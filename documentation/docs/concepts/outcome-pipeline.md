@@ -224,6 +224,15 @@ After the write, and only on success:
    (`removeDirectedParticipants`), and that is where `ERR_ACTIVE_DRAW_POSITION` can arise. A loser taken
    back leaves every seat their loss reached, a link further on included, and no exit stays awarded to
    a seat so emptied (census A1, `aSeatEmptiedFurtherOnLeavesNoAwardBehind`).
+   **A winner directed across a link is seated once** (2026-10-22). A winner who already holds a seat in
+   the target matchUp is left there and nothing is written: a direction can arrive twice in one call (a
+   DOUBLE_ELIMINATION Decider seated from the Main final, then the same winner re-advanced by a correction
+   below), and the second used to reach for the other seat and be refused. A placement across a link that
+   fails otherwise, and a winner with no position to take, are not returned: the direction runs after the
+   result is written, and a refusal there would leave that write behind. For a Decider, `reconcileDeciders`
+   seats it from the final that stands (step 5). Over the suite and the frozen census windows the only
+   placement failures reached were the already-seated case (census de 9304558 with
+   `doubleExitPropagateBye: false`, census F2 20477784). Pinned by `aWinnerAcrossALinkIsSeatedOnce.test.ts`.
 2. **Exit propagation.** WALKOVER, DEFAULTED and (by policy) RETIRED carry into the consolation the
    loser is fed to; a double exit produces exits downstream. The rules are on
    [exit propagation](./exit-propagation.md) and are not repeated here. `progressExitStatus` iterates

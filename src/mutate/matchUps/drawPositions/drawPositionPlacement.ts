@@ -1229,6 +1229,18 @@ export function directWinner({
   return { ...SUCCESS };
 }
 
+/**
+ * A PLACEMENT ACROSS A LINK THAT FAILS IS LOGGED, NOT RETURNED. It runs mid-cascade, after the call has written the source
+ * matchUp's result, and a refusal from here would leave that write behind (an error must change nothing, with no
+ * rollback by the caller; CA 2026-10-22). Of `assignDrawPosition`'s refusals, the only ones these branches can meet are
+ * the participant already holding a position in the target structure (the seated case is skipped above) and a seeded
+ * participant on a drawPosition the seeding policy does not allow. Measured 2026-10-22: neither is reached over the
+ * suite and the frozen census windows once the seated case is skipped.
+ */
+function unreturnedPlacementError(result?: ResultType) {
+  if (result?.error) pushGlobalLog({ method: 'directWinner', error: result.error });
+}
+
 function directWinnerViaLink({
   winnerMatchUpDrawPositionIndex,
   inContextDrawMatchUps,
@@ -1286,14 +1298,27 @@ function directWinnerViaLink({
     .map((assignment) => assignment.drawPosition);
   const targetDrawPositionIsUnfilled =
     !!targetMatchUpDrawPosition && unfilledTargetMatchUpDrawPositions?.includes(targetMatchUpDrawPosition);
+  /**
+   * THE WINNER ALREADY HOLDS A SEAT IN THE TARGET MATCHUP: nothing to place. A direction can arrive a second time in
+   * one call — the Decider of a DOUBLE_ELIMINATION is seated from the Main final, and a correction below re-advances
+   * the same winner across the same link — and placing them again would put one participant in both seats. That
+   * attempt used to be made and refused (`ERR_EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT`) and the refusal dropped,
+   * so the draw was right by accident. Measured 2026-10-22 (factory `dev` `01ce40e544`): the only two refusals these
+   * placements returned over the suite and the frozen census windows w1, w2 and de (both BYE arms) were this case, census
+   * de 9304558 under `doubleExitPropagateBye: false` and census F2 20477784 (`censusF2RefusalRegression20261011`).
+   */
+  const winnerSeatedInTarget =
+    !!winnerExistingDrawPosition && targetMatchUpDrawPositions.includes(winnerExistingDrawPosition);
 
-  if (
+  if (winnerParticipantId && winnerSeatedInTarget && unfilledTargetMatchUpDrawPositions?.length) {
+    // already placed; see above
+  } else if (
     winnerParticipantId &&
     winnerTargetLink.target.roundNumber === 1 &&
     targetMatchUpDrawPosition &&
     targetDrawPositionIsUnfilled
   ) {
-    assignDrawPosition({
+    const assignResult = assignDrawPosition({
       drawPosition: targetMatchUpDrawPosition,
       participantId: winnerParticipantId,
       structureId: targetStructureId,
@@ -1304,20 +1329,23 @@ function directWinnerViaLink({
       matchUpsMap,
       event,
     });
+    unreturnedPlacementError(assignResult);
   } else if (winnerParticipantId && unfilledTargetMatchUpDrawPositions?.length) {
     const drawPosition = unfilledTargetMatchUpDrawPositions.pop();
-    drawPosition &&
-      assignDrawPosition({
-        participantId: winnerParticipantId,
-        structureId: targetStructureId,
-        inContextDrawMatchUps,
-        sourceMatchUpStatus,
-        tournamentRecord,
-        drawDefinition,
-        drawPosition,
-        matchUpsMap,
-        event,
-      });
+    const assignResult = drawPosition
+      ? assignDrawPosition({
+          participantId: winnerParticipantId,
+          structureId: targetStructureId,
+          inContextDrawMatchUps,
+          sourceMatchUpStatus,
+          tournamentRecord,
+          drawDefinition,
+          drawPosition,
+          matchUpsMap,
+          event,
+        })
+      : undefined;
+    unreturnedPlacementError(assignResult);
   } else if (winnerExistingDrawPosition) {
     const assignResult = assignMatchUpDrawPosition({
       drawPosition: winnerExistingDrawPosition,
@@ -1332,9 +1360,11 @@ function directWinnerViaLink({
     });
     if (assignResult.error) return decorateResult({ result: assignResult, stack });
   } else if (structure?.stage !== QUALIFYING) {
-    const error = 'winner target position unavaiallble';
-    pushGlobalLog({ method: 'directWinner', error });
-    decorateResult({ stack, result: { error } });
+    // NO POSITION FOR THE WINNER. Not returned: the call has already written (the source matchUp's result) before any
+    // direction, and nothing in the cascade restores it, so a refusal here would leave a half-applied call. Reached only
+    // over a target whose every seat is held by others; for a DOUBLE_ELIMINATION Decider `reconcileDeciders` re-seats it
+    // from the final that stands later in the same call. Measured unreached in play (2026-10-22).
+    pushGlobalLog({ method: 'directWinner', error: 'winner target position unavailable' });
   }
 
   if (structure?.seedAssignments && structure.structureId !== targetStructureId) {
