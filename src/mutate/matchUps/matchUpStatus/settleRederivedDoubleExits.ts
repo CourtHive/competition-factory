@@ -3,7 +3,6 @@ import { arrivedOverLoserLink } from '@Mutate/drawDefinitions/matchUpGovernor/re
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { applyWithdrawnExits, withdrawByeSeats } from './applyWithdrawnExits';
-import { producedStraightInto } from './oweDissolvedConvergencesTheirByes';
 import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
