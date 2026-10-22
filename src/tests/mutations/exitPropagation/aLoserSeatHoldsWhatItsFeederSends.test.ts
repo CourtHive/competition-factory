@@ -1,6 +1,6 @@
 import { getDrawDefinition, getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
 import { checkLoserSeatsDerived } from '@Tests/testHarness/exitPropagation/properties';
-import { feederSendsNobody } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
+import { byeSeatsOwedTo, feederSendsNobody } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { setSubscriptions } from '@Global/state/globalState';
@@ -91,6 +91,38 @@ describe('feederSendsNobody reads the feeder as it stands', () => {
     // its own result no longer counts, and neither does the exit it sent on
     expect(reasonFor('derived-unwound', 'East|1|1', new Set([doubleExit.matchUpId]))).toBeUndefined();
     expect(reasonFor('derived-unwound', 'East|2|1', new Set([doubleExit.matchUpId]))).toBeUndefined();
+  });
+});
+
+describe('byeSeatsOwedTo reads the BYEs a matchUp is the reason for', () => {
+  it('the seats a double exit feeds, and every seat a BYE it caused leaves nobody to fill', () => {
+    const drawId = 'derived-owed';
+    draw(drawId, { drawType: COMPASS, drawSize: 16, participantsCount: 16 }, [
+      ['East|1|1', { matchUpStatus: DOUBLE_WALKOVER }],
+    ]);
+    const inContextDrawMatchUps = getDrawMatchUps(drawId);
+    const doubleExit = inContextDrawMatchUps.find((matchUp: any) => coordinate(matchUp) === 'East|1|1');
+    const owed = byeSeatsOwedTo({
+      inContextDrawMatchUps,
+      drawDefinition: getDrawDefinition(drawId),
+      matchUpId: doubleExit.matchUpId,
+    });
+    // West|1|1 and North|1|1 directly; each becomes a BYE matchUp, so the seats their loser links feed follow, and so on
+    expect(owed.map(coordinate).sort()).toEqual([
+      'Northwest|1|1',
+      'North|1|1',
+      'Southeast|1|1',
+      'South|1|1',
+      'West|1|1',
+    ]);
+    const unplayed = inContextDrawMatchUps.find((matchUp: any) => coordinate(matchUp) === 'East|1|3');
+    expect(
+      byeSeatsOwedTo({
+        inContextDrawMatchUps,
+        drawDefinition: getDrawDefinition(drawId),
+        matchUpId: unplayed.matchUpId,
+      }),
+    ).toEqual([]);
   });
 });
 

@@ -6,6 +6,7 @@ import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
+import { byeSeatsOwedTo } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import {
   clearSideExitProvenance,
   setSideExitProvenance,
@@ -459,9 +460,12 @@ function byeClaimPlayedOn(
   drawDefinition: DrawDefinition,
   depth: number,
 ): ResultType & { playedOn?: boolean } {
-  const claimedMatchUps = (matchUps ?? []).filter((matchUp) =>
-    Object.values(matchUp.sideExitProvenance ?? {}).some((entry) => entry?.byeClaims?.includes(standing.matchUpId)),
-  );
+  const claimedMatchUps = byeSeatsOwedTo({
+    inContextDrawMatchUps: matchUps ?? [],
+    matchUpId: standing.matchUpId,
+    drawDefinition,
+  });
+
   for (const claimed of claimedMatchUps) {
     const onward = claimed.matchUpStatus === BYE ? nextPlayable(claimed, matchUps, drawDefinition) : { next: claimed };
     if (onward.error) return onward;
