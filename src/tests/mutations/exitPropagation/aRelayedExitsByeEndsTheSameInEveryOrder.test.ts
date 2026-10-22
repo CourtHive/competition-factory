@@ -17,16 +17,19 @@ import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 /**
- * A RELAYED EXIT'S BYE IS CLAIMED BY THE MATCHUP IT DECIDES, in every order (census openings policy-off,
+ * A RELAYED EXIT'S BYE ENDS THE SAME IN EVERY ORDER, and clearing leaves no stale BYE (census openings policy-off,
  * LOSER_SEAT_DERIVED, COMPASS 16/11 under `doubleExitPropagateBye: false`: 21146979, 21157479).
  *
  * `East|1|5`'s double walkover produces a walkover into `West|1|3`, a BYE matchUp, which relays it into `West|2|2`. When
  * the loser of `East|1|7` stands opposite, `West|2|2` is awarded to them, and its loser seat in `Southwest` becomes the
- * BYE nobody can fill. Entered in that order, the BYE is claimed by `West|2|2` itself: the exit was relayed, not
- * produced straight into it. Reached the other way round — `East|1|7`'s walkover carried in, converging `West|2|2`, then
- * re-scored as a played result, re-deriving the convergence to the award — the BYE was claimed by `East|1|5`, as though
- * its exit had been produced straight into `West|2|2`. Clearing `East|1|5` then withdrew `West|2|2`'s award and the BYE's
- * claim, and left the BYE: `Southwest|1|1` dp 2 held a propagated BYE while its feeder, now TO_BE_PLAYED, sends somebody.
+ * BYE nobody can fill. The exit was relayed, not produced straight into `West|2|2`, so the BYE belongs to `West|2|2`'s
+ * award in either entry order: `East|1|7` first, or `East|1|7`'s walkover carried in, converging `West|2|2`, then
+ * re-scored as a played result.
+ *
+ * History: while the `byeClaims` ledger existed (retired in P58 4.2) the second order named `East|1|5` as the BYE's
+ * claimant, as though its exit had been produced straight into `West|2|2`. Clearing `East|1|5` then withdrew the award but
+ * left the BYE, so `Southwest|1|1` dp 2 held a propagated BYE while its feeder, now TO_BE_PLAYED, sends somebody. With the
+ * BYE read from the draw, this guards that both orders reach the same draw and that the clear withdraws the BYE.
  */
 
 const coordinate = (matchUp: any) => `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`;
@@ -59,23 +62,23 @@ const forward: [string, any][] = [
 const cleared: [string, any] = ['East|1|5', clearOutcome];
 
 it('the award a dissolved convergence re-derives leaves the draw forward entry leaves', () => {
-  const dissolved = drawAfter('relayed-claim-dissolved', converged);
-  expect(find(getDrawMatchUps('relayed-claim-dissolved'), 'West|2|2')).toMatchObject({
+  const dissolved = drawAfter('relayed-bye-dissolved', converged);
+  expect(find(getDrawMatchUps('relayed-bye-dissolved'), 'West|2|2')).toMatchObject({
     matchUpStatus: WALKOVER,
     winningSide: 2,
   });
-  expect(drawAfter('relayed-claim-forward', forward)).toEqual(dissolved);
+  expect(drawAfter('relayed-bye-forward', forward)).toEqual(dissolved);
 });
 
 it('clearing the double exit takes the BYE back in either order', () => {
-  const dissolved = drawAfter('relayed-claim-dissolved-cleared', [...converged, cleared]);
-  expect(find(getDrawMatchUps('relayed-claim-dissolved-cleared'), 'West|2|2').matchUpStatus).toEqual(TO_BE_PLAYED);
-  expect(checkLoserSeatsDerived('relayed-claim-dissolved-cleared')).toEqual([]);
-  const southwest = getDrawDefinition('relayed-claim-dissolved-cleared').structures.find(
+  const dissolved = drawAfter('relayed-bye-dissolved-cleared', [...converged, cleared]);
+  expect(find(getDrawMatchUps('relayed-bye-dissolved-cleared'), 'West|2|2').matchUpStatus).toEqual(TO_BE_PLAYED);
+  expect(checkLoserSeatsDerived('relayed-bye-dissolved-cleared')).toEqual([]);
+  const southwest = getDrawDefinition('relayed-bye-dissolved-cleared').structures.find(
     (structure: any) => structure.structureName === 'Southwest',
   );
   expect(southwest.positionAssignments.find((assignment: any) => assignment.drawPosition === 2)).toEqual({
     drawPosition: 2,
   });
-  expect(drawAfter('relayed-claim-forward-cleared', [...forward, cleared])).toEqual(dissolved);
+  expect(drawAfter('relayed-bye-forward-cleared', [...forward, cleared])).toEqual(dissolved);
 });
