@@ -130,6 +130,7 @@ export function getVenueSchedulingDetails({
       matchUpDependencies,
       participantReachability,
       clearScheduleDates,
+      tournamentRecords,
       scheduleDate,
       minutesMap,
       matchUps,
