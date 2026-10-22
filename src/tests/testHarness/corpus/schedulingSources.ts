@@ -249,8 +249,8 @@ export function schedulingScenarios(): Authored[] {
   }
 
   {
-    // FOUND building this corpus (2026-10-22): `scheduleMatchUps` on a plain 8 draw times the final at 08:00 and both
-    // semifinals at 09:00. Pinned as a known failure until the fix; the claim below is the rule, not today's behaviour
+    // C2 (found building this corpus, 2026-10-22): `scheduleMatchUps` timed a final at 08:00 and both semifinals at
+    // 09:00 on a plain 8 draw; it waited for no source because the set of sources it waits for defaulted to empty
     const { tournamentRecord } = generate({ drawProfile: { drawSize: 8 }, courtsCount: 4 });
     const matchUpIds = tournamentEngine
       .allTournamentMatchUps()
@@ -259,7 +259,6 @@ export function schedulingScenarios(): Authored[] {
     out.push({
       scenarioId: 'authored/scheduling/schedule-matchups-final-before-semifinals',
       ref: 'scheduling § direct scheduling: a matchUp is never timed before the matchUps that feed it',
-      knownFailure: 'SCHEDULING_PIPELINE_VNEXT.md § 5 found-while-building C2',
       initialRecord: tournamentRecord,
       directives: [{ method: 'scheduleMatchUps', params: { scheduleDate: DAY_1, matchUpIds } }],
       finalState: (record) => {

@@ -3,6 +3,7 @@ import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
 import { convertTime, extractDate, validTimeValue } from '@Tools/dateTime';
 import { matchUpTimeModifiers } from '@Query/matchUp/timeModifiers';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { checkPlayedOrder } from './scheduleItems/playedOrder';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { mustBeAnArray } from '@Tools/mustBeAnArray';
 
@@ -22,6 +23,8 @@ type AddScheduleAttributeArgs = {
 };
 
 type AddMatchUpScheduledTimeArgs = {
+  /** set by a caller that has already asked `checkPlayedOrder` of the whole write */
+  playedOrderChecked?: boolean;
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   removePriorValues?: boolean;
@@ -46,6 +49,11 @@ export function addMatchUpScheduledTime(params: AddMatchUpScheduledTimeArgs) {
     const result = findDrawMatchUp({ drawDefinition, matchUpId });
     if (result.error) return decorateResult({ result, stack });
     matchUp = result.matchUp;
+  }
+
+  if (!params.playedOrderChecked) {
+    const refusal = checkPlayedOrder({ drawDefinition, matchUpId, schedule: { scheduledTime: scheduledTime ?? '' } });
+    if (refusal) return decorateResult({ result: refusal, stack });
   }
 
   const timeDate = extractDate(scheduledTime);

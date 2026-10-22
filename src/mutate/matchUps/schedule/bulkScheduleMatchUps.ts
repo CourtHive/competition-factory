@@ -71,36 +71,48 @@ export function bulkScheduleMatchUps(params: BulkScheduleMatchUpsArgs) {
     tournamentRecords,
   });
 
-  for (const tournamentRecord of Object.values(tournamentRecords)) {
-    const { tournamentId } = tournamentRecord;
-    const matchUpIds = matchUpContextIds
-      ?.filter((contextIds) => contextIds.tournamentId === tournamentId)
-      .map(getMatchUpId);
+  const tournamentBatches = Object.values(tournamentRecords)
+    .map((tournamentRecord: Tournament) => {
+      const { tournamentId } = tournamentRecord;
+      const matchUpIds = matchUpContextIds
+        ?.filter((contextIds) => contextIds.tournamentId === tournamentId)
+        .map(getMatchUpId);
+      const tournamentMatchUpDetails = matchUpDetails?.filter(
+        (_, index) => detailTournamentIds[index] === tournamentId,
+      );
+      return { tournamentRecord, matchUpIds, tournamentMatchUpDetails };
+    })
+    .filter(({ matchUpIds, tournamentMatchUpDetails }) => matchUpIds?.length || tournamentMatchUpDetails?.length);
 
-    const tournamentMatchUpDetails = matchUpDetails?.filter((_, index) => detailTournamentIds[index] === tournamentId);
+  const batchArgs = ({ tournamentRecord, matchUpIds, tournamentMatchUpDetails }) => ({
+    matchUpDetails: tournamentMatchUpDetails,
+    scheduleCompletedMatchUps,
+    overrideScheduleLock,
+    scheduleByeMatchUps,
+    matchUpDependencies,
+    errorOnAnachronism,
+    removePriorValues,
+    tournamentRecords,
+    tournamentRecord,
+    checkChronology,
+    matchUpIds,
+    schedule,
+  });
 
-    if (matchUpIds?.length || tournamentMatchUpDetails?.length) {
-      const result = bulkScheduleTournamentMatchUps({
-        matchUpDetails: tournamentMatchUpDetails,
-        scheduleCompletedMatchUps,
-        overrideScheduleLock,
-        scheduleByeMatchUps,
-        matchUpDependencies,
-        errorOnAnachronism,
-        removePriorValues,
-        tournamentRecords,
-        tournamentRecord,
-        checkChronology,
-        matchUpIds,
-        schedule,
-      });
-      if (result.warnings?.length) warnings.push(...result.warnings);
-      if (result.lockedMatchUpIds?.length) lockedMatchUpIds.push(...result.lockedMatchUpIds);
-      if (result.skippedMatchUpIds?.length) skippedMatchUpIds.push(...result.skippedMatchUpIds);
-      if (result.notFoundMatchUpIds?.length) notFoundMatchUpIds.push(...result.notFoundMatchUpIds);
-      if (result.scheduled) scheduled += result.scheduled;
-      if (result.error) return result;
-    }
+  // the played order is refused for the whole call, every tournament, before any tournament is written
+  for (const batch of tournamentBatches) {
+    const result = bulkScheduleTournamentMatchUps({ ...batchArgs(batch), playedOrderOnly: true });
+    if (result.error) return result;
+  }
+
+  for (const batch of tournamentBatches) {
+    const result = bulkScheduleTournamentMatchUps({ ...batchArgs(batch), playedOrderChecked: true });
+    if (result.warnings?.length) warnings.push(...result.warnings);
+    if (result.lockedMatchUpIds?.length) lockedMatchUpIds.push(...result.lockedMatchUpIds);
+    if (result.skippedMatchUpIds?.length) skippedMatchUpIds.push(...result.skippedMatchUpIds);
+    if (result.notFoundMatchUpIds?.length) notFoundMatchUpIds.push(...result.notFoundMatchUpIds);
+    if (result.scheduled) scheduled += result.scheduled;
+    if (result.error) return result;
   }
 
   return {

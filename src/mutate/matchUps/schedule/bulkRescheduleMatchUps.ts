@@ -2,6 +2,7 @@ import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { getTournamentInfo } from '@Query/tournaments/getTournamentInfo';
+import { checkBatchPlayedOrder } from './scheduleItems/playedOrder';
 import { findDrawDefinition } from '@Acquire/findDrawDefinition';
 import { getMatchUpIds } from '@Functions/global/extractors';
 import { hasSchedule } from '@Query/matchUp/hasSchedule';
@@ -16,8 +17,8 @@ import {
 // constants and types
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { TournamentRecords, ResultType } from '@Types/factoryTypes';
-import { SUCCESS } from '@Constants/resultConstants';
 import { DrawDefinition, Tournament } from '@Types/tournamentTypes';
+import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 import {
   INVALID_VALUES,
@@ -139,6 +140,28 @@ export function bulkReschedule({
   const rescheduledMatchUpIds: string[] = [];
   const notRescheduledMatchUpIds: string[] = [];
 
+  // a shift that would put a matchUp before a played matchUp it depends on (or a played matchUp after one that depends
+  // on it) is refused for the whole batch, judged on where the batch leaves every matchUp, before any is written
+  const placements = scheduledNotCompletedMatchUps
+    .filter(({ matchUpId }) => matchUpIds.includes(matchUpId))
+    .flatMap((inContextMatchUp) => {
+      const { dateRefused, timeRefused, newScheduledDate, newScheduledTime } = computeReschedule({
+        inContextMatchUp,
+        minutesChange,
+        daysChange,
+        startDate,
+        endDate,
+      });
+      if (dateRefused || timeRefused || (!newScheduledDate && !newScheduledTime)) return [];
+      const schedule = {
+        ...(newScheduledDate ? { scheduledDate: newScheduledDate } : {}),
+        ...(newScheduledTime ? { scheduledTime: newScheduledTime } : {}),
+      };
+      return [{ drawId: inContextMatchUp.drawId, matchUpId: inContextMatchUp.matchUpId, schedule }];
+    });
+  const playedOrderRefusal = checkBatchPlayedOrder({ tournamentRecord, placements });
+  if (playedOrderRefusal) return playedOrderRefusal;
+
   for (const drawId of Object.keys(drawIdMap)) {
     const result = findDrawDefinition({ tournamentRecord, drawId });
     if (result.error) return result;
@@ -241,8 +264,68 @@ function rescheduleMatchUp({
   endDate,
   dryRun,
 }: RescheduleMatchUpArgs): ResultType | undefined {
+  const { dateRefused, timeRefused, newScheduledDate, newScheduledTime } = computeReschedule({
+    inContextMatchUp: scheduledNotCompletedMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId),
+    minutesChange,
+    daysChange,
+    startDate,
+    endDate,
+  });
+
+  if (dateRefused || timeRefused) {
+    notRescheduledMatchUpIds.push(matchUpId);
+    return undefined;
+  }
+
+  if (newScheduledTime || newScheduledDate) {
+    // Written through addMatchUpScheduleItems so a re-dated matchUp leaves the old day's grid (B3): its courtOrder,
+    // court and venue were a position on THAT day's grid, and a date change clears them exactly as it does for
+    // scheduleMatchUps. The tournamentRecord also lets the date's own range check run. Chronology is not checked: a
+    // bulk shift moves every listed matchUp together. A schedule lock is respected (B7): the locked matchUp is skipped
+    // and reported in lockedMatchUpIds, as every bulk path does, unless the caller passes overrideScheduleLock. A dry
+    // run validates without writing, so it reports locks too.
+    const result = addMatchUpScheduleItems({
+      schedule: {
+        ...(newScheduledDate ? { scheduledDate: newScheduledDate } : {}),
+        ...(newScheduledTime ? { scheduledTime: newScheduledTime } : {}),
+      },
+      checkChronology: false,
+      playedOrderChecked: true,
+      validateOnly: !!dryRun,
+      overrideScheduleLock,
+      tournamentRecords,
+      tournamentRecord,
+      drawDefinition,
+      matchUpId,
+    });
+    if (result.error?.code === SCHEDULE_LOCKED.code) {
+      lockedMatchUpIds.push(matchUpId);
+      notRescheduledMatchUpIds.push(matchUpId);
+      return undefined;
+    }
+    if (result.error) return result;
+  }
+  if (newScheduledTime || newScheduledDate) {
+    rescheduledMatchUpIds.push(matchUpId);
+  }
+  return undefined;
+}
+
+/** where a shift moves one matchUp, or that it refuses to (each change is its own verdict) */
+function computeReschedule({
+  inContextMatchUp,
+  minutesChange,
+  daysChange,
+  startDate,
+  endDate,
+}: {
+  inContextMatchUp?: HydratedMatchUp;
+  minutesChange?: number;
+  daysChange?: number;
+  startDate?: string;
+  endDate?: string;
+}) {
   const dayTotalMinutes = 1440;
-  const inContextMatchUp = scheduledNotCompletedMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
   const { scheduledTime, scheduledDate } = inContextMatchUp?.schedule ?? {};
 
   // Each change is a separate verdict and EITHER refuses the matchUp. B1: the minutes verdict used to
@@ -278,40 +361,5 @@ function rescheduleMatchUp({
     }
   }
 
-  if (dateRefused || timeRefused) {
-    notRescheduledMatchUpIds.push(matchUpId);
-    return undefined;
-  }
-
-  if (newScheduledTime || newScheduledDate) {
-    // Written through addMatchUpScheduleItems so a re-dated matchUp leaves the old day's grid (B3): its courtOrder,
-    // court and venue were a position on THAT day's grid, and a date change clears them exactly as it does for
-    // scheduleMatchUps. The tournamentRecord also lets the date's own range check run. Chronology is not checked: a
-    // bulk shift moves every listed matchUp together. A schedule lock is respected (B7): the locked matchUp is skipped
-    // and reported in lockedMatchUpIds, as every bulk path does, unless the caller passes overrideScheduleLock. A dry
-    // run validates without writing, so it reports locks too.
-    const result = addMatchUpScheduleItems({
-      schedule: {
-        ...(newScheduledDate ? { scheduledDate: newScheduledDate } : {}),
-        ...(newScheduledTime ? { scheduledTime: newScheduledTime } : {}),
-      },
-      checkChronology: false,
-      validateOnly: !!dryRun,
-      overrideScheduleLock,
-      tournamentRecords,
-      tournamentRecord,
-      drawDefinition,
-      matchUpId,
-    });
-    if (result.error?.code === SCHEDULE_LOCKED.code) {
-      lockedMatchUpIds.push(matchUpId);
-      notRescheduledMatchUpIds.push(matchUpId);
-      return undefined;
-    }
-    if (result.error) return result;
-  }
-  if (newScheduledTime || newScheduledDate) {
-    rescheduledMatchUpIds.push(matchUpId);
-  }
-  return undefined;
+  return { dateRefused, timeRefused, newScheduledDate, newScheduledTime };
 }

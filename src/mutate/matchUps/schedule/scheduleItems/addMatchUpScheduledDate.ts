@@ -1,6 +1,7 @@
 import { setMatchUpFirstClassOrTimeItem } from '@Mutate/timeItems/matchUps/setMatchUpFirstClassOrTimeItem';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { dateValidation } from '@Validators/regex';
+import { checkPlayedOrder } from './playedOrder';
 import { extractDate } from '@Tools/dateTime';
 
 // constants and types
@@ -13,9 +14,10 @@ export function addMatchUpScheduledDate({
   removePriorValues,
   tournamentRecord,
   drawDefinition,
+  playedOrderChecked,
   disableNotice,
   matchUpId,
-}: AddScheduleAttributeArgs & { scheduledDate?: string }): ResultType {
+}: AddScheduleAttributeArgs & { scheduledDate?: string; playedOrderChecked?: boolean }): ResultType {
   const stack = 'addMatchUpScheduledDate';
   if (!matchUpId) return { error: MISSING_MATCHUP_ID };
 
@@ -35,6 +37,11 @@ export function addMatchUpScheduledDate({
         info: 'scheduledDate must be within tournament start and end dates',
         stack,
       });
+  }
+
+  if (!playedOrderChecked && drawDefinition) {
+    const refusal = checkPlayedOrder({ drawDefinition, matchUpId, schedule: { scheduledDate: scheduledDate ?? '' } });
+    if (refusal) return decorateResult({ result: refusal, stack });
   }
 
   return setMatchUpFirstClassOrTimeItem({

@@ -1559,12 +1559,40 @@ engine.addMatchUpScheduleItems({
     allocatedCourts, // optional — alias for courtIds; accepts the read-side shape
   },
   removePriorValues, // optional boolean — clear existing schedule timeItems first
-  checkChronology, // optional boolean — defaults to true; validate time ordering
+  checkChronology, // optional boolean — defaults to true; warn on time ordering (see Played order below)
   errorOnAnachronism, // optional boolean — return error on chronological violations
   errorOnUnknownAttributes, // optional boolean — error instead of warning on attributes that will not be written
   proConflictDetection, // optional boolean — detect pro scheduling conflicts
   disableNotice, // optional boolean — suppress modification notices
 });
+```
+
+### Played order: a matchUp is never placed before a played matchUp it depends on
+
+Every write that moves a matchUp's `scheduledDate` or `scheduledTime` (this method, `addMatchUpScheduledTime`,
+`addMatchUpScheduledDate`, `bulkScheduleMatchUps`, `bulkRescheduleMatchUps` and the schedulers) is refused with
+`ANACHRONISM`, writing nothing, when it would place the matchUp **at or before a played matchUp it depends on**, or place
+a played matchUp **after a matchUp that depends on it**.
+
+- **Played**: `COMPLETED`, `RETIRED` or `DEFAULTED`, with a score. A walkover, a double walkover or default, a cancelled
+  or abandoned matchUp, a dead rubber or a BYE imposes nothing; neither does a matchUp `IN_PROGRESS` or `SUSPENDED`,
+  whatever its score.
+- **Depends on**: winner and loser links, feed-in, qualifying to main, round robin group to playoff. AD_HOC rounds and the
+  rounds of a round robin carry no links and impose no order.
+- **Before**: scheduled against scheduled. An earlier date; or the same date, both times set, at or before. A same-day
+  placement without a time, or a played matchUp without a date, proves nothing. Recorded start and end times are not
+  compared.
+- Only a write that **moves** the matchUp is asked: a court, a court order, an official, or writing back an unchanged
+  schedule is never refused, even when the stored order is already wrong.
+- `checkChronology: false` does not waive it (that switch only turns off the `ANACHRONISM` _warning_ about unplayed
+  sources). Bulk writes are judged on the state the whole batch leaves, and refused whole, before any of it is written.
+
+The refusal's `context.blockingMatchUps` names each blocking matchUp (`relation: 'playedSource'` or `'dependent'`),
+with its date, time, status and round, so a client can say which result stands in the way.
+
+```js
+const result = engine.addMatchUpScheduleItems({ matchUpId: finalId, drawId, schedule: { scheduledTime: '09:00' } });
+// semifinal played at 10:00 → result.error === ANACHRONISM; result.context.blockingMatchUps[0].relation === 'playedSource'
 ```
 
 ### `calledAt`

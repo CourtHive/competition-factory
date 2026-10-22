@@ -2,6 +2,7 @@ import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
+import { checkBatchPlayedOrder } from './scheduleItems/playedOrder';
 import { findDrawDefinition } from '@Acquire/findDrawDefinition';
 
 // constants and types
@@ -29,6 +30,10 @@ type BulkScheduleMachUpsArgs = {
   matchUpIds?: string[];
   matchUpDetails?: any;
   schedule?: any;
+  /** the batch's played order was checked by the caller, across every tournament it writes */
+  playedOrderChecked?: boolean;
+  /** check the batch's played order and write nothing (the caller's first pass over several tournaments) */
+  playedOrderOnly?: boolean;
 };
 
 export function bulkScheduleTournamentMatchUps({
@@ -42,6 +47,8 @@ export function bulkScheduleTournamentMatchUps({
   tournamentRecords,
   tournamentRecord,
   matchUpDetails,
+  playedOrderChecked,
+  playedOrderOnly,
   matchUpIds,
   schedule,
 }: BulkScheduleMachUpsArgs): {
@@ -110,6 +117,17 @@ export function bulkScheduleTournamentMatchUps({
   }, {});
 
   const attemptedMatchUpIds = new Set<string>(skippedMatchUpIds);
+  const scheduleOf = (matchUpId: string) => detailScheduleOf({ matchUpDetails, schedule, matchUpId });
+
+  const gate = playedOrderGate({
+    playedOrderChecked,
+    tournamentRecord,
+    playedOrderOnly,
+    isRequested,
+    scheduleOf,
+    drawIdMap,
+  });
+  if (gate) return gate;
 
   for (const drawId of Object.keys(drawIdMap)) {
     const { drawDefinition } = findDrawDefinition({
@@ -128,9 +146,9 @@ export function bulkScheduleTournamentMatchUps({
     }).matchUps;
 
     for (const matchUpId of drawMatchUpIds) {
-      const matchUpSchedule = matchUpDetails?.find((details) => details.matchUpId === matchUpId)?.schedule || schedule;
       const result = addMatchUpScheduleItems({
-        schedule: matchUpSchedule,
+        schedule: scheduleOf(matchUpId),
+        playedOrderChecked: true,
         overrideScheduleLock,
         matchUpDependencies,
         errorOnAnachronism,
@@ -167,4 +185,32 @@ export function bulkScheduleTournamentMatchUps({
     ...(notFoundMatchUpIds.length ? { notFoundMatchUpIds } : {}),
     scheduled,
   };
+}
+
+function detailScheduleOf({ matchUpDetails, schedule, matchUpId }) {
+  return matchUpDetails?.find((details) => details.matchUpId === matchUpId)?.schedule || schedule;
+}
+
+/**
+ * A played matchUp's order is refused for the whole batch, before any of it is written; a caller's first pass over
+ * several tournaments (`playedOrderOnly`) stops here either way, writing nothing
+ */
+function playedOrderGate({
+  playedOrderChecked,
+  playedOrderOnly,
+  tournamentRecord,
+  drawIdMap,
+  isRequested,
+  scheduleOf,
+}) {
+  if (!playedOrderChecked) {
+    const placements = Object.keys(drawIdMap).flatMap((drawId) =>
+      drawIdMap[drawId]
+        .filter(isRequested)
+        .map((matchUpId) => ({ drawId, matchUpId, schedule: scheduleOf(matchUpId) })),
+    );
+    const refusal = checkBatchPlayedOrder({ tournamentRecord, placements });
+    if (refusal) return refusal;
+  }
+  return playedOrderOnly ? { ...SUCCESS, scheduled: 0 } : undefined;
 }
