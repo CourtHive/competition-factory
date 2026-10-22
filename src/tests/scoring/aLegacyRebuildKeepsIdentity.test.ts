@@ -6,7 +6,8 @@ import { describe, expect, it } from 'vitest';
  * (scoring-engine spec § 12.1, § 12.6 item 2; CA 2026-10-18): "a rebuild ... keeps everything that is not
  * scoring: the matchUp's identity, participants and any metadata a host attached." v1's points-only rebuild
  * (used by undo, editPoint and removePoint when the record has no timeline) started from a fresh matchUp and
- * copied back only each side's lineUp, so an undo on such a record dropped the sides' participants.
+ * copied back only each side's lineUp, so an undo on such a record dropped the sides' participants. Since
+ * 2026-10-22 such a record takes its timeline on its first action, and the rebuild is the timeline's.
  */
 
 function legacyRecord() {
@@ -30,7 +31,10 @@ function expectIdentity(engine: ScoringEngine) {
   expect(state.extensions).toEqual([{ name: 'host', value: { court: 4 } }]);
   expect(state.sides.map((side: any) => side.participantId)).toEqual(['p-1', 'p-2']);
   expect(state.sides.map((side: any) => side.participant.participantName)).toEqual(['Ada', 'Grace']);
-  expect(state.history.entries).toBeUndefined();
+  // the action first gave the record its timeline (§ 12.6, CA 2026-10-22), one point entry per point
+  expect(state.history.entries.filter((entry: any) => entry.type === 'point').length).toEqual(
+    state.history.points.length,
+  );
 }
 
 describe('§ 12.6 item 2 a legacy point-only rebuild keeps identity, participants and metadata (CA 2026-10-18)', () => {

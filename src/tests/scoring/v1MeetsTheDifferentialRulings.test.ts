@@ -396,7 +396,7 @@ describe('the record shapes the full-record differential found, v2’s way (CA 2
     expect(history(loaded)!.entries).toBeUndefined();
   });
 
-  it('a record without a timeline starts one on a redo, each point entry linked to its point (§ 12.1, § 12.6)', () => {
+  it('a record without a timeline starts one on its first undo, each point entry linked to its point (§ 12.6)', () => {
     const source = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     play(source, '121');
     const state = source.getState();
@@ -404,7 +404,7 @@ describe('the record shapes the full-record differential found, v2’s way (CA 2
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     engine.setState(state);
     engine.undo();
-    expect(history(engine)!.entries).toBeUndefined();
+    expect(history(engine)!.entries!.map((entry) => entry.pointIndex)).toEqual([0, 1]);
     engine.redo();
     expect(history(engine)!.entries!.map((entry) => entry.pointIndex)).toEqual([0, 1, 2]);
   });
