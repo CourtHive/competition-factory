@@ -1,6 +1,6 @@
 import { getDrawDefinition, getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
+import { byeSeatsOwedTo, feederSendsNobody, seatShowsBye } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { checkLoserSeatsDerived } from '@Tests/testHarness/exitPropagation/properties';
-import { byeSeatsOwedTo, feederSendsNobody } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { setSubscriptions } from '@Global/state/globalState';
@@ -123,6 +123,19 @@ describe('byeSeatsOwedTo reads the BYEs a matchUp is the reason for', () => {
         matchUpId: unplayed.matchUpId,
       }),
     ).toEqual([]);
+  });
+});
+
+describe('seatShowsBye: CA ruling (A), a policy-off double exit shows its produced exit', () => {
+  it('a BYE shows every reason but a double exit under the policy off, unless the seat is fed in', () => {
+    const off = { progression: { doubleExitPropagateBye: false } };
+    expect(seatShowsBye({ reason: 'DOUBLE_EXIT' })).toEqual(true);
+    expect(seatShowsBye({ reason: 'DOUBLE_EXIT', appliedPolicies: off })).toEqual(false);
+    expect(
+      seatShowsBye({ reason: 'DOUBLE_EXIT', appliedPolicies: off, seatMatchUp: { hasFedDrawPosition: true } as any }),
+    ).toEqual(true);
+    expect(seatShowsBye({ reason: 'NOBODY_LOST', appliedPolicies: off })).toEqual(true);
+    expect(seatShowsBye({ reason: undefined })).toEqual(false);
   });
 });
 

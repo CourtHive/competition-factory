@@ -5,19 +5,21 @@ import { setSubscriptions } from '@Global/state/globalState';
 import { expect, it } from 'vitest';
 
 // constants
-import { DEFAULTED, DOUBLE_WALKOVER, BYE } from '@Constants/matchUpStatusConstants';
+import { DEFAULTED, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { OLYMPIC } from '@Constants/drawDefinitionConstants';
 
 /**
- * A CARRIER PASSING A BYE ONTO THE SIDE A DISSOLVED DOUBLE EXIT DECIDED BRINGS ITS OWN EXIT (census run 17 F3
+ * A CARRIER WHOSE DOUBLE EXIT DISSOLVES KEEPS THEIR OWN EXIT, AND MEETS THE EXIT PRODUCED OPPOSITE (census run 17 F3
  * MONOTONIC_DECISION, OLYMPIC 16/16 seed 20738091, `doubleExitPropagateBye: false`).
  *
  * `South|1|1` holds two defaulted participants and is a DOUBLE_DEFAULT, whose produced exit decides `South|2|1` for the
- * participant opposite. `East|1|4`'s double walkover then converges `West|1|2` and gives `South|1|1` a BYE in place of
- * that matchUp's loser. The double default dissolves; the defaulted participant left beside the BYE passes through it
- * onto the side of `South|2|1` the double default had decided. That side kept only the double default's entry, which
- * settle voids as stale, and `South|2|1` re-opened beneath a defaulted participant. The carrier's own DEFAULTED is
- * that side's record, as it is when the double walkover comes first.
+ * participant opposite. `East|1|4`'s double walkover then converges `West|1|2`, and `South|1|1` loses that matchUp's
+ * loser. Under the policy off a double exit's loser seat shows the exit it produced, never a BYE (CA ruling (A),
+ * 2026-10-21), so the double default dissolves into a new convergence: the defaulted participant from `West|1|1` stays,
+ * opposite `West|1|2`'s produced walkover, and `South|1|1` is a DOUBLE_WALKOVER (a mixture takes the weaker label).
+ * Its produced walkover decides `South|2|1` for the participant opposite, as the double default did. Before the ruling
+ * the seat took a BYE, the carrier passed it onto the side the double default had decided, and the census found
+ * `South|2|1` re-opened beneath them when settle voided that side's stale entry.
  *
  * Replayed through the census's own `replay`: every per-step property, then the forward monotonic check. The draw
  * itself is then read with the double walkover entered last and first, without the census probe.
@@ -46,7 +48,7 @@ it('scoring the matchUp that dissolves the double exit un-decides nothing', () =
   expect(replay(config, setup, 'carrier-dissolved-exit', POLICY_OFF)).toBeNull();
 });
 
-it('the carrier records its own exit on the side the double exit decided, in either order', () => {
+it('the carrier keeps its own exit and converges with the exit produced opposite, in either order', () => {
   for (const [label, steps] of [
     ['double walkover last', [...setup, at('East|1|4', { matchUpStatus: DOUBLE_WALKOVER })]],
     ['double walkover first', [...setup.slice(0, 6), at('East|1|4', { matchUpStatus: DOUBLE_WALKOVER }), setup[6]]],
@@ -61,14 +63,20 @@ it('the carrier records its own exit on the side the double exit decided, in eit
     }
     const matchUps = getDrawMatchUps(drawId);
     const find = (key: string) => matchUps.find((matchUp: any) => coordinate(matchUp) === key);
-    expect(find('South|1|1').matchUpStatus, label).toEqual(BYE);
+    const converged = find('South|1|1');
+    expect(converged.matchUpStatus, label).toEqual(DOUBLE_WALKOVER);
+    // the carrier keeps their own DEFAULTED from `West|1|1`, opposite the walkover `West|1|2`'s convergence produced
+    const named = (entry: any) =>
+      coordinate(matchUps.find((matchUp: any) => matchUp.matchUpId === entry?.sourceMatchUpId));
+    expect(converged.sideExitProvenance?.[1]?.matchUpStatus, label).toEqual(DEFAULTED);
+    expect(named(converged.sideExitProvenance?.[1]), label).toEqual('West|1|1');
+    expect(converged.sideExitProvenance?.[2]?.matchUpStatus, label).toEqual(WALKOVER);
+    expect(named(converged.sideExitProvenance?.[2]), label).toEqual('West|1|2');
+    // ...and `South|2|1` is decided by the walkover `South|1|1` produces, for the side the double default decided
     const onward = find('South|2|1');
-    expect(onward.matchUpStatus, label).toEqual(DEFAULTED);
+    expect(onward.matchUpStatus, label).toEqual(WALKOVER);
     expect(onward.winningSide, label).toEqual(2);
-    const carrier = onward.sideExitProvenance?.[1];
-    expect(carrier?.matchUpStatus, label).toEqual(DEFAULTED);
-    expect(coordinate(matchUps.find((matchUp: any) => matchUp.matchUpId === carrier?.sourceMatchUpId)), label).toEqual(
-      'West|1|1',
-    );
+    expect(onward.sideExitProvenance?.[1]?.matchUpStatus, label).toEqual(WALKOVER);
+    expect(named(onward.sideExitProvenance?.[1]), label).toEqual('South|1|1');
   }
 });

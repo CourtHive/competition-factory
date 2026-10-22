@@ -95,11 +95,11 @@ function scheduled(drawId: string) {
   return view(drawId);
 }
 
-it("the scheduled draw holds South dp 4's BYE on West|1|4's claim", () => {
+it("the scheduled draw holds South dp 4's BYE on East|1|8's claim", () => {
   const { watched, dp4 } = scheduled('owed-bye-scheduled');
   expect(dp4).toEqual({ drawPosition: 4, bye: true, byeFromPropagation: true });
   expect(watched['West|1|4']).toMatchObject({ matchUpStatus: WALKOVER, winningSide: 1 });
-  expect(watched['South|1|2']).toMatchObject({ matchUpStatus: BYE, winningSide: null, claims: { '2': ['West|1|4'] } });
+  expect(watched['South|1|2']).toMatchObject({ matchUpStatus: BYE, winningSide: null, claims: { '2': ['East|1|8'] } });
   expect(watched['South|2|1'].matchUpStatus).toEqual(DOUBLE_WALKOVER);
 });
 

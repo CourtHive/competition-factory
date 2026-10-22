@@ -1,14 +1,16 @@
+import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
-import { matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
+import { matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { positionTargets } from '@Query/matchUp/positionTargets';
+import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { carriedExitStatus } from './sideExitProvenance';
 import { isDoubleExit } from '@Validators/isExit';
 
 // constants and types
 import { DrawDefinition, DrawLink, PositionAssignment } from '@Types/tournamentTypes';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
+import { PolicyDefinitions } from '@Types/factoryTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 /** why the matchUp feeding a loser seat will never send anyone across the link */
@@ -135,4 +137,25 @@ export function byeSeatsOwedTo({
     }
   }
   return [...seats.values()];
+}
+
+/**
+ * Does a loser seat whose feeder sends nobody show that with a BYE? CA ruling (A), 2026-10-21: yes, except that a double
+ * exit's loser seat shows the exit it produced when `doubleExitPropagateBye` is false, whether the double exit was
+ * entered or two exits converged into it, unless the seat is a fed-in position (`hasFedDrawPosition`), which takes a BYE
+ * whatever the policy. Before the ruling a converged double exit's seat held a BYE or the produced exit depending on the
+ * order the results were entered (`reclaimSingleExitBye` against the settled-seat rule of census S6 20694910).
+ */
+export function seatShowsBye({
+  appliedPolicies,
+  seatMatchUp,
+  reason,
+}: {
+  appliedPolicies?: PolicyDefinitions;
+  seatMatchUp?: HydratedMatchUp;
+  reason?: FeederSendsNobody;
+}): boolean {
+  if (!reason) return false;
+  if (reason !== 'DOUBLE_EXIT' || propagatesByeOnDoubleExit(appliedPolicies)) return true;
+  return !!seatMatchUp?.hasFedDrawPosition;
 }

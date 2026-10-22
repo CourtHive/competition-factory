@@ -194,10 +194,12 @@ it('a convergence dissolved to a single exit withdraws its claim on a BYE others
   expect(forward['South|1|1']).toEqual({
     matchUpStatus: 'BYE',
     winningSide: null,
-    sides: ['BYE', 'BYE'],
+    sides: ['BYE', '-'],
     provenance: {
       '2': {
-        byeClaims: ['East|1|3'],
+        matchUpStatus: 'WALKOVER',
+        previousMatchUpStatus: 'DOUBLE_WALKOVER',
+        sourceMatchUpId: 'West|1|2',
       },
     },
   });
