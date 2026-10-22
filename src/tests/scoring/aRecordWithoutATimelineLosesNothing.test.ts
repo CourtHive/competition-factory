@@ -1,12 +1,11 @@
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
-import { ScoringEngineV2 } from '@Assemblies/engines/scoring/v2/engine';
 import { describe, expect, it } from 'vitest';
 
 /*
  * A record saved without a timeline (§ 12.6 shape 2: points, and perhaps a substitution list, but no entries)
  * takes its timeline on the first action that changes it: its points as point entries, each substitution placed
  * before the point it preceded. Every operation then works on that timeline, so nothing the record holds is lost
- * to an undo, a redo or a rebuild (CA 2026-10-22). Both engines are held to it directly.
+ * to an undo, a redo or a rebuild (CA 2026-10-22).
  */
 
 const FORMAT = 'SET1-S:TB7';
@@ -19,11 +18,8 @@ const AFTER = [
   ['b1', 'b2'],
 ];
 
-type Engine = ScoringEngine | ScoringEngineV2;
-const ENGINES: [string, (options: Record<string, unknown>) => Engine][] = [
-  ['v1', (options) => new ScoringEngine(options)],
-  ['v2', (options) => new ScoringEngineV2(options)],
-];
+type Engine = ScoringEngine;
+const make = (options: Record<string, unknown>): Engine => new ScoringEngine(options);
 
 /** two points, a2 substituted by a3, two more points, and, when asked, a3 substituted by a4 after them */
 function savedWithoutTimeline(make: (options: Record<string, unknown>) => Engine, substituteLast = false) {
@@ -48,7 +44,7 @@ const subs = (engine: Engine) => (engine.getState().history!.substitutions ?? []
 const timeline = (engine: Engine) =>
   engine.getState().history!.entries!.map((entry) => (entry.type === 'point' ? entry.pointIndex : entry.type));
 
-describe.each(ENGINES)('%s: a record without a timeline loses nothing (§ 12.6)', (_name, make) => {
+describe('a record without a timeline loses nothing (§ 12.6)', () => {
   it('takes its timeline on its first undo, each substitution before the point it preceded', () => {
     const engine = savedWithoutTimeline(make);
     expect(engine.getState().history!.entries).toBeUndefined();

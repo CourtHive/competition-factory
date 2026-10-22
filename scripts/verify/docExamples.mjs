@@ -130,16 +130,19 @@ const engine = tournamentEngine; const matchUpId = 'context'; const matchUps = [
     check: `if (result.valid || !result.invalidAgeMax || !result.categoryDetails || !result.childCategoryDetails || 'details' in result) throw new Error('flat category flags and source details');`,
   },
 ];
-// Keep the advertised complete index synchronized with public class methods.
+// Keep the advertised complete index synchronized with public class methods. The class is the reducer's shell
+// (`v2/engine.ts`) since SE4; `ScoringEngine.ts` re-exports it.
+const SCORER_SOURCE = 'src/assemblies/engines/scoring/v2/engine.ts';
 const source = ts.createSourceFile(
-  'ScoringEngine.ts',
-  readFileSync(join(root, 'src/assemblies/engines/scoring/ScoringEngine.ts'), 'utf8'),
+  'engine.ts',
+  readFileSync(join(root, SCORER_SOURCE), 'utf8'),
   ts.ScriptTarget.Latest,
   true,
 );
 const scorerClass = source.statements.find(
   (node) => ts.isClassDeclaration(node) && node.name?.text === 'ScoringEngine',
 );
+if (!scorerClass) throw new Error(`No ScoringEngine class in ${SCORER_SOURCE}: the API index cannot be checked`);
 const api = readFileSync(join(root, 'documentation/docs/scoring-engine/scoring-engine-api.md'), 'utf8');
 const headings = new Set([...api.matchAll(/^### (\w+)\s*$/gm)].map((match) => match[1]));
 const methods = scorerClass.members.filter(

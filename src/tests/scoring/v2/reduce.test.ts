@@ -10,7 +10,7 @@ import type { MatchRule } from '@Assemblies/engines/scoring/v2/format';
 /*
  * ScoringEngine v2 (SE2a): the reducer held directly to the spec (documentation/docs/scoring-engine/
  * scoring-engine-spec.md), section by section. The conformance suite holds it to the rulebooks through the
- * differential (`SCORING_ENGINE=differential`); these cases hold the parts a ScoringEngine call cannot reach alone.
+ * ScoringEngine; these cases hold the parts a ScoringEngine call cannot reach alone.
  */
 
 /** point entries from a stream of `1`s and `2`s (spaces ignored) */

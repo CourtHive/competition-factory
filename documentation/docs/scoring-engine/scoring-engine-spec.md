@@ -19,6 +19,10 @@ rule disagree, this page states the rule and records v1's behaviour as **a v1 de
 cutover** (the differential of v1 against v2 surfaces each one); it does not encode a v1 accident as
 the rule. A persisted record v1 wrote is still read as v1 read it (§ 12.8).
 
+**Since SE4 (CA 2026-10-22) the `ScoringEngine` is the reducer this page specifies; v1 is retired.** Every
+v1 defect recorded here was ruled and brought to the rule, by the differential of v1 against v2, before v1
+went; the notes on v1 stay as the record of what changed. The differential retired with v1.
+
 ```text
 state = reduce(configuration, timeline)
 
@@ -1072,14 +1076,14 @@ an additive action, not a format change.
 
 ## 15. What the suite and the corpus pin
 
-|                    |                                                                                                                                                                                                    |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| conformance matrix | 81 cells from the factory's harvested formats: 77 held by independent cases, 4 refused, none missing (`formatMatrix.test.ts`); every cell placed in § 17                                           |
-| conformance cases  | about 300, written from rulebooks (ITF, USA Pickleball, World Squash, ITTF, BWF, FIVB, VALORANT) or from the format definitions, each held five ways (see the opening)                             |
-| v1/v2 differential | `SCORING_ENGINE=differential`: every v1 call made on a v2 engine shell too, and the result and state compared; `SCORING_ENGINE=v2` runs the suites on v2 alone; `pnpm verify:scoring-differential` |
-| engine tests       | the S1–S13 fixes (#5511–#5521), the defects the cases found (#5529, #5530, #5533) and the replay, boundary and service tests cited above                                                           |
-| scoring corpus     | 72 seeded streams (8 formats × 3 biases × 3 seeds) through the pure `createMatchUp`/`addPoint`, each step's result pinned by the manifest (#5511), and one point after completion each             |
-| class timeline     | undo, redo, edits, baselines, segment ends, server corrections, substitutions, save and load, as corpus scenarios, with every conformance cell (SE3, #5658)                                        |
+|                    |                                                                                                                                                                                        |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| conformance matrix | 81 cells from the factory's harvested formats: 77 held by independent cases, 4 refused, none missing (`formatMatrix.test.ts`); every cell placed in § 17                               |
+| conformance cases  | about 300, written from rulebooks (ITF, USA Pickleball, World Squash, ITTF, BWF, FIVB, VALORANT) or from the format definitions, each held five ways (see the opening)                 |
+| v1/v2 differential | retired with v1 at SE4; until then every v1 call was made on the v2 engine too, and the outcome and the whole record compared                                                          |
+| engine tests       | the S1–S13 fixes (#5511–#5521), the defects the cases found (#5529, #5530, #5533) and the replay, boundary and service tests cited above                                               |
+| scoring corpus     | 72 seeded streams (8 formats × 3 biases × 3 seeds) through the pure `createMatchUp`/`addPoint`, each step's result pinned by the manifest (#5511), and one point after completion each |
+| class timeline     | undo, redo, edits, baselines, segment ends, server corrections, substitutions, save and load, as corpus scenarios, with every conformance cell (SE3, #5658)                            |
 
 ## 16. Decisions (2026-10-18)
 

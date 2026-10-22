@@ -1,42 +1,30 @@
-import { getScoringEngine, setScoringEngine } from '@Global/state/globalState';
+import { ScoringEngine as Governed } from '@Assemblies/governors/scoreGovernor';
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
-import { ScoringEngineV2 } from '@Assemblies/engines/scoring/v2/engine';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 // constants and types
-import { SCORING_ENGINE_V1, SCORING_ENGINE_V2 } from '@Constants/scoringEngineConstants';
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 /*
- * ScoringEngine v2 (SE2c): the engine shell, held to the spec (§ 2, § 11, § 12) and the API reference directly,
- * whatever engine the selector names. The scoring suites hold it to every expectation they hold v1 to when run with
- * `SCORING_ENGINE=v2`; these cases are the shell's own oracle, so it is covered and checked in every run.
+ * The ScoringEngine (v2 since SE4): the engine shell, held to the spec (§ 2, § 11, § 12) and the API reference
+ * directly. These cases are the shell's own oracle; the scoring suites hold it to every other expectation.
  */
 
-const selected = getScoringEngine();
-afterEach(() => {
-  setScoringEngine(selected);
-});
-
 const engineFor = (matchUpFormat: string, options: Record<string, unknown> = {}) =>
-  new ScoringEngineV2({ matchUpFormat, ...options });
+  new ScoringEngine({ matchUpFormat, ...options });
 
-function play(engine: ScoringEngineV2, sides: string) {
+function play(engine: ScoringEngine, sides: string) {
   for (const side of sides.replaceAll(' ', '')) engine.addPoint({ winner: side === '1' ? 0 : 1 });
 }
 
 const love = (side: '1' | '2', games = 1) => side.repeat(4 * games);
-const sets = (engine: ScoringEngineV2) =>
+const sets = (engine: ScoringEngine) =>
   engine.getState().score.sets.map((set) => [set.side1Score, set.side2Score, set.winningSide]);
 
-describe('the selector', () => {
-  it('v2 selected: the constructor hands back the v2 shell; v1 selected: the class itself', () => {
-    setScoringEngine(SCORING_ENGINE_V2);
-    expect(new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' })).toBeInstanceOf(ScoringEngineV2);
-    setScoringEngine(SCORING_ENGINE_V1);
-    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
-    expect(engine).not.toBeInstanceOf(ScoringEngineV2);
-    expect(engine).toBeInstanceOf(ScoringEngine);
+describe('the class', () => {
+  it('scoreGovernor exports the one ScoringEngine, and an instance is one', () => {
+    expect(Governed).toBe(ScoringEngine);
+    expect(new Governed({ matchUpFormat: 'SET3-S:6/TB7' })).toBeInstanceOf(ScoringEngine);
   });
 });
 
@@ -356,7 +344,7 @@ describe('§ 12.5, § 12.6 persistence', () => {
 });
 
 describe('§ 12.8 legacy shapes replay as v1 replayed them, flagged', () => {
-  const loadedWith = (format: string, build: (engine: ScoringEngineV2) => void, extra: Record<string, unknown>[]) => {
+  const loadedWith = (format: string, build: (engine: ScoringEngine) => void, extra: Record<string, unknown>[]) => {
     const source = engineFor(format);
     build(source);
     const state = source.getState();

@@ -345,7 +345,7 @@ function buildUpdateEntryStatus({
   extension,
   stage,
 }) {
-  const filterEntries = (entries?) =>
+  const filterEntries = (entries?: Entry[]) =>
     (entries ?? [])
       .filter((entry: Entry) => !stage || !entry.entryStage || stage === entry.entryStage)
       .filter(({ participantId }) => participantIds.includes(participantId));
@@ -358,9 +358,9 @@ function buildUpdateEntryStatus({
     );
 
   // pure: true when any targeted entry in the list is assigned a draw position and may not change
-  const entryStatusBlocked = (entries?) => !ignoreAssignment && filterEntries(entries).some(isAssigned);
+  const entryStatusBlocked = (entries?: Entry[]) => !ignoreAssignment && filterEntries(entries).some(isAssigned);
 
-  const updateEntryStatus = (entries?) => {
+  const updateEntryStatus = (entries?: Entry[]) => {
     if (entryStatusBlocked(entries)) return { error: EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT };
 
     filterEntries(entries).forEach((entry: Entry) => {
