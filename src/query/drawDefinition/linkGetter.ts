@@ -1,3 +1,4 @@
+import { isLinkObject, isMalformedRoundLink } from '@Query/drawDefinition/malformedLinks';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { overlap } from '@Tools/arrays';
@@ -5,8 +6,8 @@ import { overlap } from '@Tools/arrays';
 // constants and types
 import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { DRAW_DEFINITION, STRUCTURE_ID } from '@Constants/attributeConstants';
-import { LOSER, WINNER } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition, DrawLink } from '@Types/tournamentTypes';
+import { WINNER } from '@Constants/drawDefinitionConstants';
 import { ResultType } from '@Types/factoryTypes';
 
 type GetRoundLinksArgs = {
@@ -52,6 +53,7 @@ export function getTargetLink({
   source,
 }: GetTargetLinkArgs): DrawLink | TargetLinkError | undefined {
   const result = source.find((link) => {
+    if (!isLinkObject(link)) return false; // reported by getDrawInconsistencies (INVALID_LINK), never dereferenced
     const positionCondition =
       !link.source?.finishingPositions ||
       !finishingPositions ||

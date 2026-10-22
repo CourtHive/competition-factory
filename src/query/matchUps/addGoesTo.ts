@@ -257,14 +257,23 @@ const GOES_TO_FIELDS = ['winnerMatchUpId', 'loserMatchUpId', 'finishingRound'] a
  * derive from (its rounds are paired, not linked), so it is skipped, as the query's write always skipped it.
  */
 export function storeGoesTo(drawDefinition: DrawDefinition): number {
-  if (hasStoredGoesTo({ drawDefinition }) && !needsFinishingRounds(drawDefinition)) return 0;
-  if (drawDefinition.structures?.some((structure) => isAdHoc({ structure }))) return 0;
-  if (addGoesTo({ drawDefinition: makeDeepCopy(drawDefinition, false, true) }).error) return 0;
+  return storeGoesToResult(drawDefinition).stored;
+}
+
+/**
+ * `storeGoesTo`, saying WHY a draw was left as it was: the error the derivation met (a malformed round link), so a
+ * caller that reports, as `migrateTournamentRecord` does, need not swallow it. `stored` is what `storeGoesTo` returns.
+ */
+export function storeGoesToResult(drawDefinition: DrawDefinition): { stored: number; error?: ResultType } {
+  if (hasStoredGoesTo({ drawDefinition }) && !needsFinishingRounds(drawDefinition)) return { stored: 0 };
+  if (drawDefinition.structures?.some((structure) => isAdHoc({ structure }))) return { stored: 0 };
+  const derived = addGoesTo({ drawDefinition: makeDeepCopy(drawDefinition, false, true) });
+  if (derived.error) return { stored: 0, error: derived };
   // counted only where a stored value changed: a draw whose edges cannot be derived (no links, nothing to follow) is
   // asked again on every run and given nothing each time
   const before = storedGoesTo(drawDefinition);
   addGoesTo({ drawDefinition });
-  return storedGoesTo(drawDefinition) === before ? 0 : 1;
+  return { stored: storedGoesTo(drawDefinition) === before ? 0 : 1 };
 }
 
 function storedGoesTo(drawDefinition: DrawDefinition): string {

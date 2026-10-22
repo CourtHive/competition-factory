@@ -1,9 +1,15 @@
+import * as drawsGovernor from '@Assemblies/governors/drawsGovernor';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { MISSING_STRUCTURE, UNRECOGNIZED_DRAW_TYPE, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+import {
+  INVALID_VALUES,
+  MISSING_DRAW_DEFINITION,
+  MISSING_STRUCTURE,
+  UNRECOGNIZED_DRAW_TYPE,
+} from '@Constants/errorConditionConstants';
 import {
   CONSOLATION,
   MAIN,
@@ -282,5 +288,30 @@ describe('addLinkedConsolationStructure', () => {
 
     const updated = tournamentEngine.getEvent({ drawId }).drawDefinition;
     expect(updated.structures.find((s) => s.stage === CONSOLATION)).toBeDefined();
+  });
+
+  // a LOSER link with no source round is malformed: refused before anything is generated or attached, on a direct call
+  it.each([
+    ['missing', [{ targetRoundNumber: 1 }]],
+    ['zero', [{ sourceRoundNumber: 0, targetRoundNumber: 1 }]],
+    ['not an integer', [{ sourceRoundNumber: 1.5, targetRoundNumber: 1 }]],
+    ['beyond the source rounds', [{ sourceRoundNumber: 4, targetRoundNumber: 1 }]],
+    ['one of several', [{ sourceRoundNumber: 1, targetRoundNumber: 1 }, { targetRoundNumber: 1 }]],
+    ['links that are not an array', 'nope'],
+  ])('refuses a sourceRoundNumber that is %s, leaving the draw unchanged', (_, links) => {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 8, drawType: SINGLE_ELIMINATION }],
+    });
+    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+    const before = structuredClone(drawDefinition);
+
+    const result: any = drawsGovernor.addLinkedConsolationStructure({
+      structureType: AD_HOC,
+      links: links as any,
+      drawDefinition,
+      drawSize: 4,
+    });
+    expect(result.error).toEqual(INVALID_VALUES);
+    expect(drawDefinition).toEqual(before);
   });
 });

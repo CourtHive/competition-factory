@@ -1,5 +1,6 @@
 import { getStructureInconsistencies } from '@Query/drawDefinition/getStructureInconsistencies';
 import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
+import { isLinkObject, isMalformedRoundLink } from '@Query/drawDefinition/malformedLinks';
 import { isPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
@@ -25,6 +26,12 @@ import { SUCCESS } from '@Constants/resultConstants';
 //    detected structurally BEFORE fan-out. (error)
 //  - LINK_MISSING_SOURCE_ROUND: a WINNER/LOSER link with no source.roundNumber; the engine cannot
 //    determine which round feeds the target (getTargetLink treats this as INVALID_VALUES). (error)
+//  - INVALID_LINK: an entry of `links` that is not an object (null, a string, an array). Every reader
+//    that dereferences it throws, so it is reported here and the rest of the scan reads the draw
+//    WITHOUT it: the other findings are still made. (error)
+//
+//  The link predicates are `isLinkObject` / `isMalformedRoundLink` (malformedLinks.ts), shared with
+//  the readers and with `repairMalformedLinks`, which repairs or removes every link reported here.
 //  - SCAN_ERROR: structure-level derivation threw on this draw (corrupt state the leaf could not
 //    read). Surfaced rather than allowed to crash the scan. (error)
 //  - DROPPED_PROGRESSION: a LOSER- or WINNER-linked source matchUp whose feeding participant is
@@ -53,6 +60,7 @@ import { SUCCESS } from '@Constants/resultConstants';
 // planning/DATA_INTEGRITY_HIERARCHY_AND_ALERTING.md.
 export const DANGLING_LINK = 'DANGLING_LINK';
 export const LINK_MISSING_SOURCE_ROUND = 'LINK_MISSING_SOURCE_ROUND';
+export const INVALID_LINK = 'INVALID_LINK';
 export const SCAN_ERROR = 'SCAN_ERROR';
 export const DROPPED_PROGRESSION = 'DROPPED_PROGRESSION';
 export const INELIGIBLE_PROGRESSION = 'INELIGIBLE_PROGRESSION';
@@ -77,8 +85,16 @@ function collectStructures(structures: Structure[] | undefined, collected: Struc
 
 function getLinkInconsistencies(drawDefinition: DrawDefinition, structureIds: Set<string>): Partial<Inconsistency>[] {
   const inconsistencies: Partial<Inconsistency>[] = [];
-  for (const link of drawDefinition.links ?? []) {
-    if (!link) continue;
+  for (const [linkIndex, link] of (drawDefinition.links ?? []).entries()) {
+    if (!isLinkObject(link)) {
+      inconsistencies.push({
+        issueType: INVALID_LINK,
+        message: `links[${linkIndex}] is not a link (${link === null ? 'null' : typeof link})`,
+        severity: 'error',
+        linkIndex,
+      });
+      continue;
+    }
     const sourceStructureId = link.source?.structureId;
     const targetStructureId = link.target?.structureId;
     const missing = [
@@ -96,7 +112,7 @@ function getLinkInconsistencies(drawDefinition: DrawDefinition, structureIds: Se
         // structureId identifies the issue for fingerprinting when one side is absent
         structureId: sourceStructureId ?? targetStructureId,
       });
-    } else if (ROUND_LINK_TYPES.includes(link.linkType) && !link.source?.roundNumber) {
+    } else if (isMalformedRoundLink(link)) {
       inconsistencies.push({
         ...base,
         issueType: LINK_MISSING_SOURCE_ROUND,
@@ -224,7 +240,9 @@ function getProgressionInconsistencies(
   inContextDrawMatchUps: HydratedMatchUp[],
   structureById: Map<string, Structure>,
 ): Partial<Inconsistency>[] {
-  const progressionLinks = (drawDefinition.links ?? []).filter((link) => ROUND_LINK_TYPES.includes(link?.linkType));
+  const progressionLinks = (drawDefinition.links ?? []).filter(
+    (link) => isLinkObject(link) && ROUND_LINK_TYPES.includes(link.linkType),
+  );
   return progressionLinks.flatMap((link) => {
     const sourceStructureId = link.source?.structureId;
     const targetStructure = structureById.get(link.target?.structureId);
@@ -237,11 +255,19 @@ function getProgressionInconsistencies(
   });
 }
 
+function withoutInvalidLinks(drawDefinition: DrawDefinition): DrawDefinition {
+  const links: unknown[] | undefined = drawDefinition.links;
+  if (!Array.isArray(links) || links.every(isLinkObject)) return drawDefinition;
+  return { ...drawDefinition, links: links.filter(isLinkObject) };
+}
+
 export function getDrawInconsistencies(
   params: GetDrawInconsistenciesArgs,
 ): ResultType & { valid?: boolean; inconsistencies?: Inconsistency[] } {
-  const { drawDefinition, tournamentRecord, matchUpsMap, event } = params;
-  if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
+  const { tournamentRecord, matchUpsMap, event } = params;
+  if (!params.drawDefinition) return { error: MISSING_DRAW_DEFINITION };
+  // an entry that is not a link is reported by getLinkInconsistencies; everything else reads the draw without it
+  const drawDefinition = withoutInvalidLinks(params.drawDefinition);
   const drawId = params.drawId ?? drawDefinition.drawId;
 
   const allStructures: Structure[] = [];
@@ -249,7 +275,7 @@ export function getDrawInconsistencies(
   const structureIds = new Set(allStructures.map((structure) => structure.structureId));
   const structureById = new Map(allStructures.map((structure) => [structure.structureId, structure]));
 
-  const linkInconsistencies = getLinkInconsistencies(drawDefinition, structureIds);
+  const linkInconsistencies = getLinkInconsistencies(params.drawDefinition, structureIds);
 
   // A dangling link crashes inContext derivation (getExitProfile dereferences the missing target
   // structure), so structure-level fan-out and progression checks are skipped when one is present —

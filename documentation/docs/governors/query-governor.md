@@ -996,14 +996,21 @@ Draw-level checks (in addition to every structure-level `issueType`):
 - `DANGLING_LINK` — a link whose `source` or `target` `structureId` is not a structure in the draw.
   Detected structurally **before** fan-out, because inContext derivation itself throws on such a
   draw. (error)
-- `LINK_MISSING_SOURCE_ROUND` — a `WINNER`/`LOSER` link with no `source.roundNumber`; the engine
-  cannot determine which round feeds the target. (error)
+- `LINK_MISSING_SOURCE_ROUND` — a `WINNER`/`LOSER` link with no `source.roundNumber` (missing or 0);
+  the engine cannot determine which round feeds the target. A link that is also dangling is reported
+  once, as `DANGLING_LINK`. (error)
+- `INVALID_LINK` — an entry of `links` that is not an object (`null`, a string, an array), with its
+  `linkIndex`. Every reader that dereferences it throws, so it is reported here and the rest of the
+  scan reads the draw without it. (error)
 - `SCAN_ERROR` — structure-level derivation threw on this draw (corrupt state the leaf could not
   read); surfaced rather than allowed to crash the scan. (error)
 - `DROPPED_PROGRESSION` — a `LOSER`- or `WINNER`-linked source matchUp whose feeding participant is
   **eligible** to feed the target structure yet is absent from its `positionAssignments` — a
   consolation or feed-back progression that silently failed. The `direction` field records `LOSER`
   vs `WINNER`. (error)
+
+The three link findings (`DANGLING_LINK`, `LINK_MISSING_SOURCE_ROUND`, `INVALID_LINK`) are repaired, or
+removed and reported, by [`repairMalformedLinks`](/docs/governors/draws-governor#repairmalformedlinks).
 
 **Sound progression via the engine's own feed logic.** The link alone over-approximates feeding, so
 `DROPPED_PROGRESSION` reuses the engine's actual positioning logic per direction:

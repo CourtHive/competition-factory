@@ -2,14 +2,14 @@ import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalize
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { getMatchUpPresence, getParticipantPresence } from '@Acquire/presenceAttestations';
 import { normalizePenaltyType } from '@Query/participants/normalizePenaltyType';
-import { storeGoesTo } from '@Query/matchUps/addGoesTo';
+import { storeGoesToResult } from '@Query/matchUps/addGoesTo';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, Participant, Structure, TimeItem, Tournament } from '@Types/tournamentTypes';
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { SIGN_IN_STATUS } from '@Constants/participantConstants';
+import { ResultType, ResultWarning } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { ResultType } from '@Types/factoryTypes';
 import {
   COMPETITION_STATE,
   DELEGATED_OUTCOME,
@@ -250,22 +250,51 @@ function migrateVenuesAndCourts(record: Tournament, counts: MigrationCounts, cle
   }
 }
 
-function migrateDrawDefinition(drawDefinition: DrawDefinition, counts: MigrationCounts, clearLegacy: boolean) {
+/**
+ * A draw whose edges cannot be derived is left as it was, and SAID to be: a WARNING, not an error.
+ *
+ * The migration is a success that still has something to say (`ResultWarning`): every other promotion of the record has
+ * been made, and an error returned after them would be an error that left the record changed. Nor is the draw the
+ * migration's to repair: a malformed link is the operator's (`repairMalformedLinks`). So the edges are not stored, the
+ * draw is unchanged by this step, and the warning names the draw and the error the derivation met, where it used to be
+ * swallowed (`storeGoesTo` answered 0, the same as a draw that owed nothing). A link that makes the derivation THROW
+ * (an entry that is not an object, a link to an absent structure) is reported the same way rather than ending the run.
+ */
+export const GOES_TO_NOT_STORED = 'GOES_TO_NOT_STORED';
+
+type MigrationContext = { counts: MigrationCounts; clearLegacy: boolean; warnings: ResultWarning[] };
+
+function migrateGoesTo(drawDefinition: DrawDefinition, eventId: string | undefined, context: MigrationContext) {
+  const drawId = drawDefinition.drawId;
+  try {
+    const { stored, error } = storeGoesToResult(drawDefinition);
+    context.counts.goesTo += stored;
+    if (error?.error)
+      context.warnings.push({ code: GOES_TO_NOT_STORED, drawId, eventId, error: error.error, info: error.info });
+  } catch (err) {
+    const info = err instanceof Error ? err.message : String(err);
+    context.warnings.push({ code: GOES_TO_NOT_STORED, drawId, eventId, info });
+  }
+}
+
+function migrateDrawDefinition(drawDefinition: DrawDefinition, eventId: string | undefined, context: MigrationContext) {
+  const { counts, clearLegacy } = context;
   counts.drawDefinitions += applyFlatPromotions(drawDefinition, DRAW_DEFINITION_PROMOTIONS, clearLegacy);
   for (const entry of drawDefinition.entries ?? []) {
     counts.entries += applyFlatPromotions(entry, ENTRY_PROMOTIONS, clearLegacy);
   }
   walkStructures(drawDefinition.structures ?? [], counts, clearLegacy);
-  counts.goesTo += storeGoesTo(drawDefinition);
+  migrateGoesTo(drawDefinition, eventId, context);
 }
 
-function migrateEvent(event: Event, counts: MigrationCounts, clearLegacy: boolean) {
+function migrateEvent(event: Event, context: MigrationContext) {
+  const { counts, clearLegacy } = context;
   counts.events += applyFlatPromotions(event, EVENT_PROMOTIONS, clearLegacy);
   for (const entry of event.entries ?? []) {
     counts.entries += applyFlatPromotions(entry, ENTRY_PROMOTIONS, clearLegacy);
   }
   for (const drawDefinition of event.drawDefinitions ?? []) {
-    migrateDrawDefinition(drawDefinition, counts, clearLegacy);
+    migrateDrawDefinition(drawDefinition, event.eventId, context);
   }
 }
 
@@ -301,11 +330,17 @@ export function migrateTournamentRecord({
 
   migrateTournamentLevel(tournamentRecord, counts, clearLegacy);
   migrateVenuesAndCourts(tournamentRecord, counts, clearLegacy);
+  const warnings: ResultWarning[] = [];
   for (const event of tournamentRecord.events ?? []) {
-    migrateEvent(event, counts, clearLegacy);
+    migrateEvent(event, { counts, clearLegacy, warnings });
   }
 
-  return { ...SUCCESS, promoted: counts, totalPromoted: sumCounts(counts) };
+  return {
+    ...SUCCESS,
+    promoted: counts,
+    totalPromoted: sumCounts(counts),
+    ...(warnings.length ? { warnings } : {}),
+  };
 }
 
 /**
