@@ -125,6 +125,8 @@ export class ScoringEngineV2 {
   private stale = false;
   /** the timeline holds input v1 accepted past a close, so the match plays on as v1 played it (§ 12.8) */
   private pastClose = false;
+  /** the match's initial server, set before anything was recorded; every replay starts from it (SE3-E1) */
+  private initialServer?: Side;
 
   constructor(options: ScoringEngineOptions = {}) {
     this.competitionFormat = options.competitionFormat;
@@ -177,7 +179,7 @@ export class ScoringEngineV2 {
   private replay(entries: ScoreEntry[]): Rebuilt {
     this.pastClose = false;
     let context = this.context();
-    let state = initialState();
+    let state = this.startingState(context);
     let completedBy: number | undefined;
     const legacy = new Set<string>();
     const replayed = entries.map((entry, index) => {
@@ -198,6 +200,13 @@ export class ScoringEngineV2 {
     });
     this.pastClose = !!context.match?.pastClose;
     return { state, entries: replayed, completedBy, legacy: [...legacy] };
+  }
+
+  /** a fresh score, its service oriented by the match's initial server if it has one */
+  private startingState(context: ReducerContext): ScoringState {
+    const side = this.initialServer;
+    if (side === undefined) return initialState();
+    return step(context, initialState(), { type: 'setServer', data: { side } } as TimelineEntry).state;
   }
 
   /** replays the timeline and writes the record from it */
@@ -223,6 +232,7 @@ export class ScoringEngineV2 {
       completedBy: this.completedBy,
       lineUps: { initial: this.initialLineUps, current: this.lineUps, doubles: this.doubles },
       timeline: !!this.entries,
+      initialServer: this.initialServer,
     });
     // a record as loaded, or as a non-recalculating correction left it, keeps its points until the next rebuild:
     // new input is added to it, as calculated servers are re-derived only then (§ 12.4, § 12.6 shape 3)
@@ -359,8 +369,9 @@ export class ScoringEngineV2 {
 
   /**
    * A server correction (§ 2.6, § 10.6). Recorded as its own action by default; with `recordEntry: false` it is
-   * attached to the entry before it and replayed and undone with it. With nothing on the timeline it orients the
-   * next point only (SE3-E1). A correction that changes nothing records nothing (§ 12.3).
+   * attached to the entry before it and replayed and undone with it. With nothing on the timeline it is the match's
+   * initial server, kept on the record and not on the timeline (SE3-E1). A correction that changes nothing records
+   * nothing (§ 12.3).
    */
   setServer(side: 0 | 1, options?: { recordEntry?: boolean }): void {
     const reason = readServer({ side });
@@ -379,7 +390,10 @@ export class ScoringEngineV2 {
     const entries = this.entries as ScoreEntry[];
     const last = entries.at(-1);
     if (!last) {
+      // the match's initial server: kept on the record, so every rebuild and reload starts from it (SE3-E1)
+      this.initialServer = side;
       this.state = corrected;
+      this.write(entries);
       return;
     }
     entries[entries.length - 1] = { ...last, serverCorrection: side };
@@ -543,6 +557,7 @@ export class ScoringEngineV2 {
     this.completedBy = undefined;
     this.legacyShapes = new Set();
     this.stale = false;
+    this.initialServer = undefined;
     this.eventHandlers?.onReset?.(this.eventContext());
   }
 
@@ -558,6 +573,7 @@ export class ScoringEngineV2 {
     this.entries = loaded.history?.entries ? [...loaded.history.entries] : undefined;
     this.lineUps = lineUpsOf(loaded);
     this.initialLineUps = initialLineUpsOf(this.lineUps, this.entries, loaded.history?.substitutions);
+    this.initialServer = loaded.history?.initialServer;
     // loaded as stored; the reduction is ready for the next action, which rebuilds the record (§ 12.6)
     this.prepare();
     // the legacy shapes are those the last rebuild met, and none has run yet (the API's getLegacyShapes)

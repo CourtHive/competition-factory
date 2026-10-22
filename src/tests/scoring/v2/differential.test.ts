@@ -6,6 +6,7 @@ import {
   resetScoringDifferentialTally,
   installScoringDifferential,
   ScoringEngineDivergence,
+  takeScoringDivergences,
   firstDifference,
 } from '@Assemblies/engines/scoring/v2/differential';
 
@@ -68,6 +69,8 @@ beforeEach(() => {
 });
 afterEach(() => {
   setScoringEngine();
+  // the divergences these cases throw on purpose; the test setup fails a test that leaves any behind
+  takeScoringDivergences();
 });
 
 describe('the selector', () => {
@@ -106,6 +109,17 @@ describe('the differential compares v1 with its v2 shell', () => {
   it('throws when v1 records an action v2 refuses', () => {
     const fake = new FakeEngine();
     expect(() => fake.addPoint({ winner: 3 })).toThrow(ScoringEngineDivergence);
+  });
+
+  it('keeps a divergence the caller caught, for the test setup to fail its test on', () => {
+    takeScoringDivergences();
+    try {
+      new FakeEngine().addPoint({ winner: 3 });
+    } catch {
+      // a harness that records every throw as a refusal
+    }
+    expect(takeScoringDivergences()).toEqual([expect.stringMatching(/divergence after addPoint/)]);
+    expect(takeScoringDivergences()).toEqual([]);
   });
 
   it('throws when v1 refuses an action v2 records, and rethrows v1’s refusal where both refuse', () => {

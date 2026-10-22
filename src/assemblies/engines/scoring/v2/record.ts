@@ -69,11 +69,21 @@ export type Materialized = {
   /** the index of the entry that completed the match, when it is complete */
   completedBy?: number;
   lineUps: { initial?: LineUps; current?: LineUps; doubles: boolean };
+  /** the match's initial server, set before anything was recorded (SE3-E1); kept on the history, not the timeline */
+  initialServer?: 0 | 1;
   /** a legacy point-only record (§ 12.6 shape 2) keeps no `entries` */
   timeline: boolean;
 };
 
-export function materialize({ base, state, entries, completedBy, lineUps, timeline }: Materialized): MatchUp {
+export function materialize({
+  base,
+  state,
+  entries,
+  completedBy,
+  lineUps,
+  timeline,
+  initialServer,
+}: Materialized): MatchUp {
   const { points, substitutions, endTime } = played(state, entries, completedBy, lineUps);
   const {
     winningSide: _winningSide,
@@ -86,6 +96,7 @@ export function materialize({ base, state, entries, completedBy, lineUps, timeli
     points,
     ...(timeline ? { entries } : {}),
     ...(substitutions.length || previous?.substitutions ? { substitutions } : {}),
+    ...(initialServer === undefined ? {} : { initialServer }),
   };
   const recorded: MatchUp = {
     ...identity,
@@ -97,6 +108,6 @@ export function materialize({ base, state, entries, completedBy, lineUps, timeli
       lineUps.current?.[side.sideNumber] ? { ...side, lineUp: lineUps.current[side.sideNumber] } : side,
     ),
   };
-  if (previous || entries.length || points.length) recorded.history = history;
+  if (previous || entries.length || points.length || initialServer !== undefined) recorded.history = history;
   return recorded;
 }

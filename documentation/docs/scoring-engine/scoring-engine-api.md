@@ -301,7 +301,7 @@ engine.isComplete(); // false
 undo(count?: number): boolean
 ```
 
-Undo the last N actions. Works across all input types (points, games, sets, segments). Returns `true` if undo succeeded.
+Undo the last N actions. Works across all input types (points, games, sets, segments). Returns `true` if undo succeeded; `false` when there is nothing to undo or `count` is below 1.
 
 ```js
 engine.undo(); // Undo last action
@@ -316,7 +316,7 @@ engine.undo(3); // Undo last 3 actions
 redo(count?: number): boolean
 ```
 
-Redo the last N undone actions. Returns `true` if redo succeeded.
+Redo the last N undone actions. Returns `true` if redo succeeded; `false` when there is nothing to redo or `count` is below 1.
 
 ```js
 engine.redo(); // Redo last undone action
@@ -812,7 +812,9 @@ default this records a timeline action, clears redo and survives rebuilding/undo
 rule-driven corrections can use `recordEntry: false`: the correction is then attached to the entry
 before it (the point just played), replayed with it and undone with it, so `undo` takes back the
 point and its correction together and a rebuild keeps the server. With nothing on the timeline before
-it, it orients the next point only. A correction that changes nothing records nothing. A side other
+it, it is the match's initial server: kept on the record as `history.initialServer` (not a timeline
+entry), so every rebuild and reload starts from it. Under `serverRule: 'WINNER_SERVES'` a correction
+names the next point's server only, and the winner of that point serves after it. A correction that changes nothing records nothing. A side other
 than 0 or 1 is refused, and so is any call on a format that does not parse. It corrects sides, not
 individual doubles rotation.
 

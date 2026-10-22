@@ -168,6 +168,11 @@ export interface MatchUpHistory {
   states?: MatchUpState[];
   entries?: ScoreEntry[];
   substitutions?: SubstitutionEvent[];
+  /**
+   * The match's initial server, from a `setServer(side, { recordEntry: false })` made before anything was recorded:
+   * every rebuild starts from it, and it is not a timeline entry (0 = side 1, 1 = side 2)
+   */
+  initialServer?: 0 | 1;
 }
 
 /**

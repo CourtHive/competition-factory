@@ -440,11 +440,14 @@ describe('§ 2.6, § 10.6 server corrections', () => {
     expect(() => engineFor('NOT-A-FORMAT').setServer(1)).toThrow(/Invalid matchUpFormat/);
   });
 
-  it('with nothing on the timeline, a correction orients the next point only (SE3-E1)', () => {
+  it('with nothing on the timeline, a correction is the initial server, kept through a rebuild (SE3-E1)', () => {
     const engine = engineFor('SET3-S:6/TB7');
     engine.setServer(1, { recordEntry: false });
     expect(engine.getNextServer()).toEqual(1);
-    expect(engine.getState().history).toBeUndefined();
+    expect(engine.getState().history).toEqual({ points: [], entries: [], initialServer: 1 });
+    play(engine, '1');
+    engine.undo();
+    expect(engine.getNextServer()).toEqual(1);
   });
 });
 

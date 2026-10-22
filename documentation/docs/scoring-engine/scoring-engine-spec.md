@@ -77,7 +77,8 @@ The state is a CODES matchUp: `matchUpFormat`, `matchUpStatus`, `matchUpType`, t
   engine marks: `isTiebreakOnly`, `isTimed`, `segmentComplete` (a timed segment closed, with or
   without a winner) and `currentStreak` (a consecutive-points game in progress).
 - `history.points` holds the materialized points (§ 11.1); `history.entries` is the timeline
-  (§ 12.1); `history.substitutions` mirrors the substitution entries.
+  (§ 12.1); `history.substitutions` mirrors the substitution entries; `history.initialServer` is the
+  match's initial server, when one was named before anything was recorded (§ 2.6).
 
 ### 1.3 Sides
 
@@ -270,8 +271,10 @@ Names the side due to serve the next point; § 10.6 states what it does to the d
 
 **A server correction survives undo and rebuild** (CA 2026-10-18). With `recordEntry: false` it is not
 an action of its own: it is recorded **attached to the preceding entry**, replayed with it, and undone
-with it, so undoing that point removes the correction too. v1 changes the orientation without a record,
-and the next rebuild loses it (`SET3-S:6/TB7`: servers 1, 1, then after one undo the surviving point's
+with it, so undoing that point removes the correction too. **With nothing before it** it is the match's
+**initial server** (CA 2026-10-21, SE3-E1): kept on the record as `history.initialServer`, not on the
+timeline, so every rebuild and reload starts from it, and `reset` clears it. v1 changed the orientation
+without a record, and the next rebuild lost it (`SET3-S:6/TB7`: servers 1, 1, then after one undo the surviving point's
 server is 0); INTENNSE re-applies it after every point and still shows the wrong server after an undo:
 a live v1 defect (§ 16, 16).
 
@@ -766,7 +769,9 @@ The derivations above assume side 1 serves first. The orientation is read in thi
 ### 10.7 The competition's rule
 
 Under `serverRule: WINNER_SERVES` the server of a point is the winner of the point before it, and side
-1 for the first point. The engine supplies that server to the scorer, so the server shown
+1 for the first point. A `setServer(side)` names the next point's server only; the rule resumes after
+that point, and a correction naming the side already named changes nothing and records nothing (CA
+2026-10-21, SE3-E3). The engine supplies that server to the scorer, so the server shown
 (`getNextServer()`), the server recorded and the server a rebuild derives agree; it is calculated, not
 recorded (S5, #5517). A server the caller supplies is recorded as played, and the rule resumes after it
 (`scoringAgreement.test.ts`, "S5: the competition server rule decides the recorded server too").
@@ -890,8 +895,10 @@ rotation").
 - `undo(n)` moves the last n entries, of any type, to the redo stack (a `point` entry takes its point
   with it, and a server correction attached to an entry goes with that entry, § 2.6) and rebuilds. It
   takes back whatever was recorded last, a challenge or an annotation included (§ 2.8; CA 2026-10-18).
-  It returns false when there is nothing to undo.
-- `redo(n)` moves the last n back onto the timeline and rebuilds.
+  It returns false when there is nothing to undo, and for `n` below 1, which undoes nothing (CA
+  2026-10-21, SE3-E2).
+- `redo(n)` moves the last n back onto the timeline and rebuilds; false, likewise, when there is
+  nothing to redo or `n` is below 1.
 - **A recorded action clears the redo stack** (point, game, set, segment end, baseline, server
   correction, substitution, challenge, annotation); **an action that changes nothing records nothing**
   and keeps it, as a refused or ignored one does (CA 2026-10-18). v1's `endSegment` does not clear it,
@@ -908,6 +915,9 @@ rotation").
   other spelling on the entry, so the replay reads the edit. With `recalculate: false` the score is left
   as it was until the next rebuild, which applies the edit (`aCompletedMatchTakesCorrections.test.ts`).
 - `removePoint(i)` removes the point and its entry, renumbers the later point entries, and rebuilds.
+  With `recalculate: false` the score is left as it was until the next rebuild, and it still counts the
+  removed point: a point added meanwhile is numbered (`index`, `pointNumber`) as that score counts it,
+  so no index repeats, and the rebuild renumbers them all (CA 2026-10-21, SE2c-D6).
 - `decoratePoint(i, metadata)` writes the metadata to the point and its entry without a rebuild; it
   survives every later rebuild.
 - An index out of range is a no-op for all three. A rebuilding correction clears the redo stack.
