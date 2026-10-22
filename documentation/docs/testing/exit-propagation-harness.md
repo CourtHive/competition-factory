@@ -296,6 +296,14 @@ why it was placed, so such a claim is history-dependent by design; see the conce
 omission is policed for truth by `ARRIVAL_TRUE`: an entry or claim that is present must be true, so an omission hides
 only absence, never a falsehood.
 
+`LOSER_SEAT_DERIVED` holds every replay step to a reading of the draw rather than of the claim ledger (since
+2026-10-21; the ledger is being retired, Mentat P58). For every matchUp with a loser link, `feederSendsNobody` says
+whether it will ever send anyone across that link: not when it holds a BYE, is a double exit, was won against an exit,
+is pending with a carried exit, or feeds a FIRST_MATCHUP link that excludes every candidate loser. A propagated BYE on
+the seat it feeds must have such a reason, and a participant there must not. Whether a seat whose feeder sends nobody
+shows a BYE or a produced exit is left to the policy and the rules that place them. Measured before it was asserted:
+2,493,487 seat observations in the census gate inputs and 118,803 in the exitPropagation suite, with no contradiction.
+
 ### Replay dispositions and receipts
 
 `replay` returns `{ verdict, complete, counts, findings, coverage, projectionAudit }`. Its functional
