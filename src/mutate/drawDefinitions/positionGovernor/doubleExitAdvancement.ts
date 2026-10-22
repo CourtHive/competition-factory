@@ -2163,7 +2163,19 @@ function advanceByeAdvancedDrawPosition({
      * The provenance below is still stamped, so the exit's origin stays on record, and the advance
      * that follows is unchanged.
      */
-    const byeAdvances = !advancingParticipantId && matchUpHoldsBye({ drawDefinition, matchUp: nextWinnerMatchUp });
+    // asked of the STORED matchUp: the hydrated one is the view this cascade started from, and a BYE taken out of it
+    // since (a propagated BYE giving way to a produced exit, CA ruling (A)) still reads there as holding it, so the
+    // position opposite advanced past a BYE that had gone and stayed a round on (census policy-off OLYMPIC 32/32
+    // 21036479: `South|2|2` lost dp 6's BYE to `South|1|3`'s relayed walkover and dp 7 stayed in `South|3|1`)
+    const byeAdvances =
+      !advancingParticipantId &&
+      matchUpHoldsBye({
+        matchUp: {
+          drawPositions: noContextNextWinnerMatchUp.drawPositions,
+          structureId: nextWinnerMatchUp.structureId,
+        },
+        drawDefinition,
+      });
     const result = modifyMatchUpScore({
       matchUpStatusCodes: retainPolicyCodes(noContextNextWinnerMatchUp),
       derivedStatusCodes: { matchUpId: noContextNextWinnerMatchUp.matchUpId },
