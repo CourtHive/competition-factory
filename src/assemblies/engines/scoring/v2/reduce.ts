@@ -252,7 +252,23 @@ function set(match: MatchRule, state: ScoringState, entry: TimelineEntry): Step 
   if (typeof at === 'string') return ignored(state, at);
   const result = segmentTotal(at.rule, at.set.setNumber, facts.total as SetTotal);
   if ('refused' in result) return refused(state, refusal(result.refused));
-  return { state: scored(match, state, at, result), outcome: RECORDED };
+  return { state: scored(match, state, at, raceInPlay(at.rule, result)), outcome: RECORDED };
+}
+
+/**
+ * An unfinished tiebreak-only total records no set won: it is the race's running points, the game in play, as a
+ * baseline reads it (§ 5 rule 1; SE2a-D13, CA 2026-10-21), so the next point plays on from it.
+ */
+function raceInPlay(rule: SegmentRule, result: SegmentStep): SegmentStep {
+  const { set } = result;
+  if (rule.kind !== 'tiebreakOnly' || isClosed(set)) return result;
+  const score: Pair = [set.side1TiebreakScore ?? set.side1Score, set.side2TiebreakScore ?? set.side2Score];
+  const { side1TiebreakScore: _side1, side2TiebreakScore: _side2, ...open } = set;
+  return {
+    ...result,
+    set: { ...open, side1Score: 0, side2Score: 0, side1GameScores: [score[0]], side2GameScores: [score[1]] },
+    game: { score, pointsPlayed: score[0] + score[1] },
+  };
 }
 
 /**
@@ -334,6 +350,9 @@ function baselineInPlay(match: MatchRule, sets: ScoredSet[], data: EntryData): B
   const setNumber = closed.length + 1;
   const rule = ruleForSet(match, setNumber, setsWon(closed));
   const raceInPlay = open && rule.kind === 'tiebreakOnly';
+  // an unfinished tiebreak-only set's total is its race's points, so a currentGameScore would name them twice
+  // (SE2a-D14, CA 2026-10-21: refused, the cleaner rule)
+  if (given && raceInPlay) return { refused: raceNamedTwice(setNumber) };
   const base: ScoredSet = open && !raceInPlay ? last : openSet(rule, setNumber);
   const inPlay: ScoredSet = { ...base, side1Score: base.side1Score + games[0], side2Score: base.side2Score + games[1] };
   if (decidedInPlay(rule, [inPlay.side1Score, inPlay.side2Score])) return { refused: 'the set in play is already won' };
@@ -343,6 +362,9 @@ function baselineInPlay(match: MatchRule, sets: ScoredSet[], data: EntryData): B
   const withGame = { ...inPlay, side1GameScores: [points[0]], side2GameScores: [points[1]] };
   return { sets: [...closed, withGame], game: { score: points, pointsPlayed: points[0] + points[1] } };
 }
+
+export const raceNamedTwice = (setNumber: number): string =>
+  `Set ${setNumber} is a tiebreak-only set in play, and a currentGameScore names its points again`;
 
 /** whether the baseline's set in play is a combined total, which has no game score (§ 7 rule 5) */
 function combinedInPlay(match: MatchRule, sets: ScoredSet[], open: boolean): boolean {

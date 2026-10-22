@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 
 /*
  * v1 brought to the rule where the v1/v2 differential found it short (CA 2026-10-21; scoring-engine v2 plan § 9,
- * SE2a-D11, SE2b-D11, D17, D18, D20, D22, D24; then SE3-E1, E2, E3 and SE2c-D6). The differential holds v1 to v2 on every one of these under
+ * SE2a-D11, SE2b-D11, D17, D18, D20, D22, D24; then SE3-E1, E2, E3, SE2c-D6; then SE2a-D3b, D12, D13, D14 and SE2c-D3).
+ * The differential holds v1 to v2 on every one of these under
  * `SCORING_ENGINE=differential`; these cases hold v1 to the spec directly, whatever engine is selected.
  */
 
@@ -168,5 +169,95 @@ describe('SE2c-D6: a point added to a record a removal left stale is numbered as
     ]);
     engine.undo();
     expect(points(engine).map((point) => point.index)).toEqual([0, 1, 2, 3]);
+  });
+});
+
+describe('SE2a-D3b: the game that wins a set opens no next game, however it was entered', () => {
+  it('a set closed by addGame keeps no trailing 0-0, as one closed by a point keeps none', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
+    play(engine, '11');
+    for (let game = 0; game < 6; game++) engine.addGame({ winner: 0 });
+    const [set] = sets(engine);
+    expect(set).toMatchObject({ side1Score: 6, side2Score: 0, winningSide: 1 });
+    expect([set.side1GameScores, set.side2GameScores]).toEqual([
+      [2, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0],
+    ]);
+  });
+});
+
+describe('SE2a-D12: a point’s number counts the points played in its game, not their values (§ 11.1)', () => {
+  it('after an ace worth 3 the next point is number 1', () => {
+    const engine = new ScoringEngine({
+      matchUpFormat: 'SET1-S:T10P',
+      competitionFormat: { pointMultipliers: [{ condition: { results: ['Ace'] }, value: 3 }] } as any,
+    });
+    engine.addPoint({ winner: 0, result: 'Ace' });
+    play(engine, '21');
+    expect(points(engine).map((point) => [point.number, point.score])).toEqual([
+      [0, '3-0'],
+      [1, '3-1'],
+      [2, '4-1'],
+    ]);
+  });
+});
+
+describe('SE2a-D14: a currentGameScore beside an unfinished tiebreak-only set names its race twice, and is refused', () => {
+  it('SET3-S:TB10 at 4-3 with a currentGameScore of 2-1 is refused; at 4-3 alone it plays on from 4-3', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:TB10' });
+    const sets43 = [{ side1Score: 4, side2Score: 3 }];
+    expect(() =>
+      engine.setInitialScore({ sets: sets43, currentGameScore: { side1Points: 2, side2Points: 1 } }),
+    ).toThrow(/names its points again/);
+    expect(engine.getState().history?.entries ?? []).toEqual([]);
+    engine.setInitialScore({ sets: sets43 });
+    expect(sets(engine)[0]).toMatchObject({ side1Score: 0, side2Score: 0, side1GameScores: [4], side2GameScores: [3] });
+  });
+
+  it('a stored baseline v1 took replays as v1 replayed it: the race from the total, flagged', () => {
+    const source = new ScoringEngine({ matchUpFormat: 'SET3-S:TB10' });
+    source.setInitialScore({ sets: [{ side1Score: 4, side2Score: 3 }] });
+    const state = source.getState();
+    (state.history!.entries![0].data as any).currentGameScore = { side1Points: 2, side2Points: 1 };
+    const loaded = new ScoringEngine({ matchUpFormat: 'SET3-S:TB10' });
+    loaded.setState(state);
+    play(loaded, '1');
+    loaded.undo();
+    expect(sets(loaded)[0]).toMatchObject({ side1GameScores: [4], side2GameScores: [3] });
+    expect(loaded.getLegacyShapes()).toContain('refusedInput');
+  });
+});
+
+describe('SE2c-D3: a loaded record’s timeline is authoritative over its stored score (§ 12.2)', () => {
+  it('the record shows its stored score until the next action, which is taken on the timeline', () => {
+    const source = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
+    play(source, '1');
+    const state = source.getState();
+    state.history!.entries!.unshift({
+      type: 'setInitialScore',
+      data: { sets: [{ side1Score: 6, side2Score: 0 }] },
+      timestamp: '2026-10-01T00:00:00Z',
+    });
+    const loaded = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
+    loaded.setState(state);
+    expect(sets(loaded).map((set) => [set.side1Score, set.side2Score])).toEqual([[0, 0]]);
+    play(loaded, '1');
+    expect(sets(loaded).map((set) => [set.side1Score, set.side2Score])).toEqual([
+      [6, 0],
+      [0, 0],
+    ]);
+    // the stored points stay until the next rebuild
+    expect(points(loaded)).toHaveLength(2);
+  });
+
+  it('the configuration loaded after it prepares the score again', () => {
+    const competitionFormat = { pointMultipliers: [{ condition: { results: ['Ace'] }, value: 2 }] } as any;
+    const source = new ScoringEngine({ matchUpFormat: 'SET1-S:T10P', competitionFormat });
+    source.addPoint({ winner: 0, result: 'Ace' });
+    const loaded = new ScoringEngine();
+    loaded.setState(source.getState());
+    loaded.loadSupplementaryState(source.getSupplementaryState());
+    play(loaded, '1');
+    expect(sets(loaded)[0]).toMatchObject({ side1Score: 3, side2Score: 0 });
   });
 });

@@ -38,8 +38,12 @@ describe('§ 2.3 rule 1 a finished total gets the rule winner (CA 2026-10-18, de
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:TB11' });
     engine.addSet({ side1Score: 11, side2Score: 9 });
     expect(lastSet(engine)).toEqual([11, 9, 1]);
+    // an unfinished total is the race in play, as a baseline reads it (§ 5 rule 1; SE2a-D13, CA 2026-10-21)
     engine.addSet({ side1Score: 11, side2Score: 10 });
-    expect(lastSet(engine)).toEqual([11, 10, undefined]);
+    expect(lastSet(engine)).toEqual([0, 0, undefined]);
+    expect(engine.getState().score.sets[1]).toMatchObject({ side1GameScores: [11], side2GameScores: [10] });
+    engine.addPoint({ winner: 0 });
+    expect(lastSet(engine)).toEqual([1, 0, 1]);
   });
 });
 

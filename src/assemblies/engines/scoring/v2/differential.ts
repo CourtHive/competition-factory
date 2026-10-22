@@ -5,8 +5,7 @@ import { ScoringEngineV2 } from './engine';
 import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { SCORING_ENGINE_DIFFERENTIAL } from '@Constants/scoringEngineConstants';
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
-import type { ScoringEngineOptions, ScoringEngineSupplementaryState } from '../ScoringEngine';
-import type { MatchUp } from '@Types/scoring/types';
+import type { ScoringEngineOptions } from '../ScoringEngine';
 import type { ScoringConfiguration } from './types';
 
 /**
@@ -231,52 +230,6 @@ export function firstDifference(a: unknown, b: unknown, path = ''): Difference |
   return { path: path || '(root)', v1: JSON.stringify(a) ?? 'undefined', v2: JSON.stringify(b) ?? 'undefined' };
 }
 
-/**
- * Differences surfaced by the differential and awaiting CA's decision (rule versus v1), each named by its decision
- * id in the SE2a hand-off. Each is narrowed to one field and one direction, and counted, so it can neither hide
- * another difference nor pass unnoticed. A decided one is removed here when v1 (or v2) is changed: D11, D17, D18,
- * D20 and D24 were (CA 2026-10-21), with v1 brought to the rule.
- *
- * - SE2a-D3b: the per-game counts of a set closed by `addGame`. A game won short of the set opens the next game
- *   at 0-0 in both (SE2a-D3); a set closed by a point keeps no trailing entry in both; but a set closed by
- *   `addGame` keeps a trailing 0-0 in v1, a game that will never be played, and none in v2.
- * - SE2a-D12: a point's `number` in a race scored in point values. § 11.1 counts the points played in its game
- *   before it; v1 counts their values (after an ace worth 3, the next point is `number` 3, not 1).
- *
- * D23, D25 and D26 are views not compared at all: `UNCOMPARED_VIEWS`.
- */
-function pendingTrailingGame(v1: Projection, v2: Projection): void {
-  v2.sets.forEach((set, index) => {
-    const mine = set.side1GameScores as number[] | undefined;
-    const theirs = v1.sets[index] ?? {};
-    const [theirs1, theirs2] = [theirs.side1GameScores, theirs.side2GameScores] as (number[] | undefined)[];
-    if (!set.winningSide || !mine || !theirs1 || !theirs2 || theirs1.length !== mine.length + 1) return;
-    if (theirs1.at(-1) !== 0 || theirs2.at(-1) !== 0) return;
-    set.side1GameScores = [...mine, 0];
-    set.side2GameScores = [...(set.side2GameScores as number[]), 0];
-    count('pending:SE2a-D3b');
-  });
-}
-
-function pendingNumberByValue(v1: Projection, v2: Projection): void {
-  v2.points.forEach((point, index) => {
-    const theirs = v1.points[index];
-    if (!theirs || theirs.number === point.number) return;
-    const valuesBefore = v2.points
-      .slice(0, index)
-      .filter((before) => before.set === point.set && before.game === point.game)
-      .reduce((sum, before) => sum + ((before.scoreValue as number | undefined) ?? 1), 0);
-    if (theirs.number !== valuesBefore) return;
-    point.number = theirs.number;
-    count('pending:SE2a-D12');
-  });
-}
-
-function pendingDecisions(v1: Projection, v2: Projection): void {
-  pendingTrailingGame(v1, v2);
-  pendingNumberByValue(v1, v2);
-}
-
 /** what a call did: its result, or that it threw; a crash (not a refusal) is kept apart, with its message */
 type Outcome = { threw: boolean; result?: unknown; crash?: string };
 
@@ -290,31 +243,6 @@ function outcomeVerdict(method: string, outcome: Outcome): string {
   if (outcome.threw) return 'refused';
   if (OFFERED[method]) return v1Verdict(outcome.result);
   return ANSWERING.has(method) ? canonical(outcome.result ?? null) : 'done';
-}
-
-/** calls after which v1's record is rebuilt from its timeline, no longer as it was loaded */
-const REBUILDS: ReadonlySet<string> = new Set(['undo', 'redo', 'reset', 'editPoint', 'removePoint']);
-
-function rebuilds(method: string, args: unknown[]): boolean {
-  const options = { editPoint: args[2], removePoint: args[1] }[method] as { recalculate?: boolean } | undefined;
-  return REBUILDS.has(method) && options?.recalculate !== false;
-}
-
-/**
- * SE2c-D3: a loaded record whose stored score disagrees with its own timeline. Until its next rebuild, v1 goes on
- * from the stored score (input scored on it, the next server derived from it) and v2 from the timeline, which is
- * authoritative (§ 12.2). Recognised only for a record the differential found inconsistent when it was loaded, and
- * only until a rebuild; for a consistent record, only the next server is excused, and only while it is as stored.
- */
-function pendingStoredScore(v1: Projection, v2: Projection, loaded: Loaded | undefined): Projection {
-  if (!loaded) return v2;
-  if (loaded.inconsistent && canonical(v1) !== canonical(v2)) {
-    count('pending:SE2c-D3');
-    return v1;
-  }
-  if (canonical(v1.next) === canonical(v2.next)) return v2;
-  count('pending:SE2c-D3');
-  return { ...v2, next: v1.next };
 }
 
 function stateProjection(engine: Engine, state: V1State): Projection {
@@ -331,13 +259,7 @@ function stateProjection(engine: Engine, state: V1State): Projection {
  * Compares v1 with its v2 shell after a call: what the call did, then the state (status, winner, sets, points and
  * their service) and the next server; throws on a difference.
  */
-export function compareEngines(
-  v1Engine: Engine,
-  v2Engine: Engine,
-  method: string,
-  outcomes: [Outcome, Outcome],
-  loaded?: Loaded,
-): void {
+export function compareEngines(v1Engine: Engine, v2Engine: Engine, method: string, outcomes: [Outcome, Outcome]): void {
   const format = v1Engine.getFormat?.();
   const crash = outcomes[1].crash;
   if (crash) throw new ScoringEngineDivergence({ method, format, v1: 'ran', v2: `crashed: ${crash}` });
@@ -351,9 +273,7 @@ export function compareEngines(
   const projected = stateProjection(v2Engine, v2State);
   // an engine without the service queries is compared on its score alone
   if (!v1Engine.getNextServer) projected.next = null;
-  pendingDecisions(v1, projected);
-  const v2 = pendingStoredScore(v1, projected, loaded);
-  const difference = firstDifference(v1, v2);
+  const difference = firstDifference(v1, projected);
   if (difference)
     throw new ScoringEngineDivergence({
       method,
@@ -407,26 +327,6 @@ function mirror(companion: Engine, method: string, args: unknown[]): Outcome {
 
 const depths = new WeakMap<object, number>();
 const companions = new WeakMap<object, Engine>();
-/** a record as loaded, until a rebuild: whether it disagreed with its own timeline when it was loaded */
-type Loaded = { inconsistent: boolean };
-const loadedRecords = new WeakMap<object, Loaded>();
-
-/** whether a loaded record's score is the one its timeline rebuilds to (§ 12.2) */
-function consistent(engine: Engine): boolean {
-  const state = engine.getState() as unknown as MatchUp;
-  if (!state.history?.entries) return true;
-  const supplementary = engine.getSupplementaryState() as ScoringEngineSupplementaryState | undefined;
-  const rebuilt = ScoringEngineV2.rebuiltFrom(state, supplementary);
-  const sets = (record: MatchUp) => (record.score?.sets ?? []).map((set) => pick({ ...set }, SET_FIELDS));
-  return canonical(sets(state)) === canonical(sets(rebuilt));
-}
-
-function track(engine: Engine, method: string, args: unknown[]): Loaded | undefined {
-  if (method === 'setState') loadedRecords.set(engine, { inconsistent: !consistent(engine) });
-  else if (rebuilds(method, args)) loadedRecords.delete(engine);
-  return loadedRecords.get(engine);
-}
-
 function wrap(method: string, original: Method): Method {
   return function differential(this: Engine, ...args: unknown[]) {
     if (getScoringEngine() !== SCORING_ENGINE_DIFFERENTIAL) return original.apply(this, args);
@@ -440,13 +340,11 @@ function wrap(method: string, original: Method): Method {
       v1 = { threw: false, result: original.apply(this, args) };
     } catch (error) {
       depths.set(this, 0);
-      const loaded = loadedRecords.get(this);
-      compareEngines(this, companion, method, [{ threw: true }, mirror(companion, method, args)], loaded);
+      compareEngines(this, companion, method, [{ threw: true }, mirror(companion, method, args)]);
       throw error;
     }
     depths.set(this, 0);
-    const loaded = track(this, method, args);
-    compareEngines(this, companion, method, [v1, mirror(companion, method, args)], loaded);
+    compareEngines(this, companion, method, [v1, mirror(companion, method, args)]);
     return v1.result;
   };
 }

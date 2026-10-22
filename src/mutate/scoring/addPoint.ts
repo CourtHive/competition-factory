@@ -264,7 +264,7 @@ function handleStandardSet(
   const gameOffset = side1Games + side2Games - pointBasedGames;
   (point as any).set = currentSetIndex;
   (point as any).game = gameOffset + currentGameIndex;
-  (point as any).number = side1Points + side2Points;
+  (point as any).number = pointsPlayedBefore(matchUp, point, side1Points + side2Points);
 
   // Add point to winner
   if (winner === 0) {
@@ -410,7 +410,7 @@ function handleTiebreakOnlySet(
   // V3-compatible point metadata
   (point as any).set = currentSetIndex;
   (point as any).game = 0; // Always game 0 (the entire set is one game)
-  (point as any).number = side1Points + side2Points;
+  (point as any).number = pointsPlayedBefore(matchUp, point, side1Points + side2Points);
 
   // Add point to winner (with multiplier support)
   if (winner === 0) {
@@ -475,7 +475,7 @@ function handleMatchTiebreak(
   // V3-compatible point metadata
   (point as any).set = currentSetIndex;
   (point as any).game = 0;
-  (point as any).number = side1Points + side2Points;
+  (point as any).number = pointsPlayedBefore(matchUp, point, side1Points + side2Points);
 
   // Add point (with multiplier support)
   if (winner === 0) {
@@ -510,6 +510,19 @@ function handleMatchTiebreak(
  */
 /** A point with the set, game and point-in-game coordinates the scorer writes onto it. */
 type PlacedPoint = Point & { set?: number; game?: number; number?: number };
+
+/**
+ * A point's `number`: the points played in its game before it (§ 11.1), not their values. The running score counts
+ * values, so each earlier point of the game worth other than one is taken back to one (SE2a-D12, CA 2026-10-21).
+ */
+function pointsPlayedBefore(matchUp: MatchUp, point: Point, runningScore: number): number {
+  const { set, game } = point as PlacedPoint;
+  const earlier = (matchUp.history?.points ?? []) as PlacedPoint[];
+  const extra = earlier
+    .filter((before) => before !== point && before.set === set && before.game === game)
+    .reduce((sum, before) => sum + (before.scoreValue ?? 1) - 1, 0);
+  return runningScore - extra;
+}
 /** A set a timed segment or tiebreak closes. */
 type ClosableSet = SetScore & { segmentComplete?: boolean };
 
@@ -538,7 +551,11 @@ function handleTimedSet(
   }
 
   (point as PlacedPoint).game = 0;
-  (point as PlacedPoint).number = (currentSet.side1Score || 0) + (currentSet.side2Score || 0);
+  (point as PlacedPoint).number = pointsPlayedBefore(
+    matchUp,
+    point,
+    (currentSet.side1Score || 0) + (currentSet.side2Score || 0),
+  );
 
   // Just increment the score — set doesn't auto-complete (with multiplier support)
   if (winner === 0) {

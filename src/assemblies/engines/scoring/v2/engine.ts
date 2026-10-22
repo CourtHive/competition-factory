@@ -581,18 +581,6 @@ export class ScoringEngineV2 {
     this.stale = true;
   }
 
-  /**
-   * The record a matchUp rebuilds to from its own timeline, as loaded with its saved configuration: what a stored
-   * score should agree with (§ 12.2). The differential reads it to tell a consistent record from one that is not.
-   */
-  static rebuiltFrom(matchUp: MatchUp, supplementary?: ScoringEngineSupplementaryState): MatchUp {
-    const engine = new ScoringEngineV2({ matchUpFormat: matchUp.matchUpFormat });
-    engine.setState(matchUp);
-    if (supplementary) engine.loadSupplementaryState(supplementary);
-    engine.rebuild();
-    return engine.getState();
-  }
-
   /** the reduction a stored record's next action is taken on, its record left as stored */
   private prepare(): void {
     const rebuilt = this.replay(this.timeline());

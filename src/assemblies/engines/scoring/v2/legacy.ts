@@ -83,6 +83,11 @@ function refusedFacts(context: ReducerContext, state: ScoringState, entry: Timel
     return decided(match, judged, sets);
   }
   if (entry.type === 'endSegment') return closedAsV1Did(match, state);
+  // v1 took a baseline whose tiebreak-only set in play a currentGameScore named again, and left that out (SE2a-D14)
+  if (entry.type === 'setInitialScore' && data.currentGameScore !== undefined) {
+    const { currentGameScore: _named, ...rest } = data;
+    return replayed(withData(entry, rest));
+  }
   return undefined;
 }
 

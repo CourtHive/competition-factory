@@ -327,6 +327,8 @@ export class ScoringEngine {
   private winnerServesNext?: { side: 0 | 1; atPoint: number };
   // points removed without recalculating since the last rebuild: the stale score still counts them (§ 12.4)
   private uncountedRemovals = 0;
+  // a loaded record's score as stored, which getState shows until the next action writes (§ 12.2, SE2c-D3)
+  private storedScore?: Pick<MatchUp, 'score' | 'matchUpStatus' | 'winningSide' | 'endTime' | 'serverFlip'>;
   private matchUpFormat!: string; // assigned below, unless the constructor hands back the v2 shell
   private matchUpId?: string;
   private isDoubles!: boolean;
@@ -385,6 +387,31 @@ export class ScoringEngine {
     // timeline undone; never a previous matchUp's.
     this.initialLineUps = deriveInitialLineUps(matchUp);
     this.cacheFormatStructure();
+    this.storedScore = undefined;
+    this.prepareFromTimeline();
+  }
+
+  /**
+   * A loaded record's timeline is authoritative (§ 12.2; SE2c-D3, CA 2026-10-21): the score the next action is taken
+   * on, and every view, are rebuilt from it with the engine's configuration, while the record keeps its points and
+   * shows its stored score until that action writes. A record without a timeline goes on from its stored score.
+   */
+  private prepareFromTimeline(): void {
+    if (!this.state.history?.entries?.length || !this.cachedFormatStructure) return;
+    const stored = this.storedScore ?? this.scoreAsStored();
+    // eslint-disable-next-line no-restricted-syntax
+    const points = JSON.parse(JSON.stringify(this.state.history.points ?? []));
+    this.rebuildFromEntries();
+    this.state.history!.points = points;
+    // the legacy shapes are the last rebuild's, and none has run on the record yet
+    this.legacyShapes.clear();
+    this.storedScore = stored;
+  }
+
+  private scoreAsStored(): NonNullable<ScoringEngine['storedScore']> {
+    const { score, matchUpStatus, winningSide, endTime, serverFlip } = this.state;
+    // eslint-disable-next-line no-restricted-syntax
+    return JSON.parse(JSON.stringify({ score, matchUpStatus, winningSide, endTime, serverFlip }));
   }
 
   /**
@@ -398,8 +425,29 @@ export class ScoringEngine {
     // Deliberate — see the JSDoc above. structuredClone throws DataCloneError on the framework proxies
     // this state can hold, so the JSON round-trip is the requirement here, not the default deep-copy
     // idiom the rule exists to retire.
+    const record = this.storedScore ? this.withStoredScore() : this.state;
     // eslint-disable-next-line no-restricted-syntax
-    return JSON.parse(JSON.stringify(this.state));
+    return JSON.parse(JSON.stringify(record));
+  }
+
+  /** the record as loaded: the stored score over the state the next action is taken on (SE2c-D3) */
+  private withStoredScore(): MatchUp {
+    const {
+      score: _score,
+      winningSide: _winningSide,
+      endTime: _endTime,
+      serverFlip: _serverFlip,
+      ...rest
+    } = this.state;
+    const stored = this.storedScore!;
+    return {
+      ...rest,
+      score: stored.score,
+      matchUpStatus: stored.matchUpStatus,
+      ...(stored.winningSide === undefined ? {} : { winningSide: stored.winningSide }),
+      ...(stored.endTime === undefined ? {} : { endTime: stored.endTime }),
+      ...(stored.serverFlip === undefined ? {} : { serverFlip: stored.serverFlip }),
+    };
   }
 
   // ===========================================================================
@@ -468,6 +516,7 @@ export class ScoringEngine {
     // Record entry in unified timeline: every input the caller supplied (S1). A calculated server is
     // not one, so a rebuild re-derives it.
     this.state.history!.entries ??= [];
+    this.storedScore = undefined;
     this.state.history!.entries.push({
       type: 'point',
       data: recordedPointInput(options),
@@ -773,6 +822,7 @@ export class ScoringEngine {
     }
     this.state.history!.entries!.push(entry);
     this.redoStack = [];
+    this.storedScore = undefined;
     this.notifyLevelClose();
   }
 
@@ -842,6 +892,7 @@ export class ScoringEngine {
     this.ensureHistory();
     this.state.history!.entries!.push(entry);
     this.redoStack = [];
+    this.storedScore = undefined;
   }
 
   // ===========================================================================
@@ -1122,6 +1173,7 @@ export class ScoringEngine {
       const preceding = this.state.history!.entries!.at(-1);
       if (!preceding) {
         this.state.history!.initialServer = side;
+        this.storedScore = undefined;
         return;
       }
       preceding.serverCorrection = side;
@@ -1466,6 +1518,8 @@ export class ScoringEngine {
         Object.entries(state.initialLineUps).map(([k, v]) => [k, v.map((tc) => ({ ...tc }))]),
       );
     }
+    // the history's own configuration scores what follows: a record not yet written is prepared again under it
+    if (this.storedScore && (state.competitionFormat || state.pointMultipliers)) this.prepareFromTimeline();
   }
 
   // ===========================================================================
@@ -1719,6 +1773,7 @@ export class ScoringEngine {
     this.initialLineUps = undefined;
     this.winnerServesNext = undefined;
     this.uncountedRemovals = 0;
+    this.storedScore = undefined;
 
     this.eventHandlers?.onReset?.(this.buildEventContext());
   }
@@ -1789,6 +1844,8 @@ export class ScoringEngine {
       this.legacyShapes.add(LEGACY_REFUSED_INPUT);
     }
     const newSet = buildJudgedSet(options, setNumber, setFormat, judgement, winningSide);
+    // an unfinished tiebreak-only total is the race in play, as a baseline reads it (§ 5 rule 1, SE2a-D13)
+    if (setFormat?.tiebreakSet && winningSide === undefined && !newSet.segmentComplete) openRaceInPlay(newSet);
     sets[setNumber - 1] = newSet;
 
     if (this.state.matchUpStatus === TO_BE_PLAYED) {
@@ -1846,17 +1903,6 @@ export class ScoringEngine {
       currentSet.side2Score = (currentSet.side2Score || 0) + 1;
     }
 
-    // Reset point-level tracking: close the current game's point scores
-    // and start a fresh 0-0 game for subsequent addPoint() calls
-    if (currentSet.side1GameScores?.length || currentSet.side2GameScores?.length) {
-      currentSet.side1GameScores = currentSet.side1GameScores ?? [];
-      currentSet.side2GameScores = currentSet.side2GameScores ?? [];
-      // Start a new game at 0-0 (the completed game's points are discarded
-      // since addGame provides the result without point detail)
-      currentSet.side1GameScores.push(0);
-      currentSet.side2GameScores.push(0);
-    }
-
     // Store tiebreak scores if provided
     if (tiebreakScore) {
       currentSet.side1TiebreakScore = tiebreakScore[0];
@@ -1865,6 +1911,17 @@ export class ScoringEngine {
 
     // Check set completion
     this.checkSetCompletion(currentSet);
+
+    // Reset point-level tracking: a game won short of the set opens the next at 0-0 for subsequent addPoint()
+    // calls (the completed game's points are discarded, since addGame gives the result without point detail,
+    // SE2a-D3); the game that wins the set opens none, as a point that wins it opens none (SE2a-D3b)
+    const countsPoints = !!(currentSet.side1GameScores?.length || currentSet.side2GameScores?.length);
+    if (countsPoints && currentSet.winningSide === undefined) {
+      currentSet.side1GameScores = currentSet.side1GameScores ?? [];
+      currentSet.side2GameScores = currentSet.side2GameScores ?? [];
+      currentSet.side1GameScores.push(0);
+      currentSet.side2GameScores.push(0);
+    }
 
     // Check match completion if set was won
     if (currentSet.winningSide !== undefined) {
@@ -2108,7 +2165,9 @@ export class ScoringEngine {
         const refusal = baselineInputRefusal(data);
         if (refusal) return { refusal };
         if (scoresAfter(entries.slice(0, index), -1)) return { refusal: 'a second baseline' };
-        return {};
+        // v1 took this one and left out its currentGameScore, as applyInitialScore still does (SE2a-D14)
+        const named = this.raceNamedTwice(data);
+        return named ? { refusal: named } : {};
       }
       default:
         return {};
@@ -2172,6 +2231,7 @@ export class ScoringEngine {
 
   /** a rebuild's service starts over, oriented by the match's initial server if it has one (SE3-E1) */
   private startService(): void {
+    this.storedScore = undefined;
     this.winnerServesNext = undefined;
     this.uncountedRemovals = 0;
     const initialServer = this.state.history?.initialServer;
@@ -2264,6 +2324,8 @@ export class ScoringEngine {
 
       if (index < given.length - 1) refusal ??= `Set ${setNumber} is not finished and is not the last set`;
       else if (options.currentSetScore) refusal ??= `Set ${setNumber} is not finished and a currentSetScore follows it`;
+      // its total is the race's points: a currentGameScore names them twice (SE2a-D14, CA 2026-10-21)
+      else refusal ??= this.raceNamedTwice(options);
       this.openBaselineSet(set, setFormat, options);
     }
 
@@ -2283,6 +2345,26 @@ export class ScoringEngine {
   }
 
   /**
+   * Why a baseline names a race's points twice, if it does: an unfinished tiebreak-only last set is its race in play,
+   * so a `currentGameScore` beside it is refused (SE2a-D14, CA 2026-10-21: the cleaner rule).
+   */
+  private raceNamedTwice(options: InitialScoreOptions): string | undefined {
+    const given = options.sets ?? [];
+    if (!options.currentGameScore || options.currentSetScore || !given.length) return undefined;
+    const sets: ClosableSet[] = [];
+    for (const [index, total] of given.entries()) {
+      const setFormat = setFormatFor(this.cachedFormatStructure, sets, index + 1);
+      const judgement = judgeSetTotal(total, setFormat);
+      const { winningSide } = settleSetWinner(total, judgement);
+      sets.push(buildJudgedSet(total, index + 1, setFormat, judgement, winningSide));
+    }
+    const last = sets.at(-1)!;
+    const setFormat = setFormatFor(this.cachedFormatStructure, sets, last.setNumber);
+    if (!setFormat?.tiebreakSet || last.winningSide !== undefined || last.segmentComplete) return undefined;
+    return `Set ${last.setNumber} is a tiebreak-only set in play, and a currentGameScore names its points again`;
+  }
+
+  /**
    * An unfinished last set of a baseline as the set in play: the game in play's points, and in a
    * tiebreak-only segment its running points, which are the game in play there (§ 5 rule 1).
    */
@@ -2292,18 +2374,26 @@ export class ScoringEngine {
     options: InitialScoreOptions,
   ): void {
     if (setFormat?.tiebreakSet) {
-      const points = [set.side1TiebreakScore ?? set.side1Score ?? 0, set.side2TiebreakScore ?? set.side2Score ?? 0];
-      Object.assign(set, { side1Score: 0, side2Score: 0 });
-      delete set.side1TiebreakScore;
-      delete set.side2TiebreakScore;
-      set.side1GameScores = [points[0]];
-      set.side2GameScores = [points[1]];
+      openRaceInPlay(set);
       return;
     }
     if (set.isTimed) return;
     set.side1GameScores = [options.currentGameScore?.side1Points ?? 0];
     set.side2GameScores = [options.currentGameScore?.side2Points ?? 0];
   }
+}
+
+/**
+ * An unfinished tiebreak-only set as the set in play: no game won, its total (or `points`) the race's running
+ * points, which are the game in play (§ 5 rule 1).
+ */
+function openRaceInPlay(set: SetScore, points?: [number, number]): void {
+  const race = points ?? [set.side1TiebreakScore ?? set.side1Score ?? 0, set.side2TiebreakScore ?? set.side2Score ?? 0];
+  Object.assign(set, { side1Score: 0, side2Score: 0 });
+  delete set.side1TiebreakScore;
+  delete set.side2TiebreakScore;
+  set.side1GameScores = [race[0]];
+  set.side2GameScores = [race[1]];
 }
 
 // the v1/v2 differential (scoring-engine v2 plan § 2): inert unless the ScoringEngine selector is `differential`
