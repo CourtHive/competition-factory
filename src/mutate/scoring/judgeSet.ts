@@ -133,6 +133,15 @@ export function settleSetWinner(total: SetTotal, judgement: SetJudgement): { win
   return { winningSide: explicit };
 }
 
+/**
+ * Marks a set by the format governing it (§ 1.2, CA 2026-10-21): `isTiebreakOnly` where a tiebreak-only rule scores
+ * it, a `-F:TB{n}` match tiebreak included, and `isTimed` where a timed one does, however the set was entered.
+ */
+export function markSet(set: SetScore, setFormat: SetFormatStructure | undefined): void {
+  if (setFormat?.tiebreakSet && !setFormat.timed) set.isTiebreakOnly = true;
+  if (setFormat?.timed) set.isTimed = true;
+}
+
 /** The set a judged total is recorded as. */
 export function buildJudgedSet(
   total: SetTotal,
@@ -145,8 +154,8 @@ export function buildJudgedSet(
   if (given(total.side1TiebreakScore)) set.side1TiebreakScore = total.side1TiebreakScore;
   if (given(total.side2TiebreakScore)) set.side2TiebreakScore = total.side2TiebreakScore;
   if (setFormat?.outs && judgement.finished) set.segmentComplete = true;
+  markSet(set, setFormat);
   if (setFormat?.timed) {
-    set.isTimed = true;
     if (winningSide !== undefined || judgement.finished) set.segmentComplete = true;
     else if (judgement.tiebreakAtTime) {
       set.side1TiebreakScore ??= 0;

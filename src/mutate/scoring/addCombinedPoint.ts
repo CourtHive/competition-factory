@@ -24,9 +24,15 @@ export function addCombinedPoint(
   const analysis = analyzeCombinedPointSet(set, contract);
   if (!analysis.valid) return matchUp;
   set.winningSide = analysis.winningSide;
-  const point: Point = {
+  const index = matchUp.history?.points.length ?? 0;
+  // every point carries its coordinates (§ 11.1, CA 2026-10-21): a combined total is one set played as one game
+  const point: Point & { index: number; set: number; game: number; number: number } = {
     ...options,
-    pointNumber: (matchUp.history?.points.length ?? 0) + 1,
+    index,
+    set: 0,
+    game: 0,
+    number: index,
+    pointNumber: index + 1,
     winner,
     winningSide: (winner + 1) as 1 | 2,
     server,

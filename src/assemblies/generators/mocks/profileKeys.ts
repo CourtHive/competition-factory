@@ -318,6 +318,8 @@ type Check = { keys: readonly string[]; path: string; value: unknown };
  * `tournamentEngine.modifyTournamentRecord` did not pass these, so they are not its options to refuse.
  */
 export const ENGINE_SUPPLIED_KEYS = ['activeTournamentId', 'tournamentRecords', 'tournamentId'] as const;
+// generation reads no record, but an engine with one loaded spreads it into the params all the same
+export const GENERATE_ENGINE_SUPPLIED_KEYS = [...ENGINE_SUPPLIED_KEYS, 'tournamentRecord'] as const;
 
 /**
  * The first key, in any profile the call carries, that the generators do not read. A misplaced option

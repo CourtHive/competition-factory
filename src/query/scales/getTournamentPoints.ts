@@ -174,6 +174,18 @@ function calculateTeamLinePoints({
   }
 }
 
+/**
+ * The quality-win bonus a person earned in one draw, or undefined when there
+ * is none. Singles only: a doubles draw is processed through the PAIR
+ * participant, which has no person to rank against.
+ *
+ * The caller attaches the result to the award it builds for the same draw
+ * rather than emitting a separate award. A separate award used to carry only
+ * `{ qualityWinPoints, qualityWins, pointsAuthority, eventType, drawId }` — no
+ * category, gender or dates — so `generateRankingList`'s category filter
+ * dropped it from every age-category list, and a consumer storing awards
+ * (courthive-rankings: `points`, `end_date` NOT NULL) could not persist it.
+ */
 function calculateQualityWinPoints({
   qualityWinProfiles,
   participant,
@@ -183,17 +195,14 @@ function calculateQualityWinPoints({
   person,
   tournamentRecord,
   level,
-  personPoints,
-  pointsAuthority,
-  eventType,
-}) {
-  if (!qualityWinProfiles?.length || !participant.matchUps) return;
+}): ReturnType<typeof getQualityWinPoints> | undefined {
+  if (!qualityWinProfiles?.length || !participant.matchUps || !person?.personId) return undefined;
 
   const drawMatchUps = Object.values(participant.matchUps as Record<string, any>).filter(
     (m: any) => m.drawId === drawId && m.participantWon,
   );
 
-  if (!drawMatchUps.length) return;
+  if (!drawMatchUps.length) return undefined;
 
   const wonMatchUpIds = drawMatchUps.map((m: any) => m.matchUpId);
   const participantSideMap: Record<string, number> = {};
@@ -212,19 +221,7 @@ function calculateQualityWinPoints({
     level,
   });
 
-  if (qualityWinPoints > 0) {
-    const personId = person?.personId;
-    if (personId) {
-      if (!personPoints[personId]) personPoints[personId] = [];
-      personPoints[personId].push({
-        qualityWinPoints,
-        qualityWins,
-        pointsAuthority,
-        eventType,
-        drawId,
-      });
-    }
-  }
+  return qualityWinPoints > 0 ? { qualityWinPoints, qualityWins } : undefined;
 }
 
 function resolveMaxCountable(awardProfile, level, currentMax) {
@@ -552,11 +549,27 @@ function calculateDrawPoints({
 
     points = accum.positionPoints + accum.perWinPoints + bonusPoints;
 
-    if (accum.perWinPoints || accum.positionPoints || bonusPoints) {
+    // Quality-win bonuses are part of the same draw context as the primary
+    // award: they ride on it as `qualityWinPoints` (never folded into `points`,
+    // which every consumer reads as position + per-win + bonus) and inherit its
+    // category, dates and authority.
+    const qualityWin = calculateQualityWinPoints({
+      qualityWinProfiles,
+      participant,
+      drawId,
+      mappedMatchUps,
+      participantId,
+      person,
+      tournamentRecord,
+      level,
+    });
+
+    if (accum.perWinPoints || accum.positionPoints || bonusPoints || qualityWin) {
       buildAndDistributeAward({
         accum,
         bonusPoints,
         points,
+        qualityWin,
         eventType,
         drawId,
         category,
@@ -578,23 +591,6 @@ function calculateDrawPoints({
         pointsAuthority,
       });
     }
-
-    // Quality-win bonuses are part of the same draw context as the
-    // primary award, so they inherit the matched profile's authority
-    // and only fall back to the policy default when no profile matched.
-    calculateQualityWinPoints({
-      qualityWinProfiles,
-      participant,
-      drawId,
-      mappedMatchUps,
-      participantId,
-      person,
-      tournamentRecord,
-      level,
-      personPoints,
-      pointsAuthority: accum.primaryAwardProfile?.pointsAuthority ?? pointsAuthority,
-      eventType,
-    });
   }
 }
 
@@ -692,6 +688,7 @@ function buildAndDistributeAward({
   accum,
   bonusPoints,
   points,
+  qualityWin,
   eventType,
   drawId,
   category,
@@ -732,6 +729,11 @@ function buildAndDistributeAward({
     endDate,
     level,
   };
+
+  if (qualityWin) {
+    award.qualityWinPoints = qualityWin.qualityWinPoints;
+    award.qualityWins = qualityWin.qualityWins;
+  }
 
   if (devContext && accum.profileName) award.profileName = accum.profileName;
 

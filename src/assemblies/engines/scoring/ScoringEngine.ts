@@ -20,6 +20,8 @@ import { calculateMatchStatistics } from '@Query/scoring/statistics/standalone';
 import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
 import { isDecisionRequired } from '@Query/scoring/decisionRequired';
+import { installScoringDifferential } from './v2/differential';
+import { getScoringEngine } from '@Global/state/globalState';
 import { createMatchUp } from '@Mutate/scoring/createMatchUp';
 import { getScoreboard } from '@Query/scoring/getScoreboard';
 import { checkTiebreakWon } from '@Mutate/scoring/gameWon';
@@ -28,6 +30,7 @@ import { getEpisodes } from '@Query/scoring/getEpisodes';
 import { isComplete } from '@Query/scoring/isComplete';
 import { getWinner } from '@Query/scoring/getWinner';
 import { getScore } from '@Query/scoring/getScore';
+import { ScoringEngineV2 } from './v2/engine';
 import { isObject } from '@Tools/objects';
 import { nowIso } from '@Tools/clock';
 import {
@@ -56,6 +59,7 @@ import {
   SCORING_PAST_LEVEL_CLOSE,
 } from '@Mutate/scoring/matchCompletion';
 import {
+  markSet,
   setFormatFor,
   judgeSetTotal,
   buildJudgedSet,
@@ -69,6 +73,7 @@ import {
 // constants and types
 import type { MatchStatistics, StatisticsOptions, StatObject } from '@Query/scoring/statistics/types';
 import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { SCORING_ENGINE_V2 } from '@Constants/scoringEngineConstants';
 import type { PointMultiplier } from '@Mutate/scoring/resolvePointValue';
 import type { InputLevels } from '@Tools/scoring/scoringUtilities';
 import type { ClosableSet } from '@Mutate/scoring/judgeSet';
@@ -318,9 +323,9 @@ export class ScoringEngine {
   private redoStack: ScoreEntry[] = [];
   // the legacy shapes the last rebuild met (spec § 12.8)
   private legacyShapes = new Set<string>();
-  private matchUpFormat: string;
+  private matchUpFormat!: string; // assigned below, unless the constructor hands back the v2 shell
   private matchUpId?: string;
-  private isDoubles: boolean;
+  private isDoubles!: boolean;
   private state!: MatchUp; // Definite assignment - initialized in constructor
 
   /**
@@ -329,6 +334,8 @@ export class ScoringEngine {
    * @param options - Engine configuration
    */
   constructor(options: ScoringEngineOptions = {}) {
+    // with v2 selected alone, the v2 shell is the engine: the class stays the one entry point (plan § 2, SE2c)
+    if (getScoringEngine() === SCORING_ENGINE_V2) return new ScoringEngineV2(options) as unknown as ScoringEngine;
     // Extract from competitionFormat if provided
     if (options.competitionFormat) {
       this.competitionFormat = options.competitionFormat;
@@ -1054,10 +1061,11 @@ export class ScoringEngine {
   /**
    * Whether `getNextServer()` is the engine's derivation (spec § 10.4, CA 2026-10-18). False where no server
    * is derived: in a combined total `P{n}`, and in a tiebreak-only format (`S:TB{n}`) until each sport's own
-   * service rule is added. `getNextServer()` still answers 0 or 1 there, for API compatibility, but the
-   * answer is only a placeholder: the side a `setServer` named, or side 1.
+   * service rule is added; and once the match is complete, which has no next point (CA 2026-10-21).
+   * `getNextServer()` still answers 0 or 1 there, for API compatibility, but the answer is only a placeholder.
    */
   isServerDerived(): boolean {
+    if (this.state.matchUpStatus === COMPLETED) return false;
     if (this.competitionFormat?.serverRule === 'WINNER_SERVES') return true;
     return liveServiceRule(this.state, this.cachedFormatStructure) !== 'none';
   }
@@ -1777,6 +1785,7 @@ export class ScoringEngine {
         side1Score: 0,
         side2Score: 0,
       };
+      markSet(currentSet, setFormatFor(this.cachedFormatStructure, this.state.score.sets, currentSet.setNumber));
       this.state.score.sets.push(currentSet);
     }
 
@@ -2213,6 +2222,7 @@ export class ScoringEngine {
         side1GameScores: [options.currentGameScore?.side1Points ?? 0],
         side2GameScores: [options.currentGameScore?.side2Points ?? 0],
       };
+      markSet(currentSet, setFormatFor(formatStructure, sets, currentSet.setNumber));
       sets.push(currentSet);
     }
 
@@ -2242,3 +2252,6 @@ export class ScoringEngine {
     set.side2GameScores = [options.currentGameScore?.side2Points ?? 0];
   }
 }
+
+// the v1/v2 differential (scoring-engine v2 plan § 2): inert unless the ScoringEngine selector is `differential`
+installScoringDifferential(ScoringEngine);

@@ -3,9 +3,9 @@ import { getSideDrawPosition, getWinningSideDrawPosition } from '@Query/matchUps
 import { cameDownLoserLink } from '@Mutate/matchUps/drawPositions/cameDownLoserLink';
 import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { writeNativeEnabled } from '@Global/state/globalState';
 import { definedAttributes } from '@Tools/definedAttributes';
-import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 
 // constants and types
 import { MappedMatchUps } from '@Types/factoryTypes';
@@ -650,6 +650,44 @@ export function byeClaimSurvives({
     if (withdrawnSourceIds?.has(claimantMatchUpId)) return false;
     return isStillDoubleExit(claimantMatchUpId);
   });
+}
+
+/** Why a claimant holds a BYE claim (Mentat P58): read from the claimant as it stands, never stored. */
+export type ByeClaimReason = 'DOUBLE_EXIT_PRODUCED' | 'UNFILLABLE_LOSER' | 'BYE_MATCHUP_LOSER';
+
+export const BYE_CLAIM_REASON = {
+  DOUBLE_EXIT_PRODUCED: 'DOUBLE_EXIT_PRODUCED',
+  UNFILLABLE_LOSER: 'UNFILLABLE_LOSER',
+  BYE_MATCHUP_LOSER: 'BYE_MATCHUP_LOSER',
+} as const satisfies Record<ByeClaimReason, ByeClaimReason>;
+
+/**
+ * Why a claimant owes the BYE it claims, read from the claimant as it stands; `undefined` when it owes none.
+ *
+ * `byeClaims` records WHO claims a BYE on a loser seat. Each of the three writers claims for one reason, and each reason
+ * is a fact about the claimant that a later call can change:
+ *
+ *  - `DOUBLE_EXIT_PRODUCED`: the claimant is a double exit, so its produced exit leaves the seat's feeder nobody to lose
+ *    (`doubleExitAdvancement`, `positionClear.keepByeOnItsOriginsAccount`);
+ *  - `BYE_MATCHUP_LOSER`: the claimant is a BYE matchUp, whose loser is a BYE (`propagateUnfillableLoserBye`);
+ *  - `UNFILLABLE_LOSER`: the claimant is an awarded single exit whose losing side is a carried exit, so it has nobody to
+ *    lose (`propagateUnfillableLoserBye`).
+ *
+ * CA ruled on 2026-10-21 to derive the reason on read rather than store it. A reason written when the claim was made
+ * goes stale: measured over the exitPropagation suite's census replays, 4 of 618 final claims were made by an awarded
+ * single exit that has since converged into a double exit, and every one of the 618 derived correctly from its
+ * claimant. A claimant that derives no reason holds a claim nothing justifies.
+ */
+export function byeClaimReason(claimant?: MatchUp): ByeClaimReason | undefined {
+  if (!claimant) return undefined;
+  if (isDoubleExit(claimant.matchUpStatus)) return BYE_CLAIM_REASON.DOUBLE_EXIT_PRODUCED;
+  if (claimant.matchUpStatus === BYE) return BYE_CLAIM_REASON.BYE_MATCHUP_LOSER;
+  if (!claimant.winningSide || !isExit(claimant.matchUpStatus)) return undefined;
+
+  const provenance = getSideExitProvenance({ matchUp: claimant }) ?? {};
+  const exitingSides = ([1, 2] as const).filter((sideNumber) => carriedExitStatus(provenance[sideNumber]));
+  const losesACarriedExit = exitingSides.length === 1 && exitingSides[0] !== claimant.winningSide;
+  return losesACarriedExit ? BYE_CLAIM_REASON.UNFILLABLE_LOSER : undefined;
 }
 
 /**

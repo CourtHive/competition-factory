@@ -1,17 +1,17 @@
 import { releaseAdvancedDrawPositionAcrossLinks } from '@Mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement';
 import { releaseHoldersByeFromTarget } from '@Mutate/drawDefinitions/positionGovernor/releaseHoldersByeFromTarget';
 import { advanceDrawPosition, assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
+import { modifyMatchUpNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { getDrawPositionSideNumber, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
 import { applyWithdrawnExits, withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
+import { clearDrawPosition, drawPositionRemovals } from '@Mutate/matchUps/drawPositions/positionClear';
 import { assignMatchUpDrawPosition } from '@Mutate/matchUps/drawPositions/assignMatchUpDrawPosition';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
-import { modifyMatchUpNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { getByeCrossing, matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import { clearDrawPosition, drawPositionRemovals } from '@Mutate/matchUps/drawPositions/positionClear';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
@@ -1503,15 +1503,35 @@ function advanceFromTarget({
       targetMatchUpId: noContextTargetMatchUp.matchUpId,
       matchUpStatus,
     });
+    /**
+     * THE NEXT HOP IS DECIDED ON THE DRAW THIS HOP LEFT, as `advanceConvergedWinner` decides it (punch-list P60).
+     *
+     * This hop wrote the convergence and may have released positions on the way (`withdrawOwnAdvancement` follows a
+     * released position across its winner link), so the in-context view in `params` and the targets read from it
+     * describe the draw before both. Carried into the recursion, the produced exit's winner was read off a seat
+     * that had moved: DOUBLE_ELIMINATION 8/6 under `doubleExitPropagateBye: false` (census F2 fixture, 20506968),
+     * `Main|1|3` re-scored as a walkover made `Backdraw|3|1` and then `Backdraw|4|1` double walkovers; the Backdraw
+     * finalist was taken back out of `Main|4|1`, leaving the Main winner alone on side 2, and the produced WALKOVER
+     * there was awarded to side 1, the seat the stale view still showed them in. The final read WALKOVER won by
+     * nobody until a later call rewrote it.
+     */
+    const refreshed = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
+    const refreshedTargetData = positionTargets({
+      matchUpId: targetMatchUp.matchUpId,
+      inContextDrawMatchUps: refreshed,
+      drawDefinition,
+    });
+    if (refreshedTargetData.error) return decorateResult({ result: refreshedTargetData, stack });
     return doubleExitAdvancement({
       ...params,
+      inContextDrawMatchUps: refreshed,
+      targetData: refreshedTargetData,
       // derived for the matchUp the exit ARRIVED in; it names a different seat in the next one (as for
       // advanceConvergedWinner). Carried into the recursion it awarded the onward produced exit to its own exiting side:
       // census 20349817 (COMPASS 16/11, `doubleExitPropagateBye: false`), `North|2|1` WALKOVER won by side 2, the side
       // the exit came in on, and the participant arriving on side 1 was then never awarded it.
       walkoverWinningSide: undefined,
       matchUpStatus,
-      targetData,
     });
   }
 

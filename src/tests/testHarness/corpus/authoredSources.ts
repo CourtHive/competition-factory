@@ -1,5 +1,7 @@
+import { BYE_CLAIM_REASON, byeClaimReason } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { CorpusWriteError, writeScenario, type Directive } from './writeScenario';
 import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
+import { PRODUCED_EXIT_POLICY } from '../exitPropagation/producedExitPolicy';
 import { clearOutcome } from '../exitPropagation/transitions';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -14,6 +16,7 @@ import {
   FIRST_MATCH_LOSER_CONSOLATION,
   DOUBLE_ELIMINATION,
   CONSOLATION,
+  COMPASS,
   MAIN,
 } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
@@ -75,17 +78,16 @@ const claim = (ok: boolean, sentence: string) => (ok ? [] : [sentence]);
 const win = (scoreString = '6-1 6-1', winningSide = 1) =>
   mocksEngine.generateOutcomeFromScoreString({ scoreString, winningSide }).outcome;
 
-function generate(drawProfile: any, policy?: any) {
+function generate(drawProfile: any, policy?: any, otherPolicies?: any) {
   // the starting record is built on the corpus clock, so its timestamps, and so its hash, reproduce:
   // a committed manifest of these hashes is only a signal if a rerun cannot move them
   setClock(CLOCK);
   // and from its own seed: one shared random sequence made every scenario's ids depend on how many
   // scenarios were generated before it, so adding one moved the hashes of all that followed
   setRandomSource(SEED);
+  const scoring = policy && { [POLICY_TYPE_SCORING]: { ...POLICY_SCORING_DEFAULT[POLICY_TYPE_SCORING], ...policy } };
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    ...(policy
-      ? { policyDefinitions: { [POLICY_TYPE_SCORING]: { ...POLICY_SCORING_DEFAULT[POLICY_TYPE_SCORING], ...policy } } }
-      : {}),
+    ...(scoring || otherPolicies ? { policyDefinitions: { ...otherPolicies, ...scoring } } : {}),
     drawProfiles: [drawProfile],
     startDate: '2026-10-01',
     endDate: '2026-10-03',
@@ -104,6 +106,60 @@ const sms = (m: any, outcome: any, extra: Record<string, unknown> = {}): Directi
   method: 'setMatchUpStatus',
   params: { drawId: m.drawId, matchUpId: m.matchUpId, outcome, ...extra },
 });
+
+/** a COMPASS-style matchUp by structure name, from what `generate` returned */
+const named = (matchUps: any[], structureName: string, roundNumber: number, roundPosition: number) =>
+  matchUps.find(
+    (m: any) => m.structureName === structureName && m.roundNumber === roundNumber && m.roundPosition === roundPosition,
+  );
+
+/** play every matchUp with two participants and no result, side 1 winning, until none is left; returns the directives */
+function playedOut(): Directive[] {
+  const directives: Directive[] = [];
+  let played = 1;
+  while (played) {
+    played = 0;
+    for (const m of tournamentEngine.allTournamentMatchUps({ inContext: true }).matchUps ?? []) {
+      const occupants = (m.sides ?? []).filter((side: any) => side?.participantId && !side?.bye);
+      if (m.winningSide || (m.matchUpStatus && m.matchUpStatus !== TO_BE_PLAYED) || occupants.length !== 2) continue;
+      const directive = sms(m, { winningSide: 1 });
+      if (tournamentEngine.setMatchUpStatus(directive.params).error) continue;
+      directives.push(directive);
+      played++;
+    }
+  }
+  return directives;
+}
+
+/**
+ * The raw matchUp at a structure name and round coordinates, and the claims on a seat of it: the BYE claim this pins is
+ * held there by `claimantMatchUpId` alone, and the claimant, read from the same record, owes it for `reason`
+ */
+function claimHeld(
+  record: any,
+  [structureName, roundNumber, roundPosition]: [string, number, number],
+  claimantMatchUpId: string,
+  reason: string,
+) {
+  const matchUps = (record.events ?? []).flatMap((event: any) =>
+    (event.drawDefinitions ?? []).flatMap((drawDefinition: any) =>
+      (drawDefinition.structures ?? []).flatMap((structure: any) =>
+        (structure.matchUps ?? []).map((matchUp: any) => ({ ...matchUp, structureName: structure.structureName })),
+      ),
+    ),
+  );
+  const seat = named(matchUps, structureName, roundNumber, roundPosition);
+  const claimant = matchUps.find((matchUp: any) => matchUp.matchUpId === claimantMatchUpId);
+  const claims = Object.values(seat?.sideExitProvenance ?? {}).flatMap((entry: any) => entry?.byeClaims ?? []);
+  const coordinate = `${structureName}|${roundNumber}|${roundPosition}`;
+  return [
+    ...claim(
+      claims.length === 1 && claims[0] === claimantMatchUpId,
+      `${coordinate} holds one BYE claim, by the claimant`,
+    ),
+    ...claim(byeClaimReason(claimant) === reason, `the claimant owes the BYE as ${reason}`),
+  ];
+}
 
 export function authoredScenarios(): Authored[] {
   const out: Authored[] = [];
@@ -485,6 +541,90 @@ export function authoredScenarios(): Authored[] {
         },
       ],
       expected: ['ERR_MISSING_VALUE', 'ERR_MISSING_TOURNAMENT', 'ERR_MISSING_EVENT_ID', 'ok'],
+    });
+  }
+
+  // BYE claims (Mentat P58): a claim names its claimant, and the reason is read from the claimant as it stands. One
+  // scenario per reason pins the seat, the claimant and the reason, so a change to who claims, or to why, moves a hash
+  {
+    const { tournamentRecord, matchUps } = generate({ drawSize: 16, drawType: COMPASS });
+    const doubleExit = named(matchUps, 'East', 1, 1);
+    out.push({
+      scenarioId: 'authored/bye-claims/double-exit-produced',
+      ref: 'exit-propagation § BYE claims: a double exit claims the BYE its produced exit leaves on its loser seat',
+      initialRecord: tournamentRecord,
+      directives: [sms(doubleExit, { matchUpStatus: DOUBLE_WALKOVER }, { propagateExitStatus: true })],
+      expected: ['ok'],
+      finalState: (record) =>
+        claimHeld(record, ['West', 1, 1], doubleExit.matchUpId, BYE_CLAIM_REASON.DOUBLE_EXIT_PRODUCED),
+    });
+  }
+  {
+    // COMPASS 16/14 played out (unfillableLoserTargetBye): `West|2|1` is awarded against the exit `East|1|2`'s double
+    // walkover carried, so it has no loser, and the seat its loser would take in `Southwest|1|1` is a BYE it claims
+    const { tournamentRecord, matchUps } = generate(
+      { drawSize: 16, participantsCount: 14, drawType: COMPASS },
+      undefined,
+      PRODUCED_EXIT_POLICY,
+    );
+    const initialRecord = structuredClone(tournamentRecord);
+    const directives = [sms(named(matchUps, 'East', 1, 2), { matchUpStatus: DOUBLE_WALKOVER })];
+    tournamentEngine.setMatchUpStatus(directives[0].params);
+    directives.push(...playedOut());
+    const awarded = named(matchUps, 'West', 2, 1);
+    out.push({
+      scenarioId: 'authored/bye-claims/unfillable-loser',
+      ref: 'exit-propagation § BYE claims: an awarded exit whose losing side is a carried exit claims its loser seat',
+      initialRecord,
+      directives,
+      expected: directives.map(() => 'ok'),
+      finalState: (record) =>
+        claimHeld(record, ['Southwest', 1, 1], awarded.matchUpId, BYE_CLAIM_REASON.UNFILLABLE_LOSER),
+    });
+  }
+
+  {
+    // the seat a BYE matchUp's loser link feeds is a BYE because nothing can come down that link: the draw says why, not
+    // a claim. `East|1|1` is a BYE matchUp, so `West|1|1` holds a BYE on the seat it feeds; the double walkover beside
+    // it claims the other seat, and clearing the double walkover takes that claimed BYE and leaves the fed one
+    const { tournamentRecord, matchUps } = generate({ drawSize: 16, participantsCount: 14, drawType: COMPASS });
+    const doubleExit = named(matchUps, 'East', 1, 2);
+    out.push({
+      scenarioId: 'authored/bye-claims/bye-matchup-fed-seat',
+      ref: 'exit-propagation § BYE claims: a seat fed by a BYE matchUp keeps its BYE, unclaimed, when the claim beside it goes',
+      initialRecord: tournamentRecord,
+      directives: [
+        sms(doubleExit, { matchUpStatus: DOUBLE_WALKOVER }, { propagateExitStatus: true }),
+        sms(doubleExit, clearOutcome, { propagateExitStatus: true }),
+      ],
+      expected: ['ok', 'ok'],
+      finalState: (record) => {
+        const structures = record.events[0].drawDefinitions[0].structures;
+        const structureNamed = (name: string) => structures.find((structure: any) => structure.structureName === name);
+        const west = structureNamed('West');
+        const seat = named(
+          west.matchUps.map((matchUp: any) => ({ ...matchUp, structureName: 'West' })),
+          'West',
+          1,
+          1,
+        );
+        const byes = (seat?.drawPositions ?? []).filter(
+          (drawPosition: number) =>
+            west.positionAssignments.find((assignment: any) => assignment.drawPosition === drawPosition)?.bye,
+        );
+        const feeder = named(
+          structureNamed('East').matchUps.map((matchUp: any) => ({ ...matchUp, structureName: 'East' })),
+          'East',
+          1,
+          1,
+        );
+        const claims = Object.values(seat?.sideExitProvenance ?? {}).flatMap((entry: any) => entry?.byeClaims ?? []);
+        return [
+          ...claim(feeder?.matchUpStatus === BYE, 'East|1|1, which feeds the seat, is a BYE matchUp'),
+          ...claim(byes.length === 1, 'West|1|1 holds one BYE: the fed seat kept it, the cleared claim took the other'),
+          ...claim(!claims.length, 'no claim is left on West|1|1: the fed BYE stands on the draw, not on a claim'),
+        ];
+      },
     });
   }
 

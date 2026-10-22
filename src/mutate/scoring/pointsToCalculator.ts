@@ -155,10 +155,12 @@ function calcPointsToGame(
     return calcTiebreakPointsTo(side1Points, side2Points, tbTo, isNoAD);
   }
 
-  // Consecutive game format: return count as minimum-to-win
+  // Consecutive game format: the side on the run needs the rest of it, the other side a whole run (CA 2026-10-21)
   if (formatStructure.gameFormat?.type === 'CONSECUTIVE') {
     const count = formatStructure.gameFormat.count || 3;
-    return [count, count];
+    const streak = currentSet?.currentStreak;
+    const rest = (side: 0 | 1) => (streak?.side === side ? count - streak.count : count);
+    return [rest(0), rest(1)];
   }
 
   // Regular game within standard set

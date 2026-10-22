@@ -51,6 +51,62 @@ const hasScoreValue = (score: any): boolean =>
   !!(score?.sets?.length || score?.scoreStringSide1 || score?.scoreStringSide2);
 
 /**
+ * A WINNING SIDE HOLDS SOMEBODY — or a seat still to be reached, opposite the exit that decided it (punch-list P60).
+ *
+ * `getStructureInconsistencies`' WINNING_SIDE_WITHOUT_PARTICIPANT asks this of non-exits only, because an exit can be
+ * decided before its winner arrives (exit-propagation.md, "The pending propagated exit"), so an exit with an empty
+ * winning side went unread by every check. P60 lived there: DOUBLE_ELIMINATION 8/6, `doubleExitPropagateBye: false`,
+ * seed 20506968 (census F2 fixture). A correction made the Backdraw final a double walkover, the Main final's
+ * Backdraw finalist was released across the link, and the produced WALKOVER was then awarded from a view taken before
+ * the release: `Main|4|1` read WALKOVER ws=1 with side 1 empty and the Main winner, who exited nothing, on side 2,
+ * for five steps until a later call rewrote it.
+ *
+ * Returns the reason when the winning side holds nobody and nothing explains why, else undefined. Measured over the
+ * exitPropagation, testHarness and corpus suites (2026-10-21, hydrated matchUps) the winning side was empty 6,598
+ * times, and every one is a shape the engine means:
+ *
+ * - **A carried exit, opponent not yet arrived** (5,782; e.g. `censusF1FeedRegression20261011` `Consolation|1|2`): the
+ *   exit's loser stands on the other side, and their side's provenance records the exit.
+ * - **The exit a double exit sends over its loser link** (710; e.g. `theWholeDrawIsTheSameInEveryOrder` `West|1|2`,
+ *   `doubleExitPropagateBye: false`): nobody stands on either side; the losing side's provenance records the exit
+ *   (`previousMatchUpStatus` a double exit) and whoever arrives on the other side wins it.
+ * - **An exit recorded before the opponent arrives** (106; e.g. `exitBeforeArrivalCensus` `Main|2|3`, #5160): the
+ *   occupant on the losing side exited, and no provenance stands on either side.
+ *
+ * So an empty winning side is pending only for a single exit, with nothing recorded on the winning side, and with the
+ * exit accounted for on the losing side: its provenance records an exit, or its occupant made one. P60's shape fails
+ * the second: the winning side's provenance records the produced exit itself. Not read where it cannot be: only a
+ * hydrated matchUp (`hasContext`) names who stands on a side — a stored TEAM matchUp's `sides` hold lineUps and no
+ * `participantId`, so read raw every dual and rubber in the corpus fired (2,012 times, all false) — and a BYE on the
+ * winning side is BYE_WON's.
+ *
+ * Falsified: before the P60 fix it fires on exactly two schedules of every census window (`sched-w1`, `sched-w2`,
+ * `sched-de`) and both census-fail sets replayed under `doubleExitPropagateBye: false` — 20506968 and 9301858, both
+ * `Main|4|1` — and after it on none, under any of the three arms.
+ */
+const EXITS_AWAITING_AN_ARRIVAL = new Set([WALKOVER, DEFAULTED]);
+
+function winningSideHoldsNobody(matchUp: any): string | undefined {
+  const { winningSide, matchUpStatus, sides } = matchUp;
+  if (![1, 2].includes(winningSide) || matchUp.hasContext !== true) return undefined;
+  const sideOf = (sideNumber: number) => sides?.find((side: any) => side?.sideNumber === sideNumber);
+  const winner = sideOf(winningSide);
+  if (winner?.participantId || winner?.bye) return undefined;
+
+  const provenance = matchUp.sideExitProvenance ?? {};
+  const loserSideNumber = 3 - winningSide;
+  const exitOnLoserSide =
+    isAnyExit(provenance[loserSideNumber]?.matchUpStatus) || !!sideOf(loserSideNumber)?.participantId;
+  const pending = EXITS_AWAITING_AN_ARRIVAL.has(matchUpStatus) && !provenance[winningSide] && exitOnLoserSide;
+  if (pending) return undefined;
+
+  return (
+    `matchUpStatus ${matchUpStatus} awards winningSide ${winningSide}, which holds no participant` +
+    (provenance[winningSide] ? ` and records ${JSON.stringify(provenance[winningSide])}` : '')
+  );
+}
+
+/**
  * Per-matchUp rules.
  *
  * WINNING_SIDE_DOMAIN guards against arithmetic slips rather than logic errors: several
@@ -129,6 +185,11 @@ function matchUpInvariants(matchUp: any): InvariantViolation[] {
       `matchUpStatus ${matchUpStatus} awards winningSide ${winningSide} to side ${byeSide.sideNumber}, ` +
         `which is a BYE (drawPosition ${byeSide.drawPosition})`,
     );
+  }
+
+  const emptyWinningSide = winningSideHoldsNobody(matchUp);
+  if (emptyWinningSide) {
+    record('WINNING_SIDE_EMPTY', emptyWinningSide);
   }
 
   // A double exit has no winner by definition — neither side advances.

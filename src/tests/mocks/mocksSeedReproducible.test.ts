@@ -7,6 +7,7 @@ import { setClock } from '@Tools/clock';
 // constants
 import { ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
 import { DOUBLES, TEAM } from '@Constants/eventConstants';
+import { MALE } from '@Constants/genderConstants';
 
 /**
  * A mocksEngine seed names its record (2026-10-17 mocks assessment, M3 and M5).
@@ -157,7 +158,11 @@ describe('a profile is not changed by generating from it', () => {
   });
 
   it('modifyTournamentRecord leaves participantsProfile.idPrefix and eventProfile.gender as given', () => {
-    const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8 }] });
+    // the existing event has a gender, so a profile that is written into would gain one
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      eventProfiles: [{ gender: MALE, drawProfiles: [{ drawSize: 8 }] }],
+    });
+    expect(tournamentRecord.events[0].gender).toEqual(MALE);
     const participantsProfile = { participantsCount: 4, idPrefix: 'P' };
     const eventProfiles = [{ eventId: tournamentRecord.events[0].eventId, drawProfiles: [{ drawSize: 4 }] }];
     const result: any = modifyTournamentRecord({ participantsProfile, eventProfiles, tournamentRecord } as any);
