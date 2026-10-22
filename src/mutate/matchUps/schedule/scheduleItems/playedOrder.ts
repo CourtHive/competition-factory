@@ -8,7 +8,7 @@ import { findDrawDefinition } from '@Acquire/findDrawDefinition';
 import { extractDate, extractTime } from '@Tools/dateTime';
 
 // constants and types
-import { DrawDefinition, MatchUp, Score, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, MatchUp, MatchUpStatusUnion, Score, Tournament } from '@Types/tournamentTypes';
 import { COMPLETED, DEFAULTED, RETIRED } from '@Constants/matchUpStatusConstants';
 import { ANACHRONISM } from '@Constants/errorConditionConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
@@ -37,7 +37,7 @@ export type PendingPlacements = { [matchUpId: string]: Placement };
 
 const PLAYED_STATUSES = new Set<string>([COMPLETED, RETIRED, DEFAULTED]);
 
-export function wasPlayed(matchUp?: { matchUpStatus?: string; score?: Score }): boolean {
+export function wasPlayed(matchUp?: { matchUpStatus?: MatchUpStatusUnion; score?: Score }): boolean {
   return !!matchUp?.matchUpStatus && PLAYED_STATUSES.has(matchUp.matchUpStatus) && checkScoreHasValue(matchUp);
 }
 
@@ -77,7 +77,7 @@ export function placementAfterWrite(stored: Placement, schedule: Placement): Pla
 
 type BlockingMatchUp = {
   relation: 'playedSource' | 'dependent';
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
   structureId?: string;
   roundNumber?: number;
   matchUpId: string;
