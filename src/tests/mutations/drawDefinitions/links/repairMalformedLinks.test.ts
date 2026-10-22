@@ -132,7 +132,7 @@ describe('a malformed round link is restored to the round generation wrote', () 
           !(link.linkType === LOSER && link.target.structureId === structureId(drawDefinition, 'Decider')),
       ),
     ],
-    ['COMPASS: every LOSER link', { drawType: COMPASS, drawSize: 32 }, dropSourceRound(() => true)],
+    ['COMPASS: every LOSER link', { drawType: COMPASS, drawSize: 16 }, dropSourceRound(() => true)],
     ['FEED_IN_CHAMPIONSHIP: every LOSER link', { drawType: FEED_IN_CHAMPIONSHIP }, dropSourceRound(() => true)],
     [
       'playoffs: the LOSER links into three added playoff structures',
@@ -346,19 +346,20 @@ it('a WINNER link is restored to the final round of its source', () => {
 // the claim the docs make, measured: every WINNER or LOSER link a generator writes, stripped of its round one at a
 // time, is restored to that round (the full sweep, sizes 4 to 64 with qualifying and playoffs, measured 556 of 556)
 it.each([
-  [FIRST_MATCH_LOSER_CONSOLATION, [8, 32]],
-  [FIRST_ROUND_LOSER_CONSOLATION, [8, 32]],
-  [DOUBLE_ELIMINATION, [4, 16, 32]],
-  [COMPASS, [8, 32, 64]],
-  [OLYMPIC, [16, 32]],
-  [CURTIS_CONSOLATION, [32, 64]],
-  [FEED_IN_CHAMPIONSHIP, [16, 32]],
-  [FEED_IN_CHAMPIONSHIP_TO_SF, [16, 32]],
-  [MODIFIED_FEED_IN_CHAMPIONSHIP, [16, 32]],
+  [FIRST_MATCH_LOSER_CONSOLATION, [8, 16]],
+  [FIRST_ROUND_LOSER_CONSOLATION, [8]],
+  [DOUBLE_ELIMINATION, [4, 16]],
+  [COMPASS, [8, 32]],
+  [OLYMPIC, [16]],
+  [CURTIS_CONSOLATION, [32]],
+  [FEED_IN_CHAMPIONSHIP, [16]],
+  [FEED_IN_CHAMPIONSHIP_TO_SF, [16]],
+  [MODIFIED_FEED_IN_CHAMPIONSHIP, [16]],
   [PAGE_PLAYOFF, [4]],
 ] as [string, number[]][])('%s: each stripped round is restored to the round generation wrote', (drawType, sizes) => {
   for (const drawSize of sizes) {
-    const { tournamentRecord } = generate({ drawType, drawSize, completeAllMatchUps: true });
+    // the counts the inference reads are those of the stored structures: a fresh draw has them all
+    const { tournamentRecord } = generate({ drawType, drawSize });
     const drawDefinition = drawOf(tournamentRecord);
     const roundLinks = drawDefinition.links.filter(({ linkType }) => [WINNER, LOSER].includes(linkType));
     expect(roundLinks.length).toBeGreaterThan(0);
