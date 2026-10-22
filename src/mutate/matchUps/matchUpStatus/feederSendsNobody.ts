@@ -1,11 +1,13 @@
 import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
 import { matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
+import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
+import { positionTargets } from '@Query/matchUp/positionTargets';
 import { carriedExitStatus } from './sideExitProvenance';
 import { isDoubleExit } from '@Validators/isExit';
 
 // constants and types
-import { DrawDefinition, DrawLink } from '@Types/tournamentTypes';
+import { DrawDefinition, DrawLink, PositionAssignment } from '@Types/tournamentTypes';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 
@@ -80,4 +82,57 @@ export function feederSendsNobody({
         getDrawPositionWinCount({ sourceMatchUps: teamLevelMatchUps(earlier), drawPosition: side.drawPosition }) > 0,
     );
   return everyCandidateHasWon ? 'LINK_EXCLUDES' : undefined;
+}
+
+/**
+ * The loser seats holding a propagated BYE that a matchUp is the reason for, read from the draw (Mentat P58): seats it
+ * feeds across its loser link; seats fed by a matchUp that carries an exit it produced; and, transitively, seats fed by
+ * a matchUp that holds one of those BYEs, since a BYE matchUp sends nobody either. Each is returned as the matchUp the
+ * seat belongs to. This is what the `byeClaims` ledger recorded as the matchUp's claims, without depending on the order
+ * results were entered.
+ */
+export function byeSeatsOwedTo({
+  inContextDrawMatchUps,
+  drawDefinition,
+  matchUpId,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  matchUpId: string;
+}): HydratedMatchUp[] {
+  const sources = new Set<string>([matchUpId]);
+  const seats = new Map<string, HydratedMatchUp>();
+  const assignmentsOf = new Map<string, PositionAssignment[]>();
+  const assignments = (structureId: string) => {
+    if (!assignmentsOf.has(structureId))
+      assignmentsOf.set(structureId, getPositionAssignments({ drawDefinition, structureId }).positionAssignments ?? []);
+    return assignmentsOf.get(structureId) ?? [];
+  };
+  let grown = true;
+  while (grown) {
+    grown = false;
+    for (const feeder of inContextDrawMatchUps) {
+      if (!feeder.loserMatchUpId) continue;
+      const fromSource =
+        sources.has(feeder.matchUpId) ||
+        Object.values(feeder.sideExitProvenance ?? {}).some(
+          (entry) => !!carriedExitStatus(entry) && sources.has(entry?.sourceMatchUpId ?? ''),
+        );
+      if (!fromSource) continue;
+      const { loserMatchUp, loserTargetDrawPosition } =
+        positionTargets({
+          matchUpId: feeder.matchUpId,
+          inContextMatchUp: feeder,
+          inContextDrawMatchUps,
+          drawDefinition,
+        })?.targetMatchUps ?? {};
+      if (!loserMatchUp?.structureId || seats.has(loserMatchUp.matchUpId)) continue;
+      const seat = assignments(loserMatchUp.structureId).find((a) => a.drawPosition === loserTargetDrawPosition);
+      if (!seat?.bye || !seat.byeFromPropagation) continue;
+      seats.set(loserMatchUp.matchUpId, loserMatchUp);
+      sources.add(loserMatchUp.matchUpId);
+      grown = true;
+    }
+  }
+  return [...seats.values()];
 }
