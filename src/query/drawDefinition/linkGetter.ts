@@ -60,13 +60,43 @@ export function getTargetLink({
     return condition && positionCondition && link.linkType === linkType;
   });
 
-  if (result && [WINNER, LOSER].includes(result.linkType) && !result.source?.roundNumber) {
+  if (result && isMalformedRoundLink(result)) {
     return {
       ...decorateResult({ result: { error: INVALID_VALUES }, stack: 'getTargetLink', context: result }),
       error: INVALID_VALUES,
     };
   }
   return result;
+}
+
+/** a WINNER or LOSER link with no source round cannot say which round it directs (CA, 2026-10-06: an error) */
+export function isMalformedRoundLink(link: DrawLink): boolean {
+  return [WINNER, LOSER].includes(link.linkType) && !link.source?.roundNumber;
+}
+
+/**
+ * THE DRAW'S MALFORMED ROUND LINK, if it has one, as the error `positionTargets` would return on meeting it.
+ *
+ * Asked of the whole draw, not of one matchUp's targets. `positionTargets` meets a malformed link only when a matchUp
+ * whose round it governs is directed, and a cascade can direct a participant into any structure a link reaches, so
+ * where the cascade will meet one is known only once it has written. A draw with none cannot raise it at all, from
+ * `positionTargets` or anything that calls it: nothing that sets a matchUp's outcome writes a link. So an outcome is
+ * refused on a draw that has one, before the first write (outcome-pipeline.md § 2 row 21), and every `positionTargets`
+ * error after that point is impossible by construction (CA, 2026-10-22: no mutation relies on rollback).
+ */
+export function getMalformedRoundLink(drawDefinition?: DrawDefinition): TargetLinkError | undefined {
+  const link = drawDefinition?.links?.find(isMalformedRoundLink);
+  if (!link) return undefined;
+  const context = { structureId: link.source?.structureId, linkType: link.linkType };
+  return {
+    ...decorateResult({
+      result: { error: INVALID_VALUES },
+      info: 'a WINNER or LOSER link has no source roundNumber',
+      stack: 'getMalformedRoundLink',
+      context,
+    }),
+    error: INVALID_VALUES,
+  };
 }
 
 type GetStructureLinksArgs = {

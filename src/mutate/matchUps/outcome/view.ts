@@ -14,6 +14,7 @@ import { isDeciderStructure } from '@Query/drawDefinition/deciderStructures';
 import { lastSetFormatIsTimed } from '@Query/matchUp/lastSetFormatisTimed';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
+import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
 import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
@@ -469,8 +470,10 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     matchUp,
     drawDefinition,
   };
-  const unreadableLink = targets.error
-    ? { error: targets.error, info: targets.info, context: targets.context }
+  // and a malformed link anywhere in the draw, which the cascade could otherwise meet only after it had written
+  const malformed = targets.error ? targets : getMalformedRoundLink(drawDefinition);
+  const unreadableLink = malformed?.error
+    ? { error: malformed.error, info: malformed.info, context: malformed.context }
     : undefined;
   const propagatedExitStands = !unreadableLink && !!hasPropagatedExitDownstream(drawView);
   const activeDownstream = !!targets.activeDownstream;

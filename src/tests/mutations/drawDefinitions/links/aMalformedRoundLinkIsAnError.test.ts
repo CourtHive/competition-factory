@@ -133,18 +133,16 @@ it('a double exit across a malformed LOSER link is refused, and the draw is unch
   expect(hash(getDrawDefinition(drawId))).toEqual(before);
 });
 
-it('a malformed link in a structure DOWNSTREAM is returned from the cascade, and rolled back', () => {
-  // COMPASS: East's round-1 losers go to West, and West's own LOSER link is the malformed one
+it('a malformed link in a structure DOWNSTREAM is refused before the first write, with no rollback', () => {
+  // COMPASS: East's round-1 losers go to West, and West's own LOSER link is the malformed one. The cascade met it only
+  // after it had written, so this once needed `rollbackOnError`; it is now asked of the whole draw before the first write
+  // (`getMalformedRoundLink`; CA, 2026-10-22: no mutation relies on rollback), and the call is DIRECT
   const { drawId } = corruptedDraw({ drawType: COMPASS, structureName: 'West', linkType: LOSER });
   const eastId = getDrawDefinition(drawId).structures.find((s) => s.structureName === 'East').structureId;
   const matchUpId = matchUpIn(drawId, eastId).matchUpId;
   const before = hash(getDrawDefinition(drawId));
-  const result: any = tournamentEngine.executionQueue(
-    [{ method: 'setMatchUpStatus', params: { drawId, matchUpId, outcome } }],
-    true,
-  );
+  const result: any = tournamentEngine.setMatchUpStatus({ drawId, matchUpId, outcome });
   expectLinkError(result);
-  expect(result.rolledBack).toEqual(true);
   expect(hash(getDrawDefinition(drawId))).toEqual(before);
 });
 

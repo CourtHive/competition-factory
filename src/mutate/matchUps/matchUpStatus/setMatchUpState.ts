@@ -26,6 +26,7 @@ import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { isDeciderStructure } from '@Query/drawDefinition/deciderStructures';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
 import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -684,7 +685,12 @@ function downstreamOf({
   matchUpId: string;
 }) {
   const convergence = !!propagatingExit && isDoubleExit(matchUpStatus);
-  return getTargetsDownstream({ convergence, matchUpId, inContextDrawMatchUps, drawDefinition });
+  const targets = getTargetsDownstream({ convergence, matchUpId, inContextDrawMatchUps, drawDefinition });
+  // A malformed link ANYWHERE in the draw is the answer, not only one this matchUp's targets or its downstream walk
+  // reach: the cascade can direct a participant into any structure a link reaches, so a narrower check left the error to
+  // be met after the cascade had written. With none, nothing past here can meet one (see `getMalformedRoundLink`).
+  const malformed = !targets.error && getMalformedRoundLink(drawDefinition);
+  return malformed ? { ...malformed, targetData: undefined, activeDownstream: undefined } : targets;
 }
 
 function checkDownstreamCompatibility({ matchUpTieId, activeDownstream, matchUpStatus, winningSide, matchUp }) {
