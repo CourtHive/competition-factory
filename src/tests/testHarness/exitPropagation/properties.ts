@@ -1,5 +1,6 @@
 import { emptyProjectionAuditCounts, type ProjectionAudit, type ProjectionAuditCounts } from './projectionAudit';
 import { byeClaimReason, carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { feederSendsNobody } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -216,6 +217,57 @@ export function checkClaimsLive(drawId: string): PropertyFailure[] {
         });
       }
     }
+  }
+  return failures;
+}
+
+/**
+ * LOSER_SEAT_DERIVED — every loser seat holds what its feeder says it must (Mentat P58, CA 2026-10-21).
+ *
+ * The `byeClaims` ledger is being retired in favour of a reading of the draw (`feederSendsNobody`): a loser seat's BYE
+ * is owed exactly while the matchUp feeding it across the link will never send anyone. This holds every replay step to
+ * that reading, before any engine code relies on it, so each later step of the retirement must keep it:
+ *
+ *  - a propagated BYE on the seat has a feeder that sends nobody;
+ *  - a participant on the seat has a feeder that sends somebody.
+ *
+ * Whether a seat whose feeder sends nobody shows a BYE or a produced exit is a separate question, settled by the
+ * policy and by rules this does not restate (`doubleExitPropagateBye`; a fed-in seat; a loser seat that already holds a
+ * BYE is settled, census S6 20694910), so it is not judged here.
+ *
+ * An empty seat is not judged: a feeder holding a carried exit is resolved before its seat is filled. A decider's seats
+ * are `reconcileDecider`'s, and a seat a draw BYE holds was settled at generation, so neither is judged here.
+ */
+export function checkLoserSeatsDerived(drawId: string): PropertyFailure[] {
+  const drawDefinition = getDrawDefinition(drawId);
+  if (!drawDefinition) return [];
+  const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition })?.matchUps ?? [];
+  const failures: PropertyFailure[] = [];
+  for (const feeder of inContextDrawMatchUps) {
+    if (!feeder.loserMatchUpId) continue;
+    const targetData = positionTargets({
+      matchUpId: feeder.matchUpId,
+      inContextMatchUp: feeder,
+      inContextDrawMatchUps,
+      drawDefinition,
+    });
+    const { loserMatchUp, loserTargetDrawPosition, winnerMatchUp } = targetData?.targetMatchUps ?? {};
+    if (!loserMatchUp || !loserTargetDrawPosition || winnerMatchUp?.matchUpId === loserMatchUp.matchUpId) continue;
+    const { positionAssignments } = getPositionAssignments({ drawDefinition, structureId: loserMatchUp.structureId });
+    const seat = positionAssignments?.find((assignment) => assignment.drawPosition === loserTargetDrawPosition);
+    const holdsPropagatedBye = !!seat?.bye && !!seat.byeFromPropagation;
+    if (!holdsPropagatedBye && !seat?.participantId) continue;
+    const loserTargetLink = targetData?.targetLinks?.loserTargetLink;
+    const reason = feederSendsNobody({ feeder, loserTargetLink, inContextDrawMatchUps, drawDefinition });
+    const wrong =
+      (holdsPropagatedBye && !reason && 'holds a propagated BYE though its feeder sends somebody') ||
+      (seat?.participantId && reason && `holds a participant though its feeder sends nobody (${reason})`);
+    if (wrong)
+      failures.push({
+        property: 'LOSER_SEAT_DERIVED',
+        matchUpId: loserMatchUp.matchUpId,
+        detail: `${coordinate(loserMatchUp)} dp ${loserTargetDrawPosition}, fed by ${coordinate(feeder)} (${feeder.matchUpStatus}): ${wrong}`,
+      });
   }
   return failures;
 }
