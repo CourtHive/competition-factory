@@ -299,6 +299,13 @@ const result = mocksGovernor.generateTournamentRecord({ policyDefinitions: { dra
 // result.context.option -> 'policyDefinitions.draws'
 ```
 
+In `modifyTournamentRecord`, an eventProfile that targets an **existing** event attaches its `policyDefinitions` to
+that event, before any new draws are generated. A policy type the event already holds is replaced, but only while
+nothing has happened under it: once any of the event's matchUps has a result (a score, a winning side, a completed
+status such as a walkover, or play in progress), replacing it would lose the record of the policy those results were
+produced under, so the call is refused with `EXISTING_POLICY_TYPE` and the record is left unchanged. A policy type the
+event does not hold yet is attached either way.
+
 ---
 
 ## modifyTournamentRecord

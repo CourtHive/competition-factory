@@ -8,23 +8,86 @@ import { setSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import { addTournamentParticipants } from './addTournamentParticipants';
 import { generateEventParticipants } from './generateEventParticipants';
 import { generateEventWithFlights } from './generateEventWithFlights';
+import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { generateEventWithDraw } from './generateEventWithDraw';
+import { attachProfilePolicies } from './attachProfilePolicies';
 import { publishEvent } from '@Mutate/publishing/publishEvent';
 import { generateVenues } from '@Mutate/venues/generateVenues';
+import { isActiveMatchUp } from '@Query/matchUp/activeMatchUp';
 import { cloneState, restoreState } from '@Tools/cloneState';
 import { generateFlights } from './generateFlights';
 import { addEvent } from '@Mutate/events/addEvent';
+import { isObject } from '@Tools/objects';
 
-// constants
-import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+// constants and types
+import { EXISTING_POLICY_TYPE, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import type { MockEventProfile, ModifyTournamentRecordArgs } from '@Types/mocksTypes';
+import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
+import { APPLIED_POLICIES } from '@Constants/extensionConstants';
+import type { Event, Tournament } from '@Types/tournamentTypes';
 import { DOUBLES, SINGLES } from '@Constants/eventConstants';
-import type { Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
-function processExistingEvent({ event, eventProfile, tournamentRecord, allUniqueParticipantIds, drawIds }) {
+const COMPLETED_STATUSES = new Set<string | undefined>(completedMatchUpStatuses);
+
+type EventPolicyArgs = {
+  eventProfile: MockEventProfile;
+  tournamentRecord: Tournament;
+  profileIndex: number;
+  event: Event;
+};
+type ExistingEventArgs = EventPolicyArgs & { allUniqueParticipantIds: string[]; drawIds: string[] };
+
+/**
+ * An existing event's eventProfile `policyDefinitions` replace the event's own policies of those types, but only while
+ * nothing has happened under them (CA 2026-10-21): replacing a policy after results would lose the record of the
+ * policy the results were produced under. A type the event does not hold yet is attached; the policy it inherited
+ * stays recorded where it is. Attached before any new draws, so they are generated under it.
+ */
+function replaceEventPolicies({ tournamentRecord, eventProfile, profileIndex, event }: EventPolicyArgs) {
+  const { policyDefinitions } = eventProfile;
+  const option = `eventProfiles[${profileIndex}].policyDefinitions`;
+  const ownPolicies = event.extensions?.find((extension) => extension?.name === APPLIED_POLICIES)?.value ?? {};
+  const given: Record<string, unknown> = isObject(policyDefinitions)
+    ? (policyDefinitions as Record<string, unknown>)
+    : {};
+  const replaced = Object.keys(given).filter((policyType) => given[policyType] && ownPolicies[policyType]);
+
+  if (replaced.length && eventHasResults(event)) {
+    const refused = `${option}.${replaced[0]}`;
+    return {
+      info: `an event with results keeps its policies: ${refused}`,
+      context: { option: refused },
+      error: EXISTING_POLICY_TYPE,
+    };
+  }
+
+  return attachProfilePolicies({ allowReplacement: true, policyDefinitions, tournamentRecord, option, event });
+}
+
+// a walkover is a result here, though isActiveMatchUp does not count it (nothing was played)
+function eventHasResults(event: Event) {
+  return (event.drawDefinitions ?? []).some((drawDefinition) =>
+    allDrawMatchUps({ event, drawDefinition }).matchUps?.some(
+      (matchUp) => !!matchUp.winningSide || COMPLETED_STATUSES.has(matchUp.matchUpStatus) || isActiveMatchUp(matchUp),
+    ),
+  );
+}
+
+function processExistingEvent({
+  allUniqueParticipantIds,
+  tournamentRecord,
+  eventProfile,
+  profileIndex,
+  drawIds,
+  event,
+}: ExistingEventArgs) {
   const { gender, category, eventType } = event;
   const { drawProfiles, publish } = eventProfile;
+
+  const policyRefusal = replaceEventPolicies({ event, eventProfile, tournamentRecord, profileIndex });
+  if (policyRefusal) return policyRefusal;
 
   const eventParticipantType =
     (isMatchUpEventType(SINGLES)(eventType) && INDIVIDUAL) ||
@@ -126,8 +189,17 @@ function withFallbacks(eventProfile, params) {
   return resolved;
 }
 
-function handleExistingEvent({ event, eventProfile, tournamentRecord, allUniqueParticipantIds, drawIds, params }) {
+function handleExistingEvent({
+  allUniqueParticipantIds,
+  tournamentRecord,
+  profileIndex,
+  eventProfile,
+  drawIds,
+  params,
+  event,
+}: ExistingEventArgs & { params: ModifyTournamentRecordArgs }) {
   const result = processExistingEvent({
+    profileIndex,
     event,
     eventProfile: withFallbacks(eventProfile, params),
     tournamentRecord,
@@ -182,6 +254,7 @@ function processEventProfiles({ eventProfiles, tournamentRecord, allUniquePartic
 
     if (event) {
       const result = handleExistingEvent({
+        profileIndex,
         event,
         eventProfile,
         tournamentRecord,
