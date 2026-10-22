@@ -593,6 +593,19 @@ export function addEventEntries(params: AddEventEntriesArgs): ResultType {
     });
   }
 
+  // Refuse before writing: an invalid participantId anywhere in the list rejects the whole call,
+  // so no entry (event or draw) is added for the valid ones either.
+  if (validParticipantIds.length !== participantIds.length)
+    return decorateResult({
+      context: definedAttributes({
+        categoryRejections: categoryRejections.length ? categoryRejections : undefined,
+        mismatchedGender: mismatchedGender.length ? mismatchedGender : undefined,
+        gender: event.gender,
+      }),
+      result: { error: INVALID_PARTICIPANT_IDS },
+      stack,
+    });
+
   const eventEntriesBefore = entriesKey(event.entries);
   event.entries ??= [];
   const existingIds = new Set(event.entries.map((e: any) => e.participantId || e.participant?.participantId));
@@ -641,19 +654,6 @@ export function addEventEntries(params: AddEventEntriesArgs): ResultType {
   }
 
   removeUngroupedParticipantIdsHelper({ event, tournamentRecord, removedEntries });
-
-  const invalidParticipantIds = validParticipantIds.length !== participantIds.length;
-
-  if (invalidParticipantIds)
-    return decorateResult({
-      context: definedAttributes({
-        categoryRejections: categoryRejections.length ? categoryRejections : undefined,
-        mismatchedGender: mismatchedGender.length ? mismatchedGender : undefined,
-        gender: event.gender,
-      }),
-      result: { error: INVALID_PARTICIPANT_IDS },
-      stack,
-    });
 
   if (autoEntryPositions) {
     event.entries = refreshEntryPositions({
