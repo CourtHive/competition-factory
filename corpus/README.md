@@ -179,7 +179,9 @@ With `SCHEDULING_PROPERTIES=<file>`, a setup file (`src/tests/testHarness/schedu
 checks every `scheduleProfileRounds`, `scheduleMatchUps`, `scheduleProfileGrid` and
 `proAutoSchedule` call in the run against the same properties, and appends one line per test file:
 the calls checked by method, and every violation with its test. Opt-in; the ordinary suite is
-untouched.
+untouched. The sweep also asks the report properties (`SCHEDULE_ACCOUNTED`, `SCHEDULE_REPORT_TRUE`)
+of each call. Under it, `global/paramsCopiedOnlyWhenRead.test.ts` fails by construction: it asserts
+that params are copied only when nothing observes the call, and the sweep is an observer.
 
 ## The hash manifest (committed)
 

@@ -240,7 +240,15 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
     // When the caller has explicitly filtered courts and nothing remains for
     // this date's venues, skip — falling back to "all courts" would defeat
     // the filter.
-    if (courtIdsFilter && !dateCourtIds.length) continue;
+    // a date skipped still reports its matchUps as not scheduled: they vanished from the result before (C5,
+    // SCHEDULING_PIPELINE_VNEXT.md § 5)
+    const skipDate = () => {
+      notScheduledMatchUpIds[scheduledDate] = dateMatchUps.map(({ matchUpId }) => matchUpId);
+    };
+    if (courtIdsFilter && !dateCourtIds.length) {
+      skipDate();
+      continue;
+    }
 
     // Run proAutoSchedule for this date with the collected matchUps.
     // BYE / completed filtering already happened in `findRoundMatchUps` above
@@ -248,6 +256,7 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
     // scheduler is fed the pre-filtered set.
     const gridResult = proAutoSchedule({
       courtIds: resolveTargetCourtIds(dateCourtIds, courtIdsFilter),
+      scheduleCompletedMatchUps,
       matchUpDailyLimits,
       minCourtGridRows,
       tournamentRecords,
@@ -255,7 +264,10 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
       scheduledDate,
     });
 
-    if (gridResult.error) continue;
+    if (gridResult.error) {
+      skipDate();
+      continue;
+    }
 
     const dateScheduledIds = (gridResult.scheduled ?? []).map((m) => m.matchUpId);
     const dateNotScheduledIds = (gridResult.notScheduled ?? []).map((m) => m.matchUpId);

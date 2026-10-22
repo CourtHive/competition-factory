@@ -22,6 +22,8 @@ import { ResultType } from '@Types/factoryTypes';
 type ProAutoScheduleArgs = {
   tournamentRecords: { [key: string]: Tournament };
   matchUpDailyLimits?: { [key: string]: number };
+  /** passed to the write: without it a completed matchUp the grid places is skipped there */
+  scheduleCompletedMatchUps?: boolean;
   matchUps: HydratedMatchUp[];
   minCourtGridRows?: number;
   scheduledDate: string;
@@ -94,6 +96,7 @@ function findOpenCourtIndex(
 }
 
 export function proAutoSchedule({
+  scheduleCompletedMatchUps,
   matchUpDailyLimits,
   minCourtGridRows = 10,
   tournamentRecords,
@@ -237,11 +240,24 @@ export function proAutoSchedule({
     },
   }));
 
-  result = bulkScheduleMatchUps({ tournamentRecords, matchUpDetails });
+  const writeResult = bulkScheduleMatchUps({ tournamentRecords, matchUpDetails, scheduleCompletedMatchUps });
 
-  const notScheduled = matchUps;
+  // scheduled is what the write wrote: a matchUp it skipped (completed, a BYE), kept (locked) or could not find was
+  // placed on the grid and not written, and was reported scheduled all the same (C4, SCHEDULING_PIPELINE_VNEXT.md § 5)
+  const {
+    skippedMatchUpIds = [],
+    lockedMatchUpIds = [],
+    notFoundMatchUpIds = [],
+  } = writeResult as {
+    notFoundMatchUpIds?: string[];
+    skippedMatchUpIds?: string[];
+    lockedMatchUpIds?: string[];
+  };
+  const unwritten = new Set([...skippedMatchUpIds, ...lockedMatchUpIds, ...notFoundMatchUpIds]);
+  const written = scheduled.filter(({ matchUpId }) => !unwritten.has(matchUpId));
+  const notScheduled = [...matchUps, ...scheduled.filter(({ matchUpId }) => unwritten.has(matchUpId))];
 
-  return { ...result, scheduled, notScheduled, overLimitMatchUpIds };
+  return { ...writeResult, scheduled: written, notScheduled, overLimitMatchUpIds };
 }
 
 // Evaluate whether `matchUp` can be placed on `row` given dependency,
