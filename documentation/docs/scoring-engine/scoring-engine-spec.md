@@ -816,7 +816,12 @@ Computed before each point, from the score at the serve, for the set in play's f
   the game, so No-Ad, deuce caps and margins agree (`pointsToMinimum.test.ts`). A consecutive game needs
   its run length.
 - `gamesToSet`, `pointsToSet` (the game's points plus the remaining games at four points each), and
-  `pointsToMatch` (the set's points plus the remaining sets at their minimum).
+  `pointsToMatch` (the set's points plus the remaining sets at their minimum). `gamesToSet` is the
+  games won in a row that win the set by its rule, the tiebreak counting as one more (4-5 in a
+  tiebreak set: 3; the one-game set `S:1/TB7` from love: 2), and each remaining set is counted at the
+  minimum of the format governing it then, a deciding set at the final format's (`SET3-S:4WB1-F:TB7`
+  one set down: 16 + 7). A timed segment, outs and a combined total add nothing (SE2b-D23, D25, D26;
+  CA 2026-10-21).
 - `isBreakpoint`: the receiver needs one point to win the game.
 - The score situation for the next point: `isGamePoint` (the server needs one), `isBreakPoint`,
   `isSetPoint`, `isMatchPoint` (either side needs one), `isGoldenPoint` (both need one, under No-Ad or a

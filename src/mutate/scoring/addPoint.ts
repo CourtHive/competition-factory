@@ -13,8 +13,8 @@
  * - NoAD games and tiebreaks
  */
 
+import { checkStandardGameWon, checkStandardSetWon, checkTiebreakWon } from './gameWon';
 import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
-import { checkStandardGameWon, checkTiebreakWon } from './gameWon';
 import type { SetType } from '@Tools/scoring/scoringUtilities';
 import type { PointMultiplier } from './resolvePointValue';
 import { checkAndFinalizeMatch } from './matchCompletion';
@@ -28,7 +28,6 @@ import { nowIso } from '@Tools/clock';
 import {
   inputLevels,
   resolveSetType,
-  setHasTiebreak,
   inputLevelError,
   isLiveDecidingSet,
   isAggregateFormat,
@@ -714,39 +713,6 @@ function getOrCreateSet(matchUp: MatchUp, isTiebreakOnly: boolean, isTimed: bool
   return newSet;
 }
 
-/**
- * Check if a standard set is won
- */
-export function checkStandardSetWon(
-  side1Games: number,
-  side2Games: number,
-  setFormat: SetFormatStructure,
-  isDecidingSet: boolean,
-  finalSetFormat?: SetFormatStructure,
-): number | undefined {
-  const setTo = setFormat.setTo || 6;
-  const tiebreakAt = (typeof setFormat.tiebreakAt === 'number' ? setFormat.tiebreakAt : undefined) ?? setTo;
-  const activeFormat = isDecidingSet && finalSetFormat ? finalSetFormat : setFormat;
-  const noTiebreak = !setHasTiebreak(activeFormat);
-
-  const winBy = activeFormat.winBy || 2;
-
-  // Check if tiebreak was played and won (e.g., 7-6 after tiebreak at 6-6)
-  if (!noTiebreak && (side1Games === tiebreakAt + 1 || side2Games === tiebreakAt + 1)) {
-    return side1Games > side2Games ? 0 : 1;
-  }
-
-  // Regular set win (must meet threshold and win by margin)
-  if (side1Games >= setTo || side2Games >= setTo) {
-    const diff = Math.abs(side1Games - side2Games);
-    if (diff >= winBy) {
-      return side1Games > side2Games ? 0 : 1;
-    }
-  }
-
-  return undefined;
-}
-
 const SIDE_INDEX = new Set([0, 1]);
 const SIDE_NUMBER = new Set([1, 2]);
 
@@ -954,3 +920,6 @@ export function formatGameScore(p1: number, p2: number, isTiebreak: boolean, isC
 
   return `${p1 < 4 ? points[p1] : '0'}-${p2 < 4 ? points[p2] : '0'}`;
 }
+
+// where it lived before gameWon held every win predicate; its importers read it from here
+export { checkStandardSetWon };

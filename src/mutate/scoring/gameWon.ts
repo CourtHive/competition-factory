@@ -2,8 +2,8 @@
  * When a game is won. addPoint completes games with these, and pointsToCalculator counts the points to them,
  * so the "points to game" decoration and the point that completes the game cannot disagree.
  */
+import { setHasTiebreak, tiebreakMargin } from '@Tools/scoring/scoringUtilities';
 import type { FormatStructure, SetFormatStructure } from '@Types/scoring/types';
-import { tiebreakMargin } from '@Tools/scoring/scoringUtilities';
 
 /**
  * Check if a tiebreak game is won
@@ -66,6 +66,39 @@ export function checkStandardGameWon(
   // Regular tennis scoring (deuce/advantage)
   if ((side1Points >= pointsTo || side2Points >= pointsTo) && diff >= 2) {
     return side1Points > side2Points ? 0 : 1;
+  }
+
+  return undefined;
+}
+
+/**
+ * Check if a standard set is won
+ */
+export function checkStandardSetWon(
+  side1Games: number,
+  side2Games: number,
+  setFormat: SetFormatStructure,
+  isDecidingSet: boolean,
+  finalSetFormat?: SetFormatStructure,
+): number | undefined {
+  const setTo = setFormat.setTo || 6;
+  const tiebreakAt = (typeof setFormat.tiebreakAt === 'number' ? setFormat.tiebreakAt : undefined) ?? setTo;
+  const activeFormat = isDecidingSet && finalSetFormat ? finalSetFormat : setFormat;
+  const noTiebreak = !setHasTiebreak(activeFormat);
+
+  const winBy = activeFormat.winBy || 2;
+
+  // Check if tiebreak was played and won (e.g., 7-6 after tiebreak at 6-6)
+  if (!noTiebreak && (side1Games === tiebreakAt + 1 || side2Games === tiebreakAt + 1)) {
+    return side1Games > side2Games ? 0 : 1;
+  }
+
+  // Regular set win (must meet threshold and win by margin)
+  if (side1Games >= setTo || side2Games >= setTo) {
+    const diff = Math.abs(side1Games - side2Games);
+    if (diff >= winBy) {
+      return side1Games > side2Games ? 0 : 1;
+    }
   }
 
   return undefined;

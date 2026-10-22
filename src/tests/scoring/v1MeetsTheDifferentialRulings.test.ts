@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 /*
  * v1 brought to the rule where the v1/v2 differential found it short (CA 2026-10-21; scoring-engine v2 plan § 9,
- * SE2a-D11, SE2b-D11, D17, D18, D20, D22, D24; then SE3-E1, E2, E3, SE2c-D6; then SE2a-D3b, D12, D13, D14 and SE2c-D3).
+ * SE2a-D11, SE2b-D11, D17, D18, D20, D22, D24; then SE3-E1, E2, E3, SE2c-D6; then SE2a-D3b, D12, D13, D14, SE2c-D3; then SE2b-D23, D25, D26).
  * The differential holds v1 to v2 on every one of these under
  * `SCORING_ENGINE=differential`; these cases hold v1 to the spec directly, whatever engine is selected.
  */
@@ -259,5 +259,50 @@ describe('SE2c-D3: a loaded record’s timeline is authoritative over its stored
     loaded.loadSupplementaryState(source.getSupplementaryState());
     play(loaded, '1');
     expect(sets(loaded)[0]).toMatchObject({ side1Score: 3, side2Score: 0 });
+  });
+});
+
+/** the points-to views carried by the next point, a point to side 1, after `winners` (§ 11.2) */
+function viewsAfter(engine: ScoringEngine, winners: string) {
+  play(engine, winners + '1');
+  const { gamesToSet, pointsToSet, pointsToMatch } = points(engine).at(-1)!;
+  return { gamesToSet, pointsToSet, pointsToMatch };
+}
+const loveGames = (side: '1' | '2', games: number) => side.repeat(4 * games);
+
+describe('SE2b-D23: gamesToSet counts the games won in a row that win the set, by its rule (§ 11.2)', () => {
+  it('behind at 4-5 in a tiebreak set a side needs three; at 5-6 in an advantage set three', () => {
+    const tiebreakSet = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
+    expect(viewsAfter(tiebreakSet, loveGames('1', 4) + loveGames('2', 5))).toMatchObject({
+      gamesToSet: [3, 1],
+      pointsToSet: [12, 4],
+    });
+    const advantageSet = new ScoringEngine({ matchUpFormat: 'SET3-S:6' });
+    expect(viewsAfter(advantageSet, loveGames('1', 5) + loveGames('2', 6)).gamesToSet).toEqual([3, 1]);
+  });
+
+  it('the one-game set needs two games from love, so a later one counts eight points', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:1/TB7' });
+    expect(viewsAfter(engine, '')).toEqual({ gamesToSet: [2, 2], pointsToSet: [8, 8], pointsToMatch: [16, 16] });
+  });
+});
+
+describe('SE2b-D25: pointsToMatch counts a deciding set at the final format’s minimum (§ 3.2, § 11.2)', () => {
+  it('SET3-S:4WB1-F:TB7 one set down: the second set and a seven-point decider', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:4WB1-F:TB7' });
+    expect(viewsAfter(engine, loveGames('1', 4)).pointsToMatch).toEqual([16, 23]);
+  });
+});
+
+describe('SE2b-D26: in an aggregate’s decider each side needs the points of the decider (§ 9.3, § 11.2)', () => {
+  it('SET3XA-S:T10-F:TB1 level 3-3 after three bolts, side 2 ahead two bolts to one: one point each', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3XA-S:T10-F:TB1' });
+    for (const [side1Score, side2Score] of [
+      [3, 0],
+      [0, 1],
+      [0, 2],
+    ])
+      engine.addSet({ side1Score, side2Score });
+    expect(viewsAfter(engine, '').pointsToMatch).toEqual([1, 1]);
   });
 });

@@ -9,8 +9,7 @@
  */
 
 import { isLiveDecidingSet } from '@Tools/scoring/scoringUtilities';
-import { checkStandardSetWon } from './addPoint';
-import { checkTiebreakWon } from './gameWon';
+import { checkStandardSetWon, checkTiebreakWon } from './gameWon';
 import { isObject } from '@Tools/objects';
 
 // types
