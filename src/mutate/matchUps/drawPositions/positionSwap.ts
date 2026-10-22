@@ -1,7 +1,9 @@
 import { conditionallyDisableLinkPositioning } from '@Mutate/drawDefinitions/positionGovernor/conditionallyDisableLinkPositioning';
 import { addPositionActionTelemetry } from '@Mutate/drawDefinitions/positionGovernor/addPositionActionTelemetry';
 import { modifyDrawNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
+import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { removeDrawPositionAssignment } from '@Mutate/drawDefinitions/removeDrawPositionAssignment';
+import { drawPositionAssignmentRefusal } from '@Query/drawDefinition/drawPositionAssignmentRefusal';
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { assignDrawPosition } from '@Mutate/matchUps/drawPositions/positionAssignment';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
@@ -19,7 +21,9 @@ import { CONTAINER } from '@Constants/drawDefinitionConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import { ResultType } from '@Types/factoryTypes';
 import {
+  DRAW_POSITION_ACTIVE,
   INVALID_VALUES,
   MISSING_DRAW_DEFINITION,
   MISSING_STRUCTURE_ID,
@@ -216,6 +220,9 @@ function swapParticipantIdWithBYE({
   const { qualifier } = originalParticipantIdAssignment;
   const { structureId } = structure;
 
+  const refusal = byeSwapRefusal({ tournamentRecord, drawDefinition, assignments, structure, event });
+  if (refusal) return refusal;
+
   // remove both drawPosition assignments
   let result = removeDrawPositionAssignment({
     drawPosition: originalByeDrawPosition,
@@ -323,6 +330,16 @@ function roundRobinSwap({
   // if both positions are unfilled qualifier seats no need to do anything
   if (assignments.filter(isQualifierPlaceholder).length === 2) return { ...SUCCESS };
 
+  const isQualifierSwap = assignments.some(isQualifierPlaceholder);
+  const isByeSwap = assignments.some(({ bye }) => bye);
+
+  // asked before resetLineUps, the first write
+  const refusal =
+    isByeSwap && !isQualifierSwap
+      ? byeSwapRefusal({ tournamentRecord, drawDefinition, assignments, structure, event })
+      : undefined;
+  if (refusal) return refusal;
+
   resetLineUps({
     inContextDrawMatchUps,
     tournamentRecord,
@@ -333,11 +350,9 @@ function roundRobinSwap({
     event,
   });
 
-  const isQualifierSwap = assignments.some(isQualifierPlaceholder);
-  const isByeSwap = assignments.some(({ bye }) => bye);
-
   if (isByeSwap && !isQualifierSwap) {
-    swapParticipantIdWithBYE({
+    // refused above if it could be refused at all; a failure past that point is still reported
+    const result = swapParticipantIdWithBYE({
       inContextDrawMatchUps,
       tournamentRecord,
       drawDefinition,
@@ -346,6 +361,7 @@ function roundRobinSwap({
       structure,
       event,
     });
+    if (result.error) return result;
   } else {
     // for Round Robin the positionAssignments are distributed across structures
     // so the strategy of creating a new positionAssignments array won't work
@@ -358,4 +374,30 @@ function roundRobinSwap({
   }
 
   return { ...SUCCESS };
+}
+
+/**
+ * What `swapParticipantIdWithBYE` would refuse only after emptying both seats: the participant's seat
+ * is active (it cannot be cleared), or the participant cannot be placed on the BYE's seat
+ * (`assignDrawPosition`'s refusals — a seed outside its block, chiefly). Asked before the first write.
+ * The BYE's own seat is never refused for being active: `clearDrawPosition` exempts a BYE.
+ */
+function byeSwapRefusal({ tournamentRecord, drawDefinition, assignments, structure, event }): ResultType | undefined {
+  const byeAssignment = assignments.find(({ bye }) => bye);
+  const participantAssignment = assignments.find(({ participantId }) => participantId);
+  if (!byeAssignment || !participantAssignment) return undefined;
+  const { structureId } = structure;
+
+  const { activeDrawPositions } = getStructureDrawPositionProfiles({ drawDefinition, structureId });
+  if (activeDrawPositions.includes(participantAssignment.drawPosition)) return { error: DRAW_POSITION_ACTIVE };
+
+  return drawPositionAssignmentRefusal({
+    vacatedDrawPositions: [participantAssignment.drawPosition],
+    participantId: participantAssignment.participantId,
+    drawPosition: byeAssignment.drawPosition,
+    tournamentRecord,
+    drawDefinition,
+    structureId,
+    event,
+  });
 }

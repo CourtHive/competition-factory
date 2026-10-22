@@ -1,3 +1,4 @@
+import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { deleteParticipants } from '@Mutate/participants/deleteParticipants';
 import { getStageEntries } from '@Query/drawDefinition/getStageEntries';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -8,13 +9,14 @@ import { addEventEntries } from './addEventEntries';
 import { arrayIndices } from '@Tools/arrays';
 
 // constants and types
+import { DrawDefinition, Entry, Event, Participant, Tournament } from '@Types/tournamentTypes';
 import { TOURNAMENT_RECORD, PARTICIPANT_ID, EVENT } from '@Constants/attributeConstants';
-import { DrawDefinition, Tournament, Event } from '@Types/tournamentTypes';
 import { PAIR, TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { DOUBLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { UNGROUPED } from '@Constants/entryStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
+  EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT,
   ErrorType,
   INVALID_EVENT_TYPE,
   INVALID_PARTICIPANT_TYPE,
@@ -36,6 +38,79 @@ type DestroyGroupEntryArgs = {
   event: Event;
 };
 
+type ReleasedSeat = { drawId?: string; structureId?: string; drawPosition?: number };
+
+/**
+ * Every refusal `destroyGroupEntry` can make, asked WITHOUT writing.
+ *
+ * A caller that must destroy a group entry as the SECOND step of a mutation (removing a PAIR from a
+ * drawPosition and dissolving it) asks this before its first write, so a refusal leaves the record as
+ * it was. `releasedSeat` names the one seat that caller is about to empty: the entry may still be
+ * assigned there, and must not be assigned anywhere else — `removeEventEntries` refuses an entry that
+ * holds any drawPosition in any of the event's draws.
+ */
+export function groupEntryDestructionError({
+  tournamentRecord,
+  participantId,
+  releasedSeat,
+  event,
+}: {
+  tournamentRecord: Tournament;
+  releasedSeat?: ReleasedSeat;
+  participantId: string;
+  event: Event;
+}): { error?: ErrorType } | undefined {
+  const stack = 'destroyGroupEntry';
+  const paramsCheck = requireParams({ tournamentRecord, participantId, event }, [
+    TOURNAMENT_RECORD,
+    PARTICIPANT_ID,
+    EVENT,
+  ]);
+  if (paramsCheck.error) return paramsCheck;
+
+  if (!event.eventType || ![DOUBLES_EVENT, TEAM_EVENT].includes(event.eventType)) {
+    return decorateResult({ result: { error: INVALID_EVENT_TYPE }, stack });
+  }
+
+  const participant = (tournamentRecord.participants ?? []).find((p) => p.participantId === participantId);
+  if (!participant) return decorateResult({ result: { error: PARTICIPANT_NOT_FOUND }, stack });
+
+  if (
+    !participant.participantType ||
+    ![PAIR, TEAM_PARTICIPANT].includes(participant.participantType) ||
+    (participant.participantType === TEAM_PARTICIPANT && event.eventType !== TEAM_EVENT) ||
+    (participant.participantType === PAIR && event.eventType !== DOUBLES_EVENT)
+  ) {
+    return { error: INVALID_PARTICIPANT_TYPE };
+  }
+
+  if (!(event.entries ?? []).some((entry) => entry.participantId === participantId)) {
+    return { error: PARTICIPANT_ENTRY_NOT_FOUND };
+  }
+
+  if (releasedSeat && assignedBeyondSeat({ event, participantId, releasedSeat })) {
+    return decorateResult({ result: { error: EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT }, stack });
+  }
+
+  return undefined;
+}
+
+function assignedBeyondSeat({ event, participantId, releasedSeat }) {
+  return (event.drawDefinitions ?? []).some((drawDefinition) =>
+    (drawDefinition.structures ?? []).some((structure) =>
+      (getPositionAssignments({ structure }).positionAssignments ?? []).some(
+        (assignment) =>
+          assignment.participantId === participantId &&
+          !(
+            drawDefinition.drawId === releasedSeat.drawId &&
+            structure.structureId === releasedSeat.structureId &&
+            assignment.drawPosition === releasedSeat.drawPosition
+          ),
+      ),
+    ),
+  );
+}
+
 export function destroyGroupEntry({
   removeGroupParticipant,
   tournamentRecord,
@@ -49,37 +124,13 @@ export function destroyGroupEntry({
   error?: ErrorType;
   participantRemoved?: boolean;
 } {
-  const stack = 'destroyGroupEntry';
-  const paramsCheck = requireParams({ tournamentRecord, participantId, event }, [
-    TOURNAMENT_RECORD,
-    PARTICIPANT_ID,
-    EVENT,
-  ]);
-  if (paramsCheck.error) return paramsCheck;
+  const refusal = groupEntryDestructionError({ tournamentRecord, participantId, event });
+  if (refusal) return refusal;
 
-  if (!event.eventType || ![DOUBLES_EVENT, TEAM_EVENT].includes(event.eventType)) {
-    return decorateResult({ result: { error: INVALID_EVENT_TYPE }, stack });
-  }
-
+  // both are present: `groupEntryDestructionError` refused otherwise
   const tournamentParticipants = tournamentRecord.participants ?? [];
-  const participant = tournamentParticipants.find((participant) => participant.participantId === participantId);
-
-  if (!participant) {
-    return decorateResult({ result: { error: PARTICIPANT_NOT_FOUND }, stack });
-  }
-
-  if (
-    !participant.participantType ||
-    ![PAIR, TEAM_PARTICIPANT].includes(participant.participantType) ||
-    (participant.participantType === TEAM_PARTICIPANT && event.eventType !== TEAM_EVENT) ||
-    (participant.participantType === PAIR && event.eventType !== DOUBLES_EVENT)
-  ) {
-    return { error: INVALID_PARTICIPANT_TYPE };
-  }
-
-  const eventEntries = event.entries ?? [];
-  const entry = eventEntries.find((entry) => entry.participantId === participantId);
-  if (!entry) return { error: PARTICIPANT_ENTRY_NOT_FOUND };
+  const participant = tournamentParticipants.find((p) => p.participantId === participantId) as Participant;
+  const entry = (event.entries ?? []).find((entry) => entry.participantId === participantId) as Entry;
 
   const { stageEntries } = getStageEntries({
     selected: false,
