@@ -14,7 +14,8 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  * `East|1|2`, then a reset. `West|1|1` — a BYE — still carried
  * `matchUpStatusCodes: [{ sideNumber: 1 }, { previousMatchUpStatus: DOUBLE_WALKOVER, matchUpStatus:
  * WALKOVER, sideNumber: 2 }]` and the matching `sideExitProvenance`, describing a walkover that had
- * just been undone. `North|1|1` kept a `byeClaims` ledger entry for the same vanished exit.
+ * just been undone. `North|1|1` kept a `byeClaims` ledger entry for the same vanished exit (a ledger retired since,
+ * Mentat P58).
  *
  * **The cause is the BYE skip, not a missing clear.** `toBePlayed` does clear both fields, and
  * `resetMatchUpScore` reached it only for `matchUpStatus !== BYE`. Skipping the overwrite is correct
@@ -90,8 +91,10 @@ it('removes exit-propagation residue from a BYE matchUp when a draw is reset', (
   // P37. The legacy-array half of this control is gone; the line below is the same claim on the
   // surface that survives, and it names the SIDE, which a length could not.
   expect(westBefore.sideExitProvenance?.[2]?.previousMatchUpStatus).toEqual(DOUBLE_WALKOVER);
+  // the BYE the double walkover sent on: since the byeClaims ledger retired (Mentat P58) no claim records it, and the
+  // reset must still leave North|1|1 with nothing describing the undone exit
   const northBefore = at(rawMatchUps(), 'North', 1, 1);
-  expect(northBefore.sideExitProvenance?.[1]?.byeClaims?.length).toBeGreaterThan(0);
+  expect(northBefore.matchUpStatus).toEqual(BYE);
 
   const result: any = tournamentEngine.resetDrawDefinition({ drawId: DRAW_ID });
   expect(result.success).toBe(true);
@@ -107,7 +110,7 @@ it('removes exit-propagation residue from a BYE matchUp when a draw is reset', (
   // and the BYE itself SURVIVES — it is positioning, not a result
   expect(west.matchUpStatus).toEqual(BYE);
 
-  // the BYE claim ledger goes with it
+  // and North|1|1 records nothing of it either
   expect(at(rawMatchUps(), 'North', 1, 1).sideExitProvenance).toBeUndefined();
 
   // the draw the user is left with is internally consistent
