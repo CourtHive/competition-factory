@@ -182,8 +182,10 @@ runs sample fresh seeds, not new code — and all are closed in 7.10.0, held by
 
 **Classify a stall before tracing it.** Replay the seed with and without `rollbackOnError: true` and
 count refusals that changed the draw. A stall that exists only without rollback is the downstream
-effect of a refusal-after-write (`ERROR_IMPLIES_NO_MUTATION`); TMX and the server call with rollback
-on, so production sees a clean refusal, but the root is still in the pipeline. Then ask why an exit
+effect of a refusal-after-write (`ERROR_IMPLIES_NO_MUTATION`). That is a defect in the method, not a
+case rollback covers: a method's error must leave the record unchanged on a direct call, so the root
+is in the pipeline and is fixed there — the replay with rollback only separates it from a stall
+with another cause. Then ask why an exit
 did not travel as far as its participant would have: run 9's only stall looked like a RULE 4 refusal
 and was a carried exit dropped at a BYE in a structure's last round, two steps earlier.
 

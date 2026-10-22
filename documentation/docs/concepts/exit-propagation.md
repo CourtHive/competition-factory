@@ -221,32 +221,36 @@ A client retry or a double-click corrupted the draw progressively and silently.
 A genuine _change_ still propagates. `DOUBLE_WALKOVER` to `DOUBLE_DEFAULT` is a change, not a
 repeat.
 
-### A rejected mutation does not alter the draw when you ask for that
+### A rejected mutation does not alter the draw
 
 A rejected call cannot destroy a result that was already recorded, including a pending propagated
 exit. The specific defect behind this guarantee is closed: a bare `{ winningSide }` outcome is now
 validated _before_ any removal runs, where it used to skip the early participant check and be caught
 only after the existing result had been unwound.
 
-**The general guarantee is opt-in, and this is worth being precise about.** Pass
-`rollbackOnError: true` and a refused mutation leaves the draw byte-identical: the engine snapshots
-before the call and restores on error, and the queued notices are discarded with it, so subscribers
-are not told about changes that were undone. Measured over a 600-seed randomized sweep, every case
-where the default call returned an error _after_ changing the draw left it unchanged with the flag —
-45 of 45.
+**The guarantee is per method, on a direct call, and it does not depend on `rollbackOnError`.** A
+`setMatchUpStatus` that returns an error leaves the draw unchanged. The cascade delivers that by
+itself: it refuses before it writes, and it builds in no snapshot or restore to hide a refusal that
+comes too late. A refusal returned after a write is a defect, not a design choice.
 
-`executionQueue` snapshots for the whole queue, so TMX and competition-factory-server — which pass
-`rollbackOnError: true` on every mutation — already have this. A consumer calling `setMatchUpStatus`
-directly should pass it.
+Be precise about where that stands. Refusals that can only arise part-way through a cascade are
+being made impossible one root cause at a time; those that cannot be removed in the current pipeline
+are handed to its successor, which decides before it writes. The exit-propagation census measures
+the property on direct calls as `ERROR_IMPLIES_NO_MUTATION`, so a residual case shows up there rather
+than being assumed away.
 
-The flag can only restore what an error reports, so the cascade reports every error. Since 7.5.0 any
-write the cascade makes that fails, fails the call, and a refusal raised inside the cascade is
-returned to the caller rather than dropped behind a success. Before that, a call could report
-success over a draw the cascade had left half-written, and `rollbackOnError` had nothing to act on.
+`rollbackOnError` is a separate, queue-level feature: it makes several directives in one
+`executionQueue` succeed or fail together, and discards the queued notices of a refused queue. It is
+not how a single method's error is made clean, and a consumer calling `setMatchUpStatus` directly
+does not need it for that.
 
-If you are writing a client, an error response with the flag needs no compensating action. It does
-**not** mean every rejection is a no-op for your UI: the request was refused, and the reason in the
-error is worth surfacing.
+The cascade reports every error. Since 7.5.0 any write the cascade makes that fails, fails the call,
+and a refusal raised inside the cascade is returned to the caller rather than dropped behind a
+success. Before that, a call could report success over a draw the cascade had left half-written.
+
+If you are writing a client, an error response needs no compensating action. It does **not** mean
+every rejection is a no-op for your UI: the request was refused, and the reason in the error is
+worth surfacing.
 
 ### Which double exit a convergence becomes does not depend on entry order
 

@@ -124,9 +124,9 @@ This means any existing consumer reading `result.error.code` or `JSON.stringify(
 
 ## Choosing how to surface errors
 
-| Pattern                                                             | When                                                                                                     |
-| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Engine returns `{ error: POJO }`, caller branches on `result.error` | Long-running mutation paths that need to roll back partial work — never throw across the engine boundary |
-| Caller wraps with [`unwrap()`](./unwrap.md) and uses `instanceof`   | Dev paths, UI gates, test code — programmer error should be loud                                         |
-| Caller wraps with `unwrapOr(result, fallback)`                      | Render paths where a typed fallback is the right UX                                                      |
-| Catch at the top of an action handler and route by `e.code`         | When you don't want to import 13 subclasses but still want code-keyed routing                            |
+| Pattern                                                             | When                                                                                            |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Engine returns `{ error: POJO }`, caller branches on `result.error` | Mutation paths: refuse before writing, return the error, never throw across the engine boundary |
+| Caller wraps with [`unwrap()`](./unwrap.md) and uses `instanceof`   | Dev paths, UI gates, test code — programmer error should be loud                                |
+| Caller wraps with `unwrapOr(result, fallback)`                      | Render paths where a typed fallback is the right UX                                             |
+| Catch at the top of an action handler and route by `e.code`         | When you don't want to import 13 subclasses but still want code-keyed routing                   |
