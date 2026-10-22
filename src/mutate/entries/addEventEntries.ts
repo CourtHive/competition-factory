@@ -510,20 +510,30 @@ function updateUngroupedEntryStatuses(event: Event, participantIds: string[], st
   return updated;
 }
 
-export function addEventEntries(params: AddEventEntriesArgs): ResultType {
+type EventEntriesEvaluation =
+  | { refusal: ResultType }
+  | {
+      categoryRejections: CategoryRejection[];
+      validParticipantIds: string[];
+      rotatingPartners: boolean;
+      refusal?: undefined;
+    };
+
+/**
+ * Every check `addEventEntries` makes before its first write, made WITHOUT writing.
+ *
+ * `addEventEntries` runs exactly this, so its guards live in one place; a caller that must add entries as
+ * the SECOND step of a mutation (`destroyGroupEntry` re-entering a dissolved PAIR's individuals) asks the
+ * same question before its first write.
+ */
+function evaluateEventEntries(params: AddEventEntriesArgs): EventEntriesEvaluation {
   const {
-    suppressDuplicateEntries = true,
     entryStatus = DIRECT_ACCEPTANCE,
-    autoEntryPositions = true,
     enforceCategory = false,
     enforceGender = true,
-    entryStageSequence,
     policyDefinitions,
-    entryStage = MAIN,
     tournamentRecord,
-    ignoreStageSpace,
     drawDefinition,
-    roundTarget,
     extensions,
     extension,
     drawId,
@@ -534,12 +544,12 @@ export function addEventEntries(params: AddEventEntriesArgs): ResultType {
 
   // Validate params
   const paramValidation = validateAddEventEntriesParams(params, stack);
-  if ('error' in paramValidation) return paramValidation;
+  if ('error' in paramValidation) return { refusal: paramValidation };
   const participantIds = 'participantIds' in paramValidation ? paramValidation.participantIds : [];
 
   // Validate extensions
   const extensionValidation = validateExtensions(extensions, extension, stack);
-  if (extensionValidation) return extensionValidation;
+  if (extensionValidation) return { refusal: extensionValidation };
 
   // Resolve policies and gender enforcement
   const { genderEnforced } = resolvePoliciesAndGender({
@@ -549,12 +559,8 @@ export function addEventEntries(params: AddEventEntriesArgs): ResultType {
     enforceGender,
   });
 
-  const addedParticipantIdEntries: string[] = [];
-  const removedEntries: any[] = [];
-
   const checkTypedParticipants = !!tournamentRecord;
   const mismatchedGender: any[] = [];
-  let info;
 
   const rotatingPartners =
     !!drawId && drawId === drawDefinition?.drawId && isRotatingPartnerDraw(drawDefinition, event);
@@ -586,25 +592,68 @@ export function addEventEntries(params: AddEventEntriesArgs): ResultType {
   });
 
   if (rotatingPartners && (!checkTypedParticipants || validParticipantIds.length !== participantIds.length)) {
-    return decorateResult({
-      result: { error: INVALID_PARTICIPANT_IDS },
-      stack,
-      context: { mismatchedGender, categoryRejections },
-    });
+    return {
+      refusal: decorateResult({
+        result: { error: INVALID_PARTICIPANT_IDS },
+        stack,
+        context: { mismatchedGender, categoryRejections },
+      }),
+    };
   }
 
   // Refuse before writing: an invalid participantId anywhere in the list rejects the whole call,
   // so no entry (event or draw) is added for the valid ones either.
   if (validParticipantIds.length !== participantIds.length)
-    return decorateResult({
-      context: definedAttributes({
-        categoryRejections: categoryRejections.length ? categoryRejections : undefined,
-        mismatchedGender: mismatchedGender.length ? mismatchedGender : undefined,
-        gender: event.gender,
+    return {
+      refusal: decorateResult({
+        context: definedAttributes({
+          categoryRejections: categoryRejections.length ? categoryRejections : undefined,
+          mismatchedGender: mismatchedGender.length ? mismatchedGender : undefined,
+          gender: event.gender,
+        }),
+        result: { error: INVALID_PARTICIPANT_IDS },
+        stack,
       }),
-      result: { error: INVALID_PARTICIPANT_IDS },
-      stack,
-    });
+    };
+
+  return { validParticipantIds, categoryRejections, rotatingPartners };
+}
+
+/**
+ * Would `addEventEntries` with these params refuse, and with what? Writes nothing.
+ * Returns the refusal `addEventEntries` would return, or `undefined` when it would proceed.
+ */
+export function addEventEntriesRefusal(params: AddEventEntriesArgs): ResultType | undefined {
+  return evaluateEventEntries(params).refusal;
+}
+
+export function addEventEntries(params: AddEventEntriesArgs): ResultType {
+  const {
+    suppressDuplicateEntries = true,
+    entryStatus = DIRECT_ACCEPTANCE,
+    autoEntryPositions = true,
+    entryStageSequence,
+    entryStage = MAIN,
+    tournamentRecord,
+    ignoreStageSpace,
+    drawDefinition,
+    roundTarget,
+    extensions,
+    extension,
+    drawId,
+    event,
+  } = params;
+
+  const stack = 'addEventEntries';
+
+  // every refusal is decided here, before the first write
+  const evaluation = evaluateEventEntries(params);
+  if (evaluation.refusal) return evaluation.refusal;
+  const { validParticipantIds, categoryRejections, rotatingPartners } = evaluation;
+
+  const addedParticipantIdEntries: string[] = [];
+  const removedEntries: any[] = [];
+  let info;
 
   const eventEntriesBefore = entriesKey(event.entries);
   event.entries ??= [];

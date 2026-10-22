@@ -1,15 +1,15 @@
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { deleteParticipants } from '@Mutate/participants/deleteParticipants';
+import { addEventEntries, addEventEntriesRefusal } from './addEventEntries';
 import { getStageEntries } from '@Query/drawDefinition/getStageEntries';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
 import { removeEventEntries } from './removeEventEntries';
-import { addEventEntries } from './addEventEntries';
 import { arrayIndices } from '@Tools/arrays';
 
 // constants and types
-import { DrawDefinition, Entry, Event, Participant, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, EntryStatusUnion, Event, Tournament } from '@Types/tournamentTypes';
 import { TOURNAMENT_RECORD, PARTICIPANT_ID, EVENT } from '@Constants/attributeConstants';
 import { PAIR, TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { DOUBLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
@@ -51,13 +51,19 @@ type ReleasedSeat = { drawId?: string; structureId?: string; drawPosition?: numb
  */
 export function groupEntryDestructionError({
   tournamentRecord,
+  drawDefinition,
   participantId,
   releasedSeat,
+  drawId,
+  stage,
   event,
 }: {
+  drawDefinition?: DrawDefinition;
   tournamentRecord: Tournament;
   releasedSeat?: ReleasedSeat;
   participantId: string;
+  drawId?: string;
+  stage?: string;
   event: Event;
 }): { error?: ErrorType } | undefined {
   const stack = 'destroyGroupEntry';
@@ -92,7 +98,71 @@ export function groupEntryDestructionError({
     return decorateResult({ result: { error: EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT }, stack });
   }
 
+  // the individuals are re-entered AFTER the group entry is removed: whatever `addEventEntries` would
+  // refuse them for (gender, category, role, an unknown id) is refused here, before anything is written
+  const reentry = individualsReentry({ tournamentRecord, drawDefinition, participantId, drawId, stage, event });
+  if (reentry) {
+    const refusal = addEventEntriesRefusal(reentry);
+    if (refusal?.error) return decorateResult({ result: refusal, stack });
+  }
+
   return undefined;
+}
+
+/**
+ * The exact `addEventEntries` params `destroyGroupEntry` re-enters the group's individuals with, or
+ * `undefined` when there are none to re-enter. Pure: computed from the record as it stands.
+ */
+function individualsReentry({
+  tournamentRecord,
+  drawDefinition,
+  participantId,
+  drawId,
+  stage,
+  event,
+}: {
+  drawDefinition?: DrawDefinition;
+  tournamentRecord: Tournament;
+  participantId: string;
+  drawId?: string;
+  stage?: string;
+  event: Event;
+}) {
+  const tournamentParticipants = tournamentRecord.participants ?? [];
+  const participant = tournamentParticipants.find((p) => p.participantId === participantId);
+  const entry = (event.entries ?? []).find((entry) => entry.participantId === participantId);
+  if (!participant || !entry) return undefined;
+
+  const { stageEntries } = getStageEntries({
+    drawDefinition: drawDefinition as DrawDefinition,
+    selected: false,
+    drawId,
+    event,
+    stage,
+  });
+  const groupedParticipantIds = stageEntries.map(getParticipantId);
+  const individualParticipantIdsInGroups = tournamentParticipants
+    .filter(({ participantId }) => groupedParticipantIds.includes(participantId))
+    .map(({ individualParticipantIds }) => individualParticipantIds)
+    .flat()
+    .filter(Boolean);
+
+  // find only those individualParticipantIds which do not occur MULTIPLE TIMES in PAIRs/GROUPs in the event.entries or drawEntries
+  // this scenario can occur in e.g. ITA tournaments where an individual participant is paired multiple times across flights
+  const individualParticipantIds = participant.individualParticipantIds?.filter(
+    (participantId) => arrayIndices(participantId, individualParticipantIdsInGroups).length === 1,
+  );
+  if (!individualParticipantIds?.length) return undefined;
+
+  return {
+    participantIds: individualParticipantIds,
+    entryStatus: UNGROUPED as EntryStatusUnion,
+    entryStage: entry.entryStage,
+    tournamentRecord,
+    drawDefinition,
+    drawId,
+    event,
+  };
 }
 
 function assignedBeyondSeat({
@@ -132,33 +202,12 @@ export function destroyGroupEntry({
   error?: ErrorType;
   participantRemoved?: boolean;
 } {
-  const refusal = groupEntryDestructionError({ tournamentRecord, participantId, event });
+  // every refusal, the individuals' re-entry included, is asked before the first write
+  const refusal = groupEntryDestructionError({ tournamentRecord, drawDefinition, participantId, drawId, stage, event });
   if (refusal) return refusal;
 
-  // both are present: `groupEntryDestructionError` refused otherwise
-  const tournamentParticipants = tournamentRecord.participants ?? [];
-  const participant = tournamentParticipants.find((p) => p.participantId === participantId) as Participant;
-  const entry = (event.entries ?? []).find((entry) => entry.participantId === participantId) as Entry;
-
-  const { stageEntries } = getStageEntries({
-    selected: false,
-    drawDefinition,
-    drawId,
-    event,
-    stage,
-  });
-  const groupedParticipantIds = stageEntries.map(getParticipantId);
-  const individualParticipantIdsInGroups = tournamentParticipants
-    .filter(({ participantId }) => groupedParticipantIds.includes(participantId))
-    .map(({ individualParticipantIds }) => individualParticipantIds)
-    .flat()
-    .filter(Boolean);
-
-  // find only those individualParticipantIds which do not occur MULTIPLE TIMES in PAIRs/GROUPs in the event.entries or drawEntries
-  // this scenario can occur in e.g. ITA tournaments where an individual participant is paired multiple times across flights
-  const individualParticipantIds = participant.individualParticipantIds?.filter(
-    (participantId) => arrayIndices(participantId, individualParticipantIdsInGroups).length === 1,
-  );
+  // computed before the group entry is removed, exactly as the pre-check computed them
+  const reentry = individualsReentry({ tournamentRecord, drawDefinition, participantId, drawId, stage, event });
 
   // remove the group participant from event entries
   let result = removeEventEntries({
@@ -167,16 +216,8 @@ export function destroyGroupEntry({
   });
   if (result.error) return result;
 
-  if (individualParticipantIds?.length) {
-    result = addEventEntries({
-      participantIds: individualParticipantIds,
-      entryStatus: UNGROUPED,
-      entryStage: entry.entryStage,
-      tournamentRecord,
-      drawDefinition,
-      drawId,
-      event,
-    });
+  if (reentry) {
+    result = addEventEntries(reentry);
     if (result.error) return result;
   }
 
