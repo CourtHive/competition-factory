@@ -35,11 +35,11 @@ import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
+import { isDoubleExit, isExit } from '@Validators/isExit';
 import { validateScore } from '@Validators/validateScore';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
-import { isDoubleExit } from '@Validators/isExit';
 import { isObject } from '@Tools/objects';
 import { nowIso } from '@Tools/clock';
 
@@ -63,6 +63,7 @@ import {
   MATCHUP_NOT_FOUND,
   MATCHUP_STATUS_OUT_OF_SCOPE,
   MISSING_DRAW_DEFINITION,
+  MISSING_DRAW_POSITIONS,
   NO_VALID_ACTIONS,
   PROPAGATED_EXITS_DOWNSTREAM,
 } from '@Constants/errorConditionConstants';
@@ -311,6 +312,7 @@ function writeMatchUpState(params: SetMatchUpStateArgs) {
   }
 
   let dualWinningSideChange;
+  let applyTeamWrites: (() => void) | undefined;
   if (isTeam) {
     const teamResult: any = handleTeamAutoCalc({
       tournamentRecord,
@@ -328,6 +330,7 @@ function writeMatchUpState(params: SetMatchUpStateArgs) {
     });
     if (teamResult?.error) return teamResult;
     if (teamResult?.dualWinningSideChange !== undefined) dualWinningSideChange = teamResult.dualWinningSideChange;
+    applyTeamWrites = teamResult.apply;
   }
 
   if (isTeam && matchUpStatus && [AWAITING_RESULT].includes(matchUpStatus)) {
@@ -446,7 +449,7 @@ function writeMatchUpState(params: SetMatchUpStateArgs) {
   });
   if (downstreamError) return downstreamError;
 
-  return resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeDownstream, stack });
+  return resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeDownstream, applyTeamWrites, stack });
 }
 
 // Refuse to revert a COMPLETED matchUp that carries a *validated* winning score
@@ -722,7 +725,22 @@ function checkDownstreamCompatibility({ matchUpTieId, activeDownstream, matchUpS
   return undefined;
 }
 
-function resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeDownstream, stack }) {
+function resolveAndApplyOutcome({
+  dualWinningSideChange,
+  activeDownstream,
+  applyTeamWrites,
+  params,
+  isTeam,
+  stack,
+}: {
+  dualWinningSideChange?: boolean;
+  applyTeamWrites?: () => void;
+  activeDownstream?: boolean;
+  isTeam: boolean;
+  stack: string;
+  /** the call's parameters as the writers below take them (`swapWinnerLoser`, `noDownstreamDependencies`) */
+  params: Parameters<typeof swapWinnerLoser>[0];
+}) {
   const {
     allowChangePropagation,
     tournamentRecords,
@@ -754,6 +772,12 @@ function resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeD
     });
     if (check.error) return check;
   }
+
+  const unplaceable = missingDrawPositionsRefusal({ params, activeDownstream: !!activeDownstream });
+  if (unplaceable) return unplaceable;
+
+  // the TEAM dual's auto-calc and lineUps, now that nothing before the outcome's own writes can refuse
+  applyTeamWrites?.();
 
   const validWinningSideSwap =
     !isTeam && !dualWinningSideChange && winningSide && matchUp.winningSide && matchUp.winningSide !== winningSide;
@@ -810,7 +834,7 @@ function resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeD
   }
 
   let result;
-  if (isUndirectedPointOutcome(params, activeDownstream)) {
+  if (isUndirectedPointOutcome(params, !!activeDownstream)) {
     result = applyMatchUpValues(params);
   } else if (!activeDownstream || !hasPropagated) {
     result = noDownstreamDependencies(params);
@@ -843,6 +867,32 @@ function resolveAndApplyOutcome({ params, isTeam, dualWinningSideChange, activeD
   return decorateResult({ result, stack });
 }
 
+/**
+ * A WINNER WITH NO DRAWPOSITIONS TO DIRECT FROM IS REFUSED BEFORE THE FIRST WRITE.
+ *
+ * `directParticipants` refused `MISSING_DRAW_POSITIONS` only after `attemptToModifyScore` had written the score and the
+ * winner: measured on `dev` 01ce40e544, a SINGLE_ELIMINATION matchUp stored without `drawPositions`, scored under
+ * `requireParticipantsForScoring: false`, returned the error over a written result (CA, 2026-10-22: an error leaves the
+ * record unchanged, and no mutation relies on rollback). The same question, asked of the same matchUp, on the route
+ * that reaches it: a matchUp that has sent nothing (so neither the swap nor the downstream-dependency route), not a
+ * line of a dual, not ad hoc, given a winner or an exit to carry. Read before anything is written, so it cannot drift
+ * from what `directParticipants` reads.
+ */
+function missingDrawPositionsRefusal({
+  activeDownstream,
+  params,
+}: {
+  params: SetMatchUpStateArgs & { matchUp: MatchUp; structure?: Structure };
+  activeDownstream: boolean;
+}) {
+  const { matchUp, structure, matchUpStatus } = params;
+  if (matchUp.drawPositions || matchUp.collectionId || isAdHoc({ structure })) return undefined;
+  if (matchUp.winningSide || isDoubleExit(matchUp.matchUpStatus)) return undefined;
+  const directs = !!params.winningSide || (!!params.propagateExitStatus && isExit(matchUpStatus));
+  if (!directs || isUndirectedPointOutcome(params, activeDownstream)) return undefined;
+  return decorateResult({ result: { error: MISSING_DRAW_POSITIONS }, stack: 'setMatchUpStatus' });
+}
+
 // Auto-capture matchUp.schedule.scoredTime the first time a matchUp becomes
 // "scored" (a score with value, a winningSide, or a completed status). Applied
 // at the convergence point so it covers every apply sub-path. Captured once —
@@ -859,6 +909,15 @@ function applyScoredTime({ matchUp }) {
   }
 }
 
+/**
+ * A TEAM dual's auto-calc, DECIDED here and WRITTEN by the returned `apply`.
+ *
+ * The decision (the projected winningSide, and the refusal to change it under active downstream) reads only the draw.
+ * The writes (the `disableAutoCalc` flag, the sides' lineUps) used to be made here, above every refusal that follows
+ * them in `writeMatchUpState`, so a TEAM call refused there (`AWAITING_RESULT`, a participant check, a schedule) had
+ * already written them (CA, 2026-10-22: an error leaves the record unchanged, and no mutation relies on rollback).
+ * Nothing between reads them, so `apply` is called once every refusal before the outcome's own writes has been asked.
+ */
 function handleTeamAutoCalc({
   tournamentRecord,
   inContextMatchUp,
@@ -874,14 +933,10 @@ function handleTeamAutoCalc({
   event,
 }) {
   let dualWinningSideChange;
+  let autoCalcValue: true | undefined;
 
   if (disableAutoCalc) {
-    setFirstClassOrExtension({
-      element: matchUp,
-      attribute: 'disableAutoCalc',
-      name: DISABLE_AUTO_CALC,
-      value: true,
-    });
+    autoCalcValue = true;
   } else if (enableAutoCalc) {
     const existingDualMatchUpWinningSide = matchUp.winningSide;
 
@@ -915,13 +970,6 @@ function handleTeamAutoCalc({
       });
     }
 
-    setFirstClassOrExtension({
-      element: matchUp,
-      attribute: 'disableAutoCalc',
-      name: DISABLE_AUTO_CALC,
-      value: undefined,
-    });
-
     // setting these parameters will enable noDownStreamDependencies to attemptToSetWinningSide
     Object.assign(params, {
       winningSide: projectedWinningSide,
@@ -931,16 +979,26 @@ function handleTeamAutoCalc({
     });
   }
 
-  ensureSideLineUps({
-    tournamentId: tournamentRecord?.tournamentId,
-    inContextDualMatchUp: inContextMatchUp,
-    eventId: event?.eventId,
-    dualMatchUp: matchUp,
-    drawDefinition,
-    event,
-  });
+  const apply = () => {
+    if (disableAutoCalc || enableAutoCalc) {
+      setFirstClassOrExtension({
+        element: matchUp,
+        attribute: 'disableAutoCalc',
+        name: DISABLE_AUTO_CALC,
+        value: autoCalcValue,
+      });
+    }
+    ensureSideLineUps({
+      tournamentId: tournamentRecord?.tournamentId,
+      inContextDualMatchUp: inContextMatchUp,
+      eventId: event?.eventId,
+      dualMatchUp: matchUp,
+      drawDefinition,
+      event,
+    });
+  };
 
-  return { dualWinningSideChange };
+  return { dualWinningSideChange, apply };
 }
 
 function resolveQualifyingContext({ inContextMatchUp, winningSide, matchUp, params }) {
