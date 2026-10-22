@@ -323,6 +323,10 @@ export class ScoringEngine {
   private redoStack: ScoreEntry[] = [];
   // the legacy shapes the last rebuild met (spec § 12.8)
   private legacyShapes = new Set<string>();
+  // under WINNER_SERVES a correction names the next point's server only: the side, and the points played then
+  private winnerServesNext?: { side: 0 | 1; atPoint: number };
+  // points removed without recalculating since the last rebuild: the stale score still counts them (§ 12.4)
+  private uncountedRemovals = 0;
   private matchUpFormat!: string; // assigned below, unless the constructor hands back the v2 shell
   private matchUpId?: string;
   private isDoubles!: boolean;
@@ -374,6 +378,8 @@ export class ScoringEngine {
     this.isDoubles = matchUp.matchUpType === 'DOUBLES';
     this.redoStack = [];
     this.initialScore = undefined;
+    this.winnerServesNext = undefined;
+    this.uncountedRemovals = 0;
     // A rebuild starts the lineUps from their initial snapshot. Loaded without one (no
     // loadSupplementaryState to follow), the snapshot is the loaded lineUps with the substitution
     // timeline undone; never a previous matchUp's.
@@ -439,6 +445,13 @@ export class ScoringEngine {
     // a point already played goes through decoratePoint or editPoint, which a completed match takes.
     if ((this.state.history?.points.length || 0) === pointIndex)
       return { recorded: false, ignored: this.ignoredPoint(options) };
+
+    // a record a removal left stale numbers the point as its score counts it, until the next rebuild (SE2c-D6)
+    if (this.uncountedRemovals) {
+      const played = this.state.history!.points.at(-1) as any;
+      played.index += this.uncountedRemovals;
+      played.pointNumber += this.uncountedRemovals;
+    }
 
     // Attach activePlayers to the just-added point
     if (activePlayers) {
@@ -845,6 +858,8 @@ export class ScoringEngine {
    * @returns True if undo succeeded, false if nothing to undo
    */
   undo(count: number = 1): boolean {
+    // undoing no action does nothing, and says so (§ 12.3, SE3-E2)
+    if (count < 1) return false;
     const entries = this.state.history?.entries;
 
     // Entries-based undo (mixed-mode)
@@ -889,7 +904,7 @@ export class ScoringEngine {
    * @returns True if redo succeeded, false if nothing to redo
    */
   redo(count: number = 1): boolean {
-    if (this.redoStack.length === 0) return false;
+    if (this.redoStack.length === 0 || count < 1) return false;
 
     // A record with no timeline was undone point by point: put the points back the same way. Starting
     // a timeline here would hold only the redone points, and a rebuild from it would drop the rest.
@@ -1041,6 +1056,8 @@ export class ScoringEngine {
     const serverRule = this.competitionFormat?.serverRule;
 
     if (serverRule === 'WINNER_SERVES') {
+      const corrected = this.winnerServesCorrection();
+      if (corrected !== undefined) return corrected;
       const lastPoint = this.state.history?.points.at(-1);
       return lastPoint ? lastPoint.winner : 0;
     }
@@ -1085,18 +1102,28 @@ export class ScoringEngine {
     this.requireFormat();
     if (side !== 0 && side !== 1) throw new Error(`Invalid server: ${side}`);
     const before = this.state.serverFlip;
+    const named = this.winnerServesCorrection();
     this.applyServerCorrection(side);
-    // a correction that changes nothing records nothing and keeps the redo stack (§ 12.3)
-    if (before !== undefined && before === this.state.serverFlip) return;
+    // a correction that changes nothing records nothing and keeps the redo stack (§ 12.3); under WINNER_SERVES it
+    // names the next point's server only, so it changes nothing when that side is named already (SE3-E3)
+    const unchanged =
+      this.competitionFormat?.serverRule === 'WINNER_SERVES'
+        ? named === side
+        : before !== undefined && before === this.state.serverFlip;
+    if (unchanged) return;
 
     // A rule-driven correction (e.g. INTENNSE's post-point serving rules) is not an action of its own: it
     // is recorded on the entry before it, replayed with it and undone with it, so undo takes back the
     // point and its correction together (§ 2.6, CA 2026-10-18). With nothing before it there is no entry
-    // to attach it to, and it orients the next point only.
+    // to attach it to: it is the match's initial server, kept on the record, so every rebuild and reload
+    // starts from it, and it adds nothing to the timeline (SE3-E1, CA 2026-10-21).
     if (options?.recordEntry === false) {
       this.ensureHistory();
       const preceding = this.state.history!.entries!.at(-1);
-      if (!preceding) return;
+      if (!preceding) {
+        this.state.history!.initialServer = side;
+        return;
+      }
       preceding.serverCorrection = side;
       this.redoStack = [];
       return;
@@ -1661,7 +1688,10 @@ export class ScoringEngine {
       }
     }
 
-    if (!shouldRecalculate) return;
+    if (!shouldRecalculate) {
+      this.uncountedRemovals += 1;
+      return;
+    }
 
     if (entries && entries.length > 0) {
       this.rebuildFromEntries();
@@ -1687,6 +1717,8 @@ export class ScoringEngine {
     this.redoStack = [];
     this.initialScore = undefined;
     this.initialLineUps = undefined;
+    this.winnerServesNext = undefined;
+    this.uncountedRemovals = 0;
 
     this.eventHandlers?.onReset?.(this.buildEventContext());
   }
@@ -1987,6 +2019,7 @@ export class ScoringEngine {
     // Swap state so apply methods work on newState
     this.state = newState;
     this.legacyShapes.clear();
+    this.startService();
 
     for (const [index, entry] of entries.entries()) {
       const wasComplete = this.state.matchUpStatus === COMPLETED;
@@ -2113,7 +2146,8 @@ export class ScoringEngine {
       else delete side.lineUp;
     }
 
-    newState.history = { points: [], entries: [...entries] };
+    const initialServer = this.state.history?.initialServer;
+    newState.history = { points: [], entries: [...entries], ...(initialServer === undefined ? {} : { initialServer }) };
 
     return newState;
   }
@@ -2126,6 +2160,22 @@ export class ScoringEngine {
     const setType = resolveSetType(this.cachedFormatStructure!, this.setsWon(), openSetNumber(this.state.score.sets));
     const baseServer = deriveServerBase(this.state, this.cachedFormatStructure!, setType);
     this.state.serverFlip = side !== baseServer;
+    if (this.competitionFormat?.serverRule === 'WINNER_SERVES')
+      this.winnerServesNext = { side: side as 0 | 1, atPoint: this.state.history?.points.length ?? 0 };
+  }
+
+  /** under WINNER_SERVES, the side a correction named for the next point, until that point is played (§ 10.6) */
+  private winnerServesCorrection(): 0 | 1 | undefined {
+    const next = this.winnerServesNext;
+    return next?.atPoint === (this.state.history?.points.length ?? 0) ? next.side : undefined;
+  }
+
+  /** a rebuild's service starts over, oriented by the match's initial server if it has one (SE3-E1) */
+  private startService(): void {
+    this.winnerServesNext = undefined;
+    this.uncountedRemovals = 0;
+    const initialServer = this.state.history?.initialServer;
+    if (initialServer === 0 || initialServer === 1) this.applyServerCorrection(initialServer);
   }
 
   /**
@@ -2140,7 +2190,10 @@ export class ScoringEngine {
     // Like every rebuild it keeps the identity, participants and host metadata (§ 12.1, § 12.6 item 2).
     // Without a timeline no substitution is replayed, so the lineUps on court now are kept as they are.
     let newState = this.keptIdentity();
-    newState.history = { points: [] };
+    const initialServer = this.state.history?.initialServer;
+    newState.history = { points: [], ...(initialServer === undefined ? {} : { initialServer }) };
+    this.state = newState;
+    this.startService();
 
     // Apply initial score if present (late arrival)
     if (this.initialScore) {

@@ -1,9 +1,10 @@
 import { setScoringEngine } from '@Global/state/globalState';
-import { afterAll, beforeEach } from 'vitest';
+import { afterAll, afterEach, beforeEach } from 'vitest';
 import { appendFileSync } from 'node:fs';
 
 // constants and types
 import {
+  SCORING_ENGINE_DIFFERENTIAL,
   SCORING_ENGINE_V1,
   SCORING_ENGINE_V2,
   runnableScoringEngineModes,
@@ -14,6 +15,8 @@ import {
  * Vitest setupFiles hook: `SCORING_ENGINE=differential vitest run` runs the suite with v1 deciding and the v2
  * reducer checked against it after every ScoringEngine call; a difference throws. Unset, the suite runs v1, as
  * production does. Re-applied before every test because a test may set the mode itself.
+ *
+ * In differential mode a test fails when it leaves a divergence behind, even one the code under test caught.
  *
  * With `SCORING_TALLY=<file>`, each test file appends what the differential compared and deferred, so a run can
  * prove it compared something (`scripts/verify/scoringDifferential.mjs`). Under `SCORING_ENGINE=v2` it appends
@@ -34,6 +37,15 @@ if (requested && mode !== requested)
 beforeEach(() => {
   setScoringEngine(mode);
 });
+
+// a divergence caught by the code under test (a harness that records throws, a bare toThrow) still fails its test
+if (mode === SCORING_ENGINE_DIFFERENTIAL)
+  afterEach(async () => {
+    const { takeScoringDivergences } = await import('@Assemblies/engines/scoring/v2/differential');
+    const divergences = takeScoringDivergences();
+    if (divergences.length)
+      throw new Error(`${divergences.length} scoring engine divergence(s), caught:\n${divergences.join('\n')}`);
+  });
 
 const out = process.env.SCORING_TALLY;
 if (out && mode === SCORING_ENGINE_V2)

@@ -89,7 +89,19 @@ export class ScoringEngineDivergence extends Error {
     this.method = method;
     this.v1 = v1;
     this.v2 = v2;
+    thrown.push(this.message);
   }
+}
+
+/**
+ * Every divergence thrown and not yet taken. A divergence is an ordinary throw, so a caller that catches throws hides
+ * it: the corpus harness records any throw as a refusal, and a bare `toThrow()` accepts one. The test setup takes
+ * them after every test and fails the test that left one (`setScoringEngine.ts`), wherever it was caught.
+ */
+const thrown: string[] = [];
+
+export function takeScoringDivergences(): string[] {
+  return thrown.splice(0);
 }
 
 /* ------------------------------------------------------------------------------------------------------------ */
