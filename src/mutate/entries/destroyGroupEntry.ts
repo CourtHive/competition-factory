@@ -95,8 +95,16 @@ export function groupEntryDestructionError({
   return undefined;
 }
 
-function assignedBeyondSeat({ event, participantId, releasedSeat }) {
-  return (event.drawDefinitions ?? []).some((drawDefinition) =>
+function assignedBeyondSeat({
+  event,
+  participantId,
+  releasedSeat,
+}: {
+  event: Event;
+  participantId: string;
+  releasedSeat: ReleasedSeat;
+}): boolean {
+  return (event.drawDefinitions ?? []).some((drawDefinition: DrawDefinition) =>
     (drawDefinition.structures ?? []).some((structure) =>
       (getPositionAssignments({ structure }).positionAssignments ?? []).some(
         (assignment) =>
