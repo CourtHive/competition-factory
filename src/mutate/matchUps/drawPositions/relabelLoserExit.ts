@@ -1,12 +1,12 @@
 import { removeOnwardLoserPlacements } from '@Mutate/matchUps/drawPositions/removeOnwardLoserPlacements';
 import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
+import { byeSeatsOwedTo } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
-import { byeSeatsOwedTo } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import {
   clearSideExitProvenance,
   setSideExitProvenance,
@@ -326,18 +326,15 @@ function clearByeHeldCarries(args: RelabelArgs, byeHeld: HydratedMatchUp[], lose
  * Remove the stale carry entry from the BYE-held matchUp, and nothing else. A BYE is never re-derived, and the loser has
  * already been through it, so a cascading withdrawal is wrong here: measured on census de 9301858
  * (DOUBLE_ELIMINATION 8/6, a structural BYE at `Backdraw|2|2`), `withdrawProducedExits` followed the chain on and
- * released the loser's own advancement out of `Backdraw|3|1`, leaving `Backdraw|4|1` awarded to an empty seat. The
- * entry's BYE claims, which belong to the BYE and not to this carry, stay.
+ * released the loser's own advancement out of `Backdraw|3|1`, leaving `Backdraw|4|1` awarded to an empty seat.
  */
 function clearByeHeldCarry(args: RelabelArgs, byeHeld: HydratedMatchUp, loserParticipantId: string) {
   const stored = args.matchUpsMap?.drawMatchUps?.find((matchUp: MatchUp) => matchUp.matchUpId === byeHeld.matchUpId);
   const side = byeHeld.sides?.find((candidate) => candidate?.participantId === loserParticipantId)?.sideNumber;
   const provenance = stored?.sideExitProvenance;
   if (!stored || !provenance || (side !== 1 && side !== 2) || !provenance[side]) return;
-  const byeClaims = provenance[side]?.byeClaims;
   const remaining: SideExitProvenance = { ...provenance };
-  if (byeClaims?.length) remaining[side] = { byeClaims };
-  else delete remaining[side];
+  delete remaining[side];
   setSideExitProvenance({ matchUp: stored, provenance: remaining });
   if (!Object.keys(remaining).length) clearSideExitProvenance(stored);
   modifyMatchUpNotice({
@@ -416,24 +413,26 @@ function hasResult(matchUp: HydratedMatchUp): boolean {
  * `Consolation|2|1`'s produced walkover won, then `Consolation|3|1` played). A clear of the origin is refused
  * there, and the relabel leaves the convergence as it stands.
  *
- * `byeClaims` also asks, of a convergence, what its BYE claim passed on (`byeClaimPlayedOn`). Only the kind guard asks
- * it: a change of kind dissolves the convergence and withdraws the claim, where a relabel that keeps the winner leaves
- * both standing.
+ * `byesItCaused` also asks, of a convergence, what the BYEs it is the reason for passed on (`byesItCausedPlayedOn`, read
+ * from the draw: `byeSeatsOwedTo`). Only the kind guard asks it: a change of kind dissolves the convergence and takes
+ * those BYEs back, where a relabel that keeps the winner leaves both standing.
  */
 export function winnerPlayedOn(
   standing: HydratedMatchUp,
   matchUps: HydratedMatchUp[] | undefined,
   drawDefinition: DrawDefinition,
-  { depth = 0, byeClaims = false }: { depth?: number; byeClaims?: boolean } = {},
+  { depth = 0, byesItCaused = false }: { depth?: number; byesItCaused?: boolean } = {},
 ): ResultType & { playedOn?: boolean } {
   // bounded as a draw is: each step moves at least one round on
   if (depth > 32) return { playedOn: true };
   if (isDoubleExit(standing.matchUpStatus)) {
-    const claimed = byeClaims ? byeClaimPlayedOn(standing, matchUps, drawDefinition, depth) : { playedOn: false };
+    const claimed = byesItCaused
+      ? byesItCausedPlayedOn(standing, matchUps, drawDefinition, depth)
+      : { playedOn: false };
     if (claimed.error || claimed.playedOn) return claimed;
     const produced = nextPlayable(standing, matchUps, drawDefinition);
     if (produced.error || !produced.next) return produced.error ? produced : { playedOn: false };
-    return winnerPlayedOn(produced.next, matchUps, drawDefinition, { depth: depth + 1, byeClaims });
+    return winnerPlayedOn(produced.next, matchUps, drawDefinition, { depth: depth + 1, byesItCaused });
   }
   if (!standing.winningSide) return { playedOn: false };
   const onward = nextPlayable(standing, matchUps, drawDefinition);
@@ -443,7 +442,7 @@ export function winnerPlayedOn(
   // A CASCADE AWARD IS PASSED THROUGH, NOT STOPPED AT: its winner was carried on by it, and may have played on from
   // where it put them — across a link too (census de 9300887, DOUBLE_ELIMINATION 8/4: the Backdraw final awarded by a
   // carried walkover, its winner then beaten in the recorded Main final). Asked of the award's own winner, onward.
-  return winnerPlayedOn(onward.next, matchUps, drawDefinition, { depth: depth + 1, byeClaims });
+  return winnerPlayedOn(onward.next, matchUps, drawDefinition, { depth: depth + 1, byesItCaused });
 }
 
 /**
@@ -454,7 +453,7 @@ export function winnerPlayedOn(
  * passed a participant on into `South|3|1`, recorded RETIRED 6-3; re-entering `East|1|13`'s walkover as a played win
  * left it TO_BE_PLAYED holding the score). Asked of the first matchUp past the BYEs, as of a winner.
  */
-function byeClaimPlayedOn(
+function byesItCausedPlayedOn(
   standing: HydratedMatchUp,
   matchUps: HydratedMatchUp[] | undefined,
   drawDefinition: DrawDefinition,
@@ -471,7 +470,7 @@ function byeClaimPlayedOn(
     if (onward.error) return onward;
     if (!onward.next || !hasResult(onward.next)) continue;
     if (hasEarnedResult(onward.next)) return { playedOn: true };
-    const awarded = winnerPlayedOn(onward.next, matchUps, drawDefinition, { depth: depth + 1, byeClaims: true });
+    const awarded = winnerPlayedOn(onward.next, matchUps, drawDefinition, { depth: depth + 1, byesItCaused: true });
     if (awarded.error || awarded.playedOn) return awarded;
   }
   return { playedOn: false };

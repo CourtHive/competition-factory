@@ -5141,6 +5141,7 @@
         },
         "byeClaims": {
           "type": "array",
+          "description": "Retired (Mentat P58, 2026-10-22): no longer written or read; accepted so that stored records still validate.",
           "items": {
             "type": "string"
           }

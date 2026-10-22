@@ -25,7 +25,6 @@ import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type {
   SideExitProvenanceEntry,
-  SideExitProvenance,
   MatchUpStatusUnion,
   DrawDefinition,
   Tournament,
@@ -266,12 +265,8 @@ export function settleRederivedDoubleExit({
   // through a BYE rather than as the origin's loser, the replay below has no other way to restore it
   // (sweep seed 6141627: a South final became a BYE, its kept entry was cleared and never re-stamped).
   // It is kept at the carrier's CURRENT side, where the replay stamps it too, never at its old key.
-  const claims = byeClaimsOf(getSideExitProvenance({ matchUp: stored }));
   clearSideExitProvenance(stored);
-  setSideExitProvenance({
-    provenance: { ...claims, [carrierSide]: { ...claims[carrierSide], ...keptEntry } },
-    matchUp: stored,
-  });
+  setSideExitProvenance({ provenance: { [carrierSide]: { ...keptEntry } }, matchUp: stored });
   if (stored.matchUpStatus !== BYE) stored.matchUpStatus = TO_BE_PLAYED;
   delete stored.winningSide;
   blankExitCodes(stored);
@@ -391,22 +386,6 @@ function ownLoserTarget({
   if (!inContextMatchUps) return undefined;
   return positionTargets({ matchUpId, inContextDrawMatchUps: inContextMatchUps, drawDefinition }).targetMatchUps
     ?.loserMatchUp?.matchUpId;
-}
-
-/**
- * The BYE claims a matchUp holds, by side. A claim leaves when its claimant withdraws it, never as a side effect of the
- * matchUp it stands on being re-derived (`positionClear`'s rule). Dropped with the dissolved convergence's provenance,
- * the claim a matchUp made on the seat its loser can never fill was lost, and when a correction later gave that loser
- * back nothing could withdraw the BYE (census run 19, COMPASS 16/13 policy-off 20849541: `Southwest|1|1` dp 1, claimed
- * by `West|2|1` while it was won over a produced exit, stood after `East|1|2` was corrected to a played result).
- */
-function byeClaimsOf(provenance?: SideExitProvenance): SideExitProvenance {
-  const claims: SideExitProvenance = {};
-  for (const sideNumber of [1, 2] as const) {
-    const byeClaims = provenance?.[sideNumber]?.byeClaims;
-    if (byeClaims?.length) claims[sideNumber] = { byeClaims: [...byeClaims] };
-  }
-  return claims;
 }
 
 /** a BYE feeding this matchUp holds the kept exit's origin: the exit reached here relayed past it, not down its link */

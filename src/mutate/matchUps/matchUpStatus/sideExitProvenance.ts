@@ -299,8 +299,7 @@ export function withdrawArrivalFrom({ sourceMatchUpId, matchUp }: { sourceMatchU
     const entry = provenance[sideNumber];
     const originOfPosition = arrivedByResult(entry) || entry?.matchUpStatus === BYE;
     if (entry?.sourceMatchUpId !== sourceMatchUpId || !originOfPosition) continue;
-    if (entry.byeClaims?.length) provenance[sideNumber] = { byeClaims: [...entry.byeClaims] };
-    else delete provenance[sideNumber];
+    delete provenance[sideNumber];
   }
   if (!Object.keys(provenance).length) delete matchUp.sideExitProvenance;
 }
@@ -358,27 +357,6 @@ export function refreshArrivalsFrom({
 }
 
 /**
- * Remove a BYE-held matchUp's exits, and keep the BYE CLAIMS recorded beside them.
- *
- * A side's entry can hold both: the exit an origin sent there, and the claim a matchUp whose loser is nobody holds on
- * the BYE that seat now is (`recordByeClaim`). They are separate relations. Withdrawing the exit cleared the whole
- * entry, and the claim went with it: census run 20 policy-off, COMPASS 16/13 (20964176): `West|2|2`'s convergence
- * dissolved to a single exit and claimed the BYE in `Southwest|1|1` for its loser, and withdrawing the produced exit
- * the double exit had sent there erased that claim in the same settle. When a relabel later brought `West|2|2` an
- * opponent, nothing recorded the BYE as `West|2|2`'s, so it stood, and its real loser replaced it a result later.
- */
-function clearExitsKeepingByeClaims(matchUp: MatchUp): void {
-  const claims = ([1, 2] as const)
-    .map((sideNumber) => [sideNumber, matchUp.sideExitProvenance?.[sideNumber]?.byeClaims] as const)
-    .filter(([, byeClaims]) => byeClaims?.length);
-  clearSideExitProvenance(matchUp);
-  if (!claims.length) return;
-  matchUp.sideExitProvenance = Object.fromEntries(
-    claims.map(([sideNumber, byeClaims]) => [sideNumber, { byeClaims: [...(byeClaims ?? [])] }]),
-  );
-}
-
-/**
  * Remove provenance from a matchUp.
  *
  * NOT gated on the write mode. Every site that blanks `matchUpStatusCodes` must also clear this, or
@@ -412,33 +390,6 @@ export function clearSideExitProvenance(matchUp?: MatchUp): void {
   if (codes?.some((code: any) => isProjectedExitCode(code))) {
     matchUp.matchUpStatusCodes = codes.filter((code: any) => !isProjectedExitCode(code));
   }
-}
-
-/**
- * The BYE CLAIM ledger alone, with every exit fact dropped.
- *
- * P41. `applyScoreAndStatus` blanks a matchUp via the `toBePlayed` fixture and rescues provenance only
- * when `isAnyExit(matchUpStatus)`, which excludes BYE — so a BYE target lost its whole record, and what
- * carried the facts through that call was the legacy `matchUpStatusCodes` array, which is not blanked.
- *
- * Rescuing the WHOLE record on a BYE is wrong, and that is measured rather than assumed: it keeps exit
- * provenance a BYE must not hold, and produced `DO_UNDO_IDENTITY` on six FIRST_MATCH_LOSER_CONSOLATION
- * property cells plus a fed round *gaining* an origin in `byeHeldCarryPendingFeeder`.
- *
- * What a BYE legitimately keeps is the CLAIM ledger — the same thing `clearResolvedSideExitProvenance`
- * exempts BYE in order to protect, for the reason recorded there: without it "the BYE claim ledger is
- * wiped by the next placement or score to touch the matchUp, and the unwind is blind again". An entry
- * carrying ONLY `byeClaims` describes a BYE this cascade claims, not an exit, which is the same
- * distinction `projectExitStatusCodes` draws.
- */
-export function retainByeClaimsOnly(provenance?: SideExitProvenance): SideExitProvenance | undefined {
-  if (!provenance) return undefined;
-  const retained: SideExitProvenance = {};
-  for (const sideNumber of [1, 2] as const) {
-    const claims = provenance[sideNumber]?.byeClaims;
-    if (claims?.length) retained[sideNumber] = { byeClaims: [...claims] } as SideExitProvenanceEntry;
-  }
-  return Object.keys(retained).length ? retained : undefined;
 }
 
 /**
@@ -918,7 +869,7 @@ export function rewritesCarriedExit({
  *  - a CARRIED EXIT — `matchUpStatus` is an exit status; the cascade delivered it to this side;
  *  - an ARRIVAL — `matchUpStatus: COMPLETED` or `BYE`; this side's occupant got here by winning or
  *    by advancing through a BYE, recorded because it is a real fact about a convergence;
- *  - a BYE CLAIM LEDGER — `byeClaims` and nothing else; which double exits claim this BYE.
+ *  - (until 2026-10-22) a BYE CLAIM LEDGER — `byeClaims` and nothing else; retired (Mentat P58), ignored if stored.
  *
  * Every reader that asked *"does this matchUp hold a propagated exit"* by testing that the field
  * was non-empty therefore answered yes for all three. Measured 2026-09-29 over 1,440 draws played
@@ -1305,7 +1256,7 @@ function withdrawFromMatchUp(
   // BYE carrying one exit through it, and when that exit's origin became a double exit the withdrawal
   // reverted the BYE to TO_BE_PLAYED, with BYEs on both sides once the double exit's BYE arrived.
   if (holdsBye({ matchUp, structureId, drawDefinition })) {
-    clearExitsKeepingByeClaims(matchUp);
+    clearSideExitProvenance(matchUp);
     matchUp.matchUpStatusCodes = [];
     // and an exit LABEL beside the BYE goes with the exit it described: a BYE is never won. Census w2 9100211
     // (FIRST_MATCH_LOSER_CONSOLATION 32/32, `doubleExitPropagateBye: false`): `Consolation|1|4`'s convergence produced

@@ -30,7 +30,6 @@ import {
   deriveExitStateFromProvenance,
   clearSideExitProvenance,
   withoutWinnersOrigins,
-  retainByeClaimsOnly,
   carriedExitStatus,
   sideRecordOf,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
@@ -942,10 +941,8 @@ function updateMatchUpStatusAfterRemoval({
       : undefined;
   } else if (!matchUpContainsBye && retained) {
     // Undecided, so no origin stands on it either; a winner's origin rides only on a matchUp that is an exit or a
-    // BYE (ORIGIN_ON_UNDECIDED_MATCHUP). `removeDoubleExit`'s withdrawal clears it the same way. The claims stay.
+    // BYE (ORIGIN_ON_UNDECIDED_MATCHUP). `removeDoubleExit`'s withdrawal clears it the same way.
     clearSideExitProvenance(targetMatchUp);
-    const claims = retainByeClaimsOnly(retained);
-    if (claims) targetMatchUp.sideExitProvenance = claims;
   }
   const noChange =
     initialDrawPositions?.includes(drawPosition) &&
@@ -1146,13 +1143,12 @@ function readSidesBefore({ matchUps, drawDefinition, structureId }): SidesBefore
 
 function retainProvenanceBesideRemoval(provenance: any, clearedSideNumber?: number) {
   if (!provenance) return undefined;
-  if (!clearedSideNumber) return retainByeClaimsOnly(provenance);
+  if (!clearedSideNumber) return undefined;
   const retained: any = {};
   for (const sideNumber of [1, 2]) {
     const entry = provenance[sideNumber];
     if (!entry) continue;
     if (sideNumber !== clearedSideNumber) retained[sideNumber] = { ...entry };
-    else if (entry.byeClaims?.length) retained[sideNumber] = { byeClaims: [...entry.byeClaims] };
   }
   return Object.keys(retained).length ? retained : undefined;
 }

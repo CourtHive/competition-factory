@@ -149,7 +149,7 @@ export function removeDoubleExit(params) {
    * THE FMLC "PAIRED ROUND-1 DOUBLE EXIT" TEST THAT STOOD HERE IS GONE. It asked whether the BYE on
    * the loser target had been propagated by two double exits by pairing the source's roundPosition
    * with the ROUND-1 matchUps of its structure — a topological proxy for the question the
-   * `byeClaims` ledger below answers by record. For a round-2 source it collected no matchUps at
+   * draw-derived `byeSeatStands` below answers. For a round-2 source it collected no matchUps at
    * all, and `[].every(...)` is `true`, so it returned SUCCESS having withdrawn nothing.
    *
    * Measured 2026-09-30 by CA in TMX on FIRST_MATCH_LOSER_CONSOLATION 8/5: `Main|2|1` a
@@ -997,9 +997,7 @@ function retainByeOriginsBesideExits(
     const oppositeWithdrawn =
       !!opposite?.sourceMatchUpId && withdrawnSourceIds.has(opposite.sourceMatchUpId) && !!carriedExitStatus(opposite);
     if (!isByeOrigin(kept[sideNumber]) || !oppositeWithdrawn) continue;
-    const claims = kept[sideNumber]?.byeClaims;
-    if (claims?.length) kept[sideNumber] = { byeClaims: [...claims] };
-    else delete kept[sideNumber];
+    delete kept[sideNumber];
   }
   return Object.keys(kept).length ? kept : undefined;
 }
