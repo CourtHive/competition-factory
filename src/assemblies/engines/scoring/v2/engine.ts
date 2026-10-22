@@ -159,16 +159,26 @@ export class ScoringEngineV2 {
     return this.record.matchUpType === 'DOUBLES';
   }
 
-  /** the timeline a rebuild replays: the entries, or a legacy record's points as point entries (§ 12.6 shape 2) */
+  /**
+   * The timeline a rebuild replays: the entries, or those of a record saved without them (§ 12.6 shape 2): its
+   * points as point entries, each substitution placed before the point it preceded, in the order recorded, so
+   * nothing the record holds is lost. One placed past the last point follows it.
+   */
   private timeline(): ScoreEntry[] {
     if (this.entries) return this.entries;
     const points = this.record.history?.points ?? [];
-    return points.map((point, pointIndex) => ({
-      type: 'point',
-      data: replayInput(point),
-      timestamp: point.timestamp ?? nowIso(),
-      pointIndex,
-    }));
+    const substitutions = this.record.history?.substitutions ?? [];
+    const placedBefore = (index: number): ScoreEntry[] =>
+      substitutions
+        .filter((sub) => Math.min(sub.beforePointIndex ?? points.length, points.length) === index)
+        .map((sub) => ({ type: 'substitution', data: sub, timestamp: sub.timestamp ?? nowIso() }));
+    return [
+      ...points.flatMap((point, pointIndex): ScoreEntry[] => [
+        ...placedBefore(pointIndex),
+        { type: 'point', data: replayInput(point), timestamp: point.timestamp ?? nowIso(), pointIndex },
+      ]),
+      ...placedBefore(points.length),
+    ];
   }
 
   /** a fresh score with every entry replayed in order (§ 12.1) */
@@ -238,10 +248,17 @@ export class ScoringEngineV2 {
     });
   }
 
-  /** a legacy point-only record builds its timeline from its points on its first recorded action (§ 12.6) */
+  /** a record saved without a timeline takes it on the first action that changes it (§ 12.6) */
   private ensureTimeline(): void {
     if (this.entries) return;
     this.entries = this.timeline();
+  }
+
+  /** the timeline taken by a correction that writes no score: on the record at once, as the points are */
+  private recordTimeline(): void {
+    this.ensureTimeline();
+    const points = this.record.history?.points ?? [];
+    this.record = { ...this.record, history: { ...this.record.history, points, entries: this.entries } };
   }
 
   /**
@@ -411,12 +428,7 @@ export class ScoringEngineV2 {
     if (n <= 0) return false;
     const undone = timeline.slice(timeline.length - n).reverse();
     this.redoStack.push(...undone.map(({ pointIndex: _p, ...entry }) => entry as ScoreEntry));
-    if (this.entries) this.entries = timeline.slice(0, timeline.length - n);
-    else
-      this.record = {
-        ...this.record,
-        history: { ...this.record.history, points: (this.record.history?.points ?? []).slice(0, -n) },
-      };
+    this.entries = timeline.slice(0, timeline.length - n);
     this.rebuild();
     this.eventHandlers?.onUndo?.(this.eventContext());
     return true;
@@ -442,7 +454,7 @@ export class ScoringEngineV2 {
   }
 
   getUndoDepth(): number {
-    return this.entries ? this.entries.length : (this.record.history?.points.length ?? 0);
+    return this.timeline().length;
   }
 
   getRedoDepth(): number {
@@ -473,11 +485,12 @@ export class ScoringEngineV2 {
   editPoint(pointIndex: number, newData: Partial<AddPointOptions>, options?: { recalculate?: boolean }): void {
     const points = this.record.history?.points ?? [];
     if (pointIndex < 0 || pointIndex >= points.length) return;
+    this.recordTimeline();
     const given = newData as Record<string, unknown>;
     const data = this.corrected(pointIndex, given);
     const entry = this.pointEntry(pointIndex);
     if (entry) entry.data = data;
-    // the point carries both spellings of what was edited; a record without a timeline rebuilds from its points
+    // the point carries both spellings of what was edited
     this.patchPoint(pointIndex, this.spelled({ ...points[pointIndex], ...given } as Point, given));
     if (options?.recalculate === false) {
       this.stale = true;
@@ -507,15 +520,16 @@ export class ScoringEngineV2 {
     const points = this.record.history?.points ?? [];
     if (pointIndex < 0 || pointIndex >= points.length) return;
     const kept = points.filter((_, index) => index !== pointIndex);
-    if (this.entries)
-      this.entries = this.entries
-        .filter((entry) => !(entry.type === 'point' && entry.pointIndex === pointIndex))
-        .map((entry) =>
-          entry.pointIndex !== undefined && entry.pointIndex > pointIndex
-            ? { ...entry, pointIndex: entry.pointIndex - 1 }
-            : entry,
-        );
-    const history = { ...this.record.history, points: kept, ...(this.entries ? { entries: this.entries } : {}) };
+    this.ensureTimeline();
+    const entries = (this.entries as ScoreEntry[])
+      .filter((entry) => !(entry.type === 'point' && entry.pointIndex === pointIndex))
+      .map((entry) =>
+        entry.pointIndex !== undefined && entry.pointIndex > pointIndex
+          ? { ...entry, pointIndex: entry.pointIndex - 1 }
+          : entry,
+      );
+    this.entries = entries;
+    const history = { ...this.record.history, points: kept, entries };
     this.record = { ...this.record, history };
     if (options?.recalculate === false) {
       this.stale = true;
@@ -528,6 +542,7 @@ export class ScoringEngineV2 {
   decoratePoint(pointIndex: number, metadata: Record<string, unknown>): void {
     const points = this.record.history?.points ?? [];
     if (pointIndex < 0 || pointIndex >= points.length) return;
+    this.recordTimeline();
     const entry = this.pointEntry(pointIndex);
     if (entry) entry.data = { ...entry.data, ...recordedInput(metadata) };
     this.patchPoint(pointIndex, metadata);

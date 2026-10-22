@@ -965,16 +965,18 @@ and a fresh v1 must name the next server a fresh v2 names when each loads v2's r
    stored, but the next action, and every view, are taken on the score its timeline rebuilds to (with
    the configuration then loaded; `loadSupplementaryState` prepares it again). That action writes the
    timeline's score and keeps the stored points until the next rebuild.
-2. **A legacy point-only record** (points, no `entries`): loaded as stored. Without a timeline,
-   `undo` pops points (the redo stack holds each point's replay input), `redo` builds the timeline from the
-   points the undo left and re-adds the redone points as entries on it, each linked to its point
-   (CA 2026-10-22), and a correction rebuilds from the points. A point's replay input is every field except the
-   calculated ones of § 1.4, so its stored `scoreValue` (the effective value) and its stored `server`
-   replay as given, and the old result stands (`replayLossless.test.ts`, "a record with no timeline
-   replays its points with their recorded facts"). **The first recorded action on such a record first
-   builds a timeline from its points**, so a later rebuild keeps them ("a new point on a record with no
-   timeline keeps the points before it through a rebuild"). Its rebuild keeps the matchUp's identity,
-   participants and host metadata, like every rebuild (§ 12.1; `aLegacyRebuildKeepsIdentity.test.ts`).
+2. **A legacy point-only record** (points, perhaps a substitution list, no `entries`): loaded as stored.
+   **The first action that changes it, undo, redo and every correction included, first gives it its
+   timeline**: its points as point entries, each substitution placed before the point it preceded
+   (`beforePointIndex`), in the order recorded, one past the last point after it (CA 2026-10-22). From then on
+   it is an entries-based record, so nothing it holds is lost to an undo, a redo or a rebuild, and an undo
+   takes back its last action, a substitution included. A point's replay input is every field except the
+   calculated ones of § 1.4, so its stored `scoreValue` (the effective value), its stored `server` and the
+   players it recorded (`activePlayers`) replay as given, and the old result stands (`replayLossless.test.ts`,
+   "a record with no timeline replays its points with their recorded facts";
+   `aRecordWithoutATimelineLosesNothing.test.ts`). An undo with nothing to take back gives it no timeline. Its
+   rebuild keeps the matchUp's identity, participants and host metadata, like every rebuild (§ 12.1;
+   `aLegacyRebuildKeepsIdentity.test.ts`).
 3. **Points saved under the old tiebreak rotation** (before #5512): loaded as stored; calculated servers
    are re-derived on the next rebuild, supplied ones kept.
 4. **Substitution events without `setNumber`** (before 2026-10-17): placed by the point they preceded.

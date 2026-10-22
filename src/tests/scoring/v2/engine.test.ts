@@ -319,20 +319,20 @@ describe('§ 12.5, § 12.6 persistence', () => {
     expect(engine.getPointMultipliers()).toEqual([{ condition: { results: ['Ace'] }, value: 3 }]);
   });
 
-  it('a record with no timeline: undo pops points, redo re-adds them, a new action builds the timeline', () => {
+  it('a record with no timeline takes it on its first action, an undo included, and goes on from it', () => {
     const source = engineFor('SET3-S:6/TB7');
     play(source, '1121');
     const state = source.getState();
     delete state.history!.entries;
     const engine = engineFor('SET3-S:6/TB7');
     engine.setState(state);
+    expect(engine.getState().history?.entries).toBeUndefined();
     expect(engine.getUndoDepth()).toEqual(4);
     engine.undo();
-    expect(engine.getState().history?.entries).toBeUndefined();
+    expect(engine.getState().history?.entries).toHaveLength(3);
     expect(engine.getState().history?.points).toHaveLength(3);
     engine.editPoint(2, { winner: 0 });
-    expect(engine.getState().history?.entries).toBeUndefined();
-    // a rebuilding correction cleared the redo stack (§ 12.4); a new point is the first recorded action
+    // a rebuilding correction cleared the redo stack (§ 12.4)
     expect(engine.redo()).toEqual(false);
     engine.addPoint({ winner: 0 });
     expect(engine.getState().history?.entries).toHaveLength(4);
