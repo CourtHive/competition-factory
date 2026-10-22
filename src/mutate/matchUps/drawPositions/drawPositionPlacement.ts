@@ -91,7 +91,6 @@ import { CONSOLATION, CONTAINER, MAIN, PLAY_OFF, QUALIFYING, FIRST_MATCHUP } fro
 
 import {
   DRAW_POSITION_ASSIGNED,
-  DRAW_POSITION_NOT_FOUND,
   STRUCTURE_NOT_FOUND,
   INVALID_DRAW_POSITION,
   EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT,
@@ -1230,6 +1229,18 @@ export function directWinner({
   return { ...SUCCESS };
 }
 
+/**
+ * A PLACEMENT ACROSS A LINK THAT FAILS IS LOGGED, NOT RETURNED. It runs mid-cascade, after the call has written the source
+ * matchUp's result, and a refusal from here would leave that write behind (an error must change nothing, with no
+ * rollback by the caller; CA 2026-10-22). Of `assignDrawPosition`'s refusals, the only ones these branches can meet are
+ * the participant already holding a position in the target structure (the seated case is skipped above) and a seeded
+ * participant on a drawPosition the seeding policy does not allow. Measured 2026-10-22: neither is reached over the
+ * suite and the frozen census windows once the seated case is skipped.
+ */
+function unreturnedPlacementError(result?: ResultType) {
+  if (result?.error) pushGlobalLog({ method: 'directWinner', error: result.error });
+}
+
 function directWinnerViaLink({
   winnerMatchUpDrawPositionIndex,
   inContextDrawMatchUps,
@@ -1307,7 +1318,6 @@ function directWinnerViaLink({
     targetMatchUpDrawPosition &&
     targetDrawPositionIsUnfilled
   ) {
-    // AN ERROR IS THE CALL'S RESULT: a placement refused here left the winner unplaced while the call reported success
     const assignResult = assignDrawPosition({
       drawPosition: targetMatchUpDrawPosition,
       participantId: winnerParticipantId,
@@ -1319,7 +1329,7 @@ function directWinnerViaLink({
       matchUpsMap,
       event,
     });
-    if (assignResult.error) return decorateResult({ result: assignResult, stack });
+    unreturnedPlacementError(assignResult);
   } else if (winnerParticipantId && unfilledTargetMatchUpDrawPositions?.length) {
     const drawPosition = unfilledTargetMatchUpDrawPositions.pop();
     const assignResult = drawPosition
@@ -1335,7 +1345,7 @@ function directWinnerViaLink({
           event,
         })
       : undefined;
-    if (assignResult?.error) return decorateResult({ result: assignResult, stack });
+    unreturnedPlacementError(assignResult);
   } else if (winnerExistingDrawPosition) {
     const assignResult = assignMatchUpDrawPosition({
       drawPosition: winnerExistingDrawPosition,
@@ -1350,16 +1360,11 @@ function directWinnerViaLink({
     });
     if (assignResult.error) return decorateResult({ result: assignResult, stack });
   } else if (structure?.stage !== QUALIFYING) {
-    // NOWHERE TO PUT THE WINNER is a refusal, not a log line: it used to be built and dropped, and the call succeeded
-    // with the winner unplaced. Measured unreached over the suite and the frozen census windows (2026-10-22).
-    const info = 'winner target position unavailable';
-    pushGlobalLog({ method: 'directWinner', error: info });
-    return decorateResult({
-      context: { winnerParticipantId, targetStructureId },
-      result: { error: DRAW_POSITION_NOT_FOUND },
-      stack,
-      info,
-    });
+    // NO POSITION FOR THE WINNER. Not returned: the call has already written (the source matchUp's result) before any
+    // direction, and nothing in the cascade restores it, so a refusal here would leave a half-applied call. Reached only
+    // over a target whose every seat is held by others; for a DOUBLE_ELIMINATION Decider `reconcileDeciders` re-seats it
+    // from the final that stands later in the same call. Measured unreached in play (2026-10-22).
+    pushGlobalLog({ method: 'directWinner', error: 'winner target position unavailable' });
   }
 
   if (structure?.seedAssignments && structure.structureId !== targetStructureId) {

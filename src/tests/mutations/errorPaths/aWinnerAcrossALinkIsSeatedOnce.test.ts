@@ -8,26 +8,18 @@ import { afterEach, expect, it, vi } from 'vitest';
 // constants
 import { DOUBLE_WALKOVER, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
-import {
-  EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT,
-  DRAW_POSITION_NOT_FOUND,
-} from '@Constants/errorConditionConstants';
+import { EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT } from '@Constants/errorConditionConstants';
 
 /**
- * A WINNER DIRECTED ACROSS A LINK IS PLACED, OR THE CALL REFUSES — `directWinnerViaLink`.
+ * A WINNER DIRECTED ACROSS A LINK IS SEATED ONCE — `directWinnerViaLink`.
  *
- * It dropped every result but one: the two `assignDrawPosition` placements of the winner into the target structure,
- * and the error it built when there was no position for the winner at all. Each could leave the winner unplaced while
- * the call reported success.
- *
- * ## What the play reaches: one case, and it is benign
- *
- * Measured 2026-10-22 on factory `dev` `01ce40e544`, with a probe on each dropped result, over the full suite and the
- * frozen census windows w1 and w2 (both BYE arms) and de (default and `doubleExitPropagateBye: false`): the placements
- * returned an error twice, both `ERR_EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT`, both a DOUBLE_ELIMINATION Decider
- * whose side-1 seat ALREADY held the winner being directed, seated there earlier in the same call across the same
- * link. The second direction then reached for the other, empty seat, and `assignDrawPosition` refused to seat one
- * participant twice. The stored draw was right, because the refusal stopped the double seat; the error was dropped.
+ * It dropped the results of its two `assignDrawPosition` placements. Measured 2026-10-22 on factory `dev` `01ce40e544`,
+ * with a probe on each dropped result, over the full suite and the frozen census windows w1 and w2 (both BYE arms) and
+ * de (default and `doubleExitPropagateBye: false`): they refused twice, both
+ * `ERR_EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT`, both a DOUBLE_ELIMINATION Decider whose side-1 seat ALREADY held
+ * the winner being directed, seated there earlier in the same call across the same link. The second direction reached
+ * for the other, empty seat, and `assignDrawPosition` refused to seat one participant twice. The stored draw was right;
+ * the attempt was redundant.
  *
  * - census de 9304558, `doubleExitPropagateBye: false`: by the ordinary direction
  *   (`directWinner → assignMatchUpDrawPosition → advanceDrawPosition → advanceIntoWinnerMatchUp → directWinner`),
@@ -35,9 +27,15 @@ import {
  * - census F2 20477784 (`censusF2RefusalRegression20261011`): by a double exit's crossing
  *   (`doubleExitAdvancement → … → directExitWinnerAcrossLink → directWinner`).
  *
- * Such a winner is now recognised as placed and nothing is attempted; any other refusal is the call's result. The
- * "no position" error was never reached; it is pinned by a constructed state, and the placements' propagation by
- * fault injection. Under `rollbackOnError` a refused call changes nothing (CA, 2026-10-18).
+ * A winner already seated in the target matchUp is now left where they are, and nothing is attempted.
+ *
+ * ## Why the other failures are not returned
+ *
+ * A direction runs after the call has written the source matchUp's result, and nothing in the cascade restores it: a
+ * refusal from here would leave that write behind, and an error must change nothing with no rollback by the caller
+ * (CA, 2026-10-22). So a placement that fails, and a winner with no position to take, are logged and not returned. For
+ * the Decider, `reconcileDeciders` seats it from the final that stands later in the same call; the last two cases pin
+ * that, the second by fault injection (no placement failure other than the seated case is reached in play).
  */
 
 const FORCED_ERROR = { code: 'ERR_FORCED', message: 'forced by the test' };
@@ -188,91 +186,22 @@ function deciderHeldBy(drawId: string, record: any, holders: string[]) {
   tournamentEngine.setState(record);
 }
 
-it('the Main final winner is seated in the Decider, and a placement that fails is the call result', () => {
-  let { drawId } = mainFinalToPlay();
-  // CONTROL: unforced, Marie is placed in the Decider by `directWinnerViaLink`
+it('a Decider whose seats are held by others is re-seated from the final, and the call succeeds', () => {
+  const { drawId, record } = mainFinalToPlay();
+  deciderHeldBy(drawId, record, ['Inigo Batty', 'Joe Jovovich']);
+  // `directWinnerViaLink` finds no position for Marie (every seat held, she holds none); it does not refuse after the
+  // result is written, and `reconcileDeciders` seats the Decider from the final that stands, as on `dev`
   let result: any = apply(drawId, 'Main|4|1', { winningSide: 2 });
   expect(result.success).toEqual(true);
-  expect(names(find(drawId, 'Decider|1|1'))).toContain('Marie Ogden');
-
-  ({ drawId } = mainFinalToPlay());
-  watch.force = true;
-  result = apply(drawId, 'Main|4|1', { winningSide: 2 });
-  expect(watch.forced).toEqual(1);
-  expect(result.success).toBeUndefined();
-  expect(result.error).toEqual(FORCED_ERROR);
+  expect(names(find(drawId, 'Decider|1|1'))).toEqual(['Marie Ogden', 'Joe Jovovich']);
 });
 
-it('a winner placed in the Decider seat left open beside a stale holder: a failed placement is the call result', () => {
-  let { drawId, record } = mainFinalToPlay();
-  deciderHeldBy(drawId, record, ['Inigo Batty']);
-  // CONTROL: unforced, the winner takes the open seat; the loser then finds none, and `directLoser` already says so
+it('a placement across the link that fails is not returned as a refusal over the written result', () => {
+  const { drawId } = mainFinalToPlay();
+  watch.force = true;
   let result: any = apply(drawId, 'Main|4|1', { winningSide: 2 });
-  expect(result.error?.code).toEqual('ERR_OCCUPIED_DRAW_POSITION');
-  expect(result.stack[0]).toEqual('directLoser');
-  expect(assignments(drawId, 'Decider').map((assignment) => assignment.participantId)).toContain(
-    find(drawId, 'Main|4|1').sides[1].participantId,
-  );
-
-  ({ drawId, record } = mainFinalToPlay());
-  deciderHeldBy(drawId, record, ['Inigo Batty']);
-  watch.force = true;
-  result = apply(drawId, 'Main|4|1', { winningSide: 2 });
-  expect(watch.forced).toEqual(1);
-  expect(result.error).toEqual(FORCED_ERROR);
-});
-
-/**
- * Every seat of the Decider held, and not by the winner: there is nowhere to place them. On `dev` the error was built
- * and dropped, `directWinner` reported success with the winner unplaced, and only the Decider's own reconciliation,
- * later in the call, put the winner over the stale holder. A direction that cannot place its winner now says so.
- */
-it('a winner with no position to take refuses the call', () => {
-  const { drawId, record } = mainFinalToPlay();
-  deciderHeldBy(drawId, record, ['Inigo Batty', 'Joe Jovovich']);
-  let result: any = apply(drawId, 'Main|4|1', { winningSide: 2 });
-  expect(result.success).toBeUndefined();
-  expect(result.error).toEqual(DRAW_POSITION_NOT_FOUND);
-  expect(result.info).toEqual('winner target position unavailable');
-  expect(result.stack[0]).toEqual('directWinner');
-});
-
-it('under rollbackOnError a refused direction across a link changes nothing', () => {
-  const { drawId, record } = mainFinalToPlay();
-  deciderHeldBy(drawId, record, ['Inigo Batty', 'Joe Jovovich']);
-  const before = recordNow();
-  const matchUpId = find(drawId, 'Main|4|1').matchUpId;
-  let result: any = tournamentEngine.executionQueue(
-    [
-      {
-        method: 'setMatchUpStatus',
-        params: { propagateExitStatus: true, outcome: { winningSide: 2 }, matchUpId, drawId },
-      },
-    ],
-    true,
-  );
-  expect(result.error).toEqual(DRAW_POSITION_NOT_FOUND);
-  expect(recordNow()).toEqual(before);
-
-  // and the same under a forced placement failure
-  const fresh = mainFinalToPlay();
-  const freshBefore = recordNow();
-  watch.force = true;
-  result = tournamentEngine.executionQueue(
-    [
-      {
-        params: {
-          propagateExitStatus: true,
-          outcome: { winningSide: 2 },
-          matchUpId: find(fresh.drawId, 'Main|4|1').matchUpId,
-          drawId: fresh.drawId,
-        },
-        method: 'setMatchUpStatus',
-      },
-    ],
-    true,
-  );
-  expect(watch.forced).toEqual(1);
-  expect(result.error).toEqual(FORCED_ERROR);
-  expect(recordNow()).toEqual(freshBefore);
+  // CONTROL: the winner's placement across the link was made, and failed
+  expect(watch.forced).toBeGreaterThan(0);
+  expect(result.success).toEqual(true);
+  expect(names(find(drawId, 'Decider|1|1'))).toEqual(['Marie Ogden', 'Joe Jovovich']);
 });
