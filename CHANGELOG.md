@@ -1,5 +1,37 @@
 # Changelog
 
+## [7.19.0](https://github.com/CourtHive/competition-factory/compare/v7.18.0...v7.19.0) (2026-10-22)
+
+
+### Features
+
+* **exitPropagation:** a BYE claim's reason is read from its claimant (P58) ([#5649](https://github.com/CourtHive/competition-factory/issues/5649)) ([d9fefc0](https://github.com/CourtHive/competition-factory/commit/d9fefc07f2170fa2069b2882af3665b11ab8d59c))
+* **scoring:** a clean-room v2 reducer and a v1/v2 differential for standard and tiebreak sets ([#5657](https://github.com/CourtHive/competition-factory/issues/5657)) ([cf394a3](https://github.com/CourtHive/competition-factory/commit/cf394a365a3bfff386c22cba28b488fe70598678))
+* **scoring:** the v2 engine shell (SE2c): v2 runs alone, and the differential runs it beside v1 ([#5666](https://github.com/CourtHive/competition-factory/issues/5666)) ([0f2c3a7](https://github.com/CourtHive/competition-factory/commit/0f2c3a702ffae70bfb26b85e7b38aafdd92bf8de))
+* **scoring:** v2 scores every segment kind, derives service and the views (SE2b) ([#5660](https://github.com/CourtHive/competition-factory/issues/5660)) ([3c11790](https://github.com/CourtHive/competition-factory/commit/3c11790c00ac6adba3bcff66d7000d4785993931))
+
+
+### Bug Fixes
+
+* **deps:** update tods-competition-factory to 7.18.0 ([#5654](https://github.com/CourtHive/competition-factory/issues/5654)) ([ef3f302](https://github.com/CourtHive/competition-factory/commit/ef3f302389f54abe3825d2f99e0bb5ad67122525))
+* **exitPropagation:** award a converged exit's onward produced exit on the draw the hop left ([#5667](https://github.com/CourtHive/competition-factory/issues/5667)) ([eb698de](https://github.com/CourtHive/competition-factory/commit/eb698deef0ea570954a9d602f0aba7999be306fc))
+* **mocks:** an existing event's policyDefinitions replace its policies until it has results ([#5662](https://github.com/CourtHive/competition-factory/issues/5662)) ([74714a3](https://github.com/CourtHive/competition-factory/commit/74714a34f4789a975b3aabbe3237f7284cd56815))
+* **mocks:** engine-routed generateTournamentRecord accepts the params the engine adds ([#5655](https://github.com/CourtHive/competition-factory/issues/5655)) ([3d0c50f](https://github.com/CourtHive/competition-factory/commit/3d0c50f621155866d28306944adddaa3ef642599))
+* **policies:** a refused policy refuses generation instead of being dropped ([#5661](https://github.com/CourtHive/competition-factory/issues/5661)) ([be42b5f](https://github.com/CourtHive/competition-factory/commit/be42b5fb4d02a155ed662989b0303dba57d13f31))
+* **scales:** carry a quality-win bonus on its draw's award, with the draw's context ([#5669](https://github.com/CourtHive/competition-factory/issues/5669)) ([90e7442](https://github.com/CourtHive/competition-factory/commit/90e74427c267c783cc63a6469cad2c439837121a))
+* **scoring:** v1 meets CA's rulings on the differential's open questions, and their exemptions go ([#5665](https://github.com/CourtHive/competition-factory/issues/5665)) ([b1d0b7b](https://github.com/CourtHive/competition-factory/commit/b1d0b7bac546d1f07d92ee96e05a3c4d3d20f865))
+
+
+### Performance
+
+* **matchUps:** copy a hydrated side participant once ([#5664](https://github.com/CourtHive/competition-factory/issues/5664)) ([37c2078](https://github.com/CourtHive/competition-factory/commit/37c20785619622521f95fd98d4430deac0e174f4))
+* **query:** getDrawData hydrates only the participants its draw references ([#5656](https://github.com/CourtHive/competition-factory/issues/5656)) ([c9a7d7b](https://github.com/CourtHive/competition-factory/commit/c9a7d7be17d6975bf724aec96ce9a69e96a68c62))
+
+
+### Documentation
+
+* **policies:** how a print policy resolves across tournament, event and draw ([#5663](https://github.com/CourtHive/competition-factory/issues/5663)) ([0ede9b3](https://github.com/CourtHive/competition-factory/commit/0ede9b3a79c6146624b38b5de4d5bd7c39ea2425))
+
 ## [7.18.0](https://github.com/CourtHive/competition-factory/compare/v7.17.0...v7.18.0) (2026-10-21)
 
 
