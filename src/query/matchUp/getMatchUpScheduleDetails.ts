@@ -1,5 +1,5 @@
+import { matchUpFormatTimes, resolveTimingDetails } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
 import { addMinutesToTimeString, extractDate, extractTime, getIsoDateString } from '@Tools/dateTime';
-import { matchUpFormatTimes } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
 import { getCachedVenueData, HydrationCache } from '@Query/matchUps/hydrationCache';
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
@@ -305,10 +305,16 @@ function computeRecoveryTimes({
 
   const eventType = matchUp.matchUpType ?? matchUpType;
   if (scheduleTiming && scheduledTime && afterRecoveryTimes && eventType) {
-    const timingDetails = {
+    // the fallbacks the scheduler reads too (C3): the default policy when none is attached, a timed format's own minutes
+    // `scheduleTiming` is what `getScheduleTiming` returns, whatever the parameter's declared type says
+    const resolvedScheduleTiming = scheduleTiming as unknown as Parameters<
+      typeof resolveTimingDetails
+    >[0]['scheduleTiming'];
+    const timingDetails = resolveTimingDetails({
       matchUpFormat: matchUp.matchUpFormat ?? matchUpFormat,
-      ...scheduleTiming,
-    };
+      categoryType: resolvedScheduleTiming.categoryType,
+      scheduleTiming: resolvedScheduleTiming,
+    });
     ({
       averageMinutes = 0,
       recoveryMinutes = 0,

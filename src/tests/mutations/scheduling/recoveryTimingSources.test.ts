@@ -14,6 +14,8 @@ import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFA
 //   C1 (CA: recovery is calculated): a matchUp already timed on the date holds its participants for its recovery even
 //      when the profile is not scheduling it: a COMPLETED matchUp, or one timed outside the profile.
 //   Q1 (CA: look for a timing in the tournament or the event): scheduleMatchUps, given no minutes, reads them there.
+//   C3 (CA: a default fallback is desirable): with no policy attached, the hydrated `timeAfterRecovery` falls back to
+//      the default policy, as the scheduler's round timing always did.
 
 const venueId = 'venue1';
 const day = '2026-10-01';
@@ -54,8 +56,8 @@ describe('C1: a matchUp already timed holds its participants for its recovery', 
     mocksEngine.generateTournamentRecord({
       venueProfiles: [{ startTime: '08:00', endTime: '20:00', courtsCount: 17, venueId }],
       drawProfiles: [{ drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP_TO_QF }],
-      // no policy attached: the round timing falls back to the default policy, but the hydrated `timeAfterRecovery`
-      // that seeds not-before times does not, so nothing else masks a completed matchUp's missing recovery
+      // no policy attached: the default policy decides the round timing and, since C3, the hydrated timeAfterRecovery that
+      // seeds not-before times, so two mechanisms now hold this; the test timed outside the profile isolates C1's own fix
       startDate: day,
       endDate: day,
       setState: true,
@@ -163,5 +165,32 @@ describe('Q1: scheduleMatchUps reads the timing the tournament states', () => {
     const placed = scheduleBoth();
     expect(placed.length).toEqual(8);
     expect(Math.min(...placed)).toBeLessThan(AVERAGE_PLUS_RECOVERY);
+  });
+});
+
+describe('C3: hydration and the scheduler resolve the same minutes when no policy is attached', () => {
+  it('a timed matchUp hydrates its timeAfterRecovery from the default policy', () => {
+    mocksEngine.generateTournamentRecord({
+      venueProfiles: [{ startTime: '08:00', endTime: '20:00', courtsCount: 8, venueId }],
+      drawProfiles: [{ drawSize: 8 }],
+      startDate: day,
+      endDate: day,
+      setState: true,
+    });
+    const [matchUp] = tournamentEngine.allTournamentMatchUps({ matchUpFilters: { roundNumbers: [1] } }).matchUps;
+    const result: any = tournamentEngine.addMatchUpScheduleItems({
+      schedule: { scheduledDate: day, scheduledTime: '08:00' },
+      matchUpId: matchUp.matchUpId,
+      drawId: matchUp.drawId,
+    });
+    expect(result.success).toEqual(true);
+
+    const hydrated = tournamentEngine
+      .allTournamentMatchUps({ afterRecoveryTimes: true })
+      .matchUps.find((m: any) => m.matchUpId === matchUp.matchUpId);
+    // was undefined: with no policy the hydration found no minutes, while the scheduler read 90 and 60
+    expect(hydrated.schedule.averageMinutes).toEqual(90);
+    expect(hydrated.schedule.recoveryMinutes).toEqual(60);
+    expect(hydrated.schedule.timeAfterRecovery).toEqual('10:30');
   });
 });

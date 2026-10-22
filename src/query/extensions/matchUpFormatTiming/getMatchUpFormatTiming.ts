@@ -45,6 +45,46 @@ export function getMatchUpFormatTiming({
   // event is optional, so eventType can also be passed in directly
   eventType = eventType ?? event?.eventType ?? SINGLES_EVENT;
 
+  const { scheduleTiming } = getScheduleTiming({
+    policyDefinitions,
+    tournamentRecord,
+    categoryName,
+    categoryType,
+    event,
+  });
+
+  const timingDetails = resolveTimingDetails({
+    defaultRecoveryMinutes,
+    defaultAverageMinutes,
+    scheduleTiming,
+    matchUpFormat,
+    categoryType,
+  });
+
+  return matchUpFormatTimes({ eventType, timingDetails, playedMinutes });
+}
+
+type ResolveTimingDetailsArgs = {
+  defaultRecoveryMinutes?: number;
+  defaultAverageMinutes?: number;
+  categoryType?: string;
+  matchUpFormat?: string;
+  scheduleTiming: ReturnType<typeof getScheduleTiming>['scheduleTiming'];
+};
+
+/**
+ * The timing details `matchUpFormatTimes` resolves from: the schedule timing a record states, with the fallbacks every
+ * reader of it must share. Two readers resolving the same matchUp differently is C3 (SCHEDULING_PIPELINE_VNEXT.md § 5):
+ * hydration's `timeAfterRecovery` read the bare schedule timing, so with no policy attached it found no minutes at all,
+ * while the scheduler, through `getMatchUpFormatTiming`, read the default policy's 90 and 60.
+ */
+export function resolveTimingDetails({
+  defaultAverageMinutes = 90,
+  defaultRecoveryMinutes = 0,
+  scheduleTiming,
+  matchUpFormat,
+  categoryType,
+}: ResolveTimingDetailsArgs) {
   // Timed-format default: when matchUpFormat carries explicit durations,
   // derive the default average from the code itself instead of falling back
   // to a flat 90. Whole-match cap (-M:T<n>) wins outright; otherwise the
@@ -55,7 +95,7 @@ export function getMatchUpFormatTiming({
   //   SET3-S:T15-F:T10   → 40 (2 × 15 + 10)
   //   <anything>-M:T60   → 60
   // Explicit policy / event / tournament timings still take precedence.
-  const parsed = parseMatchUpFormat(matchUpFormat);
+  const parsed = matchUpFormat ? parseMatchUpFormat(matchUpFormat) : undefined;
   const timedDefaultMinutes = deriveTimedDefaultMinutes(parsed);
   const effectiveDefaultAverage = timedDefaultMinutes ?? defaultAverageMinutes;
 
@@ -63,14 +103,6 @@ export function getMatchUpFormatTiming({
     averageTimes: [{ minutes: { default: effectiveDefaultAverage } }],
     recoveryTimes: [{ minutes: { default: defaultRecoveryMinutes } }],
   };
-
-  const { scheduleTiming } = getScheduleTiming({
-    policyDefinitions,
-    tournamentRecord,
-    categoryName,
-    categoryType,
-    event,
-  });
 
   // Default-policy fallback: when no scheduling policy is attached we
   // substitute POLICY_SCHEDULING_DEFAULT so per-format averages and
@@ -110,7 +142,7 @@ export function getMatchUpFormatTiming({
     defaultTiming,
   };
 
-  return matchUpFormatTimes({ eventType, timingDetails, playedMinutes });
+  return timingDetails;
 }
 
 function deriveTimedDefaultMinutes(parsed: ReturnType<typeof parseMatchUpFormat>): number | undefined {
