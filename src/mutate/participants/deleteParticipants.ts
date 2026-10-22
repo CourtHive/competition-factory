@@ -88,8 +88,17 @@ export function deleteParticipants(params: DeleteParticipantsArgs): {
     return { error: EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT };
   }
 
+  // Deleting an individual deletes every PAIR containing it, so those PAIRs must hold no drawPosition and
+  // their entries go with them: the refusal and the entries removal both cover the derived PAIR ids.
+  const derivedPairIds = (tournamentRecord.participants ?? [])
+    .filter(
+      (participant) => !participantIds.includes(participant.participantId) && isRemoved(participant, participantIds),
+    )
+    .map(({ participantId }) => participantId);
+  const entryParticipantIds = [...participantIds, ...derivedPairIds];
+
   // Every refusal the writes below could make is asked here, before the first write.
-  const refusal = entriesRemovalRefusal({ tournamentRecord, participantIds });
+  const refusal = entriesRemovalRefusal({ tournamentRecord, participantIds: entryParticipantIds });
   if (refusal) return refusal;
   if (!(tournamentRecord.participants ?? []).some((participant) => isRemoved(participant, participantIds))) {
     return { error: CANNOT_REMOVE_PARTICIPANTS };
@@ -102,10 +111,10 @@ export function deleteParticipants(params: DeleteParticipantsArgs): {
   const prunedGroupings: Participant[] = [];
   const mappedIndividualParticipantIdsToAdd = {};
 
-  // If not active in draws, remove participantIds from all entries
+  // If not active in draws, remove the entries of every participant being deleted, derived PAIRs included
   for (const event of tournamentRecord.events ?? []) {
     const result = removeEventEntries({
-      participantIds,
+      participantIds: entryParticipantIds,
       event,
     });
     if (result.error) return result;
