@@ -9,5 +9,15 @@
         "threshold": "30"
       }
     }
+  },
+  "files.watcherExclude": {
+    "**/.worktrees/**": true,
+    "**/node_modules/**": true,
+    "**/coverage/**": true,
+    "**/dist/**": true
+  },
+  "search.exclude": {
+    "**/.worktrees/**": true,
+    "**/coverage/**": true
   }
 }
