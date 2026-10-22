@@ -211,7 +211,7 @@ describe('what it compares now that v2 has a shell, and the little it does not',
     expect(() => engine.addPoint({ winner: 0 })).toThrow(/record\.annotated true/);
   });
 
-  it('sets aside, and counts, the encodings and the differences awaiting a ruling', () => {
+  it('sets aside, and counts, the encodings; every other difference is compared', () => {
     const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
     engine.setServer(1);
     engine.addPoint({ winner: 0 });
@@ -220,7 +220,7 @@ describe('what it compares now that v2 has a shell, and the little it does not',
     timed.endSegment();
     const tally = getScoringDifferentialTally();
     expect(tally['encoding:server-flip']).toBeGreaterThan(0);
-    expect(tally['pending:entry-set-number']).toBeGreaterThan(0);
+    expect(Object.keys(tally).filter((key) => key.startsWith('pending:'))).toEqual([]);
   });
 
   it('v1 reading the record v2 wrote must name the next server a fresh v2 names', () => {

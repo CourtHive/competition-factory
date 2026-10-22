@@ -293,12 +293,11 @@ const each =
     records.forEach(strip);
 
 const entriesOf = (record: Fields): Fields[] => ((record.history as Fields | undefined)?.entries as Fields[]) ?? [];
-const setsOf = (record: Fields): Fields[] => ((record.score as Fields | undefined)?.sets as Fields[]) ?? [];
 
 /**
- * The differences the record comparison sets aside, in order, until the records agree.
- * `encoding:` the same fact written differently, its effect compared (the servers, the next server, and v1 reading
- * v2's record); `pending:` a difference awaiting a ruling (plan § 9).
+ * The differences the record comparison sets aside, in order, until the records agree: the same fact written
+ * differently, its effect compared (the servers, the next server, and v1 reading v2's record). The five shapes the
+ * record comparison first found are ruled v2's way and compared (CA 2026-10-22, plan § 9).
  */
 const STRIPS: Strip[] = [
   // v1's encoding of the orientation (SE2b-D21): v2 derives it from the timeline and `history.initialServer`
@@ -307,37 +306,6 @@ const STRIPS: Strip[] = [
   {
     key: 'encoding:server-correction',
     strip: each((record) => entriesOf(record).forEach((entry) => delete entry.serverCorrection)),
-  },
-  // v1 writes the set into the caller's data (endSegment, a timed addGame); v2 replays the entry where it stands
-  {
-    key: 'pending:entry-set-number',
-    strip: each((record) => entriesOf(record).forEach((entry) => delete (entry.data as Fields | undefined)?.setNumber)),
-  },
-  // v2 stamps endTime on every completed match (§ 12.7); v1 not on some timed and points-based ones
-  { key: 'pending:end-time', strip: each((record) => delete record.endTime) },
-  // an empty substitution list or history: v1 starts a history on an ignored point, and keeps an emptied list
-  {
-    key: 'pending:empty-history',
-    strip: each((record) => {
-      const history = record.history as Fields | undefined;
-      if (!history) return;
-      for (const list of ['substitutions', 'entries', 'points'])
-        if (!(history[list] as unknown[] | undefined)?.length) delete history[list];
-      if (!Object.keys(history).length) delete record.history;
-    }),
-  },
-  // a point-only record (§ 12.6 shape 2): v2 builds its timeline on any recorded action, undo and redo included
-  {
-    key: 'pending:legacy-timeline',
-    strip: (records) => {
-      const histories = records.map((record) => record.history as Fields | undefined);
-      if (histories.some((history) => !history?.entries)) histories.forEach((history) => delete history?.entries);
-    },
-  },
-  // deprecated, discarded by a rebuild (§ 2.9): v2 writes the record from the reduction on every action
-  {
-    key: 'pending:hard-boundaries',
-    strip: each((record) => setsOf(record).forEach((set) => delete set.hardBoundaries)),
   },
 ];
 

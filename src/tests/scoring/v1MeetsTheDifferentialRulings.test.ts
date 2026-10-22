@@ -358,3 +358,78 @@ describe('v1 reads the record v2 writes: at a cutover, and on a rollback (§ 12.
     expect(loaded.getState().history!.substitutions!.map((event) => event.inParticipantId)).toEqual(['E']);
   });
 });
+
+describe('the record shapes the full-record differential found, v2’s way (CA 2026-10-22)', () => {
+  const history = (engine: ScoringEngine) => engine.getState().history;
+
+  it('an entry holds the caller’s facts only: endSegment writes no setNumber into its data (R2)', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:T10' });
+    engine.addPoint({ winner: 0 });
+    engine.endSegment();
+    expect(history(engine)!.entries!.at(-1)!.data).toEqual({});
+    engine.undo();
+    engine.redo();
+    expect(sets(engine)[0].segmentComplete).toBe(true);
+  });
+
+  it('a completed combined total carries its endTime (§ 1.2)', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET1-S:P4' });
+    play(engine, '1111');
+    expect(engine.getState().matchUpStatus).toEqual('COMPLETED');
+    expect(engine.getState().endTime).toBeDefined();
+    engine.undo();
+    expect(engine.getState().endTime).toBeUndefined();
+  });
+
+  it('an ignored point starts no history, and no timeline on a record without one (§ 12.6)', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
+    engine.addPoint({} as never);
+    expect(history(engine)).toBeUndefined();
+    // a completed match saved without a timeline: the point after it is ignored
+    const legacy = new ScoringEngine({ matchUpFormat: 'SET1-S:TB7' });
+    play(legacy, '1111111');
+    const state = legacy.getState();
+    delete state.history!.entries;
+    const loaded = new ScoringEngine({ matchUpFormat: 'SET1-S:TB7' });
+    loaded.setState(state);
+    expect(loaded.addPoint({ winner: 0 })).toMatchObject({ recorded: false });
+    expect(history(loaded)!.entries).toBeUndefined();
+  });
+
+  it('a record without a timeline starts one on a redo, each point entry linked to its point (§ 12.1, § 12.6)', () => {
+    const source = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
+    play(source, '121');
+    const state = source.getState();
+    delete state.history!.entries;
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
+    engine.setState(state);
+    engine.undo();
+    expect(history(engine)!.entries).toBeUndefined();
+    engine.redo();
+    expect(history(engine)!.entries!.map((entry) => entry.pointIndex)).toEqual([0, 1, 2]);
+  });
+
+  it('a timeline a removal empties is still the record’s timeline', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
+    play(engine, '1');
+    engine.removePoint(0);
+    expect(history(engine)!.entries).toEqual([]);
+  });
+
+  it('the deprecated hardBoundaries do not outlive the next recorded action (§ 2.9)', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
+    play(engine, '1111');
+    engine.markHardBoundary({ setIndex: 0, gameIndex: 0 });
+    expect(sets(engine)[0].hardBoundaries).toEqual([0]);
+    play(engine, '1');
+    expect(sets(engine)[0].hardBoundaries).toBeUndefined();
+  });
+
+  it('a substitution list emptied by an undo is kept, empty', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7', isDoubles: true });
+    engine.setLineUp(1, [{ participantId: 'A' }, { participantId: 'B' }]);
+    engine.substitute({ sideNumber: 1, outParticipantId: 'A', inParticipantId: 'E' });
+    engine.undo();
+    expect(history(engine)!.substitutions).toEqual([]);
+  });
+});
