@@ -866,11 +866,34 @@ const readable = tools.constantToString('SINGLE_ELIMINATION');
 
 ### dehydrateMatchUps
 
-Remove computed attributes from matchUps for storage.
+Return every matchUp in a tournament record to its **stored** shape, in place. Use it on a record assembled from
+query output — `getEventData`, `allTournamentMatchUps({ inContext: true })`, a public API payload — before saving it.
 
 ```js
-const dehydrated = tools.dehydrateMatchUps(matchUps);
+const { success } = tools.dehydrateMatchUps({ tournamentRecord });
+
+// a record assembled from query output that no longer marks its matchUps `hasContext`
+tools.dehydrateMatchUps({ tournamentRecord, hydrated: true });
 ```
+
+Queries **hydrate** matchUps: they copy event, draw and structure context onto each one, resolve each side's
+participant (in a TEAM event, also the side's team), and give a collection matchUp its tie's draw positions and round.
+In a TEAM event that is repeated for every collection matchUp on every side, so a hydrated TEAM record can be several
+times the size of the stored one. Dehydration removes exactly what hydration adds:
+
+- attributes a stored matchUp never has (`eventName`, `drawId`, `structureId`, `stage`, `hasContext`, …) are removed,
+  inside `tieMatchUps` too;
+- a side's `participant` and `teamParticipant` are removed; its `participantId` is removed only where the record can
+  derive it again — from the structure's `positionAssignments`, or from the tie's `lineUp` for a collection matchUp;
+- on a hydrated matchUp, values equal to what it would inherit (`matchUpFormat`, an individual matchUp's
+  `matchUpType`, a tie's `tieFormat`) and derived schedule details (venue and court names, timing estimates) are
+  removed, as are placeholder sides on unplayed matchUps;
+- everything stored is kept — `timeItems`, `notes`, `extensions`, `checkIns`, the stored `schedule`, a stored
+  `roundName`.
+
+It is idempotent, and a record that is already in stored shape is returned unchanged.
+
+`tools.buildFromSources` applies it to every record it builds.
 
 ### visualizeScheduledMatchUps
 

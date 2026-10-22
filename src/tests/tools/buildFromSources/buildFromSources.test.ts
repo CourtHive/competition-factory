@@ -36,23 +36,6 @@ const FIXTURE_DATE = '2026-06-12';
 // ----------------------------------------------------------------- helpers
 type AnyObj = Record<string, any>;
 
-// Walk every structure (including nested `structures`) and return a
-// matchUpId → matchUp map. Two of the schedule round-trip tests need
-// the rebuilt record indexed this way to compare sides hydration
-// against the schedule "truth"; extracting it kills the SonarJS
-// no-identical-functions warning (S4144) without changing test logic.
-function collectRebuiltMatchUps(rebuilt: AnyObj): Map<string, AnyObj> {
-  const byId = new Map<string, AnyObj>();
-  const walk = (structs: AnyObj[] | undefined) => {
-    for (const s of structs ?? []) {
-      for (const m of s.matchUps ?? []) byId.set(m.matchUpId, m);
-      walk(s.structures);
-    }
-  };
-  for (const e of rebuilt.events ?? []) for (const dd of e.drawDefinitions ?? []) walk(dd.structures);
-  return byId;
-}
-
 // Flat list of every matchUp in a rebuilt record, in traversal order. Distinct from
 // collectRebuiltMatchUps above, which keys by matchUpId and therefore dedupes.
 function listRebuiltMatchUps(rebuilt: AnyObj): AnyObj[] {
@@ -65,6 +48,15 @@ function listRebuiltMatchUps(rebuilt: AnyObj): AnyObj[] {
   };
   for (const e of rebuilt.events ?? []) for (const dd of e.drawDefinitions ?? []) walk(dd.structures);
   return matchUps;
+}
+
+// The rebuilt record's matchUps as the engine reads them. The record is stored-shape: a side's participant lives in
+// the structure's positionAssignments, a doubles matchUp inherits its matchUpType from the event. Hydrating it is
+// how a test asks what the record MEANS, and also proves it can be read.
+function hydratedRebuiltMatchUps(rebuilt: AnyObj): Map<string, AnyObj> {
+  tournamentEngine.setState(structuredClone(rebuilt));
+  const { matchUps } = tournamentEngine.allTournamentMatchUps();
+  return new Map(matchUps.map((m: AnyObj) => [m.matchUpId, m]));
 }
 
 // Normalize a matchUp's `sides` to a sorted ["drawPosition:participantId", …]
@@ -377,7 +369,7 @@ describe('round-trip from mocksEngine', () => {
     const truth = new Map<string, AnyObj>();
     for (const m of scheduleResponse.dateMatchUps ?? []) truth.set(m.matchUpId, m);
 
-    const rebuiltById = collectRebuiltMatchUps(rebuilt);
+    const rebuiltById = hydratedRebuiltMatchUps(rebuilt);
 
     let compared = 0;
     for (const [id, truthMatchUp] of truth) {
@@ -526,7 +518,7 @@ describe('round-trip from mocksEngine — doubles', () => {
     });
 
     expect(rebuilt.events?.[0]?.eventType).toBe(DOUBLES_EVENT);
-    const matchUps = listRebuiltMatchUps(rebuilt);
+    const matchUps = [...hydratedRebuiltMatchUps(rebuilt).values()];
     expect(matchUps.length).toBeGreaterThan(0);
     for (const m of matchUps) expect(m.matchUpType).toBe(DOUBLES_MATCHUP);
   });
@@ -577,7 +569,7 @@ describe('round-trip from mocksEngine — doubles', () => {
     const truth = new Map<string, AnyObj>();
     for (const m of scheduleResponse.dateMatchUps ?? []) truth.set(m.matchUpId, m);
 
-    const rebuiltById = collectRebuiltMatchUps(rebuilt);
+    const rebuiltById = hydratedRebuiltMatchUps(rebuilt);
 
     expect(truth.size).toBeGreaterThan(0);
     for (const [id, truthMatchUp] of truth) {
