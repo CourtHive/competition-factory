@@ -5,8 +5,8 @@ import { setSubscriptions } from '@Global/state/globalState';
 import { expect, it } from 'vitest';
 
 // constants
-import { OLYMPIC } from '@Constants/drawDefinitionConstants';
 import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { OLYMPIC } from '@Constants/drawDefinitionConstants';
 
 /**
  * A PENDING EXIT AWAITING AN ARRIVAL CAN STILL DELIVER (census S8 policy-off, MONOTONIC_DECISION, OLYMPIC 32/30:

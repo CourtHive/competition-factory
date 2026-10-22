@@ -2,8 +2,8 @@ import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/prop
 import { arrivedOverLoserLink } from '@Mutate/drawDefinitions/matchUpGovernor/removeDoubleExit';
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { producedStraightInto } from './oweDissolvedConvergencesTheirByes';
 import { applyWithdrawnExits, withdrawByeSeats } from './applyWithdrawnExits';
+import { producedStraightInto } from './oweDissolvedConvergencesTheirByes';
 import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';

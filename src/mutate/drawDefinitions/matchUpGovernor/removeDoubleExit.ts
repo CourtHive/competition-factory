@@ -36,6 +36,10 @@ import {
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
+import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
+import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
+import type { HydratedMatchUp } from '@Types/hydrated';
+import { SUCCESS } from '@Constants/resultConstants';
 import type {
   SideExitProvenanceEntry,
   MatchUpStatusUnion,
@@ -44,10 +48,6 @@ import type {
   DrawLink,
   MatchUp,
 } from '@Types/tournamentTypes';
-import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
-import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
-import type { HydratedMatchUp } from '@Types/hydrated';
-import { SUCCESS } from '@Constants/resultConstants';
 import {
   BYE,
   completedMatchUpStatuses,
