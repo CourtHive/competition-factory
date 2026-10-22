@@ -113,7 +113,7 @@ export function modifyEntriesStatus({
     stage,
   });
 
-  const autoPosition = ({ flight: fl, drawDefinition: dd }) => {
+  const autoPosition = ({ flight: fl, drawDefinition: dd }: { flight?: Flight; drawDefinition?: DrawDefinition }) => {
     if (event) event.entries = refreshEntryPositions({ entries: event.entries ?? [] });
     if (fl) {
       fl.drawEntries = refreshEntryPositions({ entries: fl.drawEntries });
@@ -122,7 +122,13 @@ export function modifyEntriesStatus({
     if (dd) dd.entries = refreshEntryPositions({ entries: dd.entries });
   };
 
-  const updateDrawEntries = ({ flight: fl, drawDefinition: dd }) => {
+  const updateDrawEntries = ({
+    flight: fl,
+    drawDefinition: dd,
+  }: {
+    flight?: Flight;
+    drawDefinition?: DrawDefinition;
+  }) => {
     const innerStack = 'updateDrawEntries';
     if (fl) {
       const result = updateEntryStatus(fl.drawEntries);
