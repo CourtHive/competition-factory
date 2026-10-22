@@ -609,6 +609,10 @@ tournamentEngine.attachPolicies({
 // - Main draw position requirement
 ```
 
+A USTA tournament also attaches `POLICY_PROGRESSION_USTA`, so that a double walkover produces a
+walkover rather than a BYE in the connected structure. See
+[Progression Policy](./progressionPolicy.md#usta-policy_progression_usta).
+
 ### ITF Junior Event
 
 ```js
