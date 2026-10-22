@@ -286,6 +286,25 @@ After the write, and only on success:
   clean-up. A refusal must not repair, as a side effect, what an earlier call left; that repair is the
   next accepted call's to make (2026-10-11: the settle step ran after a refusal and was the refused
   call's only write in 55 of 92 census refusals after a write).
+- **A settle step has no failure to report** (outcome v2 executor plan, Phase C prerequisite 2;
+  CA, 2026-10-22: "The pipeline needs to work without rollback"). Steps 4 and 5 run after the cascade
+  has written, so an error found there could not be refused without leaving those writes behind, and
+  no caller rollback is relied on. A settle step's inner calls must therefore be unable to fail, and
+  where one could, the failure is checked before the call's first write. Today:
+  - `reconcileLinkAdvancements` cannot fail by construction. `releaseLinkedWinnerAdvancement` returns
+    nothing or `releaseAdvancedDrawPosition`'s success and declares no `error`; the pass holds its
+    result in a type that admits none, so a release that one day declares an error does not compile.
+  - `reconcileScoredTimes` cannot fail by construction. Its notice's only error is a missing matchUp,
+    which the pass's guard keeps from reaching it (`settlePassesCannotFail.test.ts`).
+  - `reconcileMissedLinkAdvancements` is **open**. `directWinner` can return an error there: a target
+    matchUp with no free slot (`ERR_EXISTING_POSITION_ASSIGNMENT`), or one from the advance it makes onward.
+    The pass drops it, and it is known only once the cascade has written. Over the suite and the frozen
+    census windows, it was reached 29 times and never failed (2026-10-22). That is not a proof. How a
+    failure there is to change nothing is a question for CA.
+
+  Measured 2026-10-22 over the suite and the frozen census windows w1, w2 and de: the release was reached
+  4 times and the notice 3,922 times, never with an error.
+
 - **A refused call stores none of a draw's missing edges** (CA, 2026-10-18: "no, a refused call does
   not store a draw's missing edges. v1 should no longer do so."). A draw stored without
   `winnerMatchUpId` / `loserMatchUpId` (an older record, a file the factory did not produce) is given

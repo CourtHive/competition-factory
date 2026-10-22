@@ -6,6 +6,9 @@ import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 // types
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 
+/** a release that declares an `error` is not assignable here; see "It cannot fail, by construction" */
+type ReleaseCannotFail = void | { error?: never };
+
 /**
  * Release every participant standing across a round link out of a matchUp that, once the mutation has settled, has
  * no result.
@@ -24,6 +27,15 @@ import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
  *
  * So the question is asked once more, here, against settled state, exactly as `reconcileStaleExitOrigins` asks
  * its own. It reads only the draw, so it is idempotent; the predicate is the one the inconsistency reports.
+ *
+ * ## It cannot fail, by construction
+ *
+ * It runs after the cascade has written, so a failure here could not be refused without leaving those writes behind,
+ * and an error changes nothing (CA, 2026-10-18) with no caller rollback to lean on (CA, 2026-10-22). So the release it
+ * makes has no error to return: `releaseLinkedWinnerAdvancement` returns nothing or `releaseAdvancedDrawPosition`'s
+ * success, and its declared result carries no `error`. `ReleaseCannotFail` holds it there: a release that one day
+ * declares an error stops this file compiling, rather than having it dropped here (outcome v2 executor plan, Phase C
+ * prerequisite 2). Measured 2026-10-22: reached 4 times over the suite, never with an error.
  */
 export function reconcileLinkAdvancements({
   tournamentRecord,
@@ -49,7 +61,7 @@ export function reconcileLinkAdvancements({
 
     const before = unearned.length;
     for (const { link, participantId } of unearned) {
-      releaseLinkedWinnerAdvancement({
+      const released: ReleaseCannotFail = releaseLinkedWinnerAdvancement({
         roundNumber: link.source.roundNumber,
         structureId: link.source.structureId,
         matchUpsMap: resolvedMap,
@@ -59,6 +71,7 @@ export function reconcileLinkAdvancements({
         participantId,
         event,
       });
+      void released;
     }
     const after = getUnearnedLinkAdvancements({
       inContextDrawMatchUps:

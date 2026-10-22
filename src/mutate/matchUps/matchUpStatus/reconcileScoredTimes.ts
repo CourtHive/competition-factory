@@ -32,6 +32,15 @@ export function matchUpIsScored(matchUp?: MatchUp): boolean {
  *
  * Run once, after the cascade has settled, as `reconcileStaleExitOrigins` is: a property of the stored
  * draw rather than a record of what each writer did, so a writer added later is covered too.
+ *
+ * ## It cannot fail, by construction
+ *
+ * It runs after the cascade has written, so a failure here could not be refused without leaving those writes behind,
+ * and an error changes nothing (CA, 2026-10-18) with no caller rollback to lean on (CA, 2026-10-22). Its one inner
+ * call is `modifyMatchUpNotice`, whose only error is a missing matchUp (`MISSING_MATCHUP`): its `matchUp` is required
+ * in the type, and the guard below reads `matchUp?.schedule?.scoredTime` before the notice is reached, so a missing
+ * matchUp never gets there. Nothing is dropped (outcome v2 executor plan, Phase C prerequisite 2). Measured
+ * 2026-10-22: the notice was made 3,922 times over the suite and the frozen census windows, never with an error.
  */
 export function reconcileScoredTimes({
   tournamentRecord,
@@ -45,6 +54,7 @@ export function reconcileScoredTimes({
   event?: Event;
 }): void {
   for (const matchUp of matchUps) {
+    // the guard that keeps the notice below from failing: a missing matchUp never reaches it
     if (!matchUp?.schedule?.scoredTime || matchUpIsScored(matchUp)) continue;
     delete matchUp.schedule.scoredTime;
     modifyMatchUpNotice({
