@@ -1,4 +1,5 @@
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { ScoringEngineV2 } from '@Assemblies/engines/scoring/v2/engine';
 import { describe, expect, it } from 'vitest';
 
 /*
@@ -304,5 +305,56 @@ describe('SE2b-D26: in an aggregate’s decider each side needs the points of th
     ])
       engine.addSet({ side1Score, side2Score });
     expect(viewsAfter(engine, '').pointsToMatch).toEqual([1, 1]);
+  });
+});
+
+describe('a set tiebreak keeps no streak, whatever the game format (§ 1.2, § 4.3)', () => {
+  it('a consecutive-points format marks the run in its games and none in the tiebreak', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:4/TB5-G:3C' });
+    play(engine, '11');
+    expect(sets(engine)[0].currentStreak).toEqual({ side: 0, count: 2 });
+    play(engine, '1' + '222' + '111222'.repeat(3));
+    expect(sets(engine)[0]).toMatchObject({ side1Score: 4, side2Score: 4 });
+    play(engine, '2222');
+    expect(sets(engine)[0].currentStreak).toBeUndefined();
+  });
+});
+
+describe('v1 reads the record v2 writes: at a cutover, and on a rollback (§ 12.5)', () => {
+  const readByV1 = (written: ScoringEngineV2) => {
+    const reader = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
+    reader.setState(written.getState());
+    return reader;
+  };
+
+  it('a match whose initial server is all it holds: v2 writes no serverFlip', () => {
+    const written = new ScoringEngineV2({ matchUpFormat: 'SET3-S:6/TB7' });
+    written.setServer(1, { recordEntry: false });
+    expect(written.getState().serverFlip).toBeUndefined();
+    expect(readByV1(written).getNextServer()).toEqual(1);
+  });
+
+  it('a baseline that names its server: v2 keeps the server in the baseline’s data alone', () => {
+    const written = new ScoringEngineV2({ matchUpFormat: 'SET3-S:6/TB7' });
+    written.setInitialScore({ sets: [{ side1Score: 2, side2Score: 1 }], server: 0 });
+    const reader = readByV1(written);
+    expect(reader.getNextServer()).toEqual(written.getNextServer());
+    reader.addPoint({ winner: 0 });
+    reader.undo();
+    expect(reader.getNextServer()).toEqual(0);
+  });
+
+  it('a loaded substitution list is shown as stored until the next action writes (SE2c-D3)', () => {
+    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7', isDoubles: true });
+    engine.setLineUp(1, [{ participantId: 'A' }, { participantId: 'B' }]);
+    engine.setLineUp(2, [{ participantId: 'C' }, { participantId: 'D' }]);
+    engine.substitute({ sideNumber: 1, outParticipantId: 'A', inParticipantId: 'E' });
+    const state = engine.getState();
+    state.history!.substitutions = [];
+    const loaded = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7', isDoubles: true });
+    loaded.setState(state);
+    expect(loaded.getState().history!.substitutions).toEqual([]);
+    loaded.addPoint({ winner: 0 });
+    expect(loaded.getState().history!.substitutions!.map((event) => event.inParticipantId)).toEqual(['E']);
   });
 });

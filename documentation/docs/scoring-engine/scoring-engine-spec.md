@@ -75,7 +75,8 @@ The state is a CODES matchUp: `matchUpFormat`, `matchUpStatus`, `matchUpType`, t
   `side1TiebreakScore`/`side2TiebreakScore` when a tiebreak was played, `winningSide` when won, the
   per-game point counts `side1GameScores`/`side2GameScores` of the games played point by point, and
   engine marks: `isTiebreakOnly`, `isTimed`, `segmentComplete` (a timed segment closed, with or
-  without a winner) and `currentStreak` (a consecutive-points game in progress).
+  without a winner) and `currentStreak` (a consecutive-points game in progress; never in a set
+  tiebreak, which no consecutive-points rule reaches, § 4.3).
 - `history.points` holds the materialized points (§ 11.1); `history.entries` is the timeline
   (§ 12.1); `history.substitutions` mirrors the substitution entries; `history.initialServer` is the
   match's initial server, when one was named before anything was recorded (§ 2.6).
@@ -930,7 +931,8 @@ rotation").
 - `removePoint(i)` removes the point and its entry, renumbers the later point entries, and rebuilds.
   With `recalculate: false` the score is left as it was until the next rebuild, and it still counts the
   removed point: a point added meanwhile is numbered (`index`, `pointNumber`) as that score counts it,
-  so no index repeats, and the rebuild renumbers them all (CA 2026-10-21, SE2c-D6).
+  so no index repeats, and the rebuild renumbers them all (CA 2026-10-21, SE2c-D6). Its entry's
+  `pointIndex` is still its position in `history.points` (§ 12.1), which a correction finds it by.
 - `decoratePoint(i, metadata)` writes the metadata to the point and its entry without a rebuild; it
   survives every later rebuild.
 - An index out of range is a no-op for all three. A rebuilding correction clears the redo stack.
@@ -943,6 +945,12 @@ and return copies: what crosses the boundary is never the engine's own object (S
 `publicBoundary.test.ts`, "S9: ownership"). `setState` adopts the matchUp's format and identity, clears
 the redo stack, and takes the initial lineUps from the current ones with the substitutions on the
 timeline undone.
+
+Either engine reads the record the other wrote, so a cutover and a rollback load what is stored. The
+two write the same record but for the orientation's encoding: v1 writes `serverFlip` and a baseline's
+`serverCorrection`, v2 neither, and each reads the other's from the timeline, `history.initialServer`
+and a baseline's `server`. The differential holds both: the whole record is compared after every call,
+and a fresh v1 must name the next server a fresh v2 names when each loads v2's record.
 
 ### 12.6 Every persisted shape v2 must read
 

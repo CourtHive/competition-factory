@@ -275,7 +275,138 @@ export function compareEngines(v1Engine: Engine, v2Engine: Engine, method: strin
       v1: `${difference.path} ${difference.v1}`,
       v2: `${difference.path} ${difference.v2}`,
     });
+  compareRecords(v1Engine, method, format, [v1State, v2State]);
+  compareReading(v1Engine, v2Engine, method, v2State);
   count(`compared:${method}`);
+}
+
+/* ------------------------------------------------------------------------------------------------------------ */
+/* the whole record. The projection is what the reducer defines; the record is what a host saves and a consumer  */
+/* reads, so it is compared too, every field but those a clock writes and those named below, each counted.       */
+
+type Strip = { key: string; strip: (records: Fields[]) => void };
+
+/** a strip that sets aside the same field in each record */
+const each =
+  (strip: (record: Fields) => void) =>
+  (records: Fields[]): void =>
+    records.forEach(strip);
+
+const entriesOf = (record: Fields): Fields[] => ((record.history as Fields | undefined)?.entries as Fields[]) ?? [];
+const setsOf = (record: Fields): Fields[] => ((record.score as Fields | undefined)?.sets as Fields[]) ?? [];
+
+/**
+ * The differences the record comparison sets aside, in order, until the records agree.
+ * `encoding:` the same fact written differently, its effect compared (the servers, the next server, and v1 reading
+ * v2's record); `pending:` a difference awaiting a ruling (plan § 9).
+ */
+const STRIPS: Strip[] = [
+  // v1's encoding of the orientation (SE2b-D21): v2 derives it from the timeline and `history.initialServer`
+  { key: 'encoding:server-flip', strip: each((record) => delete record.serverFlip) },
+  // where a correction is attached is each engine's own; the server it names is compared on every point
+  {
+    key: 'encoding:server-correction',
+    strip: each((record) => entriesOf(record).forEach((entry) => delete entry.serverCorrection)),
+  },
+  // v1 writes the set into the caller's data (endSegment, a timed addGame); v2 replays the entry where it stands
+  {
+    key: 'pending:entry-set-number',
+    strip: each((record) => entriesOf(record).forEach((entry) => delete (entry.data as Fields | undefined)?.setNumber)),
+  },
+  // v2 stamps endTime on every completed match (§ 12.7); v1 not on some timed and points-based ones
+  { key: 'pending:end-time', strip: each((record) => delete record.endTime) },
+  // an empty substitution list or history: v1 starts a history on an ignored point, and keeps an emptied list
+  {
+    key: 'pending:empty-history',
+    strip: each((record) => {
+      const history = record.history as Fields | undefined;
+      if (!history) return;
+      for (const list of ['substitutions', 'entries', 'points'])
+        if (!(history[list] as unknown[] | undefined)?.length) delete history[list];
+      if (!Object.keys(history).length) delete record.history;
+    }),
+  },
+  // a point-only record (§ 12.6 shape 2): v2 builds its timeline on any recorded action, undo and redo included
+  {
+    key: 'pending:legacy-timeline',
+    strip: (records) => {
+      const histories = records.map((record) => record.history as Fields | undefined);
+      if (histories.some((history) => !history?.entries)) histories.forEach((history) => delete history?.entries);
+    },
+  },
+  // deprecated, discarded by a rebuild (§ 2.9): v2 writes the record from the reduction on every action
+  {
+    key: 'pending:hard-boundaries',
+    strip: each((record) => setsOf(record).forEach((set) => delete set.hardBoundaries)),
+  },
+];
+
+/** the fields a clock writes: each engine reads its own, a moment apart */
+const CLOCK_FIELDS: ReadonlySet<string> = new Set(['createdAt', 'timestamp']);
+
+/** a JSON copy without the clock's fields; `endTime` is kept as present or absent */
+function unclocked(record: unknown): Fields {
+  // a JSON round trip with a replacer: it is the replacer that drops the clock's fields, as the engines copy too
+  const json = JSON.stringify(record, (key, value: unknown) => {
+    if (CLOCK_FIELDS.has(key)) return undefined;
+    return key === 'endTime' && value !== undefined ? true : value;
+  });
+  return JSON.parse(json);
+}
+
+const reset = new WeakSet<object>();
+
+function compareRecords(v1Engine: Engine, method: string, format: string | undefined, records: [V1State, unknown]) {
+  if (method === 'reset') reset.add(v1Engine);
+  const [mine, theirs] = records.map(unclocked);
+  // each engine names a matchUp it reset afresh
+  if (reset.has(v1Engine)) [mine, theirs].forEach((record) => delete record.matchUpId);
+  if (canonical(mine) === canonical(theirs)) return;
+  // set aside in order until the records agree, each counted where it removed something from records that differed
+  for (const { key, strip } of STRIPS) {
+    const before = canonical(mine) + canonical(theirs);
+    strip([mine, theirs]);
+    if (canonical(mine) + canonical(theirs) !== before) count(key);
+    if (canonical(mine) === canonical(theirs)) return;
+  }
+  const difference = firstDifference(mine, theirs, 'record') as Difference;
+  throw new ScoringEngineDivergence({
+    method,
+    format,
+    v1: `${difference.path} ${difference.v1}`,
+    v2: `${difference.path} ${difference.v2}`,
+  });
+}
+
+/**
+ * v1 reading the record v2 wrote: at a cutover, and on a rollback, records one engine wrote are loaded by the other.
+ * A fresh v1 and a fresh v2 each load it as a host would (`setState`, then `loadSupplementaryState`) and must name
+ * the same next server. Fresh v2 is the oracle, not the writer: a loaded record's timeline is authoritative
+ * (SE2c-D3), so a record a non-recalculating correction left stale reads as its timeline says.
+ */
+function compareReading(v1Engine: Engine, v2Engine: Engine, method: string, record: V1State): void {
+  // an engine without the service queries is compared on its score alone
+  if (!v1Engine.getNextServer) return;
+  const matchUpFormat = v1Engine.getFormat?.() ?? record.matchUpFormat;
+  const V1 = v1Engine.constructor as new (options: ScoringEngineOptions) => Engine;
+  const readers = [new V1({ matchUpFormat }), new ScoringEngineV2({ matchUpFormat }) as unknown as Engine];
+  // the v1 reader is not compared itself: its calls go straight to v1
+  depths.set(readers[0], 1);
+  for (const reader of readers) {
+    reader.setState?.(record);
+    reader.loadSupplementaryState?.(v2Engine.getSupplementaryState());
+  }
+  const [read, written] = readers.map((engine) =>
+    canonical({ side: engine.getNextServer?.(), derived: engine.isServerDerived?.() }),
+  );
+  if (read !== written)
+    throw new ScoringEngineDivergence({
+      method: `${method} (v1 reading v2's record)`,
+      format: v1Engine.getFormat?.(),
+      v1: `next ${read}`,
+      v2: `next ${written}`,
+    });
+  count('compared:v1-reads-v2');
 }
 
 /**

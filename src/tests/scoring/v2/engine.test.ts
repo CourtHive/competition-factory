@@ -269,6 +269,22 @@ describe('§ 12.4 corrections', () => {
     expect(engine.getPointCount()).toEqual(1);
   });
 
+  it('a point added to a record a removal left stale links its entry to its position in the points (§ 12.4)', () => {
+    const engine = engineFor('SET3-S:6/TB7');
+    play(engine, '1122');
+    engine.removePoint(3, { recalculate: false });
+    play(engine, '11');
+    const { entries, points } = engine.getState().history!;
+    expect(entries!.map((entry) => entry.pointIndex)).toEqual([0, 1, 2, 3, 4]);
+    // the score's count numbers the points (SE2c-D6); the entry's link is the position
+    expect(points.map((point) => (point as { index?: number }).index)).toEqual([0, 1, 2, 4, 5]);
+    engine.decoratePoint(3, { shot: 'A' });
+    engine.decoratePoint(4, { shot: 'B' });
+    engine.editPoint(0, { winner: 0 });
+    const shots = engine.getState().history!.points.map((point) => (point as { shot?: string }).shot);
+    expect(shots).toEqual([undefined, undefined, undefined, 'A', 'B']);
+  });
+
   it('markHardBoundary is an annotation, sorted, and the next rebuild discards it', () => {
     const engine = engineFor('SET3-S:6/TB7');
     play(engine, love('1', 3));

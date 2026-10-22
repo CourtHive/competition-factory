@@ -281,8 +281,12 @@ function handleStandardSet(
   const isConsecutive = formatStructure.gameFormat?.type === 'CONSECUTIVE';
   const consecutiveCount = formatStructure.gameFormat?.count || 3;
 
-  // Track streak for CONSECUTIVE games
-  if (isConsecutive) {
+  // Check if in tiebreak: the ACTIVE format's say, deciding set or not — see `setHasTiebreak`
+  const isTiebreak = isStandardSetTiebreak(activeSetFormat, side1Games, side2Games);
+
+  // Track streak for CONSECUTIVE games: a tiebreak is scored point by point whatever the game format, so it keeps
+  // no streak (§ 1.2, § 4.3)
+  if (isConsecutive && !isTiebreak) {
     const streak = currentSet.currentStreak;
     if (streak?.side === winner) {
       currentSet.currentStreak = { side: winner, count: streak.count + 1 };
@@ -290,9 +294,6 @@ function handleStandardSet(
       currentSet.currentStreak = { side: winner, count: 1 };
     }
   }
-
-  // Check if in tiebreak: the ACTIVE format's say, deciding set or not — see `setHasTiebreak`
-  const isTiebreak = isStandardSetTiebreak(activeSetFormat, side1Games, side2Games);
 
   // Check if game is won
   let gameWon: number | undefined;
@@ -796,6 +797,12 @@ export function deriveServer(matchUp: MatchUp, formatStructure: FormatStructure,
   // Under @RALLY a correction names the server of the next point only: the rule resumes after it.
   if (matchUp.serverFlip !== undefined) {
     return matchUp.serverFlip ? ((1 - baseServer) as 0 | 1) : baseServer;
+  }
+  // A record that names its initial server and has no point yet is oriented by it (SE3-E1): v2 writes no
+  // serverFlip, so this is how v1 reads the record v2 writes. Once a point is played, its server says it.
+  const initialServer = matchUp.history?.initialServer;
+  if ((initialServer === 0 || initialServer === 1) && !matchUp.history?.points?.length) {
+    return initialServer === 1 ? ((1 - baseServer) as 0 | 1) : baseServer;
   }
   if (rule !== 'rotation') return baseServer;
 

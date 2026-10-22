@@ -328,7 +328,10 @@ export class ScoringEngine {
   // points removed without recalculating since the last rebuild: the stale score still counts them (§ 12.4)
   private uncountedRemovals = 0;
   // a loaded record's score as stored, which getState shows until the next action writes (§ 12.2, SE2c-D3)
-  private storedScore?: Pick<MatchUp, 'score' | 'matchUpStatus' | 'winningSide' | 'endTime' | 'serverFlip'>;
+  private storedScore?: Pick<MatchUp, 'score' | 'matchUpStatus' | 'winningSide' | 'endTime' | 'serverFlip'> & {
+    /** the record's substitution list as stored: the rebuilt one is written by the next action (SE2c-D3) */
+    substitutions?: NonNullable<MatchUp['history']>['substitutions'];
+  };
   private matchUpFormat!: string; // assigned below, unless the constructor hands back the v2 shell
   private matchUpId?: string;
   private isDoubles!: boolean;
@@ -410,8 +413,9 @@ export class ScoringEngine {
 
   private scoreAsStored(): NonNullable<ScoringEngine['storedScore']> {
     const { score, matchUpStatus, winningSide, endTime, serverFlip } = this.state;
+    const substitutions = this.state.history?.substitutions;
     // eslint-disable-next-line no-restricted-syntax
-    return JSON.parse(JSON.stringify({ score, matchUpStatus, winningSide, endTime, serverFlip }));
+    return JSON.parse(JSON.stringify({ score, matchUpStatus, winningSide, endTime, serverFlip, substitutions }));
   }
 
   /**
@@ -440,8 +444,12 @@ export class ScoringEngine {
       ...rest
     } = this.state;
     const stored = this.storedScore!;
+    const { substitutions: _substitutions, ...history } = rest.history ?? { points: [] };
     return {
       ...rest,
+      ...(rest.history
+        ? { history: { ...history, ...(stored.substitutions ? { substitutions: stored.substitutions } : {}) } }
+        : {}),
       score: stored.score,
       matchUpStatus: stored.matchUpStatus,
       ...(stored.winningSide === undefined ? {} : { winningSide: stored.winningSide }),
@@ -2088,9 +2096,10 @@ export class ScoringEngine {
       else if (verdict.ignored && !pastLevelClose) this.legacyShapes.add(LEGACY_IGNORED_INPUT);
       this.replayEntry(entry, entries, index);
       this.replayLegacyShape(this.state, wasComplete, scoresAfter(entries, index));
-      // a server correction attached to the entry is replayed with it (§ 2.6)
-      if (entry.serverCorrection === 0 || entry.serverCorrection === 1)
-        this.applyServerCorrection(entry.serverCorrection);
+      // a server correction attached to the entry is replayed with it (§ 2.6), as is a baseline's server, which v2
+      // keeps only in the baseline's data
+      const correction = entry.serverCorrection ?? (entry.type === 'setInitialScore' ? entry.data?.server : undefined);
+      if (correction === 0 || correction === 1) this.applyServerCorrection(correction);
     }
   }
 
