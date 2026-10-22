@@ -612,6 +612,13 @@ winner goes on into the Main structure; when the exit that decided the Backdraw 
 withdrawn, they are taken back out of the seat the link gave them too, so the re-derived winner can
 take it (census 20506968, DOUBLE_ELIMINATION 8/6).
 
+When the Backdraw final itself becomes a double exit, the exit it produces into the Main final is awarded to the
+finalist left standing there, on the side they now hold. Taking the Backdraw finalist out leaves the Main finalist
+alone, and a lone position sits on its own bracket side, so the side can change with the release. Before this the
+award was read from the draw as it stood before the release and named the empty side: the Main final read
+`WALKOVER` won by nobody, with its only finalist on the other side, until a later result rewrote it (census F2,
+20506968, DOUBLE_ELIMINATION 8/6 under `doubleExitPropagateBye: false`).
+
 A BYE in the Backdraw final follows the link too. A BYE there carries the other finalist into the
 Main structure, and when it is taken back (a double exit corrected, its loser arriving for the seat)
 the finalist it carried is taken back out of the Main final with it (census run-17 baseline,
