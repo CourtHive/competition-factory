@@ -105,7 +105,16 @@ export function feederSendsNobody({
  * seat belongs to. This is what the `byeClaims` ledger recorded as the matchUp's claims, without depending on the order
  * results were entered.
  */
-export function byeSeatsOwedTo({
+export function byeSeatsOwedTo(args: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  matchUpId: string;
+}): HydratedMatchUp[] {
+  return byeSeatPositionsOwedTo(args).map(({ matchUp }) => matchUp);
+}
+
+/** {@link byeSeatsOwedTo}, with each seat's structure and drawPosition, in the order the seats were found */
+export function byeSeatPositionsOwedTo({
   inContextDrawMatchUps,
   drawDefinition,
   matchUpId,
@@ -113,9 +122,9 @@ export function byeSeatsOwedTo({
   inContextDrawMatchUps: HydratedMatchUp[];
   drawDefinition: DrawDefinition;
   matchUpId: string;
-}): HydratedMatchUp[] {
+}): { matchUp: HydratedMatchUp; structureId: string; drawPosition: number }[] {
   const sources = new Set<string>([matchUpId]);
-  const seats = new Map<string, HydratedMatchUp>();
+  const seats = new Map<string, { matchUp: HydratedMatchUp; structureId: string; drawPosition: number }>();
   const assignmentsOf = new Map<string, PositionAssignment[]>();
   const assignments = (structureId: string) => {
     if (!assignmentsOf.has(structureId))
@@ -140,10 +149,14 @@ export function byeSeatsOwedTo({
           inContextDrawMatchUps,
           drawDefinition,
         })?.targetMatchUps ?? {};
-      if (!loserMatchUp?.structureId || seats.has(loserMatchUp.matchUpId)) continue;
+      if (!loserMatchUp?.structureId || !loserTargetDrawPosition || seats.has(loserMatchUp.matchUpId)) continue;
       const seat = assignments(loserMatchUp.structureId).find((a) => a.drawPosition === loserTargetDrawPosition);
       if (!seat?.bye || !seat.byeFromPropagation) continue;
-      seats.set(loserMatchUp.matchUpId, loserMatchUp);
+      seats.set(loserMatchUp.matchUpId, {
+        structureId: loserMatchUp.structureId,
+        drawPosition: loserTargetDrawPosition,
+        matchUp: loserMatchUp,
+      });
       sources.add(loserMatchUp.matchUpId);
       grown = true;
     }
