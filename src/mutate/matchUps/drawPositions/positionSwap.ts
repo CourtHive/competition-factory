@@ -2,9 +2,9 @@ import { conditionallyDisableLinkPositioning } from '@Mutate/drawDefinitions/pos
 import { addPositionActionTelemetry } from '@Mutate/drawDefinitions/positionGovernor/addPositionActionTelemetry';
 import { modifyDrawNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
-import { removeDrawPositionAssignment } from '@Mutate/drawDefinitions/removeDrawPositionAssignment';
 import { drawPositionAssignmentRefusal } from '@Query/drawDefinition/drawPositionAssignmentRefusal';
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
+import { removeAssignment } from '@Mutate/drawDefinitions/removeDrawPositionAssignment';
 import { assignDrawPosition } from '@Mutate/matchUps/drawPositions/positionAssignment';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { updateSideLineUp } from '@Mutate/matchUps/lineUps/updateSideLineUp';
@@ -12,6 +12,7 @@ import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { resetLineUps } from '@Mutate/matchUps/lineUps/resetLineUps';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { composeDrawMutation } from '@Tools/composeThenWrite';
 import { findStructure } from '@Acquire/findStructure';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
@@ -39,7 +40,18 @@ function isQualifierPlaceholder({ qualifier, participantId }: { qualifier?: bool
   return !!qualifier && !participantId;
 }
 
-export function swapDrawPositionAssignments({ tournamentRecord, drawDefinition, drawPositions, structureId, event }) {
+/**
+ * Swaps the occupants of two drawPositions.
+ *
+ * COMPOSE, THEN WRITE: a swap with a BYE is two removals, a BYE placement and an assignment, and a later step
+ * can refuse after the earlier ones wrote. So it is composed on a working copy first and written only if it
+ * composed (`composeDrawMutation`): every refusal leaves the stored record as it was.
+ */
+export function swapDrawPositionAssignments(params) {
+  return composeDrawMutation(params, swapAssignments);
+}
+
+function swapAssignments({ tournamentRecord, drawDefinition, drawPositions, structureId, event }) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
   if (!structureId) return { error: MISSING_STRUCTURE_ID };
   if (drawPositions?.length !== 2) return { error: INVALID_VALUES, drawPositions };
@@ -224,7 +236,7 @@ function swapParticipantIdWithBYE({
   if (refusal) return refusal;
 
   // remove both drawPosition assignments
-  let result = removeDrawPositionAssignment({
+  let result = removeAssignment({
     drawPosition: originalByeDrawPosition,
     inContextDrawMatchUps,
     tournamentRecord,
@@ -234,7 +246,7 @@ function swapParticipantIdWithBYE({
   });
   if (result.error) return result;
 
-  result = removeDrawPositionAssignment({
+  result = removeAssignment({
     drawPosition: originalParticipantIdDrawPosition,
     inContextDrawMatchUps,
     tournamentRecord,
@@ -244,7 +256,7 @@ function swapParticipantIdWithBYE({
   });
   if (result.error) return result;
 
-  assignDrawPositionBye({
+  result = assignDrawPositionBye({
     drawPosition: originalParticipantIdDrawPosition,
     tournamentRecord,
     drawDefinition,
@@ -252,6 +264,7 @@ function swapParticipantIdWithBYE({
     matchUpsMap,
     event,
   });
+  if (result.error) return result;
 
   // replace the original byeAssignment with participantId
   result = assignDrawPosition({

@@ -1,4 +1,9 @@
 import { randomSource, RandomFunction, withCallRandomSource, withRandomSource } from '@Tools/prng';
+import { disableNotifications, enableNotifications } from '@Global/state/globalState';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
+
+// types
+import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 
 /**
  * COMPOSE ON A WORKING COPY, THEN WRITE — and write only what composed without error.
@@ -35,6 +40,61 @@ export function composeThenWrite<T extends { error?: unknown }>({
 
   const ambientReplay = replaying(ambient.values, ambientSource);
   return withAmbient(ambientReplay, () => write(passed && replaying(passed.values, random as RandomFunction)));
+}
+
+type DrawMutationParams = {
+  tournamentRecord?: Tournament;
+  drawDefinition?: DrawDefinition;
+  event?: Event;
+};
+
+/**
+ * `composeThenWrite` for a draw mutation that takes the engine's resolved `{ tournamentRecord, event,
+ * drawDefinition }`: composed on a working copy of the event (its draws with it) — or of the draw alone when
+ * there is no event — with notifications held, then written to the stored draw.
+ *
+ * The working record is the stored record with only the event replaced: these mutations write to the event
+ * and its draws, and read the rest. A map or hydration the caller built from the stored draw is dropped from
+ * the composition, which builds its own from the copy.
+ */
+export function composeDrawMutation<P extends DrawMutationParams, T extends { error?: unknown }>(
+  params: P,
+  mutate: (params: P) => T,
+): T {
+  const { tournamentRecord, drawDefinition } = params;
+  if (!isStoredDraw({ tournamentRecord, drawDefinition })) return mutate(params);
+  return composeThenWrite({
+    compose: () => {
+      const workingParams = workingCopyParams(params);
+      disableNotifications();
+      try {
+        return mutate(workingParams);
+      } finally {
+        enableNotifications();
+      }
+    },
+    write: () => mutate(params),
+  });
+}
+
+function workingCopyParams<P extends DrawMutationParams>(params: P): P {
+  const { tournamentRecord, drawDefinition, event } = params;
+  const workingEvent = event ? makeDeepCopy(event, false, true) : undefined;
+  const workingDraw =
+    workingEvent?.drawDefinitions?.find((draw) => draw.drawId === drawDefinition?.drawId) ??
+    (drawDefinition && makeDeepCopy(drawDefinition, false, true));
+  const workingRecord = tournamentRecord && {
+    ...tournamentRecord,
+    events: tournamentRecord.events?.map((candidate) => (candidate === event ? workingEvent : candidate)),
+  };
+  return {
+    ...params,
+    inContextDrawMatchUps: undefined,
+    tournamentRecord: workingRecord,
+    drawDefinition: workingDraw,
+    matchUpsMap: undefined,
+    event: workingEvent,
+  };
 }
 
 /**

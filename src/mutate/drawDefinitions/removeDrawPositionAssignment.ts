@@ -12,6 +12,7 @@ import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
 import { destroyPairEntry } from '@Mutate/entries/destroyPairEntry';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { composeDrawMutation } from '@Tools/composeThenWrite';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
@@ -20,7 +21,19 @@ import { ALTERNATE, WITHDRAWN } from '@Constants/entryStatusConstants';
 import { PAIR } from '@Constants/participantConstants';
 import { ResultType } from '@Types/factoryTypes';
 
+/**
+ * Removes the participant (or BYE) at a drawPosition, optionally withdrawing the entry and replacing it with a BYE.
+ *
+ * COMPOSE, THEN WRITE: the removal clears the seat, rewrites entries, places a BYE and carries emptied seats past
+ * BYEs in turn, and the later steps can refuse. So it is composed on a working copy first and written only if it
+ * composed (`composeDrawMutation`): every refusal leaves the stored record as it was.
+ */
 export function removeDrawPositionAssignment(params): ResultType & { participantId?: string } {
+  return composeDrawMutation(params, removeAssignment);
+}
+
+/** The removal itself, against the draw it is given. Not atomic on its own: callers compose first. */
+export function removeAssignment(params): ResultType & { participantId?: string } {
   const {
     tournamentRecord,
     preserveScheduling,
