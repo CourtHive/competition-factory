@@ -292,11 +292,10 @@ establish LEGACY/BRIDGE behavior. A frozen zero describes those fixtures; new se
 
 `DO_UNDO_IDENTITY` compares a projection, and leaves out by ruling what forward play records in some entry orders and
 not others: arrival entries (F4) and the `{ BYE, BYE }` origin pair (F5), the legacy `matchUpStatusCodes` array (F1,
-counted by the `CODES_CONSISTENT` ledger), BYE drawPositions rendered as `BYE` (R10), and, since 2026-10-20, BYE claims
-on a loser seat that a BYE matchUp feeds across a link (CA ruling (b): the claim ledger records who claims a BYE, not
-why it was placed, so such a claim is history-dependent by design; see the concepts page, census Phase B). Each
-omission is policed for truth by `ARRIVAL_TRUE`: an entry or claim that is present must be true, so an omission hides
-only absence, never a falsehood.
+counted by the `CODES_CONSISTENT` ledger), and BYE drawPositions rendered as `BYE` (R10). From 2026-10-20 to
+2026-10-22 it also left out BYE claims on a loser seat a BYE matchUp feeds (CA ruling (b)); the `byeClaims` ledger is
+retired (Mentat P58), so nothing claims a BYE and that exclusion is gone. Each omission is policed for truth by
+`ARRIVAL_TRUE`: an entry that is present must be true, so an omission hides only absence, never a falsehood.
 
 `LOSER_SEAT_DERIVED` holds every replay step to a reading of the draw rather than of the claim ledger (since
 2026-10-21; the ledger is being retired, Mentat P58). For every matchUp with a loser link, `feederSendsNobody` says

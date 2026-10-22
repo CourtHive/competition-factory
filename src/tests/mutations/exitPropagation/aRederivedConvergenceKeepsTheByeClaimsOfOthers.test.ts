@@ -1,6 +1,8 @@
-import { getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
+import { getDrawDefinition, getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
+import { byeSeatsOwedTo, feederSendsNobody } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { prepareDraw, replayFailure as replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
+import { positionTargets } from '@Query/matchUp/positionTargets';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, it } from 'vitest';
 
@@ -18,6 +20,11 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  * re-derivation rewrote the provenance from the kept carrier alone, dropping the claim with everything else. A claim
  * leaves when its claimant withdraws it (`positionClear`), and with it gone nothing could: re-entering `East|1|2` as a
  * played result gave `West|2|1` a real loser again, the BYE stood, and that loser later arrived onto it.
+ *
+ * The `byeClaims` ledger is retired (Mentat P58, CA 2026-10-21): no claim is recorded, so none can be dropped, and the
+ * BYE's reason is read from the draw. After the re-derivation the seat still holds the BYE, `West|2|1` sends nobody
+ * across its loser link (`feederSendsNobody`: `NOBODY_LOST`), and the seat is among those `West|2|1` is the reason for
+ * (`byeSeatsOwedTo`).
  */
 
 type Step = { structureName: string; roundNumber: number; roundPosition: number; outcome: any };
@@ -102,7 +109,18 @@ function play(steps: Step[], drawId: string) {
       },
     ]),
   );
-  return { find, accepted, draw };
+  const derived = (key: string) => {
+    const drawDefinition = getDrawDefinition(drawId);
+    const inContextDrawMatchUps = getDrawMatchUps(drawId);
+    const feeder = inContextDrawMatchUps.find((matchUp: any) => coordinate(matchUp) === key);
+    const loserTargetLink = positionTargets({ matchUpId: feeder.matchUpId, inContextDrawMatchUps, drawDefinition })
+      ?.targetLinks?.loserTargetLink;
+    return {
+      reason: feederSendsNobody({ inContextDrawMatchUps, loserTargetLink, drawDefinition, feeder }),
+      owed: byeSeatsOwedTo({ inContextDrawMatchUps, drawDefinition, matchUpId: feeder.matchUpId }).map(coordinate),
+    };
+  };
+  return { find, accepted, draw, derived };
 }
 
 it('the census schedule un-decides nothing', () => {
@@ -110,13 +128,14 @@ it('the census schedule un-decides nothing', () => {
   expect(replay(CONFIG, SCHEDULE, 'rederived-claims', POLICY_OFF)).toBeNull();
 });
 
-it("the convergence's re-derivation keeps the claim West|2|1 made on the seat beside it", () => {
-  const { find } = play(UP_TO_THE_DOUBLE_WALKOVER, 'rederived-claims-dwo');
+it("after the convergence's re-derivation the seat beside it still holds the BYE West|2|1's loser link owes", () => {
+  const { find, derived } = play(UP_TO_THE_DOUBLE_WALKOVER, 'rederived-claims-dwo');
   const southwest = find('Southwest|1|1');
   expect(southwest.matchUpStatus).toEqual(BYE);
-  const claimant = find('West|2|1').matchUpId;
-  const claims = Object.values(southwest.sideExitProvenance ?? {}).flatMap((entry: any) => entry?.byeClaims ?? []);
-  expect(claims).toContain(claimant);
+  expect(southwest.sides.some((side: any) => side?.bye)).toEqual(true);
+  const { reason, owed } = derived('West|2|1');
+  expect(reason).toEqual('NOBODY_LOST');
+  expect(owed).toContain('Southwest|1|1');
 });
 
 it('the BYE goes when the correction gives West|2|1 a loser again', () => {

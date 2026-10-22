@@ -1,6 +1,8 @@
 import { getDrawDefinition, getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
+import { byeSeatsOwedTo, feederSendsNobody } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
+import { positionTargets } from '@Query/matchUp/positionTargets';
 import { setSubscriptions } from '@Global/state/globalState';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -17,6 +19,11 @@ import { afterEach, describe, expect, it } from 'vitest';
  * winner's seat in `Consolation|3|1` stalled opposite `Consolation|1|2`'s winner.
  *
  * The skip is kept to the BYE it was written for: the matchUp feeding the seat holds a BYE.
+ *
+ * The `byeClaims` ledger is retired (Mentat P58, CA 2026-10-21), so the BYE is no longer held by a recorded claim. What
+ * the claim stood for is read from the draw: the seat holds the BYE, its feeder `Main|2|1` sends nobody across the link
+ * (`feederSendsNobody`: its losing side holds nobody), and `Main|1|1` is the matchUp the BYE is owed to
+ * (`byeSeatsOwedTo`).
  */
 
 const coordinate = (matchUp: any) => `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`;
@@ -58,7 +65,7 @@ afterEach(() => {
   delete process.env.ALLOW_CHANGE_PROPAGATION;
 });
 
-describe('a first-match-loser BYE is claimed by the exit that owes it', () => {
+describe('a first-match-loser BYE stands while the exit that owes it still decides its feeder', () => {
   it.each(ARMS)('arm %s', (_arm, policyDefinitions, allowChangePropagation) => {
     if (allowChangePropagation) process.env.ALLOW_CHANGE_PROPAGATION = '1';
     else delete process.env.ALLOW_CHANGE_PROPAGATION;
@@ -90,12 +97,27 @@ describe('a first-match-loser BYE is claimed by the exit that owes it', () => {
     const consolation = drawDefinition.structures.find((structure: any) => structure.structureName === 'Consolation');
     expect(consolation.positionAssignments.find((assignment: any) => assignment.drawPosition === 1)?.bye).toEqual(true);
 
-    // ...held by the claim of the exit that still owes it
+    // ...owed by the exit that still decides its feeder: Main|2|1 sends nobody, and the BYE is Main|1|1's to answer for
     const seatMatchUp = at('Consolation|2|1');
     expect(seatMatchUp.matchUpStatus).toEqual('BYE');
     expect(seatMatchUp.winningSide).toBeUndefined();
     expect(seatMatchUp.sides[0].bye).toEqual(true);
-    expect(seatMatchUp.sideExitProvenance?.[1]?.byeClaims).toEqual([at('Main|1|1').matchUpId]);
+    expect(seatMatchUp.sideExitProvenance?.[1]).toBeUndefined();
+    const feeder = at('Main|2|1');
+    const loserTargetLink = positionTargets({
+      matchUpId: feeder.matchUpId,
+      inContextDrawMatchUps: matchUps,
+      drawDefinition,
+    })?.targetLinks?.loserTargetLink;
+    expect(feederSendsNobody({ inContextDrawMatchUps: matchUps, loserTargetLink, drawDefinition, feeder })).toEqual(
+      'NOBODY_LOST',
+    );
+    const owed = byeSeatsOwedTo({
+      inContextDrawMatchUps: matchUps,
+      drawDefinition,
+      matchUpId: at('Main|1|1').matchUpId,
+    });
+    expect(owed.map(coordinate)).toContain('Consolation|2|1');
 
     // with the BYE propagated (the default), the BYE's opponent goes on carrying its default and decides the final;
     // under `doubleExitPropagateBye: false` Consolation|1|1 is itself a double default and the final is decided by it

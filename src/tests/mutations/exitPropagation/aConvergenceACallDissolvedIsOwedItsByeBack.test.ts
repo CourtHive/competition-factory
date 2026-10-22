@@ -1,5 +1,7 @@
+import { byeSeatsOwedTo, feederSendsNobody } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
+import { positionTargets } from '@Query/matchUp/positionTargets';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, it } from 'vitest';
 import {
@@ -28,6 +30,11 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  * side, and `South|2|1` and `South|3|1` followed it. The BYE is now owed once the call has settled
  * (`oweDissolvedConvergencesTheirByes`), so a convergence that dissolves and converges again within one call is left
  * alone (`aLoserSeatHoldingAByeIsNotConverged`).
+ *
+ * The scheduled draw once recorded the BYE as `East|1|8`'s claim (`byeClaims`); the ledger is retired (Mentat P58, CA
+ * 2026-10-21), so what the claim stood for is read from the draw: `West|1|4` sends nobody across its loser link
+ * (`feederSendsNobody`: `NOBODY_LOST`), and `South|1|2` is among the seats `East|1|8` is the reason for
+ * (`byeSeatsOwedTo`). The round trip holds that reading too.
  */
 
 type Step = { structureName: string; roundNumber: number; roundPosition: number; outcome: any };
@@ -65,7 +72,22 @@ function enter(drawId: string, step: Step) {
 
 function view(drawId: string) {
   const matchUps = getDrawMatchUps(drawId);
-  const named = new Map(matchUps.map((matchUp: any) => [matchUp.matchUpId, coordinate(matchUp)]));
+  const drawDefinition = getDrawDefinition(drawId);
+  const find = (key: string) => matchUps.find((matchUp: any) => coordinate(matchUp) === key);
+  const feeder = find('West|1|4');
+  const loserTargetLink = positionTargets({
+    matchUpId: feeder.matchUpId,
+    inContextDrawMatchUps: matchUps,
+    drawDefinition,
+  })?.targetLinks?.loserTargetLink;
+  const derived = {
+    reason: feederSendsNobody({ inContextDrawMatchUps: matchUps, loserTargetLink, drawDefinition, feeder }),
+    owed: byeSeatsOwedTo({
+      inContextDrawMatchUps: matchUps,
+      drawDefinition,
+      matchUpId: find('East|1|8').matchUpId,
+    }).map(coordinate),
+  };
   const watched = Object.fromEntries(
     matchUps
       .filter((matchUp: any) => WATCH.includes(coordinate(matchUp)))
@@ -75,17 +97,13 @@ function view(drawId: string) {
           matchUpStatus: matchUp.matchUpStatus,
           winningSide: matchUp.winningSide ?? null,
           drawPositions: matchUp.drawPositions,
-          claims: Object.fromEntries(
-            Object.entries(matchUp.sideExitProvenance ?? {})
-              .filter(([, entry]: any) => entry?.byeClaims?.length)
-              .map(([side, entry]: any) => [side, entry.byeClaims.map((id: string) => named.get(id))]),
-          ),
+          provenance: matchUp.sideExitProvenance ?? null,
         },
       ]),
   );
-  const south = getDrawDefinition(drawId).structures.find((structure: any) => structure.structureName === 'South');
+  const south = drawDefinition.structures.find((structure: any) => structure.structureName === 'South');
   const dp4 = south.positionAssignments.find((assignment: any) => assignment.drawPosition === 4);
-  return { watched, dp4 };
+  return { watched, dp4, derived };
 }
 
 function scheduled(drawId: string) {
@@ -95,11 +113,14 @@ function scheduled(drawId: string) {
   return view(drawId);
 }
 
-it("the scheduled draw holds South dp 4's BYE on East|1|8's claim", () => {
-  const { watched, dp4 } = scheduled('owed-bye-scheduled');
+it("the scheduled draw holds South dp 4's BYE, owed to East|1|8 because West|1|4 has nobody to lose", () => {
+  const { watched, dp4, derived } = scheduled('owed-bye-scheduled');
   expect(dp4).toEqual({ drawPosition: 4, bye: true, byeFromPropagation: true });
   expect(watched['West|1|4']).toMatchObject({ matchUpStatus: WALKOVER, winningSide: 1 });
-  expect(watched['South|1|2']).toMatchObject({ matchUpStatus: BYE, winningSide: null, claims: { '2': ['East|1|8'] } });
+  expect(watched['South|1|2']).toMatchObject({ matchUpStatus: BYE, winningSide: null });
+  expect(watched['South|1|2'].provenance?.['2']).toBeUndefined();
+  expect(derived.reason).toEqual('NOBODY_LOST');
+  expect(derived.owed).toContain('South|1|2');
   expect(watched['South|2|1'].matchUpStatus).toEqual(DOUBLE_WALKOVER);
 });
 
@@ -119,5 +140,6 @@ it("clearing the probe gives the dissolved convergence's loser seat its BYE back
   const after = view('owed-bye-round-trip');
   expect(after.dp4).toEqual(before.dp4);
   expect(after.watched).toEqual(before.watched);
+  expect(after.derived).toEqual(before.derived);
   expect(after.watched['South|3|1'].matchUpStatus).not.toEqual(TO_BE_PLAYED);
 });

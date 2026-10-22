@@ -3,8 +3,8 @@ import { getSideDrawPosition, getWinningSideDrawPosition } from '@Query/matchUps
 import { cameDownLoserLink } from '@Mutate/matchUps/drawPositions/cameDownLoserLink';
 import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
-import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { writeNativeEnabled } from '@Global/state/globalState';
+import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { definedAttributes } from '@Tools/definedAttributes';
 
 // constants and types
@@ -514,105 +514,6 @@ export function clearResolvedSideExitProvenance(matchUp?: MatchUp): void {
 }
 
 /**
- * Record that `claimantMatchUpId`'s double exit claims a BYE on this side.
- *
- * Called on the ATTEMPT, not the placement. `assignDrawPositionBye` returns early when the position
- * already holds a BYE (`currentAssignment?.bye`, and again on `containsBye`), both above the point
- * where it marks the assignment — so a second claimant places nothing and, recorded at placement
- * time, would be invisible. Measured: the disputed BYE has two claimants in every affected draw
- * type, and it is the second one that decides whether the BYE survives a correction of the first.
- */
-export function recordByeClaim({
-  claimantMatchUpId,
-  sideNumber,
-  matchUp,
-}: {
-  claimantMatchUpId?: string;
-  sideNumber?: number;
-  matchUp?: MatchUp;
-}): void {
-  if (!matchUp || !claimantMatchUpId || (sideNumber !== 1 && sideNumber !== 2)) return;
-  if (!writeNativeEnabled()) return;
-
-  const provenance: SideExitProvenance = { ...(matchUp.sideExitProvenance ?? {}) };
-  const entry: SideExitProvenanceEntry = { ...(provenance[sideNumber] ?? {}) };
-  const claims = new Set(entry.byeClaims ?? []);
-  claims.add(claimantMatchUpId);
-  entry.byeClaims = [...claims];
-  provenance[sideNumber] = entry;
-  matchUp.sideExitProvenance = provenance;
-}
-
-/**
- * Withdraw one matchUp's BYE claim, and drop the record entirely when nothing is left.
- *
- * A ledger that is only ever written accumulates claims that describe nothing, and the first thing
- * that notices is an unwind asserting the record is gone. Withdrawal is what makes the claim a
- * memo of a LIVE relation rather than a growing history.
- */
-export function withdrawByeClaim({
-  claimantMatchUpId,
-  sideNumber,
-  matchUp,
-}: {
-  claimantMatchUpId?: string;
-  sideNumber?: number;
-  matchUp?: MatchUp;
-}): void {
-  if (!matchUp || !claimantMatchUpId || (sideNumber !== 1 && sideNumber !== 2)) return;
-  const entry = matchUp.sideExitProvenance?.[sideNumber];
-  if (!entry?.byeClaims?.length) return;
-
-  const remaining = entry.byeClaims.filter((id) => id !== claimantMatchUpId);
-  const provenance: SideExitProvenance = { ...(matchUp.sideExitProvenance ?? {}) };
-  if (remaining.length) {
-    provenance[sideNumber] = { ...entry, byeClaims: remaining };
-  } else {
-    const { byeClaims: _dropped, ...withoutClaims } = entry;
-    // an entry that held ONLY claims goes with them; one that also describes an exit stays
-    if (Object.keys(withoutClaims).length) provenance[sideNumber] = withoutClaims;
-    else delete provenance[sideNumber];
-  }
-
-  if (Object.keys(provenance).length) matchUp.sideExitProvenance = provenance;
-  else delete matchUp.sideExitProvenance;
-}
-
-/**
- * Withdraw this matchUp's BYE claims wherever they were recorded.
- *
- * Claims are keyed by IDENTITY, not by coordinate, and they have to be: the onward-advance path
- * records a claim on a DOWNSTREAM matchUp — a BYE that walks — which the unwind never revisits with
- * the drawPosition it was claimed against. Withdrawing only at the coordinate the unwind happens to
- * hold leaves those behind, and a stale claim reads as a live one.
- *
- * This is the same shape as `withdrawProducedExits`, which withdraws exit provenance by
- * `sourceMatchUpId` for the same reason.
- */
-export function withdrawByeClaimsFrom({
-  claimantMatchUpId,
-  matchUps,
-}: {
-  claimantMatchUpId?: string;
-  matchUps?: MatchUp[];
-}): MatchUp[] {
-  const withdrawn: MatchUp[] = [];
-  if (!claimantMatchUpId) return withdrawn;
-  for (const matchUp of matchUps ?? []) {
-    const provenance = matchUp?.sideExitProvenance;
-    if (!provenance) continue;
-    for (const sideNumber of [1, 2]) {
-      if (provenance[sideNumber]?.byeClaims?.includes(claimantMatchUpId)) {
-        withdrawByeClaim({ matchUp, sideNumber, claimantMatchUpId });
-        if (!withdrawn.includes(matchUp)) withdrawn.push(matchUp);
-      }
-    }
-  }
-  // the matchUps it wrote to, for the caller to announce
-  return withdrawn;
-}
-
-/**
  * What a matchUp's side record holds: its exit provenance and the status codes projected from it. Compared before and
  * after a write that no state write announces, so the caller announces the matchUp only when the write changed it.
  */
@@ -623,44 +524,6 @@ export function sideRecordOf(matchUp?: MatchUp): string {
     matchUp?.sideStatusCodes,
     matchUp?.matchUpStatusCode,
   ]);
-}
-
-/** Why a claimant holds a BYE claim (Mentat P58): read from the claimant as it stands, never stored. */
-export type ByeClaimReason = 'DOUBLE_EXIT_PRODUCED' | 'UNFILLABLE_LOSER' | 'BYE_MATCHUP_LOSER';
-
-export const BYE_CLAIM_REASON = {
-  DOUBLE_EXIT_PRODUCED: 'DOUBLE_EXIT_PRODUCED',
-  UNFILLABLE_LOSER: 'UNFILLABLE_LOSER',
-  BYE_MATCHUP_LOSER: 'BYE_MATCHUP_LOSER',
-} as const satisfies Record<ByeClaimReason, ByeClaimReason>;
-
-/**
- * Why a claimant owes the BYE it claims, read from the claimant as it stands; `undefined` when it owes none.
- *
- * `byeClaims` records WHO claims a BYE on a loser seat. Each of the three writers claims for one reason, and each reason
- * is a fact about the claimant that a later call can change:
- *
- *  - `DOUBLE_EXIT_PRODUCED`: the claimant is a double exit, so its produced exit leaves the seat's feeder nobody to lose
- *    (`doubleExitAdvancement`, `positionClear.keepByeOnItsOriginsAccount`);
- *  - `BYE_MATCHUP_LOSER`: the claimant is a BYE matchUp, whose loser is a BYE (`propagateUnfillableLoserBye`);
- *  - `UNFILLABLE_LOSER`: the claimant is an awarded single exit whose losing side is a carried exit, so it has nobody to
- *    lose (`propagateUnfillableLoserBye`).
- *
- * CA ruled on 2026-10-21 to derive the reason on read rather than store it. A reason written when the claim was made
- * goes stale: measured over the exitPropagation suite's census replays, 4 of 618 final claims were made by an awarded
- * single exit that has since converged into a double exit, and every one of the 618 derived correctly from its
- * claimant. A claimant that derives no reason holds a claim nothing justifies.
- */
-export function byeClaimReason(claimant?: MatchUp): ByeClaimReason | undefined {
-  if (!claimant) return undefined;
-  if (isDoubleExit(claimant.matchUpStatus)) return BYE_CLAIM_REASON.DOUBLE_EXIT_PRODUCED;
-  if (claimant.matchUpStatus === BYE) return BYE_CLAIM_REASON.BYE_MATCHUP_LOSER;
-  if (!claimant.winningSide || !isExit(claimant.matchUpStatus)) return undefined;
-
-  const provenance = getSideExitProvenance({ matchUp: claimant }) ?? {};
-  const exitingSides = ([1, 2] as const).filter((sideNumber) => carriedExitStatus(provenance[sideNumber]));
-  const losesACarriedExit = exitingSides.length === 1 && exitingSides[0] !== claimant.winningSide;
-  return losesACarriedExit ? BYE_CLAIM_REASON.UNFILLABLE_LOSER : undefined;
 }
 
 /**
