@@ -45,5 +45,8 @@ export function addCombinedPoint(
   matchUp.score.sets = [set];
   matchUp.winningSide = analysis.winningSide;
   matchUp.matchUpStatus = analysis.complete ? COMPLETED : IN_PROGRESS;
+  // a completed match carries the time of the input that completed it (§ 1.2, § 12.7)
+  if (analysis.complete) matchUp.endTime ??= point.timestamp;
+  else delete matchUp.endTime;
   return matchUp;
 }

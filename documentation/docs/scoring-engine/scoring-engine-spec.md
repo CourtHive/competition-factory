@@ -895,6 +895,11 @@ players who played it (`aRebuildKeepsActivePlayers.test.ts`). An entry of a type
 is kept in place and not replayed (§ 12.6); a `challenge` or `annotation` is replayed and changes no
 score (§ 2.8).
 
+An entry's `data` is the caller's facts only (R2): the engine adds nothing it can derive, such as the set an
+`endSegment` closes, which the replay finds where the entry stands. Input that records nothing starts no
+history. A record that kept a substitution list keeps one, emptied when nothing is replayed into it, and a
+timeline a removal empties is still the record's timeline (CA 2026-10-22).
+
 ### 12.2 What a point entry holds
 
 Every field the caller supplied, including fields beyond the typed options, and no calculated field
@@ -961,8 +966,9 @@ and a fresh v1 must name the next server a fresh v2 names when each loads v2's r
    the configuration then loaded; `loadSupplementaryState` prepares it again). That action writes the
    timeline's score and keeps the stored points until the next rebuild.
 2. **A legacy point-only record** (points, no `entries`): loaded as stored. Without a timeline,
-   `undo` pops points (the redo stack holds each point's replay input), `redo` re-adds them through the
-   scorer, and a correction rebuilds from the points. A point's replay input is every field except the
+   `undo` pops points (the redo stack holds each point's replay input), `redo` builds the timeline from the
+   points the undo left and re-adds the redone points as entries on it, each linked to its point
+   (CA 2026-10-22), and a correction rebuilds from the points. A point's replay input is every field except the
    calculated ones of § 1.4, so its stored `scoreValue` (the effective value) and its stored `server`
    replay as given, and the old result stands (`replayLossless.test.ts`, "a record with no timeline
    replays its points with their recorded facts"). **The first recorded action on such a record first
@@ -981,7 +987,8 @@ and a fresh v1 must name the next server a fresh v2 names when each loads v2's r
    the history the same way (S10; "the saved configuration is what the history was scored under").
 7. **Host-written `challenge` entries** (epixodic's `{ type: 'challenge', data: { sideNumber } }`): read
    unchanged as `challenge` actions (§ 2.8). Any other foreign entry: kept, not replayed.
-8. **`hardBoundaries`** on a set: read and ignored; a rebuild discards them (§ 2.9).
+8. **`hardBoundaries`** on a set: read and ignored; the next recorded action or rebuild discards them
+   (§ 2.9; CA 2026-10-22).
 
 ### 12.7 Determinism
 

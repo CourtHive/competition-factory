@@ -476,6 +476,7 @@ export class ScoringEngine {
     const valueRefusal = this.pointValueRefusal(options);
     if (valueRefusal) throw new Error(valueRefusal);
     // before the point is scored: a record without a timeline starts one from the points it already has
+    const [hadHistory, hadTimeline] = [!!this.state.history, !!this.state.history?.entries];
     this.ensureHistory();
     const pointIndex = this.state.history?.points.length || 0;
 
@@ -499,8 +500,12 @@ export class ScoringEngine {
     // recorded: no timeline entry (undo would pop it as a phantom), no cleared redo stack, no
     // onPoint, and no activePlayers or penaltyType stamped onto the point before it. A correction to
     // a point already played goes through decoratePoint or editPoint, which a completed match takes.
-    if ((this.state.history?.points.length || 0) === pointIndex)
+    if ((this.state.history?.points.length || 0) === pointIndex) {
+      // and nothing was recorded, so neither a history nor a timeline is started (§ 12.6)
+      if (!hadHistory) delete this.state.history;
+      else if (!hadTimeline) delete this.state.history!.entries;
       return { recorded: false, ignored: this.ignoredPoint(options) };
+    }
 
     // a record a removal left stale numbers the point as its score counts it, until the next rebuild (SE2c-D6)
     if (this.uncountedRemovals) {
@@ -525,7 +530,7 @@ export class ScoringEngine {
     // not one, so a rebuild re-derives it.
     this.state.history!.entries ??= [];
     this.storedScore = undefined;
-    this.state.history!.entries.push({
+    this.appendEntry({
       type: 'point',
       data: recordedPointInput(options),
       timestamp: options.timestamp || nowIso(),
@@ -684,7 +689,7 @@ export class ScoringEngine {
 
     // Record entry in unified timeline
     this.ensureHistory();
-    this.state.history!.entries!.push({
+    this.appendEntry({
       type: 'set',
       data: { ...options, winningSide },
       timestamp: options.timestamp || nowIso(),
@@ -720,7 +725,7 @@ export class ScoringEngine {
 
     // Record entry in unified timeline
     this.ensureHistory();
-    this.state.history!.entries!.push({
+    this.appendEntry({
       type: 'game',
       data: options,
       timestamp: options.timestamp || nowIso(),
@@ -771,10 +776,10 @@ export class ScoringEngine {
 
     // Record entry in unified timeline
     this.ensureHistory();
-    const currentSetIndex = (options?.setNumber ?? this.state.score.sets.length) - 1;
-    this.state.history!.entries!.push({
+    this.appendEntry({
       type: 'endSegment',
-      data: { setNumber: currentSetIndex + 1, ...options },
+      // the caller's facts only (R2): replayed in order, the entry ends the segment in play
+      data: { ...options },
       timestamp: options?.timestamp || nowIso(),
     });
 
@@ -828,7 +833,7 @@ export class ScoringEngine {
       entry.serverCorrection = options.server;
       this.applyServerCorrection(options.server);
     }
-    this.state.history!.entries!.push(entry);
+    this.appendEntry(entry);
     this.redoStack = [];
     this.storedScore = undefined;
     this.notifyLevelClose();
@@ -896,9 +901,18 @@ export class ScoringEngine {
   }
 
   /** A recorded action that changes no score: on the timeline, clearing the redo stack (§ 12.3). */
+  /**
+   * Appends a recorded action to the timeline. The record is written from the score again, so the deprecated
+   * `hardBoundaries` annotation does not outlive it (§ 2.9; CA 2026-10-22, v2's way).
+   */
+  private appendEntry(entry: ScoreEntry): void {
+    this.state.history!.entries!.push(entry);
+    for (const set of this.state.score.sets) delete set.hardBoundaries;
+  }
+
   private recordEntry(entry: ScoreEntry): void {
     this.ensureHistory();
-    this.state.history!.entries!.push(entry);
+    this.appendEntry(entry);
     this.redoStack = [];
     this.storedScore = undefined;
   }
@@ -964,23 +978,17 @@ export class ScoringEngine {
    */
   redo(count: number = 1): boolean {
     if (this.redoStack.length === 0 || count < 1) return false;
-
-    // A record with no timeline was undone point by point: put the points back the same way. Starting
-    // a timeline here would hold only the redone points, and a rebuild from it would drop the rest.
-    if (!this.state.history?.entries) {
-      const toRedo = Math.min(count, this.redoStack.length);
-      for (let i = 0; i < toRedo; i++) {
-        const entry = this.redoStack.pop()!;
-        this.state = addPoint(this.state, entry.data, { pointMultipliers: this.pointMultipliers });
-      }
-      this.eventHandlers?.onRedo?.(this.buildEventContext());
-      return true;
-    }
+    // a record saved without a timeline starts one on a redo, from the points the undo left, as v2 does (§ 12.6)
+    this.ensureHistory();
 
     const toRedo = Math.min(count, this.redoStack.length);
+    const entries = this.state.history!.entries!;
     for (let i = 0; i < toRedo; i++) {
-      // a redone point is re-added during the rebuild
-      this.state.history!.entries!.push(this.redoStack.pop()!);
+      // a redone point is re-added during the rebuild; one undone from a record without a timeline is linked to
+      // its point here (§ 12.1)
+      const entry = this.redoStack.pop()!;
+      if (entry.type === 'point') entry.pointIndex ??= entries.filter((each) => each.type === 'point').length;
+      entries.push(entry);
     }
 
     this.rebuildFromEntries();
@@ -1398,7 +1406,7 @@ export class ScoringEngine {
     };
 
     // Record in unified timeline
-    this.state.history!.entries!.push({
+    this.appendEntry({
       type: 'substitution',
       data: subEvent,
       timestamp: options.timestamp || nowIso(),
@@ -1755,7 +1763,8 @@ export class ScoringEngine {
       return;
     }
 
-    if (entries && entries.length > 0) {
+    // a timeline emptied by the removal is still the record's timeline (§ 12.6)
+    if (entries) {
       this.rebuildFromEntries();
     } else {
       this.rebuildState();
@@ -2023,6 +2032,9 @@ export class ScoringEngine {
     matchUp.score.sets[0].winningSide = analysis.winningSide;
     matchUp.winningSide = analysis.winningSide;
     matchUp.matchUpStatus = analysis.complete ? COMPLETED : IN_PROGRESS;
+    // a completed match carries its endTime (§ 1.2)
+    if (analysis.complete) matchUp.endTime ??= nowIso();
+    else delete matchUp.endTime;
   }
 
   private checkSetCompletion(currentSet: SetScore): void {
@@ -2214,8 +2226,10 @@ export class ScoringEngine {
       else delete side.lineUp;
     }
 
-    const initialServer = this.state.history?.initialServer;
+    const { initialServer, substitutions } = this.state.history ?? {};
     newState.history = { points: [], entries: [...entries], ...(initialServer === undefined ? {} : { initialServer }) };
+    // a record that kept a substitution list keeps one, emptied when no substitution is replayed into it (v2's way)
+    if (substitutions) newState.history.substitutions = [];
 
     return newState;
   }
@@ -2259,8 +2273,10 @@ export class ScoringEngine {
     // Like every rebuild it keeps the identity, participants and host metadata (§ 12.1, § 12.6 item 2).
     // Without a timeline no substitution is replayed, so the lineUps on court now are kept as they are.
     let newState = this.keptIdentity();
-    const initialServer = this.state.history?.initialServer;
+    const { initialServer, substitutions } = this.state.history ?? {};
     newState.history = { points: [], ...(initialServer === undefined ? {} : { initialServer }) };
+    // no substitution is replayed without a timeline: a record that kept a list keeps it, emptied (v2's way)
+    if (substitutions) newState.history.substitutions = [];
     this.state = newState;
     this.startService();
 
