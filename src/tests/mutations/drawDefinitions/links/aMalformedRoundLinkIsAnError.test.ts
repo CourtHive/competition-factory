@@ -146,6 +146,33 @@ it('a malformed link in a structure DOWNSTREAM is refused before the first write
   expect(hash(getDrawDefinition(drawId))).toEqual(before);
 });
 
+it('a links entry that is not a link is refused by setMatchUpStatus before any write, without a throw', () => {
+  // the draw-wide gate (`getMalformedRoundLink`) shares `isMalformedRoundLink` (malformedLinks.ts), which answers true
+  // for an entry that is not an object; it once used `find`, which handed back the `null` itself and read as "none"
+  setSubscriptions({});
+  const {
+    tournamentRecord,
+    drawIds: [drawId],
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION }],
+    setState: false,
+  });
+  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const main = drawDefinition.structures.find((structure) => structure.stage === 'MAIN');
+  const matchUpId = main.matchUps.find((m) => m.roundNumber === 1 && m.roundPosition === 1).matchUpId;
+  drawDefinition.links.push(null);
+  tournamentEngine.setState(tournamentRecord);
+  const before = hash(getDrawDefinition(drawId));
+
+  let result: any;
+  expect(() => {
+    result = tournamentEngine.setMatchUpStatus({ drawId, matchUpId, outcome });
+  }).not.toThrow();
+  expectLinkError(result);
+  expect(result.context).toMatchObject({ linkIndex: 2 });
+  expect(hash(getDrawDefinition(drawId))).toEqual(before);
+});
+
 it('clearing a position in a structure with a malformed link is refused, and rolled back', () => {
   const { drawId, sourceStructureId } = corruptedDraw({ drawType: FIRST_MATCH_LOSER_CONSOLATION, linkType: LOSER });
   const before = hash(getDrawDefinition(drawId));

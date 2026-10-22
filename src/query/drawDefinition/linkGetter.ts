@@ -71,11 +71,6 @@ export function getTargetLink({
   return result;
 }
 
-/** a WINNER or LOSER link with no source round cannot say which round it directs (CA, 2026-10-06: an error) */
-export function isMalformedRoundLink(link: DrawLink): boolean {
-  return [WINNER, LOSER].includes(link.linkType) && !link.source?.roundNumber;
-}
-
 /**
  * THE DRAW'S MALFORMED ROUND LINK, if it has one, as the error `positionTargets` would return on meeting it.
  *
@@ -87,13 +82,17 @@ export function isMalformedRoundLink(link: DrawLink): boolean {
  * error after that point is impossible by construction (CA, 2026-10-22: no mutation relies on rollback).
  */
 export function getMalformedRoundLink(drawDefinition?: DrawDefinition): TargetLinkError | undefined {
-  const link = drawDefinition?.links?.find(isMalformedRoundLink);
-  if (!link) return undefined;
-  const context = { structureId: link.source?.structureId, linkType: link.linkType };
+  // `findIndex`, not `find`: the predicate (malformedLinks.ts) also answers true for an entry that is not an object, and
+  // `find` would hand back that `null` itself, which reads as "none" and lets the draw past the gate
+  const links: unknown[] = Array.isArray(drawDefinition?.links) ? drawDefinition.links : [];
+  const linkIndex = links.findIndex(isMalformedRoundLink);
+  if (linkIndex < 0) return undefined;
+  const link = links[linkIndex] as DrawLink | null | undefined;
+  const context = { structureId: link?.source?.structureId, linkType: link?.linkType, linkIndex };
   return {
     ...decorateResult({
       result: { error: INVALID_VALUES },
-      info: 'a WINNER or LOSER link has no source roundNumber',
+      info: isLinkObject(link) ? 'a WINNER or LOSER link has no source roundNumber' : 'an entry of links is not a link',
       stack: 'getMalformedRoundLink',
       context,
     }),

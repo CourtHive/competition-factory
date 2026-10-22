@@ -1,3 +1,4 @@
+import { isLinkObject } from '@Query/drawDefinition/malformedLinks';
 import { findStructure } from '@Acquire/findStructure';
 import { matchUpsOf } from '@Acquire/structureMembers';
 
@@ -13,7 +14,8 @@ import { DrawDefinition } from '@Types/tournamentTypes';
  * reconciliation all ask the same question here, so a prediction and a refusal can never disagree about it.
  */
 export function getDeciderFeeds(drawDefinition?: DrawDefinition) {
-  const links = drawDefinition?.links ?? [];
+  // an entry that is not a link is never read: refused by the outcome gate, reported as INVALID_LINK
+  const links = (drawDefinition?.links ?? []).filter(isLinkObject);
   return links
     .filter((link) => link.linkType === WINNER)
     .map((winnerLink) => ({

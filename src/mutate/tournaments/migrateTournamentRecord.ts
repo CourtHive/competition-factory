@@ -257,8 +257,9 @@ function migrateVenuesAndCourts(record: Tournament, counts: MigrationCounts, cle
  * been made, and an error returned after them would be an error that left the record changed. Nor is the draw the
  * migration's to repair: a malformed link is the operator's (`repairMalformedLinks`). So the edges are not stored, the
  * draw is unchanged by this step, and the warning names the draw and the error the derivation met, where it used to be
- * swallowed (`storeGoesTo` answered 0, the same as a draw that owed nothing). A link that makes the derivation THROW
- * (an entry that is not an object, a link to an absent structure) is reported the same way rather than ending the run.
+ * swallowed (`storeGoesTo` answered 0, the same as a draw that owed nothing). The draw-wide gate outcomes ask
+ * (`getMalformedRoundLink`) is asked first, so an entry that is not an object is reported too; a link that makes the
+ * derivation THROW (a link to an absent structure) is reported the same way rather than ending the run.
  */
 export const GOES_TO_NOT_STORED = 'GOES_TO_NOT_STORED';
 

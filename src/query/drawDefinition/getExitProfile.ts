@@ -1,3 +1,6 @@
+import { isLinkObject } from '@Query/drawDefinition/malformedLinks';
+
+// constants
 import { INVALID_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { CONSOLATION, PLAY_OFF } from '@Constants/drawDefinitionConstants';
 
@@ -48,7 +51,12 @@ export function getExitProfiles({ drawDefinition }) {
     // initialStructure of CONSOLATION and PLAY_OFF do not need to be captured
     if (!(exitProfile === '0' && [CONSOLATION, PLAY_OFF].includes(stage))) exitProfiles[structureId].push(exitProfile);
     const relevantLinks = links.filter(
-      (link) => link.source.structureId === structureId && link.source.roundNumber >= targetRound, // this doesn't work for ROUND_ROBIN. Will need to use roundProfile to determine final roundNumber.
+      // an entry that is not a link is never followed: the outcome gate refuses it (`getMalformedRoundLink`) and the
+      // integrity scan reports it (INVALID_LINK); a read that met it first used to throw before either was asked
+      (link) =>
+        isLinkObject(link) &&
+        link.source?.structureId === structureId &&
+        (link.source.roundNumber ?? -1) >= targetRound, // this doesn't work for ROUND_ROBIN. Will need to use roundProfile to determine final roundNumber.
     );
 
     for (const link of relevantLinks) {
