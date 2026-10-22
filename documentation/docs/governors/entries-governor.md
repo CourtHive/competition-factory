@@ -38,6 +38,9 @@ Adds `participantIds` to `event.entries`; optionally pass drawId to add particip
 
 Supports optional validation of participant eligibility against event category constraints (age ranges, rating requirements).
 
+A call is all-or-nothing: if any of `participantIds` is refused (wrong participant type, gender, category or role),
+the call returns `INVALID_PARTICIPANT_IDS` and enters **no one**; the record is unchanged. Resubmit without the refused ids.
+
 :::note
 
 Will **_not_** throw an error if unable to add entries into specified `flightProfile.flight[].drawEntries`,

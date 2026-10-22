@@ -17,6 +17,7 @@ import { INDIVIDUAL, PAIR, TEAM_PARTICIPANT } from '@Constants/participantConsta
 import { validStages } from '@Constants/drawDefinitionConstants';
 import { DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import { Flight } from '@Types/factoryTypes';
 import {
   ALTERNATE,
   DRAW_SPECIFIC_STATUSES,
@@ -102,7 +103,7 @@ export function modifyEntriesStatus({
   // and draw) is caught by comparing each entries list, and the event's flight profile, at the end.
   const snapshot = snapshotEntries({ drawDefinition, event });
 
-  const updateEntryStatus = buildUpdateEntryStatus({
+  const { updateEntryStatus, entryStatusBlocked } = buildUpdateEntryStatus({
     assignedParticipantIds,
     ignoreAssignment,
     participantIds,
@@ -136,6 +137,31 @@ export function modifyEntriesStatus({
     return { ...SUCCESS };
   };
 
+  const generatedDrawIds = event?.drawDefinitions?.map(({ drawId: id }) => id) ?? [];
+  const flightsNoDraw = flightProfile?.flights?.filter((f) => !generatedDrawIds.includes(f.drawId)) ?? [];
+
+  const singleDraw =
+    flightProfile?.flights?.length === 1 && (event?.drawDefinitions?.length ?? 0) <= flightProfile?.flights?.length;
+
+  if (!flight && !drawDefinition && entryStatus && DRAW_SPECIFIC_STATUSES.includes(entryStatus)) {
+    return { error: ENTRY_STATUS_NOT_ALLOWED_FOR_EVENT };
+  }
+
+  const updateEventEntries = !!((!flight && !drawDefinition) || entryStatus === WITHDRAWN || (eventSync && singleDraw));
+
+  // Refuse before writing: every entries list this call will touch is checked before any is modified.
+  const targetEntryLists = getTargetEntryLists({
+    updateEventEntries,
+    drawDefinition,
+    flightsNoDraw,
+    flightProfile,
+    entryStatus,
+    flight,
+    event,
+  });
+  if (targetEntryLists.some(entryStatusBlocked))
+    return decorateResult({ result: { error: EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT }, stack });
+
   const entryPositionsExist =
     event?.entries?.find(({ entryPosition }) => entryPosition) ??
     flight?.drawEntries?.find(({ entryPosition }) => entryPosition) ??
@@ -148,23 +174,13 @@ export function modifyEntriesStatus({
     if (result.error) return decorateResult({ result, stack });
   }
 
-  const generatedDrawIds = event?.drawDefinitions?.map(({ drawId: id }) => id) ?? [];
-  const flightsNoDraw = flightProfile?.flights?.filter((f) => !generatedDrawIds.includes(f.drawId)) ?? [];
-
   for (const noDrawFlight of flightsNoDraw) {
     const result = noDrawFlight && updateDrawEntries({ flight: noDrawFlight, drawDefinition: undefined });
     if (result?.error) return decorateResult({ result, stack });
   }
 
-  const singleDraw =
-    flightProfile?.flights?.length === 1 && (event?.drawDefinitions?.length ?? 0) <= flightProfile?.flights?.length;
-
-  if (!flight && !drawDefinition && entryStatus && DRAW_SPECIFIC_STATUSES.includes(entryStatus)) {
-    return { error: ENTRY_STATUS_NOT_ALLOWED_FOR_EVENT };
-  }
-
   let eventEntriesModified = false;
-  if ((!flight && !drawDefinition) || entryStatus === WITHDRAWN || (eventSync && singleDraw)) {
+  if (updateEventEntries) {
     const result = updateEntryStatus(event?.entries);
     if (result?.error) return decorateResult({ result, stack });
     eventEntriesModified = !!event?.entries;
@@ -323,21 +339,25 @@ function buildUpdateEntryStatus({
   extension,
   stage,
 }) {
-  return (entries?) => {
-    const filteredEntries = (entries ?? [])
+  const filterEntries = (entries?) =>
+    (entries ?? [])
       .filter((entry: Entry) => !stage || !entry.entryStage || stage === entry.entryStage)
       .filter(({ participantId }) => participantIds.includes(participantId));
 
-    const isAssigned = (entry) =>
-      entryStatus &&
-      assignedParticipantIds.includes(entry.participantId) &&
-      !(
-        EQUIVALENT_ACCEPTANCE_STATUSES.includes(entry.entryStatus) &&
-        EQUIVALENT_ACCEPTANCE_STATUSES.includes(entryStatus)
-      );
+  const isAssigned = (entry) =>
+    entryStatus &&
+    assignedParticipantIds.includes(entry.participantId) &&
+    !(
+      EQUIVALENT_ACCEPTANCE_STATUSES.includes(entry.entryStatus) && EQUIVALENT_ACCEPTANCE_STATUSES.includes(entryStatus)
+    );
 
-    const success = filteredEntries.every((entry: Entry) => {
-      if (isAssigned(entry) && !ignoreAssignment) return false;
+  // pure: true when any targeted entry in the list is assigned a draw position and may not change
+  const entryStatusBlocked = (entries?) => !ignoreAssignment && filterEntries(entries).some(isAssigned);
+
+  const updateEntryStatus = (entries?) => {
+    if (entryStatusBlocked(entries)) return { error: EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT };
+
+    filterEntries(entries).forEach((entry: Entry) => {
       if (entryStatus) {
         entry.entryStatus = entryStatus;
         delete entry.entryPosition;
@@ -353,11 +373,43 @@ function buildUpdateEntryStatus({
           removeExtension({ element: entry, name: extension.name });
         }
       }
-      return true;
     });
 
-    return success ? { ...SUCCESS } : { error: EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT };
+    return { ...SUCCESS };
   };
+
+  return { updateEntryStatus, entryStatusBlocked };
+}
+
+// every entries list modifyEntriesStatus will pass to updateEntryStatus, in the order it does so
+type GetTargetEntryListsArgs = {
+  flightProfile?: { flights?: Flight[] };
+  drawDefinition?: DrawDefinition;
+  entryStatus?: EntryStatusUnion;
+  updateEventEntries: boolean;
+  flightsNoDraw: Flight[];
+  flight?: Flight;
+  event?: Event;
+};
+function getTargetEntryLists({
+  updateEventEntries,
+  drawDefinition,
+  flightsNoDraw,
+  flightProfile,
+  entryStatus,
+  flight,
+  event,
+}: GetTargetEntryListsArgs): (Entry[] | undefined)[] {
+  const lists: (Entry[] | undefined)[] = [flight?.drawEntries, drawDefinition?.entries];
+  flightsNoDraw.forEach((f) => lists.push(f?.drawEntries));
+  if (updateEventEntries) {
+    lists.push(event?.entries);
+    if (entryStatus === WITHDRAWN) {
+      flightProfile?.flights?.forEach((f) => lists.push(f.drawEntries));
+      event?.drawDefinitions?.forEach((dd) => lists.push(dd.entries));
+    }
+  }
+  return lists;
 }
 
 function withdrawFromAllFlightsAndDraws({ updateEntryStatus, participantIds, flightProfile, event }) {

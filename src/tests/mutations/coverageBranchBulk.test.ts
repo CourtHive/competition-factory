@@ -508,12 +508,11 @@ describe('setStructureOrder branch coverage', () => {
     expect(result.error).toEqual(MISSING_DRAW_DEFINITION);
   });
 
-  it('handles invalid orderMap values', () => {
-    // orderMap with non-integer values triggers decorateResult but function continues
-    const drawDef: any = { drawId: 'd1', structures: [] };
+  it('refuses invalid orderMap values before writing', () => {
+    const drawDef: any = { drawId: 'd1' };
     const result = setStructureOrder({ drawDefinition: drawDef, orderMap: { s1: 'abc' } });
-    // The function has a bug: decorateResult result is not returned, so it continues
-    expect(result.error).toBeUndefined();
+    expect(result.error).toEqual(INVALID_VALUES);
+    expect(drawDef.structures).toBeUndefined();
   });
 
   it('initializes structures when undefined', () => {

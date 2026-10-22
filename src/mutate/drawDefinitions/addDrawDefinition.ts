@@ -66,12 +66,12 @@ export function addDrawDefinition(
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
   if (!event) return { error: MISSING_EVENT };
 
-  event.drawDefinitions ??= [];
+  const eventDrawDefinitions = event.drawDefinitions ?? [];
   const { drawId, drawName, entries: drawEntries } = drawDefinition;
   const { entries: eventEntries } = event;
   let modifiedEventEntryStatusCount = 0;
 
-  if (existingDrawCount !== undefined && existingDrawCount !== event.drawDefinitions.length)
+  if (existingDrawCount !== undefined && existingDrawCount !== eventDrawDefinitions.length)
     return { error: INVALID_VALUES, info: 'drawDefintions count mismatch' };
 
   const { flightProfile } = getFlightProfile({ event });
@@ -81,7 +81,7 @@ export function addDrawDefinition(
   // if there is a source drawId specified, the source draw must exist
   const sourceDrawId = flightProfile?.links?.find((link) => link?.target?.drawId === drawId)?.source?.drawId;
   const sourceDrawIdError =
-    sourceDrawId && !event.drawDefinitions.some((drawDefinition) => drawDefinition.drawId === sourceDrawId);
+    sourceDrawId && !eventDrawDefinitions.some((drawDefinition) => drawDefinition.drawId === sourceDrawId);
 
   if (sourceDrawIdError)
     return decorateResult({
@@ -107,10 +107,6 @@ export function addDrawDefinition(
 
   const { matchingEventEntries } = validationResult;
 
-  if (modifyEventEntries) {
-    modifiedEventEntryStatusCount = applyModifiedEventEntries({ drawEntries, eventEntries });
-  }
-
   if (eventEntries && !matchingEventEntries)
     return decorateResult({
       result: {
@@ -120,14 +116,30 @@ export function addDrawDefinition(
       },
     });
 
+  // Refuse before writing: an existing drawId is only replaced when permitted and unscored.
+  const existingDrawDefinition = eventDrawDefinitions.find((dd) => dd.drawId === drawId);
+  if (existingDrawDefinition) {
+    if (!allowReplacement) return { error: DRAW_ID_EXISTS };
+    // Refuse to overwrite a draw whose matchUps have scores unless explicitly forced (or the
+    // scoring policy permits it) — mirrors deleteDrawDefinitions so a replace can't silently
+    // wipe completed results. The AUDIT snapshot below still fires when the replace proceeds.
+    if (replacementBlockedByScores({ existingDrawDefinition, tournamentRecord, event, force }))
+      return { error: SCORES_PRESENT };
+  }
+
+  event.drawDefinitions ??= [];
+
+  if (modifyEventEntries) {
+    modifiedEventEntryStatusCount = applyModifiedEventEntries({ drawEntries, eventEntries });
+  }
+
   const flightNumbers =
     flightProfile?.flights
       ?.map(({ flightNumber }) => !Number.isNaN(Number(flightNumber)) && ensureInt(flightNumber))
       ?.filter((flightNumber): flightNumber is number => !!flightNumber) ?? [];
 
   const drawOrders =
-    (event.drawDefinitions.map(({ drawOrder }) => drawOrder && ensureInt(drawOrder))?.filter(Boolean) as number[]) ||
-    [];
+    (eventDrawDefinitions.map(({ drawOrder }) => drawOrder && ensureInt(drawOrder))?.filter(Boolean) as number[]) || [];
 
   let drawOrder = Math.max(0, ...drawOrders, ...flightNumbers) + 1;
 
@@ -165,18 +177,8 @@ export function addDrawDefinition(
   setFirstClassOrExtension({ element: event, attribute: 'flightProfile', name: FLIGHT_PROFILE, value });
   Object.assign(drawDefinition, { drawOrder });
 
-  const existingDrawDefinition = event.drawDefinitions.find((dd) => dd.drawId === drawId);
   const tournamentId = tournamentRecord?.tournamentId;
   const eventId: string = event.eventId;
-
-  if (existingDrawDefinition) {
-    if (!allowReplacement) return { error: DRAW_ID_EXISTS };
-    // Refuse to overwrite a draw whose matchUps have scores unless explicitly forced (or the
-    // scoring policy permits it) — mirrors deleteDrawDefinitions so a replace can't silently
-    // wipe completed results. The AUDIT snapshot below still fires when the replace proceeds.
-    if (replacementBlockedByScores({ existingDrawDefinition, tournamentRecord, event, force }))
-      return { error: SCORES_PRESENT };
-  }
 
   // A draw built outside the factory may carry no `winnerMatchUpId` / `loserMatchUpId`. It is stored with the edges
   // the factory would have generated (CA, 2026-10-18), before the notices, so they announce the draw as stored.

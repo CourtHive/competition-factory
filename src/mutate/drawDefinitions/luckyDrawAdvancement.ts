@@ -2,7 +2,6 @@ import { modifyPositionAssignmentsNotice, modifyMatchUpNotice } from '@Mutate/no
 import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { isLucky } from '@Query/drawDefinition/isLucky';
 import { findStructure } from '@Acquire/findStructure';
@@ -15,11 +14,19 @@ import {
 
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION, MISSING_PARTICIPANT_ID } from '@Constants/errorConditionConstants';
-import { DrawDefinition, Event, MatchUp, PositionAssignment, Structure, Tournament } from '@Types/tournamentTypes';
 import { LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
+import {
+  DrawDefinition,
+  DrawLink,
+  Event,
+  MatchUp,
+  PositionAssignment,
+  Structure,
+  Tournament,
+} from '@Types/tournamentTypes';
 
 type LuckyDrawAdvancementArgs = {
   tournamentRecord?: Tournament;
@@ -150,10 +157,23 @@ export function luckyDrawAdvancement({
     structure,
     roundNumber,
   });
-  structure.positionAssignments = positionAssignments;
 
-  const prepError = prepareNextRoundMatchUps({ nextRoundMatchUps, positionAssignments });
-  if (prepError) return prepError;
+  // Refuse before writing: every next-round matchUp is checked before any assignment or matchUp is touched.
+  const assignedError = checkNextRoundUnassigned({ nextRoundMatchUps, positionAssignments });
+  if (assignedError) return assignedError;
+
+  // Refuse before writing: every LOSER link that will receive discarded losers must reach an existing structure.
+  const discarded = resolveDiscardedLoserTargets({
+    drawDefinition,
+    roundStatus,
+    luckyLoserIds,
+    structureId,
+    roundNumber,
+  });
+  if (discarded.error) return discarded.error;
+
+  structure.positionAssignments = positionAssignments;
+  prepareNextRoundMatchUps({ nextRoundMatchUps });
 
   const tournamentId = tournamentRecord?.tournamentId;
 
@@ -178,14 +198,15 @@ export function luckyDrawAdvancement({
     event,
   });
 
-  if (roundStatus.isPreFeedRound && luckyLoserIds.length) {
-    handleDiscardedLosers({
-      drawDefinition,
+  for (const { link, targetStructure } of discarded.targets) {
+    placeDiscardedLosers({
+      targetStructureId: link.target.structureId,
+      targetRoundNumber: link.target.roundNumber,
+      participantIds: discarded.participantIds,
+      feedProfile: link.target.feedProfile,
       tournamentRecord,
-      roundStatus,
-      luckyLoserIds,
-      structureId,
-      roundNumber,
+      targetStructure,
+      drawDefinition,
       event,
     });
   }
@@ -202,6 +223,7 @@ function placeDiscardedLosers({
   tournamentRecord,
   targetStructureId,
   targetRoundNumber,
+  targetStructure,
   feedProfile,
   participantIds,
   event,
@@ -210,19 +232,15 @@ function placeDiscardedLosers({
   tournamentRecord?: Tournament;
   targetStructureId: string;
   targetRoundNumber: number;
+  targetStructure: Structure;
   feedProfile?: string;
   participantIds: string[];
   event?: Event;
-}): ResultType | undefined {
-  const { structure: targetStructure } = findStructure({ drawDefinition, structureId: targetStructureId });
-  if (!targetStructure) return { error: INVALID_VALUES };
-
+}): void {
   // AD_HOC target structures (finishingPosition=WIN_RATIO) don't use matchUps
   // or position assignments. Participants are already in drawDefinition.entries
   // and available for ad-hoc round generation.
-  if (isAdHoc({ structure: targetStructure }) && targetStructure.finishingPosition === WIN_RATIO) {
-    return { ...SUCCESS };
-  }
+  if (isAdHoc({ structure: targetStructure }) && targetStructure.finishingPosition === WIN_RATIO) return;
 
   let targetMatchUps = (matchUpsOf(targetStructure) ?? [])
     .filter((m) => m.roundNumber === targetRoundNumber)
@@ -299,25 +317,37 @@ function placeDiscardedLosers({
     structure: targetStructure,
     event,
   });
-
-  return { ...SUCCESS };
 }
 
-function handleDiscardedLosers({
+type DiscardedLoserTargets = {
+  targets: { link: DrawLink; targetStructure: Structure }[];
+  participantIds: string[];
+  error?: ResultType;
+};
+
+// pure: the structures that receive the losers not selected as lucky losers; an error when a LOSER link's target
+// structure does not exist (CA, 2026-10-22: refused before any write, never placed-and-logged)
+function resolveDiscardedLoserTargets({
   drawDefinition,
-  tournamentRecord,
-  roundStatus,
   luckyLoserIds,
   structureId,
   roundNumber,
-  event,
-}) {
+  roundStatus,
+}: {
+  drawDefinition: DrawDefinition;
+  roundStatus: LuckyRoundInfo;
+  luckyLoserIds: string[];
+  structureId: string;
+  roundNumber: number;
+}): DiscardedLoserTargets {
+  const none = { targets: [], participantIds: [] };
+  if (!roundStatus.isPreFeedRound || !luckyLoserIds.length) return none;
+
   const advancedSet = new Set<string>(luckyLoserIds);
-  const discardedLosers = (roundStatus.eligibleLosers ?? [])
+  const participantIds = (roundStatus.eligibleLosers ?? [])
     .filter((l) => !advancedSet.has(l.participantId))
     .map((l) => l.participantId);
-
-  if (!discardedLosers.length) return;
+  if (!participantIds.length) return none;
 
   const loserLinks = (drawDefinition.links ?? []).filter(
     (link) =>
@@ -326,42 +356,44 @@ function handleDiscardedLosers({
       (link.source.roundNumber || 1) === roundNumber,
   );
 
+  const targets: DiscardedLoserTargets['targets'] = [];
   for (const link of loserLinks) {
-    const result = placeDiscardedLosers({
-      drawDefinition,
-      tournamentRecord,
-      targetStructureId: link.target.structureId,
-      targetRoundNumber: link.target.roundNumber,
-      feedProfile: link.target.feedProfile,
-      participantIds: discardedLosers,
-      event,
-    });
-    if (result?.error) {
-      pushGlobalLog({
-        method: 'luckyDrawAdvancement',
-        issue: 'failed to place discarded losers in consolidation structure',
-        error: result.error,
+    const targetStructureId = link.target.structureId;
+    const { structure: targetStructure } = findStructure({ drawDefinition, structureId: targetStructureId });
+    if (!targetStructure) {
+      const error = decorateResult({
+        result: { error: INVALID_VALUES },
+        info: 'LOSER link targets a structure that does not exist',
+        context: { targetStructureId },
+        stack,
       });
+      return { ...none, error };
     }
+    targets.push({ link, targetStructure });
   }
+
+  return { targets, participantIds };
 }
 
-function prepareNextRoundMatchUps({ nextRoundMatchUps, positionAssignments }): ResultType | undefined {
+// pure: an error when any next-round matchUp already has a participant assigned to one of its drawPositions
+function checkNextRoundUnassigned({ nextRoundMatchUps, positionAssignments }): ResultType | undefined {
+  const alreadyAssigned = nextRoundMatchUps.some((matchUp) =>
+    (matchUp.drawPositions ?? []).some(
+      (dp) => dp && positionAssignments.some((a) => a.drawPosition === dp && a.participantId),
+    ),
+  );
+  if (alreadyAssigned)
+    return decorateResult({
+      result: { error: INVALID_VALUES },
+      info: 'Next round already has participants assigned',
+    });
+  return undefined;
+}
+
+function prepareNextRoundMatchUps({ nextRoundMatchUps }) {
   for (const matchUp of nextRoundMatchUps) {
     const dps = matchUp.drawPositions;
     if (!dps?.length) continue;
-
-    const assignedPositions = dps.filter((dp) => {
-      if (!dp) return false;
-      return positionAssignments.some((a) => a.drawPosition === dp && a.participantId);
-    });
-
-    if (assignedPositions.length) {
-      return decorateResult({
-        result: { error: INVALID_VALUES },
-        info: 'Next round already has participants assigned',
-      });
-    }
 
     if (dps.some(Boolean)) {
       matchUp.drawPositions = [];
@@ -372,8 +404,6 @@ function prepareNextRoundMatchUps({ nextRoundMatchUps, positionAssignments }): R
       matchUp.score = undefined;
     }
   }
-
-  return undefined;
 }
 
 /**

@@ -1351,6 +1351,10 @@ Advances participants from a completed round into the next round of a LUCKY_DRAW
 
 Works by assigning virtual drawPositions to next-round matchUps and creating corresponding positionAssignment entries, enabling the standard scoring flow for those matchUps.
 
+Every check runs before anything is written; on error the draw is unchanged. That includes the losers not selected
+as lucky losers: when a LOSER link from the round targets a structure that does not exist, the call returns
+`INVALID_VALUES` and advances no one.
+
 ```js
 engine.luckyDrawAdvancement({
   roundNumber, // required — round number that has just completed
