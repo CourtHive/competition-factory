@@ -1059,7 +1059,8 @@ all three. `POLICY_SCORING_USTA` sets both exit flags to `true`. See
 
 `POLICY_SCORING_DEFAULT` sets `requireParticipantsForScoring: false`, so a tournament with it
 attached can score a matchUp that is missing a participant. `POLICY_PROGRESSION_DEFAULT` sets the
-four progression values shown in the table.
+four progression values shown in the table. `POLICY_PROGRESSION_USTA` differs from it only in
+`doubleExitPropagateBye: false`: USTA requires a produced `WALKOVER`, not a BYE, in the linked structure.
 
 **How the exit settings are tested.** Since 7.0.0 an
 [exit-propagation harness](../testing/exit-propagation-harness.md) has driven the settings that

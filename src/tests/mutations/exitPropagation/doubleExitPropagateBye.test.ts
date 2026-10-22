@@ -22,8 +22,10 @@ import { FEED_IN_CHAMPIONSHIP_TO_SF } from '@Constants/drawDefinitionConstants';
  *
  * `POLICY_PROGRESSION_DEFAULT` already names this — `progression.doubleExitPropagateBye`, *"a BYE
  * will propagate to loser position instead of a produced WALKOVER … significant for providers who do
- * not award ranking points for first round walkovers"*. It defaults to FALSE and this test does not
- * change that: everything here is opt-in.
+ * not award ranking points for first round walkovers"*. It defaulted to FALSE when this test was
+ * written; since 2026-09-29 it defaults to TRUE, which is why `build` below states the setting both
+ * ways. `false` is a supported configuration, not a legacy one: USTA requires it
+ * (`POLICY_PROGRESSION_USTA`).
  *
  * ## The gap
  *
