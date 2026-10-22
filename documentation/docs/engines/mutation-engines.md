@@ -171,7 +171,14 @@ See [Subscriptions](/docs/engines/subscriptions) for complete notification docum
 
 ## Rollback on Error
 
-Protect tournament integrity by automatically reverting changes when operations fail.
+`rollbackOnError` snapshots the records before a call or a queue and restores them if it returns an
+error. Its job is **multi-directive atomicity**: making several directives succeed or fail together.
+
+It is **not** what makes a single method's error clean. A method that returns an error leaves the
+record unchanged on a direct call, with or without the flag — each method is responsible for
+refusing before it writes. Where a method still returns an error after writing, that is a defect: the
+known cases are tracked, and the exit-propagation census property `ERROR_IMPLIES_NO_MUTATION`
+(measured on direct calls) polices it. Do not pass `rollbackOnError` as the fix for one.
 
 ### Basic Rollback
 
@@ -194,12 +201,12 @@ tournamentEngine.setState(tournamentRecord);
 
 const result = tournamentEngine.automatedPositioning({
   drawId: 'draw-1',
-  rollbackOnError: true, // on { error }, restore the records as they were before this call
+  rollbackOnError: true, // accepted on any method; restores from a snapshot on { error }
 });
 
 if (result.error) {
-  // the tournament records are back to their pre-call state
-  console.error('Operation failed, state rolled back:', result.error);
+  // the refusal is the thing to surface; the records are as they were before the call
+  console.error('Operation refused:', result.error);
 }
 ```
 
@@ -258,10 +265,12 @@ tournamentEngine.setTournamentId(state.tournamentId);
 
 **Use `rollbackOnError: true` when:**
 
-- Operating on production data
-- Complex multi-step operations
-- User-initiated actions that must be atomic
-- Data integrity is critical
+- Several directives in one `executionQueue` must succeed or fail together
+- Earlier directives in a queue must not survive a later one's refusal
+- A persistence layer writes the whole record after the queue and must not store a half-applied batch
+
+It is not a substitute for a method's own guarantee: a single method's error leaves the record
+unchanged without it.
 
 **Skip rollback when:**
 

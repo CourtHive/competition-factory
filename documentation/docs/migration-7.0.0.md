@@ -93,9 +93,12 @@ The only interface change is the error _code_ for this case, which moved from
 participant check rather than from the later score-modification guard. Match on behaviour rather
 than on that specific code.
 
-:::note Atomicity on error is opt-in
-Callers that need all-or-nothing should go through `executionQueue` with `rollbackOnError: true`,
-which snapshots and restores; that is what TMX and competition-factory-server do on every mutation.
+:::note An error leaves the draw unchanged, without rollback
+The rule is per method: a `setMatchUpStatus` that returns an error leaves the record unchanged on a
+direct call, and `rollbackOnError` is not what provides that. Residual cases where a refusal arrives
+after a write are defects, tracked by the census property `ERROR_IMPLIES_NO_MUTATION`. Use
+`executionQueue` with `rollbackOnError: true` when **several** directives must succeed or fail
+together.
 :::
 
 ## 4. Time-zone conversions refuse rather than throw or guess
