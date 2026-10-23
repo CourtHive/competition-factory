@@ -1,4 +1,5 @@
 import { SCHEDULING_REPORT_PROPERTIES } from '../scheduling/schedulingReportProperties';
+import { cellId, pinnedScaleCells, pinnedScaleScenario } from './schedulingScale';
 import { CorpusWriteError, writeScenario, type Directive } from './writeScenario';
 import { SCHEDULING_STEP_PROPERTIES } from '../scheduling/schedulingProperties';
 import tournamentEngine from '@Engines/syncEngine';
@@ -336,6 +337,72 @@ export function schedulingScenarios(): Authored[] {
     });
   }
 
+  {
+    // C2 (CA 2026-10-22): R1 played on day 2, with scores, and R2 profiled on day 1, where its sources are not yet
+    // played. Today the plan places R2 and the writer refuses each placement, reporting it as unscheduled
+    const { tournamentRecord, round, matchUpsOf, drawId } = generate({ drawProfile: { drawSize: 8 }, courtsCount: 4 });
+    const outcome = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 1 }).outcome;
+    out.push({
+      scenarioId: 'authored/scheduling/placement-before-a-played-source',
+      ref: 'scheduling § played order: a matchUp is never placed before a source already played',
+      initialRecord: tournamentRecord,
+      directives: [
+        ...matchUpsOf(MAIN, 1).flatMap((matchUp: any) => [
+          {
+            method: 'addMatchUpScheduleItems',
+            params: {
+              drawId,
+              matchUpId: matchUp.matchUpId,
+              schedule: { scheduledDate: DAY_2, scheduledTime: '09:00' },
+            },
+          },
+          { method: 'setMatchUpStatus', params: { drawId, matchUpId: matchUp.matchUpId, outcome } },
+        ]),
+        round(DAY_1, MAIN, 2),
+        profileRun([DAY_1]),
+      ],
+      finalState: (record) =>
+        claim(timedOn(rawRound(record, MAIN, 2), DAY_1) === 0, 'no R2 matchUp is timed before its played sources'),
+    });
+  }
+
+  {
+    // a profiled round none of whose matchUps has a format: nothing of it is placed, and (CA 2026-10-23) it is
+    // reported, which is not yet so: SCHEDULE_ACCOUNTED refuses the run until it is
+    const { tournamentRecord, round } = generate({ drawProfile: { drawSize: 8 }, courtsCount: 4 });
+    // strip every format a matchUp could inherit: tournament, event, draw, structures, matchUps
+    const strip = (item: any) => delete item.matchUpFormat;
+    strip(tournamentRecord);
+    for (const event of tournamentRecord.events) {
+      strip(event);
+      for (const drawDefinition of event.drawDefinitions) {
+        strip(drawDefinition);
+        for (const structure of drawDefinition.structures) {
+          strip(structure);
+          structure.matchUps?.forEach(strip);
+        }
+      }
+    }
+    out.push({
+      scenarioId: 'authored/scheduling/format-less-round',
+      ref: 'scheduling § 2: a round with no matchUpFormat is not placed',
+      initialRecord: tournamentRecord,
+      knownFailure: 'a format-less round is left unplaced and unreported (CA 2026-10-23: report it)',
+      directives: [round(DAY_1, MAIN, 1), profileRun([DAY_1])],
+      finalState: (record, values) => {
+        const report = JSON.stringify(values.at(-1) ?? {});
+        const roundOne = rawRound(record, MAIN, 1);
+        return [
+          ...claim(timedOn(roundOne, DAY_1) === 0, 'no R1 matchUp is timed'),
+          ...claim(
+            roundOne.every(({ matchUpId }) => report.includes(matchUpId)),
+            'every R1 matchUp is reported as unplaced',
+          ),
+        ];
+      },
+    });
+  }
+
   return out;
 }
 
@@ -373,6 +440,31 @@ export function recordScheduling({ outDir }: { outDir: string }) {
     } catch (err: any) {
       if (!(err instanceof CorpusWriteError)) throw err;
       failed.push({ scenarioId: authored.scenarioId, reason: err.message.slice(0, 300) });
+    }
+  }
+
+  // the pinned scale sample, in its own file of the same source, so the manifest holds its outcomes
+  const samplePath = path.join(outDir, 'scheduling-scale-sample.jsonl');
+  fs.writeFileSync(samplePath, '');
+  for (const cell of pinnedScaleCells()) {
+    const scenarioId = cellId(cell);
+    try {
+      const { initialRecord, directives } = pinnedScaleScenario(cell);
+      const scenario = writeScenario({
+        properties: [...SCHEDULING_STEP_PROPERTIES, ...SCHEDULING_REPORT_PROPERTIES],
+        source: { kind: 'matrix', ref: `${scenarioId} seed=${cell.seed}` },
+        tags: ['scale', 'scheduling-pipeline', 'pinned'],
+        seed: cell.seed,
+        initialRecord,
+        clock: CLOCK,
+        directives,
+        scenarioId,
+      });
+      fs.appendFileSync(samplePath, JSON.stringify(scenario) + '\n');
+      written.push({ scenario });
+    } catch (err: any) {
+      if (!(err instanceof CorpusWriteError)) throw err;
+      failed.push({ scenarioId, reason: err.message.slice(0, 300) });
     }
   }
   return { written, failed };
