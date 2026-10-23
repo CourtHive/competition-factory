@@ -56,10 +56,9 @@ export function getSchedulingProfile({ tournamentRecords, tournamentRecord }: Ge
     [];
 
   if (schedulingProfile.length) {
-    const { venueIds } = getCompetitionVenues({
-      requireCourts: true,
-      tournamentRecords,
-    });
+    // a venue with no courts (none added yet, or all removed) is still a venue: its rounds are kept and place nothing
+    // (CA 2026-10-23); only a venue, event or draw that is gone needs repair
+    const { venueIds } = getCompetitionVenues({ tournamentRecords });
     const { eventIds, drawIds } = getEventIdsAndDrawIds({ tournamentRecords });
 
     const { updatedSchedulingProfile, modifications, issues } = getUpdatedSchedulingProfile({

@@ -3,7 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { NO_VALID_DATES, SCHEDULING_PROFILE_REPAIR_REQUIRED } from '@Constants/errorConditionConstants';
+import { NO_VALID_DATES } from '@Constants/errorConditionConstants';
 import { SINGLE_ELIMINATION, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 
@@ -308,18 +308,22 @@ describe('scheduleProfileGrid multiple venues', () => {
       ],
     });
 
-    // a venue with no courts is not a valid profile venue: the run is refused, the repaired profile (without that
-    // venue's rounds) offered, and nothing is written; it was removed from the stored profile silently on read
+    // a venue with no courts keeps its rounds and places nothing (CA 2026-10-23): the profile needs no repair, round 1
+    // (profiled at the courtless venue) is reported not scheduled, and round 2 is placed at the venue with courts
+    expect(tournamentEngine.getSchedulingProfile().modifications).toEqual(0);
     let result: any = tournamentEngine.scheduleProfileGrid({ scheduleDates: [startDate] });
-    expect(result.error).toEqual(SCHEDULING_PROFILE_REPAIR_REQUIRED);
-    const { repairedSchedulingProfile } = result.context;
-    expect(repairedSchedulingProfile[0].venues.map(({ venueId }: any) => venueId)).toEqual([venueId1]);
+    expect(result.success).toBe(true);
+    const roundOf = (roundNumber: number) =>
+      tournamentEngine
+        .allTournamentMatchUps({ matchUpFilters: { roundNumbers: [roundNumber] } })
+        .matchUps.map(({ matchUpId }: any) => matchUpId);
+    expect(result.notScheduledMatchUpIds[startDate].toSorted()).toEqual(roundOf(1).toSorted());
+    expect(result.scheduledMatchUpIds[startDate].toSorted()).toEqual(roundOf(2).toSorted());
 
-    // once the repair is saved, the call succeeds
-    result = tournamentEngine.setSchedulingProfile({ schedulingProfile: repairedSchedulingProfile });
+    // and the timed scheduler likewise places nothing there
+    result = tournamentEngine.scheduleProfileRounds({ scheduleDates: [startDate] });
     expect(result.success).toBe(true);
-    result = tournamentEngine.scheduleProfileGrid({ scheduleDates: [startDate] });
-    expect(result.success).toBe(true);
+    expect(result.noTimeMatchUpIds[startDate].toSorted()).toEqual(roundOf(1).toSorted());
   });
 });
 

@@ -20,6 +20,10 @@ import { HydratedMatchUp } from '@Types/hydrated';
 type ScheduleProfileGridArgs = {
   tournamentRecords: TournamentRecords;
   matchUpDailyLimits?: { [key: string]: number };
+  /**
+   * @deprecated ignored: the profile schedulers never place a completed matchUp (CA 2026-10-23). Removed at the next
+   * major.
+   */
   scheduleCompletedMatchUps?: boolean;
   clearScheduleDates?: boolean | string[];
   minCourtGridRows?: number;
@@ -107,7 +111,8 @@ function collectVenuePlan(
   allMatchUps: HydratedMatchUp[],
   containedStructureIds: Record<string, string>,
   scheduleCompletedMatchUps?: boolean,
-): { dateMatchUps: HydratedMatchUp[]; dateCourtIds: string[] } {
+): { dateMatchUps: HydratedMatchUp[]; dateCourtIds: string[]; courtlessMatchUps: HydratedMatchUp[] } {
+  const courtlessMatchUps: HydratedMatchUp[] = [];
   const dateMatchUps: HydratedMatchUp[] = [];
   const dateCourtIds: string[] = [];
 
@@ -116,14 +121,30 @@ function collectVenuePlan(
     const venueCourtIds = courtIdsFilter ? allVenueCourtIds.filter((id) => courtIdsFilter.has(id)) : allVenueCourtIds;
     dateCourtIds.push(...venueCourtIds);
 
+    // a venue with no courts keeps its rounds and places nothing (CA 2026-10-23): its matchUps are not offered to the
+    // date's other courts, and are reported not scheduled
+    const target = allVenueCourtIds.length ? dateMatchUps : courtlessMatchUps;
     for (const roundProfile of venueProfile.rounds ?? []) {
-      dateMatchUps.push(
-        ...findRoundMatchUps(roundProfile, allMatchUps, containedStructureIds, scheduleCompletedMatchUps),
-      );
+      target.push(...findRoundMatchUps(roundProfile, allMatchUps, containedStructureIds, scheduleCompletedMatchUps));
     }
   }
 
-  return { dateMatchUps, dateCourtIds };
+  return { dateMatchUps, dateCourtIds, courtlessMatchUps };
+}
+
+/**
+ * The limits the grid applies (CA 2026-10-23: the schedulers agree on the policies applied). None given: those the
+ * timed pipeline resolves (the policy's, the tournament's, each participant's override), enforced. `{}` given: the
+ * caller opted out, and the same limits are asked only to warn. Limits given: those, enforced.
+ */
+function gridDailyLimits(
+  matchUpDailyLimits: ScheduleProfileGridArgs['matchUpDailyLimits'],
+  tournamentRecords: TournamentRecords,
+) {
+  const waived = !!matchUpDailyLimits && !Object.keys(matchUpDailyLimits).length;
+  if (matchUpDailyLimits && !waived) return { limits: { matchUpDailyLimits, dailyLimitOverrides: undefined }, waived };
+  const { matchUpDailyLimits: resolved, dailyLimitOverrides } = getMatchUpDailyLimits({ tournamentRecords });
+  return { limits: { matchUpDailyLimits: resolved, dailyLimitOverrides }, waived };
 }
 
 /**
@@ -137,8 +158,9 @@ function collectVenuePlan(
  * Each venue's courts are used as the target for its rounds.
  */
 export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
+  // a completed matchUp is never placed on the grid (CA 2026-10-23), whatever the call says
+  const scheduleCompletedMatchUps = false;
   const {
-    scheduleCompletedMatchUps,
     matchUpDailyLimits,
     minCourtGridRows = 10,
     clearScheduleDates,
@@ -223,15 +245,7 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
     })
     .sort((a, b) => new Date(a.scheduleDate).getTime() - new Date(b.scheduleDate).getTime());
 
-  // the limits the grid applies (CA 2026-10-23: the schedulers agree on the policies applied). None given: those the
-  // timed pipeline resolves (the policy's, the tournament's, each participant's override), enforced. `{}` given: the
-  // caller opted out, and the same limits are asked only to warn. Limits given: those, enforced.
-  const resolved = getMatchUpDailyLimits({ tournamentRecords });
-  const waived = !!matchUpDailyLimits && !Object.keys(matchUpDailyLimits).length;
-  const limits =
-    matchUpDailyLimits === undefined || waived
-      ? { matchUpDailyLimits: resolved.matchUpDailyLimits, dailyLimitOverrides: resolved.dailyLimitOverrides }
-      : { matchUpDailyLimits, dailyLimitOverrides: undefined };
+  const { limits, waived } = gridDailyLimits(matchUpDailyLimits, tournamentRecords);
 
   // Track results per date
   const dailyLimitWarningMatchUpIds: Record<string, string[]> = {};
@@ -239,12 +253,18 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
   const notScheduledMatchUpIds: Record<string, string[]> = {};
   const overLimitMatchUpIds: Record<string, string[]> = {};
   const scheduledDates: string[] = [];
+  const reports = {
+    dailyLimitWarnings: dailyLimitWarningMatchUpIds,
+    notScheduled: notScheduledMatchUpIds,
+    overLimit: overLimitMatchUpIds,
+    scheduled: scheduledMatchUpIds,
+  };
 
   for (const dateProfile of dateProfiles) {
     const scheduledDate = extractDate(dateProfile.scheduleDate);
 
     // Collect matchUps for this date based on profile round ordering
-    const { dateMatchUps, dateCourtIds } = collectVenuePlan(
+    const { dateMatchUps, dateCourtIds, courtlessMatchUps } = collectVenuePlan(
       dateProfile,
       courtsByVenue,
       courtIdsFilter,
@@ -253,6 +273,8 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
       scheduleCompletedMatchUps,
     );
 
+    const courtlessIds = courtlessMatchUps.map(({ matchUpId }) => matchUpId);
+    if (courtlessIds.length) notScheduledMatchUpIds[scheduledDate] = courtlessIds;
     if (!dateMatchUps.length) continue;
     // When the caller has explicitly filtered courts and nothing remains for
     // this date's venues, skip — falling back to "all courts" would defeat
@@ -260,7 +282,7 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
     // a date skipped still reports its matchUps as not scheduled: they vanished from the result before (C5,
     // SCHEDULING_PIPELINE_VNEXT.md § 5)
     const skipDate = () => {
-      notScheduledMatchUpIds[scheduledDate] = dateMatchUps.map(({ matchUpId }) => matchUpId);
+      notScheduledMatchUpIds[scheduledDate] = [...dateMatchUps.map(({ matchUpId }) => matchUpId), ...courtlessIds];
     };
     if (courtIdsFilter && !dateCourtIds.length) {
       skipDate();
@@ -289,21 +311,15 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
     }
 
     const dateScheduledIds = (gridResult.scheduled ?? []).map((m) => m.matchUpId);
-    const dateNotScheduledIds = (gridResult.notScheduled ?? []).map((m) => m.matchUpId);
-    const dateOverLimitIds: string[] = gridResult.overLimitMatchUpIds ?? [];
-
-    if (dateScheduledIds.length) {
-      scheduledMatchUpIds[scheduledDate] = dateScheduledIds;
-      scheduledDates.push(scheduledDate);
-    }
-    if (dateNotScheduledIds.length) {
-      notScheduledMatchUpIds[scheduledDate] = dateNotScheduledIds;
-    }
-    if (dateOverLimitIds.length) {
-      overLimitMatchUpIds[scheduledDate] = dateOverLimitIds;
-    }
-    if (gridResult.dailyLimitWarningMatchUpIds?.length) {
-      dailyLimitWarningMatchUpIds[scheduledDate] = gridResult.dailyLimitWarningMatchUpIds;
+    if (dateScheduledIds.length) scheduledDates.push(scheduledDate);
+    const dateResult = {
+      notScheduled: [...(gridResult.notScheduled ?? []).map((m) => m.matchUpId), ...courtlessIds],
+      dailyLimitWarnings: gridResult.dailyLimitWarningMatchUpIds ?? [],
+      overLimit: gridResult.overLimitMatchUpIds ?? [],
+      scheduled: dateScheduledIds,
+    };
+    for (const [key, ids] of Object.entries(dateResult)) {
+      if (ids.length) reports[key as keyof typeof reports][scheduledDate] = ids;
     }
   }
 
