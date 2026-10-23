@@ -233,6 +233,7 @@ const {
   scheduledDates, // Array of dates where matches were scheduled
   scheduledMatchUpIds, // All successfully scheduled matchUpIds
   noTimeMatchUpIds, // MatchUps that couldn't be fit into available time
+  noFormatMatchUpIds, // MatchUps of profiled rounds with no matchUpFormat: not placed
   overLimitMatchUpIds, // MatchUps blocked by daily limits
   requestConflicts, // Array of { date, conflicts } for participant conflicts
 } = result;

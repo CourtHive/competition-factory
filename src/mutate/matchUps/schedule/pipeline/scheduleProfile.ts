@@ -99,6 +99,7 @@ export function scheduleProfileVNext(params: ScheduleProfileVNextArgs) {
     overLimitMatchUpIds: plan.overLimitMatchUpIds,
     requestConflicts: plan.requestConflicts,
     scheduledMatchUpIds,
+    noFormatMatchUpIds: plan.noFormatMatchUpIds,
     noTimeMatchUpIds,
     scheduledDates,
   };

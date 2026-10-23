@@ -40,6 +40,7 @@ const isPlaced = (matchUp: any) =>
   (!!matchUp.schedule?.scheduledDate && matchUp.schedule?.courtOrder !== undefined);
 const REASONS = [
   'notScheduledMatchUpIds',
+  'noFormatMatchUpIds',
   'noTimeMatchUpIds',
   'overLimitMatchUpIds',
   'dependencyDeferredMatchUpIds',

@@ -147,7 +147,8 @@ Dates are taken in order. On each date:
    matchUp belongs to the first venue that profiles it on the date. A `roundSegment` applies only when the round has a
    power-of-two count of matchUps, the segment count is a power of two smaller than it, and the round lists no
    `matchUpIds`. Each round's matchUps take the minutes of the round's **first** matchUp's format (**OPEN**, C7: a round
-   of mixed formats is timed by its first). The venue's **slots** are its Garman times: with `C` courts available,
+   of mixed formats is timed by its first). A round none of whose matchUps has a format cannot be timed: nothing of
+   it is placed, and its matchUps not yet timed are reported in `noFormatMatchUpIds`. The venue's **slots** are its Garman times: with `C` courts available,
    average minutes `T` and period length `L`, the matchUps expected by period `P` are
    `TM = Int(((L × C) / T) × (P − 1) + C)`, and a period's slots are the difference from the period before, computed
    over each court's availability and bookings. `T` is the **greatest** average among the venue's rounds on the date (the
