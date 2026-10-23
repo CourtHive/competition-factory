@@ -176,6 +176,27 @@ describe('scheduling step properties: each one fires on its own fault', () => {
     place(at(1, 2), day1, '08:00');
     expect(checkSchedulingStep({ before: over, after: record() })).toEqual([]);
   });
+
+  it('SCHEDULE_DAILY_LIMITS_RESPECTED counts a court-grid placement (a date and a court order, no time)', () => {
+    const { record, at, place } = setup();
+    let result: any = tournamentEngine.setMatchUpDailyLimits({ dailyLimits: { SINGLES: 1, total: 1 } });
+    expect(result.success).toEqual(true);
+    const outcome = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 1 }).outcome;
+    place(at(1, 1), day1, '08:00');
+    result = tournamentEngine.setMatchUpStatus({ matchUpId: at(1, 1).matchUpId, drawId: at(1, 1).drawId, outcome });
+    expect(result.success).toEqual(true);
+    const before = record();
+    // R1's winner, certain in R2, gets a second singles on day 1 from the grid: a court order and no time
+    result = tournamentEngine.addMatchUpScheduleItems({
+      schedule: { scheduledDate: day1, courtOrder: 1 },
+      matchUpId: at(2, 1).matchUpId,
+      drawId: at(2, 1).drawId,
+    });
+    expect(result.success).toEqual(true);
+    expect(properties(checkSchedulingStep({ before, after: record() }))).toEqual([SCHEDULE_DAILY_LIMITS_RESPECTED]);
+    // a call that waived the limits ({}) is not charged
+    expect(checkSchedulingStep({ before, after: record(), dailyLimitsWaived: true })).toEqual([]);
+  });
 });
 
 describe('scheduling step properties hold on a profile run', () => {

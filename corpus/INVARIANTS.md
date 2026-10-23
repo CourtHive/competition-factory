@@ -124,7 +124,9 @@ A placement never takes a certain participant over a daily limit on its date: SI
 matchUps they are certain to play there. The limits are the tournament's (`scheduling.dailyLimits`, else the
 scheduling policy's `defaultDailyLimits`; none when neither is set), with the participant's override from the policy's
 `matchUpDailyLimits` on top, key by key. A limit of 0 is no limit. A participant already over before the call is a
-violation only if the call adds to it.
+violation only if the call adds to it. A placement is a timed one or one on the day's court grid (a date and a court
+order, no time), and both count toward the day (CA 2026-10-23: the grid applies the timed pipeline's limits). A call
+that waived the limits (`matchUpDailyLimits: {}`) is not asked.
 
 ## Scheduling report properties
 

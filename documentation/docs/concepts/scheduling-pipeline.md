@@ -207,7 +207,9 @@ Row by row, each remaining matchUp is placed on the row's first open court unles
 - a matchUp it depends on is still unplaced;
 - a matchUp that depends on it is on the previous row;
 - a participant who can play it is already on the row (unless the two are alternatives for them);
-- with `matchUpDailyLimits` given, a participant would go over a limit (§ 3.5): reported over the limit;
+- a participant would go over a daily limit (§ 3.5): reported over the limit. The grid applies the limits the timed
+  pipeline resolves (CA 2026-10-23); a call given `matchUpDailyLimits` applies those instead, and one given `{}` opts
+  out: the matchUp is placed and reported in `dailyLimitWarningMatchUpIds`;
 - every open court is closed at its time (a time-window court booking).
 
 A matchUp not placed on a row is offered to the next. The placements are written in one bulk write (date, court and
@@ -253,8 +255,9 @@ the calls that decide placements; the bulk and reschedule mutations write the ti
 
 ## 9. Open questions
 
-1. **The grid reads daily limits only when the call passes `matchUpDailyLimits`;** the timed pipeline reads the
-   tournament's and the policy's. Should the grid read them too?
+1. ~~The grid reads daily limits only when the call passes `matchUpDailyLimits`.~~ Decided (CA 2026-10-23): it resolves
+   them as the timed pipeline does and enforces them; `{}` opts out and warns (§ 5). `SCHEDULE_DAILY_LIMITS_RESPECTED`
+   counts court-grid placements too.
 2. **The grid places by row order, not time,** for matchUps with no time: `SCHEDULE_SOURCES_FIRST` and recovery are
    asked of timed placements, so a grid run's ordering is pinned only by its row rules. Should the corpus state a
    row-order property?

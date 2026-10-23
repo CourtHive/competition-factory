@@ -4,6 +4,7 @@ import { clearScheduledMatchUps } from '@Mutate/matchUps/schedule/clearScheduled
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getContainedStructures } from '@Query/drawDefinition/getContainedStructures';
 import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
+import { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
 import { extractDate, isValidDateString } from '@Tools/dateTime';
 
@@ -222,7 +223,18 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
     })
     .sort((a, b) => new Date(a.scheduleDate).getTime() - new Date(b.scheduleDate).getTime());
 
+  // the limits the grid applies (CA 2026-10-23: the schedulers agree on the policies applied). None given: those the
+  // timed pipeline resolves (the policy's, the tournament's, each participant's override), enforced. `{}` given: the
+  // caller opted out, and the same limits are asked only to warn. Limits given: those, enforced.
+  const resolved = getMatchUpDailyLimits({ tournamentRecords });
+  const waived = !!matchUpDailyLimits && !Object.keys(matchUpDailyLimits).length;
+  const limits =
+    matchUpDailyLimits === undefined || waived
+      ? { matchUpDailyLimits: resolved.matchUpDailyLimits, dailyLimitOverrides: resolved.dailyLimitOverrides }
+      : { matchUpDailyLimits, dailyLimitOverrides: undefined };
+
   // Track results per date
+  const dailyLimitWarningMatchUpIds: Record<string, string[]> = {};
   const scheduledMatchUpIds: Record<string, string[]> = {};
   const notScheduledMatchUpIds: Record<string, string[]> = {};
   const overLimitMatchUpIds: Record<string, string[]> = {};
@@ -261,8 +273,10 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
     // scheduler is fed the pre-filtered set.
     const gridResult = proAutoSchedule({
       courtIds: resolveTargetCourtIds(dateCourtIds, courtIdsFilter),
+      matchUpDailyLimits: limits.matchUpDailyLimits,
+      dailyLimitOverrides: limits.dailyLimitOverrides,
+      dailyLimitsWarnOnly: waived,
       scheduleCompletedMatchUps,
-      matchUpDailyLimits,
       minCourtGridRows,
       tournamentRecords,
       matchUps: dateMatchUps,
@@ -288,12 +302,16 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
     if (dateOverLimitIds.length) {
       overLimitMatchUpIds[scheduledDate] = dateOverLimitIds;
     }
+    if (gridResult.dailyLimitWarningMatchUpIds?.length) {
+      dailyLimitWarningMatchUpIds[scheduledDate] = gridResult.dailyLimitWarningMatchUpIds;
+    }
   }
 
   return {
     ...SUCCESS,
     scheduledMatchUpIds,
     notScheduledMatchUpIds,
+    dailyLimitWarningMatchUpIds,
     overLimitMatchUpIds,
     scheduledDates,
   };

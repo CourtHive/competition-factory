@@ -68,6 +68,34 @@ function hydrated(tournamentRecord: any): Map<string, any> {
   return new Map(matchUps.map((matchUp: any) => [matchUp.matchUpId, matchUp]));
 }
 
+/** a matchUp's day when it is placed on it: timed, or on the day's court grid (a court order, no time) */
+const placedDate = (matchUp: any) => {
+  const { scheduledDate, scheduledTime, courtOrder } = matchUp?.schedule ?? {};
+  const date = extractDate(scheduledDate) || extractDate(scheduledTime);
+  return date && (scheduledTime || courtOrder !== undefined) ? date : undefined;
+};
+const placementKey = (matchUp: any) =>
+  placedDate(matchUp) && [placedDate(matchUp), matchUp.schedule?.scheduledTime, matchUp.schedule?.courtOrder].join('|');
+
+/** the day bookings of a record's placed matchUps, timed or not: what a daily limit counts */
+function datedMatchUps(
+  matchUps: Map<string, any>,
+): Map<string, Pick<Timed, 'date' | 'individualIds' | 'matchUpType' | 'matchUpStatus' | 'matchUpId'>> {
+  const dated = new Map();
+  for (const matchUp of matchUps.values()) {
+    const date = placedDate(matchUp);
+    if (!date) continue;
+    dated.set(matchUp.matchUpId, {
+      individualIds: individualIds(matchUp),
+      matchUpStatus: matchUp.matchUpStatus,
+      matchUpType: matchUp.matchUpType,
+      matchUpId: matchUp.matchUpId,
+      date,
+    });
+  }
+  return dated;
+}
+
 const slot = (matchUp: any) => {
   const { scheduledDate, scheduledTime } = matchUp?.schedule ?? {};
   const date = extractDate(scheduledDate) || extractDate(scheduledTime);
@@ -166,8 +194,9 @@ function sourcesMap(matchUps: Map<string, any>) {
 }
 
 type Counts = { [SINGLES]: number; [DOUBLES]: number; total: number };
+type DayBooking = Pick<Timed, 'date' | 'individualIds' | 'matchUpType' | 'matchUpStatus'>;
 
-function dayCounts(timed: Map<string, Timed>, participantId: string, date: string): Counts {
+function dayCounts(timed: Map<string, DayBooking>, participantId: string, date: string): Counts {
   const counts: Counts = { [SINGLES]: 0, [DOUBLES]: 0, total: 0 };
   for (const booking of timed.values()) {
     if (booking.date !== date || NOT_PLAYED.has(booking.matchUpStatus as string)) continue;
@@ -199,6 +228,8 @@ export function placedMatchUpIds(before: any, after: any): string[] {
 }
 
 type StepContext = {
+  datedBefore: Map<string, DayBooking>;
+  dated: Map<string, DayBooking>;
   timedBefore: Map<string, Timed>;
   sourcesOf: Map<string, string[]>;
   timed: Map<string, Timed>;
@@ -268,12 +299,17 @@ function recoveryRespected(
 
 /**
  * a placement never takes a participant over a limit; one already over before the step (an operator's doing) is not
- * the step's fault unless the step added to it
+ * the step's fault unless the step added to it. A day's load counts every matchUp placed on it, timed or on its court
+ * grid (CA 2026-10-23: the grid applies the limits the timed pipeline does)
  */
-function dailyLimitsRespected(booking: Timed, participantId: string, context: StepContext): SchedulingViolation[] {
+function dailyLimitsRespected(
+  booking: { matchUpId: string; date: string },
+  participantId: string,
+  context: StepContext,
+): SchedulingViolation[] {
   const limits = context.limitsFor(participantId);
-  const exceeded = overLimit(dayCounts(context.timed, participantId, booking.date), limits);
-  const wasExceeded = overLimit(dayCounts(context.timedBefore, participantId, booking.date), limits);
+  const exceeded = overLimit(dayCounts(context.dated, participantId, booking.date), limits);
+  const wasExceeded = overLimit(dayCounts(context.datedBefore, participantId, booking.date), limits);
   if (!exceeded || exceeded === wasExceeded) return [];
   return [
     {
@@ -284,22 +320,35 @@ function dailyLimitsRespected(booking: Timed, participantId: string, context: St
   ];
 }
 
+/**
+ * `dailyLimitsWaived`: the call opted out of daily limits (a grid call given `matchUpDailyLimits: {}`), so its
+ * placements are not asked SCHEDULE_DAILY_LIMITS_RESPECTED
+ */
 export function checkSchedulingStep({
+  dailyLimitsWaived,
   timing,
   before,
   after,
 }: {
+  dailyLimitsWaived?: boolean;
   timing?: CallTiming;
   before: any;
   after: any;
 }): SchedulingViolation[] {
-  const placed = placedMatchUpIds(before, after);
-  if (!placed.length) return [];
-
+  const prior = hydrated(before);
   const matchUps = hydrated(after);
+  // placed on a day by the step, timed or on the court grid
+  const datedPlaced = [...matchUps.values()]
+    .filter((matchUp) => placedDate(matchUp) && placementKey(matchUp) !== placementKey(prior.get(matchUp.matchUpId)))
+    .map(({ matchUpId }) => matchUpId);
+  const placed = placedMatchUpIds(before, after);
+  if (!placed.length && !datedPlaced.length) return [];
+
   const { matchUpDailyLimits, participantDailyLimits } = getDailyLimit({ tournamentRecord: after });
   const context: StepContext = {
-    timedBefore: timedMatchUps(before, hydrated(before), timing),
+    datedBefore: datedMatchUps(prior),
+    dated: datedMatchUps(matchUps),
+    timedBefore: timedMatchUps(before, prior, timing),
     timed: timedMatchUps(after, matchUps, timing),
     sourcesOf: sourcesMap(matchUps),
     // the tournament's limits with the participant's own override on top, key by key
@@ -317,10 +366,14 @@ export function checkSchedulingStep({
     violations.push(...sourcesFirst(booking, context));
     if (NOT_PLAYED.has(booking.matchUpStatus as string)) continue;
     for (const participantId of booking.individualIds)
-      violations.push(
-        ...recoveryRespected(booking, participantId, context.timed, reportedPairs),
-        ...dailyLimitsRespected(booking, participantId, context),
-      );
+      violations.push(...recoveryRespected(booking, participantId, context.timed, reportedPairs));
+  }
+  if (dailyLimitsWaived) return violations;
+  for (const matchUpId of datedPlaced) {
+    const booking = context.dated.get(matchUpId) as DayBooking & { matchUpId: string };
+    if (NOT_PLAYED.has(booking.matchUpStatus as string)) continue;
+    for (const participantId of booking.individualIds)
+      violations.push(...dailyLimitsRespected(booking, participantId, context));
   }
   return violations;
 }

@@ -2,7 +2,8 @@ import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
-// constants
+// constants and fixtures
+import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
 import { NO_VALID_DATES } from '@Constants/errorConditionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
@@ -356,7 +357,7 @@ describe('scheduleProfileGrid', () => {
     expect(byCourtOrder.map((p) => p.courtOrder)).toEqual([1, 2, 3, 4]);
   });
 
-  it('does not enforce daily limits when matchUpDailyLimits is omitted (default behavior)', () => {
+  it('places freely when matchUpDailyLimits is omitted and the tournament has no limits', () => {
     const venueId = 'venue-no-limits';
     const drawId = 'draw-no-limits';
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -389,7 +390,7 @@ describe('scheduleProfileGrid', () => {
       ],
     });
 
-    // No matchUpDailyLimits passed — all 4 R1 + 2 R2 should land.
+    // No matchUpDailyLimits passed and none attached — all 4 R1 + 2 R2 should land.
     result = tournamentEngine.scheduleProfileGrid({ scheduleDates: [startDate] });
     expect(result.success).toEqual(true);
     expect((result.scheduledMatchUpIds[startDate] ?? []).length).toEqual(6);
@@ -448,6 +449,61 @@ describe('scheduleProfileGrid', () => {
 
     // Sanity: no overlap between scheduled and over-limit.
     for (const id of scheduledIds) expect(overLimitIds).not.toContain(id);
+  });
+
+  // CA 2026-10-23: the schedulers agree on the limits applied. Omitted, the grid resolves them as the timed pipeline
+  // does (the policy's, the tournament's, each participant's override) and enforces them; `{}` opts out, and the same
+  // limits are asked only to warn
+  describe('daily limits the tournament carries', () => {
+    function threeRoundsOneDay(limits: { policy?: boolean; tournament?: Record<string, number> }) {
+      const venueId = 'venue-resolved';
+      const drawId = 'draw-resolved';
+      const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+        venueProfiles: [{ venueName: 'CC', venueAbbreviation: 'CC', courtsCount: 4, venueId }],
+        ...(limits.policy ? { policyDefinitions: POLICY_SCHEDULING_DEFAULT } : {}),
+        drawProfiles: [{ drawId, drawSize: 8 }],
+        startDate,
+        endDate,
+      });
+      tournamentEngine.setState(tournamentRecord);
+      if (limits.tournament) {
+        const result = tournamentEngine.setMatchUpDailyLimits({ dailyLimits: limits.tournament });
+        expect(result.success).toEqual(true);
+      }
+      const { matchUps } = tournamentEngine.allCompetitionMatchUps({ inContext: true });
+      const { tournamentId, eventId, structureId } = matchUps[0];
+      const rounds = [1, 2, 3].map((roundNumber) => ({ tournamentId, eventId, drawId, structureId, roundNumber }));
+      tournamentEngine.setSchedulingProfile({
+        schedulingProfile: [{ scheduleDate: startDate, venues: [{ venueId, rounds }] }],
+      });
+      const [final] = matchUps.filter((matchUp: any) => matchUp.roundNumber === 3);
+      return { finalId: final.matchUpId };
+    }
+
+    it('omitted: the policy limit (2 singles) holds the final off the grid, as the timed pipeline does', () => {
+      const { finalId } = threeRoundsOneDay({ policy: true });
+      const result: any = tournamentEngine.scheduleProfileGrid({ scheduleDates: [startDate] });
+      expect(result.success).toEqual(true);
+      expect(result.scheduledMatchUpIds[startDate].length).toEqual(6);
+      expect(result.overLimitMatchUpIds[startDate]).toEqual([finalId]);
+      expect(result.dailyLimitWarningMatchUpIds[startDate]).toBeUndefined();
+    });
+
+    it('omitted: the tournament limits are applied too', () => {
+      threeRoundsOneDay({ tournament: { SINGLES: 1, total: 1 } });
+      const result: any = tournamentEngine.scheduleProfileGrid({ scheduleDates: [startDate] });
+      expect(result.scheduledMatchUpIds[startDate].length).toEqual(4);
+      expect(result.overLimitMatchUpIds[startDate].length).toEqual(3);
+    });
+
+    it('`{}`: the caller opted out; every matchUp is placed, the final with a warning', () => {
+      const { finalId } = threeRoundsOneDay({ policy: true });
+      const result: any = tournamentEngine.scheduleProfileGrid({ scheduleDates: [startDate], matchUpDailyLimits: {} });
+      expect(result.success).toEqual(true);
+      expect(result.scheduledMatchUpIds[startDate].length).toEqual(7);
+      expect(result.overLimitMatchUpIds[startDate]).toBeUndefined();
+      expect(result.dailyLimitWarningMatchUpIds[startDate]).toEqual([finalId]);
+    });
   });
 
   it('handles multiple venues in a single date', () => {
