@@ -179,7 +179,7 @@ describe('the vNext view resolves a profile as v1 does', () => {
     expectSamePlan(profile, true);
   });
 
-  it('a round none of whose matchUps has a format schedules nothing', () => {
+  it('a round none of whose matchUps has a format schedules nothing, and is reported', () => {
     const { round } = setup([{ drawSize: 8 }, { drawSize: 8 }]);
     // strip every format the first draw's matchUps could inherit: tournament, event, draw, structures, matchUps
     const { tournamentRecord } = tournamentEngine.getTournament();
@@ -203,7 +203,14 @@ describe('the vNext view resolves a profile as v1 does', () => {
     const [unformatted, formatted] = view.dates[0].venues[0].rounds;
     expect(unformatted.minutes).toBeUndefined();
     expect(unformatted.matchUpIds).toEqual([]);
+    expect(unformatted.noFormatMatchUpIds.length).toEqual(4);
     expect(formatted.matchUpIds.length).toEqual(4);
+    expect(formatted.noFormatMatchUpIds).toBeUndefined();
+
+    // a run places the formatted round and reports the other (CA 2026-10-23: report it)
+    const result: any = tournamentEngine.scheduleProfileRounds({ scheduleDates: [DAYS[0]] });
+    expect(result.scheduledMatchUpIds[DAYS[0]].length).toEqual(4);
+    expect(result.noFormatMatchUpIds[DAYS[0]].toSorted()).toEqual(unformatted.noFormatMatchUpIds.toSorted());
   });
 
   it('a profile with no date left after scheduleDates is refused', () => {

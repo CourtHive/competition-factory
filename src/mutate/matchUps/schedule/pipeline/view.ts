@@ -57,6 +57,8 @@ export type RoundPlan = {
   profiledMatchUpIds: string[];
   /** absent when no matchUp of the round has a format: such a round schedules nothing */
   minutes?: Minutes;
+  /** a round with no format: its schedulable matchUps not yet timed, which a run reports and does not place */
+  noFormatMatchUpIds?: string[];
   periodLength: number;
   error?: ErrorType;
 };
@@ -228,8 +230,14 @@ export function buildSchedulingView({
           const { minutes: roundTiming, error } = roundMinutes(round, inRound, tournamentRecords);
           const unscheduled = { round, matchUpIds: [], profiledMatchUpIds: [], periodLength: roundPeriodLength };
           if (error) return { ...unscheduled, error };
-          // a round none of whose matchUps has a format is not timed, and so schedules nothing (as v1)
-          if (!roundTiming) return unscheduled;
+          // a round none of whose matchUps has a format is not timed, and so schedules nothing; its matchUps not yet
+          // timed are reported (CA 2026-10-23)
+          if (!roundTiming) {
+            const noFormatMatchUpIds = inRound
+              .filter((matchUp) => schedulable(matchUp) && !matchUp.schedule?.scheduledTime)
+              .map(({ matchUpId }) => matchUpId);
+            return { ...unscheduled, noFormatMatchUpIds };
+          }
           const profiledMatchUpIds = inRound.filter(schedulable).map(({ matchUpId }) => matchUpId);
           for (const matchUpId of profiledMatchUpIds) minutes.set(matchUpId, roundTiming);
           const matchUpIds = profiledMatchUpIds.filter((matchUpId) => !claimed.has(matchUpId));

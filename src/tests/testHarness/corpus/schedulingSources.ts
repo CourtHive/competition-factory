@@ -368,7 +368,7 @@ export function schedulingScenarios(): Authored[] {
 
   {
     // a profiled round none of whose matchUps has a format: nothing of it is placed, and (CA 2026-10-23) it is
-    // reported, which is not yet so: SCHEDULE_ACCOUNTED refuses the run until it is
+    // reported, under noFormatMatchUpIds
     const { tournamentRecord, round } = generate({ drawProfile: { drawSize: 8 }, courtsCount: 4 });
     // strip every format a matchUp could inherit: tournament, event, draw, structures, matchUps
     const strip = (item: any) => delete item.matchUpFormat;
@@ -387,7 +387,6 @@ export function schedulingScenarios(): Authored[] {
       scenarioId: 'authored/scheduling/format-less-round',
       ref: 'scheduling § 2: a round with no matchUpFormat is not placed',
       initialRecord: tournamentRecord,
-      knownFailure: 'a format-less round is left unplaced and unreported (CA 2026-10-23: report it)',
       directives: [round(DAY_1, MAIN, 1), profileRun([DAY_1])],
       finalState: (record, values) => {
         const report = JSON.stringify(values.at(-1) ?? {});

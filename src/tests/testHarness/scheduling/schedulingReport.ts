@@ -11,6 +11,7 @@
 const REASONS = [
   'scheduledMatchUpIds',
   'notScheduledMatchUpIds',
+  'noFormatMatchUpIds',
   'noTimeMatchUpIds',
   'overLimitMatchUpIds',
   'dependencyDeferredMatchUpIds',

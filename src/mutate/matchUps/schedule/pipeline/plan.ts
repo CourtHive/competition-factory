@@ -48,6 +48,8 @@ export type SchedulePlan = {
   unplaced: ByDate<{ [venueId: string]: string[] }>;
   /** profiled matchUps no slot took, per date: each venue's in turn */
   noTimeMatchUpIds: ByDate<string[]>;
+  /** matchUps of profiled rounds with no format, per date: not placed, since they cannot be timed */
+  noFormatMatchUpIds: ByDate<string[]>;
   overLimitMatchUpIds: PlaceVenueRoundsArgs['overLimitMatchUpIds'];
   overLimitMatchUpDetails: PlaceVenueRoundsArgs['overLimitMatchUpDetails'];
   recoveryTimeDeferredMatchUpIds: PlaceVenueRoundsArgs['recoveryTimeDeferredMatchUpIds'];
@@ -93,6 +95,7 @@ export function planSchedule({
     matchUpScheduleTimes: {},
     overLimitMatchUpIds: {},
     scheduledMatchUpIds: {},
+    noFormatMatchUpIds: {},
     noTimeMatchUpIds: {},
     requestConflicts: {},
     placements: {},
@@ -150,6 +153,9 @@ function planDate({
   plan.scheduledMatchUpIds[scheduleDate] = [];
   plan.noTimeMatchUpIds[scheduleDate] = [];
   plan.requestConflicts[scheduleDate] = [];
+  plan.noFormatMatchUpIds[scheduleDate] = [
+    ...new Set(datePlan.venues.flatMap((venue) => venue.rounds.flatMap((round) => round.noFormatMatchUpIds ?? []))),
+  ];
   plan.placements[scheduleDate] = {};
   plan.unplaced[scheduleDate] = {};
 
