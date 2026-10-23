@@ -1,5 +1,71 @@
 # Changelog
 
+## [7.20.0](https://github.com/CourtHive/competition-factory/compare/v7.19.0...v7.20.0) (2026-10-23)
+
+
+### Features
+
+* **draws:** repair malformed round links, and report them where they were swallowed ([#5700](https://github.com/CourtHive/competition-factory/issues/5700)) ([441abef](https://github.com/CourtHive/competition-factory/commit/441abefb97c41e62ec725aa5983a54f7a000e8b5))
+* **policies:** a USTA progression policy, so a double walkover is a walkover downstream too ([#5689](https://github.com/CourtHive/competition-factory/issues/5689)) ([554479e](https://github.com/CourtHive/competition-factory/commit/554479eac2dc55fc8ead834d2c29ce070b86fd0e))
+* **policies:** the default privacy policy publishes each individual's teams, limited to names ([#5710](https://github.com/CourtHive/competition-factory/issues/5710)) ([b8b8afa](https://github.com/CourtHive/competition-factory/commit/b8b8afac49687a3cda1111f0f86e821f9ebe26f6))
+* **scheduling:** courtless venues keep their rounds; completed matchUps are never re-scheduled ([#5729](https://github.com/CourtHive/competition-factory/issues/5729)) ([96a358b](https://github.com/CourtHive/competition-factory/commit/96a358b7a3344cc5ad128c7fce4b252ab0a96810))
+* **scheduling:** drop scheduleCompletedMatchUps from the schedulers; mocks schedule, then play ([#5731](https://github.com/CourtHive/competition-factory/issues/5731)) ([94e925e](https://github.com/CourtHive/competition-factory/commit/94e925e3686d3c45b7828ac700fda49a4b27656b))
+* **scheduling:** refuse a profile that needs repair, offering the repair; never save it on read ([#5725](https://github.com/CourtHive/competition-factory/issues/5725)) ([5aa2ae7](https://github.com/CourtHive/competition-factory/commit/5aa2ae71598054a23e3ec30bc4f636b791fa0aad))
+* **scheduling:** report the matchUps of a format-less profiled round ([#5724](https://github.com/CourtHive/competition-factory/issues/5724)) ([1d4da46](https://github.com/CourtHive/competition-factory/commit/1d4da4684f98e2da10cab298adec7eb2b12223ae))
+* **scheduling:** scheduleProfileRounds runs the vnext pipeline; v1 timed scheduler retired ([#5722](https://github.com/CourtHive/competition-factory/issues/5722)) ([cc6a060](https://github.com/CourtHive/competition-factory/commit/cc6a060402d08a13e4ea1bddc161e06db7253741))
+* **scheduling:** the grid applies the timed pipeline's daily limits; {} opts out and warns ([#5728](https://github.com/CourtHive/competition-factory/issues/5728)) ([cee8774](https://github.com/CourtHive/competition-factory/commit/cee8774528164723965763e5b4747342c1c240ab))
+* **scheduling:** the planner keeps the played order; one guard over the whole plan ([#5726](https://github.com/CourtHive/competition-factory/issues/5726)) ([b0be021](https://github.com/CourtHive/competition-factory/commit/b0be021f913439901c84ce206166c17b71c78326))
+* **scheduling:** vNext stage one, the read-only scheduling view ([#5716](https://github.com/CourtHive/competition-factory/issues/5716)) ([fd1287b](https://github.com/CourtHive/competition-factory/commit/fd1287b387c9521078576c4d2c9f3f18ce7385f4))
+* **scheduling:** vnext stage two, the plan, held to v1 by a differential ([#5718](https://github.com/CourtHive/competition-factory/issues/5718)) ([4cfbc62](https://github.com/CourtHive/competition-factory/commit/4cfbc62561cc08e11d92fc0dfc2be6b5d8ac3a5f))
+* **scheduling:** vnext writer and end-to-end entry, held to v1 call for call ([#5720](https://github.com/CourtHive/competition-factory/issues/5720)) ([a6e05a8](https://github.com/CourtHive/competition-factory/commit/a6e05a82ee9f5a13f16c72b26bf1b46ccd9b08c2))
+* **scoring:** the ScoringEngine is the v2 reducer, and v1 is retired (SE4) ([#5695](https://github.com/CourtHive/competition-factory/issues/5695)) ([bf87b5f](https://github.com/CourtHive/competition-factory/commit/bf87b5f8f34fa3341fa3f8d0cd8aebeac5da0bf4))
+
+
+### Bug Fixes
+
+* **buildFromSources:** keep a TEAM event's tieFormat once, where the factory keeps it ([#5699](https://github.com/CourtHive/competition-factory/issues/5699)) ([590851b](https://github.com/CourtHive/competition-factory/commit/590851b8a620063eb264d78915f77bc11c858ea8))
+* **dehydrate:** return TEAM ties and collection matchUps to their stored shape ([#5694](https://github.com/CourtHive/competition-factory/issues/5694)) ([6ad637e](https://github.com/CourtHive/competition-factory/commit/6ad637ebe0d0b20b5c0a2d78e304968442ea59ad))
+* **deps:** update tods-competition-factory to 7.19.0 ([#5676](https://github.com/CourtHive/competition-factory/issues/5676)) ([01ce40e](https://github.com/CourtHive/competition-factory/commit/01ce40e544290c82749dab2bd8053b47a2515e5a))
+* **destroyGroupEntry:** refuse a refused re-entry before removing the group entry ([#5703](https://github.com/CourtHive/competition-factory/issues/5703)) ([1dab3cd](https://github.com/CourtHive/competition-factory/commit/1dab3cded646b4703c578a881cefba40dcab12d4))
+* **directWinner:** a winner directed across a link is seated once ([#5683](https://github.com/CourtHive/competition-factory/issues/5683)) ([7fae803](https://github.com/CourtHive/competition-factory/commit/7fae8037f16323b42ffb54bf7740a000892cf6ff))
+* **draws:** refuse a playoff group whose drawType cannot be built ([#5730](https://github.com/CourtHive/competition-factory/issues/5730)) ([2dca5da](https://github.com/CourtHive/competition-factory/commit/2dca5daba08e382d3695b2ad3e0351b9db3b1c93))
+* entries and draw mutations refuse before they write ([#5687](https://github.com/CourtHive/competition-factory/issues/5687)) ([ace93f7](https://github.com/CourtHive/competition-factory/commit/ace93f76389c136b06aa49e34961fcdc73a513d6))
+* **exitPropagation:** a policy-off double exit's loser seat shows its exit in every order (P58 3a) ([303b759](https://github.com/CourtHive/competition-factory/commit/303b759bd8e4217ddb18ba38bb0c9ce9463883a5))
+* **exitPropagation:** an unclaimed BYE goes with the award that kept it (P58 3b) ([1b0acc0](https://github.com/CourtHive/competition-factory/commit/1b0acc02c65658b0e1c140e598f922fdc6b05d85))
+* **exitPropagation:** policy-off round trips and loser seats after ruling (A) (P58 3a) ([fd13817](https://github.com/CourtHive/competition-factory/commit/fd138171a07b90b69925b9031c9fbe8cdfdac8a2))
+* **links:** a round robin's link traverses by finishing position, as POSITION or WINNER ([#5727](https://github.com/CourtHive/competition-factory/issues/5727)) ([d54bbbd](https://github.com/CourtHive/competition-factory/commit/d54bbbd8c344bd335c26a2d3e117ef6450d88d71))
+* **matchUpStatus:** two settle passes cannot fail by construction; the third is open ([#5682](https://github.com/CourtHive/competition-factory/issues/5682)) ([720d641](https://github.com/CourtHive/competition-factory/commit/720d64121480cb81d258a6241ffbb4f3215c5f69))
+* **outcome:** make post-write errors impossible where provable; hand the rest to v2 ([#5692](https://github.com/CourtHive/competition-factory/issues/5692)) ([04a9e60](https://github.com/CourtHive/competition-factory/commit/04a9e6053907990d38ff7320f0a31f760d837195))
+* **participants:** deleteParticipants refuses before its first write ([#5704](https://github.com/CourtHive/competition-factory/issues/5704)) ([9c1ebc3](https://github.com/CourtHive/competition-factory/commit/9c1ebc3cacafb4a9b52cb57325f19ac8b0890f4c))
+* **participants:** deleting an individual refuses on, and cleans up, the PAIRs it deletes ([#5706](https://github.com/CourtHive/competition-factory/issues/5706)) ([61e9663](https://github.com/CourtHive/competition-factory/commit/61e966354dd260a2461d223fbbd7ff9a1f7ffee1))
+* **positions:** compose automated positioning on a working copy, then write ([#5693](https://github.com/CourtHive/competition-factory/issues/5693)) ([0e99c56](https://github.com/CourtHive/competition-factory/commit/0e99c56568670ce50e41dfdfa1e7db480a57950a))
+* **positions:** refuse before the first write in five position mutations ([#5688](https://github.com/CourtHive/competition-factory/issues/5688)) ([7633495](https://github.com/CourtHive/competition-factory/commit/763349501a529b793843077313a200cbd96f608d))
+* **scheduling:** a timed matchUp holds its recovery; scheduleMatchUps reads stated timing ([#5705](https://github.com/CourtHive/competition-factory/issues/5705)) ([b81b2b0](https://github.com/CourtHive/competition-factory/commit/b81b2b0ff62d4ab6ac0e7cb1821d8213e1c86560))
+* **scheduling:** never place a matchUp before a played matchUp it depends on ([#5707](https://github.com/CourtHive/competition-factory/issues/5707)) ([f1f4154](https://github.com/CourtHive/competition-factory/commit/f1f4154be4df5ff8c7a5463e6574e02a821a37f4))
+* **scoring:** a caught divergence fails its test; v1 meets SE3-E1, E2, E3 and SE2c-D6 ([#5668](https://github.com/CourtHive/competition-factory/issues/5668)) ([abf8ec8](https://github.com/CourtHive/competition-factory/commit/abf8ec8ff2e00596b7ad202109af0694dec4cfe4))
+* **scoring:** a record without a timeline loses nothing, in both engines ([#5691](https://github.com/CourtHive/competition-factory/issues/5691)) ([582ba4a](https://github.com/CourtHive/competition-factory/commit/582ba4a81b90a49011d446ab9a457aa096ad01d0))
+* **scoring:** the record shape: pointIndex, tiebreak streak, v1 reading v2, full-record differential ([#5684](https://github.com/CourtHive/competition-factory/issues/5684)) ([73cb2d0](https://github.com/CourtHive/competition-factory/commit/73cb2d0bb63bf02f30b6d05eb75456d7fae3b4dd))
+* **scoring:** v1 counts gamesToSet, pointsToSet and pointsToMatch by § 11.2, and they are compared ([#5672](https://github.com/CourtHive/competition-factory/issues/5672)) ([7c0a072](https://github.com/CourtHive/competition-factory/commit/7c0a07214db0ba2944c8ca7235a682aa87bab416))
+* **scoring:** v1 meets SE2a-D3b, D12 and SE2c-D3; D13 and D14 in both engines; no pending exemptions ([#5671](https://github.com/CourtHive/competition-factory/issues/5671)) ([6d312d9](https://github.com/CourtHive/competition-factory/commit/6d312d90566bc5394778e7f2f96a432aaa3f7963))
+* **scoring:** v1 writes the record v2's way on the five shapes the full-record differential found ([#5685](https://github.com/CourtHive/competition-factory/issues/5685)) ([13ac32c](https://github.com/CourtHive/competition-factory/commit/13ac32cb9ae2670148ec4810373c59f6bd6eaf43))
+* **types:** type the entry helpers [#5687](https://github.com/CourtHive/competition-factory/issues/5687) and [#5688](https://github.com/CourtHive/competition-factory/issues/5688) added, so dev passes verify:implicit-any ([#5696](https://github.com/CourtHive/competition-factory/issues/5696)) ([38583f6](https://github.com/CourtHive/competition-factory/commit/38583f6889db560a5ac6f566d8ecb3ca105a300b))
+
+
+### Performance
+
+* **scheduling:** ask an over-limit matchUp once per date, and report it once ([#5723](https://github.com/CourtHive/competition-factory/issues/5723)) ([61b611d](https://github.com/CourtHive/competition-factory/commit/61b611d906d7585a380703fe58cc7ee1e2607f24))
+* **scheduling:** incremental daily-limit day loads ([#5712](https://github.com/CourtHive/competition-factory/issues/5712)) ([f22480f](https://github.com/CourtHive/competition-factory/commit/f22480f17a647dbb808e0fd49723994ef6ead22f))
+* **scheduling:** memoize a participant's day load per candidate until the day changes ([#5719](https://github.com/CourtHive/competition-factory/issues/5719)) ([62c9b67](https://github.com/CourtHive/competition-factory/commit/62c9b67f1a2df6d155d7009c4690729d7a5626f2))
+* **scheduling:** reuse the dependency graph for the played-order check; memoize timing lookups ([#5709](https://github.com/CourtHive/competition-factory/issues/5709)) ([972a910](https://github.com/CourtHive/competition-factory/commit/972a910dcf88ba6d6d3719d1d0883d723cc46c30))
+
+
+### Documentation
+
+* **errors:** an error leaves the record unchanged per method, not via rollbackOnError ([#5690](https://github.com/CourtHive/competition-factory/issues/5690)) ([c1f26ed](https://github.com/CourtHive/competition-factory/commit/c1f26edace41fb32a3b2774cecb783cac0a659c6))
+* **integrity:** stalled positions are an error, not the warning-tier example ([#5698](https://github.com/CourtHive/competition-factory/issues/5698)) ([4de37d8](https://github.com/CourtHive/competition-factory/commit/4de37d82a53214424ab08a75cbec6c9abe25c103))
+* **scheduling:** correct the spec's profile issues; pin § 2; rules from the view ([#5717](https://github.com/CourtHive/competition-factory/issues/5717)) ([db70055](https://github.com/CourtHive/competition-factory/commit/db700558dff47eb5af2cfbabb674b4ed4939e46a))
+* **scheduling:** the scheduling pipeline spec ([#5715](https://github.com/CourtHive/competition-factory/issues/5715)) ([c497075](https://github.com/CourtHive/competition-factory/commit/c497075410868cb25163e8ec5b6385630852a421))
+
 ## [7.19.0](https://github.com/CourtHive/competition-factory/compare/v7.18.0...v7.19.0) (2026-10-22)
 
 
