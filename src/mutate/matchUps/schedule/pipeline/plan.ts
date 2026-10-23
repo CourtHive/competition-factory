@@ -44,7 +44,9 @@ export type SchedulePlan = {
   scheduledMatchUpIds: ByDate<string[]>;
   /** placements per date and venue */
   placements: ByDate<{ [venueId: string]: { matchUpId: string; scheduleTime: string }[] }>;
-  /** profiled matchUps no slot took */
+  /** profiled matchUps no slot took, per date and venue */
+  unplaced: ByDate<{ [venueId: string]: string[] }>;
+  /** profiled matchUps no slot took, per date: each venue's in turn */
   noTimeMatchUpIds: ByDate<string[]>;
   overLimitMatchUpIds: PlaceVenueRoundsArgs['overLimitMatchUpIds'];
   overLimitMatchUpDetails: PlaceVenueRoundsArgs['overLimitMatchUpDetails'];
@@ -94,6 +96,7 @@ export function planSchedule({
     noTimeMatchUpIds: {},
     requestConflicts: {},
     placements: {},
+    unplaced: {},
   };
   // request conflicts found across dates; v1 keeps them and reports none of them
   const scheduleDateRequestConflicts: PlaceVenueRoundsArgs['scheduleDateRequestConflicts'] = {};
@@ -148,6 +151,7 @@ function planDate({
   plan.noTimeMatchUpIds[scheduleDate] = [];
   plan.requestConflicts[scheduleDate] = [];
   plan.placements[scheduleDate] = {};
+  plan.unplaced[scheduleDate] = {};
 
   // the date's bookkeeping: who may yet play each matchUp, each participant's day, and when each matchUp may start
   const matchUpPotentialParticipantIds: PlaceVenueRoundsArgs['matchUpPotentialParticipantIds'] = {};
@@ -266,7 +270,8 @@ function recordDatePlacements({ venueScheduledRoundDetails, scheduleDate, datePl
     }
     plan.placements[scheduleDate][venueId] = placements;
     plan.scheduledMatchUpIds[scheduleDate].push(...placements.map(getMatchUpId));
-    plan.noTimeMatchUpIds[scheduleDate].push(...details.matchUpsToSchedule.map(getMatchUpId));
+    plan.unplaced[scheduleDate][venueId] = details.matchUpsToSchedule.map(getMatchUpId);
+    plan.noTimeMatchUpIds[scheduleDate].push(...plan.unplaced[scheduleDate][venueId]);
     plan.scheduleTimesRemaining[scheduleDate][venueId] = details.scheduleTimes.toSorted(
       (a, b) => timeStringMinutes(a.scheduleTime) - timeStringMinutes(b.scheduleTime),
     );
