@@ -32,8 +32,9 @@ A round names a tournament, event, draw, structure and round number; it may narr
 robin's rounds are profiled on the round robin's containing structure: they cover every group it contains.
 
 **The call** takes `scheduleDates` (the profile's dates to schedule; all of them when absent), `clearScheduleDates`,
-`courtIds` (a court filter), `periodLength` (minutes per scheduling period, default 30), `scheduleCompletedMatchUps`
-(include completed matchUps, an override mocks use) and `dryRun`.
+`courtIds` (a court filter), `periodLength` (minutes per scheduling period, default 30) and `dryRun`. A completed
+matchUp is never scheduled again (CA 2026-10-23): `scheduleCompletedMatchUps` is ignored by both profile schedulers
+(mocksEngine's seeding calls the pipeline's own entry, which still honours it for fixtures).
 
 **`clearScheduleDates`.** `true` clears every scheduled matchUp that is not finished, in every tournament loaded, on
 every date, profiled or not; a schedule lock survives. An array clears only the matchUps scheduled on the dates it
@@ -47,12 +48,15 @@ and lock.
 
 - No valid date remains after narrowing the profile's dates by `scheduleDates`: `NO_VALID_DATES`.
 - An empty profile is not refused: the call succeeds and places nothing.
-- Before scheduling, the profile is validated against the tournament. A profile that names a venue (or a venue with no
-  courts), an event or a draw no longer in the record needs repair: the call is refused with
+- Before scheduling, the profile is validated against the tournament. A profile that names a venue, an event or a draw
+  no longer in the record needs repair: the call is refused with
   `SCHEDULING_PROFILE_REPAIR_REQUIRED` and writes nothing. Its `context` offers the repaired profile
   (`repairedSchedulingProfile`, without those rounds), with `modifications` and `issues`; saving it with
   `setSchedulingProfile` is the repair. A round profiled at more than one venue on a date is reported in
   `schedulingProfileIssues`.
+- A venue with no courts (none added yet, or all removed) is still a venue (CA 2026-10-23): its rounds are kept and
+  place nothing. The timed pipeline reports their matchUps in `noTimeMatchUpIds`; the grid does not offer them to the
+  date's other courts and reports them in `notScheduledMatchUpIds`.
 - Reading the profile never saves a repair: `getSchedulingProfile` returns the repaired profile with its
   `modifications` and leaves the stored one as it is. A query runs on one side only (client or server), so a save there
   would part the two records. The mutations that remove a venue, event or draw (or a venue's courts) repair the profile
@@ -150,7 +154,7 @@ Dates are taken in order. On each date:
    hold their participants for recovery and count toward daily loads. A BYE's schedule is never cleared here: an
    operator's placement on a seat that became a BYE is preserved.
 2. **Per venue,** the profiled rounds are taken in `sortOrder` (then profile order) and resolved to their matchUps in
-   matchUp order, skipping BYEs, completed matchUps (unless `scheduleCompletedMatchUps`), and matchUps already timed. A
+   matchUp order, skipping BYEs, completed matchUps, and matchUps already timed. A
    matchUp belongs to the first venue that profiles it on the date. A `roundSegment` applies only when the round has a
    power-of-two count of matchUps, the segment count is a power of two smaller than it, and the round lists no
    `matchUpIds`. Each round's matchUps take the minutes of the round's **first** matchUp's format (**OPEN**, C7: a round
@@ -197,7 +201,7 @@ nothing. The call records an audit of what it did on the tournament.
 ## 5. The grid pipeline: `scheduleProfileGrid`
 
 Per date, the profiled rounds of every venue are resolved to their matchUps (a round on a round robin covers its
-groups), skipping BYEs, completed matchUps (unless `scheduleCompletedMatchUps`) and matchUps already on a court or a
+groups), skipping BYEs, completed matchUps and matchUps already on a court or a
 court order. The date's grid is its courts by rows; matchUps already timed are walked earliest first, so they land on
 earlier rows.
 

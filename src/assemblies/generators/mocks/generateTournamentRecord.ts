@@ -1,6 +1,6 @@
 import { checkProfileKeys, GENERATE_ENGINE_SUPPLIED_KEYS, GENERATE_TOURNAMENT_RECORD_KEYS } from './profileKeys';
 import { createTournamentRecord } from '@Generators/tournamentRecords/createTournamentRecord';
-import { scheduleProfileRounds } from '@Mutate/matchUps/schedule/scheduleProfileRounds';
+import { scheduleProfileVNext } from '@Mutate/matchUps/schedule/pipeline/scheduleProfile';
 import { addTournamentParticipants } from './addTournamentParticipants';
 import { addParticipants } from '@Mutate/participants/addParticipants';
 import { generateEventWithFlights } from './generateEventWithFlights';
@@ -233,7 +233,9 @@ function scheduleRounds(params): { scheduledRounds?: any; schedulerResult?: any;
     const { tournamentId } = tournamentRecord;
     const tournamentRecords = { [tournamentId]: tournamentRecord };
 
-    const schedulerResult = scheduleProfileRounds({
+    // seeding a fixture, not scheduling for an operator: the pipeline's own entry, which may place completed matchUps
+    // (the public scheduleProfileRounds never does, CA 2026-10-23)
+    const schedulerResult = scheduleProfileVNext({
       scheduleCompletedMatchUps,
       tournamentRecords,
       periodLength,

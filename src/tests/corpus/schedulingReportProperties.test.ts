@@ -114,7 +114,7 @@ describe('scheduling report properties: quiet on a true report, and each fires o
 });
 
 describe('C4: scheduleProfileGrid reports as scheduled only what it wrote', () => {
-  it('a completed matchUp placed with scheduleCompletedMatchUps is written, and reported as stored', () => {
+  it('a completed matchUp is never placed, whatever scheduleCompletedMatchUps says; what is reported is stored', () => {
     mocksEngine.generateTournamentRecord({
       venueProfiles: [{ courtsCount: 4, venueId }],
       drawProfiles: [
@@ -164,8 +164,11 @@ describe('C4: scheduleProfileGrid reports as scheduled only what it wrote', () =
       tournamentEngine.allTournamentMatchUps().matchUps.map((m: any) => [m.matchUpId, m.schedule?.scheduledDate]),
     );
     const reported = result.scheduledMatchUpIds[day1] ?? [];
-    // was: the four completed R1 matchUps reported scheduled and never written
-    expect(reported.length).toEqual(5);
+    // was (C4): the four completed R1 matchUps reported scheduled and never written; then, with the flag honoured,
+    // written. Since CA 2026-10-23 the profile schedulers never place a completed matchUp: only R2's unlocked matchUp
+    expect(reported.length).toEqual(1);
+    const completed = tournamentEngine.allTournamentMatchUps().matchUps.filter((m: any) => m.roundNumber === 1);
+    expect(completed.every((m: any) => !reported.includes(m.matchUpId) && !m.schedule?.scheduledDate)).toEqual(true);
     expect(reported.every((id: string) => stored.get(id) === day1)).toEqual(true);
     // the grid leaves a matchUp that already holds a court placement where it is, lock or no lock
     expect(reported).not.toContain(locked.matchUpId);

@@ -231,7 +231,7 @@ describe('scheduleProfileGrid', () => {
     expect(Math.max(...courtOrders)).toBeLessThanOrEqual(1);
   });
 
-  it('respects scheduleCompletedMatchUps override (legacy mocksEngine behavior)', () => {
+  it('never places a completed matchUp, whatever scheduleCompletedMatchUps says (CA 2026-10-23)', () => {
     const venueId = 'venue-include-completed';
     const drawId = 'draw-include-completed';
     const { tournamentRecord } = mocksEngine.generateTournamentRecord({
@@ -275,18 +275,14 @@ describe('scheduleProfileGrid', () => {
       ],
     });
 
-    // With override, completed matchUps re-enter the pipeline (the legacy
-    // path used by mocksEngine seeding). We don't assert on exact placement
-    // here — only that the override is respected so the count is higher.
+    // The flag once let completed matchUps re-enter the pipeline; it is now ignored, so only R2's 2 are placed
     result = tournamentEngine.scheduleProfileGrid({
       scheduleDates: [startDate],
       scheduleCompletedMatchUps: true,
     });
     expect(result.success).toEqual(true);
     const scheduledIds = result.scheduledMatchUpIds[startDate] ?? [];
-    // Default-path baseline would only schedule R2 (2 matchUps); with override
-    // the 4 completed R1 also enter the pipeline.
-    expect(scheduledIds.length).toBeGreaterThan(2);
+    expect(scheduledIds.length).toEqual(2);
   });
 
   // Regression: when Garman has already assigned scheduledTime to matchUps
