@@ -309,7 +309,7 @@ it('a draw with nothing malformed is left alone', () => {
   const { drawId, tournamentRecord } = generate({ drawType: FEED_IN_CHAMPIONSHIP });
   const before = structuredClone(drawOf(tournamentRecord));
   const result: any = tournamentEngine.repairMalformedLinks({ drawId });
-  expect(result).toEqual({ success: true, repaired: [], removed: [] });
+  expect(result).toEqual({ success: true, repaired: [], relabeled: [], removed: [] });
   expect(tournamentEngine.getEvent({ drawId }).drawDefinition).toEqual(before);
   expect(repairMalformedLinks({ drawDefinition: undefined as any }).error).toBeDefined();
   expect(repairMalformedLink({ drawDefinition: undefined as any }).error).toBeDefined();

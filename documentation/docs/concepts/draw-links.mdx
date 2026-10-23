@@ -20,8 +20,8 @@ type Link = {
   linkType: 'LOSER' | 'WINNER' | 'POSITION'; // Type of participant flow
   source: {
     structureId: string; // Source structure UUID
-    roundNumber?: number; // Optional: specific round (0 = placeholder)
-    finishingPositions?: number[]; // For POSITION links
+    roundNumber?: number; // WINNER/LOSER: REQUIRED, the round that feeds the target. POSITION: optional (0 = placeholder)
+    finishingPositions?: number[]; // POSITION links: which group finishing positions leave a round robin
     qualifyingPositions?: number; // Qualifier count for placeholder links
   };
   target: {
@@ -51,23 +51,24 @@ type Link = {
 }
 ```
 
-**WINNER Links** - Direct winning participants:
+**WINNER Links** - Direct winning participants of an elimination round:
 
 ```js
 {
   linkType: 'WINNER',
   source: {
-    structureId: 'round-robin-group-1',
-    finishingPositions: [1]  // Group winners
+    structureId: 'qualifying-structure-id',
+    roundNumber: 2  // the qualifying round whose winners are the qualifiers
   },
   target: {
-    structureId: 'playoff-structure',
-    roundNumber: 1
+    structureId: 'main-draw-id',
+    roundNumber: 1,
+    feedProfile: 'DRAW'
   }
 }
 ```
 
-**POSITION Links** - Feed based on finishing position:
+**POSITION Links** - Feed based on finishing position (round robin groups):
 
 ```js
 {
@@ -83,6 +84,19 @@ type Link = {
   }
 }
 ```
+
+### Rounds and finishing positions: how a link names its source
+
+A link names WHO LEAVES its source structure in one of two ways, and the two are not interchangeable:
+
+| link type         | names its source by             | why                                                                                                                                                                                                          |
+| ----------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `WINNER`, `LOSER` | `source.roundNumber` (required) | an elimination structure decides who leaves it match by match, so the link names the round whose winners (or losers) it carries                                                                              |
+| `POSITION`        | `source.finishingPositions`     | a round robin decides who leaves it by [tally](/docs/policies/roundRobinTallyPolicy), once its groups are complete, so the link names the group finishing positions it carries (`[1]`: every group's winner) |
+
+- **A `POSITION` link needs no `roundNumber`.** The factory records the groups' final round on a round robin qualifying link (`roundNumber: 3` for groups of four) and none on a round robin playoff link; in neither does the round decide who leaves. Round robin qualifying into MAIN and round robin into its playoffs are both `POSITION` links.
+- **A `WINNER` or `LOSER` link with no `source.roundNumber` is malformed** (`LINK_MISSING_SOURCE_ROUND`): it cannot say which round it directs, and the draw refuses every outcome until it is repaired with [`repairMalformedLinks`](/docs/governors/draws-governor#repairmalformedlinks).
+- **Legacy label.** Records converted from classic TMX (2017–2023) carry the round robin qualifying link into MAIN as `linkType: 'WINNER'` with `finishingPositions: [1]` and no round. It is a `POSITION` link under an old name: its source is a round robin, and it names finishing positions. It is NOT malformed and does not refuse outcomes; [`getDrawInconsistencies`](/docs/governors/query-governor#getdrawinconsistencies) reports it as `LEGACY_ROUND_ROBIN_WINNER_LINK` (severity `info`), and [`repairMalformedLinks`](/docs/governors/draws-governor#repairmalformedlinks) and [`migrateTournamentRecord`](/docs/engines/migrate-tournament-record) relabel it `POSITION`. A `WINNER` link with no round out of an ELIMINATION structure stays malformed, whatever `finishingPositions` it carries.
 
 **Placeholder Qualifying Links** - Reserve qualifier positions before qualifying structures are generated:
 

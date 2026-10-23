@@ -999,6 +999,11 @@ Draw-level checks (in addition to every structure-level `issueType`):
 - `LINK_MISSING_SOURCE_ROUND` — a `WINNER`/`LOSER` link with no `source.roundNumber` (missing or 0);
   the engine cannot determine which round feeds the target. A link that is also dangling is reported
   once, as `DANGLING_LINK`. (error)
+- `LEGACY_ROUND_ROBIN_WINNER_LINK` — a round robin's link labelled `WINNER`, naming
+  `source.finishingPositions` with no round (classic TMX conversions). It is a `POSITION` link under a
+  legacy name: a round robin decides who leaves it by tally, so a missing round is correct here, and the
+  draw neither refuses outcomes nor reads as invalid. `repairMalformedLinks` and `migrateTournamentRecord`
+  relabel it `POSITION`. (info)
 - `INVALID_LINK` — an entry of `links` that is not an object (`null`, a string, an array), with its
   `linkIndex`. Every reader that dereferences it throws, so it is reported here and the rest of the
   scan reads the draw without it. (error)

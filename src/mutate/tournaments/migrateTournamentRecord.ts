@@ -1,6 +1,7 @@
 import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { getMatchUpPresence, getParticipantPresence } from '@Acquire/presenceAttestations';
+import { isLegacyRoundRobinWinnerLink } from '@Query/drawDefinition/malformedLinks';
 import { normalizePenaltyType } from '@Query/participants/normalizePenaltyType';
 import { storeGoesToResult } from '@Query/matchUps/addGoesTo';
 
@@ -9,6 +10,7 @@ import { DrawDefinition, Event, MatchUp, Participant, Structure, TimeItem, Tourn
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { SIGN_IN_STATUS } from '@Constants/participantConstants';
 import { ResultType, ResultWarning } from '@Types/factoryTypes';
+import { POSITION } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   COMPETITION_STATE,
@@ -187,6 +189,7 @@ type MigrationCounts = {
   matchUpCheckIns: number;
   drawPositions: number;
   goesTo: number;
+  links: number;
   participantPresence: number;
   penaltyLabels: number;
   venues: number;
@@ -278,6 +281,22 @@ function migrateGoesTo(drawDefinition: DrawDefinition, eventId: string | undefin
   }
 }
 
+/**
+ * A round robin's link under the legacy WINNER label becomes the POSITION link it always meant
+ * (`isLegacyRoundRobinWinnerLink`): records converted from classic TMX name a round robin qualifying structure's link
+ * into MAIN `linkType: WINNER`, with `source.finishingPositions` and no round. Only the label changes. Done before the
+ * edges are derived, though the label does not decide them: a round robin's link directs no matchUp.
+ */
+function relabelLegacyRoundRobinLinks(drawDefinition: DrawDefinition): number {
+  let relabeled = 0;
+  for (const link of drawDefinition.links ?? []) {
+    if (!isLegacyRoundRobinWinnerLink(link, drawDefinition)) continue;
+    link.linkType = POSITION;
+    relabeled += 1;
+  }
+  return relabeled;
+}
+
 function migrateDrawDefinition(drawDefinition: DrawDefinition, eventId: string | undefined, context: MigrationContext) {
   const { counts, clearLegacy } = context;
   counts.drawDefinitions += applyFlatPromotions(drawDefinition, DRAW_DEFINITION_PROMOTIONS, clearLegacy);
@@ -285,6 +304,7 @@ function migrateDrawDefinition(drawDefinition: DrawDefinition, eventId: string |
     counts.entries += applyFlatPromotions(entry, ENTRY_PROMOTIONS, clearLegacy);
   }
   walkStructures(drawDefinition.structures ?? [], counts, clearLegacy);
+  counts.links += relabelLegacyRoundRobinLinks(drawDefinition);
   migrateGoesTo(drawDefinition, eventId, context);
 }
 
@@ -323,6 +343,7 @@ export function migrateTournamentRecord({
     matchUpCheckIns: 0,
     drawPositions: 0,
     goesTo: 0,
+    links: 0,
     participantPresence: 0,
     penaltyLabels: 0,
     venues: 0,
