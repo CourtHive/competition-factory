@@ -13,13 +13,13 @@ import { HydratedMatchUp } from '@Types/hydrated';
 
 /**
  * vNext, stage two: the PLAN. From the view alone it decides, date by date, which profiled matchUps take which slot,
- * and writes nothing: the records are only read, and every booking is kept in the plan's own bookkeeping. What it decides
- * is what v1's timed scheduler (`scheduleProfileRounds`, jinnScheduler) decides with `dryRun: true`; the differential in
- * `schedulingPlan.test.ts` holds the two to the same placements across the corpus and the scale matrix.
+ * and writes nothing: the records are only read, and every booking is kept in the plan's own bookkeeping. It replaced v1's
+ * timed scheduler (jinnScheduler) after a differential held the two to the same placements across the corpus and the
+ * scale matrix; the corpus manifest now pins them (SCHEDULING_PIPELINE_VNEXT.md § 7).
  *
  * A date runs as spec § 3 states it: the matchUps already on the date book their participants and recovery first; each
  * venue's slots are sized by the greatest average minutes among its rounds; then the venues' slots are filled in turn
- * (`placeVenueRounds`, shared with v1).
+ * (`placeVenueRounds`).
  */
 
 type PlanScheduleArgs = {

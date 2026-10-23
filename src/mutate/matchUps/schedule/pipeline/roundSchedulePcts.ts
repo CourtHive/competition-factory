@@ -1,7 +1,6 @@
 /**
  * Each profiled round's share placed on its date, written onto the profile's own round objects (`canScheduledMatchUpIds`,
- * `possibleToSchedulePct`, `possibleToSchedule`), which a run returns as `dateSchedulingProfiles`. Shared by v1's
- * jinnScheduler and vNext.
+ * `possibleToSchedulePct`, `possibleToSchedule`), which a run returns as `dateSchedulingProfiles`.
  */
 type ReportedRound = {
   matchUps?: { matchUpId: string }[];

@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 // Fixtures
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
 
-// Regression for the "Explain why over capacity" enrichment. jinnScheduler
+// Regression for the "Explain why over capacity" enrichment. The scheduler
 // historically returned only flat `overLimitMatchUpIds[date]: string[]` —
 // operators had no way to see WHICH participant on a refused matchUp hit
 // WHICH counter. The additive `overLimitMatchUpDetails[date]` payload

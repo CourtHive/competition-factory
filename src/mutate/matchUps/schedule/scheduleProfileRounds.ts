@@ -1,5 +1,4 @@
 import { getParticipantReachability } from '@Mutate/matchUps/schedule/scheduleMatchUps/getParticipantReachability';
-import { jinnScheduler } from '@Mutate/matchUps/schedule/schedulers/jinnScheduler/jinnScheduler';
 import { v2Scheduler } from '@Mutate/matchUps/schedule/schedulers/v2Scheduler/v2Scheduler';
 import { clearScheduledMatchUps } from '@Mutate/matchUps/schedule/clearScheduledMatchUps';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
@@ -10,6 +9,7 @@ import { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { getSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
+import { scheduleProfileVNext } from './pipeline/scheduleProfile';
 import { extractDate, isValidDateString } from '@Tools/dateTime';
 
 // constants and types
@@ -38,8 +38,13 @@ type ScheduleProfileRoundsArgs = {
    */
   pro?: boolean;
 };
-// abstraction layer to allow other schedulers to be defined at a later time
+/**
+ * The profile scheduler: the scheduling pipeline's view → plan → write (`pipeline/`, SCHEDULING_PIPELINE_VNEXT.md § 7).
+ * The deprecated `pro` flag alone still takes the older path below, to `v2Scheduler`.
+ */
 export function scheduleProfileRounds(params: ScheduleProfileRoundsArgs) {
+  if (!params?.pro) return scheduleProfileVNext(params);
+
   const {
     checkPotentialRequestConflicts = true,
     excludeNoDateCompleted = true,
@@ -52,7 +57,6 @@ export function scheduleProfileRounds(params: ScheduleProfileRoundsArgs) {
     useGarman,
     courtIds,
     dryRun,
-    pro,
   } = params;
 
   const paramsCheck = checkRequiredParameters(params, [
@@ -179,11 +183,7 @@ export function scheduleProfileRounds(params: ScheduleProfileRoundsArgs) {
     courts,
   };
 
-  if (pro) {
-    // v2Scheduler (held pending its assessment) still types clearScheduleDates as boolean;
-    // the shared helpers it passes the value to accept the documented string[] form
-    return v2Scheduler(schedulingParams as Parameters<typeof v2Scheduler>[0]);
-  } else {
-    return jinnScheduler(schedulingParams);
-  }
+  // v2Scheduler (held pending its assessment) still types clearScheduleDates as boolean;
+  // the shared helpers it passes the value to accept the documented string[] form
+  return v2Scheduler(schedulingParams as Parameters<typeof v2Scheduler>[0]);
 }

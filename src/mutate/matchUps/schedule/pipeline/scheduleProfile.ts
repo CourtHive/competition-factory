@@ -14,10 +14,9 @@ import { TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
 /**
- * vNext end to end: view → plan → write, for the calls v1's `scheduleProfileRounds` takes with its default (timed)
- * scheduler, returning what it returns. Not yet an engine method: it is reached only by the differential
- * (`schedulingPipeline.test.ts`), which holds its records and its result to v1's, call for call, until the switch
- * (SCHEDULING_PIPELINE_VNEXT.md § 7).
+ * The profile scheduler end to end: view → plan → write. `scheduleProfileRounds` routes every call here but the
+ * deprecated `pro` one. It replaced v1's timed scheduler after a differential held its records and its result to v1's,
+ * call for call; the corpus manifest now pins them (SCHEDULING_PIPELINE_VNEXT.md § 7).
  */
 type ScheduleProfileVNextArgs = {
   checkPotentialRequestConflicts?: boolean;
