@@ -141,6 +141,8 @@ function invertedPolicy() {
   const participant = template[POLICY_TYPE_PARTICIPANT].participant;
   for (const level of [participant, participant.individualParticipants]) {
     level.participantName = false;
+    // the name of each team an individual belongs to is a TEAM participant's name: deny it with the rest
+    level.teams = { ...level.teams, participantName: false };
     level.rankings = false;
     level.ratings = false;
     level.representing = false;
