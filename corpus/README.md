@@ -183,6 +183,18 @@ untouched. The sweep also asks the report properties (`SCHEDULE_ACCOUNTED`, `SCH
 of each call. Under it, `global/paramsCopiedOnlyWhenRead.test.ts` fails by construction: it asserts
 that params are copied only when nothing observes the call, and the sweep is an observer.
 
+## The scheduling scale source
+
+```bash
+pnpm corpus:scheduling-scale      # .corpus-out/scheduling-scale/scheduling-scale.jsonl, the whole matrix
+SCHEDULING_SCALE_FAILURES=/tmp/f.json pnpm corpus:scheduling-scale   # keep every refused cell's reason
+```
+
+`src/tests/testHarness/corpus/schedulingScale.ts` runs a matrix of generated configurations (draw type × size × BYEs ×
+venues × daily limits × days: 288 cells) through `scheduleProfileRounds` and then `scheduleProfileGrid`. Every cell
+claims every scheduling property, so a refused cell is a scheduler breaking one, named by cell and property. A smoke
+slice (one cell per draw type) runs in the ordinary suite; the whole matrix is opt-in and is not in the manifest gate.
+
 ## The hash manifest (committed)
 
 ```bash

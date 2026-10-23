@@ -59,7 +59,9 @@ function findRoundMatchUps(
   scheduleCompletedMatchUps?: boolean,
 ): HydratedMatchUp[] {
   const { structureId, roundNumber, drawId, roundSegment } = roundProfile;
-  const effectiveStructureId = containedStructureIds[structureId] ?? structureId;
+  // a matchUp is in the profiled structure, or in a group the profiled structure contains
+  const inProfiledStructure = (m: HydratedMatchUp) =>
+    m.structureId === structureId || containedStructureIds[m.structureId] === structureId;
 
   const segmentIds = roundSegment
     ? new Set(
@@ -86,8 +88,7 @@ function findRoundMatchUps(
     if (m.roundNumber !== roundNumber) return false;
     if (m.drawId !== drawId) return false;
 
-    const mStructureId = containedStructureIds[m.structureId] ?? m.structureId;
-    if (mStructureId !== effectiveStructureId) return false;
+    if (!inProfiledStructure(m)) return false;
 
     return segmentIds ? segmentIds.has(m.matchUpId) : true;
   });
@@ -164,11 +165,13 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
 
   const { schedulingProfile = [] } = result;
 
-  // Resolve contained structures for round robin
-  const containedStructureIds = Object.assign(
+  // a round robin's groups are contained in the structure its profile rounds name: each group's container, by group.
+  // This was the container -> groups map read as group -> container, so a round profiled on a round robin never found
+  // a matchUp and the grid placed none of it (C6, SCHEDULING_PIPELINE_VNEXT.md § 5)
+  const containedStructureIds: Record<string, string> = Object.assign(
     {},
     ...Object.values(tournamentRecords).map(
-      (tournamentRecord) => getContainedStructures({ tournamentRecord }).containedStructures,
+      (tournamentRecord) => getContainedStructures({ tournamentRecord }).containerStructures,
     ),
   );
 
