@@ -11,6 +11,11 @@ import { setClock } from '@Tools/clock';
 import addFormats from 'ajv-formats';
 import Ajv from 'ajv';
 import fs from 'fs';
+import {
+  SCHEDULE_RERUN_STABLE,
+  checkRerunStable,
+  checkSchedulingReport,
+} from '../scheduling/schedulingReportProperties';
 
 export type Directive = { method: string; params: Record<string, unknown> };
 
@@ -77,20 +82,27 @@ function violationsAcross(record: any, rules: string[]): string[] {
   return found;
 }
 
-/** the scheduling step properties a scenario claims, asked of one step: a claimed property is checked, never assumed */
-function schedulingViolations(directive: Directive, before: any, after: any, properties: string[]): string[] {
-  const claimed = new Set(
-    properties.filter((name) => (SCHEDULING_STEP_PROPERTIES as readonly string[]).includes(name)),
-  );
-  if (!claimed.size) return [];
+type StepUnderCheck = { directive: Directive; previous?: Directive; before: any; after: any; report?: any };
+
+/** the scheduling properties a scenario claims, asked of one step: a claimed property is checked, never assumed */
+function schedulingViolations({ directive, previous, before, after, report }: StepUnderCheck, properties: string[]) {
+  const claimed = new Set(properties);
   const { averageMatchUpMinutes, recoveryMinutes, recoveryMinutesMap } = directive.params as any;
   const timing =
     directive.method === 'scheduleMatchUps'
       ? { averageMatchUpMinutes, recoveryMinutes, recoveryMinutesMap }
       : undefined;
-  return checkSchedulingStep({ before, after, timing })
+  const repeated =
+    claimed.has(SCHEDULE_RERUN_STABLE) && !!report && JSON.stringify(previous) === JSON.stringify(directive);
+  return [
+    ...(SCHEDULING_STEP_PROPERTIES.some((name) => claimed.has(name))
+      ? checkSchedulingStep({ before, after, timing })
+      : []),
+    ...checkSchedulingReport({ before, after, report, params: directive.params }),
+    ...(repeated ? checkRerunStable({ before, after }) : []),
+  ]
     .filter((violation) => claimed.has(violation.property))
-    .map((violation) => `${violation.property}: ${violation.matchUpId} ${violation.detail}`);
+    .map((violation) => `${violation.property}: ${violation.matchUpId ?? ''} ${violation.detail}`);
 }
 
 /**
@@ -142,7 +154,10 @@ export function writeScenario(args: WriteScenarioArgs) {
       const hash = canonicalHash(next);
       const violatedNow = [
         ...violationsAcross(next, invariants),
-        ...schedulingViolations(directive, state, next, properties),
+        ...schedulingViolations(
+          { directive, previous: directives[steps.length - 1], before: state, after: next, report },
+          properties,
+        ),
       ];
       if (violatedNow.length && !knownFailure) {
         throw new CorpusWriteError(`after ${directive.method} (step ${steps.length}): ${violatedNow.join('; ')}`);

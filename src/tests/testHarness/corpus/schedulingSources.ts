@@ -1,3 +1,4 @@
+import { SCHEDULING_REPORT_PROPERTIES } from '../scheduling/schedulingReportProperties';
 import { CorpusWriteError, writeScenario, type Directive } from './writeScenario';
 import { SCHEDULING_STEP_PROPERTIES } from '../scheduling/schedulingProperties';
 import tournamentEngine from '@Engines/syncEngine';
@@ -106,7 +107,8 @@ export function schedulingScenarios(): Authored[] {
       scenarioId: 'authored/scheduling/profile-one-day',
       ref: 'scheduling § timed pipeline: a profiled round is placed on its date, its dependents after it',
       initialRecord: tournamentRecord,
-      directives: [round(DAY_1, MAIN, 1), round(DAY_1, MAIN, 2), profileRun([DAY_1])],
+      // the run twice: the repeat places nothing (SCHEDULE_RERUN_STABLE)
+      directives: [round(DAY_1, MAIN, 1), round(DAY_1, MAIN, 2), profileRun([DAY_1]), profileRun([DAY_1])],
       finalState: (record) => [
         ...claim(timedOn(rawRound(record, MAIN, 1), DAY_1) === 8, 'all 8 R1 matchUps timed on day 1'),
         ...claim(timedOn(rawRound(record, MAIN, 2), DAY_1) === 4, 'all 4 R2 matchUps timed on day 1'),
@@ -292,7 +294,7 @@ export function recordScheduling({ outDir }: { outDir: string }) {
         scenarioId: authored.scenarioId,
         source: { kind: 'authored', ref: authored.ref },
         tags: ['authored', 'scheduling-pipeline'],
-        properties: [...SCHEDULING_STEP_PROPERTIES],
+        properties: [...SCHEDULING_STEP_PROPERTIES, ...SCHEDULING_REPORT_PROPERTIES],
         knownFailure: authored.knownFailure,
         initialRecord: authored.initialRecord,
         directives: authored.directives,

@@ -125,3 +125,31 @@ matchUps they are certain to play there. The limits are the tournament's (`sched
 scheduling policy's `defaultDailyLimits`; none when neither is set), with the participant's override from the policy's
 `matchUpDailyLimits` on top, key by key. A limit of 0 is no limit. A participant already over before the call is a
 violation only if the call adds to it.
+
+## Scheduling report properties
+
+What a scheduling call's deferral report (its step's `result.value`; `src/tests/testHarness/scheduling/schedulingReport.ts`)
+must say about the records before and after it. The authority is
+`src/tests/testHarness/scheduling/schedulingReportProperties.ts`. A call made with `dryRun` reports placements it does not
+write, by design, and is not asked.
+
+### `SCHEDULE_ACCOUNTED`
+
+For a call that schedules from the scheduling profile: every matchUp of a profiled round, on a date the call schedules
+(the profile's dates, narrowed to the call's `scheduleDates` when it names any), that could be scheduled (not a BYE, not
+completed, not a TEAM dual: its tie matchUps are what is scheduled) and is unplaced after the call appears in the report
+under some reason (`notScheduledMatchUpIds`, `noTimeMatchUpIds`, `overLimitMatchUpIds`, `dependencyDeferredMatchUpIds`,
+`recoveryTimeDeferredMatchUpIds`, `requestConflicts`). Placed means timed, or (the grid scheduler, which places by row and
+sets no time) given a date and a court order. A round's
+matchUps are those of its draw and round number, in its structure or a structure it contains, limited to its
+`matchUpIds` when it lists any, and to its `roundSegment` (by round position) when it has one.
+
+### `SCHEDULE_REPORT_TRUE`
+
+The report's `scheduledMatchUpIds` are the matchUps the call placed: every placed matchUp is reported, and every reported
+matchUp the record holds is stored on the date it is reported under. A report covering several tournaments is checked
+against each record for the matchUps that record holds.
+
+### `SCHEDULE_RERUN_STABLE`
+
+A scheduling call identical to the step before it places nothing: no matchUp is timed, or moved, by the repeat.

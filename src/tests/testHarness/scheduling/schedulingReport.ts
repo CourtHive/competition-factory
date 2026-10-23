@@ -10,6 +10,7 @@
  */
 const REASONS = [
   'scheduledMatchUpIds',
+  'notScheduledMatchUpIds',
   'noTimeMatchUpIds',
   'overLimitMatchUpIds',
   'dependencyDeferredMatchUpIds',

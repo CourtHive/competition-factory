@@ -25,11 +25,13 @@ const PLACING_METHODS = new Set([
 
 if (out) {
   const { checkSchedulingStep } = await import('./scheduling/schedulingProperties');
+  const { checkSchedulingReport } = await import('./scheduling/schedulingReportProperties');
+  const { schedulingReport } = await import('./scheduling/schedulingReport');
   const { getInvokeObserver, getTournamentRecords, setInvokeObserver } = await import('@Global/state/globalState');
 
   const checked: Record<string, number> = {};
   const violations: any[] = [];
-  const open: { methodName: string; before: Record<string, any>; timing?: any }[] = [];
+  const open: { methodName: string; before: Record<string, any>; timing?: any; params?: any }[] = [];
   let checking = false;
 
   const snapshot = () => structuredClone(getTournamentRecords() ?? {});
@@ -43,7 +45,7 @@ if (out) {
         event.methodName === 'scheduleMatchUps'
           ? { averageMatchUpMinutes, recoveryMinutes, recoveryMinutesMap }
           : undefined;
-      open.push({ methodName: event.methodName, before: snapshot(), timing });
+      open.push({ methodName: event.methodName, before: snapshot(), timing, params: event.params });
       return undefined;
     }
     const call = open.pop();
@@ -55,7 +57,11 @@ if (out) {
       for (const [tournamentId, record] of Object.entries(after)) {
         const before = call.before[tournamentId];
         if (!before) continue;
-        for (const violation of checkSchedulingStep({ before, after: record, timing: call.timing }))
+        const report = schedulingReport(call.methodName, event.result);
+        for (const violation of [
+          ...checkSchedulingStep({ before, after: record, timing: call.timing }),
+          ...checkSchedulingReport({ before, after: record, report, params: call.params }),
+        ])
           violations.push({ test: currentTestSeed()?.name, method: call.methodName, ...violation });
       }
     } finally {
