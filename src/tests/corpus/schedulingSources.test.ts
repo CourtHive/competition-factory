@@ -13,6 +13,9 @@ import fs from 'node:fs';
  * writer refuses one whose scheduler breaks them; its `finalState` claims are the rule it pins. A scenario with a
  * `knownFailure` pins today's behaviour of a recorded defect: its claims are expected to FAIL, and the day they pass
  * the defect is fixed and the scenario loses its `knownFailure` in the same PR.
+ *
+ * The pinned scale sample makes this the slowest corpus source: about 7 s locally, over 30 s under CI's coverage
+ * instrumentation, hence its own timeout.
  */
 let outDir = '';
 afterEach(() => {
@@ -54,4 +57,4 @@ it('every scheduling scenario writes, replays both ways, and holds its claims (k
       expect({ id, defectStillPresent: failedClaims.length > 0 }).toEqual({ id, defectStillPresent: true });
     else expect({ id, failedClaims }).toEqual({ id, failedClaims: [] });
   }
-});
+}, 180_000);
