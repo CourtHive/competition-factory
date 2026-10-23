@@ -150,9 +150,8 @@ Dates are taken in order. On each date:
    of mixed formats is timed by its first). The venue's **slots** are its Garman times: with `C` courts available,
    average minutes `T` and period length `L`, the matchUps expected by period `P` are
    `TM = Int(((L × C) / T) × (P − 1) + C)`, and a period's slots are the difference from the period before, computed
-   over each court's availability and bookings. `T` is the average of the venue's first group of rounds (rounds group
-   by average minutes and period length), and `L` is the call's `periodLength`; a round's own `periodLength` only
-   affects how rounds group.
+   over each court's availability and bookings. `T` is the **greatest** average among the venue's rounds on the date (the
+   rounds form a single group), and `L` is the call's `periodLength`.
 3. **Slot by slot.** Each slot is offered to the venue's remaining matchUps in profile order; the first that passes the
    gate is placed there. A venue places at most as many matchUps per pass as it has courts; a slot no matchUp takes is
    retried in a later pass, up to 10 attempts. Venues alternate pass by pass until every venue is complete or the
