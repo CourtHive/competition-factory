@@ -21,8 +21,7 @@ type ScheduleProfileGridArgs = {
   tournamentRecords: TournamentRecords;
   matchUpDailyLimits?: { [key: string]: number };
   /**
-   * @deprecated ignored: the profile schedulers never place a completed matchUp (CA 2026-10-23). Removed at the next
-   * major.
+   * @deprecated ignored: completed matchUps are never scheduled (CA 2026-10-23). Removed at the next major.
    */
   scheduleCompletedMatchUps?: boolean;
   clearScheduleDates?: boolean | string[];
@@ -61,7 +60,6 @@ function findRoundMatchUps(
   roundProfile: RoundProfile,
   allMatchUps: HydratedMatchUp[],
   containedStructureIds: Record<string, string>,
-  scheduleCompletedMatchUps?: boolean,
 ): HydratedMatchUp[] {
   const { structureId, roundNumber, drawId, roundSegment } = roundProfile;
   // a matchUp is in the profiled structure, or in a group the profiled structure contains
@@ -83,11 +81,8 @@ function findRoundMatchUps(
 
   return allMatchUps.filter((m: any) => {
     if (m.matchUpStatus === BYE) return false;
-    // Completed matchUps from earlier sessions must not be carried into the
-    // pro scheduler — they don't need placement and would otherwise occupy
-    // grid rows, pushing newly-scheduled matchUps down. mocksEngine and a
-    // few other callers explicitly opt back in via scheduleCompletedMatchUps.
-    if (!scheduleCompletedMatchUps && completedMatchUpStatuses.includes(m.matchUpStatus)) return false;
+    // a completed matchUp is never placed (CA 2026-10-23): it needs no court, and would push new placements down
+    if (completedMatchUpStatuses.includes(m.matchUpStatus)) return false;
     if (m.schedule?.courtId) return false;
     if (m.schedule?.courtOrder) return false;
     if (m.roundNumber !== roundNumber) return false;
@@ -110,7 +105,6 @@ function collectVenuePlan(
   courtIdsFilter: Set<string> | null,
   allMatchUps: HydratedMatchUp[],
   containedStructureIds: Record<string, string>,
-  scheduleCompletedMatchUps?: boolean,
 ): { dateMatchUps: HydratedMatchUp[]; dateCourtIds: string[]; courtlessMatchUps: HydratedMatchUp[] } {
   const courtlessMatchUps: HydratedMatchUp[] = [];
   const dateMatchUps: HydratedMatchUp[] = [];
@@ -125,7 +119,7 @@ function collectVenuePlan(
     // date's other courts, and are reported not scheduled
     const target = allVenueCourtIds.length ? dateMatchUps : courtlessMatchUps;
     for (const roundProfile of venueProfile.rounds ?? []) {
-      target.push(...findRoundMatchUps(roundProfile, allMatchUps, containedStructureIds, scheduleCompletedMatchUps));
+      target.push(...findRoundMatchUps(roundProfile, allMatchUps, containedStructureIds));
     }
   }
 
@@ -158,8 +152,6 @@ function gridDailyLimits(
  * Each venue's courts are used as the target for its rounds.
  */
 export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
-  // a completed matchUp is never placed on the grid (CA 2026-10-23), whatever the call says
-  const scheduleCompletedMatchUps = false;
   const {
     matchUpDailyLimits,
     minCourtGridRows = 10,
@@ -270,7 +262,6 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
       courtIdsFilter,
       allMatchUps ?? [],
       containedStructureIds,
-      scheduleCompletedMatchUps,
     );
 
     const courtlessIds = courtlessMatchUps.map(({ matchUpId }) => matchUpId);
@@ -290,15 +281,13 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
     }
 
     // Run proAutoSchedule for this date with the collected matchUps.
-    // BYE / completed filtering already happened in `findRoundMatchUps` above
-    // when `scheduleCompletedMatchUps` was false (the default), so the
-    // scheduler is fed the pre-filtered set.
+    // BYE / completed filtering already happened in `findRoundMatchUps` above,
+    // so the scheduler is fed the pre-filtered set.
     const gridResult = proAutoSchedule({
       courtIds: resolveTargetCourtIds(dateCourtIds, courtIdsFilter),
       matchUpDailyLimits: limits.matchUpDailyLimits,
       dailyLimitOverrides: limits.dailyLimitOverrides,
       dailyLimitsWarnOnly: waived,
-      scheduleCompletedMatchUps,
       minCourtGridRows,
       tournamentRecords,
       matchUps: dateMatchUps,

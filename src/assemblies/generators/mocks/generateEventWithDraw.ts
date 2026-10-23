@@ -27,6 +27,7 @@ import { addFlight } from '@Mutate/events/addFlight';
 import { isGendered } from '@Validators/isGendered';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { isFemale } from '@Validators/isFemale';
+import { findEvent } from '@Acquire/findEvent';
 import { isObject } from '@Tools/objects';
 import { coerceEven } from '@Tools/math';
 import { UUID } from '@Tools/UUID';
@@ -712,6 +713,7 @@ function applySeedingScales({ tournamentRecord, participantIds, seedingScaleName
 }
 
 function generateAndAttachDraw({
+  deferredOutcomes,
   matchUpStatusProfile,
   completeAllMatchUps,
   randomWinningSide,
@@ -768,7 +770,30 @@ function generateAndAttachDraw({
     addDrawDefinition({ drawDefinition, event, suppressNotifications: true });
 
     const manual = drawProfile.automated === false;
-    if (isMock && !manual) {
+    // a tournament auto-scheduled after generation has its draws' results applied once it is scheduled, as a real
+    // tournament is played: the schedulers never place a completed matchUp (CA 2026-10-23). An iterative AD_HOC draw
+    // generates its rounds from results, and a draw not added to the event is never scheduled: both complete now
+    const defer = deferredOutcomes && !iterativeAdHoc && drawProfile?.addEvent !== false;
+    if (isMock && !manual && defer) {
+      const { drawId: deferredDrawId } = drawDefinition;
+      deferredOutcomes.push(() => {
+        const found = findEvent({ tournamentRecord, drawId: deferredDrawId });
+        if (!found.event || !found.drawDefinition) return undefined;
+        return processOutcomes({
+          drawDefinition: found.drawDefinition,
+          event: found.event,
+          matchUpStatusProfile,
+          completeAllMatchUps,
+          randomWinningSide,
+          tournamentRecord,
+          completionGoal,
+          matchUpFormat,
+          drawProfile,
+          drawType,
+          random,
+        });
+      });
+    } else if (isMock && !manual) {
       const outcomesResult: any = processOutcomes({
         matchUpStatusProfile,
         completeAllMatchUps,
@@ -1006,6 +1031,7 @@ export function generateEventWithDraw(params) {
     (drawProfileCopy.roundsCount ?? 1) > 1;
 
   const genResult = generateAndAttachDraw({
+    deferredOutcomes: params.deferredOutcomes,
     matchUpStatusProfile,
     completeAllMatchUps,
     randomWinningSide,

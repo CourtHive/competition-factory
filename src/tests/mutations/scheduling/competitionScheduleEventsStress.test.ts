@@ -45,7 +45,6 @@ test('mocksEngine can autoschedule', () => {
   const participantsProfile = { personExtensions };
 
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    scheduleCompletedMatchUps: true,
     completeAllMatchUps: true,
     participantsProfile,
     autoSchedule: true,
@@ -59,7 +58,9 @@ test('mocksEngine can autoschedule', () => {
     matchUps: [mockedMatchUp],
   } = tournamentEngine.setState(tournamentRecord).allTournamentMatchUps();
 
-  expect(Object.keys(mockedMatchUp.schedule).length).toBeGreaterThan(0);
+  // a time, not merely a schedule object (scoredTime alone made one): the mocks schedule, then play
+  expect(mockedMatchUp.matchUpStatus).toEqual('COMPLETED');
+  expect(mockedMatchUp.schedule.scheduledTime).toBeDefined();
 });
 
 test('competitionScheduelMatchUps supports hydrateParticipants: false', () => {
@@ -104,7 +105,6 @@ test('competitionScheduelMatchUps supports hydrateParticipants: false', () => {
   const participantsProfile = { personExtensions };
 
   mocksEngine.generateTournamentRecord({
-    scheduleCompletedMatchUps: true,
     completeAllMatchUps: true,
     participantsProfile,
     autoSchedule: true,

@@ -1093,6 +1093,9 @@ engine.proAutoSchedule({
 });
 ```
 
+A completed matchUp is never placed (CA 2026-10-23): passed one, the write skips it and it is reported not scheduled.
+`scheduleCompletedMatchUps` is accepted and ignored until the next major.
+
 ---
 
 ### proConflicts

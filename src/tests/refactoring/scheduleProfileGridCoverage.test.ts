@@ -3,8 +3,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { NO_VALID_DATES } from '@Constants/errorConditionConstants';
 import { SINGLE_ELIMINATION, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
+import { NO_VALID_DATES } from '@Constants/errorConditionConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 
 const VENUE_ID = 'grid-venue';
@@ -707,9 +707,9 @@ describe('scheduleProfileGrid edge cases', () => {
   });
 });
 
-// ===== scheduleCompletedMatchUps =====
+// ===== scheduleCompletedMatchUps (retired, CA 2026-10-23: accepted and ignored) =====
 describe('scheduleProfileGrid scheduleCompletedMatchUps', () => {
-  it('passes scheduleCompletedMatchUps option through to proAutoSchedule', () => {
+  it('is accepted and changes nothing for a draw with no completed matchUp', () => {
     const { tournamentId, eventId, drawId, structureId, startDate } = setupTournament();
 
     addProfileRound({ tournamentId, eventId, drawId, structureId, roundNumber: 1, scheduleDate: startDate });

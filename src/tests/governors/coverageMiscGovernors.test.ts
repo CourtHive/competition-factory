@@ -159,16 +159,12 @@ describe('getMatchUpsToSchedule', () => {
     expect(matchUpsToSchedule![0].matchUpId).toBe('m2');
   });
 
-  it('includes completed matchUps when scheduleCompletedMatchUps is true', () => {
+  it('never includes a completed matchUp (CA 2026-10-23: no override)', () => {
     const matchUps = [{ matchUpId: 'm1', matchUpStatus: COMPLETED }, { matchUpId: 'm2' }];
     const orderedMatchUpIds = ['m1', 'm2'];
 
-    const { matchUpsToSchedule } = getMatchUpsToSchedule({
-      scheduleCompletedMatchUps: true,
-      orderedMatchUpIds,
-      matchUps,
-    });
-    expect(matchUpsToSchedule!.length).toBe(2);
+    const { matchUpsToSchedule } = getMatchUpsToSchedule({ orderedMatchUpIds, matchUps });
+    expect(matchUpsToSchedule!.map(({ matchUpId }) => matchUpId)).toEqual(['m2']);
   });
 });
 

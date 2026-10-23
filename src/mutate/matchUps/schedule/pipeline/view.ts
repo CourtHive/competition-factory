@@ -89,7 +89,6 @@ export type SchedulingView = {
 
 type BuildSchedulingViewArgs = {
   tournamentRecords: { [tournamentId: string]: Tournament };
-  scheduleCompletedMatchUps?: boolean;
   scheduleDates?: string[];
   periodLength?: number;
   courtIds?: string[];
@@ -177,7 +176,6 @@ function roundMinutes(
 }
 
 export function buildSchedulingView({
-  scheduleCompletedMatchUps,
   scheduleDates = [],
   tournamentRecords,
   periodLength = 30,
@@ -213,9 +211,10 @@ export function buildSchedulingView({
       (tournamentRecord) => getContainedStructures({ tournamentRecord }).containedStructures,
     ),
   );
+  // a completed matchUp is never scheduled again (CA 2026-10-23)
   const schedulable = (matchUp: HydratedMatchUp) =>
     matchUp.matchUpStatus !== BYE &&
-    (scheduleCompletedMatchUps || !matchUp.matchUpStatus || !completedMatchUpStatuses.includes(matchUp.matchUpStatus));
+    (!matchUp.matchUpStatus || !completedMatchUpStatuses.includes(matchUp.matchUpStatus));
 
   const minutes = new Map<string, Minutes>();
   const dates: DatePlan[] = dateProfiles.map((dateProfile) => {

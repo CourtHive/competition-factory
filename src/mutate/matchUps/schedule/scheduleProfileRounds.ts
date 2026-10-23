@@ -24,8 +24,7 @@ type ScheduleProfileRoundsArgs = {
   checkPotentialRequestConflicts?: boolean;
   tournamentRecords: TournamentRecords;
   /**
-   * @deprecated ignored: the profile schedulers never place a completed matchUp (CA 2026-10-23). Removed at the next
-   * major.
+   * @deprecated ignored: completed matchUps are never scheduled (CA 2026-10-23). Removed at the next major.
    */
   scheduleCompletedMatchUps?: boolean;
   excludeNoDateCompleted?: boolean;
@@ -47,8 +46,7 @@ type ScheduleProfileRoundsArgs = {
  * The deprecated `pro` flag alone still takes the older path below, to `v2Scheduler`.
  */
 export function scheduleProfileRounds(params: ScheduleProfileRoundsArgs) {
-  // a completed matchUp is never scheduled again by the profile schedulers (CA 2026-10-23), whatever the call says
-  if (!params?.pro) return scheduleProfileVNext({ ...params, scheduleCompletedMatchUps: undefined });
+  if (!params?.pro) return scheduleProfileVNext(params);
 
   const {
     checkPotentialRequestConflicts = true,

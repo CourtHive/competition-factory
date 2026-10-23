@@ -50,7 +50,9 @@ interface GenerateTournamentRecordOptions {
 
   // Scheduling
   schedulingProfile?: array; // Scheduling directives
-  autoSchedule?: boolean; // Auto-schedule using profile
+  autoSchedule?: boolean; // Auto-schedule using profile; results (below) are then applied after scheduling,
+  // so completed matchUps carry the schedule they were played to. The schedulers never place a completed
+  // matchUp, and `scheduleCompletedMatchUps` is accepted and ignored (CA 2026-10-23)
   scenarioProfile?: object; // Anchor the schedule to a moment (see below)
 
   // Match Completion (each may also be set on a single drawProfile, which takes precedence)
