@@ -1169,6 +1169,13 @@ const { tournamentRecord, scenarioResult } = mocksEngine.generateTournamentRecor
 - It requires matchUps that are already scheduled (a `schedulingProfile` with `autoSchedule`). With
   nothing scheduled it is a **no-op, not an error** — `scenarioResult.shiftedCount` is `0`.
 - Pass an ISO `anchor` in tests. `'NOW'` is for demos and fixtures meant to stay current.
+- With `autoSchedule`, the order is: schedule, anchor, assign courts, **then** apply the results, then
+  `called` / `checkedIn` / `conflicts`. So completed matchUps are shifted and courted with the rest, and the
+  operational state reads the played tournament.
+- The shift is all or nothing. It is refused, before any matchUp moves, when it would leave the tournament's
+  dates (`INVALID_DATE`) or leave a matchUp out of played order (`ANACHRONISM`, judged on the whole shift: a
+  uniform shift of a schedule that is in order never is). An invalid `called`, `checkedIn` or `conflicts` is
+  refused before the shift as well, and a court grid that refuses is the call's refusal.
 
 `scenarioResult` reports `anchoredTo`, `shiftMinutes` and `shiftedCount`, and `calledMatchUpIds`,
 `checkedInMatchUpIds` and `conflicts` (each with its `type` and `matchUpIds`).
