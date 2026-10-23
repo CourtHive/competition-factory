@@ -67,7 +67,8 @@ export function bulkScheduleMatchUps(params: BulkScheduleMatchUpsArgs) {
     if (detail?.matchUpId && !detailTournamentIds[index]) notFoundMatchUpIds.push(detail.matchUpId);
   });
 
-  const { matchUpDependencies } = getMatchUpDependencies({
+  // one graph and one hydration for the whole call: both passes over every tournament reuse them
+  const { matchUpDependencies, matchUps: inContextMatchUps } = getMatchUpDependencies({
     tournamentRecords,
   });
 
@@ -91,6 +92,7 @@ export function bulkScheduleMatchUps(params: BulkScheduleMatchUpsArgs) {
     scheduleByeMatchUps,
     matchUpDependencies,
     errorOnAnachronism,
+    inContextMatchUps,
     removePriorValues,
     tournamentRecords,
     tournamentRecord,

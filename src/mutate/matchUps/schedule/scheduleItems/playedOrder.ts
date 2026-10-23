@@ -163,9 +163,13 @@ export type BatchPlacement = { drawId: string; matchUpId: string; schedule: Plac
  * its final earlier together is not refused for the step between, and a refusal leaves nothing half-written.
  */
 export function checkBatchPlayedOrder({
+  matchUpDependencies: givenDependencies,
+  inContextMatchUps: givenMatchUps,
   tournamentRecord,
   placements,
 }: {
+  matchUpDependencies?: PlayedOrderArgs['matchUpDependencies'];
+  inContextMatchUps?: HydratedMatchUp[];
   placements: BatchPlacement[];
   tournamentRecord: Tournament;
 }): ResultType | undefined {
@@ -191,9 +195,12 @@ export function checkBatchPlayedOrder({
   for (const { drawId, matchUpId, schedule } of placements) {
     const draw = draws.get(drawId);
     if (!draw) continue;
-    if (!dependenciesByDraw.has(drawId))
+    // the caller's graph when it has one (a bulk call builds it once for every tournament), else one per draw
+    if (!givenDependencies && !dependenciesByDraw.has(drawId))
       dependenciesByDraw.set(drawId, getMatchUpDependencies({ drawDefinition: draw.drawDefinition }));
-    const { matchUpDependencies, matchUps } = dependenciesByDraw.get(drawId) ?? {};
+    const { matchUpDependencies, matchUps } = givenDependencies
+      ? { matchUpDependencies: givenDependencies, matchUps: givenMatchUps }
+      : (dependenciesByDraw.get(drawId) ?? {});
     const refusal = checkPlayedOrder({
       drawDefinition: draw.drawDefinition,
       inContextMatchUps: matchUps,

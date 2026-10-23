@@ -12,6 +12,7 @@ import { modifyParticipantDayMatchUps } from './participantDayLoad';
 import { updateTimeAfterRecovery } from './updateTimeAfterRecovery';
 import { calculateScheduleTimes } from './calculateScheduleTimes';
 import { findDrawDefinition } from '@Acquire/findDrawDefinition';
+import { checkPlayedOrder } from '../scheduleItems/playedOrder';
 import { checkRequestConflicts } from './checkRequestConflicts';
 import { getMatchUpIds } from '@Functions/global/extractors';
 import { processNextMatchUps } from './processNextMatchUps';
@@ -364,11 +365,22 @@ export function scheduleMatchUps(params) {
               if (dryRun) {
                 scheduledMatchUpIds.push(matchUpId);
               } else {
-                const result = addMatchUpScheduledTime({
+                // asked once per placement with the graph this call already holds, not rebuilt by the write
+                const refusal = checkPlayedOrder({
+                  schedule: { scheduledDate: extractDate(scheduleDate), scheduledTime },
+                  inContextMatchUps: competitionMatchUps,
+                  matchUpDependencies,
                   drawDefinition,
                   matchUpId,
-                  scheduledTime,
                 });
+                const result =
+                  refusal ??
+                  addMatchUpScheduledTime({
+                    playedOrderChecked: true,
+                    drawDefinition,
+                    matchUpId,
+                    scheduledTime,
+                  });
                 // a refused write (a played matchUp it depends on is later) leaves the matchUp unscheduled, and no venue
                 if (!result.success) {
                   refusedMatchUpIds.push(matchUpId);
