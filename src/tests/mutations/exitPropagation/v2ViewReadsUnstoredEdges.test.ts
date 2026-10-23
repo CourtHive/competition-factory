@@ -1,6 +1,7 @@
 import { getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
+import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { addGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -11,8 +12,8 @@ import tournamentEngine from '@Engines/syncEngine';
 // constants
 import { DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Constants/outcomePipelineConstants';
-import { CANNOT_CHANGE_OUTCOME } from '@Constants/errorConditionConstants';
-import { COMPASS } from '@Constants/drawDefinitionConstants';
+import { CANNOT_CHANGE_OUTCOME, PROPAGATED_EXITS_DOWNSTREAM } from '@Constants/errorConditionConstants';
+import { COMPASS, FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 
 /**
  * THE v2 VIEW SEES A DRAW'S EDGES WHETHER OR NOT THE DRAW STORES THEM, AND WRITES NONE (outcome v2 S0).
@@ -116,5 +117,62 @@ describe('a correction refused by a recorded result, on a record that stores no 
     const corrected = enter(drawId, ['East|1|13', { winningSide: 1 }]);
     expect(corrected.thrown, 'v2 and v1 disagree').toBeUndefined();
     expect(corrected.error?.code).toEqual(CANNOT_CHANGE_OUTCOME.code);
+  });
+});
+
+/**
+ * Review of #5741, finding 1: `hasPropagatedExitDownstream` (§ 2 row 10) reads `loserMatchUpId` off the STORED
+ * matchUps (`matchUpsMap.drawMatchUps`), which `addGoesTo({ inContextOnly })` leaves alone. v1 reads them after
+ * `ensureGoesTo` wrote them. So on a record stored without edges, v2 missed a clear v1 refuses: a WALKOVER whose loser
+ * went on to an exit in the consolation (propagation off, so nothing is carried and `exitCarriedFrom` does not exempt
+ * it). The view now hands row 10 an overlay of the stored map carrying the edges it derived, writing nothing.
+ */
+describe('a clear refused by an exit downstream (row 10), on a record that stores no edges', () => {
+  const drawId = 'unstored-edges-row-10';
+  const WALKOVER_1 = { matchUpStatus: WALKOVER, winningSide: 1 };
+  const byName = (structureName: string, roundNumber: number, roundPosition: number) =>
+    getDrawMatchUps(drawId).find(
+      (matchUp: any) =>
+        matchUp.structureName === structureName &&
+        matchUp.roundNumber === roundNumber &&
+        matchUp.roundPosition === roundPosition,
+    );
+  const enter = (matchUp: any, outcome: any) =>
+    observeMutation({ propagateExitStatus: false, matchUpId: matchUp.matchUpId, outcome, drawId });
+
+  function prepare() {
+    setSubscriptions({});
+    const { drawIds } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 8, drawId }],
+      setState: true,
+    });
+    expect(drawIds).toContain(drawId);
+    // the losers of Main|1|1 and Main|1|2 meet in Consolation|1|1; that matchUp ends in an exit
+    expect(enter(byName('Main', 1, 1), WALKOVER_1).thrown).toBeUndefined();
+    expect(enter(byName('Main', 1, 2), { winningSide: 1 }).thrown).toBeUndefined();
+    const consolation = byName('Consolation', 1, 1);
+    expect(consolation.sides.filter((side: any) => side?.participantId)).toHaveLength(2);
+    expect(enter(consolation, WALKOVER_1).thrown).toBeUndefined();
+  }
+
+  it('is refused on a record with its edges (the rule)', () => {
+    prepare();
+    setOutcomePipeline(OUTCOME_PIPELINE_DIFFERENTIAL);
+    const cleared = enter(byName('Main', 1, 1), toBePlayed);
+    expect(cleared.thrown).toBeUndefined();
+    expect(cleared.error?.code).toEqual(PROPAGATED_EXITS_DOWNSTREAM.code);
+  });
+
+  it('is refused the same way, with v2 agreeing, when the record stores no edges', () => {
+    prepare();
+    const { tournamentRecord } = tournamentEngine.getTournament();
+    stripEdges(tournamentRecord.events[0].drawDefinitions[0]);
+    expect(hasStoredGoesTo({ drawDefinition: tournamentRecord.events[0].drawDefinitions[0] })).toEqual(false);
+    tournamentEngine.setState(tournamentRecord);
+
+    setOutcomePipeline(OUTCOME_PIPELINE_DIFFERENTIAL);
+    const cleared = enter(byName('Main', 1, 1), toBePlayed);
+    expect(cleared.thrown, 'v2 and v1 disagree').toBeUndefined();
+    expect(cleared.error?.code).toEqual(PROPAGATED_EXITS_DOWNSTREAM.code);
   });
 });

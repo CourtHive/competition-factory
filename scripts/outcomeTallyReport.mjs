@@ -26,10 +26,21 @@ if (!file || !fs.existsSync(file)) {
 
 const keys = new Map();
 let files = 0;
-for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
+const lines = fs.readFileSync(file, 'utf8').split('\n');
+for (const [index, line] of lines.entries()) {
   if (!line.trim()) continue;
   files += 1;
-  for (const [key, count] of Object.entries(JSON.parse(line))) {
+  let parsed;
+  try {
+    parsed = JSON.parse(line);
+  } catch (error) {
+    // the tally is appended by parallel vitest workers; a torn line is named, and the run is not summarised as if whole
+    console.error(
+      `[outcome-tally] ${file}:${index + 1} is not a JSON line (${error.message}); the tally is incomplete`,
+    );
+    process.exit(1);
+  }
+  for (const [key, count] of Object.entries(parsed)) {
     const total = keys.get(key) ?? { compared: 0, deferred: 0 };
     total.compared += count.compared;
     total.deferred += count.deferred;

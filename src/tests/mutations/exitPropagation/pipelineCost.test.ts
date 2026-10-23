@@ -426,8 +426,11 @@ it.skipIf(!enabled)(
  * - The baseline is v1's. Under `v2` each call may cost v1's count plus the view's own reads: one
  *   hydration, and no map (the view takes `setMatchUpStatus`'s). Until S2 every call is one v2
  *   abstains from, which is the bound G3 sets for it (v1 + 1). Under `differential` (the
- *   checkpoint gate's mode) it may cost two more: one read of the draw after v1 ran, shared by every
- *   check, and the second view `planDual` builds for a line that decides its dual (S1 removes it).
+ *   checkpoint gate's mode) it may cost one more: the read of the draw after v1 ran, shared by every
+ *   check. The TEAM lines arm alone may cost one beyond that: the second view `planDual` builds for a
+ *   line that decides its dual (76 of its 228 calls). S1 removes that view, and the exception with it.
+ *   Each allowance is the measured cost, so one more hydration per call fails on every arm (review of
+ *   #5741: at +3 for differential, eight arms sat one per call under the ceiling).
  * - The baseline is written under `v1` only, and a census whose arms or call counts differ from it
  *   fails: those are a different census, not a cheaper one.
  */
@@ -437,10 +440,10 @@ const BASELINE = path.resolve(process.cwd(), 'scripts/verify/baseline/hydrations
 type Ceiling = { total: number; worst: number };
 type ArmCeilings = { calls: number; hydrations: Ceiling; getMatchUpsMap: Ceiling };
 
-/** what each mode may add to each call, on top of v1's count */
+/** what each mode may add to each call, on top of v1's count: the measured cost, not a margin */
 const GATED: { name: keyof Omit<ArmCeilings, 'calls'>; selector: Selector; allowance: Record<string, number> }[] = [
   {
-    allowance: { [OUTCOME_PIPELINE_V1]: 0, [OUTCOME_PIPELINE_V2]: 1, [OUTCOME_PIPELINE_DIFFERENTIAL]: 3 },
+    allowance: { [OUTCOME_PIPELINE_V1]: 0, [OUTCOME_PIPELINE_V2]: 1, [OUTCOME_PIPELINE_DIFFERENTIAL]: 2 },
     name: 'hydrations',
     selector: hydration,
   },
@@ -481,7 +484,10 @@ it.skipIf(!gated)(
         const now = measured[arm];
         expect(now.calls, `${arm}: setMatchUpStatus calls`).toEqual(ceilings.calls);
         for (const { name, allowance: allowed } of GATED) {
-          const allowance = allowed[mode];
+          // `planDual`'s second view, under differential, on the one arm whose lines decide their dual
+          const planDual =
+            mode === OUTCOME_PIPELINE_DIFFERENTIAL && name === 'hydrations' && arm.startsWith('TEAM lines') ? 1 : 0;
+          const allowance = allowed[mode] + planDual;
           const limit = {
             total: ceilings[name].total + allowance * ceilings.calls,
             worst: ceilings[name].worst + allowance,
@@ -504,7 +510,8 @@ it.skipIf(!gated)(
     }
 
     expect(baseline, `no baseline at ${BASELINE}; run with HYDRATIONS_UPDATE=1`).toBeDefined();
-    if (falls.length)
+    // under v2 and differential the ceiling is v1's plus an allowance, so slack there is not a number to write down
+    if (falls.length && mode === OUTCOME_PIPELINE_V1)
       process.stdout.write(
         `[verify:hydrations] ${falls.length} below the ceiling (lower it with HYDRATIONS_UPDATE=1):\n  ${falls.join('\n  ')}\n`,
       );

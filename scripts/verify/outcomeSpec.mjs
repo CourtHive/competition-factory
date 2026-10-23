@@ -13,7 +13,9 @@
  * - every refusal row `refusals.ts` raises (`refuse(row, …)`) is a row of § 2's table.
  *
  * A union that cannot be found, or a refusal file with no rows, is a failure, not a clean result: a
- * rename would otherwise turn the check into one that looks at nothing.
+ * rename would otherwise turn the check into one that looks at nothing. So is a `refuse(` call whose
+ * row the parser cannot read (an expression rather than a literal): it is named, not skipped (review of
+ * #5741, finding 2: one such call existed and the check reported every row read).
  *
  * Self-test:  node scripts/verify/outcomeSpec.mjs --self-test   (fires on each gap, quiet when complete)
  */
@@ -44,8 +46,13 @@ function unionMembers(source, name) {
   return [...body.matchAll(/'([^']+)'/g)].map((match) => match[1]);
 }
 
-const refusalRows = (source) =>
-  [...new Set([...source.matchAll(/\brefuse\(\s*(\d+)\s*,/g)].map((match) => Number(match[1])))].sort((a, b) => a - b);
+/** every `refuse(` call site (not the definition), and the rows read from those whose row is a literal */
+function refusalRows(source) {
+  const calls = [...source.matchAll(/(?<![\w.])refuse\((?!row)/g)].length;
+  const literal = [...source.matchAll(/(?<![\w.])refuse\(\s*(\d+)\s*,/g)];
+  const rows = [...new Set(literal.map((match) => Number(match[1])))].sort((a, b) => a - b);
+  return { calls, parsed: literal.length, rows };
+}
 
 const tableRows = (section) => new Set([...section.matchAll(/^\|\s*(\d+)\s*\|/gm)].map((match) => Number(match[1])));
 
@@ -62,13 +69,17 @@ function check({ spec, types, refusals }) {
     for (const member of members)
       if (!text.includes(`\`${member}\``)) problems.push(`${name} '${member}' is not named in ${SPEC} § ${section}`);
   }
-  const rows = refusalRows(refusals);
+  const { calls, parsed, rows } = refusalRows(refusals);
   const refusalTable = sectionOf(spec, '2');
   if (!rows.length) problems.push(`no refuse(row, …) calls found in ${REFUSALS}`);
+  if (parsed !== calls)
+    problems.push(
+      `${calls - parsed} refuse(…) call(s) in ${REFUSALS} give their row as an expression; write each row as a literal`,
+    );
   if (!refusalTable) problems.push(`no § 2 in ${SPEC}`);
   const documented = refusalTable ? tableRows(refusalTable) : new Set();
   for (const row of rows) if (!documented.has(row)) problems.push(`refusal row ${row} is not a row of ${SPEC} § 2`);
-  return { problems, named, rows: rows.length };
+  return { problems, named, rows: rows.length, calls };
 }
 
 function selfTest() {
@@ -102,8 +113,15 @@ function selfTest() {
     check({ spec, types, refusals: '' }).problems.some((p) => p.includes('no refuse')),
     'fires on no rows',
   );
+  const expression = refusals + ' refuse(cond ? 1 : 2, W);';
+  assert(
+    check({ spec, types, refusals: expression }).problems.some((p) => p.includes('as an expression')),
+    'fires on an unparsed row',
+  );
+  const definition = 'const refuse = (row, error) => ({ row, error });\n' + refusals;
+  assert(check({ spec, types, refusals: definition }).problems.length === 0, 'the definition is not a call');
   console.log(
-    '[verify:outcome-spec] self-test OK — fires on an unnamed member, a member named outside its section, an undocumented row, a missing union and no rows; quiet when complete',
+    '[verify:outcome-spec] self-test OK — fires on an unnamed member, a member named outside its section, an undocumented row, a missing union, no rows and an unparsed row; quiet when complete',
   );
 }
 

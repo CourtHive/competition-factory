@@ -209,9 +209,13 @@ function heldBesideFeederBye(
   if (structureMatchUps.some((candidate) => (candidate.roundNumber ?? 0) > (matchUp.roundNumber ?? 0))) return [];
   return (
     structureMatchUps
-      // the feeder's winner target is read from the links, as v1 directs it: a stored `winnerMatchUpId` is
-      // there only on a draw generated with goesTo, and the view's hydration does not add it (no `nextMatchUps`)
-      .filter((feeder) => feeder.matchUpStatus === BYE && winnerTargetOf(feeder.matchUpId, draw) === matchUp.matchUpId)
+      // the copy carries the stored `winnerMatchUpId`, or the one the view derived on a draw storing none; a feeder
+      // still without one (`hasStoredGoesTo` asks whether a structure stores ANY edge) is read from its links
+      .filter(
+        (feeder) =>
+          feeder.matchUpStatus === BYE &&
+          (feeder.winnerMatchUpId ?? winnerTargetOf(feeder.matchUpId, draw)) === matchUp.matchUpId,
+      )
       .flatMap((feeder) => Object.values(getSideExitProvenance({ matchUp: feeder }) ?? {}))
       .filter((entry) => entry?.sourceMatchUpId !== sourceMatchUpId)
       .map((entry) => carriedExitStatus(entry))
@@ -446,8 +450,21 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
   // A DRAW STORED WITHOUT ITS EDGES: v1 writes them before it decides anything (`ensureGoesTo`, onto its view too),
   // and its guards read `winnerMatchUpId` on that view (`relabelLoserExit`). The view takes the same edges onto its own
   // copy and writes nothing. A draw the factory generated stores them, and pays only the `hasStoredGoesTo` walk.
-  if (!hasStoredGoesTo({ drawDefinition }))
-    addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap, inContextOnly: true });
+  // `hasPropagatedExitDownstream` (§ 2 row 10) reads `loserMatchUpId` off the STORED matchUps, so on such a draw it is
+  // handed an overlay of the stored map carrying the derived edges (review of #5741); the stored objects are not touched.
+  const goesTo = hasStoredGoesTo({ drawDefinition })
+    ? undefined
+    : addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap, inContextOnly: true }).goesToMap;
+  const storedView = goesTo
+    ? {
+        ...matchUpsMap,
+        drawMatchUps: matchUpsMap.drawMatchUps.map((stored) => ({
+          ...stored,
+          winnerMatchUpId: stored.winnerMatchUpId ?? goesTo.winnerMatchUpIds[stored.matchUpId],
+          loserMatchUpId: stored.loserMatchUpId ?? goesTo.loserMatchUpIds[stored.matchUpId],
+        })),
+      }
+    : matchUpsMap;
   const draw: DrawContext = { inContextDrawMatchUps, drawDefinition };
 
   const { structure } = findStructure({ drawDefinition, structureId: inContextMatchUp?.structureId });
@@ -488,7 +505,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     inContextDrawMatchUps,
     inContextMatchUp,
     matchUpTieId,
-    matchUpsMap,
+    matchUpsMap: storedView,
     targetData,
     structure,
     matchUp,

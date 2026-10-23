@@ -410,7 +410,8 @@ jobs:
       - name: touches the outcome pipeline
         id: paths
         run: |
-          if git diff --name-only HEAD^1 HEAD | grep -qE '^src/mutate/(matchUps|drawDefinitions/positionGovernor|drawDefinitions/matchUpGovernor)/'; then
+          # the outcome paths, and the queries the v2 view decides by (addGoesTo, positionTargets, the draw reads)
+          if git diff --name-only HEAD^1 HEAD | grep -qE '^src/(mutate/(matchUps|drawDefinitions/positionGovernor|drawDefinitions/matchUpGovernor)|query/(matchUps|matchUp|drawDefinition))/'; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"

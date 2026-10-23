@@ -261,13 +261,13 @@ function refuseDispatch(request: OutcomeRequest, view: OutcomeView): Refusal | u
     const effectiveWinningSide = view.isTeam && flags.enableAutoCalc ? projected : winningSide;
     if (effectiveWinningSide === existing.winningSide || (view.matchUpTieId && !dualWinningSideChange))
       return undefined;
-    return refuse(
-      existing.winningSide ? 14 : 13,
-      existing.winningSide ? CANNOT_CHANGE_WINNING_SIDE : CANNOT_CHANGE_OUTCOME,
-      {
-        context: { winningSide: effectiveWinningSide },
-      },
-    );
+    // rows 14 and 13, each written as its literal so `verify:outcome-spec` reads both
+    const extra = {
+      context: { winningSide: effectiveWinningSide },
+    };
+    return existing.winningSide
+      ? refuse(14, CANNOT_CHANGE_WINNING_SIDE, extra)
+      : refuse(13, CANNOT_CHANGE_OUTCOME, extra);
   }
   if (isDirectingMatchUpStatus({ matchUpStatus }) || line?.autoCalcDisabled) return undefined;
   return refuse(15, NO_VALID_ACTIONS);
