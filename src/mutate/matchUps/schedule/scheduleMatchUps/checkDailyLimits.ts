@@ -1,4 +1,5 @@
 import { getReachableParticipantIds, ParticipantReachability } from './getParticipantReachability';
+import { checkParticipantProfileInitialization } from './checkParticipantProfileInitialization';
 import type { IndividualParticipantProfiles } from './checkParticipantProfileInitialization';
 import { getParticipantDayLoads } from './participantDayLoad';
 
@@ -54,23 +55,37 @@ export function checkDailyLimits({
   const { matchUpId, drawId, matchUpType } = matchUp;
   const { certain, all: relevantParticipantIds } = getReachableParticipantIds(reachability, matchUpId);
 
+  const certainIds = new Set(certain);
   const participantIdsAtLimit = relevantParticipantIds.filter((participantId) => {
-    const loads = getParticipantDayLoads({
-      addingMatchUp: { matchUpId, drawId, matchUpType, certain: certain.includes(participantId) },
-      individualParticipantProfiles,
-      reachability,
-      participantId,
-    });
     const limits = resolveDailyLimits({
       tournamentId: matchUp.tournamentId,
       dailyLimitOverrides,
       matchUpDailyLimits,
       participantId,
     });
-    return [matchUpType, TOTAL].some((counterName) => {
-      const dailyLimit = counterName && limits[counterName];
-      return !!dailyLimit && (loads[counterName as string] ?? 0) > dailyLimit;
+    const counterNames = [matchUpType, TOTAL].filter((counterName) => counterName && limits[counterName as string]);
+    // no limit applies: nothing to compute
+    if (!counterNames.length) return false;
+
+    // adding one matchUp raises a day load by at most one (a certain matchUp adds one; a potential one lengthens the
+    // longest chain by at most one), so a participant whose load without it is below every limit cannot exceed one.
+    // `counters` is that load, refreshed whenever the participant's day changes (modifyParticipantDayMatchUps). Most
+    // asks end here; computing the load for every participant of every candidate at every slot was the profile
+    // scheduler's main cost (SCHEDULING_PIPELINE_VNEXT.md § 7.0)
+    checkParticipantProfileInitialization({ individualParticipantProfiles, participantId });
+    const { counters } = individualParticipantProfiles[participantId];
+    const mayExceed = counterNames.some(
+      (counterName) => (counters[counterName as string] ?? 0) + 1 > limits[counterName as string],
+    );
+    if (!mayExceed) return false;
+
+    const loads = getParticipantDayLoads({
+      addingMatchUp: { matchUpId, drawId, matchUpType, certain: certainIds.has(participantId) },
+      individualParticipantProfiles,
+      reachability,
+      participantId,
     });
+    return counterNames.some((counterName) => (loads[counterName as string] ?? 0) > limits[counterName as string]);
   });
 
   return { participantIdsAtLimit, relevantParticipantIds };
