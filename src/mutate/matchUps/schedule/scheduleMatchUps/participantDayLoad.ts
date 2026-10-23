@@ -89,7 +89,7 @@ function termWith(term: DrawTerm, adding: DayMatchUp, upstream: ParticipantReach
 }
 
 type DayLoadCache = {
-  terms: Map<string, DrawTerm>;
+  drawTerms: Map<string, DrawTerm>;
   drawsByCounter: Map<string, Set<string>>;
   dayMatchUpIds: Set<string>;
 };
@@ -108,9 +108,9 @@ function dayLoadCache(profile: IndividualParticipantProfiles[string], upstream: 
       drawsByCounter.get(counterName)?.add(dayMatchUp.drawId);
     }
   }
-  const terms = new Map([...groups].map(([key, group]) => [key, drawTerm(group, upstream)]));
+  const drawTerms = new Map([...groups].map(([key, group]) => [key, drawTerm(group, upstream)]));
   const cache: DayLoadCache = {
-    terms,
+    drawTerms,
     drawsByCounter,
     dayMatchUpIds: new Set(profile.dayMatchUps.map(({ matchUpId }) => matchUpId)),
   };
@@ -165,7 +165,7 @@ export function getParticipantDayLoads({
     if (adds && addingMatchUp) drawIds.add(addingMatchUp.drawId);
     let load = 0;
     for (const drawId of drawIds) {
-      const term = cache.terms.get(`${counterName}|${drawId}`) ?? drawTerm([], upstream);
+      const term = cache.drawTerms.get(`${counterName}|${drawId}`) ?? drawTerm([], upstream);
       load +=
         adds && addingMatchUp?.drawId === drawId
           ? termWith(term, addingMatchUp, upstream)
