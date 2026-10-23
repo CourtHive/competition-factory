@@ -99,6 +99,8 @@ export function decideOutcomeV2(args: BuildViewArgs): {
         v1: comparison.v1,
         v2: comparison.v2,
       });
+    // a refusal v2 did not plan is one of the apply-stage codes; the tally names which (the S0 deferral tally)
+    if (comparison.deferred) differentialTally(`refusal:deferred:${comparison.deferred}`, 'deferred');
     if (refusal || v1Result?.error) return differentialTally('refusal', refusal ? 'compared' : 'deferred');
     checkNoExitBesideBye({ args, route: route ?? 'none' });
     if (!route || !plan || !args.drawDefinition) return differentialTally(route ?? 'none', 'deferred');
