@@ -179,6 +179,33 @@ describe('the vNext view resolves a profile as v1 does', () => {
     expectSamePlan(profile, true);
   });
 
+  it('a round none of whose matchUps has a format schedules nothing', () => {
+    const { round } = setup([{ drawSize: 8 }, { drawSize: 8 }]);
+    // strip every format the first draw's matchUps could inherit: tournament, event, draw, structures, matchUps
+    const { tournamentRecord } = tournamentEngine.getTournament();
+    const strip = (item: any) => delete item.matchUpFormat;
+    strip(tournamentRecord);
+    const [event] = tournamentRecord.events;
+    strip(event);
+    for (const drawDefinition of event.drawDefinitions) {
+      strip(drawDefinition);
+      for (const structure of drawDefinition.structures) {
+        strip(structure);
+        structure.matchUps.forEach(strip);
+      }
+    }
+    tournamentEngine.setState(tournamentRecord);
+    const profile = [
+      { scheduleDate: DAYS[0], venues: [{ venueId: 'venue-1', rounds: [round(0, 0, 1), round(1, 0, 1)] }] },
+    ];
+    expectSamePlan(profile);
+    const view: any = buildSchedulingView({ tournamentRecords: currentRecords() });
+    const [unformatted, formatted] = view.dates[0].venues[0].rounds;
+    expect(unformatted.minutes).toBeUndefined();
+    expect(unformatted.matchUpIds).toEqual([]);
+    expect(formatted.matchUpIds.length).toEqual(4);
+  });
+
   it('a profile with no date left after scheduleDates is refused', () => {
     const { round } = setup([{ drawSize: 8 }]);
     tournamentEngine.setSchedulingProfile({
