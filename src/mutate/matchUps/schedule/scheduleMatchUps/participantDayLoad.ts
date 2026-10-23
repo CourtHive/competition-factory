@@ -89,6 +89,8 @@ function termWith(term: DrawTerm, adding: DayMatchUp, upstream: ParticipantReach
 }
 
 type DayLoadCache = {
+  /** the loads with a matchUp added, by the matchUp and its certainty: a candidate is asked about at every slot tried */
+  withAdded: Map<string, { [counterName: string]: number }>;
   drawTerms: Map<string, DrawTerm>;
   drawsByCounter: Map<string, Set<string>>;
   dayMatchUpIds: Set<string>;
@@ -110,6 +112,7 @@ function dayLoadCache(profile: IndividualParticipantProfiles[string], upstream: 
   }
   const drawTerms = new Map([...groups].map(([key, group]) => [key, drawTerm(group, upstream)]));
   const cache: DayLoadCache = {
+    withAdded: new Map(),
     drawTerms,
     drawsByCounter,
     dayMatchUpIds: new Set(profile.dayMatchUps.map(({ matchUpId }) => matchUpId)),
@@ -124,8 +127,10 @@ function dayLoadCache(profile: IndividualParticipantProfiles[string], upstream: 
  * Asked for every participant of every candidate matchUp at every slot a scheduler tries; rebuilding every draw's
  * longest chain on each ask was ~85% of the profile scheduler's time (SCHEDULING_PIPELINE_VNEXT.md § 7.0). The day's
  * per-draw terms are cached on the profile (`dayLoadCache`, cleared by `modifyParticipantDayMatchUps` whenever the day
- * changes) and an added matchUp is folded into its draw's term in one scan. The result is the number `getDayLoad`
- * gives for the same matchUps (pinned by dayLoadCache.test.ts).
+ * changes) and an added matchUp is folded into its draw's term in one scan. A candidate's loads are memoized on the same
+ * cache: a participant at a limit is asked about the same candidate at every slot tried, and the answer cannot change
+ * until the day does. The result is the number `getDayLoad` gives for the same matchUps (pinned by
+ * dayLoadCache.test.ts). The memoized loads are shared: callers read them and never write to them.
  */
 export function getParticipantDayLoads({
   individualParticipantProfiles,
@@ -141,9 +146,10 @@ export function getParticipantDayLoads({
   checkParticipantProfileInitialization({ individualParticipantProfiles, participantId });
   const profile = individualParticipantProfiles[participantId];
   const { upstream } = reachability;
+  const cache = dayLoadCache(profile, upstream);
 
   // a matchUp already in the day is a replacement (its certainty may differ): answered from scratch, as it always was
-  if (addingMatchUp && profile.dayMatchUps.some(({ matchUpId }) => matchUpId === addingMatchUp.matchUpId)) {
+  if (addingMatchUp && cache.dayMatchUpIds.has(addingMatchUp.matchUpId)) {
     const dayMatchUps = [
       ...profile.dayMatchUps.filter(({ matchUpId }) => matchUpId !== addingMatchUp.matchUpId),
       addingMatchUp,
@@ -154,7 +160,11 @@ export function getParticipantDayLoads({
     return loads;
   }
 
-  const cache = dayLoadCache(profile, upstream);
+  // the answer for a candidate holds until the day changes, which discards the cache and with it this memo
+  const addedKey = addingMatchUp && `${addingMatchUp.matchUpId}|${addingMatchUp.certain ? 1 : 0}`;
+  const memoized = addedKey ? cache.withAdded.get(addedKey) : undefined;
+  if (memoized) return memoized;
+
   const counterNames = new Set([TOTAL, ...cache.drawsByCounter.keys()]);
   if (addingMatchUp?.matchUpType) counterNames.add(addingMatchUp.matchUpType);
 
@@ -173,6 +183,7 @@ export function getParticipantDayLoads({
     }
     loads[counterName] = load;
   }
+  if (addedKey) cache.withAdded.set(addedKey, loads);
   return loads;
 }
 

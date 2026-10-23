@@ -15,6 +15,8 @@ import { TOTAL } from '@Constants/scheduleConstants';
 
 // The day-load cache (SCHEDULING_PIPELINE_VNEXT.md § 7.0) must give exactly the loads getDayLoad gives for the same
 // matchUps: for every participant, with and without every candidate matchUp, as the day is built up and taken down.
+// Each candidate is asked twice, so the second answer comes from the per-candidate memo; the memo outliving a change to
+// the day would show as a stale answer on the next pass.
 // checkDailyLimits skips the computation when `counters` + 1 is within every limit; that rests on the two facts asserted
 // here too: `counters` is current, and one matchUp adds at most one to a load.
 
@@ -66,6 +68,14 @@ it('the cached day loads equal getDayLoad, as matchUps are added and removed', (
         });
         const expected = reference(profile, reachability, adding);
         expect(cached).toEqual(expected);
+        // asked again, the memoized answer: still the same, and (on the next pass, after the day changed) never stale
+        const again = getParticipantDayLoads({
+          individualParticipantProfiles: profiles,
+          addingMatchUp: adding,
+          participantId,
+          reachability,
+        });
+        expect(again).toEqual(expected);
         // what checkDailyLimits relies on to skip the computation: `counters` is the load without the candidate, and
         // adding one matchUp raises any load by at most one
         const without = reference(profile, reachability);
