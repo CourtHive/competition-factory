@@ -1,9 +1,10 @@
-import { isLegacyRoundRobinWinnerLink, isLinkObject, isMalformedRoundLink } from '@Query/drawDefinition/malformedLinks';
 import { getStructureInconsistencies } from '@Query/drawDefinition/getStructureInconsistencies';
 import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
+import { isLinkObject, isMalformedRoundLink } from '@Query/drawDefinition/malformedLinks';
 import { isPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
+import { traversesByRound } from '@Query/drawDefinition/linkTraversal';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 
 // constants and types
@@ -24,16 +25,14 @@ import { SUCCESS } from '@Constants/resultConstants';
 //  - DANGLING_LINK: a link whose source or target structureId is not a structure in this draw —
 //    progression can never resolve, and inContext derivation itself throws on such a draw, so it is
 //    detected structurally BEFORE fan-out. (error)
-//  - LINK_MISSING_SOURCE_ROUND: a WINNER/LOSER link with no source.roundNumber; the engine cannot
-//    determine which round feeds the target (getTargetLink treats this as INVALID_VALUES). (error)
+//  - LINK_MISSING_SOURCE_ROUND: a link that traverses by round (a WINNER/LOSER link out of an
+//    elimination structure) with no source.roundNumber; the engine cannot determine which round feeds
+//    the target (getTargetLink treats this as INVALID_VALUES). (error) A link out of a round robin that
+//    names finishingPositions traverses by finishing position, labelled POSITION or WINNER, and needs no
+//    round (linkTraversal.ts): it is never reported here.
 //  - INVALID_LINK: an entry of `links` that is not an object (null, a string, an array). Every reader
 //    that dereferences it throws, so it is reported here and the rest of the scan reads the draw
 //    WITHOUT it: the other findings are still made. (error)
-//  - LEGACY_ROUND_ROBIN_WINNER_LINK: a round robin's link labelled WINNER, naming its source by
-//    `finishingPositions` with no round (classic TMX conversions). It is a POSITION link in all but
-//    name: a round robin decides who leaves it by tally, not by round, so a missing round is CORRECT
-//    here and the draw is not refused. Reported so it can be relabelled (`repairMalformedLinks`,
-//    `migrateTournamentRecord`); never an error. (info)
 //
 //  The link predicates are `isLinkObject` / `isMalformedRoundLink` (malformedLinks.ts), shared with
 //  the readers and with `repairMalformedLinks`, which repairs or removes every link reported here.
@@ -66,12 +65,9 @@ import { SUCCESS } from '@Constants/resultConstants';
 export const DANGLING_LINK = 'DANGLING_LINK';
 export const LINK_MISSING_SOURCE_ROUND = 'LINK_MISSING_SOURCE_ROUND';
 export const INVALID_LINK = 'INVALID_LINK';
-export const LEGACY_ROUND_ROBIN_WINNER_LINK = 'LEGACY_ROUND_ROBIN_WINNER_LINK';
 export const SCAN_ERROR = 'SCAN_ERROR';
 export const DROPPED_PROGRESSION = 'DROPPED_PROGRESSION';
 export const INELIGIBLE_PROGRESSION = 'INELIGIBLE_PROGRESSION';
-
-const ROUND_LINK_TYPES = [WINNER, LOSER];
 
 type GetDrawInconsistenciesArgs = {
   drawDefinition: DrawDefinition;
@@ -117,14 +113,6 @@ function getLinkInconsistencies(drawDefinition: DrawDefinition, structureIds: Se
         severity: 'error',
         // structureId identifies the issue for fingerprinting when one side is absent
         structureId: sourceStructureId ?? targetStructureId,
-      });
-    } else if (isLegacyRoundRobinWinnerLink(link, drawDefinition)) {
-      inconsistencies.push({
-        ...base,
-        issueType: LEGACY_ROUND_ROBIN_WINNER_LINK,
-        message: 'round robin link is labelled WINNER; it names finishingPositions, so it is a POSITION link',
-        severity: 'info',
-        structureId: sourceStructureId,
       });
     } else if (isMalformedRoundLink(link, drawDefinition)) {
       inconsistencies.push({
@@ -254,12 +242,10 @@ function getProgressionInconsistencies(
   inContextDrawMatchUps: HydratedMatchUp[],
   structureById: Map<string, Structure>,
 ): Partial<Inconsistency>[] {
-  // a round robin's legacy WINNER label is a POSITION link, which carries no round to check progression against
+  // only links that traverse by round carry winners or losers match by match; a round robin's link (by finishing
+  // position, labelled POSITION or WINNER) has no round matchUps to check progression against
   const progressionLinks = (drawDefinition.links ?? []).filter(
-    (link) =>
-      isLinkObject(link) &&
-      ROUND_LINK_TYPES.includes(link.linkType) &&
-      !isLegacyRoundRobinWinnerLink(link, drawDefinition),
+    (link) => isLinkObject(link) && traversesByRound(link, drawDefinition),
   );
   return progressionLinks.flatMap((link) => {
     const sourceStructureId = link.source?.structureId;

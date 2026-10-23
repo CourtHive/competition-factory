@@ -54,12 +54,10 @@ A `flightProfile` extension on a **draw definition** is not promoted (since 7.10
 
 It also rewrites every legacy `participant.penalties[].penaltyType` to its `PenaltyTypeEnum` code, counted as `promoted.penaltyLabels`: a display label written by earlier releases (`'Ball Abuse'` becomes `BALL_ABUSE`) or a misspelled code (`EQUIMENT_VIOLATION`). It is the same rewrite `addPenalty` and `modifyPenalty` apply on write, and it does not depend on `clearLegacy`. A value it does not recognise is left as it is. See [penaltyConstants](../constants.mdx).
 
-It also relabels a round robin's link under the legacy `WINNER` label as the `POSITION` link it is, counted as `promoted.links`. Records converted from classic TMX carry the round robin qualifying link into MAIN as `linkType: 'WINNER'` with `source.finishingPositions` and no round; a round robin decides who leaves it by tally, so the link names finishing positions and is a `POSITION` link in all but name. Only the label changes, and it does not depend on `clearLegacy`. See [Rounds and finishing positions](/docs/concepts/draw-links#rounds-and-finishing-positions-how-a-link-names-its-source).
-
 It also gives a draw that does not store its progression edges the ones the factory stores on every draw it generates, counted as `promoted.goesTo` (one per draw changed). A record converted from another system may hold no `winnerMatchUpId` / `loserMatchUpId` on its matchUps, and a lone structure from one may carry no `finishingPositionRange`. The migration writes what the draw's links and positions derive: the edges, the loser ranges widened over the loser target, and a lone foreign structure's finishing rounds. This does not depend on `clearLegacy`. Three kinds of draw are left as they are:
 
 - an AD_HOC draw, whose rounds are paired rather than linked;
-- a draw with a malformed link (a `WINNER`/`LOSER` link with no `source.roundNumber`, an entry of `links` that is not an object, a link to an absent structure), which is never half given its edges. It is reported in `warnings` as `GOES_TO_NOT_STORED`, with its `drawId`, `eventId` and the error the derivation met: a warning, not an error, because every other promotion has been made and the draw itself is unchanged. Repair it with [`repairMalformedLinks`](/docs/governors/draws-governor#repairmalformedlinks) and migrate again;
+- a draw with a malformed link (a `WINNER`/`LOSER` link out of an elimination structure with no `source.roundNumber`, an entry of `links` that is not an object, a link to an absent structure), which is never half given its edges. It is reported in `warnings` as `GOES_TO_NOT_STORED`, with its `drawId`, `eventId` and the error the derivation met: a warning, not an error, because every other promotion has been made and the draw itself is unchanged. Repair it with [`repairMalformedLinks`](/docs/governors/draws-governor#repairmalformedlinks) and migrate again;
 - a draw whose edges cannot be derived, for example one structure with no links and nothing to follow.
 
 Readers never write these edges themselves: a query derives what it needs on a copy, so a record keeps whatever it was stored with until it is migrated.
@@ -98,7 +96,6 @@ type MigrationResult = {
     matchUpCheckIns: number;
     drawPositions: number;
     goesTo: number; // draws given their progression edges or finishing rounds
-    links: number; // round robin links relabelled from the legacy WINNER label to POSITION
     participantPresence: number;
     penaltyLabels: number;
     venues: number;

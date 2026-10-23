@@ -60,12 +60,15 @@ export type DrawLinkUnionAssertions = [
     >
   >,
 
-  // a round link names its round; a position link names finishing positions, not a round
-  ExpectNot<Assignable<{ linkType: 'LOSER'; source: { structureId: string }; target: Target }, DrawLink>>,
-  ExpectNot<
-    Assignable<{ linkType: 'POSITION'; source: { structureId: string; roundNumber: number }; target: Target }, DrawLink>
+  // a link out of a round robin names finishing positions, labelled POSITION or WINNER (CA, 2026-10-23); a round on
+  // it is allowed and decides nothing (the factory writes the groups' final round on a qualifying POSITION link)
+  Expect<
+    Assignable<
+      { linkType: 'WINNER'; source: { structureId: string; finishingPositions: number[] }; target: Target },
+      DrawLink
+    >
   >,
-  ExpectNot<
+  Expect<
     Assignable<
       {
         linkType: 'WINNER';
@@ -74,5 +77,28 @@ export type DrawLinkUnionAssertions = [
       },
       DrawLink
     >
+  >,
+  Expect<
+    Assignable<
+      {
+        linkType: 'POSITION';
+        source: { structureId: string; roundNumber: number; finishingPositions: number[] };
+        target: Target;
+      },
+      DrawLink
+    >
+  >,
+
+  // a round link names its round: a LOSER link names neither a round nor finishing positions it could carry
+  ExpectNot<Assignable<{ linkType: 'LOSER'; source: { structureId: string }; target: Target }, DrawLink>>,
+  ExpectNot<
+    Assignable<
+      { linkType: 'LOSER'; source: { structureId: string; finishingPositions: number[] }; target: Target },
+      DrawLink
+    >
+  >,
+  // a POSITION link names finishing positions
+  ExpectNot<
+    Assignable<{ linkType: 'POSITION'; source: { structureId: string; roundNumber: number }; target: Target }, DrawLink>
   >,
 ];

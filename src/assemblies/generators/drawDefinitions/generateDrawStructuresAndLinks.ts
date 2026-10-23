@@ -1,4 +1,5 @@
 import { generateQualifyingStructures } from './drawTypes/generateQualifyingStructures';
+import { traversesByFinishingPosition } from '@Query/drawDefinition/linkTraversal';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { generateQualifyingLink } from './links/generateQualifyingLink';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -31,7 +32,6 @@ import {
   ADAPTIVE,
   QUALIFYING,
   WINNER,
-  POSITION,
 } from '@Constants/drawDefinitionConstants';
 
 type GenerateDrawStructuresAndLinksArgs = {
@@ -224,7 +224,8 @@ export function generateDrawStructuresAndLinks(params: GenerateDrawStructuresAnd
 }
 
 function getQualifiersCount(link, structure) {
-  if (link.linkType === POSITION && structure?.structures) {
+  // a link out of a round robin carries its groups' finishers, labelled POSITION or WINNER (linkTraversal.ts)
+  if (traversesByFinishingPosition(link, { structures: [structure] }) && structure?.structures) {
     const finishingPositions = link.source.finishingPositions ?? [];
     return structure.structures.length * finishingPositions.length;
   } else if (link.linkType === WINNER && structure?.matchUps?.length) {

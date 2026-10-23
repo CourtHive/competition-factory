@@ -1,13 +1,14 @@
-import { isLegacyRoundRobinWinnerLink, isLinkObject, isMalformedRoundLink } from '@Query/drawDefinition/malformedLinks';
 import { modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
+import { isLinkObject, isMalformedRoundLink } from '@Query/drawDefinition/malformedLinks';
+import { traversesByFinishingPosition } from '@Query/drawDefinition/linkTraversal';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { addGoesTo } from '@Query/matchUps/addGoesTo';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
 import { DrawDefinition, DrawLink, Event, MatchUp, Structure, Tournament } from '@Types/tournamentTypes';
-import { POSITION, WINNER } from '@Constants/drawDefinitionConstants';
+import { WINNER } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 import {
@@ -32,11 +33,10 @@ import {
  *    round takes from the link. A round already directed by another well-formed link of the same type from the same
  *    structure is not a candidate: a round's losers (or winners) go to one place. Where no round, or more than one,
  *    fits, the link is removed and the candidates are reported (NO_SOURCE_ROUND, AMBIGUOUS_SOURCE_ROUND).
- *  - LEGACY_ROUND_ROBIN_WINNER_LINK: a round robin's link labelled WINNER with `source.finishingPositions` and no
- *    round (`isLegacyRoundRobinWinnerLink`) is RELABELLED POSITION and reported in `relabeled`. It is not malformed: a
- *    round robin decides who leaves it by tally, so its link names finishing positions, never a round, and a round
- *    must NOT be restored to it (a container has no rounds of its own, so the inference above would find none and
- *    remove the link that joins qualifying to MAIN). Relabelling changes only the label, so it never needs `force`.
+ *
+ * A link out of a round robin that names `finishingPositions` traverses by finishing position, labelled `POSITION` or
+ * `WINNER` (linkTraversal.ts). It is not malformed, so the repair never touches it: it is never given a round (a
+ * container has no rounds of its own, so the inference above would find none) and never removed.
  *
  * The fed positions of target round T are those of round T that no earlier round holds: all of round 1, and in a later
  * round the positions that do not advance into it. Their count, `2·m(T) − m(T−1)` (with `m(0) = 0`), is what the link
@@ -60,7 +60,6 @@ export const NOT_A_LINK = 'NOT_A_LINK';
 export const DANGLING_LINK_REMOVED = 'DANGLING_LINK';
 export const NO_SOURCE_ROUND = 'NO_SOURCE_ROUND';
 export const AMBIGUOUS_SOURCE_ROUND = 'AMBIGUOUS_SOURCE_ROUND';
-export const LEGACY_ROUND_ROBIN_WINNER_LINK = 'LEGACY_ROUND_ROBIN_WINNER_LINK';
 
 export type RepairedLink = {
   linkIndex: number;
@@ -71,16 +70,6 @@ export type RepairedLink = {
   sourceRoundNumber: number;
   /** 'inferred' from the structures, or 'specified' by the caller */
   basis: 'inferred' | 'specified';
-};
-
-export type RelabeledLink = {
-  linkIndex: number;
-  reason: typeof LEGACY_ROUND_ROBIN_WINNER_LINK;
-  sourceStructureId: string;
-  targetStructureId: string;
-  finishingPositions: number[];
-  from: typeof WINNER;
-  to: typeof POSITION;
 };
 
 export type RemovedLink = {
@@ -115,14 +104,12 @@ type RepairMalformedLinkArgs = RepairLinksArgs &
 
 export type RepairMalformedLinksResult = ResultType & {
   repaired?: RepairedLink[];
-  relabeled?: RelabeledLink[];
   removed?: RemovedLink[];
   unlinkedStructureIds?: string[];
 };
 
 type LinkPlan = {
   repaired: RepairedLink[];
-  relabeled: RelabeledLink[];
   removed: RemovedLink[];
   arrived: ArrivedThroughLink[];
 };
@@ -161,8 +148,7 @@ function repair({
   const plan = planLinkRepairs({ drawDefinition, selection, sourceRoundNumber });
   if (!('repaired' in plan)) return decorateResult({ result: plan, stack });
 
-  if (!plan.repaired.length && !plan.removed.length && !plan.relabeled.length)
-    return { ...SUCCESS, repaired: [], relabeled: [], removed: [] };
+  if (!plan.repaired.length && !plan.removed.length) return { ...SUCCESS, repaired: [], removed: [] };
 
   if (plan.arrived.length && !force) {
     return decorateResult({
@@ -194,7 +180,6 @@ function repair({
   return {
     ...SUCCESS,
     repaired: plan.repaired,
-    relabeled: plan.relabeled,
     removed: plan.removed,
     unlinkedStructureIds: composed.unlinkedStructureIds,
   };
@@ -209,10 +194,6 @@ function applyPlan(drawDefinition: DrawDefinition, plan: LinkPlan): ResultType &
   const removedIndices = new Set(plan.removed.map(({ linkIndex }) => linkIndex));
   for (const { linkIndex, sourceRoundNumber } of plan.repaired) {
     (links[linkIndex] as DrawLink).source.roundNumber = sourceRoundNumber;
-  }
-  // only the label changes: a round robin's link carries no round and directs no matchUp, so it has no edges to clear
-  for (const { linkIndex } of plan.relabeled) {
-    (links[linkIndex] as DrawLink).linkType = POSITION;
   }
 
   const affected = [...plan.repaired, ...plan.removed].filter(
@@ -277,32 +258,21 @@ export function planLinkRepairs({ drawDefinition, selection, sourceRoundNumber }
   const byId = new Map(structures.map((structure) => [structure.structureId, structure]));
   const links: unknown[] = Array.isArray(drawDefinition.links) ? drawDefinition.links : [];
 
-  const draw = { structures };
   const indices = links
     .map((link, linkIndex) => ({ link, linkIndex }))
-    .filter(
-      ({ link }) =>
-        !isLinkObject(link) ||
-        isDangling(link, byId) ||
-        isMalformedRoundLink(link, draw) ||
-        isLegacyRoundRobinWinnerLink(link, draw),
-    )
+    .filter(({ link }) => !isLinkObject(link) || isDangling(link, byId) || isMalformedRoundLink(link, { structures }))
     .filter(({ link }) => !selection || (isLinkObject(link) && matchesSelection(link, selection)));
 
   if (selection && indices.length !== 1) {
     return {
       error: INVALID_VALUES,
-      info: indices.length ? 'the selection matches more than one link to repair' : 'no link to repair matches',
+      info: indices.length ? 'the selection matches more than one malformed link' : 'no malformed link matches',
       context: { selection, matched: indices.length },
     };
   }
 
-  const plan: LinkPlan = { repaired: [], relabeled: [], removed: [], arrived: [] };
+  const plan: LinkPlan = { repaired: [], removed: [], arrived: [] };
   for (const { link, linkIndex } of indices) {
-    if (!isDangling(link, byId) && isLegacyRoundRobinWinnerLink(link, draw)) {
-      plan.relabeled.push(relabel(link as DrawLink, linkIndex));
-      continue;
-    }
     const decision = decide({ link, linkIndex, links, byId, sourceRoundNumber });
     if (!('linkIndex' in decision)) return decision;
     if ('reason' in decision) plan.removed.push(decision);
@@ -322,18 +292,6 @@ export function planLinkRepairs({ drawDefinition, selection, sourceRoundNumber }
   }
 
   return plan;
-}
-
-function relabel(link: DrawLink, linkIndex: number): RelabeledLink {
-  return {
-    reason: LEGACY_ROUND_ROBIN_WINNER_LINK,
-    finishingPositions: [...(link.source.finishingPositions ?? [])],
-    sourceStructureId: link.source.structureId,
-    targetStructureId: link.target.structureId,
-    from: WINNER,
-    to: POSITION,
-    linkIndex,
-  };
 }
 
 function decide({
@@ -496,7 +454,7 @@ function suppliedPositions(link: DrawLink, byId: Map<string, Structure>): number
   const source = byId.get(link.source?.structureId);
   if (!source) return 0; // a dangling link supplies nothing, and is removed
   const counts = roundCounts(source);
-  if (link.linkType === POSITION || isLegacyRoundRobinWinnerLink(link, { structures: [...byId.values()] })) {
+  if (traversesByFinishingPosition(link, { structures: [...byId.values()] })) {
     const groups = structuresOf(source)?.length || 1;
     return (link.source.finishingPositions?.length ?? 0) * groups;
   }

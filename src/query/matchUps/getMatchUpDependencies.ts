@@ -3,6 +3,7 @@
  * Optionally builds up an exhaustive map of all potential participantIds for each matchUpId
  */
 
+import { isRoundWinnerLink, traversesByFinishingPosition } from '@Query/drawDefinition/linkTraversal';
 import { getIndividualParticipantIds } from '@Query/matchUp/getIndividualParticipantIds';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import { derivedGoesToOrLinkError, GoesToMap } from '@Query/matchUps/addGoesTo';
@@ -14,7 +15,6 @@ import { findEvent } from '@Acquire/findEvent';
 // constants and types
 import { ErrorType, MISSING_DRAW_ID, MISSING_MATCHUPS, MISSING_MATCHUP_IDS } from '@Constants/errorConditionConstants';
 import { DrawDefinition, DrawLink, Tournament } from '@Types/tournamentTypes';
-import { POSITION, WINNER } from '@Constants/drawDefinitionConstants';
 import { TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
@@ -59,19 +59,24 @@ export function getMatchUpDependencies(params: GetMatchUpDependenciesArgs): {
 
   const allTournamentRecords: Tournament[] = Object.values(tournamentRecords);
 
-  const allLinks: DrawLink[] = allTournamentRecords.reduce((allLinks: any[], tournamentRecord) => {
-    return allLinks.concat(
-      (tournamentRecord.events ?? [])
-        .map((event) => (event.drawDefinitions ?? []).map((drawDefinition) => drawDefinition.links ?? []))
-        .flat(Infinity),
+  const allDrawDefinitions: DrawDefinition[] = allTournamentRecords.flatMap((tournamentRecord) =>
+    (tournamentRecord.events ?? []).flatMap((event) => event.drawDefinitions ?? []),
+  );
+  // each link is classified with its own draw in view: a link out of a round robin traverses by finishing position,
+  // labelled POSITION or WINNER (linkTraversal.ts)
+  const linksOf = (predicate: (link: DrawLink, drawDefinition: DrawDefinition) => boolean): DrawLink[] =>
+    allDrawDefinitions.flatMap((drawDefinition) =>
+      (drawDefinition.links ?? []).filter((link) => predicate(link, drawDefinition)),
     );
-  }, []);
 
-  const positionLinks = allLinks.filter(({ linkType }) => linkType === POSITION);
+  const positionLinks = linksOf((link, drawDefinition) => traversesByFinishingPosition(link, drawDefinition));
   // a WINNER link between two structures feeds the winners of a qualifying round into qualifier positions
-  const qualifyingLinks = allLinks.filter(
-    ({ linkType, source, target }) =>
-      linkType === WINNER && source?.structureId && target?.structureId && source.structureId !== target.structureId,
+  const qualifyingLinks = linksOf(
+    (link, drawDefinition) =>
+      isRoundWinnerLink(link, drawDefinition) &&
+      !!link.source?.structureId &&
+      !!link.target?.structureId &&
+      link.source.structureId !== link.target.structureId,
   );
 
   let matchUps: HydratedMatchUp[] | undefined = targetMatchUps;

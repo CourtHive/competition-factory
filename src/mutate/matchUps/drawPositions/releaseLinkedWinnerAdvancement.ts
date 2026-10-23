@@ -3,6 +3,7 @@ import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { releaseAdvancedDrawPosition } from './releaseAdvancedDrawPosition';
+import { isRoundWinnerLink } from '@Query/drawDefinition/linkTraversal';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findStructure } from '@Acquire/findStructure';
@@ -237,7 +238,8 @@ export function releaseAcrossWinnerLinks({
   event,
 }: Omit<ReleaseLinkedWinnerAdvancementArgs, 'roundNumber'> & { participantId: string }) {
   for (const link of drawDefinition.links ?? []) {
-    if (link.linkType !== WINNER || link.source.structureId !== structureId || !link.source.roundNumber) continue;
+    if (!isRoundWinnerLink(link, drawDefinition) || link.source.structureId !== structureId || !link.source.roundNumber)
+      continue;
     releaseLinkedWinnerAdvancement({
       roundNumber: link.source.roundNumber,
       tournamentRecord,

@@ -20,8 +20,8 @@ type Link = {
   linkType: 'LOSER' | 'WINNER' | 'POSITION'; // Type of participant flow
   source: {
     structureId: string; // Source structure UUID
-    roundNumber?: number; // WINNER/LOSER: REQUIRED, the round that feeds the target. POSITION: optional (0 = placeholder)
-    finishingPositions?: number[]; // POSITION links: which group finishing positions leave a round robin
+    roundNumber?: number; // the round whose winners/losers cross: required out of an elimination structure (0 = placeholder)
+    finishingPositions?: number[]; // the group places that cross: directs every link out of a round robin
     qualifyingPositions?: number; // Qualifier count for placeholder links
   };
   target: {
@@ -51,7 +51,7 @@ type Link = {
 }
 ```
 
-**WINNER Links** - Direct winning participants of an elimination round:
+**WINNER Links** - Direct winning participants. Out of an elimination structure, the winners of a round:
 
 ```js
 {
@@ -68,7 +68,23 @@ type Link = {
 }
 ```
 
-**POSITION Links** - Feed based on finishing position (round robin groups):
+Out of a round robin, the group finishers named by `finishingPositions` (see [Rounds and finishing positions](#rounds-and-finishing-positions-how-a-link-traverses)):
+
+```js
+{
+  linkType: 'WINNER',
+  source: {
+    structureId: 'round-robin-container',
+    finishingPositions: [1]  // Group winners
+  },
+  target: {
+    structureId: 'playoff-structure',
+    roundNumber: 1
+  }
+}
+```
+
+**POSITION Links** - Feed based on finishing position:
 
 ```js
 {
@@ -85,18 +101,19 @@ type Link = {
 }
 ```
 
-### Rounds and finishing positions: how a link names its source
+### Rounds and finishing positions: how a link traverses
 
-A link names WHO LEAVES its source structure in one of two ways, and the two are not interchangeable:
+A link says WHO CROSSES it from its source structure in one of two ways, and the source structure decides which:
 
-| link type         | names its source by             | why                                                                                                                                                                                                          |
-| ----------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `WINNER`, `LOSER` | `source.roundNumber` (required) | an elimination structure decides who leaves it match by match, so the link names the round whose winners (or losers) it carries                                                                              |
-| `POSITION`        | `source.finishingPositions`     | a round robin decides who leaves it by [tally](/docs/policies/roundRobinTallyPolicy), once its groups are complete, so the link names the group finishing positions it carries (`[1]`: every group's winner) |
+| source structure                      | the link is directed by         | labelled               | why                                                                                                                                                                                            |
+| ------------------------------------- | ------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| round robin (a `CONTAINER` of groups) | `source.finishingPositions`     | `POSITION` or `WINNER` | a round robin decides who leaves it by [tally](/docs/policies/roundRobinTallyPolicy), once its groups are complete: `[1]` is every group's winner, `[2]` every runner-up, `[1, 2]` the top two |
+| elimination                           | `source.roundNumber` (required) | `WINNER` or `LOSER`    | an elimination structure decides who leaves it match by match: the link names the round whose winners (or losers) cross it                                                                     |
 
-- **A `POSITION` link needs no `roundNumber`.** The factory records the groups' final round on a round robin qualifying link (`roundNumber: 3` for groups of four) and none on a round robin playoff link; in neither does the round decide who leaves. Round robin qualifying into MAIN and round robin into its playoffs are both `POSITION` links.
-- **A `WINNER` or `LOSER` link with no `source.roundNumber` is malformed** (`LINK_MISSING_SOURCE_ROUND`): it cannot say which round it directs, and the draw refuses every outcome until it is repaired with [`repairMalformedLinks`](/docs/governors/draws-governor#repairmalformedlinks).
-- **Legacy label.** Records converted from classic TMX (2017–2023) carry the round robin qualifying link into MAIN as `linkType: 'WINNER'` with `finishingPositions: [1]` and no round. It is a `POSITION` link under an old name: its source is a round robin, and it names finishing positions. It is NOT malformed and does not refuse outcomes; [`getDrawInconsistencies`](/docs/governors/query-governor#getdrawinconsistencies) reports it as `LEGACY_ROUND_ROBIN_WINNER_LINK` (severity `info`), and [`repairMalformedLinks`](/docs/governors/draws-governor#repairmalformedlinks) and [`migrateTournamentRecord`](/docs/engines/migrate-tournament-record) relabel it `POSITION`. A `WINNER` link with no round out of an ELIMINATION structure stays malformed, whatever `finishingPositions` it carries.
+- **Both labels are valid out of a round robin, permanently.** The factory writes `POSITION`; records converted from classic TMX, earlier factory versions and this page's examples use `WINNER`. Every engine reader decides by the source structure, so the two behave identically: qualifier progression, the qualifier position action, playoff positioning, finishing positions and the integrity scan all read `finishingPositions`.
+- **A `roundNumber` on a round robin link is allowed and decides nothing.** The factory records the groups' final round on a round robin qualifying link (`roundNumber: 3` for groups of four) and none on a playoff link.
+- **What is malformed** (`LINK_MISSING_SOURCE_ROUND`): a link that must name a round and does not: a `WINNER` or `LOSER` link out of an elimination structure with no `source.roundNumber`, or a `WINNER` link out of a round robin that names no `finishingPositions` either. A draw holding one refuses every outcome until it is repaired with [`repairMalformedLinks`](/docs/governors/draws-governor#repairmalformedlinks), which never touches a round robin link that names `finishingPositions`.
+- A `LOSER` link out of a round robin is not a finishing-position link: round robin matchUps are never directed by links.
 
 **Placeholder Qualifying Links** - Reserve qualifier positions before qualifying structures are generated:
 

@@ -81,8 +81,8 @@ export function getTargetLink({
  * refused on a draw that has one, before the first write (outcome-pipeline.md § 2 row 21), and every `positionTargets`
  * error after that point is impossible by construction (CA, 2026-10-22: no mutation relies on rollback).
  *
- * A round robin's link under the legacy WINNER label (`isLegacyRoundRobinWinnerLink`) is not malformed and does not
- * refuse the draw: the draw is passed so its source structure can be seen.
+ * The draw is passed so a link out of a round robin is seen for what it is: it traverses by finishing position
+ * (`traversesByFinishingPosition`), labelled `POSITION` or `WINNER`, needs no round, and never refuses the draw.
  */
 export function getMalformedRoundLink(drawDefinition?: DrawDefinition): TargetLinkError | undefined {
   // `findIndex`, not `find`: the predicate (malformedLinks.ts) also answers true for an entry that is not an object, and

@@ -178,7 +178,7 @@ These ranges define how group finishers map to overall draw finishing positions 
 
 ## Links Between Structures
 
-Draw structures are connected via **links** that control participant flow. Out of a round robin, the `finishingPositions` field on a `POSITION` link's source determines which participants advance, by tally, with no round involved. (`WINNER` and `LOSER` links, out of elimination structures, name a `source.roundNumber` instead; see [Rounds and finishing positions](./draw-links.mdx#rounds-and-finishing-positions-how-a-link-names-its-source).)
+Draw structures are connected via **links** that control participant flow. Out of a round robin, the `finishingPositions` field on the link's source determines which participants advance, by tally, whether the link is labelled `POSITION` (as the factory writes it) or `WINNER`. See [Rounds and finishing positions](./draw-links.mdx#rounds-and-finishing-positions-how-a-link-traverses).
 
 ```js
 // Group winners advance to Gold bracket

@@ -1149,10 +1149,10 @@ engine.renameStructures({
 
 ## repairMalformedLinks
 
-Repairs every malformed entry of `drawDefinition.links`, or removes what cannot be repaired, and reports which. These are the link findings of [`getDrawInconsistencies`](/docs/governors/query-governor#getdrawinconsistencies): `LINK_MISSING_SOURCE_ROUND`, `DANGLING_LINK` and `INVALID_LINK`. A draw with such a link refuses every outcome, and an entry that is not an object makes the draw's readers throw. It also relabels a round robin's link under the legacy `WINNER` label (`LEGACY_ROUND_ROBIN_WINNER_LINK`), which is not malformed: see [Rounds and finishing positions](/docs/concepts/draw-links#rounds-and-finishing-positions-how-a-link-names-its-source).
+Repairs every malformed entry of `drawDefinition.links`, or removes what cannot be repaired, and reports which. These are the link findings of [`getDrawInconsistencies`](/docs/governors/query-governor#getdrawinconsistencies): `LINK_MISSING_SOURCE_ROUND`, `DANGLING_LINK` and `INVALID_LINK`. A draw with such a link refuses every outcome, and an entry that is not an object makes the draw's readers throw. A link out of a round robin that names `finishingPositions` is never malformed, labelled `POSITION` or `WINNER`, and the repair never touches it: see [Rounds and finishing positions](/docs/concepts/draw-links#rounds-and-finishing-positions-how-a-link-traverses).
 
 ```js
-const { repaired, relabeled, removed, unlinkedStructureIds } = engine.repairMalformedLinks({
+const { repaired, removed, unlinkedStructureIds } = engine.repairMalformedLinks({
   drawId, // required
   force, // optional - proceed although participants arrived through a link the repair changes
 });
@@ -1160,16 +1160,13 @@ const { repaired, relabeled, removed, unlinkedStructureIds } = engine.repairMalf
 
 What happens to each entry:
 
-| condition                                                                       | action                                            | `reason`                         |
-| ------------------------------------------------------------------------------- | ------------------------------------------------- | -------------------------------- |
-| not an object (`null`, a string, an array)                                      | removed                                           | `NOT_A_LINK`                     |
-| `source` or `target` structure not in the draw                                  | removed                                           | `DANGLING_LINK`                  |
-| `WINNER`/`LOSER` link with no `source.roundNumber`, exactly one round fits      | `source.roundNumber` restored                     | (in `repaired`)                  |
-| `WINNER`/`LOSER` link with no `source.roundNumber`, several rounds fit          | removed, with `candidates`                        | `AMBIGUOUS_SOURCE_ROUND`         |
-| `WINNER`/`LOSER` link with no `source.roundNumber`, no round fits               | removed                                           | `NO_SOURCE_ROUND`                |
-| `WINNER` link from a round robin, with `source.finishingPositions` and no round | `linkType` relabelled `POSITION` (in `relabeled`) | `LEGACY_ROUND_ROBIN_WINNER_LINK` |
-
-A round robin's link names finishing positions; no round decides who leaves a round robin, which is decided by tally. So a legacy `WINNER` label on one (classic TMX conversions) is relabelled `POSITION`, which changes nothing else about the link, and is never given a round or removed. A container has no rounds of its own, so the round inference below would find none and remove the link that joins qualifying to MAIN. The relabel needs no `force`, since it does not change how anyone arrived.
+| condition                                                                  | action                        | `reason`                 |
+| -------------------------------------------------------------------------- | ----------------------------- | ------------------------ |
+| not an object (`null`, a string, an array)                                 | removed                       | `NOT_A_LINK`             |
+| `source` or `target` structure not in the draw                             | removed                       | `DANGLING_LINK`          |
+| `WINNER`/`LOSER` link with no `source.roundNumber`, exactly one round fits | `source.roundNumber` restored | (in `repaired`)          |
+| `WINNER`/`LOSER` link with no `source.roundNumber`, several rounds fit     | removed, with `candidates`    | `AMBIGUOUS_SOURCE_ROUND` |
+| `WINNER`/`LOSER` link with no `source.roundNumber`, no round fits          | removed                       | `NO_SOURCE_ROUND`        |
 
 How the round is found, by the reasoning the factory uses to derive a source round from a structure:
 
