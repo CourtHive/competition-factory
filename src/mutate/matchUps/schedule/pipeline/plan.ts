@@ -5,6 +5,7 @@ import { PlaceVenueRoundsArgs, scheduleVenueRounds, VenueRoundDetails } from './
 import { generateScheduleTimes } from '@Generators/scheduling/utils/generateScheduleTimes';
 import { extractDate, sameDay, timeStringMinutes } from '@Tools/dateTime';
 import { getMatchUpId } from '@Functions/global/extractors';
+import { playedOrderGate } from './playedOrderGate';
 
 // types
 import type { DatePlan, Minutes, SchedulingView, VenuePlan } from './view';
@@ -53,6 +54,9 @@ export type SchedulePlan = {
   overLimitMatchUpIds: PlaceVenueRoundsArgs['overLimitMatchUpIds'];
   overLimitMatchUpDetails: PlaceVenueRoundsArgs['overLimitMatchUpDetails'];
   recoveryTimeDeferredMatchUpIds: PlaceVenueRoundsArgs['recoveryTimeDeferredMatchUpIds'];
+  /** matchUps left unplaced because every slot offered them was at or before a played source (or at or after a
+   * played dependent): the first such slot and the played matchUps that refused it */
+  playedOrderDeferredMatchUpIds: PlaceVenueRoundsArgs['playedOrderDeferredMatchUpIds'];
   dependencyDeferredMatchUpIds: PlaceVenueRoundsArgs['dependencyDeferredMatchUpIds'];
   requestConflicts: PlaceVenueRoundsArgs['requestConflicts'];
   skippedScheduleTimes: PlaceVenueRoundsArgs['skippedScheduleTimes'];
@@ -88,6 +92,7 @@ export function planSchedule({
 }: PlanScheduleArgs): SchedulePlan {
   const plan: SchedulePlan = {
     recoveryTimeDeferredMatchUpIds: {},
+    playedOrderDeferredMatchUpIds: {},
     dependencyDeferredMatchUpIds: {},
     overLimitMatchUpDetails: {},
     scheduleTimesRemaining: {},
@@ -145,6 +150,7 @@ function planDate({
   const { hydrated, tournamentRecords, matchUpDependencies, reachability } = view;
 
   plan.recoveryTimeDeferredMatchUpIds[scheduleDate] = {};
+  plan.playedOrderDeferredMatchUpIds[scheduleDate] = {};
   plan.dependencyDeferredMatchUpIds[scheduleDate] = {};
   plan.scheduleTimesRemaining[scheduleDate] = {};
   plan.skippedScheduleTimes[scheduleDate] = {};
@@ -231,6 +237,8 @@ function planDate({
 
   scheduleVenueRounds({
     recoveryTimeDeferredMatchUpIds: plan.recoveryTimeDeferredMatchUpIds,
+    playedOrderDeferredMatchUpIds: plan.playedOrderDeferredMatchUpIds,
+    playedOrderRefusal: playedOrderGate(view, scheduleDate),
     dependencyDeferredMatchUpIds: plan.dependencyDeferredMatchUpIds,
     overLimitMatchUpDetails: plan.overLimitMatchUpDetails,
     matchUpScheduleTimes: plan.matchUpScheduleTimes,
@@ -277,7 +285,12 @@ function recordDatePlacements({ venueScheduledRoundDetails, scheduleDate, datePl
     plan.placements[scheduleDate][venueId] = placements;
     plan.scheduledMatchUpIds[scheduleDate].push(...placements.map(getMatchUpId));
     plan.unplaced[scheduleDate][venueId] = details.matchUpsToSchedule.map(getMatchUpId);
-    plan.noTimeMatchUpIds[scheduleDate].push(...plan.unplaced[scheduleDate][venueId]);
+    // a matchUp the played order held back is reported under that reason alone; one a later slot took is not reported
+    const playedOrderDeferred = plan.playedOrderDeferredMatchUpIds[scheduleDate];
+    for (const { matchUpId } of placements) delete playedOrderDeferred[matchUpId];
+    plan.noTimeMatchUpIds[scheduleDate].push(
+      ...plan.unplaced[scheduleDate][venueId].filter((matchUpId) => !playedOrderDeferred[matchUpId]),
+    );
     plan.scheduleTimesRemaining[scheduleDate][venueId] = details.scheduleTimes.toSorted(
       (a, b) => timeStringMinutes(a.scheduleTime) - timeStringMinutes(b.scheduleTime),
     );

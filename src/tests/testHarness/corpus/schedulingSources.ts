@@ -339,7 +339,8 @@ export function schedulingScenarios(): Authored[] {
 
   {
     // C2 (CA 2026-10-22): R1 played on day 2, with scores, and R2 profiled on day 1, where its sources are not yet
-    // played. Today the plan places R2 and the writer refuses each placement, reporting it as unscheduled
+    // played. The planner's gate never takes such a slot (CA 2026-10-23): R2 is reported under
+    // playedOrderDeferredMatchUpIds and nothing is written
     const { tournamentRecord, round, matchUpsOf, drawId } = generate({ drawProfile: { drawSize: 8 }, courtsCount: 4 });
     const outcome = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 1 }).outcome;
     out.push({

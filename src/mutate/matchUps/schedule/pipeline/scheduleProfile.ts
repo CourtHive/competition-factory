@@ -1,8 +1,11 @@
 import { auditAutoScheduling } from '@Mutate/matchUps/schedule/schedulers/auditAutoScheduling';
 import { clearScheduledMatchUps } from '@Mutate/matchUps/schedule/clearScheduledMatchUps';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { disableNotifications, enableNotifications } from '@Global/state/globalState';
 import { computeRoundSchedulePcts } from './roundSchedulePcts';
+import { planPlayedOrderRefusal } from './playedOrderGate';
 import { isValidDateString } from '@Tools/dateTime';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { buildSchedulingView } from './view';
 import { planSchedule } from './plan';
 import { nowMs } from '@Tools/clock';
@@ -49,19 +52,22 @@ export function scheduleProfileVNext(params: ScheduleProfileVNextArgs) {
   if ('error' in firstView) return firstView;
   if (!firstView.schedulingProfile.length) return { ...SUCCESS };
 
-  // a date cleared is cleared before the matchUps are read, so the plan sees the date empty; the dates are validated
-  // first, so a call refused for its dates clears nothing
-  if (clearScheduleDates && !dryRun) {
-    const scheduledDates = Array.isArray(clearScheduleDates) ? clearScheduleDates : [];
-    clearScheduledMatchUps({ tournamentRecords, scheduledDates });
-  }
-  const view = clearScheduleDates && !dryRun ? buildSchedulingView(params) : firstView;
-  if ('error' in view) return { error: view.error };
+  // a date to clear is planned on a working copy cleared first (notifications held), so the plan sees the date empty
+  // and a refusal leaves the stored records untouched; a dry run plans the same way, so it previews what a run does
+  const scheduledDates = Array.isArray(clearScheduleDates) ? clearScheduleDates : [];
+  const working = clearScheduleDates ? clearedWorkingCopy(tournamentRecords, scheduledDates) : tournamentRecords;
+  const view = clearScheduleDates ? buildSchedulingView({ ...params, tournamentRecords: working }) : firstView;
+  if ('error' in view) return view;
 
+  // the plan, then the guard over all of it, before anything is written (CA 2026-10-23)
   const plan = planSchedule({ ...params, view });
+  const refusal = planPlayedOrderRefusal({ plan, view });
+  if (refusal) return refusal;
+
+  if (clearScheduleDates && !dryRun) clearScheduledMatchUps({ tournamentRecords, scheduledDates });
   const { scheduledMatchUpIds, noTimeMatchUpIds } = dryRun
     ? { scheduledMatchUpIds: plan.scheduledMatchUpIds, noTimeMatchUpIds: plan.noTimeMatchUpIds }
-    : writePlan({ plan, view });
+    : writePlan({ plan, view, tournamentRecords });
 
   view.dateSchedulingProfiles.forEach((dateSchedulingProfile, index) =>
     computeRoundSchedulePcts({
@@ -72,7 +78,7 @@ export function scheduleProfileVNext(params: ScheduleProfileVNextArgs) {
   );
 
   // the original form of the date strings
-  const scheduledDates = view.dateSchedulingProfiles.map(({ scheduleDate }) => scheduleDate);
+  const profileDates = view.dateSchedulingProfiles.map(({ scheduleDate }) => scheduleDate);
   auditAutoScheduling({
     tournamentRecords,
     autoSchedulingAudit: {
@@ -81,8 +87,8 @@ export function scheduleProfileVNext(params: ScheduleProfileVNextArgs) {
       requestConflicts: plan.requestConflicts,
       timeStamp: nowMs(),
       scheduledMatchUpIds,
+      scheduledDates: profileDates,
       noTimeMatchUpIds,
-      scheduledDates,
     },
   });
 
@@ -100,8 +106,21 @@ export function scheduleProfileVNext(params: ScheduleProfileVNextArgs) {
     overLimitMatchUpIds: plan.overLimitMatchUpIds,
     requestConflicts: plan.requestConflicts,
     scheduledMatchUpIds,
+    playedOrderDeferredMatchUpIds: plan.playedOrderDeferredMatchUpIds,
     noFormatMatchUpIds: plan.noFormatMatchUpIds,
+    scheduledDates: profileDates,
     noTimeMatchUpIds,
-    scheduledDates,
   };
+}
+
+/** the records with the dates cleared, on a copy: what the plan reads when a call clears dates first */
+function clearedWorkingCopy(tournamentRecords: TournamentRecords, scheduledDates: string[]): TournamentRecords {
+  const working: TournamentRecords = makeDeepCopy(tournamentRecords, false, true);
+  disableNotifications();
+  try {
+    clearScheduledMatchUps({ tournamentRecords: working, scheduledDates });
+  } finally {
+    enableNotifications();
+  }
+  return working;
 }

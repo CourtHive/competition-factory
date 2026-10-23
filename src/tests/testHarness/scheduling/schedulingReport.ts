@@ -16,6 +16,7 @@ const REASONS = [
   'overLimitMatchUpIds',
   'dependencyDeferredMatchUpIds',
   'recoveryTimeDeferredMatchUpIds',
+  'playedOrderDeferredMatchUpIds',
 ] as const;
 
 /** the methods that decide placements, and so report what they left unscheduled */
