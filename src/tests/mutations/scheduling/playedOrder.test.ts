@@ -16,6 +16,12 @@ const day1 = '2026-10-01';
 const day2 = '2026-10-02';
 const venueId = 'venue1';
 
+/** the matchUp at a round and position, as the engine holds it now */
+const matchUpAt = (roundNumber: number, roundPosition: number) =>
+  tournamentEngine
+    .allTournamentMatchUps()
+    .matchUps.find((m: any) => m.roundNumber === roundNumber && m.roundPosition === roundPosition);
+
 /** an 8 draw: R1 played, semifinal 1 played (unless `semifinalOutcome` is null) and timed day 2 at 10:00 */
 function playedSemifinal({ semifinalOutcome = { scoreString: '6-1 6-1', winningSide: 1 } }: any = {}) {
   mocksEngine.generateTournamentRecord({
@@ -38,10 +44,7 @@ function playedSemifinal({ semifinalOutcome = { scoreString: '6-1 6-1', winningS
     endDate: day2,
     setState: true,
   });
-  const at = (roundNumber: number, roundPosition: number) =>
-    tournamentEngine
-      .allTournamentMatchUps()
-      .matchUps.find((m: any) => m.roundNumber === roundNumber && m.roundPosition === roundPosition);
+  const at = matchUpAt;
   const write = (matchUp: any, schedule: any, extra: any = {}) =>
     tournamentEngine.addMatchUpScheduleItems({
       matchUpId: matchUp.matchUpId,
@@ -232,5 +235,62 @@ describe('C2: scheduleMatchUps waits for a matchUp’s sources', () => {
     // was: the final at 08:00, both semifinals at 09:00
     expect(Math.min(...minutes(2))).toBeGreaterThan(Math.max(...minutes(1)));
     expect(Math.min(...minutes(3))).toBeGreaterThan(Math.max(...minutes(2)));
+  });
+});
+
+describe('the profile scheduler asks the played order of a placement once, date and time together', () => {
+  it('moving a final from day 3 to day 2, after its played semifinals, is not refused for its old time', () => {
+    const days = ['2026-10-01', '2026-10-02', '2026-10-03'];
+    mocksEngine.generateTournamentRecord({
+      venueProfiles: [{ venueId, courtsCount: 4, startTime: '08:00', endTime: '20:00' }],
+      drawProfiles: [
+        {
+          drawSize: 4,
+          outcomes: [1, 2].map((roundPosition) => ({
+            roundNumber: 1,
+            roundPosition,
+            scoreString: '6-1 6-1',
+            winningSide: 1,
+          })),
+        },
+      ],
+      startDate: days[0],
+      endDate: days[2],
+      setState: true,
+    });
+    const at = matchUpAt;
+    for (const roundPosition of [1, 2]) {
+      const semifinal = at(1, roundPosition);
+      const result: any = tournamentEngine.addMatchUpScheduleItems({
+        schedule: { scheduledDate: days[1], scheduledTime: '12:00' },
+        matchUpId: semifinal.matchUpId,
+        drawId: semifinal.drawId,
+      });
+      expect(result.success).toEqual(true);
+    }
+    const final = at(2, 1);
+    let result: any = tournamentEngine.addMatchUpScheduleItems({
+      schedule: { scheduledDate: days[2], scheduledTime: '08:00' },
+      matchUpId: final.matchUpId,
+      drawId: final.drawId,
+    });
+    expect(result.success).toEqual(true);
+
+    const { tournamentId, eventId, drawId, structureId } = final;
+    result = tournamentEngine.addSchedulingProfileRound({
+      round: { tournamentId, eventId, drawId, structureId, roundNumber: 2 },
+      scheduleDate: days[1],
+      venueId,
+    });
+    expect(result.success).toEqual(true);
+    result = tournamentEngine.scheduleProfileRounds({ scheduleDates: [days[1]] });
+    expect(result.success).toEqual(true);
+
+    // the date was asked alone, against the final's old 08:00: refused as before the 12:00 semifinals, so the final kept
+    // day 3 and took the new time there, while the report said it was scheduled on day 2
+    const moved = at(2, 1);
+    expect(moved.schedule.scheduledDate).toEqual(days[1]);
+    expect(timeStringMinutes(timeOf(moved))).toBeGreaterThan(timeStringMinutes('12:00'));
+    expect(result.scheduledMatchUpIds[days[1]]).toEqual([final.matchUpId]);
   });
 });

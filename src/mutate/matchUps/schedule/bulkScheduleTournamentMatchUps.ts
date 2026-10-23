@@ -1,14 +1,15 @@
 import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
+import { checkBatchPlayedOrder, BatchPlacement } from './scheduleItems/playedOrder';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
-import { checkBatchPlayedOrder } from './scheduleItems/playedOrder';
 import { findDrawDefinition } from '@Acquire/findDrawDefinition';
 
 // constants and types
 import { BYE, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
+import { HydratedMatchUp } from '@Types/hydrated';
 import {
   MISSING_SCHEDULE,
   SCHEDULE_LOCKED,
@@ -27,6 +28,8 @@ type BulkScheduleMachUpsArgs = {
   removePriorValues?: boolean;
   checkChronology?: boolean;
   matchUpDependencies?: any;
+  /** hydrated matchUps the caller already holds; without them each call hydrates the tournament again */
+  inContextMatchUps?: HydratedMatchUp[];
   matchUpIds?: string[];
   matchUpDetails?: any;
   schedule?: any;
@@ -47,6 +50,7 @@ export function bulkScheduleTournamentMatchUps({
   tournamentRecords,
   tournamentRecord,
   matchUpDetails,
+  inContextMatchUps: givenInContextMatchUps,
   playedOrderChecked,
   playedOrderOnly,
   matchUpIds,
@@ -64,7 +68,7 @@ export function bulkScheduleTournamentMatchUps({
 
   if (!matchUpDetails && (!schedule || typeof schedule !== 'object')) return { error: MISSING_SCHEDULE };
 
-  let inContextMatchUps;
+  let inContextMatchUps = givenInContextMatchUps;
   const lockedMatchUpIds: string[] = [];
   const warnings: any[] = [];
   let scheduled = 0;
@@ -82,12 +86,7 @@ export function bulkScheduleTournamentMatchUps({
 
   // Optimize getting matchUps for all tournamentRecords
   // if inContextMatchUps retrieved in previous step, skip this step
-  if (!inContextMatchUps) {
-    inContextMatchUps =
-      allTournamentMatchUps({
-        tournamentRecord,
-      })?.matchUps ?? [];
-  }
+  inContextMatchUps ??= allTournamentMatchUps({ tournamentRecord })?.matchUps ?? [];
 
   const detailMatchUpIds = matchUpDetails?.map((detail) => detail.matchUpId);
   const requestedMatchUpIds = new Set<string>(matchUpIds ?? detailMatchUpIds ?? []);
@@ -103,7 +102,7 @@ export function bulkScheduleTournamentMatchUps({
     const { matchUpId, drawId, matchUpStatus } = matchUp;
     if (
       (scheduleByeMatchUps || matchUpStatus !== BYE) &&
-      (scheduleCompletedMatchUps || !completedMatchUpStatuses.includes(matchUpStatus))
+      (scheduleCompletedMatchUps || !matchUpStatus || !completedMatchUpStatuses.includes(matchUpStatus))
     ) {
       if (drawIdMap[drawId]) {
         drawIdMap[drawId].push(matchUpId);
@@ -120,6 +119,8 @@ export function bulkScheduleTournamentMatchUps({
   const scheduleOf = (matchUpId: string) => detailScheduleOf({ matchUpDetails, schedule, matchUpId });
 
   const gate = playedOrderGate({
+    matchUpDependencies,
+    inContextMatchUps,
     playedOrderChecked,
     tournamentRecord,
     playedOrderOnly,
@@ -195,21 +196,34 @@ function detailScheduleOf({ matchUpDetails, schedule, matchUpId }) {
  * A played matchUp's order is refused for the whole batch, before any of it is written; a caller's first pass over
  * several tournaments (`playedOrderOnly`) stops here either way, writing nothing
  */
+type PlayedOrderGateArgs = {
+  scheduleOf: (matchUpId: string) => BatchPlacement['schedule'];
+  matchUpDependencies?: BulkScheduleMachUpsArgs['matchUpDependencies'];
+  drawIdMap: { [drawId: string]: string[] };
+  isRequested: (matchUpId: string) => boolean;
+  inContextMatchUps?: HydratedMatchUp[];
+  playedOrderChecked?: boolean;
+  tournamentRecord: Tournament;
+  playedOrderOnly?: boolean;
+};
+
 function playedOrderGate({
+  matchUpDependencies,
+  inContextMatchUps,
   playedOrderChecked,
   playedOrderOnly,
   tournamentRecord,
   drawIdMap,
   isRequested,
   scheduleOf,
-}) {
+}: PlayedOrderGateArgs) {
   if (!playedOrderChecked) {
     const placements = Object.keys(drawIdMap).flatMap((drawId) =>
       drawIdMap[drawId]
         .filter(isRequested)
         .map((matchUpId) => ({ drawId, matchUpId, schedule: scheduleOf(matchUpId) })),
     );
-    const refusal = checkBatchPlayedOrder({ tournamentRecord, placements });
+    const refusal = checkBatchPlayedOrder({ tournamentRecord, placements, matchUpDependencies, inContextMatchUps });
     if (refusal) return refusal;
   }
   return playedOrderOnly ? { ...SUCCESS, scheduled: 0 } : undefined;

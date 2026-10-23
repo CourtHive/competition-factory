@@ -42,13 +42,18 @@ function alreadyScheduledMinutes({
   tournamentRecords,
   minutesMap,
   matchUp,
+  memo,
 }: {
   tournamentRecords?: { [key: string]: Tournament };
   minutesMap?: { [matchUpId: string]: Minutes };
+  memo: Map<string, Minutes | undefined>;
   matchUp: HydratedMatchUp;
 }): Minutes | undefined {
   const mapped = minutesMap?.[matchUp.matchUpId];
   if (mapped || !tournamentRecords || !matchUp.matchUpFormat || !matchUp.tournamentId) return mapped;
+  // minutes depend only on the tournament, the event and the format: resolved once per combination in a call
+  const key = `${matchUp.tournamentId}|${matchUp.eventId}|${matchUp.matchUpFormat}`;
+  if (memo.has(key)) return memo.get(key);
   const tournamentRecord = tournamentRecords[matchUp.tournamentId];
   const { event } = findEvent({ tournamentRecord, eventId: matchUp.eventId });
   const { category, eventType } = event ?? {};
@@ -61,7 +66,9 @@ function alreadyScheduledMinutes({
     tournamentRecords,
     eventType,
   });
-  return 'error' in timing ? undefined : timing;
+  const minutes = 'error' in timing ? undefined : timing;
+  memo.set(key, minutes);
+  return minutes;
 }
 export function processAlreadyScheduledMatchUps({
   matchUpPotentialParticipantIds,
@@ -132,6 +139,7 @@ export function processAlreadyScheduledMatchUps({
     return false;
   };
 
+  const minutesMemo = new Map<string, Minutes | undefined>();
   for (const matchUp of alreadyScheduled) {
     if (shouldExclude(matchUp)) continue;
 
@@ -146,7 +154,7 @@ export function processAlreadyScheduledMatchUps({
 
     if (scheduleTime) {
       matchUpScheduleTimes[matchUp.matchUpId] = scheduleTime;
-      const minutes = alreadyScheduledMinutes({ matchUp, minutesMap, tournamentRecords });
+      const minutes = alreadyScheduledMinutes({ matchUp, minutesMap, tournamentRecords, memo: minutesMemo });
       const recoveryMinutes = minutes?.recoveryMinutes;
       const typeChangeRecoveryMinutes = minutes?.typeChangeRecoveryMinutes;
       const averageMatchUpMinutes = greatestAverageMinutes;

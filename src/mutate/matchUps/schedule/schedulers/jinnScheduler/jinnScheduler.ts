@@ -11,6 +11,7 @@ import { processNextMatchUps } from '@Mutate/matchUps/schedule/scheduleMatchUps/
 import { checkRecoveryTime } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkRecoveryTime';
 import { getVenueSchedulingDetails } from '@Query/matchUps/scheduling/getVenueSchedulingDetails';
 import { auditAutoScheduling } from '@Mutate/matchUps/schedule/schedulers/auditAutoScheduling';
+import { checkPlayedOrder } from '@Mutate/matchUps/schedule/scheduleItems/playedOrder';
 import { extractDate, sameDay, timeStringMinutes, zeroPad } from '@Tools/dateTime';
 import { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue';
 import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
@@ -137,6 +138,8 @@ export function jinnScheduler({
     assignScheduledTimes({
       venueScheduledRoundDetails,
       scheduleTimesRemaining,
+      matchUpDependencies,
+      matchUps,
       matchUpScheduleTimes,
       scheduledMatchUpIds,
       tournamentRecords,
@@ -470,6 +473,8 @@ function getPassesBound({ venueScheduledRoundDetails, maxScheduleTimeAttempts, v
 function assignScheduledTimes({
   venueScheduledRoundDetails,
   scheduleTimesRemaining,
+  matchUpDependencies,
+  matchUps,
   matchUpScheduleTimes,
   scheduledMatchUpIds,
   tournamentRecords,
@@ -496,7 +501,10 @@ function assignScheduledTimes({
         drawMatchUps.forEach(({ matchUpId }) => {
           scheduleMatchUpTime({
             scheduledMatchUpIds,
+            matchUpDependencies,
+            noTimeMatchUpIds,
             drawDefinition,
+            matchUps,
             matchUpScheduleTimes,
             tournamentRecord,
             scheduleDate,
@@ -519,7 +527,10 @@ function assignScheduledTimes({
 
 function scheduleMatchUpTime({
   scheduledMatchUpIds,
+  matchUpDependencies,
+  noTimeMatchUpIds,
   drawDefinition,
+  matchUps,
   matchUpScheduleTimes,
   tournamentRecord,
   scheduleDate,
@@ -538,10 +549,25 @@ function scheduleMatchUpTime({
     return;
   }
 
+  // the played order is asked once, of the date and time together and with the graph this run already holds: asked of
+  // each write apart it rebuilt the graph per write, and judged the date against the matchUp's old time
+  const refusal = checkPlayedOrder({
+    schedule: { scheduledDate, scheduledTime: formatTime },
+    inContextMatchUps: matchUps,
+    matchUpDependencies,
+    drawDefinition,
+    matchUpId,
+  });
+  if (refusal) {
+    noTimeMatchUpIds[scheduleDate].push(matchUpId);
+    return;
+  }
+
   // Persist date and time as separate timeItems so SCHEDULED_TIME is plain HH:mm.
   // Without an explicit SCHEDULED_DATE, addMatchUpScheduledTime falls back to
   // embedding the date in the time value, which surfaces as "YYYY-MM-DDTHH:mm" in UI.
   addMatchUpScheduledDate({
+    playedOrderChecked: true,
     tournamentRecord,
     drawDefinition,
     scheduledDate,
@@ -549,11 +575,13 @@ function scheduleMatchUpTime({
   });
 
   const result = addMatchUpScheduledTime({
-    drawDefinition,
     scheduledTime: formatTime,
+    playedOrderChecked: true,
+    drawDefinition,
     matchUpId,
   });
-  if (result.success) scheduledMatchUpIds[scheduleDate].push(matchUpId);
+  if (!result.success) return;
+  scheduledMatchUpIds[scheduleDate].push(matchUpId);
 
   if (venueId) {
     assignMatchUpVenue({

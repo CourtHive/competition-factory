@@ -95,8 +95,7 @@ export function resolveTimingDetails({
   //   SET3-S:T15-F:T10   → 40 (2 × 15 + 10)
   //   <anything>-M:T60   → 60
   // Explicit policy / event / tournament timings still take precedence.
-  const parsed = matchUpFormat ? parseMatchUpFormat(matchUpFormat) : undefined;
-  const timedDefaultMinutes = deriveTimedDefaultMinutes(parsed);
+  const timedDefaultMinutes = timedDefaultMinutesOf(matchUpFormat);
   const effectiveDefaultAverage = timedDefaultMinutes ?? defaultAverageMinutes;
 
   const defaultTiming = {
@@ -143,6 +142,21 @@ export function resolveTimingDetails({
   };
 
   return timingDetails;
+}
+
+/**
+ * A format's own minutes, memoized by code: a pure function of the string, read for every timed matchUp a hydration
+ * with `afterRecoveryTimes` returns (C3), which parsed the same few codes once per matchUp. The cache is bounded.
+ */
+const TIMED_DEFAULT_CACHE_LIMIT = 512;
+const timedDefaultCache = new Map<string, number | undefined>();
+function timedDefaultMinutesOf(matchUpFormat?: string): number | undefined {
+  if (!matchUpFormat) return undefined;
+  if (timedDefaultCache.has(matchUpFormat)) return timedDefaultCache.get(matchUpFormat);
+  if (timedDefaultCache.size >= TIMED_DEFAULT_CACHE_LIMIT) timedDefaultCache.clear();
+  const minutes = deriveTimedDefaultMinutes(parseMatchUpFormat(matchUpFormat));
+  timedDefaultCache.set(matchUpFormat, minutes);
+  return minutes;
 }
 
 function deriveTimedDefaultMinutes(parsed: ReturnType<typeof parseMatchUpFormat>): number | undefined {
