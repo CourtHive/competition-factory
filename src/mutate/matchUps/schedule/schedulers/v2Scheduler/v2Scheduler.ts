@@ -554,7 +554,6 @@ type V2Scheduler = {
   participantReachability: ParticipantReachability;
   checkPotentialRequestConflicts?: boolean;
   tournamentRecords: TournamentRecords;
-  scheduleCompletedMatchUps?: boolean;
   schedulingProfileModifications: any;
   excludeNoDateCompleted?: boolean;
   personRequests?: PersonRequests;
@@ -579,7 +578,6 @@ type V2Scheduler = {
 export function v2Scheduler({
   schedulingProfileModifications,
   checkPotentialRequestConflicts,
-  scheduleCompletedMatchUps, // override which can be used by mocksEngine
   excludeNoDateCompleted,
   schedulingProfileIssues,
   dateSchedulingProfiles,
@@ -650,7 +648,6 @@ export function v2Scheduler({
     } = getVenueSchedulingDetails({
       matchUpPotentialParticipantIds,
       individualParticipantProfiles,
-      scheduleCompletedMatchUps,
       excludeNoDateCompleted,
       containedStructureIds,
       matchUpNotBeforeTimes,

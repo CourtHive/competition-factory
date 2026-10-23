@@ -1,20 +1,22 @@
+import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { deleteParticipants } from '@Mutate/participants/deleteParticipants';
+import { addEventEntries, addEventEntriesRefusal } from './addEventEntries';
 import { getStageEntries } from '@Query/drawDefinition/getStageEntries';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
 import { removeEventEntries } from './removeEventEntries';
-import { addEventEntries } from './addEventEntries';
 import { arrayIndices } from '@Tools/arrays';
 
 // constants and types
+import { DrawDefinition, EntryStatusUnion, Event, Tournament } from '@Types/tournamentTypes';
 import { TOURNAMENT_RECORD, PARTICIPANT_ID, EVENT } from '@Constants/attributeConstants';
-import { DrawDefinition, Tournament, Event } from '@Types/tournamentTypes';
 import { PAIR, TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { DOUBLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { UNGROUPED } from '@Constants/entryStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
+  EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT,
   ErrorType,
   INVALID_EVENT_TYPE,
   INVALID_PARTICIPANT_TYPE,
@@ -36,19 +38,34 @@ type DestroyGroupEntryArgs = {
   event: Event;
 };
 
-export function destroyGroupEntry({
-  removeGroupParticipant,
+type ReleasedSeat = { drawId?: string; structureId?: string; drawPosition?: number };
+
+/**
+ * Every refusal `destroyGroupEntry` can make, asked WITHOUT writing.
+ *
+ * A caller that must destroy a group entry as the SECOND step of a mutation (removing a PAIR from a
+ * drawPosition and dissolving it) asks this before its first write, so a refusal leaves the record as
+ * it was. `releasedSeat` names the one seat that caller is about to empty: the entry may still be
+ * assigned there, and must not be assigned anywhere else — `removeEventEntries` refuses an entry that
+ * holds any drawPosition in any of the event's draws.
+ */
+export function groupEntryDestructionError({
   tournamentRecord,
   drawDefinition,
   participantId,
+  releasedSeat,
   drawId,
   stage,
   event,
-}: DestroyGroupEntryArgs): {
-  success?: boolean;
-  error?: ErrorType;
-  participantRemoved?: boolean;
-} {
+}: {
+  drawDefinition?: DrawDefinition;
+  tournamentRecord: Tournament;
+  releasedSeat?: ReleasedSeat;
+  participantId: string;
+  drawId?: string;
+  stage?: string;
+  event: Event;
+}): { error?: ErrorType } | undefined {
   const stack = 'destroyGroupEntry';
   const paramsCheck = requireParams({ tournamentRecord, participantId, event }, [
     TOURNAMENT_RECORD,
@@ -61,12 +78,8 @@ export function destroyGroupEntry({
     return decorateResult({ result: { error: INVALID_EVENT_TYPE }, stack });
   }
 
-  const tournamentParticipants = tournamentRecord.participants ?? [];
-  const participant = tournamentParticipants.find((participant) => participant.participantId === participantId);
-
-  if (!participant) {
-    return decorateResult({ result: { error: PARTICIPANT_NOT_FOUND }, stack });
-  }
+  const participant = (tournamentRecord.participants ?? []).find((p) => p.participantId === participantId);
+  if (!participant) return decorateResult({ result: { error: PARTICIPANT_NOT_FOUND }, stack });
 
   if (
     !participant.participantType ||
@@ -77,13 +90,52 @@ export function destroyGroupEntry({
     return { error: INVALID_PARTICIPANT_TYPE };
   }
 
-  const eventEntries = event.entries ?? [];
-  const entry = eventEntries.find((entry) => entry.participantId === participantId);
-  if (!entry) return { error: PARTICIPANT_ENTRY_NOT_FOUND };
+  if (!(event.entries ?? []).some((entry) => entry.participantId === participantId)) {
+    return { error: PARTICIPANT_ENTRY_NOT_FOUND };
+  }
+
+  if (releasedSeat && assignedBeyondSeat({ event, participantId, releasedSeat })) {
+    return decorateResult({ result: { error: EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT }, stack });
+  }
+
+  // the individuals are re-entered AFTER the group entry is removed: whatever `addEventEntries` would
+  // refuse them for (gender, category, role, an unknown id) is refused here, before anything is written
+  const reentry = individualsReentry({ tournamentRecord, drawDefinition, participantId, drawId, stage, event });
+  if (reentry) {
+    const refusal = addEventEntriesRefusal(reentry);
+    if (refusal?.error) return decorateResult({ result: refusal, stack });
+  }
+
+  return undefined;
+}
+
+/**
+ * The exact `addEventEntries` params `destroyGroupEntry` re-enters the group's individuals with, or
+ * `undefined` when there are none to re-enter. Pure: computed from the record as it stands.
+ */
+function individualsReentry({
+  tournamentRecord,
+  drawDefinition,
+  participantId,
+  drawId,
+  stage,
+  event,
+}: {
+  drawDefinition?: DrawDefinition;
+  tournamentRecord: Tournament;
+  participantId: string;
+  drawId?: string;
+  stage?: string;
+  event: Event;
+}) {
+  const tournamentParticipants = tournamentRecord.participants ?? [];
+  const participant = tournamentParticipants.find((p) => p.participantId === participantId);
+  const entry = (event.entries ?? []).find((entry) => entry.participantId === participantId);
+  if (!participant || !entry) return undefined;
 
   const { stageEntries } = getStageEntries({
+    drawDefinition: drawDefinition as DrawDefinition,
     selected: false,
-    drawDefinition,
     drawId,
     event,
     stage,
@@ -100,6 +152,62 @@ export function destroyGroupEntry({
   const individualParticipantIds = participant.individualParticipantIds?.filter(
     (participantId) => arrayIndices(participantId, individualParticipantIdsInGroups).length === 1,
   );
+  if (!individualParticipantIds?.length) return undefined;
+
+  return {
+    participantIds: individualParticipantIds,
+    entryStatus: UNGROUPED as EntryStatusUnion,
+    entryStage: entry.entryStage,
+    tournamentRecord,
+    drawDefinition,
+    drawId,
+    event,
+  };
+}
+
+function assignedBeyondSeat({
+  event,
+  participantId,
+  releasedSeat,
+}: {
+  event: Event;
+  participantId: string;
+  releasedSeat: ReleasedSeat;
+}): boolean {
+  return (event.drawDefinitions ?? []).some((drawDefinition: DrawDefinition) =>
+    (drawDefinition.structures ?? []).some((structure) =>
+      (getPositionAssignments({ structure }).positionAssignments ?? []).some(
+        (assignment) =>
+          assignment.participantId === participantId &&
+          !(
+            drawDefinition.drawId === releasedSeat.drawId &&
+            structure.structureId === releasedSeat.structureId &&
+            assignment.drawPosition === releasedSeat.drawPosition
+          ),
+      ),
+    ),
+  );
+}
+
+export function destroyGroupEntry({
+  removeGroupParticipant,
+  tournamentRecord,
+  drawDefinition,
+  participantId,
+  drawId,
+  stage,
+  event,
+}: DestroyGroupEntryArgs): {
+  success?: boolean;
+  error?: ErrorType;
+  participantRemoved?: boolean;
+} {
+  // every refusal, the individuals' re-entry included, is asked before the first write
+  const refusal = groupEntryDestructionError({ tournamentRecord, drawDefinition, participantId, drawId, stage, event });
+  if (refusal) return refusal;
+
+  // computed before the group entry is removed, exactly as the pre-check computed them
+  const reentry = individualsReentry({ tournamentRecord, drawDefinition, participantId, drawId, stage, event });
 
   // remove the group participant from event entries
   let result = removeEventEntries({
@@ -108,16 +216,8 @@ export function destroyGroupEntry({
   });
   if (result.error) return result;
 
-  if (individualParticipantIds?.length) {
-    result = addEventEntries({
-      participantIds: individualParticipantIds,
-      entryStatus: UNGROUPED,
-      entryStage: entry.entryStage,
-      tournamentRecord,
-      drawDefinition,
-      drawId,
-      event,
-    });
+  if (reentry) {
+    result = addEventEntries(reentry);
     if (result.error) return result;
   }
 

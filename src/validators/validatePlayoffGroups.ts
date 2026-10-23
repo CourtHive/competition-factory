@@ -1,9 +1,76 @@
+import { decorateResult } from '@Functions/global/decorateResult';
 import { numericSort } from '@Tools/sorting';
 
 // constants and types
-import { INVALID_VALUES, INVALID_CONFIGURATION } from '@Constants/errorConditionConstants';
+import { INVALID_VALUES, INVALID_CONFIGURATION, UNRECOGNIZED_DRAW_TYPE } from '@Constants/errorConditionConstants';
 import { GEM_SCORE } from '@Constants/tallyConstants';
 import { ResultType } from '@Types/factoryTypes';
+import {
+  AD_HOC,
+  COMPASS,
+  CURTIS_CONSOLATION,
+  FEED_IN_CHAMPIONSHIP,
+  FEED_IN_CHAMPIONSHIP_TO_QF,
+  FEED_IN_CHAMPIONSHIP_TO_R16,
+  FEED_IN_CHAMPIONSHIP_TO_SF,
+  FIRST_MATCH_LOSER_CONSOLATION,
+  FIRST_ROUND_LOSER_CONSOLATION,
+  MODIFIED_FEED_IN_CHAMPIONSHIP,
+  OLYMPIC,
+  PAGE_PLAYOFF,
+  PLAYOFF,
+  ROUND_ROBIN,
+  SINGLE_ELIMINATION,
+} from '@Constants/drawDefinitionConstants';
+
+export const FEED_IN_DRAW_TYPES: ReadonlySet<string> = new Set([
+  FIRST_MATCH_LOSER_CONSOLATION,
+  FEED_IN_CHAMPIONSHIP,
+  FEED_IN_CHAMPIONSHIP_TO_R16,
+  FEED_IN_CHAMPIONSHIP_TO_QF,
+  FEED_IN_CHAMPIONSHIP_TO_SF,
+  MODIFIED_FEED_IN_CHAMPIONSHIP,
+]);
+
+export const COMPASS_OLYMPIC_PLAYOFF_TYPES: ReadonlySet<string> = new Set([COMPASS, OLYMPIC, PLAYOFF]);
+
+// THE DRAW TYPES A PLAYOFF GROUP CAN BE BUILT AS: exactly the branches of the dispatch in processPlayoffGroups.
+// Any other value used to fall through every branch, and the group was dropped while the generation reported success
+// (a RR-with-playoff draw came back as the Main structure alone). A branch added there must be added here too.
+export const PLAYOFF_GROUP_DRAW_TYPES: ReadonlySet<string> = new Set([
+  SINGLE_ELIMINATION,
+  ...COMPASS_OLYMPIC_PLAYOFF_TYPES,
+  ...FEED_IN_DRAW_TYPES,
+  ROUND_ROBIN,
+  FIRST_ROUND_LOSER_CONSOLATION,
+  CURTIS_CONSOLATION,
+  PAGE_PLAYOFF,
+  AD_HOC,
+]);
+
+/**
+ * Refuses a playoff group whose drawType cannot be built, before anything is generated.
+ * An omitted drawType (undefined or null) keeps its default, SINGLE_ELIMINATION.
+ * Every entry point that accepts playoffGroups reaches this through processPlayoffGroups.
+ */
+export function checkPlayoffGroupDrawTypes({ playoffGroups }: { playoffGroups?: unknown }): ResultType {
+  if (!Array.isArray(playoffGroups)) return { valid: true };
+
+  for (const [playoffGroupIndex, playoffGroup] of playoffGroups.entries()) {
+    const drawType = playoffGroup?.drawType;
+    if (drawType === undefined || drawType === null) continue;
+    if (typeof drawType === 'string' && PLAYOFF_GROUP_DRAW_TYPES.has(drawType)) continue;
+
+    return decorateResult({
+      info: `playoffGroups[${playoffGroupIndex}].drawType ${JSON.stringify(drawType) ?? String(drawType)} is not a drawType a playoff group can be built as`,
+      context: { playoffGroupIndex, drawType, validDrawTypes: [...PLAYOFF_GROUP_DRAW_TYPES] },
+      result: { error: UNRECOGNIZED_DRAW_TYPE, valid: false },
+      stack: 'checkPlayoffGroupDrawTypes',
+    });
+  }
+
+  return { valid: true };
+}
 
 export type PlayoffGroupConfig = {
   structureOptions?: { groupSize?: number };
@@ -43,6 +110,7 @@ type ValidatePlayoffGroupsArgs = {
  *    finishing positions, no standard (non-bestOf) playoff group should end up with
  *    fewer than 2 participants
  * 5. Total participants claimed across all playoff groups cannot exceed groupCount * groupSize
+ * 6. Each playoffGroup's drawType, when present, must be one of PLAYOFF_GROUP_DRAW_TYPES
  */
 
 export function validatePlayoffGroups({
@@ -63,6 +131,9 @@ export function validatePlayoffGroups({
   if (!groupSize || groupSize < 1) {
     return { error: INVALID_VALUES, valid: false, info: 'groupSize must be >= 1' };
   }
+
+  const drawTypeCheck = checkPlayoffGroupDrawTypes({ playoffGroups });
+  if (drawTypeCheck.error) return drawTypeCheck;
 
   // Track how many participants are consumed from each finishing position across all groups
   // Each finishing position has exactly `groupCount` participants available

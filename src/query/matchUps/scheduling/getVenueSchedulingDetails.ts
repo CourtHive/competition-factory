@@ -19,7 +19,6 @@ type GetVenueSchedulingDetailsArgs = {
   matchUpNotBeforeTimes: { [key: string]: any };
   matchUpDependencies: { [key: string]: any };
   participantReachability: ParticipantReachability;
-  scheduleCompletedMatchUps?: boolean;
   excludeNoDateCompleted?: boolean;
   containedStructureIds: string[];
   clearScheduleDates?: boolean | string[];
@@ -35,7 +34,6 @@ type GetVenueSchedulingDetailsArgs = {
 export function getVenueSchedulingDetails({
   matchUpPotentialParticipantIds,
   individualParticipantProfiles,
-  scheduleCompletedMatchUps,
   excludeNoDateCompleted,
   containedStructureIds,
   matchUpNotBeforeTimes,
@@ -75,7 +73,6 @@ export function getVenueSchedulingDetails({
     const { rounds = [], venueId } = venue; // rounds derives from dateSchedulingProfile
     const { scheduledRoundsDetails, greatestAverageMinutes, orderedMatchUpIds, minutesMap } = getScheduledRoundsDetails(
       {
-        scheduleCompletedMatchUps,
         containedStructureIds,
         tournamentRecords,
         periodLength,
@@ -130,6 +127,7 @@ export function getVenueSchedulingDetails({
       matchUpDependencies,
       participantReachability,
       clearScheduleDates,
+      tournamentRecords,
       scheduleDate,
       minutesMap,
       matchUps,
@@ -142,7 +140,6 @@ export function getVenueSchedulingDetails({
 
     const { matchUpsToSchedule, matchUpMap } = getMatchUpsToSchedule({
       matchUpPotentialParticipantIds,
-      scheduleCompletedMatchUps,
       orderedMatchUpIds: venueMatchUpIds,
       dateScheduledMatchUpIds,
       matchUpNotBeforeTimes,

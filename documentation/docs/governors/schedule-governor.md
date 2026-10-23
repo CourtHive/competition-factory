@@ -261,8 +261,8 @@ engine.scheduleMatchUps({
 
   // Scheduling parameters
   periodLength, // optional - scheduling block size in minutes (default: 30)
-  averageMatchUpMinutes, // optional - average match duration (default: 90)
-  recoveryMinutes, // optional - recovery time between matches (default: 0)
+  averageMatchUpMinutes, // optional - average match duration (see "Timing" below)
+  recoveryMinutes, // optional - recovery time between matches (see "Timing" below)
 
   // Time constraints
   startTime, // optional - schedule start time (HH:mm)
@@ -276,6 +276,14 @@ engine.scheduleMatchUps({
   dryRun, // optional boolean - preview without changes
 });
 ```
+
+#### Timing: where the minutes come from
+
+Minutes stated in the call (`averageMatchUpMinutes`, `recoveryMinutes`, `recoveryMinutesMap`) always win. When the call
+states none, `scheduleMatchUps` looks for a timing in the tournament or the matchUp's event: an attached scheduling
+policy, the tournament's `scheduling.timing`, or the event's schedule timing. Each matchUp's recovery then comes from its
+own format and event (as `getMatchUpFormatTiming` resolves it), and the time slots are sized by the greatest average
+among the matchUps. With no timing stated anywhere, the defaults are 90 minutes and no recovery, as before.
 
 #### Period Length: Scheduling Block Size
 
@@ -472,10 +480,9 @@ Profile-driven grid scheduling. Uses the scheduling profile to determine which r
 engine.scheduleProfileGrid({
   scheduleDates, // optional - specific dates to schedule
   clearScheduleDates, // optional - as for scheduleProfileRounds; clears dates and times too, not only grid positions
-  scheduleCompletedMatchUps, // optional boolean (default: false) - include
-  // already-COMPLETED matchUps in the placement pool
-  matchUpDailyLimits, // optional - { SINGLES, DOUBLES, total } per-participant
-  // daily limits; when omitted, no enforcement
+  scheduleCompletedMatchUps, // deprecated, ignored: completed matchUps are never placed
+  matchUpDailyLimits, // optional - { SINGLES, DOUBLES, total } per-participant daily limits;
+  // omitted: the tournament's limits, enforced; {}: none enforced, over-limit placements warned
   minCourtGridRows, // optional number - rows per court (default: 10)
   courtIds, // optional array - restrict placement to only these courts
 });
@@ -483,9 +490,15 @@ engine.scheduleProfileGrid({
 
 When `courtIds` is provided, only courts in the set are considered as placement targets at each venue. Passing an empty array places nothing. Omitting the parameter places onto all courts at the profile's venues (the default).
 
-**Completed matchUps**: By default the pro scheduler excludes matchUps that already carry a terminal status (`COMPLETED`, `RETIRED`, `WALKOVER`, `DEFAULTED`, etc.) from the placement pool — these don't need a court slot and would otherwise occupy grid rows, pushing newly-placed matchUps down. Set `scheduleCompletedMatchUps: true` only for callers (such as `mocksEngine` seeding) that intentionally want completed matchUps to receive grid coordinates.
+**Completed matchUps**: By default the pro scheduler excludes matchUps that already carry a terminal status (`COMPLETED`, `RETIRED`, `WALKOVER`, `DEFAULTED`, etc.) from the placement pool — these don't need a court slot and would otherwise occupy grid rows, pushing newly-placed matchUps down. `scheduleCompletedMatchUps` no longer changes this (CA 2026-10-23: completed matchUps are excluded from re-scheduling); it is ignored and will be removed at the next major. A venue in the profile with no courts keeps its rounds; their matchUps are not placed on other venues' courts and are reported in `notScheduledMatchUpIds`.
 
-**Daily-limit enforcement** (opt-in via `matchUpDailyLimits`): When provided, the pro scheduler refuses to place a matchUp whose entered participants or winner-advancement potentials would push any single participant past the per-day cap for the matchUp type or for the daily `total`. Counters are seeded from matchUps already on the grid for the date so subsequent runs see total daily load. Refused matchUps are reported in `overLimitMatchUpIds`, NOT in `notScheduledMatchUpIds`. Existing direct callers that omit `matchUpDailyLimits` see no behavior change.
+**Daily limits**: the grid applies the limits `scheduleProfileRounds` applies, so the two schedulers agree.
+
+- **Omitted** (the default): the limits are resolved as the timed pipeline resolves them (the scheduling policy's, the tournament's `scheduling.dailyLimits`, and each participant's override) and enforced.
+- **`{}`**: the caller opts out. Nothing is refused for a limit, and a placement that would take a participant over the resolved limits is made and reported in `dailyLimitWarningMatchUpIds`.
+- **Limits given**: those limits are enforced.
+
+An enforced limit refuses a matchUp whose entered participants or winner-advancement potentials would push any single participant past the per-day cap for the matchUp type or for the daily `total`. Counters are seeded from matchUps already on the grid for the date so subsequent runs see total daily load. Refused matchUps are reported in `overLimitMatchUpIds`, NOT in `notScheduledMatchUpIds`.
 
 **Returns**:
 
@@ -495,7 +508,7 @@ When `courtIds` is provided, only courts in the set are considered as placement 
   scheduledMatchUpIds,    // record<date, matchUpIds[]> - matchUps placed per date
   notScheduledMatchUpIds, // record<date, matchUpIds[]> - matchUps that didn't fit per date
   overLimitMatchUpIds,    // record<date, matchUpIds[]> - matchUps rejected by daily limits
-  // (populated only when matchUpDailyLimits was provided)
+  dailyLimitWarningMatchUpIds, // record<date, matchUpIds[]> - placed over a limit the call waived ({})
 }
 ```
 
@@ -986,10 +999,12 @@ in the rounds holds `undefined`, so the other rounds still schedule.
 
 ### getSchedulingProfile
 
-Returns the current scheduling profile.
+Returns the current scheduling profile. A stored profile that names a venue, event or draw no longer in the record is
+returned repaired, with the count of `modifications` and the `issues`, and is never saved: the profile schedulers
+refuse it with `SCHEDULING_PROFILE_REPAIR_REQUIRED` until the repaired profile is saved with `setSchedulingProfile`.
 
 ```js
-const { schedulingProfile } = engine.getSchedulingProfile();
+const { schedulingProfile, modifications, issues } = engine.getSchedulingProfile();
 ```
 
 ---
@@ -1077,6 +1092,9 @@ engine.proAutoSchedule({
   venueIds, // optional
 });
 ```
+
+A completed matchUp is never placed (CA 2026-10-23): passed one, the write skips it and it is reported not scheduled.
+`scheduleCompletedMatchUps` is accepted and ignored until the next major.
 
 ---
 
@@ -1551,12 +1569,40 @@ engine.addMatchUpScheduleItems({
     allocatedCourts, // optional — alias for courtIds; accepts the read-side shape
   },
   removePriorValues, // optional boolean — clear existing schedule timeItems first
-  checkChronology, // optional boolean — defaults to true; validate time ordering
+  checkChronology, // optional boolean — defaults to true; warn on time ordering (see Played order below)
   errorOnAnachronism, // optional boolean — return error on chronological violations
   errorOnUnknownAttributes, // optional boolean — error instead of warning on attributes that will not be written
   proConflictDetection, // optional boolean — detect pro scheduling conflicts
   disableNotice, // optional boolean — suppress modification notices
 });
+```
+
+### Played order: a matchUp is never placed before a played matchUp it depends on
+
+Every write that moves a matchUp's `scheduledDate` or `scheduledTime` (this method, `addMatchUpScheduledTime`,
+`addMatchUpScheduledDate`, `bulkScheduleMatchUps`, `bulkRescheduleMatchUps` and the schedulers) is refused with
+`ANACHRONISM`, writing nothing, when it would place the matchUp **at or before a played matchUp it depends on**, or place
+a played matchUp **after a matchUp that depends on it**.
+
+- **Played**: `COMPLETED`, `RETIRED` or `DEFAULTED`, with a score. A walkover, a double walkover or default, a cancelled
+  or abandoned matchUp, a dead rubber or a BYE imposes nothing; neither does a matchUp `IN_PROGRESS` or `SUSPENDED`,
+  whatever its score.
+- **Depends on**: winner and loser links, feed-in, qualifying to main, round robin group to playoff. AD_HOC rounds and the
+  rounds of a round robin carry no links and impose no order.
+- **Before**: scheduled against scheduled. An earlier date; or the same date, both times set, at or before. A same-day
+  placement without a time, or a played matchUp without a date, proves nothing. Recorded start and end times are not
+  compared.
+- Only a write that **moves** the matchUp is asked: a court, a court order, an official, or writing back an unchanged
+  schedule is never refused, even when the stored order is already wrong.
+- `checkChronology: false` does not waive it (that switch only turns off the `ANACHRONISM` _warning_ about unplayed
+  sources). Bulk writes are judged on the state the whole batch leaves, and refused whole, before any of it is written.
+
+The refusal's `context.blockingMatchUps` names each blocking matchUp (`relation: 'playedSource'` or `'dependent'`),
+with its date, time, status and round, so a client can say which result stands in the way.
+
+```js
+const result = engine.addMatchUpScheduleItems({ matchUpId: finalId, drawId, schedule: { scheduledTime: '09:00' } });
+// semifinal played at 10:00 → result.error === ANACHRONISM; result.context.blockingMatchUps[0].relation === 'playedSource'
 ```
 
 ### `calledAt`

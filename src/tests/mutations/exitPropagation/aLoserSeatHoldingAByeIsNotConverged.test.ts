@@ -9,19 +9,21 @@ import { BYE, DEFAULTED, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpSta
 import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 /**
- * A LOSER SEAT HOLDING A BYE IS NOT CONVERGED (census policy-off MONOTONIC_DECISION, COMPASS 32/31 under
+ * A CONVERGED LOSER SEAT IS THE SAME IN EVERY ORDER (census policy-off MONOTONIC_DECISION, COMPASS 32/31 under
  * `doubleExitPropagateBye: false`, seed 20551581, failing since run 15; shrunk from 30 steps to 15, the mechanism to 5).
  *
  * `South|1|3` holds a produced walkover (`West|1|5` defaulted, `West|1|6` walked over) and sends it into
  * `Southeast|1|2` side 1. `South|1|4` converges two carriers (`East|1|13`'s and `East|1|15`'s losers), so its loser
  * seat, `Southeast|1|2` dp 4, holds a produced walkover and `Southeast|1|2` is a double walkover. `East|1|16`'s default
  * then makes `West|1|8` a double default: its carrier leaves `South|1|4`, the convergence is re-derived to a single
- * exit and withdrawn from dp 4, and `South|1|4`, now a carrier beside a produced exit, owes that seat a BYE, which is
- * placed. Re-converging, `South|1|4` found `Southeast|1|2` a pending walkover with nobody in it and converted it to a
- * double walkover over the BYE, because the "seat already holds a BYE" guard came after the empty-exit branch. Entered
- * with `East|1|16` before `East|1|13`, the BYE is there first and `Southeast|1|2` is a BYE relaying `South|1|3`'s
- * walkover. The stale double walkover then held `Southeast|2|1` across both positions, so correcting `East|1|5`'s
- * walkover to a played win left its winner stranded in `Southeast`, and the census probe un-decided `Southeast|2|1`.
+ * exit and withdrawn from dp 4, and `South|1|4`, now a carrier beside a produced exit, converges again. Under the policy
+ * off a double exit's loser seat shows the exit it produced, never a BYE (CA ruling (A), 2026-10-21), so dp 4 holds the
+ * produced walkover and `Southeast|1|2` is a double walkover whichever of `East|1|13` and `East|1|16` comes first. (Before
+ * the ruling the seat that already held a BYE was settled, and this file pinned `Southeast|1|2` as a BYE in both orders.)
+ *
+ * The census schedule's probes also take `West|1|2` and `East|2|2` from a pending single exit to a convergence and back.
+ * Clearing the probe must give the seat back the BYE the pending exit owes it, claimed by the double exit that produced it,
+ * as forward play leaves it (`restoreProducedExitLoserBye`).
  */
 
 type Step = { structureName: string; roundNumber: number; roundPosition: number; outcome: any };
@@ -90,12 +92,14 @@ it('the census schedule un-decides nothing', () => {
   expect(replay(CONFIG, CENSUS_SCHEDULE, 'bye-held-loser-seat-census', POLICY_OFF)).toBeNull();
 });
 
-it('a BYE placed in a converged loser seat makes the matchUp a BYE relaying the other exit', () => {
+it('a converged loser seat shows the exit its convergence produced, so the matchUp it feeds converges', () => {
   const draw = drawAfter(CONVERGE_THEN_BYE, 'bye-held-loser-seat-converged');
   expect(draw['South|1|4'].matchUpStatus).toEqual(DOUBLE_WALKOVER);
-  expect(draw['Southeast|1|2'].occupants).toEqual([undefined, BYE]);
-  expect(draw['Southeast|1|2'].matchUpStatus).toEqual(BYE);
-  // South|1|3's produced walkover passes through the BYE and waits, unawarded, in the next round
+  // under the policy off `South|1|4`'s loser seat, `Southeast|1|2` dp 4, shows the walkover it produced, never a BYE (CA
+  // ruling (A), 2026-10-21), so the two produced walkovers meet there
+  expect(draw['Southeast|1|2'].occupants).toEqual([undefined, undefined]);
+  expect(draw['Southeast|1|2'].matchUpStatus).toEqual(DOUBLE_WALKOVER);
+  // and that convergence's produced walkover waits, unawarded, in the next round
   expect(draw['Southeast|2|1'].matchUpStatus).toEqual(WALKOVER);
   expect(draw['Southeast|2|1'].winningSide).toBeUndefined();
 });

@@ -1,7 +1,9 @@
 import { addFinishingRounds } from '@Assemblies/generators/drawDefinitions/addFinishingRounds';
 import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { buildTargetIndex, positionTargets } from '@Query/matchUp/positionTargets';
+import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
+import { isLinkObject } from '@Query/drawDefinition/malformedLinks';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
@@ -142,7 +144,9 @@ export function addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap }
  */
 export function hasStoredGoesTo({ drawDefinition }: { drawDefinition: DrawDefinition }): boolean {
   const loserSources = new Set(
-    (drawDefinition.links ?? []).filter((link) => link.linkType === LOSER).map((link) => link.source?.structureId),
+    (drawDefinition.links ?? [])
+      .filter((link) => isLinkObject(link) && link.linkType === LOSER)
+      .map((link) => link.source?.structureId),
   );
 
   return (drawDefinition.structures ?? []).every((structure) => {
@@ -257,14 +261,27 @@ const GOES_TO_FIELDS = ['winnerMatchUpId', 'loserMatchUpId', 'finishingRound'] a
  * derive from (its rounds are paired, not linked), so it is skipped, as the query's write always skipped it.
  */
 export function storeGoesTo(drawDefinition: DrawDefinition): number {
-  if (hasStoredGoesTo({ drawDefinition }) && !needsFinishingRounds(drawDefinition)) return 0;
-  if (drawDefinition.structures?.some((structure) => isAdHoc({ structure }))) return 0;
-  if (addGoesTo({ drawDefinition: makeDeepCopy(drawDefinition, false, true) }).error) return 0;
+  return storeGoesToResult(drawDefinition).stored;
+}
+
+/**
+ * `storeGoesTo`, saying WHY a draw was left as it was: the error the derivation met (a malformed round link), so a
+ * caller that reports, as `migrateTournamentRecord` does, need not swallow it. `stored` is what `storeGoesTo` returns.
+ */
+export function storeGoesToResult(drawDefinition: DrawDefinition): { stored: number; error?: ResultType } {
+  if (hasStoredGoesTo({ drawDefinition }) && !needsFinishingRounds(drawDefinition)) return { stored: 0 };
+  if (drawDefinition.structures?.some((structure) => isAdHoc({ structure }))) return { stored: 0 };
+  // asked of the whole draw, as an outcome is: an entry that is not a link is skipped by the derivation, which would
+  // otherwise store edges on a draw every outcome then refuses, with nothing said
+  const malformed = getMalformedRoundLink(drawDefinition);
+  if (malformed) return { stored: 0, error: malformed };
+  const derived = addGoesTo({ drawDefinition: makeDeepCopy(drawDefinition, false, true) });
+  if (derived.error) return { stored: 0, error: derived };
   // counted only where a stored value changed: a draw whose edges cannot be derived (no links, nothing to follow) is
   // asked again on every run and given nothing each time
   const before = storedGoesTo(drawDefinition);
   addGoesTo({ drawDefinition });
-  return storedGoesTo(drawDefinition) === before ? 0 : 1;
+  return { stored: storedGoesTo(drawDefinition) === before ? 0 : 1 };
 }
 
 function storedGoesTo(drawDefinition: DrawDefinition): string {

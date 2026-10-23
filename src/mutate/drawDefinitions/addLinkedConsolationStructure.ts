@@ -1,12 +1,19 @@
 import { getGenerators } from '@Assemblies/generators/drawDefinitions/getGenerators';
+import { decorateResult } from '@Functions/global/decorateResult';
 import { attachConsolationStructures } from './attachStructures';
+import { matchUpsOf } from '@Acquire/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
 import { constantToString } from '@Tools/strings';
 
 // constants
-import { MISSING_DRAW_DEFINITION, MISSING_STRUCTURE, UNRECOGNIZED_DRAW_TYPE } from '@Constants/errorConditionConstants';
 import { CONSOLATION, LOSER, MAIN, AD_HOC, TOP_DOWN } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
+import {
+  INVALID_VALUES,
+  MISSING_DRAW_DEFINITION,
+  MISSING_STRUCTURE,
+  UNRECOGNIZED_DRAW_TYPE,
+} from '@Constants/errorConditionConstants';
 
 type LoserLinkDefinition = {
   sourceRoundNumber: number;
@@ -83,6 +90,22 @@ export function addLinkedConsolationStructure({
 
   const { structure: mainStructure } = findStructure({ drawDefinition, structureId: mainStructureId });
   if (!mainStructure) return { error: MISSING_STRUCTURE };
+
+  // a LOSER link with no source round is malformed (`isMalformedRoundLink`): refused before anything is generated or
+  // attached, as is a round the source structure does not have
+  const sourceRounds = new Set((matchUpsOf(mainStructure) ?? []).map(({ roundNumber }) => roundNumber));
+  const linkDefList: (LoserLinkDefinition | undefined)[] = Array.isArray(linkDefs) ? linkDefs : [undefined];
+  const invalidIndex = linkDefList.findIndex((linkDef) => {
+    const sourceRoundNumber = linkDef?.sourceRoundNumber;
+    return !Number.isInteger(sourceRoundNumber) || (sourceRoundNumber ?? 0) < 1 || !sourceRounds.has(sourceRoundNumber);
+  });
+  if (invalidIndex >= 0)
+    return decorateResult({
+      result: { error: INVALID_VALUES },
+      info: 'each link needs a sourceRoundNumber that is a round of the source structure',
+      context: { sourceRoundNumber: linkDefList[invalidIndex]?.sourceRoundNumber, structureId: mainStructureId },
+      stack: 'addLinkedConsolationStructure',
+    });
 
   const result = generateConsolationStructure({
     structureName,

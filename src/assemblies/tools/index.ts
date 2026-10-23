@@ -30,6 +30,10 @@ export { matchUpSort } from '@Functions/sorters/matchUpSort';
 // method because callers are ingest/import tools operating on a record they hold, not on engine
 // state — and because third-party data cannot be relied on to arrive linked.
 export { inferDrawLinks } from '@Mutate/drawDefinitions/links/inferDrawLinks';
+// How a link TRAVERSES: by finishing position (out of a round robin, labelled POSITION or WINNER) or by round (out of
+// an elimination structure). A client reading `drawDefinition.links` asks here instead of comparing `linkType`, so it
+// reads a round robin's WINNER link as the engine does (CA, 2026-10-23). Positional arguments: (link, drawDefinition).
+export { traversesByFinishingPosition, traversesByRound, isRoundWinnerLink } from '@Query/drawDefinition/linkTraversal';
 // Assemble a tournamentRecord from partial/third-party sources. Moved here from a TMX dev utility
 // so there is ONE versioned, tested copy: it was consumed by seven call sites across four repos
 // while living unversioned in a client app. `buildFromSources` repairs draw links on the way out.

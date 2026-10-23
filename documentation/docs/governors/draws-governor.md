@@ -122,6 +122,7 @@ engine.addPlayoffStructures({
   playoffStructureNameBase, // optional - base word for default playoff naming, e.g. 'Playoff'
   roundLimit: 2, // optional - cap the rounds of each generated structure, e.g. a consolation that plays two rounds
   roundLimits: { 1: 1 }, // optional - per SOURCE roundNumber cap; overrides roundLimit for that structure
+  playoffGroups, // optional - [{ finishingPositions, drawType, structureName }]; an unbuildable drawType refuses the call and nothing is added
 });
 
 // example use of playoffAttributes - will generated playoff structure from 2nd round with structureName: 'BRONZE'
@@ -1147,6 +1148,61 @@ engine.renameStructures({
 
 ---
 
+## repairMalformedLinks
+
+Repairs every malformed entry of `drawDefinition.links`, or removes what cannot be repaired, and reports which. These are the link findings of [`getDrawInconsistencies`](/docs/governors/query-governor#getdrawinconsistencies): `LINK_MISSING_SOURCE_ROUND`, `DANGLING_LINK` and `INVALID_LINK`. A draw with such a link refuses every outcome, and an entry that is not an object makes the draw's readers throw. A link out of a round robin that names `finishingPositions` is never malformed, labelled `POSITION` or `WINNER`, and the repair never touches it: see [Rounds and finishing positions](/docs/concepts/draw-links#rounds-and-finishing-positions-how-a-link-traverses).
+
+```js
+const { repaired, removed, unlinkedStructureIds } = engine.repairMalformedLinks({
+  drawId, // required
+  force, // optional - proceed although participants arrived through a link the repair changes
+});
+```
+
+What happens to each entry:
+
+| condition                                                                  | action                        | `reason`                 |
+| -------------------------------------------------------------------------- | ----------------------------- | ------------------------ |
+| not an object (`null`, a string, an array)                                 | removed                       | `NOT_A_LINK`             |
+| `source` or `target` structure not in the draw                             | removed                       | `DANGLING_LINK`          |
+| `WINNER`/`LOSER` link with no `source.roundNumber`, exactly one round fits | `source.roundNumber` restored | (in `repaired`)          |
+| `WINNER`/`LOSER` link with no `source.roundNumber`, several rounds fit     | removed, with `candidates`    | `AMBIGUOUS_SOURCE_ROUND` |
+| `WINNER`/`LOSER` link with no `source.roundNumber`, no round fits          | removed                       | `NO_SOURCE_ROUND`        |
+
+How the round is found, by the reasoning the factory uses to derive a source round from a structure:
+
+- **`WINNER`**: the source structure's final round. The winners of every earlier round advance within the structure.
+- **`LOSER`**: the source round whose matchUp count equals the number of positions the link supplies to its target round: the target round's fed positions (`2·m(T) − m(T−1)`) less those the round's other links supply. A round another well-formed link of the same type already directs from the same structure is not a candidate. Two malformed links that would be restored to the same round are both removed.
+
+Measured over every generated draw type that carries `WINNER` or `LOSER` links (draw sizes 4 to 64, fresh and completed, qualifying and added playoff structures): 556 of 556 links stripped of their round one at a time were restored to the round generation wrote. Rounds become ambiguous when several malformed links compete for rounds with equal matchUp counts, such as `DOUBLE_ELIMINATION` Main rounds 3 and 4 when both of their `LOSER` links are malformed.
+
+**Refusals, before any write.** The call is refused with `DRAW_POSITION_ASSIGNED`, and the draw is left unchanged, when a participant ARRIVED through a link the repair would change: the participant holds a position the link supplies in its target and has a decided matchUp in its source. `context.arrived` names them, and `context.repaired` / `context.removed` show what the repair would have done. Pass `force: true` to proceed.
+
+The repair is composed on a copy first, so an error leaves the record as it was, without a rollback. On success, the stored `winnerMatchUpId` / `loserMatchUpId` of the changed links are cleared and rebuilt with `addGoesTo` (once no malformed link remains). A removed link's edges are cleared, as `removeStructure` clears them, and `finishingPositionRange` is left as it is.
+
+Removing the only link into a structure leaves it unlinked, which `getDrawData` refuses. Such structures are listed in `unlinkedStructureIds`; [`tools.repairDrawLinks`](/docs/tools/build-from-sources#repairdrawlinks) can then add a link and report how much it had to guess.
+
+---
+
+## repairMalformedLink
+
+Repairs or removes ONE malformed link, chosen by its structures. `sourceRoundNumber` is the operator's answer where `repairMalformedLinks` found no round or several: it must be a round of the source structure that no other link of the same type directs. Otherwise the round is inferred as for `repairMalformedLinks`. Returns the same report, and refuses in the same cases.
+
+```js
+const { repaired, removed } = engine.repairMalformedLink({
+  drawId, // required
+  sourceStructureId, // sourceStructureId and/or targetStructureId required
+  targetStructureId,
+  linkType, // optional - where the two structures are joined by more than one link
+  sourceRoundNumber, // optional - the round to restore
+  force, // optional
+});
+```
+
+The selection must match exactly one malformed link (`INVALID_VALUES` otherwise). If other malformed links remain in the draw, the edges are rebuilt once they are repaired.
+
+---
+
 ## resetDrawDefinition
 
 Resets a drawDefinition to its initial state. For all matchUps: removes scores, extensions, and notes; restores drawPositions for rounds beyond round 1 (removes progressed positions). For structures that are not QUALIFYING or MAIN stageSequence 1: clears participant positionAssignments (preserving byes) and seed assignments. Optionally removes scheduling timeItems.
@@ -1350,6 +1406,10 @@ engine.withdrawParticipantAtDrawPosition({
 Advances participants from a completed round into the next round of a LUCKY_DRAW. For pre-feed rounds, advances all winners plus the selected lucky loser. For non-pre-feed rounds, advances all winners without loser selection.
 
 Works by assigning virtual drawPositions to next-round matchUps and creating corresponding positionAssignment entries, enabling the standard scoring flow for those matchUps.
+
+Every check runs before anything is written; on error the draw is unchanged. That includes the losers not selected
+as lucky losers: when a LOSER link from the round targets a structure that does not exist, the call returns
+`INVALID_VALUES` and advances no one.
 
 ```js
 engine.luckyDrawAdvancement({

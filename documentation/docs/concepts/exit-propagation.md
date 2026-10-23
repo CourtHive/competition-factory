@@ -188,20 +188,23 @@ state is removed.
 Consumers do not normally need to read it. It is documented because it is visible in stored
 tournament records.
 
-### Why a BYE claim names its claimant and not its reason
+### Why a loser seat's BYE is read from the draw
 
-A side's `byeClaims` lists the matchUps that claim the BYE on that loser seat. Each claimant owes the BYE for one
-reason: it is a double exit whose produced exit leaves the seat's feeder nobody to lose, or it is an awarded single
-exit whose losing side is a carried exit. The engine reads that reason from
-the claimant as it stands (`byeClaimReason`) and stores only the claimant's matchUpId. A stored reason goes stale: a
-claimant awarded as a single exit can later converge into a double exit, and over the census replays 4 of 618 final
-claims had changed kind that way (CA, 2026-10-21, Mentat P58). A claim whose claimant owes no BYE is one an unwind
-missed, and the harness fails it (`CLAIMS_LIVE`).
+Whether a propagated BYE on a loser seat stands is read from the draw, never from a record of who placed it. It stands
+while the matchUp feeding the seat across the link will never send anyone: it holds a BYE (a BYE matchUp has no winner
+or loser), it is a double exit, it was won against an exit and its losing side holds nobody, it is undecided and holds
+alone the exit a double exit produced along its winner path, or it feeds a FIRST_MATCHUP link that every candidate
+loser is already ineligible to cross. Under `doubleExitPropagateBye: false` a double exit's seat shows its produced
+exit instead of a BYE (CA ruling (A), 2026-10-21), unless the seat is fed in. An exit that came over a loser link waits
+for the award: the seat is owed its BYE only once the matchUp is awarded.
 
-A seat that a BYE matchUp's loser link feeds holds no claim. A BYE matchUp has no winner or loser, so nothing can come
-down that link, and the seat is a BYE because of the draw itself: the matchUp feeding it is a BYE matchUp. The BYE
-cascade places that BYE without a claim, and it stays when a claim beside it goes (golden corpus
-`authored/bye-claims/bye-matchup-fed-seat`).
+Until 2026-10-22 each side kept a `byeClaims` ledger of the matchUps that claimed its BYE, and unwinds asked it whether
+the BYE still had a reason. The ledger depended on the order results were entered: the same draw could carry a claim
+in one order and none in another, so the census round trip had to leave such claims out (CA ruling (b), 2026-10-20).
+Measured before the ledger was retired, the draw-derived reading explained every propagated loser-seat BYE in
+2,493,487 census seat observations, where the ledger explained fewer (Mentat P58). The ledger is no longer written or
+read; `byeClaims` on a stored record is ignored. The harness holds every step to the draw-derived reading
+(`LOSER_SEAT_DERIVED`).
 
 ## Guarantees
 
@@ -221,32 +224,36 @@ A client retry or a double-click corrupted the draw progressively and silently.
 A genuine _change_ still propagates. `DOUBLE_WALKOVER` to `DOUBLE_DEFAULT` is a change, not a
 repeat.
 
-### A rejected mutation does not alter the draw when you ask for that
+### A rejected mutation does not alter the draw
 
 A rejected call cannot destroy a result that was already recorded, including a pending propagated
 exit. The specific defect behind this guarantee is closed: a bare `{ winningSide }` outcome is now
 validated _before_ any removal runs, where it used to skip the early participant check and be caught
 only after the existing result had been unwound.
 
-**The general guarantee is opt-in, and this is worth being precise about.** Pass
-`rollbackOnError: true` and a refused mutation leaves the draw byte-identical: the engine snapshots
-before the call and restores on error, and the queued notices are discarded with it, so subscribers
-are not told about changes that were undone. Measured over a 600-seed randomized sweep, every case
-where the default call returned an error _after_ changing the draw left it unchanged with the flag —
-45 of 45.
+**The guarantee is per method, on a direct call, and it does not depend on `rollbackOnError`.** A
+`setMatchUpStatus` that returns an error leaves the draw unchanged. The cascade delivers that by
+itself: it refuses before it writes, and it builds in no snapshot or restore to hide a refusal that
+comes too late. A refusal returned after a write is a defect, not a design choice.
 
-`executionQueue` snapshots for the whole queue, so TMX and competition-factory-server — which pass
-`rollbackOnError: true` on every mutation — already have this. A consumer calling `setMatchUpStatus`
-directly should pass it.
+Be precise about where that stands. Refusals that can only arise part-way through a cascade are
+being made impossible one root cause at a time; those that cannot be removed in the current pipeline
+are handed to its successor, which decides before it writes. The exit-propagation census measures
+the property on direct calls as `ERROR_IMPLIES_NO_MUTATION`, so a residual case shows up there rather
+than being assumed away.
 
-The flag can only restore what an error reports, so the cascade reports every error. Since 7.5.0 any
-write the cascade makes that fails, fails the call, and a refusal raised inside the cascade is
-returned to the caller rather than dropped behind a success. Before that, a call could report
-success over a draw the cascade had left half-written, and `rollbackOnError` had nothing to act on.
+`rollbackOnError` is a separate, queue-level feature: it makes several directives in one
+`executionQueue` succeed or fail together, and discards the queued notices of a refused queue. It is
+not how a single method's error is made clean, and a consumer calling `setMatchUpStatus` directly
+does not need it for that.
 
-If you are writing a client, an error response with the flag needs no compensating action. It does
-**not** mean every rejection is a no-op for your UI: the request was refused, and the reason in the
-error is worth surfacing.
+The cascade reports every error. Since 7.5.0 any write the cascade makes that fails, fails the call,
+and a refusal raised inside the cascade is returned to the caller rather than dropped behind a
+success. Before that, a call could report success over a draw the cascade had left half-written.
+
+If you are writing a client, an error response needs no compensating action. It does **not** mean
+every rejection is a no-op for your UI: the request was refused, and the reason in the error is
+worth surfacing.
 
 ### Which double exit a convergence becomes does not depend on entry order
 
@@ -485,7 +492,10 @@ decided, so the same results left a pending exit in one order and a TO_BE_PLAYED
 behind a BYE in another (census s14, COMPASS 32/27, 20521366: `North|2|1`; across every order of the results
 that pin these shapes, three end states became one). Under `doubleExitPropagateBye: false` a double exit's
 loser seat receives the produced exit and never a BYE, in either order of the two exits that converged there;
-the BYE opposite stays, and the exit travels on. An entry left on a side that is itself a BYE is no held
+the BYE opposite stays, and the exit travels on. That holds for a double exit two exits converged into as for one
+entered directly, and a propagated BYE already on the seat gives way to the produced exit (CA ruling (A),
+2026-10-21; before it, the seat kept that BYE in some orders and showed the produced exit in others). A fed-in seat
+takes a BYE whatever the policy, and a BYE the draw placed at generation stays. An entry left on a side that is itself a BYE is no held
 exit: its carrier went home when the BYE took the seat (census run-17 Class B, COMPASS 32/27, 20641116:
 entered last, the probe left `Southwest|2|1` TO_BE_PLAYED with the exit held back; entered first, the loser
 seat became a BYE; both now leave the pending walkover).
@@ -634,9 +644,13 @@ BYE goes unless another exit still claims it (census run-17 baseline, COMPASS 16
 
 A BYE claimed further on goes the same way. A double exit's produced exit can decide a matchUp a round
 on, and the BYE claimed for that matchUp's loser stands on the double exit's account. When the double
-exit is re-derived to a single exit, the exit it produced is withdrawn and so is that BYE. Only the
-BYE at the re-derived matchUp's own loser seat stays, because its losing side is still the produced
-exit (census run-17 baseline, COMPASS 16/13 and 16/14 under `doubleExitPropagateBye: false`).
+exit is re-derived to a single exit, the exit it produced is withdrawn and so is that BYE. The
+re-derived matchUp's own loser seat, which showed the produced exit while it was a double exit, is owed its
+BYE again when the single exit is awarded, because its losing side is still the produced exit (census run-17
+baseline, COMPASS 16/13 and 16/14 under `doubleExitPropagateBye: false`). A single exit still pending is owed
+it only where forward play gives a pending exit one: where a double exit produced the exit straight into the
+matchUp. An exit relayed past a BYE leaves its matchUp's loser seat empty until it is awarded, in every order
+(census openings policy-off, COMPASS 16/13 21078668: `West|2|2`).
 
 A seat that becomes a BYE keeps nothing it was awarded. When a correction takes a fed loser back out and the seat they
 held becomes the BYE nobody can fill, an advancement a produced exit gave that seat is taken back first, and the BYE
@@ -1127,17 +1141,12 @@ named test that fails without it.
   call and is an awarded single exit after it; a convergence that dissolves and converges again within one call is
   owed nothing (COMPASS 32/30 30004303 under `doubleExitPropagateBye: false`:
   `aConvergenceACallDissolvedIsOwedItsByeBack`).
-- **Known limitation: whether a BYE matchUp's loser-seat BYE carries a double exit's claim depends on entry order.** That
-  BYE can have two reasons: the matchUp feeding the seat is a BYE matchUp, and a double exit whose produced exit it
-  relays makes its loser nobody. The claim ledger (`byeClaims`) records WHO claims a BYE, not WHY it was placed, so the
-  engine keeps or omits the double exit's claim by which reason came first, and both outcomes are load-bearing: where
-  the double exit's BYE came first, the claim is what keeps the seat's BYE when a later clear takes the BYE out of the
-  feeder (`aClearedSeatKeepsTheByeALiveDoubleExitClaims`); where the feeder's structural BYE came first, the absence of a
-  claim is what stops the double exit's unwind from taking a BYE the feeder still justifies
-  (`aByeMatchUpsLoserSeatKeepsItsBye`). Both state rules, never claiming and always claiming, were measured on
-  2026-10-20 and each reopened one of those cases, so neither shipped. A claim there that is present names the feeder
-  itself or a matchUp that is still a double exit. The lasting fix is a ledger that records the reason a BYE was placed.
-  Testing treats it like an arrival entry: see the harness's round trip (`aByeFedSeatClaimIsLeftOutAndPoliced`).
+- **Resolved (Mentat P58, 2026-10-22): a BYE matchUp's loser-seat BYE no longer depends on a claim.** That BYE can have
+  two reasons, the matchUp feeding the seat is a BYE matchUp and a double exit whose produced exit it relays makes its
+  loser nobody, and the retired `byeClaims` ledger kept or omitted the double exit's claim by which came first (CA
+  ruling (b), 2026-10-20, left such claims out of the census round trip). Whether the BYE stands is now read from the
+  draw (see "Why a loser seat's BYE is read from the draw"), the claims are gone, and the round trip compares the seat
+  whole: census Phase B 30004303's schedule and probes replay clean (`aByeFedLoserSeatRoundTripsWhole`).
 
 ### Nothing to do is success, not failure
 

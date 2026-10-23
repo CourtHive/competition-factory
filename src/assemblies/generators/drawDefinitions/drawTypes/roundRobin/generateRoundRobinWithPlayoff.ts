@@ -3,6 +3,7 @@
 // groups of finishing drawPositions which playoff
 
 import { processPlayoffGroups } from '@Generators/drawDefinitions/drawTypes/processPlayoffGroups';
+import { decorateResult } from '@Functions/global/decorateResult';
 import { generateRoundRobin } from './roundRobin';
 import { constantToString } from '@Tools/strings';
 
@@ -31,7 +32,7 @@ export function generateRoundRobinWithPlayOff(params) {
   ];
   const [mainStructure] = structures;
 
-  const { structures: playoffStructures, links } = processPlayoffGroups({
+  const playoffResult = processPlayoffGroups({
     sourceStructureId: mainStructure.structureId,
     requireSequential,
     drawDefinition,
@@ -41,6 +42,10 @@ export function generateRoundRobinWithPlayOff(params) {
     ...params,
   });
 
+  // a refused playoff group refuses the draw: the Main structure alone is not the draw that was asked for
+  if (playoffResult.error) return decorateResult({ result: playoffResult, stack: 'generateRoundRobinWithPlayOff' });
+
+  const { structures: playoffStructures, links } = playoffResult;
   if (playoffStructures) structures.push(...playoffStructures);
 
   return {

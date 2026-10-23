@@ -1,42 +1,30 @@
-import { getScoringEngine, setScoringEngine } from '@Global/state/globalState';
+import { ScoringEngine as Governed } from '@Assemblies/governors/scoreGovernor';
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
-import { ScoringEngineV2 } from '@Assemblies/engines/scoring/v2/engine';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 // constants and types
-import { SCORING_ENGINE_V1, SCORING_ENGINE_V2 } from '@Constants/scoringEngineConstants';
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 /*
- * ScoringEngine v2 (SE2c): the engine shell, held to the spec (§ 2, § 11, § 12) and the API reference directly,
- * whatever engine the selector names. The scoring suites hold it to every expectation they hold v1 to when run with
- * `SCORING_ENGINE=v2`; these cases are the shell's own oracle, so it is covered and checked in every run.
+ * The ScoringEngine (v2 since SE4): the engine shell, held to the spec (§ 2, § 11, § 12) and the API reference
+ * directly. These cases are the shell's own oracle; the scoring suites hold it to every other expectation.
  */
 
-const selected = getScoringEngine();
-afterEach(() => {
-  setScoringEngine(selected);
-});
-
 const engineFor = (matchUpFormat: string, options: Record<string, unknown> = {}) =>
-  new ScoringEngineV2({ matchUpFormat, ...options });
+  new ScoringEngine({ matchUpFormat, ...options });
 
-function play(engine: ScoringEngineV2, sides: string) {
+function play(engine: ScoringEngine, sides: string) {
   for (const side of sides.replaceAll(' ', '')) engine.addPoint({ winner: side === '1' ? 0 : 1 });
 }
 
 const love = (side: '1' | '2', games = 1) => side.repeat(4 * games);
-const sets = (engine: ScoringEngineV2) =>
+const sets = (engine: ScoringEngine) =>
   engine.getState().score.sets.map((set) => [set.side1Score, set.side2Score, set.winningSide]);
 
-describe('the selector', () => {
-  it('v2 selected: the constructor hands back the v2 shell; v1 selected: the class itself', () => {
-    setScoringEngine(SCORING_ENGINE_V2);
-    expect(new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' })).toBeInstanceOf(ScoringEngineV2);
-    setScoringEngine(SCORING_ENGINE_V1);
-    const engine = new ScoringEngine({ matchUpFormat: 'SET3-S:6/TB7' });
-    expect(engine).not.toBeInstanceOf(ScoringEngineV2);
-    expect(engine).toBeInstanceOf(ScoringEngine);
+describe('the class', () => {
+  it('scoreGovernor exports the one ScoringEngine, and an instance is one', () => {
+    expect(Governed).toBe(ScoringEngine);
+    expect(new Governed({ matchUpFormat: 'SET3-S:6/TB7' })).toBeInstanceOf(ScoringEngine);
   });
 });
 
@@ -269,6 +257,22 @@ describe('§ 12.4 corrections', () => {
     expect(engine.getPointCount()).toEqual(1);
   });
 
+  it('a point added to a record a removal left stale links its entry to its position in the points (§ 12.4)', () => {
+    const engine = engineFor('SET3-S:6/TB7');
+    play(engine, '1122');
+    engine.removePoint(3, { recalculate: false });
+    play(engine, '11');
+    const { entries, points } = engine.getState().history!;
+    expect(entries!.map((entry) => entry.pointIndex)).toEqual([0, 1, 2, 3, 4]);
+    // the score's count numbers the points (SE2c-D6); the entry's link is the position
+    expect(points.map((point) => (point as { index?: number }).index)).toEqual([0, 1, 2, 4, 5]);
+    engine.decoratePoint(3, { shot: 'A' });
+    engine.decoratePoint(4, { shot: 'B' });
+    engine.editPoint(0, { winner: 0 });
+    const shots = engine.getState().history!.points.map((point) => (point as { shot?: string }).shot);
+    expect(shots).toEqual([undefined, undefined, undefined, 'A', 'B']);
+  });
+
   it('markHardBoundary is an annotation, sorted, and the next rebuild discards it', () => {
     const engine = engineFor('SET3-S:6/TB7');
     play(engine, love('1', 3));
@@ -303,20 +307,20 @@ describe('§ 12.5, § 12.6 persistence', () => {
     expect(engine.getPointMultipliers()).toEqual([{ condition: { results: ['Ace'] }, value: 3 }]);
   });
 
-  it('a record with no timeline: undo pops points, redo re-adds them, a new action builds the timeline', () => {
+  it('a record with no timeline takes it on its first action, an undo included, and goes on from it', () => {
     const source = engineFor('SET3-S:6/TB7');
     play(source, '1121');
     const state = source.getState();
     delete state.history!.entries;
     const engine = engineFor('SET3-S:6/TB7');
     engine.setState(state);
+    expect(engine.getState().history?.entries).toBeUndefined();
     expect(engine.getUndoDepth()).toEqual(4);
     engine.undo();
-    expect(engine.getState().history?.entries).toBeUndefined();
+    expect(engine.getState().history?.entries).toHaveLength(3);
     expect(engine.getState().history?.points).toHaveLength(3);
     engine.editPoint(2, { winner: 0 });
-    expect(engine.getState().history?.entries).toBeUndefined();
-    // a rebuilding correction cleared the redo stack (§ 12.4); a new point is the first recorded action
+    // a rebuilding correction cleared the redo stack (§ 12.4)
     expect(engine.redo()).toEqual(false);
     engine.addPoint({ winner: 0 });
     expect(engine.getState().history?.entries).toHaveLength(4);
@@ -340,7 +344,7 @@ describe('§ 12.5, § 12.6 persistence', () => {
 });
 
 describe('§ 12.8 legacy shapes replay as v1 replayed them, flagged', () => {
-  const loadedWith = (format: string, build: (engine: ScoringEngineV2) => void, extra: Record<string, unknown>[]) => {
+  const loadedWith = (format: string, build: (engine: ScoringEngine) => void, extra: Record<string, unknown>[]) => {
     const source = engineFor(format);
     build(source);
     const state = source.getState();
@@ -440,11 +444,14 @@ describe('§ 2.6, § 10.6 server corrections', () => {
     expect(() => engineFor('NOT-A-FORMAT').setServer(1)).toThrow(/Invalid matchUpFormat/);
   });
 
-  it('with nothing on the timeline, a correction orients the next point only (SE3-E1)', () => {
+  it('with nothing on the timeline, a correction is the initial server, kept through a rebuild (SE3-E1)', () => {
     const engine = engineFor('SET3-S:6/TB7');
     engine.setServer(1, { recordEntry: false });
     expect(engine.getNextServer()).toEqual(1);
-    expect(engine.getState().history).toBeUndefined();
+    expect(engine.getState().history).toEqual({ points: [], entries: [], initialServer: 1 });
+    play(engine, '1');
+    engine.undo();
+    expect(engine.getNextServer()).toEqual(1);
   });
 });
 

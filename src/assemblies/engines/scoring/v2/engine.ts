@@ -55,14 +55,15 @@ import type {
 } from '../ScoringEngine';
 
 /**
- * ScoringEngine v2 (SE2c): the public `ScoringEngine` API as a thin shell over the reducer (plan § 2).
+ * The `ScoringEngine` (v2 since SE4): the public API as a thin shell over the reducer (plan § 2).
  *
  * The score is a pure function of the configuration and the timeline (§ 12.1): every action is offered to the
  * reducer's `step`, which refuses, ignores or records it; undo, redo and the corrections are timeline operations
  * followed by a rebuild (`reduce`). The shell owns only what is not score: the timeline and the redo stack, the
  * lineUps, the event handlers and the record's identity.
  *
- * Written from the spec (`scoring-engine-spec.md`, § 2, § 11, § 12) and the API reference, not from v1's code.
+ * Written from the spec (`scoring-engine-spec.md`, § 2, § 11, § 12) and the API reference, not from v1's code. v1, the
+ * class it replaced, is gone; records v1 wrote replay as v1 replayed them (§ 12.8).
  */
 
 const SUPPLEMENTARY_STATE_VERSION = 1;
@@ -88,7 +89,7 @@ function recordedInput(options: Record<string, unknown>): Record<string, unknown
 
 /** the replay input of a point saved without a timeline (§ 12.6 shape 2): every field but the calculated ones */
 function replayInput(point: Point): Record<string, unknown> {
-  // its recorded players stay with it: a record without a timeline has no substitutions to replay (§ 12.6)
+  // the players it recorded stand on replay (§ 12.6)
   const { winningSide: _w, serverSideNumber: _s, ...rest } = point;
   return recordedInput(rest);
 }
@@ -107,7 +108,7 @@ function refusedWith(outcome: StepOutcome): never {
 
 type Rebuilt = { state: ScoringState; entries: ScoreEntry[]; completedBy?: number; legacy: string[] };
 
-export class ScoringEngineV2 {
+export class ScoringEngine {
   private matchUpFormat: string;
   private competitionFormat?: CompetitionFormat;
   private pointMultipliers: PointMultiplier[];
@@ -125,6 +126,8 @@ export class ScoringEngineV2 {
   private stale = false;
   /** the timeline holds input v1 accepted past a close, so the match plays on as v1 played it (§ 12.8) */
   private pastClose = false;
+  /** the match's initial server, set before anything was recorded; every replay starts from it (SE3-E1) */
+  private initialServer?: Side;
 
   constructor(options: ScoringEngineOptions = {}) {
     this.competitionFormat = options.competitionFormat;
@@ -157,16 +160,26 @@ export class ScoringEngineV2 {
     return this.record.matchUpType === 'DOUBLES';
   }
 
-  /** the timeline a rebuild replays: the entries, or a legacy record's points as point entries (§ 12.6 shape 2) */
+  /**
+   * The timeline a rebuild replays: the entries, or those of a record saved without them (§ 12.6 shape 2): its
+   * points as point entries, each substitution placed before the point it preceded, in the order recorded, so
+   * nothing the record holds is lost. One placed past the last point follows it.
+   */
   private timeline(): ScoreEntry[] {
     if (this.entries) return this.entries;
     const points = this.record.history?.points ?? [];
-    return points.map((point, pointIndex) => ({
-      type: 'point',
-      data: replayInput(point),
-      timestamp: point.timestamp ?? nowIso(),
-      pointIndex,
-    }));
+    const substitutions = this.record.history?.substitutions ?? [];
+    const placedBefore = (index: number): ScoreEntry[] =>
+      substitutions
+        .filter((sub) => Math.min(sub.beforePointIndex ?? points.length, points.length) === index)
+        .map((sub) => ({ type: 'substitution', data: sub, timestamp: sub.timestamp ?? nowIso() }));
+    return [
+      ...points.flatMap((point, pointIndex): ScoreEntry[] => [
+        ...placedBefore(pointIndex),
+        { type: 'point', data: replayInput(point), timestamp: point.timestamp ?? nowIso(), pointIndex },
+      ]),
+      ...placedBefore(points.length),
+    ];
   }
 
   /** a fresh score with every entry replayed in order (§ 12.1) */
@@ -177,7 +190,7 @@ export class ScoringEngineV2 {
   private replay(entries: ScoreEntry[]): Rebuilt {
     this.pastClose = false;
     let context = this.context();
-    let state = initialState();
+    let state = this.startingState(context);
     let completedBy: number | undefined;
     const legacy = new Set<string>();
     const replayed = entries.map((entry, index) => {
@@ -200,6 +213,13 @@ export class ScoringEngineV2 {
     return { state, entries: replayed, completedBy, legacy: [...legacy] };
   }
 
+  /** a fresh score, its service oriented by the match's initial server if it has one */
+  private startingState(context: ReducerContext): ScoringState {
+    const side = this.initialServer;
+    if (side === undefined) return initialState();
+    return step(context, initialState(), { type: 'setServer', data: { side } } as TimelineEntry).state;
+  }
+
   /** replays the timeline and writes the record from it */
   private rebuild(): void {
     const rebuilt = this.replay(this.timeline());
@@ -215,7 +235,6 @@ export class ScoringEngineV2 {
   }
 
   private write(entries: ScoreEntry[]): void {
-    const stored = this.stale ? (this.record.history?.points ?? []) : [];
     this.record = materialize({
       base: this.record,
       state: this.state,
@@ -223,17 +242,24 @@ export class ScoringEngineV2 {
       completedBy: this.completedBy,
       lineUps: { initial: this.initialLineUps, current: this.lineUps, doubles: this.doubles },
       timeline: !!this.entries,
+      initialServer: this.initialServer,
+      // a record as loaded, or as a non-recalculating correction left it, keeps its points until the next rebuild
+      // (§ 12.4, § 12.6 shape 3)
+      stored: this.stale ? (this.record.history?.points ?? []) : [],
     });
-    // a record as loaded, or as a non-recalculating correction left it, keeps its points until the next rebuild:
-    // new input is added to it, as calculated servers are re-derived only then (§ 12.4, § 12.6 shape 3)
-    if (stored.length && this.record.history)
-      this.record.history.points = [...stored, ...this.record.history.points.slice(stored.length)];
   }
 
-  /** a legacy point-only record builds its timeline from its points on its first recorded action (§ 12.6) */
+  /** a record saved without a timeline takes it on the first action that changes it (§ 12.6) */
   private ensureTimeline(): void {
     if (this.entries) return;
     this.entries = this.timeline();
+  }
+
+  /** the timeline taken by a correction that writes no score: on the record at once, as the points are */
+  private recordTimeline(): void {
+    this.ensureTimeline();
+    const points = this.record.history?.points ?? [];
+    this.record = { ...this.record, history: { ...this.record.history, points, entries: this.entries } };
   }
 
   /**
@@ -250,7 +276,9 @@ export class ScoringEngineV2 {
       return { recorded: false, ignored: result.outcome.ignored } as ScoringActionResult;
     }
     const entries = this.entries as ScoreEntry[];
-    const pointIndex = result.state.points.length > before.points.length ? before.points.length : undefined;
+    // the point's position in the record, which a non-recalculating removal has made shorter than the score counts
+    const position = this.stale ? (this.record.history?.points?.length ?? 0) : before.points.length;
+    const pointIndex = result.state.points.length > before.points.length ? position : undefined;
     entries.push(pointIndex === undefined ? judged(entry, result.state) : { ...entry, pointIndex });
     if (before.matchUpStatus !== COMPLETED && result.state.matchUpStatus === COMPLETED)
       this.completedBy = entries.length - 1;
@@ -359,8 +387,9 @@ export class ScoringEngineV2 {
 
   /**
    * A server correction (§ 2.6, § 10.6). Recorded as its own action by default; with `recordEntry: false` it is
-   * attached to the entry before it and replayed and undone with it. With nothing on the timeline it orients the
-   * next point only (SE3-E1). A correction that changes nothing records nothing (§ 12.3).
+   * attached to the entry before it and replayed and undone with it. With nothing on the timeline it is the match's
+   * initial server, kept on the record and not on the timeline (SE3-E1). A correction that changes nothing records
+   * nothing (§ 12.3).
    */
   setServer(side: 0 | 1, options?: { recordEntry?: boolean }): void {
     const reason = readServer({ side });
@@ -379,7 +408,10 @@ export class ScoringEngineV2 {
     const entries = this.entries as ScoreEntry[];
     const last = entries.at(-1);
     if (!last) {
+      // the match's initial server: kept on the record, so every rebuild and reload starts from it (SE3-E1)
+      this.initialServer = side;
       this.state = corrected;
+      this.write(entries);
       return;
     }
     entries[entries.length - 1] = { ...last, serverCorrection: side };
@@ -397,12 +429,7 @@ export class ScoringEngineV2 {
     if (n <= 0) return false;
     const undone = timeline.slice(timeline.length - n).reverse();
     this.redoStack.push(...undone.map(({ pointIndex: _p, ...entry }) => entry as ScoreEntry));
-    if (this.entries) this.entries = timeline.slice(0, timeline.length - n);
-    else
-      this.record = {
-        ...this.record,
-        history: { ...this.record.history, points: (this.record.history?.points ?? []).slice(0, -n) },
-      };
+    this.entries = timeline.slice(0, timeline.length - n);
     this.rebuild();
     this.eventHandlers?.onUndo?.(this.eventContext());
     return true;
@@ -428,7 +455,7 @@ export class ScoringEngineV2 {
   }
 
   getUndoDepth(): number {
-    return this.entries ? this.entries.length : (this.record.history?.points.length ?? 0);
+    return this.timeline().length;
   }
 
   getRedoDepth(): number {
@@ -459,11 +486,12 @@ export class ScoringEngineV2 {
   editPoint(pointIndex: number, newData: Partial<AddPointOptions>, options?: { recalculate?: boolean }): void {
     const points = this.record.history?.points ?? [];
     if (pointIndex < 0 || pointIndex >= points.length) return;
+    this.recordTimeline();
     const given = newData as Record<string, unknown>;
     const data = this.corrected(pointIndex, given);
     const entry = this.pointEntry(pointIndex);
     if (entry) entry.data = data;
-    // the point carries both spellings of what was edited; a record without a timeline rebuilds from its points
+    // the point carries both spellings of what was edited
     this.patchPoint(pointIndex, this.spelled({ ...points[pointIndex], ...given } as Point, given));
     if (options?.recalculate === false) {
       this.stale = true;
@@ -493,15 +521,16 @@ export class ScoringEngineV2 {
     const points = this.record.history?.points ?? [];
     if (pointIndex < 0 || pointIndex >= points.length) return;
     const kept = points.filter((_, index) => index !== pointIndex);
-    if (this.entries)
-      this.entries = this.entries
-        .filter((entry) => !(entry.type === 'point' && entry.pointIndex === pointIndex))
-        .map((entry) =>
-          entry.pointIndex !== undefined && entry.pointIndex > pointIndex
-            ? { ...entry, pointIndex: entry.pointIndex - 1 }
-            : entry,
-        );
-    const history = { ...this.record.history, points: kept, ...(this.entries ? { entries: this.entries } : {}) };
+    this.ensureTimeline();
+    const entries = (this.entries as ScoreEntry[])
+      .filter((entry) => !(entry.type === 'point' && entry.pointIndex === pointIndex))
+      .map((entry) =>
+        entry.pointIndex !== undefined && entry.pointIndex > pointIndex
+          ? { ...entry, pointIndex: entry.pointIndex - 1 }
+          : entry,
+      );
+    this.entries = entries;
+    const history = { ...this.record.history, points: kept, entries };
     this.record = { ...this.record, history };
     if (options?.recalculate === false) {
       this.stale = true;
@@ -514,6 +543,7 @@ export class ScoringEngineV2 {
   decoratePoint(pointIndex: number, metadata: Record<string, unknown>): void {
     const points = this.record.history?.points ?? [];
     if (pointIndex < 0 || pointIndex >= points.length) return;
+    this.recordTimeline();
     const entry = this.pointEntry(pointIndex);
     if (entry) entry.data = { ...entry.data, ...recordedInput(metadata) };
     this.patchPoint(pointIndex, metadata);
@@ -543,6 +573,7 @@ export class ScoringEngineV2 {
     this.completedBy = undefined;
     this.legacyShapes = new Set();
     this.stale = false;
+    this.initialServer = undefined;
     this.eventHandlers?.onReset?.(this.eventContext());
   }
 
@@ -558,23 +589,12 @@ export class ScoringEngineV2 {
     this.entries = loaded.history?.entries ? [...loaded.history.entries] : undefined;
     this.lineUps = lineUpsOf(loaded);
     this.initialLineUps = initialLineUpsOf(this.lineUps, this.entries, loaded.history?.substitutions);
+    this.initialServer = loaded.history?.initialServer;
     // loaded as stored; the reduction is ready for the next action, which rebuilds the record (§ 12.6)
     this.prepare();
     // the legacy shapes are those the last rebuild met, and none has run yet (the API's getLegacyShapes)
     this.legacyShapes = new Set();
     this.stale = true;
-  }
-
-  /**
-   * The record a matchUp rebuilds to from its own timeline, as loaded with its saved configuration: what a stored
-   * score should agree with (§ 12.2). The differential reads it to tell a consistent record from one that is not.
-   */
-  static rebuiltFrom(matchUp: MatchUp, supplementary?: ScoringEngineSupplementaryState): MatchUp {
-    const engine = new ScoringEngineV2({ matchUpFormat: matchUp.matchUpFormat });
-    engine.setState(matchUp);
-    if (supplementary) engine.loadSupplementaryState(supplementary);
-    engine.rebuild();
-    return engine.getState();
   }
 
   /** the reduction a stored record's next action is taken on, its record left as stored */
@@ -759,9 +779,10 @@ export class ScoringEngineV2 {
     inParticipantId: string;
     timestamp?: string;
   }): SubstitutionResult {
-    const { timestamp, ...facts } = options;
+    const { timestamp } = options;
     const setNumber = this.setNumberInPlay();
-    const event: SubstitutionEvent = { ...facts, beforePointIndex: this.getPointCount(), setNumber };
+    // the caller's time stays on the event as well as the entry: the substitution list is read on its own (§ 2.7)
+    const event: SubstitutionEvent = { ...options, beforePointIndex: this.getPointCount(), setNumber };
     const error = substitutionError(this.lineUps, event);
     if (error) return { success: false, error };
     this.lineUps = substituted(this.lineUps as LineUps, event);

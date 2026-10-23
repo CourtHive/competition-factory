@@ -333,10 +333,11 @@ describe('Tiebreak NoAD extended play — calcSideTiebreakPointsTo', () => {
 });
 
 // ============================================================================
-// 5. calcSideGamesToSet — already-won (L301) and no-tiebreak margin (L318)
+// 5. gamesToSet counts the games won in a row that win the set (§ 11.2; SE2b-D23, CA 2026-10-21): a set whose
+//    score already wins it, never marked won, counts the next game, as v2 does; and the no-tiebreak margin
 // ============================================================================
-describe('calcSideGamesToSet — already-won and no-tiebreak paths', () => {
-  it('games already won (diff >= winBy) — L301', () => {
+describe('gamesToSet — a score that already wins the set, and the no-tiebreak margin', () => {
+  it('a set at 7-5 not marked won counts the next game — § 11.2', () => {
     const format = 'SET1-S:6/TB7';
     const fs = parse(format)!;
     // Construct state at 7-5 in games (past setTo, diff=2 >= winBy=2)
@@ -361,11 +362,11 @@ describe('calcSideGamesToSet — already-won and no-tiebreak paths', () => {
 
     let result: any = calculatePointsTo(mu, fs, 'standard', fs.setFormat, 0);
     expect(result).toBeDefined();
-    // side1: 7 >= setTo=6, diff=2 >= winBy=2 → return 0 (L301)
-    expect(result.gamesToSet[0]).toBe(0);
+    // side1: 8-5 wins the set by its rule, so one game in a row
+    expect(result.gamesToSet[0]).toBe(1);
   });
 
-  it('no-tiebreak advantage set: both at setTo-1, no tiebreak, diff >= winBy — L318', () => {
+  it('no-tiebreak advantage set at 7-5 not marked won counts the next game — § 11.2', () => {
     // SET1-S:6 (no tiebreak format — noTiebreak is true)
     const format = 'SET5-S:6/TB7-F:6';
     const fs = parse(format)!;
@@ -399,8 +400,8 @@ describe('calcSideGamesToSet — already-won and no-tiebreak paths', () => {
     const setType = resolveSetType(fs, [2, 2]);
     let result: any = calculatePointsTo(mu, fs, setType, finalSetFormat, 0);
     expect(result).toBeDefined();
-    // In advantage set with noTiebreak, side1 at 7-5 (diff=2 >= winBy=2) → 0
-    expect(result.gamesToSet[0]).toBe(0);
+    // In an advantage set side1 at 8-5 wins by the margin: one game in a row
+    expect(result.gamesToSet[0]).toBe(1);
   });
 
   it('no-tiebreak: both close to setTo, diff < winBy — needs margin (L318 false branch)', () => {
@@ -443,11 +444,11 @@ describe('calcSideGamesToSet — already-won and no-tiebreak paths', () => {
 });
 
 // ============================================================================
-// 6. calcSidePointsToSet — gamesNeeded <= 0 returns 0 (L349)
-//    getMinPointsPerSet — tiebreakSet (L376-379) and timed (L382)
+// 6. pointsToSet: the game's points plus the remaining games at four points each (§ 11.2)
+//    getMinPointsPerSet — tiebreakSet and timed
 // ============================================================================
 describe('calcSidePointsToSet and getMinPointsPerSet', () => {
-  it('pointsToSet is 0 when gamesToSet is 0 (set already won) — L349', () => {
+  it('pointsToSet at a 7-5 set not marked won is the next game’s points — § 11.2', () => {
     const format = 'SET1-S:6/TB7';
     const fs = parse(format)!;
     // Construct state at 7-5 (set already won)
@@ -472,9 +473,9 @@ describe('calcSidePointsToSet and getMinPointsPerSet', () => {
 
     let result: any = calculatePointsTo(mu, fs, 'standard', fs.setFormat, 0);
     expect(result).toBeDefined();
-    // gamesToSet[0] should be 0 (already won), so pointsToSet[0] should be 0 (L349)
-    expect(result.gamesToSet[0]).toBe(0);
-    expect(result.pointsToSet[0]).toBe(0);
+    // one game in a row, at the four points of the game in play
+    expect(result.gamesToSet[0]).toBe(1);
+    expect(result.pointsToSet[0]).toBe(4);
   });
 
   it('getMinPointsPerSet for tiebreakSet format — L376-379', () => {

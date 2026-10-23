@@ -6,6 +6,7 @@ export { withdrawParticipantAtDrawPosition } from '@Mutate/drawDefinitions/withd
 
 export { addVoluntaryConsolationStructure } from '@Mutate/drawDefinitions/addVoluntaryConsolationStructure';
 export { luckyLoserDrawPositionAssignment } from '@Mutate/drawDefinitions/luckyLoserDrawPositionAssignment';
+export { repairMalformedLink, repairMalformedLinks } from '@Mutate/drawDefinitions/links/repairMalformedLinks';
 export { shiftAdHocRounds } from '@Mutate/drawDefinitions/structureGovernor/adHocRounds/shiftAdHocRounds';
 export { setPositionAssignments } from '@Mutate/drawDefinitions/positionGovernor/setPositionAssignments';
 export { swapAdHocRounds } from '@Mutate/drawDefinitions/structureGovernor/adHocRounds/swapAdHocRounds';

@@ -125,6 +125,7 @@ module.exports = {
           label: 'Scheduling',
           items: [
             'concepts/scheduling-overview',
+            'concepts/scheduling-pipeline',
             'concepts/venues-courts',
             'concepts/scheduling-policy',
             'concepts/scheduling-profile',

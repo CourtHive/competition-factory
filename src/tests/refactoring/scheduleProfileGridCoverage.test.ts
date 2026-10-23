@@ -308,9 +308,22 @@ describe('scheduleProfileGrid multiple venues', () => {
       ],
     });
 
-    // Even if one venue has no courts, the overall call should succeed
+    // a venue with no courts keeps its rounds and places nothing (CA 2026-10-23): the profile needs no repair, round 1
+    // (profiled at the courtless venue) is reported not scheduled, and round 2 is placed at the venue with courts
+    expect(tournamentEngine.getSchedulingProfile().modifications).toEqual(0);
     let result: any = tournamentEngine.scheduleProfileGrid({ scheduleDates: [startDate] });
     expect(result.success).toBe(true);
+    const roundOf = (roundNumber: number) =>
+      tournamentEngine
+        .allTournamentMatchUps({ matchUpFilters: { roundNumbers: [roundNumber] } })
+        .matchUps.map(({ matchUpId }: any) => matchUpId);
+    expect(result.notScheduledMatchUpIds[startDate].toSorted()).toEqual(roundOf(1).toSorted());
+    expect(result.scheduledMatchUpIds[startDate].toSorted()).toEqual(roundOf(2).toSorted());
+
+    // and the timed scheduler likewise places nothing there
+    result = tournamentEngine.scheduleProfileRounds({ scheduleDates: [startDate] });
+    expect(result.success).toBe(true);
+    expect(result.noTimeMatchUpIds[startDate].toSorted()).toEqual(roundOf(1).toSorted());
   });
 });
 
@@ -694,9 +707,9 @@ describe('scheduleProfileGrid edge cases', () => {
   });
 });
 
-// ===== scheduleCompletedMatchUps =====
+// ===== scheduleCompletedMatchUps (retired, CA 2026-10-23: accepted and ignored) =====
 describe('scheduleProfileGrid scheduleCompletedMatchUps', () => {
-  it('passes scheduleCompletedMatchUps option through to proAutoSchedule', () => {
+  it('is accepted and changes nothing for a draw with no completed matchUp', () => {
     const { tournamentId, eventId, drawId, structureId, startDate } = setupTournament();
 
     addProfileRound({ tournamentId, eventId, drawId, structureId, roundNumber: 1, scheduleDate: startDate });

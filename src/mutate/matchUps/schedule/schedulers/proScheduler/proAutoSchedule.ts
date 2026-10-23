@@ -1,7 +1,7 @@
+import { checkDailyLimits, DailyLimitOverrides } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkDailyLimits';
 import { getParticipantReachability } from '@Mutate/matchUps/schedule/scheduleMatchUps/getParticipantReachability';
 import { modifyParticipantDayMatchUps } from '@Mutate/matchUps/schedule/scheduleMatchUps/participantDayLoad';
 import { getParticipantClashes } from '@Mutate/matchUps/schedule/scheduleMatchUps/participantClashes';
-import { checkDailyLimits } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkDailyLimits';
 import { competitionScheduleMatchUps } from '@Query/matchUps/competitionScheduleMatchUps';
 import { matchUpChronologicalSort } from '@Functions/sorters/matchUpChronologicalSort';
 import { bulkScheduleMatchUps } from '@Mutate/matchUps/schedule/bulkScheduleMatchUps';
@@ -22,6 +22,14 @@ import { ResultType } from '@Types/factoryTypes';
 type ProAutoScheduleArgs = {
   tournamentRecords: { [key: string]: Tournament };
   matchUpDailyLimits?: { [key: string]: number };
+  dailyLimitOverrides?: DailyLimitOverrides;
+  /** the limits are asked but not enforced: a placement over one is made and reported in dailyLimitWarningMatchUpIds */
+  dailyLimitsWarnOnly?: boolean;
+  /**
+   * @deprecated ignored: completed matchUps are never scheduled (CA 2026-10-23); the write skips one and it is reported
+   * not scheduled. Removed at the next major.
+   */
+  scheduleCompletedMatchUps?: boolean;
   matchUps: HydratedMatchUp[];
   minCourtGridRows?: number;
   scheduledDate: string;
@@ -94,6 +102,8 @@ function findOpenCourtIndex(
 }
 
 export function proAutoSchedule({
+  dailyLimitsWarnOnly,
+  dailyLimitOverrides,
   matchUpDailyLimits,
   minCourtGridRows = 10,
   tournamentRecords,
@@ -103,6 +113,7 @@ export function proAutoSchedule({
 }: ProAutoScheduleArgs): ResultType & {
   notScheduled?: HydratedMatchUp[];
   scheduled?: HydratedMatchUp[];
+  dailyLimitWarningMatchUpIds?: string[];
   overLimitMatchUpIds?: string[];
 } {
   if (!validMatchUps(matchUps)) return { error: INVALID_VALUES };
@@ -163,7 +174,7 @@ export function proAutoSchedule({
   // Per-participant day loads. Only used when matchUpDailyLimits is provided. Pre-populated from gridMatchUps
   // (matchUps already on the grid for this date) so the limit reflects the whole day, not just what this run places.
   // Participants certain and potential for each matchUp come from the reachability model (see participantDayLoad).
-  const enforceLimits = !!matchUpDailyLimits && Object.keys(matchUpDailyLimits).length > 0;
+  const enforceLimits = hasEntries(matchUpDailyLimits) || hasEntries(dailyLimitOverrides);
   const reachability = getParticipantReachability({
     matchUpDependencies: deps,
     matchUps: matchUps.concat(gridMatchUps),
@@ -172,6 +183,7 @@ export function proAutoSchedule({
   const drawIdOf = (matchUpId: string) => drawIds.get(matchUpId);
   const individualParticipantProfiles: any = {};
   const overLimitMatchUpIds: string[] = [];
+  const dailyLimitWarningMatchUpIds: string[] = [];
 
   if (enforceLimits) {
     for (const matchUp of gridMatchUps) {
@@ -203,6 +215,8 @@ export function proAutoSchedule({
         enforceLimits,
         drawIdOf,
         matchUpDailyLimits,
+        dailyLimitOverrides,
+        dailyLimitsWarnOnly,
         individualParticipantProfiles,
         reachability,
       });
@@ -213,11 +227,12 @@ export function proAutoSchedule({
         Object.assign(matchUp.schedule, court.schedule);
         Object.assign(court, matchUp);
         scheduled.push(matchUp);
+        if (verdict.atLimit) dailyLimitWarningMatchUpIds.push(matchUp.matchUpId);
         if (enforceLimits) {
           modifyParticipantDayMatchUps({ individualParticipantProfiles, reachability, matchUp, value: 1 });
         }
         row.matchUpIds.push(matchUp.matchUpId);
-      } else if (matchUp && verdict.atLimit) {
+      } else if (matchUp && verdict.atLimit && !dailyLimitsWarnOnly) {
         if (!overLimitMatchUpIds.includes(matchUp.matchUpId)) overLimitMatchUpIds.push(matchUp.matchUpId);
       } else if (matchUp) {
         unscheduledMatchUps.push(matchUp);
@@ -237,18 +252,42 @@ export function proAutoSchedule({
     },
   }));
 
-  result = bulkScheduleMatchUps({ tournamentRecords, matchUpDetails });
+  const writeResult = bulkScheduleMatchUps({ tournamentRecords, matchUpDetails });
 
-  const notScheduled = matchUps;
+  // scheduled is what the write wrote: a matchUp it skipped (completed, a BYE), kept (locked) or could not find was
+  // placed on the grid and not written, and was reported scheduled all the same (C4, SCHEDULING_PIPELINE_VNEXT.md § 5)
+  const {
+    skippedMatchUpIds = [],
+    lockedMatchUpIds = [],
+    notFoundMatchUpIds = [],
+  } = writeResult as {
+    notFoundMatchUpIds?: string[];
+    skippedMatchUpIds?: string[];
+    lockedMatchUpIds?: string[];
+  };
+  const unwritten = new Set([...skippedMatchUpIds, ...lockedMatchUpIds, ...notFoundMatchUpIds]);
+  const written = scheduled.filter(({ matchUpId }) => !unwritten.has(matchUpId));
+  const notScheduled = [...matchUps, ...scheduled.filter(({ matchUpId }) => unwritten.has(matchUpId))];
 
-  return { ...result, scheduled, notScheduled, overLimitMatchUpIds };
+  // a warning is reported only for a placement the write made
+  const warned = dailyLimitWarningMatchUpIds.filter((matchUpId) => !unwritten.has(matchUpId));
+  return {
+    ...writeResult,
+    dailyLimitWarningMatchUpIds: warned,
+    scheduled: written,
+    overLimitMatchUpIds,
+    notScheduled,
+  };
 }
+
+const hasEntries = (value?: object) => !!value && Object.keys(value).length > 0;
 
 // Evaluate whether `matchUp` can be placed on `row` given dependency,
 // participant-conflict, and (optional) daily-limit constraints. Returns a
 // discriminated verdict: `canPlace` (with side-effect inputs prepared),
 // `atLimit` (over the daily limit — should NOT be retried), or neither
-// (defer to a later row).
+// (defer to a later row). With `dailyLimitsWarnOnly` a matchUp over a limit
+// can still be placed, `atLimit` then marking the placement for a warning.
 function evaluatePlacement({
   matchUp,
   row,
@@ -258,6 +297,8 @@ function evaluatePlacement({
   enforceLimits,
   drawIdOf,
   matchUpDailyLimits,
+  dailyLimitOverrides,
+  dailyLimitsWarnOnly,
   individualParticipantProfiles,
   reachability,
 }: any): { canPlace: boolean; atLimit: boolean } {
@@ -283,6 +324,7 @@ function evaluatePlacement({
     const dlResult = checkDailyLimits({
       reachability,
       individualParticipantProfiles,
+      dailyLimitOverrides,
       matchUpDailyLimits,
       matchUp,
     });
@@ -295,7 +337,7 @@ function evaluatePlacement({
     !unscheduledContainSource &&
     !rowContainsParticipants &&
     !previousIncludesDependent &&
-    !atLimit;
+    (!atLimit || !!dailyLimitsWarnOnly);
 
   return { canPlace, atLimit };
 }

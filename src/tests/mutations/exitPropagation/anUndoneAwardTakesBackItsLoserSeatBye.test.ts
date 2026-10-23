@@ -1,5 +1,7 @@
-import { getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
+import { getDrawDefinition, getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
+import { feederSendsNobody } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
+import { positionTargets } from '@Query/matchUp/positionTargets';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, it } from 'vitest';
 
@@ -8,20 +10,33 @@ import { expect, it } from 'vitest';
  * `doubleExitPropagateBye: false`).
  *
  * A produced exit awarded to the participant who arrives opposite it has nobody for a loser, so its loser seat is given
- * a BYE (P39, `propagateUnfillableLoserBye`) and the award claims it. When that participant leaves again, because the
- * result that sent them is cleared, the award goes and the exit stands pending; a pending exit sends nothing over its
- * loser link, so the BYE it claimed goes with the award, as it does where a double exit is unwound. It stood, and the
- * loser seat read BYE in a draw where no rebuild of the standing results places one. Two paths take an award back: the
- * loser direction (`withdrawAwardsToEmptiedSeats`, 32/27 seed 21081040) and the winner direction
- * (`removeSubsequentRoundsParticipant`, 16/14 seed 21086952).
+ * a BYE (P39, `propagateUnfillableLoserBye`). When that participant leaves again, because the result that sent them is
+ * cleared, the award goes and the exit stands pending; a pending exit sends nothing over its loser link, so the BYE
+ * goes with the award, as it does where a double exit is unwound. It stood, and the loser seat read BYE in a draw where
+ * no rebuild of the standing results places one. Two paths take an award back: the loser direction
+ * (`withdrawAwardsToEmptiedSeats`, 32/27 seed 21081040) and the winner direction (`removeSubsequentRoundsParticipant`,
+ * 16/14 seed 21086952).
+ *
+ * The award once recorded a claim on the BYE (`byeClaims`); the ledger is retired (Mentat P58, CA 2026-10-21), so the
+ * seat carries no provenance and the BYE stands on what the claim stood for, read from the draw: the award's loser is
+ * nobody (`feederSendsNobody`: `NOBODY_LOST`). Once the award is taken back its feeder no longer reads that way.
  */
 
 const coordinate = (matchUp: any) => `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`;
 const CLEAR = { matchUpStatus: 'TO_BE_PLAYED', score: { scoreStringSide1: '', scoreStringSide2: '' } };
 
 /** a BYE origin is a may-record fact (exit-propagation.md), so the view leaves it out, as the census round trip does */
-const isByeOrigin = (entry: any) =>
-  entry?.matchUpStatus === 'BYE' && entry?.previousMatchUpStatus === 'BYE' && !entry?.byeClaims;
+const isByeOrigin = (entry: any) => entry?.matchUpStatus === 'BYE' && entry?.previousMatchUpStatus === 'BYE';
+
+/** why the matchUp at `key` sends nobody across its loser link, read from the draw as it stands */
+function feederReason(drawId: string, key: string) {
+  const drawDefinition = getDrawDefinition(drawId);
+  const inContextDrawMatchUps = getDrawMatchUps(drawId);
+  const feeder = inContextDrawMatchUps.find((matchUp: any) => coordinate(matchUp) === key);
+  const loserTargetLink = positionTargets({ matchUpId: feeder.matchUpId, inContextDrawMatchUps, drawDefinition })
+    ?.targetLinks?.loserTargetLink;
+  return feederSendsNobody({ inContextDrawMatchUps, loserTargetLink, drawDefinition, feeder });
+}
 
 function occupant(side: any) {
   if (side.bye) return 'BYE';
@@ -72,9 +87,16 @@ function roundTrip(row: any, drawId: string) {
   });
   expect(applied.error).toBeUndefined();
   const forward = view(drawId, row.watch);
+  const forwardReason = feederReason(drawId, row.feeder);
   const cleared = observeMutation({ propagateExitStatus, matchUpId: probe.matchUpId, outcome: CLEAR, drawId });
   expect(cleared.error).toBeUndefined();
-  return { before, forward, after: view(drawId, row.watch) };
+  return {
+    before,
+    forward,
+    forwardReason,
+    after: view(drawId, row.watch),
+    afterReason: feederReason(drawId, row.feeder),
+  };
 }
 
 const ANUNDONEAWARDTAKESBACKITSLOSERSEATBYE_A = {
@@ -82,6 +104,7 @@ const ANUNDONEAWARDTAKESBACKITSLOSERSEATBYE_A = {
   policyDefinitions: { progression: { doubleExitPropagateBye: false } },
   probe: { structureName: 'East', roundNumber: 1, roundPosition: 6, outcome: { winningSide: 2 } },
   watch: ['Southwest|1|1', 'Southwest|2|1', 'West|2|2'],
+  feeder: 'West|2|2',
   steps: [
     { structureName: 'East', roundNumber: 1, roundPosition: 14, outcome: { winningSide: 1 } },
     { structureName: 'East', roundNumber: 1, roundPosition: 13, outcome: { winningSide: 2 } },
@@ -167,7 +190,7 @@ const ANUNDONEAWARDTAKESBACKITSLOSERSEATBYE_A = {
 };
 
 it('a loser taken back from the seat opposite a produced exit takes back the BYE the award sent on', () => {
-  const { before, forward, after } = roundTrip(
+  const { before, forward, forwardReason, after, afterReason } = roundTrip(
     ANUNDONEAWARDTAKESBACKITSLOSERSEATBYE_A,
     'anUndoneAwardTakesBackItsLoserSeatBye_a',
   );
@@ -183,14 +206,14 @@ it('a loser taken back from the seat opposite a produced exit takes back the BYE
     matchUpStatus: 'BYE',
     winningSide: null,
     sides: ['-', 'BYE'],
-    provenance: {
-      '2': {
-        byeClaims: ['West|2|2'],
-      },
-    },
+    provenance: null,
   });
+  // the award at West|2|2 has nobody for a loser, so its loser seat holds the BYE
+  expect(forwardReason).toEqual('NOBODY_LOST');
   // and the clear puts it back
   expect(after).toEqual(before);
+  // with the award taken back the exit stands pending, and it is no longer read as sending nobody
+  expect(afterReason).toBeUndefined();
 });
 
 const ANUNDONEAWARDTAKESBACKITSLOSERSEATBYE_B = {
@@ -198,6 +221,7 @@ const ANUNDONEAWARDTAKESBACKITSLOSERSEATBYE_B = {
   policyDefinitions: { progression: { doubleExitPropagateBye: false } },
   probe: { structureName: 'West', roundNumber: 1, roundPosition: 2, outcome: { winningSide: 1 } },
   watch: ['Southwest|1|1', 'West|2|1'],
+  feeder: 'West|2|1',
   steps: [
     {
       structureName: 'East',
@@ -258,7 +282,7 @@ const ANUNDONEAWARDTAKESBACKITSLOSERSEATBYE_B = {
 };
 
 it('a winner taken back from the seat opposite a produced exit takes back the BYE the award sent on', () => {
-  const { before, forward, after } = roundTrip(
+  const { before, forward, forwardReason, after, afterReason } = roundTrip(
     ANUNDONEAWARDTAKESBACKITSLOSERSEATBYE_B,
     'anUndoneAwardTakesBackItsLoserSeatBye_b',
   );
@@ -274,12 +298,12 @@ it('a winner taken back from the seat opposite a produced exit takes back the BY
     matchUpStatus: 'BYE',
     winningSide: null,
     sides: ['BYE', '-'],
-    provenance: {
-      '1': {
-        byeClaims: ['West|2|1'],
-      },
-    },
+    provenance: null,
   });
+  // the award at West|2|1 has nobody for a loser, so its loser seat holds the BYE
+  expect(forwardReason).toEqual('NOBODY_LOST');
   // and the clear puts it back
   expect(after).toEqual(before);
+  // with the award taken back the exit stands pending, and it is no longer read as sending nobody
+  expect(afterReason).toBeUndefined();
 });

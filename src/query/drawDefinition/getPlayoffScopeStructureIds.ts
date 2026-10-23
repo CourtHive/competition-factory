@@ -1,7 +1,8 @@
+import { traversesByFinishingPosition } from '@Query/drawDefinition/linkTraversal';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
-import { LOSER, POSITION, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { LOSER, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
 
 type GetPlayoffScopeStructureIdsArgs = {
@@ -38,7 +39,7 @@ export function getPlayoffScopeStructureIds({
   while (grew) {
     grew = false;
     for (const link of links) {
-      if (link.linkType !== LOSER && link.linkType !== POSITION) continue;
+      if (link.linkType !== LOSER && !traversesByFinishingPosition(link, drawDefinition)) continue;
       const sourceId = link.source?.structureId;
       const targetId = link.target?.structureId;
       if (sourceId && targetId && scope.has(sourceId) && !scope.has(targetId)) {

@@ -1,17 +1,26 @@
 import { WINNING_SIDE_ADVANCEMENT_MISMATCH } from '@Query/drawDefinition/getStructureInconsistencies';
-import { getDrawInconsistencies, DANGLING_LINK } from '@Query/drawDefinition/getDrawInconsistencies';
+import { getTargetLink } from '@Query/drawDefinition/linkGetter';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Tests/engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
+import {
+  getDrawInconsistencies,
+  DANGLING_LINK,
+  INVALID_LINK,
+  LINK_MISSING_SOURCE_ROUND,
+  SCAN_ERROR,
+} from '@Query/drawDefinition/getDrawInconsistencies';
 
 // constants
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { DOUBLE_WALKOVER } from '@Constants/matchUpStatusConstants';
 import {
   COMPASS,
   FIRST_MATCH_LOSER_CONSOLATION,
   ROUND_ROBIN_WITH_PLAYOFF,
   SINGLE_ELIMINATION,
+  LOSER,
   DRAW,
 } from '@Constants/drawDefinitionConstants';
 
@@ -103,4 +112,82 @@ test('fans out structure-level inconsistencies with drawId + fingerprint stamped
   expect(mismatch.scope).toEqual('STRUCTURE');
   expect(mismatch.drawId).toEqual(drawId);
   expect(typeof mismatch.fingerprint).toEqual('string');
+});
+
+// the link checks, each on a draw generated well-formed and then corrupted (CA, 2026-10-22: none asserted
+// LINK_MISSING_SOURCE_ROUND until now)
+function linkedDraw(drawId: string) {
+  setSubscriptions({});
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawId, drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION, idPrefix: drawId }],
+    setState: true,
+  });
+  return tournamentEngine.getEvent({ drawId }).drawDefinition;
+}
+
+const issueTypes = (result) => result.inconsistencies.map(({ issueType }) => issueType);
+
+test('reports a WINNER or LOSER link with no source round as LINK_MISSING_SOURCE_ROUND', () => {
+  const drawDefinition = linkedDraw('draw-missing-round');
+  const link = drawDefinition.links.find(({ linkType }) => linkType === LOSER);
+  for (const corruption of [
+    () => Reflect.deleteProperty(link.source, 'roundNumber'),
+    () => (link.source.roundNumber = 0),
+  ]) {
+    corruption();
+    const result: any = getDrawInconsistencies({ drawDefinition });
+    expect(result.valid).toEqual(false);
+    const missing = result.inconsistencies.find(({ issueType }) => issueType === LINK_MISSING_SOURCE_ROUND);
+    expect(missing).toMatchObject({
+      sourceStructureId: link.source.structureId,
+      targetStructureId: link.target.structureId,
+      structureId: link.source.structureId,
+      severity: 'error',
+      linkType: LOSER,
+      scope: DRAW,
+    });
+  }
+});
+
+test('a link that is both dangling and missing its source round is reported once, as DANGLING_LINK', () => {
+  const drawDefinition = linkedDraw('draw-dangling-and-missing');
+  const link = drawDefinition.links[0];
+  Reflect.deleteProperty(link.source, 'roundNumber');
+  link.target.structureId = 'no-such-structure';
+  const result: any = getDrawInconsistencies({ drawDefinition });
+  expect(issueTypes(result).filter((issueType) => issueType !== SCAN_ERROR)).toEqual([DANGLING_LINK]);
+});
+
+test('an entry of links that is not an object is reported as INVALID_LINK, and the scan reads the rest', () => {
+  const drawDefinition = linkedDraw('draw-null-link');
+  const loserLink = drawDefinition.links.find(({ linkType }) => linkType === LOSER);
+  Reflect.deleteProperty(loserLink.source, 'roundNumber');
+  drawDefinition.links.push(null, 7);
+
+  const result: any = getDrawInconsistencies({ drawDefinition });
+  expect(result.valid).toEqual(false);
+  // reported, never thrown: no SCAN_ERROR, and the malformed link beside it is still found
+  expect(issueTypes(result).sort()).toEqual([INVALID_LINK, INVALID_LINK, LINK_MISSING_SOURCE_ROUND]);
+  const invalid = result.inconsistencies.filter(({ issueType }) => issueType === INVALID_LINK);
+  expect(invalid.map(({ linkIndex, message }) => [linkIndex, message])).toEqual([
+    [2, 'links[2] is not a link (null)'],
+    [3, 'links[3] is not a link (number)'],
+  ]);
+  // the draw handed in is not changed by the scan
+  expect(drawDefinition.links.length).toEqual(4);
+});
+
+test('getTargetLink passes over an entry that is not an object, and answers a malformed link with an error', () => {
+  const drawDefinition = linkedDraw('draw-target-link');
+  const [first, second] = drawDefinition.links;
+  const source: any[] = [null, 'x', first];
+  expect(getTargetLink({ source, linkType: LOSER })).toBe(first);
+  Reflect.deleteProperty(second.source, 'roundNumber');
+  const result: any = getTargetLink({
+    source: [undefined, second] as any[],
+    linkType: LOSER,
+    linkCondition: second.linkCondition,
+  });
+  expect(result.error).toEqual(INVALID_VALUES);
+  expect(getTargetLink({ source: [null] as any[], linkType: LOSER })).toBeUndefined();
 });

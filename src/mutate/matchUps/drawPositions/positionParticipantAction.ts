@@ -1,5 +1,6 @@
 import { conditionallyDisableLinkPositioning } from '@Mutate/drawDefinitions/positionGovernor/conditionallyDisableLinkPositioning';
 import { addPositionActionTelemetry } from '@Mutate/drawDefinitions/positionGovernor/addPositionActionTelemetry';
+import { drawPositionAssignmentRefusal } from '@Query/drawDefinition/drawPositionAssignmentRefusal';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -90,6 +91,20 @@ export function positionParticipantAction(params) {
    * (assessment G3); `qualifierArrivesIntoStandingExit.test.ts`.
    */
   const placeholderOnly = !!positionAssignment && !positionAssignment.bye && !positionAssignment.participantId;
+
+  // The seat is emptied before the participant is placed; a placement that would be refused is refused
+  // FIRST, so the refusal leaves the BYE (and everything clearing it rewrites) where it was.
+  const refusal = drawPositionAssignmentRefusal({
+    isQualifierPosition,
+    tournamentRecord,
+    drawDefinition,
+    participantId,
+    drawPosition,
+    structureId,
+    event,
+  });
+  if (refusal) return decorateResult({ result: refusal, stack });
+
   const result = placeholderOnly
     ? { ...SUCCESS, participantId: undefined }
     : clearDrawPosition({

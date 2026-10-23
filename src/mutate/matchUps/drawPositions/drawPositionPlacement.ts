@@ -32,10 +32,10 @@ import { structureAssignedDrawPositions, getPositionAssignments } from '@Query/d
 import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
 import { getUpdatedDrawPositions } from '@Mutate/drawDefinitions/matchUpGovernor/getUpdatedDrawPositions';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
+import { drawPositionAssignmentRefusal } from '@Query/drawDefinition/drawPositionAssignmentRefusal';
 import { getExitWinningSide } from '@Mutate/drawDefinitions/matchUpGovernor/getExitWinningSide';
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
 import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 import { addDrawEntry } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
 import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
@@ -45,8 +45,6 @@ import { updateSideLineUp } from '@Mutate/matchUps/lineUps/updateSideLineUp';
 import { propagateUnfillableLoserBye } from './propagateUnfillableLoserBye';
 import { isUnscoredOutcome } from '@Query/matchUp/getDrawPositionWinCount';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
-import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import { isValidSeedPosition } from '@Query/drawDefinition/seedGetter';
 import { getTargetMatchUps } from '@Query/matchUps/getTargetMatchUps';
 import { resetLineUps } from '@Mutate/matchUps/lineUps/resetLineUps';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
@@ -55,10 +53,8 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { normalizeDrawPositions } from './normalizeDrawPositions';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { assignDrawPositionBye } from './assignDrawPositionBye';
-import { getParticipantId } from '@Functions/global/extractors';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { drawPositionFilled } from './drawPositionFilled';
-import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 import { SUCCESS } from '@Constants/resultConstants';
 import { clearDrawPosition } from './positionClear';
@@ -72,6 +68,7 @@ import {
   MatchUp,
   MatchUpStatusUnion,
   PositionAssignment,
+  Structure,
   Tournament,
 } from '@Types/tournamentTypes';
 import {
@@ -92,12 +89,7 @@ import { CONSOLATION, CONTAINER, MAIN, PLAY_OFF, QUALIFYING, FIRST_MATCHUP } fro
 import {
   DRAW_POSITION_ASSIGNED,
   STRUCTURE_NOT_FOUND,
-  INVALID_DRAW_POSITION,
-  EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT,
-  INVALID_DRAW_POSITION_FOR_SEEDING,
   DRAW_POSITION_ACTIVE,
-  MISSING_PARTICIPANT_ID,
-  INVALID_MATCHUP,
   ErrorType,
 } from '@Constants/errorConditionConstants';
 
@@ -1229,6 +1221,18 @@ export function directWinner({
   return { ...SUCCESS };
 }
 
+/**
+ * A PLACEMENT ACROSS A LINK THAT FAILS IS LOGGED, NOT RETURNED. It runs mid-cascade, after the call has written the source
+ * matchUp's result, and a refusal from here would leave that write behind (an error must change nothing, with no
+ * rollback by the caller; CA 2026-10-22). Of `assignDrawPosition`'s refusals, the only ones these branches can meet are
+ * the participant already holding a position in the target structure (the seated case is skipped above) and a seeded
+ * participant on a drawPosition the seeding policy does not allow. Measured 2026-10-22: neither is reached over the
+ * suite and the frozen census windows once the seated case is skipped.
+ */
+function unreturnedPlacementError(result?: ResultType) {
+  if (result?.error) pushGlobalLog({ method: 'directWinner', error: result.error });
+}
+
 function directWinnerViaLink({
   winnerMatchUpDrawPositionIndex,
   inContextDrawMatchUps,
@@ -1286,14 +1290,27 @@ function directWinnerViaLink({
     .map((assignment) => assignment.drawPosition);
   const targetDrawPositionIsUnfilled =
     !!targetMatchUpDrawPosition && unfilledTargetMatchUpDrawPositions?.includes(targetMatchUpDrawPosition);
+  /**
+   * THE WINNER ALREADY HOLDS A SEAT IN THE TARGET MATCHUP: nothing to place. A direction can arrive a second time in
+   * one call — the Decider of a DOUBLE_ELIMINATION is seated from the Main final, and a correction below re-advances
+   * the same winner across the same link — and placing them again would put one participant in both seats. That
+   * attempt used to be made and refused (`ERR_EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT`) and the refusal dropped,
+   * so the draw was right by accident. Measured 2026-10-22 (factory `dev` `01ce40e544`): the only two refusals these
+   * placements returned over the suite and the frozen census windows w1, w2 and de (both BYE arms) were this case, census
+   * de 9304558 under `doubleExitPropagateBye: false` and census F2 20477784 (`censusF2RefusalRegression20261011`).
+   */
+  const winnerSeatedInTarget =
+    !!winnerExistingDrawPosition && targetMatchUpDrawPositions.includes(winnerExistingDrawPosition);
 
-  if (
+  if (winnerParticipantId && winnerSeatedInTarget && unfilledTargetMatchUpDrawPositions?.length) {
+    // already placed; see above
+  } else if (
     winnerParticipantId &&
     winnerTargetLink.target.roundNumber === 1 &&
     targetMatchUpDrawPosition &&
     targetDrawPositionIsUnfilled
   ) {
-    assignDrawPosition({
+    const assignResult = assignDrawPosition({
       drawPosition: targetMatchUpDrawPosition,
       participantId: winnerParticipantId,
       structureId: targetStructureId,
@@ -1304,20 +1321,23 @@ function directWinnerViaLink({
       matchUpsMap,
       event,
     });
+    unreturnedPlacementError(assignResult);
   } else if (winnerParticipantId && unfilledTargetMatchUpDrawPositions?.length) {
     const drawPosition = unfilledTargetMatchUpDrawPositions.pop();
-    drawPosition &&
-      assignDrawPosition({
-        participantId: winnerParticipantId,
-        structureId: targetStructureId,
-        inContextDrawMatchUps,
-        sourceMatchUpStatus,
-        tournamentRecord,
-        drawDefinition,
-        drawPosition,
-        matchUpsMap,
-        event,
-      });
+    const assignResult = drawPosition
+      ? assignDrawPosition({
+          participantId: winnerParticipantId,
+          structureId: targetStructureId,
+          inContextDrawMatchUps,
+          sourceMatchUpStatus,
+          tournamentRecord,
+          drawDefinition,
+          drawPosition,
+          matchUpsMap,
+          event,
+        })
+      : undefined;
+    unreturnedPlacementError(assignResult);
   } else if (winnerExistingDrawPosition) {
     const assignResult = assignMatchUpDrawPosition({
       drawPosition: winnerExistingDrawPosition,
@@ -1332,9 +1352,11 @@ function directWinnerViaLink({
     });
     if (assignResult.error) return decorateResult({ result: assignResult, stack });
   } else if (structure?.stage !== QUALIFYING) {
-    const error = 'winner target position unavaiallble';
-    pushGlobalLog({ method: 'directWinner', error });
-    decorateResult({ stack, result: { error } });
+    // NO POSITION FOR THE WINNER. Not returned: the call has already written (the source matchUp's result) before any
+    // direction, and nothing in the cascade restores it, so a refusal here would leave a half-applied call. Reached only
+    // over a target whose every seat is held by others; for a DOUBLE_ELIMINATION Decider `reconcileDeciders` re-seats it
+    // from the final that stands later in the same call. Measured unreached in play (2026-10-22).
+    pushGlobalLog({ method: 'directWinner', error: 'winner target position unavailable' });
   }
 
   if (structure?.seedAssignments && structure.structureId !== targetStructureId) {
@@ -1450,8 +1472,20 @@ export function assignDrawPosition({
 } {
   const stack = 'assignDrawPosition';
 
-  if (!participantId && !isQualifierPosition)
-    return decorateResult({ result: { error: MISSING_PARTICIPANT_ID }, stack });
+  // every refusal is asked before anything is read into place or written: the same guards a position
+  // action asks before it empties a seat, so the two cannot drift apart
+  const refusal = drawPositionAssignmentRefusal({
+    provisionalPositioning,
+    isQualifierPosition,
+    tournamentRecord,
+    drawDefinition,
+    participantId,
+    seedBlockInfo,
+    drawPosition,
+    structureId,
+    event,
+  });
+  if (refusal) return refusal;
 
   matchUpsMap = matchUpsMap ?? getMatchUpsMap({ drawDefinition });
 
@@ -1463,72 +1497,20 @@ export function assignDrawPosition({
     }));
   }
 
-  const result = findStructure({ drawDefinition, structureId });
-  if (result.error) return decorateResult({ result, stack });
-  const { structure } = result;
-  if (!structure) return { error: STRUCTURE_NOT_FOUND };
-
-  // there are no drawPositions assigned for ADHOC structures
-  if (isAdHoc({ structure })) return decorateResult({ result: { error: INVALID_MATCHUP }, stack });
-
-  const { seedAssignments } = getStructureSeedAssignments({
-    provisionalPositioning,
-    drawDefinition,
-    structure,
-  });
-
-  const relevantAssignment = seedAssignments?.find((assignment) => assignment.participantId === participantId);
-  const participantSeedNumber = relevantAssignment?.seedNumber;
-
-  const { appliedPolicies } = getAppliedPolicies({
-    tournamentRecord,
-    drawDefinition,
-    structure,
-    event,
-  });
-  if (participantSeedNumber) {
-    const isValidDrawPosition = isValidSeedPosition({
-      seedNumber: participantSeedNumber,
-      appliedPolicies,
-      drawDefinition,
-      seedBlockInfo,
-      drawPosition,
-      structureId,
-    });
-    if (!isValidDrawPosition)
-      return decorateResult({
-        result: { error: INVALID_DRAW_POSITION_FOR_SEEDING },
-        context: { drawPosition },
-        stack,
-      });
-  }
-
-  const sadp = structureAssignedDrawPositions({ structure });
-  const positionAssignments: PositionAssignment[] = sadp.positionAssignments ?? [];
-  const positionAssignment = positionAssignments?.find((assignment) => assignment.drawPosition === drawPosition);
-  if (!positionAssignment)
-    return decorateResult({
-      result: { error: INVALID_DRAW_POSITION },
-      context: { drawPosition },
-      stack,
-    });
+  // both present: refused above otherwise
+  const structure = findStructure({ drawDefinition, structureId }).structure as Structure;
+  const positionAssignments: PositionAssignment[] =
+    structureAssignedDrawPositions({ structure }).positionAssignments ?? [];
+  const positionAssignment = positionAssignments.find(
+    (assignment) => assignment.drawPosition === drawPosition,
+  ) as PositionAssignment;
 
   // Idempotent no-op: the participant is already assigned to exactly this
   // drawPosition. Re-asserting the same assignment (a bulk re-sync or a retry —
   // e.g. an integration re-pushing an already-populated draw) must succeed, not
-  // error. The "already assigned" guard below still applies when the participant
-  // sits at a DIFFERENT drawPosition — that's a real conflict needing a swap/clear.
+  // error. A participant seated at a DIFFERENT drawPosition was refused above —
+  // that's a real conflict needing a swap/clear.
   if (positionAssignment.participantId === participantId) return { positionAssignments, ...SUCCESS };
-
-  const participantAlreadyAssigned = positionAssignments?.map(getParticipantId).includes(participantId);
-
-  if (participantAlreadyAssigned) {
-    return decorateResult({
-      result: { error: EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT },
-      context: { drawPosition },
-      stack,
-    });
-  }
 
   const { containsParticipant, containsBye } = drawPositionFilled(positionAssignment);
 

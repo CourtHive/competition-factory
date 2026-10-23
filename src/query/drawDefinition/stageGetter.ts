@@ -1,3 +1,4 @@
+import { traversesByFinishingPosition } from '@Query/drawDefinition/linkTraversal';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 
@@ -14,7 +15,7 @@ import { numericSort } from '@Tools/sorting';
 
 // constants
 import { ALTERNATE, FEED_IN, WILDCARD, DIRECT_ENTRY_STATUSES } from '@Constants/entryStatusConstants';
-import { POSITION, CONTAINER, PLAY_OFF, validStages } from '@Constants/drawDefinitionConstants';
+import { CONTAINER, PLAY_OFF, validStages } from '@Constants/drawDefinitionConstants';
 import { ROUND_TARGET, TALLY } from '@Constants/extensionConstants';
 
 // constants and types
@@ -124,7 +125,7 @@ function getPlayoffEntries({ provisionalPositioning, drawDefinition, structureId
 } {
   const playoffEntries: any[] = [];
   const inboundLink: DrawLink | undefined = (drawDefinition.links ?? []).find(
-    (link) => link.linkType === POSITION && link.target.structureId === structureId,
+    (link) => traversesByFinishingPosition(link, drawDefinition) && link.target.structureId === structureId,
   );
   if (inboundLink) {
     // links from round robins include an array of finishing positions
@@ -228,7 +229,7 @@ function collectRemainderEntries({
 
   const otherBestOfLinks = (drawDefinition.links ?? []).filter(
     (link) =>
-      link.linkType === POSITION &&
+      traversesByFinishingPosition(link, drawDefinition) &&
       link.source.structureId === structureId &&
       link.target.structureId !== inboundLink.target.structureId &&
       link.source.bestOf !== undefined,

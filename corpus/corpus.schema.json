@@ -232,8 +232,8 @@
           "type": "object"
         },
         "value": {
-          "$comment": "OPEN by necessity: the return value of a query or pure method (the matchUpFormat grammar's parse, stringify, isValid), in canonical form. Absent means the method returned undefined. A mutation's result never carries a value; its effect is the patch.",
-          "description": "Return value of a query or pure method, canonical."
+          "$comment": "OPEN by necessity: the return value of a query or pure method (the matchUpFormat grammar's parse, stringify, isValid), in canonical form. Absent means the method returned undefined. A mutation's effect is the patch; the one exception is a scheduling mutation, whose value is its deferral report (what it scheduled and why it left the rest unscheduled, per date), because a reason for NOT writing has no patch to carry it.",
+          "description": "Return value of a query or pure method, or a scheduling mutation's deferral report; canonical."
         }
       },
       "required": ["success"],
@@ -285,7 +285,19 @@
     },
     "PropertyName": {
       "type": "string",
-      "enum": ["DO_UNDO_IDENTITY", "IDEMPOTENT_REAPPLY", "MONOTONIC_DECISION", "GRAMMAR_ROUND_TRIP"]
+      "enum": [
+        "DO_UNDO_IDENTITY",
+        "IDEMPOTENT_REAPPLY",
+        "MONOTONIC_DECISION",
+        "GRAMMAR_ROUND_TRIP",
+        "SCHEDULE_NO_BYE_PLACED",
+        "SCHEDULE_SOURCES_FIRST",
+        "SCHEDULE_RECOVERY_RESPECTED",
+        "SCHEDULE_DAILY_LIMITS_RESPECTED",
+        "SCHEDULE_ACCOUNTED",
+        "SCHEDULE_REPORT_TRUE",
+        "SCHEDULE_RERUN_STABLE"
+      ]
     }
   }
 }

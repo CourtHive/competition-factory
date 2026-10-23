@@ -20,8 +20,18 @@ import { DOUBLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
  * 1,200 draws played to exhaustion — the engine returns NO error at all, so this test says nothing
  * about what the engine does in play. It pins one thing: IF the write fails, the caller hears of it.
  *
- * It does not assert the draw is unchanged. By the time the decider is reconciled the final has been
- * scored, and CA's standing ruling is that nothing in this cascade snapshots or restores.
+ * ## A KNOWN V1 RESIDUAL, not the design
+ *
+ * It does not assert the draw is unchanged, because v1 cannot yet provide it. By the time the decider
+ * is reconciled the final has been scored, so a failure here is a refusal-after-write, which the rule
+ * (CA, 2026-10-22: a method's error leaves the record unchanged on a direct call, without
+ * `rollbackOnError`) forbids. The cascade builds in no snapshot or restore to hide it. The decider's
+ * write cannot be asked before the final's (what it writes depends on the final's settled result), so
+ * `reconcileDeciders` is on the outcome v2 executor plan's "v1 errors handed to v2" list (Mentat
+ * `planning/OUTCOME_V2_EXECUTOR_PLAN.md`): v2 must plan it as a refusal. Its `positionTargets` error, the
+ * other one it can return, is impossible since a malformed round link anywhere in the draw is refused
+ * before the first write (outcome-pipeline.md § 2 row 21). What this test pins is only that the error
+ * is never swallowed behind a success; when v2 plans the site it gains the record assertion.
  */
 
 const forced = vi.hoisted(() => ({ context: undefined as string | undefined, hits: 0 }));
@@ -92,7 +102,7 @@ it('settles the decider and reports success when the write succeeds', () => {
   expect(forced.hits).toEqual(0);
 });
 
-it('returns the error when the write to the decider fails', () => {
+it('returns the error when the write to the decider fails (v1 residual: the final stays scored)', () => {
   playToTheFinal();
   forced.context = 'reconcileDecider';
 

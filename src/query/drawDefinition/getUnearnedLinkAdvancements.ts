@@ -1,3 +1,4 @@
+import { traversesByFinishingPosition } from '@Query/drawDefinition/linkTraversal';
 import { isDoubleExit } from '@Validators/isExit';
 
 // constants and types
@@ -35,7 +36,9 @@ export function getUnearnedLinkAdvancements({
   const found: UnearnedLinkAdvancement[] = [];
   const seen = new Set<string>();
   for (const link of drawDefinition.links ?? []) {
-    if (link.linkType === 'POSITION' || !link.source.roundNumber) continue;
+    // a link out of a round robin carries finishers, not round winners, whatever its label
+    if (link.linkType === 'POSITION' || traversesByFinishingPosition(link, drawDefinition) || !link.source.roundNumber)
+      continue;
     const undecided = inContextDrawMatchUps.filter(
       (matchUp) =>
         !matchUp.collectionId &&
@@ -46,7 +49,7 @@ export function getUnearnedLinkAdvancements({
         !(link.linkType === 'LOSER' && isDoubleExit(matchUp.matchUpStatus)),
     );
     for (const sourceMatchUp of undecided) {
-      found.push(...acrossLink({ link, sourceMatchUp, inContextDrawMatchUps, seen }));
+      found.push(...acrossLink({ link: link as RoundDrawLink, sourceMatchUp, inContextDrawMatchUps, seen }));
     }
   }
   return found;

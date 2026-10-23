@@ -35,7 +35,13 @@ function played(
   entries: ScoreEntry[],
   completedBy: number | undefined,
   lineUps: { initial?: LineUps; doubles: boolean },
+  kept: number,
 ): Played {
+  // a point entry's pointIndex is its point's position in the record (§ 12.4). The reduced state may still count
+  // points a non-recalculating removal took out of the record, so a point added since is that many places further
+  // on in the state; the points before it are the record's own, kept as they are
+  const added = entries.filter((entry) => entry.type === POINT && (entry.pointIndex ?? -1) >= kept).length;
+  const shift = kept ? state.points.length - kept - added : 0;
   let onCourt: LineUps = { ...(lineUps.initial ?? {}) };
   const withPlayers = hasLineUps(lineUps.initial);
   const points: Point[] = [];
@@ -47,7 +53,8 @@ function played(
       return entry;
     }
     if (entry.type !== POINT || entry.pointIndex === undefined) return entry;
-    const point = state.points[entry.pointIndex] as ScoredPoint | undefined;
+    const point = state.points[entry.pointIndex < kept ? entry.pointIndex : entry.pointIndex + shift] as
+      ScoredPoint | undefined;
     if (point)
       points[entry.pointIndex] = toPoint(point, withPlayers ? activePlayersOf(onCourt, lineUps.doubles) : undefined);
     return entry;
@@ -69,12 +76,28 @@ export type Materialized = {
   /** the index of the entry that completed the match, when it is complete */
   completedBy?: number;
   lineUps: { initial?: LineUps; current?: LineUps; doubles: boolean };
+  /** the match's initial server, set before anything was recorded (SE3-E1); kept on the history, not the timeline */
+  initialServer?: 0 | 1;
   /** a legacy point-only record (§ 12.6 shape 2) keeps no `entries` */
   timeline: boolean;
+  /** the record's points as loaded or as a non-recalculating correction left them, kept until the next rebuild */
+  stored?: Point[];
 };
 
-export function materialize({ base, state, entries, completedBy, lineUps, timeline }: Materialized): MatchUp {
-  const { points, substitutions, endTime } = played(state, entries, completedBy, lineUps);
+export function materialize({
+  base,
+  state,
+  entries,
+  completedBy,
+  lineUps,
+  timeline,
+  initialServer,
+  stored = [],
+}: Materialized): MatchUp {
+  const placed = played(state, entries, completedBy, lineUps, stored.length);
+  const { substitutions, endTime } = placed;
+  // new input is added to the stored points, as calculated servers are re-derived only on a rebuild (§ 12.4)
+  const points = stored.length ? [...stored, ...placed.points.slice(stored.length)] : placed.points;
   const {
     winningSide: _winningSide,
     endTime: _endTime,
@@ -86,6 +109,7 @@ export function materialize({ base, state, entries, completedBy, lineUps, timeli
     points,
     ...(timeline ? { entries } : {}),
     ...(substitutions.length || previous?.substitutions ? { substitutions } : {}),
+    ...(initialServer === undefined ? {} : { initialServer }),
   };
   const recorded: MatchUp = {
     ...identity,
@@ -97,6 +121,6 @@ export function materialize({ base, state, entries, completedBy, lineUps, timeli
       lineUps.current?.[side.sideNumber] ? { ...side, lineUp: lineUps.current[side.sideNumber] } : side,
     ),
   };
-  if (previous || entries.length || points.length) recorded.history = history;
+  if (previous || entries.length || points.length || initialServer !== undefined) recorded.history = history;
   return recorded;
 }

@@ -253,19 +253,29 @@ describe('dehydrate branch coverage', () => {
     expect(matchUps[0]).not.toHaveProperty('matchUpFormat');
   });
 
+  // a tie's sides are its lineUps; a hydrated tie side with no lineUp is a placeholder and goes
   it('removeExtraneousAttributes keeps sides when tieMatchUps present', () => {
-    const matchUps = [
+    const lineUp = [{ participantId: 'p1', collectionAssignments: [{ collectionId: 'c1', collectionPosition: 1 }] }];
+    const matchUps: any[] = [
       {
         matchUpId: 'mu1',
         roundNumber: 1,
         drawPositions: [1, 2],
-        sides: [{ sideNumber: 1 }],
+        sides: [{ sideNumber: 1, lineUp }],
         tieMatchUps: [],
         structureId: 's1',
       },
     ];
     removeExtraneousAttributes(matchUps);
-    expect(matchUps[0]).toHaveProperty('sides');
+    expect(matchUps[0].sides).toEqual([{ sideNumber: 1, lineUp }]);
+  });
+
+  it('removeExtraneousAttributes drops a hydrated tie side that is only numbering', () => {
+    const matchUps: any[] = [
+      { matchUpId: 'mu1', drawPositions: [1, 2], sides: [{ sideNumber: 1 }], tieMatchUps: [], structureId: 's1' },
+    ];
+    removeExtraneousAttributes(matchUps);
+    expect(matchUps[0]).not.toHaveProperty('sides');
   });
 
   it('removeExtraneousAttributes preserves matchUpFormat when different from inherited', () => {

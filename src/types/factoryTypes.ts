@@ -951,6 +951,11 @@ export type ResultWarning = {
   code: string;
   matchUpIds?: string[];
   setNumbers?: number[];
+  eventId?: string;
+  drawId?: string;
+  /** the error behind the warning, where something was left undone because of one */
+  error?: ErrorType;
+  info?: unknown;
 };
 
 export type ResultType = {

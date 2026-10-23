@@ -1,3 +1,4 @@
+import { getTournamentRecord } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
@@ -5,14 +6,17 @@ import { expect, test } from 'vitest';
 // constants
 import { LUCKY_DRAW, MAIN } from '@Constants/drawDefinitionConstants';
 import {
+  NO_DRAW_POSITIONS_AVAILABLE_FOR_QUALIFIERS,
   INSUFFICIENT_DRAW_POSITIONS,
   LUCKY_DRAW_BYE_LIMIT,
   STRUCTURE_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
 
+const recordCopy = () => structuredClone(getTournamentRecord(tournamentEngine.getTournamentId()));
+
 // an 8 draw with 2 qualifier positions and 6 direct acceptances, nothing placed;
-// a BYE placed by hand leaves 7 positions for 8 entries, so positioning fails part-way:
-// the qualifiers are placed, then the direct acceptances cannot all be seated
+// a BYE placed by hand leaves 7 positions for 8 entries, so positioning cannot succeed:
+// seating them would place the qualifiers and then fail on the direct acceptances
 function setupOverfullMain() {
   const drawProfiles = [
     {
@@ -51,17 +55,16 @@ test('automated positioning of a structure that does not exist returns an error'
   expect(result.success).toBeUndefined();
 });
 
-test('a part-way positioning failure is rolled back when the caller asks for rollbackOnError', () => {
+test('a positioning that cannot seat everyone is refused before anything is placed', () => {
   const { drawId, structureId, getMain } = setupOverfullMain();
 
-  const result = tournamentEngine.executionQueue(
-    [{ method: 'automatedPositioning', params: { drawId, structureId } }],
-    true,
-  );
+  // a DIRECT call — no executionQueue, no rollbackOnError: the refusal itself leaves the record as it was
+  const before = recordCopy();
+  const result = tournamentEngine.automatedPositioning({ drawId, structureId });
   expect(result.error).toEqual(INSUFFICIENT_DRAW_POSITIONS);
-  expect(result.rolledBack).toEqual(true);
+  expect(recordCopy()).toEqual(before);
 
-  // the qualifiers placed before the failure are gone; only the hand-placed BYE remains
+  // no qualifier was placed; only the hand-placed BYE is there
   const { positionAssignments } = getMain();
   expect(positionAssignments.filter((assignment) => assignment.qualifier).length).toEqual(0);
   expect(positionAssignments.filter((assignment) => assignment.bye).map(({ drawPosition }) => drawPosition)).toEqual([
@@ -87,4 +90,18 @@ test('a LUCKY_DRAW that would need more than one BYE is refused', () => {
     drawProfiles: [{ drawSize: 5, drawType: LUCKY_DRAW, participantsCount: 4 }],
   });
   expect(result.error).toEqual(LUCKY_DRAW_BYE_LIMIT);
+});
+
+test('qualifiers with no round to land in are refused before anything is placed', () => {
+  const { drawId, structureId, getMain } = setupOverfullMain();
+  // seats 1-7 hold BYEs: one open seat for two qualifiers
+  for (const drawPosition of [2, 3, 4, 5, 6, 7]) {
+    expect(tournamentEngine.assignDrawPositionBye({ drawId, structureId, drawPosition }).success).toEqual(true);
+  }
+  expect(getMain().positionAssignments.filter(({ bye }) => bye).length).toEqual(7);
+
+  const before = recordCopy();
+  const result = tournamentEngine.automatedPositioning({ drawId, structureId });
+  expect(result.error).toEqual(NO_DRAW_POSITIONS_AVAILABLE_FOR_QUALIFIERS);
+  expect(recordCopy()).toEqual(before);
 });

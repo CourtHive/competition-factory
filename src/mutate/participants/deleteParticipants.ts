@@ -1,9 +1,10 @@
+import { getAssignedParticipantIds } from '@Query/drawDefinition/getAssignedParticipantIds';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { removeParticipantIdsFromAllTeams } from './removeIndividualParticipantIds';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { removeEventEntries } from '@Mutate/entries/removeEventEntries';
 import { getParticipants } from '@Query/participants/getParticipants';
-import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { addEventEntries } from '@Mutate/entries/addEventEntries';
 import { addNotice } from '@Global/state/globalState';
 import { intersection } from '@Tools/arrays';
@@ -22,6 +23,7 @@ import {
   MISSING_PARTICIPANT_IDS,
   EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT,
   ErrorType,
+  MISSING_EVENT,
 } from '@Constants/errorConditionConstants';
 
 type DeleteParticipantsArgs = {
@@ -86,6 +88,22 @@ export function deleteParticipants(params: DeleteParticipantsArgs): {
     return { error: EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT };
   }
 
+  // Deleting an individual deletes every PAIR containing it, so those PAIRs must hold no drawPosition and
+  // their entries go with them: the refusal and the entries removal both cover the derived PAIR ids.
+  const derivedPairIds = (tournamentRecord.participants ?? [])
+    .filter(
+      (participant) => !participantIds.includes(participant.participantId) && isRemoved(participant, participantIds),
+    )
+    .map(({ participantId }) => participantId);
+  const entryParticipantIds = [...participantIds, ...derivedPairIds];
+
+  // Every refusal the writes below could make is asked here, before the first write.
+  const refusal = entriesRemovalRefusal({ tournamentRecord, participantIds: entryParticipantIds });
+  if (refusal) return refusal;
+  if (!(tournamentRecord.participants ?? []).some((participant) => isRemoved(participant, participantIds))) {
+    return { error: CANNOT_REMOVE_PARTICIPANTS };
+  }
+
   const eventParticipantIdsRemoved = {};
   // what the notices announce: every participant removed (a PAIR goes with its deleted individual,
   // though only the individual was requested) and every grouping whose ids were pruned
@@ -93,10 +111,10 @@ export function deleteParticipants(params: DeleteParticipantsArgs): {
   const prunedGroupings: Participant[] = [];
   const mappedIndividualParticipantIdsToAdd = {};
 
-  // If not active in draws, remove participantIds from all entries
+  // If not active in draws, remove the entries of every participant being deleted, derived PAIRs included
   for (const event of tournamentRecord.events ?? []) {
     const result = removeEventEntries({
-      participantIds,
+      participantIds: entryParticipantIds,
       event,
     });
     if (result.error) return result;
@@ -104,10 +122,7 @@ export function deleteParticipants(params: DeleteParticipantsArgs): {
   }
 
   tournamentRecord.participants = (tournamentRecord.participants ?? []).filter((participant) => {
-    const participantToRemove =
-      participantIds.includes(participant.participantId) ||
-      (participant.participantType === PAIR &&
-        participant.individualParticipantIds?.some((id) => participantIds.includes(id)));
+    const participantToRemove = isRemoved(participant, participantIds);
 
     // Remove deleted individuals from every grouping that referenced them — TEAM *and* GROUP.
     //
@@ -179,13 +194,51 @@ export function deleteParticipants(params: DeleteParticipantsArgs): {
     }
   }
 
-  if (participantsRemovedCount) {
-    addNotice({
-      payload: { participantIds: removedParticipantIds, tournamentId: tournamentRecord.tournamentId },
-      topic: DELETE_PARTICIPANTS,
-    });
-    modifyParticipantsNotice({ tournamentId: tournamentRecord.tournamentId, participants: prunedGroupings });
-  }
+  // participantsRemovedCount is never 0: the pre-check refused a call that would remove no participant
+  addNotice({
+    payload: { participantIds: removedParticipantIds, tournamentId: tournamentRecord.tournamentId },
+    topic: DELETE_PARTICIPANTS,
+  });
+  modifyParticipantsNotice({ tournamentId: tournamentRecord.tournamentId, participants: prunedGroupings });
 
-  return participantsRemovedCount ? { ...SUCCESS, participantsRemovedCount } : { error: CANNOT_REMOVE_PARTICIPANTS };
+  return { ...SUCCESS, participantsRemovedCount };
+}
+
+// a requested participant, or a PAIR one of whose individuals is requested
+function isRemoved(participant: Participant, participantIds: string[]): boolean {
+  return (
+    participantIds.includes(participant.participantId) ||
+    (participant.participantType === PAIR &&
+      !!participant.individualParticipantIds?.some((id) => participantIds.includes(id)))
+  );
+}
+
+/**
+ * The refusals `removeEventEntries` would make for each event, asked of EVERY event before any is written.
+ *
+ * The draw-assignment check above skips TEAM draws (an individual is "in" a TEAM draw through lineUps,
+ * which must not block deleting them), so a TEAM participant positioned in a TEAM draw passed it. The
+ * per-event loop then removed its entries from every earlier event before `removeEventEntries` refused
+ * at the event holding the position. This asks the same question `removeEventEntries` asks — is any
+ * requested participant assigned a drawPosition in any of the event's draws, TEAM draws included — of
+ * all events at once.
+ */
+function entriesRemovalRefusal({
+  tournamentRecord,
+  participantIds,
+}: {
+  tournamentRecord: Tournament;
+  participantIds: string[];
+}): { error: ErrorType } | undefined {
+  const events = tournamentRecord.events ?? [];
+  if (events.some((event) => !event?.eventId)) return { error: MISSING_EVENT };
+
+  const assigned = events.some((event) =>
+    (event.drawDefinitions ?? []).some((drawDefinition) =>
+      (getAssignedParticipantIds({ drawDefinition }).assignedParticipantIds ?? []).some((participantId) =>
+        participantIds.includes(participantId),
+      ),
+    ),
+  );
+  return assigned ? { error: EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT } : undefined;
 }

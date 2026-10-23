@@ -82,13 +82,19 @@ describe('addEventEntries role gate', () => {
     expect(enteredIds(eventId)).toContain(rolelessId);
   });
 
-  it('admits the competitors in a mixed batch and refuses only the staff member', () => {
+  it('refuses a mixed batch containing a staff member without entering anyone, then admits the competitors', () => {
     const { eventId, participantIds } = seed();
     const [staffId, ...others] = participantIds;
     tournamentEngine.modifyParticipant({ participant: { participantId: staffId, participantRole: OFFICIAL } });
+    const enteredBefore = enteredIds(eventId);
 
-    const result: any = tournamentEngine.addEventEntries({ participantIds, eventId });
+    // an error leaves the record unchanged: no competitor in the batch is entered either
+    let result: any = tournamentEngine.addEventEntries({ participantIds, eventId });
     expect(result.error).toEqual(INVALID_PARTICIPANT_IDS);
+    expect(enteredIds(eventId)).toEqual(enteredBefore);
+
+    result = tournamentEngine.addEventEntries({ participantIds: others, eventId });
+    expect(result.success).toEqual(true);
 
     const entered = enteredIds(eventId);
     expect(entered).not.toContain(staffId);

@@ -62,9 +62,12 @@ function fnv1a(input: string): string {
  * are stamped so a caller can *"route by severity"*, while both layers returned
  * `valid: finalized.length === 0` — so an ADVISORY finding was indistinguishable from a corrupt draw,
  * and any new advisory rule turned every `expect(valid).toEqual(true)` in the suite red. That is not a
- * property of the rule; it is this line. `STALLED_POSITION` is the first check to use the tier: a
- * stranded participant is a real defect worth reporting to a director, and it is not a claim that the
- * stored draw is structurally corrupt.
+ * property of the rule; it is this line. `STALLED_POSITION` was the first check to use the tier, and it
+ * no longer does: it shipped as a `warning` and has been an `error` since 7.10.0 (2026-10-10), once
+ * randomised censuses at scale read zero stalls — the history is in its docblock in
+ * `getStructureInconsistencies`. `UNCOLLAPSED_CONVERGENCE` made the same move. A caller that treats an
+ * `error` as "refuse this record" (an ingest gate, for one) therefore refuses a stalled draw, and that is
+ * the intended reading, not a mis-rating.
  *
  * A `warning` therefore still appears in `inconsistencies` — it is reported, routed and rendered; it
  * simply does not assert that the draw is invalid.

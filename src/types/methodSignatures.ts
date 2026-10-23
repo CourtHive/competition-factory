@@ -44,6 +44,7 @@ import type { addPersonRequests } from '@Mutate/matchUps/schedule/scheduleMatchU
 import type { getDrawParticipantRepresentativeIds } from '@Query/drawDefinition/getDrawParticipantRepresentativeIds';
 import type { getEventMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getEventMatchUpFormatTiming';
 import type { getModifiedMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getModifiedMatchUpTiming';
+import type { repairMalformedLink, repairMalformedLinks } from '@Mutate/drawDefinitions/links/repairMalformedLinks';
 import type { withdrawParticipantAtDrawPosition } from '@Mutate/drawDefinitions/withdrawParticipantAtDrawPosition';
 import type { declineEndorsement, endorseApplication, requestEndorsement } from '@Mutate/sanctioning/endorsement';
 import type { getValidGroupSizes } from '@Assemblies/generators/drawDefinitions/drawTypes/roundRobin/roundRobin';
@@ -1272,6 +1273,8 @@ export interface MethodSignatures {
   removeTournamentExtension: EngineMethod<typeof removeTournamentExtension>;
   renameStructures: EngineMethod<typeof renameStructures>;
   reorderUpcomingMatchUps: EngineMethod<typeof reorderUpcomingMatchUps>;
+  repairMalformedLink: EngineMethod<typeof repairMalformedLink>;
+  repairMalformedLinks: EngineMethod<typeof repairMalformedLinks>;
   repairScore: EngineMethod<typeof repairScore>;
   replaceTieMatchUpParticipantId: EngineMethod<typeof replaceTieMatchUpParticipantId>;
   requestEndorsement: EngineMethod<typeof requestEndorsement>;

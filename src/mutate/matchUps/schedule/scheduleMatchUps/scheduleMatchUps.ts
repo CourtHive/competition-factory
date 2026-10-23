@@ -5,12 +5,14 @@ import { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue
 import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
 import { getPersonRequests } from '@Query/matchUps/scheduling/getPersonRequests';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
+import { resolveScheduleMatchUpsTiming } from './resolveScheduleMatchUpsTiming';
 import { getParticipantReachability } from './getParticipantReachability';
 import { checkDependenciesScheduled } from './checkDependenciesScheduled';
 import { modifyParticipantDayMatchUps } from './participantDayLoad';
 import { updateTimeAfterRecovery } from './updateTimeAfterRecovery';
 import { calculateScheduleTimes } from './calculateScheduleTimes';
 import { findDrawDefinition } from '@Acquire/findDrawDefinition';
+import { checkPlayedOrder } from '../scheduleItems/playedOrder';
 import { checkRequestConflicts } from './checkRequestConflicts';
 import { getMatchUpIds } from '@Functions/global/extractors';
 import { processNextMatchUps } from './processNextMatchUps';
@@ -45,6 +47,7 @@ import {
  * @param {number} periodLength - granularity of time blocks to consider, in minutes
  * @param {number} averageMatchUpMinutes - how long the expected matchUps are expected to last, in minutes, on average
  * @param {number} recoveryMinutes - time in minutes that should be alloted for participants to recover between matches
+ *   (when neither is stated, a timing in the tournament or the event decides; with none, 90 and 0)
  * @param {object} matchUpDailyLimits - { SINGLES, DOUBLES, TOTAL } - maximum number of matches allowed per participant
  * @param {boolean} checkPotentialRequestConflicts - check personRequests when person is only potentially in matchUp being scheduled
  *
@@ -53,11 +56,11 @@ import {
 export function scheduleMatchUps(params) {
   const {
     tournamentRecords,
-    allDateMatchUpIds = [],
+    allDateMatchUpIds: statedAllDateMatchUpIds,
 
-    averageMatchUpMinutes = 90,
-    recoveryMinutes = 0,
-    recoveryMinutesMap, // for matchUpIds batched by averageMatchUpMinutes this enables varying recoveryMinutes
+    averageMatchUpMinutes: statedAverageMinutes,
+    recoveryMinutes: statedRecoveryMinutes,
+    recoveryMinutesMap: statedRecoveryMinutesMap, // for matchUpIds batched by averageMatchUpMinutes: varying recovery
 
     matchUpPotentialParticipantIds = {},
     individualParticipantProfiles = {},
@@ -130,6 +133,17 @@ export function scheduleMatchUps(params) {
     .map((matchUpId) => competitionMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId))
     .filter(Boolean);
 
+  const dateMatchUps = competitionMatchUps.filter(
+    (matchUp) => matchUp.schedule?.scheduledDate && sameDay(scheduleDate, extractDate(matchUp.schedule.scheduledDate)),
+  );
+  const { averageMatchUpMinutes, recoveryMinutes, recoveryMinutesMap } = resolveScheduleMatchUpsTiming({
+    matchUps: [...targetMatchUps, ...dateMatchUps],
+    averageMatchUpMinutes: statedAverageMinutes,
+    recoveryMinutesMap: statedRecoveryMinutesMap,
+    recoveryMinutes: statedRecoveryMinutes,
+    tournamentRecords,
+  });
+
   // determines court availability taking into account already scheduled matchUps on the scheduleDate
   // optimization to pass already retrieved competitionMatchUps to avoid refetch (requires refactor)
   const { venueId, scheduleTimes, dateScheduledMatchUpIds } = calculateScheduleTimes({
@@ -143,6 +157,10 @@ export function scheduleMatchUps(params) {
     periodLength,
     venueIds,
   });
+  // a source outside this set is not waited for (checkDependenciesScheduled). With none stated it is the matchUps being
+  // scheduled and those already on the date: the empty default waited for nobody, so a final took the first free slot
+  // before both its semifinals (C2, SCHEDULING_PIPELINE_VNEXT.md § 5)
+  const allDateMatchUpIds: string[] = statedAllDateMatchUpIds ?? [...matchUpIds, ...(dateScheduledMatchUpIds ?? [])];
   const requestConflicts = {};
   const skippedScheduleTimes: string[] = [];
   const matchUpScheduleTimes = {};
@@ -326,6 +344,7 @@ export function scheduleMatchUps(params) {
   });
 
   const scheduledMatchUpIds: string[] = [];
+  const refusedMatchUpIds: string[] = [];
   Object.keys(matchUpMap).forEach((tournamentId) => {
     const tournamentRecord = tournamentRecords[tournamentId];
     if (tournamentRecord) {
@@ -346,12 +365,28 @@ export function scheduleMatchUps(params) {
               if (dryRun) {
                 scheduledMatchUpIds.push(matchUpId);
               } else {
-                const result = addMatchUpScheduledTime({
+                // asked once per placement with the graph this call already holds, not rebuilt by the write
+                const refusal = checkPlayedOrder({
+                  schedule: { scheduledDate: extractDate(scheduleDate), scheduledTime },
+                  inContextMatchUps: competitionMatchUps,
+                  matchUpDependencies,
                   drawDefinition,
                   matchUpId,
-                  scheduledTime,
                 });
-                if (result.success) scheduledMatchUpIds.push(matchUpId);
+                const result =
+                  refusal ??
+                  addMatchUpScheduledTime({
+                    playedOrderChecked: true,
+                    drawDefinition,
+                    matchUpId,
+                    scheduledTime,
+                  });
+                // a refused write (a played matchUp it depends on is later) leaves the matchUp unscheduled, and no venue
+                if (!result.success) {
+                  refusedMatchUpIds.push(matchUpId);
+                  return;
+                }
+                scheduledMatchUpIds.push(matchUpId);
 
                 if (venueId) {
                   assignMatchUpVenue({
@@ -370,7 +405,7 @@ export function scheduleMatchUps(params) {
     }
   });
 
-  const noTimeMatchUpIds = getMatchUpIds(matchUpsToSchedule);
+  const noTimeMatchUpIds = [...getMatchUpIds(matchUpsToSchedule), ...refusedMatchUpIds];
 
   return {
     ...SUCCESS,

@@ -1,9 +1,11 @@
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { xa } from '@Tools/extractAttributes';
 import { expect, it } from 'vitest';
 
 // constants
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { COMPASS } from '@Constants/drawDefinitionConstants';
 
 it('can order structures', () => {
@@ -38,4 +40,25 @@ it('can order structures', () => {
 
   const expectedStructureIdsOrder = newOrder.map((i) => structureIds[i + 1]);
   expect(expectedStructureIdsOrder).not.toEqual(orderedStructureIds);
+});
+
+it('setStructureOrder refuses a non-integer orderMap before reordering any structure', () => {
+  const {
+    drawIds: [drawId],
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 32, drawType: COMPASS }],
+    setState: true,
+  });
+
+  const structureIds = tournamentEngine.getEvent({ drawId }).drawDefinition.structures.map(xa('structureId'));
+  const orderMap = Object.assign({}, ...structureIds.map((structureId, index) => ({ [structureId]: 8 - index })));
+  orderMap[structureIds[0]] = 'first';
+
+  const before = makeDeepCopy(tournamentEngine.getTournament().tournamentRecord, false, true);
+  let result: any = tournamentEngine.setStructureOrder({ drawId, orderMap });
+  expect(result.error).toEqual(INVALID_VALUES);
+  expect(makeDeepCopy(tournamentEngine.getTournament().tournamentRecord, false, true)).toEqual(before);
+
+  result = tournamentEngine.setStructureOrder({ drawId, orderMap: null });
+  expect(result.error).toEqual(INVALID_VALUES);
 });

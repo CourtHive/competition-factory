@@ -10,8 +10,8 @@ import { ResultType } from '@Types/factoryTypes';
 
 export function setStructureOrder({ drawDefinition, tournamentRecord, disableNotice, orderMap, event }): ResultType {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
-  if (typeof orderMap !== 'object' || !Object.values(orderMap).every((val) => isConvertableInteger(val)))
-    decorateResult({
+  if (!orderMap || typeof orderMap !== 'object' || !Object.values(orderMap).every((val) => isConvertableInteger(val)))
+    return decorateResult({
       result: { error: INVALID_VALUES },
       context: { orderMap },
     });

@@ -133,18 +133,43 @@ it('a double exit across a malformed LOSER link is refused, and the draw is unch
   expect(hash(getDrawDefinition(drawId))).toEqual(before);
 });
 
-it('a malformed link in a structure DOWNSTREAM is returned from the cascade, and rolled back', () => {
-  // COMPASS: East's round-1 losers go to West, and West's own LOSER link is the malformed one
+it('a malformed link in a structure DOWNSTREAM is refused before the first write, with no rollback', () => {
+  // COMPASS: East's round-1 losers go to West, and West's own LOSER link is the malformed one. The cascade met it only
+  // after it had written, so this once needed `rollbackOnError`; it is now asked of the whole draw before the first write
+  // (`getMalformedRoundLink`; CA, 2026-10-22: no mutation relies on rollback), and the call is DIRECT
   const { drawId } = corruptedDraw({ drawType: COMPASS, structureName: 'West', linkType: LOSER });
   const eastId = getDrawDefinition(drawId).structures.find((s) => s.structureName === 'East').structureId;
   const matchUpId = matchUpIn(drawId, eastId).matchUpId;
   const before = hash(getDrawDefinition(drawId));
-  const result: any = tournamentEngine.executionQueue(
-    [{ method: 'setMatchUpStatus', params: { drawId, matchUpId, outcome } }],
-    true,
-  );
+  const result: any = tournamentEngine.setMatchUpStatus({ drawId, matchUpId, outcome });
   expectLinkError(result);
-  expect(result.rolledBack).toEqual(true);
+  expect(hash(getDrawDefinition(drawId))).toEqual(before);
+});
+
+it('a links entry that is not a link is refused by setMatchUpStatus before any write, without a throw', () => {
+  // the draw-wide gate (`getMalformedRoundLink`) shares `isMalformedRoundLink` (malformedLinks.ts), which answers true
+  // for an entry that is not an object; it once used `find`, which handed back the `null` itself and read as "none"
+  setSubscriptions({});
+  const {
+    tournamentRecord,
+    drawIds: [drawId],
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION }],
+    setState: false,
+  });
+  const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
+  const main = drawDefinition.structures.find((structure) => structure.stage === 'MAIN');
+  const matchUpId = main.matchUps.find((m) => m.roundNumber === 1 && m.roundPosition === 1).matchUpId;
+  drawDefinition.links.push(null);
+  tournamentEngine.setState(tournamentRecord);
+  const before = hash(getDrawDefinition(drawId));
+
+  let result: any;
+  expect(() => {
+    result = tournamentEngine.setMatchUpStatus({ drawId, matchUpId, outcome });
+  }).not.toThrow();
+  expectLinkError(result);
+  expect(result.context).toMatchObject({ linkIndex: 2 });
   expect(hash(getDrawDefinition(drawId))).toEqual(before);
 });
 

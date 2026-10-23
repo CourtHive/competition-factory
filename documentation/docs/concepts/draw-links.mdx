@@ -20,8 +20,8 @@ type Link = {
   linkType: 'LOSER' | 'WINNER' | 'POSITION'; // Type of participant flow
   source: {
     structureId: string; // Source structure UUID
-    roundNumber?: number; // Optional: specific round (0 = placeholder)
-    finishingPositions?: number[]; // For POSITION links
+    roundNumber?: number; // the round whose winners/losers cross: required out of an elimination structure (0 = placeholder)
+    finishingPositions?: number[]; // the group places that cross: directs every link out of a round robin
     qualifyingPositions?: number; // Qualifier count for placeholder links
   };
   target: {
@@ -51,13 +51,30 @@ type Link = {
 }
 ```
 
-**WINNER Links** - Direct winning participants:
+**WINNER Links** - Direct winning participants. Out of an elimination structure, the winners of a round:
 
 ```js
 {
   linkType: 'WINNER',
   source: {
-    structureId: 'round-robin-group-1',
+    structureId: 'qualifying-structure-id',
+    roundNumber: 2  // the qualifying round whose winners are the qualifiers
+  },
+  target: {
+    structureId: 'main-draw-id',
+    roundNumber: 1,
+    feedProfile: 'DRAW'
+  }
+}
+```
+
+Out of a round robin, the group finishers named by `finishingPositions` (see [Rounds and finishing positions](#rounds-and-finishing-positions-how-a-link-traverses)):
+
+```js
+{
+  linkType: 'WINNER',
+  source: {
+    structureId: 'round-robin-container',
     finishingPositions: [1]  // Group winners
   },
   target: {
@@ -83,6 +100,20 @@ type Link = {
   }
 }
 ```
+
+### Rounds and finishing positions: how a link traverses
+
+A link says WHO CROSSES it from its source structure in one of two ways, and the source structure decides which:
+
+| source structure                      | the link is directed by         | labelled               | why                                                                                                                                                                                            |
+| ------------------------------------- | ------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| round robin (a `CONTAINER` of groups) | `source.finishingPositions`     | `POSITION` or `WINNER` | a round robin decides who leaves it by [tally](/docs/policies/roundRobinTallyPolicy), once its groups are complete: `[1]` is every group's winner, `[2]` every runner-up, `[1, 2]` the top two |
+| elimination                           | `source.roundNumber` (required) | `WINNER` or `LOSER`    | an elimination structure decides who leaves it match by match: the link names the round whose winners (or losers) cross it                                                                     |
+
+- **Both labels are valid out of a round robin, permanently.** The factory writes `POSITION`; records converted from classic TMX, earlier factory versions and this page's examples use `WINNER`. Every engine reader decides by the source structure, so the two behave identically: qualifier progression, the qualifier position action, playoff positioning, finishing positions and the integrity scan all read `finishingPositions`.
+- **A `roundNumber` on a round robin link is allowed and decides nothing.** The factory records the groups' final round on a round robin qualifying link (`roundNumber: 3` for groups of four) and none on a playoff link.
+- **What is malformed** (`LINK_MISSING_SOURCE_ROUND`): a link that must name a round and does not: a `WINNER` or `LOSER` link out of an elimination structure with no `source.roundNumber`, or a `WINNER` link out of a round robin that names no `finishingPositions` either. A draw holding one refuses every outcome until it is repaired with [`repairMalformedLinks`](/docs/governors/draws-governor#repairmalformedlinks), which never touches a round robin link that names `finishingPositions`.
+- A `LOSER` link out of a round robin is not a finishing-position link: round robin matchUps are never directed by links.
 
 **Placeholder Qualifying Links** - Reserve qualifier positions before qualifying structures are generated:
 

@@ -1,14 +1,21 @@
+import { SCHEDULING_STEP_PROPERTIES, checkSchedulingStep } from '../scheduling/schedulingProperties';
 import { getInvariantViolations } from '../exitPropagation/invariants';
+import { schedulingReport } from '../scheduling/schedulingReport';
 import { factoryVersion } from '@Functions/global/factoryVersion';
 import { getSchemaWriteMode } from '@Global/state/globalState';
-import { canonicalHash, canonicalObject } from './hash';
 import { generatePatch } from '../../../forge/jsonPatch';
+import { canonicalHash, canonicalObject } from './hash';
 import tournamentEngine from '@Engines/syncEngine';
 import { setRandomSource } from '@Tools/prng';
 import { setClock } from '@Tools/clock';
 import addFormats from 'ajv-formats';
 import Ajv from 'ajv';
 import fs from 'fs';
+import {
+  SCHEDULE_RERUN_STABLE,
+  checkRerunStable,
+  checkSchedulingReport,
+} from '../scheduling/schedulingReportProperties';
 
 export type Directive = { method: string; params: Record<string, unknown> };
 
@@ -75,6 +82,35 @@ function violationsAcross(record: any, rules: string[]): string[] {
   return found;
 }
 
+/** a call given empty daily limits opted out of them */
+const waivesDailyLimits = ({ params }: Directive) => {
+  const limits = (params as any)?.matchUpDailyLimits;
+  return !!limits && typeof limits === 'object' && !Object.keys(limits).length;
+};
+
+type StepUnderCheck = { directive: Directive; previous?: Directive; before: any; after: any; report?: any };
+
+/** the scheduling properties a scenario claims, asked of one step: a claimed property is checked, never assumed */
+function schedulingViolations({ directive, previous, before, after, report }: StepUnderCheck, properties: string[]) {
+  const claimed = new Set(properties);
+  const { averageMatchUpMinutes, recoveryMinutes, recoveryMinutesMap } = directive.params as any;
+  const timing =
+    directive.method === 'scheduleMatchUps'
+      ? { averageMatchUpMinutes, recoveryMinutes, recoveryMinutesMap }
+      : undefined;
+  const repeated =
+    claimed.has(SCHEDULE_RERUN_STABLE) && !!report && JSON.stringify(previous) === JSON.stringify(directive);
+  return [
+    ...(SCHEDULING_STEP_PROPERTIES.some((name) => claimed.has(name))
+      ? checkSchedulingStep({ before, after, timing, dailyLimitsWaived: waivesDailyLimits(directive) })
+      : []),
+    ...checkSchedulingReport({ before, after, report, params: directive.params }),
+    ...(repeated ? checkRerunStable({ before, after }) : []),
+  ]
+    .filter((violation) => claimed.has(violation.property))
+    .map((violation) => `${violation.property}: ${violation.matchUpId ?? ''} ${violation.detail}`);
+}
+
 /**
  * Write one corpus scenario by running `directives` through the sync engine from `initialRecord`.
  *
@@ -83,8 +119,8 @@ function violationsAcross(record: any, rules: string[]): string[] {
  * returned, the RFC 6902 patch from the previous canonical state, and the SHA-256 of the canonical
  * state after. The initial record is validated against tournament.schema.json and the result
  * against corpus.schema.json; either failing is a thrown error, never a scenario with a hole in it.
- * A claimed invariant that is violated after any step is refused unless `knownFailure` names the
- * tracker entry that owns it.
+ * A claimed invariant, or a claimed scheduling step property, that is violated after any step is
+ * refused unless `knownFailure` names the tracker entry that owns it.
  */
 export function writeScenario(args: WriteScenarioArgs) {
   const { scenarioId, source, seed, clock, tags, knownFailure, initialRecord, directives } = args;
@@ -112,16 +148,23 @@ export function writeScenario(args: WriteScenarioArgs) {
     for (const directive of directives) {
       const coordinates = coordinatesFor(directive.params?.matchUpId, state);
       const outcome: any = tournamentEngine.executionQueue([{ method: directive.method, params: directive.params }]);
+      const report = schedulingReport(directive.method, outcome?.results?.[0]);
       const result = outcome?.error
         ? {
             error: outcome.error.code ?? String(outcome.error),
             ...(outcome.context ? { context: canonicalObject(outcome.context) } : {}),
           }
-        : { success: true };
+        : { success: true, ...(report ? { value: canonicalObject(report) } : {}) };
       const next = canonicalObject<any>(tournamentEngine.getTournament().tournamentRecord);
       const patch = generatePatch(state, next);
       const hash = canonicalHash(next);
-      const violatedNow = violationsAcross(next, invariants);
+      const violatedNow = [
+        ...violationsAcross(next, invariants),
+        ...schedulingViolations(
+          { directive, previous: directives[steps.length - 1], before: state, after: next, report },
+          properties,
+        ),
+      ];
       if (violatedNow.length && !knownFailure) {
         throw new CorpusWriteError(`after ${directive.method} (step ${steps.length}): ${violatedNow.join('; ')}`);
       }

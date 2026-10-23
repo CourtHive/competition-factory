@@ -406,7 +406,7 @@ describe('processAlreadyScheduledMatchUps — exclusion flags', () => {
 
 describe('scheduleProfileRounds — exclusion flag threading', () => {
   // End-to-end: the new flags must thread from the public API through
-  // scheduleProfileRounds → jinnScheduler → getVenueSchedulingDetails →
+  // scheduleProfileRounds → planSchedule → getVenueSchedulingDetails →
   // processAlreadyScheduledMatchUps without breaking the pipeline.
   it.each([
     { excludeNoDateCompleted: true, excludePriorDates: true, label: 'both defaults (true/true)' },

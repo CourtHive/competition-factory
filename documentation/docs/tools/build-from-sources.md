@@ -139,6 +139,23 @@ const { derivedLinks } = tools.buildFromSources(sources);
 
 Anything still unlinked is joined by [`repairDrawLinks`](#repairdrawlinks) and reported in `inferredLinks`.
 
+### Stored shape, TEAM events included
+
+Every source matchUp is query output, and so hydrated: it carries event and draw context, and each side carries a
+full copy of its participant. In a TEAM event the same is true of every collection matchUp inside every tie, on both
+sides, with the side's team attached too. The assembled record is therefore passed through
+[`dehydrateMatchUps`](./tools-api#dehydratematchups) before it is returned, so ties and collection matchUps are stored
+as the factory stores them: a tie's sides hold its `lineUp`, a collection matchUp's sides hold only their
+`sideNumber`, and every participant is read back from `positionAssignments` and the lineUps.
+
+The sources carry a `tieFormat` only on each tie (`getEventData` has none at the event or draw level), so the
+assembler also gives each draw the `tieFormat` most of its ties share, and an event whose draws all share one keeps
+it on the event instead, as a factory-built TEAM event does. Dehydration then drops every tie's copy that equals
+what it inherits; a tie whose format really differs keeps its own.
+
+Measured on a USTA playtennis TEAM tournament (121 teams, 127 ties, 2,467 collection matchUps): 19.7 MB without these
+steps, 4.3 MB with them, with every matchUp reading the same through the engine.
+
 ## buildTournamentRecord
 
 The lower-level assembler, for a caller that has already separated its sources.
@@ -158,8 +175,9 @@ function buildTournamentRecord(args?: {
 const record = tools.buildTournamentRecord({ eventDataDocs, matchUpDocs, participantDocs });
 ```
 
-It builds every structure and derives links from the `drawType` as above, because a draw with more than
-one structure is unreadable without them. **It does not repair links**, deliberately: a caller assembling
+It builds every structure, derives links from the `drawType` as above, because a draw with more than
+one structure is unreadable without them, and returns its matchUps in stored shape (above). **It does not
+repair links**, deliberately: a caller assembling
 a record by hand opts in to inference via `repairDrawLinks`. Unplaced matchUps, unbuilt structures and
 derived links are collected only if the caller hands over an array to collect them into, so the
 function's shape is unchanged for callers that do not want the report.

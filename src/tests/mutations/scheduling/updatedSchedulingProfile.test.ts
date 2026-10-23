@@ -5,7 +5,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { INVALID_DATE, INVALID_VALUES, SCHEDULING_PROFILE_REPAIR_REQUIRED } from '@Constants/errorConditionConstants';
 import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
 
 const scheduleDate = '2022-01-03';
@@ -148,7 +148,31 @@ it('can update a schedulingProfile when venues change', () => {
   });
   expect(result.issues.length).toEqual(1);
 
+  // reading the profile never saves its repair (CA 2026-10-23: a query runs on one side only): the stored profile still
+  // needs it, and the profile scheduler refuses, offering the repaired profile
+  result = tournamentEngine.getSchedulingProfile();
+  expect(result.modifications).toEqual(1);
+  result = tournamentEngine.scheduleProfileRounds();
+  expect(result.error).toEqual(SCHEDULING_PROFILE_REPAIR_REQUIRED);
+  expect(result.context.repairedSchedulingProfile.length).toEqual(1);
+  expect(result.context.modifications).toEqual(1);
+  result = tournamentEngine.scheduleProfileGrid();
+  expect(result.error).toEqual(SCHEDULING_PROFILE_REPAIR_REQUIRED);
+
+  // checkAndUpdateSchedulingProfile, which runs inside the mutations that orphan a round, saves it
   const { tournamentRecord: snapshot } = tournamentEngine.getTournament();
   result = checkAndUpdateSchedulingProfile({ tournamentRecord: snapshot });
+  expect(result.modifications).toEqual(1);
+  result = checkAndUpdateSchedulingProfile({ tournamentRecord: snapshot });
   expect(!!result.modifications).toEqual(false);
+
+  // and the offered profile, saved with setSchedulingProfile, is what a caller's repair does
+  tournamentEngine.setState(stored);
+  result = tournamentEngine.addTournamentExtension({ extension });
+  expect(result.success).toEqual(true);
+  const refusal: any = tournamentEngine.scheduleProfileRounds();
+  result = tournamentEngine.setSchedulingProfile({ schedulingProfile: refusal.context.repairedSchedulingProfile });
+  expect(result.success).toEqual(true);
+  expect(tournamentEngine.getSchedulingProfile().modifications).toEqual(0);
+  expect(tournamentEngine.scheduleProfileRounds().error).toBeUndefined();
 });

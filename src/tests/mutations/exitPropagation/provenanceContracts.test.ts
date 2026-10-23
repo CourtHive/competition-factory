@@ -1,18 +1,15 @@
 import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
 import { reconcileDecider } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
+import { byeSeatStands } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 import {
   deriveExitStateFromProvenance,
   withdrawProducedExits,
-  withdrawByeClaimsFrom,
   clearSideExitProvenance,
   mergeSideExitProvenance,
-  withdrawByeClaim,
   policyCodeString,
-  byeClaimSurvives,
-  recordByeClaim,
   exitCarriedFrom,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
@@ -45,45 +42,14 @@ describe('a provenance write with nothing to write to changes nothing', () => {
   it('clearSideExitProvenance', () => {
     expect(clearSideExitProvenance(undefined)).toBeUndefined();
   });
-
-  it('recordByeClaim refuses a side that is not 1 or 2', () => {
-    const matchUp: any = { matchUpId: 'm' };
-    recordByeClaim({ matchUp, claimantMatchUpId: 'claimant', sideNumber: 3 });
-    recordByeClaim({ matchUp, claimantMatchUpId: undefined, sideNumber: 1 });
-    recordByeClaim({ matchUp: undefined, claimantMatchUpId: 'claimant', sideNumber: 1 });
-    expect(matchUp.sideExitProvenance).toBeUndefined();
-
-    // CONTROL: the same call with a side that exists does write
-    recordByeClaim({ matchUp, claimantMatchUpId: 'claimant', sideNumber: 1 });
-    expect(matchUp.sideExitProvenance?.[1]?.byeClaims).toEqual(['claimant']);
-  });
-
-  it('withdrawByeClaimsFrom with no claimant leaves every claim where it is', () => {
-    const matchUp: any = { matchUpId: 'm', sideExitProvenance: { 1: { byeClaims: ['claimant'] } } };
-    withdrawByeClaimsFrom({ claimantMatchUpId: undefined, matchUps: [matchUp] });
-    expect(matchUp.sideExitProvenance[1].byeClaims).toEqual(['claimant']);
-  });
-});
-
-describe('withdrawing a claim keeps what else the side records', () => {
-  it('drops the ledger and keeps the origin when the last claim goes', () => {
-    const matchUp: any = { matchUpId: 'm', sideExitProvenance: { 1: { ...carried, byeClaims: ['claimant'] } } };
-    withdrawByeClaim({ matchUp, claimantMatchUpId: 'claimant', sideNumber: 1 });
-    expect(matchUp.sideExitProvenance).toEqual({ 1: carried });
-  });
-
-  it('drops the side when the claim was all it held', () => {
-    const matchUp: any = { matchUpId: 'm', sideExitProvenance: { 1: { byeClaims: ['claimant'] }, 2: carried } };
-    withdrawByeClaim({ matchUp, claimantMatchUpId: 'claimant', sideNumber: 1 });
-    expect(matchUp.sideExitProvenance).toEqual({ 2: carried });
-  });
 });
 
 describe('a provenance read with nothing to read answers no', () => {
-  it('byeClaimSurvives', () => {
-    const isStillDoubleExit = () => true;
-    expect(byeClaimSurvives({ matchUp: undefined, sideNumber: 1, isStillDoubleExit })).toEqual(false);
-    expect(byeClaimSurvives({ matchUp: { matchUpId: 'm' } as any, sideNumber: 3, isStillDoubleExit })).toEqual(false);
+  it('byeSeatStands', () => {
+    const drawDefinition: any = { drawId: 'd', structures: [] };
+    expect(byeSeatStands({ drawDefinition, structureId: undefined, drawPosition: 1 })).toEqual(false);
+    expect(byeSeatStands({ drawDefinition, structureId: 's', drawPosition: undefined })).toEqual(false);
+    expect(byeSeatStands({ drawDefinition, structureId: 's', drawPosition: 1 })).toEqual(false);
   });
 
   it('deriveExitStateFromProvenance', () => {

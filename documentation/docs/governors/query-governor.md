@@ -18,15 +18,15 @@ The all-draw, all-event and all-tournament query layers forward these options th
 including TEAM child lines. `getDrawData` and `getEventData` expose public structure projections;
 they forward `hydrateParticipants` but do not expose every low-level matchUp option.
 
-| Option / contract                   | Meaning and default                                                                                                                                                                                                                              |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `inContext`                         | Tournament query defaults to `true`; draw/event callers should request `true` explicitly when they need hydration. Raw `false` results are mutation references. Other options requiring context can trigger it.                                  |
-| `hydrateParticipants`               | Omitted means full participants on hydrated sides. `false` preserves side IDs, draw positions and scoring facts, but replaces `side.participant` with entry-stage/status and lucky-advancement metadata. It does not disable structural context. |
-| `afterRecoveryTimes`                | Opt-in recovery calculation from the scheduling policy; needs in-context matchUps. Forwarded through event/draw queries and TEAM children. Omit when the consumer does not need readiness/rest fields.                                           |
-| `matchUpFilters.matchUpIds`         | Narrows requested output and hydration early. TEAM parents needed to derive a requested line's context are still considered; structural completion/dependency facts come from the whole structure.                                               |
-| `contextFilters` / `matchUpFilters` | Applied to the relevant raw/context fields. A narrow payload is not permission to omit structural inputs needed to compute it.                                                                                                                   |
-| `contextProfile.exclude`            | Final output redaction, including nested TEAM lines; computation, filtering and completion happen first.                                                                                                                                         |
-| Standalone tournament matchUps      | Also returned by the tournament query, with applicable filters; lack draw/structure/event context. In-context output is copied and strips check-in attribution; raw output exposes stored references.                                            |
+| Option / contract                   | Meaning and default                                                                                                                                                                                                                                                                 |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `inContext`                         | Tournament query defaults to `true`; draw/event callers should request `true` explicitly when they need hydration. Raw `false` results are mutation references. Other options requiring context can trigger it.                                                                     |
+| `hydrateParticipants`               | Omitted means full participants on hydrated sides. `false` preserves side IDs, draw positions and scoring facts, but replaces `side.participant` with entry-stage/status and lucky-advancement metadata. It does not disable structural context.                                    |
+| `afterRecoveryTimes`                | Opt-in recovery calculation from the scheduling policy (the default scheduling policy when none is attached, as the schedulers use); needs in-context matchUps. Forwarded through event/draw queries and TEAM children. Omit when the consumer does not need readiness/rest fields. |
+| `matchUpFilters.matchUpIds`         | Narrows requested output and hydration early. TEAM parents needed to derive a requested line's context are still considered; structural completion/dependency facts come from the whole structure.                                                                                  |
+| `contextFilters` / `matchUpFilters` | Applied to the relevant raw/context fields. A narrow payload is not permission to omit structural inputs needed to compute it.                                                                                                                                                      |
+| `contextProfile.exclude`            | Final output redaction, including nested TEAM lines; computation, filtering and completion happen first.                                                                                                                                                                            |
+| Standalone tournament matchUps      | Also returned by the tournament query, with applicable filters; lack draw/structure/event context. In-context output is copied and strips check-in attribution; raw output exposes stored references.                                                                               |
 
 Hydrated objects are read projections, not a write API. Apply changes through engine mutations;
 editing a copy returned by `getState`, `getEvent` or an in-context query does not persist them.
@@ -996,14 +996,25 @@ Draw-level checks (in addition to every structure-level `issueType`):
 - `DANGLING_LINK` — a link whose `source` or `target` `structureId` is not a structure in the draw.
   Detected structurally **before** fan-out, because inContext derivation itself throws on such a
   draw. (error)
-- `LINK_MISSING_SOURCE_ROUND` — a `WINNER`/`LOSER` link with no `source.roundNumber`; the engine
-  cannot determine which round feeds the target. (error)
+- `LINK_MISSING_SOURCE_ROUND` — a link that must name a round and does not: a `WINNER`/`LOSER` link
+  out of an elimination structure with no `source.roundNumber` (missing or 0), or a `WINNER` link out of
+  a round robin naming no `finishingPositions`; the engine cannot determine which round feeds the target.
+  A link out of a round robin that names `finishingPositions` is directed by them, labelled `POSITION`
+  or `WINNER`, and needs no round: see
+  [Rounds and finishing positions](/docs/concepts/draw-links#rounds-and-finishing-positions-how-a-link-traverses). A link that is also dangling is reported
+  once, as `DANGLING_LINK`. (error)
+- `INVALID_LINK` — an entry of `links` that is not an object (`null`, a string, an array), with its
+  `linkIndex`. Every reader that dereferences it throws, so it is reported here and the rest of the
+  scan reads the draw without it. (error)
 - `SCAN_ERROR` — structure-level derivation threw on this draw (corrupt state the leaf could not
   read); surfaced rather than allowed to crash the scan. (error)
 - `DROPPED_PROGRESSION` — a `LOSER`- or `WINNER`-linked source matchUp whose feeding participant is
   **eligible** to feed the target structure yet is absent from its `positionAssignments` — a
   consolation or feed-back progression that silently failed. The `direction` field records `LOSER`
   vs `WINNER`. (error)
+
+The three link findings (`DANGLING_LINK`, `LINK_MISSING_SOURCE_ROUND`, `INVALID_LINK`) are repaired, or
+removed and reported, by [`repairMalformedLinks`](/docs/governors/draws-governor#repairmalformedlinks).
 
 **Sound progression via the engine's own feed logic.** The link alone over-approximates feeding, so
 `DROPPED_PROGRESSION` reuses the engine's actual positioning logic per direction:

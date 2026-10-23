@@ -7,18 +7,20 @@ import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { isValidExtension } from '@Validators/isValidExtension';
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { completeDrawMatchUps } from './completeDrawMatchUps';
+import { findEvent } from '@Acquire/findEvent';
 import { generateRange } from '@Tools/arrays';
 import { xa } from '@Tools/extractAttributes';
 
 // constants
 import { DRAW_DEFINITION_NOT_FOUND, ErrorType, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { MAIN, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
+import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { PARTICIPANT_ID } from '@Constants/attributeConstants';
-import { Event, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { SEEDING } from '@Constants/scaleConstants';
 
 export function generateFlightDrawDefinitions({
+  deferredOutcomes,
   matchUpStatusProfile,
   completeAllMatchUps,
   randomWinningSide,
@@ -28,6 +30,8 @@ export function generateFlightDrawDefinitions({
   isMock,
   event,
 }: {
+  /** results to apply once the tournament is scheduled (see generateEventWithDraw), instead of now */
+  deferredOutcomes?: (() => { error?: ErrorType } | undefined)[];
   random?: () => number;
   matchUpStatusProfile?: any;
   completeAllMatchUps?: boolean | string;
@@ -102,19 +106,30 @@ export function generateFlightDrawDefinitions({
     });
 
     if (!manual && (completion.completeAllMatchUps || completionGoal)) {
-      const completeResult = completeFlightMatchUps({
-        matchUpFormat: drawProfiles[index]?.matchUpFormat,
-        drawType: drawProfiles[index]?.drawType,
-        matchUpStatusProfile: completion.matchUpStatusProfile,
-        completeAllMatchUps: completion.completeAllMatchUps,
-        randomWinningSide: completion.randomWinningSide,
-        tournamentRecord,
-        drawDefinition,
-        completionGoal,
-        random,
-        event,
-      });
-      if (completeResult?.error) return { error: completeResult.error, drawIds: [] };
+      const complete = (target: { drawDefinition: DrawDefinition; event: Event }) =>
+        completeFlightMatchUps({
+          matchUpFormat: drawProfiles[index]?.matchUpFormat,
+          drawType: drawProfiles[index]?.drawType,
+          matchUpStatusProfile: completion.matchUpStatusProfile,
+          completeAllMatchUps: completion.completeAllMatchUps,
+          randomWinningSide: completion.randomWinningSide,
+          drawDefinition: target.drawDefinition,
+          event: target.event,
+          tournamentRecord,
+          completionGoal,
+          random,
+        });
+      if (deferredOutcomes) {
+        deferredOutcomes.push(() => {
+          const found = findEvent({ tournamentRecord, drawId });
+          return found.event && found.drawDefinition
+            ? complete({ drawDefinition: found.drawDefinition, event: found.event })
+            : undefined;
+        });
+      } else {
+        const completeResult = complete({ drawDefinition, event });
+        if (completeResult?.error) return { error: completeResult.error, drawIds: [] };
+      }
     }
   }
 

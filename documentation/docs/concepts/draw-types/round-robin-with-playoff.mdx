@@ -106,6 +106,20 @@ This creates:
 - A "Gold" playoff bracket receiving the top 2 from each group (8 participants).
 - A "Silver" playoff bracket receiving positions 3-4 from each group (8 participants).
 
+### Playoff group draw types
+
+Each playoff group may name the `drawType` it is built as. When `drawType` is omitted (or `null`), the group is built as `SINGLE_ELIMINATION`; a group of only 2 participants is always built as `SINGLE_ELIMINATION`. The draw types a playoff group can be built as are:
+
+- `SINGLE_ELIMINATION`
+- `COMPASS`, `OLYMPIC`, `PLAYOFF`
+- `FEED_IN_CHAMPIONSHIP`, `FEED_IN_CHAMPIONSHIP_TO_R16`, `FEED_IN_CHAMPIONSHIP_TO_QF`, `FEED_IN_CHAMPIONSHIP_TO_SF`, `MODIFIED_FEED_IN_CHAMPIONSHIP`, `FIRST_MATCH_LOSER_CONSOLATION`
+- `FIRST_ROUND_LOSER_CONSOLATION`, `CURTIS_CONSOLATION`
+- `ROUND_ROBIN` (the group's own `structureOptions.groupSize` defaults to 4)
+- `PAGE_PLAYOFF` (exactly 4 participants)
+- `AD_HOC`
+
+Any other value (an empty string, the stage constant `PLAY_OFF`, `ROUND_ROBIN_WITH_PLAYOFF`, a non-string) is refused with `UNRECOGNIZED_DRAW_TYPE` before anything is generated. The refusal's `info` and `context` name the offending group (`context.playoffGroupIndex`, `context.drawType`) and list `context.validDrawTypes`. One unbuildable group refuses the whole request: no draw is generated and no playoff structure is added, so the other groups are never half-built. `generateDrawDefinition`, `addPlayoffStructures`, `generateAndPopulatePlayoffStructures` and `validatePlayoffGroups` all apply the same check.
+
 ## Best Finishers (Cross-Group Advancement)
 
 When you need to advance a number of participants that isn't evenly divisible by the number of groups, use the `bestOf` option. This selects all participants from the specified `finishingPositions`, then fills remaining slots with the best-ranked participants from subsequent finishing positions using cross-group comparison via `GEMscore`.
@@ -167,6 +181,7 @@ const { valid, info } = engine.validatePlayoffGroups({
 
 This validates:
 
+- each group's `drawType` (see [Playoff group draw types](#playoff-group-draw-types))
 - `bestOf` bounds and `rankBy` values
 - Cross-group consumption (no standard group ends up with fewer than 2 participants)
 - Total claimed participants don't exceed available

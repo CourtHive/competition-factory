@@ -10,6 +10,7 @@ import { getQualifiersCount } from '@Query/drawDefinition/getQualifiersCount';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { composeThenWrite, isStoredDraw } from '@Tools/composeThenWrite';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { getStageEntries } from '@Query/drawDefinition/stageGetter';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -432,13 +433,48 @@ function seedUnpositionedStructure(params: AutomatedPositioningArgs & { structur
   }
 }
 
-export function automatedPositioning(params: AutomatedPositioningArgs): ResultType & {
+type AutomatedPositioningResult = ResultType & {
   positionAssignments?: PositionAssignment[];
   seedAssignments?: SeedAssignment[];
   positioningReport?: { [key: string]: any }[];
   success?: boolean;
   conflicts?: any[];
-} {
+};
+
+/**
+ * Positions a structure: seeds, BYEs, qualifiers and the unseeded, in the order the seeding profile asks.
+ *
+ * COMPOSE, THEN WRITE. Each step places on the draw the next step reads, and a later step can refuse
+ * (the unseeded find too few seats once the seeds and BYEs are placed; a qualifier finds no seat). So the
+ * whole positioning is first composed on a working copy of the draw; a refusal there is returned with the
+ * stored record untouched, and only a positioning that composed is written — making the same choices
+ * (`composeThenWrite`). `applyPositioning: false` is the composition alone: the copy's positioning is
+ * returned and the stored draw is not written.
+ */
+export function automatedPositioning(params: AutomatedPositioningArgs): AutomatedPositioningResult {
+  // a preview, or a draw still being generated (a refusal discards it whole)
+  if (params.applyPositioning === false || !isStoredDraw(params)) return positionStructure(params);
+
+  return composeThenWrite({
+    // the working copy is the draw's; a map or hydration the caller built from the stored draw is not
+    compose: (random) =>
+      positionStructure({
+        ...params,
+        inContextDrawMatchUps: undefined,
+        applyPositioning: false,
+        matchUpsMap: undefined,
+        random,
+      }),
+    write: (random) => positionStructure({ ...params, random }),
+    random: params.random,
+  });
+}
+
+/**
+ * One structure's positioning, against `drawDefinition` as given — or, with `applyPositioning: false`,
+ * against a copy of it with notifications held. Not atomic on its own: callers compose first.
+ */
+export function positionStructure(params: AutomatedPositioningArgs): AutomatedPositioningResult {
   let { drawDefinition } = params;
   const {
     applyPositioning = true,
@@ -473,6 +509,7 @@ export function automatedPositioning(params: AutomatedPositioningArgs): ResultTy
   if (initialError) return handleErrorCondition({ error: initialError }, applyPositioning);
 
   if (!entries?.length && !qualifiersCount) return handleSuccessCondition({ ...SUCCESS }, applyPositioning);
+
   seedUnpositionedStructure({ ...params, appliedPolicies, drawDefinition, structure });
 
   const matchUpsMap = params.matchUpsMap ?? getMatchUpsMap({ drawDefinition });

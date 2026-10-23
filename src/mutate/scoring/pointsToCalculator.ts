@@ -14,10 +14,11 @@
 
 import type { MatchUp, FormatStructure, SetFormatStructure, SetScore } from '@Types/scoring/types';
 import { isAggregateFormat, isStandardSetTiebreak } from '@Tools/scoring/scoringUtilities';
+import { checkStandardGameWon, checkStandardSetWon, checkTiebreakWon } from './gameWon';
 import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
-import { checkStandardGameWon, checkTiebreakWon } from './gameWon';
 import type { SetType } from '@Tools/scoring/scoringUtilities';
 import { aggregateTotals } from './matchCompletion';
+import { setFormatFor } from './judgeSet';
 
 export interface PointsToDecoration {
   pointsToGame: [number, number];
@@ -51,7 +52,8 @@ export function calculatePointsTo(
   const currentSet = getCurrentSet(matchUp);
   const setsWon = getSetsWon(matchUp);
   const bestOf = formatStructure.exactly || formatStructure.bestOf || 3;
-  const setsToWin = Math.ceil(bestOf / 2);
+  // a majority of the sets (§ 9.1; SE2a-D7)
+  const setsToWin = Math.floor(bestOf / 2) + 1;
 
   // Get current game point scores
   const { side1Points, side2Points } = getCurrentGamePoints(currentSet);
@@ -219,72 +221,30 @@ function sidePointsUntilWon(
 }
 
 /**
- * Calculate games each side needs to win the current set
+ * `gamesToSet` (§ 11.2): the games each side must win in a row to win the set, the game in play included, counted
+ * against the predicate that completes the set, so a margin, an advantage set and a tiebreak (one more game) agree
+ * (SE2b-D23, CA 2026-10-21). A tiebreak-only set is one game.
  */
 function calcGamesToSet(
   currentSet: SetScore | undefined,
   activeSetFormat: SetFormatStructure,
   setType: SetType,
 ): [number, number] {
-  // Tiebreak-only / match tiebreak: 1 game = 1 set, always 1 game needed at start
-  if (setType === 'tiebreakOnly' || setType === 'matchTiebreak') {
-    // If set is in progress (no winner yet), need 1 game
-    if (!currentSet || currentSet.winningSide !== undefined) return [1, 1];
-    return [1, 1]; // The "game" is the entire tiebreak
-  }
-
-  // Standard set
-  const s1 = currentSet?.side1Score || 0;
-  const s2 = currentSet?.side2Score || 0;
-  const setTo = activeSetFormat.setTo || 6;
-  const tiebreakAt = (typeof activeSetFormat.tiebreakAt === 'number' ? activeSetFormat.tiebreakAt : undefined) ?? setTo;
-  const noTiebreak = activeSetFormat.noTiebreak || false;
-  const winBy = activeSetFormat.winBy || 2;
-
-  return [
-    calcSideGamesToSet(s1, s2, setTo, tiebreakAt, noTiebreak, winBy),
-    calcSideGamesToSet(s2, s1, setTo, tiebreakAt, noTiebreak, winBy),
-  ];
+  if (setType === 'tiebreakOnly' || setType === 'matchTiebreak') return [1, 1];
+  const games: [number, number] = [currentSet?.side1Score || 0, currentSet?.side2Score || 0];
+  return [gamesInARow(games, 0, activeSetFormat), gamesInARow(games, 1, activeSetFormat)];
 }
 
-function calcSideGamesToSet(
-  myGames: number,
-  oppGames: number,
-  setTo: number,
-  tiebreakAt: number,
-  noTiebreak: boolean,
-  winBy: number,
-): number {
-  // At tiebreak threshold: need 1 more game (the tiebreak)
-  if (!noTiebreak && myGames === tiebreakAt && oppGames === tiebreakAt) {
-    return 1;
+/** a guard on every count: no set rule needs more games than this to finish */
+const GAMES_LIMIT = 200;
+
+function gamesInARow(from: [number, number], side: 0 | 1, setFormat: SetFormatStructure): number {
+  const games: [number, number] = [...from];
+  for (let count = 1; count <= GAMES_LIMIT; count++) {
+    games[side] += 1;
+    if (checkStandardSetWon(games[0], games[1], setFormat, false) === side) return count;
   }
-
-  // Already at or above setTo
-  if (myGames >= setTo) {
-    const diff = myGames - oppGames;
-    if (diff >= winBy) return 0; // Already won
-    // Need to build margin (no tiebreak or advantage set)
-    return winBy - diff;
-  }
-
-  // Simple case: games needed to reach setTo
-  const needed = setTo - myGames;
-
-  // If opponent is close enough that we'll need a tiebreak/margin
-  if (oppGames >= setTo - 1 && myGames >= setTo - 1) {
-    // Both close to setTo — may need tiebreak
-    if (!noTiebreak) {
-      // Tiebreak available: at worst need to reach tiebreakAt + win tiebreak
-      return Math.max(1, setTo - myGames);
-    }
-    // No tiebreak: need winBy margin
-    const diff = myGames - oppGames;
-    if (diff >= winBy) return 0;
-    return winBy - diff;
-  }
-
-  return needed;
+  return -1;
 }
 
 /**
@@ -343,14 +303,28 @@ function calcPointsToMatch(
   if (formatStructure.exactly && !isAggregateFormat(formatStructure))
     return exactlyPointsToMatch(pointsToSet, setsWon, formatStructure, matchUp);
 
-  // Calculate minimum points per set for remaining sets
-  const sf = formatStructure.setFormat;
-  const minPointsPerSet = getMinPointsPerSet(sf, formatStructure);
+  const side = (index: 0 | 1): number => {
+    const needed = Math.max(0, setsToWin - setsWon[index] - 1);
+    return pointsToSet[index] + laterSetsInARow(matchUp, formatStructure, index, needed);
+  };
+  return [side(0), side(1)];
+}
 
-  return [
-    calcSidePointsToMatch(pointsToSet[0], setsWon[0], setsToWin, minPointsPerSet),
-    calcSidePointsToMatch(pointsToSet[1], setsWon[1], setsToWin, minPointsPerSet),
-  ];
+/**
+ * The points of the `count` sets after the one in play that `side` must win in a row, each at the minimum of the
+ * format governing it then (§ 3.2, § 11.2): a deciding set at the final format's (SE2b-D25, CA 2026-10-21).
+ */
+function laterSetsInARow(matchUp: MatchUp, formatStructure: FormatStructure, side: 0 | 1, count: number): number {
+  const sets: SetScore[] = matchUp.score.sets.filter(isClosedSet);
+  const won = (setNumber: number): SetScore => ({ setNumber, side1Score: 0, side2Score: 0, winningSide: side + 1 });
+  sets.push(won(sets.length + 1));
+  let total = 0;
+  for (let k = 1; k <= count; k++) {
+    const setNumber = sets.length + 1;
+    total += getMinPointsPerSet(setFormatFor(formatStructure, sets, setNumber), formatStructure);
+    sets.push(won(setNumber));
+  }
+  return total;
 }
 
 /** A set that is over: won, or a timed segment closed with or without a winner. */
@@ -424,6 +398,11 @@ function aggregatePointsToMatch(
   return [side(0), side(1)];
 }
 
+/**
+ * The fewest points that win a set of this format from its start (§ 11.2, "at their minimum"): a race's points, or
+ * the games that win a set from love, each at the fewest points that win a game (four, or a consecutive game's run).
+ * A timed segment, outs and a combined total have no points minimum.
+ */
 function getMinPointsPerSet(sf: SetFormatStructure | undefined, formatStructure: FormatStructure): number {
   if (!sf) return 24; // Default: 6 games × 4 points
 
@@ -431,25 +410,12 @@ function getMinPointsPerSet(sf: SetFormatStructure | undefined, formatStructure:
     return sf.tiebreakSet.tiebreakTo || 11;
   }
 
-  if (sf.timed) return 0; // Can't calculate
+  if (sf.timed || sf.outs || sf.combinedPointTotal) return 0;
 
-  const setTo = sf.setTo || 6;
   const gameType = formatStructure.gameFormat?.type;
   const minPointsPerGame = gameType === 'CONSECUTIVE' ? formatStructure.gameFormat?.count || 3 : 4;
 
-  return setTo * minPointsPerGame;
-}
-
-function calcSidePointsToMatch(
-  pointsToCurrentSet: number,
-  setsWonBySide: number,
-  setsToWin: number,
-  minPointsPerSet: number,
-): number {
-  if (setsWonBySide >= setsToWin) return 0; // Already won
-
-  const remainingSets = Math.max(0, setsToWin - setsWonBySide - 1);
-  return pointsToCurrentSet + remainingSets * minPointsPerSet;
+  return gamesInARow([0, 0], 0, sf) * minPointsPerGame;
 }
 
 /**

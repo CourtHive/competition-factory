@@ -14,7 +14,7 @@ import {
   type PropertyFailure,
 } from './transitions';
 import {
-  checkClaimsLive,
+  checkLoserSeatsDerived,
   checkArrivalsTrue,
   checkDoUndoIdentity,
   checkIdempotence,
@@ -429,6 +429,7 @@ function replayWithContext(
     const failures = [
       ...checkErrorAtomicity(observation, target.matchUpId),
       ...checkInvariants(observation, target.matchUpId),
+      ...checkLoserSeatsDerived(drawId),
     ];
     for (const failure of failures) addFinding(context, failure);
     options.onStep?.({ index, step, observation });
@@ -440,8 +441,8 @@ function replayWithContext(
   if (integrity.length) return { ...integrity[0], stage: 'final' };
   const arrivals = checkArrivalsTrue(drawId);
   if (arrivals.length) return { ...arrivals[0], stage: 'final' };
-  const claims = checkClaimsLive(drawId);
-  if (claims.length) return { ...claims[0], stage: 'final' };
+  const seats = checkLoserSeatsDerived(drawId);
+  if (seats.length) return { ...seats[0], stage: 'final' };
   if (coverage) {
     const inconsistent = checkCodesConsistent(drawId, '-');
     coverage.codesInconsistentMatchUps += inconsistent.length;

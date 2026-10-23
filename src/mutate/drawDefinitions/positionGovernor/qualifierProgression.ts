@@ -84,7 +84,7 @@ export function qualifierProgression({
     getSourceStructureIdsAndRelevantLinks({
       structureId: mainStructure.structureId,
       targetRoundNumber,
-      linkType: WINNER, // WINNER of qualifying structures will traverse link
+      linkType: WINNER, // links that traverse by ROUND: the winners of an elimination qualifying round
       drawDefinition,
     }) ?? {};
 
@@ -92,7 +92,7 @@ export function qualifierProgression({
     getSourceStructureIdsAndRelevantLinks({
       structureId: mainStructure.structureId,
       targetRoundNumber,
-      linkType: POSITION, // link will define how many finishingPositions traverse the link
+      linkType: POSITION, // links that traverse by FINISHING POSITION: out of a round robin, labelled POSITION or WINNER
       drawDefinition,
     }) ?? {};
 
@@ -170,7 +170,12 @@ function collectEliminationQualifiers({
 
       if (winningSide || relevantSide) {
         const { participantId } = winningSide ?? relevantSide ?? {};
-        if (participantId && !assignedParticipantIds.includes(participantId)) {
+        // once each: a participant who won several matchUps of the source is one qualifier, not several
+        if (
+          participantId &&
+          !assignedParticipantIds.includes(participantId) &&
+          !qualifyingParticipantIds.includes(participantId)
+        ) {
           qualifyingParticipantIds.push(participantId);
         }
       }
@@ -196,6 +201,11 @@ function collectRoundRobinQualifiers({
     });
     if (!structureCompleted) continue;
 
+    // the link names the group finishing positions that qualify (`[1]`: every group's winner; `[1, 2]`: the top two),
+    // whether it is labelled POSITION or WINNER; a link naming none qualifies the winners
+    const finishingPositions: number[] = sourceLink.source.finishingPositions?.length
+      ? sourceLink.source.finishingPositions
+      : [1];
     const { positionAssignments } = getPositionAssignments({ structure });
     const relevantParticipantIds =
       positionAssignments
@@ -204,7 +214,12 @@ function collectRoundRobinQualifiers({
           const results = firstClassOrExtension({ element: assignment, attribute: 'tally', name: TALLY });
           return results ? { participantId, groupOrder: results?.groupOrder } : {};
         })
-        .filter(({ groupOrder, participantId }) => groupOrder === 1 && !assignedParticipantIds.includes(participantId))
+        .filter(
+          ({ groupOrder, participantId }) =>
+            finishingPositions.includes(groupOrder) &&
+            !assignedParticipantIds.includes(participantId) &&
+            !qualifyingParticipantIds.includes(participantId),
+        )
         .map(({ participantId }) => participantId) ?? [];
 
     if (relevantParticipantIds) qualifyingParticipantIds.push(...relevantParticipantIds);

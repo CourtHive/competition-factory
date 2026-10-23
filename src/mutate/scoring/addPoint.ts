@@ -13,8 +13,8 @@
  * - NoAD games and tiebreaks
  */
 
+import { checkStandardGameWon, checkStandardSetWon, checkTiebreakWon } from './gameWon';
 import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
-import { checkStandardGameWon, checkTiebreakWon } from './gameWon';
 import type { SetType } from '@Tools/scoring/scoringUtilities';
 import type { PointMultiplier } from './resolvePointValue';
 import { checkAndFinalizeMatch } from './matchCompletion';
@@ -28,7 +28,6 @@ import { nowIso } from '@Tools/clock';
 import {
   inputLevels,
   resolveSetType,
-  setHasTiebreak,
   inputLevelError,
   isLiveDecidingSet,
   isAggregateFormat,
@@ -264,7 +263,7 @@ function handleStandardSet(
   const gameOffset = side1Games + side2Games - pointBasedGames;
   (point as any).set = currentSetIndex;
   (point as any).game = gameOffset + currentGameIndex;
-  (point as any).number = side1Points + side2Points;
+  (point as any).number = pointsPlayedBefore(matchUp, point, side1Points + side2Points);
 
   // Add point to winner
   if (winner === 0) {
@@ -282,8 +281,12 @@ function handleStandardSet(
   const isConsecutive = formatStructure.gameFormat?.type === 'CONSECUTIVE';
   const consecutiveCount = formatStructure.gameFormat?.count || 3;
 
-  // Track streak for CONSECUTIVE games
-  if (isConsecutive) {
+  // Check if in tiebreak: the ACTIVE format's say, deciding set or not — see `setHasTiebreak`
+  const isTiebreak = isStandardSetTiebreak(activeSetFormat, side1Games, side2Games);
+
+  // Track streak for CONSECUTIVE games: a tiebreak is scored point by point whatever the game format, so it keeps
+  // no streak (§ 1.2, § 4.3)
+  if (isConsecutive && !isTiebreak) {
     const streak = currentSet.currentStreak;
     if (streak?.side === winner) {
       currentSet.currentStreak = { side: winner, count: streak.count + 1 };
@@ -291,9 +294,6 @@ function handleStandardSet(
       currentSet.currentStreak = { side: winner, count: 1 };
     }
   }
-
-  // Check if in tiebreak: the ACTIVE format's say, deciding set or not — see `setHasTiebreak`
-  const isTiebreak = isStandardSetTiebreak(activeSetFormat, side1Games, side2Games);
 
   // Check if game is won
   let gameWon: number | undefined;
@@ -410,7 +410,7 @@ function handleTiebreakOnlySet(
   // V3-compatible point metadata
   (point as any).set = currentSetIndex;
   (point as any).game = 0; // Always game 0 (the entire set is one game)
-  (point as any).number = side1Points + side2Points;
+  (point as any).number = pointsPlayedBefore(matchUp, point, side1Points + side2Points);
 
   // Add point to winner (with multiplier support)
   if (winner === 0) {
@@ -475,7 +475,7 @@ function handleMatchTiebreak(
   // V3-compatible point metadata
   (point as any).set = currentSetIndex;
   (point as any).game = 0;
-  (point as any).number = side1Points + side2Points;
+  (point as any).number = pointsPlayedBefore(matchUp, point, side1Points + side2Points);
 
   // Add point (with multiplier support)
   if (winner === 0) {
@@ -510,6 +510,19 @@ function handleMatchTiebreak(
  */
 /** A point with the set, game and point-in-game coordinates the scorer writes onto it. */
 type PlacedPoint = Point & { set?: number; game?: number; number?: number };
+
+/**
+ * A point's `number`: the points played in its game before it (§ 11.1), not their values. The running score counts
+ * values, so each earlier point of the game worth other than one is taken back to one (SE2a-D12, CA 2026-10-21).
+ */
+function pointsPlayedBefore(matchUp: MatchUp, point: Point, runningScore: number): number {
+  const { set, game } = point as PlacedPoint;
+  const earlier = (matchUp.history?.points ?? []) as PlacedPoint[];
+  const extra = earlier
+    .filter((before) => before !== point && before.set === set && before.game === game)
+    .reduce((sum, before) => sum + (before.scoreValue ?? 1) - 1, 0);
+  return runningScore - extra;
+}
 /** A set a timed segment or tiebreak closes. */
 type ClosableSet = SetScore & { segmentComplete?: boolean };
 
@@ -538,7 +551,11 @@ function handleTimedSet(
   }
 
   (point as PlacedPoint).game = 0;
-  (point as PlacedPoint).number = (currentSet.side1Score || 0) + (currentSet.side2Score || 0);
+  (point as PlacedPoint).number = pointsPlayedBefore(
+    matchUp,
+    point,
+    (currentSet.side1Score || 0) + (currentSet.side2Score || 0),
+  );
 
   // Just increment the score — set doesn't auto-complete (with multiplier support)
   if (winner === 0) {
@@ -697,39 +714,6 @@ function getOrCreateSet(matchUp: MatchUp, isTiebreakOnly: boolean, isTimed: bool
   return newSet;
 }
 
-/**
- * Check if a standard set is won
- */
-export function checkStandardSetWon(
-  side1Games: number,
-  side2Games: number,
-  setFormat: SetFormatStructure,
-  isDecidingSet: boolean,
-  finalSetFormat?: SetFormatStructure,
-): number | undefined {
-  const setTo = setFormat.setTo || 6;
-  const tiebreakAt = (typeof setFormat.tiebreakAt === 'number' ? setFormat.tiebreakAt : undefined) ?? setTo;
-  const activeFormat = isDecidingSet && finalSetFormat ? finalSetFormat : setFormat;
-  const noTiebreak = !setHasTiebreak(activeFormat);
-
-  const winBy = activeFormat.winBy || 2;
-
-  // Check if tiebreak was played and won (e.g., 7-6 after tiebreak at 6-6)
-  if (!noTiebreak && (side1Games === tiebreakAt + 1 || side2Games === tiebreakAt + 1)) {
-    return side1Games > side2Games ? 0 : 1;
-  }
-
-  // Regular set win (must meet threshold and win by margin)
-  if (side1Games >= setTo || side2Games >= setTo) {
-    const diff = Math.abs(side1Games - side2Games);
-    if (diff >= winBy) {
-      return side1Games > side2Games ? 0 : 1;
-    }
-  }
-
-  return undefined;
-}
-
 const SIDE_INDEX = new Set([0, 1]);
 const SIDE_NUMBER = new Set([1, 2]);
 
@@ -813,6 +797,12 @@ export function deriveServer(matchUp: MatchUp, formatStructure: FormatStructure,
   // Under @RALLY a correction names the server of the next point only: the rule resumes after it.
   if (matchUp.serverFlip !== undefined) {
     return matchUp.serverFlip ? ((1 - baseServer) as 0 | 1) : baseServer;
+  }
+  // A record that names its initial server and has no point yet is oriented by it (SE3-E1): v2 writes no
+  // serverFlip, so this is how v1 reads the record v2 writes. Once a point is played, its server says it.
+  const initialServer = matchUp.history?.initialServer;
+  if ((initialServer === 0 || initialServer === 1) && !matchUp.history?.points?.length) {
+    return initialServer === 1 ? ((1 - baseServer) as 0 | 1) : baseServer;
   }
   if (rule !== 'rotation') return baseServer;
 
@@ -937,3 +927,6 @@ export function formatGameScore(p1: number, p2: number, isTiebreak: boolean, isC
 
   return `${p1 < 4 ? points[p1] : '0'}-${p2 < 4 ? points[p2] : '0'}`;
 }
+
+// where it lived before gameWon held every win predicate; its importers read it from here
+export { checkStandardSetWon };

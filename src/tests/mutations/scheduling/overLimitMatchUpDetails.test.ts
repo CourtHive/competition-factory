@@ -5,11 +5,11 @@ import { describe, expect, it } from 'vitest';
 // Fixtures
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
 
-// Regression for the "Explain why over capacity" enrichment. jinnScheduler
+// Regression for the "Explain why over capacity" enrichment. The scheduler
 // historically returned only flat `overLimitMatchUpIds[date]: string[]` —
 // operators had no way to see WHICH participant on a refused matchUp hit
 // WHICH counter. The additive `overLimitMatchUpDetails[date]` payload
-// surfaces that detail per attempt.
+// surfaces that detail, once per refused matchUp per date.
 describe('overLimitMatchUpDetails', () => {
   it('populates participant + counter detail when a matchUp is refused for daily limits', () => {
     const startDate = '2024-06-15';
@@ -80,11 +80,9 @@ describe('overLimitMatchUpDetails', () => {
       }
     }
 
-    // Every matchUpId in overLimitMatchUpIds must appear at least once
-    // in the details payload (every refusal got an explanation).
-    const detailIds = new Set(details.map((d) => d.matchUpId));
-    for (const id of overLimitIds) {
-      expect(detailIds.has(id)).toEqual(true);
-    }
+    // Every matchUpId in overLimitMatchUpIds has exactly one entry in the details payload: every refusal
+    // got an explanation, and a matchUp over a limit is asked once per date, not at every slot after (CA 2026-10-23)
+    const detailIds = details.map((d) => d.matchUpId);
+    expect(detailIds.toSorted()).toEqual(overLimitIds.toSorted());
   });
 });

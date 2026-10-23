@@ -182,8 +182,10 @@ runs sample fresh seeds, not new code — and all are closed in 7.10.0, held by
 
 **Classify a stall before tracing it.** Replay the seed with and without `rollbackOnError: true` and
 count refusals that changed the draw. A stall that exists only without rollback is the downstream
-effect of a refusal-after-write (`ERROR_IMPLIES_NO_MUTATION`); TMX and the server call with rollback
-on, so production sees a clean refusal, but the root is still in the pipeline. Then ask why an exit
+effect of a refusal-after-write (`ERROR_IMPLIES_NO_MUTATION`). That is a defect in the method, not a
+case rollback covers: a method's error must leave the record unchanged on a direct call, so the root
+is in the pipeline and is fixed there — the replay with rollback only separates it from a stall
+with another cause. Then ask why an exit
 did not travel as far as its participant would have: run 9's only stall looked like a RULE 4 refusal
 and was a carried exit dropped at a BYE in a structure's last round, two steps earlier.
 
@@ -290,11 +292,19 @@ establish LEGACY/BRIDGE behavior. A frozen zero describes those fixtures; new se
 
 `DO_UNDO_IDENTITY` compares a projection, and leaves out by ruling what forward play records in some entry orders and
 not others: arrival entries (F4) and the `{ BYE, BYE }` origin pair (F5), the legacy `matchUpStatusCodes` array (F1,
-counted by the `CODES_CONSISTENT` ledger), BYE drawPositions rendered as `BYE` (R10), and, since 2026-10-20, BYE claims
-on a loser seat that a BYE matchUp feeds across a link (CA ruling (b): the claim ledger records who claims a BYE, not
-why it was placed, so such a claim is history-dependent by design; see the concepts page, census Phase B). Each
-omission is policed for truth by `ARRIVAL_TRUE`: an entry or claim that is present must be true, so an omission hides
-only absence, never a falsehood.
+counted by the `CODES_CONSISTENT` ledger), and BYE drawPositions rendered as `BYE` (R10). From 2026-10-20 to
+2026-10-22 it also left out BYE claims on a loser seat a BYE matchUp feeds (CA ruling (b)); the `byeClaims` ledger is
+retired (Mentat P58), so nothing claims a BYE and that exclusion is gone. Each omission is policed for truth by
+`ARRIVAL_TRUE`: an entry that is present must be true, so an omission hides only absence, never a falsehood.
+
+`LOSER_SEAT_DERIVED` holds every replay step to a reading of the draw rather than of the claim ledger (since
+2026-10-21; the ledger is being retired, Mentat P58). For every matchUp with a loser link, `feederSendsNobody` says
+whether it will ever send anyone across that link: not when it holds a BYE, is a double exit, was won against an exit,
+is pending with a double exit's produced exit that came along its winner path (one that came over a loser link waits for
+the award, P39), or feeds a FIRST_MATCHUP link that excludes every candidate loser. A propagated BYE on
+the seat it feeds must have such a reason, and a participant there must not. Whether a seat whose feeder sends nobody
+shows a BYE or a produced exit is left to the policy and the rules that place them. Measured before it was asserted:
+2,493,487 seat observations in the census gate inputs and 118,803 in the exitPropagation suite, with no contradiction.
 
 ### Replay dispositions and receipts
 

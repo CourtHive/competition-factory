@@ -2,10 +2,12 @@ import fs from 'fs';
 
 /**
  * The core method set the corpus harvests (plan § 6, draft pending CA's decision § 9.3): the
- * mutation and generation exports of the scoring, matchUp, draws and entries governors, plus the
- * generation and matchUpFormat governors. Queries are excluded by construction: only `mutate` and
- * `generate` barrels are read, and the two governors read whole export nothing but mutations and
- * a pure grammar.
+ * mutation and generation exports of the scoring, matchUp, draws, entries and schedule governors,
+ * plus the generation and matchUpFormat governors. The schedule governor joined for the scheduling
+ * pipeline's corpus (CA 2026-10-22, `SCHEDULING_PIPELINE_VNEXT.md` § 5). Queries are excluded: only
+ * `mutate` and `generate` barrels are read, the two governors read whole export nothing but
+ * mutations and a pure grammar, and the read-only exports a `mutate` barrel carries anyway are
+ * listed in READ_ONLY_EXPORTS.
  *
  * Derived from the governor SOURCE TEXT, not by importing the modules. Importing them from a
  * setup file populates the module registry before a test file's `vi.mock` is hoisted, so a test
@@ -20,6 +22,7 @@ const SOURCES = [
   'src/assemblies/governors/drawsGovernor/mutate.ts',
   'src/assemblies/governors/drawsGovernor/generate.ts',
   'src/assemblies/governors/entriesGovernor/mutate.ts',
+  'src/assemblies/governors/scheduleGovernor/mutate.ts',
   'src/assemblies/governors/generationGovernor/index.ts',
   'src/assemblies/governors/matchUpFormatGovernor/index.ts',
 ];
@@ -40,10 +43,26 @@ function exportedNames(source: string): string[] {
   return names;
 }
 
+/**
+ * Exports of a `mutate` barrel that write nothing, so harvesting them recorded steps with empty patches: queries and
+ * pure generators the schedule governor's barrel carries beside its mutations (SCHEDULING_PIPELINE_VNEXT.md § 5). Each
+ * was read for writes before it was listed: none touches the record.
+ */
+const READ_ONLY_EXPORTS = new Set([
+  'validateSchedulingProfile',
+  'validateScheduleScenario',
+  'findMatchUpFormatTiming',
+  'generateVirtualCourts',
+  'generateBookings',
+  'proConflicts',
+]);
+
 export const CORE_METHOD_SOURCES: Readonly<Record<string, string[]>> = Object.fromEntries(
   SOURCES.map((file) => [
     file.replace('src/assemblies/governors/', '').replace(/\.ts$/, ''),
-    exportedNames(fs.readFileSync(file, 'utf8')).sort((a, b) => a.localeCompare(b)),
+    exportedNames(fs.readFileSync(file, 'utf8'))
+      .filter((name) => !READ_ONLY_EXPORTS.has(name))
+      .sort((a, b) => a.localeCompare(b)),
   ]),
 );
 

@@ -19,6 +19,10 @@ rule disagree, this page states the rule and records v1's behaviour as **a v1 de
 cutover** (the differential of v1 against v2 surfaces each one); it does not encode a v1 accident as
 the rule. A persisted record v1 wrote is still read as v1 read it (§ 12.8).
 
+**Since SE4 (CA 2026-10-22) the `ScoringEngine` is the reducer this page specifies; v1 is retired.** Every
+v1 defect recorded here was ruled and brought to the rule, by the differential of v1 against v2, before v1
+went; the notes on v1 stay as the record of what changed. The differential retired with v1.
+
 ```text
 state = reduce(configuration, timeline)
 
@@ -75,9 +79,11 @@ The state is a CODES matchUp: `matchUpFormat`, `matchUpStatus`, `matchUpType`, t
   `side1TiebreakScore`/`side2TiebreakScore` when a tiebreak was played, `winningSide` when won, the
   per-game point counts `side1GameScores`/`side2GameScores` of the games played point by point, and
   engine marks: `isTiebreakOnly`, `isTimed`, `segmentComplete` (a timed segment closed, with or
-  without a winner) and `currentStreak` (a consecutive-points game in progress).
+  without a winner) and `currentStreak` (a consecutive-points game in progress; never in a set
+  tiebreak, which no consecutive-points rule reaches, § 4.3).
 - `history.points` holds the materialized points (§ 11.1); `history.entries` is the timeline
-  (§ 12.1); `history.substitutions` mirrors the substitution entries.
+  (§ 12.1); `history.substitutions` mirrors the substitution entries; `history.initialServer` is the
+  match's initial server, when one was named before anything was recorded (§ 2.6).
 
 ### 1.3 Sides
 
@@ -177,7 +183,8 @@ the result says it was ignored):
 
 Adds one game (or unit) to the open set for the side `winner` names, creating the next set when the
 last one has a winner. A game in progress point by point is abandoned: its points stay on the
-history, and the set's next point opens a new game at 0-0 (`getEpisodesInterruptedGames.test.ts`,
+history, and the set's next point opens a new game at 0-0 (a game that wins the set opens none, as a
+point that wins it opens none: SE2a-D3b, CA 2026-10-21) (`getEpisodesInterruptedGames.test.ts`,
 "credits an interrupted game to no point"). A `tiebreakScore` is stored as the set's tiebreak points.
 The set is then judged by its segment's rule (§ 4.2) and the match by § 9. In a timed segment a game
 is a unit of its score (§ 6.2).
@@ -204,7 +211,9 @@ already closed level, and counts a game in a tiebreak-only segment as one of its
    manual end (§ 2.4);
 3. a total the rule does not call finished, given with no winner, is recorded as the set in play, open
    (3-1 in a set to six), not refused: the courthive-components inline scorer ignores refusals, so a
-   refusal would lose the input;
+   refusal would lose the input. In a tiebreak-only segment that total is the race's running points,
+   the game in play (§ 5 rule 1), as a baseline reads it: `SET3-S:TB11` 11-10 is `[0, 0]` with the game
+   in play at 11-10, and the next point plays on from it (SE2a-D13, CA 2026-10-21);
 4. a timed segment's total is a finished segment: the side with more wins it, and a level one follows
    § 9.7 (or its declared tiebreak, § 6.4).
 
@@ -251,7 +260,10 @@ is part of the timeline").
    final set is the one the deciding-set rule of § 3.2 names, read from the score; a tiebreak-only set
    is read from its points (1-0 with 11-9 is won).
 2. A baseline that decides the match completes it (6-0 6-0 in a best of three is `COMPLETED`).
-3. An unfinished last set is the set in play.
+3. An unfinished last set is the set in play. In a tiebreak-only segment its total is the race in play,
+   so a `currentGameScore` given beside it names that race's points twice and is refused (SE2a-D14, CA
+   2026-10-21: the cleaner rule). A stored baseline v1 took so replays as v1 replayed it, from the
+   total, flagged as a legacy shape (§ 12.8).
 4. A supplied `server` is honoured: it is recorded as a `setServer` at the baseline's position
    (§ 10.6).
 5. A second baseline is refused once the timeline holds scoring entries; a correction uses
@@ -270,8 +282,10 @@ Names the side due to serve the next point; § 10.6 states what it does to the d
 
 **A server correction survives undo and rebuild** (CA 2026-10-18). With `recordEntry: false` it is not
 an action of its own: it is recorded **attached to the preceding entry**, replayed with it, and undone
-with it, so undoing that point removes the correction too. v1 changes the orientation without a record,
-and the next rebuild loses it (`SET3-S:6/TB7`: servers 1, 1, then after one undo the surviving point's
+with it, so undoing that point removes the correction too. **With nothing before it** it is the match's
+**initial server** (CA 2026-10-21, SE3-E1): kept on the record as `history.initialServer`, not on the
+timeline, so every rebuild and reload starts from it, and `reset` clears it. v1 changed the orientation
+without a record, and the next rebuild lost it (`SET3-S:6/TB7`: servers 1, 1, then after one undo the surviving point's
 server is 0); INTENNSE re-applies it after every point and still shows the wrong server after an undo:
 a live v1 defect (§ 16, 16).
 
@@ -318,7 +332,8 @@ it without replaying it, and `undo` pops it, which is already the rule.
 
 ### 3.1 The match
 
-- **Best of N** (`SET3`, `MAP5`, …): the first side to win ⌈N/2⌉ sets wins. `SET1X` and `SET1XA` read as
+- **Best of N** (`SET3`, `MAP5`, …): the first side to win a majority of N sets, ⌊N/2⌋ + 1, wins (for odd N
+  that is ⌈N/2⌉; an even N can end level, § 9.7; SE2a-D7, CA 2026-10-21). `SET1X` and `SET1XA` read as
   best of one (exactly one set is best of one).
 - **Exactly N** (`X`): all N sets are played; a lead is not a win (§ 9.2).
 - **Aggregate** (`A`): every set is played and the total across them decides; sets won are not
@@ -573,16 +588,17 @@ format is parsed and not enforced (§ 3.4).
 
 ### 9.1 Best of N
 
-The match is won by the first side to win ⌈N/2⌉ sets (Rule 7; `standardSets`, "Rule 7"). A set without
+The match is won by the first side to win a majority of the N sets, ⌊N/2⌋ + 1 (Rule 7; `standardSets`,
+"Rule 7"; SE2a-D7: ⌈N/2⌉ read for an even N would be half, which § 9.7 rule 4 contradicts). A set without
 a winner (a timed segment closed level) is played and counts for neither side. **No set beyond N is
-played**: when all N sets are played and neither side has ⌈N/2⌉, the side with more sets wins, and a
+played**: when all N sets are played and neither side has a majority, the side with more sets wins, and a
 level count ends the match by § 9.7 (CA 2026-10-18). v1 opens another set after a level timed segment,
 so `SET1-S:T10P` level at time takes a second set and a `SET3-S:T10` can need a fourth: a v1 defect
 (§ 16, 3).
 
 ### 9.2 Exactly N, not aggregate
 
-1. Reaching ⌈N/2⌉ sets before all N are played is a lead, not a win (`tiebreakSets`, "in HAL3X a
+1. Reaching a majority of sets before all N are played is a lead, not a win (`tiebreakSets`, "in HAL3X a
    two-halves lead is not a win"; `timedSegments`, "exactly | timed").
 2. Once all N sets are played, the side with more sets wins, however many it took; a sweep is a win
    (`tiebreakSets`, "a sweep included").
@@ -766,7 +782,9 @@ The derivations above assume side 1 serves first. The orientation is read in thi
 ### 10.7 The competition's rule
 
 Under `serverRule: WINNER_SERVES` the server of a point is the winner of the point before it, and side
-1 for the first point. The engine supplies that server to the scorer, so the server shown
+1 for the first point. A `setServer(side)` names the next point's server only; the rule resumes after
+that point, and a correction naming the side already named changes nothing and records nothing (CA
+2026-10-21, SE3-E3). The engine supplies that server to the scorer, so the server shown
 (`getNextServer()`), the server recorded and the server a rebuild derives agree; it is calculated, not
 recorded (S5, #5517). A server the caller supplies is recorded as played, and the rule resumes after it
 (`scoringAgreement.test.ts`, "S5: the competition server rule decides the recorded server too").
@@ -803,7 +821,12 @@ Computed before each point, from the score at the serve, for the set in play's f
   the game, so No-Ad, deuce caps and margins agree (`pointsToMinimum.test.ts`). A consecutive game needs
   its run length.
 - `gamesToSet`, `pointsToSet` (the game's points plus the remaining games at four points each), and
-  `pointsToMatch` (the set's points plus the remaining sets at their minimum).
+  `pointsToMatch` (the set's points plus the remaining sets at their minimum). `gamesToSet` is the
+  games won in a row that win the set by its rule, the tiebreak counting as one more (4-5 in a
+  tiebreak set: 3; the one-game set `S:1/TB7` from love: 2), and each remaining set is counted at the
+  minimum of the format governing it then, a deciding set at the final format's (`SET3-S:4WB1-F:TB7`
+  one set down: 16 + 7). A timed segment, outs and a combined total add nothing (SE2b-D23, D25, D26;
+  CA 2026-10-21).
 - `isBreakpoint`: the receiver needs one point to win the game.
 - The score situation for the next point: `isGamePoint` (the server needs one), `isBreakPoint`,
   `isSetPoint`, `isMatchPoint` (either side needs one), `isGoldenPoint` (both need one, under No-Ad or a
@@ -876,6 +899,11 @@ players who played it (`aRebuildKeepsActivePlayers.test.ts`). An entry of a type
 is kept in place and not replayed (§ 12.6); a `challenge` or `annotation` is replayed and changes no
 score (§ 2.8).
 
+An entry's `data` is the caller's facts only (R2): the engine adds nothing it can derive, such as the set an
+`endSegment` closes, which the replay finds where the entry stands. Input that records nothing starts no
+history. A record that kept a substitution list keeps one, emptied when nothing is replayed into it, and a
+timeline a removal empties is still the record's timeline (CA 2026-10-22).
+
 ### 12.2 What a point entry holds
 
 Every field the caller supplied, including fields beyond the typed options, and no calculated field
@@ -890,8 +918,10 @@ rotation").
 - `undo(n)` moves the last n entries, of any type, to the redo stack (a `point` entry takes its point
   with it, and a server correction attached to an entry goes with that entry, § 2.6) and rebuilds. It
   takes back whatever was recorded last, a challenge or an annotation included (§ 2.8; CA 2026-10-18).
-  It returns false when there is nothing to undo.
-- `redo(n)` moves the last n back onto the timeline and rebuilds.
+  It returns false when there is nothing to undo, and for `n` below 1, which undoes nothing (CA
+  2026-10-21, SE3-E2).
+- `redo(n)` moves the last n back onto the timeline and rebuilds; false, likewise, when there is
+  nothing to redo or `n` is below 1.
 - **A recorded action clears the redo stack** (point, game, set, segment end, baseline, server
   correction, substitution, challenge, annotation); **an action that changes nothing records nothing**
   and keeps it, as a refused or ignored one does (CA 2026-10-18). v1's `endSegment` does not clear it,
@@ -908,6 +938,10 @@ rotation").
   other spelling on the entry, so the replay reads the edit. With `recalculate: false` the score is left
   as it was until the next rebuild, which applies the edit (`aCompletedMatchTakesCorrections.test.ts`).
 - `removePoint(i)` removes the point and its entry, renumbers the later point entries, and rebuilds.
+  With `recalculate: false` the score is left as it was until the next rebuild, and it still counts the
+  removed point: a point added meanwhile is numbered (`index`, `pointNumber`) as that score counts it,
+  so no index repeats, and the rebuild renumbers them all (CA 2026-10-21, SE2c-D6). Its entry's
+  `pointIndex` is still its position in `history.points` (§ 12.1), which a correction finds it by.
 - `decoratePoint(i, metadata)` writes the metadata to the point and its entry without a rebuild; it
   survives every later rebuild.
 - An index out of range is a no-op for all three. A rebuilding correction clears the redo stack.
@@ -921,19 +955,32 @@ and return copies: what crosses the boundary is never the engine's own object (S
 the redo stack, and takes the initial lineUps from the current ones with the substitutions on the
 timeline undone.
 
+Either engine reads the record the other wrote, so a cutover and a rollback load what is stored. The
+two write the same record but for the orientation's encoding: v1 writes `serverFlip` and a baseline's
+`serverCorrection`, v2 neither, and each reads the other's from the timeline, `history.initialServer`
+and a baseline's `server`. The differential holds both: the whole record is compared after every call,
+and a fresh v1 must name the next server a fresh v2 names when each loads v2's record.
+
 ### 12.6 Every persisted shape v2 must read
 
 1. **An entries-based record** (`history.entries` present): rebuilt from its entries. Its point entries
-   may predate S1 (#5515) and hold fewer fields; the entry is still authoritative.
-2. **A legacy point-only record** (points, no `entries`): loaded as stored. Without a timeline,
-   `undo` pops points (the redo stack holds each point's replay input), `redo` re-adds them through the
-   scorer, and a correction rebuilds from the points. A point's replay input is every field except the
-   calculated ones of § 1.4, so its stored `scoreValue` (the effective value) and its stored `server`
-   replay as given, and the old result stands (`replayLossless.test.ts`, "a record with no timeline
-   replays its points with their recorded facts"). **The first recorded action on such a record first
-   builds a timeline from its points**, so a later rebuild keeps them ("a new point on a record with no
-   timeline keeps the points before it through a rebuild"). Its rebuild keeps the matchUp's identity,
-   participants and host metadata, like every rebuild (§ 12.1; `aLegacyRebuildKeepsIdentity.test.ts`).
+   may predate S1 (#5515) and hold fewer fields; the entry is still authoritative. **Its timeline is
+   authoritative over its stored score** (SE2c-D3, CA 2026-10-21): loaded, the record is returned as
+   stored, but the next action, and every view, are taken on the score its timeline rebuilds to (with
+   the configuration then loaded; `loadSupplementaryState` prepares it again). That action writes the
+   timeline's score and keeps the stored points until the next rebuild.
+2. **A legacy point-only record** (points, perhaps a substitution list, no `entries`): loaded as stored.
+   **The first action that changes it, undo, redo and every correction included, first gives it its
+   timeline**: its points as point entries, each substitution placed before the point it preceded
+   (`beforePointIndex`), in the order recorded, one past the last point after it (CA 2026-10-22). From then on
+   it is an entries-based record, so nothing it holds is lost to an undo, a redo or a rebuild, and an undo
+   takes back its last action, a substitution included. A point's replay input is every field except the
+   calculated ones of § 1.4, so its stored `scoreValue` (the effective value), its stored `server` and the
+   players it recorded (`activePlayers`) replay as given, and the old result stands (`replayLossless.test.ts`,
+   "a record with no timeline replays its points with their recorded facts";
+   `aRecordWithoutATimelineLosesNothing.test.ts`). An undo with nothing to take back gives it no timeline. Its
+   rebuild keeps the matchUp's identity, participants and host metadata, like every rebuild (§ 12.1;
+   `aLegacyRebuildKeepsIdentity.test.ts`).
 3. **Points saved under the old tiebreak rotation** (before #5512): loaded as stored; calculated servers
    are re-derived on the next rebuild, supplied ones kept.
 4. **Substitution events without `setNumber`** (before 2026-10-17): placed by the point they preceded.
@@ -946,7 +993,8 @@ timeline undone.
    the history the same way (S10; "the saved configuration is what the history was scored under").
 7. **Host-written `challenge` entries** (epixodic's `{ type: 'challenge', data: { sideNumber } }`): read
    unchanged as `challenge` actions (§ 2.8). Any other foreign entry: kept, not replayed.
-8. **`hardBoundaries`** on a set: read and ignored; a rebuild discards them (§ 2.9).
+8. **`hardBoundaries`** on a set: read and ignored; the next recorded action or rebuild discards them
+   (§ 2.9; CA 2026-10-22).
 
 ### 12.7 Determinism
 
@@ -1028,14 +1076,14 @@ an additive action, not a format change.
 
 ## 15. What the suite and the corpus pin
 
-|                    |                                                                                                                                                                                                    |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| conformance matrix | 81 cells from the factory's harvested formats: 77 held by independent cases, 4 refused, none missing (`formatMatrix.test.ts`); every cell placed in § 17                                           |
-| conformance cases  | about 300, written from rulebooks (ITF, USA Pickleball, World Squash, ITTF, BWF, FIVB, VALORANT) or from the format definitions, each held five ways (see the opening)                             |
-| v1/v2 differential | `SCORING_ENGINE=differential`: every v1 call made on a v2 engine shell too, and the result and state compared; `SCORING_ENGINE=v2` runs the suites on v2 alone; `pnpm verify:scoring-differential` |
-| engine tests       | the S1–S13 fixes (#5511–#5521), the defects the cases found (#5529, #5530, #5533) and the replay, boundary and service tests cited above                                                           |
-| scoring corpus     | 72 seeded streams (8 formats × 3 biases × 3 seeds) through the pure `createMatchUp`/`addPoint`, each step's result pinned by the manifest (#5511), and one point after completion each             |
-| class timeline     | undo, redo, edits, baselines, segment ends, server corrections, substitutions, save and load, as corpus scenarios, with every conformance cell (SE3, #5658)                                        |
+|                    |                                                                                                                                                                                        |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| conformance matrix | 81 cells from the factory's harvested formats: 77 held by independent cases, 4 refused, none missing (`formatMatrix.test.ts`); every cell placed in § 17                               |
+| conformance cases  | about 300, written from rulebooks (ITF, USA Pickleball, World Squash, ITTF, BWF, FIVB, VALORANT) or from the format definitions, each held five ways (see the opening)                 |
+| v1/v2 differential | retired with v1 at SE4; until then every v1 call was made on the v2 engine too, and the outcome and the whole record compared                                                          |
+| engine tests       | the S1–S13 fixes (#5511–#5521), the defects the cases found (#5529, #5530, #5533) and the replay, boundary and service tests cited above                                               |
+| scoring corpus     | 72 seeded streams (8 formats × 3 biases × 3 seeds) through the pure `createMatchUp`/`addPoint`, each step's result pinned by the manifest (#5511), and one point after completion each |
+| class timeline     | undo, redo, edits, baselines, segment ends, server corrections, substitutions, save and load, as corpus scenarios, with every conformance cell (SE3, #5658)                            |
 
 ## 16. Decisions (2026-10-18)
 

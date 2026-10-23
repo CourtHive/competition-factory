@@ -156,6 +156,45 @@ claim, and an engine that answers differently fails the test as a finding. A `?`
 rule the page leaves open; what the engine does is recorded and printed for the page's next
 revision.
 
+## Authored scenarios for the scheduling pipeline
+
+```bash
+pnpm corpus:scheduling     # .corpus-out/scheduling/scheduling.jsonl
+SCHEDULING_PROPERTIES=/tmp/sp.jsonl pnpm vitest run   # check every scheduling call the suite makes
+```
+
+`src/tests/testHarness/corpus/schedulingSources.ts` holds one scenario per scheduling rule
+(`Mentat/planning/SCHEDULING_PIPELINE_VNEXT.md` § 5): a generated record, the directives that build a
+scheduling profile and run a scheduler, and claims on the record the patches rebuild. Every scenario
+claims the four scheduling step properties (`INVARIANTS.md`), and the writer checks them after each
+step and refuses a scenario that breaks one. A scheduling call's step records its **deferral report**
+as `result.value` (`src/tests/testHarness/scheduling/schedulingReport.ts`): per date, what was
+scheduled and, per reason, which matchUps were left unscheduled. A reason for not writing has no
+patch to carry it, so the report is what pins it, and it moves the manifest's results hash.
+
+A scenario with `knownFailure` pins a recorded defect: the test requires its claims to FAIL, so
+fixing the defect fails the test until the `knownFailure` is removed in the same PR.
+
+With `SCHEDULING_PROPERTIES=<file>`, a setup file (`src/tests/testHarness/schedulingProperties.ts`)
+checks every `scheduleProfileRounds`, `scheduleMatchUps`, `scheduleProfileGrid` and
+`proAutoSchedule` call in the run against the same properties, and appends one line per test file:
+the calls checked by method, and every violation with its test. Opt-in; the ordinary suite is
+untouched. The sweep also asks the report properties (`SCHEDULE_ACCOUNTED`, `SCHEDULE_REPORT_TRUE`)
+of each call. Under it, `global/paramsCopiedOnlyWhenRead.test.ts` fails by construction: it asserts
+that params are copied only when nothing observes the call, and the sweep is an observer.
+
+## The scheduling scale source
+
+```bash
+pnpm corpus:scheduling-scale      # .corpus-out/scheduling-scale/scheduling-scale.jsonl, the whole matrix
+SCHEDULING_SCALE_FAILURES=/tmp/f.json pnpm corpus:scheduling-scale   # keep every refused cell's reason
+```
+
+`src/tests/testHarness/corpus/schedulingScale.ts` runs a matrix of generated configurations (draw type × size × BYEs ×
+venues × daily limits × days: 288 cells) through `scheduleProfileRounds` and then `scheduleProfileGrid`. Every cell
+claims every scheduling property, so a refused cell is a scheduler breaking one, named by cell and property. A smoke
+slice (one cell per draw type) runs in the ordinary suite; the whole matrix is opt-in and is not in the manifest gate.
+
 ## The hash manifest (committed)
 
 ```bash
@@ -164,8 +203,8 @@ pnpm verify:corpus-manifest   # the merge gate: fails when a hash moved and the 
 ```
 
 The scenarios stay out of git; their hashes do not. `corpus/MANIFEST.txt` holds one line per
-authored, grammar and scoring scenario: id, step count, the hash after the last step. Those three
-sources reproduce bit for bit (the authored starting records are built on the corpus clock for
+authored, scheduling, grammar and scoring scenario: id, step count, the hash after the last step. Those four
+sources reproduce bit for bit (the authored and scheduling starting records are built on the corpus clock for
 exactly this, and the grammar source reads only the fixture and edge formats unless
 `CORPUS_GRAMMAR_HARVEST` asks it to harvest the recorded corpus, which `corpus:verify` does). A behaviour change moves a hash, the gate names every scenario that moved, and the
 fix is either the engine or a deliberate regeneration committed with the change.

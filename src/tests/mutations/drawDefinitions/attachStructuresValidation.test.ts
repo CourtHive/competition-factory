@@ -1,10 +1,11 @@
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { expect, it } from 'vitest';
 
 // constants
 import { CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION, MAIN, LOSER, DRAW } from '@Constants/drawDefinitionConstants';
-import { INVALID_STRUCTURE } from '@Constants/errorConditionConstants';
+import { INVALID_STRUCTURE, INVALID_VALUES } from '@Constants/errorConditionConstants';
 
 it('rejects attachStructures when links reference non-existent structures', () => {
   const {
@@ -92,4 +93,32 @@ it('accepts attachStructures when links reference valid structures', () => {
   const consolationStructure = drawDefinition.structures.find((s) => s.stage === CONSOLATION);
   expect(consolationStructure).toBeDefined();
   expect(drawDefinition.links.length).toBeGreaterThan(0);
+});
+
+it('refuses a malformed link (LOSER with no source roundNumber) before writing links, structures or edges', () => {
+  const {
+    drawIds: [drawId],
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION }],
+    setState: true,
+  });
+
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId });
+  const mainStructure = drawDefinition.structures.find((s) => s.stage === MAIN);
+  const consolationStructure = drawDefinition.structures.find((s) => s.stage === CONSOLATION);
+  expect(drawDefinition.links.length).toBeGreaterThan(0);
+
+  const links = [
+    {
+      linkType: LOSER,
+      source: { structureId: consolationStructure.structureId },
+      target: { structureId: mainStructure.structureId, feedProfile: DRAW, roundNumber: 2 },
+    },
+  ];
+
+  const snapshot = () => makeDeepCopy(tournamentEngine.getTournament().tournamentRecord, false, true);
+  const before = snapshot();
+  const result: any = tournamentEngine.attachStructures({ structures: [], drawId, links });
+  expect(result.error).toEqual(INVALID_VALUES);
+  expect(snapshot()).toEqual(before);
 });

@@ -15,6 +15,7 @@ import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
 import { scheduleLockConflicts } from '@Query/matchUp/isScheduleLocked';
 import { getParticipants } from '@Query/participants/getParticipants';
+import { checkPlayedOrder, PendingPlacements } from './playedOrder';
 import { dateValidation, validTimeString } from '@Validators/regex';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
@@ -134,8 +135,10 @@ function applyScheduleTiming({
     });
     if (result?.error) return decorateResult({ result, stack, context: { calledAt } });
   }
+  // the played order was asked of the whole write by addMatchUpScheduleItems, not of the date and the time apart
   if (scheduledDate !== undefined) {
     const result = addMatchUpScheduledDate({
+      playedOrderChecked: true,
       disableNotice: true,
       removePriorValues,
       tournamentRecord,
@@ -147,6 +150,7 @@ function applyScheduleTiming({
   }
   if (scheduledTime !== undefined) {
     const result = addMatchUpScheduledTime({
+      playedOrderChecked: true,
       disableNotice: true,
       removePriorValues,
       tournamentRecord,
@@ -464,6 +468,10 @@ type AddMatchUpScheduleItemsArgs = {
   drawDefinition: DrawDefinition;
   errorOnUnknownAttributes?: boolean;
   errorOnAnachronism?: boolean;
+  /** the other placements of the same batch, judged in place of what is stored (see checkPlayedOrder) */
+  pendingPlacements?: PendingPlacements;
+  /** set by a bulk caller that asked `checkPlayedOrder` of the whole batch before writing any of it */
+  playedOrderChecked?: boolean;
   /** run every refusal WITHOUT writing anything — see `checkScheduleValues` */
   validateOnly?: boolean;
   removePriorValues?: boolean;
@@ -502,6 +510,8 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
     errorOnAnachronism = false,
     checkChronology = true,
     validateOnly = false,
+    playedOrderChecked,
+    pendingPlacements,
     overrideScheduleLock,
     removePriorValues,
     tournamentRecords,
@@ -589,6 +599,19 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
         }
       }
     }
+  }
+
+  // not waived by `checkChronology: false`: that skips the ANACHRONISM warning, never this refusal
+  if (!playedOrderChecked) {
+    const refusal = checkPlayedOrder({
+      schedule: { scheduledDate, scheduledTime },
+      matchUpDependencies,
+      inContextMatchUps,
+      pendingPlacements,
+      drawDefinition,
+      matchUpId,
+    });
+    if (refusal) return decorateResult({ result: refusal, stack });
   }
 
   // Detect a day change BEFORE applyScheduleTiming mutates the matchUp's date.

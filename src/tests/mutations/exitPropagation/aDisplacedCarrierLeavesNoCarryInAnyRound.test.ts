@@ -12,14 +12,16 @@ import { expect, it } from 'vitest';
  * and `withdrawDisplacedCarry` withdrew the carry only from the furthest matchUp the position had reached: the
  * first-round entry stayed, naming a feeder that is now a BYE, on a BYE-vs-BYE matchUp (`Southeast|1|2`). Every rebuild
  * of the standing results leaves that side with no entry. The carry now goes from every matchUp holding the position.
+ *
+ * The side once kept a `byeClaims` entry (`South|1|4`'s claim on the BYE); the ledger is retired (Mentat P58, CA
+ * 2026-10-21), so the BYE-vs-BYE matchUp holds no provenance at all before the probe, after it, and after its clear.
  */
 
 const coordinate = (matchUp: any) => `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`;
 const CLEAR = { matchUpStatus: 'TO_BE_PLAYED', score: { scoreStringSide1: '', scoreStringSide2: '' } };
 
 /** a BYE origin is a may-record fact (exit-propagation.md), so the view leaves it out, as the census round trip does */
-const isByeOrigin = (entry: any) =>
-  entry?.matchUpStatus === 'BYE' && entry?.previousMatchUpStatus === 'BYE' && !entry?.byeClaims;
+const isByeOrigin = (entry: any) => entry?.matchUpStatus === 'BYE' && entry?.previousMatchUpStatus === 'BYE';
 
 function occupant(side: any) {
   if (side.bye) return 'BYE';
@@ -174,22 +176,14 @@ it("a BYE that takes a carrier's seat withdraws the carry from every round the s
     matchUpStatus: 'BYE',
     winningSide: null,
     sides: ['BYE', 'BYE'],
-    provenance: {
-      '2': {
-        byeClaims: ['South|1|4'],
-      },
-    },
+    provenance: null,
   });
-  // what the probe changed there
+  // the probe leaves no carry there
   expect(forward['Southeast|1|2']).toEqual({
     matchUpStatus: 'BYE',
     winningSide: null,
     sides: ['BYE', 'BYE'],
-    provenance: {
-      '2': {
-        byeClaims: ['South|1|4'],
-      },
-    },
+    provenance: null,
   });
   // and the clear puts it back
   expect(after).toEqual(before);

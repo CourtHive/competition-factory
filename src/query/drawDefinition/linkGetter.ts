@@ -1,3 +1,4 @@
+import { isLinkObject, isMalformedRoundLink } from '@Query/drawDefinition/malformedLinks';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { overlap } from '@Tools/arrays';
@@ -5,8 +6,8 @@ import { overlap } from '@Tools/arrays';
 // constants and types
 import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { DRAW_DEFINITION, STRUCTURE_ID } from '@Constants/attributeConstants';
-import { LOSER, WINNER } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition, DrawLink } from '@Types/tournamentTypes';
+import { WINNER } from '@Constants/drawDefinitionConstants';
 import { ResultType } from '@Types/factoryTypes';
 
 type GetRoundLinksArgs = {
@@ -52,6 +53,7 @@ export function getTargetLink({
   source,
 }: GetTargetLinkArgs): DrawLink | TargetLinkError | undefined {
   const result = source.find((link) => {
+    if (!isLinkObject(link)) return false; // reported by getDrawInconsistencies (INVALID_LINK), never dereferenced
     const positionCondition =
       !link.source?.finishingPositions ||
       !finishingPositions ||
@@ -60,13 +62,45 @@ export function getTargetLink({
     return condition && positionCondition && link.linkType === linkType;
   });
 
-  if (result && [WINNER, LOSER].includes(result.linkType) && !result.source?.roundNumber) {
+  if (result && isMalformedRoundLink(result)) {
     return {
       ...decorateResult({ result: { error: INVALID_VALUES }, stack: 'getTargetLink', context: result }),
       error: INVALID_VALUES,
     };
   }
   return result;
+}
+
+/**
+ * THE DRAW'S MALFORMED ROUND LINK, if it has one, as the error `positionTargets` would return on meeting it.
+ *
+ * Asked of the whole draw, not of one matchUp's targets. `positionTargets` meets a malformed link only when a matchUp
+ * whose round it governs is directed, and a cascade can direct a participant into any structure a link reaches, so
+ * where the cascade will meet one is known only once it has written. A draw with none cannot raise it at all, from
+ * `positionTargets` or anything that calls it: nothing that sets a matchUp's outcome writes a link. So an outcome is
+ * refused on a draw that has one, before the first write (outcome-pipeline.md § 2 row 21), and every `positionTargets`
+ * error after that point is impossible by construction (CA, 2026-10-22: no mutation relies on rollback).
+ *
+ * The draw is passed so a link out of a round robin is seen for what it is: it traverses by finishing position
+ * (`traversesByFinishingPosition`), labelled `POSITION` or `WINNER`, needs no round, and never refuses the draw.
+ */
+export function getMalformedRoundLink(drawDefinition?: DrawDefinition): TargetLinkError | undefined {
+  // `findIndex`, not `find`: the predicate (malformedLinks.ts) also answers true for an entry that is not an object, and
+  // `find` would hand back that `null` itself, which reads as "none" and lets the draw past the gate
+  const links: unknown[] = Array.isArray(drawDefinition?.links) ? drawDefinition.links : [];
+  const linkIndex = links.findIndex((link) => isMalformedRoundLink(link, drawDefinition));
+  if (linkIndex < 0) return undefined;
+  const link = links[linkIndex] as DrawLink | null | undefined;
+  const context = { structureId: link?.source?.structureId, linkType: link?.linkType, linkIndex };
+  return {
+    ...decorateResult({
+      result: { error: INVALID_VALUES },
+      info: isLinkObject(link) ? 'a WINNER or LOSER link has no source roundNumber' : 'an entry of links is not a link',
+      stack: 'getMalformedRoundLink',
+      context,
+    }),
+    error: INVALID_VALUES,
+  };
 }
 
 type GetStructureLinksArgs = {
