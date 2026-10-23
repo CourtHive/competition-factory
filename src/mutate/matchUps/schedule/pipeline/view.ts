@@ -1,10 +1,10 @@
 import { getParticipantReachability, ParticipantReachability } from '../scheduleMatchUps/getParticipantReachability';
+import { getSchedulingProfile, schedulingProfileRepairRefusal } from '@Mutate/tournaments/schedulingProfile';
 import { getContainedStructures } from '@Query/drawDefinition/getContainedStructures';
 import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import { getPersonRequests } from '@Query/matchUps/scheduling/getPersonRequests';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
-import { getSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import { findMatchUpFormatTiming } from '@Acquire/findMatchUpFormatTiming';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
 import { extractDate, isValidDateString } from '@Tools/dateTime';
@@ -182,11 +182,12 @@ export function buildSchedulingView({
   tournamentRecords,
   periodLength = 30,
   courtIds,
-}: BuildSchedulingViewArgs): SchedulingView | { error: ErrorType } {
-  // validating the stored profile can repair it (rounds whose venue, event or draw is gone are removed and the profile is
-  // saved), exactly as v1's run does: the one write a view can cause
+}: BuildSchedulingViewArgs): SchedulingView | { error: ErrorType; context?: Record<string, unknown> } {
+  // a stored profile that needs repair (a round whose venue, event or draw is gone) is refused, with the repaired profile
+  // offered for the caller to save: the view writes nothing (CA 2026-10-23)
   const profileResult = getSchedulingProfile({ tournamentRecords });
   if (profileResult.error) return { error: profileResult.error };
+  if (profileResult.modifications) return schedulingProfileRepairRefusal(profileResult) as { error: ErrorType };
   const { schedulingProfile = [], modifications, issues = [] } = profileResult;
   const dateProfiles = profileDates(schedulingProfile, scheduleDates);
   if (schedulingProfile.length && !dateProfiles.length) return { error: NO_VALID_DATES };

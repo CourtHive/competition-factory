@@ -47,9 +47,16 @@ and lock.
 
 - No valid date remains after narrowing the profile's dates by `scheduleDates`: `NO_VALID_DATES`.
 - An empty profile is not refused: the call succeeds and places nothing.
-- Before scheduling, the profile is validated against the tournament: a round whose venue, event or draw no longer
-  exists is removed from the stored profile (the profile is saved without it), and a round profiled at more than one
-  venue on a date is reported; both come back in `schedulingProfileIssues`.
+- Before scheduling, the profile is validated against the tournament. A profile that names a venue (or a venue with no
+  courts), an event or a draw no longer in the record needs repair: the call is refused with
+  `SCHEDULING_PROFILE_REPAIR_REQUIRED` and writes nothing. Its `context` offers the repaired profile
+  (`repairedSchedulingProfile`, without those rounds), with `modifications` and `issues`; saving it with
+  `setSchedulingProfile` is the repair. A round profiled at more than one venue on a date is reported in
+  `schedulingProfileIssues`.
+- Reading the profile never saves a repair: `getSchedulingProfile` returns the repaired profile with its
+  `modifications` and leaves the stored one as it is. A query runs on one side only (client or server), so a save there
+  would part the two records. The mutations that remove a venue, event or draw (or a venue's courts) repair the profile
+  as part of their own write.
 - A profile that orders a round before a round it depends on is not refused and not reported by the scheduler (the
   query `getSchedulingProfileIssues` reports such rounds, with the matchUps each `shouldBeAfter`). The gate's dependency
   rule (§ 4, step 4.3) still places the rounds in dependency order.

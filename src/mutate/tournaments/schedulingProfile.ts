@@ -2,6 +2,7 @@ import { firstClassGroupLeafOrExtension, setGroupLeafOrExtension } from '@Mutate
 import { validateSchedulingProfile } from '@Validators/validateSchedulingProfile';
 import { getEventIdsAndDrawIds } from '@Query/tournaments/getEventIdsAndDrawIds';
 import { getCompetitionVenues } from '@Query/venues/venuesAndCourtsGetter';
+import { decorateResult } from '@Functions/global/decorateResult';
 import { addNotice } from '@Global/state/globalState';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import {
@@ -10,12 +11,16 @@ import {
 } from '@Query/matchUps/scheduling/getUpdatedSchedulingProfile';
 
 // constants and types
-import { ErrorType, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
 import { MODIFY_SCHEDULING_PROFILE } from '@Constants/topicConstants';
 import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
 import { TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
+import {
+  SCHEDULING_PROFILE_REPAIR_REQUIRED,
+  MISSING_TOURNAMENT_RECORDS,
+  ErrorType,
+} from '@Constants/errorConditionConstants';
 
 type GetSchedulingProfileArgs = {
   tournamentRecords?: TournamentRecords;
@@ -64,15 +69,11 @@ export function getSchedulingProfile({ tournamentRecords, tournamentRecord }: Ge
       drawIds,
     });
 
+    // the repaired profile is returned, never saved: this is a query, run on one side only, and a save here parted
+    // the client's record from the server's (CA 2026-10-23). A scheduler refuses until it is repaired, and
+    // checkAndUpdateSchedulingProfile (inside the mutations that orphan a round) or setSchedulingProfile saves it
     if (modifications) {
       schedulingProfile = updatedSchedulingProfile;
-      const result = setSchedulingProfile({
-        tournamentRecords,
-        tournamentRecord,
-        schedulingProfile,
-      });
-      if (result.error) return result;
-
       issues.push(...getMultipleVenueRoundIssues({ schedulingProfile }));
       return { schedulingProfile: profileCopy(schedulingProfile), modifications, issues };
     }
@@ -84,6 +85,27 @@ export function getSchedulingProfile({ tournamentRecords, tournamentRecord }: Ge
   }
 
   return { schedulingProfile: profileCopy(schedulingProfile), modifications: 0 };
+}
+
+/**
+ * A scheduler's refusal to run on a profile that needs repair: nothing is written, and the context offers the repaired
+ * profile (with what was changed and why) for the caller to save with setSchedulingProfile, on both sides.
+ */
+export function schedulingProfileRepairRefusal({
+  schedulingProfile,
+  modifications,
+  issues,
+}: {
+  schedulingProfile?: unknown[];
+  modifications?: number;
+  issues?: string[];
+}) {
+  return decorateResult({
+    result: { error: SCHEDULING_PROFILE_REPAIR_REQUIRED },
+    info: 'the scheduling profile names a venue, event or draw that is gone; save the repaired profile first',
+    context: { repairedSchedulingProfile: schedulingProfile, modifications, issues },
+    stack: 'schedulingProfileRepairRefusal',
+  });
 }
 
 // A copy, never the stored profile: the schedulers annotate the rounds they are handed
@@ -142,11 +164,15 @@ export function checkAndUpdateSchedulingProfile(params) {
     {};
 
   if (!params.schedulingProfile) {
-    const { modifications, issues } = getSchedulingProfile({
+    const { schedulingProfile, modifications, issues, error } = getSchedulingProfile({
       tournamentRecords,
       tournamentRecord,
     });
-    return { success: !modifications, modifications, issues };
+    if (error) return { error };
+    if (!modifications) return { ...SUCCESS, modifications, issues };
+    // the mutation that orphaned a round saves the repair, on every side it runs on
+    const result = setSchedulingProfile({ tournamentRecords, tournamentRecord, schedulingProfile });
+    return { ...result, modifications, issues };
   }
 
   const { venueIds } = getCompetitionVenues({ tournamentRecords });

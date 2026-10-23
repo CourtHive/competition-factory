@@ -994,10 +994,12 @@ in the rounds holds `undefined`, so the other rounds still schedule.
 
 ### getSchedulingProfile
 
-Returns the current scheduling profile.
+Returns the current scheduling profile. A stored profile that names a venue, event or draw no longer in the record is
+returned repaired, with the count of `modifications` and the `issues`, and is never saved: the profile schedulers
+refuse it with `SCHEDULING_PROFILE_REPAIR_REQUIRED` until the repaired profile is saved with `setSchedulingProfile`.
 
 ```js
-const { schedulingProfile } = engine.getSchedulingProfile();
+const { schedulingProfile, modifications, issues } = engine.getSchedulingProfile();
 ```
 
 ---

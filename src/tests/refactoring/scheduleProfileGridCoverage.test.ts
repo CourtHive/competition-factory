@@ -3,8 +3,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
+import { NO_VALID_DATES, SCHEDULING_PROFILE_REPAIR_REQUIRED } from '@Constants/errorConditionConstants';
 import { SINGLE_ELIMINATION, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
-import { NO_VALID_DATES } from '@Constants/errorConditionConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 
 const VENUE_ID = 'grid-venue';
@@ -308,8 +308,17 @@ describe('scheduleProfileGrid multiple venues', () => {
       ],
     });
 
-    // Even if one venue has no courts, the overall call should succeed
+    // a venue with no courts is not a valid profile venue: the run is refused, the repaired profile (without that
+    // venue's rounds) offered, and nothing is written; it was removed from the stored profile silently on read
     let result: any = tournamentEngine.scheduleProfileGrid({ scheduleDates: [startDate] });
+    expect(result.error).toEqual(SCHEDULING_PROFILE_REPAIR_REQUIRED);
+    const { repairedSchedulingProfile } = result.context;
+    expect(repairedSchedulingProfile[0].venues.map(({ venueId }: any) => venueId)).toEqual([venueId1]);
+
+    // once the repair is saved, the call succeeds
+    result = tournamentEngine.setSchedulingProfile({ schedulingProfile: repairedSchedulingProfile });
+    expect(result.success).toBe(true);
+    result = tournamentEngine.scheduleProfileGrid({ scheduleDates: [startDate] });
     expect(result.success).toBe(true);
   });
 });

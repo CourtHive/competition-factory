@@ -1,4 +1,5 @@
 import { getParticipantReachability } from '@Mutate/matchUps/schedule/scheduleMatchUps/getParticipantReachability';
+import { getSchedulingProfile, schedulingProfileRepairRefusal } from '@Mutate/tournaments/schedulingProfile';
 import { v2Scheduler } from '@Mutate/matchUps/schedule/schedulers/v2Scheduler/v2Scheduler';
 import { clearScheduledMatchUps } from '@Mutate/matchUps/schedule/clearScheduledMatchUps';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
@@ -7,7 +8,6 @@ import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUp
 import { getPersonRequests } from '@Query/matchUps/scheduling/getPersonRequests';
 import { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
-import { getSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
 import { scheduleProfileVNext } from './pipeline/scheduleProfile';
 import { extractDate, isValidDateString } from '@Tools/dateTime';
@@ -71,6 +71,8 @@ export function scheduleProfileRounds(params: ScheduleProfileRoundsArgs) {
 
   const result = getSchedulingProfile({ tournamentRecords });
   if (result.error) return result;
+  // a profile that needs repair is refused before anything is written, the repaired profile offered (CA 2026-10-23)
+  if (result.modifications) return schedulingProfileRepairRefusal(result);
 
   if (!result.schedulingProfile.length) return { ...SUCCESS };
 
