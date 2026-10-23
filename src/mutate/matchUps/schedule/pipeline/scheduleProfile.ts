@@ -43,9 +43,10 @@ export function scheduleProfileVNext(params: ScheduleProfileVNextArgs) {
   if (paramsCheck.error) return paramsCheck;
 
   const { tournamentRecords, clearScheduleDates, dryRun } = params;
-  // the profile is validated (and repaired) once, by the first view; an empty profile schedules nothing
+  // the profile is validated once, by the first view (one that needs repair is refused); an empty profile schedules
+  // nothing
   const firstView = buildSchedulingView(params);
-  if ('error' in firstView) return { error: firstView.error };
+  if ('error' in firstView) return firstView;
   if (!firstView.schedulingProfile.length) return { ...SUCCESS };
 
   // a date cleared is cleared before the matchUps are read, so the plan sees the date empty; the dates are validated

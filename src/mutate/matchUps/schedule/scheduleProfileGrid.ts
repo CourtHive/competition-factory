@@ -1,9 +1,9 @@
+import { getSchedulingProfile, schedulingProfileRepairRefusal } from '@Mutate/tournaments/schedulingProfile';
 import { proAutoSchedule } from '@Mutate/matchUps/schedule/schedulers/proScheduler/proAutoSchedule';
 import { clearScheduledMatchUps } from '@Mutate/matchUps/schedule/clearScheduledMatchUps';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getContainedStructures } from '@Query/drawDefinition/getContainedStructures';
 import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
-import { getSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
 import { extractDate, isValidDateString } from '@Tools/dateTime';
 
@@ -160,6 +160,8 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
 
   const result = getSchedulingProfile({ tournamentRecords });
   if (result.error) return result;
+  // a profile that needs repair is refused before anything is written, the repaired profile offered (CA 2026-10-23)
+  if (result.modifications) return schedulingProfileRepairRefusal(result);
 
   if (!result.schedulingProfile.length) return { ...SUCCESS };
 

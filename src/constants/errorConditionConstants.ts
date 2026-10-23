@@ -765,6 +765,14 @@ export const SCHEDULE_SCENARIO_NOT_FOUND = {
   message: 'Schedule scenario not found',
   code: 'ERR_NOT_FOUND_SCHEDULE_SCENARIO' as const,
 } satisfies ErrorType;
+// A stored scheduling profile that names a venue, event or draw no longer in the record. A query
+// reports the repaired profile without saving it (a query runs on one side only, so a save would
+// part client from server); a scheduler refuses with this, offering the repaired profile in its
+// context, and the repair is saved by setSchedulingProfile, a mutation that runs on both.
+export const SCHEDULING_PROFILE_REPAIR_REQUIRED = {
+  message: 'Scheduling profile needs repair',
+  code: 'ERR_SCHEDULING_PROFILE_REPAIR_REQUIRED' as const,
+} satisfies ErrorType;
 export const SCHEDULE_SCENARIO_EXISTS = {
   message: 'Schedule scenario exists',
   code: 'ERR_EXISTING_SCHEDULE_SCENARIO' as const,
@@ -1007,6 +1015,7 @@ export const QUALIFYING_CAPACITY_EXCEEDED = {
 
 export const errorConditionConstants = {
   ANACHRONISM,
+  SCHEDULING_PROFILE_REPAIR_REQUIRED,
   UNWRITABLE_SCHEDULE_ATTRIBUTES,
   BOOKING_NOT_FOUND,
   CANNOT_CHANGE_FEED_ELIGIBILITY,
