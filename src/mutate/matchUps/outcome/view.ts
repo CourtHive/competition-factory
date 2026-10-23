@@ -16,6 +16,7 @@ import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
 import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
+import { addGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -133,8 +134,7 @@ function arrivedByWinning(
  */
 function placedTheHoldersBye(matchUp: HydratedMatchUp, sourceMatchUpId: string, draw: DrawContext): boolean {
   const byeSeats = (matchUp.sides ?? []).filter((side) => side?.bye).map((side) => side?.drawPosition);
-  const source = draw.inContextDrawMatchUps.find((candidate) => candidate.matchUpId === sourceMatchUpId);
-  if (!source?.loserMatchUpId || !byeSeats.length) return false;
+  if (!byeSeats.length) return false;
   const { loserMatchUp, loserTargetDrawPosition } =
     positionTargets({ ...draw, matchUpId: sourceMatchUpId })?.targetMatchUps ?? {};
   return loserMatchUp?.structureId === matchUp.structureId && byeSeats.includes(loserTargetDrawPosition);
@@ -207,13 +207,20 @@ function heldBesideFeederBye(
     (candidate) => candidate.structureId === matchUp.structureId,
   );
   if (structureMatchUps.some((candidate) => (candidate.roundNumber ?? 0) > (matchUp.roundNumber ?? 0))) return [];
-  return structureMatchUps
-    .filter((feeder) => feeder.winnerMatchUpId === matchUp.matchUpId && feeder.matchUpStatus === BYE)
-    .flatMap((feeder) => Object.values(getSideExitProvenance({ matchUp: feeder }) ?? {}))
-    .filter((entry) => entry?.sourceMatchUpId !== sourceMatchUpId)
-    .map((entry) => carriedExitStatus(entry))
-    .filter((status): status is MatchUpStatusUnion => !!status);
+  return (
+    structureMatchUps
+      // the feeder's winner target is read from the links, as v1 directs it: a stored `winnerMatchUpId` is
+      // there only on a draw generated with goesTo, and the view's hydration does not add it (no `nextMatchUps`)
+      .filter((feeder) => feeder.matchUpStatus === BYE && winnerTargetOf(feeder.matchUpId, draw) === matchUp.matchUpId)
+      .flatMap((feeder) => Object.values(getSideExitProvenance({ matchUp: feeder }) ?? {}))
+      .filter((entry) => entry?.sourceMatchUpId !== sourceMatchUpId)
+      .map((entry) => carriedExitStatus(entry))
+      .filter((status): status is MatchUpStatusUnion => !!status)
+  );
 }
+
+const winnerTargetOf = (matchUpId: string, draw: DrawContext): string | undefined =>
+  positionTargets({ ...draw, matchUpId })?.targetMatchUps?.winnerMatchUp?.matchUpId;
 
 function standingExits(matchUp?: HydratedMatchUp, sourceMatchUpId?: string, draw?: DrawContext): MatchUpStatusUnion[] {
   const carried = [
@@ -425,9 +432,8 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
   };
   if (!drawDefinition || !request.matchUpId) return empty;
 
-  const matchUpsMap = getMatchUpsMap({ drawDefinition });
+  const matchUpsMap = args.matchUpsMap ?? getMatchUpsMap({ drawDefinition });
   const { matchUps: inContextDrawMatchUps } = getAllDrawMatchUps({
-    nextMatchUps: true,
     tournamentRecord,
     inContext: true,
     drawDefinition,
@@ -437,6 +443,11 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
   const matchUp = matchUpsMap.drawMatchUps.find((m) => m.matchUpId === request.matchUpId);
   const inContextMatchUp = inContextDrawMatchUps?.find((m) => m.matchUpId === request.matchUpId);
   if (!matchUp || !inContextDrawMatchUps) return empty;
+  // A DRAW STORED WITHOUT ITS EDGES: v1 writes them before it decides anything (`ensureGoesTo`, onto its view too),
+  // and its guards read `winnerMatchUpId` on that view (`relabelLoserExit`). The view takes the same edges onto its own
+  // copy and writes nothing. A draw the factory generated stores them, and pays only the `hasStoredGoesTo` walk.
+  if (!hasStoredGoesTo({ drawDefinition }))
+    addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap, inContextOnly: true });
   const draw: DrawContext = { inContextDrawMatchUps, drawDefinition };
 
   const { structure } = findStructure({ drawDefinition, structureId: inContextMatchUp?.structureId });

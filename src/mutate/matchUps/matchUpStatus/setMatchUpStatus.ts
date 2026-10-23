@@ -398,6 +398,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     policyDefinitions,
     tournamentRecord,
     drawDefinition,
+    matchUpsMap,
     event,
   });
   if (v2.refused) return decorateResult({ result: v2.refused, stack });

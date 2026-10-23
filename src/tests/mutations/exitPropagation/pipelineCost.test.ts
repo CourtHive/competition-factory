@@ -419,8 +419,9 @@ it.skipIf(!enabled)(
  *
  * - A count that RISES fails. A count that FALLS passes and says so; `HYDRATIONS_UPDATE=1` writes
  *   the lower number, and writes a rise only with `HYDRATIONS_ACCEPT_RISE=1` as well.
- * - The baseline is v1's. Under `v2` each call may cost v1's count plus one, the view's own read;
- *   until S2 every call is one v2 abstains from, which is the bound G3 sets for it. `differential`
+ * - The baseline is v1's. Under `v2` each call may cost v1's count plus the view's own reads: one
+ *   hydration, and no map (the view takes `setMatchUpStatus`'s). Until S2 every call is one v2
+ *   abstains from, which is the bound G3 sets for it (v1 + 1). `differential`
  *   is refused: it runs both pipelines and then checks one against the other, which is not a cost
  *   either pipeline has.
  * - The baseline is written under `v1` only, and a census whose arms or call counts differ from it
@@ -432,9 +433,10 @@ const BASELINE = path.resolve(process.cwd(), 'scripts/verify/baseline/hydrations
 type Ceiling = { total: number; worst: number };
 type ArmCeilings = { calls: number; hydrations: Ceiling; getMatchUpsMap: Ceiling };
 
-const GATED: { name: keyof Omit<ArmCeilings, 'calls'>; selector: Selector }[] = [
-  { name: 'hydrations', selector: hydration },
-  { name: 'getMatchUpsMap', selector: top('getMatchUpsMap') },
+/** `v2`: what the view itself may add to each call, on top of v1's count */
+const GATED: { name: keyof Omit<ArmCeilings, 'calls'>; selector: Selector; v2: number }[] = [
+  { name: 'hydrations', selector: hydration, v2: 1 },
+  { name: 'getMatchUpsMap', selector: top('getMatchUpsMap'), v2: 0 },
 ];
 
 function measureArms(records: CallRecord[]): Record<string, ArmCeilings> {
@@ -460,8 +462,6 @@ it.skipIf(!gated)(
     const baseline: Record<string, ArmCeilings> | undefined = fs.existsSync(BASELINE)
       ? JSON.parse(fs.readFileSync(BASELINE, 'utf8')).arms
       : undefined;
-    // the view's own read, once per call, on every call v2 does not yet own
-    const allowance = mode === OUTCOME_PIPELINE_V1 ? 0 : 1;
 
     const rises: string[] = [];
     const falls: string[] = [];
@@ -470,7 +470,8 @@ it.skipIf(!gated)(
       for (const [arm, ceilings] of Object.entries(baseline)) {
         const now = measured[arm];
         expect(now.calls, `${arm}: setMatchUpStatus calls`).toEqual(ceilings.calls);
-        for (const { name } of GATED) {
+        for (const { name, v2 } of GATED) {
+          const allowance = mode === OUTCOME_PIPELINE_V1 ? 0 : v2;
           const limit = {
             total: ceilings[name].total + allowance * ceilings.calls,
             worst: ceilings[name].worst + allowance,
