@@ -1149,7 +1149,7 @@ engine.renameStructures({
 
 ## repairMalformedLinks
 
-Repairs every malformed entry of `drawDefinition.links`, or removes what cannot be repaired, and reports which. These are the link findings of [`getDrawInconsistencies`](/docs/governors/query-governor#getdrawinconsistencies): `LINK_MISSING_SOURCE_ROUND`, `DANGLING_LINK` and `INVALID_LINK`. A draw with such a link refuses every outcome, and an entry that is not an object makes the draw's readers throw.
+Repairs every malformed entry of `drawDefinition.links`, or removes what cannot be repaired, and reports which. These are the link findings of [`getDrawInconsistencies`](/docs/governors/query-governor#getdrawinconsistencies): `LINK_MISSING_SOURCE_ROUND`, `DANGLING_LINK` and `INVALID_LINK`. A draw with such a link refuses every outcome, and an entry that is not an object makes the draw's readers throw. A link out of a round robin that names `finishingPositions` is never malformed, labelled `POSITION` or `WINNER`, and the repair never touches it: see [Rounds and finishing positions](/docs/concepts/draw-links#rounds-and-finishing-positions-how-a-link-traverses).
 
 ```js
 const { repaired, removed, unlinkedStructureIds } = engine.repairMalformedLinks({

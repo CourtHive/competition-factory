@@ -4,6 +4,7 @@ import { isLinkObject, isMalformedRoundLink } from '@Query/drawDefinition/malfor
 import { isPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
+import { traversesByRound } from '@Query/drawDefinition/linkTraversal';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 
 // constants and types
@@ -24,8 +25,11 @@ import { SUCCESS } from '@Constants/resultConstants';
 //  - DANGLING_LINK: a link whose source or target structureId is not a structure in this draw —
 //    progression can never resolve, and inContext derivation itself throws on such a draw, so it is
 //    detected structurally BEFORE fan-out. (error)
-//  - LINK_MISSING_SOURCE_ROUND: a WINNER/LOSER link with no source.roundNumber; the engine cannot
-//    determine which round feeds the target (getTargetLink treats this as INVALID_VALUES). (error)
+//  - LINK_MISSING_SOURCE_ROUND: a link that traverses by round (a WINNER/LOSER link out of an
+//    elimination structure) with no source.roundNumber; the engine cannot determine which round feeds
+//    the target (getTargetLink treats this as INVALID_VALUES). (error) A link out of a round robin that
+//    names finishingPositions traverses by finishing position, labelled POSITION or WINNER, and needs no
+//    round (linkTraversal.ts): it is never reported here.
 //  - INVALID_LINK: an entry of `links` that is not an object (null, a string, an array). Every reader
 //    that dereferences it throws, so it is reported here and the rest of the scan reads the draw
 //    WITHOUT it: the other findings are still made. (error)
@@ -64,8 +68,6 @@ export const INVALID_LINK = 'INVALID_LINK';
 export const SCAN_ERROR = 'SCAN_ERROR';
 export const DROPPED_PROGRESSION = 'DROPPED_PROGRESSION';
 export const INELIGIBLE_PROGRESSION = 'INELIGIBLE_PROGRESSION';
-
-const ROUND_LINK_TYPES = [WINNER, LOSER];
 
 type GetDrawInconsistenciesArgs = {
   drawDefinition: DrawDefinition;
@@ -112,7 +114,7 @@ function getLinkInconsistencies(drawDefinition: DrawDefinition, structureIds: Se
         // structureId identifies the issue for fingerprinting when one side is absent
         structureId: sourceStructureId ?? targetStructureId,
       });
-    } else if (isMalformedRoundLink(link)) {
+    } else if (isMalformedRoundLink(link, drawDefinition)) {
       inconsistencies.push({
         ...base,
         issueType: LINK_MISSING_SOURCE_ROUND,
@@ -240,8 +242,10 @@ function getProgressionInconsistencies(
   inContextDrawMatchUps: HydratedMatchUp[],
   structureById: Map<string, Structure>,
 ): Partial<Inconsistency>[] {
+  // only links that traverse by round carry winners or losers match by match; a round robin's link (by finishing
+  // position, labelled POSITION or WINNER) has no round matchUps to check progression against
   const progressionLinks = (drawDefinition.links ?? []).filter(
-    (link) => isLinkObject(link) && ROUND_LINK_TYPES.includes(link.linkType),
+    (link) => isLinkObject(link) && traversesByRound(link, drawDefinition),
   );
   return progressionLinks.flatMap((link) => {
     const sourceStructureId = link.source?.structureId;

@@ -1,13 +1,14 @@
 import { modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { isLinkObject, isMalformedRoundLink } from '@Query/drawDefinition/malformedLinks';
+import { traversesByFinishingPosition } from '@Query/drawDefinition/linkTraversal';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { addGoesTo } from '@Query/matchUps/addGoesTo';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
 import { DrawDefinition, DrawLink, Event, MatchUp, Structure, Tournament } from '@Types/tournamentTypes';
-import { POSITION, WINNER } from '@Constants/drawDefinitionConstants';
+import { WINNER } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 import {
@@ -32,6 +33,10 @@ import {
  *    round takes from the link. A round already directed by another well-formed link of the same type from the same
  *    structure is not a candidate: a round's losers (or winners) go to one place. Where no round, or more than one,
  *    fits, the link is removed and the candidates are reported (NO_SOURCE_ROUND, AMBIGUOUS_SOURCE_ROUND).
+ *
+ * A link out of a round robin that names `finishingPositions` traverses by finishing position, labelled `POSITION` or
+ * `WINNER` (linkTraversal.ts). It is not malformed, so the repair never touches it: it is never given a round (a
+ * container has no rounds of its own, so the inference above would find none) and never removed.
  *
  * The fed positions of target round T are those of round T that no earlier round holds: all of round 1, and in a later
  * round the positions that do not advance into it. Their count, `2·m(T) − m(T−1)` (with `m(0) = 0`), is what the link
@@ -202,7 +207,7 @@ function applyPlan(drawDefinition: DrawDefinition, plan: LinkPlan): ResultType &
   const byId = new Map(
     flattenStructures(drawDefinition.structures).map((structure) => [structure.structureId, structure]),
   );
-  if (!drawDefinition.links.some((link) => isMalformedRoundLink(link) || isDangling(link, byId))) {
+  if (!drawDefinition.links.some((link) => isMalformedRoundLink(link, drawDefinition) || isDangling(link, byId))) {
     const goesTo = addGoesTo({ drawDefinition });
     if (goesTo.error) return goesTo;
   }
@@ -255,7 +260,7 @@ export function planLinkRepairs({ drawDefinition, selection, sourceRoundNumber }
 
   const indices = links
     .map((link, linkIndex) => ({ link, linkIndex }))
-    .filter(({ link }) => !isLinkObject(link) || isDangling(link, byId) || isMalformedRoundLink(link))
+    .filter(({ link }) => !isLinkObject(link) || isDangling(link, byId) || isMalformedRoundLink(link, { structures }))
     .filter(({ link }) => !selection || (isLinkObject(link) && matchesSelection(link, selection)));
 
   if (selection && indices.length !== 1) {
@@ -449,7 +454,7 @@ function suppliedPositions(link: DrawLink, byId: Map<string, Structure>): number
   const source = byId.get(link.source?.structureId);
   if (!source) return 0; // a dangling link supplies nothing, and is removed
   const counts = roundCounts(source);
-  if (link.linkType === POSITION) {
+  if (traversesByFinishingPosition(link, { structures: [...byId.values()] })) {
     const groups = structuresOf(source)?.length || 1;
     return (link.source.finishingPositions?.length ?? 0) * groups;
   }

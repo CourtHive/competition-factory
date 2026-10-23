@@ -1,6 +1,10 @@
+import { isRoundWinnerLink, traversesByFinishingPosition } from '@Query/drawDefinition/linkTraversal';
 import { getStructureLinks } from '@Query/drawDefinition/linkGetter';
-import { DrawDefinition } from '@Types/tournamentTypes';
+import { DrawDefinition, DrawLink } from '@Types/tournamentTypes';
 import { findStructure } from '@Acquire/findStructure';
+
+// constants
+import { POSITION, WINNER } from '@Constants/drawDefinitionConstants';
 
 type GetSourceStructureDetailArgs = {
   drawDefinition: DrawDefinition;
@@ -22,8 +26,15 @@ export function getSourceStructureIdsAndRelevantLinks({
       structureId,
     }) ?? {};
 
+  // a link out of a round robin traverses by finishing position whether it is labelled POSITION or WINNER, and only a
+  // link that traverses by round carries the WINNERs of a round (linkTraversal.ts)
+  const ofLinkType = (link: DrawLink) => {
+    if (linkType === POSITION) return traversesByFinishingPosition(link, drawDefinition);
+    if (linkType === WINNER) return isRoundWinnerLink(link, drawDefinition);
+    return link.linkType === linkType;
+  };
   const sourceLinks = (links?.target ?? [])
-    .filter(({ linkType: structureLinkType }) => structureLinkType === linkType)
+    .filter(ofLinkType)
     // if a target roundNumber is provided, only consider structures with link target matching roundNumber
     .filter(({ target }) => !targetRoundNumber || targetRoundNumber === target.roundNumber);
 

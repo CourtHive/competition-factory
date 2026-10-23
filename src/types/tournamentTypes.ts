@@ -491,19 +491,27 @@ export interface DrawLinkBase {
   updatedAt?: Date | string;
 }
 
-/** A link that moves the winners or losers of one round of the source structure. */
+/** A link that moves the winners or losers of one round of an ELIMINATION source structure, match by match. */
 export interface RoundDrawLink extends DrawLinkBase {
   linkType: `${LinkTypeEnum.LOSER}` | `${LinkTypeEnum.WINNER}`;
   source: DrawLinkSource & { roundNumber: number; finishingPositions?: never };
 }
 
-/** A link that moves participants by their finishing position in the source structure (round robin playoffs). */
+/**
+ * A link that moves participants by their FINISHING POSITION in a round robin: `finishingPositions` names the group
+ * places that cross it (`[1]`: every group's winner), decided by tally. Labelled `POSITION`, or `WINNER` (valid,
+ * permanently: CA, 2026-10-23); a reader asks `traversesByFinishingPosition`, never the label alone. A `roundNumber` is
+ * allowed and decides nothing (the factory records the groups' final round on a qualifying link).
+ */
 export interface PositionDrawLink extends DrawLinkBase {
-  linkType: `${LinkTypeEnum.POSITION}`;
-  source: DrawLinkSource & { finishingPositions: number[]; roundNumber?: never };
+  linkType: `${LinkTypeEnum.POSITION}` | `${LinkTypeEnum.WINNER}`;
+  source: DrawLinkSource & { finishingPositions: number[]; roundNumber?: number };
 }
 
-/** Discriminated by `linkType`: a round link names a source `roundNumber`, a position link `finishingPositions`. */
+/**
+ * A round link names a source `roundNumber`; a position link names `finishingPositions`. `WINNER` labels both, so the
+ * label alone does not discriminate: the source structure does (linkTraversal.ts).
+ */
 export type DrawLink = RoundDrawLink | PositionDrawLink;
 
 export enum LinkTypeEnum {

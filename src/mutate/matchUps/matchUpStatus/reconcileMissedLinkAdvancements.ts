@@ -1,6 +1,7 @@
 import { directWinner } from '@Mutate/matchUps/drawPositions/drawPositionPlacement';
 import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { isRoundWinnerLink } from '@Query/drawDefinition/linkTraversal';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -8,7 +9,6 @@ import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
-import { WINNER } from '@Constants/drawDefinitionConstants';
 
 /**
  * Direct every participant who DECIDED a round feeding another structure over a WINNER link, and is not there yet.
@@ -35,7 +35,7 @@ export function reconcileMissedLinkAdvancements({
   event?: Event;
 }): void {
   const winnerLinks = (drawDefinition?.links ?? []).filter(
-    (link) => link.linkType === WINNER && link.target?.structureId !== link.source?.structureId,
+    (link) => isRoundWinnerLink(link, drawDefinition) && link.target?.structureId !== link.source?.structureId,
   );
   if (!drawDefinition || !winnerLinks.length) return;
 

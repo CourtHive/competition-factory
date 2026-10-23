@@ -920,6 +920,36 @@ const parsed = tools.parseScoreString({
 
 ---
 
+## Draw Links
+
+How a link in `drawDefinition.links` TRAVERSES: by finishing position or by round. Ask these instead of comparing `linkType`: out of a round robin, a link labelled `POSITION` or `WINNER` traverses by `finishingPositions`, and only the source structure can tell a round robin's `WINNER` link from an elimination one. Pass the draw; without it a `WINNER` link is read as a round link. See [Rounds and finishing positions](/docs/concepts/draw-links#rounds-and-finishing-positions-how-a-link-traverses).
+
+### traversesByFinishingPosition
+
+True for a `POSITION` link, and for a `WINNER` link out of a round robin (a `CONTAINER`) that names `source.finishingPositions`.
+
+```js
+const groupFinishersCross = tools.traversesByFinishingPosition(link, drawDefinition);
+```
+
+### traversesByRound
+
+True for a `WINNER` or `LOSER` link that carries the winners or losers of a round: every one that is not the above.
+
+```js
+const roundCrosses = tools.traversesByRound(link, drawDefinition);
+```
+
+### isRoundWinnerLink
+
+True for a `WINNER` link that traverses by round: what match-by-match advancement follows.
+
+```js
+const advancesRoundWinners = tools.isRoundWinnerLink(link, drawDefinition);
+```
+
+---
+
 ## Not in tools Module
 
 The following functions are available through **governors**, not the tools module:

@@ -143,7 +143,12 @@ function collectEliminationQualifiers({
 
       if (winningSide || relevantSide) {
         const { participantId, participant } = winningSide ?? relevantSide ?? {};
-        if (participantId && !assignedParticipantIds.has(participantId)) {
+        // once each: a participant who won several matchUps of the source is one qualifier, not several
+        if (
+          participantId &&
+          !assignedParticipantIds.has(participantId) &&
+          !qualifyingParticipantIds.includes(participantId)
+        ) {
           if (participant && returnParticipants) qualifyingParticipants.push(participant);
           qualifyingParticipantIds.push(participantId);
         }
@@ -175,6 +180,11 @@ function collectRoundRobinQualifiers({
 
     if (requireCompletedStructures && !structureCompleted) continue;
 
+    // the link names the group finishing positions that qualify (`[1]`: every group's winner; `[1, 2]`: the top two),
+    // whether it is labelled POSITION or WINNER; a link naming none qualifies the winners
+    const finishingPositions: number[] = sourceLink.source.finishingPositions?.length
+      ? sourceLink.source.finishingPositions
+      : [1];
     const { positionAssignments } = getPositionAssignments({ structure });
     const relevantParticipantIds =
       positionAssignments
@@ -188,7 +198,12 @@ function collectRoundRobinQualifiers({
 
           return results ? { participantId, groupOrder: results?.groupOrder } : {};
         })
-        .filter(({ groupOrder, participantId }) => groupOrder === 1 && !assignedParticipantIds.has(participantId))
+        .filter(
+          ({ groupOrder, participantId }) =>
+            finishingPositions.includes(groupOrder) &&
+            !assignedParticipantIds.has(participantId) &&
+            !qualifyingParticipantIds.includes(participantId),
+        )
         .map(({ participantId }) => participantId) ?? [];
 
     if (relevantParticipantIds) qualifyingParticipantIds.push(...relevantParticipantIds);

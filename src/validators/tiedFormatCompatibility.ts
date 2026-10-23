@@ -1,5 +1,6 @@
 import { stringifyCombinedPointFormat } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { parse, type ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
+import { isRoundWinnerLink } from '@Query/drawDefinition/linkTraversal';
 import { structuresOf, matchUpsOf } from '@Acquire/structureMembers';
 
 // constants and types
@@ -10,7 +11,6 @@ import { TEAM } from '@Constants/eventConstants';
 import {
   ROUND_OUTCOME,
   WIN_RATIO,
-  WINNER,
   AD_HOC,
   SWISS,
   LADDER,
@@ -75,7 +75,7 @@ export function advancesMatchWinner(drawDefinition: DrawDefinition, structure: S
     return true;
   return (drawDefinition.links ?? []).some(
     (link) =>
-      link.linkType === WINNER &&
+      isRoundWinnerLink(link, drawDefinition) &&
       link.source?.structureId === structure.structureId &&
       typeof link.source.roundNumber === 'number',
   );

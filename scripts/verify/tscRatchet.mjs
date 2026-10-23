@@ -69,12 +69,15 @@ const COUNTS = {
   },
 };
 
-/** The `never` fields the 8.0.0 hard form deletes. Each must be present exactly once, or the count is meaningless. */
+/**
+ * The `never` fields the 8.0.0 hard form deletes. Each must be present exactly once, or the count is meaningless.
+ * A position link's `roundNumber` is not among them: it is a real optional field (CA, 2026-10-23), since a link out of a
+ * round robin may record the groups' final round, and the factory writes one on a qualifying link.
+ */
 export const SOFT_ONLY_LINES = [
   '  structures?: never;\n',
   '  matchUps?: never;\n  positionAssignments?: never;\n',
   '; finishingPositions?: never }',
-  '; roundNumber?: never }',
 ];
 
 export function toHardUnion(source) {
@@ -247,7 +250,7 @@ function selfTest() {
     'interface ItemStructure {\n  matchUps?: MatchUp[];\n  structures?: never;\n}',
     'interface ContainerStructure {\n  structures: Structure[];\n  matchUps?: never;\n  positionAssignments?: never;\n}',
     'source: DrawLinkSource & { roundNumber: number; finishingPositions?: never };',
-    'source: DrawLinkSource & { finishingPositions: number[]; roundNumber?: never };',
+    'source: DrawLinkSource & { finishingPositions: number[]; roundNumber?: number };',
   ].join('\n');
   const hard = toHardUnion(soft);
   expect('the hard form deletes every never field', hard.includes('never'), false);

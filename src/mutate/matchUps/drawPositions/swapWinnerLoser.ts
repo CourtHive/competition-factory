@@ -7,6 +7,7 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { isRoundWinnerLink } from '@Query/drawDefinition/linkTraversal';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { reverseScore } from '@Generators/score/reverseScore';
@@ -22,7 +23,7 @@ import {
 
 // constants and types
 import type { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
-import { LOSER, WINNER } from '@Constants/drawDefinitionConstants';
+import { LOSER } from '@Constants/drawDefinitionConstants';
 
 /**
  * Swap the winner and loser of an already-decided matchUp, carrying the change downstream.
@@ -229,7 +230,7 @@ export function swapWinnerLoser(params) {
     const positionA = originPosition(existingWinnerParticipantId);
     const positionB = originPosition(existingLoserParticipantId);
     const reEntryRounds = (drawDefinition.links ?? [])
-      .filter((link) => link.linkType === WINNER && link.target.structureId === originStructureId)
+      .filter((link) => isRoundWinnerLink(link, drawDefinition) && link.target.structureId === originStructureId)
       .map((link) => link.target.roundNumber ?? 0);
     if (!positionA || !reEntryRounds.length) continue;
     const firstReEntryRound = Math.min(...reEntryRounds);

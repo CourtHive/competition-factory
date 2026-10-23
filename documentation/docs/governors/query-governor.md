@@ -996,8 +996,12 @@ Draw-level checks (in addition to every structure-level `issueType`):
 - `DANGLING_LINK` — a link whose `source` or `target` `structureId` is not a structure in the draw.
   Detected structurally **before** fan-out, because inContext derivation itself throws on such a
   draw. (error)
-- `LINK_MISSING_SOURCE_ROUND` — a `WINNER`/`LOSER` link with no `source.roundNumber` (missing or 0);
-  the engine cannot determine which round feeds the target. A link that is also dangling is reported
+- `LINK_MISSING_SOURCE_ROUND` — a link that must name a round and does not: a `WINNER`/`LOSER` link
+  out of an elimination structure with no `source.roundNumber` (missing or 0), or a `WINNER` link out of
+  a round robin naming no `finishingPositions`; the engine cannot determine which round feeds the target.
+  A link out of a round robin that names `finishingPositions` is directed by them, labelled `POSITION`
+  or `WINNER`, and needs no round: see
+  [Rounds and finishing positions](/docs/concepts/draw-links#rounds-and-finishing-positions-how-a-link-traverses). A link that is also dangling is reported
   once, as `DANGLING_LINK`. (error)
 - `INVALID_LINK` — an entry of `links` that is not an object (`null`, a string, an array), with its
   `linkIndex`. Every reader that dereferences it throws, so it is reported here and the rest of the
