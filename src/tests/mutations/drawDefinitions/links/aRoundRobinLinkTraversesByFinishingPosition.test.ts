@@ -8,6 +8,7 @@ import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
+import * as tools from '@Assemblies/tools';
 
 // constants
 import { QUALIFYING_PARTICIPANT } from '@Constants/positionActionConstants';
@@ -195,6 +196,12 @@ describe('the shared definition: how a link traverses', () => {
     // a POSITION label needs no draw
     link.linkType = POSITION;
     expect(traversesByFinishingPosition(link)).toEqual(true);
+  });
+
+  it('clients read the same definition: tools exports it', () => {
+    expect(tools.traversesByFinishingPosition).toBe(traversesByFinishingPosition);
+    expect(tools.traversesByRound).toBe(traversesByRound);
+    expect(tools.isRoundWinnerLink).toBe(isRoundWinnerLink);
   });
 
   it.each([null, 'link', [], undefined])('an entry that is not a link traverses neither way: %s', (entry) => {
