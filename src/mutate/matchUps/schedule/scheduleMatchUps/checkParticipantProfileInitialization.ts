@@ -21,6 +21,8 @@ export type ParticipantProfile = {
   bookings: ParticipantBooking[];
   timeAfterRecovery?: string;
   dayMatchUps: DayMatchUp[];
+  /** the day grouped for day-load asks (participantDayLoad.ts); cleared whenever dayMatchUps changes */
+  dayLoadCache?: unknown;
 };
 
 export type IndividualParticipantProfiles = { [participantId: string]: ParticipantProfile };
