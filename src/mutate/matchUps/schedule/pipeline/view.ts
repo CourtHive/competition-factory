@@ -24,7 +24,8 @@ import { Tournament } from '@Types/tournamentTypes';
 /**
  * vNext, stage one: the read-only VIEW a scheduling call is decided from (SCHEDULING_PIPELINE_VNEXT.md § 7; the rules
  * are `documentation/docs/concepts/scheduling-pipeline.md` § 1 and § 3). Built once per call, so nothing downstream
- * re-hydrates, rebuilds a graph or re-resolves a round (§ 7.0, design rule 1). Nothing here writes.
+ * re-hydrates, rebuilds a graph or re-resolves a round (§ 7.0, design rule 1). Nothing here writes, except the repair
+ * profile validation makes to a stored profile whose rounds name a venue, event or draw that is gone (spec § 2).
  *
  * It reuses the engine's queries for what the spec states as inputs (hydration, the dependency graph, participant
  * reachability, format timing); what vNext re-implements is the orchestration over them. The round resolution below is
@@ -64,6 +65,12 @@ export type DatePlan = { scheduleDate: string; venues: VenuePlan[] };
 
 export type SchedulingView = {
   tournamentRecords: { [tournamentId: string]: Tournament };
+  /** the profile as validated, and what validation changed and found (spec § 2) */
+  schedulingProfile: DateProfile[];
+  schedulingProfileModifications?: number;
+  schedulingProfileIssues: string[];
+  /** the profile's own date objects for the dates planned, in order */
+  dateSchedulingProfiles: DateProfile[];
   matchUpDependencies: ReturnType<typeof getMatchUpDependencies>['matchUpDependencies'];
   dailyLimitOverrides: ReturnType<typeof getMatchUpDailyLimits>['dailyLimitOverrides'];
   matchUpDailyLimits: ReturnType<typeof getMatchUpDailyLimits>['matchUpDailyLimits'];
@@ -86,13 +93,15 @@ type BuildSchedulingViewArgs = {
   courtIds?: string[];
 };
 
-/** the profile's dates, in order, narrowed to `scheduleDates` when the call names any */
+/**
+ * The profile's dates, in order, narrowed to `scheduleDates` when the call names any. They are the profile's own
+ * objects, as v1's `dateSchedulingProfiles` are: a run reports each round's share placed on them.
+ */
 function profileDates(schedulingProfile: DateProfile[], scheduleDates: string[]): DateProfile[] {
   const named = new Set(scheduleDates.filter(isValidDateString).map((date) => extractDate(date)));
   return schedulingProfile
     .filter(({ scheduleDate }) => isValidDateString(scheduleDate))
-    .map((dateProfile) => ({ ...dateProfile, scheduleDate: extractDate(dateProfile.scheduleDate) }))
-    .filter(({ scheduleDate }) => !scheduleDates.length || named.has(scheduleDate))
+    .filter(({ scheduleDate }) => !scheduleDates.length || named.has(extractDate(scheduleDate)))
     .sort((a, b) => new Date(a.scheduleDate).getTime() - new Date(b.scheduleDate).getTime());
 }
 
@@ -172,7 +181,11 @@ export function buildSchedulingView({
   periodLength = 30,
   courtIds,
 }: BuildSchedulingViewArgs): SchedulingView | { error: ErrorType } {
-  const { schedulingProfile = [] } = getSchedulingProfile({ tournamentRecords });
+  // validating the stored profile can repair it (rounds whose venue, event or draw is gone are removed and the profile is
+  // saved), exactly as v1's run does: the one write a view can cause
+  const profileResult = getSchedulingProfile({ tournamentRecords });
+  if (profileResult.error) return { error: profileResult.error };
+  const { schedulingProfile = [], modifications, issues = [] } = profileResult;
   const dateProfiles = profileDates(schedulingProfile, scheduleDates);
   if (schedulingProfile.length && !dateProfiles.length) return { error: NO_VALID_DATES };
 
@@ -225,7 +238,7 @@ export function buildSchedulingView({
         }),
       };
     });
-    return { scheduleDate: dateProfile.scheduleDate, venues };
+    return { scheduleDate: extractDate(dateProfile.scheduleDate), venues };
   });
 
   const allCourts: HydratedCourt[] = getVenuesAndCourts({ ignoreDisabled: false, tournamentRecords }).courts ?? [];
@@ -235,10 +248,14 @@ export function buildSchedulingView({
 
   return {
     matchUps: new Map(hydrated.map((matchUp) => [matchUp.matchUpId, matchUp])),
+    schedulingProfileModifications: modifications,
+    dateSchedulingProfiles: dateProfiles,
+    schedulingProfileIssues: issues,
     matchUpDependencies,
     dailyLimitOverrides,
     matchUpDailyLimits,
     tournamentRecords,
+    schedulingProfile,
     personRequests,
     reachability,
     hydrated,

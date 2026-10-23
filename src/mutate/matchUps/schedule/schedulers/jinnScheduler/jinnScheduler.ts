@@ -1,6 +1,7 @@
 import { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems/addMatchUpScheduledDate';
 import { processNextMatchUps } from '@Mutate/matchUps/schedule/scheduleMatchUps/processNextMatchUps';
 import { getVenueSchedulingDetails } from '@Query/matchUps/scheduling/getVenueSchedulingDetails';
+import { computeRoundSchedulePcts } from '@Mutate/matchUps/schedule/pipeline/roundSchedulePcts';
 import { auditAutoScheduling } from '@Mutate/matchUps/schedule/schedulers/auditAutoScheduling';
 import { scheduleVenueRounds } from '@Mutate/matchUps/schedule/pipeline/placeVenueRounds';
 import { checkPlayedOrder } from '@Mutate/matchUps/schedule/scheduleItems/playedOrder';
@@ -325,23 +326,5 @@ function scheduleMatchUpTime({
       matchUpId,
       venueId,
     });
-  }
-}
-
-function computeRoundSchedulePcts({ scheduledMatchUpIds, dateSchedulingProfile, scheduleDate }) {
-  for (const venue of dateSchedulingProfile.venues) {
-    for (const round of venue.rounds) {
-      const matchUpIds = round.matchUps?.map(({ matchUpId }) => matchUpId) ?? [];
-      const canScheduleMatchUpIds = matchUpIds.filter((matchUpId) =>
-        scheduledMatchUpIds[scheduleDate].includes(matchUpId),
-      );
-      round.canScheduledMatchUpIds = canScheduleMatchUpIds;
-      let possibleToSchedulePct = Math.round((canScheduleMatchUpIds.length / round.matchUpsCount) * 10000) / 100;
-      if (possibleToSchedulePct === Infinity || Number.isNaN(possibleToSchedulePct)) possibleToSchedulePct = 0;
-      round.possibleToSchedulePct = possibleToSchedulePct;
-      if (round.matchUpsCount === canScheduleMatchUpIds.length) {
-        round.possibleToSchedule = true;
-      }
-    }
   }
 }
