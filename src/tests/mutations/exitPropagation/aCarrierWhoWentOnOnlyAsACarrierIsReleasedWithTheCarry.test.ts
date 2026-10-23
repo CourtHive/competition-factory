@@ -1,5 +1,7 @@
-import { getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
+import { getDrawDefinition, getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
+import { feederSendsNobody } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
+import { positionTargets } from '@Query/matchUp/positionTargets';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, it } from 'vitest';
 
@@ -26,6 +28,10 @@ import { expect, it } from 'vitest';
  * one (`convergesAtTarget`), so the first carrier always carries. A carried exit decides every matchUp its carrier
  * stands in, even with nobody opposite yet, and it is changed only at its origin (`CANNOT_CHANGE_OUTCOME`). So a carrier
  * goes on only past BYEs, and every onward matchUp is a BYE, waiting on the carry, or decided by it.
+ *
+ * The first carrier's seat once recorded `West|2|4`'s claim on its BYE (`byeClaims`); the ledger is retired (Mentat
+ * P58, CA 2026-10-21), so the seat holds no provenance, and what the claim stood for is read from the draw: `West|2|4`
+ * is a double exit and sends nobody across its loser link (`feederSendsNobody`: `DOUBLE_EXIT`).
  */
 
 const coordinate = (matchUp: any) => `${matchUp.structureName}|${matchUp.roundNumber}|${matchUp.roundPosition}`;
@@ -57,6 +63,16 @@ function view(drawId: string) {
       },
     ]),
   );
+}
+
+/** why the matchUp at `key` sends nobody across its loser link, read from the draw as it stands */
+function feederReason(drawId: string, key: string) {
+  const drawDefinition = getDrawDefinition(drawId);
+  const inContextDrawMatchUps = getDrawMatchUps(drawId);
+  const feeder = inContextDrawMatchUps.find((matchUp: any) => coordinate(matchUp) === key);
+  const loserTargetLink = positionTargets({ matchUpId: feeder.matchUpId, inContextDrawMatchUps, drawDefinition })
+    ?.targetLinks?.loserTargetLink;
+  return feederSendsNobody({ inContextDrawMatchUps, loserTargetLink, drawDefinition, feeder });
 }
 
 const CONFIG = { participantsCount: 27, propagateExitStatus: true, drawSize: 32, drawType: 'COMPASS', seed: 21155795 };
@@ -135,8 +151,9 @@ it('a carrier past a BYE is released, carry and all, where another carry decided
     winningSide: null,
     sides: ['BYE', 'BYE'],
     score: null,
-    provenance: { '2': { byeClaims: ['West|2|4'] } },
+    provenance: null,
   });
+  expect(feederReason(drawId, 'West|2|4')).toEqual('DOUBLE_EXIT');
   // and the final holds the second carrier beside the BYE it sends, their own carry recorded beside it
   expect(after['Southwest|2|1']).toEqual({
     matchUpStatus: 'BYE',

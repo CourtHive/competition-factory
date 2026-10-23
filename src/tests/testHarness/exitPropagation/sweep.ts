@@ -15,7 +15,6 @@ import {
 } from './transitions';
 import {
   checkLoserSeatsDerived,
-  checkClaimsLive,
   checkArrivalsTrue,
   checkDoUndoIdentity,
   checkIdempotence,
@@ -442,8 +441,6 @@ function replayWithContext(
   if (integrity.length) return { ...integrity[0], stage: 'final' };
   const arrivals = checkArrivalsTrue(drawId);
   if (arrivals.length) return { ...arrivals[0], stage: 'final' };
-  const claims = checkClaimsLive(drawId);
-  if (claims.length) return { ...claims[0], stage: 'final' };
   const seats = checkLoserSeatsDerived(drawId);
   if (seats.length) return { ...seats[0], stage: 'final' };
   if (coverage) {

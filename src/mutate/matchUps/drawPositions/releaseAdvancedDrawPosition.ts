@@ -1,5 +1,6 @@
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { bringCarryHome, carryLeavingWith } from '@Mutate/matchUps/drawPositions/carryHome';
+import { withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
@@ -151,6 +152,7 @@ export function releaseAdvancedDrawPosition({
 
   const releasedRoundNumbers: number[] = [];
   const vacatedByes: { roundNumber: number; remaining: number[] }[] = [];
+  const withdrawnAwards: string[] = [];
   for (const matchUp of matchUps) {
     if (!releasable(matchUp)) continue;
     const heldOpenForArrival =
@@ -248,6 +250,7 @@ export function releaseAdvancedDrawPosition({
     // pending. A CARRIED exit keeps its winningSide on an empty seat by design (exit-propagation.md).
     if (heldOpenForArrival && awardedByProducedExit({ drawPosition, matchUps, matchUp })) {
       matchUp.winningSide = undefined;
+      withdrawnAwards.push(matchUp.matchUpId);
     }
 
     /**
@@ -272,6 +275,16 @@ export function releaseAdvancedDrawPosition({
       matchUp,
       event,
     });
+  }
+
+  // ...and so does the BYE the award sent over its loser link for a loser who is nobody (P39): a pending exit sends
+  // nothing there, as on the other paths that take an award back (`anUndoneAwardTakesBackItsLoserSeatBye`). Census run
+  // 19, COMPASS 16/13 20849541 policy off: re-scoring `East|1|3` from a walkover took `West|1|2`'s winner out of
+  // `West|2|1`, whose award over `East|1|2`'s produced walkover went and left `Southwest|1|1` dp 1 a BYE nothing owed
+  // (`aRederivedConvergenceKeepsTheByeClaimsOfOthers`). Withdrawn once the pass is done, so a seat it clears cannot
+  // move a matchUp this pass is still reading
+  for (const claimantMatchUpId of withdrawnAwards) {
+    withdrawByeSeats({ claimantMatchUpId, tournamentRecord, drawDefinition, matchUpsMap: resolvedMap, event });
   }
 
   return { ...SUCCESS, releasedRoundNumbers, vacatedByes };

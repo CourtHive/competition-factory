@@ -1,12 +1,12 @@
 import { removeDirectedBye, removeDirectedWinner } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
+import { getSideDrawPosition, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { firstRoundFeedersWon } from '@Mutate/matchUps/drawPositions/drawPositionPlacement';
 import { withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
+import { byeSeatStands } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
-import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
@@ -14,17 +14,6 @@ import { positionTargets } from '@Query/matchUp/positionTargets';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
 import { intersection, overlap } from '@Tools/arrays';
-import {
-  getDrawPositionSideNumber,
-  getSideDrawPosition,
-  getWinningSideDrawPosition,
-} from '@Query/matchUps/getDrawPositionSides';
-import {
-  withdrawByeClaimsFrom,
-  byeClaimSurvives,
-  withdrawByeClaim,
-  sideRecordOf,
-} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import {
   deriveExitStateFromProvenance,
   getSideExitProvenance,
@@ -35,6 +24,10 @@ import {
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
+import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
+import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
+import type { HydratedMatchUp } from '@Types/hydrated';
+import { SUCCESS } from '@Constants/resultConstants';
 import type {
   SideExitProvenanceEntry,
   MatchUpStatusUnion,
@@ -43,10 +36,6 @@ import type {
   DrawLink,
   MatchUp,
 } from '@Types/tournamentTypes';
-import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
-import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
-import type { HydratedMatchUp } from '@Types/hydrated';
-import { SUCCESS } from '@Constants/resultConstants';
 import {
   BYE,
   completedMatchUpStatuses,
@@ -157,47 +146,10 @@ export function removeDoubleExit(params) {
     loserMatchUp?.matchUpStatus === BYE && !!byeProvenance && !reservationStands({ params, loserTargetLink });
 
   /**
-   * This cascade is being unwound, so its own BYE claim goes — on EVERY path.
-   *
-   * Withdrawal used to sit inside the branch that removes the BYE, so the branch handling a loser
-   * target that already holds a draw BYE (visited "to WITHDRAW, and only that") left the claim
-   * behind. A ledger written on every attempt and withdrawn on only some paths accumulates claims
-   * describing nothing, and a stale claim reads as a live one — which would make the retain test
-   * answer "another cascade still owes this" forever.
-   */
-  const rawLoserMatchUp = (matchUpsMap?.drawMatchUps ?? []).find(
-    (candidate) => candidate.matchUpId === loserMatchUp?.matchUpId,
-  );
-  // the claim's side, read structurally: a lone position's side is not its index
-  const claimSideNumber =
-    getDrawPositionSideNumber({
-      matchUp: rawLoserMatchUp && { ...rawLoserMatchUp, sides: undefined },
-      structureId: loserMatchUp?.structureId,
-      drawPosition: loserTargetDrawPosition,
-      drawDefinition,
-    }) || 1;
-  const loserRecord = sideRecordOf(rawLoserMatchUp);
-  withdrawByeClaim({ matchUp: rawLoserMatchUp, sideNumber: claimSideNumber, claimantMatchUpId: matchUpId });
-  // ...and wherever else this cascade claimed one: a BYE that WALKS is claimed on a downstream
-  // matchUp the unwind never revisits at this coordinate
-  const claimsWithdrawn = withdrawByeClaimsFrom({ matchUps: matchUpsMap?.drawMatchUps, claimantMatchUpId: matchUpId });
-  // a claim is the matchUp's own record, and the unwind below need not rewrite the matchUp it leaves: each is announced
-  if (rawLoserMatchUp && loserRecord !== sideRecordOf(rawLoserMatchUp)) claimsWithdrawn.push(rawLoserMatchUp);
-  for (const withdrawnFrom of new Set(claimsWithdrawn))
-    modifyMatchUpNotice({
-      tournamentId: params.tournamentRecord?.tournamentId,
-      eventId: params.event?.eventId,
-      context: 'removeDoubleExit',
-      matchUp: withdrawnFrom,
-      event: params.event,
-      drawDefinition,
-    });
-
-  /**
    * THE FMLC "PAIRED ROUND-1 DOUBLE EXIT" TEST THAT STOOD HERE IS GONE. It asked whether the BYE on
    * the loser target had been propagated by two double exits by pairing the source's roundPosition
    * with the ROUND-1 matchUps of its structure — a topological proxy for the question the
-   * `byeClaims` ledger below answers by record. For a round-2 source it collected no matchUps at
+   * draw-derived `byeSeatStands` below answers. For a round-2 source it collected no matchUps at
    * all, and `[].every(...)` is `true`, so it returned SUCCESS having withdrawn nothing.
    *
    * Measured 2026-09-30 by CA in TMX on FIRST_MATCH_LOSER_CONSOLATION 8/5: `Main|2|1` a
@@ -237,25 +189,24 @@ export function removeDoubleExit(params) {
      * reached the same count but OVER-RETAINED, because round-1 pairing is not how a backdraw feeds
      * and it cannot see a claimant that is a cascade continuation.
      */
-    const anotherClaimSurvives = byeClaimSurvives({
-      isStillDoubleExit: (claimantMatchUpId) =>
-        isDoubleExit(inContextDrawMatchUps.find(({ matchUpId: id }) => id === claimantMatchUpId)?.matchUpStatus),
-      matchUp: rawLoserMatchUp,
-      sideNumber: claimSideNumber,
-      withdrawnSourceIds,
-    });
-    // ...and while the matchUp being unwound still holds a BYE of its own. A BYE matchUp's loser is a BYE, so the BYE
-    // cascade gave its loser seat one that no double exit claims; this unwind leaves that BYE where it found it
-    // (census A1 wave 4, COMPASS 16/15 21036395: `aByeMatchUpsLoserSeatKeepsItsBye`).
-    const unwound = inContextDrawMatchUps.find((candidate: HydratedMatchUp) => candidate.matchUpId === matchUpId);
-    const stillHoldsBye =
-      byePropagatedToLoserMatchUp &&
-      !!unwound?.structureId &&
-      matchUpHoldsBye({
+    // read from the draw (`byeSeatStands`): its feeder, judged as the unwind will leave it, still sends nobody and the
+    // policy shows that with a BYE. A BYE matchUp's loser seat keeps its BYE this way too (census A1 wave 4, COMPASS
+    // 16/15 21036395: `aByeMatchUpsLoserSeatKeepsItsBye`).
+    const seat = (positionAssignmentsOf(loserStructure) ?? []).find(
+      (assignment) => assignment.drawPosition === loserTargetDrawPosition,
+    );
+    const byeStands =
+      !!seat?.bye &&
+      !!seat.byeFromPropagation &&
+      byeSeatStands({
+        structureId: inContextLoserMatchUp.structureId,
+        drawPosition: loserTargetDrawPosition,
+        withdrawn: withdrawnSourceIds,
+        appliedPolicies,
         drawDefinition,
-        matchUp: { drawPositions: unwound.drawPositions, structureId: unwound.structureId },
+        matchUpsMap,
       });
-    if (anotherClaimSurvives || stillHoldsBye) {
+    if (byeStands) {
       return decorateResult({ result: { ...SUCCESS }, stack });
     }
 
@@ -1046,9 +997,7 @@ function retainByeOriginsBesideExits(
     const oppositeWithdrawn =
       !!opposite?.sourceMatchUpId && withdrawnSourceIds.has(opposite.sourceMatchUpId) && !!carriedExitStatus(opposite);
     if (!isByeOrigin(kept[sideNumber]) || !oppositeWithdrawn) continue;
-    const claims = kept[sideNumber]?.byeClaims;
-    if (claims?.length) kept[sideNumber] = { byeClaims: [...claims] };
-    else delete kept[sideNumber];
+    delete kept[sideNumber];
   }
   return Object.keys(kept).length ? kept : undefined;
 }

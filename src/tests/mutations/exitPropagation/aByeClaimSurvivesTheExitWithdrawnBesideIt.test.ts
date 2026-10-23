@@ -1,6 +1,8 @@
-import { getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
+import { getDrawDefinition, getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
+import { byeSeatsOwedTo, feederSendsNobody } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { prepareDraw, replayFailure as replay } from '@Tests/testHarness/exitPropagation/sweep';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
+import { positionTargets } from '@Query/matchUp/positionTargets';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, it } from 'vitest';
 
@@ -19,6 +21,11 @@ import { COMPASS } from '@Constants/drawDefinitionConstants';
  * In the same settle the produced exit the double exit had sent to that seat is withdrawn, and the withdrawal cleared
  * the side's whole record: the claim went with the exit. When a relabel of `East|1|7` later brought `West|2|2` a real
  * opponent, nothing recorded the BYE as `West|2|2`'s, so it stood, and `West|2|2`'s loser replaced it a result later.
+ *
+ * The `byeClaims` ledger is retired (Mentat P58, CA 2026-10-21): nothing records the BYE as anyone's, and no withdrawal
+ * can clear a claim. The BYE's reason is read from the draw: after the convergence dissolves, `West|2|2` sends nobody
+ * across its loser link (`feederSendsNobody`: `NOBODY_LOST`), and the seat is among those `West|2|2` is the reason for
+ * (`byeSeatsOwedTo`).
  */
 
 type Step = { structureName: string; roundNumber: number; roundPosition: number; outcome: any };
@@ -74,13 +81,24 @@ const byCoordinate = (matchUps: any[]) =>
     ]),
   );
 
-it('the BYE West|2|2 claims for its loser is recorded as its claim after the convergence dissolves', () => {
-  const matchUps = play(schedule.slice(0, 3), 'claim-recorded');
-  const claimant = matchUps.find((matchUp: any) => coordinate(matchUp) === 'West|2|2');
+it("the BYE at West|2|2's loser seat is read as West|2|2's after the convergence dissolves", () => {
+  const drawId = 'claim-recorded';
+  const matchUps = play(schedule.slice(0, 3), drawId);
+  const drawDefinition = getDrawDefinition(drawId);
+  const feeder = matchUps.find((matchUp: any) => coordinate(matchUp) === 'West|2|2');
   const seat = matchUps.find((matchUp: any) => coordinate(matchUp) === 'Southwest|1|1');
   expect(seat.matchUpStatus).toEqual(BYE);
-  const claims = [1, 2].flatMap((sideNumber) => seat.sideExitProvenance?.[sideNumber]?.byeClaims ?? []);
-  expect(claims).toContain(claimant.matchUpId);
+  expect(seat.sides.some((side: any) => side?.bye)).toEqual(true);
+  const loserTargetLink = positionTargets({
+    matchUpId: feeder.matchUpId,
+    inContextDrawMatchUps: matchUps,
+    drawDefinition,
+  })?.targetLinks?.loserTargetLink;
+  expect(feederSendsNobody({ inContextDrawMatchUps: matchUps, loserTargetLink, drawDefinition, feeder })).toEqual(
+    'NOBODY_LOST',
+  );
+  const owed = byeSeatsOwedTo({ inContextDrawMatchUps: matchUps, drawDefinition, matchUpId: feeder.matchUpId });
+  expect(owed.map(coordinate)).toContain('Southwest|1|1');
 });
 
 it('the BYE goes when West|2|2 gains an opponent, and the draw is the one the results entered directly reach', () => {

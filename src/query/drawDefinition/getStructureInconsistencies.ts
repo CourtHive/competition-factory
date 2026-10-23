@@ -545,8 +545,7 @@ function getWinnerAdvancementInconsistency(
  * came to be in a CONTEST THAT HAS BEEN DECIDED WITHOUT BEING PLAYED: an exit, a double exit, or a
  * BYE. On a matchUp that is still to be played, or was played, there is nothing for it to explain.
  *
- * A BYE claim ledger (`byeClaims` alone) is exempt. It records which double exits claim a BYE, is
- * written at the point of the attempt, and carries no origin.
+ * A `byeClaims` entry on a stored record (the ledger retired by Mentat P58) is exempt: it carries no origin.
  *
  * **SEVERITY `error`, and the population is ZERO.** Measured over 1,440 draws played to exhaustion —
  * 126,786 matchUp-states carrying provenance, sampled after every step — and over the full suite,

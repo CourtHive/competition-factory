@@ -1,13 +1,16 @@
+import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
-import { matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
+import { matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
+import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
+import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { carriedExitStatus } from './sideExitProvenance';
 import { isDoubleExit } from '@Validators/isExit';
 
 // constants and types
 import { DrawDefinition, DrawLink, PositionAssignment } from '@Types/tournamentTypes';
+import { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 
@@ -22,7 +25,8 @@ export type FeederSendsNobody = 'FEEDER_HOLDS_BYE' | 'DOUBLE_EXIT' | 'NOBODY_LOS
  *  - holds a BYE: a BYE matchUp has no winner or loser, so nothing comes down its loser link (`FEEDER_HOLDS_BYE`);
  *  - is a double exit (`DOUBLE_EXIT`);
  *  - is decided and its losing side holds nobody: it was won against a produced or carried exit (`NOBODY_LOST`);
- *  - is undecided and one side holds a carried exit, which is the side that will lose (`EXIT_PENDING`);
+ *  - is undecided and one side holds, alone, the exit a double exit produced along its winner path, which is the side that
+ *    will lose (`EXIT_PENDING`; an exit that came over a loser link waits for the award, P39);
  *  - feeds a FIRST_MATCHUP link and every participant who could lose it already has a scored win, so none crosses
  *    (`getDrawPositionWinCount`, the engine's own eligibility rule; `LINK_EXCLUDES`).
  *
@@ -55,8 +59,18 @@ export function feederSendsNobody({
   const beingUnwound = !!withdrawn?.has(feeder.matchUpId);
   const originWithdrawn = (sideNumber: number) =>
     !!withdrawn?.has(feeder.sideExitProvenance?.[sideNumber]?.sourceMatchUpId ?? '');
-  const carriesAnExit = (sideNumber: number) =>
-    carriedExitStatus(feeder.sideExitProvenance?.[sideNumber]) && !originWithdrawn(sideNumber);
+  // an exit a double exit produced and sent along its WINNER path, standing alone on its side: nobody will ever stand
+  // there, so the side loses, and forward play owes the loser seat its BYE at once (`advanceByeToLoserMatchUp`). An exit
+  // that arrived over a LOSER link waits for the award, and P39 owes the seat a BYE only then
+  // (`anUndoneAwardTakesBackItsLoserSeatBye`)
+  const pendingProducedExit = (sideNumber: number) => {
+    const entry = feeder.sideExitProvenance?.[sideNumber];
+    if (!carriedExitStatus(entry) || !isDoubleExit(entry?.previousMatchUpStatus) || originWithdrawn(sideNumber))
+      return false;
+    if (feeder.sides?.some((side) => side?.sideNumber === sideNumber && side.participantId)) return false;
+    const source = inContextDrawMatchUps.find((candidate) => candidate.matchUpId === entry?.sourceMatchUpId);
+    return !!source && source.structureId === feeder.structureId;
+  };
 
   if (!beingUnwound && isDoubleExit(feeder.matchUpStatus)) return 'DOUBLE_EXIT';
   const decided = !beingUnwound && !!feeder.winningSide;
@@ -64,7 +78,7 @@ export function feederSendsNobody({
     const losingSideNumber = 3 - (feeder.winningSide as number);
     const losingSide = feeder.sides?.find((side) => side?.sideNumber === losingSideNumber);
     if (!losingSide?.participantId && !originWithdrawn(losingSideNumber)) return 'NOBODY_LOST';
-  } else if ([1, 2].some(carriesAnExit)) {
+  } else if ([1, 2].some((sideNumber) => pendingProducedExit(sideNumber))) {
     return 'EXIT_PENDING';
   }
 
@@ -91,7 +105,16 @@ export function feederSendsNobody({
  * seat belongs to. This is what the `byeClaims` ledger recorded as the matchUp's claims, without depending on the order
  * results were entered.
  */
-export function byeSeatsOwedTo({
+export function byeSeatsOwedTo(args: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  matchUpId: string;
+}): HydratedMatchUp[] {
+  return byeSeatPositionsOwedTo(args).map(({ matchUp }) => matchUp);
+}
+
+/** {@link byeSeatsOwedTo}, with each seat's structure and drawPosition, in the order the seats were found */
+export function byeSeatPositionsOwedTo({
   inContextDrawMatchUps,
   drawDefinition,
   matchUpId,
@@ -99,9 +122,9 @@ export function byeSeatsOwedTo({
   inContextDrawMatchUps: HydratedMatchUp[];
   drawDefinition: DrawDefinition;
   matchUpId: string;
-}): HydratedMatchUp[] {
+}): { matchUp: HydratedMatchUp; structureId: string; drawPosition: number }[] {
   const sources = new Set<string>([matchUpId]);
-  const seats = new Map<string, HydratedMatchUp>();
+  const seats = new Map<string, { matchUp: HydratedMatchUp; structureId: string; drawPosition: number }>();
   const assignmentsOf = new Map<string, PositionAssignment[]>();
   const assignments = (structureId: string) => {
     if (!assignmentsOf.has(structureId))
@@ -126,13 +149,78 @@ export function byeSeatsOwedTo({
           inContextDrawMatchUps,
           drawDefinition,
         })?.targetMatchUps ?? {};
-      if (!loserMatchUp?.structureId || seats.has(loserMatchUp.matchUpId)) continue;
+      if (!loserMatchUp?.structureId || !loserTargetDrawPosition || seats.has(loserMatchUp.matchUpId)) continue;
       const seat = assignments(loserMatchUp.structureId).find((a) => a.drawPosition === loserTargetDrawPosition);
       if (!seat?.bye || !seat.byeFromPropagation) continue;
-      seats.set(loserMatchUp.matchUpId, loserMatchUp);
+      seats.set(loserMatchUp.matchUpId, {
+        structureId: loserMatchUp.structureId,
+        drawPosition: loserTargetDrawPosition,
+        matchUp: loserMatchUp,
+      });
       sources.add(loserMatchUp.matchUpId);
       grown = true;
     }
   }
   return [...seats.values()];
+}
+
+/**
+ * Does a loser seat whose feeder sends nobody show that with a BYE? CA ruling (A), 2026-10-21: yes, except that a double
+ * exit's loser seat shows the exit it produced when `doubleExitPropagateBye` is false, whether the double exit was
+ * entered or two exits converged into it, unless the seat is a fed-in position (`hasFedDrawPosition`), which takes a BYE
+ * whatever the policy. Before the ruling a converged double exit's seat held a BYE or the produced exit depending on the
+ * order the results were entered (`reclaimSingleExitBye` against the settled-seat rule of census S6 20694910).
+ */
+export function seatShowsBye({
+  appliedPolicies,
+  seatMatchUp,
+  reason,
+}: {
+  appliedPolicies?: PolicyDefinitions;
+  seatMatchUp?: HydratedMatchUp;
+  reason?: FeederSendsNobody;
+}): boolean {
+  if (!reason) return false;
+  if (reason !== 'DOUBLE_EXIT' || propagatesByeOnDoubleExit(appliedPolicies)) return true;
+  return !!seatMatchUp?.hasFedDrawPosition;
+}
+
+/**
+ * DOES THE BYE ON THIS LOSER SEAT STILL STAND? Read from the draw, not from the `byeClaims` ledger (Mentat P58).
+ *
+ * It stands while the matchUp feeding the seat across a link sends nobody (`feederSendsNobody`) and a BYE is how the
+ * seat shows that (`seatShowsBye`, CA ruling (A)). The seat is a drawPosition in its structure, so a BYE that has
+ * advanced is judged by the seat it started from. `withdrawn` names matchUps being unwound, judged as they will stand.
+ */
+export function byeSeatStands({
+  appliedPolicies,
+  drawDefinition,
+  drawPosition,
+  matchUpsMap,
+  structureId,
+  withdrawn,
+}: {
+  appliedPolicies?: PolicyDefinitions;
+  drawDefinition: DrawDefinition;
+  matchUpsMap?: MatchUpsMap;
+  withdrawn?: Set<string>;
+  drawPosition?: number;
+  structureId?: string;
+}): boolean {
+  if (!drawPosition || !structureId) return false;
+  const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
+  return inContextDrawMatchUps.some((feeder) => {
+    if (!feeder.loserMatchUpId) return false;
+    const targetData = positionTargets({
+      matchUpId: feeder.matchUpId,
+      inContextMatchUp: feeder,
+      inContextDrawMatchUps,
+      drawDefinition,
+    });
+    const { loserMatchUp, loserTargetDrawPosition } = targetData?.targetMatchUps ?? {};
+    if (loserMatchUp?.structureId !== structureId || loserTargetDrawPosition !== drawPosition) return false;
+    const loserTargetLink = targetData?.targetLinks?.loserTargetLink;
+    const reason = feederSendsNobody({ inContextDrawMatchUps, loserTargetLink, drawDefinition, withdrawn, feeder });
+    return seatShowsBye({ reason, appliedPolicies, seatMatchUp: loserMatchUp });
+  });
 }

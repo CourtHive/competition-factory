@@ -1,6 +1,6 @@
 import { getDrawDefinition, getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
+import { byeSeatsOwedTo, feederSendsNobody, seatShowsBye } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { checkLoserSeatsDerived } from '@Tests/testHarness/exitPropagation/properties';
-import { byeSeatsOwedTo, feederSendsNobody } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { setSubscriptions } from '@Global/state/globalState';
@@ -33,9 +33,9 @@ function reasonFor(drawId: string, key: string, withdrawn?: Set<string>) {
   return feederSendsNobody({ inContextDrawMatchUps, loserTargetLink, drawDefinition, withdrawn, feeder });
 }
 
-function draw(drawId: string, config: any, steps: [string, any][] = []) {
+function draw(drawId: string, config: any, steps: [string, any][] = [], policyDefinitions?: any) {
   setSubscriptions({});
-  expect(prepareDraw({ propagateExitStatus: true, seed: 1, ...config }, drawId)).toEqual(true);
+  expect(prepareDraw({ propagateExitStatus: true, seed: 1, ...config }, drawId, policyDefinitions)).toEqual(true);
   for (const [key, outcome] of steps) {
     const target = getDrawMatchUps(drawId).find((matchUp: any) => coordinate(matchUp) === key);
     expect(
@@ -73,6 +73,29 @@ describe('feederSendsNobody reads the feeder as it stands', () => {
     expect(reasonFor('derived-won', 'East|2|1')).toEqual('NOBODY_LOST');
   });
 
+  it('an exit that came over a loser link waits for the award: it is not the winner path a double exit owes at once', () => {
+    const drawDefinition: any = { drawId: 'synthetic', structures: [] };
+    const doubleExit = (structureId: string): any => ({
+      matchUpId: 'origin',
+      structureId,
+      matchUpStatus: DOUBLE_WALKOVER,
+    });
+    const pending = (structureId: string): any => ({
+      matchUpId: 'feeder',
+      structureId,
+      matchUpStatus: WALKOVER,
+      sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
+      sideExitProvenance: {
+        1: { matchUpStatus: WALKOVER, previousMatchUpStatus: DOUBLE_WALKOVER, sourceMatchUpId: 'origin' },
+      },
+    });
+    const reason = (feeder: any, origin: any) =>
+      feederSendsNobody({ inContextDrawMatchUps: [feeder, origin], drawDefinition, feeder });
+    // the double exit's own structure: its produced exit came along the winner path, and its loser is nobody
+    expect(reason(pending('East'), doubleExit('East'))).toEqual('EXIT_PENDING');
+    // another structure: it came over a loser link, and only the award (P39) owes the seat a BYE
+    expect(reason(pending('West'), doubleExit('East'))).toBeUndefined();
+  });
   it('a first-match-loser link that carries none of the matchUp’s possible losers', () => {
     draw('derived-link', { drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 8, participantsCount: 8 }, [
       ['Main|1|1', played],
@@ -123,6 +146,19 @@ describe('byeSeatsOwedTo reads the BYEs a matchUp is the reason for', () => {
         matchUpId: unplayed.matchUpId,
       }),
     ).toEqual([]);
+  });
+});
+
+describe('seatShowsBye: CA ruling (A), a policy-off double exit shows its produced exit', () => {
+  it('a BYE shows every reason but a double exit under the policy off, unless the seat is fed in', () => {
+    const off = { progression: { doubleExitPropagateBye: false } };
+    expect(seatShowsBye({ reason: 'DOUBLE_EXIT' })).toEqual(true);
+    expect(seatShowsBye({ reason: 'DOUBLE_EXIT', appliedPolicies: off })).toEqual(false);
+    expect(
+      seatShowsBye({ reason: 'DOUBLE_EXIT', appliedPolicies: off, seatMatchUp: { hasFedDrawPosition: true } as any }),
+    ).toEqual(true);
+    expect(seatShowsBye({ reason: 'NOBODY_LOST', appliedPolicies: off })).toEqual(true);
+    expect(seatShowsBye({ reason: undefined })).toEqual(false);
   });
 });
 

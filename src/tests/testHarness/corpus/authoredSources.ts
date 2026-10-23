@@ -1,17 +1,21 @@
-import { BYE_CLAIM_REASON, byeClaimReason } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { feederSendsNobody } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { CorpusWriteError, writeScenario, type Directive } from './writeScenario';
 import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { PRODUCED_EXIT_POLICY } from '../exitPropagation/producedExitPolicy';
+import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { positionTargets } from '@Query/matchUp/positionTargets';
 import { clearOutcome } from '../exitPropagation/transitions';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { setRandomSource } from '@Tools/prng';
 import { setClock } from '@Tools/clock';
-import fs from 'fs';
 import path from 'path';
+import fs from 'fs';
 
 // constants
 import { POLICY_SCORING_DEFAULT } from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
+import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
+import { TEAM } from '@Constants/eventConstants';
 import {
   FIRST_MATCH_LOSER_CONSOLATION,
   DOUBLE_ELIMINATION,
@@ -19,8 +23,6 @@ import {
   COMPASS,
   MAIN,
 } from '@Constants/drawDefinitionConstants';
-import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
-import { TEAM } from '@Constants/eventConstants';
 import {
   BYE,
   CANCELLED,
@@ -132,32 +134,38 @@ function playedOut(): Directive[] {
 }
 
 /**
- * The raw matchUp at a structure name and round coordinates, and the claims on a seat of it: the BYE claim this pins is
- * held there by `claimantMatchUpId` alone, and the claimant, read from the same record, owes it for `reason`
+ * The raw matchUp at a structure name and round coordinates holds a propagated BYE on the seat `feederMatchUpId`'s loser
+ * link feeds, the feeder sends nobody for `reason` (`feederSendsNobody`, read from the draw), and no `byeClaims` ledger
+ * stands on it (retired, Mentat P58)
  */
-function claimHeld(
+function seatHeld(
   record: any,
   [structureName, roundNumber, roundPosition]: [string, number, number],
-  claimantMatchUpId: string,
+  feederMatchUpId: string,
   reason: string,
 ) {
-  const matchUps = (record.events ?? []).flatMap((event: any) =>
-    (event.drawDefinitions ?? []).flatMap((drawDefinition: any) =>
-      (drawDefinition.structures ?? []).flatMap((structure: any) =>
-        (structure.matchUps ?? []).map((matchUp: any) => ({ ...matchUp, structureName: structure.structureName })),
-      ),
-    ),
-  );
-  const seat = named(matchUps, structureName, roundNumber, roundPosition);
-  const claimant = matchUps.find((matchUp: any) => matchUp.matchUpId === claimantMatchUpId);
-  const claims = Object.values(seat?.sideExitProvenance ?? {}).flatMap((entry: any) => entry?.byeClaims ?? []);
+  const drawDefinition = record.events?.[0]?.drawDefinitions?.[0];
+  const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition })?.matchUps ?? [];
+  const feeder: any = inContextDrawMatchUps.find((matchUp: any) => matchUp.matchUpId === feederMatchUpId);
+  const targetData = feeder && positionTargets({ matchUpId: feederMatchUpId, inContextDrawMatchUps, drawDefinition });
+  const { loserMatchUp, loserTargetDrawPosition } = targetData?.targetMatchUps ?? {};
   const coordinate = `${structureName}|${roundNumber}|${roundPosition}`;
+  const isSeat =
+    loserMatchUp?.structureName === structureName &&
+    loserMatchUp?.roundNumber === roundNumber &&
+    loserMatchUp?.roundPosition === roundPosition;
+  const structure = drawDefinition?.structures?.find(
+    (candidate: any) => candidate.structureId === loserMatchUp?.structureId,
+  );
+  const assignment = structure?.positionAssignments?.find((a: any) => a.drawPosition === loserTargetDrawPosition);
+  const loserTargetLink = targetData?.targetLinks?.loserTargetLink;
+  const derived = feeder && feederSendsNobody({ inContextDrawMatchUps, loserTargetLink, drawDefinition, feeder });
+  const claims = Object.values(loserMatchUp?.sideExitProvenance ?? {}).flatMap((entry: any) => entry?.byeClaims ?? []);
   return [
-    ...claim(
-      claims.length === 1 && claims[0] === claimantMatchUpId,
-      `${coordinate} holds one BYE claim, by the claimant`,
-    ),
-    ...claim(byeClaimReason(claimant) === reason, `the claimant owes the BYE as ${reason}`),
+    ...claim(isSeat, `${coordinate} is the seat the feeder's loser link names`),
+    ...claim(!!assignment?.bye && !!assignment.byeFromPropagation, `${coordinate} holds a propagated BYE there`),
+    ...claim(derived === reason, `the feeder sends nobody, for ${reason}`),
+    ...claim(!claims.length, `${coordinate} carries no BYE claim`),
   ];
 }
 
@@ -555,8 +563,7 @@ export function authoredScenarios(): Authored[] {
       initialRecord: tournamentRecord,
       directives: [sms(doubleExit, { matchUpStatus: DOUBLE_WALKOVER }, { propagateExitStatus: true })],
       expected: ['ok'],
-      finalState: (record) =>
-        claimHeld(record, ['West', 1, 1], doubleExit.matchUpId, BYE_CLAIM_REASON.DOUBLE_EXIT_PRODUCED),
+      finalState: (record) => seatHeld(record, ['West', 1, 1], doubleExit.matchUpId, 'DOUBLE_EXIT'),
     });
   }
   {
@@ -578,8 +585,7 @@ export function authoredScenarios(): Authored[] {
       initialRecord,
       directives,
       expected: directives.map(() => 'ok'),
-      finalState: (record) =>
-        claimHeld(record, ['Southwest', 1, 1], awarded.matchUpId, BYE_CLAIM_REASON.UNFILLABLE_LOSER),
+      finalState: (record) => seatHeld(record, ['Southwest', 1, 1], awarded.matchUpId, 'NOBODY_LOST'),
     });
   }
 

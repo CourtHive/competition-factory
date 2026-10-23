@@ -682,13 +682,11 @@ function withdrawDisplacedCarry({
   const entry = provenance?.[sideNumber];
   if (!entry || !carriedExitStatus(entry)) return false;
   const kept = { ...provenance };
-  if (entry.byeClaims?.length) kept[sideNumber] = { byeClaims: [...entry.byeClaims] };
-  else delete kept[sideNumber];
+  delete kept[sideNumber];
   // and a BYE origin opposite goes with the carry: it was written opposite that exit, and stands opposite none now
   const opposite = kept[3 - sideNumber];
   if (opposite?.matchUpStatus === BYE && opposite.previousMatchUpStatus === BYE) {
-    if (opposite.byeClaims?.length) kept[3 - sideNumber] = { byeClaims: [...opposite.byeClaims] };
-    else delete kept[3 - sideNumber];
+    delete kept[3 - sideNumber];
   }
   setSideExitProvenance({ matchUp, provenance: kept });
   blankSideExitCode(matchUp, sideNumber);
@@ -701,18 +699,14 @@ function withdrawDisplacedCarry({
  * contested here for the entry to explain. Left standing, it was the only trace of the exit the matchUp had held (census
  * run 18, COMPASS 16/16, 20672521: `South|1|1`'s convergence produced into `South|2|1`, which recorded `South|1|2`'s
  * walkover winner on side 2; a BYE then took `South|2|1`'s side 1 and the arrival stayed on a BYE). Entered with the BYE
- * first, `South|2|1` records nothing on that side. A BYE claim on the side stays: it is the ledger, not the arrival.
+ * first, `South|2|1` records nothing on that side.
  */
 function withdrawArrivalsByResult(matchUp: MatchUp): void {
   const provenance = getSideExitProvenance({ matchUp });
   const arrivalSides = ([1, 2] as const).filter((sideNumber) => arrivedByResult(provenance?.[sideNumber]));
   if (!provenance || !arrivalSides.length) return;
   const kept = { ...provenance };
-  for (const sideNumber of arrivalSides) {
-    const claims = provenance[sideNumber]?.byeClaims;
-    if (claims?.length) kept[sideNumber] = { byeClaims: [...claims] };
-    else delete kept[sideNumber];
-  }
+  for (const sideNumber of arrivalSides) delete kept[sideNumber];
   setSideExitProvenance({ matchUp, provenance: kept });
 }
 

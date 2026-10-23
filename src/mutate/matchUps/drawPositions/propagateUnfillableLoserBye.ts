@@ -1,17 +1,11 @@
+import { carriedExitStatus, getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { assignDrawPositionBye, assignFedDrawPositionBye } from './assignDrawPositionBye';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { matchUpsOf } from '@Acquire/structureMembers';
 import { isExit } from '@Validators/isExit';
-import {
-  carriedExitStatus,
-  getSideExitProvenance,
-  recordByeClaim,
-  sideRecordOf,
-} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
@@ -99,15 +93,16 @@ import { BYE } from '@Constants/matchUpStatusConstants';
  * before the BYE is ever placed" in `unfillableLoserTargetBye.test.ts` pins the ordering, so if that refusal ever loosens the test fires
  * and tells the next reader that a withdrawal has become necessary.
  *
- * The claim IS still recorded: `removeDoubleExit`'s `byeClaimSurvives` consults the ledger whenever it
- * visits a loser target, and `withdrawByeSeats` (`applyWithdrawnExits.ts`) reads the same claims when a
- * claimant later gains an opponent. The measurement above holds for correcting the ORIGINATING exit; a
- * BYE claimed by a dissolved convergence is withdrawn there, not here, and only while the claim survives
- * the exits withdrawn beside it (census S7, 20964176: `aByeClaimSurvivesTheExitWithdrawnBesideIt.test.ts`).
+ * Whether the BYE still stands is read from the draw by the unwinds that might take it back (`byeSeatStands`, in
+ * `removeDoubleExit`, `positionClear` and `withdrawByeSeats`); nothing records who placed it (Mentat P58 retired the
+ * `byeClaims` ledger). The measurement above holds for correcting the ORIGINATING exit; a BYE a dissolved convergence
+ * no longer owes is withdrawn by `withdrawByeSeats`, not here, and only while nothing else beside it still sends nobody
+ * (census S7, 20964176: `aByeClaimSurvivesTheExitWithdrawnBesideIt.test.ts`).
  */
 export function propagateUnfillableLoserBye({
   tournamentRecord,
   drawDefinition,
+  pendingExit,
   matchUpsMap,
   matchUpId,
   event,
@@ -115,6 +110,7 @@ export function propagateUnfillableLoserBye({
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   matchUpsMap?: MatchUpsMap;
+  pendingExit?: boolean;
   matchUpId?: string;
   event?: Event;
 }): ResultType | undefined {
@@ -147,7 +143,10 @@ export function propagateUnfillableLoserBye({
   if (matchUp?.matchUpStatus === BYE) {
     if (!holdsPropagatedBye({ drawDefinition, matchUp })) return undefined;
   } else {
-    if (!matchUp?.winningSide || !isExit(matchUp.matchUpStatus)) return undefined;
+    // a caller re-owing a dissolved convergence's seat may name a PENDING exit: undecided, one side holding the exit
+    // that side will lose, so its loser is nobody as surely as an awarded one's (`feederSendsNobody` EXIT_PENDING)
+    const pending = !!pendingExit && !matchUp?.winningSide;
+    if (!pending && (!matchUp?.winningSide || !isExit(matchUp.matchUpStatus))) return undefined;
 
     const provenance = getSideExitProvenance({ matchUp }) ?? {};
     const exitingSides = ([1, 2] as const).filter((sideNumber) => carriedExitStatus(provenance[sideNumber]));
@@ -160,7 +159,7 @@ export function propagateUnfillableLoserBye({
      */
     if (exitingSides.length !== 1) return undefined;
     // and the exited side must be the side that LOST, or this matchUp's loser is a real participant
-    if (matchUp.winningSide === exitingSides[0]) return undefined;
+    if (!pending && matchUp?.winningSide === exitingSides[0]) return undefined;
   }
 
   const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
@@ -241,37 +240,6 @@ export function propagateUnfillableLoserBye({
           event,
         });
   if (result?.error) return result;
-
-  /**
-   * The claim is recorded on the TARGET, keyed by the side the BYE occupies, so `removeDoubleExit`'s
-   * `byeClaimSurvives` can decide whether the BYE still has a reason to exist when an exit is undone.
-   *
-   * The side is read off the target's own derived sides rather than by indexing its `drawPositions` —
-   * the same P24 hazard this function avoids everywhere else.
-   */
-  const refreshed = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
-  const inContextTarget = refreshed.find((candidate) => candidate.matchUpId === loserMatchUp.matchUpId);
-  const claimSideNumber = (inContextTarget?.sides ?? []).find(
-    (side) => side?.drawPosition === loserTargetDrawPosition,
-  )?.sideNumber;
-
-  if (claimSideNumber === 1 || claimSideNumber === 2) {
-    const rawLoserMatchUp = matchUpsMap.drawMatchUps?.find(
-      (candidate) => candidate.matchUpId === loserMatchUp.matchUpId,
-    );
-    const record = sideRecordOf(rawLoserMatchUp);
-    recordByeClaim({ claimantMatchUpId: matchUpId, sideNumber: claimSideNumber, matchUp: rawLoserMatchUp });
-    // recorded after the BYE is placed, so the placement's notice does not carry it: announced here
-    if (rawLoserMatchUp && record !== sideRecordOf(rawLoserMatchUp))
-      modifyMatchUpNotice({
-        tournamentId: tournamentRecord?.tournamentId,
-        context: 'propagateUnfillableLoserBye',
-        matchUp: rawLoserMatchUp,
-        eventId: event?.eventId,
-        drawDefinition,
-        event,
-      });
-  }
 
   return undefined;
 }

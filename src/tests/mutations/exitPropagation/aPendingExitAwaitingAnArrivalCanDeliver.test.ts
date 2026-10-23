@@ -5,15 +5,8 @@ import { setSubscriptions } from '@Global/state/globalState';
 import { expect, it } from 'vitest';
 
 // constants
+import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { OLYMPIC } from '@Constants/drawDefinitionConstants';
-import {
-  BYE,
-  DEFAULTED,
-  DOUBLE_DEFAULT,
-  DOUBLE_WALKOVER,
-  TO_BE_PLAYED,
-  WALKOVER,
-} from '@Constants/matchUpStatusConstants';
 
 /**
  * A PENDING EXIT AWAITING AN ARRIVAL CAN STILL DELIVER (census S8 policy-off, MONOTONIC_DECISION, OLYMPIC 32/30:
@@ -87,13 +80,19 @@ it('20609643: the walkover entered last does not undecide the matchUp past the B
   expect(after['South|3|1'].matchUpStatus).not.toEqual(TO_BE_PLAYED);
 });
 
-it('20609643: the held exit goes on pending, the BYE stays, whichever order the walkover comes in', () => {
+it('20609643: the held exit goes on pending, whichever order the walkover comes in', () => {
   const last = drawAfter([...schedule, ...later, walkover], 'pending-delivers-last');
   const first = drawAfter([walkover, ...schedule, ...later], 'pending-delivers-first');
   const between = drawAfter([...schedule, walkover, ...later], 'pending-delivers-between');
   expect(first).toEqual(last);
   expect(between).toEqual(last);
-  expect(last['South|2|1'].matchUpStatus).toEqual(BYE);
+  // ruling (A): West|1|2 converged, so South dp 2 holds its produced default, not a BYE; carried past South|1|1's BYE it
+  // meets South|1|2's produced walkover and South|2|1 converges
+  expect(last['South|2|1']).toEqual({
+    matchUpStatus: DOUBLE_WALKOVER,
+    winningSide: undefined,
+    occupants: [undefined, undefined],
+  });
   expect(last['South|3|1']).toEqual({
     matchUpStatus: WALKOVER,
     winningSide: undefined,

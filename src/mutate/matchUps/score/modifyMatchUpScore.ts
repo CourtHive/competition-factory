@@ -1,13 +1,10 @@
-import { attributeDerivedStatusCodes, splitStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
-import type { DerivedStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { updateAssignmentParticipantResults } from '@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults';
+import { attributeDerivedStatusCodes, splitStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { processCompetitionMatchUp } from '@Mutate/drawDefinitions/competition/processCompetitionMatchUp';
 import { modifyMatchUpNotice, updateInContextMatchUp } from '@Mutate/notifications/drawNotifications';
-import {
-  clearResolvedSideExitProvenance,
-  retainByeClaimsOnly,
-} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { clearResolvedSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
+import type { DerivedStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
@@ -41,7 +38,6 @@ import {
   WALKOVER,
   IN_PROGRESS,
   INCOMPLETE,
-  BYE,
 } from '@Constants/matchUpStatusConstants';
 
 /**
@@ -279,9 +275,7 @@ function applyScoreAndStatus({
     // call was the LEGACY `matchUpStatusCodes` array, which this function does not blank — so
     // `getSideExitProvenance`'s fallback resurrected them afterwards. That is why the array is not a
     // projection of the record inside this one call: it IS the record. See punch-list P41.
-    const survivingProvenance = isAnyExit(matchUpStatus)
-      ? matchUp.sideExitProvenance
-      : retainByeClaimsOnly(matchUpStatus === BYE ? matchUp.sideExitProvenance : undefined);
+    const survivingProvenance = isAnyExit(matchUpStatus) ? matchUp.sideExitProvenance : undefined;
     // A matchUp-level `matchUpFormat` SURVIVES the blank (CA, 2026-10-01): the format is a property
     // of the match, not of its result. The fixture carries `matchUpFormat: undefined` because it is
     // the unwound-matchUp shape, and until this line a clear erased a format a director had set on
