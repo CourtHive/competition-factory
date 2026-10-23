@@ -1,3 +1,5 @@
+import { buildSchedulingView } from '@Mutate/matchUps/schedule/pipeline/view';
+import { planSchedule } from '@Mutate/matchUps/schedule/pipeline/plan';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { appendFileSync } from 'node:fs';
@@ -98,6 +100,28 @@ function playDayOne() {
   }
 }
 
+function currentRecords() {
+  const { tournamentRecord } = tournamentEngine.getTournament();
+  return { [tournamentRecord.tournamentId]: tournamentRecord };
+}
+const vNextView = (params: any): any => buildSchedulingView({ tournamentRecords: currentRecords(), ...params });
+function vNext(params: any) {
+  const plan = planSchedule({ view: vNextView(params), ...params });
+  return { success: !!plan };
+}
+/** the plan alone, from a view built outside the timing */
+function timedPlan(record: any, params: any) {
+  const times: number[] = [];
+  for (let i = 0; i < RUNS; i += 1) {
+    tournamentEngine.setState(structuredClone(record));
+    const view = vNextView(params);
+    const start = performance.now();
+    planSchedule({ view, ...params });
+    times.push(performance.now() - start);
+  }
+  return { ms: Math.round(median(times)), success: true };
+}
+
 it.skipIf(!enabled)('scheduling bench', () => {
   const fresh = fixture();
   const matchUpCount = tournamentEngine.allTournamentMatchUps().matchUps.length;
@@ -128,6 +152,19 @@ it.skipIf(!enabled)('scheduling bench', () => {
       tournamentEngine.scheduleMatchUps({ scheduleDate: DAYS[1], matchUpIds: seIds(mid), venueIds: ['venue-2'] }),
     ),
     eventId: se.eventId ? 'ok' : 'missing',
+    // vNext against v1's dry run of the same call: the view, the plan, and both together
+    dryRunFresh: timed(fresh, () => tournamentEngine.scheduleProfileRounds({ scheduleDates: DAYS, dryRun: true })),
+    viewFresh: timed(fresh, () => ({ success: !vNextView({ scheduleDates: DAYS }).error })),
+    planFresh: timedPlan(fresh, { scheduleDates: DAYS }),
+    vNextFresh: timed(fresh, () => vNext({ scheduleDates: DAYS })),
+    dryRunMid: timed(mid, () =>
+      tournamentEngine.scheduleProfileRounds({
+        scheduleDates: DAYS.slice(1),
+        clearScheduleDates: DAYS.slice(1),
+        dryRun: true,
+      }),
+    ),
+    vNextMid: timed(mid, () => vNext({ scheduleDates: DAYS.slice(1), clearScheduleDates: DAYS.slice(1) })),
   };
   const line = JSON.stringify({ label: process.env.SCHEDULING_BENCH_LABEL ?? 'local', runs: RUNS, ...results });
   process.stderr.write(`\nSCHEDULING_BENCH ${line}\n`);
