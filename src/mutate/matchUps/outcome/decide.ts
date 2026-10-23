@@ -84,6 +84,14 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   };
 
   function compareWithV1(v1Result: ResultType) {
+    try {
+      checkAgainstV1(v1Result);
+    } finally {
+      POST_CALL.delete(args);
+    }
+  }
+
+  function checkAgainstV1(v1Result: ResultType) {
     const comparison = compareDecisions(refusal, v1Result?.error?.code);
     if (!comparison.agree)
       throw new OutcomePipelineDivergence({
@@ -167,14 +175,7 @@ function checkDirection({ args, route, direction }: CheckArgs & { direction: Dir
 
 /** a feeder of `target` other than the request's own matchUp holds a BYE and a carried exit, with nobody in it */
 function opponentFeederHoldsAnExit(args: BuildViewArgs, target: HydratedMatchUp, excludeMatchUpId: string): boolean {
-  const matchUps =
-    getAllDrawMatchUps({
-      tournamentRecord: args.tournamentRecord,
-      drawDefinition: args.drawDefinition,
-      inContext: true,
-      event: args.event,
-    }).matchUps ?? [];
-  return matchUps.some(
+  return drawAfter(args).matchUps.some(
     (feeder) =>
       feeder.matchUpId !== excludeMatchUpId &&
       feeder.matchUpId !== args.request.matchUpId &&
@@ -185,15 +186,33 @@ function opponentFeederHoldsAnExit(args: BuildViewArgs, target: HydratedMatchUp,
   );
 }
 
+/**
+ * THE DRAW AS IT STANDS AFTER v1 RAN, READ ONCE PER CALL (S0). Every check below runs after v1 has written and only
+ * reads, so one hydration serves them all; before S0 each asked for its own, a whole-draw hydration each even for one
+ * matchUp (`matchUpFilters` is applied after hydrating). Held for one `compareWithV1` and dropped in its `finally`;
+ * keyed on the call's args, so no other call, under `asyncEngine` or otherwise, ever reads it.
+ */
+const POST_CALL = new WeakMap<BuildViewArgs, { matchUps: HydratedMatchUp[]; byId: Map<string, HydratedMatchUp> }>();
+
+function drawAfter(args: BuildViewArgs) {
+  let read = POST_CALL.get(args);
+  if (!read) {
+    const matchUps =
+      getAllDrawMatchUps({
+        tournamentRecord: args.tournamentRecord,
+        drawDefinition: args.drawDefinition,
+        inContext: true,
+        event: args.event,
+      }).matchUps ?? [];
+    read = { matchUps, byId: new Map(matchUps.map((matchUp) => [matchUp.matchUpId, matchUp])) };
+    POST_CALL.set(args, read);
+  }
+  return read;
+}
+
 /** one matchUp of the draw as it stands after v1 ran, in context */
 function standing(args: BuildViewArgs, matchUpId: string) {
-  return getAllDrawMatchUps({
-    matchUpFilters: { matchUpIds: [matchUpId] },
-    tournamentRecord: args.tournamentRecord,
-    drawDefinition: args.drawDefinition,
-    inContext: true,
-    event: args.event,
-  }).matchUps?.[0];
+  return drawAfter(args).byId.get(matchUpId);
 }
 
 function diverge(args: BuildViewArgs, v1: string, v2: string): never {
@@ -397,12 +416,7 @@ function checkPastByeConvergence({
 /** the matchUp a holder's winner goes on to, read from the draw's links rather than from who is in it */
 function onwardMatchUp(args: BuildViewArgs, holder: HydratedMatchUp): HydratedMatchUp | undefined {
   if (!args.drawDefinition) return undefined;
-  const inContextDrawMatchUps = getAllDrawMatchUps({
-    tournamentRecord: args.tournamentRecord,
-    drawDefinition: args.drawDefinition,
-    inContext: true,
-    event: args.event,
-  }).matchUps;
+  const inContextDrawMatchUps = drawAfter(args).matchUps;
   const onwardId = positionTargets({
     drawDefinition: args.drawDefinition,
     matchUpId: holder.matchUpId,
@@ -500,14 +514,7 @@ function checkProducedExit({
  * defect wherever it comes from. Checked across the whole draw, not only what this call planned.
  */
 function checkNoExitBesideBye({ args, route }: CheckArgs) {
-  const matchUps =
-    getAllDrawMatchUps({
-      tournamentRecord: args.tournamentRecord,
-      drawDefinition: args.drawDefinition,
-      inContext: true,
-      event: args.event,
-    }).matchUps ?? [];
-  const offenders = matchUps.filter(
+  const offenders = drawAfter(args).matchUps.filter(
     (m) =>
       isExitLabel(m.matchUpStatus) &&
       !!m.winnerMatchUpId &&

@@ -19,8 +19,12 @@ import {
 
 // constants
 import { COMPLETED, DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
 import { LUCKY_DRAW, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import {
+  OUTCOME_PIPELINE_DIFFERENTIAL,
+  OUTCOME_PIPELINE_V1,
+  OUTCOME_PIPELINE_V2,
+} from '@Constants/outcomePipelineConstants';
 
 /**
  * WHAT ONE `setMatchUpStatus` ASKS OF THE DRAW, AND WHO ASKS — assessment gap G15.
@@ -421,9 +425,9 @@ it.skipIf(!enabled)(
  *   the lower number, and writes a rise only with `HYDRATIONS_ACCEPT_RISE=1` as well.
  * - The baseline is v1's. Under `v2` each call may cost v1's count plus the view's own reads: one
  *   hydration, and no map (the view takes `setMatchUpStatus`'s). Until S2 every call is one v2
- *   abstains from, which is the bound G3 sets for it (v1 + 1). `differential`
- *   is refused: it runs both pipelines and then checks one against the other, which is not a cost
- *   either pipeline has.
+ *   abstains from, which is the bound G3 sets for it (v1 + 1). Under `differential` (the
+ *   checkpoint gate's mode) it may cost two more: one read of the draw after v1 ran, shared by every
+ *   check, and the second view `planDual` builds for a line that decides its dual (S1 removes it).
  * - The baseline is written under `v1` only, and a census whose arms or call counts differ from it
  *   fails: those are a different census, not a cheaper one.
  */
@@ -433,10 +437,18 @@ const BASELINE = path.resolve(process.cwd(), 'scripts/verify/baseline/hydrations
 type Ceiling = { total: number; worst: number };
 type ArmCeilings = { calls: number; hydrations: Ceiling; getMatchUpsMap: Ceiling };
 
-/** `v2`: what the view itself may add to each call, on top of v1's count */
-const GATED: { name: keyof Omit<ArmCeilings, 'calls'>; selector: Selector; v2: number }[] = [
-  { name: 'hydrations', selector: hydration, v2: 1 },
-  { name: 'getMatchUpsMap', selector: top('getMatchUpsMap'), v2: 0 },
+/** what each mode may add to each call, on top of v1's count */
+const GATED: { name: keyof Omit<ArmCeilings, 'calls'>; selector: Selector; allowance: Record<string, number> }[] = [
+  {
+    allowance: { [OUTCOME_PIPELINE_V1]: 0, [OUTCOME_PIPELINE_V2]: 1, [OUTCOME_PIPELINE_DIFFERENTIAL]: 3 },
+    name: 'hydrations',
+    selector: hydration,
+  },
+  {
+    allowance: { [OUTCOME_PIPELINE_V1]: 0, [OUTCOME_PIPELINE_V2]: 0, [OUTCOME_PIPELINE_DIFFERENTIAL]: 0 },
+    selector: top('getMatchUpsMap'),
+    name: 'getMatchUpsMap',
+  },
 ];
 
 function measureArms(records: CallRecord[]): Record<string, ArmCeilings> {
@@ -456,8 +468,6 @@ it.skipIf(!gated)(
   'the hydration gate: no arm asks the draw for more than v1 did',
   () => {
     const mode = getOutcomePipeline();
-    // G3 is read under v1 and v2; differential runs both pipelines and its checks, so it is a different cost
-    expect(mode, 'run verify:hydrations under OUTCOME_PIPELINE=v1 or v2').not.toEqual(OUTCOME_PIPELINE_DIFFERENTIAL);
     const measured = measureArms(collectCensus().records);
     const baseline: Record<string, ArmCeilings> | undefined = fs.existsSync(BASELINE)
       ? JSON.parse(fs.readFileSync(BASELINE, 'utf8')).arms
@@ -470,8 +480,8 @@ it.skipIf(!gated)(
       for (const [arm, ceilings] of Object.entries(baseline)) {
         const now = measured[arm];
         expect(now.calls, `${arm}: setMatchUpStatus calls`).toEqual(ceilings.calls);
-        for (const { name, v2 } of GATED) {
-          const allowance = mode === OUTCOME_PIPELINE_V1 ? 0 : v2;
+        for (const { name, allowance: allowed } of GATED) {
+          const allowance = allowed[mode];
           const limit = {
             total: ceilings[name].total + allowance * ceilings.calls,
             worst: ceilings[name].worst + allowance,
