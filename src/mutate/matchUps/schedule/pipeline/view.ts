@@ -1,9 +1,12 @@
 import { getParticipantReachability, ParticipantReachability } from '../scheduleMatchUps/getParticipantReachability';
 import { getContainedStructures } from '@Query/drawDefinition/getContainedStructures';
 import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
+import { getPersonRequests } from '@Query/matchUps/scheduling/getPersonRequests';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
+import { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
 import { getSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import { findMatchUpFormatTiming } from '@Acquire/findMatchUpFormatTiming';
+import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
 import { extractDate, isValidDateString } from '@Tools/dateTime';
 import { isConvertableInteger, isPowerOf2 } from '@Tools/math';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
@@ -13,8 +16,10 @@ import { findEvent } from '@Acquire/findEvent';
 // constants and types
 import { BYE, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { ErrorType, NO_VALID_DATES } from '@Constants/errorConditionConstants';
+import { HydratedCourt, HydratedMatchUp } from '@Types/hydrated';
+import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
+import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { Tournament } from '@Types/tournamentTypes';
-import { HydratedMatchUp } from '@Types/hydrated';
 
 /**
  * vNext, stage one: the read-only VIEW a scheduling call is decided from (SCHEDULING_PIPELINE_VNEXT.md § 7; the rules
@@ -47,6 +52,10 @@ export type RoundPlan = {
   round: ProfileRound;
   /** the round's schedulable matchUps, in order; those another venue already claims on the date are left out */
   matchUpIds: string[];
+  /** the round's schedulable matchUps before any claim: they size the venue's slots and carry the round's minutes */
+  profiledMatchUpIds: string[];
+  /** absent when no matchUp of the round has a format: such a round schedules nothing */
+  minutes?: Minutes;
   periodLength: number;
   error?: ErrorType;
 };
@@ -56,8 +65,15 @@ export type DatePlan = { scheduleDate: string; venues: VenuePlan[] };
 export type SchedulingView = {
   tournamentRecords: { [tournamentId: string]: Tournament };
   matchUpDependencies: ReturnType<typeof getMatchUpDependencies>['matchUpDependencies'];
+  dailyLimitOverrides: ReturnType<typeof getMatchUpDailyLimits>['dailyLimitOverrides'];
+  matchUpDailyLimits: ReturnType<typeof getMatchUpDailyLimits>['matchUpDailyLimits'];
+  personRequests: ReturnType<typeof getPersonRequests>['personRequests'];
+  /** the matchUps as hydrated for scheduling, in hydration order (the timed scheduler's own `matchUps`) */
+  hydrated: HydratedMatchUp[];
   matchUps: Map<string, HydratedMatchUp>;
   reachability: ParticipantReachability;
+  /** the courts the call may use: every court, enabled or not, narrowed to `courtIds` when the call names any */
+  courts: HydratedCourt[];
   minutes: Map<string, Minutes>;
   dates: DatePlan[];
 };
@@ -67,6 +83,7 @@ type BuildSchedulingViewArgs = {
   scheduleCompletedMatchUps?: boolean;
   scheduleDates?: string[];
   periodLength?: number;
+  courtIds?: string[];
 };
 
 /** the profile's dates, in order, narrowed to `scheduleDates` when the call names any */
@@ -153,12 +170,21 @@ export function buildSchedulingView({
   scheduleDates = [],
   tournamentRecords,
   periodLength = 30,
+  courtIds,
 }: BuildSchedulingViewArgs): SchedulingView | { error: ErrorType } {
   const { schedulingProfile = [] } = getSchedulingProfile({ tournamentRecords });
   const dateProfiles = profileDates(schedulingProfile, scheduleDates);
   if (schedulingProfile.length && !dateProfiles.length) return { error: NO_VALID_DATES };
 
-  const hydrated = allCompetitionMatchUps({ nextMatchUps: true, tournamentRecords }).matchUps ?? [];
+  // hydrated as the timed scheduler reads them: singles and doubles (a TEAM dual's tie matchUps are what is scheduled),
+  // with each schedule's time after recovery, which seeds the not-before times of the matchUps it feeds
+  const hydrated =
+    allCompetitionMatchUps({
+      matchUpFilters: { matchUpTypes: [SINGLES, DOUBLES] },
+      afterRecoveryTimes: true,
+      nextMatchUps: true,
+      tournamentRecords,
+    }).matchUps ?? [];
   const { matchUpDependencies } = getMatchUpDependencies({
     includeParticipantDependencies: true,
     matchUps: hydrated,
@@ -187,24 +213,37 @@ export function buildSchedulingView({
           const inRound = roundMatchUps(round, hydrated, containedStructures);
           const roundPeriodLength = round.periodLength || periodLength;
           const { minutes: roundTiming, error } = roundMinutes(round, inRound, tournamentRecords);
-          if (error) return { round, matchUpIds: [], periodLength: roundPeriodLength, error };
-          const matchUpIds = inRound.filter(schedulable).map(({ matchUpId }) => matchUpId);
-          if (roundTiming) for (const matchUpId of matchUpIds) minutes.set(matchUpId, roundTiming);
-          const venueMatchUpIds = matchUpIds.filter((matchUpId) => !claimed.has(matchUpId));
-          venueMatchUpIds.forEach((matchUpId) => claimed.add(matchUpId));
-          return { round, matchUpIds: venueMatchUpIds, periodLength: roundPeriodLength };
+          const unscheduled = { round, matchUpIds: [], profiledMatchUpIds: [], periodLength: roundPeriodLength };
+          if (error) return { ...unscheduled, error };
+          // a round none of whose matchUps has a format is not timed, and so schedules nothing (as v1)
+          if (!roundTiming) return unscheduled;
+          const profiledMatchUpIds = inRound.filter(schedulable).map(({ matchUpId }) => matchUpId);
+          for (const matchUpId of profiledMatchUpIds) minutes.set(matchUpId, roundTiming);
+          const matchUpIds = profiledMatchUpIds.filter((matchUpId) => !claimed.has(matchUpId));
+          matchUpIds.forEach((matchUpId) => claimed.add(matchUpId));
+          return { round, matchUpIds, profiledMatchUpIds, minutes: roundTiming, periodLength: roundPeriodLength };
         }),
       };
     });
     return { scheduleDate: dateProfile.scheduleDate, venues };
   });
 
+  const allCourts: HydratedCourt[] = getVenuesAndCourts({ ignoreDisabled: false, tournamentRecords }).courts ?? [];
+  const courts = Array.isArray(courtIds) ? allCourts.filter(({ courtId }) => courtIds.includes(courtId)) : allCourts;
+  const { matchUpDailyLimits, dailyLimitOverrides } = getMatchUpDailyLimits({ tournamentRecords });
+  const { personRequests } = getPersonRequests({ requestType: DO_NOT_SCHEDULE, tournamentRecords });
+
   return {
     matchUps: new Map(hydrated.map((matchUp) => [matchUp.matchUpId, matchUp])),
     matchUpDependencies,
+    dailyLimitOverrides,
+    matchUpDailyLimits,
     tournamentRecords,
+    personRequests,
     reachability,
+    hydrated,
     minutes,
+    courts,
     dates,
   };
 }
