@@ -137,6 +137,30 @@ export function scaleScenario(cell: ScaleCell) {
   return { initialRecord: tournamentRecord, directives };
 }
 
+/**
+ * The scale cells whose outcome the manifest pins: the matrix itself is checked only against the scheduling
+ * properties, so these are what hold a placement still. Every seventh cell: the three innermost axes (venues, limits,
+ * days) repeat every 8 cells, so a stride of 8 would pin one combination of them; 7 is coprime to 8 and visits all.
+ * Each runs the profile as a dry run, for real, again over what it wrote, and again with its dates cleared, before
+ * the grid.
+ */
+export const pinnedScaleCells = () => scaleCells().filter((_, index) => index % 7 === 3);
+
+export function pinnedScaleScenario(cell: ScaleCell) {
+  const { initialRecord, directives } = scaleScenario(cell);
+  const profileIndex = directives.findIndex(({ method }) => method === 'scheduleProfileRounds');
+  const { params } = directives[profileIndex];
+  directives.splice(
+    profileIndex,
+    1,
+    { method: 'scheduleProfileRounds', params: { ...params, dryRun: true } },
+    { method: 'scheduleProfileRounds', params },
+    { method: 'scheduleProfileRounds', params },
+    { method: 'scheduleProfileRounds', params: { ...params, clearScheduleDates: params.scheduleDates } },
+  );
+  return { initialRecord, directives };
+}
+
 export function recordSchedulingScale({ outDir, cells = scaleCells() }: { outDir: string; cells?: ScaleCell[] }) {
   fs.mkdirSync(outDir, { recursive: true });
   const outPath = path.join(outDir, 'scheduling-scale.jsonl');
