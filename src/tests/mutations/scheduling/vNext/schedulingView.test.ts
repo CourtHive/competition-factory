@@ -1,4 +1,5 @@
 import { getScheduledRoundsDetails } from '@Query/matchUps/scheduling/getScheduledRoundsDetails';
+import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import { buildSchedulingView } from '@Mutate/matchUps/schedule/pipeline/view';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -7,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 // constants and types
 import { FEED_IN_CHAMPIONSHIP, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { NO_VALID_DATES } from '@Constants/errorConditionConstants';
+import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 
 // vNext's view must resolve a scheduling profile exactly as v1 does: per date and venue the same matchUps in the same
 // order (v1: getScheduledRoundsDetails, then the first venue to profile a matchUp on a date claims it), and the same
@@ -51,13 +53,25 @@ function setup(drawProfiles: any[], outcomes = false) {
 
 /** v1's per-venue matchUps and minutes for a profile, as getVenueSchedulingDetails derives them */
 function v1Plan(tournamentRecords: any, schedulingProfile: any[], scheduleCompletedMatchUps?: boolean) {
+  // the matchUps scheduleProfileRounds hands its scheduler
+  const matchUps = allCompetitionMatchUps({
+    matchUpFilters: { matchUpTypes: [SINGLES, DOUBLES] },
+    afterRecoveryTimes: true,
+    nextMatchUps: true,
+    tournamentRecords,
+  }).matchUps;
   const minutes: Record<string, any> = {};
   const plan = schedulingProfile.map(({ scheduleDate, venues }) => {
     const claimed = new Set<string>();
     return {
       scheduleDate,
       venues: venues.map(({ venueId, rounds }) => {
-        const result: any = getScheduledRoundsDetails({ tournamentRecords, rounds, scheduleCompletedMatchUps });
+        const result: any = getScheduledRoundsDetails({
+          tournamentRecords,
+          rounds,
+          scheduleCompletedMatchUps,
+          matchUps,
+        });
         Object.assign(minutes, result.minutesMap);
         const matchUpIds = (result.orderedMatchUpIds ?? []).filter((id: string) => !claimed.has(id));
         matchUpIds.forEach((id: string) => claimed.add(id));

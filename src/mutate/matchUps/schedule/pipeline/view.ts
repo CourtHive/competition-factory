@@ -13,6 +13,7 @@ import { findEvent } from '@Acquire/findEvent';
 // constants and types
 import { BYE, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { ErrorType, NO_VALID_DATES } from '@Constants/errorConditionConstants';
+import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { Tournament } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
@@ -158,7 +159,15 @@ export function buildSchedulingView({
   const dateProfiles = profileDates(schedulingProfile, scheduleDates);
   if (schedulingProfile.length && !dateProfiles.length) return { error: NO_VALID_DATES };
 
-  const hydrated = allCompetitionMatchUps({ nextMatchUps: true, tournamentRecords }).matchUps ?? [];
+  // hydrated as the timed scheduler reads them: singles and doubles (a TEAM dual's tie matchUps are what is scheduled),
+  // with each schedule's time after recovery, which seeds the not-before times of the matchUps it feeds
+  const hydrated =
+    allCompetitionMatchUps({
+      matchUpFilters: { matchUpTypes: [SINGLES, DOUBLES] },
+      afterRecoveryTimes: true,
+      nextMatchUps: true,
+      tournamentRecords,
+    }).matchUps ?? [];
   const { matchUpDependencies } = getMatchUpDependencies({
     includeParticipantDependencies: true,
     matchUps: hydrated,
