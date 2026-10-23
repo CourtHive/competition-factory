@@ -126,20 +126,20 @@ two participants, with one family of exceptions and one rule inside it:
 
 `attemptToSetMatchUpStatus` chooses exactly one route, in this order:
 
-| route                                | when                                                                              | does                                                           |
-| ------------------------------------ | --------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| unrecognized                         | status is neither directing nor non-directing                                     | refuse `ERR_UNRECOGNIZED_MATCHUP_STATUS`                       |
-| already in the requested double exit | same double exit requested, no winner                                             | **success, no-op** (§ 6)                                       |
-| only modify score                    | a TEAM line; or a winner exists and the status is directing and not a double exit | write the score                                                |
-| completed → double exit              | a winner exists and a double exit is requested                                    | remove the directed participants, then advance the double exit |
-| existing winner                      | a winner exists                                                                   | remove the directed participants, re-evaluate                  |
-| non-directing                        | status is non-directing                                                           | clear the score (CANCELLED and WALKOVER remove it)             |
-| BYE                                  | status is BYE                                                                     | the BYE path                                                   |
-| not directing                        |                                                                                   | refuse `ERR_UNRECOGNIZED_MATCHUP_STATUS`                       |
-| double exit                          |                                                                                   | clear the score, then advance the double exit                  |
-| team round robin                     | a dual in a round-robin container                                                 | write the score                                                |
-| propagating                          | `propagateExitStatus`                                                             | write the score                                                |
-| fallthrough                          |                                                                                   | refuse `ERR_INVALID_MATCHUP_STATUS`                            |
+| route                                | when                                                                              | does                                                           | v2                         |
+| ------------------------------------ | --------------------------------------------------------------------------------- | -------------------------------------------------------------- | -------------------------- |
+| unrecognized                         | status is neither directing nor non-directing                                     | refuse `ERR_UNRECOGNIZED_MATCHUP_STATUS`                       | `refused`                  |
+| already in the requested double exit | same double exit requested, no winner                                             | **success, no-op** (§ 6)                                       | `noop`                     |
+| only modify score                    | a TEAM line; or a winner exists and the status is directing and not a double exit | write the score                                                | `only-score`               |
+| completed → double exit              | a winner exists and a double exit is requested                                    | remove the directed participants, then advance the double exit | `completed-to-double-exit` |
+| existing winner                      | a winner exists                                                                   | remove the directed participants, re-evaluate                  | `existing-winner-removed`  |
+| non-directing                        | status is non-directing                                                           | clear the score (CANCELLED and WALKOVER remove it)             | `clear`                    |
+| BYE                                  | status is BYE                                                                     | the BYE path                                                   | `bye`                      |
+| not directing                        |                                                                                   | refuse `ERR_UNRECOGNIZED_MATCHUP_STATUS`                       | `refused`                  |
+| double exit                          |                                                                                   | clear the score, then advance the double exit                  | `double-exit`              |
+| team round robin                     | a dual in a round-robin container                                                 | write the score                                                | `team-round-robin`         |
+| propagating                          | `propagateExitStatus`                                                             | write the score                                                | `propagating`              |
+| fallthrough                          |                                                                                   | refuse `ERR_INVALID_MATCHUP_STATUS`                            | `refused`                  |
 
 Before any route, `resolveAndApplyOutcome` dispatches on two facts: whether **downstream is active**
 (something later depends on this result) and whether this matchUp **has propagated** (it holds a
@@ -147,6 +147,21 @@ winner or a double exit). A matchUp that has never sent anything downstream cann
 anything there, so a first entry always takes the propagating branch. With both true, a named winner
 goes to `winningSideWithDownstreamDependencies`; a directing status or disabled auto-calc goes to
 `applyMatchUpValues`; anything else is `ERR_NO_VALID_ACTIONS`.
+
+**The route v2 names** (`Route`, `src/mutate/matchUps/outcome/types.ts`) is the table's last column for
+a call that reaches `attemptToSetMatchUpStatus`; `refused` is any of its three refusals. The dispatch
+names six more:
+
+- `swap`: `allowChangePropagation` with a different winner on a matchUp that has one (below).
+- `winner`: the propagating branch with a winner named, an exit under `propagateExitStatus`, or a
+  CANCELLED or ABANDONED line that changes its dual's winner: `attemptToSetWinningSide`.
+- `line-score`: a line rescored with a winner while its dual loses the winner it had.
+- `remove-directed`: a score with no winner, or a winner taken away with no score: the directed
+  participants are taken back.
+- `clear-score`: nothing else matched; the score is removed.
+- `apply-values`: downstream is active and this matchUp has propagated, with a winner, a directing
+  status or auto-calc disabled (`applyMatchUpValues`); also a drawn result in a rotating-partner or
+  combined-point round robin with nothing active downstream.
 
 **A matchUp in play downstream is active** (CA, 2026-10-18, P57): _"downstream matchUps e.g. "the
 match it feeds" should be considered active and a source matchUp (a matchUp earler in the dependency
