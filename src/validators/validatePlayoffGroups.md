@@ -36,7 +36,7 @@ function validatePlayoffGroups({
 | `bestOf`             | `number?`  | Total participants to select via cross-group ranking (overrides `groupCount * finishingPositions.length`)      |
 | `rankBy`             | `string?`  | Ranking method for cross-group comparison. Currently only `'GEMscore'` is supported (see `GEM_SCORE` constant) |
 | `remainder`          | `boolean?` | If `true`, this group takes all participants not claimed by prior `bestOf` groups                              |
-| `drawType`           | `string?`  | Draw type for the playoff structure (default: `SINGLE_ELIMINATION`)                                            |
+| `drawType`           | `string?`  | Draw type for the playoff structure (default: `SINGLE_ELIMINATION`); must be in `PLAYOFF_GROUP_DRAW_TYPES`     |
 | `structureName`      | `string?`  | Custom name for the generated playoff structure                                                                |
 | `structureOptions`   | `object?`  | Options passed to the playoff structure generator (e.g. `{ groupSize: 4 }` for RR playoffs)                    |
 
@@ -50,21 +50,22 @@ On failure: `{ valid: false, error, info }` with a descriptive `info` string exp
 
 1. `playoffGroups` must be a non-empty array
 2. `groupCount` and `groupSize` must be >= 1
-3. Each playoff group must have a non-empty `finishingPositions` array (unless it is a `remainder` group)
-4. `finishingPositions` values must be in range `[1, groupSize]`
-5. If `bestOf` is specified:
+3. Each playoff group's `drawType`, when present (not `undefined`/`null`), must be one of `PLAYOFF_GROUP_DRAW_TYPES` (exported beside the validator): `SINGLE_ELIMINATION`, `COMPASS`, `OLYMPIC`, `PLAYOFF`, the six feed-in types, `ROUND_ROBIN`, `FIRST_ROUND_LOSER_CONSOLATION`, `CURTIS_CONSOLATION`, `PAGE_PLAYOFF`, `AD_HOC`. Otherwise `UNRECOGNIZED_DRAW_TYPE`, with `context: { playoffGroupIndex, drawType, validDrawTypes }`
+4. Each playoff group must have a non-empty `finishingPositions` array (unless it is a `remainder` group)
+5. `finishingPositions` values must be in range `[1, groupSize]`
+6. If `bestOf` is specified:
    - Must be a positive number
    - Must be >= `groupCount * finishingPositions.length` (cannot request fewer than guaranteed participants)
    - Must be <= `groupCount * groupSize` (cannot request more than total participants)
-6. A `remainder` group must appear after at least one `bestOf` group
-7. A `remainder` group must have at least 2 remaining participants
-8. `rankBy`, if specified, must be `'GEMscore'` (the `GEM_SCORE` constant)
-9. Cross-group consumption: no finishing position can be over-consumed across all playoff groups
-10. Total claimed participants cannot exceed `groupCount * groupSize`
+7. A `remainder` group must appear after at least one `bestOf` group
+8. A `remainder` group must have at least 2 remaining participants
+9. `rankBy`, if specified, must be `'GEMscore'` (the `GEM_SCORE` constant)
+10. Cross-group consumption: no finishing position can be over-consumed across all playoff groups
+11. Total claimed participants cannot exceed `groupCount * groupSize`
 
 ## Usage
 
-Called internally by `processPlayoffGroups` when any playoff group uses `bestOf` or `remainder`:
+Called internally by `processPlayoffGroups` when any playoff group uses `bestOf` or `remainder`. The `drawType` rule runs for every call of `processPlayoffGroups` regardless (`checkPlayoffGroupDrawTypes`), before anything is generated, so `generateDrawDefinition`, `addPlayoffStructures` and `generateAndPopulatePlayoffStructures` refuse an unbuildable playoff group the same way:
 
 ```ts
 const hasBestOfOrRemainder = playoffGroups?.some((pg) => pg.bestOf !== undefined || pg.remainder);

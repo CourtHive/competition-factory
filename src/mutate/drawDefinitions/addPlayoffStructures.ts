@@ -1,9 +1,12 @@
 import { generateAndPopulatePlayoffStructures } from '@Assemblies/generators/drawDefinitions/generateAndPopulatePlayoffStructures';
+import { decorateResult } from '@Functions/global/decorateResult';
 import { attachPlayoffStructures } from './attachStructures';
 
 export function addPlayoffStructures(params) {
-  const { structures, links, matchUpModifications, error } = generateAndPopulatePlayoffStructures(params);
-  if (error) return { error };
+  const result = generateAndPopulatePlayoffStructures(params);
+  // the refusal is returned whole: its info and context name what was refused
+  if (result.error) return decorateResult({ result, stack: 'addPlayoffStructures' });
+  const { structures, links, matchUpModifications } = result;
 
   const drawDefinition = params.drawDefinition;
 

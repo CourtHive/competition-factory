@@ -122,6 +122,7 @@ engine.addPlayoffStructures({
   playoffStructureNameBase, // optional - base word for default playoff naming, e.g. 'Playoff'
   roundLimit: 2, // optional - cap the rounds of each generated structure, e.g. a consolation that plays two rounds
   roundLimits: { 1: 1 }, // optional - per SOURCE roundNumber cap; overrides roundLimit for that structure
+  playoffGroups, // optional - [{ finishingPositions, drawType, structureName }]; an unbuildable drawType refuses the call and nothing is added
 });
 
 // example use of playoffAttributes - will generated playoff structure from 2nd round with structureName: 'BRONZE'

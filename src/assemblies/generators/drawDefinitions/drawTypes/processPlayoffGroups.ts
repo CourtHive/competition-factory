@@ -2,7 +2,6 @@ import { generatePlayoffStructures } from '@Generators/drawDefinitions/drawTypes
 import { generatePagePlayoff } from '@Generators/drawDefinitions/drawTypes/pagePlayoff';
 import { getPositionRangeMap } from '@Query/drawDefinition/getPositionRangeMap';
 import { firstRoundLoserConsolation } from './firstRoundLoserConsolation';
-import { validatePlayoffGroups } from '@Validators/validatePlayoffGroups';
 import structureTemplate from '@Generators/templates/structureTemplate';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { structureSort } from '@Functions/sorters/structureSort';
@@ -12,6 +11,12 @@ import { feedInChampionship } from './feedInChamp';
 import { treeMatchUps } from './eliminationTree';
 import { numericSort } from '@Tools/sorting';
 import { nextPowerOf2 } from '@Tools/math';
+import {
+  checkPlayoffGroupDrawTypes,
+  COMPASS_OLYMPIC_PLAYOFF_TYPES,
+  FEED_IN_DRAW_TYPES,
+  validatePlayoffGroups,
+} from '@Validators/validatePlayoffGroups';
 
 // constants and types
 import { INVALID_CONFIGURATION, INVALID_VALUES } from '@Constants/errorConditionConstants';
@@ -26,7 +31,6 @@ import {
   COMPASS_ATTRIBUTES,
   CURTIS_CONSOLATION,
   DRAW,
-  FEED_IN_CHAMPIONSHIP,
   FEED_IN_CHAMPIONSHIP_TO_QF,
   FEED_IN_CHAMPIONSHIP_TO_R16,
   FEED_IN_CHAMPIONSHIP_TO_SF,
@@ -37,7 +41,6 @@ import {
   OLYMPIC,
   OLYMPIC_ATTRIBUTES,
   PLAY_OFF,
-  PLAYOFF,
   POSITION,
   PAGE_PLAYOFF,
   ROUND_ROBIN,
@@ -45,17 +48,6 @@ import {
   TOP_DOWN,
   WINNER,
 } from '@Constants/drawDefinitionConstants';
-
-const FEED_IN_DRAW_TYPES = new Set([
-  FIRST_MATCH_LOSER_CONSOLATION,
-  FEED_IN_CHAMPIONSHIP,
-  FEED_IN_CHAMPIONSHIP_TO_R16,
-  FEED_IN_CHAMPIONSHIP_TO_QF,
-  FEED_IN_CHAMPIONSHIP_TO_SF,
-  MODIFIED_FEED_IN_CHAMPIONSHIP,
-]);
-
-const COMPASS_OLYMPIC_PLAYOFF_TYPES = new Set([COMPASS, OLYMPIC, PLAYOFF]);
 
 export function processPlayoffGroups({
   requireSequential = true,
@@ -81,6 +73,10 @@ export function processPlayoffGroups({
 } {
   const resolvedFeedPolicy = feedPolicy || policyDefinitions?.[POLICY_TYPE_FEED_IN];
   const stack = 'processPlayoffGroups';
+
+  // refused before anything is generated: a group whose drawType has no builder below was silently dropped
+  const drawTypeCheck = checkPlayoffGroupDrawTypes({ playoffGroups });
+  if (drawTypeCheck.error) return decorateResult({ result: drawTypeCheck, stack });
 
   let finishingPositionOffset = 0;
   const finishingPositionTargets: { structureId: string; finishingPositions: number[] }[] = [];
