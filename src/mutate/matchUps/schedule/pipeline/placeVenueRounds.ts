@@ -285,8 +285,11 @@ export function scheduleVenueRounds({
           }),
         );
 
+        // a matchUp over a daily limit stays over it for the rest of the date (a participant's day only gains
+        // matchUps while slots are filled), so it is asked once and reported once (CA 2026-10-23), not at every slot
+        const overLimit = overLimitMatchUpIds[scheduleDate];
         details.matchUpsToSchedule = details.matchUpsToSchedule.filter(
-          ({ matchUpId }) => matchUpId !== scheduledMatchUp?.matchUpId,
+          ({ matchUpId }) => matchUpId !== scheduledMatchUp?.matchUpId && !overLimit.includes(matchUpId),
         );
 
         if (!scheduledMatchUp) {
@@ -334,11 +337,11 @@ function getPassesBound({ venueScheduledRoundDetails, maxScheduleTimeAttempts, v
   return slotsCount * maxScheduleTimeAttempts + 1;
 }
 
-// Capture per-attempt explanation for an over-limit refusal: which
-// participants on the matchUp are at the cap, and which counters
-// (matchUpType / TOTAL) they have hit and at what value. Pushed in
-// addition to the existing flat overLimitMatchUpIds array so existing
-// consumers continue to work; the drawer reads this when present.
+// Capture the explanation for an over-limit refusal, once per matchUp per date: which
+// participants on the matchUp are at the cap, which counters (matchUpType / TOTAL) they
+// have hit and at what value, and the first time it was offered. Pushed in addition to
+// the flat overLimitMatchUpIds array so existing consumers continue to work; the drawer
+// reads this when present.
 type OverLimitMatchUpDetail = {
   participants: { participantId: string; atLimitCounters: { counter: string; count: number; limit: number }[] }[];
   attemptedTime: string;
