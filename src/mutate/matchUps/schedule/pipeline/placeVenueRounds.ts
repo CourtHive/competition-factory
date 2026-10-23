@@ -17,8 +17,8 @@ import { HydratedMatchUp } from '@Types/hydrated';
 /**
  * Places a date's profiled matchUps on its venues' Garman slots: each slot is offered to the venue's matchUps in order,
  * and the first to pass every gate (daily limits, dependent timing, dependencies, recovery, person requests) takes it.
- * Shared by v1's jinnScheduler and vNext's planner (SCHEDULING_PIPELINE_VNEXT.md § 7), which differ in how they build
- * the per-venue details, not in how a slot is filled. It writes only to the bookkeeping it is handed.
+ * Moved unchanged from v1's jinnScheduler into the planner (SCHEDULING_PIPELINE_VNEXT.md § 7). It writes only to the
+ * bookkeeping it is handed.
  */
 
 type ByDate<T> = { [scheduleDate: string]: T };
