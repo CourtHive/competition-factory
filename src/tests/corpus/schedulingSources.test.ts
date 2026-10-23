@@ -27,17 +27,18 @@ it('every scheduling scenario writes, replays both ways, and holds its claims (k
   expect(failed).toEqual([]);
   expect(written.length).toBeGreaterThanOrEqual(7);
 
-  for (const { scenario, knownFailure, finalState } of written) {
+  for (const { scenario, knownFailure, finalState, expectedErrors = {} } of written) {
     const id = scenario.scenarioId;
     expect({ id, reader: replayAsReader(scenario) }).toEqual({ id, reader: [] });
     expect({ id, engine: replayThroughEngine(scenario) }).toEqual({ id, engine: [] });
-    expect({ id, results: scenario.steps.filter((step: any) => step.result.error).map((s: any) => s.result) }).toEqual({
-      id,
-      results: [],
-    });
-    // every scheduling call records its deferral report
+    // the steps refused are exactly those the scenario expects, with their codes; every other step succeeded
+    const errors = Object.fromEntries(
+      scenario.steps.flatMap((step: any, index: number) => (step.result.error ? [[index, step.result.error]] : [])),
+    );
+    expect({ id, errors }).toEqual({ id, errors: expectedErrors });
+    // every scheduling call that succeeded records its deferral report
     for (const step of scenario.steps)
-      if (['scheduleProfileRounds', 'scheduleMatchUps'].includes(step.directive.method))
+      if (!step.result.error && ['scheduleProfileRounds', 'scheduleMatchUps'].includes(step.directive.method))
         expect({ id, value: typeof step.result.value }).toEqual({ id, value: 'object' });
 
     if (!finalState) continue;

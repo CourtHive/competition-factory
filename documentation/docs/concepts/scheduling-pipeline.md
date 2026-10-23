@@ -47,9 +47,12 @@ and lock.
 
 - No valid date remains after narrowing the profile's dates by `scheduleDates`: `NO_VALID_DATES`.
 - An empty profile is not refused: the call succeeds and places nothing.
-- A profile that orders a round before a round it depends on is not refused: `schedulingProfileIssues` reports each
-  such matchUp with the matchUps it `shouldBeAfter`, and the gate's dependency rule (§ 4, step 4.3) still holds the
-  order when it is placed.
+- Before scheduling, the profile is validated against the tournament: a round whose venue, event or draw no longer
+  exists is removed from the stored profile (the profile is saved without it), and a round profiled at more than one
+  venue on a date is reported; both come back in `schedulingProfileIssues`.
+- A profile that orders a round before a round it depends on is not refused and not reported by the scheduler (the
+  query `getSchedulingProfileIssues` reports such rounds, with the matchUps each `shouldBeAfter`). The gate's dependency
+  rule (§ 4, step 4.3) still places the rounds in dependency order.
 
 **OPEN:** the remaining parameter refusals (`INVALID_VALUES` for a malformed `courtIds` or `periodLength`) are not yet
 pinned by the corpus.
@@ -139,11 +142,17 @@ Dates are taken in order. On each date:
 1. **What is already there.** The matchUps already timed on the date are booked first, with their own minutes, so they
    hold their participants for recovery and count toward daily loads. A BYE's schedule is never cleared here: an
    operator's placement on a seat that became a BYE is preserved.
-2. **Per venue,** the profiled rounds are resolved to their matchUps in profile order, skipping BYEs, completed
-   matchUps (unless `scheduleCompletedMatchUps`), and matchUps already timed. The venue's **slots** are its Garman
-   times: with `C` courts available, average minutes `T` and period length `L`, the matchUps expected by period `P` are
+2. **Per venue,** the profiled rounds are taken in `sortOrder` (then profile order) and resolved to their matchUps in
+   matchUp order, skipping BYEs, completed matchUps (unless `scheduleCompletedMatchUps`), and matchUps already timed. A
+   matchUp belongs to the first venue that profiles it on the date. A `roundSegment` applies only when the round has a
+   power-of-two count of matchUps, the segment count is a power of two smaller than it, and the round lists no
+   `matchUpIds`. Each round's matchUps take the minutes of the round's **first** matchUp's format (**OPEN**, C7: a round
+   of mixed formats is timed by its first). The venue's **slots** are its Garman times: with `C` courts available,
+   average minutes `T` and period length `L`, the matchUps expected by period `P` are
    `TM = Int(((L × C) / T) × (P − 1) + C)`, and a period's slots are the difference from the period before, computed
-   over each court's availability and bookings.
+   over each court's availability and bookings. `T` is the average of the venue's first group of rounds (rounds group
+   by average minutes and period length), and `L` is the call's `periodLength`; a round's own `periodLength` only
+   affects how rounds group.
 3. **Slot by slot.** Each slot is offered to the venue's remaining matchUps in profile order; the first that passes the
    gate is placed there. A venue places at most as many matchUps per pass as it has courts; a slot no matchUp takes is
    retried in a later pass, up to 10 attempts. Venues alternate pass by pass until every venue is complete or the
@@ -230,7 +239,11 @@ the calls that decide placements; the bulk and reschedule mutations write the ti
    row-order property?
 3. **Recovery books potentials one matchUp away only** (by design, 2026-10-16): a participant two rounds away is not
    held. Daily limits count every potential. Is the asymmetry the rule to keep in vNext?
-4. **The parameter refusals** of § 2 are not yet pinned by corpus scenarios.
+4. **The parameter refusals** of § 2 other than `NO_VALID_DATES` are not yet pinned by corpus scenarios
+   (`authored/scheduling/profile-no-valid-dates`, `empty-profile-places-nothing` and `profile-out-of-order` pin the
+   rest of § 2).
+5. **C7: a round of mixed formats is timed by its first matchUp's format** (§ 4, step 2). Should each matchUp take its
+   own format's minutes?
 
 ## Related
 

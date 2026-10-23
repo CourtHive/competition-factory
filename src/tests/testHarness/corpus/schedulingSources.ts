@@ -11,6 +11,7 @@ import fs from 'fs';
 // constants and fixtures
 import { CONSOLATION, FEED_IN_CHAMPIONSHIP_TO_QF, MAIN } from '@Constants/drawDefinitionConstants';
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
+import { NO_VALID_DATES } from '@Constants/errorConditionConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { TOTAL } from '@Constants/scheduleConstants';
 import { SINGLES } from '@Constants/matchUpTypes';
@@ -37,6 +38,8 @@ type Authored = {
   initialRecord: any;
   directives: Directive[];
   knownFailure?: string;
+  /** the steps expected to be refused, by index, with their error code; every other step must succeed */
+  expectedErrors?: { [stepIndex: number]: string };
   /** returns the claims that FAIL, as sentences, asked of the final record and every step's value */
   finalState?: (record: any, values: any[]) => string[];
 };
@@ -209,6 +212,60 @@ export function schedulingScenarios(): Authored[] {
   }
 
   {
+    // spec § 2: a profile with no date left once `scheduleDates` narrows it is refused, and writes nothing
+    const { tournamentRecord, round } = generate({ drawProfile: { drawSize: 8 } });
+    out.push({
+      scenarioId: 'authored/scheduling/profile-no-valid-dates',
+      ref: 'scheduling § 2: NO_VALID_DATES when scheduleDates leaves no profile date',
+      initialRecord: tournamentRecord,
+      directives: [round(DAY_1, MAIN, 1), profileRun([DAY_2])],
+      expectedErrors: { 1: NO_VALID_DATES.code },
+    });
+  }
+
+  {
+    // spec § 2: an empty profile is not refused; the call succeeds and places nothing
+    const { tournamentRecord } = generate({ drawProfile: { drawSize: 8 } });
+    out.push({
+      scenarioId: 'authored/scheduling/empty-profile-places-nothing',
+      ref: 'scheduling § 2: an empty profile succeeds and places nothing',
+      initialRecord: tournamentRecord,
+      directives: [profileRun([DAY_1])],
+      finalState: (record) => claim(timedOn(rawRound(record, MAIN, 1), DAY_1) === 0, 'nothing timed'),
+    });
+  }
+
+  {
+    // spec § 2 and § 4: a profile that orders R2 before R1 is neither refused nor reported by the scheduler (the query
+    // getSchedulingProfileIssues reports it), and the gate's dependency rule still places R1 first
+    const { tournamentRecord, round } = generate({
+      policyDefinitions: POLICY_SCHEDULING_DEFAULT,
+      drawProfile: { drawSize: 8 },
+    });
+    out.push({
+      scenarioId: 'authored/scheduling/profile-out-of-order',
+      ref: 'scheduling § 2, § 4: rounds profiled out of order are placed in dependency order',
+      initialRecord: tournamentRecord,
+      directives: [round(DAY_1, MAIN, 2), round(DAY_1, MAIN, 1), profileRun([DAY_1])],
+      finalState: (record) => {
+        const latestR1 =
+          rawRound(record, MAIN, 1)
+            .map((m) => m.schedule?.scheduledTime ?? '')
+            .toSorted((a: string, b: string) => a.localeCompare(b))
+            .at(-1) ?? '';
+        const earliestR2 =
+          rawRound(record, MAIN, 2)
+            .map((m) => m.schedule?.scheduledTime ?? '')
+            .toSorted((a: string, b: string) => a.localeCompare(b))[0] ?? '';
+        return [
+          ...claim(timedOn(rawRound(record, MAIN, 1), DAY_1) === 4, 'all of R1 timed'),
+          ...claim(!!earliestR2 && earliestR2 > latestR1, `R2 (${earliestR2}) after R1 (${latestR1})`),
+        ];
+      },
+    });
+  }
+
+  {
     // C1 (found building this corpus, 2026-10-22; CA: recovery is calculated): a COMPLETED matchUp still holds its
     // participants. Main R1 at 08:00 is completed, and a second profile run places consolation R1, whose players are
     // R1's losers, only once R1's 90 minutes and 60 of recovery are over
@@ -286,7 +343,12 @@ export function recordScheduling({ outDir }: { outDir: string }) {
   fs.mkdirSync(outDir, { recursive: true });
   const outPath = path.join(outDir, 'scheduling.jsonl');
   fs.writeFileSync(outPath, '');
-  const written: { scenario: any; knownFailure?: string; finalState?: Authored['finalState'] }[] = [];
+  const written: {
+    expectedErrors?: Authored['expectedErrors'];
+    finalState?: Authored['finalState'];
+    knownFailure?: string;
+    scenario: any;
+  }[] = [];
   const failed: { scenarioId: string; reason: string }[] = [];
   for (const authored of schedulingScenarios()) {
     try {
@@ -302,7 +364,12 @@ export function recordScheduling({ outDir }: { outDir: string }) {
         clock: CLOCK,
       });
       fs.appendFileSync(outPath, JSON.stringify(scenario) + '\n');
-      written.push({ scenario, knownFailure: authored.knownFailure, finalState: authored.finalState });
+      written.push({
+        expectedErrors: authored.expectedErrors,
+        knownFailure: authored.knownFailure,
+        finalState: authored.finalState,
+        scenario,
+      });
     } catch (err: any) {
       if (!(err instanceof CorpusWriteError)) throw err;
       failed.push({ scenarioId: authored.scenarioId, reason: err.message.slice(0, 300) });
