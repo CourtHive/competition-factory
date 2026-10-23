@@ -82,6 +82,12 @@ function violationsAcross(record: any, rules: string[]): string[] {
   return found;
 }
 
+/** a call given empty daily limits opted out of them */
+const waivesDailyLimits = ({ params }: Directive) => {
+  const limits = (params as any)?.matchUpDailyLimits;
+  return !!limits && typeof limits === 'object' && !Object.keys(limits).length;
+};
+
 type StepUnderCheck = { directive: Directive; previous?: Directive; before: any; after: any; report?: any };
 
 /** the scheduling properties a scenario claims, asked of one step: a claimed property is checked, never assumed */
@@ -96,7 +102,7 @@ function schedulingViolations({ directive, previous, before, after, report }: St
     claimed.has(SCHEDULE_RERUN_STABLE) && !!report && JSON.stringify(previous) === JSON.stringify(directive);
   return [
     ...(SCHEDULING_STEP_PROPERTIES.some((name) => claimed.has(name))
-      ? checkSchedulingStep({ before, after, timing })
+      ? checkSchedulingStep({ before, after, timing, dailyLimitsWaived: waivesDailyLimits(directive) })
       : []),
     ...checkSchedulingReport({ before, after, report, params: directive.params }),
     ...(repeated ? checkRerunStable({ before, after }) : []),
