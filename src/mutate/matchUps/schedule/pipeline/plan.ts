@@ -27,7 +27,6 @@ type PlanScheduleArgs = {
   view: SchedulingView;
   checkPotentialRequestConflicts?: boolean;
   clearScheduleDates?: boolean | string[];
-  scheduleCompletedMatchUps?: boolean;
   excludeNoDateCompleted?: boolean;
   excludePriorDates?: boolean;
   /** the call's own period length: absent, a venue's slots derive theirs from its average minutes */
@@ -85,7 +84,6 @@ export function planSchedule({
   checkPotentialRequestConflicts = true,
   excludeNoDateCompleted = true,
   excludePriorDates = true,
-  scheduleCompletedMatchUps,
   clearScheduleDates,
   periodLength,
   view,
@@ -113,7 +111,6 @@ export function planSchedule({
     planDate({
       checkPotentialRequestConflicts,
       scheduleDateRequestConflicts,
-      scheduleCompletedMatchUps,
       excludeNoDateCompleted,
       clearScheduleDates,
       excludePriorDates,
@@ -137,7 +134,6 @@ type PlanDateArgs = Omit<PlanScheduleArgs, 'checkPotentialRequestConflicts'> & {
 function planDate({
   checkPotentialRequestConflicts,
   scheduleDateRequestConflicts,
-  scheduleCompletedMatchUps,
   excludeNoDateCompleted,
   clearScheduleDates,
   excludePriorDates,
@@ -219,7 +215,6 @@ function planDate({
       dateScheduledMatchUpIds: already.dateScheduledMatchUpIds,
       matchUpScheduleTimes: plan.matchUpScheduleTimes,
       matchUpPotentialParticipantIds,
-      scheduleCompletedMatchUps,
       clearDate: already.clearDate,
       matchUpNotBeforeTimes,
       matchUps: hydrated,

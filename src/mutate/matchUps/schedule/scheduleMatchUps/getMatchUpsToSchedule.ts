@@ -19,7 +19,6 @@ type GetMatchUpsToScheduleArgs = {
   matchUpPotentialParticipantIds?: { [key: string]: string[] };
   matchUpScheduleTimes?: { [key: string]: string };
   matchUpNotBeforeTimes?: { [key: string]: any };
-  scheduleCompletedMatchUps?: boolean;
   dateScheduledMatchUpIds?: string[];
   orderedMatchUpIds?: string[];
   clearDate?: boolean;
@@ -37,7 +36,6 @@ export function getMatchUpsToSchedule(params: GetMatchUpsToScheduleArgs): {
   const {
     matchUpPotentialParticipantIds,
     dateScheduledMatchUpIds = [],
-    scheduleCompletedMatchUps,
     matchUpNotBeforeTimes,
     matchUpScheduleTimes,
     orderedMatchUpIds,
@@ -66,10 +64,8 @@ export function getMatchUpsToSchedule(params: GetMatchUpsToScheduleArgs): {
         DOUBLE_DEFAULT,
       ].includes(matchUp?.matchUpStatus);
 
-      return (
-        scheduleCompletedMatchUps || // override for mocksEngine
-        (!alreadyScheduled && !matchUp.winningSide && !doNotSchedule)
-      );
+      // a completed matchUp is never scheduled again (CA 2026-10-23)
+      return !alreadyScheduled && !matchUp.winningSide && !doNotSchedule;
     });
 
   // for optimization, build up an object for each tournament and an array for each draw with target matchUps

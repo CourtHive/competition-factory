@@ -52,7 +52,7 @@ function setup(drawProfiles: any[], outcomes = false) {
 }
 
 /** v1's per-venue matchUps and minutes for a profile, as getVenueSchedulingDetails derives them */
-function v1Plan(tournamentRecords: any, schedulingProfile: any[], scheduleCompletedMatchUps?: boolean) {
+function v1Plan(tournamentRecords: any, schedulingProfile: any[]) {
   // the matchUps scheduleProfileRounds hands its scheduler
   const matchUps = allCompetitionMatchUps({
     matchUpFilters: { matchUpTypes: [SINGLES, DOUBLES] },
@@ -69,7 +69,6 @@ function v1Plan(tournamentRecords: any, schedulingProfile: any[], scheduleComple
         const result: any = getScheduledRoundsDetails({
           tournamentRecords,
           rounds,
-          scheduleCompletedMatchUps,
           matchUps,
         });
         Object.assign(minutes, result.minutesMap);
@@ -96,13 +95,13 @@ function currentRecords() {
   return { [tournamentRecord.tournamentId]: tournamentRecord };
 }
 
-function expectSamePlan(schedulingProfile: any[], scheduleCompletedMatchUps?: boolean) {
+function expectSamePlan(schedulingProfile: any[]) {
   const result: any = tournamentEngine.setSchedulingProfile({ schedulingProfile });
   expect(result.success).toEqual(true);
   const tournamentRecords = currentRecords();
-  const view: any = buildSchedulingView({ tournamentRecords, scheduleCompletedMatchUps });
+  const view: any = buildSchedulingView({ tournamentRecords });
   expect(view.error).toBeUndefined();
-  const expected = v1Plan(tournamentRecords, schedulingProfile, scheduleCompletedMatchUps);
+  const expected = v1Plan(tournamentRecords, schedulingProfile);
   const actual = vNextPlan(view);
   expect(actual.plan).toEqual(expected.plan);
   expect(actual.minutes).toEqual(expected.minutes);
@@ -170,13 +169,12 @@ describe('the vNext view resolves a profile as v1 does', () => {
     ]);
   });
 
-  it('completed matchUps are left out, unless scheduleCompletedMatchUps', () => {
+  it('completed matchUps are left out (CA 2026-10-23: no override)', () => {
     const { round } = setup([{ drawSize: 8 }], true);
     const profile = [
       { scheduleDate: DAYS[0], venues: [{ venueId: 'venue-1', rounds: [round(0, 0, 1), round(0, 0, 2)] }] },
     ];
     expectSamePlan(profile);
-    expectSamePlan(profile, true);
   });
 
   it('a round none of whose matchUps has a format schedules nothing, and is reported', () => {

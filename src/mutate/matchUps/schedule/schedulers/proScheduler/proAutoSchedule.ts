@@ -25,7 +25,10 @@ type ProAutoScheduleArgs = {
   dailyLimitOverrides?: DailyLimitOverrides;
   /** the limits are asked but not enforced: a placement over one is made and reported in dailyLimitWarningMatchUpIds */
   dailyLimitsWarnOnly?: boolean;
-  /** passed to the write: without it a completed matchUp the grid places is skipped there */
+  /**
+   * @deprecated ignored: completed matchUps are never scheduled (CA 2026-10-23); the write skips one and it is reported
+   * not scheduled. Removed at the next major.
+   */
   scheduleCompletedMatchUps?: boolean;
   matchUps: HydratedMatchUp[];
   minCourtGridRows?: number;
@@ -99,7 +102,6 @@ function findOpenCourtIndex(
 }
 
 export function proAutoSchedule({
-  scheduleCompletedMatchUps,
   dailyLimitsWarnOnly,
   dailyLimitOverrides,
   matchUpDailyLimits,
@@ -250,7 +252,7 @@ export function proAutoSchedule({
     },
   }));
 
-  const writeResult = bulkScheduleMatchUps({ tournamentRecords, matchUpDetails, scheduleCompletedMatchUps });
+  const writeResult = bulkScheduleMatchUps({ tournamentRecords, matchUpDetails });
 
   // scheduled is what the write wrote: a matchUp it skipped (completed, a BYE), kept (locked) or could not find was
   // placed on the grid and not written, and was reported scheduled all the same (C4, SCHEDULING_PIPELINE_VNEXT.md § 5)

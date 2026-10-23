@@ -78,7 +78,6 @@ export function generatePrivacyFixture() {
       { drawSize: 8, seedsCount: 4, eventType: DOUBLES, drawId: DOUBLES_DRAW_ID, drawName: 'Doubles' },
       { drawSize: 4, eventType: TEAM, drawId: TEAM_DRAW_ID, drawName: 'Team' },
     ],
-    scheduleCompletedMatchUps: true,
     schedulingProfile,
     venueProfiles,
     endDate: '2024-01-03',

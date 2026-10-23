@@ -169,6 +169,7 @@ export function generateEventWithFlights(params) {
       randomWinningSide,
     });
     const drawDefinitionResult = generateFlightDrawDefinitions({
+      deferredOutcomes: params.deferredOutcomes,
       matchUpStatusProfile: completion.matchUpStatusProfile,
       completeAllMatchUps: completion.completeAllMatchUps,
       randomWinningSide: completion.randomWinningSide,

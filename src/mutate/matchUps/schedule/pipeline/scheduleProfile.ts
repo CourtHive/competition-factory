@@ -25,7 +25,6 @@ type ScheduleProfileVNextArgs = {
   checkPotentialRequestConflicts?: boolean;
   tournamentRecords: TournamentRecords;
   clearScheduleDates?: boolean | string[];
-  scheduleCompletedMatchUps?: boolean;
   excludeNoDateCompleted?: boolean;
   excludePriorDates?: boolean;
   scheduleDates?: string[];

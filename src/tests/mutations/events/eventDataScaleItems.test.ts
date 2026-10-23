@@ -53,7 +53,6 @@ test('ratings values should be present on tournamentParticipants in getEventData
     tournamentRecord,
     eventIds: [eventId],
   } = mocksEngine.generateTournamentRecord({
-    scheduleCompletedMatchUps: true,
     completeAllMatchUps: true,
     participantsProfile: { personExtensions },
     autoSchedule: true,

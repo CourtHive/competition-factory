@@ -33,8 +33,9 @@ robin's rounds are profiled on the round robin's containing structure: they cove
 
 **The call** takes `scheduleDates` (the profile's dates to schedule; all of them when absent), `clearScheduleDates`,
 `courtIds` (a court filter), `periodLength` (minutes per scheduling period, default 30) and `dryRun`. A completed
-matchUp is never scheduled again (CA 2026-10-23): `scheduleCompletedMatchUps` is ignored by both profile schedulers
-(mocksEngine's seeding calls the pipeline's own entry, which still honours it for fixtures).
+matchUp is never scheduled again, and there is no override (CA 2026-10-23): `scheduleCompletedMatchUps` is accepted
+and ignored by the schedulers until the next major. mocksEngine, auto-scheduling a generated tournament, schedules it
+first and applies its results after, as a real tournament is played.
 
 **`clearScheduleDates`.** `true` clears every scheduled matchUp that is not finished, in every tournament loaded, on
 every date, profiled or not; a schedule lock survives. An array clears only the matchUps scheduled on the dates it

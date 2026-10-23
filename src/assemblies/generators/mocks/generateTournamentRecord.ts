@@ -1,6 +1,6 @@
 import { checkProfileKeys, GENERATE_ENGINE_SUPPLIED_KEYS, GENERATE_TOURNAMENT_RECORD_KEYS } from './profileKeys';
 import { createTournamentRecord } from '@Generators/tournamentRecords/createTournamentRecord';
-import { scheduleProfileVNext } from '@Mutate/matchUps/schedule/pipeline/scheduleProfile';
+import { scheduleProfileRounds } from '@Mutate/matchUps/schedule/scheduleProfileRounds';
 import { addTournamentParticipants } from './addTournamentParticipants';
 import { addParticipants } from '@Mutate/participants/addParticipants';
 import { generateEventWithFlights } from './generateEventWithFlights';
@@ -23,6 +23,7 @@ import { now } from '@Tools/clock';
 import { ErrorType, INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import defaultRatingsParameters from '@Fixtures/ratings/ratingsParameters';
 import type { GenerateTournamentRecordArgs } from '@Types/mocksTypes';
+import type { Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
 // SELECTED WITH `randomMember`, NEVER `randomPop`. `randomPop` SPLICES, and this array is a
@@ -127,22 +128,23 @@ export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
     eventIds: string[] = [],
     drawIds: string[] = [];
 
+  // auto-scheduled: the draws' results are applied once the tournament is scheduled, as a real one is played, since the
+  // schedulers never place a completed matchUp (CA 2026-10-23)
+  const deferredOutcomes: DeferredOutcomes | undefined = schedulingProfile && params?.autoSchedule ? [] : undefined;
   const profilesResult = processAllProfiles({
+    params: deferredOutcomes ? { ...params, deferredOutcomes } : params,
     allUniqueParticipantIds,
     useExistingParticipants,
     ratingsParameters,
     tournamentRecord,
-    params,
     eventIds,
     venueIds,
     drawIds,
   });
   if (profilesResult?.error) return profilesResult;
 
-  const scheduled = schedulingProfile ? scheduleRounds({ ...params, tournamentRecord }) : {};
-  // a refused schedule is a refusal, not an empty schedule
+  const scheduled = scheduleThenPlay({ params, tournamentRecord, schedulingProfile, deferredOutcomes });
   if (scheduled.error) return scheduled;
-  if (scheduled.schedulerResult?.error) return scheduled.schedulerResult;
   const { scheduledRounds = undefined, schedulerResult = {} } = scheduled;
 
   // Anchoring runs AFTER scheduling: it shifts the times the scheduler produced rather than
@@ -220,8 +222,35 @@ function processEventProfiles(params) {
   }
 }
 
+type DeferredOutcomes = (() => { error?: ErrorType } | undefined)[];
+
+/** the profile's rounds scheduled, then the results deferred until now applied, as a real tournament is played */
+type ScheduleThenPlayArgs = {
+  deferredOutcomes?: DeferredOutcomes;
+  params: Record<string, unknown>;
+  schedulingProfile?: unknown[];
+  tournamentRecord: Tournament;
+};
+
+function scheduleThenPlay({
+  schedulingProfile,
+  tournamentRecord,
+  deferredOutcomes,
+  params,
+}: ScheduleThenPlayArgs): ReturnType<typeof scheduleRounds> {
+  const scheduled = schedulingProfile ? scheduleRounds({ ...params, tournamentRecord }) : {};
+  // a refused schedule is a refusal, not an empty schedule
+  if (scheduled.error) return scheduled;
+  if (scheduled.schedulerResult?.error) return scheduled.schedulerResult;
+  for (const applyOutcomes of deferredOutcomes ?? []) {
+    const outcomesResult = applyOutcomes();
+    if (outcomesResult?.error) return outcomesResult;
+  }
+  return scheduled;
+}
+
 function scheduleRounds(params): { scheduledRounds?: any; schedulerResult?: any; error?: ErrorType } {
-  const { schedulingProfile, tournamentRecord, autoSchedule, periodLength, scheduleCompletedMatchUps } = params;
+  const { schedulingProfile, tournamentRecord, autoSchedule, periodLength } = params;
   const result = generateScheduledRounds({
     schedulingProfile,
     tournamentRecord,
@@ -233,13 +262,7 @@ function scheduleRounds(params): { scheduledRounds?: any; schedulerResult?: any;
     const { tournamentId } = tournamentRecord;
     const tournamentRecords = { [tournamentId]: tournamentRecord };
 
-    // seeding a fixture, not scheduling for an operator: the pipeline's own entry, which may place completed matchUps
-    // (the public scheduleProfileRounds never does, CA 2026-10-23)
-    const schedulerResult = scheduleProfileVNext({
-      scheduleCompletedMatchUps,
-      tournamentRecords,
-      periodLength,
-    });
+    const schedulerResult = scheduleProfileRounds({ tournamentRecords, periodLength });
 
     return { schedulerResult, scheduledRounds };
   }
