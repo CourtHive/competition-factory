@@ -1,5 +1,18 @@
 import { POLICY_TYPE_PARTICIPANT } from '@Constants/policyConstants';
 
+/**
+ * The teams an individual belongs to, as `withGroupings` attaches them. A school or team name is not private,
+ * and draw displays with participant detail TEAM read `teams[0].participantName`. An object template is
+ * applied to every array element, so team contacts, online resources, members and role responsibilities
+ * stay stripped.
+ */
+const PUBLIC_TEAMS = {
+  participantId: true,
+  participantName: true,
+  participantOtherName: true,
+  participantType: true,
+};
+
 export const POLICY_PRIVACY_DEFAULT = {
   [POLICY_TYPE_PARTICIPANT]: {
     policyName: 'Participant Privacy Policy',
@@ -16,6 +29,7 @@ export const POLICY_PRIVACY_DEFAULT = {
         rankings: true,
         ratings: true,
         representing: true,
+        teams: { ...PUBLIC_TEAMS },
         participantRoleResponsibilities: false,
         participantType: true,
         person: {
@@ -53,6 +67,7 @@ export const POLICY_PRIVACY_DEFAULT = {
       rankings: true,
       ratings: true,
       representing: true,
+      teams: { ...PUBLIC_TEAMS },
       participantRoleResponsibilities: false,
       participantType: true,
       person: {

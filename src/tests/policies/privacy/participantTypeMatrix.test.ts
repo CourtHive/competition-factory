@@ -34,6 +34,15 @@ const filtered = (policyDefinitions: any) =>
   tournamentEngine.getParticipants({ policyDefinitions, withGroupings: true, withIndividualParticipants: true })
     .participants;
 
+/** `teams` and `groups` absent from the template: the default names `teams`, so delete it from both levels. */
+function teamsAbsentPolicy() {
+  const policy = structuredClone(POLICY_PRIVACY_DEFAULT);
+  const participant: any = policy[POLICY_TYPE_PARTICIPANT].participant;
+  delete participant.teams;
+  delete participant.individualParticipants.teams;
+  return policy;
+}
+
 /** `teams` named explicitly as denied, rather than merely absent from the template. */
 function teamsDeniedPolicy() {
   const policy = structuredClone(POLICY_PRIVACY_DEFAULT);
@@ -44,7 +53,7 @@ function teamsDeniedPolicy() {
 
 describe('filtering an attribute never removes an entity', () => {
   it.each([
-    ['teams absent from the template', POLICY_PRIVACY_DEFAULT],
+    ['teams absent from the template', teamsAbsentPolicy()],
     ['teams explicitly false', teamsDeniedPolicy()],
   ])('%s: every participantType survives, in the same numbers', (_name, policyDefinitions) => {
     const before = unfiltered();
@@ -65,7 +74,7 @@ describe('filtering an attribute never removes an entity', () => {
   });
 
   it.each([
-    ['teams absent from the template', POLICY_PRIVACY_DEFAULT],
+    ['teams absent from the template', teamsAbsentPolicy()],
     ['teams explicitly false', teamsDeniedPolicy()],
   ])('%s: the `teams` / `groups` ATTRIBUTE is gone from individuals', (_name, policyDefinitions) => {
     const before = unfiltered().filter((p: any) => p.participantType === INDIVIDUAL);
