@@ -47,7 +47,7 @@ type Placed = { matchUp: HydratedMatchUp; instant: number };
 
 const refuse = (info: string) => ({ error: INVALID_VALUES, info });
 
-function invalidScenarioState({ called, checkedIn, conflicts, assignCourts }: ScenarioStateArgs) {
+export function invalidScenarioState({ called, checkedIn, conflicts, assignCourts }: ScenarioStateArgs) {
   for (const timeWindow of [called, checkedIn]) {
     if (timeWindow !== undefined && !(Number.isFinite(timeWindow?.withinMinutes) && timeWindow.withinMinutes >= 0))
       return refuse('called and checkedIn take { withinMinutes }, a non-negative number');

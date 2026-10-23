@@ -145,14 +145,7 @@ export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
 
   const scheduled = scheduleThenPlay({ params, tournamentRecord, schedulingProfile, deferredOutcomes });
   if (scheduled.error) return scheduled;
-  const { scheduledRounds = undefined, schedulerResult = {} } = scheduled;
-
-  // Anchoring runs AFTER scheduling: it shifts the times the scheduler produced rather than
-  // replacing them, so matchUp average and recovery spacing survive intact.
-  const scenarioResult = params?.scenarioProfile
-    ? applyScenarioProfile({ tournamentRecord, scenarioProfile: params.scenarioProfile })
-    : undefined;
-  if (scenarioResult?.error) return scenarioResult;
+  const { scheduledRounds = undefined, schedulerResult = {}, scenarioResult = undefined } = scheduled;
 
   // clear globalState modified flag;
   cycleMutationStatus();
@@ -224,29 +217,49 @@ function processEventProfiles(params) {
 
 type DeferredOutcomes = (() => { error?: ErrorType } | undefined)[];
 
-/** the profile's rounds scheduled, then the results deferred until now applied, as a real tournament is played */
+/**
+ * The profile's rounds scheduled, the schedule anchored and courted (`scenarioProfile`), and only then the results
+ * deferred until now applied, as a real tournament is played.
+ *
+ * Anchoring runs AFTER scheduling: it shifts the times the scheduler produced rather than replacing them, so matchUp
+ * average and recovery spacing survive intact. Playing runs after anchoring and courts (7.20.0 played between them):
+ * the court grid never places a completed matchUp, so results applied first left every completed matchUp without a
+ * court, and a matchUp shifted after its result was judged for played order one step at a time.
+ */
 type ScheduleThenPlayArgs = {
   deferredOutcomes?: DeferredOutcomes;
-  params: Record<string, unknown>;
+  params: Record<string, any>;
   schedulingProfile?: unknown[];
   tournamentRecord: Tournament;
 };
 
-function scheduleThenPlay({
-  schedulingProfile,
-  tournamentRecord,
-  deferredOutcomes,
-  params,
-}: ScheduleThenPlayArgs): ReturnType<typeof scheduleRounds> {
+function scheduleThenPlay({ schedulingProfile, tournamentRecord, deferredOutcomes, params }: ScheduleThenPlayArgs): {
+  scenarioResult?: ReturnType<typeof applyScenarioProfile>;
+  scheduledRounds?: any;
+  schedulerResult?: any;
+  error?: ErrorType;
+} {
   const scheduled = schedulingProfile ? scheduleRounds({ ...params, tournamentRecord }) : {};
   // a refused schedule is a refusal, not an empty schedule
   if (scheduled.error) return scheduled;
   if (scheduled.schedulerResult?.error) return scheduled.schedulerResult;
-  for (const applyOutcomes of deferredOutcomes ?? []) {
-    const outcomesResult = applyOutcomes();
-    if (outcomesResult?.error) return outcomesResult;
+
+  const play = () => {
+    for (const applyOutcomes of deferredOutcomes ?? []) {
+      const outcomesResult = applyOutcomes();
+      if (outcomesResult?.error) return outcomesResult;
+    }
+    return undefined;
+  };
+
+  if (!params?.scenarioProfile) {
+    const played = play();
+    return played?.error ? played : scheduled;
   }
-  return scheduled;
+
+  const scenarioResult = applyScenarioProfile({ tournamentRecord, scenarioProfile: params.scenarioProfile, play });
+  if (scenarioResult.error) return scenarioResult;
+  return { ...scheduled, scenarioResult };
 }
 
 function scheduleRounds(params): { scheduledRounds?: any; schedulerResult?: any; error?: ErrorType } {

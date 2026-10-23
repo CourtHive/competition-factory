@@ -1,17 +1,19 @@
 import { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems/addMatchUpScheduledDate';
+import { applyScenarioState, invalidScenarioState, ScenarioConflict } from './scenarioState';
+import { checkBatchPlayedOrder } from '@Mutate/matchUps/schedule/scheduleItems/playedOrder';
 import { scheduleProfileGrid } from '@Mutate/matchUps/schedule/scheduleProfileGrid';
 import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
-import { applyScenarioState, ScenarioConflict } from './scenarioState';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { extractDate } from '@Tools/dateTime';
 import { now } from '@Tools/clock';
 
 // constants and types
-import { INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { ErrorType, INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
+import { ResultType } from '@Types/factoryTypes';
 
 /**
  * Anchors a generated schedule to a moment, so an example stays demonstrable whenever it is run.
@@ -44,6 +46,13 @@ type ScenarioProfile = {
 };
 
 type ApplyScenarioProfileArgs = {
+  /**
+   * Run once the schedule is anchored and courted, before operational state and conflicts: `generateTournamentRecord`
+   * plays its deferred results here, so a completed matchUp is shifted and courted with the rest (the shift and the
+   * court grid both run on a record nobody has played in yet) and `called`, `checkedIn` and `conflicts` read the
+   * played record, as they did before results were deferred.
+   */
+  play?: () => { error?: ErrorType; info?: string } | undefined;
   scenarioProfile: ScenarioProfile;
   tournamentRecord: Tournament;
 };
@@ -69,24 +78,62 @@ function scheduledInstant(matchUp: HydratedMatchUp): Date | undefined {
   return isNaN(instant.getTime()) ? undefined : instant;
 }
 
-export function applyScenarioProfile({ tournamentRecord, scenarioProfile }: ApplyScenarioProfileArgs) {
+export function applyScenarioProfile({ tournamentRecord, scenarioProfile, play }: ApplyScenarioProfileArgs) {
   if (typeof scenarioProfile !== 'object' || scenarioProfile === null) return { error: INVALID_VALUES };
 
-  const { anchor = 'NOW', minutesBeforeAnchor = 0, assignCourts } = scenarioProfile;
+  const { anchor = 'NOW', minutesBeforeAnchor = 0 } = scenarioProfile;
 
   if (typeof minutesBeforeAnchor !== 'number' || !isFinite(minutesBeforeAnchor)) return { error: INVALID_VALUES };
 
   const anchorDate = anchor === 'NOW' ? now() : new Date(anchor);
   if (isNaN(anchorDate.getTime())) return { error: INVALID_VALUES };
 
+  // the whole profile is validated before the first write: an invalid `called` or `conflicts` was refused only after
+  // the schedule had been shifted and courted
+  const invalidState = invalidScenarioState({ ...scenarioProfile, tournamentRecord, anchorDate });
+  if (invalidState) return decorateResult({ result: invalidState, stack: 'applyScenarioProfile' });
+
+  const anchored = anchorSchedule({ tournamentRecord, scenarioProfile, anchorDate });
+  if (anchored.error) return decorateResult({ result: anchored, stack: 'applyScenarioProfile' });
+
+  const played = play?.();
+  if (played?.error) return decorateResult({ result: played, stack: 'applyScenarioProfile' });
+
+  // Nothing to anchor is a legitimate outcome, not an error: a caller may have generated without a
+  // schedulingProfile. Say so in the result rather than silently succeeding at nothing.
+  if (anchored.nothingScheduled) return { ...SUCCESS, shiftedCount: 0, anchoredTo: anchorDate.toISOString() };
+
+  // operational state and deliberate conflicts come last of all: they describe the schedule as it stands, played
+  const state = applyScenarioState({ ...scenarioProfile, tournamentRecord, anchorDate });
+  if ('error' in state) return decorateResult({ result: state, stack: 'applyScenarioProfile' });
+
+  return {
+    ...SUCCESS,
+    ...state,
+    anchoredTo: anchorDate.toISOString(),
+    shiftMinutes: anchored.shiftMinutes,
+    shiftedCount: anchored.shiftedCount ?? 0,
+  };
+}
+
+type AnchorScheduleArgs = {
+  scenarioProfile: ScenarioProfile;
+  tournamentRecord: Tournament;
+  anchorDate: Date;
+};
+
+type AnchorScheduleResult = ResultType & { shiftMinutes?: number; shiftedCount?: number; nothingScheduled?: boolean };
+
+/** the rigid shift, then the courts: every refusal the shift can meet is decided before any of it is written */
+function anchorSchedule({ tournamentRecord, scenarioProfile, anchorDate }: AnchorScheduleArgs): AnchorScheduleResult {
+  const { minutesBeforeAnchor = 0, assignCourts } = scenarioProfile;
+
   const matchUps = allTournamentMatchUps({ tournamentRecord }).matchUps ?? [];
   const scheduled = matchUps
     .map((matchUp) => ({ matchUp, instant: scheduledInstant(matchUp) }))
     .filter((entry): entry is { matchUp: HydratedMatchUp; instant: Date } => !!entry.instant);
 
-  // Nothing to anchor is a legitimate outcome, not an error: a caller may have generated without a
-  // schedulingProfile. Say so in the result rather than silently succeeding at nothing.
-  if (!scheduled.length) return { ...SUCCESS, shiftedCount: 0, anchoredTo: anchorDate.toISOString() };
+  if (!scheduled.length) return { shiftedCount: 0, nothingScheduled: true };
 
   const earliest = Math.min(...scheduled.map((entry) => entry.instant.getTime()));
   const target = anchorDate.getTime() - minutesBeforeAnchor * 60_000;
@@ -135,6 +182,31 @@ export function applyScenarioProfile({ tournamentRecord, scenarioProfile }: Appl
     }
   }
 
+  /**
+   * The played order is asked of the WHOLE shift at once, against the state it leaves, and then not again per write.
+   *
+   * Each write asks `checkPlayedOrder` of itself against what is stored, and a rigid shift is a sequence of steps that
+   * each move ONE matchUp: shifting a played first-round matchUp later while its second-round dependent still sits at
+   * its old time is an ANACHRONISM for that step, though the finished shift preserves every order. Measured on 7.20.0:
+   * a 16 draw with 4 results, shifted later, refused 4 of 12 writes and reported success with `shiftedCount: 8`.
+   * Judged as a batch, a uniform shift passes; a schedule that was already out of played order is refused whole.
+   */
+  const batchRefusal = checkBatchPlayedOrder({
+    placements: shifts.map(({ matchUp, shifted }) => {
+      const [scheduledDate, scheduledTime] = isoMinute(shifted).split('T');
+      return { drawId: matchUp.drawId, matchUpId: matchUp.matchUpId, schedule: { scheduledDate, scheduledTime } };
+    }),
+    allRefusals: true,
+    tournamentRecord,
+  });
+  if (batchRefusal) {
+    return decorateResult({
+      info: 'anchoring would leave a matchUp out of played order; nothing was shifted',
+      result: batchRefusal,
+      stack: 'applyScenarioProfile',
+    });
+  }
+
   let shiftedCount = 0;
   for (const { matchUp, shifted } of shifts) {
     const drawDefinition = drawMap[matchUp.drawId];
@@ -146,21 +218,25 @@ export function applyScenarioProfile({ tournamentRecord, scenarioProfile }: Appl
       const dateResult = addMatchUpScheduledDate({
         scheduledDate: targetDate,
         matchUpId: matchUp.matchUpId,
+        playedOrderChecked: true,
         disableNotice: true,
         tournamentRecord,
         drawDefinition,
       });
-      if (dateResult?.error) return decorateResult({ result: dateResult, stack: 'applyScenarioProfile' });
+      if (dateResult?.error) return refusedWrite(dateResult, matchUp.matchUpId, shiftedCount);
     }
 
+    // a refused write is the call's refusal: it was counted out and reported as success before
     const result = addMatchUpScheduledTime({
       scheduledTime: isoShifted,
       matchUpId: matchUp.matchUpId,
+      playedOrderChecked: true,
       disableNotice: true,
       tournamentRecord,
       drawDefinition,
     });
-    if (!result?.error) shiftedCount += 1;
+    if (result?.error) return refusedWrite(result, matchUp.matchUpId, shiftedCount);
+    shiftedCount += 1;
   }
 
   // Courts LAST, deliberately.
@@ -180,18 +256,21 @@ export function applyScenarioProfile({ tournamentRecord, scenarioProfile }: Appl
           .map((d) => String(d).split('T')[0]),
       ),
     ];
-    if (scheduleDates.length) scheduleProfileGrid({ tournamentRecords, scheduleDates });
+    if (scheduleDates.length) {
+      // a grid that refuses is the call's refusal, not a schedule silently left without courts
+      const courtsResult = scheduleProfileGrid({ tournamentRecords, scheduleDates });
+      if (courtsResult?.error)
+        return decorateResult({ result: courtsResult as ResultType, stack: 'applyScenarioProfile' });
+    }
   }
 
-  // operational state and deliberate conflicts come last of all: they describe the schedule as it stands
-  const state = applyScenarioState({ ...scenarioProfile, tournamentRecord, anchorDate });
-  if ('error' in state) return decorateResult({ result: state, stack: 'applyScenarioProfile' });
+  return { shiftMinutes: Math.round(deltaMs / 60_000), shiftedCount };
+}
 
-  return {
-    ...SUCCESS,
-    ...state,
-    anchoredTo: anchorDate.toISOString(),
-    shiftMinutes: Math.round(deltaMs / 60_000),
-    shiftedCount,
-  };
+function refusedWrite(result: ResultType, matchUpId: string, shiftedCount: number) {
+  return decorateResult({
+    result,
+    context: { matchUpId, shiftedCount },
+    stack: 'applyScenarioProfile',
+  });
 }
