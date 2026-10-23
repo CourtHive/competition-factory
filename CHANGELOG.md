@@ -1,5 +1,12 @@
 # Changelog
 
+## [7.20.1](https://github.com/CourtHive/competition-factory/compare/v7.20.0...v7.20.1) (2026-10-23)
+
+
+### Bug Fixes
+
+* **mocks:** anchor and court a scenario before playing, and judge the shift whole ([#5736](https://github.com/CourtHive/competition-factory/issues/5736)) ([b867ffe](https://github.com/CourtHive/competition-factory/commit/b867ffe1743c009af47c286b827a6a667a9396e6))
+
 ## [7.20.0](https://github.com/CourtHive/competition-factory/compare/v7.19.0...v7.20.0) (2026-10-23)
 
 
