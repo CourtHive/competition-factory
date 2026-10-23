@@ -3,8 +3,9 @@ import { deepCorrectionScenario, runPath } from '@Tests/testHarness/exitPropagat
 import type { CallRecord, Selector, Site } from '@Tests/testHarness/exitPropagation/pipelineCost';
 import type { DivergenceConfig } from '@Tests/testHarness/exitPropagation/correctionDivergence';
 import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
-import { setSubscriptions } from '@Global/state/globalState';
+import { getOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { expect, it, vi } from 'vitest';
+import path from 'node:path';
 import fs from 'node:fs';
 import {
   MATRIX_EXTENSION_DRAW_TYPES,
@@ -18,6 +19,7 @@ import {
 
 // constants
 import { COMPLETED, DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
 import { LUCKY_DRAW, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 
 /**
@@ -64,6 +66,9 @@ import { LUCKY_DRAW, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstan
  *
  *   PIPELINE_COST=1 OUT=/tmp/pipeline-cost.json TZ=UTC \
  *     npx vitest run src/tests/mutations/exitPropagation/pipelineCost.test.ts
+ *
+ * The same census is a gate, `pnpm verify:hydrations` (`PIPELINE_HYDRATIONS=1`, below): no arm may ask
+ * the draw for more than `scripts/verify/baseline/hydrations.json` records.
  */
 
 vi.mock('@Query/matchUps/getMatchUpsMap', async (importOriginal) => {
@@ -312,64 +317,69 @@ function siteTable(records: CallRecord[], nested: boolean, limit: number): strin
   return lines.join('\n');
 }
 
+/** every arm of the census, played once; the report and the hydration gate read the same records */
+function collectCensus(): { records: CallRecord[]; refused: number } {
+  const records: CallRecord[] = [];
+  const skipped: string[] = [];
+  let refused = 0;
+
+  for (const drawType of ALL_DRAW_TYPES) {
+    const double = matrixCell(drawType, DOUBLE_WALKOVER);
+    const single = matrixCell(drawType, WALKOVER);
+    const defaulted = matrixCell(drawType, DEFAULTED);
+    // CONTROL: the matrix has the cell this census names, for every draw type
+    expect(double, `${drawType} DOUBLE_WALKOVER cell`).toBeDefined();
+    expect(single, `${drawType} WALKOVER cell`).toBeDefined();
+    expect(defaulted, `${drawType} DEFAULTED cell`).toBeDefined();
+    records.push(
+      ...playCell('matrix BYE: DOUBLE_WALKOVER', double!),
+      ...playCell('matrix EXIT: DOUBLE_WALKOVER', double!, PRODUCED_EXIT_POLICY),
+      ...playCell('matrix BYE: WALKOVER propagated', single!),
+      ...playCell('matrix BYE: DEFAULTED propagated', defaulted!),
+    );
+  }
+
+  let seed = 7500000;
+  for (const policy of POLICIES) {
+    for (const drawType of ALL_DRAW_TYPES) {
+      for (const cellExit of [{ matchUpStatus: DOUBLE_WALKOVER }, { matchUpStatus: WALKOVER, winningSide: 1 }]) {
+        seed += 1;
+        const played = playCorrection(drawType, policy, cellExit, seed);
+        if (!played) {
+          skipped.push(`${policy.name} ${drawType} ${cellExit.matchUpStatus}`);
+          continue;
+        }
+        refused += played.refused;
+        records.push(...played.records);
+      }
+    }
+  }
+
+  const teamCells = TEAM_LINE_CELLS.filter(
+    (cell) =>
+      cell.exitStatus === DOUBLE_WALKOVER &&
+      cell.participantsCount === 13 &&
+      cell.propagateExitStatus &&
+      cell.drawSize === 16,
+  );
+  // CONTROL: one line-arm cell per TEAM draw type
+  expect(teamCells).toHaveLength(4);
+  for (const cell of teamCells) records.push(...playCell('TEAM lines: DOUBLE_WALKOVER', cell));
+
+  // CONTROL: the census looked at what it says it looked at
+  const arms = new Set(records.map((record) => record.arm));
+  expect(arms.size).toEqual(9);
+  expect(skipped, 'draw types with no correction to measure').toEqual([]);
+  for (const record of records) {
+    for (const key of record.sites.keys()) expect(key).not.toContain('(no engine frame)');
+  }
+  return { records, refused };
+}
+
 it.skipIf(!enabled)(
   'the census: calls per site per setMatchUpStatus, over every draw type',
   () => {
-    const records: CallRecord[] = [];
-    const skipped: string[] = [];
-    let refused = 0;
-
-    for (const drawType of ALL_DRAW_TYPES) {
-      const double = matrixCell(drawType, DOUBLE_WALKOVER);
-      const single = matrixCell(drawType, WALKOVER);
-      const defaulted = matrixCell(drawType, DEFAULTED);
-      // CONTROL: the matrix has the cell this census names, for every draw type
-      expect(double, `${drawType} DOUBLE_WALKOVER cell`).toBeDefined();
-      expect(single, `${drawType} WALKOVER cell`).toBeDefined();
-      expect(defaulted, `${drawType} DEFAULTED cell`).toBeDefined();
-      records.push(
-        ...playCell('matrix BYE: DOUBLE_WALKOVER', double!),
-        ...playCell('matrix EXIT: DOUBLE_WALKOVER', double!, PRODUCED_EXIT_POLICY),
-        ...playCell('matrix BYE: WALKOVER propagated', single!),
-        ...playCell('matrix BYE: DEFAULTED propagated', defaulted!),
-      );
-    }
-
-    let seed = 7500000;
-    for (const policy of POLICIES) {
-      for (const drawType of ALL_DRAW_TYPES) {
-        for (const cellExit of [{ matchUpStatus: DOUBLE_WALKOVER }, { matchUpStatus: WALKOVER, winningSide: 1 }]) {
-          seed += 1;
-          const played = playCorrection(drawType, policy, cellExit, seed);
-          if (!played) {
-            skipped.push(`${policy.name} ${drawType} ${cellExit.matchUpStatus}`);
-            continue;
-          }
-          refused += played.refused;
-          records.push(...played.records);
-        }
-      }
-    }
-
-    const teamCells = TEAM_LINE_CELLS.filter(
-      (cell) =>
-        cell.exitStatus === DOUBLE_WALKOVER &&
-        cell.participantsCount === 13 &&
-        cell.propagateExitStatus &&
-        cell.drawSize === 16,
-    );
-    // CONTROL: one line-arm cell per TEAM draw type
-    expect(teamCells).toHaveLength(4);
-    for (const cell of teamCells) records.push(...playCell('TEAM lines: DOUBLE_WALKOVER', cell));
-
-    // CONTROL: the census looked at what it says it looked at
-    const arms = new Set(records.map((record) => record.arm));
-    expect(arms.size).toEqual(9);
-    expect(skipped, 'draw types with no correction to measure').toEqual([]);
-    for (const record of records) {
-      for (const key of record.sites.keys()) expect(key).not.toContain('(no engine frame)');
-    }
-
+    const { records, refused } = collectCensus();
     const report = [
       '',
       `# pipeline cost census — ${records.length} setMatchUpStatus calls, ${ALL_DRAW_TYPES.length} draw types, ${refused} refused steps`,
@@ -394,6 +404,100 @@ it.skipIf(!enabled)(
       fs.writeFileSync(outPath, JSON.stringify(rows));
       fs.writeFileSync(outPath.replace(/\.json$/, '') + '.md', report);
     }
+  },
+  600_000,
+);
+
+// ---------------------------------------------------------------------------------------------
+// THE HYDRATION GATE — PIPELINE_HYDRATIONS=1, `pnpm verify:hydrations` (executor plan § 6.0, G3)
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * The census, held to v1's counts. Per arm, two reads per `setMatchUpStatus`: draw hydrations and
+ * the `getMatchUpsMap` builds the pipeline asks for itself (top of stack). Each has a total and a
+ * worst call in `scripts/verify/baseline/hydrations.json`.
+ *
+ * - A count that RISES fails. A count that FALLS passes and says so; `HYDRATIONS_UPDATE=1` writes
+ *   the lower number, and writes a rise only with `HYDRATIONS_ACCEPT_RISE=1` as well.
+ * - The baseline is v1's. Under `v2` each call may cost v1's count plus one, the view's own read;
+ *   until S2 every call is one v2 abstains from, which is the bound G3 sets for it. `differential`
+ *   is refused: it runs both pipelines and then checks one against the other, which is not a cost
+ *   either pipeline has.
+ * - The baseline is written under `v1` only, and a census whose arms or call counts differ from it
+ *   fails: those are a different census, not a cheaper one.
+ */
+const gated = process.env.PIPELINE_HYDRATIONS === '1';
+const BASELINE = path.resolve(process.cwd(), 'scripts/verify/baseline/hydrations.json');
+
+type Ceiling = { total: number; worst: number };
+type ArmCeilings = { calls: number; hydrations: Ceiling; getMatchUpsMap: Ceiling };
+
+const GATED: { name: keyof Omit<ArmCeilings, 'calls'>; selector: Selector }[] = [
+  { name: 'hydrations', selector: hydration },
+  { name: 'getMatchUpsMap', selector: top('getMatchUpsMap') },
+];
+
+function measureArms(records: CallRecord[]): Record<string, ArmCeilings> {
+  const arms: Record<string, ArmCeilings> = {};
+  for (const arm of [...new Set(records.map((record) => record.arm))]) {
+    const inArm = records.filter((record) => record.arm === arm);
+    const read = (selector: Selector): Ceiling => {
+      const { total, worst } = distribution(inArm, selector);
+      return { total, worst };
+    };
+    arms[arm] = { calls: inArm.length, hydrations: read(hydration), getMatchUpsMap: read(top('getMatchUpsMap')) };
+  }
+  return arms;
+}
+
+it.skipIf(!gated)(
+  'the hydration gate: no arm asks the draw for more than v1 did',
+  () => {
+    const mode = getOutcomePipeline();
+    // G3 is read under v1 and v2; differential runs both pipelines and its checks, so it is a different cost
+    expect(mode, 'run verify:hydrations under OUTCOME_PIPELINE=v1 or v2').not.toEqual(OUTCOME_PIPELINE_DIFFERENTIAL);
+    const measured = measureArms(collectCensus().records);
+    const baseline: Record<string, ArmCeilings> | undefined = fs.existsSync(BASELINE)
+      ? JSON.parse(fs.readFileSync(BASELINE, 'utf8')).arms
+      : undefined;
+    // the view's own read, once per call, on every call v2 does not yet own
+    const allowance = mode === OUTCOME_PIPELINE_V1 ? 0 : 1;
+
+    const rises: string[] = [];
+    const falls: string[] = [];
+    if (baseline) {
+      expect(Object.keys(measured).sort(), 'the census arms').toEqual(Object.keys(baseline).sort());
+      for (const [arm, ceilings] of Object.entries(baseline)) {
+        const now = measured[arm];
+        expect(now.calls, `${arm}: setMatchUpStatus calls`).toEqual(ceilings.calls);
+        for (const { name } of GATED) {
+          const limit = {
+            total: ceilings[name].total + allowance * ceilings.calls,
+            worst: ceilings[name].worst + allowance,
+          };
+          for (const measure of ['total', 'worst'] as const) {
+            const line = `${arm} ${name} ${measure}: ${now[name][measure]} against ${limit[measure]}`;
+            if (now[name][measure] > limit[measure]) rises.push(line);
+            else if (now[name][measure] < limit[measure]) falls.push(line);
+          }
+        }
+      }
+    }
+
+    const update = process.env.HYDRATIONS_UPDATE === '1';
+    if (update && (!baseline || rises.length === 0 || process.env.HYDRATIONS_ACCEPT_RISE === '1')) {
+      expect(mode, 'the baseline is v1 counts; write it under OUTCOME_PIPELINE=v1').toEqual(OUTCOME_PIPELINE_V1);
+      fs.writeFileSync(BASELINE, JSON.stringify({ mode, arms: measured }, undefined, 2) + '\n');
+      process.stdout.write(`[verify:hydrations] wrote ${path.relative(process.cwd(), BASELINE)}\n`);
+      return;
+    }
+
+    expect(baseline, `no baseline at ${BASELINE}; run with HYDRATIONS_UPDATE=1`).toBeDefined();
+    if (falls.length)
+      process.stdout.write(
+        `[verify:hydrations] ${falls.length} below the ceiling (lower it with HYDRATIONS_UPDATE=1):\n  ${falls.join('\n  ')}\n`,
+      );
+    expect(rises, `asked the draw for more than the ceiling allows under ${mode}`).toEqual([]);
   },
   600_000,
 );

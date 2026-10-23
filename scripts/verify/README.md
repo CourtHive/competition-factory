@@ -1,6 +1,6 @@
 # Factory verification suite
 
-`pnpm verify` is the gate before every publish. It chains 26 checks (the `verify` script in `package.json`) that together cover compile, runtime, dist integrity, and security awareness. If any link in the chain fails, the suite exits non-zero and `prepublishOnly` blocks the release.
+`pnpm verify` is the gate before every publish. It chains 28 checks (the `verify` script in `package.json`) that together cover compile, runtime, dist integrity, and security awareness. If any link in the chain fails, the suite exits non-zero and `prepublishOnly` blocks the release.
 
 A further check, `verify:ecosystem`, runs downstream consumer tests against the in-tree factory but is **not** part of the chained `verify` script — it depends on sibling repos being checked out on disk, which isn't the case on CI runners. Run it explicitly (`pnpm verify:ecosystem`) when working locally, or use `pnpm verify:all` (= `pnpm verify && pnpm verify:ecosystem`) for the full sweep.
 
@@ -14,6 +14,7 @@ A further check, `verify:ecosystem`, runs downstream consumer tests against the 
 | `verify:exit-tenant`       | a NEW file in `src/` reaching for `matchUpStatusCodes` — the LEGACY array whose per-side exit tenant was evicted (P37); reads `sideExitProvenance` instead. Allowlisted by FILE, with a reason each, and a stale entry fails so the list ratchets down                                                                                    | ~0 s   |
 | `verify:coverage`          | regressions below `95/97/87/97.5` statements/functions/branches/lines                                                                                                                                                                                                                                                                     | ~100 s |
 | `verify:coverage-headroom` | a change spending more than 25 items of margin before the coverage floor; always prints headroom per metric                                                                                                                                                                                                                               | ~0 s   |
+| `verify:hydrations`        | a `setMatchUpStatus` asking the draw for more than v1 did: per census arm, the total and worst draw hydrations and `getMatchUpsMap` builds, under `v1` and again under `v2` (each call v1 + 1, the v2 view) (outcome v2 executor plan G3)                                                                                                 | ~2 min |
 | `verify:server`            | NestJS-style server specs (`pnpm test:server` — vitest, `vitest.server.config.mts`)                                                                                                                                                                                                                                                       | ~7 s   |
 | `verify:audit`             | high or critical `pnpm audit` advisories in **every** lockfile (package + `documentation/`), minus entries in `audit-waivers.json`; a waiver matching no open advisory also fails                                                                                                                                                         | ~10 s  |
 | `verify:build`             | the full prod build produces `dist/` (run after the above so a tiny lint/type fix re-runs the cheap stuff first)                                                                                                                                                                                                                          | ~13 s  |
@@ -40,12 +41,13 @@ Total: ~3 minutes warm. The chain is ordered so cheap fail-fast checks run first
 
 ## Baselines
 
-Four artifacts live under `scripts/verify/baseline/`:
+The baselines live under `scripts/verify/baseline/`:
 
 - **`surface.txt`** — sorted list of every public export name. Surface drift is computed by set diff against this file. Regenerate after intentional surface changes with `pnpm verify:surface -- --update-baseline`.
 - **`bundle-size.json`** — `{ rawBytes, gzipBytes }` per published file. Growth-budget is +10 % per file by default; override with `--budget=N` (decimal).
 - **`consumer-bundle.json`** — per consumer fixture: raw + gzip of the bundled output, its module count, and its minified bytes per source area (from the esbuild metafile). +10 % by default (`--budget=N`); the areas let a failure say what was pulled in. `verify:bundle-size` cannot see this: when a governor starts importing a generator, the published files grow by one export line, because the generator was already in them. Re-seed with `pnpm verify:consumer-bundle -- --update-baseline`.
 - **`coverage-headroom.json`** — items of margin per metric before the coverage floor. A change may spend 25 by default (`--budget=N`); accept a new margin with `node scripts/verify/coverage-headroom.mjs --update-baseline`. Percentages hide how close the floor is — 95.09 % against a 95 floor was **39 statements** out of 43,284 — so this tracks the number in items.
+- **`hydrations.json`** — v1's draw hydrations and `getMatchUpsMap` builds per census arm (`calls`, `total`, `worst`); may only fall. Lower it with `PIPELINE_HYDRATIONS=1 HYDRATIONS_UPDATE=1 OUTCOME_PIPELINE=v1 TZ=UTC npx vitest run src/tests/mutations/exitPropagation/pipelineCost.test.ts`; a rise is written only with `HYDRATIONS_ACCEPT_RISE=1` as well.
 - **`any-count.json`** — `any` per directory in non-test `src`; it may only fall (`verify:any-count`, below).
 - **`tsc-test-types.json`** — tsc errors per test file; may only fall (`verify:test-types`, below).
 - **`tsc-implicit-any.json`** — implicit `any` (TS7xxx) per directory in non-test `src`; may only fall (`verify:implicit-any`, below).
