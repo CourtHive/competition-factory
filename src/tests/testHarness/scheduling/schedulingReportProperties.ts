@@ -45,6 +45,7 @@ const REASONS = [
   'overLimitMatchUpIds',
   'dependencyDeferredMatchUpIds',
   'recoveryTimeDeferredMatchUpIds',
+  'playedOrderDeferredMatchUpIds',
   'requestConflicts',
 ];
 

@@ -139,8 +139,8 @@ matchUp that depends on it (CA, 2026-10-22). **Played** is COMPLETED, RETIRED or
 a double walkover or default, a cancelled or abandoned matchUp, a dead rubber, a BYE, and a matchUp IN_PROGRESS or
 SUSPENDED impose nothing. The comparison is scheduled against scheduled: an earlier date, or the same date with both
 times set and at or before. A same-day placement with no time, or a played matchUp with no date, proves nothing. The
-schedulers ask it once per placement and do not place a matchUp that fails it; every schedule write refuses it with
-`ANACHRONISM` (see [schedule governor: played order](../governors/schedule-governor.md)).
+profile scheduler asks it of each slot it offers (§ 4, step 4.2) and then once of its whole plan (§ 4, step 5); every
+schedule write refuses it with `ANACHRONISM` (see [schedule governor: played order](../governors/schedule-governor.md)).
 
 ## 4. The timed pipeline: `scheduleProfileRounds`
 
@@ -155,8 +155,9 @@ Dates are taken in order. On each date:
    power-of-two count of matchUps, the segment count is a power of two smaller than it, and the round lists no
    `matchUpIds`. Each round's matchUps take the minutes of the round's **first** matchUp's format (**OPEN**, C7: a round
    of mixed formats is timed by its first). A round none of whose matchUps has a format cannot be timed: nothing of
-   it is placed, and its matchUps not yet timed are reported in `noFormatMatchUpIds`. The venue's **slots** are its Garman times: with `C` courts available,
-   average minutes `T` and period length `L`, the matchUps expected by period `P` are
+   it is placed, and its matchUps not yet timed are reported in `noFormatMatchUpIds`. The venue's **slots** are its
+   Garman times: with `C` courts available, average minutes `T` and period length `L`, the matchUps expected by period
+   `P` are
    `TM = Int(((L × C) / T) × (P − 1) + C)`, and a period's slots are the difference from the period before, computed
    over each court's availability and bookings. `T` is the **greatest** average among the venue's rounds on the date (the
    rounds form a single group), and `L` is the call's `periodLength`.
@@ -165,20 +166,33 @@ Dates are taken in order. On each date:
    retried in a later pass, up to 10 attempts. Venues alternate pass by pass until every venue is complete or the
    passes run out (bounded by the day's slots).
 4. **The gate,** in order; the first failure defers the matchUp for this slot, recorded under its reason:
-   1. a participant would go over a daily limit (§ 3.5): `overLimitMatchUpIds`;
-   2. a matchUp it feeds is already placed earlier than this one would be free: not placed here;
-   3. a matchUp it depends on, among the date's matchUps, is not yet placed: `dependencyDeferredMatchUpIds`;
-   4. a participant is not yet free (§ 3.4), or the matchUp's not-before time (its sources' free time) is later:
+   1. a participant would go over a daily limit (§ 3.5): `overLimitMatchUpIds`. A participant's day only gains matchUps
+      as slots are filled, so the matchUp stays over the limit for the rest of the date: it leaves the date's list and
+      is reported once (one `overLimitMatchUpDetails` entry, at the first slot it was offered), not under
+      `noTimeMatchUpIds`;
+   2. the slot is at or before a played matchUp it depends on, or at or after a played matchUp that depends on it
+      (§ 3.7): `playedOrderDeferredMatchUpIds`, with the first such slot and the played matchUps that refused it. The
+      slot stays free for the next matchUp, and a matchUp still unplaced at the end of the date is reported under this
+      reason alone;
+   3. a matchUp it feeds is already placed earlier than this one would be free: not placed here;
+   4. a matchUp it depends on, among the date's matchUps, is not yet placed: `dependencyDeferredMatchUpIds`;
+   5. a participant is not yet free (§ 3.4), or the matchUp's not-before time (its sources' free time) is later:
       `recoveryTimeDeferredMatchUpIds`;
-   5. a person request blocks it (§ 3.6): `requestConflicts`.
+   6. a person request blocks it (§ 3.6): `requestConflicts`.
 
    A matchUp that passes is booked: its participants' loads and free times are updated for the rest of the date.
 
-5. **Write.** Each placed matchUp passes the played-order check (§ 3.7) and is then given its date, its time (HH:MM)
-   and its venue. One that fails it is reported in `noTimeMatchUpIds` and given nothing.
+5. **The guard, then the write.** Once every date is planned, the whole plan is judged against the played order
+   (§ 3.7) together, on the state it leaves, before anything is written. A plan the gate made passes it. One that does
+   not is refused whole with `ANACHRONISM`, every offending placement in `context.refusals`, and nothing is written:
+   the guard is a planner defect's last stop, not a reason a TD meets. Then each placement is given its date, its
+   time (HH:MM) and its venue.
 
-What remains unplaced on a date is reported in `noTimeMatchUpIds` for that date, beside whatever reasons it collected.
-A dry run reports the plan and writes nothing. The call records an audit of what it did on the tournament.
+Dates named in `clearScheduleDates` are planned on a working copy of the records cleared first, so the plan sees them
+empty and a refusal leaves them as they were; they are cleared on the records only when the plan is written. What
+remains unplaced on a date is reported in `noTimeMatchUpIds` for that date, beside whatever reasons it collected. A dry
+run plans exactly as a run does (clearing on the copy included), so it reports what the run would write, and writes
+nothing. The call records an audit of what it did on the tournament.
 
 ## 5. The grid pipeline: `scheduleProfileGrid`
 

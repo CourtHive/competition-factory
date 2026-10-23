@@ -161,17 +161,22 @@ export type BatchPlacement = { drawId: string; matchUpId: string; schedule: Plac
  * The played-order refusal for a whole batch, decided before any of it is written: every placement is judged against
  * the state the batch leaves (each other placement in place of what is stored), so a batch that moves a semifinal and
  * its final earlier together is not refused for the step between, and a refusal leaves nothing half-written.
+ *
+ * The first refusal is returned; with `allRefusals`, every placement is judged and the first refusal carries them all
+ * in `context.refusals`, so a caller can name every offender at once.
  */
 export function checkBatchPlayedOrder({
   matchUpDependencies: givenDependencies,
   inContextMatchUps: givenMatchUps,
   tournamentRecord,
+  allRefusals,
   placements,
 }: {
   matchUpDependencies?: PlayedOrderArgs['matchUpDependencies'];
   inContextMatchUps?: HydratedMatchUp[];
   placements: BatchPlacement[];
   tournamentRecord: Tournament;
+  allRefusals?: boolean;
 }): ResultType | undefined {
   const draws = new Map<string, { drawDefinition: DrawDefinition; raw: Map<string, MatchUp> }>();
   for (const { drawId } of placements) {
@@ -191,6 +196,7 @@ export function checkBatchPlayedOrder({
     if (raw) pendingPlacements[matchUpId] = placementAfterWrite(storedPlacement(raw), schedule);
   }
 
+  const refusals: ResultType[] = [];
   const dependenciesByDraw = new Map<string, ReturnType<typeof getMatchUpDependencies>>();
   for (const { drawId, matchUpId, schedule } of placements) {
     const draw = draws.get(drawId);
@@ -209,7 +215,11 @@ export function checkBatchPlayedOrder({
       matchUpId,
       schedule,
     });
-    if (refusal) return refusal;
+    if (refusal && !allRefusals) return refusal;
+    if (refusal) refusals.push(refusal);
   }
-  return undefined;
+  if (!refusals.length) return undefined;
+  const [first] = refusals;
+  // copies: the first refusal's own context takes the list, which must not contain itself
+  return decorateResult({ result: first, context: { refusals: refusals.map(({ context }) => ({ ...context })) } });
 }

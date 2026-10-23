@@ -16,7 +16,8 @@ import { HydratedMatchUp } from '@Types/hydrated';
 
 /**
  * Places a date's profiled matchUps on its venues' Garman slots: each slot is offered to the venue's matchUps in order,
- * and the first to pass every gate (daily limits, dependent timing, dependencies, recovery, person requests) takes it.
+ * and the first to pass every gate (daily limits, played order, dependent timing, dependencies, recovery, person
+ * requests) takes it.
  * Moved unchanged from v1's jinnScheduler into the planner (SCHEDULING_PIPELINE_VNEXT.md § 7). It writes only to the
  * bookkeeping it is handed.
  */
@@ -29,6 +30,8 @@ export type RecoveryDeferral = { scheduleTime: string } & Pick<
   'blockingParticipantIds' | 'notBeforeTime'
 >;
 export type DependencyDeferral = { scheduleTime: string; remainingDependencies: string[] };
+/** the first slot a matchUp was refused for the played order, and the played matchUps that refused it */
+export type PlayedOrderDeferral = { scheduleTime: string; blockingMatchUps: unknown[] };
 type RequestConflict = NonNullable<ReturnType<typeof checkRequestConflicts>['conflicts']>[number];
 
 /** a venue's slots and the matchUps still to place on them, on one date */
@@ -45,6 +48,9 @@ export type VenueRoundDetails = {
 
 export type PlaceVenueRoundsArgs = {
   recoveryTimeDeferredMatchUpIds: ByDate<{ [matchUpId: string]: RecoveryDeferral[] }>;
+  playedOrderDeferredMatchUpIds: ByDate<{ [matchUpId: string]: PlayedOrderDeferral }>;
+  /** the played matchUps that would refuse this placement (spec § 3.7), or undefined when none would */
+  playedOrderRefusal: (matchUp: HydratedMatchUp, scheduleTime: string) => unknown[] | undefined;
   dependencyDeferredMatchUpIds: ByDate<{ [matchUpId: string]: DependencyDeferral[] }>;
   skippedScheduleTimes: ByDate<{ [venueId: string]: SkippedScheduleTime[] }>;
   matchUpNotBeforeTimes: Parameters<typeof checkRecoveryTime>[0]['matchUpNotBeforeTimes'];
@@ -79,6 +85,8 @@ type TryScheduleMatchUpArgs = Omit<
 function tryScheduleMatchUp({
   checkPotentialRequestConflicts,
   recoveryTimeDeferredMatchUpIds,
+  playedOrderDeferredMatchUpIds,
+  playedOrderRefusal,
   dependencyDeferredMatchUpIds,
   individualParticipantProfiles,
   matchUpPotentialParticipantIds,
@@ -123,6 +131,14 @@ function tryScheduleMatchUp({
       scheduleTime,
       matchUpId,
     });
+    return false;
+  }
+
+  // a slot at or before a played source, or at or after a played dependent, is never taken (CA 2026-10-23): the plan
+  // holds the rule the writer's guard asks, so the guard does not fire on a plan made here
+  const blockingMatchUps = playedOrderRefusal(matchUp, scheduleTime);
+  if (blockingMatchUps) {
+    playedOrderDeferredMatchUpIds[scheduleDate][matchUpId] ??= { scheduleTime, blockingMatchUps };
     return false;
   }
 
@@ -219,11 +235,13 @@ function tryScheduleMatchUp({
 export function scheduleVenueRounds({
   checkPotentialRequestConflicts,
   recoveryTimeDeferredMatchUpIds,
+  playedOrderDeferredMatchUpIds,
   dependencyDeferredMatchUpIds,
   individualParticipantProfiles,
   matchUpPotentialParticipantIds,
   scheduleDateRequestConflicts,
   venueScheduledRoundDetails,
+  playedOrderRefusal,
   matchUpScheduleTimes,
   matchUpNotBeforeTimes,
   overLimitMatchUpDetails,
@@ -263,6 +281,8 @@ export function scheduleVenueRounds({
           tryScheduleMatchUp({
             checkPotentialRequestConflicts,
             recoveryTimeDeferredMatchUpIds,
+            playedOrderDeferredMatchUpIds,
+            playedOrderRefusal,
             dependencyDeferredMatchUpIds,
             individualParticipantProfiles,
             matchUpPotentialParticipantIds,
