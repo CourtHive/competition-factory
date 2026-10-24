@@ -4,8 +4,8 @@
  *
  * ## What this guards
  *
- * v2 is written from `documentation/docs/concepts/outcome-pipeline.md`, and the spec is what a Go or
- * Rust port follows. A name v2 decides by that the spec never states is a rule only the TypeScript
+ * v2 is written from `documentation/docs/concepts/outcome-pipeline.md`, and the spec is what any second
+ * implementation follows. A name v2 decides by that the spec never states is a rule only the TypeScript
  * knows. Two vocabularies are checked today:
  *
  * - every member of each union in `UNIONS` (`types.ts`) is named, in backticks, in its spec section:

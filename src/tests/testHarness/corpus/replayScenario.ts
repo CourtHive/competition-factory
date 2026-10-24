@@ -8,7 +8,7 @@ export type Mismatch = { step: number; expected: string; actual: string; result?
 
 /**
  * The READER contract: apply each step's patch to the previous state and check the hash.
- * This is what a consumer with no engine (the Rust reader) does; it proves the patches and hashes
+ * This is what a consumer with no engine (a reader) does; it proves the patches and hashes
  * are self-consistent without running anything.
  */
 export function replayAsReader(scenario: any): Mismatch[] {

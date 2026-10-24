@@ -37,8 +37,8 @@ a hash moved whenever `package.json`'s version did, and no behaviour had: a rele
 A step is `directive` → `result` → `patch` → `hash`. The patch is RFC 6902 from the previous
 canonical state (the initial record for step 0); the hash is of the whole state after. A refused
 directive has an `error` result, an empty patch and an unchanged hash. A consumer may either apply
-the patches and check the hashes (a reader, which is what the Rust consumer does) or run its own
-engine and compare its state's hash (a port).
+the patches and check the hashes (a reader) or run its own engine and compare its state's hash
+(a second implementation).
 
 ## Identity: the one piece of corpus logic a consumer implements itself
 

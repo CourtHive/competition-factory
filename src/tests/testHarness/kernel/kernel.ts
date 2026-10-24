@@ -1,6 +1,6 @@
 /**
  * The scoring kernel test seam (pilot): versioned, serializable operations over stable internal contracts, so a
- * case written as data can run against this implementation and, later, against a second one (the Go port) through
+ * case written as data can run against this implementation and, later, against a second implementation through
  * its own adapter. Test infrastructure only: nothing here is exported from the package, registered on an engine or
  * reachable from server dispatch. Plan: Mentat/planning/FACTORY_TEST_INFRASTRUCTURE_PLAN.md (item E).
  *
