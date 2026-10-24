@@ -1,0 +1,104 @@
+{
+  "mode": "v1",
+  "arms": {
+    "matrix BYE: DOUBLE_WALKOVER": {
+      "calls": 199,
+      "hydrations": {
+        "total": 1735,
+        "worst": 19
+      },
+      "getMatchUpsMap": {
+        "total": 1997,
+        "worst": 13
+      }
+    },
+    "matrix EXIT: DOUBLE_WALKOVER": {
+      "calls": 199,
+      "hydrations": {
+        "total": 1999,
+        "worst": 20
+      },
+      "getMatchUpsMap": {
+        "total": 1995,
+        "worst": 13
+      }
+    },
+    "matrix BYE: WALKOVER propagated": {
+      "calls": 270,
+      "hydrations": {
+        "total": 2465,
+        "worst": 16
+      },
+      "getMatchUpsMap": {
+        "total": 2347,
+        "worst": 14
+      }
+    },
+    "matrix BYE: DEFAULTED propagated": {
+      "calls": 270,
+      "hydrations": {
+        "total": 2463,
+        "worst": 16
+      },
+      "getMatchUpsMap": {
+        "total": 2360,
+        "worst": 14
+      }
+    },
+    "deep BYE: the route": {
+      "calls": 398,
+      "hydrations": {
+        "total": 3034,
+        "worst": 13
+      },
+      "getMatchUpsMap": {
+        "total": 3463,
+        "worst": 13
+      }
+    },
+    "deep BYE: the correction": {
+      "calls": 34,
+      "hydrations": {
+        "total": 320,
+        "worst": 15
+      },
+      "getMatchUpsMap": {
+        "total": 306,
+        "worst": 12
+      }
+    },
+    "deep EXIT: the route": {
+      "calls": 396,
+      "hydrations": {
+        "total": 3036,
+        "worst": 14
+      },
+      "getMatchUpsMap": {
+        "total": 3456,
+        "worst": 13
+      }
+    },
+    "deep EXIT: the correction": {
+      "calls": 34,
+      "hydrations": {
+        "total": 313,
+        "worst": 15
+      },
+      "getMatchUpsMap": {
+        "total": 303,
+        "worst": 12
+      }
+    },
+    "TEAM lines: DOUBLE_WALKOVER": {
+      "calls": 228,
+      "hydrations": {
+        "total": 1767,
+        "worst": 10
+      },
+      "getMatchUpsMap": {
+        "total": 2441,
+        "worst": 13
+      }
+    }
+  }
+}

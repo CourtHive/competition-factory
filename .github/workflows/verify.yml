@@ -19,8 +19,9 @@ name: Verify
 #   coverage-shard  the coverage run split 4 ways (vitest --shard), each writing a blob report
 #   coverage        merges the 4 blobs (vitest --merge-reports --coverage): the thresholds and
 #                   coverage/coverage-summary.json are computed over the MERGED result
-#   slow-gates      route-differential and deep-corrections, one job each
+#   slow-gates      route-differential, deep-corrections and hydrations, one job each
 #   team-arms       verify:team-arms split 5 ways (vitest --shard), one extended-arm file per job
+#   v2-arm          INFORMATIONAL: the suite under OUTCOME_PIPELINE=v2 on a dev PR touching the outcome pipeline
 #   verify          `verify (node N)`, the check master's branch protection requires: it passes only
 #                   when every job above passed (or, on a light run, was skipped as intended)
 #
@@ -189,6 +190,11 @@ jobs:
       # on every developer's machine and never once in CI.
       - name: verify:exit-tenant
         run: pnpm verify:exit-tenant
+
+      # every name outcome v2 decides by (its routes, its refusal rows) is stated in the spec a port
+      # follows (outcome v2 executor plan G5)
+      - name: verify:outcome-spec
+        run: pnpm verify:outcome-spec
 
       # the golden corpus hash manifest: a behaviour change moves a hash, and a moved hash needs
       # a deliberate `pnpm corpus:manifest` in the same PR (CA, 2026-10-01)
@@ -372,7 +378,7 @@ jobs:
       matrix:
         # the same Node matrix as `gates` (PRs: [24]; push to master and dispatch: [22, 24])
         node-version: ${{ github.event_name == 'pull_request' && fromJSON('[24]') || fromJSON('[22, 24]') }}
-        gate: [route-differential, deep-corrections]
+        gate: [route-differential, deep-corrections, hydrations]
     name: ${{ matrix.gate }} (node ${{ matrix.node-version }})
 
     steps:
@@ -384,6 +390,45 @@ jobs:
 
       - name: verify:${{ matrix.gate }}
         run: pnpm verify:${{ matrix.gate }}
+
+  # THE v2 ARM (outcome v2 executor plan § 6.0, "The CI arm"), INFORMATIONAL until S2 makes it required.
+  # The whole suite under OUTCOME_PIPELINE=v2, on a PR into dev that touches the outcome pipeline's
+  # paths. It is not in `verify`'s needs and it never fails the run: a red here is read, not gated on.
+  # Until then only checkpoints run `differential`, and nothing ran `v2`.
+  v2-arm:
+    needs: scope
+    if: github.event_name == 'pull_request' && github.base_ref == 'dev' && needs.scope.outputs.light != 'true'
+    continue-on-error: true
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # the PR's merge commit and its first parent, the base tip (as release-scope.sh reads them)
+          fetch-depth: 2
+
+      - name: touches the outcome pipeline
+        id: paths
+        run: |
+          # the outcome paths, and the queries the v2 view decides by (addGoesTo, positionTargets, the draw reads)
+          if git diff --name-only HEAD^1 HEAD | grep -qE '^src/(mutate/(matchUps|drawDefinitions/positionGovernor|drawDefinitions/matchUpGovernor)|query/(matchUps|matchUp|drawDefinition))/'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "no outcome pipeline path changed; the v2 arm does not run"
+          fi
+
+      - if: steps.paths.outputs.run == 'true'
+        uses: ./.github/actions/setup
+        with:
+          node-version: 24
+
+      - name: vitest under OUTCOME_PIPELINE=v2
+        if: steps.paths.outputs.run == 'true'
+        run: npx vitest run
+        env:
+          OUTCOME_PIPELINE: v2
+          TZ: UTC
 
   # verify:team-arms: the TEAM matrix over the seven extension draw types and more tieFormats, inert on
   # `pnpm test` (2026-10-05). As one job it was the slowest in the run (up to 30 min, 2026-10). vitest

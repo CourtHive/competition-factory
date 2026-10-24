@@ -1,5 +1,5 @@
+import type { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
 import type { ErrorType } from '@Constants/errorConditionConstants';
-import type { PolicyDefinitions } from '@Types/factoryTypes';
 import type {
   DrawDefinition,
   Event,
@@ -222,6 +222,8 @@ export type BuildViewArgs = {
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
   policyDefinitions?: PolicyDefinitions;
+  /** the caller's map of the draw (`setMatchUpStatus` builds one for the whole call), so the view does not build its own */
+  matchUpsMap?: MatchUpsMap;
   event?: Event;
   request: OutcomeRequest;
 };
