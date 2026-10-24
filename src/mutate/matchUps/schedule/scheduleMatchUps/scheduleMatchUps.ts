@@ -4,6 +4,7 @@ import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUp
 import { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue';
 import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
 import { getPersonRequests } from '@Query/matchUps/scheduling/getPersonRequests';
+import { checkRequestConflicts, RequestConflict } from './checkRequestConflicts';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { resolveScheduleMatchUpsTiming } from './resolveScheduleMatchUpsTiming';
 import { getParticipantReachability } from './getParticipantReachability';
@@ -13,7 +14,6 @@ import { updateTimeAfterRecovery } from './updateTimeAfterRecovery';
 import { calculateScheduleTimes } from './calculateScheduleTimes';
 import { findDrawDefinition } from '@Acquire/findDrawDefinition';
 import { checkPlayedOrder } from '../scheduleItems/playedOrder';
-import { checkRequestConflicts } from './checkRequestConflicts';
 import { getMatchUpIds } from '@Functions/global/extractors';
 import { processNextMatchUps } from './processNextMatchUps';
 import { checkRecoveryTime } from './checkRecoveryTime';
@@ -161,7 +161,7 @@ export function scheduleMatchUps(params) {
   // scheduled and those already on the date: the empty default waited for nobody, so a final took the first free slot
   // before both its semifinals (C2, SCHEDULING_PIPELINE_VNEXT.md § 5)
   const allDateMatchUpIds: string[] = statedAllDateMatchUpIds ?? [...matchUpIds, ...(dateScheduledMatchUpIds ?? [])];
-  const requestConflicts = {};
+  const requestConflicts: { [scheduleDate: string]: RequestConflict[] } = { [scheduleDate]: [] };
   const skippedScheduleTimes: string[] = [];
   const matchUpScheduleTimes = {};
   const recoveryTimeDeferred = {};
@@ -409,7 +409,7 @@ export function scheduleMatchUps(params) {
 
   return {
     ...SUCCESS,
-    requestConflicts: Object.values(requestConflicts),
+    requestConflicts: requestConflicts[scheduleDate],
     remainingScheduleTimes: scheduleTimes?.map(({ scheduleTime }) => scheduleTime),
     individualParticipantProfiles,
     matchUpNotBeforeTimes,

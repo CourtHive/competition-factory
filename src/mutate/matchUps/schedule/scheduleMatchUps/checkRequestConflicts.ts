@@ -1,22 +1,33 @@
 import { getIndividualParticipants } from '@Query/matchUp/getIndividualParticipants';
 import { extractTime, sameDay, timeStringMinutes } from '@Tools/dateTime';
 
-// constants
+// constants and types
 import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
+import { PersonRequests } from '@Types/factoryTypes';
 
 /**
+ * The person requests a matchUp placed at `scheduleTime` on `scheduleDate` would break, and the record of them.
+ *
+ * `requestConflicts` is keyed by date: each date holds one entry per request a placement broke, `{ request,
+ * scheduleTimes, matchUpIds }`, the slots refused and the matchUps they were refused for. A request is for one date, so
+ * its entry is found among that date's alone.
  *
  * @param {string} scheduleDate - 'YYYY-MM-DD' date string
  * @param {object} matchUp - matchUp being checked
  * @param {string} scheduleTime - time being checked
  * @param {number} averageMatchUpMinutes - number of minutes matchUp is expected to last
- *
- * @param {object} requestConflicts - tracks per-matchUp conflicts { [requestId]: { scheduleTimes, matchUpIds }}
- * @param {boolean} potentials - whether to consdier potential participants when determining conflicts
+ * @param {object} requestConflicts - { [scheduleDate]: [{ request, scheduleTimes, matchUpIds }] }
+ * @param {boolean} potentials - whether to consider potential participants when determining conflicts
  * @param {object} personRequests - contains personRequests { [personId]: [request] }
- *
- * @returns
  */
+/** a request a placement broke: the request (with the person it is for), the slots refused and the matchUps they were
+ * refused for */
+export type RequestConflict = {
+  request: PersonRequests[string][number] & { personId: string };
+  scheduleTimes: string[];
+  matchUpIds: string[];
+};
+
 export function checkRequestConflicts({
   averageMatchUpMinutes = 90,
   requestConflicts = {},
@@ -58,17 +69,14 @@ export function checkRequestConflicts({
     const conflict = matchUpStart < timeStringMinutes(endTime) && matchUpEnd > timeStringMinutes(startTime);
     if (conflict) {
       conflicts.push({ matchUpId, request, scheduleTime });
-      if (requestConflicts[requestId]) {
-        if (!requestConflicts[requestId].scheduleTimes.includes(scheduleTime))
-          requestConflicts[requestId].scheduleTimes.push(scheduleTime);
-        if (!requestConflicts[requestId].matchUpIds.includes(matchUpId))
-          requestConflicts[requestId].matchUpIds.push(matchUpId);
+      requestConflicts[scheduleDate] ??= [];
+      const dateConflicts: RequestConflict[] = requestConflicts[scheduleDate];
+      const recorded = dateConflicts.find((entry) => entry.request.requestId === requestId);
+      if (recorded) {
+        if (!recorded.scheduleTimes.includes(scheduleTime)) recorded.scheduleTimes.push(scheduleTime);
+        if (!recorded.matchUpIds.includes(matchUpId)) recorded.matchUpIds.push(matchUpId);
       } else {
-        requestConflicts[requestId] = {
-          request,
-          scheduleTimes: [scheduleTime],
-          matchUpIds: [matchUpId],
-        };
+        dateConflicts.push({ request, scheduleTimes: [scheduleTime], matchUpIds: [matchUpId] });
       }
     }
   }

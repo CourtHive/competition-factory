@@ -1,5 +1,5 @@
 import { extractDate, extractTime } from '@Tools/dateTime';
-import { generateTimeCode } from '@Tools/timeCode';
+import { UUID } from '@Tools/UUID';
 
 // constants
 import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
@@ -28,9 +28,10 @@ export function mergePersonRequests({ personRequests, personId, requests }) {
     })
     .filter(Boolean);
 
-  // Do not add any request that is missing requestType
+  // Do not add any request that is missing requestType. Each request gets its own id: modifying or removing a request
+  // selects it by id, and a time code (the millisecond) gave every request added in one call the same one
   for (const request of filteredRequests) {
-    request.requestId = generateTimeCode();
+    request.requestId = UUID();
     personRequests[personId].push(request);
   }
 

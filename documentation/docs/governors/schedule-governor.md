@@ -398,7 +398,7 @@ In the deprecated `pro: true` mode, matchUps will receive `courtId` assignments 
     scheduledMatchUpIds, // array - matchUpIds that were scheduled
     noTimeMatchUpIds, // array - matchUps that couldn't fit
     overLimitMatchUpIds, // array - matchUps exceeding participant limits
-    requestConflicts); // array - participant request conflicts
+    requestConflicts); // by date - { [date]: [{ request, scheduleTimes, matchUpIds }] }, one per request broken
 }
 ```
 
