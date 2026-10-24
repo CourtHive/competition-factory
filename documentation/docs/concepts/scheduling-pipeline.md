@@ -287,10 +287,12 @@ the calls that decide placements; the bulk and reschedule mutations write the ti
    court of 90-minute matchUps in 30-minute periods takes its second matchUp at 11:30, when the first is expected to
    end. Pinned by `scheduling.plan.garman-one-court.v1` (kernel cases) and the published 10-court column in
    `garman.test.ts`.
-7. **Request conflicts are reported beside the dates.** `requestConflicts` is keyed by date, but each conflict found is
-   added to the same object under its `requestId` (`{ request, scheduleTimes, matchUpIds }`), so the result mixes
-   date keys and request keys. Pinned by `scheduling.plan.person-request-on-a-placed-side.v1`. Should conflicts sit
-   under their date?
+7. ~~**Request conflicts are reported beside the dates.**~~ Decided (2026-10-24, by two opposed debate agents at CA's
+   request; pending CA review): conflicts sit under their date, `{ [date]: [{ request, scheduleTimes, matchUpIds }] }`,
+   one entry per request a placement broke. Every reader already assumed date keys (the auto-scheduling audit's count,
+   TMX's results drawer, the corpus report) and misread the mixed shape. Each person request also gets its own id: a
+   time code had given every request added in one call the same one. Pinned by
+   `scheduling.plan.person-request-on-a-placed-side.v1`.
 
 ## Related
 

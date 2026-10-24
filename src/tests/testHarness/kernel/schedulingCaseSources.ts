@@ -136,8 +136,8 @@ export const schedulingCaseSources: Source[] = [
     },
     claims: (plan, ids) => {
       expectEqual(timeOf(plan, ids['R1.1']), '11:30', 'the first slot after the request window');
-      // the conflict is reported against the request, beside the date keys (scheduling-pipeline.md § 9.7)
-      const conflicts = Object.values(plan.requestConflicts as Record<string, any>).filter((entry) => entry?.request);
+      // the conflict is reported under its date, against the request (scheduling-pipeline.md § 9.7)
+      const conflicts = plan.requestConflicts[DAYS[0]] as { scheduleTimes: string[]; matchUpIds: string[] }[];
       expectEqual(
         conflicts.map(({ scheduleTimes, matchUpIds }) => ({ scheduleTimes, matchUpIds })),
         [{ scheduleTimes: ['10:00'], matchUpIds: [ids['R1.1']] }],
