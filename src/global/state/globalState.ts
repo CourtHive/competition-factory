@@ -520,10 +520,31 @@ export function getNotices(params: GetNoticesArgs): any[] {
  * exposed (back-compat with pre-5.0.0 providers).
  */
 export function getPayloads(params: GetNoticesArgs): any[] {
-  if (typeof _globalStateProvider.getPayloads === 'function') {
-    return _globalStateProvider.getPayloads(params);
-  }
-  return _globalStateProvider.getNotices(params);
+  const payloads =
+    typeof _globalStateProvider.getPayloads === 'function'
+      ? _globalStateProvider.getPayloads(params)
+      : _globalStateProvider.getNotices(params);
+  return Array.isArray(payloads) ? resolveDeferred(payloads) : payloads;
+}
+
+/**
+ * A notice's payload may be DEFERRED: built only when the notices are read, which the engine does once a call has
+ * succeeded (a call that errors deletes its notices unread). So a payload that costs a hydration, the in-context
+ * matchUp of `UPDATE_INCONTEXT_MATCHUP`, is never built for a refused call, nor for a topic no one subscribes to
+ * (CA, 2026-10-24). A deferred payload that builds nothing is dropped. Provider-agnostic: a provider stores the
+ * payload as it is given.
+ */
+export const DEFERRED_PAYLOAD = '__deferredPayload';
+
+function resolveDeferred<T>(payloads: T[]): T[] {
+  const builderOf = (payload: T) => (payload as Record<string, unknown> | undefined)?.[DEFERRED_PAYLOAD];
+  if (!payloads.some((payload) => typeof builderOf(payload) === 'function')) return payloads;
+  return payloads.flatMap((payload) => {
+    const build = builderOf(payload);
+    if (typeof build !== 'function') return [payload];
+    const built = (build as () => T | undefined)();
+    return built ? [built] : [];
+  });
 }
 
 export type DeleteNoticeArgs = {

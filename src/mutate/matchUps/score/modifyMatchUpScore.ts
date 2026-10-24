@@ -1,7 +1,7 @@
 import { updateAssignmentParticipantResults } from '@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults';
 import { attributeDerivedStatusCodes, splitStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { processCompetitionMatchUp } from '@Mutate/drawDefinitions/competition/processCompetitionMatchUp';
-import { modifyMatchUpNotice, updateInContextMatchUp } from '@Mutate/notifications/drawNotifications';
+import { modifyMatchUpNotice, deferInContextMatchUp } from '@Mutate/notifications/drawNotifications';
 import { clearResolvedSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
 import type { DerivedStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
@@ -165,18 +165,17 @@ export function modifyMatchUpScore(params: ModifyMatchUpScoreArgs) {
   }
 
   const tournamentId = tournamentRecord?.tournamentId;
-  const inContextMatchUp = getInContextMatchUp({
-    defaultedProcessCodes,
-    tournamentRecord,
-    drawDefinition,
-    matchUpId,
-  });
+  // the process-codes decision reads the matchUp in context now; the notice's copy is built after the call succeeds
+  const inContextMatchUp = defaultedProcessCodes
+    ? getInContextMatchUp({ tournamentRecord, drawDefinition, matchUpId })
+    : undefined;
 
-  if (inContextMatchUp) {
-    const sendInContext = getTopics().topics.includes(UPDATE_INCONTEXT_MATCHUP);
-    if (sendInContext) {
-      updateInContextMatchUp({ tournamentId, inContextMatchUp });
-    }
+  if (drawDefinition && getTopics().topics.includes(UPDATE_INCONTEXT_MATCHUP)) {
+    deferInContextMatchUp({
+      inContextMatchUp: () => getInContextMatchUp({ tournamentRecord, drawDefinition, matchUpId }),
+      tournamentId,
+      matchUpId,
+    });
   }
 
   applyDefaultedProcessCodes({
@@ -409,10 +408,7 @@ function updateTallyIfNeeded({
   return { matchUpFormat: resolvedFormat };
 }
 
-function getInContextMatchUp({ defaultedProcessCodes, tournamentRecord, drawDefinition, matchUpId }) {
-  const sendInContext = getTopics().topics.includes(UPDATE_INCONTEXT_MATCHUP);
-  if (!sendInContext && !defaultedProcessCodes) return undefined;
-
+function getInContextMatchUp({ tournamentRecord, drawDefinition, matchUpId }) {
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
   if (!matchUpsMap) return undefined;
 

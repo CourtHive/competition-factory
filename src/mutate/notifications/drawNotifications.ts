@@ -1,4 +1,4 @@
-import { addNotice, deleteNotice, getCapturedStamps } from '@Global/state/globalState';
+import { addNotice, deleteNotice, DEFERRED_PAYLOAD, getCapturedStamps } from '@Global/state/globalState';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getDrawPositionSides } from '@Query/matchUps/getDrawPositionSides';
 import { drawOrigin, eventOrigin } from '@Query/readModel/readModelRows';
@@ -11,6 +11,7 @@ import { nowMs } from '@Tools/clock';
 import { ErrorType, MISSING_DRAW_DEFINITION, MISSING_MATCHUP } from '@Constants/errorConditionConstants';
 import { DrawDefinition, MatchUp, Structure } from '@Types/tournamentTypes';
 import { DRAW_DEFINITION, STRUCTURE } from '@Constants/attributeConstants';
+import type { HydratedMatchUp } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   ADD_DRAW_DEFINITION,
@@ -272,6 +273,35 @@ export function modifyMatchUpNotice({
     key: matchUp.matchUpId,
   });
 
+  return { ...SUCCESS };
+}
+
+/**
+ * `UPDATE_INCONTEXT_MATCHUP` with the in-context matchUp built only when the notices are read, after the call has
+ * succeeded (`globalState.getPayloads`): a refused call, which deletes its notices, builds none. Keyed by the matchUp,
+ * so a call that writes it more than once builds it once, as the call left it.
+ */
+export function deferInContextMatchUp({
+  inContextMatchUp,
+  tournamentId,
+  matchUpId,
+}: {
+  inContextMatchUp: () => HydratedMatchUp | undefined;
+  tournamentId?: string;
+  matchUpId: string;
+}) {
+  addNotice({
+    payload: {
+      [DEFERRED_PAYLOAD]: () => {
+        const built = inContextMatchUp();
+        return built ? { inContextMatchUp: built, tournamentId } : undefined;
+      },
+      tournamentId,
+      matchUpId,
+    },
+    topic: UPDATE_INCONTEXT_MATCHUP,
+    key: matchUpId,
+  });
   return { ...SUCCESS };
 }
 
