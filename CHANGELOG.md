@@ -1,5 +1,29 @@
 # Changelog
 
+## [7.21.0](https://github.com/CourtHive/competition-factory/compare/v7.20.1...v7.21.0) (2026-10-24)
+
+
+### Features
+
+* **exitPropagation:** settle telemetry for loop bounds and a dropped error, reported by the census ([#5747](https://github.com/CourtHive/competition-factory/issues/5747)) ([d4fc96f](https://github.com/CourtHive/competition-factory/commit/d4fc96fe1e56f7f5f4375e4b12d9fa6b69c133ef))
+* **outcome:** S1, ops, the reducer, planOutcome and the differential shadow apply ([#5745](https://github.com/CourtHive/competition-factory/issues/5745)) ([75c1af4](https://github.com/CourtHive/competition-factory/commit/75c1af43540fef613a4617b149ec7796ea9bbf90))
+* **scheduling:** getParticipantsRest, participant rest for many matchUps in one call ([#5749](https://github.com/CourtHive/competition-factory/issues/5749)) ([e477b1f](https://github.com/CourtHive/competition-factory/commit/e477b1f2d0c24813fca9e81c8385b7747694cc89))
+
+
+### Bug Fixes
+
+* **exitPropagation:** a carried walkover crosses the backdraw final's BYE into the grand final ([#5746](https://github.com/CourtHive/competition-factory/issues/5746)) ([01b4454](https://github.com/CourtHive/competition-factory/commit/01b445465d3113d97f3d97471b20eb7fa91824a0))
+* **matchUps:** clear the scoredTime of a result the settle removes, in the same call ([#5750](https://github.com/CourtHive/competition-factory/issues/5750)) ([58a53ac](https://github.com/CourtHive/competition-factory/commit/58a53ace97258148648df6d88bc668119f69a196))
+* **mocks:** read tournamentAttributes dates and name instead of overwriting them ([#5740](https://github.com/CourtHive/competition-factory/issues/5740)) ([dc40080](https://github.com/CourtHive/competition-factory/commit/dc400804791d6e636d439255e5d328a131d961e4))
+* **outcome:** a swap counts only the rounds before it for a first-match loser feed ([#5744](https://github.com/CourtHive/competition-factory/issues/5744)) ([3b9a77e](https://github.com/CourtHive/competition-factory/commit/3b9a77e0b169f3afe444fa3e18d4f4f074cb7685))
+* **outcome:** compare the refusals after the settle passes under differential ([#5748](https://github.com/CourtHive/competition-factory/issues/5748)) ([176fb07](https://github.com/CourtHive/competition-factory/commit/176fb07d8b2399690d8b92849c818603bec33a91))
+* **scoredTime:** only a decider's DEAD_RUBBER loses its stamp, not a team rubber's ([#5751](https://github.com/CourtHive/competition-factory/issues/5751)) ([0270ad1](https://github.com/CourtHive/competition-factory/commit/0270ad1b1abfb07b27877260b4961425e6ffb48b))
+
+
+### Performance
+
+* **outcome:** outcome v2 S0, the measurement baseline ([#5741](https://github.com/CourtHive/competition-factory/issues/5741)) ([32ab202](https://github.com/CourtHive/competition-factory/commit/32ab20287ff0a38a631fab3ac0748c1eb6c3e4d0))
+
 ## [7.20.1](https://github.com/CourtHive/competition-factory/compare/v7.20.0...v7.20.1) (2026-10-23)
 
 
