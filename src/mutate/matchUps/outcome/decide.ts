@@ -1,5 +1,6 @@
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
 import { carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { compareNotices, compareShadow, plannedNotices } from './shadow';
 import { convergence, isRelabel, planDirection } from './direction';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
@@ -13,7 +14,6 @@ import { captureRecord } from '@Tools/recordDiff';
 import { refuseOutcome } from './refusals';
 import { stampedInThisCall } from './ops';
 import { buildOutcomeView } from './view';
-import { compareNotices, compareShadow, plannedNotices } from './shadow';
 import { chooseRoute } from './route';
 import { planOutcome } from './plan';
 import {

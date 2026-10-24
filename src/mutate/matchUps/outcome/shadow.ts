@@ -1,16 +1,16 @@
-import { captureRecord } from '@Tools/recordDiff';
 import { generatePatch } from '../../../forge/jsonPatch';
+import { captureRecord } from '@Tools/recordDiff';
 import { applyOutcomeOps } from './ops';
 
 // constants and types
+import type { DrawDefinition, Tournament } from '@Types/tournamentTypes';
+import type { OutcomeOp } from './ops';
 import {
   MODIFY_DRAW_DEFINITION,
   MODIFY_MATCHUP,
   MODIFY_POSITION_ASSIGNMENTS,
   UPDATE_INCONTEXT_MATCHUP,
 } from '@Constants/topicConstants';
-import type { DrawDefinition, Tournament } from '@Types/tournamentTypes';
-import type { OutcomeOp } from './ops';
 
 /**
  * The outcome pipeline, v2: the SHADOW APPLY (executor plan § 6 S1; F7 (a)). v2 writes nothing. In `differential`, a

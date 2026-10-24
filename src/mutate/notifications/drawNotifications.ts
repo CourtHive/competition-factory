@@ -35,17 +35,15 @@ import {
  * stamp moves on, as before.
  */
 function stampUpdatedAt(entity?: { updatedAt?: string | Date } | null) {
-  if (!entity) return;
   const stamped = getCapturedStamps();
-  if (stamped?.has(entity)) return;
-  let timeStamp = nowMs();
+  if (!entity || stamped?.has(entity)) return undefined;
   const previous = entity.updatedAt;
-  if (previous) {
-    const prevMs = typeof previous === 'string' ? new Date(previous).getTime() : previous.getTime();
-    if (!Number.isNaN(prevMs) && timeStamp <= prevMs) timeStamp = prevMs + 1;
-  }
-  entity.updatedAt = new Date(timeStamp).toISOString();
+  const prevMs = typeof previous === 'string' ? new Date(previous).getTime() : previous?.getTime();
+  const timeStamp = nowMs();
+  const next = prevMs !== undefined && !Number.isNaN(prevMs) && timeStamp <= prevMs ? prevMs + 1 : timeStamp;
+  entity.updatedAt = new Date(next).toISOString();
   stamped?.add(entity);
+  return undefined;
 }
 
 function drawUpdatedAt(drawDefinition: DrawDefinition, structureIds?: string[]) {

@@ -1,6 +1,6 @@
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
-import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
+import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { getCapturedStamps } from '@Global/state/globalState';
 import { nowIso } from '@Tools/clock';
 
@@ -81,11 +81,11 @@ type Stamped = { updatedAt?: string };
  * cannot tell from the call's ledger; the ledger itself covers the live draw.
  */
 function stamp(target: Stamped | undefined, key: string, stampedBefore?: Set<string>) {
-  if (!target) return;
   const stamped = getCapturedStamps();
-  if (stampedBefore?.has(key) || stamped?.has(target)) return;
-  target.updatedAt = nextStamp(target.updatedAt);
-  stamped?.add(target);
+  if (target && !stampedBefore?.has(key) && !stamped?.has(target)) {
+    target.updatedAt = nextStamp(target.updatedAt);
+    stamped?.add(target);
+  }
 }
 
 /**

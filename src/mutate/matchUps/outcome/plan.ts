@@ -42,7 +42,7 @@ export type AbstainReason =
   | 'tallied' // a round robin, ad hoc or lucky structure: the tally (S3)
   | 'schedule' // the call carries a schedule (§ 3.5.8)
   | 'notes' // the call carries notes
-  | 'unchanged' // the write changes nothing but stamps, which S1's shadow comparison cannot see (debate-ruled)
+  | 'unchanged' // the write changes nothing but stamps: comparable by value since F2 (i) is in v1, owned from S2
   | 'no-record' // the draw is not held in the tournament record's events: nothing to fold the plan into
   | 'edges' // the draw stores no edges, which v1 writes first (`ensureGoesTo`): S2's setEdges
   | 'clock'; // no captured instant (a call outside the engine): the timestamps a write takes cannot be reproduced
@@ -208,19 +208,25 @@ export function planOutcome(args: {
   // object does not change (the write is on the structure's assignments), so it is not a touched entity (F2 (i), and v1).
   // The structure whose assignments change is, so it is stamped (v1's `modifyPositionAssignmentsNotice`).
   const loser = args.direction?.loser;
-  const loserStructureId = view.targets.loserStructureId;
-  const loserArrives = !!(loser?.arrives && loserStructureId && view.targets.loserTargetDrawPosition);
-  if (loserArrives) {
-    ops.push({
-      op: 'assignPosition',
-      structureId: loserStructureId as string,
-      drawPosition: view.targets.loserTargetDrawPosition as number,
-      participantId: loser?.participantId as string,
-    });
-  }
-  ops.push({ op: 'stampUpdatedAt', entity: 'structure', id: structureId });
-  if (loserArrives && loserStructureId !== structureId)
-    ops.push({ op: 'stampUpdatedAt', entity: 'structure', id: loserStructureId as string });
-  ops.push({ op: 'stampUpdatedAt', entity: 'drawDefinition', id: drawDefinition.drawId });
+  const { loserStructureId, loserTargetDrawPosition } = view.targets;
+  const arrival: OutcomeOp[] =
+    loser?.arrives && loserStructureId && loserTargetDrawPosition
+      ? [
+          {
+            op: 'assignPosition',
+            structureId: loserStructureId,
+            drawPosition: loserTargetDrawPosition,
+            participantId: loser.participantId,
+          },
+          ...(loserStructureId === structureId
+            ? []
+            : [{ op: 'stampUpdatedAt', entity: 'structure', id: loserStructureId } as const]),
+        ]
+      : [];
+  ops.push(
+    ...arrival,
+    { op: 'stampUpdatedAt', entity: 'structure', id: structureId },
+    { op: 'stampUpdatedAt', entity: 'drawDefinition', id: drawDefinition.drawId },
+  );
   return { ops };
 }

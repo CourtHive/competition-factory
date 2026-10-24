@@ -3,8 +3,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { setClock } from '@Tools/clock';
 
 // constants and types
-import type { DrawDefinition } from '@Types/tournamentTypes';
 import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import type { DrawDefinition } from '@Types/tournamentTypes';
 
 /**
  * The S1 op reducer and its stamps (outcome v2 executor plan § 3.3; F2 (i), CA 2026-10-19).
