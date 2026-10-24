@@ -1199,7 +1199,7 @@
               "startTime": "10:00",
               "endTime": "11:30",
               "requestType": "DO_NOT_SCHEDULE",
-              "requestId": "7GMBK0"
+              "requestId": "fb924dc9-07eb-4112-a5f0-8591f2e41bcb"
             }
           ]
         },
@@ -1380,19 +1380,20 @@
           "2026-03-02": []
         },
         "requestConflicts": {
-          "2026-03-02": [],
-          "7GMBK0": {
-            "request": {
-              "date": "2026-03-02",
-              "startTime": "10:00",
-              "endTime": "11:30",
-              "requestType": "DO_NOT_SCHEDULE",
-              "requestId": "7GMBK0",
-              "personId": "0bb494b4-963d-477f-930d-047aadb232e9"
-            },
-            "scheduleTimes": ["10:00"],
-            "matchUpIds": ["9f9448bf-64e8-41ff-a4fc-fea40b2fac0d"]
-          }
+          "2026-03-02": [
+            {
+              "request": {
+                "date": "2026-03-02",
+                "startTime": "10:00",
+                "endTime": "11:30",
+                "requestType": "DO_NOT_SCHEDULE",
+                "requestId": "fb924dc9-07eb-4112-a5f0-8591f2e41bcb",
+                "personId": "0bb494b4-963d-477f-930d-047aadb232e9"
+              },
+              "scheduleTimes": ["10:00"],
+              "matchUpIds": ["9f9448bf-64e8-41ff-a4fc-fea40b2fac0d"]
+            }
+          ]
         },
         "placements": {
           "2026-03-02": {
