@@ -115,6 +115,8 @@ function directionReason(args: {
   if (!target || target.structureId !== targets.source.structureId) return 'link';
   if (view.draw.firstMatchFeed) return 'cascade';
   if (target.hasBye || target.carriesExit || target.carriedStatuses.length || target.holdsResult) return 'cascade';
+  // a target generated with no status (LUCKY_DRAW, adaptive) is written TO_BE_PLAYED by v1 as the winner arrives
+  if (target.matchUpStatus !== TO_BE_PLAYED) return 'route';
   if (!targets.sideDrawPositions[write.winningSide as 1 | 2]) return 'route';
   return undefined;
 }

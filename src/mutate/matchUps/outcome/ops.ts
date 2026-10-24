@@ -1,3 +1,4 @@
+import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { nowIso } from '@Tools/clock';
@@ -101,16 +102,20 @@ function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMat
  */
 function indexDraw(drawDefinition: DrawDefinition) {
   const matchUps = new Map<string, MatchUp>();
+  const structureOf = new Map<string, string>();
   const structures = new Map<string, Structure>();
   const visit = (structure: Structure) => {
-    for (const matchUp of matchUpsOf(structure) ?? []) matchUps.set(matchUp.matchUpId, matchUp);
+    for (const matchUp of matchUpsOf(structure) ?? []) {
+      matchUps.set(matchUp.matchUpId, matchUp);
+      structureOf.set(matchUp.matchUpId, structure.structureId);
+    }
     for (const child of structuresOf(structure) ?? []) visit(child);
   };
   for (const structure of drawDefinition.structures ?? []) {
     structures.set(structure.structureId, structure);
     visit(structure);
   }
-  return { matchUps, structures };
+  return { matchUps, structureOf, structures };
 }
 
 /**
@@ -119,13 +124,20 @@ function indexDraw(drawDefinition: DrawDefinition) {
  * returned rather than ignored, so a shadow apply cannot pass by writing nothing.
  */
 export function applyOutcomeOps(drawDefinition: DrawDefinition, ops: OutcomeOp[]): { error?: string } {
-  const { matchUps, structures } = indexDraw(drawDefinition);
+  const { matchUps, structureOf, structures } = indexDraw(drawDefinition);
   for (const op of ops) {
     if (op.op === 'setMatchUpResult' || op.op === 'setMatchUpDrawPositions') {
       const matchUp = matchUps.get(op.matchUpId);
       if (!matchUp) return { error: `${op.op}: no matchUp ${op.matchUpId}` };
       if (op.op === 'setMatchUpResult') setMatchUpResult(matchUp, op);
-      else matchUp.drawPositions = [...op.drawPositions];
+      // through the one writer, which normalises the positions and re-keys a side's facts if an occupant changes side
+      else
+        setMatchUpDrawPositions({
+          structureId: structureOf.get(op.matchUpId),
+          drawPositions: op.drawPositions,
+          drawDefinition,
+          matchUp,
+        });
     } else if (op.op === 'assignPosition') {
       const assignment = positionAssignmentsOf(structures.get(op.structureId))?.find(
         (candidate) => candidate.drawPosition === op.drawPosition,
