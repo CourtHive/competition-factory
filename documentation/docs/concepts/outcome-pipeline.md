@@ -595,6 +595,26 @@ shadow's hydration, the working view's projection) are test instrumentation: `ve
 `differential`'s ceiling and reports them apart (768 over its census). Under `v2`, once S2 folds owned calls into the
 working view, its projection is the pipeline's own work and counts.
 
+**The structural index** (`buildStructuralIndex`, `src/query/matchUps/structuralIndex.ts`; executor plan § 3.1.1, CA
+2026-10-24: v2 decides on stored data and a structural index, never on a hydration) is one entry per matchUp in the
+hydrated shape, carrying only what the outcome logic reads. A probe of every read v2's view, planners and settle
+predicates make found that set to be the stored matchUp, its structure and round-robin container, the round profile's
+`feedRound` and `hasFedDrawPosition`, the inherited `matchUpType` and `matchUpFormat`, and its sides' `sideNumber`,
+`drawPosition`, `participantId`, `bye` and `qualifier`. A side's `participant` is read only as a presence test, so the
+index carries `{ participantId }` for a participant the tournament holds, as hydration carries the record. No participant
+record, round name, schedule detail or policy is read. The sides and the round profile come from the functions
+hydration calls (`buildMatchUpSides`, `getRoundMatchUps`), and a tiebreak-only or timed set is annotated as hydration
+annotates it, so the two derive each field once. A draw holding a TEAM matchUp is not indexed yet: a line's sides come
+from its dual's line-ups.
+
+**The index oracle** holds it to the hydration in `differential`: before v1 writes, every call's index of the draw as
+the call found it is compared, field by field, with the view's hydration of the same draw, after the view's own step on
+a draw stored without its edges. A difference is a divergence keyed `index:<field>`. Measured 2026-10-24 over the
+mutations suite: 66,154 calls, 1,873,656 entries compared, none different; 15,940 calls on TEAM draws are tallied as
+deferred. Measured against a full in-context hydration (median of 15): SINGLE_ELIMINATION 32 to 256 at 11–13%,
+FEED_IN_CHAMPIONSHIP 64, ROUND_ROBIN 32, DOUBLE_ELIMINATION 64 and COMPASS 64 at 11–13%, linear in the draw. Nothing
+reads the index yet; the view, the working view and the settle predicates move onto it next, before S2 admits a route.
+
 ## 8. What the corpus pins
 
 |                                   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
