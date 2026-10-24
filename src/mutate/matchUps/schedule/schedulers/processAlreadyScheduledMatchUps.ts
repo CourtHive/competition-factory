@@ -27,6 +27,8 @@ type ProcessAlreadyScheduledMatchUpsArgs = {
   matchUpDependencies: any;
   participantReachability: ParticipantReachability;
   tournamentRecords?: { [key: string]: Tournament };
+  /** the timed matchUps' own minutes, already resolved (`timedMatchUpMinutes`): when given, no record is read */
+  timedMinutes?: { [matchUpId: string]: Minutes | undefined };
   scheduleDate: string;
   minutesMap: any;
 };
@@ -37,20 +39,37 @@ type ProcessAlreadyScheduledMatchUpsArgs = {
  * participants were free again the moment its average minutes ran out (C1, SCHEDULING_PIPELINE_VNEXT.md § 5). Such a
  * matchUp's minutes come from its own format and event.
  */
-type Minutes = { recoveryMinutes?: number; typeChangeRecoveryMinutes?: number };
+export type Minutes = { recoveryMinutes?: number; typeChangeRecoveryMinutes?: number };
 function alreadyScheduledMinutes({
   tournamentRecords,
+  timedMinutes,
   minutesMap,
   matchUp,
   memo,
 }: {
+  timedMinutes?: { [matchUpId: string]: Minutes | undefined };
   tournamentRecords?: { [key: string]: Tournament };
   minutesMap?: { [matchUpId: string]: Minutes };
   memo: Map<string, Minutes | undefined>;
   matchUp: HydratedMatchUp;
 }): Minutes | undefined {
   const mapped = minutesMap?.[matchUp.matchUpId];
-  if (mapped || !tournamentRecords || !matchUp.matchUpFormat || !matchUp.tournamentId) return mapped;
+  if (mapped) return mapped;
+  if (timedMinutes) return timedMinutes[matchUp.matchUpId];
+  return timedMatchUpMinutes({ tournamentRecords, matchUp, memo });
+}
+
+/** a matchUp's minutes from its own format and event; `memo` keeps one resolution per tournament, event and format */
+export function timedMatchUpMinutes({
+  tournamentRecords,
+  matchUp,
+  memo,
+}: {
+  tournamentRecords?: { [key: string]: Tournament };
+  memo: Map<string, Minutes | undefined>;
+  matchUp: HydratedMatchUp;
+}): Minutes | undefined {
+  if (!tournamentRecords || !matchUp.matchUpFormat || !matchUp.tournamentId) return undefined;
   // minutes depend only on the tournament, the event and the format: resolved once per combination in a call
   const key = `${matchUp.tournamentId}|${matchUp.eventId}|${matchUp.matchUpFormat}`;
   if (memo.has(key)) return memo.get(key);
@@ -83,6 +102,7 @@ export function processAlreadyScheduledMatchUps({
   participantReachability,
   clearScheduleDates,
   tournamentRecords,
+  timedMinutes,
   scheduleDate,
   minutesMap,
   matchUps,
@@ -154,7 +174,13 @@ export function processAlreadyScheduledMatchUps({
 
     if (scheduleTime) {
       matchUpScheduleTimes[matchUp.matchUpId] = scheduleTime;
-      const minutes = alreadyScheduledMinutes({ matchUp, minutesMap, tournamentRecords, memo: minutesMemo });
+      const minutes = alreadyScheduledMinutes({
+        memo: minutesMemo,
+        tournamentRecords,
+        timedMinutes,
+        minutesMap,
+        matchUp,
+      });
       const recoveryMinutes = minutes?.recoveryMinutes;
       const typeChangeRecoveryMinutes = minutes?.typeChangeRecoveryMinutes;
       const averageMatchUpMinutes = greatestAverageMinutes;

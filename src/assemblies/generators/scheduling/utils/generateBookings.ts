@@ -7,12 +7,21 @@ import { validMatchUps } from '@Validators/validMatchUp';
 
 // constants and types
 import { MISSING_MATCHUPS, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
+import { EventTypeUnion, Tournament } from '@Types/tournamentTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
-import { Tournament } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
+/** an event as bookings read it: its type, and the scheduling policy timing that applies to it */
+export type EventBookingTiming = {
+  scheduleTiming?: ReturnType<typeof getScheduleTiming>['scheduleTiming'];
+  eventType?: EventTypeUnion;
+};
+export type EventBookingTimings = { [eventId: string]: EventBookingTiming };
+
 type GenerateBookingsArgs = {
-  tournamentRecords: { [key: string]: Tournament };
+  tournamentRecords?: { [key: string]: Tournament };
+  /** the events' timing already resolved (`getEventBookingTimings`): when given, no record is read */
+  eventTimings?: EventBookingTimings;
   dateScheduledMatchUps?: HydratedMatchUp[];
   defaultRecoveryMinutes?: number;
   averageMatchUpMinutes?: number;
@@ -26,12 +35,13 @@ export function generateBookings({
   averageMatchUpMinutes = 90,
   dateScheduledMatchUps,
   tournamentRecords,
+  eventTimings,
   venueIds = [],
   periodLength,
   scheduleDate,
   matchUps,
 }: GenerateBookingsArgs) {
-  if (typeof tournamentRecords !== 'object') return { error: MISSING_TOURNAMENT_RECORDS };
+  if (!eventTimings && typeof tournamentRecords !== 'object') return { error: MISSING_TOURNAMENT_RECORDS };
 
   if (!validMatchUps(matchUps) && !Array.isArray(dateScheduledMatchUps)) return { error: MISSING_MATCHUPS };
 
@@ -42,22 +52,7 @@ export function generateBookings({
       averageMatchUpMinutes,
     });
 
-  // get a mapping of eventIds to category details
-  const eventDetails = Object.assign(
-    {},
-    ...Object.values(tournamentRecords).flatMap((tournamentRecord) =>
-      (tournamentRecord.events ?? []).map((event) => {
-        const { scheduleTiming } = getScheduleTiming({
-          tournamentRecord,
-          event,
-        });
-
-        return {
-          [event.eventId]: { event, scheduleTiming },
-        };
-      }),
-    ),
-  );
+  const eventDetails = eventTimings ?? getEventBookingTimings(tournamentRecords ?? {});
 
   const defaultTiming = {
     averageTimes: [{ minutes: { default: averageMatchUpMinutes } }],
@@ -79,16 +74,16 @@ export function generateBookings({
 
   const bookings = relevantMatchUps
     ?.map(({ eventId, schedule, matchUpFormat }) => {
-      const { event, scheduleTiming } = eventDetails[eventId];
-      const eventType = event?.eventType;
+      const { eventType, scheduleTiming } = eventDetails[eventId];
       const timingDetails = {
         ...scheduleTiming,
         defaultTiming,
         matchUpFormat,
       };
+      // an event with no type was always read untyped here: the timing falls back to its defaults
       const { averageMinutes, recoveryMinutes } = matchUpFormatTimes({
+        eventType: eventType as EventTypeUnion,
         timingDetails,
-        eventType,
       });
       const { courtId, venueId } = schedule ?? {};
       const startTime = extractTime(schedule?.scheduledTime);
@@ -106,4 +101,16 @@ export function generateBookings({
     .filter(Boolean);
 
   return { bookings, relevantMatchUps, dateScheduledMatchUps };
+}
+
+/** every event's booking timing, by eventId, across the records */
+export function getEventBookingTimings(tournamentRecords: { [key: string]: Tournament }): EventBookingTimings {
+  const timings: EventBookingTimings = {};
+  for (const tournamentRecord of Object.values(tournamentRecords)) {
+    for (const event of tournamentRecord.events ?? []) {
+      const { scheduleTiming } = getScheduleTiming({ tournamentRecord, event });
+      timings[event.eventId] = { eventType: event.eventType, scheduleTiming };
+    }
+  }
+  return timings;
 }
