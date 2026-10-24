@@ -490,26 +490,35 @@ v2 states a call's writes as **ops**, a closed vocabulary folded by one reducer 
 draw. The overlay, the `differential` shadow apply and, from S2, apply itself all use the same reducer, so what a plan
 says and what lands are one thing. The reducer decides nothing and refuses nothing.
 
-| op                 | what it writes                                                                                                                                                                                                                        |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `setMatchUpResult` | the matchUp's status, winner, score (as the call gave it, or blanked), a new format, status codes, and `schedule.scoredTime` by v1's rule: captured the first time the matchUp is scored, kept on corrections, removed with the score |
-| `stampUpdatedAt`   | one `updatedAt` per touched entity per call (F2 (i)): the call's captured instant, or the previous stamp + 1 ms when that is already as late                                                                                          |
+| op                        | what it writes                                                                                                                                                                                                                        |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `setMatchUpResult`        | the matchUp's status, winner, score (as the call gave it, or blanked), a new format, status codes, and `schedule.scoredTime` by v1's rule: captured the first time the matchUp is scored, kept on corrections, removed with the score |
+| `setMatchUpDrawPositions` | the positions placed in a matchUp, as v1 stores them: numbers, ascending (a winner's position joining the next matchUp)                                                                                                               |
+| `stampUpdatedAt`          | one `updatedAt` per touched entity per call (F2 (i)): the call's captured instant, or the previous stamp + 1 ms when that is already as late                                                                                          |
 
 `planOutcome` returns a complete plan only when every write the call makes is an op; otherwise it **abstains**, naming
-the first reason, and the call is v1's whole (fail-closed). The reasons are the work list of the slices that follow:
+the first reason, and the call is v1's whole (fail-closed). S1 holds two shapes: the **local** write (the matchUp's own
+result, no winner before or after) and the **first direction** (a played result naming a winner where none stood, whose
+only consequence is the winner's position in the next matchUp of the same structure). The reasons are the work list of
+the slices that follow:
 
-| reason         | the call                                                                         | taken on by                                  |
-| -------------- | -------------------------------------------------------------------------------- | -------------------------------------------- |
-| `team`         | is a dual or one of its lines                                                    | S7                                           |
-| `schedule`     | carries a schedule                                                               | a later slice (§ 3.5.8 of the executor plan) |
-| `notes`        | carries notes                                                                    | a later slice                                |
-| `status-codes` | carries the client's positional status codes, split into side codes at the write | S2                                           |
-| `exit`         | has an exit status before or after                                               | S5                                           |
-| `winner`       | sets or takes away a winner, so something is directed or taken back              | S3                                           |
-| `route`        | takes a route, or reaches a status, that S1 does not plan as ops                 | S2                                           |
-| `provenance`   | is on a matchUp holding side-exit provenance the score write may clear or rescue | S5                                           |
-| `tallied`      | is in a round-robin, ad hoc or lucky structure, whose tally the write updates    | S3                                           |
-| `unchanged`    | would change nothing but stamps                                                  | S2 (with F2 in v1)                           |
+| reason         | the call                                                                                                       | taken on by                                  |
+| -------------- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `team`         | is a dual or one of its lines                                                                                  | S7                                           |
+| `schedule`     | carries a schedule                                                                                             | a later slice (§ 3.5.8 of the executor plan) |
+| `notes`        | carries notes                                                                                                  | a later slice                                |
+| `status-codes` | carries the client's positional status codes, split into side codes at the write                               | S2                                           |
+| `exit`         | has an exit status before or after                                                                             | S5                                           |
+| `winner`       | takes away or changes a winner already stored, so what it directed is taken back                               | S4                                           |
+| `loser`        | has a loser link, so the loser goes somewhere                                                                  | S3                                           |
+| `link`         | sends its winner into another structure                                                                        | S3                                           |
+| `cascade`      | sends its winner to a matchUp holding a BYE, an exit or a result, so the winner goes on or meets it            | S5                                           |
+| `route`        | takes a route, or reaches a status, that S1 does not plan as ops                                               | S2                                           |
+| `provenance`   | is on a matchUp holding side-exit provenance the score write may clear or rescue                               | S5                                           |
+| `tallied`      | is in a round-robin, ad hoc or lucky structure, whose tally the write updates                                  | S3                                           |
+| `unchanged`    | would change nothing but stamps                                                                                | S2 (with F2 in v1)                           |
+| `no-record`    | is on a draw the tournament record's events do not hold, so there is nothing to fold the plan into             | none: a shadow needs the record              |
+| `clock`        | is made outside an engine call, with no captured instant, so the timestamps a write takes cannot be reproduced | none: production calls go through the engine |
 
 **In `differential`**, a complete plan is folded into the record as it stood before v1 ran and compared with the record
 v1 wrote. Until Phase C's F2 lands in v1, stamps are normalised in that comparison (debate-ruled 2026-10-24, pending

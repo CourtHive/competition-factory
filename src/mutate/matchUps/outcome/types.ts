@@ -162,6 +162,10 @@ export type OutcomeView = {
       carriedStatuses: string[];
       /** a winner or a set with games: what a decider must lose when it is reset */
       holdsResult: boolean;
+      /** a side of the winner's target is a BYE: the winner would be sent on past it (a cascade, S5) */
+      hasBye: boolean;
+      /** the target's stored drawPositions, numbers only */
+      drawPositions: number[];
     };
     /** this matchUp's own place, and the matchUp counts of its round and the next, in its structure */
     source: {

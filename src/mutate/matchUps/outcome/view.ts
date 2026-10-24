@@ -295,6 +295,10 @@ function winnerTarget(
     carriesExit: carriesExit(winnerMatchUp, draw),
     carriedStatuses: standingExits(winnerMatchUp, sourceMatchUpId, draw),
     holdsResult: !!winnerMatchUp.winningSide || !!winnerMatchUp.score?.sets?.length,
+    hasBye: !!winnerMatchUp.sides?.some((side) => side?.bye),
+    drawPositions: (winnerMatchUp.drawPositions ?? []).filter(
+      (position): position is number => typeof position === 'number',
+    ),
   };
 }
 

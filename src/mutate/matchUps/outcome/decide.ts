@@ -65,6 +65,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   // S1: the same plan as ops, behind the fail-closed allowlist; a complete one is shadow-applied once v1 has written,
   // to the record as it stands here (one canonical capture, taken only for a complete plan)
   const outcome = planOutcome({
+    tournamentRecord: args.tournamentRecord,
     drawDefinition: args.drawDefinition,
     request: planned,
     write: plan,

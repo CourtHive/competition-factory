@@ -40,10 +40,16 @@ export type OutcomeOp =
       matchUpFormat?: string;
       matchUpStatusCodes?: MatchUpStatusCodeElement[];
     }
+  | {
+      op: 'setMatchUpDrawPositions';
+      matchUpId: string;
+      /** the positions placed in the matchUp, as v1 stores them: numbers, ascending */
+      drawPositions: number[];
+    }
   | { op: 'stampUpdatedAt'; entity: 'matchUp' | 'structure' | 'drawDefinition'; id: string };
 
 /** the op vocabulary as a literal union, which `verify:outcome-spec` holds to the spec; checked against `OutcomeOp` */
-export type OutcomeOpName = 'setMatchUpResult' | 'stampUpdatedAt';
+export type OutcomeOpName = 'setMatchUpResult' | 'setMatchUpDrawPositions' | 'stampUpdatedAt';
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 const opNamesMatch: Same<OutcomeOpName, OutcomeOp['op']> = true;
 export const OUTCOME_OP_NAMES_MATCH = opNamesMatch;
@@ -89,10 +95,11 @@ export function applyOutcomeOps(drawDefinition: DrawDefinition, ops: OutcomeOp[]
   const matchUps = new Map(getMatchUpsMap({ drawDefinition }).drawMatchUps.map((m) => [m.matchUpId, m]));
   const structures = new Map((drawDefinition.structures ?? []).map((s) => [s.structureId, s]));
   for (const op of ops) {
-    if (op.op === 'setMatchUpResult') {
+    if (op.op === 'setMatchUpResult' || op.op === 'setMatchUpDrawPositions') {
       const matchUp = matchUps.get(op.matchUpId);
-      if (!matchUp) return { error: `setMatchUpResult: no matchUp ${op.matchUpId}` };
-      setMatchUpResult(matchUp, op);
+      if (!matchUp) return { error: `${op.op}: no matchUp ${op.matchUpId}` };
+      if (op.op === 'setMatchUpResult') setMatchUpResult(matchUp, op);
+      else matchUp.drawPositions = [...op.drawPositions];
     } else if (op.entity === 'drawDefinition') {
       if (op.id !== drawDefinition.drawId) return { error: `stampUpdatedAt: not this draw ${op.id}` };
       stamp(drawDefinition as Stamped);

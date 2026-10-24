@@ -1,10 +1,18 @@
+import { getCapturedClock } from '@Global/state/globalState';
 import { isAnyExit } from '@Validators/isExit';
 
 // constants and types
 import type { DirectionPlan, MatchUpWrite, OutcomeRequest, OutcomeView, Route } from './types';
-import type { DrawDefinition, MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
+import type { DrawDefinition, MatchUpStatusUnion, Score, Tournament } from '@Types/tournamentTypes';
 import type { OutcomeOp } from './ops';
-import { AWAITING_RESULT, INCOMPLETE, IN_PROGRESS, SUSPENDED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import {
+  AWAITING_RESULT,
+  COMPLETED,
+  INCOMPLETE,
+  IN_PROGRESS,
+  SUSPENDED,
+  TO_BE_PLAYED,
+} from '@Constants/matchUpStatusConstants';
 
 /**
  * The outcome pipeline, v2: `planOutcome`, the plan as ops behind a fail-closed allowlist (executor plan § 3.7, S1).
@@ -14,12 +22,18 @@ import { AWAITING_RESULT, INCOMPLETE, IN_PROGRESS, SUSPENDED, TO_BE_PLAYED } fro
  * `differential` and compared with what v1 wrote (`shadow.ts`). The allowlist grows by slice; each reason below is a
  * shape a later slice takes on, and the abstention tally (`abstain:<reason>`) is the work list.
  *
- * S1 holds the LOCAL write: a call whose only write is the matchUp's own result, with no winner before or after (so
- * nothing is directed or taken back), no exit, nothing the score write clears or attributes, and no tally.
+ * S1 holds two shapes, both without an exit, without anything the score write clears or attributes, and without a
+ * tally:
+ *  - the LOCAL write: the matchUp's own result is the only write, with no winner before or after;
+ *  - the FIRST DIRECTION: a played result naming a winner where none stood, whose only consequence is the winner's
+ *    drawPosition in the next matchUp of the same structure (no loser link, nothing waiting there to send them on).
  */
 export type AbstainReason =
   | 'route' // a route S1 does not plan as ops
-  | 'winner' // a winner set or taken away: direction (S3)
+  | 'winner' // a winner taken away or changed: unwinding what it directed (S4)
+  | 'loser' // the loser has somewhere to go: a loser link (S3)
+  | 'link' // the winner goes into another structure (S3)
+  | 'cascade' // the winner's target holds a BYE, an exit or a result: the winner goes on, or meets it (S5)
   | 'exit' // an exit status, before or after: provenance and the cascade (S5)
   | 'status-codes' // the client's positional codes, split into side codes at the write
   | 'provenance' // the matchUp holds provenance the score write may clear or rescue
@@ -27,7 +41,9 @@ export type AbstainReason =
   | 'tallied' // a round robin, ad hoc or lucky structure: the tally (S3)
   | 'schedule' // the call carries a schedule (§ 3.5.8)
   | 'notes' // the call carries notes
-  | 'unchanged'; // the write changes nothing but stamps, which S1's shadow comparison cannot see (debate-ruled)
+  | 'unchanged' // the write changes nothing but stamps, which S1's shadow comparison cannot see (debate-ruled)
+  | 'no-record' // the draw is not held in the tournament record's events: nothing to fold the plan into
+  | 'clock'; // no captured instant (a call outside the engine): the timestamps a write takes cannot be reproduced
 
 export type OutcomePlan = { ops: OutcomeOp[]; abstain?: undefined } | { abstain: AbstainReason; ops?: undefined };
 
@@ -49,6 +65,33 @@ function unchanged(write: MatchUpWrite, view: OutcomeView): boolean {
   );
 }
 
+function localReason({ route, write }: { route?: Route; write?: MatchUpWrite }): AbstainReason | undefined {
+  if (!route || !write || !LOCAL_ROUTES.has(route)) return 'route';
+  if (!LOCAL_STATUSES.has(write.matchUpStatus)) return 'route';
+  return undefined;
+}
+
+/** a first entry naming a winner, whose direction is the winner's position in the next matchUp and nothing else */
+function directionReason(args: {
+  request: OutcomeRequest;
+  view: OutcomeView;
+  route?: Route;
+  write?: MatchUpWrite;
+  direction?: DirectionPlan;
+}): AbstainReason | undefined {
+  const { view, route, write, direction } = args;
+  const { targets } = view;
+  if (route !== 'winner' || !write || write.matchUpStatus !== COMPLETED || !write.winningSide) return 'route';
+  if (!direction?.winner) return 'route';
+  if (targets.loserMatchUpId || direction.loser) return 'loser';
+  if (direction.decider || direction.produced || direction.converged) return 'route';
+  const target = targets.winner;
+  if (!target || target.structureId !== targets.source.structureId) return 'link';
+  if (target.hasBye || target.carriesExit || target.carriedStatuses.length || target.holdsResult) return 'cascade';
+  if (!targets.sideDrawPositions[write.winningSide as 1 | 2]) return 'route';
+  return undefined;
+}
+
 /** the first reason this call is not S1's, or undefined when it is */
 function abstainReason(args: {
   request: OutcomeRequest;
@@ -57,19 +100,21 @@ function abstainReason(args: {
   write?: MatchUpWrite;
   direction?: DirectionPlan;
 }): AbstainReason | undefined {
-  const { request, view, route, write, direction } = args;
+  const { request, view, write, direction } = args;
   if (view.isTeam || view.line || view.matchUpTieId || view.existing.collectionId) return 'team';
   if (request.carries?.schedule) return 'schedule';
   if (request.carries?.notes) return 'notes';
   if (request.matchUpStatusCodes?.length) return 'status-codes';
   if (isAnyExit(request.matchUpStatus) || isAnyExit(view.existing.matchUpStatus) || isAnyExit(write?.matchUpStatus))
     return 'exit';
-  if (request.winningSide || view.existing.winningSide || write?.winningSide || direction) return 'winner';
-  if (!route || !write || !LOCAL_ROUTES.has(route)) return 'route';
-  if (!LOCAL_STATUSES.has(write.matchUpStatus)) return 'route';
+  if (view.existing.winningSide) return 'winner';
+  const directing = !!(request.winningSide || write?.winningSide || direction);
+  const shape = directing ? directionReason(args) : localReason(args);
+  if (shape) return shape;
   if (view.existing.hasSideExitProvenance || view.existing.carriedExit) return 'provenance';
   if (view.draw.tallied) return 'tallied';
-  if (unchanged(write, view)) return 'unchanged';
+  // both shapes above have a write by here
+  if (unchanged(write as MatchUpWrite, view)) return 'unchanged';
   return undefined;
 }
 
@@ -79,6 +124,7 @@ function abstainReason(args: {
  * its structure and the draw, each once).
  */
 export function planOutcome(args: {
+  tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
   direction?: DirectionPlan;
   request: OutcomeRequest;
@@ -88,11 +134,17 @@ export function planOutcome(args: {
 }): OutcomePlan {
   const reason = abstainReason(args);
   if (reason) return { abstain: reason };
-  const { request, view, drawDefinition } = args;
+  const { request, view, drawDefinition, tournamentRecord } = args;
+  // a plan is folded into the record; a draw held outside it, or a call with no captured instant, cannot be compared
+  const held = tournamentRecord?.events?.some((event) =>
+    event.drawDefinitions?.includes(drawDefinition as DrawDefinition),
+  );
+  if (!drawDefinition || !held) return { abstain: 'no-record' };
+  if (getCapturedClock() === undefined) return { abstain: 'clock' };
   const write = args.write as MatchUpWrite;
   const matchUpId = request.matchUpId as string;
   const structureId = view.targets.source.structureId;
-  if (!drawDefinition || !structureId) return { abstain: 'route' };
+  if (!structureId) return { abstain: 'route' };
 
   // the score as v1's write stores it (`applyScoreAndStatus`): blanked, the blank; given, the object as given (point
   // scores and all); neither, the matchUp's own is left where it is
@@ -107,11 +159,24 @@ export function planOutcome(args: {
       matchUpStatus: write.matchUpStatus as MatchUpStatusUnion,
       ...(score ? { score } : {}),
       ...(request.matchUpFormat ? { matchUpFormat: request.matchUpFormat } : {}),
+      ...(write.winningSide ? { winningSide: write.winningSide as 1 | 2 } : {}),
       ...(write.matchUpStatusCodes ? { matchUpStatusCodes: write.matchUpStatusCodes } : {}),
     },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
+  ];
+  // the first direction: the winner's position joins the next matchUp's, which v1 stores ascending
+  const winner = args.direction?.winner;
+  const winnerPosition = write.winningSide ? view.targets.sideDrawPositions[write.winningSide as 1 | 2] : undefined;
+  if (winner && winnerPosition && view.targets.winner) {
+    const drawPositions = [...new Set([...view.targets.winner.drawPositions, winnerPosition])].sort((a, b) => a - b);
+    ops.push(
+      { op: 'setMatchUpDrawPositions', matchUpId: winner.matchUpId, drawPositions },
+      { op: 'stampUpdatedAt', entity: 'matchUp', id: winner.matchUpId },
+    );
+  }
+  ops.push(
     { op: 'stampUpdatedAt', entity: 'structure', id: structureId },
     { op: 'stampUpdatedAt', entity: 'drawDefinition', id: drawDefinition.drawId },
-  ];
+  );
   return { ops };
 }
