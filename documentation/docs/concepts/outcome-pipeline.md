@@ -519,6 +519,7 @@ the slices that follow:
 | `tallied`      | is in a round-robin, ad hoc or lucky structure, whose tally the write updates                                  | S3                                           |
 | `unchanged`    | would change nothing but stamps                                                                                | S2 (with F2 in v1)                           |
 | `no-record`    | is on a draw the tournament record's events do not hold, so there is nothing to fold the plan into             | none: a shadow needs the record              |
+| `edges`        | is on a draw that stores no winner and loser edges, which v1 writes first (`ensureGoesTo`)                     | S2 (`setEdges`)                              |
 | `clock`        | is made outside an engine call, with no captured instant, so the timestamps a write takes cannot be reproduced | none: production calls go through the engine |
 
 **In `differential`**, a complete plan is folded into the record as it stood before v1 ran and compared with the record

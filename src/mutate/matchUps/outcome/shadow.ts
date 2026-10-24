@@ -3,6 +3,12 @@ import { generatePatch } from '../../../forge/jsonPatch';
 import { applyOutcomeOps } from './ops';
 
 // constants and types
+import {
+  MODIFY_DRAW_DEFINITION,
+  MODIFY_MATCHUP,
+  MODIFY_POSITION_ASSIGNMENTS,
+  UPDATE_INCONTEXT_MATCHUP,
+} from '@Constants/topicConstants';
 import type { DrawDefinition, Tournament } from '@Types/tournamentTypes';
 import type { OutcomeOp } from './ops';
 
@@ -84,4 +90,40 @@ export function compareShadow({
         root,
       );
   return { equal: false, path: first.path, v1: shown(at(v1)), v2: shown(at(v2)) };
+}
+
+/**
+ * THE NOTICES a complete plan implies, by topic and key (executor plan § 3.5.5): the deduplicated buffer v1 leaves,
+ * which a client's sync reads. Payloads are not compared in S1. Measured 2026-10-24 with every topic subscribed: a
+ * matchUp written or stamped is a `modifyMatchUp`, the call's own matchUp an `updateInContextMatchUp`, the draw a
+ * `modifyDrawDefinition`, and a structure an `assignPosition` writes a `modifyPositionAssignments` keyed by structureId.
+ */
+export function plannedNotices({ ops, matchUpId }: { ops: OutcomeOp[]; matchUpId: string }): Set<string> {
+  const notices = new Set<string>([`${UPDATE_INCONTEXT_MATCHUP}|${matchUpId}`]);
+  for (const op of ops) {
+    if (op.op === 'assignPosition') notices.add(`${MODIFY_POSITION_ASSIGNMENTS}|${op.structureId}`);
+    if (op.op !== 'stampUpdatedAt') continue;
+    if (op.entity === 'matchUp') notices.add(`${MODIFY_MATCHUP}|${op.id}`);
+    if (op.entity === 'drawDefinition') notices.add(`${MODIFY_DRAW_DEFINITION}|${op.id}`);
+  }
+  return notices;
+}
+
+/** what v1 added to the notice buffer in this call, deduplicated by topic and key, on the topics someone receives */
+export function compareNotices({
+  planned,
+  added,
+  topics,
+}: {
+  added: { topic?: string; key?: string }[];
+  planned: Set<string>;
+  topics: string[];
+}): { equal: true } | { equal: false; v1: string; v2: string } {
+  const subscribed = new Set(topics);
+  const received = (notice: string) => subscribed.has(notice.split('|')[0]);
+  const v1 = [...new Set(added.map((notice) => `${notice.topic}|${notice.key}`))].filter(received).sort();
+  const v2 = [...planned].filter(received).sort();
+  if (JSON.stringify(v1) === JSON.stringify(v2)) return { equal: true };
+  const only = (a: string[], b: string[]) => a.filter((notice) => !b.includes(notice)).join(', ') || 'nothing more';
+  return { equal: false, v1: `notices ${only(v1, v2)}`, v2: `planned ${only(v2, v1)}` };
 }

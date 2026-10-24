@@ -1,12 +1,13 @@
 import { generateOutcomeFromScoreString } from '@Assemblies/generators/mocks/generateOutcomeFromScoreString';
 import { getDifferentialTally, resetDifferentialTally } from '@Mutate/matchUps/outcome/differential';
-import { setOutcomePipeline } from '@Global/state/globalState';
+import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, expect, it, vi } from 'vitest';
 
 // constants
 import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Constants/outcomePipelineConstants';
+import { MODIFY_DRAW_DEFINITION, MODIFY_MATCHUP } from '@Constants/topicConstants';
 import { IN_PROGRESS, SUSPENDED } from '@Constants/matchUpStatusConstants';
 
 /**
@@ -16,7 +17,7 @@ import { IN_PROGRESS, SUSPENDED } from '@Constants/matchUpStatusConstants';
  * wrote. "Zero divergences" proves something only if a wrong plan is caught: the second test plants a fault in the
  * reducer (`setMatchUpResult` writes the wrong status) and the same call must throw, naming the field.
  */
-const planted = { fault: false };
+const planted = { fault: false, notice: false };
 
 vi.mock('@Mutate/matchUps/outcome/ops', async (importOriginal) => {
   const actual: any = await importOriginal();
@@ -32,11 +33,27 @@ vi.mock('@Mutate/matchUps/outcome/ops', async (importOriginal) => {
   };
 });
 
+vi.mock('@Mutate/matchUps/outcome/shadow', async (importOriginal) => {
+  const actual: any = await importOriginal();
+  return {
+    ...actual,
+    // the planted notice fault: the plan forgets the notice for the call's own matchUp
+    plannedNotices: (args: any) => {
+      const notices: Set<string> = actual.plannedNotices(args);
+      if (planted.notice) notices.delete(`${MODIFY_MATCHUP}|${args.matchUpId}`);
+      return notices;
+    },
+  };
+});
+
 afterEach(() => {
   planted.fault = false;
+  planted.notice = false;
+  setSubscriptions({});
 });
 
 function scoreInProgress() {
+  setSubscriptions({});
   mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8, drawId: 'd' }], nonRandom: 1, setState: true });
   const first = tournamentEngine
     .allDrawMatchUps({ drawId: 'd', inContext: true })
@@ -64,4 +81,16 @@ it('a wrong plan is a divergence, and the record is left as it was', () => {
     .allDrawMatchUps({ drawId: 'd', inContext: true })
     .matchUps.find((matchUp: any) => matchUp.roundNumber === 1);
   expect(first.matchUpStatus).not.toEqual(IN_PROGRESS);
+});
+
+it('the notices v1 publishes are the ones the plan implies, and a missing one is a divergence', () => {
+  const enter = scoreInProgress();
+  setSubscriptions({ subscriptions: { [MODIFY_MATCHUP]: () => undefined, [MODIFY_DRAW_DEFINITION]: () => undefined } });
+  expect((enter() as any).error).toBeUndefined();
+  expect(getDifferentialTally()['shadow:notices']).toEqual({ compared: 1, deferred: 0 });
+
+  const again = scoreInProgress();
+  setSubscriptions({ subscriptions: { [MODIFY_MATCHUP]: () => undefined } });
+  planted.notice = true;
+  expect(again).toThrow(/notices modifyMatchUp\|/);
 });

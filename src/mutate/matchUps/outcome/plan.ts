@@ -44,6 +44,7 @@ export type AbstainReason =
   | 'notes' // the call carries notes
   | 'unchanged' // the write changes nothing but stamps, which S1's shadow comparison cannot see (debate-ruled)
   | 'no-record' // the draw is not held in the tournament record's events: nothing to fold the plan into
+  | 'edges' // the draw stores no edges, which v1 writes first (`ensureGoesTo`): S2's setEdges
   | 'clock'; // no captured instant (a call outside the engine): the timestamps a write takes cannot be reproduced
 
 export type OutcomePlan = { ops: OutcomeOp[]; abstain?: undefined } | { abstain: AbstainReason; ops?: undefined };
@@ -128,6 +129,7 @@ function abstainReason(args: {
 }): AbstainReason | undefined {
   const { request, view, write, direction } = args;
   if (view.isTeam || view.line || view.matchUpTieId || view.existing.collectionId) return 'team';
+  if (!view.draw.storesEdges) return 'edges';
   if (request.carries?.schedule) return 'schedule';
   if (request.carries?.notes) return 'notes';
   if (request.matchUpStatusCodes?.length) return 'status-codes';

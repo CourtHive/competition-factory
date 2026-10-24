@@ -204,6 +204,8 @@ export type OutcomeView = {
     tallied: boolean;
     /** the draw has a FIRST_MATCHUP loser link, whose unreachable seats v1 fills with a propagated BYE (S5) */
     firstMatchFeed: boolean;
+    /** the draw stores its winner and loser edges; v1 writes them first on one that does not (edge repair) */
+    storesEdges: boolean;
   };
 };
 

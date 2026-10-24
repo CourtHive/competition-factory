@@ -12,12 +12,13 @@ import { observeWrite, planWrite } from './write';
 import { captureRecord } from '@Tools/recordDiff';
 import { refuseOutcome } from './refusals';
 import { buildOutcomeView } from './view';
-import { compareShadow } from './shadow';
+import { compareNotices, compareShadow, plannedNotices } from './shadow';
 import { chooseRoute } from './route';
 import { planOutcome } from './plan';
 import {
   getNoticeBuffer,
   getOutcomePipeline,
+  getTopics,
   readMutationStatus,
   restoreMutationStatus,
   setNoticeBuffer,
@@ -158,6 +159,14 @@ export function decideOutcomeV2(args: BuildViewArgs): {
         v2: `shadow-applied ${outcome.ops.length} ops: ${shadow.path} = ${shadow.v2}`,
       });
     differentialTally('shadow:applied', 'compared');
+    const noticed = compareNotices({
+      planned: plannedNotices({ ops: outcome.ops, matchUpId: args.request.matchUpId as string }),
+      added: (getNoticeBuffer() ?? []).slice(notices?.length ?? 0),
+      topics: getTopics().topics,
+    });
+    if (!noticed.equal)
+      throw new OutcomePipelineDivergence({ matchUpId: args.request.matchUpId, v1: noticed.v1, v2: noticed.v2 });
+    differentialTally('shadow:notices', 'compared');
   }
 }
 

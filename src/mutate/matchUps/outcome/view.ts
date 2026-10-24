@@ -462,6 +462,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       timedTie: false,
       tallied: false,
       firstMatchFeed: false,
+      storesEdges: true,
     },
     targets: {
       luckyPreFeed: false,
@@ -762,6 +763,8 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       // v1 propagates a BYE into a first-match feed a loser can no longer reach (`propagateUnfillableLoserBye`), set
       // going by a winner filling the round that feeds it
       firstMatchFeed: (drawDefinition.links ?? []).some((link) => link.linkCondition === FIRST_MATCHUP),
+      // v1 writes a draw's missing edges before deciding (`ensureGoesTo`): edge repair is S2's `setEdges`
+      storesEdges: !goesTo,
       isAdHoc: !!isAdHoc({ structure }),
       teamRoundRobin: !!(matchUp.tieMatchUps && !matchUp.roundPosition && inContextMatchUp?.containerStructureId),
       includesBye: !!matchUp.drawPositions?.some((position) =>
