@@ -10,6 +10,13 @@ The payload for each subscription is an array of objects, with each element of t
 All engine methods may be passed the additional parameter `{ delayNotify: true }`, in which case subscription methods are **_not_** called until a subsequent engine method is invoked.
 :::
 
+:::note `UPDATE_INCONTEXT_MATCHUP` is built only when it is delivered
+The in-context matchUp this topic carries costs a hydration, so it is built only when the notices are delivered, after
+the engine method has succeeded, and only while the topic is subscribed. A method that returns an error builds none
+and sends none. One payload is delivered per matchUp the method wrote, showing the matchUp as the method left it;
+under `delayNotify`, as it stands when the notices are delivered.
+:::
+
 ```js
 const subscriptions = {
   [topicConstants.AUDIT]: (payload) => {},
