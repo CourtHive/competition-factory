@@ -2,8 +2,9 @@ import { getCapturedClock } from '@Global/state/globalState';
 import { isAnyExit } from '@Validators/isExit';
 
 // constants and types
-import type { DirectionPlan, MatchUpWrite, OutcomeRequest, OutcomeView, Route } from './types';
 import type { DrawDefinition, MatchUpStatusUnion, Score, Tournament } from '@Types/tournamentTypes';
+import type { DirectionPlan, MatchUpWrite, OutcomeRequest, OutcomeView, Route } from './types';
+import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import type { OutcomeOp } from './ops';
 import {
   AWAITING_RESULT,
@@ -71,6 +72,29 @@ function localReason({ route, write }: { route?: Route; write?: MatchUpWrite }):
   return undefined;
 }
 
+/**
+ * A loser fed across a link joins the first direction only as a plain arrival: placed on a free seat, carrying
+ * nothing, into a matchUp holding no result, exit or BYE. The FMLC feed into round 2 is left to v1: `directLoser`
+ * seats it on the target's lowest position, which `positionTargets` does not say.
+ */
+function plainLoserReason(view: OutcomeView, direction: DirectionPlan): AbstainReason | undefined {
+  const { targets } = view;
+  const loser = direction.loser;
+  if (!loser && !targets.loserMatchUpId) return undefined;
+  if (!loser?.arrives || loser.exit || loser.converged || loser.carriedPast || loser.bye || loser.withdrawn)
+    return 'loser';
+  if (targets.loserLink?.linkCondition === FIRST_MATCHUP && targets.loserMatchUpRoundNumber === 2) return 'loser';
+  if (!targets.loserStructureId || !targets.loserTargetDrawPosition || !targets.loserTargetSeat?.free) return 'loser';
+  if (
+    targets.loserMatchUpHasResult ||
+    targets.loserMatchUpCarriesExit ||
+    targets.loserTargetSeat.opponentBye ||
+    targets.loserTargetSeat.structureHasBye
+  )
+    return 'cascade';
+  return undefined;
+}
+
 /** a first entry naming a winner, whose direction is the winner's position in the next matchUp and nothing else */
 function directionReason(args: {
   request: OutcomeRequest;
@@ -83,10 +107,12 @@ function directionReason(args: {
   const { targets } = view;
   if (route !== 'winner' || !write || write.matchUpStatus !== COMPLETED || !write.winningSide) return 'route';
   if (!direction?.winner) return 'route';
-  if (targets.loserMatchUpId || direction.loser) return 'loser';
+  const loserReason = plainLoserReason(view, direction);
+  if (loserReason) return loserReason;
   if (direction.decider || direction.produced || direction.converged) return 'route';
   const target = targets.winner;
   if (!target || target.structureId !== targets.source.structureId) return 'link';
+  if (view.draw.firstMatchFeed) return 'cascade';
   if (target.hasBye || target.carriesExit || target.carriedStatuses.length || target.holdsResult) return 'cascade';
   if (!targets.sideDrawPositions[write.winningSide as 1 | 2]) return 'route';
   return undefined;
@@ -173,6 +199,17 @@ export function planOutcome(args: {
       { op: 'setMatchUpDrawPositions', matchUpId: winner.matchUpId, drawPositions },
       { op: 'stampUpdatedAt', entity: 'matchUp', id: winner.matchUpId },
     );
+  }
+  // a plain loser arrival: the loser on the seat the link feeds. The matchUp they land in is not stamped: its stored
+  // object does not change (the write is on the structure's assignments), so it is not a touched entity (F2 (i), and v1)
+  const loser = args.direction?.loser;
+  if (loser?.arrives && view.targets.loserStructureId && view.targets.loserTargetDrawPosition) {
+    ops.push({
+      op: 'assignPosition',
+      structureId: view.targets.loserStructureId,
+      drawPosition: view.targets.loserTargetDrawPosition,
+      participantId: loser.participantId,
+    });
   }
   ops.push(
     { op: 'stampUpdatedAt', entity: 'structure', id: structureId },

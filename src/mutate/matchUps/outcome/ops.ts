@@ -1,5 +1,6 @@
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { nowIso } from '@Tools/clock';
 
 // constants and types
@@ -46,10 +47,17 @@ export type OutcomeOp =
       /** the positions placed in the matchUp, as v1 stores them: numbers, ascending */
       drawPositions: number[];
     }
+  | {
+      op: 'assignPosition';
+      structureId: string;
+      drawPosition: number;
+      /** the participant placed at the drawPosition's stored assignment (a loser fed across a link) */
+      participantId: string;
+    }
   | { op: 'stampUpdatedAt'; entity: 'matchUp' | 'structure' | 'drawDefinition'; id: string };
 
 /** the op vocabulary as a literal union, which `verify:outcome-spec` holds to the spec; checked against `OutcomeOp` */
-export type OutcomeOpName = 'setMatchUpResult' | 'setMatchUpDrawPositions' | 'stampUpdatedAt';
+export type OutcomeOpName = 'setMatchUpResult' | 'setMatchUpDrawPositions' | 'assignPosition' | 'stampUpdatedAt';
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 const opNamesMatch: Same<OutcomeOpName, OutcomeOp['op']> = true;
 export const OUTCOME_OP_NAMES_MATCH = opNamesMatch;
@@ -100,6 +108,12 @@ export function applyOutcomeOps(drawDefinition: DrawDefinition, ops: OutcomeOp[]
       if (!matchUp) return { error: `${op.op}: no matchUp ${op.matchUpId}` };
       if (op.op === 'setMatchUpResult') setMatchUpResult(matchUp, op);
       else matchUp.drawPositions = [...op.drawPositions];
+    } else if (op.op === 'assignPosition') {
+      const assignment = positionAssignmentsOf(structures.get(op.structureId))?.find(
+        (candidate) => candidate.drawPosition === op.drawPosition,
+      );
+      if (!assignment) return { error: `assignPosition: no drawPosition ${op.drawPosition} in ${op.structureId}` };
+      assignment.participantId = op.participantId;
     } else if (op.entity === 'drawDefinition') {
       if (op.id !== drawDefinition.drawId) return { error: `stampUpdatedAt: not this draw ${op.id}` };
       stamp(drawDefinition as Stamped);

@@ -137,6 +137,10 @@ export type OutcomeView = {
     loserMatchUpRoundNumber?: number;
     /** the loserMatchUp's structure and drawPositions: where a kept-out loser's BYE lands */
     loserStructureId?: string;
+    /** the drawPosition the loser link feeds in the loser's structure (`positionTargets`) */
+    loserTargetDrawPosition?: number;
+    /** that stored assignment: free when it holds no participant, BYE or qualifier */
+    loserTargetSeat?: { free: boolean; opponentBye: boolean; structureHasBye: boolean };
     /** the loserMatchUp's status before this call: an exit already there converges with the carried one */
     loserMatchUpStatus?: MatchUpStatusUnion;
     /** the loserMatchUp has a result of its own (a score, a winner, COMPLETED or an exit): a relabel carries nothing there */
@@ -195,6 +199,8 @@ export type OutcomeView = {
     combinedPointRoundRobin?: boolean;
     /** v1's score write updates a tally here (`updateTallyIfNeeded`): a round-robin container, ad hoc, or lucky */
     tallied: boolean;
+    /** the draw has a FIRST_MATCHUP loser link, whose unreachable seats v1 fills with a propagated BYE (S5) */
+    firstMatchFeed: boolean;
   };
 };
 
