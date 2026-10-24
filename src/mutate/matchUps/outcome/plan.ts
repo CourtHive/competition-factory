@@ -45,7 +45,8 @@ export type AbstainReason =
   | 'unchanged' // the write changes nothing but stamps: comparable by value since F2 (i) is in v1, owned from S2
   | 'no-record' // the draw is not held in the tournament record's events: nothing to fold the plan into
   | 'edges' // the draw stores no edges, which v1 writes first (`ensureGoesTo`): S2's setEdges
-  | 'clock'; // no captured instant (a call outside the engine): the timestamps a write takes cannot be reproduced
+  | 'clock' // no captured instant (a call outside the engine): the timestamps a write takes cannot be reproduced
+  | 'settle'; // a settle pass has work on the working view (S2's has-work predicates, `settleWork.ts`)
 
 export type OutcomePlan = { ops: OutcomeOp[]; abstain?: undefined } | { abstain: AbstainReason; ops?: undefined };
 

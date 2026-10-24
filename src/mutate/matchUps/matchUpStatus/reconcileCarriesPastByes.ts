@@ -46,15 +46,9 @@ export function reconcileCarriesPastByes({
   for (let pass = 0; pass < 16; pass += 1) {
     const matchUpsMap = getMatchUpsMap({ drawDefinition });
     // the cheap read first: a BYE matchUp recording a carried exit, before anything is hydrated
-    const candidates = matchUpsMap.drawMatchUps.filter(
-      (matchUp) => matchUp.matchUpStatus === BYE && !carriedOn.has(matchUp.matchUpId) && carriedSides(matchUp).length,
-    );
-    if (!candidates.length) return undefined;
-
+    if (!carryCandidates(matchUpsMap, carriedOn).length) return undefined;
     const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
-    const carry = candidates
-      .map((byeMatchUp) => owedCarry({ byeMatchUp, inContextDrawMatchUps, drawDefinition, matchUpsMap }))
-      .find(Boolean);
+    const carry = findOwedCarry({ inContextDrawMatchUps, drawDefinition, matchUpsMap, carriedOn });
     if (!carry) return undefined;
     carriedOn.add(carry.byeMatchUp.matchUpId);
 
@@ -78,6 +72,32 @@ export function reconcileCarriesPastByes({
     if (result?.error) return result;
   }
   return undefined;
+}
+
+function carryCandidates(matchUpsMap: MatchUpsMap, carriedOn: Set<string>): MatchUp[] {
+  return matchUpsMap.drawMatchUps.filter(
+    (matchUp) => matchUp.matchUpStatus === BYE && !carriedOn.has(matchUp.matchUpId) && carriedSides(matchUp).length,
+  );
+}
+
+/**
+ * THE PASS'S DETECTOR: the first carry past a BYE still owed, read from the draw, its map and its hydration. The pass
+ * acts on it; v2's has-work predicate (`outcome/settleWork.ts`) asks it of the working view, so the two cannot drift.
+ */
+export function findOwedCarry({
+  inContextDrawMatchUps,
+  carriedOn = new Set(),
+  drawDefinition,
+  matchUpsMap,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  carriedOn?: Set<string>;
+  matchUpsMap: MatchUpsMap;
+}) {
+  return carryCandidates(matchUpsMap, carriedOn)
+    .map((byeMatchUp) => owedCarry({ byeMatchUp, inContextDrawMatchUps, drawDefinition, matchUpsMap }))
+    .find(Boolean);
 }
 
 function carriedSides(matchUp: MatchUp): number[] {
