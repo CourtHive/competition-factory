@@ -3,6 +3,7 @@ import {
   getCapturedCompetitionClock,
   setCapturedClock,
   setCapturedCompetitionClock,
+  setCapturedStamps,
 } from '@Global/state/globalState';
 
 // constants
@@ -140,11 +141,14 @@ function beginCapture(): { timeStamp: number; release: () => void } | ClockError
 
   setCapturedClock(record.ms);
   if (competition) setCapturedCompetitionClock(competition.ms);
+  // the call's stamp ledger opens and closes with its instant: an entity is stamped once per call
+  setCapturedStamps(new WeakSet());
   return {
     timeStamp: record.ms,
     release: () => {
       setCapturedClock(undefined);
       setCapturedCompetitionClock(undefined);
+      setCapturedStamps(undefined);
     },
   };
 }

@@ -1,18 +1,17 @@
 import { applyOutcomeOps, nextStamp } from '@Mutate/matchUps/outcome/ops';
-import { normaliseStamps, STAMP } from '@Mutate/matchUps/outcome/shadow';
 import { afterEach, describe, expect, it } from 'vitest';
 import { setClock } from '@Tools/clock';
 
 // constants and types
-import type { DrawDefinition } from '@Types/tournamentTypes';
 import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import type { DrawDefinition } from '@Types/tournamentTypes';
 
 /**
  * The S1 op reducer and its stamps (outcome v2 executor plan § 3.3; F2 (i), CA 2026-10-19).
  *
  * The reducer folds ops into a stored-shape draw and decides nothing. Its stamp rule is F2 (i): one per touched entity
- * per call, the call's instant T, or the previous stamp + 1 ms when that is already as late. The `differential` shadow
- * comparison cannot see stamp values until F2 lands in v1 (debate-ruled 2026-10-24), so they are held to F2 (i) here.
+ * per call, the call's instant T, or the previous stamp + 1 ms when that is already as late. v1 keeps the same rule
+ * (`oneStampPerEntityPerCall.test.ts`), and `differential` compares every stamp by value.
  */
 const T = '2026-10-24T12:00:00.000Z';
 
@@ -98,40 +97,5 @@ describe('applyOutcomeOps', () => {
     expect(
       applyOutcomeOps(drawDefinition, [{ op: 'stampUpdatedAt', entity: 'drawDefinition', id: 'x' }]).error,
     ).toContain('not this draw');
-  });
-});
-
-describe('normaliseStamps (the shadow comparison, until F2 lands in v1)', () => {
-  it('drops structure stamps, and reads matchUp and draw stamps as present or absent', () => {
-    const record: any = {
-      updatedAt: T,
-      events: [
-        {
-          updatedAt: T,
-          drawDefinitions: [
-            {
-              updatedAt: T,
-              structures: [
-                {
-                  updatedAt: T,
-                  matchUps: [{ matchUpId: 'a', updatedAt: T }, { matchUpId: 'b' }],
-                  structures: [{ updatedAt: T, matchUps: [{ matchUpId: 'c', updatedAt: T }] }],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    };
-    const normalised: any = normaliseStamps(record);
-    const drawDefinition = normalised.events[0].drawDefinitions[0];
-    expect(drawDefinition.updatedAt).toEqual(STAMP);
-    expect(drawDefinition.structures[0].updatedAt).toBeUndefined();
-    expect(drawDefinition.structures[0].structures[0].updatedAt).toBeUndefined();
-    expect(drawDefinition.structures[0].matchUps.map((m: any) => m.updatedAt)).toEqual([STAMP, undefined]);
-    expect(drawDefinition.structures[0].structures[0].matchUps[0].updatedAt).toEqual(STAMP);
-    // only the draw's own entities: the record's and the event's stamps are compared by value
-    expect(normalised.updatedAt).toEqual(T);
-    expect(normalised.events[0].updatedAt).toEqual(T);
   });
 });

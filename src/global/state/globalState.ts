@@ -76,6 +76,7 @@ export type ImplemtationGlobalStateTypes = {
   modified: boolean;
   capturedClock?: number; // epoch ms an outer engine call captured; see tools/clock.ts
   capturedCompetitionClock?: number; // likewise, when a competition provider is installed
+  capturedStamps?: WeakSet<object>; // the entities an outer engine call has stamped `updatedAt` on; see tools/clock.ts
   callRandomSource?: () => number; // a seeded engine call's stream for unthreaded draws; see tools/prng.ts
 };
 
@@ -296,6 +297,19 @@ export function getCapturedCompetitionClock(): number | undefined {
 
 export function setCapturedCompetitionClock(timeStamp?: number) {
   _globalStateProvider.setCapturedCompetitionClock?.(timeStamp);
+}
+
+/**
+ * The entities an outer engine call has stamped `updatedAt` on, so each is stamped once per call (F2 (i), CA
+ * 2026-10-19). Opened and released with the captured clock. Optional hooks like it: a provider without them has no
+ * ledger, and an entity is then stamped at each notice, as before.
+ */
+export function getCapturedStamps(): WeakSet<object> | undefined {
+  return _globalStateProvider.getCapturedStamps?.();
+}
+
+export function setCapturedStamps(stamps?: WeakSet<object>) {
+  _globalStateProvider.setCapturedStamps?.(stamps);
 }
 
 /**
