@@ -10,6 +10,7 @@ import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount'
 import { resolveScoringFormat } from '@Query/hierarchical/resolveScoringFormat';
 import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { isDeciderStructure } from '@Query/drawDefinition/deciderStructures';
 import { lastSetFormatIsTimed } from '@Query/matchUp/lastSetFormatisTimed';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -26,9 +27,9 @@ import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { isLucky } from '@Query/drawDefinition/isLucky';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
-import { matchUpsOf } from '@Acquire/structureMembers';
 import { isObject } from '@Tools/objects';
 import {
   getSideExitProvenance,
@@ -40,7 +41,7 @@ import {
 import { POLICY_TYPE_PROGRESSION, POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { BYE, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { BuildViewArgs, OutcomeRequest, OutcomeView } from './types';
-import { WIN_RATIO } from '@Constants/drawDefinitionConstants';
+import { FIRST_MATCHUP, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
 import type {
@@ -294,6 +295,31 @@ function winnerTarget(
     carriesExit: carriesExit(winnerMatchUp, draw),
     carriedStatuses: standingExits(winnerMatchUp, sourceMatchUpId, draw),
     holdsResult: !!winnerMatchUp.winningSide || !!winnerMatchUp.score?.sets?.length,
+    hasBye: !!winnerMatchUp.sides?.some((side) => side?.bye),
+    drawPositions: (winnerMatchUp.drawPositions ?? []).filter(
+      (position): position is number => typeof position === 'number',
+    ),
+  };
+}
+
+/** the stored assignment a loser link feeds: free (no participant, no BYE), or what holds it */
+function loserTargetSeat(
+  drawDefinition: DrawDefinition,
+  structureId?: string,
+  drawPosition?: number,
+  matchUpDrawPositions: (number | undefined)[] = [],
+): OutcomeView['targets']['loserTargetSeat'] {
+  if (!structureId || !drawPosition) return undefined;
+  const { structure } = findStructure({ drawDefinition, structureId });
+  const assignments = positionAssignmentsOf(structure) ?? [];
+  const assignment = assignments.find((a) => a.drawPosition === drawPosition);
+  if (!assignment) return undefined;
+  const opponents = matchUpDrawPositions.filter((position) => position && position !== drawPosition);
+  return {
+    free: !assignment.participantId && !assignment.bye && !assignment.qualifier,
+    opponentBye: assignments.some((a) => a.bye && opponents.includes(a.drawPosition)),
+    // a BYE anywhere in the loser's structure: a new arrival can set v1's BYE propagation going there (S5)
+    structureHasBye: assignments.some((a) => a.bye),
   };
 }
 
@@ -419,11 +445,25 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     drawType: drawDefinition?.drawType,
     found: false,
     isTeam: false,
-    existing: { validWinningScore: false, scoreHasValue: false, scoredTime: false, carriedExit: false },
+    existing: {
+      validWinningScore: false,
+      scoreHasValue: false,
+      scoredTime: false,
+      carriedExit: false,
+      hasSideExitProvenance: false,
+    },
     propagatedExitStands: false,
     activeDownstream: false,
     participants: { required: false, count: 0, exitAwardable: false, requireForScoring: true },
-    draw: { isAdHoc: false, teamRoundRobin: false, includesBye: false, timedTie: false },
+    draw: {
+      isAdHoc: false,
+      teamRoundRobin: false,
+      includesBye: false,
+      timedTie: false,
+      tallied: false,
+      firstMatchFeed: false,
+      storesEdges: true,
+    },
     targets: {
       luckyPreFeed: false,
       sideParticipantIds: {},
@@ -442,13 +482,15 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
   if (!drawDefinition || !request.matchUpId) return empty;
 
   const matchUpsMap = args.matchUpsMap ?? getMatchUpsMap({ drawDefinition });
-  const { matchUps: inContextDrawMatchUps } = getAllDrawMatchUps({
-    tournamentRecord,
-    inContext: true,
-    drawDefinition,
-    matchUpsMap,
-    event,
-  });
+  const inContextDrawMatchUps =
+    args.inContextDrawMatchUps ??
+    getAllDrawMatchUps({
+      tournamentRecord,
+      inContext: true,
+      drawDefinition,
+      matchUpsMap,
+      event,
+    }).matchUps;
   const matchUp = matchUpsMap.drawMatchUps.find((m) => m.matchUpId === request.matchUpId);
   const inContextMatchUp = inContextDrawMatchUps?.find((m) => m.matchUpId === request.matchUpId);
   if (!matchUp || !inContextDrawMatchUps) return empty;
@@ -624,6 +666,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
 
   return {
     ...empty,
+    inContextDrawMatchUps,
     formatRecognized: formatRecognizedFor(
       request.matchUpFormat,
       appliedFormat(matchUp, structure, drawDefinition, event),
@@ -645,6 +688,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       ownMatchUpFormat: matchUp.matchUpFormat,
       validWinningScore: !LIVE_OR_UNSET.has(matchUp.matchUpStatus) && validWinningScore,
       carriedExit: isPropagatedExit({ matchUp }),
+      hasSideExitProvenance: Object.values(matchUp.sideExitProvenance ?? {}).some(Boolean),
     },
     impliedWinningSide,
     propagatedExitStands,
@@ -680,6 +724,13 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         : undefined,
       loserMatchUpRoundNumber: targetData?.targetMatchUps?.loserMatchUp?.roundNumber,
       loserStructureId: targetData?.targetMatchUps?.loserMatchUp?.structureId,
+      loserTargetDrawPosition: targetData?.targetMatchUps?.loserTargetDrawPosition,
+      loserTargetSeat: loserTargetSeat(
+        drawDefinition,
+        targetData?.targetMatchUps?.loserMatchUp?.structureId,
+        targetData?.targetMatchUps?.loserTargetDrawPosition,
+        targetData?.targetMatchUps?.loserMatchUp?.drawPositions,
+      ),
       loserMatchUpStatus: targetData?.targetMatchUps?.loserMatchUp?.matchUpStatus,
       loserMatchUpHasResult: hasResult(targetData?.targetMatchUps?.loserMatchUp),
       winner: winnerTarget(targetData?.targetMatchUps?.winnerMatchUp, request.matchUpId, draw),
@@ -704,6 +755,16 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       ),
     },
     draw: {
+      // v1's `updateTallyIfNeeded`, on the structure it reads: the container a round-robin group sits in
+      tallied:
+        !!inContextMatchUp?.containerStructureId ||
+        !!isAdHoc({ structure }) ||
+        !!isLucky({ drawDefinition, structure }),
+      // v1 propagates a BYE into a first-match feed a loser can no longer reach (`propagateUnfillableLoserBye`), set
+      // going by a winner filling the round that feeds it
+      firstMatchFeed: (drawDefinition.links ?? []).some((link) => link.linkCondition === FIRST_MATCHUP),
+      // v1 writes a draw's missing edges before deciding (`ensureGoesTo`): edge repair is S2's `setEdges`
+      storesEdges: !goesTo,
       isAdHoc: !!isAdHoc({ structure }),
       teamRoundRobin: !!(matchUp.tieMatchUps && !matchUp.roundPosition && inContextMatchUp?.containerStructureId),
       includesBye: !!matchUp.drawPositions?.some((position) =>

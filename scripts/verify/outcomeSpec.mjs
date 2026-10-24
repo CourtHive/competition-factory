@@ -27,12 +27,16 @@ const SPEC = 'documentation/docs/concepts/outcome-pipeline.md';
 const TYPES = 'src/mutate/matchUps/outcome/types.ts';
 const REFUSALS = 'src/mutate/matchUps/outcome/refusals.ts';
 
-/** each union, and the spec section (by its heading's number) that must name every member */
-const UNIONS = [{ name: 'Route', section: '3' }];
+/** each union, the file that declares it, and the spec section (by its heading's number) that must name every member */
+const UNIONS = [
+  { name: 'Route', file: TYPES, section: '3' },
+  { name: 'OutcomeOpName', file: 'src/mutate/matchUps/outcome/ops.ts', section: '7.2' },
+  { name: 'AbstainReason', file: 'src/mutate/matchUps/outcome/plan.ts', section: '7.2' },
+];
 
-/** a `## N.` section of the spec, up to the next `## ` heading */
+/** a `## N.` (or `## N.M `) section of the spec, up to the next `## ` heading */
 function sectionOf(spec, number) {
-  const start = spec.search(new RegExp(`^## ${number}\\. `, 'm'));
+  const start = spec.search(new RegExp(`^## ${number.replaceAll('.', '\\.')}\\.? `, 'm'));
   if (start < 0) return undefined;
   const next = spec.slice(start + 1).search(/^## /m);
   return next < 0 ? spec.slice(start) : spec.slice(start, start + 1 + next);
@@ -56,13 +60,13 @@ function refusalRows(source) {
 
 const tableRows = (section) => new Set([...section.matchAll(/^\|\s*(\d+)\s*\|/gm)].map((match) => Number(match[1])));
 
-function check({ spec, types, refusals }) {
+function check({ spec, types, refusals, sources = {}, unions = UNIONS }) {
   const problems = [];
   const named = {};
-  for (const { name, section } of UNIONS) {
-    const members = unionMembers(types, name);
+  for (const { name, file, section } of unions) {
+    const members = unionMembers(sources[file] ?? types, name);
     const text = sectionOf(spec, section);
-    if (!members?.length) problems.push(`${name}: no members found in ${TYPES}`);
+    if (!members?.length) problems.push(`${name}: no members found in ${file}`);
     if (!text) problems.push(`${name}: no § ${section} in ${SPEC}`);
     if (!members?.length || !text) continue;
     named[name] = members.length;
@@ -82,12 +86,14 @@ function check({ spec, types, refusals }) {
   return { problems, named, rows: rows.length, calls };
 }
 
+const ROUTE_ONLY = [{ name: 'Route', file: TYPES, section: '3' }];
+
 function selfTest() {
   const spec =
     '## 2. Refusals\n\n| 1 | a |\n| 2 | b |\n\n## 3. Routes\n\n`winner` and `clear`\n\n## 4. Writes\n\n`swap`\n';
   const types = "export type Route =\n  | 'winner' // directs\n  | 'clear'; // clears\n";
   const refusals = 'refuse(1, X); refuse( 2 , Y);';
-  const quiet = check({ spec, types, refusals });
+  const quiet = check({ spec, types, refusals, unions: ROUTE_ONLY });
   const assert = (ok, what) => {
     if (!ok) {
       console.error(`[verify:outcome-spec] self-test FAILED — ${what}`);
@@ -96,30 +102,39 @@ function selfTest() {
   };
   assert(quiet.problems.length === 0 && quiet.named.Route === 2 && quiet.rows === 2, 'quiet on a complete spec');
   // a member named only outside its section does not count
-  const outside = check({ spec, types: types.replace("'clear'", "'swap'"), refusals });
+  const outside = check({ spec, types: types.replace("'clear'", "'swap'"), refusals, unions: ROUTE_ONLY });
   assert(
     outside.problems.some((p) => p.includes("'swap'")),
     'fires on a member named only in another section',
   );
   assert(
-    check({ spec, types, refusals: refusals + ' refuse(3, Z);' }).problems.some((p) => p.includes('row 3')),
+    check({ spec, types, refusals: refusals + ' refuse(3, Z);', unions: ROUTE_ONLY }).problems.some((p) =>
+      p.includes('row 3'),
+    ),
     'fires on an undocumented row',
   );
   assert(
-    check({ spec, types: 'export type Other = 1;', refusals }).problems.some((p) => p.includes('no members')),
+    check({ spec, types: 'export type Other = 1;', refusals, unions: ROUTE_ONLY }).problems.some((p) =>
+      p.includes('no members'),
+    ),
     'fires on a missing union',
   );
   assert(
-    check({ spec, types, refusals: '' }).problems.some((p) => p.includes('no refuse')),
+    check({ spec, types, refusals: '', unions: ROUTE_ONLY }).problems.some((p) => p.includes('no refuse')),
     'fires on no rows',
   );
   const expression = refusals + ' refuse(cond ? 1 : 2, W);';
   assert(
-    check({ spec, types, refusals: expression }).problems.some((p) => p.includes('as an expression')),
+    check({ spec, types, refusals: expression, unions: ROUTE_ONLY }).problems.some((p) =>
+      p.includes('as an expression'),
+    ),
     'fires on an unparsed row',
   );
   const definition = 'const refuse = (row, error) => ({ row, error });\n' + refusals;
-  assert(check({ spec, types, refusals: definition }).problems.length === 0, 'the definition is not a call');
+  assert(
+    check({ spec, types, refusals: definition, unions: ROUTE_ONLY }).problems.length === 0,
+    'the definition is not a call',
+  );
   console.log(
     '[verify:outcome-spec] self-test OK — fires on an unnamed member, a member named outside its section, an undocumented row, a missing union, no rows and an unparsed row; quiet when complete',
   );
@@ -127,7 +142,13 @@ function selfTest() {
 
 function run() {
   const read = (path) => readFileSync(join(process.cwd(), path), 'utf8');
-  const { problems, named, rows } = check({ spec: read(SPEC), types: read(TYPES), refusals: read(REFUSALS) });
+  const sources = Object.fromEntries(UNIONS.map(({ file }) => [file, read(file)]));
+  const { problems, named, rows } = check({
+    spec: read(SPEC),
+    types: read(TYPES),
+    refusals: read(REFUSALS),
+    sources,
+  });
   if (problems.length) {
     console.error(`[verify:outcome-spec] FAIL — ${problems.length} name(s) v2 uses that the spec does not state:`);
     for (const problem of problems) console.error(`  ${problem}`);
