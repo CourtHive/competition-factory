@@ -7,8 +7,8 @@ import { validMatchUps } from '@Validators/validMatchUp';
 
 // constants and types
 import { MISSING_MATCHUPS, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
-import { BYE } from '@Constants/matchUpStatusConstants';
 import { EventTypeUnion, Tournament } from '@Types/tournamentTypes';
+import { BYE } from '@Constants/matchUpStatusConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 /** an event as bookings read it: its type, and the scheduling policy timing that applies to it */

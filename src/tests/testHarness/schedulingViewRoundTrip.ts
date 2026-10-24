@@ -1,5 +1,5 @@
-import { currentTestSeed } from './seedMathRandom';
 import { afterAll, beforeAll, expect } from 'vitest';
+import { currentTestSeed } from './seedMathRandom';
 import { appendFileSync } from 'node:fs';
 import { relative } from 'node:path';
 

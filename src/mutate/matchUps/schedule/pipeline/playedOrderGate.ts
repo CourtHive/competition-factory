@@ -4,9 +4,9 @@ import { zeroPad } from '@Tools/dateTime';
 
 // constants and types
 import { ANACHRONISM } from '@Constants/errorConditionConstants';
+import type { PlanningView, SchedulingView } from './view';
 import { HydratedMatchUp } from '@Types/hydrated';
 import { ResultType } from '@Types/factoryTypes';
-import type { PlanningView, SchedulingView } from './view';
 import type { SchedulePlan } from './plan';
 
 /**

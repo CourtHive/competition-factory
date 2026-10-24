@@ -1,15 +1,15 @@
+import { EventBookingTimings, generateBookings } from './generateBookings';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
 import { getScheduleTimes } from '@Query/venues/getScheduleTimes';
 import { calculatePeriodLength } from './calculatePeriodLength';
 import { getDateTimeBoundary } from './getTimeBoundary';
-import { EventBookingTimings, generateBookings } from './generateBookings';
 import { xa } from '@Tools/extractAttributes';
 
 // constants and types
 import { ErrorType, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
+import { HydratedCourt, HydratedMatchUp } from '@Types/hydrated';
 import { ScheduleTimesResult } from '@Types/factoryTypes';
 import { Tournament } from '@Types/tournamentTypes';
-import { HydratedCourt, HydratedMatchUp } from '@Types/hydrated';
 
 type GenerateScheduleTimesArgs = {
   /** the courts available on the date, already resolved (`ignoreDisabled` for the date): when given with

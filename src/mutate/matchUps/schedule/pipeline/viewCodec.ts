@@ -34,7 +34,10 @@ export function encodePlanningView(view: PlanningView): string {
   const planning: Record<string, unknown> = {};
   for (const key of Object.keys(PLANNING_VIEW_KEYS) as (keyof PlanningView)[]) planning[key] = view[key];
   const upstream = Object.fromEntries(
-    Object.entries(view.reachability.upstream).map(([matchUpId, ids]) => [matchUpId, [...ids].sort()]),
+    Object.entries(view.reachability.upstream).map(([matchUpId, ids]) => [
+      matchUpId,
+      [...ids].sort((a, b) => a.localeCompare(b, 'en')),
+    ]),
   );
   planning.reachability = { ...view.reachability, upstream } satisfies EncodedReachability;
   return JSON.stringify(planning);
