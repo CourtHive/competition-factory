@@ -988,6 +988,14 @@ export const SCHEDULED_MATCHUPS = {
   code: 'ERR_SCHEDULED_MATCHUPS' as const,
 } satisfies ErrorType;
 
+/**
+ * A settle pass reached its bound with work still to do (F9 (i), CA 2026-10-19 and 2026-10-24). Not reached on any of
+ * ~97,000 census schedules; the refusal is the bound's honest report, where it used to stop silently.
+ */
+export const SETTLE_BOUND_REACHED = {
+  message: 'A settle pass reached its bound with work still to do',
+  code: 'ERR_SETTLE_BOUND_REACHED' as const,
+} satisfies ErrorType;
 export const SCORES_PRESENT = {
   message: 'Scores present',
   code: 'ERR_SCORES_PRESENT' as const,
@@ -1207,6 +1215,7 @@ export const errorConditionConstants = {
   SCHEDULED_MATCHUPS,
   SCORES_PRESENT,
   SEEDSCOUNT_GREATER_THAN_DRAW_SIZE,
+  SETTLE_BOUND_REACHED,
   ADDITIONAL_SEEDS_EXHAUSTED,
   STAGE_SEQUENCE_LIMIT,
   STRUCTURE_NOT_FOUND,

@@ -360,13 +360,25 @@ After the write, and only on success:
     result in a type that admits none, so a release that one day declares an error does not compile.
   - `reconcileScoredTimes` cannot fail by construction. Its notice's only error is a missing matchUp,
     which the pass's guard keeps from reaching it (`settlePassesCannotFail.test.ts`).
-  - `reconcileMissedLinkAdvancements` stays **open** (outcome v2 executor plan, "v1 errors handed to v2").
-    `directWinner` can return an error there: a target matchUp with no free slot
-    (`ERR_EXISTING_POSITION_ASSIGNMENT`), or one from the advance it makes onward. The pass drops it, so it
-    is never a refusal; it is known only once the cascade has written, and whether a placement will fail
-    depends on `yieldSquattingPropagatedBye`, which can itself write before it decides, so no pure check
-    can be asked for it in advance. Reached 41 times over the suite and the frozen census windows,
-    never with an error (2026-10-22). It is not made a refusal: that would be an error after a write.
+  - `reconcileMissedLinkAdvancements` **returns** the error of the direction it makes, and the call is
+    refused on it (CA, 2026-10-24). `directWinner` can return one there: a target matchUp with no free slot
+    (`ERR_EXISTING_POSITION_ASSIGNMENT`), or one from the advance it makes onward. It is known only once the
+    cascade has written, and whether a placement will fail depends on `yieldSquattingPropagatedBye`, which
+    can itself write before it decides, so no pure check can be asked for it in advance. It was dropped
+    until 2026-10-24; it was never reached with an error over the suite and the frozen census windows
+    (2026-10-22), nor over ~97,000 census schedules (settle telemetry, 2026-10-24). A refusal here is an
+    error after a write, accepted because it is not reached; v2 plans it before its first write
+    (`aSettlePassReportsWhatItCannotDo.test.ts`).
+- **A settle loop that reaches its bound with work left refuses the call** with `SETTLE_BOUND_REACHED`,
+  naming the loop (F9 (i), CA 2026-10-19 and 2026-10-24). The bounded loops are `propagateExitFrom`,
+  `sendHeldExitsOn`, `produceStrandedConvergences`, `crossLinksThroughByes` and `reconcileLinkAdvancements`;
+  their limits are `SETTLE_PASS_LIMITS`. Each asks once more whether work is left before refusing, so a draw
+  needing exactly its limit is not refused. None was reached on ~97,000 census schedules; like the dropped
+  error above, a refusal at a bound is an error after a write, accepted because it is not reached, and v2
+  plans it before its first write (`aSettleLoopAtItsBoundRefuses.test.ts`). **The one exception is the
+  forward settle** (`settleForwardConsequences`): it is a repair loop that a record missing many winner
+  advancements reaches, so it keeps its success with a `FORWARD_SETTLE_EXHAUSTED` warning naming the matchUp
+  still owed, and the next call settles the rest (CA, 2026-10-24).
 
   Measured 2026-10-22 over the suite and the frozen census windows w1, w2 and de: the release was reached
   4 times and the notice 3,922 times, never with an error.

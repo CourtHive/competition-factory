@@ -14,6 +14,7 @@ import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdra
 import { getByeCrossing, matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
@@ -52,6 +53,7 @@ import {
   ErrorType,
   MISSING_MATCHUP,
   MISSING_STRUCTURE,
+  SETTLE_BOUND_REACHED,
 } from '@Constants/errorConditionConstants';
 
 // types
@@ -3418,12 +3420,17 @@ function produceStrandedConvergences({
   event?: Event;
 }): (ResultType & { produced?: boolean }) | undefined {
   const produced = new Set<string>();
-  for (let pass = 0; pass < 16; pass++) {
+  const done = () => (produced.size ? { ...SUCCESS, produced: true } : undefined);
+  const nextStranded = () => {
     const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
     const stranded = inContextDrawMatchUps.find(
       (matchUp) => !produced.has(matchUp.matchUpId) && strandsItsExit({ inContextDrawMatchUps, matchUpsMap, matchUp }),
     );
-    if (!stranded) return produced.size ? { ...SUCCESS, produced: true } : undefined;
+    return { inContextDrawMatchUps, stranded };
+  };
+  for (let pass = 0; pass < SETTLE_PASS_LIMITS.strandedConvergences; pass++) {
+    const { inContextDrawMatchUps, stranded } = nextStranded();
+    if (!stranded) return done();
     produced.add(stranded.matchUpId);
     // what it sent on as a single exit, before an arrival converged it, is withdrawn first, as `convergeCarriedExit` does
     applyWithdrawnExits({
@@ -3477,9 +3484,10 @@ function produceStrandedConvergences({
     });
     if (served?.error) return served;
   }
-  // every exit from the loop above returns: reaching here is the bound (F9), recorded for the census
+  // at the bound: refused only if a convergence is still stranded (F9 (i), CA 2026-10-24), and recorded for the census
+  if (!nextStranded().stranded) return done();
   recordSettleEvent({ kind: 'bound', site: 'produceStrandedConvergences', detail: `${produced.size} produced` });
-  return produced.size ? { ...SUCCESS, produced: true } : undefined;
+  return { error: SETTLE_BOUND_REACHED, info: 'produceStrandedConvergences' };
 }
 
 function strandsItsExit({
@@ -3546,9 +3554,7 @@ function sendHeldExitsOn({
   // the view the last pass found nothing to carry in — nothing has been written since it was taken
   let settledDrawMatchUps: HydratedMatchUp[] | undefined;
 
-  // each pass can make the next matchUp along a holder in its turn; a matchUp is carried from once
-  let pass = 0;
-  for (; pass < 16; pass++) {
+  const nextHeld = () => {
     const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
     let held: HeldExit | undefined;
     for (const matchUp of inContextDrawMatchUps) {
@@ -3556,6 +3562,13 @@ function sendHeldExitsOn({
       held = getHeldExit({ inContextDrawMatchUps, drawDefinition, matchUpsMap, matchUp });
       if (held) break;
     }
+    return { inContextDrawMatchUps, held };
+  };
+
+  // each pass can make the next matchUp along a holder in its turn; a matchUp is carried from once
+  let pass = 0;
+  for (; pass < SETTLE_PASS_LIMITS.heldExits; pass++) {
+    const { inContextDrawMatchUps, held } = nextHeld();
     if (!held) {
       settledDrawMatchUps = inContextDrawMatchUps;
       break;
@@ -3583,8 +3596,16 @@ function sendHeldExitsOn({
     });
     if (result?.error) return decorateResult({ result, stack });
   }
-  // a `break` leaves the counter short of the bound: at it, a held exit was still found (F9), recorded for the census
-  if (pass === 16) recordSettleEvent({ kind: 'bound', site: 'sendHeldExitsOn' });
+  // a `break` leaves the counter short of the bound. At it, refused only if a held exit is still found (F9 (i), CA
+  // 2026-10-24), and recorded for the census; the view asked is then the settled one the crossing below reads
+  if (pass === SETTLE_PASS_LIMITS.heldExits) {
+    const last = nextHeld();
+    if (last.held) {
+      recordSettleEvent({ kind: 'bound', site: 'sendHeldExitsOn' });
+      return { error: SETTLE_BOUND_REACHED, info: 'sendHeldExitsOn' };
+    }
+    settledDrawMatchUps = last.inContextDrawMatchUps;
+  }
 
   const crossed = crossLinksThroughByes({
     settledDrawMatchUps,
@@ -3638,13 +3659,18 @@ function crossLinksThroughByes({
   // a view is current until something is written; `undefined` means derive one
   let currentDrawMatchUps: HydratedMatchUp[] | undefined = settledDrawMatchUps;
 
-  let pass = 0;
-  for (; pass < 16; pass++) {
+  const nextCrossing = () => {
     const inContextDrawMatchUps =
       currentDrawMatchUps ?? getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
     const crossing = inContextDrawMatchUps
       .map((matchUp) => getByeCrossing({ inContextDrawMatchUps, drawDefinition, matchUp }))
       .find(Boolean);
+    return { inContextDrawMatchUps, crossing };
+  };
+
+  let pass = 0;
+  for (; pass < SETTLE_PASS_LIMITS.linkCrossings; pass++) {
+    const { inContextDrawMatchUps, crossing } = nextCrossing();
     if (!crossing) break;
     if ('error' in crossing) return decorateResult({ result: crossing, stack });
 
@@ -3679,8 +3705,12 @@ function crossLinksThroughByes({
     // derived after this pass's write, and nothing is written before the next pass reads it
     currentDrawMatchUps = after;
   }
-  // a `break` leaves the counter short of the bound: at it, a crossing was still found (F9), recorded for the census
-  if (pass === 16) recordSettleEvent({ kind: 'bound', site: 'crossLinksThroughByes' });
+  // a `break` leaves the counter short of the bound. At it, refused only if a crossing is still found (F9 (i), CA
+  // 2026-10-24), and recorded for the census
+  if (pass === SETTLE_PASS_LIMITS.linkCrossings && nextCrossing().crossing) {
+    recordSettleEvent({ kind: 'bound', site: 'crossLinksThroughByes' });
+    return { error: SETTLE_BOUND_REACHED, info: 'crossLinksThroughByes' };
+  }
 
   return { ...SUCCESS };
 }
