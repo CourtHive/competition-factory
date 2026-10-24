@@ -291,7 +291,8 @@ export function observeMutation({
   let result: any;
   let thrown: string | undefined;
   observer?.attempted();
-  enableSettleTelemetry();
+  // a pass's writes cost two record captures per pass: recorded only for a measurement run (SETTLE_PASSES=1)
+  enableSettleTelemetry(true, { passes: process.env.SETTLE_PASSES === '1' });
   try {
     result = tournamentEngine.setMatchUpStatus({
       propagateExitStatus,

@@ -1,5 +1,6 @@
 import {
   enableSettleTelemetry,
+  observePass,
   recordSettleEvent,
   takeSettleEvents,
 } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
@@ -36,4 +37,18 @@ it('enabling again starts from nothing', () => {
   recordSettleEvent({ kind: 'bound', site: 'a' });
   enableSettleTelemetry();
   expect(takeSettleEvents()).toEqual([]);
+});
+
+it('records a pass that writes only when passes are enabled, with the paths it changed', () => {
+  const draw: any = { drawId: 'd', structures: [] };
+  enableSettleTelemetry();
+  observePass('quiet', draw, () => undefined);
+  observePass('writer', draw, () => (draw.updated = true));
+  expect(takeSettleEvents()).toEqual([]);
+
+  enableSettleTelemetry(true, { passes: true });
+  observePass('quiet', draw, () => undefined);
+  const result = observePass('writer', draw, () => (draw.extra = 1));
+  expect(result).toEqual(1);
+  expect(takeSettleEvents()).toEqual([{ kind: 'wrote', site: 'writer', detail: '1 paths' }]);
 });
