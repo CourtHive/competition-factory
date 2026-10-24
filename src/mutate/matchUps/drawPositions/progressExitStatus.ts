@@ -29,16 +29,33 @@ import { SUCCESS } from '@Constants/resultConstants';
 // After a participant advances through a BYE, find the matchUp they advanced
 // into — the nearest later round in the same structure that now holds them — so
 // the exit status can be re-propagated onto it.
+/**
+ * Where a carrier who passed a BYE now stands: the nearest later round of the holder's own structure that holds them,
+ * else the matchUp the holder's own winner edge leads to in ANOTHER structure, when they are seated there.
+ *
+ * A structure's last round has nowhere further in its own structure, but a link can take its winner on. In
+ * DOUBLE_ELIMINATION the Backdraw final's winner goes on into the grand final. A participant who lost the Main
+ * structure's final by walkover and dropped into a Backdraw final holding a BYE passes the BYE across that link, and
+ * the walkover goes with them: the grand final is a WALKOVER won by the opponent (CA ruling 2026-10-23, census
+ * 9304724, DOUBLE_ELIMINATION 8/6). Searching the holder's structure alone stopped the carry at the BYE, and the grand
+ * final stood TO_BE_PLAYED.
+ */
 function findAdvancementMatchUp(inContextMatchUps, currentMatchUp, participantId) {
-  return inContextMatchUps
+  const holds = (m) => m.sides?.some((s) => s.participantId === participantId);
+  const later = inContextMatchUps
     ?.filter(
       (m) =>
         m.matchUpId !== currentMatchUp.matchUpId &&
         m.structureId === currentMatchUp.structureId &&
         m.roundNumber > currentMatchUp.roundNumber &&
-        m.sides?.some((s) => s.participantId === participantId),
+        holds(m),
     )
     .sort((a, b) => a.roundNumber - b.roundNumber)[0];
+  if (later) return later;
+  const onward = currentMatchUp.winnerMatchUpId
+    ? inContextMatchUps?.find((m) => m.matchUpId === currentMatchUp.winnerMatchUpId)
+    : undefined;
+  return onward && onward.structureId !== currentMatchUp.structureId && holds(onward) ? onward : undefined;
 }
 
 export function progressExitStatus({
