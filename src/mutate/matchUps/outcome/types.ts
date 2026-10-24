@@ -170,6 +170,7 @@ export type OutcomeView = {
     loserMatchUpDrawPositions?: number[];
     /** wins each side's drawPosition holds in this structure, this matchUp left out */
     priorWins: { 1: number; 2: number };
+    priorWinsBefore: { 1: number; 2: number };
     /** losses each side's participant holds in the draw, this matchUp and its winnerMatchUp left out */
     priorLosses: { 1: number; 2: number };
   };

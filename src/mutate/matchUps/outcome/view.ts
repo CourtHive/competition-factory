@@ -337,9 +337,13 @@ function priorLosses(
 function priorWins(
   inContextDrawMatchUps: HydratedMatchUp[],
   inContextMatchUp?: HydratedMatchUp,
+  beforeThisRound = false,
 ): { 1: number; 2: number } {
   const sourceMatchUps = teamLevelMatchUps(inContextDrawMatchUps).filter(
-    (m) => m.structureId === inContextMatchUp?.structureId && m.matchUpId !== inContextMatchUp?.matchUpId,
+    (m) =>
+      m.structureId === inContextMatchUp?.structureId &&
+      m.matchUpId !== inContextMatchUp?.matchUpId &&
+      (!beforeThisRound || (m.roundNumber ?? 0) < (inContextMatchUp?.roundNumber ?? 0)),
   );
   const wins = (sideNumber: number) => {
     const drawPosition = inContextMatchUp?.sides?.find((side) => side.sideNumber === sideNumber)?.drawPosition;
@@ -425,6 +429,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       sideParticipantIds: {},
       sideDrawPositions: {},
       priorWins: { 1: 0, 2: 0 },
+      priorWinsBefore: { 1: 0, 2: 0 },
       priorLosses: { 1: 0, 2: 0 },
       loserMatchUpHasResult: false,
       loserMatchUpCarriesExit: false,
@@ -691,6 +696,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         (position): position is number => typeof position === 'number',
       ),
       priorWins: priorWins(inContextDrawMatchUps, inContextMatchUp),
+      priorWinsBefore: priorWins(inContextDrawMatchUps, inContextMatchUp, true),
       priorLosses: priorLosses(
         inContextDrawMatchUps,
         inContextMatchUp,

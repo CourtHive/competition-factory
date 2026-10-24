@@ -241,6 +241,12 @@ After the write, and only on success:
    (`removeDirectedParticipants`), and that is where `ERR_ACTIVE_DRAW_POSITION` can arise. A loser taken
    back leaves every seat their loss reached, a link further on included, and no exit stays awarded to
    a seat so emptied (census A1, `aSeatEmptiedFurtherOnLeavesNoAwardBehind`).
+   **A first-match loser feed** (the link's condition `FIRST_MATCHUP`) takes the loser only if the match they lost
+   was their first played: no win of their own in the source structure. For a swap (`allowChangePropagation`
+   with a different winner) the wins counted are those in the rounds **before** the swapped one. A swap rewrites
+   the advancing drawPosition in every later matchUp, so the new loser loses their later wins with it; counted,
+   those wins would keep out a loser whose first match this was (census w1 9000582 and nine more FMLC seeds,
+   `aSwapCountsOnlyTheRoundsBeforeIt`; v1's `reconcileFedLoserEligibility`).
    **A winner directed across a link is seated once** (2026-10-22). A winner who already holds a seat in
    the target matchUp is left there and nothing is written: a direction can arrive twice in one call (a
    DOUBLE_ELIMINATION Decider seated from the Main final, then the same winner re-advanced by a correction

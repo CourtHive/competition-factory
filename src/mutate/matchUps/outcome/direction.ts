@@ -175,7 +175,8 @@ function planProducedExit(request: OutcomeRequest, view: OutcomeView): Direction
  * Exit carrying is left out: a swap that also changes an exit is not modelled.
  */
 function planSwap(request: OutcomeRequest, view: OutcomeView): DirectionPlan | undefined {
-  const plan = planDirection(request, view, 'winner');
+  const swapped = { ...view, targets: { ...view.targets, priorWins: view.targets.priorWinsBefore } };
+  const plan = planDirection(request, swapped, 'winner');
   if (!plan?.loser) return plan;
   const { exit: _exit, converged: _converged, carriedPast: _carriedPast, ...loser } = plan.loser;
   return { ...plan, loser };
