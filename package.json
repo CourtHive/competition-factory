@@ -219,7 +219,7 @@
     "agadoo": "^3.0.0",
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1",
-    "body-parser": "2.3.0",
+    "body-parser": "2.4.0",
     "bson": "7.3.3",
     "chalk": "6.0.1",
     "esbuild": "0.28.2",
