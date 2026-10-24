@@ -24,7 +24,8 @@ import {
 
 type Json = Record<string, unknown>;
 
-export type ShadowResult = { equal: true } | { equal: false; path: string; v1: string; v2: string };
+/** equal, with the shadow-applied record (what the view oracle hydrates), or the first difference */
+export type ShadowResult = { equal: true; shadow: Json } | { equal: false; path: string; v1: string; v2: string };
 
 const shown = (value: unknown) => (value === undefined ? 'absent' : JSON.stringify(value)?.slice(0, 160));
 
@@ -56,7 +57,7 @@ export function compareShadow({
   const v1 = JSON.parse(captureRecord(record)) as Json;
   const v2 = JSON.parse(captureRecord(shadow)) as Json;
   const [first] = generatePatch(v2, v1);
-  if (!first) return { equal: true };
+  if (!first) return { equal: true, shadow: v2 };
   const at = (root: Json) =>
     first.path
       .split('/')
