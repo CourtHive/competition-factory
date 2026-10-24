@@ -481,13 +481,15 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
   if (!drawDefinition || !request.matchUpId) return empty;
 
   const matchUpsMap = args.matchUpsMap ?? getMatchUpsMap({ drawDefinition });
-  const { matchUps: inContextDrawMatchUps } = getAllDrawMatchUps({
-    tournamentRecord,
-    inContext: true,
-    drawDefinition,
-    matchUpsMap,
-    event,
-  });
+  const inContextDrawMatchUps =
+    args.inContextDrawMatchUps ??
+    getAllDrawMatchUps({
+      tournamentRecord,
+      inContext: true,
+      drawDefinition,
+      matchUpsMap,
+      event,
+    }).matchUps;
   const matchUp = matchUpsMap.drawMatchUps.find((m) => m.matchUpId === request.matchUpId);
   const inContextMatchUp = inContextDrawMatchUps?.find((m) => m.matchUpId === request.matchUpId);
   if (!matchUp || !inContextDrawMatchUps) return empty;
@@ -663,6 +665,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
 
   return {
     ...empty,
+    inContextDrawMatchUps,
     formatRecognized: formatRecognizedFor(
       request.matchUpFormat,
       appliedFormat(matchUp, structure, drawDefinition, event),

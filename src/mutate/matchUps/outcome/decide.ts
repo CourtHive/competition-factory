@@ -178,7 +178,8 @@ function planDual(args: BuildViewArgs, view: OutcomeView): DualPlan | undefined 
     matchUpId: line.dualMatchUpId,
     winningSide,
   };
-  const dualView = buildOutcomeView({ ...args, request });
+  // the dual's entry in the line's own hydration: the dual's view takes no second one (S1, executor plan § 3.2)
+  const dualView = buildOutcomeView({ ...args, request, inContextDrawMatchUps: view.inContextDrawMatchUps });
   return { matchUpId: line.dualMatchUpId, winningSide, direction: planDirection(request, dualView, 'winner') };
 }
 

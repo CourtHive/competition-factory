@@ -427,9 +427,8 @@ it.skipIf(!enabled)(
  *   hydration, and no map (the view takes `setMatchUpStatus`'s). Until S2 every call is one v2
  *   abstains from, which is the bound G3 sets for it (v1 + 1). Under `differential` (the
  *   checkpoint gate's mode) it may cost one more: the read of the draw after v1 ran, shared by every
- *   check. The TEAM lines arm alone may cost one beyond that: the second view `planDual` builds for a
- *   line that decides its dual (76 of its 228 calls). S1 removes that view, and the exception with it.
- *   Each allowance is the measured cost, so one more hydration per call fails on every arm (review of
+ *   check. Since S1 a dual's view reuses its line's hydration, so no arm needs an exception. Each
+ *   allowance is the measured cost, so one more hydration per call fails on every arm (review of
  *   #5741: at +3 for differential, eight arms sat one per call under the ceiling).
  * - The baseline is written under `v1` only, and a census whose arms or call counts differ from it
  *   fails: those are a different census, not a cheaper one.
@@ -484,10 +483,7 @@ it.skipIf(!gated)(
         const now = measured[arm];
         expect(now.calls, `${arm}: setMatchUpStatus calls`).toEqual(ceilings.calls);
         for (const { name, allowance: allowed } of GATED) {
-          // `planDual`'s second view, under differential, on the one arm whose lines decide their dual
-          const planDual =
-            mode === OUTCOME_PIPELINE_DIFFERENTIAL && name === 'hydrations' && arm.startsWith('TEAM lines') ? 1 : 0;
-          const allowance = allowed[mode] + planDual;
+          const allowance = allowed[mode];
           const limit = {
             total: ceilings[name].total + allowance * ceilings.calls,
             worst: ceilings[name].worst + allowance,

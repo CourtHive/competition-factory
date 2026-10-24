@@ -1,6 +1,5 @@
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
-import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { positionAssignmentsOf } from '@Acquire/structureMembers';
+import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { nowIso } from '@Tools/clock';
 
 // constants and types
@@ -10,6 +9,7 @@ import type {
   MatchUpStatusCodeElement,
   MatchUpStatusUnion,
   Score,
+  Structure,
 } from '@Types/tournamentTypes';
 
 /**
@@ -95,13 +95,31 @@ function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMat
 }
 
 /**
+ * The draw's matchUps (a round robin's groups included) and its top-level structures, by id. A walk of what this draw
+ * holds, not `getMatchUpsMap`: the draw folded into is a shadow COPY in `differential`, so there is no map of it to
+ * reuse, and the pipeline's own map (the one build `verify:hydrations` holds to v1) is not rebuilt.
+ */
+function indexDraw(drawDefinition: DrawDefinition) {
+  const matchUps = new Map<string, MatchUp>();
+  const structures = new Map<string, Structure>();
+  const visit = (structure: Structure) => {
+    for (const matchUp of matchUpsOf(structure) ?? []) matchUps.set(matchUp.matchUpId, matchUp);
+    for (const child of structuresOf(structure) ?? []) visit(child);
+  };
+  for (const structure of drawDefinition.structures ?? []) {
+    structures.set(structure.structureId, structure);
+    visit(structure);
+  }
+  return { matchUps, structures };
+}
+
+/**
  * Fold `ops`, in order, into `drawDefinition`: the live stored draw, or a stored-shape copy of it. Ids resolve against
  * the draw given, never against a hydrated copy. An op naming something the draw does not hold is a planner defect,
  * returned rather than ignored, so a shadow apply cannot pass by writing nothing.
  */
 export function applyOutcomeOps(drawDefinition: DrawDefinition, ops: OutcomeOp[]): { error?: string } {
-  const matchUps = new Map(getMatchUpsMap({ drawDefinition }).drawMatchUps.map((m) => [m.matchUpId, m]));
-  const structures = new Map((drawDefinition.structures ?? []).map((s) => [s.structureId, s]));
+  const { matchUps, structures } = indexDraw(drawDefinition);
   for (const op of ops) {
     if (op.op === 'setMatchUpResult' || op.op === 'setMatchUpDrawPositions') {
       const matchUp = matchUps.get(op.matchUpId);

@@ -1,5 +1,6 @@
 import type { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
 import type { ErrorType } from '@Constants/errorConditionConstants';
+import type { HydratedMatchUp } from '@Types/hydrated';
 import type {
   DrawDefinition,
   Event,
@@ -60,6 +61,8 @@ export type Refusal = {
 /** what the refusal function may ask of the draw; built once per call by `buildOutcomeView` */
 export type OutcomeView = {
   hasDrawDefinition: boolean;
+  /** the one hydration the view was built from: another view of the same draw in the same call reuses it */
+  inContextDrawMatchUps?: HydratedMatchUp[];
   /** the call's `matchUpFormat` parses (true when none was given) */
   formatRecognized: boolean;
   drawType?: string;
@@ -241,6 +244,8 @@ export type BuildViewArgs = {
   policyDefinitions?: PolicyDefinitions;
   /** the caller's map of the draw (`setMatchUpStatus` builds one for the whole call), so the view does not build its own */
   matchUpsMap?: MatchUpsMap;
+  /** a hydration of this draw already taken in this call (the line's, for its dual's view), so the view takes no other */
+  inContextDrawMatchUps?: HydratedMatchUp[];
   event?: Event;
   request: OutcomeRequest;
 };
