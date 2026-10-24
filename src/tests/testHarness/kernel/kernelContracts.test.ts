@@ -1,5 +1,7 @@
 import { directAdapter, kernelOperations, serializedAdapter, validateCases } from './kernel';
 import type { KernelAdapter, KernelCase, KernelOperation, KernelResult } from './kernel';
+import { batchedAdapter, externalAdapter, stdioCommand } from './externalAdapter';
+import schedulingCases from './cases/scheduling.json';
 import { canonicalJson } from '@Tools/canonicalJson';
 import grammarCases from './cases/grammar.json';
 import scoringCases from './cases/scoring.json';
@@ -10,9 +12,21 @@ import { describe, expect, it } from 'vitest';
  * the rule it names (the minimum-points rule, the matchUpFormat grammar), not recorded from the engine, so a case
  * can catch this implementation being wrong, and a second implementation can run the same file through its own
  * adapter. The deliberately wrong adapters at the end prove the cases can tell a wrong answer from a right one.
+ *
+ * Besides the in-process adapters, every case runs through the EXTERNAL protocol (`externalAdapter.ts`): this
+ * implementation bundled and run as its own process (`stdio.ts`), one batch per run. `KERNEL_EXTERNAL_ADAPTER=<command>`
+ * adds any other implementation that speaks the protocol.
  */
-const cases = [...scoringCases, ...grammarCases] as KernelCase[];
-const adapters = [directAdapter(), serializedAdapter()];
+const cases = [...scoringCases, ...grammarCases, ...schedulingCases] as KernelCase[];
+const requests = cases.map(({ operation, input }) => ({ operation, input }));
+
+const externalCommand = process.env.KERNEL_EXTERNAL_ADAPTER;
+const adapters = [
+  directAdapter(),
+  serializedAdapter(),
+  batchedAdapter(externalAdapter(stdioCommand(), 'stdio'), requests),
+  ...(externalCommand ? [batchedAdapter(externalAdapter(externalCommand), requests)] : []),
+];
 
 // What a case pins: a value exactly; an error or a refusal by its code or reason (any detail is diagnostic).
 function observed(result: KernelResult) {
@@ -115,9 +129,41 @@ describe('the seam', () => {
   });
 });
 
+describe('the external protocol', () => {
+  it('answers a failed command, or a missing answer, with an exception for every request: never a value', () => {
+    const [request] = requests;
+    expect(
+      externalAdapter('exit 3')
+        .invokeAll([request, request])
+        .map(({ kind }) => kind),
+    ).toEqual(['exception', 'exception']);
+    expect(externalAdapter('true').invoke(request.operation, request.input)).toEqual({
+      kind: 'exception',
+      message: 'no answer for request 0',
+    });
+    expect(externalAdapter('echo nope').invoke(request.operation, request.input)).toEqual({
+      kind: 'exception',
+      message: 'answer 0 is not JSON',
+    });
+  });
+});
+
 describe('negative controls: the cases reject a wrong implementation', () => {
+  const scheduling = schedulingCases as KernelCase[];
   const scoring = scoringCases as KernelCase[];
   const grammar = grammarCases as KernelCase[];
+
+  it('a planner that ignores the played order fails the played-order case, and only it', () => {
+    const plan = kernelOperations['kernel.scheduling.plan@1'];
+    const ignoresPlayedOrder: KernelOperation = {
+      ...plan,
+      run: (input) => plan.run({ ...input, view: { ...(input.view as object), playedOrderFacts: {} } }),
+    };
+    const wrong = directAdapter({ ...kernelOperations, 'kernel.scheduling.plan@1': ignoresPlayedOrder });
+    expect(failures(wrong, scheduling).map((c) => c.caseId)).toEqual([
+      'scheduling.plan.played-source-on-a-later-date.v1',
+    ]);
+  });
 
   it('the pre-fix points-to-game rule (trailing side needs target minus its points, or 2 at deuce) fails', () => {
     const underCount: KernelOperation = {

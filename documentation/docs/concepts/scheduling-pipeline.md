@@ -279,6 +279,15 @@ the calls that decide placements; the bulk and reschedule mutations write the ti
    rest of § 2).
 5. **C7: a round of mixed formats is timed by its first matchUp's format** (§ 4, step 2). Should each matchUp take its
    own format's minutes?
+6. **The first Garman period is counted twice.** The slots number periods from 0 at the venue's opening, give period 0
+   the courts available (`C`), and apply `(P − 1)` to the period index from period 1 on, so period 1 also totals `C`.
+   With one court, `T` = 90 and `L` = 30, the second matchUp therefore starts at 12:00, where `P` counted from 1 at the
+   opening gives 11:30, the moment the first is expected to end. Pinned as the engine behaves by
+   `scheduling.plan.garman-one-court.v1` (kernel cases). Is the extra period the rule?
+7. **Request conflicts are reported beside the dates.** `requestConflicts` is keyed by date, but each conflict found is
+   added to the same object under its `requestId` (`{ request, scheduleTimes, matchUpIds }`), so the result mixes
+   date keys and request keys. Pinned by `scheduling.plan.person-request-on-a-placed-side.v1`. Should conflicts sit
+   under their date?
 
 ## Related
 

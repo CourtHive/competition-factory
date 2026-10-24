@@ -1,6 +1,7 @@
-import { decodePlanningView, encodePlanningView } from '@Mutate/matchUps/schedule/pipeline/viewCodec';
+import { decodePlanningView, planningViewData } from '@Mutate/matchUps/schedule/pipeline/viewCodec';
 import { buildSchedulingView } from '@Mutate/matchUps/schedule/pipeline/view';
 import { planSchedule } from '@Mutate/matchUps/schedule/pipeline/plan';
+import { overTheWire } from '../kernel/kernel';
 
 // types
 import { TournamentRecords } from '@Types/factoryTypes';
@@ -15,7 +16,24 @@ import { TournamentRecords } from '@Types/factoryTypes';
  */
 export type ViewRoundTrip =
   | { planned: false }
-  | { planned: true; samePlan: boolean; viewUnchanged: boolean; readsRecords: boolean; bytes: number };
+  | {
+      planned: true;
+      samePlan: boolean;
+      viewUnchanged: boolean;
+      readsRecords: boolean;
+      bytes: number;
+      /** the call as a `kernel.scheduling.plan@1` case: the view as plain data, the plan options, and the plan */
+      harvest: { view: Record<string, unknown>; options: Record<string, unknown>; plan: unknown };
+    };
+
+/** the call's parameters the planner itself takes; the rest (dates, courts) shaped the view */
+const PLAN_OPTION_KEYS = [
+  'checkPotentialRequestConflicts',
+  'excludeNoDateCompleted',
+  'clearScheduleDates',
+  'excludePriorDates',
+  'periodLength',
+];
 
 export function checkViewRoundTrip({
   tournamentRecords,
@@ -27,14 +45,19 @@ export function checkViewRoundTrip({
   const view = buildSchedulingView({ ...params, tournamentRecords });
   if ('error' in view) return { planned: false };
 
-  const text = encodePlanningView(view);
+  const data = planningViewData(view);
+  const text = JSON.stringify(data);
   const direct = planSchedule({ ...params, view });
   const decoded = decodePlanningView(text);
   const viaJson = planSchedule({ ...params, view: decoded });
+  const options = Object.fromEntries(
+    PLAN_OPTION_KEYS.filter((key) => params[key] !== undefined).map((key) => [key, params[key]]),
+  );
 
   return {
+    harvest: { view: JSON.parse(text), options, plan: overTheWire(direct) },
     samePlan: JSON.stringify(direct) === JSON.stringify(viaJson),
-    viewUnchanged: encodePlanningView(view) === text,
+    viewUnchanged: JSON.stringify(planningViewData(view)) === text,
     readsRecords: 'tournamentRecords' in decoded,
     bytes: text.length,
     planned: true,
