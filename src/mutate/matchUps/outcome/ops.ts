@@ -28,7 +28,7 @@ import type {
  *
  * STAMPS ARE F2 (i): one per TOUCHED entity per call, the matchUp, its own structure and the draw. v1 still stamps once
  * per notice and every top-level structure on each, so until Phase C changes v1 the `differential` shadow comparison
- * normalises stamps (debate-ruled 2026-10-24, pending CA review; see `shadow.ts`). The values v2 writes are held to
+ * normalises stamps (CA, 2026-10-24; see `shadow.ts`). The values v2 writes are held to
  * F2 (i) by their own tests, not by that comparison.
  */
 export type OutcomeOp =

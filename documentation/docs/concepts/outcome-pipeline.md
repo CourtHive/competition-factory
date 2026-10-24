@@ -540,8 +540,8 @@ the slices that follow:
 | `clock`        | is made outside an engine call, with no captured instant, so the timestamps a write takes cannot be reproduced | none: production calls go through the engine |
 
 **In `differential`**, a complete plan is folded into the record as it stood before v1 ran and compared with the record
-v1 wrote. Until Phase C's F2 lands in v1, stamps are normalised in that comparison (debate-ruled 2026-10-24, pending
-CA review): a structure's `updatedAt` is left out, and a matchUp's and the draw's are compared as present or absent.
+v1 wrote. Until Phase C's F2 lands in v1, stamps are normalised in that comparison (CA, 2026-10-24, a temporary
+blind spot): a structure's `updatedAt` is left out, and a matchUp's and the draw's are compared as present or absent.
 v1 stamps once per notice and every top-level structure on each, so no value comparison can pass yet.
 
 ## 8. What the corpus pins

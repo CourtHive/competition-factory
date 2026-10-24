@@ -18,7 +18,7 @@ import type { OutcomeOp } from './ops';
  * record v1 wrote. A difference is a divergence: either the plan missed a write or v1 made one the spec does not
  * state.
  *
- * STAMPS ARE NORMALISED until Phase C's F2 lands in v1 (debate-ruled 2026-10-24, pending CA review). v1 stamps once
+ * STAMPS ARE NORMALISED until Phase C's F2 lands in v1 (CA, 2026-10-24, a temporary blind spot). v1 stamps once
  * per notice, and every top-level structure on each, so its values cannot equal F2 (i)'s:
  *  - a structure's `updatedAt` is left out entirely, presence included (a stated blind spot);
  *  - a matchUp's and the draw's `updatedAt` are compared as present or absent, not by value.

@@ -42,7 +42,7 @@ export type AbstainReason =
   | 'tallied' // a round robin, ad hoc or lucky structure: the tally (S3)
   | 'schedule' // the call carries a schedule (§ 3.5.8)
   | 'notes' // the call carries notes
-  | 'unchanged' // the write changes nothing but stamps, which S1's shadow comparison cannot see (debate-ruled)
+  | 'unchanged' // the write changes nothing but stamps, which S1's shadow comparison cannot see (CA, 2026-10-24)
   | 'no-record' // the draw is not held in the tournament record's events: nothing to fold the plan into
   | 'edges' // the draw stores no edges, which v1 writes first (`ensureGoesTo`): S2's setEdges
   | 'clock'; // no captured instant (a call outside the engine): the timestamps a write takes cannot be reproduced
