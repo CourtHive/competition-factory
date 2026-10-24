@@ -4,7 +4,11 @@ import { buildSchedulingView } from '@Mutate/matchUps/schedule/pipeline/view';
 import { planSchedule } from '@Mutate/matchUps/schedule/pipeline/plan';
 import { DAYS, playedLaterFixture } from './playedOrderFixture';
 import tournamentEngine from '@Engines/syncEngine';
+import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
+
+// constants
+import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
 
 /**
  * The profile scheduler's planner reads only its view: a plan from the view equals the plan from the view written as JSON
@@ -57,5 +61,49 @@ describe('the planning view as JSON', () => {
     const tampered = decodePlanningView(encodePlanningView(view));
     tampered.dateCourts[DAYS[0]] = [];
     expect(JSON.stringify(planSchedule({ view: tampered }))).not.toEqual(JSON.stringify(direct));
+  });
+
+  it('carries the sides a person request is read from: without them a request on a placed participant is missed', () => {
+    const scheduleDate = DAYS[0];
+    mocksEngine.generateTournamentRecord({
+      venueProfiles: [{ venueId: 'venue-1', courtsCount: 1, startTime: '10:00', endTime: '20:00' }],
+      drawProfiles: [{ drawSize: 2 }],
+      startDate: scheduleDate,
+      endDate: DAYS[1],
+      setState: true,
+    });
+    const { tournamentRecord } = tournamentEngine.getTournament();
+    const { tournamentId } = tournamentRecord;
+    const [event] = tournamentRecord.events;
+    const [drawDefinition] = event.drawDefinitions;
+    let result: any = tournamentEngine.addSchedulingProfileRound({
+      round: {
+        structureId: drawDefinition.structures[0].structureId,
+        drawId: drawDefinition.drawId,
+        eventId: event.eventId,
+        roundNumber: 1,
+        tournamentId,
+      },
+      venueId: 'venue-1',
+      scheduleDate,
+    });
+    expect(result.success).toEqual(true);
+    const [target] = tournamentEngine.allTournamentMatchUps().matchUps;
+    result = tournamentEngine.addPersonRequests({
+      requests: [{ date: scheduleDate, startTime: '10:00', endTime: '11:30', requestType: DO_NOT_SCHEDULE }],
+      personId: target.sides[0].participant.person.personId,
+    });
+    expect(result.success).toEqual(true);
+
+    const records = { [tournamentId]: tournamentEngine.getTournament().tournamentRecord };
+    const view: any = buildSchedulingView({ tournamentRecords: records });
+    const plan = planSchedule({ view });
+    expect(plan.matchUpScheduleTimes[target.matchUpId]).toBeDefined();
+    expect(plan.matchUpScheduleTimes[target.matchUpId]).not.toEqual('10:00');
+    expect(checkViewRoundTrip({ tournamentRecords: records })).toMatchObject({ samePlan: true });
+
+    const sideless = decodePlanningView(encodePlanningView(view));
+    for (const matchUp of sideless.hydrated) delete matchUp.sides;
+    expect(planSchedule({ view: sideless }).matchUpScheduleTimes[target.matchUpId]).toEqual('10:00');
   });
 });

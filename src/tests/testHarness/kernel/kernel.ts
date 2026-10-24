@@ -8,6 +8,8 @@
  * each side needs to win the current game", which a port may compute however it likes. The adapter owns the
  * translation (positional helpers, parsed shapes, transport), never the expected result.
  */
+import { planningViewFromData, requiredPlanningViewKeys } from '@Mutate/matchUps/schedule/pipeline/viewCodec';
+import { planSchedule } from '@Mutate/matchUps/schedule/pipeline/plan';
 import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
 import { stringify } from '@Helpers/matchUpFormatCode/stringify';
 import { resolveSetType } from '@Tools/scoring/scoringUtilities';
@@ -32,7 +34,7 @@ export type KernelCase = {
 };
 
 export type KernelOperation = {
-  capability: 'scoring' | 'grammar';
+  capability: 'scoring' | 'grammar' | 'scheduling';
   validate: (input: Record<string, unknown>) => string | undefined; // why the input is malformed, if it is
   run: (input: Record<string, unknown>) => KernelResult;
 };
@@ -73,6 +75,30 @@ function pointsToGame(input: Record<string, unknown>): KernelResult {
   return { kind: 'value', value: result.pointsToGame };
 }
 
+/** the options a profile plan takes beside its view, and the type each must have */
+const PLAN_OPTIONS: Record<string, (value: unknown) => boolean> = {
+  clearScheduleDates: (value) =>
+    typeof value === 'boolean' || (Array.isArray(value) && value.every((date) => typeof date === 'string')),
+  checkPotentialRequestConflicts: (value) => typeof value === 'boolean',
+  excludeNoDateCompleted: (value) => typeof value === 'boolean',
+  excludePriorDates: (value) => typeof value === 'boolean',
+  periodLength: isCount,
+};
+
+function validatePlanInput(input: Record<string, unknown>) {
+  const view = input.view as Record<string, unknown> | undefined;
+  if (!view || typeof view !== 'object' || Array.isArray(view)) return 'view must be an object';
+  const missing = requiredPlanningViewKeys().filter((key) => !Object.hasOwn(view, key));
+  if (missing.length) return `view is missing ${missing.join(', ')}`;
+  const options = (input.options ?? {}) as Record<string, unknown>;
+  if (typeof options !== 'object' || Array.isArray(options)) return 'options must be an object';
+  for (const [key, value] of Object.entries(options)) {
+    if (!Object.hasOwn(PLAN_OPTIONS, key)) return `unknown option ${key}`;
+    if (!PLAN_OPTIONS[key](value)) return `option ${key} has the wrong type`;
+  }
+  return undefined;
+}
+
 // The registry is a closed, frozen map: an operation not listed here is refused, never guessed at.
 export const kernelOperations: Readonly<Record<string, KernelOperation>> = Object.freeze({
   'kernel.scoring.pointsToGame@1': {
@@ -84,6 +110,17 @@ export const kernelOperations: Readonly<Record<string, KernelOperation>> = Objec
       return undefined;
     },
     run: pointsToGame,
+  },
+  // the profile scheduler's plan: from a planning view (`viewCodec.ts`) and the call's options, the placements and the
+  // reasons for every matchUp left unplaced (scheduling-pipeline.md § 4)
+  'kernel.scheduling.plan@1': {
+    capability: 'scheduling',
+    validate: validatePlanInput,
+    run: (input) => {
+      const options = (input.options ?? {}) as Record<string, any>;
+      const plan = planSchedule({ ...options, view: planningViewFromData(input.view as Record<string, unknown>) });
+      return { kind: 'value', value: plan };
+    },
   },
   'kernel.format.parse@1': {
     capability: 'grammar',
@@ -119,6 +156,15 @@ function invokeOperation(operations: Readonly<Record<string, KernelOperation>>, 
   } catch (error) {
     return { kind: 'exception', message: error instanceof Error ? error.message : String(error) } as KernelResult;
   }
+}
+
+/**
+ * A value as it arrives across the JSON wire. Not a deep copy: what JSON cannot carry (an undefined member, a Set, a
+ * Date's type) is meant to be lost, because that is what a second implementation receives and answers.
+ */
+export function overTheWire<T>(value: T): T {
+  const text = JSON.stringify(value);
+  return text === undefined ? (undefined as T) : JSON.parse(text);
 }
 
 /** In-process: the operation receives the caller's input object. */

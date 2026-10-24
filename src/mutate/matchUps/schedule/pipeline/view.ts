@@ -74,12 +74,6 @@ export type DatePlan = { scheduleDate: string; venues: VenuePlan[] };
  * `reachability.upstream`, a Set per matchUp on the day-load hot path; `viewCodec.ts` carries it as an array.
  */
 export type PlanningView = {
-  /** the profile as validated, and what validation changed and found (spec § 2) */
-  schedulingProfile: DateProfile[];
-  schedulingProfileModifications?: number;
-  schedulingProfileIssues: string[];
-  /** the profile's own date objects for the dates planned, in order */
-  dateSchedulingProfiles: DateProfile[];
   matchUpDependencies: ReturnType<typeof getMatchUpDependencies>['matchUpDependencies'];
   dailyLimitOverrides: ReturnType<typeof getMatchUpDailyLimits>['dailyLimitOverrides'];
   matchUpDailyLimits: ReturnType<typeof getMatchUpDailyLimits>['matchUpDailyLimits'];
@@ -102,8 +96,17 @@ export type PlanningView = {
   dates: DatePlan[];
 };
 
-/** the view a call builds: the planner's, plus the records and the matchUps by id, which only the write side reads */
+/**
+ * The view a call builds: the planner's, plus what only the entry and the write side read: the profile itself, the
+ * records, and the matchUps by id.
+ */
 export type SchedulingView = PlanningView & {
+  /** the profile as validated, and what validation changed and found (spec § 2) */
+  schedulingProfile: DateProfile[];
+  schedulingProfileModifications?: number;
+  schedulingProfileIssues: string[];
+  /** the profile's own date objects for the dates planned, in order */
+  dateSchedulingProfiles: DateProfile[];
   tournamentRecords: { [tournamentId: string]: Tournament };
   matchUps: Map<string, HydratedMatchUp>;
 };
