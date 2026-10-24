@@ -24,9 +24,10 @@ interface GenerateTournamentRecordOptions {
   // Tournament Properties
   startDate?: string; // ISO date string (default: endDate - 7 days, or today)
   endDate?: string; // ISO date string (default: startDate + 7 days); before startDate is INVALID_DATE
-  tournamentAttributes?: object; // Additional tournament properties
+  tournamentName?: string; // Default: a random mock name
+  tournamentAttributes?: object; // Additional tournament properties, including tournamentId; startDate,
+  // endDate and tournamentName may be given here instead of at the top level (see "Dates and name" below)
   tournamentExtensions?: array; // Extensions to attach to tournament
-  tournamentId?: string; // Override generated ID
 
   // Convenience
   setState?: boolean; // Auto-load into tournamentEngine (default: false)
@@ -96,12 +97,44 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
 });
 ```
 
+### Dates and name
+
+`startDate`, `endDate` and `tournamentName` may be given at the top level or inside
+`tournamentAttributes`; either place is read. A date that is given in neither place is derived as
+described above (a week either side of the one given, or today and a week from today), and a missing
+name is a random mock name.
+
+Giving the same field in both places with **different** values is refused with `INVALID_VALUES`
+before anything is generated, naming both
+(`context: { option: 'tournamentAttributes.startDate', conflictsWith: 'startDate' }`); the same
+value in both places is accepted. With `setState: true`, nothing is installed on that refusal.
+
+```js
+// tournamentAttributes dates are the tournament's dates, whatever today is
+const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+  tournamentAttributes: { startDate: '2025-06-01', endDate: '2025-06-30' },
+});
+// tournamentRecord.startDate === '2025-06-01'
+
+const result = mocksEngine.generateTournamentRecord({
+  tournamentAttributes: { startDate: '2025-06-01' },
+  startDate: '2025-06-02',
+});
+// result.error -> INVALID_VALUES
+```
+
+:::note Up to 7.20.1
+Earlier versions wrote the top-level values over `tournamentAttributes` without saying so, and the
+top-level dates default to today: dates or a name given only in `tournamentAttributes` were silently
+replaced by this week and a random mock name.
+:::
+
 ### Custom Tournament ID
 
 ```js
 const tournamentId = 'my-custom-id';
 const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-  tournamentId,
+  tournamentAttributes: { tournamentId }, // a top-level tournamentId is not read
   drawProfiles: [{ drawSize: 16 }],
 });
 

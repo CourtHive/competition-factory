@@ -126,20 +126,20 @@ two participants, with one family of exceptions and one rule inside it:
 
 `attemptToSetMatchUpStatus` chooses exactly one route, in this order:
 
-| route                                | when                                                                              | does                                                           |
-| ------------------------------------ | --------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| unrecognized                         | status is neither directing nor non-directing                                     | refuse `ERR_UNRECOGNIZED_MATCHUP_STATUS`                       |
-| already in the requested double exit | same double exit requested, no winner                                             | **success, no-op** (§ 6)                                       |
-| only modify score                    | a TEAM line; or a winner exists and the status is directing and not a double exit | write the score                                                |
-| completed → double exit              | a winner exists and a double exit is requested                                    | remove the directed participants, then advance the double exit |
-| existing winner                      | a winner exists                                                                   | remove the directed participants, re-evaluate                  |
-| non-directing                        | status is non-directing                                                           | clear the score (CANCELLED and WALKOVER remove it)             |
-| BYE                                  | status is BYE                                                                     | the BYE path                                                   |
-| not directing                        |                                                                                   | refuse `ERR_UNRECOGNIZED_MATCHUP_STATUS`                       |
-| double exit                          |                                                                                   | clear the score, then advance the double exit                  |
-| team round robin                     | a dual in a round-robin container                                                 | write the score                                                |
-| propagating                          | `propagateExitStatus`                                                             | write the score                                                |
-| fallthrough                          |                                                                                   | refuse `ERR_INVALID_MATCHUP_STATUS`                            |
+| route                                | when                                                                              | does                                                           | v2                         |
+| ------------------------------------ | --------------------------------------------------------------------------------- | -------------------------------------------------------------- | -------------------------- |
+| unrecognized                         | status is neither directing nor non-directing                                     | refuse `ERR_UNRECOGNIZED_MATCHUP_STATUS`                       | `refused`                  |
+| already in the requested double exit | same double exit requested, no winner                                             | **success, no-op** (§ 6)                                       | `noop`                     |
+| only modify score                    | a TEAM line; or a winner exists and the status is directing and not a double exit | write the score                                                | `only-score`               |
+| completed → double exit              | a winner exists and a double exit is requested                                    | remove the directed participants, then advance the double exit | `completed-to-double-exit` |
+| existing winner                      | a winner exists                                                                   | remove the directed participants, re-evaluate                  | `existing-winner-removed`  |
+| non-directing                        | status is non-directing                                                           | clear the score (CANCELLED and WALKOVER remove it)             | `clear`                    |
+| BYE                                  | status is BYE                                                                     | the BYE path                                                   | `bye`                      |
+| not directing                        |                                                                                   | refuse `ERR_UNRECOGNIZED_MATCHUP_STATUS`                       | `refused`                  |
+| double exit                          |                                                                                   | clear the score, then advance the double exit                  | `double-exit`              |
+| team round robin                     | a dual in a round-robin container                                                 | write the score                                                | `team-round-robin`         |
+| propagating                          | `propagateExitStatus`                                                             | write the score                                                | `propagating`              |
+| fallthrough                          |                                                                                   | refuse `ERR_INVALID_MATCHUP_STATUS`                            | `refused`                  |
 
 Before any route, `resolveAndApplyOutcome` dispatches on two facts: whether **downstream is active**
 (something later depends on this result) and whether this matchUp **has propagated** (it holds a
@@ -147,6 +147,21 @@ winner or a double exit). A matchUp that has never sent anything downstream cann
 anything there, so a first entry always takes the propagating branch. With both true, a named winner
 goes to `winningSideWithDownstreamDependencies`; a directing status or disabled auto-calc goes to
 `applyMatchUpValues`; anything else is `ERR_NO_VALID_ACTIONS`.
+
+**The route v2 names** (`Route`, `src/mutate/matchUps/outcome/types.ts`) is the table's last column for
+a call that reaches `attemptToSetMatchUpStatus`; `refused` is any of its three refusals. The dispatch
+names six more:
+
+- `swap`: `allowChangePropagation` with a different winner on a matchUp that has one (below).
+- `winner`: the propagating branch with a winner named, an exit under `propagateExitStatus`, or a
+  CANCELLED or ABANDONED line that changes its dual's winner: `attemptToSetWinningSide`.
+- `line-score`: a line rescored with a winner while its dual loses the winner it had.
+- `remove-directed`: a score with no winner, or a winner taken away with no score: the directed
+  participants are taken back.
+- `clear-score`: nothing else matched; the score is removed.
+- `apply-values`: downstream is active and this matchUp has propagated, with a winner, a directing
+  status or auto-calc disabled (`applyMatchUpValues`); also a drawn result in a rotating-partner or
+  combined-point round robin with nothing active downstream.
 
 **A matchUp in play downstream is active** (CA, 2026-10-18, P57): _"downstream matchUps e.g. "the
 match it feeds" should be considered active and a source matchUp (a matchUp earler in the dependency
@@ -194,7 +209,10 @@ TO_BE_PLAYED`, `score` with empty `scoreStringSide1` / `scoreStringSide2` and `s
    is nothing to mirror there.
 4. **`scoredTime`** is stamped on `schedule` the first time the matchUp becomes scored (a score with
    value, a winner, or a completed status), kept through corrections, and deleted when the result is
-   removed. It is first-class in NATIVE and has no timeItem mirror.
+   removed. One exception: a DOUBLE_ELIMINATION decider made a DEAD_RUBBER was not played, so it is
+   never stamped and keeps no stamp from a result it held before. A rubber of a team tie is not the
+   exception; its DEAD_RUBBER is stamped like an ABANDONED line (CA, 2026-10-24). It is first-class
+   in NATIVE and has no timeItem mirror.
 5. **The schedule the call carried is applied after the outcome is accepted**, and was validated
    before it, so a refusal cannot land on a draw this call has just changed.
 
@@ -226,6 +244,12 @@ After the write, and only on success:
    (`removeDirectedParticipants`), and that is where `ERR_ACTIVE_DRAW_POSITION` can arise. A loser taken
    back leaves every seat their loss reached, a link further on included, and no exit stays awarded to
    a seat so emptied (census A1, `aSeatEmptiedFurtherOnLeavesNoAwardBehind`).
+   **A first-match loser feed** (the link's condition `FIRST_MATCHUP`) takes the loser only if the match they lost
+   was their first played: no win of their own in the source structure. For a swap (`allowChangePropagation`
+   with a different winner) the wins counted are those in the rounds **before** the swapped one. A swap rewrites
+   the advancing drawPosition in every later matchUp, so the new loser loses their later wins with it; counted,
+   those wins would keep out a loser whose first match this was (census w1 9000582 and nine more FMLC seeds,
+   `aSwapCountsOnlyTheRoundsBeforeIt`; v1's `reconcileFedLoserEligibility`).
    **A winner directed across a link is seated once** (2026-10-22). A winner who already holds a seat in
    the target matchUp is left there and nothing is written: a direction can arrive twice in one call (a
    DOUBLE_ELIMINATION Decider seated from the Main final, then the same winner re-advanced by a correction
@@ -285,6 +309,14 @@ After the write, and only on success:
    decider never triggers it, so a decider played anyway keeps its result; in a TEAM draw a line of the
    decider's dual is a mutation of the decider (7.8.0). See
    [Double Elimination](./draw-types/double-elimination.mdx#the-decider).
+   **Last, no matchUp left without a result keeps its `scoredTime`** (`reconcileScoredTimes`). It is
+   asked after every settle step, because they can take a result away: `settleHeldExits` turns an exit
+   holder into a BYE, and the forward settle and the link passes release what was placed. Until
+   2026-10-24 it was asked before them, so the stamp outlived the result until the next call, whatever
+   that call was: 19 calls over the exitPropagation, drawDefinitions and matchUps suites ended that way
+   (13 BYEs, 6 TO_BE_PLAYED), and none does now (`aResultTheSettleRemovesTakesItsScoredTime.test.ts`).
+   A result is what § 4 counts as one, so a decider played and then made a DEAD_RUBBER loses its stamp,
+   and a team rubber made a DEAD_RUBBER keeps it.
 6. **Notifications** (MODIFY_MATCHUP and the draw's topics) are emitted; the factory extension's
    `timeStamp` is written by the engine after the call.
 
@@ -350,6 +382,12 @@ After the write, and only on success:
   `oweDissolvedConvergencesTheirByes`, `reconcileConsolationReservations`, `reconcileCarriesPastByes`
   (both calls), `settleHeldExits`, `reconcileByeAdvancements`, `reconcileDeciders` and
   `settleForwardConsequences`. They still return their error; none is relied on to be rolled back.
+  Every one of them reaches `v2.compare` before `setMatchUpStatus` returns it (outcome v2 executor plan,
+  Phase C prerequisite 3), so under `differential` a refusal v2 did not plan is a divergence (§ 7.1:
+  the comparison writes back what it captured before v1 ran; v2 itself plans every refusal before its
+  first op, so it has nothing to undo). Until 2026-10-24 the refusals out of `settleDraw`,
+  `settleForwardConsequences` and the carry asked after it returned without the comparison
+  (`aLateRefusalIsCompared.test.ts`).
 
 - **A refused call stores none of a draw's missing edges** (CA, 2026-10-18: "no, a refused call does
   not store a draw's missing edges. v1 should no longer do so."). A draw stored without
@@ -462,6 +500,49 @@ suite's rethrowing provider fails the test, and the exit-propagation census reco
 `NO_EXCEPTION_ESCAPES`. Inside a `bulkMatchUpStatusUpdate`, the outcomes applied before the one
 that diverged stay written unless the call asked for `rollbackOnError`, the same as for any refusal
 a later outcome meets (§ 8).
+
+## 7.2 The plan as ops (S1)
+
+v2 states a call's writes as **ops**, a closed vocabulary folded by one reducer (`outcome/ops.ts`) into a stored-shape
+draw. The overlay, the `differential` shadow apply and, from S2, apply itself all use the same reducer, so what a plan
+says and what lands are one thing. The reducer decides nothing and refuses nothing.
+
+| op                        | what it writes                                                                                                                                                                                                                        |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `setMatchUpResult`        | the matchUp's status, winner, score (as the call gave it, or blanked), a new format, status codes, and `schedule.scoredTime` by v1's rule: captured the first time the matchUp is scored, kept on corrections, removed with the score |
+| `setMatchUpDrawPositions` | the positions placed in a matchUp, as v1 stores them: numbers, ascending (a winner's position joining the next matchUp)                                                                                                               |
+| `assignPosition`          | a participant on a structure's stored assignment for a drawPosition (a loser fed across a link)                                                                                                                                       |
+| `stampUpdatedAt`          | one `updatedAt` per touched entity per call (F2 (i)): the call's captured instant, or the previous stamp + 1 ms when that is already as late                                                                                          |
+
+`planOutcome` returns a complete plan only when every write the call makes is an op; otherwise it **abstains**, naming
+the first reason, and the call is v1's whole (fail-closed). S1 holds two shapes: the **local** write (the matchUp's own
+result, no winner before or after) and the **first direction** (a played result naming a winner where none stood, whose
+only consequence is the winner's position in the next matchUp of the same structure). The reasons are the work list of
+the slices that follow:
+
+| reason         | the call                                                                                                       | taken on by                                  |
+| -------------- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `team`         | is a dual or one of its lines                                                                                  | S7                                           |
+| `schedule`     | carries a schedule                                                                                             | a later slice (§ 3.5.8 of the executor plan) |
+| `notes`        | carries notes                                                                                                  | a later slice                                |
+| `status-codes` | carries the client's positional status codes, split into side codes at the write                               | S2                                           |
+| `exit`         | has an exit status before or after                                                                             | S5                                           |
+| `winner`       | takes away or changes a winner already stored, so what it directed is taken back                               | S4                                           |
+| `loser`        | has a loser link, so the loser goes somewhere                                                                  | S3                                           |
+| `link`         | sends its winner into another structure                                                                        | S3                                           |
+| `cascade`      | sends its winner to a matchUp holding a BYE, an exit or a result, so the winner goes on or meets it            | S5                                           |
+| `route`        | takes a route, or reaches a status, that S1 does not plan as ops                                               | S2                                           |
+| `provenance`   | is on a matchUp holding side-exit provenance the score write may clear or rescue                               | S5                                           |
+| `tallied`      | is in a round-robin, ad hoc or lucky structure, whose tally the write updates                                  | S3                                           |
+| `unchanged`    | would change nothing but stamps                                                                                | S2 (with F2 in v1)                           |
+| `no-record`    | is on a draw the tournament record's events do not hold, so there is nothing to fold the plan into             | none: a shadow needs the record              |
+| `edges`        | is on a draw that stores no winner and loser edges, which v1 writes first (`ensureGoesTo`)                     | S2 (`setEdges`)                              |
+| `clock`        | is made outside an engine call, with no captured instant, so the timestamps a write takes cannot be reproduced | none: production calls go through the engine |
+
+**In `differential`**, a complete plan is folded into the record as it stood before v1 ran and compared with the record
+v1 wrote. Until Phase C's F2 lands in v1, stamps are normalised in that comparison (debate-ruled 2026-10-24, pending
+CA review): a structure's `updatedAt` is left out, and a matchUp's and the draw's are compared as present or absent.
+v1 stamps once per notice and every top-level structure on each, so no value comparison can pass yet.
 
 ## 8. What the corpus pins
 

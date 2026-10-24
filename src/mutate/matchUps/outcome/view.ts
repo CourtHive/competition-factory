@@ -10,12 +10,14 @@ import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount'
 import { resolveScoringFormat } from '@Query/hierarchical/resolveScoringFormat';
 import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { isDeciderStructure } from '@Query/drawDefinition/deciderStructures';
 import { lastSetFormatIsTimed } from '@Query/matchUp/lastSetFormatisTimed';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
 import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
+import { addGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -25,9 +27,9 @@ import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { isLucky } from '@Query/drawDefinition/isLucky';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
-import { matchUpsOf } from '@Acquire/structureMembers';
 import { isObject } from '@Tools/objects';
 import {
   getSideExitProvenance,
@@ -39,7 +41,7 @@ import {
 import { POLICY_TYPE_PROGRESSION, POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { BYE, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { BuildViewArgs, OutcomeRequest, OutcomeView } from './types';
-import { WIN_RATIO } from '@Constants/drawDefinitionConstants';
+import { FIRST_MATCHUP, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
 import type {
@@ -133,8 +135,7 @@ function arrivedByWinning(
  */
 function placedTheHoldersBye(matchUp: HydratedMatchUp, sourceMatchUpId: string, draw: DrawContext): boolean {
   const byeSeats = (matchUp.sides ?? []).filter((side) => side?.bye).map((side) => side?.drawPosition);
-  const source = draw.inContextDrawMatchUps.find((candidate) => candidate.matchUpId === sourceMatchUpId);
-  if (!source?.loserMatchUpId || !byeSeats.length) return false;
+  if (!byeSeats.length) return false;
   const { loserMatchUp, loserTargetDrawPosition } =
     positionTargets({ ...draw, matchUpId: sourceMatchUpId })?.targetMatchUps ?? {};
   return loserMatchUp?.structureId === matchUp.structureId && byeSeats.includes(loserTargetDrawPosition);
@@ -207,13 +208,24 @@ function heldBesideFeederBye(
     (candidate) => candidate.structureId === matchUp.structureId,
   );
   if (structureMatchUps.some((candidate) => (candidate.roundNumber ?? 0) > (matchUp.roundNumber ?? 0))) return [];
-  return structureMatchUps
-    .filter((feeder) => feeder.winnerMatchUpId === matchUp.matchUpId && feeder.matchUpStatus === BYE)
-    .flatMap((feeder) => Object.values(getSideExitProvenance({ matchUp: feeder }) ?? {}))
-    .filter((entry) => entry?.sourceMatchUpId !== sourceMatchUpId)
-    .map((entry) => carriedExitStatus(entry))
-    .filter((status): status is MatchUpStatusUnion => !!status);
+  return (
+    structureMatchUps
+      // the copy carries the stored `winnerMatchUpId`, or the one the view derived on a draw storing none; a feeder
+      // still without one (`hasStoredGoesTo` asks whether a structure stores ANY edge) is read from its links
+      .filter(
+        (feeder) =>
+          feeder.matchUpStatus === BYE &&
+          (feeder.winnerMatchUpId ?? winnerTargetOf(feeder.matchUpId, draw)) === matchUp.matchUpId,
+      )
+      .flatMap((feeder) => Object.values(getSideExitProvenance({ matchUp: feeder }) ?? {}))
+      .filter((entry) => entry?.sourceMatchUpId !== sourceMatchUpId)
+      .map((entry) => carriedExitStatus(entry))
+      .filter((status): status is MatchUpStatusUnion => !!status)
+  );
 }
+
+const winnerTargetOf = (matchUpId: string, draw: DrawContext): string | undefined =>
+  positionTargets({ ...draw, matchUpId })?.targetMatchUps?.winnerMatchUp?.matchUpId;
 
 function standingExits(matchUp?: HydratedMatchUp, sourceMatchUpId?: string, draw?: DrawContext): MatchUpStatusUnion[] {
   const carried = [
@@ -283,6 +295,31 @@ function winnerTarget(
     carriesExit: carriesExit(winnerMatchUp, draw),
     carriedStatuses: standingExits(winnerMatchUp, sourceMatchUpId, draw),
     holdsResult: !!winnerMatchUp.winningSide || !!winnerMatchUp.score?.sets?.length,
+    hasBye: !!winnerMatchUp.sides?.some((side) => side?.bye),
+    drawPositions: (winnerMatchUp.drawPositions ?? []).filter(
+      (position): position is number => typeof position === 'number',
+    ),
+  };
+}
+
+/** the stored assignment a loser link feeds: free (no participant, no BYE), or what holds it */
+function loserTargetSeat(
+  drawDefinition: DrawDefinition,
+  structureId?: string,
+  drawPosition?: number,
+  matchUpDrawPositions: (number | undefined)[] = [],
+): OutcomeView['targets']['loserTargetSeat'] {
+  if (!structureId || !drawPosition) return undefined;
+  const { structure } = findStructure({ drawDefinition, structureId });
+  const assignments = positionAssignmentsOf(structure) ?? [];
+  const assignment = assignments.find((a) => a.drawPosition === drawPosition);
+  if (!assignment) return undefined;
+  const opponents = matchUpDrawPositions.filter((position) => position && position !== drawPosition);
+  return {
+    free: !assignment.participantId && !assignment.bye && !assignment.qualifier,
+    opponentBye: assignments.some((a) => a.bye && opponents.includes(a.drawPosition)),
+    // a BYE anywhere in the loser's structure: a new arrival can set v1's BYE propagation going there (S5)
+    structureHasBye: assignments.some((a) => a.bye),
   };
 }
 
@@ -326,9 +363,13 @@ function priorLosses(
 function priorWins(
   inContextDrawMatchUps: HydratedMatchUp[],
   inContextMatchUp?: HydratedMatchUp,
+  beforeThisRound = false,
 ): { 1: number; 2: number } {
   const sourceMatchUps = teamLevelMatchUps(inContextDrawMatchUps).filter(
-    (m) => m.structureId === inContextMatchUp?.structureId && m.matchUpId !== inContextMatchUp?.matchUpId,
+    (m) =>
+      m.structureId === inContextMatchUp?.structureId &&
+      m.matchUpId !== inContextMatchUp?.matchUpId &&
+      (!beforeThisRound || (m.roundNumber ?? 0) < (inContextMatchUp?.roundNumber ?? 0)),
   );
   const wins = (sideNumber: number) => {
     const drawPosition = inContextMatchUp?.sides?.find((side) => side.sideNumber === sideNumber)?.drawPosition;
@@ -404,16 +445,31 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     drawType: drawDefinition?.drawType,
     found: false,
     isTeam: false,
-    existing: { validWinningScore: false, scoreHasValue: false, scoredTime: false, carriedExit: false },
+    existing: {
+      validWinningScore: false,
+      scoreHasValue: false,
+      scoredTime: false,
+      carriedExit: false,
+      hasSideExitProvenance: false,
+    },
     propagatedExitStands: false,
     activeDownstream: false,
     participants: { required: false, count: 0, exitAwardable: false, requireForScoring: true },
-    draw: { isAdHoc: false, teamRoundRobin: false, includesBye: false, timedTie: false },
+    draw: {
+      isAdHoc: false,
+      teamRoundRobin: false,
+      includesBye: false,
+      timedTie: false,
+      tallied: false,
+      firstMatchFeed: false,
+      storesEdges: true,
+    },
     targets: {
       luckyPreFeed: false,
       sideParticipantIds: {},
       sideDrawPositions: {},
       priorWins: { 1: 0, 2: 0 },
+      priorWinsBefore: { 1: 0, 2: 0 },
       priorLosses: { 1: 0, 2: 0 },
       loserMatchUpHasResult: false,
       loserMatchUpCarriesExit: false,
@@ -425,18 +481,37 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
   };
   if (!drawDefinition || !request.matchUpId) return empty;
 
-  const matchUpsMap = getMatchUpsMap({ drawDefinition });
-  const { matchUps: inContextDrawMatchUps } = getAllDrawMatchUps({
-    nextMatchUps: true,
-    tournamentRecord,
-    inContext: true,
-    drawDefinition,
-    matchUpsMap,
-    event,
-  });
+  const matchUpsMap = args.matchUpsMap ?? getMatchUpsMap({ drawDefinition });
+  const inContextDrawMatchUps =
+    args.inContextDrawMatchUps ??
+    getAllDrawMatchUps({
+      tournamentRecord,
+      inContext: true,
+      drawDefinition,
+      matchUpsMap,
+      event,
+    }).matchUps;
   const matchUp = matchUpsMap.drawMatchUps.find((m) => m.matchUpId === request.matchUpId);
   const inContextMatchUp = inContextDrawMatchUps?.find((m) => m.matchUpId === request.matchUpId);
   if (!matchUp || !inContextDrawMatchUps) return empty;
+  // A DRAW STORED WITHOUT ITS EDGES: v1 writes them before it decides anything (`ensureGoesTo`, onto its view too),
+  // and its guards read `winnerMatchUpId` on that view (`relabelLoserExit`). The view takes the same edges onto its own
+  // copy and writes nothing. A draw the factory generated stores them, and pays only the `hasStoredGoesTo` walk.
+  // `hasPropagatedExitDownstream` (§ 2 row 10) reads `loserMatchUpId` off the STORED matchUps, so on such a draw it is
+  // handed an overlay of the stored map carrying the derived edges (review of #5741); the stored objects are not touched.
+  const goesTo = hasStoredGoesTo({ drawDefinition })
+    ? undefined
+    : addGoesTo({ inContextDrawMatchUps, drawDefinition, matchUpsMap, inContextOnly: true }).goesToMap;
+  const storedView = goesTo
+    ? {
+        ...matchUpsMap,
+        drawMatchUps: matchUpsMap.drawMatchUps.map((stored) => ({
+          ...stored,
+          winnerMatchUpId: stored.winnerMatchUpId ?? goesTo.winnerMatchUpIds[stored.matchUpId],
+          loserMatchUpId: stored.loserMatchUpId ?? goesTo.loserMatchUpIds[stored.matchUpId],
+        })),
+      }
+    : matchUpsMap;
   const draw: DrawContext = { inContextDrawMatchUps, drawDefinition };
 
   const { structure } = findStructure({ drawDefinition, structureId: inContextMatchUp?.structureId });
@@ -477,7 +552,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     inContextDrawMatchUps,
     inContextMatchUp,
     matchUpTieId,
-    matchUpsMap,
+    matchUpsMap: storedView,
     targetData,
     structure,
     matchUp,
@@ -591,6 +666,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
 
   return {
     ...empty,
+    inContextDrawMatchUps,
     formatRecognized: formatRecognizedFor(
       request.matchUpFormat,
       appliedFormat(matchUp, structure, drawDefinition, event),
@@ -612,6 +688,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       ownMatchUpFormat: matchUp.matchUpFormat,
       validWinningScore: !LIVE_OR_UNSET.has(matchUp.matchUpStatus) && validWinningScore,
       carriedExit: isPropagatedExit({ matchUp }),
+      hasSideExitProvenance: Object.values(matchUp.sideExitProvenance ?? {}).some(Boolean),
     },
     impliedWinningSide,
     propagatedExitStands,
@@ -647,6 +724,13 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         : undefined,
       loserMatchUpRoundNumber: targetData?.targetMatchUps?.loserMatchUp?.roundNumber,
       loserStructureId: targetData?.targetMatchUps?.loserMatchUp?.structureId,
+      loserTargetDrawPosition: targetData?.targetMatchUps?.loserTargetDrawPosition,
+      loserTargetSeat: loserTargetSeat(
+        drawDefinition,
+        targetData?.targetMatchUps?.loserMatchUp?.structureId,
+        targetData?.targetMatchUps?.loserTargetDrawPosition,
+        targetData?.targetMatchUps?.loserMatchUp?.drawPositions,
+      ),
       loserMatchUpStatus: targetData?.targetMatchUps?.loserMatchUp?.matchUpStatus,
       loserMatchUpHasResult: hasResult(targetData?.targetMatchUps?.loserMatchUp),
       winner: winnerTarget(targetData?.targetMatchUps?.winnerMatchUp, request.matchUpId, draw),
@@ -663,6 +747,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         (position): position is number => typeof position === 'number',
       ),
       priorWins: priorWins(inContextDrawMatchUps, inContextMatchUp),
+      priorWinsBefore: priorWins(inContextDrawMatchUps, inContextMatchUp, true),
       priorLosses: priorLosses(
         inContextDrawMatchUps,
         inContextMatchUp,
@@ -670,6 +755,16 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       ),
     },
     draw: {
+      // v1's `updateTallyIfNeeded`, on the structure it reads: the container a round-robin group sits in
+      tallied:
+        !!inContextMatchUp?.containerStructureId ||
+        !!isAdHoc({ structure }) ||
+        !!isLucky({ drawDefinition, structure }),
+      // v1 propagates a BYE into a first-match feed a loser can no longer reach (`propagateUnfillableLoserBye`), set
+      // going by a winner filling the round that feeds it
+      firstMatchFeed: (drawDefinition.links ?? []).some((link) => link.linkCondition === FIRST_MATCHUP),
+      // v1 writes a draw's missing edges before deciding (`ensureGoesTo`): edge repair is S2's `setEdges`
+      storesEdges: !goesTo,
       isAdHoc: !!isAdHoc({ structure }),
       teamRoundRobin: !!(matchUp.tieMatchUps && !matchUp.roundPosition && inContextMatchUp?.containerStructureId),
       includesBye: !!matchUp.drawPositions?.some((position) =>

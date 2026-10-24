@@ -1,5 +1,6 @@
+import type { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
 import type { ErrorType } from '@Constants/errorConditionConstants';
-import type { PolicyDefinitions } from '@Types/factoryTypes';
+import type { HydratedMatchUp } from '@Types/hydrated';
 import type {
   DrawDefinition,
   Event,
@@ -43,6 +44,8 @@ export type OutcomeRequest = {
   score?: OutcomeScore;
   matchUpFormat?: string;
   flags: OutcomeFlags;
+  /** what else the call carries that v1 writes and v2 does not yet plan: a call carrying either abstains (S1) */
+  carries?: { schedule?: boolean; notes?: boolean };
 };
 
 /** § 2: one code, the row of the table that raised it, and what a person or a client needs to see */
@@ -58,6 +61,8 @@ export type Refusal = {
 /** what the refusal function may ask of the draw; built once per call by `buildOutcomeView` */
 export type OutcomeView = {
   hasDrawDefinition: boolean;
+  /** the one hydration the view was built from: another view of the same draw in the same call reuses it */
+  inContextDrawMatchUps?: HydratedMatchUp[];
   /** the call's `matchUpFormat` parses (true when none was given) */
   formatRecognized: boolean;
   drawType?: string;
@@ -86,6 +91,8 @@ export type OutcomeView = {
     validWinningScore: boolean;
     /** the matchUp holds a carried or produced exit: changed at its origin, never here (§ 2 row 20) */
     carriedExit: boolean;
+    /** any side holds a `sideExitProvenance` entry, which v1's score write may clear or rescue */
+    hasSideExitProvenance: boolean;
   };
   /** what the requested score would decide under the format the call would apply; undefined when nothing */
   impliedWinningSide?: number;
@@ -133,6 +140,10 @@ export type OutcomeView = {
     loserMatchUpRoundNumber?: number;
     /** the loserMatchUp's structure and drawPositions: where a kept-out loser's BYE lands */
     loserStructureId?: string;
+    /** the drawPosition the loser link feeds in the loser's structure (`positionTargets`) */
+    loserTargetDrawPosition?: number;
+    /** that stored assignment: free when it holds no participant, BYE or qualifier */
+    loserTargetSeat?: { free: boolean; opponentBye: boolean; structureHasBye: boolean };
     /** the loserMatchUp's status before this call: an exit already there converges with the carried one */
     loserMatchUpStatus?: MatchUpStatusUnion;
     /** the loserMatchUp has a result of its own (a score, a winner, COMPLETED or an exit): a relabel carries nothing there */
@@ -158,6 +169,10 @@ export type OutcomeView = {
       carriedStatuses: string[];
       /** a winner or a set with games: what a decider must lose when it is reset */
       holdsResult: boolean;
+      /** a side of the winner's target is a BYE: the winner would be sent on past it (a cascade, S5) */
+      hasBye: boolean;
+      /** the target's stored drawPositions, numbers only */
+      drawPositions: number[];
     };
     /** this matchUp's own place, and the matchUp counts of its round and the next, in its structure */
     source: {
@@ -170,6 +185,7 @@ export type OutcomeView = {
     loserMatchUpDrawPositions?: number[];
     /** wins each side's drawPosition holds in this structure, this matchUp left out */
     priorWins: { 1: number; 2: number };
+    priorWinsBefore: { 1: number; 2: number };
     /** losses each side's participant holds in the draw, this matchUp and its winnerMatchUp left out */
     priorLosses: { 1: number; 2: number };
   };
@@ -184,6 +200,12 @@ export type OutcomeView = {
     timedTie: boolean;
     rotatingPartners?: boolean;
     combinedPointRoundRobin?: boolean;
+    /** v1's score write updates a tally here (`updateTallyIfNeeded`): a round-robin container, ad hoc, or lucky */
+    tallied: boolean;
+    /** the draw has a FIRST_MATCHUP loser link, whose unreachable seats v1 fills with a propagated BYE (S5) */
+    firstMatchFeed: boolean;
+    /** the draw stores its winner and loser edges; v1 writes them first on one that does not (edge repair) */
+    storesEdges: boolean;
   };
 };
 
@@ -222,6 +244,10 @@ export type BuildViewArgs = {
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
   policyDefinitions?: PolicyDefinitions;
+  /** the caller's map of the draw (`setMatchUpStatus` builds one for the whole call), so the view does not build its own */
+  matchUpsMap?: MatchUpsMap;
+  /** a hydration of this draw already taken in this call (the line's, for its dual's view), so the view takes no other */
+  inContextDrawMatchUps?: HydratedMatchUp[];
   event?: Event;
   request: OutcomeRequest;
 };

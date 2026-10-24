@@ -12,6 +12,7 @@ import { removeDirectedBye } from '@Mutate/matchUps/drawPositions/removeDirected
 import { modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { getByeCrossing, matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
+import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
@@ -3476,6 +3477,8 @@ function produceStrandedConvergences({
     });
     if (served?.error) return served;
   }
+  // every exit from the loop above returns: reaching here is the bound (F9), recorded for the census
+  recordSettleEvent({ kind: 'bound', site: 'produceStrandedConvergences', detail: `${produced.size} produced` });
   return produced.size ? { ...SUCCESS, produced: true } : undefined;
 }
 
@@ -3544,7 +3547,8 @@ function sendHeldExitsOn({
   let settledDrawMatchUps: HydratedMatchUp[] | undefined;
 
   // each pass can make the next matchUp along a holder in its turn; a matchUp is carried from once
-  for (let pass = 0; pass < 16; pass++) {
+  let pass = 0;
+  for (; pass < 16; pass++) {
     const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
     let held: HeldExit | undefined;
     for (const matchUp of inContextDrawMatchUps) {
@@ -3579,6 +3583,8 @@ function sendHeldExitsOn({
     });
     if (result?.error) return decorateResult({ result, stack });
   }
+  // a `break` leaves the counter short of the bound: at it, a held exit was still found (F9), recorded for the census
+  if (pass === 16) recordSettleEvent({ kind: 'bound', site: 'sendHeldExitsOn' });
 
   const crossed = crossLinksThroughByes({
     settledDrawMatchUps,
@@ -3632,7 +3638,8 @@ function crossLinksThroughByes({
   // a view is current until something is written; `undefined` means derive one
   let currentDrawMatchUps: HydratedMatchUp[] | undefined = settledDrawMatchUps;
 
-  for (let pass = 0; pass < 16; pass++) {
+  let pass = 0;
+  for (; pass < 16; pass++) {
     const inContextDrawMatchUps =
       currentDrawMatchUps ?? getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
     const crossing = inContextDrawMatchUps
@@ -3672,6 +3679,8 @@ function crossLinksThroughByes({
     // derived after this pass's write, and nothing is written before the next pass reads it
     currentDrawMatchUps = after;
   }
+  // a `break` leaves the counter short of the bound: at it, a crossing was still found (F9), recorded for the census
+  if (pass === 16) recordSettleEvent({ kind: 'bound', site: 'crossLinksThroughByes' });
 
   return { ...SUCCESS };
 }

@@ -59,7 +59,8 @@ export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
   const unknownOption = checkProfileKeys(params, GENERATE_TOURNAMENT_RECORD_KEYS, GENERATE_ENGINE_SUPPLIED_KEYS);
   if (unknownOption) return unknownOption;
   const {
-    tournamentName = randomMember(mockTournamentNames, params?.random),
+    // drawn exactly when it was before tournamentAttributes.tournamentName was read, so a seed's stream is unchanged
+    tournamentName: drawnName = randomMember(mockTournamentNames, params?.random),
     ratingsParameters = defaultRatingsParameters,
     tournamentExtensions,
     policyDefinitions,
@@ -70,7 +71,12 @@ export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
 
   const isMock = params?.isMock === false ? undefined : true;
 
-  const dates = resolveDates(params?.startDate, params?.endDate);
+  // the dates and the name may come at the top level or in tournamentAttributes; either is read, and a
+  // disagreement is refused
+  const supplied = readSuppliedHeader(params);
+  if (supplied.error) return supplied;
+  const tournamentName = supplied.tournamentName ?? drawnName;
+  const dates = resolveDates(supplied.startDate, supplied.endDate);
   if (dates.error) return dates;
   const { startDate, endDate } = dates;
 
@@ -298,6 +304,42 @@ function areValidProfiles(params) {
  * today + 7, so `endDate: 2027-02-01` produced 2027-02-01 to 2026-10-24. And a `startDate` alone was
  * parsed as UTC then advanced in local time, which is start + 6 west of UTC. Calendar dates only.
  */
+const HEADER_FIELDS = ['startDate', 'endDate', 'tournamentName'] as const;
+
+/**
+ * The tournament dates and name a caller supplied, from the top-level params or from `tournamentAttributes`.
+ *
+ * `tournamentAttributes` is spread into the record and the resolved dates and name are written over it,
+ * so a value given only there used to be overwritten by the default (today, a random mock name),
+ * silently. It is read instead; a value given in both places that disagrees is refused, naming both,
+ * since picking one would hide the other.
+ */
+function readSuppliedHeader(params?: GenerateTournamentRecordArgs): {
+  tournamentName?: string;
+  startDate?: string;
+  endDate?: string;
+  error?: ErrorType;
+  info?: string;
+  context?: { option: string; conflictsWith: string };
+} {
+  const attributes: Record<string, any> = params?.tournamentAttributes ?? {};
+  const supplied: { startDate?: string; endDate?: string; tournamentName?: string } = {};
+  for (const field of HEADER_FIELDS) {
+    const topLevel = params?.[field];
+    const attribute = attributes[field];
+    if (topLevel != null && attribute != null && topLevel !== attribute) {
+      const option = `tournamentAttributes.${field}`;
+      return {
+        info: `${option} (${attribute}) disagrees with ${field} (${topLevel}); supply it once`,
+        context: { option, conflictsWith: field },
+        error: INVALID_VALUES,
+      };
+    }
+    supplied[field] = topLevel ?? attribute ?? undefined;
+  }
+  return supplied;
+}
+
 function resolveDates(
   startDate?: string,
   endDate?: string,

@@ -1,5 +1,6 @@
 import { releaseLinkedWinnerAdvancement } from '@Mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement';
 import { getUnearnedLinkAdvancements } from '@Query/drawDefinition/getUnearnedLinkAdvancements';
+import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 
@@ -81,4 +82,6 @@ export function reconcileLinkAdvancements({
     // nothing this pass could release (a placement already played on): leave it for the inconsistency to report
     if (after >= before) return;
   }
+  // every exit from the loop above returns: reaching here is the bound (F9), recorded for the census
+  recordSettleEvent({ kind: 'bound', site: 'reconcileLinkAdvancements' });
 }

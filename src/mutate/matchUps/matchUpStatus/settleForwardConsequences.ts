@@ -1,5 +1,6 @@
 import { carryExitOnward } from '@Mutate/matchUps/matchUpStatus/settleRederivedDoubleExits';
 import { advanceDrawPosition } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
+import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
@@ -107,6 +108,7 @@ export function settleForwardConsequences(
   const owed = findOwed({ ...params, drawDefinition, done });
   if (!owed) return { settled: PASS_LIMIT };
   pushGlobalLog({ method: 'settleForwardConsequences', color: 'brightred', exhausted: owed.key });
+  recordSettleEvent({ kind: 'bound', site: 'settleForwardConsequences', detail: owed.matchUpId });
   return { exhausted: owed.matchUpId, settled: PASS_LIMIT };
 }
 

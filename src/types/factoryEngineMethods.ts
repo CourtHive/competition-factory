@@ -377,6 +377,7 @@ export type FactoryEngineMethod =
   | 'getParticipantSchedules'
   | 'getParticipantSignedInOnDate'
   | 'getParticipantSignInStatus'
+  | 'getParticipantsRest'
   | 'getParticipantsStillSignedInOnDate'
   | 'getParticipantStats'
   | 'getParticipantTimeItem'
@@ -1155,6 +1156,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getParticipantSchedules',
   'getParticipantSignedInOnDate',
   'getParticipantSignInStatus',
+  'getParticipantsRest',
   'getParticipantsStillSignedInOnDate',
   'getParticipantStats',
   'getParticipantTimeItem',

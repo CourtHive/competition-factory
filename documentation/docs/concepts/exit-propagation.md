@@ -629,6 +629,12 @@ award was read from the draw as it stood before the release and named the empty 
 `WALKOVER` won by nobody, with its only finalist on the other side, until a later result rewrote it (census F2,
 20506968, DOUBLE_ELIMINATION 8/6 under `doubleExitPropagateBye: false`).
 
+A carried exit follows the link too (CA ruling 2026-10-23; census 9304724, DOUBLE_ELIMINATION 8/6). When the Main
+structure's final is recorded as a WALKOVER, its loser drops into the Backdraw final. If that matchUp holds a BYE, the
+loser passes it across the link into the grand final, and their exit goes with them (RULE 1): the grand final is a
+WALKOVER won by the Main final's winner. RULE 1 re-propagates onto wherever the carrier lands, and a structure's last
+round has nowhere further in its own structure, so the carrier is found where the holder's winner edge leads.
+
 A BYE in the Backdraw final follows the link too. A BYE there carries the other finalist into the
 Main structure, and when it is taken back (a double exit corrected, its loser arriving for the seat)
 the finalist it carried is taken back out of the Main final with it (census run-17 baseline,

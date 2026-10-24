@@ -1959,6 +1959,46 @@ decides it: `onCourt`, a projected `readyAt`, a `pending:<feederMatchUpId>` sour
 load, so a UI can show who is still to come. Both sides undecided gives two rows. `nameFor` returns a
 doubles entrant's own name rather than the pair's. `RestResult` and `RestRow` are exported by name.
 
+`getParticipantRest` answers one matchUp. To answer many, which a schedule does once per card, use
+`getParticipantsRest`; a single call is answered as a batch of one, so the two cannot disagree.
+
+### getParticipantsRest
+
+Participant rest for many matchUps in one call. `rests[i]` answers `requests[i]` exactly as
+`getParticipantRest` answers that request alone.
+
+```js
+const asOf = new Date().toISOString();
+const { rests } = tournamentEngine.getParticipantsRest({
+  requests: [
+    { matchUpId: 'm1', asOf },
+    { matchUpId: 'm2', asOf, scheduledDate: '2026-09-12' },
+  ],
+});
+```
+
+| parameter          | type                                    | notes                                                        |
+| ------------------ | --------------------------------------- | ------------------------------------------------------------ |
+| `requests`         | `{ matchUpId, asOf, scheduledDate? }[]` | **required**; each request carries its own instant and day   |
+| `timeZone`         | IANA zone                               | defaults to the tournament's `localTimeZone`; DST-correct    |
+| `utcOffsetMinutes` | number                                  | fixed-offset fallback when no zone is available              |
+| `matchUps`         | HydratedMatchUp[]                       | optional; resolved from the record once per call when absent |
+
+Returns `{ rests }`, one `RestResult` per request, in request order. Results are aligned with the
+requests rather than keyed by matchUpId, so one matchUp asked about on two days gets two answers. A
+request with no `matchUpId` refuses the whole call with `MISSING_MATCHUP_ID` and
+`context.requestIndex`. There is no implicit "every matchUp": the caller names what it wants, because
+different cards need different days and instants (a past day is measured as of that day, today as of now).
+
+Why a batch: everything that does not depend on which matchUp is asked about is built once per call.
+Each matchUp's times are normalized once (rather than once per answer), the timing rules and daily
+limits are read once, and the day's begun matchUps are grouped by individual once per distinct
+`(scheduledDate, asOf)`. Asking about every matchUp of a 63-matchUp draw costs 189 zoned conversions
+batched against 6,048 asked one by one; the gap grows with the size of the draw.
+
+Rest counts up, so a result describes its `asOf` and nothing later: a caller repainting rest on a timer
+asks again with the new instant rather than keeping an earlier answer.
+
 ## Related Documentation
 
 - **[Scheduling Overview](../concepts/scheduling-overview.mdx)** - Core scheduling concepts
