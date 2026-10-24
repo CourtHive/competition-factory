@@ -1,8 +1,8 @@
 import { canonicalHash, canonicalObject } from './hash';
 import tournamentEngine from '@Engines/syncEngine';
 import { setRandomSource } from '@Tools/prng';
-import { setClock } from '@Tools/clock';
 import { applyPatch } from './applyPatch';
+import { setClock } from '@Tools/clock';
 
 export type Mismatch = { step: number; expected: string; actual: string; result?: unknown };
 
