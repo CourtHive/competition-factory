@@ -1,0 +1,616 @@
+[
+  {
+    "caseId": "clock.tidy.canonical.v1",
+    "operation": "kernel.time.tidy@1",
+    "input": {
+      "time": "08:00"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "08:00"
+    },
+    "note": "§ 3.8 rule 2: already canonical"
+  },
+  {
+    "caseId": "clock.tidy.single-digit-hour.v1",
+    "operation": "kernel.time.tidy@1",
+    "input": {
+      "time": "8:00"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "08:00"
+    },
+    "note": "rule 2: a one-character part is padded"
+  },
+  {
+    "caseId": "clock.tidy.single-digit-minute.v1",
+    "operation": "kernel.time.tidy@1",
+    "input": {
+      "time": "8:5"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "08:05"
+    },
+    "note": "rule 2: both parts padded"
+  },
+  {
+    "caseId": "clock.tidy.seconds-dropped.v1",
+    "operation": "kernel.time.tidy@1",
+    "input": {
+      "time": "08:00:00"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "08:00"
+    },
+    "note": "rule 2: only the first two parts are kept"
+  },
+  {
+    "caseId": "clock.tidy.sixty-minutes.v1",
+    "operation": "kernel.time.tidy@1",
+    "input": {
+      "time": "23:60"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "23:60"
+    },
+    "note": "rule 1: minutes up to 60 are a time (OPEN § 9.9)"
+  },
+  {
+    "caseId": "clock.tidy.negative-hour.v1",
+    "operation": "kernel.time.tidy@1",
+    "input": {
+      "time": "-1:00"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "-1:00"
+    },
+    "note": "rule 1: a signed integer begins the part (OPEN § 9.9)"
+  },
+  {
+    "caseId": "clock.tidy.zulu-kept-verbatim.v1",
+    "operation": "kernel.time.tidy@1",
+    "input": {
+      "time": "08:00Z"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "08:00Z"
+    },
+    "note": "rules 1-2: the Z is dropped to judge, the part kept as written (OPEN § 9.9)"
+  },
+  {
+    "caseId": "clock.tidy.leading-space-kept.v1",
+    "operation": "kernel.time.tidy@1",
+    "input": {
+      "time": " 8:00"
+    },
+    "expected": {
+      "kind": "value",
+      "value": " 8:00"
+    },
+    "note": "rules 1-2: leading whitespace allowed, a two-character part not padded (OPEN § 9.9)"
+  },
+  {
+    "caseId": "clock.tidy.meridiem-kept.v1",
+    "operation": "kernel.time.tidy@1",
+    "input": {
+      "time": "08:30 PM"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "08:30 PM"
+    },
+    "note": "rules 1-2: trailing characters ignored to judge, kept as written (OPEN § 9.9)"
+  },
+  {
+    "caseId": "clock.tidy.hour-24.v1",
+    "operation": "kernel.time.tidy@1",
+    "input": {
+      "time": "24:00"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "NOT_A_TIME"
+    },
+    "note": "rule 1: hours at most 23"
+  },
+  {
+    "caseId": "clock.tidy.hours-only.v1",
+    "operation": "kernel.time.tidy@1",
+    "input": {
+      "time": "12"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "NOT_A_TIME"
+    },
+    "note": "rule 1: at least two parts"
+  },
+  {
+    "caseId": "clock.tidy.word.v1",
+    "operation": "kernel.time.tidy@1",
+    "input": {
+      "time": "noon"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "NOT_A_TIME"
+    },
+    "note": "rule 1: a part must begin with an integer"
+  },
+  {
+    "caseId": "clock.tidy.non-numeric-minutes.v1",
+    "operation": "kernel.time.tidy@1",
+    "input": {
+      "time": "08:xx"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "NOT_A_TIME"
+    },
+    "note": "rule 1: a part must begin with an integer"
+  },
+  {
+    "caseId": "clock.tidy.empty.v1",
+    "operation": "kernel.time.tidy@1",
+    "input": {
+      "time": ""
+    },
+    "expected": {
+      "kind": "error",
+      "code": "NOT_A_TIME"
+    },
+    "note": "rule 1"
+  },
+  {
+    "caseId": "clock.extract.iso-with-zone.v1",
+    "operation": "kernel.time.extract@1",
+    "input": {
+      "value": "2026-03-02T09:15:30.000Z"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "09:15"
+    },
+    "note": "rule 3: the time after the T, tidied"
+  },
+  {
+    "caseId": "clock.extract.iso-minutes.v1",
+    "operation": "kernel.time.extract@1",
+    "input": {
+      "value": "2026-03-02T09:15"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "09:15"
+    },
+    "note": "rule 3"
+  },
+  {
+    "caseId": "clock.extract.space-separated.v1",
+    "operation": "kernel.time.extract@1",
+    "input": {
+      "value": "2026-03-02 09:15"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "NOT_A_TIME"
+    },
+    "note": "rule 3: a space-separated date and time is not read (OPEN § 9.9)"
+  },
+  {
+    "caseId": "clock.extract.bare-time.v1",
+    "operation": "kernel.time.extract@1",
+    "input": {
+      "value": "9:15"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "09:15"
+    },
+    "note": "rule 3: a bare time is tidied"
+  },
+  {
+    "caseId": "clock.minutes.morning.v1",
+    "operation": "kernel.time.minutes@1",
+    "input": {
+      "time": "08:00"
+    },
+    "expected": {
+      "kind": "value",
+      "value": 480
+    },
+    "note": "rule 4"
+  },
+  {
+    "caseId": "clock.minutes.last-minute.v1",
+    "operation": "kernel.time.minutes@1",
+    "input": {
+      "time": "23:59"
+    },
+    "expected": {
+      "kind": "value",
+      "value": 1439
+    },
+    "note": "rule 4"
+  },
+  {
+    "caseId": "clock.minutes.sixty-minutes.v1",
+    "operation": "kernel.time.minutes@1",
+    "input": {
+      "time": "23:60"
+    },
+    "expected": {
+      "kind": "value",
+      "value": 1440
+    },
+    "note": "rule 4 on rule 1's 23:60 (OPEN § 9.9)"
+  },
+  {
+    "caseId": "clock.minutes.negative-hour.v1",
+    "operation": "kernel.time.minutes@1",
+    "input": {
+      "time": "-1:00"
+    },
+    "expected": {
+      "kind": "value",
+      "value": -60
+    },
+    "note": "rule 4 on rule 1's -1:00 (OPEN § 9.9)"
+  },
+  {
+    "caseId": "clock.minutes.not-a-time.v1",
+    "operation": "kernel.time.minutes@1",
+    "input": {
+      "time": "noon"
+    },
+    "expected": {
+      "kind": "value",
+      "value": 0
+    },
+    "note": "rule 4: zero for anything not a time"
+  },
+  {
+    "caseId": "clock.minutes.from-date-time.v1",
+    "operation": "kernel.time.minutes@1",
+    "input": {
+      "time": "2026-03-02T09:15"
+    },
+    "expected": {
+      "kind": "value",
+      "value": 555
+    },
+    "note": "rules 3-4"
+  },
+  {
+    "caseId": "clock.minutes.untidy.v1",
+    "operation": "kernel.time.minutes@1",
+    "input": {
+      "time": "8:5"
+    },
+    "expected": {
+      "kind": "value",
+      "value": 485
+    },
+    "note": "rules 2 and 4"
+  },
+  {
+    "caseId": "clock.from-minutes.midnight.v1",
+    "operation": "kernel.time.fromMinutes@1",
+    "input": {
+      "minutes": 0
+    },
+    "expected": {
+      "kind": "value",
+      "value": "00:00"
+    },
+    "note": "rule 5: hours wrap at 24"
+  },
+  {
+    "caseId": "clock.from-minutes.morning.v1",
+    "operation": "kernel.time.fromMinutes@1",
+    "input": {
+      "minutes": 605
+    },
+    "expected": {
+      "kind": "value",
+      "value": "10:05"
+    },
+    "note": "rule 5: hours wrap at 24"
+  },
+  {
+    "caseId": "clock.from-minutes.last-minute.v1",
+    "operation": "kernel.time.fromMinutes@1",
+    "input": {
+      "minutes": 1439
+    },
+    "expected": {
+      "kind": "value",
+      "value": "23:59"
+    },
+    "note": "rule 5: hours wrap at 24"
+  },
+  {
+    "caseId": "clock.from-minutes.wraps-at-24.v1",
+    "operation": "kernel.time.fromMinutes@1",
+    "input": {
+      "minutes": 1440
+    },
+    "expected": {
+      "kind": "value",
+      "value": "00:00"
+    },
+    "note": "rule 5: hours wrap at 24"
+  },
+  {
+    "caseId": "clock.from-minutes.wraps-past-24.v1",
+    "operation": "kernel.time.fromMinutes@1",
+    "input": {
+      "minutes": 1500
+    },
+    "expected": {
+      "kind": "value",
+      "value": "01:00"
+    },
+    "note": "rule 5: hours wrap at 24"
+  },
+  {
+    "caseId": "clock.add-within-day.plain.v1",
+    "operation": "kernel.time.addWithinDay@1",
+    "input": {
+      "time": "8:00",
+      "minutes": 90
+    },
+    "expected": {
+      "kind": "value",
+      "value": "09:30"
+    },
+    "note": "rule 6, on rule 2's tidying"
+  },
+  {
+    "caseId": "clock.add-within-day.before-midnight.v1",
+    "operation": "kernel.time.addWithinDay@1",
+    "input": {
+      "time": "23:00",
+      "minutes": 30
+    },
+    "expected": {
+      "kind": "value",
+      "value": "23:30"
+    },
+    "note": "rule 6"
+  },
+  {
+    "caseId": "clock.add-within-day.to-last-minute.v1",
+    "operation": "kernel.time.addWithinDay@1",
+    "input": {
+      "time": "23:00",
+      "minutes": 59
+    },
+    "expected": {
+      "kind": "value",
+      "value": "23:59"
+    },
+    "note": "rule 6"
+  },
+  {
+    "caseId": "clock.add-within-day.at-midnight.v1",
+    "operation": "kernel.time.addWithinDay@1",
+    "input": {
+      "time": "23:00",
+      "minutes": 60
+    },
+    "expected": {
+      "kind": "value",
+      "value": "23:59"
+    },
+    "note": "rule 6: at or past midnight is 23:59"
+  },
+  {
+    "caseId": "clock.add-within-day.past-midnight.v1",
+    "operation": "kernel.time.addWithinDay@1",
+    "input": {
+      "time": "22:30",
+      "minutes": 150
+    },
+    "expected": {
+      "kind": "value",
+      "value": "23:59"
+    },
+    "note": "rule 6: a recovery past midnight ends at 23:59 (OPEN § 9.8)"
+  },
+  {
+    "caseId": "clock.add-within-day.negative.v1",
+    "operation": "kernel.time.addWithinDay@1",
+    "input": {
+      "time": "10:00",
+      "minutes": -700
+    },
+    "expected": {
+      "kind": "value",
+      "value": "00:00"
+    },
+    "note": "rule 6: a negative result is 00:00"
+  },
+  {
+    "caseId": "clock.add-within-day.not-a-time.v1",
+    "operation": "kernel.time.addWithinDay@1",
+    "input": {
+      "time": "xx",
+      "minutes": 30
+    },
+    "expected": {
+      "kind": "value",
+      "value": "00:30"
+    },
+    "note": "rule 6: anything not a time counts as 00:00"
+  },
+  {
+    "caseId": "clock.add-within-day.zero.v1",
+    "operation": "kernel.time.addWithinDay@1",
+    "input": {
+      "time": "10:00",
+      "minutes": 0
+    },
+    "expected": {
+      "kind": "value",
+      "value": "10:00"
+    },
+    "note": "rule 6"
+  },
+  {
+    "caseId": "clock.add-wrapping.plain.v1",
+    "operation": "kernel.time.addWrapping@1",
+    "input": {
+      "time": "08:00",
+      "minutes": 90
+    },
+    "expected": {
+      "kind": "value",
+      "value": "09:30"
+    },
+    "note": "rule 6, a booking's end"
+  },
+  {
+    "caseId": "clock.add-wrapping.past-midnight.v1",
+    "operation": "kernel.time.addWrapping@1",
+    "input": {
+      "time": "23:30",
+      "minutes": 90
+    },
+    "expected": {
+      "kind": "value",
+      "value": "01:00"
+    },
+    "note": "rule 6: a booking's end wraps (OPEN § 9.8)"
+  },
+  {
+    "caseId": "clock.add-wrapping.at-midnight.v1",
+    "operation": "kernel.time.addWrapping@1",
+    "input": {
+      "time": "23:00",
+      "minutes": 60
+    },
+    "expected": {
+      "kind": "value",
+      "value": "00:00"
+    },
+    "note": "rule 6: a booking's end wraps"
+  },
+  {
+    "caseId": "clock.add-wrapping.backwards.v1",
+    "operation": "kernel.time.addWrapping@1",
+    "input": {
+      "time": "00:30",
+      "minutes": -60
+    },
+    "expected": {
+      "kind": "value",
+      "value": "23:30"
+    },
+    "note": "rule 6: wraps in both directions"
+  },
+  {
+    "caseId": "clock.add-wrapping.untidy.v1",
+    "operation": "kernel.time.addWrapping@1",
+    "input": {
+      "time": "8:5",
+      "minutes": 10
+    },
+    "expected": {
+      "kind": "value",
+      "value": "08:15"
+    },
+    "note": "rules 2 and 6"
+  },
+  {
+    "caseId": "clock.add-wrapping.not-a-time.v1",
+    "operation": "kernel.time.addWrapping@1",
+    "input": {
+      "time": "xx",
+      "minutes": 30
+    },
+    "expected": {
+      "kind": "value",
+      "value": "00:00"
+    },
+    "note": "rule 6: a booking with no time ends at 00:00, unlike the within-day rule"
+  },
+  {
+    "caseId": "clock.date.date.v1",
+    "operation": "kernel.date.extract@1",
+    "input": {
+      "value": "2026-03-02"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "2026-03-02"
+    },
+    "note": "rule 7"
+  },
+  {
+    "caseId": "clock.date.date-time.v1",
+    "operation": "kernel.date.extract@1",
+    "input": {
+      "value": "2026-03-02T09:15:30.000Z"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "2026-03-02"
+    },
+    "note": "rule 7: the date part"
+  },
+  {
+    "caseId": "clock.date.unchecked-calendar.v1",
+    "operation": "kernel.date.extract@1",
+    "input": {
+      "value": "2026-02-30"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "2026-02-30"
+    },
+    "note": "rule 7: month and day in range, the calendar not checked (OPEN § 9.9)"
+  },
+  {
+    "caseId": "clock.date.unpadded.v1",
+    "operation": "kernel.date.extract@1",
+    "input": {
+      "value": "2026-3-2"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "NOT_A_DATE"
+    },
+    "note": "rule 7: YYYY-MM-DD only"
+  },
+  {
+    "caseId": "clock.date.other-format.v1",
+    "operation": "kernel.date.extract@1",
+    "input": {
+      "value": "02/03/2026"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "NOT_A_DATE"
+    },
+    "note": "rule 7"
+  },
+  {
+    "caseId": "clock.date.empty.v1",
+    "operation": "kernel.date.extract@1",
+    "input": {
+      "value": ""
+    },
+    "expected": {
+      "kind": "error",
+      "code": "NOT_A_DATE"
+    },
+    "note": "rule 7"
+  }
+]
