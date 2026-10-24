@@ -10,6 +10,7 @@ import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import type { ResultType } from '@Types/factoryTypes';
 
 /**
  * Direct every participant who DECIDED a round feeding another structure over a WINNER link, and is not there yet.
@@ -34,11 +35,11 @@ export function reconcileMissedLinkAdvancements({
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
   event?: Event;
-}): void {
+}): ResultType | undefined {
   const winnerLinks = (drawDefinition?.links ?? []).filter(
     (link) => isRoundWinnerLink(link, drawDefinition) && link.target?.structureId !== link.source?.structureId,
   );
-  if (!drawDefinition || !winnerLinks.length) return;
+  if (!drawDefinition || !winnerLinks.length) return undefined;
 
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
   const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
@@ -86,13 +87,17 @@ export function reconcileMissedLinkAdvancements({
         matchUpsMap,
         event,
       });
-      // the pass is `void` and its caller has written: the error is recorded for the census, not returned (Phase C)
-      if (directed?.error)
+      // returned, not dropped (Phase C prerequisite 2, CA 2026-10-24): never reached on ~97,000 census schedules, and
+      // still recorded for the census when it is
+      if (directed?.error) {
         recordSettleEvent({
           kind: 'dropped-error',
           site: 'reconcileMissedLinkAdvancements',
           detail: `${matchUp.matchUpId}: ${directed.error.code ?? directed.error}`,
         });
+        return directed;
+      }
     }
   }
+  return undefined;
 }
