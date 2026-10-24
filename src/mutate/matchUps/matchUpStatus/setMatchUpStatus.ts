@@ -463,14 +463,6 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     v2.compare?.(settled);
     return refuse(settled);
   }
-  // and once settled, no matchUp left without a result keeps the `scoredTime` a cascade stamped on it
-  reconcileScoredTimes({
-    matchUps: matchUpsMap.drawMatchUps,
-    drawDefinition: params.drawDefinition,
-    tournamentRecord: params.tournamentRecord,
-    event: params.event,
-  });
-
   // a participant who decided a round feeding another structure is seated there, before the decider is settled
   reconcileMissedLinkAdvancements({
     drawDefinition: params.drawDefinition,
@@ -511,6 +503,16 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // and, last, nobody stands across a link out of a matchUp that has no result. After `settleDraw`, not before:
   // a held exit is decided there, and a placement made for it is not unearned (de 9301605, the Decider).
   reconcileLinkAdvancements({
+    drawDefinition: params.drawDefinition,
+    tournamentRecord: params.tournamentRecord,
+    event: params.event,
+  });
+  // and once everything has settled, no matchUp left without a result keeps the `scoredTime` it was stamped with. Last,
+  // because the passes above can take a result away: `settleHeldExits` turns an exit holder into a BYE, and the
+  // forward settle and the link passes release what was placed. Asked before them, the stamp outlived the result
+  // until the next call, whatever that call was (`aResultTheSettleRemovesTakesItsScoredTime`).
+  reconcileScoredTimes({
+    matchUps: matchUpsMap.drawMatchUps,
     drawDefinition: params.drawDefinition,
     tournamentRecord: params.tournamentRecord,
     event: params.event,
