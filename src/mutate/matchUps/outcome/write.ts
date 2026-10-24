@@ -1,3 +1,4 @@
+import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { isDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { dualWinningSideChange } from './route';
@@ -69,8 +70,7 @@ function applyScoreAndStatus(args: WriteArgs, request: OutcomeRequest, view: Out
     !NON_PROGRESS.has(args.matchUpStatus)
   )
     matchUpStatus = IN_PROGRESS;
-  const scored =
-    !!winningSide || scoreHasValue || (!!matchUpStatus && completedMatchUpStatuses.includes(matchUpStatus));
+  const scored = matchUpIsScored({ winningSide, score, matchUpStatus } as MatchUp);
   return {
     matchUpStatus,
     winningSide,

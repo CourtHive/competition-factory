@@ -2,15 +2,19 @@ import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 
 // constants and types
-import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
+import { completedMatchUpStatuses, DEAD_RUBBER } from '@Constants/matchUpStatusConstants';
 import type { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 
 /**
  * Whether a matchUp carries a result: a winningSide, a score with value, or a completed status. The one
  * definition `schedule.scoredTime` is stamped and cleared against — `applyScoredTime` for the matchUp a
- * call targets, `reconcileScoredTimes` for every other matchUp the call touched.
+ * call targets, `reconcileScoredTimes` for every other matchUp the call touched, and v2's write plan.
+ *
+ * A DEAD_RUBBER is completed but was not played, so it is never scored and keeps no stamp from a result it
+ * held before (CA, 2026-10-24).
  */
 export function matchUpIsScored(matchUp?: MatchUp): boolean {
+  if (matchUp?.matchUpStatus === DEAD_RUBBER) return false;
   return (
     !!matchUp?.winningSide ||
     checkScoreHasValue({ score: matchUp?.score }) ||

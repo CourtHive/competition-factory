@@ -208,8 +208,10 @@ TO_BE_PLAYED`, `score` with empty `scoreStringSide1` / `scoreStringSide2` and `s
    `matchUpStatusCodes` as display; it plans no `sideStatusCodes` and no propagation write, so there
    is nothing to mirror there.
 4. **`scoredTime`** is stamped on `schedule` the first time the matchUp becomes scored (a score with
-   value, a winner, or a completed status), kept through corrections, and deleted when the result is
-   removed. It is first-class in NATIVE and has no timeItem mirror.
+   value, a winner, or a completed status other than DEAD_RUBBER), kept through corrections, and
+   deleted when the result is removed. A DEAD_RUBBER was not played, so it is never stamped and keeps
+   no stamp from a result it held before (CA, 2026-10-24). It is first-class in NATIVE and has no
+   timeItem mirror.
 5. **The schedule the call carried is applied after the outcome is accepted**, and was validated
    before it, so a refusal cannot land on a draw this call has just changed.
 
@@ -306,7 +308,7 @@ After the write, and only on success:
    2026-10-24 it was asked before them, so the stamp outlived the result until the next call, whatever
    that call was: 19 calls over the exitPropagation, drawDefinitions and matchUps suites ended that way
    (13 BYEs, 6 TO_BE_PLAYED), and none does now (`aResultTheSettleRemovesTakesItsScoredTime.test.ts`).
-   A completed status is a result here as in § 4, so a decider made a DEAD_RUBBER keeps its stamp.
+   A result is what § 4 counts as one, so a decider played and then made a DEAD_RUBBER loses its stamp.
 6. **Notifications** (MODIFY_MATCHUP and the draw's topics) are emitted; the factory extension's
    `timeStamp` is written by the engine after the call.
 
