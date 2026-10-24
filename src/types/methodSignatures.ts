@@ -76,6 +76,7 @@ import type { cleanExpiredMutationLocks } from '@Mutate/tournaments/mutationLock
 import type { getCompetitionLeaderboard } from '@Query/drawDefinition/competition/getCompetitionLeaderboard';
 import type { getRotatingPartnerScoringPolicy } from '@Query/drawDefinition/getRotatingPartnerScoringPolicy';
 import type { getEligibleEvents, getParticipantEligibility } from '@Query/entries/getParticipantEligibility';
+import type { getParticipantRest, getParticipantsRest } from '@Query/matchUps/scheduling/getParticipantRest';
 import type { replaceTieMatchUpParticipantId } from '@Mutate/matchUps/lineUps/replaceTieMatchUpParticipant';
 import type { modifyParticipantsPaymentStatus } from '@Mutate/participants/modifyParticipantsPaymentStatus';
 import type { getEntryFeeRange, isIndeterminateFee, resolveEntryFee } from '@Query/entries/resolveEntryFee';
@@ -284,7 +285,6 @@ import type { getSwissStandings } from '@Query/drawDefinitions/swiss/getSwissSta
 import type { getMatchUpCheckInHistory } from '@Query/matchUp/getMatchUpCheckInHistory';
 import type { getMatchUpParticipantIds } from '@Query/matchUp/getMatchUpParticipantIds';
 import type { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
-import type { getParticipantRest } from '@Query/matchUps/scheduling/getParticipantRest';
 import type { getOfficialAssignments } from '@Query/officiating/getOfficialAssignments';
 import type { getOfficialEligibility } from '@Query/officiating/getOfficialEligibility';
 import type { getLinkedTournamentIds } from '@Query/tournaments/getLinkedTournamentIds';
@@ -1046,6 +1046,7 @@ export interface MethodSignatures {
   getParticipantSchedules: EngineMethod<typeof getParticipantSchedules>;
   getParticipantSignedInOnDate: EngineMethod<typeof getParticipantSignedInOnDate>;
   getParticipantSignInStatus: EngineMethod<typeof getParticipantSignInStatus>;
+  getParticipantsRest: EngineMethod<typeof getParticipantsRest>;
   getParticipantsStillSignedInOnDate: EngineMethod<typeof getParticipantsStillSignedInOnDate>;
   getParticipantStats: EngineMethod<typeof getParticipantStats>;
   getParticipantTimeItem: EngineMethod<typeof getParticipantTimeItem>;
