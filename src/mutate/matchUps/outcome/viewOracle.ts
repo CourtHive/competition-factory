@@ -10,22 +10,20 @@ import type { HydratedMatchUp } from '@Types/hydrated';
  * view the plan was folded into is compared with one hydration of the shadow-applied record. A field that differs is
  * an invalidation the overlay missed, reported as a divergence keyed `view:<field>` before v2 ever writes.
  *
- * The fields are § 3.2's table: what the factory's queries or v2 read and a write can change.
+ * The fields are § 3.2's table, cut to what v2 and the queries it asks actually read (a probe of every read, Mentat
+ * report 2026-10-24 `outcome-v2-s2-structural-index-fields`) now that the view is the structural index (§ 3.1.1): it
+ * carries no `schedule` detail, `drawPositionsRange`, `preFeedRound`, `roundFactor` or `readyToScore`, and nothing reads
+ * them. `schedule.scoredTime` is read from the stored matchUps.
  */
 const SIDE_FIELDS = ['sideNumber', 'participantId', 'bye', 'qualifier', 'drawPosition'] as const;
 const FIELDS = [
   'matchUpStatus',
   'winningSide',
   'score',
-  'schedule',
   'drawPositions',
-  'drawPositionsRange',
   'finishingPositionRange',
   'feedRound',
   'hasFedDrawPosition',
-  'preFeedRound',
-  'roundFactor',
-  'readyToScore',
   'winnerMatchUpId',
   'loserMatchUpId',
   'sideExitProvenance',

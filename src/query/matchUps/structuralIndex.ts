@@ -42,6 +42,8 @@ export type StructuralIndex = {
 };
 
 type BuildStructuralIndexArgs = {
+  /** the top-level structures to index, the rest left out: what a working view indexes again after a write (§ 3.2) */
+  structureIds?: Set<string>;
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   event?: Event;
@@ -53,11 +55,13 @@ const onlyDefined = (obj: object) => definedAttributes(obj, undefined, true, tru
 export function buildStructuralIndex({
   tournamentRecord,
   drawDefinition,
+  structureIds,
   event,
 }: BuildStructuralIndexArgs): StructuralIndex {
   const matchUps: HydratedMatchUp[] = [];
   const participantIds = new Set((tournamentRecord?.participants ?? []).map(({ participantId }) => participantId));
   for (const structure of drawDefinition.structures ?? []) {
+    if (structureIds && !structureIds.has(structure.structureId)) continue;
     const indexed = indexStructure({ drawDefinition, participantIds, structure, event });
     if (indexed.unsupported) return { matchUps: [], unsupported: indexed.unsupported };
     matchUps.push(...indexed.matchUps);

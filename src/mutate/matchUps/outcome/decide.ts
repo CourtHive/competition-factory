@@ -3,7 +3,6 @@ import { carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProven
 import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { PREDICTED_CALL, predictSettleWork, type SettleSite } from './settleWork';
 import { compareNotices, compareShadow, plannedNotices } from './shadow';
-import { buildStructuralIndex } from '@Query/matchUps/structuralIndex';
 import { addGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
 import { convergence, isRelabel, planDirection } from './direction';
 import { compareIndex, type IndexComparison } from './indexOracle';
@@ -232,7 +231,12 @@ function planDual(args: BuildViewArgs, view: OutcomeView): DualPlan | undefined 
     winningSide,
   };
   // the dual's entry in the line's own hydration: the dual's view takes no second one (S1, executor plan § 3.2)
-  const dualView = buildOutcomeView({ ...args, request, inContextDrawMatchUps: view.inContextDrawMatchUps });
+  const dualView = buildOutcomeView({
+    ...args,
+    request,
+    inContextDrawMatchUps: view.inContextDrawMatchUps,
+    structural: view.structural,
+  });
   return { matchUpId: line.dualMatchUpId, winningSide, direction: planDirection(request, dualView, 'winner') };
 }
 
@@ -700,6 +704,7 @@ function workingViewAfter({
   if (!ops || !args.drawDefinition || !args.matchUpsMap || !view.inContextDrawMatchUps) return undefined;
   const working = createWorkingView({
     inContextDrawMatchUps: view.inContextDrawMatchUps,
+    structural: view.structural,
     tournamentRecord: args.tournamentRecord,
     drawDefinition: args.drawDefinition,
     matchUpsMap: args.matchUpsMap,
@@ -723,25 +728,29 @@ function workingViewAfter({
 }
 
 /**
- * THE INDEX ORACLE (§ 3.1.1, S2): the structural index of the draw as the call found it, against the view's hydration
- * of the same draw, on every field the outcome logic reads. Taken with the view's own step on a draw stored without its
- * edges (`addGoesTo`, onto the index as the view takes it onto its hydration). Undefined for a draw the index does not
- * yet cover (TEAM), which the tally counts as deferred.
+ * THE INDEX ORACLE (§ 3.1.1, S2): the view decides on the structural index of the draw as the call found it; here it is
+ * held to one hydration of the same draw, taken for the purpose, on every field the outcome logic reads, after the view's
+ * own step on a draw stored without its edges (`addGoesTo`, onto the hydration as the view takes it onto the index).
+ * Read before v1 writes: an index entry shares nested objects with the stored matchUp. Test instrumentation:
+ * `verify:hydrations` keeps its hydration out of `differential`'s ceiling. Undefined for a draw the view hydrated (TEAM),
+ * which the tally counts as deferred.
  */
 function indexOracle(args: BuildViewArgs, view: OutcomeView): IndexComparison | undefined {
-  if (!args.drawDefinition || !view.inContextDrawMatchUps) return undefined;
-  const index = buildStructuralIndex({
-    tournamentRecord: args.tournamentRecord,
-    drawDefinition: args.drawDefinition,
-    event: args.event,
-  });
-  if (index.unsupported) return undefined;
+  if (!args.drawDefinition || !view.structural || !view.inContextDrawMatchUps) return undefined;
+  const hydrated =
+    getAllDrawMatchUps({
+      tournamentRecord: args.tournamentRecord,
+      drawDefinition: args.drawDefinition,
+      matchUpsMap: args.matchUpsMap,
+      inContext: true,
+      event: args.event,
+    }).matchUps ?? [];
   if (!hasStoredGoesTo({ drawDefinition: args.drawDefinition }))
     addGoesTo({
-      inContextDrawMatchUps: index.matchUps,
+      inContextDrawMatchUps: hydrated,
       drawDefinition: args.drawDefinition,
       matchUpsMap: args.matchUpsMap,
       inContextOnly: true,
     });
-  return compareIndex({ hydrated: view.inContextDrawMatchUps, index: index.matchUps })[0] ?? { equal: true };
+  return compareIndex({ hydrated, index: view.inContextDrawMatchUps })[0] ?? { equal: true };
 }
