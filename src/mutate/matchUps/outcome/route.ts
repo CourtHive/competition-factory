@@ -2,6 +2,7 @@ import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/ma
 import { isDrawnResult } from '@Query/matchUps/roundRobinTally/drawnResults';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { isDoubleExit, isExit } from '@Validators/isExit';
+import { clearsABye } from '@Query/matchUp/clearsABye';
 
 // constants and types
 import type { OutcomeRequest, OutcomeView, Route } from './types';
@@ -80,6 +81,9 @@ function noDownstreamRoute(request: OutcomeRequest, view: OutcomeView): Route {
 export function chooseRoute(request: OutcomeRequest, view: OutcomeView): Route {
   const { winningSide, matchUpStatus, flags } = request;
   const { existing, line } = view;
+  // a BYE has no result to clear: the call leaves it the BYE it is (`clearsABye`, P26)
+  if (clearsABye({ storedMatchUpStatus: existing.matchUpStatus, matchUpStatus, winningSide, score: request.score }))
+    return 'noop';
   if (
     !view.activeDownstream &&
     !winningSide &&
