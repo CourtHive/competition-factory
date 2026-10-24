@@ -71,7 +71,7 @@ import { wasPlayed } from '@Query/reports/recoveryTimeline';
 // constants and types
 import { DOUBLES_MATCHUP, SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
-import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
+import { ARRAY, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
@@ -346,27 +346,102 @@ type PriorMatchUp = {
   individuals: Set<string>;
 };
 
-type RestContext = {
+/**
+ * Everything a rest answer reads that does not depend on which matchUp is asked about, built once per call.
+ *
+ * Before the batch, every answer re-derived all of it: `normalizeTimes` for every matchUp in the tournament
+ * (up to four zoned conversions each), the timing resolver, the daily limits, a scan for the target, a scan
+ * for its feeders and a scan per name. A schedule render asks once per catalog card, so a 252-matchUp
+ * tournament paid for ~254,000 conversions per render (391 ms, 2026-10-24). Each piece here is derived on
+ * first use and reused by every answer of the call; nothing outlives the call.
+ */
+type RestIndex = {
+  matchUps: HydratedMatchUp[];
+  /** First matchUp per id, as `Array.find` returns. */
+  byId: Map<string, HydratedMatchUp>;
+  times: (matchUp: HydratedMatchUp) => NormalizedTimes;
+  /** The matchUps feeding each target through `winnerMatchUpId` / `loserMatchUpId`, in matchUps order. */
+  feedersOf: Map<string, HydratedMatchUp[]>;
+  timingFor: (matchUp: HydratedMatchUp) => SchedulingTiming;
+  dailyLimits?: RestDailyLimits;
+  frame: Frame;
+  nameOf: (participantId: string) => string;
+  /** The day's begun matchUps per individual, keyed by `scheduledDate|asOfMs` (see `dayPriorByIndividual`). */
+  dayViews: Map<string, Map<string, PriorMatchUp[]>>;
+};
+
+type RestIndexInput = {
   matchUps: HydratedMatchUp[];
   timingFor: (matchUp: HydratedMatchUp) => SchedulingTiming;
   dailyLimits?: RestDailyLimits;
+  frame: Frame;
+};
+
+function buildRestIndex({ matchUps, timingFor, dailyLimits, frame }: RestIndexInput): RestIndex {
+  const byId = new Map<string, HydratedMatchUp>();
+  const feedersOf = new Map<string, HydratedMatchUp[]>();
+  const addFeeder = (targetId: string | undefined, feeder: HydratedMatchUp) => {
+    if (!targetId) return;
+    const feeders = feedersOf.get(targetId);
+    if (feeders) feeders.push(feeder);
+    else feedersOf.set(targetId, [feeder]);
+  };
+  for (const matchUp of matchUps) {
+    if (!byId.has(matchUp.matchUpId)) byId.set(matchUp.matchUpId, matchUp);
+    addFeeder(matchUp.winnerMatchUpId, matchUp);
+    // A matchUp feeding both of its outcomes into one target is still one feeder.
+    if (matchUp.loserMatchUpId !== matchUp.winnerMatchUpId) addFeeder(matchUp.loserMatchUpId, matchUp);
+  }
+
+  const timesByMatchUp = new Map<HydratedMatchUp, NormalizedTimes>();
+  const times = (matchUp: HydratedMatchUp): NormalizedTimes => {
+    let resolved = timesByMatchUp.get(matchUp);
+    if (!resolved) {
+      resolved = normalizeTimes(matchUp, frame);
+      timesByMatchUp.set(matchUp, resolved);
+    }
+    return resolved;
+  };
+
+  const names = new Map<string, string>();
+  const nameOf = (participantId: string): string => {
+    let name = names.get(participantId);
+    if (name === undefined) {
+      name = nameFor(participantId, matchUps);
+      names.set(participantId, name);
+    }
+    return name;
+  };
+
+  return { matchUps, byId, times, feedersOf, timingFor, dailyLimits, frame, nameOf, dayViews: new Map() };
+}
+
+type RestContext = {
+  index: RestIndex;
   scheduledDate: string;
   asOfMs: number;
-  frame: Frame;
 };
 
 /**
  * The matchUps on the measured day that have already begun — finished or
- * currently under way. A match that has not started yet is not load the
- * director has already spent, so it is excluded; readiness reports those as
- * `overlap` / `dependency` instead.
+ * currently under way — grouped by the individuals who played them. A match
+ * that has not started yet is not load the director has already spent, so it
+ * is excluded; readiness reports those as `overlap` / `dependency` instead.
+ *
+ * Built once per `(scheduledDate, asOf)` and shared by every answer that
+ * measures that day at that instant: whether a match is under way depends on
+ * the instant, so the instant is part of the key. The rules that depend on the
+ * inspected matchUp (not itself, not placed only after it) are applied per
+ * answer in `priorFor`.
  */
-function collectPriorMatchUps(target: HydratedMatchUp, context: RestContext): PriorMatchUp[] {
-  const results: PriorMatchUp[] = [];
-  const targetScheduledMs = normalizeTimes(target, context.frame).scheduledMs;
+function dayPriorByIndividual(context: RestContext): Map<string, PriorMatchUp[]> {
+  const { index, scheduledDate, asOfMs } = context;
+  const key = `${scheduledDate}|${asOfMs}`;
+  const cached = index.dayViews.get(key);
+  if (cached) return cached;
 
-  for (const matchUp of context.matchUps) {
-    if (matchUp.matchUpId === target.matchUpId) continue;
+  const byIndividual = new Map<string, PriorMatchUp[]>();
+  for (const matchUp of index.matchUps) {
     if (matchUp.matchUpStatus === BYE) continue;
     // A walkover is not load the director has spent — it neither tires a player
     // nor consumes a slot against the daily limit.
@@ -374,22 +449,37 @@ function collectPriorMatchUps(target: HydratedMatchUp, context: RestContext): Pr
 
     // Times are resolved before the day test because an undated matchUp is
     // dated by its `scoredTime`, which only exists in normalized form.
-    const times = normalizeTimes(matchUp, context.frame);
-    if (!occursOnDay(matchUp, times, context.scheduledDate)) continue;
+    const times = index.times(matchUp);
+    if (!occursOnDay(matchUp, times, scheduledDate)) continue;
 
-    const timing = context.timingFor(matchUp);
-    const underWay = isUnderWay(matchUp, times, context.asOfMs);
+    const timing = index.timingFor(matchUp);
+    const underWay = isUnderWay(matchUp, times, asOfMs);
     if (!isFinished(matchUp) && !underWay) continue;
-    if (placedOnlyAfter(matchUp, times, targetScheduledMs)) continue;
-    results.push({
+    const entry: PriorMatchUp = {
       individuals: new Set(individualIds(matchUp)),
       normalizedTimes: times,
       underWay,
       matchUp,
       timing,
-    });
+    };
+    for (const participantId of entry.individuals) {
+      const list = byIndividual.get(participantId);
+      if (list) list.push(entry);
+      else byIndividual.set(participantId, [entry]);
+    }
   }
-  return results;
+  index.dayViews.set(key, byIndividual);
+  return byIndividual;
+}
+
+/** One individual's begun matchUps on the day, before the inspected matchUp, in matchUps order. */
+function priorFor(participantId: string, target: HydratedMatchUp, context: RestContext): PriorMatchUp[] {
+  const targetScheduledMs = context.index.times(target).scheduledMs;
+  return (dayPriorByIndividual(context).get(participantId) ?? []).filter(
+    (entry) =>
+      entry.matchUp.matchUpId !== target.matchUpId &&
+      !placedOnlyAfter(entry.matchUp, entry.normalizedTimes, targetScheduledMs),
+  );
 }
 
 /** Daily load for one participant, and which configured limits the inspected matchUp would hit. */
@@ -509,7 +599,7 @@ function onCourtRow(params: {
   // player were already free, which is exactly backwards.
   const overrun = !!anchor && anchor.ms <= context.asOfMs;
   const readyAt =
-    anchor && !overrun ? localClock(anchor.ms + requiredMinutes * MS_PER_MINUTE, context.frame) : undefined;
+    anchor && !overrun ? localClock(anchor.ms + requiredMinutes * MS_PER_MINUTE, context.index.frame) : undefined;
   return {
     participantId,
     participantName,
@@ -525,15 +615,10 @@ function onCourtRow(params: {
   };
 }
 
-function restRowFor(
-  participantId: string,
-  target: HydratedMatchUp,
-  context: RestContext,
-  dayMatchUps: PriorMatchUp[],
-): RestRow {
-  const participantName = nameFor(participantId, context.matchUps);
-  const prior = dayMatchUps.filter((entry) => entry.individuals.has(participantId));
-  const load = loadFor(prior, target, context.dailyLimits);
+function restRowFor(participantId: string, target: HydratedMatchUp, context: RestContext): RestRow {
+  const participantName = context.index.nameOf(participantId);
+  const prior = priorFor(participantId, target, context);
+  const load = loadFor(prior, target, context.index.dailyLimits);
 
   // Still on court dominates every other reading: rest has not started, so a
   // minutes figure would be a fiction. Report the projected finish instead.
@@ -561,7 +646,9 @@ function restRowFor(
     restMinutes,
     requiredMinutes,
     typeChange,
-    ...(showReadyAt && { readyAt: localClock(latest.anchor.ms + requiredMinutes * MS_PER_MINUTE, context.frame) }),
+    ...(showReadyAt && {
+      readyAt: localClock(latest.anchor.ms + requiredMinutes * MS_PER_MINUTE, context.index.frame),
+    }),
     ...(latest.unreliable && { anchorUnreliable: true }),
     ...(latest.discarded.length && { discardedSources: latest.discarded }),
     source: latest.anchor.source,
@@ -590,11 +677,6 @@ function deficitMinutes(row: RestRow): number {
  */
 const UNKNOWN_LOAD: RestDailyLoad = { singles: 0, doubles: 0, total: 0, ordinal: 0, atLimit: [] };
 
-/** True when `matchUp` feeds either of its outcomes into `matchUpId`. */
-function feedsInto(matchUp: HydratedMatchUp, matchUpId: string): boolean {
-  return matchUp.winnerMatchUpId === matchUpId || matchUp.loserMatchUpId === matchUpId;
-}
-
 /**
  * The row for a side that has no participant yet. `onCourt` even when the feeder has not
  * started: the band means "their previous match has not finished, so rest has not begun",
@@ -603,14 +685,14 @@ function feedsInto(matchUp: HydratedMatchUp, matchUpId: string): boolean {
  * scheduled still yields a `readyAt`: the earliest this matchUp could honestly be called.
  */
 function pendingRowFor(feeder: HydratedMatchUp, target: HydratedMatchUp, context: RestContext): RestRow {
-  const timing = context.timingFor(feeder);
+  const timing = context.index.timingFor(feeder);
   const { requiredMinutes, typeChange } = requirementFor(feeder, target, timing);
-  const anchor = resolveAnchor(normalizeTimes(feeder, context.frame), timing);
+  const anchor = resolveAnchor(context.index.times(feeder), timing);
   // As for a live row: once the projected finish has passed, the projection has expired,
   // and naming a `readyAt` behind the clock would read as though the winner were free.
   const overrun = !!anchor && anchor.ms <= context.asOfMs;
   const readyAt =
-    anchor && !overrun ? localClock(anchor.ms + requiredMinutes * MS_PER_MINUTE, context.frame) : undefined;
+    anchor && !overrun ? localClock(anchor.ms + requiredMinutes * MS_PER_MINUTE, context.index.frame) : undefined;
   return {
     // Namespaced so nothing downstream can mistake it for a participantId: the match that
     // decides the side is the only identity available.
@@ -643,8 +725,8 @@ function pendingSideRows(target: HydratedMatchUp, context: RestContext): RestRow
   const undecided = (target.sides ?? []).filter((side) => !(side.participantId ?? side.participant?.participantId));
   if (!undecided.length) return [];
 
-  const feeders = context.matchUps
-    .filter((matchUp) => feedsInto(matchUp, target.matchUpId) && matchUp.matchUpStatus !== BYE && !isFinished(matchUp))
+  const feeders = (context.index.feedersOf.get(target.matchUpId) ?? [])
+    .filter((matchUp) => matchUp.matchUpStatus !== BYE && !isFinished(matchUp))
     .toSorted(
       (a, b) =>
         (a.schedule?.scheduledTime ?? '').localeCompare(b.schedule?.scheduledTime ?? '') ||
@@ -658,12 +740,9 @@ function pendingSideRows(target: HydratedMatchUp, context: RestContext): RestRow
  * Rest for every individual in one matchUp. Rows are ordered worst-first
  * (`onCourt` → `resting` → `rested` → `none`) so a renderer can take the head as
  * the headline without re-deciding severity.
- *
- * Exported for callers that already hold hydrated matchUps and a resolver.
  */
-export function analyzeParticipantRest(params: RestContext & { matchUpId: string }): RestResult {
-  const { matchUpId, ...context } = params;
-  const target = context.matchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
+function answerRest(context: RestContext, matchUpId: string): RestResult {
+  const target = context.index.byId.get(matchUpId);
   if (!target) return { evaluated: false, reason: 'unknownMatchUp' };
   if (target.matchUpStatus === BYE) return { evaluated: false, reason: 'bye' };
   if (isFinished(target)) return { evaluated: false, reason: 'completed' };
@@ -671,10 +750,9 @@ export function analyzeParticipantRest(params: RestContext & { matchUpId: string
   const participantIds = individualIds(target);
   if (!participantIds.length) return { evaluated: false, reason: 'noParticipants' };
 
-  const dayMatchUps = collectPriorMatchUps(target, context);
   const order: RestStatus[] = ['onCourt', 'resting', 'rested', 'none'];
   const rows = [
-    ...participantIds.map((participantId) => restRowFor(participantId, target, context, dayMatchUps)),
+    ...participantIds.map((participantId) => restRowFor(participantId, target, context)),
     // Sorted in rather than appended: an undecided side is the worst row by construction.
     ...pendingSideRows(target, context),
   ].toSorted((a, b) => order.indexOf(a.status) - order.indexOf(b.status) || deficitMinutes(b) - deficitMinutes(a));
@@ -685,6 +763,102 @@ export function analyzeParticipantRest(params: RestContext & { matchUpId: string
     scheduledDate: context.scheduledDate,
     rows,
   };
+}
+
+/**
+ * Rest for one matchUp, for callers that already hold hydrated matchUps and a resolver.
+ * Builds a one-answer index; to answer many matchUps, use `getParticipantsRest`.
+ */
+export function analyzeParticipantRest(
+  params: RestIndexInput & { scheduledDate: string; asOfMs: number; matchUpId: string },
+): RestResult {
+  const { matchUpId, scheduledDate, asOfMs, ...input } = params;
+  return answerRest({ index: buildRestIndex(input), scheduledDate, asOfMs }, matchUpId);
+}
+
+/** One matchUp to answer, at its own instant and on its own day. */
+export type ParticipantsRestRequest = {
+  matchUpId: string;
+  /** The instant this answer is "as of", ISO. Required: the factory holds no clock. */
+  asOf: string;
+  /** The day rest is measured on. Defaults to the matchUp's own `scheduledDate`. */
+  scheduledDate?: string;
+};
+
+type GetParticipantsRestArgs = {
+  tournamentRecord: Tournament;
+  /** Hydrated `{ inContext: true }`. Resolved from the record, once, when absent. */
+  matchUps?: HydratedMatchUp[];
+  /**
+   * Required. One entry per matchUp to answer. Each carries its own `asOf` and day, because a caller
+   * badging a schedule measures a past day as of that day and today as of now (CA, 2026-10-24: no
+   * implicit "every matchUp", which would impose one day and one instant on cards that need different ones).
+   */
+  requests: ParticipantsRestRequest[];
+  /** IANA zone. Defaults to the tournament's `localTimeZone`; DST-correct, which an offset cannot be. */
+  timeZone?: string;
+  /** Fixed offset east of UTC. Ignored when `timeZone` is supplied. */
+  utcOffsetMinutes?: number;
+};
+
+/**
+ * Participant rest for many matchUps in one call: `rests[i]` answers `requests[i]`, exactly as
+ * `getParticipantRest` answers that request alone.
+ *
+ * The work that does not depend on which matchUp is asked about is done once per call (`buildRestIndex`),
+ * and the day's begun matchUps once per distinct `(scheduledDate, asOf)` (`dayPriorByIndividual`). A
+ * schedule render that asked once per card paid for every matchUp's times on every card; here it pays
+ * once. Results are aligned with `requests` rather than keyed by matchUpId, so one matchUp asked about on
+ * two days gets two answers.
+ */
+export function getParticipantsRest(params: GetParticipantsRestArgs): ResultType & { rests?: RestResult[] } {
+  const paramsCheck = checkRequiredParameters(params, [
+    { [TOURNAMENT_RECORD]: true },
+    { requests: true, _ofType: ARRAY },
+  ]);
+  if (paramsCheck.error) return paramsCheck;
+  const { tournamentRecord, requests, utcOffsetMinutes = 0 } = params;
+  const missing = requests.findIndex((request) => !request?.matchUpId);
+  if (missing >= 0) return { error: MISSING_MATCHUP_ID, context: { requestIndex: missing } };
+
+  // Resolved on first use: a call whose every request is refused before the matchUps are needed
+  // (no instant) never hydrates the tournament, as a single `getParticipantRest` never did.
+  let index: RestIndex | undefined;
+  const indexFor = (): RestIndex => {
+    if (index) return index;
+    const matchUps =
+      params.matchUps ??
+      ((allTournamentMatchUps({ tournamentRecord, inContext: true })?.matchUps ?? []) as HydratedMatchUp[]);
+    const limits: any = getDailyLimit({ tournamentRecord });
+    index = buildRestIndex({
+      frame: { utcOffsetMinutes, timeZone: params.timeZone ?? tournamentRecord?.localTimeZone },
+      timingFor: makeTimingResolver(tournamentRecord),
+      dailyLimits: limits?.error ? undefined : limits?.matchUpDailyLimits,
+      matchUps,
+    });
+    return index;
+  };
+
+  const rests = requests.map((request): RestResult => {
+    const asOfMs = isoToMs(request.asOf);
+    // Without an instant there is nothing to measure from, and substituting one
+    // would be the factory reading a clock it does not have.
+    if (asOfMs === null) return { evaluated: false, reason: 'noAsOf' };
+
+    const resolved = indexFor();
+    const target = resolved.byId.get(request.matchUpId);
+    if (!target) return { evaluated: false, reason: 'unknownMatchUp' };
+
+    // Rest is scoped to a day, and an unscheduled matchUp has none of its own. The
+    // caller names one — that is what a catalog card is asking about — and saying
+    // so beats measuring against a day nobody chose.
+    const scheduledDate = request.scheduledDate ?? target.schedule?.scheduledDate;
+    if (!scheduledDate) return { evaluated: false, reason: 'noDay' };
+
+    return answerRest({ index: resolved, scheduledDate, asOfMs }, request.matchUpId);
+  });
+
+  return { rests };
 }
 
 type GetParticipantRestArgs = {
@@ -710,41 +884,20 @@ type GetParticipantRestArgs = {
   timeZone?: string;
 };
 
+/** Rest for one matchUp: `getParticipantsRest` with one request. */
 export function getParticipantRest(params: GetParticipantRestArgs): ResultType & { rest?: RestResult } {
   const paramsCheck = checkRequiredParameters(params, [{ [TOURNAMENT_RECORD]: true, matchUpId: true }]);
   if (paramsCheck.error) return paramsCheck;
   if (!params.matchUpId) return { error: MISSING_MATCHUP_ID };
 
-  const { tournamentRecord, matchUpId, asOf, utcOffsetMinutes = 0 } = params;
-  const asOfMs = isoToMs(asOf);
-  // Without an instant there is nothing to measure from, and substituting one
-  // would be the factory reading a clock it does not have.
-  if (asOfMs === null) return { rest: { evaluated: false, reason: 'noAsOf' } };
-
-  const matchUps =
-    params.matchUps ??
-    ((allTournamentMatchUps({ tournamentRecord, inContext: true })?.matchUps ?? []) as HydratedMatchUp[]);
-
-  const target = matchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
-  if (!target) return { rest: { evaluated: false, reason: 'unknownMatchUp' } };
-
-  // Rest is scoped to a day, and an unscheduled matchUp has none of its own. The
-  // caller names one — that is what a catalog card is asking about — and saying
-  // so beats measuring against a day nobody chose.
-  const scheduledDate = params.scheduledDate ?? target.schedule?.scheduledDate;
-  if (!scheduledDate) return { rest: { evaluated: false, reason: 'noDay' } };
-
-  const limits: any = getDailyLimit({ tournamentRecord });
-
-  const rest = analyzeParticipantRest({
-    frame: { utcOffsetMinutes, timeZone: params.timeZone ?? tournamentRecord?.localTimeZone },
-    timingFor: makeTimingResolver(tournamentRecord),
-    dailyLimits: limits?.error ? undefined : limits?.matchUpDailyLimits,
-    scheduledDate,
-    matchUpId,
+  const { tournamentRecord, matchUps, matchUpId, asOf, scheduledDate, timeZone, utcOffsetMinutes } = params;
+  const result = getParticipantsRest({
+    requests: [{ matchUpId, asOf, ...(scheduledDate !== undefined && { scheduledDate }) }],
+    tournamentRecord,
+    utcOffsetMinutes,
     matchUps,
-    asOfMs,
+    timeZone,
   });
-
-  return { rest };
+  if (result.error) return result;
+  return { rest: result.rests?.[0] };
 }
