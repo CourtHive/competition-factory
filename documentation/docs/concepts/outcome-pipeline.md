@@ -484,6 +484,38 @@ suite's rethrowing provider fails the test, and the exit-propagation census reco
 that diverged stay written unless the call asked for `rollbackOnError`, the same as for any refusal
 a later outcome meets (§ 8).
 
+## 7.2 The plan as ops (S1)
+
+v2 states a call's writes as **ops**, a closed vocabulary folded by one reducer (`outcome/ops.ts`) into a stored-shape
+draw. The overlay, the `differential` shadow apply and, from S2, apply itself all use the same reducer, so what a plan
+says and what lands are one thing. The reducer decides nothing and refuses nothing.
+
+| op                 | what it writes                                                                                                                                                                                                                        |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `setMatchUpResult` | the matchUp's status, winner, score (as the call gave it, or blanked), a new format, status codes, and `schedule.scoredTime` by v1's rule: captured the first time the matchUp is scored, kept on corrections, removed with the score |
+| `stampUpdatedAt`   | one `updatedAt` per touched entity per call (F2 (i)): the call's captured instant, or the previous stamp + 1 ms when that is already as late                                                                                          |
+
+`planOutcome` returns a complete plan only when every write the call makes is an op; otherwise it **abstains**, naming
+the first reason, and the call is v1's whole (fail-closed). The reasons are the work list of the slices that follow:
+
+| reason         | the call                                                                         | taken on by                                  |
+| -------------- | -------------------------------------------------------------------------------- | -------------------------------------------- |
+| `team`         | is a dual or one of its lines                                                    | S7                                           |
+| `schedule`     | carries a schedule                                                               | a later slice (§ 3.5.8 of the executor plan) |
+| `notes`        | carries notes                                                                    | a later slice                                |
+| `status-codes` | carries the client's positional status codes, split into side codes at the write | S2                                           |
+| `exit`         | has an exit status before or after                                               | S5                                           |
+| `winner`       | sets or takes away a winner, so something is directed or taken back              | S3                                           |
+| `route`        | takes a route, or reaches a status, that S1 does not plan as ops                 | S2                                           |
+| `provenance`   | is on a matchUp holding side-exit provenance the score write may clear or rescue | S5                                           |
+| `tallied`      | is in a round-robin, ad hoc or lucky structure, whose tally the write updates    | S3                                           |
+| `unchanged`    | would change nothing but stamps                                                  | S2 (with F2 in v1)                           |
+
+**In `differential`**, a complete plan is folded into the record as it stood before v1 ran and compared with the record
+v1 wrote. Until Phase C's F2 lands in v1, stamps are normalised in that comparison (debate-ruled 2026-10-24, pending
+CA review): a structure's `updatedAt` is left out, and a matchUp's and the draw's are compared as present or absent.
+v1 stamps once per notice and every top-level structure on each, so no value comparison can pass yet.
+
 ## 8. What the corpus pins
 
 |                                   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |

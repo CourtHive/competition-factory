@@ -9,9 +9,12 @@ import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
 import { observeWrite, planWrite } from './write';
+import { captureRecord } from '@Tools/recordDiff';
 import { refuseOutcome } from './refusals';
 import { buildOutcomeView } from './view';
+import { compareShadow } from './shadow';
 import { chooseRoute } from './route';
+import { planOutcome } from './plan';
 import {
   getNoticeBuffer,
   getOutcomePipeline,
@@ -59,6 +62,17 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   const plan = route ? planWrite(planned, view, route) : undefined;
   const direction = route ? planDirection(planned, view, route) : undefined;
   const dual = route ? planDual(args, view) : undefined;
+  // S1: the same plan as ops, behind the fail-closed allowlist; a complete one is shadow-applied once v1 has written,
+  // to the record as it stands here (one canonical capture, taken only for a complete plan)
+  const outcome = planOutcome({
+    drawDefinition: args.drawDefinition,
+    request: planned,
+    write: plan,
+    direction,
+    route,
+    view,
+  });
+  const shadowBefore = outcome.ops && args.tournamentRecord ? captureRecord(args.tournamentRecord) : undefined;
 
   // AN ERROR CHANGES NOTHING (CA, 2026-10-18), and a divergence is an error raised after v1 has written: what the
   // call touches is captured here, before v1 runs, and written back into the same objects before the divergence leaves
@@ -113,6 +127,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
       });
     differentialTally(route, 'compared');
     if (planned !== args.request) differentialTally('team-autocalc', 'compared');
+    checkShadow();
 
     // § 5 rule 1: the winner stands in the matchUp direction names, and the loser where its link says
     if (dual) checkDual({ args, after, route, dual });
@@ -122,6 +137,26 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     checkDirection({ args, after, route, direction });
     differentialTally(`${route}:direction`, 'compared');
     if (planned !== args.request) differentialTally('team-autocalc:direction', 'compared');
+  }
+
+  /** S1: the complete plan, folded into the record as it stood before v1, against the record v1 wrote */
+  function checkShadow() {
+    if (outcome.abstain) return differentialTally(`shadow:abstain:${outcome.abstain}`, 'deferred');
+    if (!shadowBefore || !args.tournamentRecord || !args.drawDefinition)
+      return differentialTally('shadow:abstain:no-record', 'deferred');
+    const shadow = compareShadow({
+      drawId: args.drawDefinition.drawId,
+      record: args.tournamentRecord,
+      before: shadowBefore,
+      ops: outcome.ops,
+    });
+    if (!shadow.equal)
+      throw new OutcomePipelineDivergence({
+        matchUpId: args.request.matchUpId,
+        v1: `wrote ${shadow.path} = ${shadow.v1}`,
+        v2: `shadow-applied ${outcome.ops.length} ops: ${shadow.path} = ${shadow.v2}`,
+      });
+    differentialTally('shadow:applied', 'compared');
   }
 }
 

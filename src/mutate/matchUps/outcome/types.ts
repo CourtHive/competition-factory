@@ -43,6 +43,8 @@ export type OutcomeRequest = {
   score?: OutcomeScore;
   matchUpFormat?: string;
   flags: OutcomeFlags;
+  /** what else the call carries that v1 writes and v2 does not yet plan: a call carrying either abstains (S1) */
+  carries?: { schedule?: boolean; notes?: boolean };
 };
 
 /** § 2: one code, the row of the table that raised it, and what a person or a client needs to see */
@@ -86,6 +88,8 @@ export type OutcomeView = {
     validWinningScore: boolean;
     /** the matchUp holds a carried or produced exit: changed at its origin, never here (§ 2 row 20) */
     carriedExit: boolean;
+    /** any side holds a `sideExitProvenance` entry, which v1's score write may clear or rescue */
+    hasSideExitProvenance: boolean;
   };
   /** what the requested score would decide under the format the call would apply; undefined when nothing */
   impliedWinningSide?: number;
@@ -185,6 +189,8 @@ export type OutcomeView = {
     timedTie: boolean;
     rotatingPartners?: boolean;
     combinedPointRoundRobin?: boolean;
+    /** v1's score write updates a tally here (`updateTallyIfNeeded`): a round-robin container, ad hoc, or lucky */
+    tallied: boolean;
   };
 };
 

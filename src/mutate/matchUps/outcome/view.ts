@@ -26,6 +26,7 @@ import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { isLucky } from '@Query/drawDefinition/isLucky';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
 import { matchUpsOf } from '@Acquire/structureMembers';
@@ -419,11 +420,17 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     drawType: drawDefinition?.drawType,
     found: false,
     isTeam: false,
-    existing: { validWinningScore: false, scoreHasValue: false, scoredTime: false, carriedExit: false },
+    existing: {
+      validWinningScore: false,
+      scoreHasValue: false,
+      scoredTime: false,
+      carriedExit: false,
+      hasSideExitProvenance: false,
+    },
     propagatedExitStands: false,
     activeDownstream: false,
     participants: { required: false, count: 0, exitAwardable: false, requireForScoring: true },
-    draw: { isAdHoc: false, teamRoundRobin: false, includesBye: false, timedTie: false },
+    draw: { isAdHoc: false, teamRoundRobin: false, includesBye: false, timedTie: false, tallied: false },
     targets: {
       luckyPreFeed: false,
       sideParticipantIds: {},
@@ -645,6 +652,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       ownMatchUpFormat: matchUp.matchUpFormat,
       validWinningScore: !LIVE_OR_UNSET.has(matchUp.matchUpStatus) && validWinningScore,
       carriedExit: isPropagatedExit({ matchUp }),
+      hasSideExitProvenance: Object.values(matchUp.sideExitProvenance ?? {}).some(Boolean),
     },
     impliedWinningSide,
     propagatedExitStands,
@@ -704,6 +712,11 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       ),
     },
     draw: {
+      // v1's `updateTallyIfNeeded`, on the structure it reads: the container a round-robin group sits in
+      tallied:
+        !!inContextMatchUp?.containerStructureId ||
+        !!isAdHoc({ structure }) ||
+        !!isLucky({ drawDefinition, structure }),
       isAdHoc: !!isAdHoc({ structure }),
       teamRoundRobin: !!(matchUp.tieMatchUps && !matchUp.roundPosition && inContextMatchUp?.containerStructureId),
       includesBye: !!matchUp.drawPositions?.some((position) =>
