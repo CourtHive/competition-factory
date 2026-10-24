@@ -205,19 +205,22 @@ export function planOutcome(args: {
     );
   }
   // a plain loser arrival: the loser on the seat the link feeds. The matchUp they land in is not stamped: its stored
-  // object does not change (the write is on the structure's assignments), so it is not a touched entity (F2 (i), and v1)
+  // object does not change (the write is on the structure's assignments), so it is not a touched entity (F2 (i), and v1).
+  // The structure whose assignments change is, so it is stamped (v1's `modifyPositionAssignmentsNotice`).
   const loser = args.direction?.loser;
-  if (loser?.arrives && view.targets.loserStructureId && view.targets.loserTargetDrawPosition) {
+  const loserStructureId = view.targets.loserStructureId;
+  const loserArrives = !!(loser?.arrives && loserStructureId && view.targets.loserTargetDrawPosition);
+  if (loserArrives) {
     ops.push({
       op: 'assignPosition',
-      structureId: view.targets.loserStructureId,
-      drawPosition: view.targets.loserTargetDrawPosition,
-      participantId: loser.participantId,
+      structureId: loserStructureId as string,
+      drawPosition: view.targets.loserTargetDrawPosition as number,
+      participantId: loser?.participantId as string,
     });
   }
-  ops.push(
-    { op: 'stampUpdatedAt', entity: 'structure', id: structureId },
-    { op: 'stampUpdatedAt', entity: 'drawDefinition', id: drawDefinition.drawId },
-  );
+  ops.push({ op: 'stampUpdatedAt', entity: 'structure', id: structureId });
+  if (loserArrives && loserStructureId !== structureId)
+    ops.push({ op: 'stampUpdatedAt', entity: 'structure', id: loserStructureId as string });
+  ops.push({ op: 'stampUpdatedAt', entity: 'drawDefinition', id: drawDefinition.drawId });
   return { ops };
 }

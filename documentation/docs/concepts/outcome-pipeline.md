@@ -326,6 +326,12 @@ After the write, and only on success:
    stamp on by 2 ms (`oneStampPerEntityPerCall.test.ts`). A state provider without the optional
    `getCapturedStamps`/`setCapturedStamps` hooks keeps no ledger and stamps at each notice, as before.
 
+   **The touched entities** are the matchUps the call writes, the draw, the top-level structure holding each matchUp
+   written (a round robin's container, the dual's structure for a line), and any structure whose position
+   assignments change (a loser fed across a link). A matchUp notice stamped every top-level structure until
+   2026-10-24, so a CURTIS main score stamped its Play Off. A matchUp that no top-level structure holds still stamps
+   every structure.
+
 ## 6. Guarantees
 
 - **A refusal changes nothing** (`ERROR_IMPLIES_NO_MUTATION`). The checks in § 2 run above every
@@ -546,9 +552,9 @@ the slices that follow:
 | `clock`        | is made outside an engine call, with no captured instant, so the timestamps a write takes cannot be reproduced | none: production calls go through the engine |
 
 **In `differential`**, a complete plan is folded into the record as it stood before v1 ran and compared with the record
-v1 wrote. A matchUp's and the draw's `updatedAt` are compared by value: v1 stamps each entity once per call, as v2
-does (F2 (i)). A structure's `updatedAt` is still left out (CA, 2026-10-24, a temporary blind spot), because v1's
-matchUp notice stamps every top-level structure, where F2 (i) stamps only the matchUp's own.
+v1 wrote, every `updatedAt` by value: v1 stamps each touched entity once per call, as v2 does (F2 (i), § 5 step 6).
+Until 2026-10-24 stamps were normalised there (structures left out, the draw and matchUps by presence), because v1
+stamped at each notice and every top-level structure on each.
 
 ## 8. What the corpus pins
 

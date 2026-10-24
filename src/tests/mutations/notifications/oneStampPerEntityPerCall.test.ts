@@ -97,18 +97,20 @@ it('still moves the stamp on in each of two calls, under a fixed clock', () => {
 });
 
 /**
- * NOT YET F2 (i): THE STRUCTURES. A matchUp notice stamps every top-level structure; F2 (i) stamps only the matchUp's
- * own. Until v1 changes, the `differential` shadow leaves structure stamps out (`outcome/shadow.ts`, CA 2026-10-24, a
- * temporary blind spot). When it changes, this test fails: take structure stamps out of `normaliseStamps` with it.
+ * ONLY THE STRUCTURE THE MATCHUP IS IN. A matchUp notice stamps the draw and the one top-level structure holding the
+ * matchUp; until 2026-10-24 it stamped every top-level structure, so a CURTIS main score stamped its Play Off.
  */
-it('still stamps a structure the result never reaches', () => {
+it("stamps the matchUp's own structure, and not a structure the result never reaches", () => {
   const { firstRound, outcome } = firstRoundDraw({ drawType: CURTIS });
-  const playOff = () => drawDefinition().structures.find((structure: any) => structure.structureName?.includes('Play'));
+  const structureNamed = (name: string) =>
+    drawDefinition().structures.find((structure: any) => structure.structureName?.includes(name));
   // CONTROL: CURTIS has a play-off, and the main first-round score does not reach it
-  expect(playOff()).toBeDefined();
-  const before = ms(playOff().updatedAt);
+  expect(structureNamed('Play')).toBeDefined();
+  const playOffBefore = structureNamed('Play').updatedAt;
+  const mainBefore = structureNamed('Main').updatedAt;
 
   tournamentEngine.setMatchUpStatus({ matchUpId: firstRound[0].matchUpId, outcome, drawId: 'd' });
 
-  expect(ms(playOff().updatedAt)).toBeGreaterThan(before);
+  expect(structureNamed('Play').updatedAt).toEqual(playOffBefore);
+  expect(ms(structureNamed('Main').updatedAt)).toEqual(oneStampAfter(mainBefore));
 });

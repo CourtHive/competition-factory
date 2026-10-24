@@ -18,24 +18,11 @@ import type { OutcomeOp } from './ops';
  * record v1 wrote. A difference is a divergence: either the plan missed a write or v1 made one the spec does not
  * state.
  *
- * STAMPS ARE COMPARED BY VALUE, but for structures. v1 stamps an entity once per call (F2 (i), CA 2026-10-19), as v2
- * does. A structure's `updatedAt` is still left out (CA, 2026-10-24, a temporary blind spot): v1's matchUp notice
- * stamps every top-level structure, F2 (i) only the matchUp's own, and that half of F2 is not yet in v1.
+ * STAMPS ARE COMPARED BY VALUE. v1 stamps each entity once per call, and only the structure holding the matchUp, as
+ * v2 does (F2 (i), CA 2026-10-19).
  */
 
 type Json = Record<string, unknown>;
-
-/** a record's JSON with structure stamps removed, the one part of F2 (i) v1 does not yet keep */
-export function normaliseStamps(record: Json): Json {
-  const visit = (structure: Json) => {
-    delete structure.updatedAt;
-    for (const child of (structure.structures as Json[] | undefined) ?? []) visit(child);
-  };
-  for (const event of (record.events as Json[] | undefined) ?? [])
-    for (const drawDefinition of (event.drawDefinitions as Json[] | undefined) ?? [])
-      for (const structure of (drawDefinition.structures as Json[] | undefined) ?? []) visit(structure);
-  return record;
-}
 
 export type ShadowResult = { equal: true } | { equal: false; path: string; v1: string; v2: string };
 
@@ -66,8 +53,8 @@ export function compareShadow({
   const applied = applyOutcomeOps(drawDefinition as unknown as DrawDefinition, ops, stampedBefore);
   if (applied.error) return { equal: false, path: '(ops)', v1: 'applied', v2: applied.error };
 
-  const v1 = normaliseStamps(JSON.parse(captureRecord(record)) as Json);
-  const v2 = normaliseStamps(JSON.parse(captureRecord(shadow)) as Json);
+  const v1 = JSON.parse(captureRecord(record)) as Json;
+  const v2 = JSON.parse(captureRecord(shadow)) as Json;
   const [first] = generatePatch(v2, v1);
   if (!first) return { equal: true };
   const at = (root: Json) =>

@@ -2,14 +2,15 @@ import { addNotice, deleteNotice, getCapturedStamps } from '@Global/state/global
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getDrawPositionSides } from '@Query/matchUps/getDrawPositionSides';
 import { drawOrigin, eventOrigin } from '@Query/readModel/readModelRows';
+import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { nowMs } from '@Tools/clock';
 
 // constants and types
 import { ErrorType, MISSING_DRAW_DEFINITION, MISSING_MATCHUP } from '@Constants/errorConditionConstants';
+import { DrawDefinition, MatchUp, Structure } from '@Types/tournamentTypes';
 import { DRAW_DEFINITION, STRUCTURE } from '@Constants/attributeConstants';
-import { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   ADD_DRAW_DEFINITION,
@@ -185,6 +186,18 @@ function resolveStructureId(drawDefinition?: DrawDefinition, matchUpId?: string)
   return search(drawDefinition.structures);
 }
 
+/**
+ * The top-level structure whose subtree holds the matchUp: a round robin's container for a group's matchUp, and the
+ * structure of the dual for one of its lines. The level `drawUpdatedAt` stamps at.
+ */
+function topLevelStructureId(drawDefinition: DrawDefinition, matchUpId: string): string | undefined {
+  const holds = (structure: Structure): boolean =>
+    !!matchUpsOf(structure)?.some(
+      (matchUp) => matchUp.matchUpId === matchUpId || matchUp.tieMatchUps?.some((line) => line.matchUpId === matchUpId),
+    ) || !!structuresOf(structure)?.some(holds);
+  return drawDefinition.structures?.find(holds)?.structureId;
+}
+
 export function modifyMatchUpNotice({
   drawDefinition,
   tournamentId,
@@ -205,12 +218,12 @@ export function modifyMatchUpNotice({
   const resolvedEventId = eventId ?? event?.eventId;
 
   if (drawDefinition) {
-    // DELIBERATELY the caller-supplied structureId only, NOT the resolved one below. This argument
-    // decides which structures get their `updatedAt` stamped by `drawUpdatedAt`; widening it to the
-    // resolved id would narrow stamping from "every structure" to "one" at 57 call sites — a
-    // behaviour change to timestamps consumers may sync on. Notice attribution and updatedAt
-    // stamping are separate concerns and are kept separate here.
-    const structureIds = structureId ? [structureId] : undefined;
+    // the draw and the ONE top-level structure that holds the matchUp are stamped (F2 (i), CA 2026-10-19): a stamp
+    // means "changed in this call", and the other structures did not change. Until 2026-10-24 every top-level
+    // structure was stamped unless the caller named one; nothing in the factory or its consumers reads a structure's
+    // stamp. A matchUp no top-level structure is found to hold still stamps every structure, as before.
+    const stampedStructureId = topLevelStructureId(drawDefinition, matchUp.matchUpId) ?? structureId;
+    const structureIds = stampedStructureId ? [stampedStructureId] : undefined;
     modifyDrawNotice({
       drawDefinition,
       structureIds,
