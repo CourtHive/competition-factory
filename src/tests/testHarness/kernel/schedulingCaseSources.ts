@@ -92,29 +92,30 @@ export const schedulingCaseSources: Source[] = [
   {
     caseId: 'scheduling.plan.garman-one-court.v1',
     note:
-      'One court, T = 90, L = 30. The engine numbers periods from 0 at the opening (period 0 totals C) and applies ' +
-      '(P − 1) to the period index, so TM is 1, 1, 1, 1, 2 for the periods starting 10:00 to 12:00 and the second ' +
-      'matchUp starts at 12:00. P counted from 1 at the opening would give 11:30: OPEN, scheduling-pipeline.md § 9.6.',
+      'One court, T = 90, L = 30. Periods number from 0 at the opening (period 0 totals C, period 1 adds none, as ' +
+      "Brian Garman's published tables do), and each total is rounded to the nearest match: 1, 1, 1.33 → 1, 1.67 → 2, " +
+      'so the second matchUp starts at 11:30, when the first is expected to end (scheduling-pipeline.md § 9.6, decided).',
     build: () => {
       tournament({ drawSize: 4, courtsCount: 1 });
       profileRounds([1]);
     },
     claims: (plan, ids) => {
-      expectEqual([timeOf(plan, ids['R1.1']), timeOf(plan, ids['R1.2'])], ['10:00', '12:00'], 'Garman periods');
+      expectEqual([timeOf(plan, ids['R1.1']), timeOf(plan, ids['R1.2'])], ['10:00', '11:30'], 'Garman periods');
     },
   },
   {
     caseId: 'scheduling.plan.final-waits-for-recovery.v1',
     note:
-      'Both semifinals at 10:00 on two courts; their players are free at 10:00 + 90 + 60 = 13:00, so the final, profiled ' +
-      'the same day, takes the first slot at or after 13:00.',
+      'Both semifinals at 10:00 on two courts; their players are free at 10:00 + 90 + 60 = 12:30, so the final, profiled ' +
+      'the same day, takes the first slot at or after 12:30, which is 12:30 (two courts: 10:00, 10:00, 11:00, 12:00, ' +
+      '12:30, ...).',
     build: () => {
       tournament({ drawSize: 4, courtsCount: 2 });
       profileRounds([1, 2]);
     },
     claims: (plan, ids) => {
       expectEqual([timeOf(plan, ids['R1.1']), timeOf(plan, ids['R1.2'])], ['10:00', '10:00'], 'semifinals');
-      expectEqual(timeOf(plan, ids['R2.1']), '13:00', 'the final after recovery');
+      expectEqual(timeOf(plan, ids['R2.1']), '12:30', 'the final after recovery');
     },
   },
   {
@@ -122,7 +123,7 @@ export const schedulingCaseSources: Source[] = [
     note:
       'A DO_NOT_SCHEDULE request from 10:00 to 11:30 for a participant placed in the matchUp: a 90 minute matchUp ' +
       "overlaps it from any start before 11:30, so the 10:00 slot is refused and the matchUp takes the court's next " +
-      'slot, 12:00 (one court: the slot after the opening is at 12:00, scheduling-pipeline.md § 9.6).',
+      'slot, 11:30.',
     build: () => {
       tournament({ drawSize: 2, courtsCount: 1 });
       profileRounds([1]);
@@ -134,7 +135,7 @@ export const schedulingCaseSources: Source[] = [
       if (!result.success) throw new Error('person request');
     },
     claims: (plan, ids) => {
-      expectEqual(timeOf(plan, ids['R1.1']), '12:00', 'the first slot after the request window');
+      expectEqual(timeOf(plan, ids['R1.1']), '11:30', 'the first slot after the request window');
       // the conflict is reported against the request, beside the date keys (scheduling-pipeline.md § 9.7)
       const conflicts = Object.values(plan.requestConflicts as Record<string, any>).filter((entry) => entry?.request);
       expectEqual(
