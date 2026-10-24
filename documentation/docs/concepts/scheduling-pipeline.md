@@ -168,9 +168,10 @@ Dates are taken in order. On each date:
    of mixed formats is timed by its first). A round none of whose matchUps has a format cannot be timed: nothing of
    it is placed, and its matchUps not yet timed are reported in `noFormatMatchUpIds`. The venue's **slots** are its
    Garman times: with `C` courts available, average minutes `T` and period length `L`, the matchUps expected by period
-   `P` are
-   `TM = Int(((L × C) / T) × (P − 1) + C)`, and a period's slots are the difference from the period before, computed
-   over each court's availability and bookings. `T` is the **greatest** average among the venue's rounds on the date (the
+   `P` are `TM = ((L × C) / T) × (P − 1) + C`, **rounded to the nearest match**, and a period's slots are the difference
+   from the period before, computed over each court's availability and bookings. Periods number from 0 at the venue's
+   opening, which takes `C`; period 1 adds none. This is Brian Garman's own numbering and rounding ("The Revised Garman
+   System", 2009-10: 10 courts of 90-minute matches total 10, 10, 13, 17, 20, … 77, 80 over 23 half-hour periods). `T` is the **greatest** average among the venue's rounds on the date (the
    rounds form a single group), and `L` is the call's `periodLength`.
 3. **Slot by slot.** Each slot is offered to the venue's remaining matchUps in profile order; the first that passes the
    gate is placed there. A venue places at most as many matchUps per pass as it has courts; a slot no matchUp takes is
@@ -279,11 +280,13 @@ the calls that decide placements; the bulk and reschedule mutations write the ti
    rest of § 2).
 5. **C7: a round of mixed formats is timed by its first matchUp's format** (§ 4, step 2). Should each matchUp take its
    own format's minutes?
-6. **The first Garman period is counted twice.** The slots number periods from 0 at the venue's opening, give period 0
-   the courts available (`C`), and apply `(P − 1)` to the period index from period 1 on, so period 1 also totals `C`.
-   With one court, `T` = 90 and `L` = 30, the second matchUp therefore starts at 12:00, where `P` counted from 1 at the
-   opening gives 11:30, the moment the first is expected to end. Pinned as the engine behaves by
-   `scheduling.plan.garman-one-court.v1` (kernel cases). Is the extra period the rule?
+6. ~~**The first Garman period is counted twice.**~~ Decided (CA 2026-10-24, after research and a debate): the period
+   numbering was Garman's own, period 0 at the opening taking `C` and period 1 adding none, as every one of his
+   published tables does. The defect was truncation: the tables round each total to the nearest match, and the slots
+   truncated it, leaving a period short whenever the fraction passed one half. They now round (§ 4, step 2), so one
+   court of 90-minute matchUps in 30-minute periods takes its second matchUp at 11:30, when the first is expected to
+   end. Pinned by `scheduling.plan.garman-one-court.v1` (kernel cases) and the published 10-court column in
+   `garman.test.ts`.
 7. **Request conflicts are reported beside the dates.** `requestConflicts` is keyed by date, but each conflict found is
    added to the same object under its `requestId` (`{ request, scheduleTimes, matchUpIds }`), so the result mixes
    date keys and request keys. Pinned by `scheduling.plan.person-request-on-a-placed-side.v1`. Should conflicts sit

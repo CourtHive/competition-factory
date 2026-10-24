@@ -309,34 +309,37 @@
           "2026-03-02": {
             "venue-1": [
               {
-                "scheduleTime": "11:30"
+                "scheduleTime": "11:00"
               },
               {
                 "scheduleTime": "12:00"
               },
               {
-                "scheduleTime": "13:00"
+                "scheduleTime": "12:30"
               },
               {
                 "scheduleTime": "13:30"
               },
               {
-                "scheduleTime": "14:30"
+                "scheduleTime": "14:00"
               },
               {
                 "scheduleTime": "15:00"
               },
               {
-                "scheduleTime": "16:00"
+                "scheduleTime": "15:30"
               },
               {
                 "scheduleTime": "16:30"
               },
               {
-                "scheduleTime": "17:30"
+                "scheduleTime": "17:00"
               },
               {
                 "scheduleTime": "18:00"
+              },
+              {
+                "scheduleTime": "18:30"
               }
             ]
           }
@@ -671,16 +674,16 @@
           "2026-03-02": {
             "venue-1": [
               {
-                "scheduleTime": "13:30"
+                "scheduleTime": "13:00"
               },
               {
-                "scheduleTime": "15:00"
+                "scheduleTime": "14:30"
               },
               {
-                "scheduleTime": "16:30"
+                "scheduleTime": "16:00"
               },
               {
-                "scheduleTime": "18:00"
+                "scheduleTime": "17:30"
               }
             ]
           }
@@ -690,7 +693,7 @@
         },
         "matchUpScheduleTimes": {
           "e4b6f994-a2e7-4435-ad49-f374c8d9c541": "10:00",
-          "93ad131a-f64c-49e5-b2b8-4a825b67aca3": "12:00"
+          "93ad131a-f64c-49e5-b2b8-4a825b67aca3": "11:30"
         },
         "overLimitMatchUpIds": {
           "2026-03-02": []
@@ -716,7 +719,7 @@
               },
               {
                 "matchUpId": "93ad131a-f64c-49e5-b2b8-4a825b67aca3",
-                "scheduleTime": "12:00"
+                "scheduleTime": "11:30"
               }
             ]
           }
@@ -728,7 +731,7 @@
         }
       }
     },
-    "note": "One court, T = 90, L = 30. The engine numbers periods from 0 at the opening (period 0 totals C) and applies (P − 1) to the period index, so TM is 1, 1, 1, 1, 2 for the periods starting 10:00 to 12:00 and the second matchUp starts at 12:00. P counted from 1 at the opening would give 11:30: OPEN, scheduling-pipeline.md § 9.6."
+    "note": "One court, T = 90, L = 30. Periods number from 0 at the opening (period 0 totals C, period 1 adds none, as Brian Garman's published tables do), and each total is rounded to the nearest match: 1, 1, 1.33 → 1, 1.67 → 2, so the second matchUp starts at 11:30, when the first is expected to end (scheduling-pipeline.md § 9.6, decided)."
   },
   {
     "caseId": "scheduling.plan.final-waits-for-recovery.v1",
@@ -1045,7 +1048,7 @@
           "2026-03-02": {
             "d47031ed-7798-4443-aeb4-21a6e4082bc5": [
               {
-                "scheduleTime": "11:30",
+                "scheduleTime": "11:00",
                 "blockingParticipantIds": [
                   "8ed092c1-15c7-4870-8e5d-83bef613ba34",
                   "47241964-3a23-4400-be9a-839013bfc8a8",
@@ -1083,22 +1086,25 @@
                 "scheduleTime": "13:30"
               },
               {
-                "scheduleTime": "14:30"
+                "scheduleTime": "14:00"
               },
               {
                 "scheduleTime": "15:00"
               },
               {
-                "scheduleTime": "16:00"
+                "scheduleTime": "15:30"
               },
               {
                 "scheduleTime": "16:30"
               },
               {
-                "scheduleTime": "17:30"
+                "scheduleTime": "17:00"
               },
               {
                 "scheduleTime": "18:00"
+              },
+              {
+                "scheduleTime": "18:30"
               }
             ]
           }
@@ -1107,7 +1113,7 @@
           "2026-03-02": {
             "venue-1": [
               {
-                "scheduleTime": "11:30",
+                "scheduleTime": "11:00",
                 "attempts": 1
               },
               {
@@ -1120,7 +1126,7 @@
         "matchUpScheduleTimes": {
           "93ad131a-f64c-49e5-b2b8-4a825b67aca3": "10:00",
           "0cfb0d77-e887-4c4e-b16b-a16f6276194f": "10:00",
-          "d47031ed-7798-4443-aeb4-21a6e4082bc5": "13:00"
+          "d47031ed-7798-4443-aeb4-21a6e4082bc5": "12:30"
         },
         "overLimitMatchUpIds": {
           "2026-03-02": []
@@ -1154,7 +1160,7 @@
               },
               {
                 "matchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
-                "scheduleTime": "13:00"
+                "scheduleTime": "12:30"
               }
             ]
           }
@@ -1166,7 +1172,7 @@
         }
       }
     },
-    "note": "Both semifinals at 10:00 on two courts; their players are free at 10:00 + 90 + 60 = 13:00, so the final, profiled the same day, takes the first slot at or after 13:00."
+    "note": "Both semifinals at 10:00 on two courts; their players are free at 10:00 + 90 + 60 = 12:30, so the final, profiled the same day, takes the first slot at or after 12:30, which is 12:30 (two courts: 10:00, 10:00, 11:00, 12:00, 12:30, ...)."
   },
   {
     "caseId": "scheduling.plan.person-request-on-a-placed-side.v1",
@@ -1334,16 +1340,16 @@
           "2026-03-02": {
             "venue-1": [
               {
-                "scheduleTime": "13:30"
+                "scheduleTime": "13:00"
               },
               {
-                "scheduleTime": "15:00"
+                "scheduleTime": "14:30"
               },
               {
-                "scheduleTime": "16:30"
+                "scheduleTime": "16:00"
               },
               {
-                "scheduleTime": "18:00"
+                "scheduleTime": "17:30"
               }
             ]
           }
@@ -1359,7 +1365,7 @@
           }
         },
         "matchUpScheduleTimes": {
-          "9f9448bf-64e8-41ff-a4fc-fea40b2fac0d": "12:00"
+          "9f9448bf-64e8-41ff-a4fc-fea40b2fac0d": "11:30"
         },
         "overLimitMatchUpIds": {
           "2026-03-02": []
@@ -1393,7 +1399,7 @@
             "venue-1": [
               {
                 "matchUpId": "9f9448bf-64e8-41ff-a4fc-fea40b2fac0d",
-                "scheduleTime": "12:00"
+                "scheduleTime": "11:30"
               }
             ]
           }
@@ -1405,7 +1411,7 @@
         }
       }
     },
-    "note": "A DO_NOT_SCHEDULE request from 10:00 to 11:30 for a participant placed in the matchUp: a 90 minute matchUp overlaps it from any start before 11:30, so the 10:00 slot is refused and the matchUp takes the court's next slot, 12:00 (one court: the slot after the opening is at 12:00, scheduling-pipeline.md § 9.6)."
+    "note": "A DO_NOT_SCHEDULE request from 10:00 to 11:30 for a participant placed in the matchUp: a 90 minute matchUp overlaps it from any start before 11:30, so the 10:00 slot is refused and the matchUp takes the court's next slot, 11:30."
   },
   {
     "caseId": "scheduling.plan.daily-limit-holds-the-final.v1",
@@ -1740,7 +1746,7 @@
           "2026-03-02": [
             {
               "matchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
-              "attemptedTime": "11:30",
+              "attemptedTime": "11:00",
               "participants": [
                 {
                   "participantId": "8ed092c1-15c7-4870-8e5d-83bef613ba34",
@@ -1813,28 +1819,31 @@
                 "scheduleTime": "12:00"
               },
               {
-                "scheduleTime": "13:00"
+                "scheduleTime": "12:30"
               },
               {
                 "scheduleTime": "13:30"
               },
               {
-                "scheduleTime": "14:30"
+                "scheduleTime": "14:00"
               },
               {
                 "scheduleTime": "15:00"
               },
               {
-                "scheduleTime": "16:00"
+                "scheduleTime": "15:30"
               },
               {
                 "scheduleTime": "16:30"
               },
               {
-                "scheduleTime": "17:30"
+                "scheduleTime": "17:00"
               },
               {
                 "scheduleTime": "18:00"
+              },
+              {
+                "scheduleTime": "18:30"
               }
             ]
           }
@@ -1843,7 +1852,7 @@
           "2026-03-02": {
             "venue-1": [
               {
-                "scheduleTime": "11:30",
+                "scheduleTime": "11:00",
                 "attempts": 1
               }
             ]
@@ -2439,7 +2448,7 @@
                 "attempts": 10
               },
               {
-                "scheduleTime": "11:30",
+                "scheduleTime": "11:00",
                 "attempts": 10
               },
               {
@@ -2447,7 +2456,7 @@
                 "attempts": 10
               },
               {
-                "scheduleTime": "13:00",
+                "scheduleTime": "12:30",
                 "attempts": 10
               },
               {
@@ -2455,7 +2464,7 @@
                 "attempts": 10
               },
               {
-                "scheduleTime": "14:30",
+                "scheduleTime": "14:00",
                 "attempts": 10
               },
               {
@@ -2463,7 +2472,7 @@
                 "attempts": 10
               },
               {
-                "scheduleTime": "16:00",
+                "scheduleTime": "15:30",
                 "attempts": 10
               },
               {
@@ -2471,11 +2480,15 @@
                 "attempts": 10
               },
               {
-                "scheduleTime": "17:30",
+                "scheduleTime": "17:00",
                 "attempts": 10
               },
               {
                 "scheduleTime": "18:00",
+                "attempts": 10
+              },
+              {
+                "scheduleTime": "18:30",
                 "attempts": 10
               }
             ]

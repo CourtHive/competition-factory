@@ -6,11 +6,12 @@ import { getCourtsAvailableAtPeriodStart } from './getCourtsAvailableAtPeriodSta
 import { courtGenerator } from '@Assemblies/generators/scheduling/courtGenerator';
 import { getFirstTimeSlotStartTime } from './getFirstTimeSlotStartTime';
 import { generateRange } from '@Tools/arrays';
-import { ensureInt } from '@Tools/ensureInt';
 
 // constants and types
 import { ScheduleTimesResult, ResultType } from '@Types/factoryTypes';
 import { ARRAY } from '@Constants/attributeConstants';
+
+const ROUNDING_EPSILON = 1e-9;
 
 export function getScheduleTimes(params): ResultType & {
   scheduleTimes?: ScheduleTimesResult[];
@@ -129,7 +130,12 @@ export function getScheduleTimes(params): ResultType & {
     previousAvailableCourts = availableToScheduleCount;
     cumulativeMatches += calculationDifference;
 
-    const addToSchedule = ensureInt(cumulativeMatches) - totalMatchUps;
+    // the matches expected by this period, to the NEAREST whole match, as Brian Garman's published tables round them
+    // ("The Revised Garman System", 2009-10: 10 courts of 1 hr 30 min matches total 10, 10, 13, 17, 20, ... 77, 80).
+    // Truncating left a period short whenever the fraction passed one half: one court of 90-minute matchUps in
+    // 30-minute periods took its second matchUp at 12:00, not 11:30 (CA 2026-10-24). The epsilon keeps a sum that is a
+    // half in exact arithmetic from rounding down on floating-point drift.
+    const addToSchedule = Math.round(cumulativeMatches + ROUNDING_EPSILON) - totalMatchUps;
     totalMatchUps += addToSchedule;
 
     return {

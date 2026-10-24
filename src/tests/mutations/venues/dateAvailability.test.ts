@@ -230,11 +230,11 @@ it('can add events, venues, and modify court availbility', () => {
   expect(Object.values(result.matchUpScheduleTimes)).toEqual([
     '09:00', // QF
     '09:00', // QF
-    '10:30', // QF
+    '10:00', // QF
     '11:00', // QF
-    '12:00', // SF
+    '11:30', // SF
     '14:00', // SF
-    '15:30', // F
+    '16:00', // F
   ]);
 
   result = tournamentEngine.scheduleProfileRounds({
@@ -244,11 +244,11 @@ it('can add events, venues, and modify court availbility', () => {
   expect(Object.values(result.matchUpScheduleTimes)).toEqual([
     '09:00',
     '09:00',
-    '10:00',
-    '10:45',
-    '11:30',
+    '09:45',
+    '10:30',
+    '11:15',
+    '12:00',
     '14:00',
-    '15:45',
   ]);
 
   result = tournamentEngine.scheduleProfileRounds({
@@ -258,11 +258,11 @@ it('can add events, venues, and modify court availbility', () => {
   expect(Object.values(result.matchUpScheduleTimes)).toEqual([
     '09:00',
     '09:00',
-    '10:00',
-    '10:40',
-    '11:30',
+    '09:40',
+    '10:20',
+    '11:10',
+    '11:50',
     '14:00',
-    '15:40',
   ]);
 
   result = tournamentEngine.scheduleProfileRounds({
@@ -272,11 +272,11 @@ it('can add events, venues, and modify court availbility', () => {
   expect(Object.values(result.matchUpScheduleTimes)).toEqual([
     '09:00',
     '09:00',
-    '09:50',
-    '10:35',
-    '11:20',
+    '09:30',
+    '10:15',
+    '11:00',
+    '11:45',
     '14:00',
-    '15:30',
   ]);
 });
 

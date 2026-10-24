@@ -138,12 +138,13 @@ describe('jinn profile scheduling mechanics', () => {
       .map(scheduledTimeOf)
       .filter(Boolean);
 
-    // one court from 08:00 to 20:00 holds 7 of the 8 matchUps of 90 minutes, never two at once
+    // one court from 08:00 to 20:00 holds all 8 matchUps of 90 minutes, one every 90 minutes (the last at 18:30, ending at
+    // 20:00), never two at once
     expect({
       noTime: result.noTimeMatchUpIds[DATE].length,
       distinctTimes: new Set(times).size,
       scheduled: times.length,
-    }).toEqual({ scheduled: 7, distinctTimes: 7, noTime: 1 });
+    }).toEqual({ scheduled: 8, distinctTimes: 8, noTime: 0 });
   });
 
   // S4: one round was accepted at two venues on one date, raised no profile issue, and was
