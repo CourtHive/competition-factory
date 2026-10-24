@@ -21,6 +21,7 @@ import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentR
 import type { DeciderSnapshot } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
 import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -660,5 +661,7 @@ function propagateExitFrom({
       iterate = true;
     }
   }
+  // stopped at the bound with a level still to propagate to (F9): recorded for the census, success as before
+  if (iterate) recordSettleEvent({ kind: 'bound', site: 'propagateExitFrom', detail: context.loserMatchUp?.matchUpId });
   return undefined;
 }
