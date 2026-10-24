@@ -300,6 +300,13 @@ After the write, and only on success:
    decider never triggers it, so a decider played anyway keeps its result; in a TEAM draw a line of the
    decider's dual is a mutation of the decider (7.8.0). See
    [Double Elimination](./draw-types/double-elimination.mdx#the-decider).
+   **Last, no matchUp left without a result keeps its `scoredTime`** (`reconcileScoredTimes`). It is
+   asked after every settle step, because they can take a result away: `settleHeldExits` turns an exit
+   holder into a BYE, and the forward settle and the link passes release what was placed. Until
+   2026-10-24 it was asked before them, so the stamp outlived the result until the next call, whatever
+   that call was: 19 calls over the exitPropagation, drawDefinitions and matchUps suites ended that way
+   (13 BYEs, 6 TO_BE_PLAYED), and none does now (`aResultTheSettleRemovesTakesItsScoredTime.test.ts`).
+   A completed status is a result here as in § 4, so a decider made a DEAD_RUBBER keeps its stamp.
 6. **Notifications** (MODIFY_MATCHUP and the draw's topics) are emitted; the factory extension's
    `timeStamp` is written by the engine after the call.
 
