@@ -112,6 +112,23 @@ export function reconcileStaleExitOrigins({
   return rederived.length ? { rederived } : undefined;
 }
 
+/**
+ * THE PASS'S DETECTOR: a stale origin or a stale relay in the draw. The loop above acts on them; v2's has-work predicate
+ * (`outcome/settleWork.ts`) asks it of the working view, so the two cannot drift. An error reading a relay is work: the
+ * pass would return it.
+ */
+export function hasStaleExitOrigins({
+  drawDefinition,
+  matchUpsMap,
+}: {
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+}): boolean {
+  if (getStaleOrigins({ drawDefinition, matchUpsMap }).length) return true;
+  const relays = getStaleRelays({ drawDefinition, matchUpsMap });
+  return !!relays.error || !!relays.staleRelays?.length;
+}
+
 /** The sourceMatchUpIds named by a carried-exit entry which no longer describe their source. */
 function getStaleOrigins({
   drawDefinition,

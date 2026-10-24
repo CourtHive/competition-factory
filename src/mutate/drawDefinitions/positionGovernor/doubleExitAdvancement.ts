@@ -3763,17 +3763,46 @@ function settleHoldersToBye({
   // `WALKOVER ws=2` and stood there decided, past this net (census w2 9100211, FMLC 32/32, `Consolation|2|4`, read by
   // the outcome pipeline's invariant on the checkpoint differential, #5341)
   const holders = (getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? []).filter(
-    (matchUp) =>
-      isExit(matchUp.matchUpStatus) &&
-      !matchUp.collectionId &&
-      !matchUp.sides?.some((side) => side?.participantId) &&
-      matchUpHoldsBye({ drawDefinition, matchUp }),
+    (matchUp) => isHolderBesideBye({ drawDefinition, matchUp }),
   );
   for (const { matchUpId } of holders) {
     const result = settleHolderToBye({ holderMatchUpId: matchUpId, drawDefinition, matchUpsMap, params });
     if (result?.error) return result;
   }
   return undefined;
+}
+
+/** an exit label left beside a BYE with nobody in it: the BYE it holds (`settleHoldersToBye`) */
+function isHolderBesideBye({ drawDefinition, matchUp }: { drawDefinition: DrawDefinition; matchUp: HydratedMatchUp }) {
+  return (
+    isExit(matchUp.matchUpStatus) &&
+    !matchUp.collectionId &&
+    !matchUp.sides?.some((side) => side?.participantId) &&
+    matchUpHoldsBye({ drawDefinition, matchUp })
+  );
+}
+
+/**
+ * THE DETECTOR OF `settleHeldExits`' FOUR SUB-PASSES, asked of one hydration: a held exit to send on, a convergence
+ * stranding its exit, a BYE advancement owed across a winner link, or an exit holder beside a BYE. v2's has-work
+ * predicate (`outcome/settleWork.ts`) asks it of the working view; each sub-pass reads the same rule from here.
+ */
+export function hasHeldExitWork({
+  inContextDrawMatchUps,
+  drawDefinition,
+  matchUpsMap,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+}): boolean {
+  return inContextDrawMatchUps.some(
+    (matchUp) =>
+      !!getHeldExit({ inContextDrawMatchUps, drawDefinition, matchUpsMap, matchUp }) ||
+      strandsItsExit({ inContextDrawMatchUps, matchUpsMap, matchUp }) ||
+      !!getByeCrossing({ inContextDrawMatchUps, drawDefinition, matchUp }) ||
+      isHolderBesideBye({ drawDefinition, matchUp }),
+  );
 }
 
 function settleHolderToBye({

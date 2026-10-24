@@ -1,5 +1,7 @@
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
 import { carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
+import { PREDICTED_CALL, predictSettleWork, type SettleSite } from './settleWork';
 import { compareNotices, compareShadow, plannedNotices } from './shadow';
 import { convergence, isRelabel, planDirection } from './direction';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -10,6 +12,7 @@ import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { compareViews, hydrateShadow } from './viewOracle';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
+import { planOutcome, type OutcomePlan } from './plan';
 import { observeWrite, planWrite } from './write';
 import { captureRecord } from '@Tools/recordDiff';
 import { createWorkingView } from './overlay';
@@ -17,7 +20,6 @@ import { refuseOutcome } from './refusals';
 import { stampedInThisCall } from './ops';
 import { buildOutcomeView } from './view';
 import { chooseRoute } from './route';
-import { planOutcome } from './plan';
 import {
   getNoticeBuffer,
   getOutcomePipeline,
@@ -69,7 +71,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   const dual = route ? planDual(args, view) : undefined;
   // S1: the same plan as ops, behind the fail-closed allowlist; a complete one is shadow-applied once v1 has written,
   // to the record as it stands here (one canonical capture, taken only for a complete plan)
-  const outcome = planOutcome({
+  const allowed = planOutcome({
     tournamentRecord: args.tournamentRecord,
     drawDefinition: args.drawDefinition,
     request: planned,
@@ -78,12 +80,17 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     route,
     view,
   });
+  // the working view after the plan (§ 3.2), folded now, before v1 writes the stored objects it reads, and asked whether
+  // any settle pass has work (S2): a plan whose call leaves a pass work is not complete, and abstains
+  const folded = allowed.ops ? workingViewAfter({ args, view, ops: allowed.ops }) : undefined;
+  const settleWork = folded && 'settle' in folded ? folded.settle : [];
+  const outcome: OutcomePlan = settleWork.length ? { abstain: 'settle' } : allowed;
   const shadowBefore = outcome.ops && args.tournamentRecord ? captureRecord(args.tournamentRecord) : undefined;
   // what this engine call already stamped, which the copy cannot know (F2 (i): an entity is stamped once per call)
   const stampedBefore = shadowBefore ? stampedInThisCall(args.drawDefinition) : undefined;
-  // the working view after the plan (§ 3.2), folded now, before v1 writes the stored objects it reads; a copy is kept for
-  // the view oracle, since a hydrated matchUp may share a nested object with the stored one v1 then writes
-  const viewAfter = shadowBefore ? workingViewAfter({ args, view, ops: outcome.ops }) : undefined;
+  // a copy of the working view is kept for the view oracle, since a hydrated matchUp may share a nested object with the
+  // stored one v1 then writes
+  const viewAfter = shadowBefore ? folded : undefined;
 
   // AN ERROR CHANGES NOTHING (CA, 2026-10-18), and a divergence is an error raised after v1 has written: what the
   // call touches is captured here, before v1 runs, and written back into the same objects before the divergence leaves
@@ -677,7 +684,7 @@ function workingViewAfter({
   args: BuildViewArgs;
   view: OutcomeView;
   ops?: OutcomeOp[];
-}): { matchUps: HydratedMatchUp[] } | { error: string } | undefined {
+}): { matchUps: HydratedMatchUp[]; settle: SettleSite[] } | { error: string } | undefined {
   if (!ops || !args.drawDefinition || !args.matchUpsMap || !view.inContextDrawMatchUps) return undefined;
   const working = createWorkingView({
     inContextDrawMatchUps: view.inContextDrawMatchUps,
@@ -688,5 +695,17 @@ function workingViewAfter({
   });
   const applied = working.apply(ops);
   if (applied.error) return { error: applied.error };
-  return { matchUps: structuredClone(working.inContextDrawMatchUps) };
+  // S2's has-work predicates, recorded for the census to set against v1's per-pass writes (nothing outside telemetry)
+  const settle = predictSettleWork({
+    propagateExitStatus: args.request.flags.propagateExitStatus,
+    inContextDrawMatchUps: view.inContextDrawMatchUps,
+    tournamentRecord: args.tournamentRecord,
+    drawDefinition: args.drawDefinition,
+    event: args.event,
+    working,
+    ops,
+  });
+  recordSettleEvent({ kind: 'predicted', site: PREDICTED_CALL });
+  for (const site of settle) recordSettleEvent({ kind: 'predicted', site });
+  return { matchUps: structuredClone(working.inContextDrawMatchUps), settle };
 }

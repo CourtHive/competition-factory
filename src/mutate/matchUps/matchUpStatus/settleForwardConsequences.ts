@@ -112,6 +112,16 @@ export function settleForwardConsequences(
   return { exhausted: owed.matchUpId, settled: PASS_LIMIT };
 }
 
+/**
+ * THE PASS'S DETECTOR: whether the draw owes a forward answer. The pass acts on each `findOwed` finds; v2's has-work
+ * predicate (`outcome/settleWork.ts`) asks this of the working view, so the two cannot drift.
+ */
+export function hasForwardWork(params: SettleArgs): boolean {
+  const { drawDefinition } = params;
+  if (!drawDefinition || isLuckyBasedDraw(drawDefinition.drawType)) return false;
+  return !!findOwed({ ...params, drawDefinition, done: new Set() });
+}
+
 function findOwed(params: SettleArgs & { drawDefinition: DrawDefinition; done: Set<string> }): Owed | undefined {
   const { drawDefinition } = params;
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
