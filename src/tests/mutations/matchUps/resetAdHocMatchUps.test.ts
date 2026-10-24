@@ -1,5 +1,7 @@
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { defined } from '@Tests/helpers/defined';
+import type { ResultType } from '@Types/factoryTypes';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
@@ -13,6 +15,7 @@ import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { SINGLES, TEAM } from '@Constants/eventConstants';
 import {
   INVALID_STRUCTURE,
+  INVALID_MATCHUP,
   INVALID_VALUES,
   MISSING_DRAW_DEFINITION,
   STRUCTURE_NOT_FOUND,
@@ -36,10 +39,10 @@ it('can remove scores from adHoc matchUps', () => {
     ],
     setState: true,
   });
-  let matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
+  let matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
   let scoredMatchUps = matchUps.filter(checkScoreHasValue);
   // expect all of the matchUps to be scored
-  expect(matchUps.length).toEqual(scoredMatchUps.length);
+  expect(matchUps?.length).toEqual(scoredMatchUps.length);
 
   let resetResult = tournamentEngine.resetAdHocMatchUps();
   expect(resetResult.error).toEqual(MISSING_DRAW_DEFINITION);
@@ -50,44 +53,44 @@ it('can remove scores from adHoc matchUps', () => {
   resetResult = tournamentEngine.resetAdHocMatchUps({ drawId, roundNumbers: [1] });
   expect(resetResult.success).toEqual(true);
 
-  matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
+  matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
   scoredMatchUps = matchUps.filter(checkScoreHasValue);
   let unScoredMatchUps = matchUps.filter(({ score }) => !checkScoreHasValue({ score }));
 
   // expect only half of the matchUps to be scored
-  expect(scoredMatchUps.length).toEqual(matchUps.length / 2);
+  expect(scoredMatchUps.length).toEqual(matchUps?.length / 2);
 
   // expect participant assignments to remain
   expect(
-    unScoredMatchUps.flatMap((m) => m.sides.flatMap((s) => s.participant?.participantId)).filter(Boolean).length,
+    unScoredMatchUps.flatMap((m) => m.sides?.flatMap((s) => s.participant?.participantId)).filter(Boolean).length,
   ).toEqual(drawSize);
 
   resetResult = tournamentEngine.resetAdHocMatchUps({ drawId, roundNumbers: [1], removeAssignments: true });
   expect(resetResult.success).toEqual(true);
-  matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
+  matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
   scoredMatchUps = matchUps.filter(checkScoreHasValue);
   unScoredMatchUps = matchUps.filter(({ score }) => !checkScoreHasValue({ score }));
 
   // expect all participant assignments to be removed from unscored matchUps
   expect(
-    unScoredMatchUps.flatMap((m) => m.sides.flatMap((s) => s.participant?.participantId)).filter(Boolean).length,
+    unScoredMatchUps.flatMap((m) => m.sides?.flatMap((s) => s.participant?.participantId)).filter(Boolean).length,
   ).toEqual(0);
 
   // expect that the second round matchUps all have particpant assignments and scores
   expect(scoredMatchUps.every((matchUp) => matchUp.roundNumber === 2));
   expect(
-    scoredMatchUps.flatMap((m) => m.sides.flatMap((s) => s.participant?.participantId)).filter(Boolean).length,
+    scoredMatchUps.flatMap((m) => m.sides?.flatMap((s) => s.participant?.participantId)).filter(Boolean).length,
   ).toEqual(8);
 
   tournamentEngine.resetAdHocMatchUps({ drawId, roundNumbers: [2], removeAssignments: true });
-  matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
+  matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
   scoredMatchUps = matchUps.filter(checkScoreHasValue);
   unScoredMatchUps = matchUps.filter(({ score }) => !checkScoreHasValue({ score }));
 
   expect(scoredMatchUps.length).toEqual(0);
-  expect(unScoredMatchUps.length).toEqual(matchUps.length);
+  expect(unScoredMatchUps.length).toEqual(matchUps?.length);
   expect(
-    unScoredMatchUps.flatMap((m) => m.sides.flatMap((s) => s.participant?.participantId)).filter(Boolean).length,
+    unScoredMatchUps.flatMap((m) => m.sides?.flatMap((s) => s.participant?.participantId)).filter(Boolean).length,
   ).toEqual(0);
 });
 
@@ -110,8 +113,8 @@ it('can reset adHoc matchUps by matchUpIds', () => {
     setState: true,
   });
 
-  let matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
-  expect(matchUps.every(checkScoreHasValue)).toBe(true);
+  let matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
+  expect(matchUps?.every(checkScoreHasValue)).toBe(true);
 
   // reset specific matchUps by matchUpIds (round 1 matchUps only)
   const round1MatchUpIds = matchUps.filter((m) => m.roundNumber === 1).map(getMatchUpId);
@@ -120,7 +123,7 @@ it('can reset adHoc matchUps by matchUpIds', () => {
   const resetResult = tournamentEngine.resetAdHocMatchUps({ drawId, matchUpIds: round1MatchUpIds });
   expect(resetResult.success).toEqual(true);
 
-  matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
+  matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
   const scoredMatchUps = matchUps.filter(checkScoreHasValue);
   const unScoredMatchUps = matchUps.filter(({ score }) => !checkScoreHasValue({ score }));
 
@@ -167,16 +170,19 @@ it('can reset adHoc matchUps in TEAM events', () => {
     setState: true,
   });
 
-  let matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
+  let matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
   const teamMatchUps = matchUps.filter(isMatchUpEventType(TEAM));
   expect(teamMatchUps.length).toBeGreaterThan(0);
 
   // score a tie matchUp to create a scored team matchUp
   const targetTeamMatchUp = teamMatchUps[0];
-  const targetTieMatchUp = targetTeamMatchUp.tieMatchUps.find(isMatchUpEventType(SINGLES));
+  const targetTieMatchUp = defined(
+    targetTeamMatchUp.tieMatchUps?.find(isMatchUpEventType(SINGLES)),
+    'targetTieMatchUp',
+  );
   expect(targetTieMatchUp).toBeDefined();
 
-  const statusResult = tournamentEngine.setMatchUpStatus({
+  const statusResult: ResultType = tournamentEngine.setMatchUpStatus({
     outcome: { matchUpStatus: DEFAULTED, winningSide: 1 },
     matchUpId: targetTieMatchUp.matchUpId,
     drawId,
@@ -189,7 +195,7 @@ it('can reset adHoc matchUps in TEAM events', () => {
   expect(resetResult.success).toEqual(true);
 
   // verify the scored tie matchUp was reset
-  matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
+  matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
   const updatedTeamMatchUps = matchUps.filter(isMatchUpEventType(TEAM));
   const scoredTeamMatchUps = updatedTeamMatchUps.filter(checkScoreHasValue);
   expect(scoredTeamMatchUps.length).toEqual(0);
@@ -215,14 +221,20 @@ it('can reset adHoc TEAM matchUps with removeAssignments', () => {
     setState: true,
   });
 
-  let matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
+  let matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
   const teamMatchUps = matchUps.filter(isMatchUpEventType(TEAM));
   const targetTeamMatchUp = teamMatchUps[0];
-  const targetTieMatchUp = targetTeamMatchUp.tieMatchUps.find(isMatchUpEventType(SINGLES));
+  const targetTieMatchUp = defined(
+    targetTeamMatchUp.tieMatchUps?.find(isMatchUpEventType(SINGLES)),
+    'targetTieMatchUp',
+  );
 
   // assign a participant to a tie matchUp
-  const targetSide = targetTeamMatchUp.sides[0];
-  const targetIndividualParticipant = targetSide.participant.individualParticipants[0];
+  const targetSide = defined(targetTeamMatchUp.sides, 'sides')[0];
+  const targetIndividualParticipant = defined(
+    targetSide.participant?.individualParticipants,
+    'individualParticipants',
+  )[0];
   const assignmentResult = tournamentEngine.assignTieMatchUpParticipantId({
     participantId: targetIndividualParticipant.participantId,
     tieMatchUpId: targetTieMatchUp.matchUpId,
@@ -240,13 +252,18 @@ it('can reset adHoc TEAM matchUps with removeAssignments', () => {
   expect(resetResult.success).toEqual(true);
 
   // verify lineUps were reset - the participant assignment should be removed
-  matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
+  matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
   const updatedTeamMatchUps = matchUps.filter(isMatchUpEventType(TEAM));
-  const updatedTarget = updatedTeamMatchUps.find((m) => m.matchUpId === targetTeamMatchUp.matchUpId);
+  const updatedTarget = defined(
+    updatedTeamMatchUps.find((m) => m.matchUpId === targetTeamMatchUp.matchUpId),
+    'updatedTarget',
+  );
   expect(updatedTarget).toBeDefined();
 
   // verify participants were removed from sides
-  const sideParticipantIds = updatedTarget.sides.flatMap((s) => s.participant?.participantId).filter(Boolean);
+  const sideParticipantIds = defined(updatedTarget.sides, 'sides')
+    .flatMap((s) => s.participant?.participantId)
+    .filter(Boolean);
   expect(sideParticipantIds.length).toEqual(0);
 });
 
@@ -294,13 +311,16 @@ it('can reset adHoc TEAM matchUps without removeAssignments', () => {
     setState: true,
   });
 
-  let matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
+  let matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
   const teamMatchUps = matchUps.filter(isMatchUpEventType(TEAM));
   const targetTeamMatchUp = teamMatchUps[0];
-  const targetTieMatchUp = targetTeamMatchUp.tieMatchUps.find(isMatchUpEventType(SINGLES));
+  const targetTieMatchUp = defined(
+    targetTeamMatchUp.tieMatchUps?.find(isMatchUpEventType(SINGLES)),
+    'targetTieMatchUp',
+  );
 
   // score a tie matchUp
-  const statusResult = tournamentEngine.setMatchUpStatus({
+  const statusResult: ResultType = tournamentEngine.setMatchUpStatus({
     outcome: { matchUpStatus: DEFAULTED, winningSide: 1 },
     matchUpId: targetTieMatchUp.matchUpId,
     drawId,
@@ -316,14 +336,19 @@ it('can reset adHoc TEAM matchUps without removeAssignments', () => {
   expect(resetResult.success).toEqual(true);
 
   // verify scores are reset but team participants remain assigned
-  matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
+  matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
   const updatedTeamMatchUps = matchUps.filter(isMatchUpEventType(TEAM));
   const scoredTeamMatchUps = updatedTeamMatchUps.filter(checkScoreHasValue);
   expect(scoredTeamMatchUps.length).toEqual(0);
 
   // participants should still be assigned since removeAssignments was not set
-  const updatedTarget = updatedTeamMatchUps.find((m) => m.matchUpId === targetTeamMatchUp.matchUpId);
-  const sideParticipantIds = updatedTarget.sides.flatMap((s) => s.participant?.participantId).filter(Boolean);
+  const updatedTarget = defined(
+    updatedTeamMatchUps.find((m) => m.matchUpId === targetTeamMatchUp.matchUpId),
+    'updatedTarget',
+  );
+  const sideParticipantIds = defined(updatedTarget.sides, 'sides')
+    .flatMap((s) => s.participant?.participantId)
+    .filter(Boolean);
   expect(sideParticipantIds.length).toBeGreaterThan(0);
 });
 
@@ -347,7 +372,7 @@ it('returns error when resetScorecard fails for TEAM matchUps', async () => {
     setState: true,
   });
 
-  const matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
+  const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
   const teamMatchUps = matchUps.filter(isMatchUpEventType(TEAM));
   const teamMatchUpIds = teamMatchUps.map(getMatchUpId);
 
@@ -386,14 +411,14 @@ it('returns error when resetMatchUpLineUps fails for TEAM matchUps with removeAs
     setState: true,
   });
 
-  const matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
+  const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
   const teamMatchUps = matchUps.filter(isMatchUpEventType(TEAM));
   const teamMatchUpIds = teamMatchUps.map(getMatchUpId);
 
   // Mock resetMatchUpLineUps to return an error
   const lineUpsModule = await import('@Mutate/matchUps/lineUps/resetMatchUpLineUps');
   const spy = vi.spyOn(lineUpsModule, 'resetMatchUpLineUps').mockReturnValue({
-    error: { message: 'Mock resetMatchUpLineUps error', code: 'MOCK_ERROR' },
+    error: { ...INVALID_MATCHUP, message: 'Mock resetMatchUpLineUps error' },
   });
 
   const resetResult = tournamentEngine.resetAdHocMatchUps({
@@ -428,7 +453,7 @@ it('returns error when setMatchUpState fails', async () => {
     setState: true,
   });
 
-  const matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
+  const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
   const matchUpIds = matchUps.map(getMatchUpId);
 
   // Mock setMatchUpState to return an error
