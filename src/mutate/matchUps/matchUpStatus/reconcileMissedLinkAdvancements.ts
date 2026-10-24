@@ -1,4 +1,5 @@
 import { directWinner } from '@Mutate/matchUps/drawPositions/drawPositionPlacement';
+import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { isRoundWinnerLink } from '@Query/drawDefinition/linkTraversal';
@@ -70,7 +71,7 @@ export function reconcileMissedLinkAdvancements({
       // Backdraw champion already holds a Main drawPosition from the round they lost there
       if (winnerMatchUp.sides?.some((side) => side?.participantId === participantId)) continue;
 
-      directWinner({
+      const directed = directWinner({
         sourceMatchUpStatus: matchUp.matchUpStatus,
         sourceMatchUpId: matchUp.matchUpId,
         winnerMatchUpDrawPositionIndex,
@@ -85,6 +86,13 @@ export function reconcileMissedLinkAdvancements({
         matchUpsMap,
         event,
       });
+      // the pass is `void` and its caller has written: the error is recorded for the census, not returned (Phase C)
+      if (directed?.error)
+        recordSettleEvent({
+          kind: 'dropped-error',
+          site: 'reconcileMissedLinkAdvancements',
+          detail: `${matchUp.matchUpId}: ${directed.error.code ?? directed.error}`,
+        });
     }
   }
 }

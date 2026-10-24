@@ -131,15 +131,32 @@ test.skipIf(!enabled)(
     const verdicts = { clean: 0, failed: 0, 'build-failed': 0 };
     let incompleteScenarios = 0;
     let failing = 0;
+    const settleCounts: Record<string, number> = {};
 
     for (const scenario of scenarios) {
       const { seed, config } = scenario;
       setSubscriptions({});
 
       const scenarioPolicy = scenario.policyDefinitions ?? policyDefinitions;
+      // what the settle passes cannot report through a result (Phase C): reported beside the verdict, never as one
+      const settle: { step: number; site: string; kind: string; detail?: string }[] = [];
       const result = replay(config, scenario.steps ?? [], `sweep-${seed}`, scenarioPolicy, coverage, {
         preparationFailure: scenarioPreparationFailure(scenario),
+        onStep: ({ index, observation }) => {
+          for (const event of observation?.settleEvents ?? []) settle.push({ step: index, ...event });
+        },
       });
+      for (const event of settle) {
+        const key = `${event.kind}:${event.site}`;
+        settleCounts[key] = (settleCounts[key] ?? 0) + 1;
+      }
+      // a pass's writes are counted only (every call has some); a bound or a dropped error is listed with its seed
+      const notable = settle.filter((event) => event.kind !== 'wrote');
+      if (notable.length)
+        fs.appendFileSync(
+          outPath,
+          JSON.stringify({ kind: 'SETTLE', seed, drawType: config.drawType, settle: notable }) + '\n',
+        );
       addReplayCounts(counts, result.counts);
       verdicts[result.verdict] += 1;
       if (!result.complete) incompleteScenarios += 1;
@@ -191,6 +208,7 @@ test.skipIf(!enabled)(
         counts,
         verdicts,
         incompleteScenarios,
+        settle: settleCounts,
       }) + '\n',
     );
 

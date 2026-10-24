@@ -1,5 +1,7 @@
+import { enableSettleTelemetry, takeSettleEvents } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { getInvariantViolations, describeViolations, type InvariantViolation } from './invariants';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
+import type { SettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { auditAcceptedRecord, type ProjectionAudit } from './projectionAudit';
 import { captureRecord, compareRecord } from '@Tools/recordDiff';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -211,6 +213,8 @@ export function decidedMatchUpIds(matchUps: any[]): Set<string> {
 
 export type Observation = {
   mutated: boolean;
+  /** what the settle passes could not report through the result: a loop at its bound, a dropped error (Phase C) */
+  settleEvents: SettleEvent[];
   /** Refused/thrown calls only: exact full-record comparison, with no timestamp exemption. */
   recordMutated?: boolean;
   firstRecordDifference?: string;
@@ -287,6 +291,8 @@ export function observeMutation({
   let result: any;
   let thrown: string | undefined;
   observer?.attempted();
+  // a pass's writes cost two record captures per pass: recorded only for a measurement run (SETTLE_PASSES=1)
+  enableSettleTelemetry(true, { passes: process.env.SETTLE_PASSES === '1' });
   try {
     result = tournamentEngine.setMatchUpStatus({
       propagateExitStatus,
@@ -298,6 +304,8 @@ export function observeMutation({
   } catch (err: any) {
     thrown = String(err?.message ?? err);
   }
+  const settleEvents = takeSettleEvents();
+  enableSettleTelemetry(false);
 
   const drawDefinition = getDrawDefinition(drawId);
   const after = hash(drawDefinition);
@@ -318,6 +326,7 @@ export function observeMutation({
 
   const observation: Observation = {
     mutated: before !== after,
+    settleEvents,
     recordMutated: recordComparison ? !recordComparison.equal : undefined,
     firstRecordDifference: recordComparison?.firstDifference?.path,
     error: result?.error,
