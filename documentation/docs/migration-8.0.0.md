@@ -10,7 +10,7 @@ This guide describes preparation for the next major release. **The engine routes
 
 See the [engine API transition manifest and per-method guidance](/docs/implementation/engine-api-transition-8). Selected methods are removal candidates pending symbol-aware consumer review and external-integrator confirmation. Their full references have moved outside the governor API listings, with migration stubs at old anchors.
 
-Engine-route removal, standalone package-export retention and internal implementation status are separate decisions. Test-only Go-harness access does not require a production governor export. No unsupported deep import is recommended.
+Engine-route removal, standalone package-export retention and internal implementation status are separate decisions. Test-only conformance-harness access does not require a production governor export. No unsupported deep import is recommended.
 
 ### Progression edges: addGoesTo
 

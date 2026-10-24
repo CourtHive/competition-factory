@@ -6,7 +6,7 @@ title: Engine API transition at 8.0.0
 
 The 125 candidates below come from the 2026-10-15 engine-reach catalog: none of their names appeared in its 21-repository product consumer sweep. This is historical candidate evidence, not a current proof of non-use or external-integrator clearance. The 191 methods not driven through an engine by tests are a different, larger set; standalone engine reach is not grounds for removal.
 
-**No runtime exports change in this documentation preparation.** Candidates require refreshed symbol-aware consumer review and external-integrator confirmation before their production routes are removed at 8.0.0. Test-only Go-harness access is independent of product exposure.
+**No runtime exports change in this documentation preparation.** Candidates require refreshed symbol-aware consumer review and external-integrator confirmation before their production routes are removed at 8.0.0. Test-only conformance-harness access is independent of product exposure.
 
 See the [8.0.0 migration guide](/docs/migration-8.0.0) in the existing migration series.
 
