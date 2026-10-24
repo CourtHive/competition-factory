@@ -146,8 +146,18 @@ const matrixCell = (drawType: string, exitStatus: string) =>
   );
 
 // the functions a draw-wide HYDRATION is asked for through, at the top of the stack
-const hydration: Selector = (site) =>
+const anyHydration: Selector = (site) =>
   !site.nested && site.inContext && ['getAllDrawMatchUps', 'getDrawMatchUps'].includes(site.fn);
+/**
+ * THE VIEW ORACLE'S OWN READS (§ 3.2; test-only, `differential` only): the shadow's hydration and the working view's
+ * projection, made to check the view, not to decide the call. Kept out of the pipeline's cost under `differential`
+ * and reported apart. Under `v2`, where S2 will fold owned calls into the working view, its projection is the
+ * pipeline's own work and counts.
+ */
+const viewOracleRead: Selector = (site) =>
+  getOutcomePipeline() === OUTCOME_PIPELINE_DIFFERENTIAL &&
+  /^(hydrateShadow@viewOracle|apply@overlay)/.test(site.caller);
+const hydration: Selector = (site) => anyHydration(site) && !viewOracleRead(site);
 const top =
   (fn: string): Selector =>
   (site) =>
@@ -470,7 +480,8 @@ it.skipIf(!gated)(
   'the hydration gate: no arm asks the draw for more than v1 did',
   () => {
     const mode = getOutcomePipeline();
-    const measured = measureArms(collectCensus().records);
+    const { records } = collectCensus();
+    const measured = measureArms(records);
     const baseline: Record<string, ArmCeilings> | undefined = fs.existsSync(BASELINE)
       ? JSON.parse(fs.readFileSync(BASELINE, 'utf8')).arms
       : undefined;
@@ -510,6 +521,12 @@ it.skipIf(!gated)(
     if (falls.length && mode === OUTCOME_PIPELINE_V1)
       process.stdout.write(
         `[verify:hydrations] ${falls.length} below the ceiling (lower it with HYDRATIONS_UPDATE=1):\n  ${falls.join('\n  ')}\n`,
+      );
+    if (mode === OUTCOME_PIPELINE_DIFFERENTIAL)
+      process.stdout.write(
+        `[verify:hydrations] the view oracle's own hydrations, outside the ceiling: ${
+          distribution(records, (site) => anyHydration(site) && viewOracleRead(site)).total
+        }\n`,
       );
     expect(rises, `asked the draw for more than the ceiling allows under ${mode}`).toEqual([]);
   },

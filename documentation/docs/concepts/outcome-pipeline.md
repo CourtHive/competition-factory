@@ -589,7 +589,10 @@ call's one hydration.
 is compared field by field (sides, status, winner, score, schedule, drawPositions, the round-profile fields,
 `readyToScore`, the edges and the exit records) with one hydration of the shadow-applied record. A difference is a
 divergence keyed `view:<field>`. Measured 2026-10-24 over the exitPropagation and matchUps suites: 9,184 views
-compared, none different; with re-derivation removed, 103 exitPropagation files fail.
+compared, none different; with re-derivation removed, 103 exitPropagation files fail. The oracle's own reads (the
+shadow's hydration, the working view's projection) are test instrumentation: `verify:hydrations` keeps them out of
+`differential`'s ceiling and reports them apart (768 over its census). Under `v2`, once S2 folds owned calls into the
+working view, its projection is the pipeline's own work and counts.
 
 ## 8. What the corpus pins
 
