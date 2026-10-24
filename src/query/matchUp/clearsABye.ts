@@ -1,8 +1,8 @@
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 
 // constants and types
+import type { MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
 import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import type { Score } from '@Types/tournamentTypes';
 
 /**
  * A CLEAR OF A BYE: a request with no winner, no score with value and no status but `TO_BE_PLAYED`, made of a matchUp
@@ -17,8 +17,8 @@ export function clearsABye({
   winningSide,
   score,
 }: {
-  storedMatchUpStatus?: string;
-  matchUpStatus?: string;
+  storedMatchUpStatus?: MatchUpStatusUnion;
+  matchUpStatus?: MatchUpStatusUnion;
   winningSide?: number;
   score?: Score;
 }): boolean {
