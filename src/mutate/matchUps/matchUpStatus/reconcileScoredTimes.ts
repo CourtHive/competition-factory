@@ -10,11 +10,12 @@ import type { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tourname
  * definition `schedule.scoredTime` is stamped and cleared against — `applyScoredTime` for the matchUp a
  * call targets, `reconcileScoredTimes` for every other matchUp the call touched, and v2's write plan.
  *
- * A DEAD_RUBBER is completed but was not played, so it is never scored and keeps no stamp from a result it
- * held before (CA, 2026-10-24).
+ * A DOUBLE_ELIMINATION decider made a DEAD_RUBBER was not played, so it is never scored and keeps no stamp from a
+ * result it held before. A rubber of a team tie (a `collectionId`) is not affected: its DEAD_RUBBER keeps its score
+ * and stamp like an ABANDONED line (CA, 2026-10-24; the decider is the only other place a DEAD_RUBBER is in scope).
  */
 export function matchUpIsScored(matchUp?: MatchUp): boolean {
-  if (matchUp?.matchUpStatus === DEAD_RUBBER) return false;
+  if (matchUp?.matchUpStatus === DEAD_RUBBER && !matchUp.collectionId) return false;
   return (
     !!matchUp?.winningSide ||
     checkScoreHasValue({ score: matchUp?.score }) ||

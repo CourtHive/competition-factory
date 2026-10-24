@@ -44,6 +44,8 @@ describe('DEAD_RUBBER scope', () => {
     expect(result.success).toEqual(true);
     result = tournamentEngine.findMatchUp({ drawId, matchUpId: rubber.matchUpId });
     expect(result.matchUp.matchUpStatus).toEqual(DEAD_RUBBER);
+    // a rubber's DEAD_RUBBER is a result, stamped like an ABANDONED line: only a decider's is not (CA, 2026-10-24)
+    expect(result.matchUp.schedule?.scoredTime).toBeDefined();
   });
 
   it('is refused on the TEAM dual itself outside a Decider', () => {
