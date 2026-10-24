@@ -215,7 +215,7 @@ export type Route =
   | 'winner' // attemptToSetWinningSide: write the result, then direct
   | 'line-score' // a line of a dual that is being rescored: write the score, the dual recomputes
   | 'remove-directed' // a score or status without a winner over a decided matchUp: take the direction back
-  | 'noop' // already in the requested double exit
+  | 'noop' // already in the requested double exit, or a clear of a BYE: nothing changes
   | 'only-score' // a winner exists and the status is directing: write the score
   | 'completed-to-double-exit' // remove the directed participants, then advance the double exit
   | 'existing-winner-removed' // a winner exists, the status is not directing: take the direction back

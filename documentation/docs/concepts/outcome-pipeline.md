@@ -148,6 +148,15 @@ anything there, so a first entry always takes the propagating branch. With both 
 goes to `winningSideWithDownstreamDependencies`; a directing status or disabled auto-calc goes to
 `applyMatchUpValues`; anything else is `ERR_NO_VALID_ACTIONS`.
 
+**A clear of a BYE changes nothing**, and is asked before the dispatch: a request with no winner, no
+score with value and no status but `TO_BE_PLAYED`, made of a matchUp stored as a `BYE`, succeeds as
+`noop` and still applies its schedule. A BYE has no result to clear, and **a `TO_BE_PLAYED` matchUp with
+a BYE side never occurs** (CA, 2026-10-24; punch-list P26). Until then the clear was accepted and wrote
+`TO_BE_PLAYED` against nobody: four seeds of census window sched-w1, on both arms. v1 and v2 ask the one
+predicate (`clearsABye`); the harness invariant `TO_BE_PLAYED_BESIDE_BYE` checks the shape at every
+census step (`aClearedByeStaysABye.test.ts`). The lines of a BYE dual are not that shape: the dual is the
+BYE, and its lines stay TO_BE_PLAYED, as they are generated (CA, 2026-10-24).
+
 **The route v2 names** (`Route`, `src/mutate/matchUps/outcome/types.ts`) is the table's last column for
 a call that reaches `attemptToSetMatchUpStatus`; `refused` is any of its three refusals. The dispatch
 names six more:

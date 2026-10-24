@@ -39,6 +39,7 @@ import { isDoubleExit, isExit } from '@Validators/isExit';
 import { validateScore } from '@Validators/validateScore';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
+import { clearsABye } from '@Query/matchUp/clearsABye';
 import { findStructure } from '@Acquire/findStructure';
 import { isObject } from '@Tools/objects';
 import { nowIso } from '@Tools/clock';
@@ -46,8 +47,8 @@ import { nowIso } from '@Tools/clock';
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
 
 // constants and types
-import { QUALIFYING, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import type { DerivedStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
+import { QUALIFYING, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -834,7 +835,17 @@ function resolveAndApplyOutcome({
   }
 
   let result;
-  if (isUndirectedPointOutcome(params, !!activeDownstream)) {
+  // A BYE has no result to clear: the call leaves it the BYE it is, and still applies its schedule (`clearsABye`)
+  if (
+    clearsABye({
+      storedMatchUpStatus: matchUp?.matchUpStatus,
+      matchUpStatus: params.matchUpStatus,
+      score: params.score,
+      winningSide,
+    })
+  ) {
+    result = { ...SUCCESS };
+  } else if (isUndirectedPointOutcome(params, !!activeDownstream)) {
     result = applyMatchUpValues(params);
   } else if (!activeDownstream || !hasPropagated) {
     result = noDownstreamDependencies(params);
