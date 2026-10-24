@@ -477,7 +477,10 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     event: params.event,
   });
   const drawSettled = settleDraw({ deciderSnapshotBefore, finalsBefore, params });
-  if (drawSettled.error) return refuse(drawSettled);
+  if (drawSettled.error) {
+    v2.compare?.(drawSettled);
+    return refuse(drawSettled);
+  }
   // what forward play sends on from a result is sent on from one a removal re-derived: asked of the settled draw
   const forward = settleForwardConsequences({
     tournamentRecord: params.tournamentRecord,
@@ -485,7 +488,10 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     event: params.event,
     propagateExitStatus,
   });
-  if (forward?.error) return refuse(forward);
+  if (forward?.error) {
+    v2.compare?.(forward);
+    return refuse(forward);
+  }
   // A direction the forward settle makes can put a BYE back in front of a carrier: a loser it directs re-forms a double
   // exit, whose loser seat takes its BYE again. The carry past a late BYE was asked in `settleDraw`, before that BYE
   // existed, so it is asked again (census A1 wave 3 R12, COMPASS 32: `Southeast|2|1` left TO_BE_PLAYED under its
@@ -496,7 +502,10 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
       drawDefinition: params.drawDefinition,
       event: params.event,
     });
-    if (carried?.error) return refuse(carried);
+    if (carried?.error) {
+      v2.compare?.(carried);
+      return refuse(carried);
+    }
   }
   // and, last, nobody stands across a link out of a matchUp that has no result. After `settleDraw`, not before:
   // a held exit is decided there, and a placement made for it is not unearned (de 9301605, the Decider).

@@ -365,6 +365,12 @@ After the write, and only on success:
   `oweDissolvedConvergencesTheirByes`, `reconcileConsolationReservations`, `reconcileCarriesPastByes`
   (both calls), `settleHeldExits`, `reconcileByeAdvancements`, `reconcileDeciders` and
   `settleForwardConsequences`. They still return their error; none is relied on to be rolled back.
+  Every one of them reaches `v2.compare` before `setMatchUpStatus` returns it (outcome v2 executor plan,
+  Phase C prerequisite 3), so under `differential` a refusal v2 did not plan is a divergence (§ 7.1:
+  the comparison writes back what it captured before v1 ran; v2 itself plans every refusal before its
+  first op, so it has nothing to undo). Until 2026-10-24 the refusals out of `settleDraw`,
+  `settleForwardConsequences` and the carry asked after it returned without the comparison
+  (`aLateRefusalIsCompared.test.ts`).
 
 - **A refused call stores none of a draw's missing edges** (CA, 2026-10-18: "no, a refused call does
   not store a draw's missing edges. v1 should no longer do so."). A draw stored without
