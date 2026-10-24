@@ -116,16 +116,22 @@ export function settleForwardConsequences(
  * THE PASS'S DETECTOR: whether the draw owes a forward answer. The pass acts on each `findOwed` finds; v2's has-work
  * predicate (`outcome/settleWork.ts`) asks this of the working view, so the two cannot drift.
  */
-export function hasForwardWork(params: SettleArgs): boolean {
+export function hasForwardWork(params: SettleArgs & Hydrated): boolean {
   const { drawDefinition } = params;
   if (!drawDefinition || isLuckyBasedDraw(drawDefinition.drawType)) return false;
   return !!findOwed({ ...params, drawDefinition, done: new Set() });
 }
 
-function findOwed(params: SettleArgs & { drawDefinition: DrawDefinition; done: Set<string> }): Owed | undefined {
+/** a map and hydration of this draw already taken (the working view's), so none is taken here */
+type Hydrated = { matchUpsMap?: MatchUpsMap; inContextDrawMatchUps?: HydratedMatchUp[] };
+
+function findOwed(
+  params: SettleArgs & Hydrated & { drawDefinition: DrawDefinition; done: Set<string> },
+): Owed | undefined {
   const { drawDefinition } = params;
-  const matchUpsMap = getMatchUpsMap({ drawDefinition });
-  const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
+  const matchUpsMap = params.matchUpsMap ?? getMatchUpsMap({ drawDefinition });
+  const inContextDrawMatchUps =
+    params.inContextDrawMatchUps ?? getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
   const assignments = new Map<string, PositionAssignment[]>();
   const reading: Reading = {
     ...params,

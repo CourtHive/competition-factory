@@ -71,12 +71,13 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
   const results = ops.filter((op) => op.op === 'setMatchUpResult');
   const resultOn = (predicate: (matchUp?: HydratedMatchUp) => boolean) =>
     results.some((op) => predicate(before.get(op.matchUpId)));
+  let stale: boolean | undefined;
+  const staleOrigins = () =>
+    (stale ??= hasStaleExitOrigins({ inContextDrawMatchUps: view, drawDefinition: draw, matchUpsMap: map }));
 
   const work: Record<SettleSite, () => boolean> = {
     // SCOPE: the double exits the call changes, and the stale origins the write leaves
-    settleExitOrigins: () =>
-      resultOn((matchUp) => isDoubleExit(matchUp?.matchUpStatus)) ||
-      hasStaleExitOrigins({ drawDefinition: draw, matchUpsMap: map }),
+    settleExitOrigins: () => resultOn((matchUp) => isDoubleExit(matchUp?.matchUpStatus)) || staleOrigins(),
     // SCOPE: a result in a round a FIRST_MATCHUP link reads
     reconcileConsolationReservations: () => {
       const sources = (draw.links ?? [])
@@ -84,7 +85,7 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
         .map((link) => `${link.source?.structureId}|${link.source?.roundNumber}`);
       return resultOn((matchUp) => sources.includes(`${matchUp?.structureId}|${matchUp?.roundNumber}`));
     },
-    reconcileStaleExitOrigins: () => hasStaleExitOrigins({ drawDefinition: draw, matchUpsMap: map }),
+    reconcileStaleExitOrigins: staleOrigins,
     reconcileCarriesPastByes: () =>
       !!findOwedCarry({ inContextDrawMatchUps: view, drawDefinition: draw, matchUpsMap: map }),
     settleHeldExits: () => hasHeldExitWork({ inContextDrawMatchUps: view, drawDefinition: draw, matchUpsMap: map }),
@@ -103,6 +104,8 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
     },
     settleForwardConsequences: () =>
       hasForwardWork({
+        inContextDrawMatchUps: view,
+        matchUpsMap: map,
         propagateExitStatus: args.propagateExitStatus,
         tournamentRecord: args.tournamentRecord,
         drawDefinition: draw,

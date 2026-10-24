@@ -118,14 +118,16 @@ export function reconcileStaleExitOrigins({
  * pass would return it.
  */
 export function hasStaleExitOrigins({
+  inContextDrawMatchUps,
   drawDefinition,
   matchUpsMap,
 }: {
+  inContextDrawMatchUps?: HydratedMatchUp[];
   drawDefinition: DrawDefinition;
   matchUpsMap: MatchUpsMap;
 }): boolean {
   if (getStaleOrigins({ drawDefinition, matchUpsMap }).length) return true;
-  const relays = getStaleRelays({ drawDefinition, matchUpsMap });
+  const relays = getStaleRelays({ inContextDrawMatchUps, drawDefinition, matchUpsMap });
   return !!relays.error || !!relays.staleRelays?.length;
 }
 
@@ -185,9 +187,12 @@ type Relay = { matchUp: MatchUp; structureId: string; sourceMatchUpId: string };
  * matchUps each still holding a BYE.
  */
 function getStaleRelays({
+  inContextDrawMatchUps: given,
   drawDefinition,
   matchUpsMap,
 }: {
+  /** a hydration of this draw already taken (the working view's), so none is taken here */
+  inContextDrawMatchUps?: HydratedMatchUp[];
   drawDefinition: DrawDefinition;
   matchUpsMap: MatchUpsMap;
 }): ResultType & { staleRelays?: Relay[] } {
@@ -209,7 +214,8 @@ function getStaleRelays({
   }
   if (!candidates.length) return { staleRelays: [] };
 
-  const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
+  const inContextDrawMatchUps =
+    given ?? getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
   // a source whose links cannot be read refuses the reconciliation; it is never read as "reaches nothing"
   let refused: ResultType | undefined;
   const targetsOf = (matchUpId: string) => {
