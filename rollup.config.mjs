@@ -118,7 +118,6 @@ const engineTypes = [
     plugins: [
       dts({
         compilerOptions: {
-          baseUrl: tsConfig.compilerOptions.baseUrl,
           paths: tsConfig.compilerOptions.paths,
         },
       }),

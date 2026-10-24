@@ -45,7 +45,10 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const TSC = join(ROOT, 'node_modules', '.bin', 'tsc');
+// TS7 (the native compiler), installed as the `typescript7` alias beside TS6 and called by path: with both installed,
+// which one `.bin/tsc` links is not something to depend on. Measured 2026-10-24: every error at the same file, line and
+// column under both; 33 of the 866 test-types errors carry TS2739/TS2741 under TS7 where TS6 says TS2345.
+const TSC = join(ROOT, 'node_modules', 'typescript7', 'bin', 'tsc');
 
 const COUNTS = {
   'test-types': {
@@ -113,7 +116,7 @@ function prepareHardUnion() {
     config,
     JSON.stringify({
       extends: join(ROOT, 'tsconfig.json'),
-      compilerOptions: { baseUrl: ROOT, rootDir: '/', paths },
+      compilerOptions: { rootDir: '/', paths },
       include: [join(ROOT, 'src/**/*.ts'), join(ROOT, 'src/**/*.js')],
       exclude: ['dist', 'src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/scratch/**'].map((glob) => join(ROOT, glob)),
     }),
