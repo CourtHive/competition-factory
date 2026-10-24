@@ -7,10 +7,12 @@ import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { cloneState, restoreState } from '@Tools/cloneState';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
+import { compareViews, hydrateShadow } from './viewOracle';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
 import { observeWrite, planWrite } from './write';
 import { captureRecord } from '@Tools/recordDiff';
+import { createWorkingView } from './overlay';
 import { refuseOutcome } from './refusals';
 import { stampedInThisCall } from './ops';
 import { buildOutcomeView } from './view';
@@ -31,6 +33,7 @@ import { BYE, DEAD_RUBBER, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusC
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { ResultType } from '@Types/factoryTypes';
+import type { OutcomeOp } from './ops';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
@@ -78,6 +81,9 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   const shadowBefore = outcome.ops && args.tournamentRecord ? captureRecord(args.tournamentRecord) : undefined;
   // what this engine call already stamped, which the copy cannot know (F2 (i): an entity is stamped once per call)
   const stampedBefore = shadowBefore ? stampedInThisCall(args.drawDefinition) : undefined;
+  // the working view after the plan (§ 3.2), folded now, before v1 writes the stored objects it reads; a copy is kept for
+  // the view oracle, since a hydrated matchUp may share a nested object with the stored one v1 then writes
+  const viewAfter = shadowBefore ? workingViewAfter({ args, view, ops: outcome.ops }) : undefined;
 
   // AN ERROR CHANGES NOTHING (CA, 2026-10-18), and a divergence is an error raised after v1 has written: what the
   // call touches is captured here, before v1 runs, and written back into the same objects before the divergence leaves
@@ -163,6 +169,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
         v2: `shadow-applied ${outcome.ops.length} ops: ${shadow.path} = ${shadow.v2}`,
       });
     differentialTally('shadow:applied', 'compared');
+    checkViewOracle(shadow.shadow);
     const noticed = compareNotices({
       planned: plannedNotices({ ops: outcome.ops, matchUpId: args.request.matchUpId as string }),
       added: (getNoticeBuffer() ?? []).slice(notices?.length ?? 0),
@@ -171,6 +178,20 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     if (!noticed.equal)
       throw new OutcomePipelineDivergence({ matchUpId: args.request.matchUpId, v1: noticed.v1, v2: noticed.v2 });
     differentialTally('shadow:notices', 'compared');
+  }
+  /** § 3.2's view oracle: the working view after the plan against a hydration of the shadow-applied record */
+  function checkViewOracle(shadow: Record<string, unknown>) {
+    if (!viewAfter || 'error' in viewAfter || !args.drawDefinition) return differentialTally('view', 'deferred');
+    const record = hydrateShadow({ shadow, drawId: args.drawDefinition.drawId });
+    if (!record) return differentialTally('view', 'deferred');
+    const compared = compareViews({ record, view: viewAfter.matchUps });
+    if (!compared.equal)
+      throw new OutcomePipelineDivergence({
+        matchUpId: args.request.matchUpId,
+        v1: `wrote ${compared.matchUp} ${compared.field} = ${compared.record}`,
+        v2: `view:${compared.field} ${compared.matchUp} = ${compared.view}`,
+      });
+    differentialTally('view', 'compared');
   }
 }
 
@@ -645,4 +666,27 @@ function toResult(refusal: Refusal): ResultType {
     ...(refusal.info ? { info: refusal.info } : {}),
     ...(refusal.context ? { context: refusal.context } : {}),
   };
+}
+
+/** fold a complete plan into a working view of the draw as the call found it; a deep copy, for the view oracle */
+function workingViewAfter({
+  args,
+  view,
+  ops,
+}: {
+  args: BuildViewArgs;
+  view: OutcomeView;
+  ops?: OutcomeOp[];
+}): { matchUps: HydratedMatchUp[] } | { error: string } | undefined {
+  if (!ops || !args.drawDefinition || !args.matchUpsMap || !view.inContextDrawMatchUps) return undefined;
+  const working = createWorkingView({
+    inContextDrawMatchUps: view.inContextDrawMatchUps,
+    tournamentRecord: args.tournamentRecord,
+    drawDefinition: args.drawDefinition,
+    matchUpsMap: args.matchUpsMap,
+    event: args.event,
+  });
+  const applied = working.apply(ops);
+  if (applied.error) return { error: applied.error };
+  return { matchUps: structuredClone(working.inContextDrawMatchUps) };
 }
