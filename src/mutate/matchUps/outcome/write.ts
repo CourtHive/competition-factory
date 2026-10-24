@@ -70,7 +70,7 @@ function applyScoreAndStatus(args: WriteArgs, request: OutcomeRequest, view: Out
     !NON_PROGRESS.has(args.matchUpStatus)
   )
     matchUpStatus = IN_PROGRESS;
-  const scored = matchUpIsScored({ winningSide, score, matchUpStatus } as MatchUp);
+  const scored = matchUpIsScored({ winningSide, score, matchUpStatus, collectionId: existing.collectionId } as MatchUp);
   return {
     matchUpStatus,
     winningSide,
