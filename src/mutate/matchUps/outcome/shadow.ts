@@ -18,35 +18,22 @@ import type { OutcomeOp } from './ops';
  * record v1 wrote. A difference is a divergence: either the plan missed a write or v1 made one the spec does not
  * state.
  *
- * STAMPS ARE NORMALISED until Phase C's F2 lands in v1 (debate-ruled 2026-10-24, pending CA review). v1 stamps once
- * per notice, and every top-level structure on each, so its values cannot equal F2 (i)'s:
- *  - a structure's `updatedAt` is left out entirely, presence included (a stated blind spot);
- *  - a matchUp's and the draw's `updatedAt` are compared as present or absent, not by value.
- * The values v2 writes are held to F2 (i) by `outcomeOps.test.ts`; `shadowStampExpiry.test.ts` fails once v1 stamps
- * once per call, and the normalisation comes out with it.
+ * STAMPS ARE COMPARED BY VALUE, but for structures. v1 stamps an entity once per call (F2 (i), CA 2026-10-19), as v2
+ * does. A structure's `updatedAt` is still left out (CA, 2026-10-24, a temporary blind spot): v1's matchUp notice
+ * stamps every top-level structure, F2 (i) only the matchUp's own, and that half of F2 is not yet in v1.
  */
-
-export const STAMP = '<stamped>';
 
 type Json = Record<string, unknown>;
 
-/** a record's JSON with stamps normalised as above; drawDefinition stamps by presence, structure stamps removed */
+/** a record's JSON with structure stamps removed, the one part of F2 (i) v1 does not yet keep */
 export function normaliseStamps(record: Json): Json {
-  for (const event of (record.events as Json[] | undefined) ?? []) {
-    for (const drawDefinition of (event.drawDefinitions as Json[] | undefined) ?? []) {
-      if (drawDefinition.updatedAt) drawDefinition.updatedAt = STAMP;
-      const visit = (structure: Json) => {
-        delete structure.updatedAt;
-        for (const matchUp of (structure.matchUps as Json[] | undefined) ?? []) {
-          if (matchUp.updatedAt) matchUp.updatedAt = STAMP;
-          for (const tieMatchUp of (matchUp.tieMatchUps as Json[] | undefined) ?? [])
-            if (tieMatchUp.updatedAt) tieMatchUp.updatedAt = STAMP;
-        }
-        for (const child of (structure.structures as Json[] | undefined) ?? []) visit(child);
-      };
+  const visit = (structure: Json) => {
+    delete structure.updatedAt;
+    for (const child of (structure.structures as Json[] | undefined) ?? []) visit(child);
+  };
+  for (const event of (record.events as Json[] | undefined) ?? [])
+    for (const drawDefinition of (event.drawDefinitions as Json[] | undefined) ?? [])
       for (const structure of (drawDefinition.structures as Json[] | undefined) ?? []) visit(structure);
-    }
-  }
   return record;
 }
 
@@ -59,11 +46,13 @@ const shown = (value: unknown) => (value === undefined ? 'absent' : JSON.stringi
  * live record after v1. Returns the first difference, by JSON Pointer, with what each side holds there.
  */
 export function compareShadow({
+  stampedBefore,
   before,
   record,
   drawId,
   ops,
 }: {
+  stampedBefore?: Set<string>;
   record: Tournament;
   before: string;
   drawId: string;
@@ -74,7 +63,7 @@ export function compareShadow({
     .flatMap((event) => (event.drawDefinitions as Json[] | undefined) ?? [])
     .find((draw) => draw.drawId === drawId);
   if (!drawDefinition) return { equal: false, path: `/drawDefinitions/${drawId}`, v1: 'present', v2: 'not found' };
-  const applied = applyOutcomeOps(drawDefinition as unknown as DrawDefinition, ops);
+  const applied = applyOutcomeOps(drawDefinition as unknown as DrawDefinition, ops, stampedBefore);
   if (applied.error) return { equal: false, path: '(ops)', v1: 'applied', v2: applied.error };
 
   const v1 = normaliseStamps(JSON.parse(captureRecord(record)) as Json);

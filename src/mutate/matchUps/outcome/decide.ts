@@ -11,6 +11,7 @@ import { findStructure } from '@Acquire/findStructure';
 import { observeWrite, planWrite } from './write';
 import { captureRecord } from '@Tools/recordDiff';
 import { refuseOutcome } from './refusals';
+import { stampedInThisCall } from './ops';
 import { buildOutcomeView } from './view';
 import { compareNotices, compareShadow, plannedNotices } from './shadow';
 import { chooseRoute } from './route';
@@ -75,6 +76,8 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     view,
   });
   const shadowBefore = outcome.ops && args.tournamentRecord ? captureRecord(args.tournamentRecord) : undefined;
+  // what this engine call already stamped, which the copy cannot know (F2 (i): an entity is stamped once per call)
+  const stampedBefore = shadowBefore ? stampedInThisCall(args.drawDefinition) : undefined;
 
   // AN ERROR CHANGES NOTHING (CA, 2026-10-18), and a divergence is an error raised after v1 has written: what the
   // call touches is captured here, before v1 runs, and written back into the same objects before the divergence leaves
@@ -151,6 +154,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
       record: args.tournamentRecord,
       before: shadowBefore,
       ops: outcome.ops,
+      stampedBefore,
     });
     if (!shadow.equal)
       throw new OutcomePipelineDivergence({

@@ -320,6 +320,12 @@ After the write, and only on success:
 6. **Notifications** (MODIFY_MATCHUP and the draw's topics) are emitted; the factory extension's
    `timeStamp` is written by the engine after the call.
 
+   **An entity's `updatedAt` is stamped once per call** (F2 (i), CA 2026-10-19): the call's captured instant, or the
+   previous stamp + 1 ms when that is already as late, however many notices the call raises for it. An
+   `executionQueue` is one call. Until 2026-10-24 v1 stamped at each notice, so one first-round score moved the draw's
+   stamp on by 2 ms (`oneStampPerEntityPerCall.test.ts`). A state provider without the optional
+   `getCapturedStamps`/`setCapturedStamps` hooks keeps no ledger and stamps at each notice, as before.
+
 ## 6. Guarantees
 
 - **A refusal changes nothing** (`ERROR_IMPLIES_NO_MUTATION`). The checks in § 2 run above every
@@ -540,9 +546,9 @@ the slices that follow:
 | `clock`        | is made outside an engine call, with no captured instant, so the timestamps a write takes cannot be reproduced | none: production calls go through the engine |
 
 **In `differential`**, a complete plan is folded into the record as it stood before v1 ran and compared with the record
-v1 wrote. Until Phase C's F2 lands in v1, stamps are normalised in that comparison (debate-ruled 2026-10-24, pending
-CA review): a structure's `updatedAt` is left out, and a matchUp's and the draw's are compared as present or absent.
-v1 stamps once per notice and every top-level structure on each, so no value comparison can pass yet.
+v1 wrote. A matchUp's and the draw's `updatedAt` are compared by value: v1 stamps each entity once per call, as v2
+does (F2 (i)). A structure's `updatedAt` is still left out (CA, 2026-10-24, a temporary blind spot), because v1's
+matchUp notice stamps every top-level structure, where F2 (i) stamps only the matchUp's own.
 
 ## 8. What the corpus pins
 

@@ -36,6 +36,8 @@ export default {
   setCapturedClock,
   getCapturedCompetitionClock,
   setCapturedCompetitionClock,
+  getCapturedStamps,
+  setCapturedStamps,
   getCallRandomSource,
   setCallRandomSource,
   deleteNotice,
@@ -75,6 +77,14 @@ export function getCapturedCompetitionClock(): number | undefined {
 
 export function setCapturedCompetitionClock(timeStamp?: number): void {
   syncGlobalState.capturedCompetitionClock = timeStamp;
+}
+
+export function getCapturedStamps(): WeakSet<object> | undefined {
+  return syncGlobalState.capturedStamps;
+}
+
+export function setCapturedStamps(stamps?: WeakSet<object>): void {
+  syncGlobalState.capturedStamps = stamps;
 }
 
 export function getCallRandomSource(): (() => number) | undefined {

@@ -1,7 +1,7 @@
+import { addNotice, deleteNotice, getCapturedStamps } from '@Global/state/globalState';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getDrawPositionSides } from '@Query/matchUps/getDrawPositionSides';
 import { drawOrigin, eventOrigin } from '@Query/readModel/readModelRows';
-import { addNotice, deleteNotice } from '@Global/state/globalState';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { nowMs } from '@Tools/clock';
@@ -23,46 +23,48 @@ import {
   UPDATE_INCONTEXT_MATCHUP,
 } from '@Constants/topicConstants';
 
+/**
+ * The next `updatedAt` for an entity: now, or 1 ms past its previous stamp when that is already now or later, so a
+ * stamp always moves on (an ordering value, not an event instant). Under a fixed or backward clock an equality-only
+ * bump gave T, T+1, T.
+ *
+ * ONCE PER CALL (F2 (i), CA 2026-10-19): inside an engine call, an entity already stamped in that call keeps its stamp,
+ * so a stamp means "changed in this call" however many notices the call raised for it. v2 writes the same value
+ * (`outcome/ops.ts` `nextStamp`). Outside an engine call, or with a state provider that keeps no ledger, every
+ * stamp moves on, as before.
+ */
+function stampUpdatedAt(entity?: { updatedAt?: string | Date } | null) {
+  if (!entity) return;
+  const stamped = getCapturedStamps();
+  if (stamped?.has(entity)) return;
+  let timeStamp = nowMs();
+  const previous = entity.updatedAt;
+  if (previous) {
+    const prevMs = typeof previous === 'string' ? new Date(previous).getTime() : previous.getTime();
+    if (!Number.isNaN(prevMs) && timeStamp <= prevMs) timeStamp = prevMs + 1;
+  }
+  entity.updatedAt = new Date(timeStamp).toISOString();
+  stamped?.add(entity);
+}
+
 function drawUpdatedAt(drawDefinition: DrawDefinition, structureIds?: string[]) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
-  let timeStamp = nowMs();
-  if (drawDefinition.updatedAt) {
-    // strictly greater than the previous stamp, as stampMatchUpUpdatedAt does: under a fixed or
-    // backward clock an equality-only bump gave T, T+1, T. An ordering value, not an event instant.
-    const prevMs = new Date(drawDefinition.updatedAt).getTime();
-    if (!Number.isNaN(prevMs) && timeStamp <= prevMs) timeStamp = prevMs + 1;
-  }
-  const updatedAt = new Date(timeStamp).toISOString();
-
   const relevantStructureIds = structureIds?.filter(Boolean);
 
-  drawDefinition.updatedAt = updatedAt;
+  stampUpdatedAt(drawDefinition);
   drawDefinition.structures?.filter(Boolean).forEach((structure) => {
     if (!relevantStructureIds?.length || relevantStructureIds?.includes(structure.structureId)) {
-      structure.updatedAt = updatedAt;
+      stampUpdatedAt(structure);
     }
   });
 
   return { ...SUCCESS };
 }
 
-/**
- * Stamp an ISO UTC timestamp on a matchUp to mark that it has just been
- * modified. Mirrors the monotonic bump used by `drawUpdatedAt` — if the
- * wall-clock reads the same millisecond as the previously-recorded
- * timestamp, we bump by 1ms so every mutation produces a strictly-
- * greater `updatedAt`. Safe no-op on a falsy matchUp.
- */
+/** Stamp a matchUp to mark that it has just been modified: `stampUpdatedAt`, so once per call. */
 function stampMatchUpUpdatedAt(matchUp?: MatchUp | null) {
-  if (!matchUp) return;
-  let timeStamp = nowMs();
-  const previous = matchUp.updatedAt;
-  if (previous) {
-    const prevMs = typeof previous === 'string' ? new Date(previous).getTime() : previous.getTime();
-    if (!Number.isNaN(prevMs) && timeStamp <= prevMs) timeStamp = prevMs + 1;
-  }
-  matchUp.updatedAt = new Date(timeStamp).toISOString();
+  stampUpdatedAt(matchUp);
 }
 
 type AddMatchUpsNoticeArgs = {
