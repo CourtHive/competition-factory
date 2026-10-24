@@ -149,6 +149,12 @@ schedule write refuses it with `ANACHRONISM` (see [schedule governor: played ord
 
 ## 4. The timed pipeline: `scheduleProfileRounds`
 
+The call runs in three stages: a **view**, everything the decisions below read, resolved once from the records; a
+**plan**, made from the view alone; and the **writes**. The view is plain data (the hydrated matchUps, the dependency
+graph, reachability, the profile resolved to rounds and minutes, each date's available courts, every event's timing,
+the minutes of matchUps already timed on a planned date, and the stored facts of every draw anyone has played in), so a
+plan can be reproduced from a view without the records: a view written as JSON and read back plans the same.
+
 Dates are taken in order. On each date:
 
 1. **What is already there.** The matchUps already timed on the date are booked first, with their own minutes, so they

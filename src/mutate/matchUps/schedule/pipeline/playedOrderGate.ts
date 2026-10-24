@@ -1,14 +1,12 @@
-import { BatchPlacement, checkBatchPlayedOrder, checkPlayedOrder, wasPlayed } from '../scheduleItems/playedOrder';
+import { BatchPlacement, checkBatchPlayedOrder, playedOrderRefusal, wasPlayed } from '../scheduleItems/playedOrder';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { findDrawDefinition } from '@Acquire/findDrawDefinition';
 import { zeroPad } from '@Tools/dateTime';
 
 // constants and types
 import { ANACHRONISM } from '@Constants/errorConditionConstants';
-import { DrawDefinition } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 import { ResultType } from '@Types/factoryTypes';
-import type { SchedulingView } from './view';
+import type { PlanningView, SchedulingView } from './view';
 import type { SchedulePlan } from './plan';
 
 /**
@@ -21,31 +19,23 @@ import type { SchedulePlan } from './plan';
  */
 const plainTime = (scheduleTime: string) => scheduleTime.split(':').map(zeroPad).join(':');
 
-export function playedOrderGate(view: SchedulingView, scheduleDate: string) {
+export function playedOrderGate(view: PlanningView, scheduleDate: string) {
   const played = new Set(view.hydrated.filter(wasPlayed).map(({ matchUpId }) => matchUpId));
   const hasPlayedNeighbour = (matchUpId: string) => {
     const { matchUpIds = [], dependentMatchUpIds = [] } = view.matchUpDependencies[matchUpId] ?? {};
     return [...matchUpIds, ...dependentMatchUpIds].some((id) => played.has(id));
   };
-  const drawDefinitions = new Map<string, DrawDefinition | undefined>();
-  const drawDefinitionOf = ({ tournamentId, drawId }: HydratedMatchUp) => {
-    if (!drawDefinitions.has(drawId)) {
-      const tournamentRecord = tournamentId ? view.tournamentRecords[tournamentId] : undefined;
-      drawDefinitions.set(drawId, tournamentRecord && findDrawDefinition({ tournamentRecord, drawId }).drawDefinition);
-    }
-    return drawDefinitions.get(drawId);
-  };
+  const graph = () => ({ matchUpDependencies: view.matchUpDependencies, inContextMatchUps: view.hydrated });
 
   return (matchUp: HydratedMatchUp, scheduleTime: string): unknown[] | undefined => {
     if (!played.size || !hasPlayedNeighbour(matchUp.matchUpId)) return undefined;
-    const drawDefinition = drawDefinitionOf(matchUp);
-    if (!drawDefinition) return undefined;
-    const refusal = checkPlayedOrder({
+    const facts = view.playedOrderFacts[matchUp.drawId];
+    if (!facts) return undefined;
+    const refusal = playedOrderRefusal({
       schedule: { scheduledDate: scheduleDate, scheduledTime: plainTime(scheduleTime) },
-      matchUpDependencies: view.matchUpDependencies,
-      inContextMatchUps: view.hydrated,
       matchUpId: matchUp.matchUpId,
-      drawDefinition,
+      facts,
+      graph,
     });
     return refusal?.context?.blockingMatchUps;
   };

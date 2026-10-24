@@ -86,7 +86,12 @@ function vNextPlan(view: any) {
     scheduleDate,
     venues: venues.map(({ venueId, rounds }) => ({ venueId, matchUpIds: rounds.flatMap((r: any) => r.matchUpIds) })),
   }));
-  return { plan, minutes: Object.fromEntries(view.minutes) };
+  // the minutes each round carries, for every matchUp it profiles: what v1's per-venue minutesMap held
+  const minutes = {};
+  for (const { venues } of view.dates)
+    for (const { rounds } of venues)
+      for (const round of rounds) for (const matchUpId of round.profiledMatchUpIds) minutes[matchUpId] = round.minutes;
+  return { plan, minutes };
 }
 
 /** the engine's records as they stand now: getTournament returns a copy, so a copy taken earlier misses later writes */

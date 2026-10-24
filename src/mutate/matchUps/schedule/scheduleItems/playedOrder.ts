@@ -83,67 +83,121 @@ type BlockingMatchUp = {
   matchUpId: string;
 } & Placement;
 
+type MatchUpDependencies = ReturnType<typeof getMatchUpDependencies>['matchUpDependencies'];
+type PlayedOrderGraph = { matchUpDependencies?: MatchUpDependencies; inContextMatchUps?: HydratedMatchUp[] };
+
 type PlayedOrderArgs = {
   pendingPlacements?: PendingPlacements;
-  matchUpDependencies?: ReturnType<typeof getMatchUpDependencies>['matchUpDependencies'];
+  matchUpDependencies?: MatchUpDependencies;
   inContextMatchUps?: HydratedMatchUp[];
   drawDefinition: DrawDefinition;
   schedule: Placement;
   matchUpId: string;
 };
 
+/** what the played order reads of a STORED matchUp: where it is placed, whether it was played, and how it is named */
+export type StoredPlayedOrderFacts = Placement & {
+  matchUpStatus?: MatchUpStatusUnion;
+  roundNumber?: number;
+  played: boolean;
+};
+export type DrawPlayedOrderFacts = { [matchUpId: string]: StoredPlayedOrderFacts };
+
+/**
+ * A draw's stored matchUps as the played order reads them, by matchUpId: plain data, so a caller can resolve them once and
+ * judge any number of placements without the draw. Undefined when nobody has played in the draw: it imposes nothing.
+ */
+export function drawPlayedOrderFacts(drawDefinition: DrawDefinition): DrawPlayedOrderFacts | undefined {
+  const rawMatchUps: MatchUp[] = allDrawMatchUps({ drawDefinition, inContext: false }).matchUps ?? [];
+  if (!rawMatchUps.some(wasPlayed)) return undefined;
+  const facts: DrawPlayedOrderFacts = {};
+  for (const matchUp of rawMatchUps) {
+    facts[matchUp.matchUpId] = {
+      ...storedPlacement(matchUp),
+      matchUpStatus: matchUp.matchUpStatus,
+      roundNumber: matchUp.roundNumber,
+      played: wasPlayed(matchUp),
+    };
+  }
+  return facts;
+}
+
+const placementOf = ({ scheduledDate, scheduledTime }: Placement): Placement => ({ scheduledDate, scheduledTime });
+
 /**
  * The played-order refusal for one write, or undefined. `pendingPlacements` are the other placements of the same batch,
  * read in place of what is stored, so a bulk write is judged on the state it leaves and not on its intermediate steps.
  */
 export function checkPlayedOrder(params: PlayedOrderArgs): ResultType | undefined {
-  const { drawDefinition, matchUpId, schedule, pendingPlacements } = params;
-  if (schedule.scheduledDate === undefined && schedule.scheduledTime === undefined) return undefined;
+  const { drawDefinition, matchUpDependencies, inContextMatchUps, ...rest } = params;
+  if (rest.schedule.scheduledDate === undefined && rest.schedule.scheduledTime === undefined) return undefined;
+  // a draw nobody has played in yet imposes nothing, whatever moves
+  const facts = drawPlayedOrderFacts(drawDefinition);
+  if (!facts) return undefined;
+  const graph = (): PlayedOrderGraph => {
+    if (matchUpDependencies && inContextMatchUps) return { matchUpDependencies, inContextMatchUps };
+    const resolved = getMatchUpDependencies({ drawDefinition });
+    return { matchUpDependencies: resolved.matchUpDependencies, inContextMatchUps: resolved.matchUps };
+  };
+  return playedOrderRefusal({ ...rest, facts, graph });
+}
 
-  const rawMatchUps: MatchUp[] = allDrawMatchUps({ drawDefinition, inContext: false }).matchUps ?? [];
-  // fast path: a draw nobody has played in yet imposes nothing, whatever moves
-  if (!rawMatchUps.some(wasPlayed)) return undefined;
-  const rawById = new Map(rawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
-  const target = rawById.get(matchUpId);
+type PlayedOrderRefusalArgs = {
+  pendingPlacements?: PendingPlacements;
+  /** the dependency graph and the in-context matchUps, asked for only when the write moves a matchUp */
+  graph: () => PlayedOrderGraph;
+  facts: DrawPlayedOrderFacts;
+  schedule: Placement;
+  matchUpId: string;
+};
+
+/** the rule itself, over a draw's stored facts (`drawPlayedOrderFacts`): it reads no record */
+export function playedOrderRefusal({
+  pendingPlacements,
+  matchUpId,
+  schedule,
+  facts,
+  graph,
+}: PlayedOrderRefusalArgs): ResultType | undefined {
+  if (schedule.scheduledDate === undefined && schedule.scheduledTime === undefined) return undefined;
+  const target = facts[matchUpId];
   if (!target) return undefined;
 
-  const stored = storedPlacement(target);
+  const stored = placementOf(target);
   const placement = placementAfterWrite(stored, schedule);
   if (placement.scheduledDate === stored.scheduledDate && placement.scheduledTime === stored.scheduledTime)
     return undefined;
 
-  let { matchUpDependencies, inContextMatchUps } = params;
-  if (!matchUpDependencies || !inContextMatchUps)
-    ({ matchUpDependencies, matchUps: inContextMatchUps } = getMatchUpDependencies({ drawDefinition }));
+  const { matchUpDependencies, inContextMatchUps } = graph();
   const inContext = new Map((inContextMatchUps ?? []).map((matchUp) => [matchUp.matchUpId, matchUp]));
-  const placementOf = (id: string): Placement => {
+  const placementOfId = (id: string): Placement => {
     if (pendingPlacements?.[id]) return pendingPlacements[id];
-    const raw = rawById.get(id);
-    return raw ? storedPlacement(raw) : {};
+    const stored = facts[id];
+    return stored ? placementOf(stored) : {};
   };
   const describe = (id: string, relation: BlockingMatchUp['relation']): BlockingMatchUp => {
     const hydrated = inContext.get(id);
-    const raw = rawById.get(id);
+    const stored = facts[id];
     return {
-      ...placementOf(id),
-      matchUpStatus: raw?.matchUpStatus ?? hydrated?.matchUpStatus,
-      roundNumber: raw?.roundNumber ?? hydrated?.roundNumber,
+      ...placementOfId(id),
+      matchUpStatus: stored?.matchUpStatus ?? hydrated?.matchUpStatus,
+      roundNumber: stored?.roundNumber ?? hydrated?.roundNumber,
       structureId: hydrated?.structureId,
       matchUpId: id,
       relation,
     };
   };
+  const played = (id: string) => (facts[id] ? facts[id].played : wasPlayed(inContext.get(id)));
 
   const dependencies = matchUpDependencies?.[matchUpId] ?? {};
   const blocking: BlockingMatchUp[] = [];
   for (const sourceId of dependencies.matchUpIds ?? []) {
-    const source = rawById.get(sourceId) ?? inContext.get(sourceId);
-    if (wasPlayed(source) && notAfter(placement, placementOf(sourceId)))
+    if (played(sourceId) && notAfter(placement, placementOfId(sourceId)))
       blocking.push(describe(sourceId, 'playedSource'));
   }
-  if (wasPlayed(target))
+  if (target.played)
     for (const dependentId of dependencies.dependentMatchUpIds ?? []) {
-      if (notAfter(placementOf(dependentId), placement)) blocking.push(describe(dependentId, 'dependent'));
+      if (notAfter(placementOfId(dependentId), placement)) blocking.push(describe(dependentId, 'dependent'));
     }
 
   if (!blocking.length) return undefined;
@@ -172,49 +226,44 @@ export function checkBatchPlayedOrder({
   allRefusals,
   placements,
 }: {
-  matchUpDependencies?: PlayedOrderArgs['matchUpDependencies'];
+  matchUpDependencies?: MatchUpDependencies;
   inContextMatchUps?: HydratedMatchUp[];
   placements: BatchPlacement[];
   tournamentRecord: Tournament;
   allRefusals?: boolean;
 }): ResultType | undefined {
-  const draws = new Map<string, { drawDefinition: DrawDefinition; raw: Map<string, MatchUp> }>();
+  const draws = new Map<string, { drawDefinition: DrawDefinition; facts: DrawPlayedOrderFacts }>();
   for (const { drawId } of placements) {
     if (draws.has(drawId)) continue;
     const drawDefinition = findDrawDefinition({ tournamentRecord, drawId }).drawDefinition;
-    if (!drawDefinition) continue;
-    const rawMatchUps: MatchUp[] = allDrawMatchUps({ drawDefinition, inContext: false }).matchUps ?? [];
     // a draw nobody has played in imposes nothing
-    if (!rawMatchUps.some(wasPlayed)) continue;
-    draws.set(drawId, { drawDefinition, raw: new Map(rawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp])) });
+    const facts = drawDefinition && drawPlayedOrderFacts(drawDefinition);
+    if (drawDefinition && facts) draws.set(drawId, { drawDefinition, facts });
   }
   if (!draws.size) return undefined;
 
   const pendingPlacements: PendingPlacements = {};
   for (const { drawId, matchUpId, schedule } of placements) {
-    const raw = draws.get(drawId)?.raw.get(matchUpId);
-    if (raw) pendingPlacements[matchUpId] = placementAfterWrite(storedPlacement(raw), schedule);
+    const stored = draws.get(drawId)?.facts[matchUpId];
+    if (stored) pendingPlacements[matchUpId] = placementAfterWrite(placementOf(stored), schedule);
   }
 
   const refusals: ResultType[] = [];
-  const dependenciesByDraw = new Map<string, ReturnType<typeof getMatchUpDependencies>>();
+  const graphByDraw = new Map<string, PlayedOrderGraph>();
   for (const { drawId, matchUpId, schedule } of placements) {
     const draw = draws.get(drawId);
     if (!draw) continue;
     // the caller's graph when it has one (a bulk call builds it once for every tournament), else one per draw
-    if (!givenDependencies && !dependenciesByDraw.has(drawId))
-      dependenciesByDraw.set(drawId, getMatchUpDependencies({ drawDefinition: draw.drawDefinition }));
-    const { matchUpDependencies, matchUps } = givenDependencies
-      ? { matchUpDependencies: givenDependencies, matchUps: givenMatchUps }
-      : (dependenciesByDraw.get(drawId) ?? {});
-    const refusal = checkPlayedOrder({
-      drawDefinition: draw.drawDefinition,
-      inContextMatchUps: matchUps,
-      matchUpDependencies,
-      pendingPlacements,
-      matchUpId,
-      schedule,
-    });
+    const graph = (): PlayedOrderGraph => {
+      if (givenDependencies && givenMatchUps)
+        return { matchUpDependencies: givenDependencies, inContextMatchUps: givenMatchUps };
+      if (!graphByDraw.has(drawId)) {
+        const { matchUpDependencies, matchUps } = getMatchUpDependencies({ drawDefinition: draw.drawDefinition });
+        graphByDraw.set(drawId, { matchUpDependencies, inContextMatchUps: matchUps });
+      }
+      return graphByDraw.get(drawId) ?? {};
+    };
+    const refusal = playedOrderRefusal({ facts: draw.facts, pendingPlacements, matchUpId, schedule, graph });
     if (refusal && !allRefusals) return refusal;
     if (refusal) refusals.push(refusal);
   }

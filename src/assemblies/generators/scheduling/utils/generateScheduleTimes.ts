@@ -2,16 +2,20 @@ import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
 import { getScheduleTimes } from '@Query/venues/getScheduleTimes';
 import { calculatePeriodLength } from './calculatePeriodLength';
 import { getDateTimeBoundary } from './getTimeBoundary';
-import { generateBookings } from './generateBookings';
+import { EventBookingTimings, generateBookings } from './generateBookings';
 import { xa } from '@Tools/extractAttributes';
 
 // constants and types
 import { ErrorType, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
 import { ScheduleTimesResult } from '@Types/factoryTypes';
 import { Tournament } from '@Types/tournamentTypes';
-import { HydratedMatchUp } from '@Types/hydrated';
+import { HydratedCourt, HydratedMatchUp } from '@Types/hydrated';
 
 type GenerateScheduleTimesArgs = {
+  /** the courts available on the date, already resolved (`ignoreDisabled` for the date): when given with
+   * `eventTimings`, no record is read */
+  dateCourts?: HydratedCourt[];
+  eventTimings?: EventBookingTimings;
   tournamentRecords?: { [key: string]: Tournament };
   calculateStartTimeFromCourts?: boolean;
   remainingScheduleTimes?: string[];
@@ -36,8 +40,10 @@ export function generateScheduleTimes({
   clearScheduleDates,
   tournamentRecords,
   tournamentRecord,
+  eventTimings,
   periodLength,
   scheduleDate,
+  dateCourts,
   startTime,
   venueIds,
   courtIds,
@@ -53,7 +59,8 @@ export function generateScheduleTimes({
   if (tournamentRecord && !tournamentRecords) {
     tournamentRecords = { [tournamentRecord.tournamentId]: tournamentRecord };
   }
-  if (typeof tournamentRecords !== 'object' || !Object.keys(tournamentRecords).length)
+  const resolved = dateCourts && eventTimings;
+  if (!resolved && (typeof tournamentRecords !== 'object' || !Object.keys(tournamentRecords).length))
     return { error: MISSING_TOURNAMENT_RECORDS };
 
   periodLength =
@@ -63,11 +70,9 @@ export function generateScheduleTimes({
       averageMatchUpMinutes,
     });
 
-  const { courts: allCourts, venues } = getVenuesAndCourts({
-    dates: [scheduleDate],
-    ignoreDisabled: true,
-    tournamentRecords,
-  });
+  const { courts: allCourts, venues } = resolved
+    ? { courts: dateCourts, venues: undefined }
+    : getVenuesAndCourts({ dates: [scheduleDate], ignoreDisabled: true, tournamentRecords });
 
   // courtIds, when provided, narrows capacity to the selected courts of the venues
   const courts =
@@ -82,6 +87,7 @@ export function generateScheduleTimes({
     defaultRecoveryMinutes,
     averageMatchUpMinutes,
     tournamentRecords,
+    eventTimings,
     scheduleDate,
     periodLength,
     venueIds,

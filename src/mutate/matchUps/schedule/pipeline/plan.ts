@@ -8,13 +8,14 @@ import { getMatchUpId } from '@Functions/global/extractors';
 import { playedOrderGate } from './playedOrderGate';
 
 // types
-import type { DatePlan, Minutes, SchedulingView, VenuePlan } from './view';
+import type { DatePlan, Minutes, PlanningView, VenuePlan } from './view';
 import { ScheduleTimesResult } from '@Types/factoryTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 /**
  * vNext, stage two: the PLAN. From the view alone it decides, date by date, which profiled matchUps take which slot,
- * and writes nothing: the records are only read, and every booking is kept in the plan's own bookkeeping. It replaced v1's
+ * and writes nothing: it reads no record (the view resolved everything it needs), and every booking is kept in the
+ * plan's own bookkeeping. It replaced v1's
  * timed scheduler (jinnScheduler) after a differential held the two to the same placements across the corpus and the
  * scale matrix; the corpus manifest now pins them (SCHEDULING_PIPELINE_VNEXT.md § 7).
  *
@@ -24,7 +25,7 @@ import { HydratedMatchUp } from '@Types/hydrated';
  */
 
 type PlanScheduleArgs = {
-  view: SchedulingView;
+  view: PlanningView;
   checkPotentialRequestConflicts?: boolean;
   clearScheduleDates?: boolean | string[];
   excludeNoDateCompleted?: boolean;
@@ -143,7 +144,7 @@ function planDate({
   view,
 }: PlanDateArgs) {
   const { scheduleDate } = datePlan;
-  const { hydrated, tournamentRecords, matchUpDependencies, reachability } = view;
+  const { hydrated, matchUpDependencies, reachability } = view;
 
   plan.recoveryTimeDeferredMatchUpIds[scheduleDate] = {};
   plan.playedOrderDeferredMatchUpIds[scheduleDate] = {};
@@ -183,11 +184,12 @@ function planDate({
     // the venue's slots, around what is already booked on its courts that day
     const { scheduleTimes = [], dateScheduledMatchUpIds } = generateScheduleTimes({
       courtIds: venueCourts.map((court) => court.courtId),
+      dateCourts: view.dateCourts[scheduleDate] ?? [],
       averageMatchUpMinutes: slotMinutes,
+      eventTimings: view.eventTimings,
       venueIds: [venue.venueId],
       matchUps: hydrated,
       clearScheduleDates,
-      tournamentRecords,
       periodLength,
       scheduleDate,
     });
@@ -203,8 +205,8 @@ function planDate({
       matchUpNotBeforeTimes,
       matchUpDependencies,
       clearScheduleDates,
+      timedMinutes: view.timedMinutes,
       excludePriorDates,
-      tournamentRecords,
       matchUps: hydrated,
       scheduleDate,
       minutesMap,
