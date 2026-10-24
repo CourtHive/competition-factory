@@ -306,14 +306,16 @@ it('properly schedules 1st rounds of two 32 single elimination draws with 10 cou
     return timesMapped;
   }, {});
 
+  // the Assign column of Garman's published 10 Courts / 1 hr 30 min table: 10, 0, 3, 4, 3, 3, 4, 3 (the first rounds
+  // fill 32 matchUps, so the last period takes the 2 left)
   expect(timeMap).toEqual({
     '08:00': 10,
     '09:00': 3,
-    '09:30': 3,
-    '10:00': 4,
+    '09:30': 4,
+    '10:00': 3,
     '10:30': 3,
-    '11:00': 3,
-    '11:30': 4,
+    '11:00': 4,
+    '11:30': 3,
     '12:00': 2,
   });
 });

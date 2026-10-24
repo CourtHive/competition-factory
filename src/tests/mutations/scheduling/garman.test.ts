@@ -39,8 +39,14 @@ it('replcates revised garman spreadsheet funcationality', () => {
     date,
   });
   expect(timingProfile.length).toEqual(23);
-  expect(timingProfile[21].add).toEqual(3);
-  expect(timingProfile[22].add).toEqual(4);
+  // Brian Garman, "The Revised Garman System" (2009), 10 Courts, Table 3 "1 hr 30 min", the Total column from 8:00 AM
+  // (period 0) to 7:00 PM (period 22): the published table rounds to the nearest match (CA 2026-10-24)
+  // prettier-ignore
+  expect(timingProfile.map(({ totalMatchUps }) => totalMatchUps)).toEqual([
+    10, 10, 13, 17, 20, 23, 27, 30, 33, 37, 40, 43, 47, 50, 53, 57, 60, 63, 67, 70, 73, 77, 80,
+  ]);
+  expect(timingProfile[21].add).toEqual(4);
+  expect(timingProfile[22].add).toEqual(3);
   expect(timingProfile[22].totalMatchUps).toEqual(80);
 
   courts = garman.courtGenerator({
@@ -57,9 +63,10 @@ it('replcates revised garman spreadsheet funcationality', () => {
     courts,
     date,
   }));
-  expect(timingProfile[21].add).toEqual(5);
-  expect(timingProfile[22].add).toEqual(4);
-  expect(timingProfile[22].totalMatchUps).toEqual(106);
+  // 12 × 30 / 80 = 4.5 matches a period: 102 by period 21, 106.5 by period 22, which rounds half up to 107
+  expect(timingProfile[21].add).toEqual(4);
+  expect(timingProfile[22].add).toEqual(5);
+  expect(timingProfile[22].totalMatchUps).toEqual(107);
 
   courts = garman.courtGenerator({
     startTime: '8:00',
@@ -75,7 +82,8 @@ it('replcates revised garman spreadsheet funcationality', () => {
     courts,
     date,
   }));
-  expect(timingProfile[21].add).toEqual(2);
+  // 3 × 30 / 75 = 1.2 matches a period: 25.8 by period 20 rounds to 26, 27 by period 21, 28.2 by period 22
+  expect(timingProfile[21].add).toEqual(1);
   expect(timingProfile[22].add).toEqual(1);
   expect(timingProfile[22].totalMatchUps).toEqual(28);
   // prettier-ignore
@@ -198,11 +206,12 @@ it('generates expected output for two locations with differing court availabilit
     averageMatchUpMinutes: 90,
     courts,
   });
-  expect(timingProfile[14].add).toEqual(1);
+  expect(timingProfile[14].add).toEqual(0);
   expect(timingProfile[14].periodStart).toEqual('16:00');
   expect(timingProfile[14].totalMatchUps).toEqual(18);
+  expect(timingProfile[15].add).toEqual(1);
   expect(timingProfile[16].add).toEqual(0);
-  expect(timingProfile[17].totalMatchUps).toEqual(18);
+  expect(timingProfile[17].totalMatchUps).toEqual(19);
   expect(timingProfile[17].add).toEqual(0);
   expect(timingProfile[18].add).toEqual(0);
 });

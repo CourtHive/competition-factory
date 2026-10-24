@@ -50,10 +50,10 @@ test.each([competitionEngineSync])(
 
     // prettier-ignore
     expect(afterRecoveryTimes.sort()).toEqual([
-      '15:00', '15:00',
       '15:30', '15:30',
-      '16:30', '16:30',
+      '16:00', '16:00',
       '17:00', '17:00',
+      '17:30', '17:30',
     ]);
 
     /*
@@ -71,7 +71,7 @@ test.each([competitionEngineSync])(
       '09:00', '09:00',
       '11:00', '11:00',
       '12:30', '12:30',
-      '14:00', '14:00',
+      '14:30', '14:30',
     ]);
     expect(result.scheduledMatchUpIds.length).toEqual(12);
     expect(result.success).toEqual(true);
@@ -109,10 +109,10 @@ test.each([competitionEngineSync])('respects matchUpDailylimits', async (competi
 
   // prettier-ignore
   expect(afterRecoveryTimes.sort(stringSort)).toEqual([
-      '12:00', '12:00',
+      '11:30', '11:30',
       '12:30', '12:30',
-      '13:30', '13:30',
-      '14:00', '14:00'
+      '14:00', '14:00',
+      '14:30', '14:30'
     ]);
 
   // prettier-ignore
@@ -120,7 +120,7 @@ test.each([competitionEngineSync])('respects matchUpDailylimits', async (competi
       '09:00', '09:00',
       '11:00', '11:00',
       '12:30', '12:30',
-      '14:00', '14:00'
+      '14:30', '14:30'
     ]);
 
   expect(result.scheduledMatchUpIds.length).toEqual(8);
