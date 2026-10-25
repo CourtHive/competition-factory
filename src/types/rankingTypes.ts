@@ -192,6 +192,12 @@ export interface AwardProfile extends AwardProfileScope {
    */
   luckyLoserRoundRobin?: boolean;
 
+  /**
+   * Team events: points for a player's own match win within a tie, by the tie's round and the line won. ITF Juniors
+   * International Team Competitions: a #1 singles, #2 singles or doubles win in the final, semifinal or quarterfinal.
+   */
+  tieWinPoints?: TieWinPoints;
+
   /** Alternative: awards based on finishing round won/lost */
   finishingRound?: Record<number, { won?: PositionValue; lost?: PositionValue }>;
 
@@ -308,6 +314,20 @@ export interface PerWinPointsDef {
 
   /** Max line positions that earn points */
   limit?: number;
+}
+
+/**
+ * Points for a player's own win in a team tie (AwardProfile.tieWinPoints). A tie's round is keyed by the team draw
+ * positions its loser takes, as a range: '2' = final, '3-4' = semifinal, '5-8' = quarterfinal. The range is exact, so
+ * a classification tie (a loser taking '7-8') is not a quarterfinal, and a round without a key earns nothing. Within a
+ * round, `singles` and `doubles` are indexed by the tie matchUp's collectionPosition (index 0 = position 1). The win
+ * counts whether or not the team won the tie, and the award goes to each player of the winning side.
+ */
+export interface TieWinPoints {
+  rounds: Record<string, { singles?: number[]; doubles?: number[] }>;
+
+  /** Each player keeps only their single best tie win in the event (default: every win is an award) */
+  bestOnly?: boolean;
 }
 
 /** Line-position-keyed values for team events */
@@ -647,7 +667,8 @@ export interface MandatoryRule {
  * Do not, however, mix `'points'` with the granular components in one bucket:
  * there it would count the same award's total twice.
  */
-export type PointComponent = 'points' | 'positionPoints' | 'perWinPoints' | 'bonusPoints' | 'qualityWinPoints';
+export type PointComponent =
+  'points' | 'positionPoints' | 'perWinPoints' | 'bonusPoints' | 'qualityWinPoints' | 'linePoints';
 
 export type DoublesAttribution = 'fullToEach' | 'splitEven' | 'teamOnly';
 

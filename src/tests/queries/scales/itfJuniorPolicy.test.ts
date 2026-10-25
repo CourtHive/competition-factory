@@ -18,7 +18,7 @@ import {
   SINGLE_ELIMINATION,
 } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
-import { SINGLES, DOUBLES } from '@Constants/eventConstants';
+import { SINGLES, DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
 
 // Ground truth: the points tables of Regulation 31, 2025 and 2026 ITF World Tennis Tour Juniors Regulations.
 // Columns W, F, SF, QF, R16, R32; a missing column awards nothing.
@@ -96,7 +96,12 @@ describe.each(POLICIES)('ITF Junior $year policy', ({ year, version, policyDefin
 
   it('counts the six best singles and a quarter of the six best doubles (Reg. 10)', () => {
     const [singles, doubles] = defined(policy.aggregationRules.countingBuckets, 'countingBuckets') as any[];
-    expect(singles).toMatchObject({ eventTypes: [SINGLES], bestOfCount: 6 });
+    // an International Team Competition result (a TEAM award carrying linePoints) counts among the singles results
+    expect(singles).toMatchObject({
+      eventTypes: [SINGLES, TEAM_EVENT],
+      pointComponents: ['positionPoints', 'linePoints'],
+      bestOfCount: 6,
+    });
     expect(singles.weight).toBeUndefined();
     expect(doubles).toMatchObject({ eventTypes: [DOUBLES], bestOfCount: 6, weight: 0.25 });
     expect(policy.aggregationRules.rollingPeriodDays).toEqual(364);
@@ -178,10 +183,20 @@ describe.each(POLICIES)('ITF Junior $year policy', ({ year, version, policyDefin
     expect(qualifying.finishingPositionRanges).toEqual({ 1: 30, 2: 20 });
   });
 
-  it('awards no points at any level the regulations do not grade', () => {
+  it('maps levels 1–9, with level 3 the International Team Competitions alone', () => {
     const levels = policy.awardProfiles.flatMap((p: any) => p.levels);
-    expect(levels).not.toContain(3);
+    expect(Math.min(...levels)).toEqual(1);
     expect(Math.max(...levels)).toEqual(9);
+    const atLevel3 = policy.awardProfiles.filter((p: any) => p.levels.includes(3));
+    expect(atLevel3.map((p: any) => p.profileName)).toEqual(['International Team Competition']);
+    expect(atLevel3[0].tieWinPoints).toEqual({
+      bestOnly: true,
+      rounds: {
+        '2': { singles: [95, 75], doubles: [75] },
+        '3-4': { singles: [75, 50], doubles: [50] },
+        '5-8': { singles: [50, 20], doubles: [20] },
+      },
+    });
   });
 });
 
@@ -355,6 +370,79 @@ describe('ITF Junior 2026 J60: a Lucky Loser Round Robin (Reg. 44 g)', () => {
       (a) => a.participantId === luckyLoserId,
     );
     expect([60, 36, 18]).toContain(award?.positionPoints);
+  });
+});
+
+describe('ITF Junior International Team Competitions (level 3)', () => {
+  // ITC ties: two singles and a doubles. Values by the round of the tie and the line won (Reg. 31).
+  const ITC_VALUES: Record<string, { singles: number[]; doubles: number[] }> = {
+    '2': { singles: [95, 75], doubles: [75] },
+    '3-4': { singles: [75, 50], doubles: [50] },
+    '5-8': { singles: [50, 20], doubles: [20] },
+  };
+
+  it('awards each player their best tie win, by round and line; classification ties earn nothing', () => {
+    const matchUpFormat = 'SET3-S:6/TB7';
+    const {
+      drawIds: [drawId],
+      eventIds: [eventId],
+    } = mocksEngine.generateTournamentRecord({
+      eventProfiles: [
+        {
+          eventType: TEAM_EVENT,
+          tieFormat: {
+            winCriteria: { valueGoal: 2 },
+            collectionDefinitions: [
+              { collectionName: 'Singles', matchUpType: SINGLES, matchUpCount: 2, matchUpValue: 1, matchUpFormat },
+              { collectionName: 'Doubles', matchUpType: DOUBLES, matchUpCount: 1, matchUpValue: 1, matchUpFormat },
+            ],
+          },
+          // every place 1–8 played off: the 5th–8th classification ties are not quarterfinals
+          drawProfiles: [{ drawSize: 8, drawType: PLAYOFF }],
+        },
+      ],
+      completeAllMatchUps: true,
+      randomWinningSide: true,
+      setState: true,
+    });
+
+    // the oracle: every line win in every tie, valued by the tie's loser range, best per person
+    const personOf = personIdsByParticipant();
+    const expected: Record<string, number> = {};
+    let classificationWins = 0;
+    for (const tie of drawMatchUps(drawId).filter((m) => m.matchUpType === TEAM_EVENT)) {
+      const round = [...new Set(tie.finishingPositionRange.loser)].join('-');
+      const values = ITC_VALUES[round];
+      for (const line of tie.tieMatchUps) {
+        if (!line.winningSide) continue;
+        if (!values) classificationWins += 1;
+        const value = values?.[line.matchUpType === DOUBLES ? 'doubles' : 'singles'][line.collectionPosition - 1];
+        const winner = line.sides.find((side: any) => side.sideNumber === line.winningSide);
+        for (const personId of personOf(winner.participantId)) {
+          if (value && value > (expected[personId] ?? 0)) expected[personId] = value;
+        }
+      }
+    }
+    expect(classificationWins).toBeGreaterThan(0);
+
+    const awards = eventPoints({ policyDefinitions: POLICY_RANKING_POINTS_ITF_JUNIOR, eventId, level: 3 });
+    const actual: Record<string, number> = {};
+    for (const award of awards.filter((a) => a.linePoints)) {
+      expect(actual[award.personId]).toBeUndefined(); // one result per player
+      actual[award.personId] = award.linePoints;
+    }
+    expect(actual).toEqual(expected);
+    expect(Object.values(actual)).toContain(Math.max(...Object.values(expected)));
+  });
+
+  it('counts an ITC result among the six best singles results', () => {
+    const aggregationRules = POLICY_RANKING_POINTS_ITF_JUNIOR[POLICY_TYPE_RANKING_POINTS].aggregationRules;
+    const pointAwards = [
+      { personId: 'p', eventType: SINGLES, level: 4, positionPoints: 250, endDate: '2026-06-01' },
+      { personId: 'p', eventType: TEAM_EVENT, level: 3, linePoints: 95, endDate: '2026-06-01' },
+    ];
+    const [entry] = generateRankingList({ pointAwards, aggregationRules, asOfDate: '2026-07-01' });
+    expect(entry.bucketTotals).toEqual({ Singles: 345, Doubles: 0 });
   });
 });
 
@@ -623,4 +711,17 @@ function drawWithLuckyLoser({ luckyLoserWinsQuarterfinal }: { luckyLoserWinsQuar
   expect(drawMatchUps(drawId).every((m) => m.winningSide)).toEqual(true);
 
   return { eventId, luckyLoserId };
+}
+
+// participantId -> personIds: an individual's own person, a pair's individuals' persons
+function personIdsByParticipant() {
+  const { participants = [] } = tournamentEngine.getParticipants();
+  const byId = new Map(participants.map((p: any) => [p.participantId, p]));
+  return (participantId: string): string[] => {
+    const participant: any = byId.get(participantId);
+    if (participant?.person?.personId) return [participant.person.personId];
+    return (participant?.individualParticipantIds ?? [])
+      .map((id: string) => (byId.get(id) as any)?.person?.personId)
+      .filter(Boolean);
+  };
 }

@@ -90,8 +90,8 @@ the six best singles results plus one quarter of the six best doubles results (t
 `POLICY_RANKING_POINTS_ITF_JUNIOR_2025` keeps the 2025 tables, which differ only in the ITF Junior Finals; use it to
 score 2025 results as they were awarded. Both count only the best result from up to two editions of the same
 J100-or-higher tournament (Reg. 10) with [`bestPerSeries`](/docs/scale-engine/aggregation#bestperseries), matching
-editions by `Tournament.tournamentSeriesId`. The policy file's header lists what neither encodes (International Team
-Competition points).
+editions by `Tournament.tournamentSeriesId`. International Team Competitions (level 3) are scored with
+[`tieWinPoints`](#team-tie-wins), and a player's one ITC result counts among their six best singles results.
 
 The vocabulary intentionally aligns with `TierClassification.system` so a
 tournament's tier-system (`'ATP'`, `'ITF_JUNIOR'`, `'PPA'`, …) lines up with
@@ -303,6 +303,28 @@ the playoff. A group place is read only from a finished group (`groupOrder`, nev
 `luckyLoserRoundRobin: true` covers a Lucky Loser Round Robin: a group runner-up placed into the playoff in place of a
 group winner. They earn playoff points only by winning a playoff match; if they lose their first, their group place
 scores instead. The ITF Juniors rule: an LLRR who loses the quarterfinal earns 2nd place points, not quarterfinal points.
+
+## Team Tie Wins
+
+`tieWinPoints` scores a player's own match win inside a team tie, by the tie's round and the line won, whether or not
+the team won the tie. A round is keyed by the team draw positions the tie's loser takes, as an exact range, so a
+classification tie for 5th–8th (`'7-8'`) is not a quarterfinal (`'5-8'`). `singles` and `doubles` are indexed by the
+line's `collectionPosition`. The awards carry `linePoints`. The ITF Junior International Team Competitions:
+
+```js
+{
+  levels: [3],
+  eventTypes: [TEAM_EVENT],
+  tieWinPoints: {
+    bestOnly: true, // one result per player: their best
+    rounds: {
+      '2': { singles: [95, 75], doubles: [75] }, // final: #1 singles, #2 singles, doubles
+      '3-4': { singles: [75, 50], doubles: [50] }, // semifinal
+      '5-8': { singles: [50, 20], doubles: [20] }, // quarterfinal
+    },
+  },
+}
+```
 
 ## Position Value Resolution
 
