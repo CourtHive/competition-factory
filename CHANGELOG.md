@@ -1,5 +1,62 @@
 # Changelog
 
+## [7.22.0](https://github.com/CourtHive/competition-factory/compare/v7.21.0...v7.22.0) (2026-10-25)
+
+
+### Features
+
+* **grammar:** the matchUpFormat grammar specification and its four rulings ([#5784](https://github.com/CourtHive/competition-factory/issues/5784)) ([ffb62ca](https://github.com/CourtHive/competition-factory/commit/ffb62ca9051438de201b6b3c8476284858f6f407))
+* **notifications:** one updatedAt per touched entity per engine call (F2 (i)) ([#5756](https://github.com/CourtHive/competition-factory/issues/5756)) ([bc5b377](https://github.com/CourtHive/competition-factory/commit/bc5b377c1cfb97c47a3b07b6818c3d905c59bacb))
+* **outcome:** the settle passes' has-work predicates, asked of the working view (S2 prep) ([#5762](https://github.com/CourtHive/competition-factory/issues/5762)) ([bc3c364](https://github.com/CourtHive/competition-factory/commit/bc3c364ea48f9dfb9ada3df446094fb30ee51e78))
+* **outcome:** the structural index and its oracle (S2 item 1, executor plan § 3.1.1) ([#5776](https://github.com/CourtHive/competition-factory/issues/5776)) ([b669b93](https://github.com/CourtHive/competition-factory/commit/b669b9321ca4db521d99d038144f1a0fe71809e9))
+* **outcome:** the view decides on the structural index (S2, executor plan § 3.1.1) ([#5777](https://github.com/CourtHive/competition-factory/issues/5777)) ([39cc06f](https://github.com/CourtHive/competition-factory/commit/39cc06fe914f21fabac979e6f7fcaa0184ef835c))
+* **outcome:** the working view and its oracle (S2 prep, executor plan § 3.2) ([#5761](https://github.com/CourtHive/competition-factory/issues/5761)) ([304453a](https://github.com/CourtHive/competition-factory/commit/304453a3eb5d96776e615b436ccdba54a9da51bc))
+* **outcome:** v2 writes the local call it owns (S2, executor plan § 6 S2) ([#5778](https://github.com/CourtHive/competition-factory/issues/5778)) ([56c488f](https://github.com/CourtHive/competition-factory/commit/56c488f3cb09078d7895ba41e3d2e477cbdf15bf))
+* **policies:** itf junior 2026 tables, a stored 2025 policy, and doubles at a quarter ([#5783](https://github.com/CourtHive/competition-factory/issues/5783)) ([4fcb168](https://github.com/CourtHive/competition-factory/commit/4fcb16825c5be409a1d0c56a56576213a65586ce))
+* **scales:** round robin group places, a level countback tiebreak, and the itf junior finals ([#5785](https://github.com/CourtHive/competition-factory/issues/5785)) ([0cb9216](https://github.com/CourtHive/competition-factory/commit/0cb9216ddac1d675e2e6056fbf28e945ef9cda56))
+* **scales:** team tie wins, and the itf junior international team competitions ([#5793](https://github.com/CourtHive/competition-factory/issues/5793)) ([7a19c10](https://github.com/CourtHive/competition-factory/commit/7a19c10b1e11d6548be032b6b939a8901b97ba97))
+* **scales:** the lucky loser round robin rule, and the 2025 itf junior finals at 1000 ([#5789](https://github.com/CourtHive/competition-factory/issues/5789)) ([9b22425](https://github.com/CourtHive/competition-factory/commit/9b22425fcdd82d8ba615411dfa5d8f1f98ea7336))
+* **scales:** tournament series, and the best result per series in a counting bucket ([#5786](https://github.com/CourtHive/competition-factory/issues/5786)) ([aaf6357](https://github.com/CourtHive/competition-factory/commit/aaf6357e37bc1bd34edae6766ce29f0d6e859a29))
+* **scheduling:** the profile plan as a conformance contract, kernel.scheduling.plan@1 ([#5766](https://github.com/CourtHive/competition-factory/issues/5766)) ([344ee53](https://github.com/CourtHive/competition-factory/commit/344ee53354eda8cb66fa4a03da48d122f79ef016))
+
+
+### Bug Fixes
+
+* **clock:** a date is YYYY-MM-DD or an ISO date-time's date, nothing else ([#5782](https://github.com/CourtHive/competition-factory/issues/5782)) ([6ca878b](https://github.com/CourtHive/competition-factory/commit/6ca878b5535b28e4134a849099873086ac628cf4))
+* **deps:** update tods-competition-factory to 7.21.0 ([#5757](https://github.com/CourtHive/competition-factory/issues/5757)) ([eae3065](https://github.com/CourtHive/competition-factory/commit/eae30652eac0b7d0c4a1d53a0c398ca62b51e779))
+* **exitPropagation:** a carrier leaving the Backdraw final leaves the grand final too ([#5772](https://github.com/CourtHive/competition-factory/issues/5772)) ([991b7a5](https://github.com/CourtHive/competition-factory/commit/991b7a5d32a90c211c862650080b62d41bdd245f))
+* **exitPropagation:** a settle loop at its bound with work left refuses; a dropped error is returned ([#5760](https://github.com/CourtHive/competition-factory/issues/5760)) ([8e149e2](https://github.com/CourtHive/competition-factory/commit/8e149e23644ccb52a54856dcdf1ec6ac5098d992))
+* **matchUps:** a clear of a BYE leaves it a BYE (P26) ([#5759](https://github.com/CourtHive/competition-factory/issues/5759)) ([b2036aa](https://github.com/CourtHive/competition-factory/commit/b2036aa8bb2f0fc789e2d30c026548d1a62d5067))
+* **outcome:** a date the schedule carries is refused by v1 alone, as a time is ([#5787](https://github.com/CourtHive/competition-factory/issues/5787)) ([c51d793](https://github.com/CourtHive/competition-factory/commit/c51d793a9a04eb6e7a8f7e0c3e812da7890ce858))
+* **scheduling:** a court booking past midnight carries into the next date ([#5780](https://github.com/CourtHive/competition-factory/issues/5780)) ([3d0c7da](https://github.com/CourtHive/competition-factory/commit/3d0c7dae9d32c6cd963ae55a9bf3562301e3e103))
+* **scheduling:** a matchUp holds its participants for its own minutes ([#5794](https://github.com/CourtHive/competition-factory/issues/5794)) ([2455350](https://github.com/CourtHive/competition-factory/commit/2455350c196075e391b62c821e09ea266cd56480))
+* **scheduling:** a recovery past midnight carries into the next date ([#5781](https://github.com/CourtHive/competition-factory/issues/5781)) ([357764b](https://github.com/CourtHive/competition-factory/commit/357764bb5f9cf36d187bc0739bcd71b6c871eb6d))
+* **scheduling:** a venue's turn is its courts open on the date; the Garman details stated ([#5795](https://github.com/CourtHive/competition-factory/issues/5795)) ([e312439](https://github.com/CourtHive/competition-factory/commit/e3124398b15fedd349d09f9947053ca44aaa61d0))
+* **scheduling:** court bookings take their own minutes, survive a bad record, and ignore BYEs ([#5791](https://github.com/CourtHive/competition-factory/issues/5791)) ([7b13c65](https://github.com/CourtHive/competition-factory/commit/7b13c65e00428fbd09f59986680bda96072b305c))
+* **scheduling:** refuse dates and times that are not ones, store them canonical ([#5774](https://github.com/CourtHive/competition-factory/issues/5774)) ([1e22b55](https://github.com/CourtHive/competition-factory/commit/1e22b55c0a5b332791f8c435e38d0b7d96ed2137))
+* **scheduling:** report request conflicts under their date, one id per person request ([#5769](https://github.com/CourtHive/competition-factory/issues/5769)) ([5663a06](https://github.com/CourtHive/competition-factory/commit/5663a06f8836ce4ba2e9928015c5fb8ce1dada11))
+* **scheduling:** round Garman slot totals to the nearest match, as the published tables do ([#5768](https://github.com/CourtHive/competition-factory/issues/5768)) ([8cf8a29](https://github.com/CourtHive/competition-factory/commit/8cf8a2991d263bcf63d7d0b417ebed9a51bb40eb))
+* **scheduling:** the same day is the same date part, as written ([#5790](https://github.com/CourtHive/competition-factory/issues/5790)) ([3c1a34d](https://github.com/CourtHive/competition-factory/commit/3c1a34daaf62a1a2be510fa1c2cbcd6ec4ab8ed0))
+* **types:** test-types reaches zero; test files join check-types ([#5775](https://github.com/CourtHive/competition-factory/issues/5775)) ([67e794c](https://github.com/CourtHive/competition-factory/commit/67e794ce97cf6c9966e3edb75926ba5a0ef3fff9))
+* **venues:** the scheduling policy's allowModificationWhenMatchUpsScheduled takes effect ([#5797](https://github.com/CourtHive/competition-factory/issues/5797)) ([9cf09ca](https://github.com/CourtHive/competition-factory/commit/9cf09ca32b4841d59e59e3af14f92c108e169027))
+
+
+### Performance
+
+* **matchUpStatus:** a settle pass asks the structural index before it hydrates ([#5779](https://github.com/CourtHive/competition-factory/issues/5779)) ([88cef87](https://github.com/CourtHive/competition-factory/commit/88cef87f7299f95058efccf457e5257ccc4d7095))
+* **matchUpStatus:** reconcileLinkAdvancements asks the structural index before it hydrates ([#5798](https://github.com/CourtHive/competition-factory/issues/5798)) ([dc78042](https://github.com/CourtHive/competition-factory/commit/dc7804254cc73c29567afd9640b37679dab828f6))
+* **matchUpStatus:** settleForwardConsequences asks the structural index before it hydrates ([#5796](https://github.com/CourtHive/competition-factory/issues/5796)) ([135741f](https://github.com/CourtHive/competition-factory/commit/135741fbe50b5c5fa4d46e73ee70119578c83d62))
+* **matchUpStatus:** settleHeldExits asks the structural index before it hydrates ([#5788](https://github.com/CourtHive/competition-factory/issues/5788)) ([2168440](https://github.com/CourtHive/competition-factory/commit/2168440d3655167cc341a99a0f8db4c891a7899c))
+* **notifications:** build the in-context matchUp after the call succeeds, for a subscriber only ([#5763](https://github.com/CourtHive/competition-factory/issues/5763)) ([a4cd9b5](https://github.com/CourtHive/competition-factory/commit/a4cd9b53ef7b0156a76a740f86c72e2536cacb56))
+
+
+### Documentation
+
+* describe the conformance harness without naming a second implementation's language ([#5764](https://github.com/CourtHive/competition-factory/issues/5764)) ([8eb804b](https://github.com/CourtHive/competition-factory/commit/8eb804b8838ca940215bf815ebf398cd2cff2f59))
+* **scheduling:** quote the refused leading-space time so markdownlint passes ([#5800](https://github.com/CourtHive/competition-factory/issues/5800)) ([ab066f0](https://github.com/CourtHive/competition-factory/commit/ab066f0d2913dc9e6a95ca35cae92d3e765bec27))
+* **scheduling:** the clock as a stated rule, with conformance cases; 9.8 and 9.9 decided ([#5771](https://github.com/CourtHive/competition-factory/issues/5771)) ([0c587da](https://github.com/CourtHive/competition-factory/commit/0c587dae5ecaa0758739d011f705fbd69404ddbe))
+* the behaviour changes since the last docs publish that no page described ([#5799](https://github.com/CourtHive/competition-factory/issues/5799)) ([74c42f6](https://github.com/CourtHive/competition-factory/commit/74c42f650c235ff60bf0404356e6da9a2a9fef94))
+
 ## [7.21.0](https://github.com/CourtHive/competition-factory/compare/v7.20.1...v7.21.0) (2026-10-24)
 
 
