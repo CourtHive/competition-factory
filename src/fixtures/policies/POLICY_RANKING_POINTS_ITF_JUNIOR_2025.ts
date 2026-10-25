@@ -21,6 +21,8 @@
  *   - Combined ranking: the six best singles results plus one quarter of the six best doubles results (Reg. 10),
  *     encoded as the Doubles bucket's `weight: 0.25`
  *   - Rolling 52-week period (Reg. 13)
+ *   - Only the best result from up to two editions of the same J100-or-higher tournament (Reg. 10), matched by
+ *     Tournament.tournamentSeriesId; a tournament without one is unaffected
  *   - Ties: Grand Slam singles points, then singles points grade by grade from J500 down, then the same for doubles
  *     (Reg. 11), all within the counting results
  *   - No main draw points until a round is won; a bye is not a win, a walkover or retirement is (Reg. 31a)
@@ -28,7 +30,6 @@
  *     the final round of qualifying. The tables give no qualifying points at other grades.
  *
  * Not encoded:
- *   - Counting only the better of two editions of the same J100-or-higher tournament (Reg. 10)
  *   - International Team Competition points (per player-position win, best result only, best 8 teams)
  */
 
@@ -148,6 +149,10 @@ const standardDoubles: AwardProfile = {
 
 // ─── Aggregation Rules ───────────────────────────────────────────────────────
 
+// Reg. 10: only the best result from up to two editions of the same J100-or-higher tournament counts (Grand Slam
+// and Youth Olympic Games, J500, J300, J200, J100). Editions are matched by Tournament.tournamentSeriesId.
+const bestPerSeries = { levels: [1, 4, 5, 6, 7] };
+
 const aggregationRules: AggregationRules = {
   rollingPeriodDays: 364, // 52 weeks
   separateByGender: true,
@@ -159,12 +164,14 @@ const aggregationRules: AggregationRules = {
       eventTypes: [SINGLES],
       bestOfCount: 6,
       pointComponents: ['positionPoints'],
+      bestPerSeries,
     },
     {
       bucketName: 'Doubles',
       eventTypes: [DOUBLES],
       bestOfCount: 6,
       pointComponents: ['positionPoints'],
+      bestPerSeries,
       weight: 0.25,
     },
   ],

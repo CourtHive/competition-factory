@@ -551,6 +551,12 @@
           "minimum": 0,
           "description": "Multiplier on the bucket total after selection (default 1; ITF Junior doubles: 0.25)"
         },
+        "bestPerSeries": {
+          "type": "object",
+          "description": "Count only the best result from each tournament series (tournamentSeriesId) at these levels (all when omitted)",
+          "properties": { "levels": { "type": "array", "items": { "type": "number" } } },
+          "additionalProperties": false
+        },
         "maxResultsPerLevel": { "type": "object", "additionalProperties": { "type": "number" } },
         "minResults": { "type": "number", "description": "Minimum results in this bucket required" },
         "levels": {
