@@ -126,6 +126,17 @@ lengthens or shortens it (the engine used the greatest average of any venue prof
 scheduled raises no not-before time from where it was timed before, which may be another date: the matchUps it feeds
 wait only for where it is placed now.
 
+**Transit between venues** (CA 2026-10-25). When a participant's consecutive matchUps on a date are at different
+venues, the later may not start before the earlier's play ends plus the **greater** of its recovery (or type-change
+recovery) and the transit from the earlier's venue to the later's: recovery counts toward transit. Either order is
+checked: a matchUp placed before another already timed at another venue must also leave the transit before it. Transit
+holds participants, never courts. The minutes from one venue to another are, in order: the minutes stated for that
+direction (a pair stated once applies both ways; a one-way value only its way); none when the two venues share a
+`facilityId` (one physical place); else the scheduling policy's `defaultTimes.transitMinutes` (the default policy
+states 30). With no policy stating it there is no transit, and a matchUp with no venue, or two matchUps at the same
+venue, take none. The planning view carries this as `transit` (`defaultMinutes`, `pairs` by direction, `facilityIds`);
+where a record states the pairs is decided separately.
+
 ### 3.5 Daily limits
 
 A participant's **day load** is every matchUp they are certain to play on the date, plus, per draw, the longest
@@ -205,8 +216,9 @@ A matchUp already timed on the date holds a court; the venue's slots (§ 4 step 
 Rules decided 2026-10-25 (debate-ruled, CA-reviewed):
 
 1. **Its own minutes.** A timed matchUp holds a court for its own average minutes, resolved as § 3.3 resolves them: the
-   record's timing, else the scheduling policy, else a timed format's own minutes. It never takes the minutes of the
-   round being placed. Recovery holds participants (§ 3.4), never the court.
+   record's timing, else the scheduling policy, else a timed format's own minutes. A timed matchUp with no format takes
+   the event's timing, else the default policy's average (90). It never takes the minutes of the round being placed.
+   Recovery holds participants (§ 3.4), never the court.
 2. **A BYE holds nothing.** A BYE is never played: whatever schedule it carries, it holds no court, adds nothing to a
    participant's day (§ 3.5) and raises no not-before time.
 3. **No venue.** A timed matchUp with no venue is at the tournament's only venue with courts on the date, when there is
@@ -224,7 +236,8 @@ Rules decided 2026-10-25 (debate-ruled, CA-reviewed):
 The call runs in three stages: a **view**, everything the decisions below read, resolved once from the records; a
 **plan**, made from the view alone; and the **writes**. The view is plain data (the hydrated matchUps, the dependency
 graph, reachability, the profile resolved to rounds and minutes, each date's available courts, every event's timing,
-the minutes of matchUps already timed on a planned date, and the stored facts of every draw anyone has played in), so a
+the minutes of matchUps already timed on a planned date, transit between venues, and the stored facts of every draw
+anyone has played in), so a
 plan can be reproduced from a view without the records: a view written as JSON and read back plans the same.
 
 Dates are taken in order. On each date:
@@ -420,6 +433,8 @@ the calls that decide placements; the bulk and reschedule mutations write the ti
      daylight-saving change inside a matchUp is ignored, by definition. Zones apply only at the edges (now, an
      embargo, display), always by an explicit IANA zone on the record, never the host's.
    - A booking or a recovery that ends past midnight carries into the next date, with the overnight times on top.
+   - Nothing carries from a planned date whose schedule the call clears: what was stored there is gone (the court
+     bookings now read this as the recovery carry already did, 2026-10-25).
    - **The consequence:** a schedule that never crosses midnight is placed exactly as today; only the placements the
      23:59 cap and the wrapping booking end decided move.
    - **A start after midnight is on the next date** (CA 2026-10-25: _"if it starts past midnight it is technically

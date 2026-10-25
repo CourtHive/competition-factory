@@ -21,6 +21,8 @@ type UpdateTimeAfterRecoveryArgs = {
   recoveryMinutes?: number;
   scheduleTime: string;
   matchUp: HydratedMatchUp;
+  /** where the matchUp is played: a participant's next matchUp at another venue waits for the transit too (§ 3.4) */
+  venueId?: string;
 };
 export function updateTimeAfterRecovery({
   individualParticipantProfiles,
@@ -31,8 +33,11 @@ export function updateTimeAfterRecovery({
   reachability,
   scheduleTime,
   matchUp,
+  venueId,
 }: UpdateTimeAfterRecoveryArgs) {
   const endTime = extractTime(matchUp?.schedule?.endTime);
+  // when play ends: transit to another venue counts from here, recovery from here too
+  const playEndTime = endTime || addMinutesWithinDay(scheduleTime, ensureInt(averageMatchUpMinutes));
   const timeAfterRecovery = endTime
     ? addMinutesWithinDay(endTime, ensureInt(recoveryMinutes))
     : addMinutesWithinDay(scheduleTime, ensureInt(averageMatchUpMinutes) + ensureInt(recoveryMinutes));
@@ -58,8 +63,10 @@ export function updateTimeAfterRecovery({
     const booking = definedAttributes({
       typeChangeTimeAfterRecovery: typeChangeTimeAfterRecovery || undefined,
       matchUpType: matchUp.matchUpType,
+      endTime: venueId ? playEndTime : undefined,
       timeAfterRecovery,
       scheduleTime,
+      venueId,
     });
 
     // check whether this participantId is potential or actual for this matchUp

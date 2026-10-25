@@ -27,6 +27,7 @@ const PLANNING_VIEW_KEYS: Record<keyof PlanningView, 'required' | 'optional'> = 
   matchUpDailyLimits: 'optional',
   playedOrderFacts: 'required',
   personRequests: 'optional',
+  transit: 'optional',
   eventTimings: 'required',
   timedMinutes: 'required',
   reachability: 'required',

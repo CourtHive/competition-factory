@@ -193,6 +193,7 @@ export function processAlreadyScheduledMatchUps({
         averageMatchUpMinutes,
         recoveryMinutes,
         scheduleTime,
+        venueId: matchUp.schedule?.venueId,
         matchUp,
       });
     }

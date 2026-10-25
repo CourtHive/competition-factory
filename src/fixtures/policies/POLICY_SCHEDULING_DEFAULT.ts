@@ -22,6 +22,9 @@ export const POLICY_SCHEDULING_DEFAULT = {
       // catch-all rather than a single flat figure. Zero means "no rule",
       // which is what a consumer must report rather than inventing one.
       overnightTimes: [{ categoryTypes: [JUNIOR], minutes: { default: 720 } }, { minutes: { default: 0 } }],
+      // Minutes to get between two venues with no stated transit (CA 2026-10-25): a participant's next matchUp at
+      // another venue waits for the greater of its recovery and this. Venues sharing a facilityId need none.
+      transitMinutes: 30,
     },
     defaultDailyLimits: {
       [SINGLES]: 2,

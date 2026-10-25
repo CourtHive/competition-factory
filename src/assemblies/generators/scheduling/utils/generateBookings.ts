@@ -30,6 +30,8 @@ type GenerateBookingsArgs = {
   scheduleDate?: string;
   /** the tournament's only venue, when it has exactly one: a timed matchUp with no venue is booked there */
   soleVenueId?: string;
+  /** planned dates whose schedule the call clears: nothing stored on them carries into the next date */
+  clearedDates?: string[];
   venueIds?: string[];
 };
 export function generateBookings({
@@ -42,6 +44,7 @@ export function generateBookings({
   periodLength,
   scheduleDate,
   soleVenueId,
+  clearedDates,
   matchUps,
 }: GenerateBookingsArgs) {
   if (!eventTimings && typeof tournamentRecords !== 'object') return { error: MISSING_TOURNAMENT_RECORDS };
@@ -100,7 +103,9 @@ export function generateBookings({
   });
 
   // a matchUp of the day before that runs past midnight holds its court from 00:00 into this date
-  const previousDate = scheduleDate && matchUps ? addDaysToDate(extractDate(scheduleDate), -1) : undefined;
+  // a cleared previous date keeps nothing stored on it, so nothing of it carries (as the recovery carry reads it)
+  const dayBefore = scheduleDate && matchUps ? addDaysToDate(extractDate(scheduleDate), -1) : undefined;
+  const previousDate = dayBefore && !clearedDates?.includes(dayBefore) ? dayBefore : undefined;
   for (const matchUp of previousDate ? (matchUps ?? []) : []) {
     const schedule = matchUp.schedule;
     if (!hasSchedule({ schedule }) || extractDate(schedule?.scheduledDate) !== previousDate || !inVenues(matchUp))
