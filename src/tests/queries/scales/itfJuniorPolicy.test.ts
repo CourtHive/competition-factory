@@ -101,6 +101,53 @@ describe.each(POLICIES)('ITF Junior $year policy', ({ year, version, policyDefin
     expect(policy.aggregationRules.rollingPeriodDays).toEqual(364);
   });
 
+  it('counts only the best edition of a J100-or-higher tournament, in each bucket (Reg. 10)', () => {
+    const buckets = defined(policy.aggregationRules.countingBuckets, 'countingBuckets') as any[];
+    for (const bucket of buckets) expect(bucket.bestPerSeries).toEqual({ levels: [1, 4, 5, 6, 7] });
+
+    // two J300 editions of one series: the better counts; two J60 editions: both count (J60 is below J100)
+    const pointAwards = [
+      {
+        personId: 'p',
+        eventType: SINGLES,
+        level: 5,
+        positionPoints: 300,
+        tournamentSeriesId: 'MEX',
+        endDate: '2026-06-01',
+      },
+      {
+        personId: 'p',
+        eventType: SINGLES,
+        level: 5,
+        positionPoints: 140,
+        tournamentSeriesId: 'MEX',
+        endDate: '2025-07-01',
+      },
+      {
+        personId: 'p',
+        eventType: SINGLES,
+        level: 8,
+        positionPoints: 60,
+        tournamentSeriesId: 'ISR',
+        endDate: '2026-05-01',
+      },
+      {
+        personId: 'p',
+        eventType: SINGLES,
+        level: 8,
+        positionPoints: 36,
+        tournamentSeriesId: 'ISR',
+        endDate: '2025-08-01',
+      },
+    ];
+    const [entry] = generateRankingList({
+      pointAwards,
+      aggregationRules: policy.aggregationRules,
+      asOfDate: '2026-06-30',
+    });
+    expect(entry.totalPoints).toEqual(300 + 60 + 36);
+  });
+
   it('encodes the Reg. 31 singles and doubles tables exactly', () => {
     const grandSlamSingles = profileNamed(policyDefinitions, 'Grand Slam Singles');
     const grandSlamDoubles = profileNamed(policyDefinitions, 'Grand Slam Doubles');

@@ -88,8 +88,10 @@ the six best singles results plus one quarter of the six best doubles results (t
 [`groupOrderPoints`](#round-robin-group-places), and ties separated by the Reg. 11 countback (a
 [`levelPoints`](/docs/scale-engine/aggregation#levelpoints-countback) tiebreak).
 `POLICY_RANKING_POINTS_ITF_JUNIOR_2025` keeps the 2025 tables, which differ only in the ITF Junior Finals; use it to
-score 2025 results as they were awarded. The policy file's header lists what neither encodes (the
-better-of-two-editions rule of Reg. 10, International Team Competition points).
+score 2025 results as they were awarded. Both count only the best result from up to two editions of the same
+J100-or-higher tournament (Reg. 10) with [`bestPerSeries`](/docs/scale-engine/aggregation#bestperseries), matching
+editions by `Tournament.tournamentSeriesId`. The policy file's header lists what neither encodes (International Team
+Competition points).
 
 The vocabulary intentionally aligns with `TierClassification.system` so a
 tournament's tier-system (`'ATP'`, `'ITF_JUNIOR'`, `'PPA'`, …) lines up with
