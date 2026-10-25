@@ -13,6 +13,7 @@ import type { ParticipantReachability } from '@Mutate/matchUps/schedule/schedule
 import { PersonRequests, ScheduleTimesResult } from '@Types/factoryTypes';
 import { TOTAL } from '@Constants/scheduleConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
+import type { VenueTransit } from './transit';
 
 /**
  * Places a date's profiled matchUps on its venues' Garman slots: each slot is offered to the venue's matchUps in order,
@@ -70,6 +71,8 @@ export type PlaceVenueRoundsArgs = {
   venues: { venueId: string }[];
   allDateMatchUpIds: string[];
   scheduleDate: string;
+  /** transit between venues (§ 3.4): absent, none applies */
+  transit?: VenueTransit;
 };
 
 type TryScheduleMatchUpArgs = Omit<
@@ -79,6 +82,7 @@ type TryScheduleMatchUpArgs = Omit<
   details: VenueRoundDetails;
   matchUp: HydratedMatchUp;
   scheduleTime: string;
+  venueId: string;
 };
 
 function tryScheduleMatchUp({
@@ -102,6 +106,8 @@ function tryScheduleMatchUp({
   personRequests,
   scheduleTime,
   scheduleDate,
+  transit,
+  venueId,
   details,
   matchUp,
 }: TryScheduleMatchUpArgs) {
@@ -170,6 +176,8 @@ function tryScheduleMatchUp({
     matchUpNotBeforeTimes,
     reachability: participantReachability,
     scheduleTime,
+    transit,
+    venueId,
     details,
     matchUp,
   });
@@ -223,6 +231,7 @@ function tryScheduleMatchUp({
     reachability: participantReachability,
     recoveryMinutes,
     scheduleTime,
+    venueId,
     matchUp,
   });
 
@@ -253,6 +262,7 @@ export function scheduleVenueRounds({
   requestConflicts,
   personRequests,
   scheduleDate,
+  transit,
   venues,
 }: PlaceVenueRoundsArgs) {
   const maxScheduleTimeAttempts = 10;
@@ -297,6 +307,8 @@ export function scheduleVenueRounds({
             personRequests,
             scheduleTime,
             scheduleDate,
+            transit,
+            venueId,
             details,
             matchUp,
           }),

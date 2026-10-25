@@ -211,6 +211,7 @@ function planDate({
       venueIds: [venue.venueId],
       matchUps: hydrated,
       clearScheduleDates,
+      clearedDates: clearedPlannedDates(view, clearScheduleDates),
       periodLength,
       scheduleDate,
     });
@@ -257,6 +258,7 @@ function planDate({
   }
 
   scheduleVenueRounds({
+    transit: view.transit,
     recoveryTimeDeferredMatchUpIds: plan.recoveryTimeDeferredMatchUpIds,
     playedOrderDeferredMatchUpIds: plan.playedOrderDeferredMatchUpIds,
     playedOrderRefusal: playedOrderGate(view, scheduleDate),
@@ -315,4 +317,11 @@ function recordDatePlacements({ venueScheduledRoundDetails, scheduleDate, datePl
       (a, b) => timeStringMinutes(a.scheduleTime) - timeStringMinutes(b.scheduleTime),
     );
   }
+}
+
+/** the planned dates whose schedule the call clears: what is stored on them is gone, and carries nothing (§ 9.8) */
+function clearedPlannedDates(view: PlanningView, clearScheduleDates?: boolean | string[]): string[] {
+  const planned = view.dates.map(({ scheduleDate }) => scheduleDate);
+  if (Array.isArray(clearScheduleDates)) return planned.filter((date) => clearScheduleDates.includes(date));
+  return clearScheduleDates ? planned : [];
 }

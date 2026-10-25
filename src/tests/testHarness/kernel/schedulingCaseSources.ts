@@ -9,7 +9,9 @@ import { setClock } from '@Tools/clock';
 import { overTheWire } from './kernel';
 
 // constants and types
+import { POLICY_SCHEDULING_DEFAULT } from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
 import type { SchedulePlan } from '@Mutate/matchUps/schedule/pipeline/plan';
+import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
 import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
 import type { KernelCase } from './kernel';
 
@@ -119,7 +121,7 @@ function eventMatchUps(eventIndex: number, roundNumber: number) {
     .allTournamentMatchUps({ matchUpFilters: { drawIds: [drawId], roundNumbers: [roundNumber] } })
     .matchUps.sort((a: any, b: any) => a.roundPosition - b.roundPosition);
 }
-function profileEventRound(eventIndex: number, roundNumber: number, scheduleDate = DAYS[0]) {
+function profileEventRound(eventIndex: number, roundNumber: number, scheduleDate = DAYS[0], venueId = VENUE) {
   const { tournamentRecord } = tournamentEngine.getTournament();
   const event = tournamentRecord.events[eventIndex];
   const drawDefinition = event.drawDefinitions[0];
@@ -131,7 +133,7 @@ function profileEventRound(eventIndex: number, roundNumber: number, scheduleDate
       eventId: event.eventId,
       roundNumber,
     },
-    venueId: VENUE,
+    venueId,
     scheduleDate,
   });
   if (!result.success) throw new Error('profile');
@@ -149,6 +151,35 @@ const timesOf = (plan: SchedulePlan, matchUps: any[]) => matchUps.map(({ matchUp
 
 /** a short format (30 minutes, 30 recovery), profiled beside a 90 minute round to tell a venue's figure from its own */
 const SHORT_FORMAT = 'SET1-S:6/TB7';
+
+/** a second venue: transit cases time a draw's semifinals at VENUE and profile its final here */
+const OTHER_VENUE = 'venue-2';
+
+/** four players in the short format at two venues of one court each; the semifinals timed at 10:00 at VENUE */
+function semifinalsAtOneVenue({ policyDefinitions }: { policyDefinitions?: Record<string, unknown> } = {}) {
+  mocksEngine.generateTournamentRecord({
+    venueProfiles: [VENUE, OTHER_VENUE].map((venueId) => ({
+      venueId,
+      courtsCount: 1,
+      startTime: '10:00',
+      endTime: '20:00',
+    })),
+    drawProfiles: [{ drawSize: 4, matchUpFormat: SHORT_FORMAT }],
+    startDate: DAYS[0],
+    endDate: DAYS[1],
+    policyDefinitions,
+    setState: true,
+  });
+  for (const semifinal of eventMatchUps(0, 1)) timeMatchUp(semifinal, { scheduledTime: '10:00', venueId: VENUE });
+  profileEventRound(0, 2, DAYS[0], OTHER_VENUE);
+}
+
+/** the default scheduling policy, with its transit minutes changed: a partial policy would replace its timings too */
+function withTransitMinutes(transitMinutes: number) {
+  const policy: any = structuredClone(POLICY_SCHEDULING_DEFAULT);
+  policy[POLICY_TYPE_SCHEDULING].defaultTimes.transitMinutes = transitMinutes;
+  return policy;
+}
 
 /** a participant of the matchUp, for a person request */
 const personOf = (matchUp: any) => matchUp.sides[0].participant.person.personId;
@@ -513,6 +544,81 @@ export const schedulingCaseSources: Source[] = [
     claims: (plan) => {
       expectEqual(plan.unbookedMatchUpIds[DAYS[0]], { [VENUE]: [eventMatchUps(0, 1)[0].matchUpId] }, 'reported');
     },
+  },
+  {
+    caseId: 'scheduling.plan.transit-longer-than-recovery-holds.v1',
+    note:
+      'The semifinals (30 minutes, 30 recovery) end at 10:30 at one venue; the final is profiled at another, 60 minutes ' +
+      'away. Recovery counts toward transit, so the finalists are free at the greater: 10:30 + 60 = 11:30 (CA 2026-10-25).',
+    build: () => semifinalsAtOneVenue(),
+    amendView: (view) => (view.transit = { pairs: { [VENUE]: { [OTHER_VENUE]: 60 } } }),
+    claims: (plan) => expectEqual(timesOf(plan, eventMatchUps(0, 2)), ['11:30'], 'after the transit'),
+  },
+  {
+    caseId: 'scheduling.plan.transit-shorter-than-recovery-adds-nothing.v1',
+    note: 'The same, 15 minutes away: recovery (to 11:00) is the greater, and transit adds nothing.',
+    build: () => semifinalsAtOneVenue(),
+    amendView: (view) => (view.transit = { pairs: { [VENUE]: { [OTHER_VENUE]: 15 } } }),
+    claims: (plan) => expectEqual(timesOf(plan, eventMatchUps(0, 2)), ['11:00'], 'after the recovery'),
+  },
+  {
+    caseId: 'scheduling.plan.transit-default-for-an-unstated-pair.v1',
+    note: 'No minutes stated for the pair: the default (60) applies, so the final is at 11:30.',
+    build: () => semifinalsAtOneVenue(),
+    amendView: (view) => (view.transit = { defaultMinutes: 60 }),
+    claims: (plan) => expectEqual(timesOf(plan, eventMatchUps(0, 2)), ['11:30'], 'after the default transit'),
+  },
+  {
+    caseId: 'scheduling.plan.transit-none-within-a-facility.v1',
+    note: 'The two venues share a facility: one physical place, no transit, whatever the default (60). The final is at 11:00.',
+    build: () => semifinalsAtOneVenue(),
+    amendView: (view) =>
+      (view.transit = { defaultMinutes: 60, facilityIds: { [VENUE]: 'facility-1', [OTHER_VENUE]: 'facility-1' } }),
+    claims: (plan) => expectEqual(timesOf(plan, eventMatchUps(0, 2)), ['11:00'], 'no transit'),
+  },
+  {
+    caseId: 'scheduling.plan.transit-one-way-applies-one-way.v1',
+    note:
+      'A one-way value from the second venue back to the first (60), none the other way and no default: going from the ' +
+      'first venue to the second takes no transit, so the final is at 11:00.',
+    build: () => semifinalsAtOneVenue(),
+    amendView: (view) => (view.transit = { pairs: { [OTHER_VENUE]: { [VENUE]: 60 } } }),
+    claims: (plan) => expectEqual(timesOf(plan, eventMatchUps(0, 2)), ['11:00'], 'the other direction only'),
+  },
+  {
+    caseId: 'scheduling.plan.transit-default-from-the-policy.v1',
+    note:
+      'The attached scheduling policy states defaultTimes.transitMinutes of 60: the view reads it as the default for a ' +
+      'pair with no stated minutes, and the final is at 11:30.',
+    build: () =>
+      semifinalsAtOneVenue({
+        policyDefinitions: withTransitMinutes(60),
+      }),
+    claims: (plan) => expectEqual(timesOf(plan, eventMatchUps(0, 2)), ['11:30'], "the policy's transit"),
+  },
+  {
+    caseId: 'scheduling.plan.cleared-date-carries-nothing.v1',
+    note:
+      'A matchUp stored at 23:00 on the first date runs past midnight, but the call clears the first date, which it plans: ' +
+      'what is stored there is gone and carries no court into the next date (§ 9.8). On the second date the court opens at ' +
+      '00:00 and the profiled matchUp is timed then, not at 00:30.',
+    options: { clearScheduleDates: [DAYS[0]] },
+    build: () => {
+      mocksEngine.generateTournamentRecord({
+        venueProfiles: [{ venueId: VENUE, courtsCount: 1, startTime: '00:00', endTime: '23:59' }],
+        drawProfiles: [
+          { drawSize: 2, uniqueParticipants: true },
+          { drawSize: 2, uniqueParticipants: true },
+        ],
+        startDate: DAYS[0],
+        endDate: DAYS[1],
+        setState: true,
+      });
+      timeMatchUp(eventMatchUps(0, 1)[0], { scheduledTime: '23:00', venueId: VENUE, courtId: firstCourtId() });
+      profileEventRound(0, 1, DAYS[0]);
+      profileEventRound(1, 1, DAYS[1]);
+    },
+    claims: (plan) => expectEqual(timesOf(plan, eventMatchUps(1, 1)), ['00:00'], 'no carry from a cleared date'),
   },
 ];
 
