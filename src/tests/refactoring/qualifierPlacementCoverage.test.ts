@@ -3,6 +3,7 @@ import { placeQualifier } from '@Mutate/drawDefinitions/matchUpGovernor/placeQua
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import { expect, it, describe } from 'vitest';
 
 // constants
@@ -705,7 +706,7 @@ describe('removeQualifier with subStructures', () => {
     const subAssignment = params.drawDefinition.structures[0].structures[0].positionAssignments.find(
       (a) => a.drawPosition === 1,
     );
-    expect(subAssignment?.participantId).toBeUndefined();
+    expect(defined(subAssignment, 'subAssignment').participantId).toBeUndefined();
   });
 
   it('clears participant from direct positionAssignments on structure', () => {
@@ -749,7 +750,7 @@ describe('removeQualifier with subStructures', () => {
     expect(result.qualifierRemoved).toEqual(true);
 
     const assignment = params.drawDefinition.structures[0].positionAssignments.find((a) => a.drawPosition === 1);
-    expect(assignment?.participantId).toBeUndefined();
+    expect(defined(assignment, 'assignment').participantId).toBeUndefined();
   });
 });
 

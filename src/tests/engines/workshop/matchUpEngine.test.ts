@@ -243,8 +243,11 @@ describe('matchUpEngine', () => {
 
     it('does not call setState for rollback when snapshot is falsy', () => {
       setupMatchUp();
-      vi.spyOn(scoreGovernor, 'validateTieFormat').mockReturnValueOnce({ error: INVALID_TIE_FORMAT });
+      // validateTieFormat({}) returns INVALID_TIE_FORMAT unmocked too, so the spy check is what proves the
+      // mocked failure is the one being rolled back.
+      const spy = vi.spyOn(scoreGovernor, 'validateTieFormat').mockReturnValueOnce({ error: INVALID_TIE_FORMAT });
       const result = matchUpEngineSync.validateTieFormat({});
+      expect(spy).toHaveBeenCalled();
       expect(result?.error).toEqual(INVALID_TIE_FORMAT);
       expect(result?.rolledBack).toBe(false);
     });
