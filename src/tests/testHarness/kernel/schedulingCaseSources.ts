@@ -147,6 +147,12 @@ function timeMatchUp(matchUp: any, schedule: Record<string, unknown>) {
 const firstCourtId = () => tournamentEngine.getVenuesAndCourts().courts[0].courtId;
 const timesOf = (plan: SchedulePlan, matchUps: any[]) => matchUps.map(({ matchUpId }) => timeOf(plan, matchUpId));
 
+/** a short format (30 minutes, 30 recovery), profiled beside a 90 minute round to tell a venue's figure from its own */
+const SHORT_FORMAT = 'SET1-S:6/TB7';
+
+/** a participant of the matchUp, for a person request */
+const personOf = (matchUp: any) => matchUp.sides[0].participant.person.personId;
+
 export const schedulingCaseSources: Source[] = [
   {
     caseId: 'scheduling.plan.first-slot-fills-every-court.v1',
@@ -385,6 +391,77 @@ export const schedulingCaseSources: Source[] = [
     },
     claims: (plan) => {
       expectEqual(timesOf(plan, eventMatchUps(0, 2)), ['10:00'], 'the final is not held by the BYE');
+    },
+  },
+  {
+    caseId: 'scheduling.plan.stored-matchup-holds-its-own-minutes.v1',
+    note:
+      'The short-format semifinals (SET1-S:6/TB7: 30 minutes, 30 recovery) are timed at 10:00; a 90 minute round of ' +
+      'another event is profiled at the same venue, with the final. A stored matchUp holds its participants for its own ' +
+      "minutes (CA 2026-10-25), not the venue's greatest average: the finalists are free at 11:00.",
+    build: () => {
+      twoEvents({ format: SHORT_FORMAT, courtsCount: 3 });
+      for (const semifinal of eventMatchUps(1, 1)) timeMatchUp(semifinal, { scheduledTime: '10:00', venueId: VENUE });
+      profileEventRound(0, 1);
+      profileEventRound(1, 2);
+    },
+    claims: (plan) => {
+      expectEqual(timesOf(plan, eventMatchUps(1, 2)), ['11:00'], "the final after its semifinals' own minutes");
+    },
+  },
+  {
+    caseId: 'scheduling.plan.placed-matchup-holds-its-own-minutes.v1',
+    note:
+      'Short-format semifinals and their final (SET1-S:6/TB7: 30 minutes, 30 recovery) are profiled with a 90 minute ' +
+      "round of another event at the same venue. A placed matchUp holds its participants for its round's own average " +
+      "(CA 2026-10-25), the figure its recovery is checked with, not the venue's greatest.",
+    build: () => {
+      twoEvents({ format: SHORT_FORMAT, courtsCount: 3 });
+      profileEventRound(0, 1);
+      profileEventRound(1, 1);
+      profileEventRound(1, 2);
+    },
+    claims: (plan) => {
+      expectEqual(timesOf(plan, eventMatchUps(1, 1)), ['10:00', '10:00'], 'the semifinals');
+      expectEqual(timesOf(plan, eventMatchUps(1, 2)), ['11:00'], 'the final after their own minutes');
+    },
+  },
+  {
+    caseId: 'scheduling.plan.request-window-is-the-matchup-minutes.v1',
+    note:
+      'A DO_NOT_SCHEDULE request from 10:45 for a participant of a short-format semifinal (30 minutes), profiled with a ' +
+      "90 minute round at the same venue. The request is checked against the matchUp's own minutes (CA 2026-10-25): " +
+      '10:00 to 10:30 does not reach it, so the semifinal is timed at 10:00.',
+    build: () => {
+      twoEvents({ format: SHORT_FORMAT, courtsCount: 3 });
+      profileEventRound(0, 1);
+      profileEventRound(1, 1);
+      const [semifinal] = eventMatchUps(1, 1);
+      const result: any = tournamentEngine.addPersonRequests({
+        requests: [{ date: DAYS[0], startTime: '10:45', endTime: '12:00', requestType: DO_NOT_SCHEDULE }],
+        personId: personOf(semifinal),
+      });
+      if (!result.success) throw new Error('person request');
+    },
+    claims: (plan) => {
+      expectEqual(timesOf(plan, eventMatchUps(1, 1)), ['10:00', '10:00'], 'the semifinals');
+    },
+  },
+  {
+    caseId: 'scheduling.plan.replanned-matchup-forgets-its-old-time.v1',
+    note:
+      'A first-round matchUp timed at 18:00 on day 1 is profiled again on day 2 with the final. It is placed at 10:00, and ' +
+      'its targets wait only for where it is placed now (CA 2026-10-25): its day-1 recovery end (20:30) is no not-before time.',
+    build: () => {
+      tournament({ drawSize: 4, courtsCount: 2 });
+      const firstRound = tournamentEngine
+        .allTournamentMatchUps({ matchUpFilters: { roundNumbers: [1] } })
+        .matchUps.sort((a: any, b: any) => a.roundPosition - b.roundPosition);
+      timeMatchUp(firstRound[0], { scheduledDate: DAYS[0], scheduledTime: '18:00', venueId: VENUE });
+      profileRounds([1, 2], DAYS[1]);
+    },
+    claims: (plan, ids) => {
+      expectEqual([timeOf(plan, ids['R1.1']), timeOf(plan, ids['R2.1'])], ['10:00', '12:30'], 'both rounds on day 2');
     },
   },
 ];

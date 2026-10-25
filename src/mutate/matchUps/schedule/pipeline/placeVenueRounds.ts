@@ -187,7 +187,9 @@ function tryScheduleMatchUp({
     return false;
   }
 
-  const averageMatchUpMinutes = details.greatestAverageMinutes;
+  // a placed matchUp holds its participants, and checks their requests, for its own minutes: its round's average, the
+  // same figure its recovery is checked with (§ 3.4, § 3.6; CA 2026-10-25), never the venue's greatest
+  const averageMatchUpMinutes = details.minutesMap?.[matchUpId]?.averageMinutes ?? details.greatestAverageMinutes;
 
   const { conflicts } = checkRequestConflicts({
     potentials: checkPotentialRequestConflicts,

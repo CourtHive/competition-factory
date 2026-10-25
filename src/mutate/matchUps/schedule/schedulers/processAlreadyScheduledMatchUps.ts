@@ -183,8 +183,9 @@ export function processAlreadyScheduledMatchUps({
       });
       const recoveryMinutes = minutes?.recoveryMinutes;
       const typeChangeRecoveryMinutes = minutes?.typeChangeRecoveryMinutes;
-      const averageMatchUpMinutes = greatestAverageMinutes;
-      // minutesMap?.[matchUp.matchUpId]?.averageMinutes; // for the future when variable averageMinutes supported
+      // a matchUp already timed holds its participants for its own average (§ 3.4), never its venue's greatest: that
+      // held them too long behind a short format and freed them too early after a long one
+      const averageMatchUpMinutes = minutes?.averageMinutes ?? greatestAverageMinutes;
 
       updateTimeAfterRecovery({
         typeChangeRecoveryMinutes,

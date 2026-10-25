@@ -87,7 +87,9 @@ export function getMatchUpsToSchedule(params: GetMatchUpsToScheduleArgs): {
             processNextMatchUps({
               matchUpPotentialParticipantIds,
               matchUpNotBeforeTimes,
-              matchUp,
+              // a matchUp about to be (re)scheduled raises no not-before time from where it was timed before, which may
+              // be another date: its targets wait only for where it is placed now (§ 4 step 2)
+              matchUp: { ...matchUp, schedule: { ...matchUp.schedule, timeAfterRecovery: undefined } },
             });
 
             return aggregator;
