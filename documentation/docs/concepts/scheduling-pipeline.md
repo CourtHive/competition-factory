@@ -162,7 +162,8 @@ conformance cases.
 2. **Tidying.** A time is written as `HH:MM`: `8:00` → `08:00`, `08:00:00` → `08:00`, `8:30 PM` → `20:30`,
    `12:15 AM` → `00:15`.
 3. **A date-time's time.** An ISO date-time, zoned or not, contributes the time after its `T`
-   (`2026-03-02T09:15:30.000Z` → `09:15`); the zone is not applied. A date and time separated by a space is not read
+   (`2026-03-02T09:15:30.000Z` → `09:15`); the zone is not applied. A date-time whose date is not a calendar day
+   (rule 7) is not a time. A date and time separated by a space is not read
    as a time.
 4. **Minutes past midnight.** A time's hours × 60 + minutes, read from its tidied form, and zero for anything that is
    not a time.

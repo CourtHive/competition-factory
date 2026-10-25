@@ -240,6 +240,18 @@
     "note": "rule 3"
   },
   {
+    "caseId": "clock.extract.off-the-calendar.v1",
+    "operation": "kernel.time.extract@1",
+    "input": {
+      "value": "2026-02-30T09:15"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "NOT_A_TIME"
+    },
+    "note": "rules 3 and 7: a date-time whose date is not a calendar day is not a time"
+  },
+  {
     "caseId": "clock.extract.space-separated.v1",
     "operation": "kernel.time.extract@1",
     "input": {

@@ -4,7 +4,7 @@
  * A **time** is `HH:MM` on the venue's wall clock, hours 00–23 and minutes 00–59. These convert to it unambiguously
  * and are accepted: `H:MM`, `HH:MM:SS` (seconds dropped), a 12-hour `h:mm AM`/`h:mm PM`, and an ISO date-time, zoned
  * or not, whose wall-clock part is taken. Anything else is not a time: `23:60`, `24:00`, `-1:00`, a bare `08:00Z`,
- * `13:30 PM`, and a value with leading or trailing text (` 8:00`).
+ * `13:30 PM`, a value with leading or trailing text (` 8:00`), and a date-time whose date is not a date.
  *
  * A **date** is `YYYY-MM-DD` on the calendar, a real day: `2026-02-30` is not a date. The date part of an ISO date-time
  * is accepted.
@@ -23,8 +23,9 @@ const pad = (value: number) => String(value).padStart(2, '0');
 export function canonicalTime(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
 
+  // a date-time is a time only when its date is a calendar day as well
   const dateTime = DATE_TIME.exec(value);
-  if (dateTime) return canonicalTime(dateTime[2]);
+  if (dateTime) return canonicalDate(dateTime[1]) ? canonicalTime(dateTime[2]) : undefined;
 
   const meridiem = MERIDIEM.exec(value);
   if (meridiem) {

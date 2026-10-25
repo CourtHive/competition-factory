@@ -1,7 +1,7 @@
 import { setMatchUpFirstClassOrTimeItem } from '@Mutate/timeItems/matchUps/setMatchUpFirstClassOrTimeItem';
-import { canonicalDate, canonicalTime, isClearingValue } from '@Tools/canonicalClock';
 import { addMatchUpScheduledDate } from './scheduleItems/addMatchUpScheduledDate';
 import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
+import { canonicalTime, isClearingValue } from '@Tools/canonicalClock';
 import { matchUpTimeModifiers } from '@Query/matchUp/timeModifiers';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { checkPlayedOrder } from './scheduleItems/playedOrder';
@@ -48,9 +48,8 @@ export function addMatchUpScheduledTime(params: AddMatchUpScheduledTimeArgs) {
   // refused; an absent value, null or '' clears it
   const clearing = isClearingValue(scheduledTime);
   if (!clearing && !canonicalTime(scheduledTime)) return decorateResult({ result: { error: INVALID_TIME }, stack });
-  // a date-time carries its date, which must be a real day
+  // a date-time carries its date, a real day (canonicalTime refuses a date-time whose date is not one)
   const timeDate = clearing ? undefined : extractDate(scheduledTime) || undefined;
-  if (timeDate && !canonicalDate(timeDate)) return decorateResult({ result: { error: INVALID_TIME }, stack });
 
   if (!matchUp) {
     const result = findDrawMatchUp({ drawDefinition, matchUpId });

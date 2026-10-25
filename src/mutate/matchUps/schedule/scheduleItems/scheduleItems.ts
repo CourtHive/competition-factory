@@ -808,15 +808,15 @@ export function checkScheduleValues({
     return { error: INVALID_VALUES, info: 'courtOrder must be convertable to an integer' };
 
   if (scheduledDate !== undefined && scheduledDate !== null && scheduledDate) {
-    if (!canonicalDate(scheduledDate)) return { error: INVALID_DATE };
-    const date = extractDate(scheduledDate);
-    if (date && tournamentRecord?.startDate && tournamentRecord?.endDate) {
-      const scheduleTime = new Date(date).getTime();
-      const start = new Date(extractDate(tournamentRecord.startDate)).getTime();
-      const end = new Date(extractDate(tournamentRecord.endDate)).getTime();
-      if (scheduleTime < start || scheduleTime > end)
-        return { error: INVALID_DATE, info: 'scheduledDate must be within tournament start and end dates' };
-    }
+    const dateError = checkTournamentDate({ tournamentRecord, date: scheduledDate });
+    if (dateError) return dateError;
+  }
+  // a scheduled time given as a date-time carries its date, which the write stores when the matchUp has none: it is
+  // checked here like a scheduledDate, so it cannot be refused after an outcome given with it has landed
+  const timeDate = isClearingValue(scheduledTime) ? undefined : extractDate(scheduledTime);
+  if (timeDate) {
+    const dateError = checkTournamentDate({ tournamentRecord, date: timeDate });
+    if (dateError) return dateError;
   }
 
   if (calledAt !== undefined && calledAt !== null) {
@@ -827,6 +827,19 @@ export function checkScheduleValues({
       return { error: INVALID_DATE, info: 'calledAt cannot precede tournament startDate' };
   }
 
+  return undefined;
+}
+
+function checkTournamentDate({ tournamentRecord, date }: { tournamentRecord?: Tournament; date: string }) {
+  const day = canonicalDate(date);
+  if (!day) return { error: INVALID_DATE };
+  if (tournamentRecord?.startDate && tournamentRecord?.endDate) {
+    const scheduleTime = new Date(day).getTime();
+    const start = new Date(extractDate(tournamentRecord.startDate)).getTime();
+    const end = new Date(extractDate(tournamentRecord.endDate)).getTime();
+    if (scheduleTime < start || scheduleTime > end)
+      return { error: INVALID_DATE, info: 'scheduledDate must be within tournament start and end dates' };
+  }
   return undefined;
 }
 
