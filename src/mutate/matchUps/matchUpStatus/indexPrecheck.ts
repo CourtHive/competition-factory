@@ -30,6 +30,18 @@ import type { HydratedMatchUp } from '@Types/hydrated';
 type PrecheckDivergence = { site: string; index: string; hydrated: string };
 const pending: PrecheckDivergence[] = [];
 
+// what the oracle reads and runs is instrumentation, not the pipeline's cost: `verify:hydrations` reads this mark
+let oracleDepth = 0;
+export const inPrecheckOracle = () => oracleDepth > 0;
+function asOracle<T>(read: () => T): T {
+  oracleDepth += 1;
+  try {
+    return read();
+  } finally {
+    oracleDepth -= 1;
+  }
+}
+
 const hasWork = (found: unknown) => (Array.isArray(found) ? found.length > 0 : !!found);
 
 export function settleUnlessIdle<T, F>({
@@ -51,13 +63,13 @@ export function settleUnlessIdle<T, F>({
   const predictedIdle = !hasWork(found);
   if (getOutcomePipeline() !== OUTCOME_PIPELINE_DIFFERENTIAL) return predictedIdle ? idle : run();
 
-  const hydrated = getAllDrawMatchUps({ inContext: true, drawDefinition }).matchUps ?? [];
+  const hydrated = asOracle(() => getAllDrawMatchUps({ inContext: true, drawDefinition }).matchUps ?? []);
   const expected = detect(hydrated);
   if (hasWork(expected) !== hasWork(found))
     pending.push({ site, index: JSON.stringify(found ?? null), hydrated: JSON.stringify(expected ?? null) });
   if (!predictedIdle) return run();
   const before = captureRecord(drawDefinition);
-  const result = run();
+  const result = asOracle(run);
   if (captureRecord(drawDefinition) !== before) pending.push({ site, index: 'idle', hydrated: 'the pass wrote' });
   return result;
 }

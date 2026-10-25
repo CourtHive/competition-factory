@@ -1,3 +1,4 @@
+import { inPrecheckOracle } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
 import { performance } from 'node:perf_hooks';
 
 /**
@@ -160,7 +161,8 @@ export function counted<T extends (...args: any[]) => any>(
 
     const captureStarted = performance.now();
     const key = siteKey({
-      caller: callerOf(new Error('site').stack),
+      // the settle precheck's oracle (agreement read, completeness run) is filed as one site, whatever the stack
+      caller: inPrecheckOracle() ? 'precheckOracle@indexPrecheck' : callerOf(new Error('site').stack),
       nested: state.countedDepth > 0,
       inContext: inContextOf(...args),
       fn,
