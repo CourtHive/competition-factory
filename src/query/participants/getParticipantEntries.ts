@@ -30,7 +30,7 @@ import { HydratedMatchUp } from '@Types/hydrated';
 import { unique } from '@Tools/arrays';
 
 type RRContainerInfo = { [containerStructureId: string]: { drawDefinition: DrawDefinition; drawId: string } };
-type RRGroupOrder = { structureId: string; groupOrder: number; groupSize: number };
+type RRGroupPlace = { structureId: string; groupOrder: number; groupSize: number };
 
 export function getParticipantEntries(params) {
   const {
@@ -137,7 +137,7 @@ export function getParticipantEntries(params) {
     });
   }
 
-  const { rrFinishingPositions, rrGroupOrders } = computeRRFinishingPositions(
+  const { rrFinishingPositions, rrGroupPlaces } = computeRRFinishingPositions(
     rrGroupMatchUps,
     rrContainerInfo,
     withRankingProfile,
@@ -146,7 +146,7 @@ export function getParticipantEntries(params) {
   if (withStatistics || withRankingProfile || !!scheduleAnalysis) {
     const conflicts = computeStatisticsAndRankingProfile({
       rrFinishingPositions,
-      rrGroupOrders,
+      rrGroupPlaces,
       withRankingProfile,
       scheduleAnalysis,
       withStatistics,
@@ -789,7 +789,7 @@ function processRRBracket({
   playoffStructure,
   drawDefinition,
   drawPositions,
-  groupOrders,
+  groupPlaces,
 }: {
   containedStructure: Structure;
   rrGroupMatchUps: { [structureId: string]: HydratedMatchUp[] };
@@ -799,7 +799,7 @@ function processRRBracket({
   playoffStructure?: Structure;
   drawDefinition: DrawDefinition;
   drawPositions: { [participantId: string]: number[] };
-  groupOrders: { [participantId: string]: RRGroupOrder };
+  groupPlaces: { [participantId: string]: RRGroupPlace };
 }) {
   const childStructureId = containedStructure.structureId;
   const groupMatchUps = rrGroupMatchUps[childStructureId];
@@ -831,7 +831,7 @@ function processRRBracket({
     // The place within the group, for awards keyed by it (AwardProfile.groupOrderPoints). Only a resolved
     // groupOrder counts: a provisional order is a guess about an unfinished group.
     if (result.groupOrder && bracketSize) {
-      groupOrders[participantId] = {
+      groupPlaces[participantId] = {
         structureId: childStructureId,
         groupOrder: result.groupOrder,
         groupSize: bracketSize,
@@ -846,9 +846,9 @@ function computeRRFinishingPositions(
   withRankingProfile?: boolean,
 ) {
   const rrFinishingPositions: { [drawId: string]: { [participantId: string]: number[] } } = {};
-  const rrGroupOrders: { [drawId: string]: { [participantId: string]: RRGroupOrder } } = {};
+  const rrGroupPlaces: { [drawId: string]: { [participantId: string]: RRGroupPlace } } = {};
 
-  if (!withRankingProfile) return { rrFinishingPositions, rrGroupOrders };
+  if (!withRankingProfile) return { rrFinishingPositions, rrGroupPlaces };
 
   for (const [containerStructureId, containerInfo] of Object.entries(rrContainerInfo)) {
     const { drawDefinition, drawId } = containerInfo;
@@ -863,7 +863,7 @@ function computeRRFinishingPositions(
     const playoffStructure = drawDefinition.structures?.find((s) => s.stage === PLAY_OFF);
 
     if (!rrFinishingPositions[drawId]) rrFinishingPositions[drawId] = {};
-    if (!rrGroupOrders[drawId]) rrGroupOrders[drawId] = {};
+    if (!rrGroupPlaces[drawId]) rrGroupPlaces[drawId] = {};
 
     for (const containedStructure of containedStructures) {
       processRRBracket({
@@ -875,12 +875,12 @@ function computeRRFinishingPositions(
         playoffStructure,
         drawDefinition,
         drawPositions: rrFinishingPositions[drawId],
-        groupOrders: rrGroupOrders[drawId],
+        groupPlaces: rrGroupPlaces[drawId],
       });
     }
   }
 
-  return { rrFinishingPositions, rrGroupOrders };
+  return { rrFinishingPositions, rrGroupPlaces };
 }
 
 function detectScheduleConflicts({ scheduleItems, potentialMatchUps, scheduleAnalysis }) {
@@ -941,7 +941,7 @@ function detectScheduleConflicts({ scheduleItems, potentialMatchUps, scheduleAna
 
 function computeStatisticsAndRankingProfile({
   rrFinishingPositions,
-  rrGroupOrders,
+  rrGroupPlaces,
   withRankingProfile,
   scheduleAnalysis,
   withStatistics,
@@ -984,7 +984,7 @@ function computeStatisticsAndRankingProfile({
         participantAggregator,
         derivedDrawInfo,
         rrFinishingPositions,
-        rrGroupOrders,
+        rrGroupPlaces,
       });
     }
 
@@ -1005,7 +1005,7 @@ function computeRankingProfileForParticipant({
   participantAggregator,
   derivedDrawInfo,
   rrFinishingPositions,
-  rrGroupOrders,
+  rrGroupPlaces,
 }) {
   const diff = (range = []) => Math.abs(range[0] - range[1]);
   const participantId = participantAggregator.participant.participantId;
@@ -1013,7 +1013,7 @@ function computeRankingProfileForParticipant({
   for (const drawId of Object.keys(participantAggregator.draws)) {
     const { orderedStructureIds = [], flightNumber } = derivedDrawInfo[drawId] ?? {};
     if (!participantAggregator.structureParticipation || !orderedStructureIds.length) continue;
-    const groupOrder: RRGroupOrder | undefined = rrGroupOrders[drawId]?.[participantId];
+    const groupOrder: RRGroupPlace | undefined = rrGroupPlaces[drawId]?.[participantId];
 
     let finishingPositionRange;
     let nonQualifyingOrder = 0;
