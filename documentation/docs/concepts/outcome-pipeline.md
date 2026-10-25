@@ -582,18 +582,21 @@ stamped at each notice and every top-level structure on each.
 without writing the record: what S2's has-work predicates for the settle passes read, where v1 reads the draw it has
 written. A matchUp or structure an op writes gets a stored-shape working copy, the ops are folded into the copies by
 the same reducer as the shadow apply, and the matchUps an op wrote, with those whose sides read a reassigned
-drawPosition, are hydrated again from the copies by projection: the factory's own `getAllDrawMatchUps`, filtered to
-their ids, over a matchUps map assembled from the call's (CA, 2026-10-24). Each replaces its entry in v2's copy of the
-call's one hydration.
+drawPosition, are derived again from the copies: by indexing again the top-level structures that hold them (below), or,
+on a TEAM draw the index does not cover, by projection, the factory's own `getAllDrawMatchUps` filtered to their ids
+over a matchUps map assembled from the call's (CA, 2026-10-24). Each replaces its entry in v2's copy of the view's
+draw.
 
 **The view oracle** checks it in `differential`: after every complete plan, the working view, folded before v1 wrote,
-is compared field by field (sides, status, winner, score, schedule, drawPositions, the round-profile fields,
-`readyToScore`, the edges and the exit records) with one hydration of the shadow-applied record. A difference is a
+is compared field by field (sides, status, winner, score, drawPositions, `finishingPositionRange`, `feedRound` and
+`hasFedDrawPosition`, the edges and the exit records: what v2 reads) with one hydration of the shadow-applied record.
+Until the view moved onto the index it also compared `schedule`, `drawPositionsRange`, `preFeedRound`, `roundFactor`
+and `readyToScore`, which nothing in v2 reads; `schedule.scoredTime` is read from the stored matchUps. A difference is a
 divergence keyed `view:<field>`. Measured 2026-10-24 over the exitPropagation and matchUps suites: 9,184 views
 compared, none different; with re-derivation removed, 103 exitPropagation files fail. The oracle's own reads (the
-shadow's hydration, the working view's projection) are test instrumentation: `verify:hydrations` keeps them out of
-`differential`'s ceiling and reports them apart (768 over its census). Under `v2`, once S2 folds owned calls into the
-working view, its projection is the pipeline's own work and counts.
+shadow's hydration, a TEAM working view's projection, and the index oracle's hydration below) are test instrumentation:
+`verify:hydrations` keeps them out of `differential`'s ceiling and reports them apart (2,184 over its census). Under
+`v2`, a TEAM working view's projection is the pipeline's own work and counts.
 
 **The structural index** (`buildStructuralIndex`, `src/query/matchUps/structuralIndex.ts`; executor plan § 3.1.1, CA
 2026-10-24: v2 decides on stored data and a structural index, never on a hydration) is one entry per matchUp in the
@@ -607,13 +610,17 @@ hydration calls (`buildMatchUpSides`, `getRoundMatchUps`), and a tiebreak-only o
 annotates it, so the two derive each field once. A draw holding a TEAM matchUp is not indexed yet: a line's sides come
 from its dual's line-ups.
 
-**The index oracle** holds it to the hydration in `differential`: before v1 writes, every call's index of the draw as
-the call found it is compared, field by field, with the view's hydration of the same draw, after the view's own step on
-a draw stored without its edges. A difference is a divergence keyed `index:<field>`. Measured 2026-10-24 over the
+**The view decides on the index.** `buildOutcomeView` builds it, not a hydration, and the working view and the settle
+predicates read it; only a TEAM draw is still hydrated. So under `v2` a call costs v1's hydrations and nothing more
+(`verify:hydrations`; the TEAM arm v1 + 1), and a call v2 refuses takes none. An index entry shares nested objects
+(`score`, `sideExitProvenance`) with the stored matchUp, so the view is read before the call writes, never after.
+
+**The index oracle** holds it to the hydration in `differential`: before v1 writes, the view's index of the draw as the
+call found it is compared, field by field, with one hydration of the same draw taken for the purpose, after the view's
+own step on a draw stored without its edges. A difference is a divergence keyed `index:<field>`. Measured 2026-10-24 over the
 mutations suite: 66,154 calls, 1,873,656 entries compared, none different; 15,940 calls on TEAM draws are tallied as
 deferred. Measured against a full in-context hydration (median of 15): SINGLE_ELIMINATION 32 to 256 at 11–13%,
-FEED_IN_CHAMPIONSHIP 64, ROUND_ROBIN 32, DOUBLE_ELIMINATION 64 and COMPASS 64 at 11–13%, linear in the draw. Nothing
-reads the index yet; the view, the working view and the settle predicates move onto it next, before S2 admits a route.
+FEED_IN_CHAMPIONSHIP 64, ROUND_ROBIN 32, DOUBLE_ELIMINATION 64 and COMPASS 64 at 11–13%, linear in the draw.
 
 ## 8. What the corpus pins
 

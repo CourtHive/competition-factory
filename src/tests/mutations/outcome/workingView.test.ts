@@ -1,4 +1,6 @@
+import { buildStructuralIndex } from '@Query/matchUps/structuralIndex';
 import { createWorkingView } from '@Mutate/matchUps/outcome/overlay';
+import { compareIndex } from '@Mutate/matchUps/outcome/indexOracle';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { setSubscriptions } from '@Global/state/globalState';
@@ -76,4 +78,40 @@ it('keeps its work local: the matchUps written, not the draw', () => {
   // CONTROL: a draw of 31 matchUps, so a whole re-derivation would be visible
   expect(inContextDrawMatchUps.length).toEqual(31);
   expect(working.work).toEqual({ copiedMatchUps: 2, copiedStructures: 1, rederived: 2, projections: 1 });
+});
+
+it('on the structural index, indexes again what it touched, and agrees with a hydration of the folded draw', () => {
+  const { ops, first, next, winnerPosition, tournamentRecord } = firstRoundWin();
+  const event = tournamentRecord.events[0];
+  const drawDefinition = event.drawDefinitions[0];
+  const matchUpsMap = getMatchUpsMap({ drawDefinition });
+  const index = buildStructuralIndex({ tournamentRecord, drawDefinition, event });
+  const working = createWorkingView({
+    inContextDrawMatchUps: index.matchUps,
+    structural: true,
+    tournamentRecord,
+    drawDefinition,
+    matchUpsMap,
+    event,
+  });
+  expect(working.apply(ops).error).toBeUndefined();
+
+  const viewed = (matchUpId: string) => working.inContextDrawMatchUps.find((m) => m.matchUpId === matchUpId) as any;
+  expect(viewed(first.matchUpId).winningSide).toEqual(1);
+  expect(viewed(next.matchUpId).sides.some((side: any) => side.drawPosition === winnerPosition)).toEqual(true);
+  // an index entry, not a hydration: no round name, and a participant only as its id
+  expect(viewed(next.matchUpId).roundName).toBeUndefined();
+  expect(working.work).toEqual({ copiedMatchUps: 2, copiedStructures: 1, rederived: 2, projections: 1 });
+
+  // the folded draw, hydrated: every field the outcome logic reads agrees
+  const folded = getAllDrawMatchUps({
+    drawDefinition: working.drawDefinition,
+    matchUpsMap: working.matchUpsMap,
+    inContext: true,
+    tournamentRecord,
+    event,
+  }).matchUps as any[];
+  expect(compareIndex({ hydrated: folded, index: working.inContextDrawMatchUps })).toEqual([]);
+  // CONTROL: the base index is still the draw as the call found it, so the comparison above is of the fold
+  expect(compareIndex({ hydrated: folded, index: index.matchUps }).length).toBeGreaterThan(0);
 });

@@ -19,6 +19,7 @@ import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
 import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
 import { addGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { buildStructuralIndex } from '@Query/matchUps/structuralIndex';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
@@ -40,8 +41,9 @@ import {
 // constants and types
 import { POLICY_TYPE_PROGRESSION, POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { BYE, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import type { BuildViewArgs, OutcomeRequest, OutcomeView } from './types';
 import { FIRST_MATCHUP, WIN_RATIO } from '@Constants/drawDefinitionConstants';
+import type { BuildViewArgs, OutcomeRequest, OutcomeView } from './types';
+import type { MatchUpsMap } from '@Types/factoryTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
 import type {
@@ -436,6 +438,22 @@ function appliedFormat(
   return matchUp.matchUpFormat ?? structure?.matchUpFormat ?? drawDefinition.matchUpFormat ?? event?.matchUpFormat;
 }
 
+/**
+ * THE DRAW THE VIEW DECIDES ON (§ 3.1.1, CA 2026-10-24): the structural index, never a hydration. A draw the index does
+ * not cover yet (TEAM) is hydrated as before; another view of the same draw in the same call reuses the first's.
+ */
+function drawToDecideOn(
+  { tournamentRecord, drawDefinition, event, ...args }: BuildViewArgs & { drawDefinition: DrawDefinition },
+  matchUpsMap: MatchUpsMap,
+): { inContextDrawMatchUps?: HydratedMatchUp[]; structural: boolean } {
+  if (args.inContextDrawMatchUps)
+    return { inContextDrawMatchUps: args.inContextDrawMatchUps, structural: !!args.structural };
+  const index = buildStructuralIndex({ tournamentRecord, drawDefinition, event });
+  if (!index.unsupported) return { inContextDrawMatchUps: index.matchUps, structural: true };
+  const hydrated = getAllDrawMatchUps({ tournamentRecord, inContext: true, drawDefinition, matchUpsMap, event });
+  return { inContextDrawMatchUps: hydrated.matchUps, structural: false };
+}
+
 export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
   const { tournamentRecord, drawDefinition, event, request, policyDefinitions } = args;
   const empty: OutcomeView = {
@@ -482,15 +500,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
   if (!drawDefinition || !request.matchUpId) return empty;
 
   const matchUpsMap = args.matchUpsMap ?? getMatchUpsMap({ drawDefinition });
-  const inContextDrawMatchUps =
-    args.inContextDrawMatchUps ??
-    getAllDrawMatchUps({
-      tournamentRecord,
-      inContext: true,
-      drawDefinition,
-      matchUpsMap,
-      event,
-    }).matchUps;
+  const { inContextDrawMatchUps, structural } = drawToDecideOn({ ...args, drawDefinition }, matchUpsMap);
   const matchUp = matchUpsMap.drawMatchUps.find((m) => m.matchUpId === request.matchUpId);
   const inContextMatchUp = inContextDrawMatchUps?.find((m) => m.matchUpId === request.matchUpId);
   if (!matchUp || !inContextDrawMatchUps) return empty;
@@ -667,6 +677,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
   return {
     ...empty,
     inContextDrawMatchUps,
+    structural,
     formatRecognized: formatRecognizedFor(
       request.matchUpFormat,
       appliedFormat(matchUp, structure, drawDefinition, event),
