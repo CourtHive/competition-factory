@@ -43,7 +43,7 @@ export function checkMatchUpIsComplete({ matchUp }: CheckMatchUpIsCompleteArgs) 
  * `undefined` rather than `false` is deliberate and load-bearing: `tallyParticipantResults`
  * separates "not complete" from "no answer" with `?? matchUp.matchUpType === TEAM`.
  */
-export function matchUpCompletion(matchUp: MatchUp | undefined) {
+export function matchUpCompletion(matchUp: Partial<MatchUp> | undefined) {
   if (!matchUp) return undefined;
   const result = checkMatchUpIsComplete({ matchUp });
   return result?.error ? undefined : result;

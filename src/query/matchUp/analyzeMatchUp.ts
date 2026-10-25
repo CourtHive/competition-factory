@@ -1,7 +1,7 @@
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { parse, ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
+import { analyzeSet, SetAnalysisFields } from './analyzeSet';
 import { instanceCount } from '@Tools/arrays';
-import { analyzeSet } from './analyzeSet';
 
 // constants and types
 import { DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
@@ -9,29 +9,30 @@ import { MISSING_MATCHUP } from '@Constants/errorConditionConstants';
 import { Set as SetType } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
 
-export function analyzeMatchUp(params?): ResultType & {
-  completedSetsHaveValidOutcomes?: boolean;
-  validMatchUpWinningSide?: boolean;
-  calculatedWinningSide?: number;
-  /** Both sides' points summed across the sets, for an AGGREGATE format only. */
-  aggregateScores?: number[];
-  isLastSetWithValues?: boolean;
-  validMatchUpOutcome?: boolean;
-  sideTiebreakScores?: number[];
-  isCompletedMatchUp?: boolean;
-  completedSetsCount?: number;
-  isValidSideNumber?: boolean;
-  matchUpScoringFormat?: any;
-  hasExistingValue?: boolean;
-  sidePointScores?: number[];
-  sideGameScores?: number[];
-  expectTimedSet?: boolean;
-  isCompletedSet?: boolean;
-  isExistingSet?: boolean;
-  existingValue?: number;
-  isActiveSet?: boolean;
-  winningSide?: number;
-} {
+export function analyzeMatchUp(params?): ResultType &
+  SetAnalysisFields & {
+    completedSetsHaveValidOutcomes?: boolean;
+    validMatchUpWinningSide?: boolean;
+    calculatedWinningSide?: number;
+    /** Both sides' points summed across the sets, for an AGGREGATE format only. */
+    aggregateScores?: number[];
+    isLastSetWithValues?: boolean;
+    validMatchUpOutcome?: boolean;
+    sideTiebreakScores?: number[];
+    isCompletedMatchUp?: boolean;
+    completedSetsCount?: number;
+    isValidSideNumber?: boolean;
+    matchUpScoringFormat?: any;
+    hasExistingValue?: boolean;
+    sidePointScores?: number[];
+    sideGameScores?: number[];
+    expectTimedSet?: boolean;
+    isCompletedSet?: boolean;
+    isExistingSet?: boolean;
+    existingValue?: number;
+    isActiveSet?: boolean;
+    winningSide?: number;
+  } {
   const { matchUp, sideNumber, setNumber, isTiebreakValue, isPointValue } = params ?? {};
   let { matchUpFormat } = params ?? {};
   if (!matchUp) return { error: MISSING_MATCHUP };

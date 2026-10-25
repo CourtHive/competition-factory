@@ -175,17 +175,13 @@ describe('analyzeScore - Aggregate scoring validation', () => {
       ],
     };
 
-    // Aggregate: 30-3, should be winningSide=1, not 2
-    const result = analyzeScore({
-      matchUpFormat: format,
-      winningSide: 2,
-      score,
-    });
+    // Aggregate: 30-3, so winningSide must be 1. analyzeScore returns only `{ valid }`, so the reason for the
+    // refusal is shown by contrast: the same score is valid with the right winningSide and refused with the wrong one.
+    const wrong = analyzeScore({ matchUpFormat: format, winningSide: 2, score });
+    const right = analyzeScore({ matchUpFormat: format, winningSide: 1, score });
 
-    expect(result.valid).toBe(false);
-    if (result.error) {
-      expect(result.error).toContain('winningSide');
-    }
+    expect(wrong.valid).toBe(false);
+    expect(right.valid).toBe(true);
   });
 
   it('should validate TB1 tiebreak resolving aggregate tie', () => {

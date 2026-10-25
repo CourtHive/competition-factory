@@ -1,26 +1,9 @@
 {
-  "src/query/event/tieFormatGenderValidityCheck.test.ts": 1,
-  "src/tests/functions/scheduledSortedMatchUps.test.ts": 4,
-  "src/tests/functions/sorters/matchUpSort.test.ts": 17,
-  "src/tests/generators/mocks/aggregateScoringScenarios.test.ts": 2,
   "src/tests/mutations/coverageBranchBulk.test.ts": 4,
   "src/tests/mutations/coverageBranchExpanded.test.ts": 2,
-  "src/tests/mutations/drawDefinitions/drawTypeSpecific/directedParticipants.test.ts": 1,
-  "src/tests/mutations/drawDefinitions/drawTypeSpecific/fmlc/fmlcRemoveResult.test.ts": 1,
-  "src/tests/mutations/drawDefinitions/setMatchUpStatus/propagateExitStatus.test.ts": 3,
-  "src/tests/mutations/events/attachFlightProfile.test.ts": 1,
   "src/tests/mutations/matchUps/score/scoreStringsDerived.test.ts": 2,
-  "src/tests/mutations/tournaments/mutationLocks.test.ts": 3,
   "src/tests/mutations/venues/venuesCoverage.test.ts": 4,
-  "src/tests/queries/events/getPublishState.test.ts": 2,
-  "src/tests/queries/matchUps/matchUpAnalysis.test.ts": 25,
-  "src/tests/query/engineParamFailOpen.test.ts": 1,
-  "src/tests/query/hierarchical/getContextContent.test.ts": 1,
   "src/tests/refactoring/matchUpScoreStatusCoverage.test.ts": 4,
   "src/tests/refactoring/qualifierLuckyLoserSeedsCoverage.test.ts": 1,
-  "src/tests/refactoring/tieFormat.coverage.test.ts": 1,
-  "src/tests/scoring/setServer-recordEntry.test.ts": 1,
-  "src/tests/scoring/statistics.test.ts": 2,
-  "src/tests/tools/arrays.test.ts": 1,
-  "src/tests/tools/objects.test.ts": 5
+  "src/tests/refactoring/tieFormat.coverage.test.ts": 1
 }

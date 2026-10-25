@@ -330,10 +330,20 @@ export interface Point {
 }
 
 /**
- * Point result types (how the point ended)
+ * Point result types (how the point ended). 'Touch' is INTENNSE's: a player prevents a 2-pointer by touching the
+ * ball with their racquet. 'Return Winner' is what the point parser emits for an `R` code.
  */
 export type PointResult =
-  'Ace' | 'Winner' | 'Serve Winner' | 'Forced Error' | 'Unforced Error' | 'Double Fault' | 'Penalty' | 'Unknown';
+  | 'Ace'
+  | 'Winner'
+  | 'Serve Winner'
+  | 'Return Winner'
+  | 'Forced Error'
+  | 'Unforced Error'
+  | 'Double Fault'
+  | 'Penalty'
+  | 'Touch'
+  | 'Unknown';
 
 /**
  * Stroke types in tennis

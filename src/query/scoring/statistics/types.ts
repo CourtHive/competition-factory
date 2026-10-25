@@ -24,7 +24,16 @@ export interface PointWithMetadata {
 
   // Point outcome (how the point ended)
   result?:
-    'Ace' | 'Winner' | 'Serve Winner' | 'Unforced Error' | 'Forced Error' | 'Double Fault' | 'Net' | 'Out' | 'Penalty';
+    | 'Ace'
+    | 'Winner'
+    | 'Serve Winner'
+    | 'Return Winner'
+    | 'Unforced Error'
+    | 'Forced Error'
+    | 'Double Fault'
+    | 'Net'
+    | 'Out'
+    | 'Penalty';
 
   // Stroke type (final shot)
   stroke?:

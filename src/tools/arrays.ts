@@ -184,7 +184,7 @@ export function noNumeric(arr) {
  * @param {number} chunksCount - number of chunks to create
  * @param {boolean} shuttle - whether or not to "shuttle" as in the movment of a shuttle in a loom
  */
-export function chunkByNth(arr: any[], chunksCount: number, shuttle?: boolean) {
+export function chunkByNth(arr: unknown, chunksCount: number, shuttle?: boolean) {
   if (!Array.isArray(arr)) return [];
   return arr.reduce((chunks, entry, index) => {
     const reverseDirection = shuttle ? !!(Math.floor(index / chunksCount) % 2) : false;
