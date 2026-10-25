@@ -1,6 +1,9 @@
 import { validateSetScore, validateMatchUpScore } from '@Validators/validateMatchUpScore';
 import { expect, it } from 'vitest';
 
+// types
+import type { SetScore } from '@Types/scoring/types';
+
 // constants
 import { COMPLETED, RETIRED } from '@Constants/matchUpStatusConstants';
 
@@ -76,7 +79,7 @@ it('validates timed sets with tied scores and tiebreak', () => {
   const matchUpFormat = 'SET3X-S:T10P/TB1';
 
   // Valid: tied scores with tiebreak
-  let set = {
+  let set: Partial<SetScore> = {
     side1Score: 30,
     side2Score: 30,
     side1TiebreakScore: 1,
@@ -211,7 +214,7 @@ it('rejects invalid timed set scores', () => {
   const matchUpFormat = 'SET3X-S:T10P/TB1';
 
   // Invalid: tied with required tiebreak but missing
-  let sets = [
+  let sets: SetScore[] = [
     { side1Score: 30, side2Score: 30, setNumber: 1, winningSide: 1 }, // No tiebreak!
   ];
 

@@ -1,6 +1,7 @@
 import { modifyMatchUpFormatTiming } from '@Mutate/extensions/matchUps/modifyMatchUpFormatTiming';
 import { removeDelegatedOutcome } from '@Mutate/extensions/matchUps/removeDelegatedOutcome';
 import { disableTieAutoCalc } from '@Mutate/extensions/matchUps/disableTieAutoCalc';
+import type { ResultType } from '@Types/factoryTypes';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
@@ -33,7 +34,7 @@ describe('disableTieAutoCalc', () => {
     const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId });
     const matchUpId = matchUps[0].matchUpId;
 
-    const result = disableTieAutoCalc({ drawDefinition, matchUpId, event });
+    const result: ResultType = disableTieAutoCalc({ drawDefinition, matchUpId, event });
     expect(result.success).toEqual(true);
   });
 });
@@ -116,7 +117,7 @@ describe('modifyMatchUpFormatTiming', () => {
       drawProfiles: [{ drawSize: 4 }],
     });
 
-    const result = modifyMatchUpFormatTiming({
+    const result: ResultType = modifyMatchUpFormatTiming({
       tournamentRecord,
       matchUpFormat: FORMAT_STANDARD,
       eventId,
@@ -128,7 +129,7 @@ describe('modifyMatchUpFormatTiming', () => {
   it('modifies timing at tournament level when no eventId', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord();
 
-    const result = modifyMatchUpFormatTiming({
+    const result: ResultType = modifyMatchUpFormatTiming({
       tournamentRecord,
       matchUpFormat: FORMAT_STANDARD,
       averageTimes: [{ categoryTypes: ['JUNIOR'], minutes: { default: 100 } }],
@@ -139,7 +140,7 @@ describe('modifyMatchUpFormatTiming', () => {
   it('modifies recovery times at tournament level', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord();
 
-    const result = modifyMatchUpFormatTiming({
+    const result: ResultType = modifyMatchUpFormatTiming({
       tournamentRecord,
       matchUpFormat: FORMAT_STANDARD,
       recoveryTimes: [{ categoryTypes: ['JUNIOR'], minutes: { default: 30 } }],
@@ -151,7 +152,7 @@ describe('modifyMatchUpFormatTiming', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord();
 
     // First set average times
-    let result = modifyMatchUpFormatTiming({
+    let result: ResultType = modifyMatchUpFormatTiming({
       tournamentRecord,
       matchUpFormat: FORMAT_STANDARD,
       averageTimes: [{ categoryTypes: ['JUNIOR'], minutes: { default: 100 } }],
@@ -170,7 +171,7 @@ describe('modifyMatchUpFormatTiming', () => {
   it('updates existing recovery times by replacing them', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord();
 
-    let result = modifyMatchUpFormatTiming({
+    let result: ResultType = modifyMatchUpFormatTiming({
       tournamentRecord,
       matchUpFormat: FORMAT_STANDARD,
       recoveryTimes: [{ categoryTypes: ['JUNIOR'], minutes: { default: 30 } }],
@@ -188,7 +189,7 @@ describe('modifyMatchUpFormatTiming', () => {
   it('filters out averageTimes without categoryNames or categoryTypes', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord();
 
-    const result = modifyMatchUpFormatTiming({
+    const result: ResultType = modifyMatchUpFormatTiming({
       tournamentRecord,
       matchUpFormat: FORMAT_STANDARD,
       averageTimes: [{ minutes: { default: 100 } }], // no categoryNames or categoryTypes
@@ -200,7 +201,7 @@ describe('modifyMatchUpFormatTiming', () => {
   it('filters out recoveryTimes without categoryNames or categoryTypes', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord();
 
-    const result = modifyMatchUpFormatTiming({
+    const result: ResultType = modifyMatchUpFormatTiming({
       tournamentRecord,
       matchUpFormat: FORMAT_STANDARD,
       recoveryTimes: [{ minutes: { default: 30 } }], // no categoryNames or categoryTypes
@@ -222,7 +223,7 @@ describe('modifyMatchUpFormatTiming', () => {
       [second.tournamentId]: second,
     };
 
-    const result = modifyMatchUpFormatTiming({
+    const result: ResultType = modifyMatchUpFormatTiming({
       tournamentRecords,
       matchUpFormat: FORMAT_STANDARD,
       averageTimes: [{ categoryTypes: ['JUNIOR'], minutes: { default: 110 } }],
@@ -239,7 +240,7 @@ describe('modifyMatchUpFormatTiming', () => {
     });
 
     // Set event-level average times
-    let result = modifyMatchUpFormatTiming({
+    let result: ResultType = modifyMatchUpFormatTiming({
       tournamentRecord,
       matchUpFormat: FORMAT_STANDARD,
       eventId,
@@ -265,7 +266,7 @@ describe('modifyMatchUpFormatTiming', () => {
       drawProfiles: [{ drawSize: 4 }],
     });
 
-    const result = modifyMatchUpFormatTiming({
+    const result: ResultType = modifyMatchUpFormatTiming({
       tournamentRecord,
       matchUpFormat: FORMAT_STANDARD,
       eventId,
@@ -278,7 +279,7 @@ describe('modifyMatchUpFormatTiming', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord();
 
     // First set some recovery times
-    let result = modifyMatchUpFormatTiming({
+    let result: ResultType = modifyMatchUpFormatTiming({
       tournamentRecord,
       matchUpFormat: FORMAT_STANDARD,
       recoveryTimes: [{ categoryTypes: ['JUNIOR'], minutes: { default: 30 } }],

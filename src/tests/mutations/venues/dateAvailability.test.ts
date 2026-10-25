@@ -1,5 +1,6 @@
 import { validDateAvailability } from '@Validators/validateDateAvailability';
 import { Availability } from '@Types/tournamentTypes';
+import type { ResultType } from '@Types/factoryTypes';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
@@ -21,7 +22,7 @@ const d220202 = '2022-02-02';
 
 test('will not allow saving of Invalid Date in dateAvailability', () => {
   let dateAvailability: Availability[] = [{ date: d210102, startTime: '09:00', endTime: '16:00' }];
-  let result = validDateAvailability({ dateAvailability });
+  let result: ResultType = validDateAvailability({ dateAvailability });
   expect(result.valid).toEqual(true);
 
   result = validDateAvailability({ dateAvailability: 'not an array' });

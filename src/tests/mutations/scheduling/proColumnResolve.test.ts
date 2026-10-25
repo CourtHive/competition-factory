@@ -116,7 +116,7 @@ describe('proColumnResolve - court-preserving conflict resolution', () => {
     expect(participantConflictCount(tournamentEngine.proConflicts({ matchUps }).rowIssues)).toBeGreaterThan(0);
 
     // snapshot court + scheduledTime for every scheduled matchUp
-    const before = new Map(
+    const before = new Map<string, { courtId?: string; scheduledTime?: string }>(
       matchUps.map((m) => [m.matchUpId, { courtId: m.schedule?.courtId, scheduledTime: m.schedule?.scheduledTime }]),
     );
 

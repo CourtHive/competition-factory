@@ -1,5 +1,7 @@
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
+import type { ResultType } from '@Types/factoryTypes';
+import { defined } from '@Tests/helpers/defined';
 import { expect, it } from 'vitest';
 
 // constants
@@ -22,7 +24,7 @@ it('can set score for timed aggregate format SET3XA-S:T10', () => {
 
   tournamentEngine.setState(tournamentRecord);
 
-  const { matchUps } = tournamentEngine.allTournamentMatchUps();
+  const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
   const matchUp = matchUps[0];
 
   // Set the matchUp format to timed aggregate
@@ -66,7 +68,7 @@ it('can set score for timed aggregate format SET3XA-S:T10', () => {
     winningSide: 1,
   };
 
-  const setStatusResult = tournamentEngine.setMatchUpStatus({
+  const setStatusResult: ResultType = tournamentEngine.setMatchUpStatus({
     drawId,
     matchUpId: matchUp.matchUpId,
     outcome,
@@ -75,28 +77,32 @@ it('can set score for timed aggregate format SET3XA-S:T10', () => {
   expect(setStatusResult.success).toBe(true);
 
   // Verify the score was set correctly
-  const { matchUps: updatedMatchUps } = tournamentEngine.allTournamentMatchUps({
-    matchUpFilters: { matchUpIds: [matchUp.matchUpId] },
-  });
+  const updatedMatchUps = defined(
+    tournamentEngine.allTournamentMatchUps({
+      matchUpFilters: { matchUpIds: [matchUp.matchUpId] },
+    }).matchUps,
+    'updatedMatchUps',
+  );
 
   const updatedMatchUp = updatedMatchUps[0];
+  const sets = defined(updatedMatchUp.score?.sets, 'score.sets');
 
   expect(updatedMatchUp.winningSide).toBe(1);
   expect(updatedMatchUp.matchUpStatus).toBe(COMPLETED);
   expect(updatedMatchUp.score?.sets?.length).toBe(3);
 
   // Verify set scores
-  expect(updatedMatchUp.score.sets[0].side1Score).toBe(10);
-  expect(updatedMatchUp.score.sets[0].side2Score).toBe(11);
-  expect(updatedMatchUp.score.sets[0].winningSide).toBe(2);
+  expect(sets[0].side1Score).toBe(10);
+  expect(sets[0].side2Score).toBe(11);
+  expect(sets[0].winningSide).toBe(2);
 
-  expect(updatedMatchUp.score.sets[1].side1Score).toBe(11);
-  expect(updatedMatchUp.score.sets[1].side2Score).toBe(10);
-  expect(updatedMatchUp.score.sets[1].winningSide).toBe(1);
+  expect(sets[1].side1Score).toBe(11);
+  expect(sets[1].side2Score).toBe(10);
+  expect(sets[1].winningSide).toBe(1);
 
-  expect(updatedMatchUp.score.sets[2].side1Score).toBe(1);
-  expect(updatedMatchUp.score.sets[2].side2Score).toBe(0);
-  expect(updatedMatchUp.score.sets[2].winningSide).toBe(1);
+  expect(sets[2].side1Score).toBe(1);
+  expect(sets[2].side2Score).toBe(0);
+  expect(sets[2].winningSide).toBe(1);
 });
 
 it('can set score for timed non-aggregate format SET3X-S:T10', () => {
@@ -115,7 +121,7 @@ it('can set score for timed non-aggregate format SET3X-S:T10', () => {
 
   tournamentEngine.setState(tournamentRecord);
 
-  const { matchUps } = tournamentEngine.allTournamentMatchUps();
+  const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
   const matchUp = matchUps[0];
 
   // Set the matchUp format to timed (non-aggregate)
@@ -156,7 +162,7 @@ it('can set score for timed non-aggregate format SET3X-S:T10', () => {
     winningSide: 1,
   };
 
-  const setStatusResult = tournamentEngine.setMatchUpStatus({
+  const setStatusResult: ResultType = tournamentEngine.setMatchUpStatus({
     drawId,
     matchUpId: matchUp.matchUpId,
     outcome,
@@ -165,26 +171,30 @@ it('can set score for timed non-aggregate format SET3X-S:T10', () => {
   expect(setStatusResult.success).toBe(true);
 
   // Verify the score was set correctly
-  const { matchUps: updatedMatchUps } = tournamentEngine.allTournamentMatchUps({
-    matchUpFilters: { matchUpIds: [matchUp.matchUpId] },
-  });
+  const updatedMatchUps = defined(
+    tournamentEngine.allTournamentMatchUps({
+      matchUpFilters: { matchUpIds: [matchUp.matchUpId] },
+    }).matchUps,
+    'updatedMatchUps',
+  );
 
   const updatedMatchUp = updatedMatchUps[0];
+  const sets = defined(updatedMatchUp.score?.sets, 'score.sets');
 
   expect(updatedMatchUp.winningSide).toBe(1);
   expect(updatedMatchUp.matchUpStatus).toBe(COMPLETED);
   expect(updatedMatchUp.score?.sets?.length).toBe(3);
 
   // Verify set scores
-  expect(updatedMatchUp.score.sets[0].side1Score).toBe(10);
-  expect(updatedMatchUp.score.sets[0].side2Score).toBe(11);
-  expect(updatedMatchUp.score.sets[0].winningSide).toBe(2);
+  expect(sets[0].side1Score).toBe(10);
+  expect(sets[0].side2Score).toBe(11);
+  expect(sets[0].winningSide).toBe(2);
 
-  expect(updatedMatchUp.score.sets[1].side1Score).toBe(11);
-  expect(updatedMatchUp.score.sets[1].side2Score).toBe(10);
-  expect(updatedMatchUp.score.sets[1].winningSide).toBe(1);
+  expect(sets[1].side1Score).toBe(11);
+  expect(sets[1].side2Score).toBe(10);
+  expect(sets[1].winningSide).toBe(1);
 
-  expect(updatedMatchUp.score.sets[2].side1Score).toBe(1);
-  expect(updatedMatchUp.score.sets[2].side2Score).toBe(0);
-  expect(updatedMatchUp.score.sets[2].winningSide).toBe(1);
+  expect(sets[2].side1Score).toBe(1);
+  expect(sets[2].side2Score).toBe(0);
+  expect(sets[2].winningSide).toBe(1);
 });

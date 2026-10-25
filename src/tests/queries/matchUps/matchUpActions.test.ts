@@ -16,7 +16,6 @@ import {
 } from '@Constants/errorConditionConstants';
 
 test('matchUpActions returns expected error messages', () => {
-  // @ts-expect-error test
   let result = matchUpActions();
   expect(result.error).toEqual(INVALID_VALUES);
 
@@ -50,9 +49,7 @@ test('matchUpActions returns expected error messages', () => {
 });
 
 test('matchUpActions returns MISSING_MATCHUP_ID when matchUpId is missing or not a string', () => {
-  // @ts-expect-error test - matchUpId missing
   let result = matchUpActions({
-    // @ts-expect-error test
     tournamentRecords: { tid: { tournamentId: 'tid' } },
     tournamentId: 'tid',
     drawDefinition: { drawId: 'd1' },
@@ -62,7 +59,6 @@ test('matchUpActions returns MISSING_MATCHUP_ID when matchUpId is missing or not
 
   // matchUpId is a number (not a string)
   result = matchUpActions({
-    // @ts-expect-error test
     tournamentRecords: { tid: { tournamentId: 'tid' } },
     tournamentId: 'tid',
     drawDefinition: { drawId: 'd1' },

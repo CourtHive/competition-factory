@@ -203,7 +203,7 @@ test('formatDate supports multiple formats', () => {
 });
 
 test('miscellaneous math tests', () => {
-  let result = isPowerOf2(3);
+  let result: boolean | undefined = isPowerOf2(3);
   expect(result).toEqual(false);
 
   result = isPowerOf2();

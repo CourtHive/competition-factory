@@ -178,7 +178,7 @@ describe('analysePolicyConformance', () => {
 
   it('is silent when the policy permits what is present', () => {
     const permissive = structuredClone(POLICY_PRIVACY_DEFAULT);
-    permissive[POLICY_TYPE_PARTICIPANT].participant = { '*': true };
+    Object.assign(permissive[POLICY_TYPE_PARTICIPANT], { participant: { '*': true } });
     const analysis = analysePolicyConformance({
       participants: fixture.hydratedParticipants,
       policyDefinitions: permissive,

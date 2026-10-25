@@ -59,6 +59,7 @@ const MATRIX = DRAW_TYPES.flatMap((drawType) => DRAW_SIZES.map((drawSize) => [dr
 
 test.for(MATRIX)(
   'CI sweep: %s drawSize %d completes with zero structural inconsistencies',
+  { timeout: 180_000 },
   ([drawType, drawSize]) => {
     setSubscriptions({});
     const drawId = `ci-${drawType}-${drawSize}`;
@@ -80,5 +81,4 @@ test.for(MATRIX)(
     expect(result.valid).toEqual(true);
     // the 64-draw cells take ~30s under CI coverage alone, against the 30s default (2026-10-03, master)
   },
-  180_000,
 );

@@ -78,7 +78,6 @@ function createContext(blocks: Block[]): EngineContext {
     blocksByCourtDay,
     templates: new Map(),
     rules: new Map(),
-    layerVisibility: new Map(),
   };
 }
 

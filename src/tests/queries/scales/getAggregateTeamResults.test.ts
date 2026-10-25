@@ -1,6 +1,7 @@
 import { completeDrawMatchUps } from '@Generators/mocks/completeDrawMatchUps';
 import { tournamentEngine } from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import { expect, it } from 'vitest';
 
 // Constants
@@ -19,7 +20,7 @@ it('can aggregate team scores across SINGLES/DOUBLES events', () => {
     setState: true,
   });
 
-  const events = tournamentEngine.getEvents().events;
+  const events = defined(tournamentEngine.getEvents().events, 'events');
   expect(events.length).toBe(0);
 
   const entryStatus = DIRECT_ACCEPTANCE;
@@ -54,7 +55,8 @@ it('can aggregate team scores across SINGLES/DOUBLES events', () => {
   const pointsResult = tournamentEngine.getAggregateTeamResults();
   expect(pointsResult.success).toBe(true);
 
-  for (const teamResult of Object.values(pointsResult.teamResults)) {
+  const teamResults = defined('teamResults' in pointsResult ? pointsResult.teamResults : undefined, 'teamResults');
+  for (const teamResult of Object.values(teamResults)) {
     const { points, diff, win, loss } = teamResult as { points: number; diff: number; win: number; loss: number };
     expect(points).toBeGreaterThanOrEqual(0);
     expect(loss).toBeGreaterThanOrEqual(0);

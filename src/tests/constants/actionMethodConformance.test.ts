@@ -54,7 +54,7 @@ function tsFiles(dir: string): string[] {
  * audit proved it by shipping an action pointing at a method that does not exist on the
  * engine. Property-assignment nodes cannot be dodged by formatting or expression shape.
  */
-function emittedMethodIdentifiers(): { names: string[]; unresolved: string[] } {
+function emittedMethodIdentifiers(): { names: string[]; literals: string[]; unresolved: string[] } {
   const names = new Set<string>();
   const literals = new Set<string>();
   const unresolved = new Set<string>();

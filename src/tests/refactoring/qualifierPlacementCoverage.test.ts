@@ -3,6 +3,7 @@ import { placeQualifier } from '@Mutate/drawDefinitions/matchUpGovernor/placeQua
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import { expect, it, describe } from 'vitest';
 
 // constants
@@ -66,7 +67,7 @@ function completeQualifyingMatchUps(drawId: string, qualifyingStructureId: strin
   }
 }
 
-function getCompletedFinalRoundMatchUp(drawId: string, qualifyingStructureId: string) {
+function getCompletedFinalRoundMatchUp(qualifyingStructureId: string) {
   const { matchUps } = tournamentEngine.allTournamentMatchUps();
   return matchUps.find(
     (m) => m.structureId === qualifyingStructureId && m.finishingRound === 1 && m.matchUpStatus === COMPLETED,
@@ -234,7 +235,7 @@ describe('placeQualifier integration via setMatchUpStatus', () => {
 
     completeQualifyingMatchUps(drawId, qualifyingStructure.structureId);
 
-    const qualifyingFinal = getCompletedFinalRoundMatchUp(drawId, qualifyingStructure.structureId);
+    const qualifyingFinal = getCompletedFinalRoundMatchUp(qualifyingStructure.structureId);
     expect(qualifyingFinal).toBeDefined();
 
     // Reset the qualifying final to TO_BE_PLAYED so we can re-complete with autoPlace
@@ -304,7 +305,7 @@ describe('removeQualifier integration via setMatchUpStatus', () => {
     completeQualifyingMatchUps(drawId, qualifyingStructure.structureId);
 
     // Find a completed qualifying final
-    let qualifyingFinal = getCompletedFinalRoundMatchUp(drawId, qualifyingStructure.structureId);
+    let qualifyingFinal = getCompletedFinalRoundMatchUp(qualifyingStructure.structureId);
     expect(qualifyingFinal).toBeDefined();
 
     // Reset it first to clear the result
@@ -365,7 +366,7 @@ describe('removeQualifier integration via setMatchUpStatus', () => {
 
     completeQualifyingMatchUps(drawId, qualifyingStructure.structureId);
 
-    const qualifyingFinal = getCompletedFinalRoundMatchUp(drawId, qualifyingStructure.structureId);
+    const qualifyingFinal = getCompletedFinalRoundMatchUp(qualifyingStructure.structureId);
     expect(qualifyingFinal).toBeDefined();
 
     // Reset and re-complete with autoPlace
@@ -575,7 +576,7 @@ describe('placeQualifier assigns participant to drawPosition', () => {
 
     // Verify assignment was mutated
     const assignment = params.drawDefinition.structures[0].positionAssignments.find((a) => a.drawPosition === 1);
-    expect(assignment.participantId).toEqual('qualWinner');
+    expect(assignment?.participantId).toEqual('qualWinner');
   });
 
   it('places qualifier into structure with subStructures (RR container)', () => {
@@ -640,7 +641,7 @@ describe('placeQualifier assigns participant to drawPosition', () => {
     const subAssignment = params.drawDefinition.structures[0].structures[0].positionAssignments.find(
       (a) => a.drawPosition === 1,
     );
-    expect(subAssignment.participantId).toEqual('qualWinner');
+    expect(subAssignment?.participantId).toEqual('qualWinner');
   });
 });
 
@@ -705,7 +706,7 @@ describe('removeQualifier with subStructures', () => {
     const subAssignment = params.drawDefinition.structures[0].structures[0].positionAssignments.find(
       (a) => a.drawPosition === 1,
     );
-    expect(subAssignment.participantId).toBeUndefined();
+    expect(defined(subAssignment, 'subAssignment').participantId).toBeUndefined();
   });
 
   it('clears participant from direct positionAssignments on structure', () => {
@@ -749,7 +750,7 @@ describe('removeQualifier with subStructures', () => {
     expect(result.qualifierRemoved).toEqual(true);
 
     const assignment = params.drawDefinition.structures[0].positionAssignments.find((a) => a.drawPosition === 1);
-    expect(assignment.participantId).toBeUndefined();
+    expect(defined(assignment, 'assignment').participantId).toBeUndefined();
   });
 });
 
@@ -856,7 +857,7 @@ describe('placeQualifier when drawPosition already has participantId', () => {
 
     // Verify the existing participant was NOT overwritten
     const assignment = params.drawDefinition.structures[0].positionAssignments.find((a) => a.drawPosition === 1);
-    expect(assignment.participantId).toEqual('alreadyThere');
+    expect(assignment?.participantId).toEqual('alreadyThere');
   });
 });
 
@@ -923,7 +924,7 @@ describe('removeQualifier blocked by downstream activity', () => {
     completeQualifyingMatchUps(drawId, qualifyingStructure.structureId);
 
     // Find a qualifying final and reset it
-    let qualifyingFinal = getCompletedFinalRoundMatchUp(drawId, qualifyingStructure.structureId);
+    let qualifyingFinal = getCompletedFinalRoundMatchUp(qualifyingStructure.structureId);
     expect(qualifyingFinal).toBeDefined();
 
     let result: any = tournamentEngine.setMatchUpStatus({

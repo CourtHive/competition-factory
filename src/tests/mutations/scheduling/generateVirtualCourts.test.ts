@@ -3,6 +3,7 @@ import { extractDate, timeStringMinutes } from '@Tools/dateTime';
 import { mocksEngine, competitionEngine } from '../../..';
 import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import tournamentEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import { expect, it, test } from 'vitest';
 
 // Fixtures
@@ -43,7 +44,7 @@ it('can create virtual courts with overlapping bookings', () => {
   });
   competitionEngine.setState(tournamentRecord);
 
-  const { matchUps } = competitionEngine.allCompetitionMatchUps();
+  const matchUps = defined(competitionEngine.allCompetitionMatchUps().matchUps, 'matchUps');
   const scheduledMatchUps = matchUps.filter(hasSchedule);
 
   visualizeScheduledMatchUps({ scheduledMatchUps, showGlobalLog });
@@ -55,9 +56,9 @@ it('can create virtual courts with overlapping bookings', () => {
   });
 
   const scheduledMatchUpsCount = schedulerResult.scheduledMatchUpIds[startDate].length;
-  expect(dateScheduledMatchUps.length).toEqual(scheduledMatchUpsCount);
-  expect(relevantMatchUps.length).toEqual(scheduledMatchUpsCount);
-  expect(bookings.length).toEqual(scheduledMatchUpsCount);
+  expect(dateScheduledMatchUps?.length).toEqual(scheduledMatchUpsCount);
+  expect(relevantMatchUps?.length).toEqual(scheduledMatchUpsCount);
+  expect(bookings?.length).toEqual(scheduledMatchUpsCount);
 
   const { courts } = competitionEngine.getVenuesAndCourts({
     venueIds: [venueId],
@@ -116,7 +117,7 @@ test('already scheduled round matchUps', () => {
   });
   expect(result.success).toEqual(true);
 
-  const { dateMatchUps: scheduledMatchUps } = competitionEngine.competitionScheduleMatchUps();
+  const scheduledMatchUps = defined(competitionEngine.competitionScheduleMatchUps().dateMatchUps, 'dateMatchUps');
   visualizeScheduledMatchUps({
     showGlobalLog: false,
     scheduledMatchUps,

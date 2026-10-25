@@ -58,6 +58,13 @@ function createActivatedRecord() {
   ]);
 }
 
+// getSanctioningRecord is typed as a union whose error member has no sanctioningRecord; narrow it
+function currentRecord() {
+  const result = sanctioningEngine.getSanctioningRecord();
+  if (!('sanctioningRecord' in result)) throw new Error('expected a sanctioningRecord');
+  return result.sanctioningRecord;
+}
+
 describe('Post-Event Compliance — Lifecycle', () => {
   beforeEach(() => {
     sanctioningEngine.reset();
@@ -247,7 +254,7 @@ describe('Automatic OVERDUE Detection', () => {
     expect(result.success).toBe(true);
     expect(result.overdueCount).toBeGreaterThan(0);
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let record: any = currentRecord();
     const overdueItems = record.compliance.items.filter((i: any) => i.status === 'OVERDUE');
     expect(overdueItems.length).toBeGreaterThan(0);
     expect(record.compliance.status).toEqual(ISSUES_FLAGGED);
@@ -269,14 +276,14 @@ describe('Automatic OVERDUE Detection', () => {
     createActivatedRecord();
     sanctioningEngine.transitionToPostEvent({});
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let record: any = currentRecord();
     const firstItem = record.compliance.items[0];
     sanctioningEngine.submitComplianceItem({ itemId: firstItem.itemId });
 
     // Check deadlines far in the future — should not override SUBMITTED status
     sanctioningEngine.checkComplianceDeadlines({ asOfDate: '2028-12-31' });
 
-    record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    record = currentRecord();
     const item = record.compliance.items.find((i: any) => i.itemId === firstItem.itemId);
     expect(item.status).toEqual(SUBMITTED);
   });

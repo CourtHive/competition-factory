@@ -1,6 +1,8 @@
 import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
+import type { ResultType } from '@Types/factoryTypes';
+import { defined } from '@Tests/helpers/defined';
 import { expect, test, describe } from 'vitest';
 
 // constants
@@ -39,13 +41,15 @@ describe('setMatchUpStatus branch coverage', () => {
       setState: true,
     });
 
-    const result = tournamentEngine.setMatchUpStatus({
+    const result: ResultType = tournamentEngine.setMatchUpStatus({
       outcome: { winningSide: 0 },
       matchUpId: 'm-1-1',
       drawId,
     });
     expect(result.error).toEqual(INVALID_WINNING_SIDE);
-    expect(tournamentEngine.findMatchUp({ drawId, matchUpId: 'm-1-1' }).matchUp.winningSide).toBeUndefined();
+    expect(
+      defined(tournamentEngine.findMatchUp({ drawId, matchUpId: 'm-1-1' }).matchUp, 'matchUp').winningSide,
+    ).toBeUndefined();
   });
 
   test('returns INVALID_WINNING_SIDE for winningSide of 3', () => {
@@ -55,7 +59,7 @@ describe('setMatchUpStatus branch coverage', () => {
       setState: true,
     });
 
-    const result = tournamentEngine.setMatchUpStatus({
+    const result: ResultType = tournamentEngine.setMatchUpStatus({
       outcome: { winningSide: 3 },
       matchUpId: 'm-1-1',
       drawId,
@@ -70,7 +74,7 @@ describe('setMatchUpStatus branch coverage', () => {
       setState: true,
     });
 
-    const result = tournamentEngine.setMatchUpStatus({
+    const result: ResultType = tournamentEngine.setMatchUpStatus({
       outcome: { winningSide: -1 },
       matchUpId: 'm-1-1',
       drawId,
@@ -87,7 +91,7 @@ describe('setMatchUpStatus branch coverage', () => {
       setState: true,
     });
 
-    const result = tournamentEngine.setMatchUpStatus({
+    const result: ResultType = tournamentEngine.setMatchUpStatus({
       matchUpId: 'm-1-1',
       outcome: {
         matchUpFormat: 'SET3-S:6/TB7',
@@ -116,7 +120,7 @@ describe('setMatchUpStatus branch coverage', () => {
       setState: true,
     });
 
-    const result = tournamentEngine.setMatchUpStatus({
+    const result: ResultType = tournamentEngine.setMatchUpStatus({
       matchUpId: 'm-1-1',
       outcome: {
         winningSide: 1,
@@ -133,7 +137,7 @@ describe('setMatchUpStatus branch coverage', () => {
     });
     expect(result.success).toEqual(true);
 
-    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+    const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
     const matchUp = matchUps.find((m) => m.matchUpId === 'm-1-1');
     expect(matchUp?.score?.scoreStringSide1).toBeDefined();
     expect(matchUp?.winningSide).toEqual(1);
@@ -148,7 +152,7 @@ describe('setMatchUpStatus branch coverage', () => {
       setState: true,
     });
 
-    const result = tournamentEngine.setMatchUpStatus({
+    const result: ResultType = tournamentEngine.setMatchUpStatus({
       matchUpId: 'm-1-1',
       outcome: {
         winningSide: 1,
@@ -166,7 +170,7 @@ describe('setMatchUpStatus branch coverage', () => {
     });
     expect(result.success).toEqual(true);
 
-    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+    const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
     const matchUp = matchUps.find((m) => m.matchUpId === 'm-1-1');
     // Empty set should have been filtered out
     expect(matchUp?.score?.sets?.length).toEqual(2);
@@ -182,7 +186,7 @@ describe('setMatchUpStatus branch coverage', () => {
     });
 
     // Score with a tiebreak in first set
-    const result = tournamentEngine.setMatchUpStatus({
+    const result: ResultType = tournamentEngine.setMatchUpStatus({
       matchUpId: 'm-1-1',
       setTBlast: true,
       outcome: {
@@ -206,7 +210,7 @@ describe('setMatchUpStatus branch coverage', () => {
     });
     expect(result.success).toEqual(true);
 
-    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+    const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
     const matchUp = matchUps.find((m) => m.matchUpId === 'm-1-1');
     expect(matchUp?.score?.scoreStringSide1).toBeDefined();
   });
@@ -225,7 +229,7 @@ describe('setMatchUpStatus branch coverage', () => {
     });
 
     // Complete first round matchUps
-    let result = tournamentEngine.setMatchUpStatus({
+    let result: ResultType = tournamentEngine.setMatchUpStatus({
       outcome: {
         winningSide: 1,
         matchUpStatus: COMPLETED,
@@ -300,7 +304,7 @@ describe('setMatchUpStatus branch coverage', () => {
     });
 
     // Set a score without winningSide (IN_PROGRESS scenario)
-    const result = tournamentEngine.setMatchUpStatus({
+    const result: ResultType = tournamentEngine.setMatchUpStatus({
       matchUpId: 'm-1-1',
       outcome: {
         score: {
@@ -323,7 +327,7 @@ describe('setMatchUpStatus branch coverage', () => {
       setState: true,
     });
 
-    const result = tournamentEngine.setMatchUpStatus({
+    const result: ResultType = tournamentEngine.setMatchUpStatus({
       matchUpId: 'm-1-1',
       drawId,
     });
@@ -342,7 +346,7 @@ describe('setMatchUpStatus branch coverage', () => {
       setState: true,
     });
 
-    const result = tournamentEngine.setMatchUpStatus({
+    const result: ResultType = tournamentEngine.setMatchUpStatus({
       matchUpId: 'm-1-1',
       schedule: { scheduledDate: '2024-01-15' },
       notes: 'Test note',
@@ -360,7 +364,7 @@ describe('setMatchUpStatus branch coverage', () => {
       setState: true,
     });
 
-    const result = tournamentEngine.setMatchUpStatus({
+    const result: ResultType = tournamentEngine.setMatchUpStatus({
       outcome: {
         matchUpStatus: WALKOVER,
         winningSide: 1,
@@ -373,7 +377,7 @@ describe('setMatchUpStatus branch coverage', () => {
     expect(result.success).toEqual(true);
 
     // Verify the loser was placed in consolation with exit status
-    const { matchUps } = tournamentEngine.allTournamentMatchUps({ inContext: true });
+    const matchUps = defined(tournamentEngine.allTournamentMatchUps({ inContext: true }).matchUps, 'matchUps');
     const consolationMatchUps = matchUps.filter((m) => m.structureName !== 'MAIN' && m.structureName !== 'Main');
     // At least one consolation matchUp should exist
     expect(consolationMatchUps.length).toBeGreaterThan(0);
@@ -388,7 +392,7 @@ describe('setMatchUpStatus branch coverage', () => {
       setState: true,
     });
 
-    const result = tournamentEngine.setMatchUpStatus({
+    const result: ResultType = tournamentEngine.setMatchUpStatus({
       matchUpId: 'm-1-1',
       matchUpFormat: 'SET1-S:6/TB7',
       outcome: {
@@ -404,7 +408,7 @@ describe('setMatchUpStatus branch coverage', () => {
     });
     expect(result.success).toEqual(true);
 
-    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+    const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
     const matchUp = matchUps.find((m) => m.matchUpId === 'm-1-1');
     expect(matchUp?.matchUpFormat).toEqual('SET1-S:6/TB7');
   });
@@ -419,7 +423,7 @@ describe('setMatchUpStatus branch coverage', () => {
     });
 
     // An invalid score (winning with only 1 set in best-of-3) should be allowed
-    const result = tournamentEngine.setMatchUpStatus({
+    const result: ResultType = tournamentEngine.setMatchUpStatus({
       matchUpId: 'm-1-1',
       disableScoreValidation: true,
       outcome: {
@@ -445,7 +449,7 @@ describe('setMatchUpStatus branch coverage', () => {
       setState: true,
     });
 
-    const result = tournamentEngine.setMatchUpStatus({
+    const result: ResultType = tournamentEngine.setMatchUpStatus({
       matchUpId: 'm-1-1',
       disableScoreValidation: true,
       outcome: {
@@ -463,7 +467,7 @@ describe('setMatchUpStatus branch coverage', () => {
     });
     expect(result.success).toEqual(true);
 
-    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+    const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
     const matchUp = matchUps.find((m) => m.matchUpId === 'm-1-1');
     // All three sets should be kept (third has tiebreak scores)
     expect(matchUp?.score?.sets?.length).toEqual(3);
@@ -489,7 +493,7 @@ describe('setMatchUpStatus branch coverage', () => {
     });
 
     // Set matchUpFormat only through outcome, not as direct param
-    const result = tournamentEngine.setMatchUpStatus({
+    const result: ResultType = tournamentEngine.setMatchUpStatus({
       matchUpId: 'm-1-1',
       // no matchUpFormat param here
       outcome: {
@@ -506,7 +510,7 @@ describe('setMatchUpStatus branch coverage', () => {
     });
     expect(result.success).toEqual(true);
 
-    const { matchUps } = tournamentEngine.allTournamentMatchUps();
+    const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
     const matchUp = matchUps.find((m) => m.matchUpId === 'm-1-1');
     expect(matchUp?.matchUpFormat).toEqual('SET1-S:6/TB7');
   });

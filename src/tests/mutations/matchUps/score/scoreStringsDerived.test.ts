@@ -1,5 +1,6 @@
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import { expect, describe, test } from 'vitest';
 
 // constants
@@ -21,8 +22,11 @@ function seedMatchUp(matchUpFormat?: string) {
 }
 
 function getMatchUp() {
-  const { matchUps } = tournamentEngine.allTournamentMatchUps();
-  return matchUps.find((matchUp: any) => matchUp.matchUpId === MATCHUP_ID);
+  const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
+  return defined(
+    matchUps.find((matchUp) => matchUp.matchUpId === MATCHUP_ID),
+    'matchUp',
+  );
 }
 
 describe('score strings are derived from score.sets', () => {
@@ -52,19 +56,20 @@ describe('score strings are derived from score.sets', () => {
     expect(result.success).toBe(true);
 
     const matchUp = getMatchUp();
-    expect(matchUp.score.scoreStringSide1).not.toBe('1-6 6-4 [4-1](0-0) RET');
-    expect(matchUp.score.scoreStringSide2).not.toBe('6-1 4-6 [1-4](0-0) RET');
+    const score = defined(matchUp.score, 'score');
+    expect(score.scoreStringSide1).not.toBe('1-6 6-4 [4-1](0-0) RET');
+    expect(score.scoreStringSide2).not.toBe('6-1 4-6 [1-4](0-0) RET');
 
     // derived strictly from the surviving sets
-    expect(matchUp.score.scoreStringSide1).toBe('1-6 6-4');
-    expect(matchUp.score.scoreStringSide2).toBe('6-1 4-6');
+    expect(score.scoreStringSide1).toBe('1-6 6-4');
+    expect(score.scoreStringSide2).toBe('6-1 4-6');
 
     // the outcome token is never baked into a stored string — matchUpStatus already carries it
-    expect(matchUp.score.scoreStringSide1).not.toContain('RET');
+    expect(score.scoreStringSide1).not.toContain('RET');
     expect(matchUp.matchUpStatus).toBe(RETIRED);
 
     // the point score never leaks into the string
-    expect(matchUp.score.scoreStringSide1).not.toContain('(0-0)');
+    expect(score.scoreStringSide1).not.toContain('(0-0)');
   });
 
   test('deciding tiebreak set renders bracketed using the matchUp format when outcome omits it', () => {
@@ -90,8 +95,9 @@ describe('score strings are derived from score.sets', () => {
     expect(result.success).toBe(true);
 
     const matchUp = getMatchUp();
-    expect(matchUp.score.scoreStringSide1).toBe('6-4 3-6 [10-8]');
-    expect(matchUp.score.scoreStringSide2).toBe('4-6 6-3 [8-10]');
+    const score = defined(matchUp.score, 'score');
+    expect(score.scoreStringSide1).toBe('6-4 3-6 [10-8]');
+    expect(score.scoreStringSide2).toBe('4-6 6-3 [8-10]');
   });
 
   test('empty sets are filtered before generation so sets and strings agree', () => {
@@ -114,10 +120,11 @@ describe('score strings are derived from score.sets', () => {
     expect(result.success).toBe(true);
 
     const matchUp = getMatchUp();
+    const score = defined(matchUp.score, 'score');
     // the empty deciding set is dropped from sets — and must not survive in the string either
-    expect(matchUp.score.sets.length).toBe(2);
-    expect(matchUp.score.scoreStringSide1).toBe('6-1 6-2');
-    expect(matchUp.score.scoreStringSide1).not.toContain('0-0');
+    expect(defined(score.sets, 'score.sets').length).toBe(2);
+    expect(score.scoreStringSide1).toBe('6-1 6-2');
+    expect(score.scoreStringSide1).not.toContain('0-0');
   });
 
   test('non-derived score attributes survive regeneration', () => {
@@ -139,8 +146,9 @@ describe('score strings are derived from score.sets', () => {
     expect(result.success).toBe(true);
 
     const matchUp = getMatchUp();
-    expect(matchUp.score.scoreStringSide1).toBe('3-2');
-    expect(matchUp.score.side1PointScore).toBe('30');
-    expect(matchUp.score.side2PointScore).toBe('15');
+    const score = defined(matchUp.score, 'score');
+    expect(score.scoreStringSide1).toBe('3-2');
+    expect(score.side1PointScore).toBe('30');
+    expect(score.side2PointScore).toBe('15');
   });
 });

@@ -1,4 +1,4 @@
-import type { competitionFormat, PointMultiplier } from '@Assemblies/governors/scoreGovernor';
+import type { CompetitionFormat, PointMultiplier } from '@Assemblies/governors/scoreGovernor';
 import { ScoringEngine } from '@Assemblies/governors/scoreGovernor';
 import { describe, it, expect } from 'vitest';
 
@@ -7,7 +7,7 @@ import { UNSPORTSMANLIKE_CONDUCT, BALL_ABUSE, RACKET_ABUSE } from '@Constants/pe
 import { SINGLES_MATCHUP, DOUBLES_MATCHUP } from '@Constants/matchUpTypes';
 import { BETWEEN_POINTS } from '@Constants/competitionFormatConstants';
 
-const INTENNSE_STANDARD: competitionFormat = {
+const INTENNSE_STANDARD: CompetitionFormat = {
   competitionFormatName: 'INTENNSE_STANDARD',
   matchUpFormat: 'SET7XA-S:T10P',
   sport: 'INTENNSE',

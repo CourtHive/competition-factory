@@ -304,20 +304,20 @@ describe('matchUpFormatGovernor - Documentation Examples', () => {
     });
 
     it('handles non-string values gracefully', () => {
-      // @ts-expect-error - testing invalid input
       const result1 = matchUpFormatGovernor.isValidMatchUpFormat({
+        // @ts-expect-error - testing invalid input
         matchUpFormat: null,
       });
       expect(result1).toBe(false);
 
-      // @ts-expect-error - testing invalid input
       const result2 = matchUpFormatGovernor.isValidMatchUpFormat({
+        // @ts-expect-error - testing invalid input
         matchUpFormat: undefined,
       });
       expect(result2).toBe(false);
 
-      // @ts-expect-error - testing invalid input
       const result3 = matchUpFormatGovernor.isValidMatchUpFormat({
+        // @ts-expect-error - testing invalid input
         matchUpFormat: 123,
       });
       expect(result3).toBe(false);

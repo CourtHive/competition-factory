@@ -3,6 +3,7 @@ import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { removeExtension } from '@Mutate/extensions/removeExtension';
 import { addNotes, removeNotes } from '@Mutate/base/addRemoveNotes';
 import { addExtension } from '@Mutate/extensions/addExtension';
+import type { ResultType } from '@Types/factoryTypes';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 import {
@@ -291,7 +292,7 @@ test('addTournamentExtension direct function coverage', () => {
 });
 
 test('addDrawDefinitionExtension direct function coverage', () => {
-  let result = addDrawDefinitionExtension(undefined as any);
+  let result: ResultType = addDrawDefinitionExtension(undefined as any);
   expect(result.error).toEqual(MISSING_VALUE);
   result = addDrawDefinitionExtension('not-object' as any);
   expect(result.error).toEqual(MISSING_VALUE);
@@ -305,7 +306,7 @@ test('addDrawDefinitionExtension direct function coverage', () => {
 });
 
 test('addEventExtension direct function coverage', () => {
-  let result = addEventExtension(undefined as any);
+  let result: ResultType = addEventExtension(undefined as any);
   expect(result.error).toEqual(MISSING_VALUE);
   result = addEventExtension('not-object' as any);
   expect(result.error).toEqual(MISSING_VALUE);
@@ -333,7 +334,7 @@ test('removeTournamentExtension direct function coverage', () => {
 });
 
 test('removeDrawDefinitionExtension direct function coverage', () => {
-  let result = removeDrawDefinitionExtension(undefined as any);
+  let result: ResultType = removeDrawDefinitionExtension(undefined as any);
   expect(result.error).toEqual(MISSING_VALUE);
   result = removeDrawDefinitionExtension('not-object' as any);
   expect(result.error).toEqual(MISSING_VALUE);
@@ -347,7 +348,7 @@ test('removeDrawDefinitionExtension direct function coverage', () => {
 });
 
 test('removeEventExtension direct function coverage', () => {
-  let result = removeEventExtension(undefined as any);
+  let result: ResultType = removeEventExtension(undefined as any);
   expect(result.error).toEqual(MISSING_VALUE);
   result = removeEventExtension('not-object' as any);
   expect(result.error).toEqual(MISSING_VALUE);

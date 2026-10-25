@@ -6,6 +6,7 @@ import { getStageEntries } from '@Query/drawDefinition/stageGetter';
 import { getDrawStructures } from '@Acquire/findStructure';
 import { tournamentEngine } from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import { generateRange } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
@@ -303,7 +304,7 @@ it('can replace qualifier with participant', () => {
   expect(result).toMatchObject(SUCCESS);
 
   // Then replace with actual participant
-  const { participants } = tournamentEngine.getParticipants();
+  const participants = defined(tournamentEngine.getParticipants().participants, 'participants');
   const participantId = participants[0].participantId;
 
   result = assignDrawPosition({

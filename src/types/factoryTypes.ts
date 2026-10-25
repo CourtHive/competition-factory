@@ -847,6 +847,11 @@ export type PairingProfile = {
 };
 
 export type GenerateDrawDefinitionArgs = {
+  /**
+   * Passed through to the drawType's generator: `groupSize` for ROUND_ROBIN and ROUND_ROBIN_WITH_PLAYOFF,
+   * `playoffGroups` for ROUND_ROBIN_WITH_PLAYOFF.
+   */
+  structureOptions?: { groupSize?: number; [key: string]: unknown };
   automated?: boolean | { seedsOnly: boolean };
   playoffAttributes?: PlayoffAttributes;
   policyDefinitions?: PolicyDefinitions;

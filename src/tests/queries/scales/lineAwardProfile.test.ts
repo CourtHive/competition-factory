@@ -40,7 +40,7 @@ it('generates points for lines in team matchUps', () => {
   const awardCriteria = {
     eventType: TEAM_EVENT,
     participation,
-  };
+  } as const;
 
   const awardProfiles = [awardProfileLevelLines];
   const { awardProfile } = getAwardProfile({ awardProfiles, ...awardCriteria });

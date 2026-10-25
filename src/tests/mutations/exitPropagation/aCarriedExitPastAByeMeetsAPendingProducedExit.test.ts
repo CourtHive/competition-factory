@@ -42,7 +42,7 @@ const STEPS: [string, any][] = [
 
 afterEach(() => setOutcomePipeline());
 
-it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_DIFFERENTIAL])(
+it.each([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_DIFFERENTIAL] as const)(
   'under %s: a walkover carried past a BYE converges with a pending produced default on the unreached side',
   (mode) => {
     setOutcomePipeline(mode);

@@ -46,7 +46,10 @@ function eventWithSharedTieFormat(references: number) {
   };
 }
 
-const modifiedTieFormat = { collectionDefinitions: [{ collectionId: 'c-1' }, { collectionId: 'c-2' }] };
+const modifiedTieFormat = {
+  collectionDefinitions: [{ collectionId: 'c-1' }, { collectionId: 'c-2' }],
+  winCriteria: { valueGoal: 1 },
+};
 
 describe('writeTieFormat — uuids pool on the copy-on-write fork', () => {
   it('takes the forked id FROM the pool when one is supplied', () => {

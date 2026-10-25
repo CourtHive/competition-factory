@@ -1,5 +1,6 @@
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import { expect, it, describe } from 'vitest';
 
 import { removeMutationLock } from '@Mutate/tournaments/mutationLocks/removeMutationLock';
@@ -34,7 +35,7 @@ describe('removeMutationLock direct coverage', () => {
     const result = tournamentEngine.removeMutationLock({ lockId, lockToken: 'token-1' });
     expect(result.success).toEqual(true);
 
-    const { mutationLocks } = tournamentEngine.getMutationLocks();
+    const mutationLocks = defined(tournamentEngine.getMutationLocks().mutationLocks, 'mutationLocks');
     expect(mutationLocks.length).toEqual(0);
   });
 

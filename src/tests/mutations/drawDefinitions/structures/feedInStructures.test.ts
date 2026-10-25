@@ -4,6 +4,7 @@ import { feedInChampionship } from '@Tests/mutations/drawDefinitions/primitives/
 import { feedInMatchUps } from '@Assemblies/generators/drawDefinitions/feedInMatchUps';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { getDrawData } from '@Query/drawDefinition/getDrawData';
+import { defined } from '@Tests/helpers/defined';
 import { generateRange } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
@@ -166,7 +167,7 @@ it('can generate FEED_IN_CHAMPIONSHIP with drawSize: 32', () => {
   expect(links[4].source.roundNumber).toEqual(5);
   expect(links[4].target.roundNumber).toEqual(8);
 
-  const result = getDrawData({ drawDefinition });
+  const result = getDrawData({ drawDefinition: defined(drawDefinition, 'drawDefinition') });
   expect(result?.structures?.[0].roundMatchUps[1][0].sides[0].displaySideNumber).not.toBeUndefined();
 });
 

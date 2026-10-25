@@ -5,8 +5,10 @@ import { expect, it } from 'vitest';
 import { FORMAT_ATP_DOUBLES, FORMAT_SHORT_SETS, FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
+type CountGamesArgs = Parameters<typeof countGames>[0];
+
 it('can count games in normal sets', () => {
-  let matchUp = {
+  let matchUp: CountGamesArgs = {
     matchUpStatus: COMPLETED,
     matchUpFormat: FORMAT_STANDARD,
     score: {
@@ -58,7 +60,7 @@ it('can count games in normal sets', () => {
 });
 
 it('can count games in short sets', () => {
-  const matchUp = {
+  const matchUp: CountGamesArgs = {
     matchUpStatus: COMPLETED,
     matchUpFormat: FORMAT_SHORT_SETS,
     score: {
@@ -85,7 +87,7 @@ it('can count games in short sets', () => {
 });
 
 it('can count games with tiebreaks in short sets', () => {
-  const matchUp = {
+  const matchUp: CountGamesArgs = {
     matchUpStatus: COMPLETED,
     matchUpFormat: FORMAT_SHORT_SETS,
     score: {
@@ -119,7 +121,7 @@ it('can count games with tiebreaks in short sets', () => {
 });
 
 it('can count games in tiebreak sets', () => {
-  const matchUp = {
+  const matchUp: CountGamesArgs = {
     matchUpStatus: COMPLETED,
     matchUpFormat: FORMAT_STANDARD,
     score: {
@@ -153,7 +155,7 @@ it('can count games in tiebreak sets', () => {
 });
 
 it('counts tiebreak sets as both sets and games', () => {
-  const matchUp = {
+  const matchUp: CountGamesArgs = {
     matchUpStatus: COMPLETED,
     matchUpFormat: FORMAT_ATP_DOUBLES,
     score: {

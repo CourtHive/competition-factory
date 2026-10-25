@@ -4,6 +4,7 @@ import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import { intersection, unique } from '@Tools/arrays';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import { extractTime } from '@Tools/dateTime';
 import { expect, it } from 'vitest';
 
@@ -30,7 +31,7 @@ it('correctly generates second round scheduleTimes', () => {
     date,
   });
 
-  const allScheduleTimes = scheduleTimes.reduce((timesMapped: any, { scheduleTime }) => {
+  const allScheduleTimes = defined(scheduleTimes, 'scheduleTimes').reduce((timesMapped: any, { scheduleTime }) => {
     if (!timesMapped[scheduleTime]) {
       timesMapped[scheduleTime] = 1;
     } else {
@@ -157,7 +158,7 @@ it('properly schedules 2nd round of 128 single elimination draw with 30 courts',
 
   const scheduledTimes = scheduledMatchUps.map(({ schedule }) => schedule.scheduledTime);
   const timeMap = scheduledTimes.reduce((timesMapped, scheduledTime) => {
-    const time = extractTime(scheduledTime);
+    const time = defined(extractTime(scheduledTime), 'time');
     if (!timesMapped[time]) {
       timesMapped[time] = 1;
     } else {
@@ -297,7 +298,7 @@ it('properly schedules 1st rounds of two 32 single elimination draws with 10 cou
 
   const scheduledTimes = scheduledMatchUps.map(({ schedule }) => schedule.scheduledTime).sort();
   const timeMap = scheduledTimes.reduce((timesMapped, scheduledTime) => {
-    const time = extractTime(scheduledTime);
+    const time = defined(extractTime(scheduledTime), 'time');
     if (!timesMapped[time]) {
       timesMapped[time] = 1;
     } else {

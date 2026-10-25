@@ -90,12 +90,12 @@ describe('the signed exposure axis resolves through the engine and hydrated part
 
     // Every rated matchUp landed in exactly one band, and the default policy's
     // five keys are all present (zero-filled when unused).
-    const counted: number = Object.values(profile.exposure.counts).reduce((a: any, b: any) => a + b, 0);
+    const counted: number = Object.values<number>(profile.exposure.counts).reduce((a, b) => a + b, 0);
     expect(counted).toEqual(profile.exposure.rated);
     expect(Object.keys(profile.exposure.counts)).toHaveLength(5);
 
     // Ratios are percentages of the rated subset.
-    const ratioTotal: number = Object.values(profile.exposure.ratios).reduce((a: any, b: any) => a + b, 0);
+    const ratioTotal: number = Object.values<number>(profile.exposure.ratios).reduce((a, b) => a + b, 0);
     expect(ratioTotal).toBeCloseTo(100, 1);
   });
 

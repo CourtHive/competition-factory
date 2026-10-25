@@ -13,9 +13,16 @@
  */
 import { CONFLICT_INPUT_KEYS } from '@Query/officiating/conflictEvaluationInputs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { defined } from '@Tests/helpers/defined';
 
 const { getOfficialConflictsMock } = vi.hoisted(() => ({
-  getOfficialConflictsMock: vi.fn(() => ({ success: true, conflicts: [], blocked: false })),
+  getOfficialConflictsMock: vi.fn<
+    (params: Record<string, unknown>) => { success: boolean; conflicts: never[]; blocked: boolean }
+  >(() => ({
+    success: true,
+    conflicts: [],
+    blocked: false,
+  })),
 }));
 
 vi.mock('@Query/officiating/getOfficialConflicts', () => ({
@@ -90,7 +97,7 @@ describe('conflict-input forwarding conformance', () => {
     invoke(inputs);
 
     expect(getOfficialConflictsMock).toHaveBeenCalled();
-    const forwarded = getOfficialConflictsMock.mock.calls.at(-1)?.[0] as any;
+    const forwarded = getOfficialConflictsMock.mock.calls.at(-1)?.[0];
 
     const dropped = CONFLICT_INPUT_KEYS.filter((key) => forwarded?.[key] === undefined);
     expect(dropped).toEqual([]);
@@ -99,7 +106,7 @@ describe('conflict-input forwarding conformance', () => {
   it.each(ROUTES)('$name forwards the input VALUES unchanged, not just the keys', ({ name, invoke }) => {
     const inputs = fullInputs();
     invoke(inputs);
-    const forwarded = getOfficialConflictsMock.mock.calls.at(-1)?.[0] as any;
+    const forwarded = defined(getOfficialConflictsMock.mock.calls.at(-1)?.[0], 'forwarded');
 
     for (const key of CONFLICT_INPUT_KEYS) {
       // groupParticipants is legitimately derived (not forwarded verbatim) by the matchUp route: it

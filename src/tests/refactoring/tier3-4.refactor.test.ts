@@ -11,6 +11,7 @@ import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
 import { shotParser } from '@Validators/scoring/mcpParser';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import { expect, it } from 'vitest';
 
 // constants
@@ -72,7 +73,7 @@ it('ScoringEngine: rebuild preserves server changes', () => {
   engine.addPoint({ winningSide: 1 });
 
   const state = engine.getState();
-  const point = state.history.points[0];
+  const point = defined(state.history, 'history').points[0];
   // Server should be side 2 (0-indexed: 1)
   expect(point.server).toEqual(1);
 });

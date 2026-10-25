@@ -1,6 +1,7 @@
 import * as queryGovernor from '@Assemblies/governors/queryGovernor';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import * as readModel from '@Query/readModel';
 import { expect, it, describe } from 'vitest';
 
@@ -24,8 +25,9 @@ describe('cast governor/engine exposure', () => {
     // governor path with an explicit record (how the server / rebuild calls it)
     const { tournamentRecord: record } = tournamentEngine.getTournament();
     const viaGovernor = queryGovernor.cast({ tournamentRecord: record });
-    expect(viaGovernor.rows.match_ups.length).toEqual(viaEngine.rows.match_ups.length);
-    expect(viaGovernor.rows.match_up_competitors.length).toEqual(viaEngine.rows.match_up_competitors.length);
+    const governorRows = defined(viaGovernor.rows, 'viaGovernor.rows');
+    expect(governorRows.match_ups.length).toEqual(viaEngine.rows.match_ups.length);
+    expect(governorRows.match_up_competitors.length).toEqual(viaEngine.rows.match_up_competitors.length);
   });
 
   it('exposes the read-model builder toolkit for the incremental producer to share', () => {

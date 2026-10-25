@@ -135,8 +135,8 @@ it('supports attaching, replacing, and clearing competitionFormat on an event', 
   });
   expect(result.success).toEqual(true);
   event = tournamentEngine.getEvent({ eventId }).event;
-  expect(event.competitionFormat?.competitionFormatId).toEqual(
-    competitionFormats.INTENNSE_STANDARD.competitionFormatId,
+  expect(event.competitionFormat?.competitionFormatName).toEqual(
+    competitionFormats.INTENNSE_STANDARD.competitionFormatName,
   );
 
   // Replace with TENNIS_STANDARD
@@ -146,7 +146,9 @@ it('supports attaching, replacing, and clearing competitionFormat on an event', 
   });
   expect(result.success).toEqual(true);
   event = tournamentEngine.getEvent({ eventId }).event;
-  expect(event.competitionFormat?.competitionFormatId).toEqual(competitionFormats.TENNIS_STANDARD.competitionFormatId);
+  expect(event.competitionFormat?.competitionFormatName).toEqual(
+    competitionFormats.TENNIS_STANDARD.competitionFormatName,
+  );
 
   // Clear with null
   result = tournamentEngine.modifyEvent({

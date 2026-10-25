@@ -2,6 +2,7 @@ import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyPa
 import { getParticipantResults } from '@Query/matchUps/roundRobinTally/getParticipantResults';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import { expect, test } from 'vitest';
 
 // constants
@@ -122,12 +123,13 @@ test('getParticipantResults with groupingTotal setsPct uses totalSets', () => {
     groupingTotal: 'setsPct',
   });
   expect(resultSetsPct.participantResults).toBeDefined();
-  const participantIds = Object.keys(resultSetsPct.participantResults);
+  const setsPctResults = defined(resultSetsPct.participantResults, 'participantResults');
+  const participantIds = Object.keys(setsPctResults);
   expect(participantIds.length).toBeGreaterThan(0);
 
   // Verify setsPct is calculated
   participantIds.forEach((pid) => {
-    const pr = resultSetsPct.participantResults[pid];
+    const pr = setsPctResults[pid];
     expect(pr.setsPct).toBeDefined();
     expect(typeof pr.setsPct).toEqual('number');
   });
@@ -162,11 +164,12 @@ test('getParticipantResults with groupingTotal gamesPct uses totalGames', () => 
     groupingTotal: 'gamesPct',
   });
   expect(resultGamesPct.participantResults).toBeDefined();
-  const participantIds = Object.keys(resultGamesPct.participantResults);
+  const gamesPctResults = defined(resultGamesPct.participantResults, 'participantResults');
+  const participantIds = Object.keys(gamesPctResults);
   expect(participantIds.length).toBeGreaterThan(0);
 
   participantIds.forEach((pid) => {
-    const pr = resultGamesPct.participantResults[pid];
+    const pr = gamesPctResults[pid];
     expect(pr.gamesPct).toBeDefined();
     expect(typeof pr.gamesPct).toEqual('number');
   });
@@ -249,9 +252,12 @@ test('getParticipantResults with round robin includes all tally fields', () => {
   const structureIds = [...new Set(contextMatchUps.map((m) => m.structureId))];
   const groupMatchUps = contextMatchUps.filter((m) => m.structureId === structureIds[0]);
 
-  const { participantResults } = getParticipantResults({
-    matchUps: groupMatchUps,
-  });
+  const participantResults = defined(
+    getParticipantResults({
+      matchUps: groupMatchUps,
+    }).participantResults,
+    'participantResults',
+  );
 
   // Verify all expected fields exist on each participant result
   Object.values(participantResults).forEach((pr: any) => {

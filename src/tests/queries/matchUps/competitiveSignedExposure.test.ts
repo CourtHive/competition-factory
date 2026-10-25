@@ -3,6 +3,10 @@ import { getMatchUpCompetitiveProfile } from '@Query/matchUp/getMatchUpCompetiti
 import { getCompetitiveProfile } from '@Query/matchUps/getCompetitiveProfile';
 import { describe, expect, it } from 'vitest';
 
+// types
+import type { HydratedMatchUp } from '@Types/hydrated';
+import type { ResultType } from '@Types/factoryTypes';
+
 // constants and fixtures
 import { ANCHOR, COMPETITIVE, DECISIVE, DOWN, EVEN, ROUTINE, STRETCH, UP } from '@Constants/statsConstants';
 import POLICY_COMPETITIVE_BANDS_DEFAULT from '@Fixtures/policies/POLICY_COMPETITIVE_BANDS_DEFAULT';
@@ -34,7 +38,12 @@ const singlesMatchUp = ({
   sets = COMPETITIVE_SETS,
   ownId = 'p1',
   oppId = 'opp',
-}: any) => ({
+}: any): HydratedMatchUp => ({
+  tournamentId: 't1',
+  structureId: 's1',
+  matchUpId: 'm1',
+  eventId: 'e1',
+  drawId: 'd1',
   matchUpType: SINGLES,
   ...(winningSide ? { winningSide } : {}),
   score: { sets },
@@ -502,7 +511,8 @@ describe('getCompetitiveProfile — pure aggregate over a matchUp array', () => 
   });
 
   it('rejects a non-array matchUps argument', () => {
-    expect(getCompetitiveProfile({ matchUps: undefined as any }).error).toBeDefined();
+    const result: ResultType = getCompetitiveProfile({ matchUps: undefined as any });
+    expect(result.error).toBeDefined();
   });
 
   it('returns empty counts for a participant with no matchUps', () => {
