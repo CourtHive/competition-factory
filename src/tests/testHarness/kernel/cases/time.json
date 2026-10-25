@@ -57,7 +57,7 @@
       "kind": "value",
       "value": "23:60"
     },
-    "note": "rule 1: minutes up to 60 are a time (OPEN § 9.9)"
+    "note": "rule 1: minutes up to 60 are a time (§ 9.9: refused once built)"
   },
   {
     "caseId": "clock.tidy.negative-hour.v1",
@@ -69,7 +69,7 @@
       "kind": "value",
       "value": "-1:00"
     },
-    "note": "rule 1: a signed integer begins the part (OPEN § 9.9)"
+    "note": "rule 1: a signed integer begins the part (§ 9.9: refused once built)"
   },
   {
     "caseId": "clock.tidy.zulu-kept-verbatim.v1",
@@ -81,7 +81,7 @@
       "kind": "value",
       "value": "08:00Z"
     },
-    "note": "rules 1-2: the Z is dropped to judge, the part kept as written (OPEN § 9.9)"
+    "note": "rules 1-2: the Z is dropped to judge, the part kept as written (§ 9.9: refused once built)"
   },
   {
     "caseId": "clock.tidy.leading-space-kept.v1",
@@ -93,7 +93,7 @@
       "kind": "value",
       "value": " 8:00"
     },
-    "note": "rules 1-2: leading whitespace allowed, a two-character part not padded (OPEN § 9.9)"
+    "note": "rules 1-2: leading whitespace allowed, a two-character part not padded (§ 9.9: refused once built)"
   },
   {
     "caseId": "clock.tidy.meridiem-kept.v1",
@@ -105,7 +105,7 @@
       "kind": "value",
       "value": "08:30 PM"
     },
-    "note": "rules 1-2: trailing characters ignored to judge, kept as written (OPEN § 9.9)"
+    "note": "rules 1-2: trailing characters ignored to judge, kept as written (§ 9.9: refused once built)"
   },
   {
     "caseId": "clock.tidy.hour-24.v1",
@@ -201,7 +201,7 @@
       "kind": "error",
       "code": "NOT_A_TIME"
     },
-    "note": "rule 3: a space-separated date and time is not read (OPEN § 9.9)"
+    "note": "rule 3: a space-separated date and time is not read (§ 9.9: refused once built)"
   },
   {
     "caseId": "clock.extract.bare-time.v1",
@@ -249,7 +249,7 @@
       "kind": "value",
       "value": 1440
     },
-    "note": "rule 4 on rule 1's 23:60 (OPEN § 9.9)"
+    "note": "rule 4 on rule 1's 23:60 (§ 9.9: refused once built)"
   },
   {
     "caseId": "clock.minutes.negative-hour.v1",
@@ -261,7 +261,7 @@
       "kind": "value",
       "value": -60
     },
-    "note": "rule 4 on rule 1's -1:00 (OPEN § 9.9)"
+    "note": "rule 4 on rule 1's -1:00 (§ 9.9: refused once built)"
   },
   {
     "caseId": "clock.minutes.not-a-time.v1",
@@ -422,7 +422,7 @@
       "kind": "value",
       "value": "23:59"
     },
-    "note": "rule 6: a recovery past midnight ends at 23:59 (OPEN § 9.8)"
+    "note": "rule 6: a recovery past midnight ends at 23:59 (§ 9.8: carries past midnight once built)"
   },
   {
     "caseId": "clock.add-within-day.negative.v1",
@@ -487,7 +487,7 @@
       "kind": "value",
       "value": "01:00"
     },
-    "note": "rule 6: a booking's end wraps (OPEN § 9.8)"
+    "note": "rule 6: a booking's end wraps (§ 9.8: carries past midnight once built)"
   },
   {
     "caseId": "clock.add-wrapping.at-midnight.v1",
@@ -575,7 +575,7 @@
       "kind": "value",
       "value": "2026-02-30"
     },
-    "note": "rule 7: month and day in range, the calendar not checked (OPEN § 9.9)"
+    "note": "rule 7: month and day in range, the calendar not checked (§ 9.9: refused once built)"
   },
   {
     "caseId": "clock.date.unpadded.v1",
