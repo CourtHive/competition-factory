@@ -4,8 +4,8 @@ import { getCompetitiveProfile } from '@Query/matchUps/getCompetitiveProfile';
 import { describe, expect, it } from 'vitest';
 
 // types
-import type { ResultType } from '@Types/factoryTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
+import type { ResultType } from '@Types/factoryTypes';
 
 // constants and fixtures
 import { ANCHOR, COMPETITIVE, DECISIVE, DOWN, EVEN, ROUTINE, STRETCH, UP } from '@Constants/statsConstants';
