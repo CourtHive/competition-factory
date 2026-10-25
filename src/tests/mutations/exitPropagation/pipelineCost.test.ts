@@ -156,7 +156,7 @@ const anyHydration: Selector = (site) =>
  */
 const viewOracleRead: Selector = (site) =>
   getOutcomePipeline() === OUTCOME_PIPELINE_DIFFERENTIAL &&
-  /^(hydrateShadow@viewOracle|apply@overlay|indexOracle@decide)/.test(site.caller);
+  /^(hydrateShadow@viewOracle|apply@overlay|indexOracle@decide|precheckOracle@indexPrecheck)/.test(site.caller);
 const hydration: Selector = (site) => anyHydration(site) && !viewOracleRead(site);
 const top =
   (fn: string): Selector =>
@@ -539,7 +539,7 @@ it.skipIf(!gated)(
       );
     if (mode === OUTCOME_PIPELINE_DIFFERENTIAL)
       process.stdout.write(
-        `[verify:hydrations] the view oracle's own hydrations, outside the ceiling: ${
+        `[verify:hydrations] the oracles' own hydrations (view, index, settle precheck), outside the ceiling: ${
           distribution(records, (site) => anyHydration(site) && viewOracleRead(site)).total
         }\n`,
       );

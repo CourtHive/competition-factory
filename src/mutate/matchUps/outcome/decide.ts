@@ -1,4 +1,5 @@
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
+import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
 import { carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { PREDICTED_CALL, predictSettleWork, type SettleSite } from './settleWork';
@@ -93,6 +94,8 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   const mode = getOutcomePipeline();
   if (mode === OUTCOME_PIPELINE_V1) return {};
 
+  // a precheck disagreement belongs to the call that met it: whatever an earlier call left is not this call's
+  takePrecheckDivergences();
   const view = buildOutcomeView(args);
   const refusal: Refusal | undefined = refuseOutcome(args.request, view);
 
@@ -139,6 +142,14 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   };
 
   function compareWithV1(v1Result: ResultType) {
+    // a settle pass that skipped its hydration on the index's word, where a hydration said otherwise (`indexPrecheck.ts`)
+    const [precheck] = takePrecheckDivergences();
+    if (precheck)
+      throw new OutcomePipelineDivergence({
+        matchUpId: args.request.matchUpId,
+        v1: `hydrated ${precheck.site} found ${precheck.hydrated}`,
+        v2: `precheck:${precheck.site} index found ${precheck.index}`,
+      });
     if (indexed && !indexed.equal)
       throw new OutcomePipelineDivergence({
         matchUpId: args.request.matchUpId,
