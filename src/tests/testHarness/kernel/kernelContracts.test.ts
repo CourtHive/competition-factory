@@ -85,13 +85,14 @@ describe.each(adapters)('$name adapter', (adapter) => {
     });
   });
 
-  it('every canonical code a parse case names stringifies back to itself', () => {
+  it('every code a parse case names stringifies back to its canonical form', () => {
     const parsed = grammarCases.filter((c) => c.operation === 'kernel.format.parse@1' && c.expected.kind === 'value');
     expect(parsed.length).toBeGreaterThan(3);
     for (const c of parsed) {
       const { value } = adapter.invoke('kernel.format.parse@1', c.input) as { value: unknown };
       const code = adapter.invoke('kernel.format.stringify@1', { formatStructure: value });
-      expect(code).toEqual({ kind: 'value', value: c.input.matchUpFormat });
+      expect(code).toEqual(adapter.invoke('kernel.format.canonical@1', c.input));
+      expect(code).toMatchObject({ kind: 'value' });
     }
   });
 });

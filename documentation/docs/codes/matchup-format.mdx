@@ -93,7 +93,8 @@ and `SET3-S:TB11NOAD@RALLY` the same won by one. In point scoring it suppresses 
 derivation for the modified set. Omitting it does not enforce side-out scoring: the engine accepts
 and counts a receiving-side winner under either format. A side-out host supplies only scoring points
 and tracks non-scoring rallies/service changes itself. See [format support](../scoring-engine/format-support.md). `NOAD` is written **before** the modifier; a modifier cannot contain `NOAD`, so
-`TB11@RALLYNOAD` is refused rather than read as a modifier named `RALLYNOAD`.
+`TB11@RALLYNOAD` is refused rather than read as a modifier named `RALLYNOAD`. A modifier is upper-case
+letters: `TB11@rally` is refused rather than scored side-out.
 
 ### Game Format Specification (`-G:`)
 
@@ -101,7 +102,7 @@ The `-G:` section describes game-level scoring within each set:
 
 | Pattern        | Description                                        | Example                                       |
 | -------------- | -------------------------------------------------- | --------------------------------------------- |
-| `TN`           | Traditional tennis/padel game scoring (0-15-30-40) | `-G:TN` (explicit traditional)                |
+| `TN`           | Traditional tennis/padel game scoring (0-15-30-40) | `-G:TN` (the default; written without it)     |
 | `TN{n}D`       | Traditional with deuce cap                         | `-G:TN3D` (Star Point: decisive at 3rd deuce) |
 | `{count}C`     | Consecutive points to win a game                   | `-G:3C` (3 consecutive points)                |
 | `{count}C{n}D` | Consecutive with deuce cap                         | `-G:3C3D`                                     |

@@ -4,7 +4,6 @@ import { stringify } from '@Helpers/matchUpFormatCode/stringify';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // constants
-import { TRADITIONAL } from '@Constants/matchUpFormatConstants';
 
 it('can parse and stringify timed sets with scoring methods', () => {
   // Test match-level aggregate scoring (XA modifier)
@@ -24,7 +23,7 @@ it('can parse and stringify timed sets with scoring methods', () => {
   // Test games-based scoring (G suffix explicit)
   result = parse('SET3X-S:T10G');
   expect(result.exactly).toEqual(3);
-  expect(result.setFormat.based).toEqual('G');
+  expect(result.setFormat.based).toBeUndefined(); // parsed as its canonical form (CA 2026-10-25)
   // G is default, so stringify omits it
   expect(stringify(result)).toEqual('SET3X-S:T10');
 
@@ -52,7 +51,7 @@ it('can parse and stringify timed sets with set-level tiebreak', () => {
   // Test games-based with TB1
   result = parse('SET3-S:T10G/TB1');
   expect(result.bestOf).toEqual(3);
-  expect(result.setFormat.based).toEqual('G');
+  expect(result.setFormat.based).toBeUndefined(); // parsed as its canonical form (CA 2026-10-25)
   expect(result.setFormat.tiebreakFormat?.tiebreakTo).toEqual(1);
   // G is default, so stringify omits it
   expect(stringify(result)).toEqual('SET3-S:T10/TB1');
@@ -124,8 +123,9 @@ it('supports traditional game format -G:TN', () => {
   expect(parsed.bestOf).toEqual(3);
   expect(parsed.setFormat.timed).toEqual(true);
   expect(parsed.setFormat.minutes).toEqual(10);
-  expect(parsed.gameFormat).toEqual({ type: TRADITIONAL });
-  expect(stringify(parsed)).toEqual(format);
+  // the default traditional game is an equivalent spelling of no -G: section (CA 2026-10-25)
+  expect(parsed.gameFormat).toBeUndefined();
+  expect(stringify(parsed)).toEqual('SET3-S:T10');
 });
 
 it('supports INTENNSE match-level aggregate (SET7XA-S:T10P)', () => {

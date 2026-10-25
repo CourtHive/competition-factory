@@ -11,9 +11,10 @@ writing codes; where the two differ, this page is the rule.
 
 First version, 2026-10-25, written from the parser's rules (`parse` refuses what `isValid` refuses, CA 2026-10-02;
 the refusals for new use, CA 2026-10-18), the existing tests (`parseIsStrict.test.ts`, `matchUpFormatCode.test.ts`,
-`crossSportFormats.test.ts`) and probes of factory `dev`. Where a behaviour is a question rather than a decision it is
-marked **OPEN** and listed in § 8. The kernel cases (`src/tests/testHarness/kernel/cases/grammar.json`, operations
-`kernel.format.parse@1`, `kernel.format.stringify@1` and `kernel.format.isValid@1`) hold every rule below that a
+`crossSportFormats.test.ts`) and probes of factory `dev`. The four questions that draft left open were decided by CA
+on 2026-10-25; each rule now stands in its section, marked "(CA 2026-10-25)", and § 8 keeps the record. The kernel
+cases (`src/tests/testHarness/kernel/cases/grammar.json`, operations `kernel.format.parse@1`,
+`kernel.format.stringify@1`, `kernel.format.canonical@1` and `kernel.format.isValid@1`) hold every rule below that a
 case can show.
 
 ## 1. The three questions
@@ -65,12 +66,13 @@ of a timed set (§ 3.4); its `G` is an equivalent spelling (§ 4).
    (`SET3Z-S:6/TB7`, `SET3ZQ-S:6/TB7`). `SET3AX`, `SET3ZX` and `SET3XX` are not codes.
 2. **The roots** are `SET`, `HAL`, `QTR`, `PER`, `INN`, `RND`, `FRM`, `MAP` and `MAT`. No other root is a code.
 3. **The sections** follow the head in the order `S`, `G`, `F`, `M`. `S` is required; each of the others is optional
-   and appears at most once. A section out of order (`SET3-S:6/TB7-F:TB10-G:TN`, `SET3-M:T90-S:6/TB7`), a repeated
-   section, or any other key (`-Q:1`) makes the string not a code.
+   and appears at most once. A section out of order (`SET3-S:6/TB7-F:TB10-G:3C`, `SET3-M:T90-S:6/TB7`), a repeated
+   section, or any other key (`-Q:1`) makes the string not a code. A `-G:TN` out of order drops away as an
+   equivalent spelling (§ 4) before the order is read.
 4. **Exactly.** `X` makes every one of `count` segments played (`exactly: count`); without it the match is best of
-   `count` (`bestOf: count`). `SET1X` is `SET1` (§ 4). **On the `SET` root, `X` requires a timed segment**, in `-S:`
-   or `-F:`: `SET3X-S:T10` is a code, `SET3X-S:6/TB7` is not. **OPEN** (§ 8, Q4): other roots take `X` on any
-   segment (`INN3X-S:6/TB7`, `MAT3X-S:6/TB7`).
+   `count` (`bestOf: count`). `SET1X` is `SET1` (§ 4). **`X` is allowed on every root and every kind of segment**
+   (CA 2026-10-25): `SET3X-S:6/TB7`, `SET3X-S:T10`, `SET2X-S:TB10` and `INN3X-S:6/TB7` are codes. The `SET` root
+   used to require a timed segment.
 5. **The final segment** (`-F:`) is allowed only when `count` is more than 1: `SET1-S:6/TB7-F:TB10` is not a code. A
    final segment identical to the set segment is an equivalent spelling (§ 4). Which set it governs is the scoring
    specification's § 3.2.
@@ -80,8 +82,8 @@ of a timed set (§ 3.4); its `G` is an equivalent spelling (§ 4).
 ### 3.3 Game and match sections
 
 - **`-G:`**: `TN[{d}D]` (a traditional game, its d-th deuce decided by the next point) or `{n}C[{d}D]` (the first to
-  win n points in a row). `TN0D`, `0C` and `3C0D` are not codes. **OPEN** (§ 8, Q1): `-G:TN` with no deuce count is
-  the default and is currently kept as written.
+  win n points in a row). `TN0D`, `0C` and `3C0D` are not codes. `-G:TN` with no deuce count is the default game and
+  an equivalent spelling of no `-G:` section (§ 4; CA 2026-10-25); `-G:TN3D` is not the default.
 - **`-M:`**: `T{minutes}`, a match clock.
 
 ### 3.4 Segments
@@ -104,10 +106,10 @@ A segment (`-S:` or `-F:`) is exactly one kind, recognised by how it starts, in 
    not a code. `NOAD` is written before the modifier (`TB11NOAD@RALLY`); `TB11@RALLYNOAD` is not a code.
 3. **Timed.** `P` builds points, `G` (the default, § 4) games. The tiebreak played when the segment ends level carries
    no `NOAD` (`T10/TB7NOAD` is not a code). `NOAD` in a timed modifier is not a code (`T10@RALLYNOAD`).
-4. **A modifier** is the text after `@` on a tiebreak-only or timed segment, and is not a number. `RALLY` is the one
-   modifier with a meaning (every rally scores); any other is kept and not scored (scoring specification § 3.4).
-   **OPEN** (§ 8, Q3): a modifier is currently any text without `-` and without `NOAD` on a tiebreak-only segment
-   (`TB11@R_1`), and any letters on a timed one, in either case (`T10@rally`).
+4. **A modifier** is the text after `@` on a tiebreak-only or timed segment: **one or more upper-case letters**, not
+   containing `NOAD` (CA 2026-10-25). `TB11@rally`, `T10@rally`, `TB11@R_1` and `TB11@RALLY2` are not codes.
+   `RALLY` is the one modifier with a meaning (every rally scores); any other upper-case name is kept and not scored
+   (`TB11@SIDEOUT`; scoring specification § 3.4).
 
 ## 4. Equivalent spellings
 
@@ -120,6 +122,7 @@ These say the same thing as their canonical form and are well-formed; `stringify
 | `X` on a count of 1                                                   | `SET1X-S:T10` → `SET1-S:T10`; `SET1XA` → `SET1A`                       |
 | a final segment identical to the set segment, once both are rewritten | `SET3-S:6-F:6` → `SET3-S:6`; `SET3-S:6/TB7-F:6/TB7@6` → `SET3-S:6/TB7` |
 | a timed segment's `G`                                                 | `T10G` → `T10`; `S:T20G/TB7` → `S:T20/TB7`                             |
+| a `-G:TN` section with no deuce count, the default game               | `SET3-S:6/TB7-G:TN` → `SET3-S:6/TB7`                                   |
 
 Nothing else is an equivalent spelling. A string that is not canonical once these are rewritten is not a code: that
 is how leading zeros, sections out of order and modifiers out of order are refused (rule 2.4, § 3.2), and how the
@@ -129,26 +132,27 @@ three lenient readings below stay closed.
 now not a code: a trailing space (`SET3-S:6/TB7 `), an empty final section (`SET3-S:6/TB7-F:`) and a tiebreak with no
 number (`SET3-S:6/TB`, `SET3-S:6/TB7-F:6/TB`).
 
-**OPEN** (§ 8, Q2): `parse` of an equivalent spelling is not always the object `parse` returns for its canonical
-form: `SET3-S:6-F:6` keeps a `finalSetFormat`, and `T10G` keeps `based: 'G'`.
+**An equivalent spelling parses to its canonical form's object** (CA 2026-10-25): `parse('SET3-S:6-F:6')` has no
+`finalSetFormat`, `parse('T10G')` no `based`, and `parse('SET3-S:6/TB7-G:TN')` no `gameFormat`. Two codes that say
+the same thing read the same.
 
 ## 5. What parse returns
 
 `parse` returns undefined for a string that is not a code, and otherwise this object. A field marked _only when_ is
 absent, never `false`, `null` or empty, when the condition does not hold.
 
-| field               | value                                                                                                               |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `bestOf`            | `count`, unless `X` with a count above 1; `1` for the simplified form                                               |
-| `exactly`           | `count`, only when `X` with a count above 1                                                                         |
-| `setFormat`         | the `-S:` segment (below)                                                                                           |
-| `finalSetFormat`    | the `-F:` segment, only when one is written                                                                         |
-| `gameFormat`        | only when `-G:` is written: `{ type: 'TRADITIONAL', deuceAfter? }` or `{ type: 'CONSECUTIVE', count, deuceAfter? }` |
-| `matchUpConstraint` | only when `-M:` is written: `{ timed: true, minutes }`                                                              |
-| `matchRoot`         | the root, only when it is not `SET`                                                                                 |
-| `aggregate`         | `true`, only when `A` is written                                                                                    |
-| `matchMods`         | the unknown match modifiers as an array of one-letter strings, only when there are any                              |
-| `simplified`        | `true`, only for the simplified timed form                                                                          |
+| field               | value                                                                                                                                       |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bestOf`            | `count`, unless `X` with a count above 1; `1` for the simplified form                                                                       |
+| `exactly`           | `count`, only when `X` with a count above 1                                                                                                 |
+| `setFormat`         | the `-S:` segment (below)                                                                                                                   |
+| `finalSetFormat`    | the `-F:` segment, only when one is written and it is not the set segment                                                                   |
+| `gameFormat`        | only when a `-G:` other than the default is written: `{ type: 'TRADITIONAL', deuceAfter }` or `{ type: 'CONSECUTIVE', count, deuceAfter? }` |
+| `matchUpConstraint` | only when `-M:` is written: `{ timed: true, minutes }`                                                                                      |
+| `matchRoot`         | the root, only when it is not `SET`                                                                                                         |
+| `aggregate`         | `true`, only when `A` is written                                                                                                            |
+| `matchMods`         | the unknown match modifiers as an array of one-letter strings, only when there are any                                                      |
+| `simplified`        | `true`, only for the simplified timed form                                                                                                  |
 
 A segment:
 
@@ -157,7 +161,7 @@ A segment:
 | standard       | `{ setTo, NoAD?: true, tiebreakFormat: { tiebreakTo, NoAD?: true }, tiebreakAt }` with a tiebreak, `tiebreakAt` being `setTo` when no `@` is written; `{ setTo, NoAD?: true, noTiebreak: true, winBy? }` without one, `winBy` only when it is not 2 |
 | tiebreak-only  | `{ tiebreakSet: { tiebreakTo, NoAD?: true, modifier? } }`                                                                                                                                                                                           |
 | outs           | `{ outs }`                                                                                                                                                                                                                                          |
-| timed          | `{ timed: true, minutes, based?: 'P' \| 'G', tiebreakFormat?: { tiebreakTo }, modifier? }`                                                                                                                                                          |
+| timed          | `{ timed: true, minutes, based?: 'P', tiebreakFormat?: { tiebreakTo }, modifier? }`                                                                                                                                                                 |
 | combined total | `{ combinedPointTotal, tieResolution: 'ALLOW' }`, `'DECIDING_POINT'` for `DP`, or `'WIN_BY_MARGIN'` with `winningMargin` for `WB{m}`                                                                                                                |
 
 ## 6. Valid for new use
@@ -179,30 +183,35 @@ A stored code of either kind parses and scores as it always did; only setting it
 ## 7. What stringify writes
 
 `stringify` is specified on the objects `parse` returns: for each it writes the canonical code (§ 1). It writes the
-sections in the order `S`, `G`, `F`, `M`, omits a final segment identical to the set segment and a final segment on a
-count of 1, writes `winBy` only when it is not 2, `tiebreakAt` only when it is not `setTo`, `based` only when it is
-`P`, and the head as root, count, `X` (only for a count above 1), `A`, then the match modifiers. With its second
+sections in the order `S`, `G`, `F`, `M`, omits a final segment identical to the set segment, a final segment on a
+count of 1 and the default game (`TRADITIONAL` with no `deuceAfter`), writes `winBy` only when it is not 2,
+`tiebreakAt` only when it is not `setTo`, `based` only when it is `P`, and the head as root, count, `X` (only for a count above 1), `A`, then the match modifiers. With its second
 argument, `preserveRedundant`, it also writes a `tiebreakAt` equal to `setTo`.
 
 On other objects it never writes a string `parse` refuses. It returns undefined for a value that is not an object, an
-object with neither `bestOf` nor `exactly` or with no `setFormat`, `exactly` on a `SET` root with no timed segment, a
-game format it cannot write, and a combined total anywhere § 3.2 rule 6 does not allow it. Beyond those, its result on
+object with neither `bestOf` nor `exactly` or with no `setFormat`, a game format it cannot write, a modifier that is
+not upper-case letters (a tiebreak modifier `'2'` would be written `6/TB7@2`, which reads back as a tiebreak at two
+games), and a combined total anywhere § 3.2 rule 6 does not allow it. Beyond those, its result on
 an object `parse` could not have returned is not specified.
 
-## 8. Open questions
+## 8. Decisions
 
-1. **`-G:TN` is a second spelling of the default game.** The scoring specification § 3.5 reads `-G:TN` and no `-G:`
-   alike, but `SET3-S:6/TB7` and `SET3-S:6/TB7-G:TN` are both canonical and parse to different objects (the second
-   has `gameFormat: { type: 'TRADITIONAL' }`). Recommendation: make `-G:TN` (with no deuce count) an equivalent
-   spelling, written without the section, and parsed without a `gameFormat`.
-2. **An equivalent spelling parses to a different object.** `SET3-S:6-F:6` keeps the redundant `finalSetFormat`, and
-   `T10G` keeps `based: 'G'`; every other equivalent spelling parses to its canonical form's object. Recommendation:
-   `parse` returns the canonical object, so that two codes that say the same thing read the same; consumers already
-   read an absent `finalSetFormat` as the set format and test `based === 'P'`.
-3. **Set modifiers are free text.** `TB11@rally`, `T10@rally` and `TB11@R_1` are well-formed and valid for new use.
-   The engine switches rally scoring on only for `RALLY`, so `@rally` scores side-out: the same silent
-   reinterpretation the closed `@RALLYNOAD` reading had (validator debate G8). Recommendation: a modifier is one or
-   more upper-case letters on both segment kinds, and an unknown one stays kept and not scored.
-4. **`X` on a standard segment depends on the root.** `SET3X-S:6/TB7` is not a code, but `INN3X-S:6/TB7`,
-   `MAT3X-S:6/TB7` and `HAL2X-S:6` are, and the scoring specification § 3.4 cites `INN3X-S:6/TB7` as a format whose
-   root changes nothing about its sets. Recommendation: one rule for every root; which one is a scoring question.
+The first draft left four questions open; CA decided each on 2026-10-25. The kernel cases that pin them carry the
+date in their notes.
+
+1. **`-G:TN` is an equivalent spelling of no `-G:` section** (§ 3.3, § 4). It was a second canonical spelling of the
+   default game, parsed with `gameFormat: { type: 'TRADITIONAL' }`.
+2. **An equivalent spelling parses to its canonical form's object** (§ 4, § 5). `SET3-S:6-F:6` kept the redundant
+   `finalSetFormat`, and `T10G` kept `based: 'G'`.
+3. **A modifier is upper-case letters** (§ 3.4 rule 4). `TB11@rally`, `T10@rally` and `TB11@R_1` were well-formed and
+   valid for new use; the engine switches rally scoring on only for `RALLY`, so `@rally` scored side-out, the same
+   silent reinterpretation the closed `@RALLYNOAD` reading had (validator debate G8).
+4. **`X` is allowed on every root and every kind of segment** (§ 3.2 rule 4). `SET3X-S:6/TB7` was not a code while
+   `INN3X-S:6/TB7` was; the scoring specification § 3.4 reads both alike, and the scoring conformance cases for the
+   `SET`-root cells (`timedSegments`, `tiebreakSets`) hold that they score as their siblings on other roots do.
+
+Measured against the factory's own formats: no fixture, test or harvested code uses a bare `-G:TN` or a modifier
+that is not upper-case letters; the codes that newly parse (`SET3X-S:6/TB7`, `SET4X-S:6`, `SET2X-S:TB10`,
+`SET3XA-S:O3`, `SET7XA-S:TB11`) were each written by a test or a page expecting them to. No corpus scenario's
+content moved; three `SET3-S:6-F:6` scoring scenarios are filed under the cell their format now reads as. Stored
+production formats were not measured.

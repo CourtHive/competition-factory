@@ -444,16 +444,16 @@
     "note": "§ 3.2 rule 1: X, then A, then the unknown modifiers"
   },
   {
-    "caseId": "grammar.parse.sections-out-of-order.v1",
+    "caseId": "grammar.parse.sections-out-of-order.v2",
     "operation": "kernel.format.parse@1",
     "input": {
-      "matchUpFormat": "SET3-S:6/TB7-F:TB10-G:TN"
+      "matchUpFormat": "SET3-S:6/TB7-F:TB10-G:3C"
     },
     "expected": {
       "kind": "error",
       "code": "UNPARSEABLE_FORMAT"
     },
-    "note": "§ 3.2 rule 3: S, G, F, M"
+    "note": "§ 3.2 rule 3: S, G, F, M (v1 used -G:TN, now an equivalent spelling that drops away, CA 2026-10-25)"
   },
   {
     "caseId": "grammar.parse.match-section-first.v1",
@@ -480,16 +480,25 @@
     "note": "§ 3.2 rule 5"
   },
   {
-    "caseId": "grammar.parse.exactly-on-a-games-set.v1",
+    "caseId": "grammar.parse.exactly-on-a-games-set.v2",
     "operation": "kernel.format.parse@1",
     "input": {
       "matchUpFormat": "SET3X-S:6/TB7"
     },
     "expected": {
-      "kind": "error",
-      "code": "UNPARSEABLE_FORMAT"
+      "kind": "value",
+      "value": {
+        "exactly": 3,
+        "setFormat": {
+          "setTo": 6,
+          "tiebreakAt": 6,
+          "tiebreakFormat": {
+            "tiebreakTo": 7
+          }
+        }
+      }
     },
-    "note": "§ 3.2 rule 4: on SET, X requires a timed segment"
+    "note": "§ 3.2 rule 4: exactly N on every root and every kind of set (CA 2026-10-25)"
   },
   {
     "caseId": "grammar.parse.combined-total-best-of-three.v1",
@@ -1337,7 +1346,7 @@
     "note": "§ 7: X only for a count above 1"
   },
   {
-    "caseId": "grammar.stringify.exactly-on-a-games-set.v1",
+    "caseId": "grammar.stringify.exactly-on-a-games-set.v2",
     "operation": "kernel.format.stringify@1",
     "input": {
       "formatStructure": {
@@ -1352,10 +1361,10 @@
       }
     },
     "expected": {
-      "kind": "error",
-      "code": "UNSTRINGIFIABLE_FORMAT"
+      "kind": "value",
+      "value": "SET3X-S:6/TB7"
     },
-    "note": "§ 7: never a code parse refuses"
+    "note": "§ 7: exactly N on a standard set is written (CA 2026-10-25)"
   },
   {
     "caseId": "grammar.stringify.no-count.v1",
@@ -1432,5 +1441,302 @@
       "code": "UNSTRINGIFIABLE_FORMAT"
     },
     "note": "§ 7, § 3.2 rule 6"
+  },
+  {
+    "caseId": "grammar.parse.lower-case-tiebreak-modifier.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:TB11@rally"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 3.4 rule 4: a modifier is upper-case letters (CA 2026-10-25); @rally scored side-out"
+  },
+  {
+    "caseId": "grammar.parse.lower-case-timed-modifier.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:T10@rally"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 3.4 rule 4 (CA 2026-10-25)"
+  },
+  {
+    "caseId": "grammar.parse.modifier-not-letters.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:TB11@R_1"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 3.4 rule 4 (CA 2026-10-25)"
+  },
+  {
+    "caseId": "grammar.parse.modifier-with-a-digit.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:TB11@RALLY2"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 3.4 rule 4 (CA 2026-10-25)"
+  },
+  {
+    "caseId": "grammar.parse.unknown-modifier-kept.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:TB11@SIDEOUT"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "bestOf": 3,
+        "setFormat": {
+          "tiebreakSet": {
+            "tiebreakTo": 11,
+            "modifier": "SIDEOUT"
+          }
+        }
+      }
+    },
+    "note": "§ 3.4 rule 4: an unknown upper-case modifier is kept, not scored"
+  },
+  {
+    "caseId": "grammar.parse.identical-final-not-kept.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6-F:6"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "bestOf": 3,
+        "setFormat": {
+          "setTo": 6,
+          "noTiebreak": true
+        }
+      }
+    },
+    "note": "§ 4, § 5: an equivalent spelling parses to its canonical form's object (CA 2026-10-25)"
+  },
+  {
+    "caseId": "grammar.parse.timed-games-basis-not-kept.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET1-S:T20G"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "bestOf": 1,
+        "setFormat": {
+          "timed": true,
+          "minutes": 20
+        }
+      }
+    },
+    "note": "§ 4, § 5 (CA 2026-10-25)"
+  },
+  {
+    "caseId": "grammar.parse.default-game-not-kept.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7-G:TN"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "bestOf": 3,
+        "setFormat": {
+          "setTo": 6,
+          "tiebreakAt": 6,
+          "tiebreakFormat": {
+            "tiebreakTo": 7
+          }
+        }
+      }
+    },
+    "note": "§ 4, § 5 (CA 2026-10-25)"
+  },
+  {
+    "caseId": "grammar.parse.deuce-game-kept.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7-G:TN3D"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "bestOf": 3,
+        "setFormat": {
+          "setTo": 6,
+          "tiebreakAt": 6,
+          "tiebreakFormat": {
+            "tiebreakTo": 7
+          }
+        },
+        "gameFormat": {
+          "type": "TRADITIONAL",
+          "deuceAfter": 3
+        }
+      }
+    },
+    "note": "§ 3.3: -G:TN with a deuce count is not the default"
+  },
+  {
+    "caseId": "grammar.parse.exactly-games-other-root.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "INN3X-S:6/TB7"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "exactly": 3,
+        "matchRoot": "INN",
+        "setFormat": {
+          "setTo": 6,
+          "tiebreakAt": 6,
+          "tiebreakFormat": {
+            "tiebreakTo": 7
+          }
+        }
+      }
+    },
+    "note": "§ 3.2 rule 4: one rule for every root"
+  },
+  {
+    "caseId": "grammar.canonical.default-game.v1",
+    "operation": "kernel.format.canonical@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7-G:TN"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "SET3-S:6/TB7"
+    },
+    "note": "§ 4 (CA 2026-10-25)"
+  },
+  {
+    "caseId": "grammar.canonical.default-game-timed.v1",
+    "operation": "kernel.format.canonical@1",
+    "input": {
+      "matchUpFormat": "SET3-S:T10-G:TN"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "SET3-S:T10"
+    },
+    "note": "§ 4 (CA 2026-10-25)"
+  },
+  {
+    "caseId": "grammar.canonical.default-game-with-final.v1",
+    "operation": "kernel.format.canonical@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7-G:TN-F:TB10"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "SET3-S:6/TB7-F:TB10"
+    },
+    "note": "§ 4 (CA 2026-10-25)"
+  },
+  {
+    "caseId": "grammar.valid.exactly-on-a-games-set.v1",
+    "operation": "kernel.format.isValid@1",
+    "input": {
+      "matchUpFormat": "SET3X-S:6/TB7"
+    },
+    "expected": {
+      "kind": "value",
+      "value": true
+    },
+    "note": "§ 3.2 rule 4 (CA 2026-10-25)"
+  },
+  {
+    "caseId": "grammar.valid.lower-case-modifier.v1",
+    "operation": "kernel.format.isValid@1",
+    "input": {
+      "matchUpFormat": "SET3-S:TB11@rally"
+    },
+    "expected": {
+      "kind": "value",
+      "value": false
+    },
+    "note": "§ 3.4 rule 4 (CA 2026-10-25)"
+  },
+  {
+    "caseId": "grammar.stringify.default-game-dropped.v1",
+    "operation": "kernel.format.stringify@1",
+    "input": {
+      "formatStructure": {
+        "bestOf": 3,
+        "setFormat": {
+          "setTo": 6,
+          "tiebreakAt": 6,
+          "tiebreakFormat": {
+            "tiebreakTo": 7
+          }
+        },
+        "gameFormat": {
+          "type": "TRADITIONAL"
+        }
+      }
+    },
+    "expected": {
+      "kind": "value",
+      "value": "SET3-S:6/TB7"
+    },
+    "note": "§ 7: the default game is not written (CA 2026-10-25)"
+  },
+  {
+    "caseId": "grammar.stringify.lower-case-modifier.v1",
+    "operation": "kernel.format.stringify@1",
+    "input": {
+      "formatStructure": {
+        "bestOf": 3,
+        "setFormat": {
+          "tiebreakSet": {
+            "tiebreakTo": 11,
+            "modifier": "rally"
+          }
+        }
+      }
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNSTRINGIFIABLE_FORMAT"
+    },
+    "note": "§ 7: never a modifier parse refuses"
+  },
+  {
+    "caseId": "grammar.stringify.numeric-tiebreak-modifier.v1",
+    "operation": "kernel.format.stringify@1",
+    "input": {
+      "formatStructure": {
+        "bestOf": 1,
+        "setFormat": {
+          "setTo": 6,
+          "tiebreakFormat": {
+            "tiebreakTo": 7,
+            "modifier": "2"
+          }
+        }
+      }
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNSTRINGIFIABLE_FORMAT"
+    },
+    "note": "§ 7: 6/TB7@2 reads back as a tiebreak at two games"
   }
 ]

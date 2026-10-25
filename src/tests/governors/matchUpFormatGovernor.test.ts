@@ -337,14 +337,14 @@ describe('matchUpFormatGovernor - Documentation Examples', () => {
         setFormat: { timed: true, minutes: 10 },
       });
 
-      // SET3X with standard game sets does NOT work
+      // SET3X with standard game sets works too: exactly N on every kind of set (CA 2026-10-25)
       const gameResult = matchUpFormatGovernor.isValidMatchUpFormat({
         matchUpFormat: 'SET3X-S:6/TB7',
       });
-      expect(gameResult).toBe(false);
+      expect(gameResult).toBe(true);
 
       const parsedGame = matchUpFormatGovernor.parse('SET3X-S:6/TB7');
-      expect(parsedGame).toBeUndefined();
+      expect(parsedGame).toMatchObject({ exactly: 3, setFormat: { setTo: 6 } });
     });
 
     it('validates SET4X only works with timed sets', () => {
@@ -360,11 +360,11 @@ describe('matchUpFormatGovernor - Documentation Examples', () => {
         setFormat: { timed: true, minutes: 20, based: 'P' },
       });
 
-      // SET4X with standard game sets does NOT work
+      // SET4X with standard game sets works too (CA 2026-10-25)
       const gameResult = matchUpFormatGovernor.isValidMatchUpFormat({
         matchUpFormat: 'SET4X-S:6',
       });
-      expect(gameResult).toBe(false);
+      expect(gameResult).toBe(true);
     });
   });
 });

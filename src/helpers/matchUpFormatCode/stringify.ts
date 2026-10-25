@@ -28,8 +28,11 @@ function timedSetFormat(matchUpFormatObject) {
     value += `/TB${matchUpFormatObject.tiebreakFormat.tiebreakTo}`;
   }
 
-  // Legacy modifier support (for formats with @)
-  if (matchUpFormatObject.modifier) value += `@${matchUpFormatObject.modifier}`;
+  // Legacy modifier support (for formats with @); never a modifier `parse` refuses
+  if (matchUpFormatObject.modifier) {
+    if (!isModifierName(matchUpFormatObject.modifier)) return undefined;
+    value += `@${matchUpFormatObject.modifier}`;
+  }
 
   return value;
 }
@@ -62,10 +65,6 @@ function getSetFormat(matchUpFormatObject, preserveRedundant?: boolean) {
   const exactly = getNumber(matchUpFormatObject.exactly) || undefined;
   const setLimit = bestOfValue || exactly;
 
-  // Never emit a code `parse` refuses (validator debate G8): `X` (exactly) is for timed sets. This
-  // emitted `SET3X-S:6/TB7`, which `parse` refuses.
-  if (!emitsParseableSetCount(matchUpFormatObject, setLimit, exactly)) return undefined;
-
   if (matchUpFormatObject.setFormat?.timed && matchUpFormatObject.simplified && setLimit === 1) {
     return timedSetFormat(matchUpFormatObject.setFormat);
   }
@@ -92,7 +91,8 @@ function getSetFormat(matchUpFormatObject, preserveRedundant?: boolean) {
   const gameFormatValue = matchUpFormatObject.gameFormat && stringifyGameFormat(matchUpFormatObject.gameFormat);
   // a game format it cannot write is not written as `G:undefined` (validator debate G8)
   if (matchUpFormatObject.gameFormat && !gameFormatValue) return undefined;
-  const gameCode = gameFormatValue ? `G:${gameFormatValue}` : '';
+  // the default traditional game is not written (CA 2026-10-25): `-G:TN` is an equivalent spelling of no `-G:`
+  const gameCode = gameFormatValue && gameFormatValue !== 'TN' ? `G:${gameFormatValue}` : '';
 
   const matchUpConstraintCode = matchUpFormatObject.matchUpConstraint?.timed
     ? `M:T${matchUpFormatObject.matchUpConstraint.minutes}`
@@ -104,13 +104,6 @@ function getSetFormat(matchUpFormatObject, preserveRedundant?: boolean) {
     return [setLimitCode, setCode, gameCode, finalSetCode, matchUpConstraintCode].filter(Boolean).join('-');
   }
   return undefined;
-}
-
-function emitsParseableSetCount(matchUpFormatObject, setLimit?: number, exactly?: number): boolean {
-  if ((matchUpFormatObject.matchRoot || SET) !== SET) return true;
-  const timed = matchUpFormatObject.setFormat?.timed || matchUpFormatObject.finalSetFormat?.timed;
-  if (exactly && exactly !== 1 && !timed) return false;
-  return !!((setLimit && setLimit >= 1) || (timed && exactly));
 }
 
 function stringifySet(setObject, preserveRedundant) {
@@ -146,6 +139,7 @@ function tiebreakFormat(tieobject) {
       return '';
     } else if (typeof tieobject === 'object' && getNumber(tieobject.tiebreakTo)) {
       let value = `TB${tieobject.tiebreakTo}${tieobject.NoAD ? NOAD : ''}`;
+      if (tieobject.modifier && !isModifierName(tieobject.modifier)) return false;
       if (tieobject.modifier) value += `@${tieobject.modifier}`;
       return value;
     } else {
@@ -153,4 +147,9 @@ function tiebreakFormat(tieobject) {
     }
   }
   return undefined;
+}
+
+/** A modifier `parse` reads: upper-case letters, not containing `NOAD` (CA 2026-10-25). */
+function isModifierName(modifier: unknown): boolean {
+  return typeof modifier === 'string' && /^[A-Z]+$/.test(modifier) && !modifier.includes(NOAD);
 }

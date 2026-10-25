@@ -559,6 +559,68 @@ describe('MAP3-S:TB13, MAP5-S:TB13 — esports maps first to 13 rounds (VALORANT
   });
 });
 
+// Exactly N is a format on every root and every kind of set (CA 2026-10-25): the SET root reads as HAL does.
+describe('SET3X-S:TB11, SET2X-S:TB10 — exactly N tiebreak sets on the SET root', () => {
+  it('X: a two-set lead is not a win while a set remains', () => {
+    conforms('SET3X-S:TB11', `${run('1', 11)} ${run('1', 11)}`, {
+      sets: [
+        [1, 0, [11, 0]],
+        [1, 0, [11, 0]],
+      ],
+      complete: false,
+    });
+  });
+
+  it('X: once every set is played the side with more sets wins', () => {
+    conforms('SET3X-S:TB11', `${run('1', 11)} ${run('1', 11)} ${run('2', 11)}`, {
+      sets: [
+        [1, 0, [11, 0]],
+        [1, 0, [11, 0]],
+        [0, 1, [0, 11]],
+      ],
+      winningSide: 1,
+      complete: true,
+    });
+  });
+
+  it('X: a level count of sets names no winner, and no set beyond N is recorded', () => {
+    conforms('SET2X-S:TB10', `${run('1', 10)} ${run('2', 10)} 1`, {
+      sets: [
+        [1, 0, [10, 0]],
+        [0, 1, [0, 10]],
+      ],
+      complete: true,
+    });
+  });
+});
+
+describe('SET3XA-S:TB11 — exactly three tiebreak sets, aggregate (spec § 9.3)', () => {
+  const format = 'SET3XA-S:TB11';
+
+  it('XA: games won are not consulted — the side with more points across all three wins', () => {
+    conforms(format, `${level(9)} 11 ${level(9)} 11 ${run('2', 11)}`, {
+      sets: [
+        [1, 0, [11, 9]],
+        [1, 0, [11, 9]],
+        [0, 1, [0, 11]],
+      ],
+      winningSide: 2,
+      complete: true,
+    });
+  });
+
+  it('XA: a level total with no declared decider names no winner, and no fourth set is played', () => {
+    conforms(format, `${level(11)} 11 ${run('2', 11)} ${run('2', 2)}${run('1', 11)}`, {
+      sets: [
+        [1, 0, [13, 11]],
+        [0, 1, [0, 11]],
+        [1, 0, [11, 2]],
+      ],
+      complete: true,
+    });
+  });
+});
+
 describe('HAL2X-S:TB11 — a level count of halves (format-support "Exactly N Sets")', () => {
   /*
    * A non-aggregate exactly format is decided on sets won once all N are recorded; a level count names
