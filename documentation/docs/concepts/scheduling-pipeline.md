@@ -346,8 +346,8 @@ the calls that decide placements; the bulk and reschedule mutations write the ti
    - A booking or a recovery that ends past midnight carries into the next date, with the overnight times on top.
    - **The consequence:** a schedule that never crosses midnight is placed exactly as today; only the placements the
      23:59 cap and the wrapping booking end decided move.
-   - **OPEN:** a start after midnight belongs to the calendar date it starts on (00:30 is the next `scheduledDate`)
-     unless a separate session day is wanted for night sessions.
+   - **A start after midnight is on the next date** (CA 2026-10-25: _"if it starts past midnight it is technically
+     scheduled for the next day"_): a 00:30 start has the next `scheduledDate`. There is no separate session day.
 9. **The clock reads more than `HH:MM`** (§ 3.8). **DECIDED (CA 2026-10-25): invalid forms are refused**; built
    after this record.
    - **At the write**, a date must be a real calendar date, `YYYY-MM-DD` (`2026-02-30` is refused), and a time must
@@ -356,7 +356,12 @@ the calls that decide placements; the bulk and reschedule mutations write the ti
      `-1:00`, `08:00Z` and ` 8:00` are refused.
    - **At the read**, stored records keep working: the same unambiguous forms are normalised, and anything else reads
      as no time (as a value that is not a time does today), listed by an audit so it can be corrected.
-   - **OPEN:** measure the stored values that are not canonical before the refusals ship.
+   - **Measured 2026-10-25** (read-only, every tournament record in production): scheduled times 43,527, all
+     canonical; court availability times 8,682 and dates 4,473, all canonical; scheduled dates 66,580 canonical and
+     154 empty strings (a cleared date, which already reads as no date); no date out of the calendar. So the refusals
+     change no stored schedule, and the empty-string date is the only legacy form the read has to keep reading as
+     absent. The match clock's times (start, stop, resume, end) are a different kind of value, instants: 10,395 are
+     ISO instants (`…T…Z`) and 746 bare `HH:MM`; they are outside this rule.
 
 ## Related
 
