@@ -1,4 +1,4 @@
-import { getCapturedClock } from '@Global/state/globalState';
+import { getCapturedClock, writeLegacyEnabled } from '@Global/state/globalState';
 import { isAnyExit } from '@Validators/isExit';
 
 // constants and types
@@ -46,9 +46,14 @@ export type AbstainReason =
   | 'no-record' // the draw is not held in the tournament record's events: nothing to fold the plan into
   | 'edges' // the draw stores no edges, which v1 writes first (`ensureGoesTo`): S2's setEdges
   | 'clock' // no captured instant (a call outside the engine): the timestamps a write takes cannot be reproduced
-  | 'settle'; // a settle pass has work on the working view (S2's has-work predicates, `settleWork.ts`)
+  | 'settle' // a settle pass has work on the working view (S2's has-work predicates, `settleWork.ts`)
+  | 'write-mode'; // LEGACY or BRIDGE: v1 writes `scoredTime` as a timeItem there, which the reducer does not (F6)
 
-export type OutcomePlan = { ops: OutcomeOp[]; abstain?: undefined } | { abstain: AbstainReason; ops?: undefined };
+/** which of the allowlist's shapes a complete plan is: `local` (the matchUp's own result) or the first `direction` */
+export type PlanShape = 'local' | 'direction';
+export type OutcomePlan =
+  | { ops: OutcomeOp[]; shape: PlanShape; abstain?: undefined }
+  | { abstain: AbstainReason; ops?: undefined; shape?: undefined };
 
 const LOCAL_ROUTES = new Set<Route>(['clear', 'clear-score', 'remove-directed', 'only-score']);
 const LOCAL_STATUSES = new Set<string | undefined>([IN_PROGRESS, SUSPENDED, AWAITING_RESULT, INCOMPLETE, TO_BE_PLAYED]);
@@ -132,6 +137,7 @@ function abstainReason(args: {
 }): AbstainReason | undefined {
   const { request, view, write, direction } = args;
   if (view.isTeam || view.line || view.matchUpTieId || view.existing.collectionId) return 'team';
+  if (writeLegacyEnabled()) return 'write-mode';
   if (!view.draw.storesEdges) return 'edges';
   if (request.carries?.schedule) return 'schedule';
   if (request.carries?.notes) return 'notes';
@@ -229,5 +235,5 @@ export function planOutcome(args: {
     { op: 'stampUpdatedAt', entity: 'structure', id: structureId },
     { op: 'stampUpdatedAt', entity: 'drawDefinition', id: drawDefinition.drawId },
   );
-  return { ops };
+  return { ops, shape: args.route === 'winner' ? 'direction' : 'local' };
 }
