@@ -16,7 +16,8 @@ type GetTournamentPointAwardsArgs = {
 
 /**
  * Pipeline-facing flat-output entry: returns a single PointAward[] with
- * tournamentId and endDate guaranteed populated on every award.
+ * tournamentId and endDate guaranteed populated on every award, and the
+ * tournament's tournamentSeriesId when the record carries one.
  *
  * Composes getTournamentPoints (which returns personPoints/pairPoints/
  * teamPoints maps) and flattens the maps into one array, enriching each
@@ -50,6 +51,9 @@ export function getTournamentPointAwards({
 
   const tournamentId = tournamentRecord.tournamentId;
   const tournamentEndDate = tournamentRecord.endDate;
+  // the tournament across its editions, for bestPerSeries; stamped only when the record carries one
+  const { tournamentSeriesId } = tournamentRecord;
+  const series = tournamentSeriesId ? { tournamentSeriesId } : {};
 
   const { participants = [] } = getParticipants({ tournamentRecord });
   const personToParticipant: Record<string, { participantId: string; participantName: string }> = {};
@@ -80,6 +84,7 @@ export function getTournamentPointAwards({
         participantName: participant?.participantName,
         tournamentId: award.tournamentId ?? tournamentId,
         endDate: award.endDate ?? tournamentEndDate,
+        ...series,
       });
     }
   }
@@ -95,6 +100,7 @@ export function getTournamentPointAwards({
         participantName: info?.participantName,
         tournamentId: award.tournamentId ?? tournamentId,
         endDate: award.endDate ?? tournamentEndDate,
+        ...series,
       });
     }
   }
@@ -110,6 +116,7 @@ export function getTournamentPointAwards({
         participantName: info?.participantName,
         tournamentId: award.tournamentId ?? tournamentId,
         endDate: award.endDate ?? tournamentEndDate,
+        ...series,
       });
     }
   }

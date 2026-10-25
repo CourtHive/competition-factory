@@ -585,6 +585,13 @@ export interface CountingBucket {
    */
   weight?: number;
 
+  /**
+   * Count only the best result from each tournament series (Tournament.tournamentSeriesId) within the window: the
+   * ITF Junior "best result from up to two editions of the same J100 or higher graded tournament" (Reg. 10). Applies
+   * to awards at `levels` (all levels when omitted); an award without a series is unaffected. The others are dropped.
+   */
+  bestPerSeries?: { levels?: number[] };
+
   /** Max results from a single tournament level within this bucket */
   maxResultsPerLevel?: Record<number, number>;
 
@@ -665,6 +672,8 @@ export interface PointAward {
 
   // Context
   tournamentId?: string;
+  /** The tournament across its editions (Tournament.tournamentSeriesId), when the record carries one */
+  tournamentSeriesId?: string;
   eventId?: string;
   drawId: string;
   structureId?: string;

@@ -133,6 +133,19 @@ combined ranking counts the six best singles results plus one quarter of the six
 Selection uses each award's own points, so a weight never changes which results count. The awards keep their own
 points; the bucket's `bucketTotal` and the participant's `totalPoints` carry the weighted value.
 
+### bestPerSeries
+
+Counts only the best result from each tournament series within the window. A series is the same tournament across its
+editions: CODES `Tournament.tournamentSeriesId`, stamped on each award by `getTournamentPointAwards`. The ITF Junior
+rule (Reg. 10) is the best result from up to two editions of the same J100 or higher graded tournament:
+
+```js
+{ bucketName: 'Singles', eventTypes: [SINGLES], bestOfCount: 6, bestPerSeries: { levels: [1, 4, 5, 6, 7] } }
+```
+
+`levels` limits the rule to awards at those levels (all levels when omitted). An award without a
+`tournamentSeriesId` is unaffected. The other editions' results move to `droppedResults`.
+
 ### maxResultsPerLevel
 
 Limits how many results from a specific tournament level count toward the bucket:
