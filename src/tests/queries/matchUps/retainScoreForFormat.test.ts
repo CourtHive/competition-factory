@@ -103,13 +103,13 @@ describe('a set whose own rule did not change is left alone, finished or not', (
   });
 
   it('a format the grammar cannot read takes nothing away, rather than everything', () => {
-    // `SET2X-S:TB10` does NOT parse — measured, though `SET2X-S:T10` does. An earlier version of the
-    // test above used it and passed for the wrong reason: nothing was discarded because nothing could
-    // be judged, not because the sets had survived a comparison. Pinned so the next reader is not
-    // caught by the same string, and so the fail-safe direction is the asserted one.
+    // An earlier version of the test above used `SET2X-S:TB10`, which did not parse then, and passed for the
+    // wrong reason: nothing was discarded because nothing could be judged, not because the sets had survived
+    // a comparison. Pinned so the fail-safe direction is the asserted one. `SET2X-S:TB10` parses since exactly
+    // N is a format on every root (CA 2026-10-25); a tiebreak with no target (`/TB`) never does.
     const sets = [set(1, 6, 4, 1), set(2, 3, 1)];
 
-    const result = retainScoreForFormat({ sets, matchUpFormat: 'SET2X-S:TB10', previousMatchUpFormat: STANDARD });
+    const result = retainScoreForFormat({ sets, matchUpFormat: 'SET2-S:6/TB', previousMatchUpFormat: STANDARD });
 
     expect(result.sets).toEqual(sets);
     expect(result.unchanged).toBe(true);

@@ -12,6 +12,7 @@ import { planningViewFromData, requiredPlanningViewKeys } from '@Mutate/matchUps
 import { dayMinutesToTimeString, extractTime, tidyTime, timeStringMinutes } from '@Tools/plainTime';
 import { addMinutesWithinDay } from '@Mutate/matchUps/schedule/scheduleMatchUps/timeWithinDay';
 import { addMinutesToDateTime, endOnTheDay } from '@Tools/civilDateTime';
+import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { planSchedule } from '@Mutate/matchUps/schedule/pipeline/plan';
 import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
 import { stringify } from '@Helpers/matchUpFormatCode/stringify';
@@ -192,7 +193,7 @@ export const kernelOperations: Readonly<Record<string, KernelOperation>> = Objec
   },
   'kernel.format.parse@1': {
     capability: 'grammar',
-    validate: (input) => (typeof input.matchUpFormat === 'string' ? undefined : 'matchUpFormat must be a string'),
+    validate: (input) => isText(input, 'matchUpFormat'),
     run: (input) => {
       const parsed = parse(input.matchUpFormat as string);
       return parsed ? { kind: 'value', value: parsed } : { kind: 'error', code: 'UNPARSEABLE_FORMAT' };
@@ -208,6 +209,20 @@ export const kernelOperations: Readonly<Record<string, KernelOperation>> = Objec
       const code = stringify(input.formatStructure);
       return code ? { kind: 'value', value: code } : { kind: 'error', code: 'UNSTRINGIFIABLE_FORMAT' };
     },
+  },
+  'kernel.format.canonical@1': {
+    capability: 'grammar',
+    validate: (input) => isText(input, 'matchUpFormat'),
+    run: (input) => {
+      const parsed = parse(input.matchUpFormat as string);
+      const code = parsed && stringify(parsed);
+      return code ? { kind: 'value', value: code } : { kind: 'error', code: 'UNPARSEABLE_FORMAT' };
+    },
+  },
+  'kernel.format.isValid@1': {
+    capability: 'grammar',
+    validate: (input) => isText(input, 'matchUpFormat'),
+    run: (input) => ({ kind: 'value', value: isValidMatchUpFormat({ matchUpFormat: input.matchUpFormat as string }) }),
   },
 });
 

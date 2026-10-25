@@ -171,12 +171,12 @@ const parsed = matchUpFormatGovernor.parse('SET3-S:6/TB7-G:TN3D');
 //   gameFormat: { type: 'TRADITIONAL', deuceAfter: 3 }
 // }
 
-// Parse explicit traditional game format
+// `-G:TN` is the default traditional game: an equivalent spelling of no `-G:` section, parsed without a
+// gameFormat and written without the section (`SET3-S:6/TB7`)
 const parsed = matchUpFormatGovernor.parse('SET3-S:6/TB7-G:TN');
 // {
 //   bestOf: 3,
-//   setFormat: { setTo: 6, tiebreakAt: 6, tiebreakFormat: { tiebreakTo: 7 } },
-//   gameFormat: { type: 'TRADITIONAL' }
+//   setFormat: { setTo: 6, tiebreakAt: 6, tiebreakFormat: { tiebreakTo: 7 } }
 // }
 
 // Parse outs-based format (wiffle ball)
@@ -435,7 +435,9 @@ Anything else that does not round-trip is refused by both: trailing characters (
 trailing space), a fractional `@6.5`, an invalid section (`SET5-S:6/TB7-F:S:6`), and a final set on a
 one-set match (`SET1-S:6/TB7-F:TB10`). Sections must appear in the canonical order.
 
-Any best-of count is valid (`SET7-S:TB11`, `SET9-S:6/TB7`). `X` (exactly) applies to timed sets only.
+Any best-of count is valid (`SET7-S:TB11`, `SET9-S:6/TB7`), and `X` (exactly) applies to every root and every
+kind of set (`SET3X-S:6/TB7`, `SET3X-S:T10`). An equivalent spelling parses to the same object as its canonical
+form. The full rules are the [grammar specification](/docs/codes/matchup-format-grammar).
 `stringify` never writes a code `parse` refuses, and returns `undefined` instead.
 
 **Examples:**

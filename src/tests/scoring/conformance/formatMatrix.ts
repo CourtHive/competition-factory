@@ -71,8 +71,6 @@ export const FORMAT_MATRIX: Record<string, MatrixEntry> = {
     ADVANTAGE_SETS,
   'bestOf | SET | set:standard(advantage) | final:same | game:consecutive | noClock | knownModifiers': ADVANTAGE_SETS,
   'bestOf | SET | set:standard(advantage) | final:same | game:traditional | noClock | knownModifiers': ADVANTAGE_SETS,
-  'bestOf | SET | set:standard(advantage) | final:standard(advantage) | game:traditional | noClock | knownModifiers':
-    ADVANTAGE_SETS,
   'bestOf | SET | set:standard(tiebreak,earlyTiebreak,noAD) | final:same | game:traditional | noClock | knownModifiers':
     TIEBREAK_VARIANTS,
   'bestOf | SET | set:standard(tiebreak,earlyTiebreak,noAD) | final:tiebreakSet | game:traditional | noClock | knownModifiers':
@@ -156,6 +154,10 @@ export const FORMAT_MATRIX: Record<string, MatrixEntry> = {
     AGGREGATE_SEGMENTS,
   'exactly | HAL | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers': TIEBREAK_SETS,
   'exactly | INN | set:standard(tiebreak) | final:same | game:traditional | noClock | knownModifiers': FINAL_SEGMENTS,
+  // exactly N on every root and every kind of set (CA 2026-10-25)
+  'exactly | SET | set:standard(advantage) | final:same | game:traditional | noClock | knownModifiers': TIMED_SEGMENTS,
+  'exactly | SET | set:standard(tiebreak) | final:same | game:traditional | noClock | knownModifiers': TIMED_SEGMENTS,
+  'exactly | SET | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers': TIEBREAK_SETS,
   'exactly | SET | set:timed(G) | final:same | game:traditional | noClock | knownModifiers': TIMED_SEGMENTS,
   'exactly | SET | set:timed(P,tiebreak) | final:same | game:traditional | noClock | knownModifiers': TIMED_SEGMENTS,
   'exactly | SET | set:timed(P) | final:same | game:traditional | noClock | knownModifiers': TIMED_SEGMENTS,
@@ -171,6 +173,11 @@ export const FORMAT_MATRIX: Record<string, MatrixEntry> = {
   },
   'exactly+aggregate | INN | set:timed(G) | final:same | game:traditional | noClock | knownModifiers':
     AGGREGATE_SEGMENTS,
+  'exactly+aggregate | SET | set:outs | final:same | game:traditional | noClock | knownModifiers': {
+    status: 'refused',
+    reason: OUTS,
+  },
+  'exactly+aggregate | SET | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers': TIEBREAK_SETS,
   'exactly+aggregate | SET | set:timed(G) | final:same | game:traditional | noClock | knownModifiers':
     AGGREGATE_SEGMENTS,
   'exactly+aggregate | SET | set:timed(G) | final:tiebreakSet | game:traditional | noClock | knownModifiers':
