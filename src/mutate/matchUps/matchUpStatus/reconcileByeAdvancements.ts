@@ -1,7 +1,7 @@
 import { advanceDrawPosition } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { nothingToSettle } from './indexPrecheck';
+import { settleUnlessIdle } from './indexPrecheck';
 
 // constants and types
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
@@ -35,8 +35,24 @@ export function reconcileByeAdvancements({
 }): ResultType | undefined {
   if (!drawDefinition) return undefined;
   // nothing owed on the structural index: the pass's first hydration would find the same, and write nothing
-  if (nothingToSettle({ drawDefinition, detect: findOwedByeAdvance, site: 'reconcileByeAdvancements' }))
-    return undefined;
+  return settleUnlessIdle({
+    run: () => advanceOwedByes({ tournamentRecord, drawDefinition, event }),
+    site: 'reconcileByeAdvancements',
+    detect: findOwedByeAdvance,
+    idle: undefined,
+    drawDefinition,
+  });
+}
+
+function advanceOwedByes({
+  tournamentRecord,
+  drawDefinition,
+  event,
+}: {
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  event?: Event;
+}): ResultType | undefined {
   // each advance seats one participant; bounded as a draw is
   for (let pass = 0; pass < 32; pass += 1) {
     const matchUpsMap = getMatchUpsMap({ drawDefinition });

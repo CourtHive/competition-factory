@@ -1,4 +1,4 @@
-import { nothingToSettle, takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
+import { settleUnlessIdle, takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { useEngineCatch } from '@Tests/testHarness/engineCatch';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -46,35 +46,63 @@ function draw(drawProfile: Record<string, unknown> = { drawSize: 8 }) {
   return { drawDefinition: tournamentRecord.events[0].drawDefinitions[0], drawId };
 }
 
-describe('nothingToSettle', () => {
-  it('is true where the index answers and the detector finds no work; false where it finds work', () => {
-    const { drawDefinition } = draw();
-    expect(nothingToSettle({ drawDefinition, site: 's', detect: () => undefined })).toEqual(true);
-    expect(nothingToSettle({ drawDefinition, site: 's', detect: () => [] })).toEqual(true);
-    expect(nothingToSettle({ drawDefinition, site: 's', detect: () => ({ matchUpId: 'm' }) })).toEqual(false);
-    expect(nothingToSettle({ drawDefinition, site: 's', detect: () => ['m'] })).toEqual(false);
+describe('settleUnlessIdle', () => {
+  const settle = (drawDefinition: any, detect: (matchUps: any[]) => unknown, run = vi.fn(() => 'ran')) => ({
+    result: settleUnlessIdle({ drawDefinition, site: 's', detect, run, idle: 'idle' }),
+    run,
   });
 
-  it('is false on a draw the index does not cover (TEAM): the pass hydrates as before', () => {
+  it('returns idle without running the pass where the index finds no work; runs it where it finds work', () => {
+    setOutcomePipeline(OUTCOME_PIPELINE_V1); // pinned: the suite may run under OUTCOME_PIPELINE=differential
+    const { drawDefinition } = draw();
+    for (const nothing of [undefined, []]) {
+      const { result, run } = settle(drawDefinition, () => nothing);
+      expect(result).toEqual('idle');
+      expect(run).not.toHaveBeenCalled();
+    }
+    for (const work of [{ matchUpId: 'm' }, ['m']]) {
+      const { result, run } = settle(drawDefinition, () => work);
+      expect(result).toEqual('ran');
+      expect(run).toHaveBeenCalledTimes(1);
+    }
+  });
+
+  it('never idles on a draw the index does not cover (TEAM): the pass runs as before', () => {
+    setOutcomePipeline(OUTCOME_PIPELINE_V1);
     const { drawDefinition } = draw({ drawSize: 4, eventType: TEAM_EVENT });
     const detect = vi.fn(() => undefined);
-    expect(nothingToSettle({ drawDefinition, site: 's', detect })).toEqual(false);
+    const { result } = settle(drawDefinition, detect);
+    expect(result).toEqual('ran');
     expect(detect).not.toHaveBeenCalled();
   });
 
-  it('asks the detector of the index, which carries no round name, and of a hydration only in differential', () => {
+  it('differential AGREEMENT: a detector that finds work on a hydration but not on the index is recorded', () => {
     const { drawDefinition } = draw();
-    // a detector that would find work on a hydration only: every hydrated matchUp has a round name
+    // every hydrated matchUp has a round name; no index entry carries one
     const detect = (matchUps: any[]) => matchUps.find((matchUp) => matchUp.roundName);
-    // pinned: the suite may run under OUTCOME_PIPELINE=differential
     setOutcomePipeline(OUTCOME_PIPELINE_V1);
-    expect(nothingToSettle({ drawDefinition, site: 'planted', detect })).toEqual(true);
+    expect(settle(drawDefinition, detect).result).toEqual('idle');
     expect(takePrecheckDivergences()).toEqual([]);
 
     setOutcomePipeline(OUTCOME_PIPELINE_DIFFERENTIAL);
-    expect(nothingToSettle({ drawDefinition, site: 'planted', detect })).toEqual(true);
-    const [recorded] = takePrecheckDivergences();
-    expect(recorded).toMatchObject({ site: 'planted', index: 'null' });
+    settle(drawDefinition, detect);
+    expect(takePrecheckDivergences()).toEqual([expect.objectContaining({ site: 's', index: 'null' })]);
+  });
+
+  it('differential COMPLETENESS: the pass runs anyway, and one that writes where the index said idle is recorded', () => {
+    const { drawDefinition } = draw();
+    setOutcomePipeline(OUTCOME_PIPELINE_DIFFERENTIAL);
+    // a pass that writes, under a detector that finds nothing anywhere
+    const writes = vi.fn(() => {
+      drawDefinition.drawName = 'written by a pass the detector called idle';
+      return 'ran';
+    });
+    expect(settle(drawDefinition, () => undefined, writes).result).toEqual('ran');
+    expect(writes).toHaveBeenCalledTimes(1);
+    expect(takePrecheckDivergences()).toEqual([{ site: 's', index: 'idle', hydrated: 'the pass wrote' }]);
+    // CONTROL: an idle pass that writes nothing is not recorded
+    settle(drawDefinition, () => undefined);
+    expect(takePrecheckDivergences()).toEqual([]);
   });
 });
 
