@@ -42,7 +42,6 @@ export type AbstainReason =
   | 'tallied' // a round robin, ad hoc or lucky structure: the tally (S3)
   | 'schedule' // the call carries a schedule (§ 3.5.8)
   | 'notes' // the call carries notes
-  | 'unchanged' // the write changes nothing but stamps: comparable by value since F2 (i) is in v1, owned from S2
   | 'no-record' // the draw is not held in the tournament record's events: nothing to fold the plan into
   | 'edges' // the draw stores no edges, which v1 writes first (`ensureGoesTo`): S2's setEdges
   | 'clock' // no captured instant (a call outside the engine): the timestamps a write takes cannot be reproduced
@@ -57,21 +56,6 @@ export type OutcomePlan =
 
 const LOCAL_ROUTES = new Set<Route>(['clear', 'clear-score', 'remove-directed', 'only-score']);
 const LOCAL_STATUSES = new Set<string | undefined>([IN_PROGRESS, SUSPENDED, AWAITING_RESULT, INCOMPLETE, TO_BE_PLAYED]);
-
-const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
-
-function unchanged(write: MatchUpWrite, view: OutcomeView): boolean {
-  const { existing } = view;
-  return (
-    write.matchUpStatus === existing.matchUpStatus &&
-    write.winningSide === existing.winningSide &&
-    (write.scoreStringSide1 ?? '') === (existing.score?.scoreStringSide1 ?? '') &&
-    (write.scoreStringSide2 ?? '') === (existing.score?.scoreStringSide2 ?? '') &&
-    same(write.sets, existing.score?.sets) &&
-    same(write.matchUpStatusCodes ?? [], existing.matchUpStatusCodes ?? []) &&
-    (write.matchUpFormat ?? existing.ownMatchUpFormat) === existing.ownMatchUpFormat
-  );
-}
 
 function localReason({ route, write }: { route?: Route; write?: MatchUpWrite }): AbstainReason | undefined {
   if (!route || !write || !LOCAL_ROUTES.has(route)) return 'route';
@@ -150,8 +134,6 @@ function abstainReason(args: {
   if (shape) return shape;
   if (view.existing.hasSideExitProvenance || view.existing.carriedExit) return 'provenance';
   if (view.draw.tallied) return 'tallied';
-  // both shapes above have a write by here
-  if (unchanged(write as MatchUpWrite, view)) return 'unchanged';
   return undefined;
 }
 

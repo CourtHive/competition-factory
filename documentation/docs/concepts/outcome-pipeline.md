@@ -482,8 +482,8 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   v1's own notices for what was written) and v1 is not asked; every other call is handed to v1
   whole, which routes and writes as under `v1`. Since S2 v2 owns the **local** write: the
   matchUp's own result (an in-progress, suspended or corrected live score, a format change with
-  it, a cleared live score), with no winner before or after, no exit, nothing directed, no tally
-  and no settle work. It leaves the record, the notices and the result v1 leaves for the same call
+  it, a cleared live score, or the same result submitted again, which changes nothing but stamps),
+  with no winner before or after, no exit, nothing directed, no tally and no settle work. It leaves the record, the notices and the result v1 leaves for the same call
   (`ownedLocalWrites.test.ts`, under a fixed clock); an owned call takes no hydration, and its
   `updateInContextMatchUp` is built only for a subscriber, after the call has succeeded.
 - **`differential`**: v2 plans the whole call before v1 runs, then checks v1's result against it,
@@ -493,7 +493,7 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   a loser carries, the exit a double exit produces, two exits converging, the swap, a decider's
   settlement, TEAM auto-calc and the direction of a dual its lines decide, and an exit that meets a
   BYE (none may be left labelled an exit beside it). A refusal v1 raises at the apply stage, where
-  v2 does not reach (`APPLY_STAGE_CODES`: an invalid time, an active, assigned or occupied drawPosition, a
+  v2 does not reach (`APPLY_STAGE_CODES`: an invalid time or date, an active, assigned or occupied drawPosition, a
   mutation lock, `ERR_FORCED`, and the status and assignment checks a write makes), is recorded as
   deferred rather than a divergence; so is a step v2 does not yet plan, such as a relabel whose
   loser stands past a BYE, or an exit carried into a swap. `getDifferentialTally()` counts compared
@@ -576,7 +576,6 @@ the slices that follow:
 | `route`        | takes a route, or reaches a status, that S1 does not plan as ops                                                   | S2                                              |
 | `provenance`   | is on a matchUp holding side-exit provenance the score write may clear or rescue                                   | S5                                              |
 | `tallied`      | is in a round-robin, ad hoc or lucky structure, whose tally the write updates                                      | S3                                              |
-| `unchanged`    | would change nothing but stamps                                                                                    | S2 (with F2 in v1)                              |
 | `no-record`    | is on a draw the tournament record's events do not hold, so there is nothing to fold the plan into                 | none: a shadow needs the record                 |
 | `edges`        | is on a draw that stores no winner and loser edges, which v1 writes first (`ensureGoesTo`)                         | S2 (`setEdges`)                                 |
 | `clock`        | is made outside an engine call, with no captured instant, so the timestamps a write takes cannot be reproduced     | none: production calls go through the engine    |

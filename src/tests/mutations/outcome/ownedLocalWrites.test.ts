@@ -80,6 +80,8 @@ const SHAPES: [string, Step[]][] = [
     [() => ({ outcome: inProgress('3-2') }), () => ({ outcome: { matchUpStatus: TO_BE_PLAYED, score: undefined } })],
   ],
   ['a format change with a live score', [() => ({ outcome: inProgress('6-3 2-1'), matchUpFormat: 'SET5-S:6/TB7' })]],
+  // the second call changes nothing but stamps: owned since S2 (F2 (i) stamps each touched entity once, as v1 does)
+  ['the same score submitted twice', [() => ({ outcome: inProgress('3-2') }), () => ({ outcome: inProgress('3-2') })]],
 ];
 
 /** the steps on a first-round matchUp, from a fresh record, every topic subscribed and the clock fixed */
