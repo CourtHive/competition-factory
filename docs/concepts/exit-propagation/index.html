@@ -1,0 +1,1122 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="docs-wrapper plugin-docs plugin-id-default docs-version-current docs-doc-page docs-doc-id-concepts/exit-propagation" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.10.2">
+<title data-rh="true">Exit Propagation | Competition Factory</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://courthive.github.io/competition-factory/docs/concepts/exit-propagation"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Exit Propagation | Competition Factory"><meta data-rh="true" name="description" content="Overview"><meta data-rh="true" property="og:description" content="Overview"><link data-rh="true" rel="icon" href="/competition-factory/img/favicon.ico"><link data-rh="true" rel="canonical" href="https://courthive.github.io/competition-factory/docs/concepts/exit-propagation"><link data-rh="true" rel="alternate" href="https://courthive.github.io/competition-factory/docs/concepts/exit-propagation" hreflang="en"><link data-rh="true" rel="alternate" href="https://courthive.github.io/competition-factory/docs/concepts/exit-propagation" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Exit Propagation","item":"https://courthive.github.io/competition-factory/docs/concepts/exit-propagation"}]}</script><link rel="stylesheet" href="/competition-factory/assets/css/styles.05ee44b1.css">
+<script src="/competition-factory/assets/js/runtime~main.d2cec68b.js" defer="defer"></script>
+<script src="/competition-factory/assets/js/main.ba74c317.js" defer="defer"></script>
+</head>
+<body>
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><link rel="preload" as="image" href="/competition-factory/img/CourtHive.svg"><link rel="preload" as="image" href="/competition-factory/img/CourtHive-dark.svg"><div role="region" aria-label="Skip to main content"><a class="skipToContent_Bat0" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/competition-factory/"><div class="navbar__logo"><img src="/competition-factory/img/CourtHive.svg" alt="CourtHive Logo" class="themedComponent_Qwys themedComponent--light_zzyo"><img src="/competition-factory/img/CourtHive-dark.svg" alt="CourtHive Logo" class="themedComponent_Qwys themedComponent--dark_G68V"></div><b class="navbar__title text--truncate">Competition Factory</b></a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/competition-factory/docs/">Docs</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><a href="https://github.com/CourtHive/competition-factory" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_W5jO"><use href="#theme-svg-external-link"></use></svg></a><div class="toggle_WNrS colorModeToggle_R1vP"><button class="clean-btn toggleButton_bSgt toggleButtonDisabled_a0iV" type="button" disabled="" title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g29F lightToggleIcon_Vjqv"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g29F darkToggleIcon_zzVV"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g29F systemToggleIcon_cWz4"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_feri"><div class="dsla-search-wrapper"><div class="dsla-search-field" data-tags="default,docs-default-current"></div></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_irZJ"><div class="docsWrapper_p_Tl"><button aria-label="Scroll back to top" class="clean-btn theme-back-to-top-button backToTopButton_iVuI" type="button"></button><div class="docRoot_pAxQ"><aside class="theme-doc-sidebar-container docSidebarContainer_CGPG"><div class="sidebarViewport_k03Q"><div class="sidebar_kBGi"><nav aria-label="Docs sidebar" class="menu thin-scrollbar menu_Mmvq"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_DaJZ menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/"><span class="categoryLinkLabel_faa0">Competition Factory</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_DaJZ menu__link menu__link--sublist menu__link--sublist-caret menu__link--active" role="button" aria-expanded="true" href="/competition-factory/docs/concepts/performance"><span class="categoryLinkLabel_faa0">Concepts</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/performance"><span class="linkLabel_CVfN">Performance Evidence and Measurement</span></a></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_DaJZ menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/registration-profile"><span class="categoryLinkLabel_faa0">Tournament Setup</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_DaJZ menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/format-wizard/engine"><span class="categoryLinkLabel_faa0">Format Wizard</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_DaJZ menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/participants"><span class="categoryLinkLabel_faa0">Participants</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_DaJZ menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/events/events-overview"><span class="categoryLinkLabel_faa0">Events</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_DaJZ menu__link menu__link--sublist menu__link--sublist-caret menu__link--active" role="button" aria-expanded="true" tabindex="0" href="/competition-factory/docs/concepts/draws-overview"><span class="categoryLinkLabel_faa0">Draws</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/draws-overview"><span class="linkLabel_CVfN">Draw Generation</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/draw-types"><span class="linkLabel_CVfN">Draw Types</span></a></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-3 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_DaJZ menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/draw-types/single-elimination"><span class="categoryLinkLabel_faa0">Draw Type Details</span></a></div></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/draw-positions"><span class="linkLabel_CVfN">drawPositions</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/draw-links"><span class="linkLabel_CVfN">Draw Links</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/draft-draws"><span class="linkLabel_CVfN">Draft Draws</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/additional-seeds"><span class="linkLabel_CVfN">Additional Seeds</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/seed-withdrawal-cascade"><span class="linkLabel_CVfN">Seed Withdrawal Cascade</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/exit-profiles"><span class="linkLabel_CVfN">Exit Profiles</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/outcome-pipeline"><span class="linkLabel_CVfN">The outcome pipeline</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" tabindex="0" href="/competition-factory/docs/concepts/exit-propagation"><span class="linkLabel_CVfN">Exit Propagation</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/finishing-positions"><span class="linkLabel_CVfN">Finishing Positions</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/actions"><span class="linkLabel_CVfN">Actions</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_DaJZ menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/matchup-overview"><span class="categoryLinkLabel_faa0">matchUps</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_DaJZ menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/scheduling-overview"><span class="categoryLinkLabel_faa0">Scheduling</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_DaJZ menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/publishing/publishing-overview"><span class="categoryLinkLabel_faa0">Publishing</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_DaJZ menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/accessors"><span class="categoryLinkLabel_faa0">Record Data</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_DaJZ menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/policies"><span class="categoryLinkLabel_faa0">Policies</span></a></div></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_DaJZ menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/engines/state-engines"><span class="categoryLinkLabel_faa0">State Engines</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_DaJZ menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/implementation/draws/allPlayoffPositionsFilled"><span class="categoryLinkLabel_faa0">Implementation reference</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_DaJZ menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/governors/governors-overview"><span class="categoryLinkLabel_faa0">Governors</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_DaJZ menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/tools/tools-overview"><span class="categoryLinkLabel_faa0">Tools</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_DaJZ menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/testing/testing-overview"><span class="categoryLinkLabel_faa0">Testing</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_DaJZ menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/constants"><span class="categoryLinkLabel_faa0">Data</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_DaJZ menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/whats-new-7.0.0"><span class="categoryLinkLabel_faa0">Release Notes &amp; Migration</span></a></div></li></ul></nav></div></div></aside><main class="docMainContainer_Xm0U"><div class="container padding-top--md padding-bottom--lg"><div class="row"><div class="col docItemCol_B4Cq"><div class="docItemContainer__ovw"><article><nav class="theme-doc-breadcrumbs breadcrumbsContainer_D6KN" aria-label="Breadcrumbs"><ul class="breadcrumbs"><li class="breadcrumbs__item"><a aria-label="Home page" class="breadcrumbs__link" href="/competition-factory/"><svg viewBox="0 0 24 24" class="breadcrumbHomeIcon_MYvU"><path d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z" fill="currentColor"></path></svg></a></li><li class="breadcrumbs__item"><span class="breadcrumbs__link">Concepts</span></li><li class="breadcrumbs__item"><span class="breadcrumbs__link">Draws</span></li><li class="breadcrumbs__item breadcrumbs__item--active"><span class="breadcrumbs__link">Exit Propagation</span></li></ul></nav><div class="tocCollapsible_b1xO theme-doc-toc-mobile tocMobile_h20e"><button type="button" class="clean-btn tocCollapsibleButton_LPWk">On this page</button></div><div class="theme-doc-markdown markdown"><header><h1>Exit Propagation</h1></header><h2 class="anchor anchorTargetStickyNavbar_Jhr7" id="overview">Overview<a href="#overview" class="hash-link" aria-label="Direct link to Overview" title="Direct link to Overview" translate="no">​</a></h2>
+<p>An <strong>exit</strong> is a matchUp that ended without being played out: <code>WALKOVER</code>, <code>DEFAULTED</code> or <code>RETIRED</code>.
+A <strong>double exit</strong> is one where <em>both</em> sides are out — <code>DOUBLE_WALKOVER</code> or <code>DOUBLE_DEFAULT</code> — so no
+participant advances from it at all.</p>
+<p>Recording an exit is not a local edit. It sets off a cascade: a winner may need advancing, a loser
+may need feeding into a consolation structure, a BYE may need placing where nobody will arrive, and
+each of those can in turn produce another exit further down the draw. <strong>Exit propagation</strong> is that
+cascade.</p>
+<p>This page describes what the engine guarantees while propagating, and the shapes a consumer will
+see in the resulting data. It is distinct from <a class="" href="/competition-factory/docs/concepts/exit-profiles">exit profiles</a>, which describe the
+<em>path</em> a participant took between structures rather than the <em>status</em> that travelled with them.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Jhr7" id="the-pending-propagated-exit">The pending propagated exit<a href="#the-pending-propagated-exit" class="hash-link" aria-label="Direct link to The pending propagated exit" title="Direct link to The pending propagated exit" translate="no">​</a></h2>
+<p>Two pending shapes exist, and they differ in whether a <code>winningSide</code> is recorded before anyone arrives.</p>
+<p><strong>A carried exit.</strong> With <code>propagateExitStatus</code> on, a <code>WALKOVER</code> or <code>DEFAULTED</code> follows the loser into
+the matchUp they are fed to. The exiting participant is present; their opponent may not be. The engine
+records the exit and points <code>winningSide</code> at the opponent&#x27;s side, <strong>even when that side is still
+empty</strong>: the outcome is already known, and whoever arrives there wins it.</p>
+<div class="language-js codeBlockContainer_ZJpG theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_ywzN"><pre tabindex="0" class="prism-code language-js codeBlock_pK0D thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_mJog"><div class="token-line" style="color:#bfc7d5"><span class="token comment" style="color:rgb(105, 112, 152);font-style:italic">// A carried exit, opponent not yet arrived</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain"></span><span class="token punctuation" style="color:rgb(199, 146, 234)">{</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token literal-property property">matchUpStatus</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token string" style="color:rgb(195, 232, 141)">&#x27;WALKOVER&#x27;</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token literal-property property">winningSide</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token number" style="color:rgb(247, 140, 108)">1</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain">                 </span><span class="token comment" style="color:rgb(105, 112, 152);font-style:italic">// side 1 is an empty feed slot</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token literal-property property">sides</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token punctuation" style="color:rgb(199, 146, 234)">[</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">    </span><span class="token punctuation" style="color:rgb(199, 146, 234)">{</span><span class="token plain"> </span><span class="token literal-property property">sideNumber</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token number" style="color:rgb(247, 140, 108)">1</span><span class="token plain"> </span><span class="token punctuation" style="color:rgb(199, 146, 234)">}</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain">            </span><span class="token comment" style="color:rgb(105, 112, 152);font-style:italic">// no participantId yet</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">    </span><span class="token punctuation" style="color:rgb(199, 146, 234)">{</span><span class="token plain"> </span><span class="token literal-property property">sideNumber</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token number" style="color:rgb(247, 140, 108)">2</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"> </span><span class="token literal-property property">participantId</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token string" style="color:rgb(195, 232, 141)">&#x27;...&#x27;</span><span class="token plain"> </span><span class="token punctuation" style="color:rgb(199, 146, 234)">}</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain">  </span><span class="token comment" style="color:rgb(105, 112, 152);font-style:italic">// the participant who carried the exit in</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token punctuation" style="color:rgb(199, 146, 234)">]</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain"></span><span class="token punctuation" style="color:rgb(199, 146, 234)">}</span><br></div></code></pre></div></div>
+<p><strong>A produced exit.</strong> A double exit sends nobody forward, so the matchUp it feeds receives a produced
+<code>WALKOVER</code> (or <code>DEFAULTED</code>) with <strong>no <code>winningSide</code></strong> while the opponent has not arrived. The award is
+made when they do. CA, 2026-09-20: <em>&quot;that is unnecessary if the winningSide will display the
+checkmark once a participant arrives... so, you don&#x27;t need to keep it.&quot;</em> The one exception is an
+opponent who is already in place: the winner is then read off their side at once, because no arrival
+is still coming to resolve it.</p>
+<p>A BYE that carries a produced exit on does not change how it lands. CA, 2026-10-03: a produced exit
+advanced past a BYE is still a produced exit, so it lands pending, as it would without the BYE. A
+seat that a feed link has reserved for a participant who has not arrived yet is not an opponent in
+place, even though it already holds a drawPosition.</p>
+<div class="language-js codeBlockContainer_ZJpG theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_ywzN"><pre tabindex="0" class="prism-code language-js codeBlock_pK0D thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_mJog"><div class="token-line" style="color:#bfc7d5"><span class="token comment" style="color:rgb(105, 112, 152);font-style:italic">// A produced exit, opponent not yet arrived</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain"></span><span class="token punctuation" style="color:rgb(199, 146, 234)">{</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token literal-property property">matchUpStatus</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token string" style="color:rgb(195, 232, 141)">&#x27;WALKOVER&#x27;</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token literal-property property">winningSide</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token keyword nil" style="font-style:italic">undefined</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain">         </span><span class="token comment" style="color:rgb(105, 112, 152);font-style:italic">// awarded when a participant arrives</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token literal-property property">sides</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token punctuation" style="color:rgb(199, 146, 234)">[</span><span class="token punctuation" style="color:rgb(199, 146, 234)">{</span><span class="token plain"> </span><span class="token literal-property property">sideNumber</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token number" style="color:rgb(247, 140, 108)">1</span><span class="token plain"> </span><span class="token punctuation" style="color:rgb(199, 146, 234)">}</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"> </span><span class="token punctuation" style="color:rgb(199, 146, 234)">{</span><span class="token plain"> </span><span class="token literal-property property">sideNumber</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token number" style="color:rgb(247, 140, 108)">2</span><span class="token plain"> </span><span class="token punctuation" style="color:rgb(199, 146, 234)">}</span><span class="token punctuation" style="color:rgb(199, 146, 234)">]</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain"></span><span class="token punctuation" style="color:rgb(199, 146, 234)">}</span><br></div></code></pre></div></div>
+<p>Two consequences worth knowing:</p>
+<ul>
+<li class=""><strong>A <code>winningSide</code> does not imply a winner is present</strong>, and an exit does not imply a
+<code>winningSide</code>. Code that reads <code>winningSide</code> and dereferences the participant on that side must
+tolerate both. <code>isActiveMatchUp</code> and <code>isActiveDownstream</code> distinguish a pending exit from a resolved
+one for this reason.</li>
+<li class=""><strong>The matchUp is not finished.</strong> It is waiting, and it will change again without any further
+action from the caller.</li>
+</ul>
+<p>Both shapes are measured by the outcome pipeline&#x27;s differential mode on every exit the suite enters
+(<code>src/mutate/matchUps/outcome/</code>).</p>
+<h2 class="anchor anchorTargetStickyNavbar_Jhr7" id="propagateexitstatus"><code>propagateExitStatus</code><a href="#propagateexitstatus" class="hash-link" aria-label="Direct link to propagateexitstatus" title="Direct link to propagateexitstatus" translate="no">​</a></h2>
+<p>Whether an exit status travels into the consolation structure at all is a scoring-policy decision.</p>
+<table><thead><tr><th>Setting</th><th>Behaviour</th></tr></thead><tbody><tr><td><code>propagateExitStatus: false</code> (factory default)</td><td>the loser is directed normally; the exit status does not follow them</td></tr><tr><td><code>propagateExitStatus: true</code></td><td>the exit status is carried into the target structure</td></tr></tbody></table>
+<p>It can be set on the scoring policy or passed per call to <code>setMatchUpStatus</code>. Since 7.5.0 a policy
+that sets the flag, <code>true</code> or <code>false</code>, wins over the call; the call decides only where the policy is
+silent (<code>policy ?? param</code>). The USTA scoring policy enables it; the factory default policy is silent
+on it, so it is off unless the call turns it on.</p>
+<p>The flag does not decide whether an exit may stand on a matchUp holding only one participant.
+Since 7.5.0 a <code>WALKOVER</code> or <code>DEFAULTED</code> can be recorded before the second opponent arrives with the
+flag on or off; the flag decides only whether an exit is then carried into the loser&#x27;s next matchUp.
+A direct double exit needs both seats reached; only the cascade&#x27;s own write may place one beside a
+seat nobody has reached. The rules for who may receive the exit are in
+<a class="" href="/competition-factory/docs/concepts/outcome-pipeline#21-who-may-receive-a-directing-outcome">the outcome pipeline § 2.1</a>.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Jhr7" id="bye-provenance-byefrompropagation">BYE provenance: <code>byeFromPropagation</code><a href="#bye-provenance-byefrompropagation" class="hash-link" aria-label="Direct link to bye-provenance-byefrompropagation" title="Direct link to bye-provenance-byefrompropagation" translate="no">​</a></h2>
+<p>When a double exit means nobody can arrive in a downstream slot, the cascade places a <strong>BYE</strong> there.
+Unwinding that double exit later has to remove the BYEs the cascade placed — and only those.</p>
+<p><code>PositionAssignment.byeFromPropagation</code> records which BYEs those are.</p>
+<div class="language-js codeBlockContainer_ZJpG theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_ywzN"><pre tabindex="0" class="prism-code language-js codeBlock_pK0D thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_mJog"><div class="token-line" style="color:#bfc7d5"><span class="token punctuation" style="color:rgb(199, 146, 234)">{</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token literal-property property">drawPosition</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token number" style="color:rgb(247, 140, 108)">1</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token literal-property property">bye</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token boolean" style="color:rgb(255, 88, 116)">true</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token literal-property property">byeFromPropagation</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token boolean" style="color:rgb(255, 88, 116)">true</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain">   </span><span class="token comment" style="color:rgb(105, 112, 152);font-style:italic">// placed by an exit cascade, not by draw generation or by hand</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain"></span><span class="token punctuation" style="color:rgb(199, 146, 234)">}</span><br></div></code></pre></div></div>
+<p>It is a boolean and nothing more: it deliberately does <strong>not</strong> store the matchUpId that caused it,
+because a stored reference can dangle once the source is removed and nothing consumes it.</p>
+<p>The flag is first-class rather than an extension because <code>removeExtensions: true</code> is a supported
+option on <code>getState</code> and <code>getTournament</code> — an extension marker would be destroyed by a routine deep
+copy, and silently, which would return removal to the topology guess it replaced. It is cleared
+wherever <code>bye</code> is cleared, in the same statement, and a BYE arriving at that drawPosition by any
+other route clears any marker left behind rather than inheriting it.</p>
+<p>Consumers do not normally need to read it. It is documented because it is visible in stored
+tournament records and in anything that round-trips <code>positionAssignments</code>.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Jhr7" id="exit-provenance-sideexitprovenance">Exit provenance: <code>sideExitProvenance</code><a href="#exit-provenance-sideexitprovenance" class="hash-link" aria-label="Direct link to exit-provenance-sideexitprovenance" title="Direct link to exit-provenance-sideexitprovenance" translate="no">​</a></h2>
+<p>When propagation produces an exit in a downstream matchUp, each side of that matchUp gets there for a
+reason — one side because an upstream double exit delivered nobody, the other because of whatever
+happened in its own feeder. <code>matchUp.sideExitProvenance</code> records those reasons, keyed by side.</p>
+<div class="language-js codeBlockContainer_ZJpG theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_ywzN"><pre tabindex="0" class="prism-code language-js codeBlock_pK0D thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_mJog"><div class="token-line" style="color:#bfc7d5"><span class="token punctuation" style="color:rgb(199, 146, 234)">{</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token number" style="color:rgb(247, 140, 108)">1</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token punctuation" style="color:rgb(199, 146, 234)">{</span><span class="token plain"> </span><span class="token literal-property property">matchUpStatus</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token string" style="color:rgb(195, 232, 141)">&#x27;WALKOVER&#x27;</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain">  </span><span class="token literal-property property">previousMatchUpStatus</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token string" style="color:rgb(195, 232, 141)">&#x27;DOUBLE_WALKOVER&#x27;</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"> </span><span class="token literal-property property">sourceMatchUpId</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token string" style="color:rgb(195, 232, 141)">&#x27;…&#x27;</span><span class="token plain"> </span><span class="token punctuation" style="color:rgb(199, 146, 234)">}</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token number" style="color:rgb(247, 140, 108)">2</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token punctuation" style="color:rgb(199, 146, 234)">{</span><span class="token plain"> </span><span class="token literal-property property">matchUpStatus</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token string" style="color:rgb(195, 232, 141)">&#x27;DEFAULTED&#x27;</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"> </span><span class="token literal-property property">previousMatchUpStatus</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token string" style="color:rgb(195, 232, 141)">&#x27;DOUBLE_DEFAULT&#x27;</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain">  </span><span class="token literal-property property">sourceMatchUpId</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token string" style="color:rgb(195, 232, 141)">&#x27;…&#x27;</span><span class="token plain"> </span><span class="token punctuation" style="color:rgb(199, 146, 234)">}</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain"></span><span class="token punctuation" style="color:rgb(199, 146, 234)">}</span><br></div></code></pre></div></div>
+<p><code>previousMatchUpStatus</code> is the upstream status that caused it; <code>matchUpStatus</code> is what this side was
+given as a result; <code>sourceMatchUpId</code> identifies the matchUp whose exit produced the entry.</p>
+<p>Three properties follow from what provenance <em>is</em> — a record of where each side came from:</p>
+<ul>
+<li class="">
+<p><strong>An arrival records no <code>matchUpStatus</code>.</strong> A participant who won their previous matchUp — by playing
+it, or because the opponent walked over or defaulted — arrives and waits; nothing was decided on
+their side here, so the entry carries the origin alone:
+<code>{ previousMatchUpStatus: &#x27;DEFAULTED&#x27;, sourceMatchUpId: &#x27;…&#x27; }</code>. Only a side on which something was
+decided records a <code>matchUpStatus</code>: an exit carried over a loser link (the loser of that DEFAULTED,
+whose opponent wins by default), an exit a double exit produced (nobody arrives; the exit stands
+pending), or a BYE. Without this, the winner of a DEFAULTED and its loser carried the same entry into
+their next matchUps, and a reader asking &quot;does this side carry an exit?&quot; could not tell them apart.</p>
+</li>
+<li class="">
+<p><strong>An entry is never <code>TO_BE_PLAYED</code>.</strong> A side that has not been decided has no origin, so it gets no
+entry rather than one naming a status that is not an outcome. This matters because readers test the
+mere <em>presence</em> of provenance to ask whether an exit was produced by propagation.</p>
+</li>
+<li class="">
+<p><strong>Origins accumulate.</strong> One side&#x27;s origin can become known before the other&#x27;s — the second feeder
+may not have been played yet — so a write that knows only its own side adds to the record instead
+of replacing it.</p>
+</li>
+<li class="">
+<p><strong>An origin sits on the matchUp its source feeds, on its seat&#x27;s side.</strong> Since 7.7.0 an entry naming a
+source in the same structure is written only on that source&#x27;s own next matchUp, never on a later round
+the same participant had reached, and it is keyed to the side the source&#x27;s position holds there,
+which roundPosition order does not predict where fed positions interleave with advanced ones. The one
+entry found further on is an exit relayed past BYEs (below). When the occupants change sides as the
+seats fill and empty, the entries move with them.</p>
+</li>
+</ul>
+<p><strong>A known limit, since the field is visible in stored records.</strong> On a consolation convergence the
+stored entry can be present for only one of the two sides; the entries that <em>are</em> there are correct.
+Completing it is the work of making <code>matchUpStatusCodes</code> a projection of this field rather than a
+parallel record — see <a class="" href="/competition-factory/docs/migration-7.0.0#12-non-breaking-additions-worth-knowing">migration §12</a>.
+Read the field per side and treat a missing side as unknown rather than as absent-of-exit.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="why-not-matchupstatuscodes">Why not <code>matchUpStatusCodes</code><a href="#why-not-matchupstatuscodes" class="hash-link" aria-label="Direct link to why-not-matchupstatuscodes" title="Direct link to why-not-matchupstatuscodes" translate="no">​</a></h3>
+<p>Because that array already holds three unrelated element shapes — the scoring policy&#x27;s code
+vocabulary, this provenance, and codes wrapped as <code>{ code }</code> — and provenance was <strong>positional</strong>
+inside it: a side was an array <em>index</em>, padded with <code>&#x27;&#x27;</code>. That made an entry impossible to address,
+impossible to attribute to the exit that produced it, and easy for any reader assuming a string to
+flatten. Keying by <code>sideNumber</code> removes the padding and the ambiguity together.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="why-this-one-carries-a-matchupid-when-byefrompropagation-refuses-to">Why this one carries a matchUpId when <code>byeFromPropagation</code> refuses to<a href="#why-this-one-carries-a-matchupid-when-byefrompropagation-refuses-to" class="hash-link" aria-label="Direct link to why-this-one-carries-a-matchupid-when-byefrompropagation-refuses-to" title="Direct link to why-this-one-carries-a-matchupid-when-byefrompropagation-refuses-to" translate="no">​</a></h3>
+<p>The BYE marker is a boolean on purpose: a stored reference can dangle once its source is removed, and
+nothing needed the identity. Provenance is the opposite case — unwinding one exit while another
+still stands requires knowing <em>which</em> entry belongs to the exit being removed, and that is precisely
+what a boolean cannot say.</p>
+<p>The dangling risk is answered by symmetry rather than by omission: provenance is cleared at every
+site that blanks <code>matchUpStatusCodes</code>, and that clear is deliberately <strong>not</strong> gated on the schema
+write mode. The write mode decides whether the field is written; it must never decide whether stale
+state is removed.</p>
+<p>Consumers do not normally need to read it. It is documented because it is visible in stored
+tournament records.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="why-a-loser-seats-bye-is-read-from-the-draw">Why a loser seat&#x27;s BYE is read from the draw<a href="#why-a-loser-seats-bye-is-read-from-the-draw" class="hash-link" aria-label="Direct link to Why a loser seat&#x27;s BYE is read from the draw" title="Direct link to Why a loser seat&#x27;s BYE is read from the draw" translate="no">​</a></h3>
+<p>Whether a propagated BYE on a loser seat stands is read from the draw, never from a record of who placed it. It stands
+while the matchUp feeding the seat across the link will never send anyone: it holds a BYE (a BYE matchUp has no winner
+or loser), it is a double exit, it was won against an exit and its losing side holds nobody, it is undecided and holds
+alone the exit a double exit produced along its winner path, or it feeds a FIRST_MATCHUP link that every candidate
+loser is already ineligible to cross. Under <code>doubleExitPropagateBye: false</code> a double exit&#x27;s seat shows its produced
+exit instead of a BYE (CA ruling (A), 2026-10-21), unless the seat is fed in. An exit that came over a loser link waits
+for the award: the seat is owed its BYE only once the matchUp is awarded.</p>
+<p>Until 2026-10-22 each side kept a <code>byeClaims</code> ledger of the matchUps that claimed its BYE, and unwinds asked it whether
+the BYE still had a reason. The ledger depended on the order results were entered: the same draw could carry a claim
+in one order and none in another, so the census round trip had to leave such claims out (CA ruling (b), 2026-10-20).
+Measured before the ledger was retired, the draw-derived reading explained every propagated loser-seat BYE in
+2,493,487 census seat observations, where the ledger explained fewer (Mentat P58). The ledger is no longer written or
+read; <code>byeClaims</code> on a stored record is ignored. The harness holds every step to the draw-derived reading
+(<code>LOSER_SEAT_DERIVED</code>).</p>
+<h2 class="anchor anchorTargetStickyNavbar_Jhr7" id="guarantees">Guarantees<a href="#guarantees" class="hash-link" aria-label="Direct link to Guarantees" title="Direct link to Guarantees" translate="no">​</a></h2>
+<p>These hold as of 7.0.0, or as of the release each states, and are enforced by the
+<a class="" href="/competition-factory/docs/testing/exit-propagation-harness">exit-propagation harness</a>.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="re-applying-the-same-double-exit-does-nothing">Re-applying the same double exit does nothing<a href="#re-applying-the-same-double-exit-does-nothing" class="hash-link" aria-label="Direct link to Re-applying the same double exit does nothing" title="Direct link to Re-applying the same double exit does nothing" translate="no">​</a></h3>
+<p>Asking for the state a matchUp is already in is <em>satisfied</em>, not repeated. Sending the identical
+double-exit outcome twice returns success and writes nothing the second time.</p>
+<p>This matters because it did not always hold: the second call used to re-run the cascade, which then
+read its own earlier work as a <em>second</em> source exiting into the same target, escalated the produced
+<code>WALKOVER</code> to a <code>DOUBLE_WALKOVER</code>, and cascaded a round further — with both calls reporting success.
+A client retry or a double-click corrupted the draw progressively and silently.</p>
+<p>A genuine <em>change</em> still propagates. <code>DOUBLE_WALKOVER</code> to <code>DOUBLE_DEFAULT</code> is a change, not a
+repeat.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="a-rejected-mutation-does-not-alter-the-draw">A rejected mutation does not alter the draw<a href="#a-rejected-mutation-does-not-alter-the-draw" class="hash-link" aria-label="Direct link to A rejected mutation does not alter the draw" title="Direct link to A rejected mutation does not alter the draw" translate="no">​</a></h3>
+<p>A rejected call cannot destroy a result that was already recorded, including a pending propagated
+exit. The specific defect behind this guarantee is closed: a bare <code>{ winningSide }</code> outcome is now
+validated <em>before</em> any removal runs, where it used to skip the early participant check and be caught
+only after the existing result had been unwound.</p>
+<p><strong>The guarantee is per method, on a direct call, and it does not depend on <code>rollbackOnError</code>.</strong> A
+<code>setMatchUpStatus</code> that returns an error leaves the draw unchanged. The cascade delivers that by
+itself: it refuses before it writes, and it builds in no snapshot or restore to hide a refusal that
+comes too late. A refusal returned after a write is a defect, not a design choice.</p>
+<p>Be precise about where that stands. Refusals that can only arise part-way through a cascade are
+being made impossible one root cause at a time; those that cannot be removed in the current pipeline
+are handed to its successor, which decides before it writes. The exit-propagation census measures
+the property on direct calls as <code>ERROR_IMPLIES_NO_MUTATION</code>, so a residual case shows up there rather
+than being assumed away.</p>
+<p><code>rollbackOnError</code> is a separate, queue-level feature: it makes several directives in one
+<code>executionQueue</code> succeed or fail together, and discards the queued notices of a refused queue. It is
+not how a single method&#x27;s error is made clean, and a consumer calling <code>setMatchUpStatus</code> directly
+does not need it for that.</p>
+<p>The cascade reports every error. Since 7.5.0 any write the cascade makes that fails, fails the call,
+and a refusal raised inside the cascade is returned to the caller rather than dropped behind a
+success. Before that, a call could report success over a draw the cascade had left half-written.</p>
+<p>If you are writing a client, an error response needs no compensating action. It does <strong>not</strong> mean
+every rejection is a no-op for your UI: the request was refused, and the reason in the error is
+worth surfacing.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="which-double-exit-a-convergence-becomes-does-not-depend-on-entry-order">Which double exit a convergence becomes does not depend on entry order<a href="#which-double-exit-a-convergence-becomes-does-not-depend-on-entry-order" class="hash-link" aria-label="Direct link to Which double exit a convergence becomes does not depend on entry order" title="Direct link to Which double exit a convergence becomes does not depend on entry order" translate="no">​</a></h3>
+<p>Two exits can converge on one matchUp — each side arriving because its own feeder produced nobody.
+The matchUp becomes a double exit, and <strong>which</strong> one is derived from both sides&#x27; origins, not from
+whichever result was entered last.</p>
+<ul>
+<li class="">both sides originating in a default → <code>DOUBLE_DEFAULT</code></li>
+<li class="">any other combination, including a default meeting a walkover → <code>DOUBLE_WALKOVER</code></li>
+</ul>
+<p>A mixture takes the weaker claim deliberately. A default is a referee&#x27;s ruling against a named
+player; in a mixed convergence one side merely failed to appear, and the collapsed status is a single
+field shared by both sides — so it states only what is true of both. The per-side origins are kept
+separately in <a href="#exit-provenance-sideexitprovenance" class=""><code>sideExitProvenance</code></a>.</p>
+<p>This did not always hold. The flavour used to be read from the arriving source alone, which made the
+stored <code>matchUpStatus</code> a function of the order an operator entered the two results: measured across
+eight draw types, entering the same two outcomes the other way round produced a different record in
+28 of 32 combinations.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="what-a-double-exit-produces-downstream-keeps-its-flavour">What a double exit produces downstream keeps its flavour<a href="#what-a-double-exit-produces-downstream-keeps-its-flavour" class="hash-link" aria-label="Direct link to What a double exit produces downstream keeps its flavour" title="Direct link to What a double exit produces downstream keeps its flavour" translate="no">​</a></h3>
+<p>A <code>DOUBLE_WALKOVER</code> produces a <code>WALKOVER</code> in the matchUp it feeds; a <code>DOUBLE_DEFAULT</code> produces a
+<code>DEFAULTED</code>. A mixed convergence is a <code>DOUBLE_WALKOVER</code> by the rule above, so it produces a
+<code>WALKOVER</code> — and that walkover is not attributable to any one upstream participant, which is the
+point of choosing the weaker label.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="a-correction-lands-where-the-direct-entry-lands">A correction lands where the direct entry lands<a href="#a-correction-lands-where-the-direct-entry-lands" class="hash-link" aria-label="Direct link to A correction lands where the direct entry lands" title="Direct link to A correction lands where the direct entry lands" translate="no">​</a></h3>
+<p>Enter the wrong outcome, then correct it, and the draw is the one you would have had by entering
+the right outcome first — status, winner and seats alike, in every matchUp the mistake could have
+touched. Enforced since 7.4.0 by the deep-correction oracle: 1,600 cells across seventeen draw
+types, each playing a twelve-step prefix with exits planted along the way, then taking the deepest
+exit back and comparing the two routes. The baseline is <strong>zero severe divergences</strong>; the only
+cells it does not compare are the four where the engine refuses the correct outcome outright, and
+those are recorded rather than counted.</p>
+<p>Three rules fell out of making this hold, each a defect that only the order of entry exposed:</p>
+<ul>
+<li class=""><strong>A seat advanced by its opponent&#x27;s BYE keeps that advancement when its occupant leaves.</strong> A fed
+seat beside a draw BYE is advanced from generation, before anybody sits on it. The advancement
+never depended on the occupant, so clearing the occupant — a corrected walkover, a position
+action — leaves the seat where it was; it is not torn down and the BYE&#x27;s seat advanced in its
+place. (This is also why a BYE placed on a seat that is already advanced and alone now feeds
+the loser link its BYE.)</li>
+<li class=""><strong>Clearing a double exit withdraws the BYE it propagated, all the way.</strong> Removing a
+<code>DOUBLE_WALKOVER</code> takes back the BYE it placed on the consolation seat, the BYE&#x27;s advancement
+into later rounds, and the <code>byeFromPropagation</code> marker — whether the double exit was in the
+first round or a later one.</li>
+<li class=""><strong>A produced exit arrives on the side its seat already holds.</strong> Where fed seat numbers
+interleave with advanced ones, feeder order predicts the wrong side; when the target already
+holds both seats, the seat&#x27;s own side is read.</li>
+<li class=""><strong>A convergence a correction dissolves settles as the kept exit alone would leave it.</strong> Re-entering
+an exit as a played win for the same winner withdraws the loser&#x27;s carried exit, and a double exit it
+had converged into falls back to the other exit. The withdrawn side&#x27;s reason code goes with its exit;
+the kept side&#x27;s stays. A kept produced exit that reached the matchUp <strong>past a BYE</strong>, with nobody yet
+in the seat it would be awarded to, lands pending as it does on the direct path (no winner until
+somebody arrives); one that came straight down its link keeps its award to that seat. And a
+participant who has already passed a BYE, carrying no exit of their own, takes the exit that BYE
+holds with them, whichever reached the seat first: the BYE stays, the exit travels (census policy-off
+20466254, 20488568, 20500008 and 20520641 — COMPASS, OLYMPIC and CURTIS_CONSOLATION).</li>
+<li class=""><strong>A re-score that keeps the winner rewrites what that winner&#x27;s arrival says.</strong> A winner who reached a
+produced exit records how they won the matchUp they came from. Correcting that matchUp to another
+result for the same winner (a default to a played win, say) rewrites the record, so it reads what
+entering the played win directly would have written (census 20500008, COMPASS 16/16).</li>
+<li class=""><strong>A flip rewrites it too.</strong> Under <code>allowChangePropagation</code>, a correction to the other winner puts the new winner in
+the old winner&#x27;s seat onward, and the arrival record there now reads the new result: a walkover won by one side
+corrected to a retirement won by the other reads RETIRED (census intgate, SINGLE_ELIMINATION 16/16 9100138:
+<code>anArrivalTellsTheTruthAfterAFlipOrAPendingExit</code>).</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="a-team-duals-double-exit-is-unwound-by-its-lines-or-protected-from-them">A team dual&#x27;s double exit is unwound by its lines, or protected from them<a href="#a-team-duals-double-exit-is-unwound-by-its-lines-or-protected-from-them" class="hash-link" aria-label="Direct link to A team dual&#x27;s double exit is unwound by its lines, or protected from them" title="Direct link to A team dual&#x27;s double exit is unwound by its lines, or protected from them" translate="no">​</a></h3>
+<p>Since 7.4.0. In a TEAM event a dual that holds a <code>DOUBLE_WALKOVER</code> has propagated like any other.
+Scoring one of its lines (tieMatchUps) afterwards takes the dual out of the double exit — so the
+produced walkover is withdrawn first, and a team that had been awarded it is taken back out of the
+next round. Once that produced walkover has been <strong>played on</strong>, a line of the dual is refused with
+<code>CANNOT_CHANGE_OUTCOME</code>, exactly as a direct re-score of the dual is: a played result is never
+reset by a score entered elsewhere.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="an-exit-never-discards-a-placement-and-says-when-it-kept-one">An exit never discards a placement, and says when it kept one<a href="#an-exit-never-discards-a-placement-and-says-when-it-kept-one" class="hash-link" aria-label="Direct link to An exit never discards a placement, and says when it kept one" title="Direct link to An exit never discards a placement, and says when it kept one" translate="no">​</a></h3>
+<p>A BYE or a produced exit that lands on a scheduled matchUp keeps that matchUp&#x27;s court, order and
+times — the rule the <a class="" href="/competition-factory/docs/governors/schedule-governor#assigning-a-bye-preserves-scheduling">schedule governor</a>
+states for BYEs, applied to produced exits since 7.5.0. The read side flags both
+(<code>CONFLICT_BYE_SCHEDULED</code>, <code>CONFLICT_EXIT_SCHEDULED</code>), and the <code>setMatchUpStatus</code> call that left
+them returns <code>warnings: [{ code: &#x27;SCHEDULE_PRESERVED_ON_EXIT&#x27;, matchUpIds }]</code> so the client can
+offer to release the slots. Enforced over the drawSize-8 matrix cells with every matchUp scheduled
+first: no slot moves under any cascade.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="a-produced-exit-awards-no-empty-seat-on-any-path">A produced exit awards no empty seat, on any path<a href="#a-produced-exit-awards-no-empty-seat-on-any-path" class="hash-link" aria-label="Direct link to A produced exit awards no empty seat, on any path" title="Direct link to A produced exit awards no empty seat, on any path" translate="no">​</a></h3>
+<p>A produced exit is never awarded to a seat that holds a drawPosition but no participant and no BYE,
+such as one a BYE advanced forward to wait for a loser fed from another structure. That seat is not
+an opponent in place, and the exit stays pending until a participant arrives; an empty position
+arriving does not resolve it. 7.5.0 applied this past a BYE; since 7.6.0 it holds on every path
+that writes a produced exit. Since 7.7.0 it also holds when a position is cleared out of a matchUp:
+a produced exit on the other side stands, pending, rather than being won by the emptied seat. And an
+empty position advanced into a matchUp holding a pending exit takes its seat; it is not moved on as
+that exit&#x27;s winner. Nor does it take back an award already standing there: a carried exit awarded to
+the side nobody had reached stays awarded when the empty position reaches that side, as it is when the
+empty position arrives first, and the loser it sent on stays where it went (census run-17 baseline,
+COMPASS under <code>doubleExitPropagateBye: false</code>).</p>
+<p>An award kept this way names a seat, not a side. In a fed round a lone position sits on its
+bracket side and two positions sort by drawPosition, so the empty position&#x27;s arrival can move the
+participant already there to the other side; the award moves with the seat. Before this it stayed on
+its old side and named the participant who had walked over, whose win was then read as never
+advanced (census run 18, FEED_IN_CHAMPIONSHIP, CURTIS_CONSOLATION, FIRST_MATCH_LOSER_CONSOLATION and
+DOUBLE_ELIMINATION: WINNER_NOT_ADVANCED, and a result refused after it had written when the
+reservation behind that seat was later withdrawn).</p>
+<p>The same holds for every fact written before the positions it describes. A carrier arriving past a
+BYE beside a lone position records its exit for the seat it takes, in the frame the matchUp is still
+in, so that the re-keying of the arrival carries it there; written in the new frame, it overwrote the
+lone position&#x27;s own exit and was then moved onto that position&#x27;s side, so the carrier won the matchUp
+on the walkover it had brought (census run 18, FEED_IN_CHAMPIONSHIP 8/5 under
+<code>doubleExitPropagateBye: false</code>: WINNING_SIDE_ADVANCEMENT_MISMATCH). And a removal clears the side the
+removed position held in the frame the record is in after the position has gone: read in the frame
+before, a produced exit leaving with its position was kept as the survivor&#x27;s, the matchUp stayed a
+pending exit, and the seat the exit had awarded stayed in the next round (census run 18,
+FIRST_MATCH_LOSER_CONSOLATION 16/11: ADVANCED_FROM_UNDECIDED).</p>
+<p>The side a removed position held is read before the removal takes anything. A lone position&#x27;s side
+is read through the feeder that delivered it, and the removal walks the rounds in order, releasing
+that feeder first; read afterwards, the side came back empty and the removal dropped the exit standing
+on the other side as well (census run 18, MODIFIED_FEED_IN_CHAMPIONSHIP 32/27 under
+<code>allowChangePropagation</code>: a produced walkover lost from a matchUp its arrival then passed undecided,
+ADVANCED_FROM_UNDECIDED).</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="a-pending-exits-reservation-goes-with-it">A pending exit&#x27;s reservation goes with it<a href="#a-pending-exits-reservation-goes-with-it" class="hash-link" aria-label="Direct link to A pending exit&#x27;s reservation goes with it" title="Direct link to A pending exit&#x27;s reservation goes with it" translate="no">​</a></h3>
+<p>Since 7.9.0. A pending produced exit can advance an empty seat ahead of it — a reservation for the
+arrival it awaits. When the exit is withdrawn the reservation is released with it, even once a BYE has
+taken the seat, and a BYE-held opponent who was owed that seat goes on as soon as it is free. A
+standing reservation is not disturbed by a double exit re-entered beside it. Pinned by the named tests
+of census seeds 20178071, 20163074 and 20139307 (FEED_IN_CHAMPIONSHIP and FIRST_MATCH_LOSER_CONSOLATION
+8/7 and 8/8).</p>
+<p>Since 7.10.0 two more cases hold. <strong>A reservation goes with its exit past a BYE it crossed</strong>: a
+reservation advanced through a BYE into a matchUp still holding a pending exit (an exit status and no
+winner yet) is released from that matchUp too when its exit is withdrawn; the pending exit itself
+stands for whoever arrives (census 20278127, FIRST_MATCH_LOSER_CONSOLATION 16/16,
+<code>doubleExitPropagateBye: false</code>). And <strong>an ineligible loser&#x27;s BYE survives the opponent&#x27;s arrival</strong>:
+in FIRST_MATCH_LOSER_CONSOLATION the BYE placed for a round-2 loser who already holds a win (and so
+cannot be fed) is a decision about a decided matchUp, and is no longer withdrawn when that loser&#x27;s
+opponent arrives afterwards and takes the walkover (census 9700053 and 9700084, the early-exit arm).</p>
+<p>A produced exit can also be replaced rather than withdrawn: when its double exit dissolves and a carrier passes a BYE
+into the matchUp, the carrier&#x27;s own exit takes the produced exit&#x27;s place there. That exit is awarded to the seat nobody
+has reached, and an award to an empty seat advances nobody, so the reservation the produced exit made is released just
+as a withdrawal releases it (census run 18, COMPASS 32/30, 20715025: <code>South|3|1</code> kept the reservation and the carrier,
+going on past a BYE later, met it there).</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="an-exit-that-meets-a-bye-leaves-a-bye-behind">An exit that meets a BYE leaves a BYE behind<a href="#an-exit-that-meets-a-bye-leaves-a-bye-behind" class="hash-link" aria-label="Direct link to An exit that meets a BYE leaves a BYE behind" title="Direct link to An exit that meets a BYE leaves a BYE behind" translate="no">​</a></h3>
+<p>Since 7.5.0. An exit carried or produced into a matchUp whose other side is a BYE moves on with the
+BYE&#x27;s advancement; the matchUp it leaves reads <code>BYE</code>, not <code>WALKOVER</code> or <code>DEFAULTED</code> beside a BYE
+and nobody.</p>
+<p>Since 7.7.0 the reverse holds too. When that BYE is withdrawn — the double exit that placed it is
+re-scored, say — the exit comes to rest where the BYE was, pending, and the copy it carried further on
+is withdrawn. A relayed copy keeps its origin&#x27;s id, so it stands only while every matchUp it passed
+still holds a BYE. That includes a <code>FIRST_MATCHUP</code> consolation reservation withdrawn when the mutation settles: the
+relays are asked again once it has gone, so the copy beyond its seat goes too (census run 18,
+FIRST_MATCH_LOSER_CONSOLATION 32/32 under <code>allowChangePropagation</code>: a first-round winner flipped by a walkover took
+the reservation in <code>Consolation|2|1</code> back, and the DEFAULTED relayed past it into <code>3|1</code> stood until the next arrival
+there cleared it).</p>
+<p>Since 7.9.0 two more cases hold. <strong>A decided holder is still the BYE it holds</strong>: an exit label standing
+beside a BYE with nobody present is settled to <code>BYE</code> when the mutation settles, whether or not a winner
+was recorded on it and under either <code>doubleExitPropagateBye</code> setting — a BYE is never won. And <strong>a lone
+BYE is never on the exit&#x27;s side</strong>: when a BYE is taken back from a matchUp holding it alone beside a
+produced or carried exit, the position it held is read as the exit&#x27;s opposite, because an exit owns no
+position — so the exit survives the removal even where the structure can no longer place the position
+and the BYE&#x27;s own arrival record is gone (census 20209866, FIRST_MATCH_LOSER_CONSOLATION 8/7).</p>
+<p><strong>A BYE records no arrival by result.</strong> A matchUp holding an exit may record where its other side will come from
+before anybody arrives. Once the matchUp becomes a BYE, whoever wins that feeder advances through it, so that origin
+goes; a BYE claim on the side stays (census run 18, COMPASS 16/16, 20672521: <code>South|2|1</code> kept <code>South|1|2</code>&#x27;s origin after
+both of <code>South|1|1</code>&#x27;s seats became BYEs, where entering either double exit first records nothing on that side).</p>
+<p><strong>A carrier a propagated BYE displaces takes their exit with them.</strong> A double exit&#x27;s loser target can be a seat a carrier
+already holds, sent there by an exit that has since converged into the double exit. The BYE takes the seat, and the
+exit the carrier recorded on that side of the matchUp leaves with them; only a BYE claim stays. Left behind, the BYE
+matchUp read as holding two carries, the carrier opposite was never carried past the BYE, and the matchUp they went on
+to read TO_BE_PLAYED over their exit (census run 18, OLYMPIC and COMPASS 32 under <code>doubleExitPropagateBye: false</code>,
+20711322 and seven more). The convergence the BYE matchUp held then settles to the carry that stays, and a carry the
+cascade has already taken past the BYE into a matchUp it decided is not replayed there: met a second time, it read as
+an exit already standing and the two converged (census run 17, OLYMPIC 16/16, 20738091).</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="two-held-exits-meet-past-their-own-byes">Two held exits meet past their own BYEs<a href="#two-held-exits-meet-past-their-own-byes" class="hash-link" aria-label="Direct link to Two held exits meet past their own BYEs" title="Direct link to Two held exits meet past their own BYEs" translate="no">​</a></h3>
+<p>CA, 2026-10-11 (P54). A held exit is one standing beside a BYE with nobody in it, waiting to be sent on. When the two
+feeders of a matchUp are both holders, their exits meet there (RULE 4) and the double exit produces onward. A
+holder&#x27;s own BYE position can already stand in that matchUp, advanced there while its seat was empty. Two rules keep
+that BYE from deciding anything:</p>
+<ul>
+<li class=""><strong>A BYE the other holder left is not one this exit passes.</strong> The exit behind that BYE is coming to the same seat
+(the BYE stays; the exit travels), so the first exit lands there pending rather than being carried through into the
+next round.</li>
+<li class=""><strong>The target is read again once the holder&#x27;s BYE has gone.</strong> With both positions present a side is read as the
+lower drawPosition (<a class="" href="/competition-factory/docs/concepts/draw-positions">drawPositions</a>); when the arriving holder&#x27;s BYE is taken out, the position
+that stays reads its own side and carries its entry with it. The arriving exit&#x27;s side, who stands opposite it and
+whether that opponent is awarded the exit are all read from the target as the release left it: a participant who
+stands there wins the exit at once, as on any arrival.</li>
+</ul>
+<p>The two exits then converge into a double exit with an origin recorded on each side, and its produced exit waits in
+the next round with no position of its own, whichever of the two arrived first.</p>
+<p>The same holds one round on. A holder&#x27;s BYE that already stands alone in the matchUp its produced exit is sent to is
+not an opponent there: the exit is not awarded to it and the BYE is not moved on again. It is taken back, and the exit
+waits there pending for whoever arrives on the other side (census run 18, DOUBLE_ELIMINATION 16/14: the BYE in
+<code>Backdraw|4|1</code> went on through <code>Backdraw|5|1</code> into the Backdraw final, and the Main final&#x27;s loser across the link into
+the decider, while <code>Backdraw|3|2</code> had still to be played).</p>
+<p>The same holds when it is a participant, not an exit, that arrives opposite the holder&#x27;s BYE. The holder&#x27;s exit is gone
+(its double exit dissolved), the participant goes on past the BYE, and the BYE position standing one round on is taken
+back out first: a matchUp receives one position from each feeder (census run 18, COMPASS 32/30, 20715025: <code>South|3|1</code>
+held both of <code>South|2|2</code>&#x27;s positions, TWO_POSITIONS_FROM_ONE_FEEDER).</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="a-held-exit-goes-on-to-a-seat-awaiting-its-arrival">A held exit goes on to a seat awaiting its arrival<a href="#a-held-exit-goes-on-to-a-seat-awaiting-its-arrival" class="hash-link" aria-label="Direct link to A held exit goes on to a seat awaiting its arrival" title="Direct link to A held exit goes on to a seat awaiting its arrival" translate="no">​</a></h3>
+<p>A held exit is sent on once the matchUp it feeds can be played, and that includes a matchUp whose
+other feeder is an exit already awarded to a seat nobody has reached yet: whoever reaches that seat
+is delivered, so the held exit goes on and waits for them, pending. Before this such a feeder was
+read as finished, the exit stayed beside its BYE, and the matchUp read TO_BE_PLAYED when the exit
+came last but held the pending exit when it came first (census run 17, COMPASS and OLYMPIC 32 under
+<code>doubleExitPropagateBye: false</code>).</p>
+<p>More generally, a held exit goes on at once, pending, whenever the matchUp it feeds can still receive an
+opponent: its other feeder is still to be played, or is an exit awarded to a seat nobody has reached. CA,
+2026-09-24: a produced walkover that meets a BYE &quot;SHOULD then propagate&quot; while the opponent&#x27;s feeder is
+pending. This holds whichever arrived first, the exit or the BYE beside it, and whether the exit is sent on as
+it arrives or when the mutation settles; until census S6 the settle held it back until the other side was
+decided, so the same results left a pending exit in one order and a TO_BE_PLAYED matchUp with the exit held
+behind a BYE in another (census s14, COMPASS 32/27, 20521366: <code>North|2|1</code>; across every order of the results
+that pin these shapes, three end states became one). Under <code>doubleExitPropagateBye: false</code> a double exit&#x27;s
+loser seat receives the produced exit and never a BYE, in either order of the two exits that converged there;
+the BYE opposite stays, and the exit travels on. That holds for a double exit two exits converged into as for one
+entered directly, and a propagated BYE already on the seat gives way to the produced exit (CA ruling (A),
+2026-10-21; before it, the seat kept that BYE in some orders and showed the produced exit in others). A fed-in seat
+takes a BYE whatever the policy, and a BYE the draw placed at generation stays. An entry left on a side that is itself a BYE is no held
+exit: its carrier went home when the BYE took the seat (census run-17 Class B, COMPASS 32/27, 20641116:
+entered last, the probe left <code>Southwest|2|1</code> TO_BE_PLAYED with the exit held back; entered first, the loser
+seat became a BYE; both now leave the pending walkover).</p>
+<p>A correction that re-derives a double exit to the exit it kept applies the same rule as the direct path: a
+kept exit that reached the matchUp relayed past a BYE lands pending, unless somebody already stands on the
+seat it would be awarded to. Awarded instead to the empty seat, it was taken by a loser arriving there with an
+exit of their own, who should have converged with it, and the seat their win would have fed became a BYE
+nobody could fill (the same seed, <code>East|1|13</code> corrected from a double walkover to a walkover).</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="a-carry-past-a-bye-a-holder-takes-back-comes-back-with-it">A carry past a BYE a holder takes back comes back with it<a href="#a-carry-past-a-bye-a-holder-takes-back-comes-back-with-it" class="hash-link" aria-label="Direct link to A carry past a BYE a holder takes back comes back with it" title="Direct link to A carry past a BYE a holder takes back comes back with it" translate="no">​</a></h3>
+<p>CA&#x27;s rule &quot;the BYE stays; the exit travels&quot; lets a holder&#x27;s BYE position stand one round on until the exit it holds
+is sent there. Meanwhile a participant carrying an exit can meet that BYE and pass it (RULE 1). When the holder&#x27;s
+exit is sent on and its BYE is taken back, whoever passed that BYE comes back with it, as with any BYE released from
+a matchUp. A matchUp onward that their carry alone decided, for a seat nobody occupies yet, is released with them:
+it was no result of its own. An award to a seat somebody holds is left alone, since they may have gone on from it;
+that is the withdrawn exit&#x27;s own release.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="a-carried-exit-is-corrected-at-its-origin">A carried exit is corrected at its origin<a href="#a-carried-exit-is-corrected-at-its-origin" class="hash-link" aria-label="Direct link to A carried exit is corrected at its origin" title="Direct link to A carried exit is corrected at its origin" translate="no">​</a></h3>
+<p>Since 7.5.0. A carried or produced exit is not a result anybody recorded at the matchUp it reached,
+so it cannot be re-scored there, flipped, relabelled as a played match or cleared: a direct call
+that would change it is refused with <code>CANNOT_CHANGE_OUTCOME</code>, and <code>matchUpActions</code> offers neither
+<code>SCORE</code> nor <code>CLEAR_SCORE</code> on it. Clear or re-score the exit&#x27;s origin, and the exit is re-derived. A
+relabel at the origin, which keeps the winner and changes what the result says about the loser, is
+covered in <a class="" href="/competition-factory/docs/concepts/outcome-pipeline#5-the-side-effects-in-order">the outcome pipeline § 5</a>, rule 2.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="a-relabel-out-of-a-convergence-and-back-into-one">A relabel out of a convergence, and back into one<a href="#a-relabel-out-of-a-convergence-and-back-into-one" class="hash-link" aria-label="Direct link to A relabel out of a convergence, and back into one" title="Direct link to A relabel out of a convergence, and back into one" translate="no">​</a></h3>
+<p>Since 7.7.0. A relabel keeps the winner and changes what the result says about the loser. Where the
+loser&#x27;s carried exit had <strong>converged</strong> with another exit (a double exit, nobody winning), relabelling
+the origin as a played result withdraws only that origin&#x27;s entry; the matchUp re-derives to the kept
+exit, and what the double exit had produced downstream is withdrawn:</p>
+<ul>
+<li class=""><strong>the kept exit was carried</strong> by another loser — that carrier is directed on again, as if their
+exit had arrived alone;</li>
+<li class=""><strong>the kept exit was produced</strong> by a double exit — the relabelled loser, now simply a participant
+standing opposite a pending produced exit, wins it and goes on (RULE 2), which is the state forward
+play reaches when the origin is entered as a played result from the start.</li>
+</ul>
+<p>The reverse holds too. A loser who won a produced exit on arrival and is then relabelled as exiting at
+the origin has that win <strong>taken back</strong> — it was the cascade&#x27;s award, not a result a director recorded —
+and the exit is carried in, converging as it would have had it been entered first. A result the loser
+then <strong>earned</strong> onward stands, and the relabel itself is now refused: see the next section. The three states (exit first; played then relabelled; exit, played, exit again) are pinned
+equal on status, winner, positions and occupants.</p>
+<p>Since 7.9.0 a relabel also withdraws a carry that had passed a pending produced exit, and a double
+exit re-derived to a single one stops producing at once rather than on the next write.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="a-recorded-result-downstream-fixes-the-kind-of-a-correction">A recorded result downstream fixes the kind of a correction<a href="#a-recorded-result-downstream-fixes-the-kind-of-a-correction" class="hash-link" aria-label="Direct link to A recorded result downstream fixes the kind of a correction" title="Direct link to A recorded result downstream fixes the kind of a correction" translate="no">​</a></h3>
+<p>CA, 2026-10-11 (P52): <em>a result someone recorded in the consolation implies something was really played,
+and it shouldn&#x27;t be removed; the person who recorded it simply didn&#x27;t realise the wrong player had been
+advanced. Changing the upstream match to a different KIND of outcome is invalid; simply changing the
+winning side is not.</em></p>
+<ul>
+<li class=""><strong>The kind</strong> of an outcome is whether it carries an exit downstream under the draw&#x27;s settings: WALKOVER
+and DEFAULTED do, RETIRED only under <code>propagateRetirementAsExit</code>; any other decided result is played. With
+<code>propagateExitStatus</code> off nothing is carried, every outcome is the same kind, and nothing here applies.</li>
+<li class=""><strong>A recorded result</strong> is one a director entered, played or not (a recorded double walkover counts), as
+opposed to what the cascade derived (a carried exit, or the award it gives whoever arrives at a pending
+exit). It counts in the matchUp the loser stands in, onward from there in a structure their loss there
+fed, and — when the outcome being corrected is a carried exit — onward from the matchUp that exit decided.</li>
+<li class=""><strong>Refused, over an untouched draw</strong> (<code>CANNOT_CHANGE_OUTCOME</code>, row 22 of the outcome pipeline): a correction
+from an exit to a played result or the reverse, by a winner change or a status-only correction alike,
+once the loser&#x27;s path holds a recorded result.</li>
+<li class=""><strong>One structure on.</strong> Where the loser&#x27;s loss carried their exit into a matchUp it decided for whoever
+stood opposite, a result that winner then recorded onward counts as recorded on the loser&#x27;s path. Census
+20496362 (OLYMPIC 16/16): Italo&#x27;s walkover carried into <code>South|1|2</code> was Uhura&#x27;s award, and Uhura then beat
+Nicole in <code>South|2|1</code>. Re-entering <code>East|1|7</code> as a played win is refused; before, it withdrew the carry
+and left Uhura in a recorded result over an undecided matchUp.</li>
+<li class=""><strong>A bare win is played.</strong> A correction naming the same winner with no status and no score records
+COMPLETED, so a walkover re-entered that way changes its kind, and the guard reads it so.</li>
+<li class=""><strong>Accepted</strong>: a winner change that keeps the kind — the recorded result becomes the new loser&#x27;s — and any
+correction where nothing downstream is recorded. Then the carried exit is re-derived from the corrected
+result, for the new loser of a winner change as for a status-only correction: an exit that is now one is
+carried, one that no longer is is withdrawn, and the draw is the one forward play reaches.</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="an-exit-arriving-at-a-seat-already-decided-for-it-is-carried-past">An exit arriving at a seat already decided for it is carried past<a href="#an-exit-arriving-at-a-seat-already-decided-for-it-is-carried-past" class="hash-link" aria-label="Direct link to An exit arriving at a seat already decided for it is carried past" title="Direct link to An exit arriving at a seat already decided for it is carried past" translate="no">​</a></h3>
+<p>CA, 2026-10-11 (P51 group 2): a participant carrying an exit into a matchUp that another exit has already
+decided for the seat awaiting them is carried past it. Two exits meeting would ordinarily converge (RULE 4),
+but where a result somebody recorded stands below that matchUp, the convergence would take it back. So the
+arrival takes the seat the decided exit was awaiting, goes on to that matchUp&#x27;s winner matchUp, and carries
+their own exit on from there, as past a BYE (RULE 1). The decided matchUp and the results below it stand.
+Where nothing recorded stands below, the two exits converge as before. Census 20496362 (OLYMPIC 16/16,
+<code>allowChangePropagation</code>): America&#x27;s walkover arriving at <code>West|1|4</code>, decided by Italo&#x27;s walkover, was
+refused after the draw had been written.</p>
+<p>The carry past comes back with its origin. Re-entering the carrier&#x27;s own exit as a played result
+withdraws their carry from where it was written, the winner matchUp they went on to, not from the
+decided matchUp they passed; the draw is then the one the played result entered first leaves (in the
+same seed, <code>West|2|2</code> returns to a match to be played and its walkover&#x27;s winner is released onward).</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="two-carried-exits-converge-over-what-they-carried">Two carried exits converge over what they carried<a href="#two-carried-exits-converge-over-what-they-carried" class="hash-link" aria-label="Direct link to Two carried exits converge over what they carried" title="Direct link to Two carried exits converge over what they carried" translate="no">​</a></h3>
+<p>CA, 2026-10-11 (census F2, P51). A carried exit decides the matchUp it reaches for the seat still awaiting its
+opponent (RULE 2), and its carrier goes on as that matchUp&#x27;s loser, carrying the exit into the next structure
+and beyond. When the awaited participant then arrives carrying an exit of their own, the two exits meet (RULE 4):
+the matchUp becomes a double exit, and what the first exit carried onward is re-derived.</p>
+<p>Whether anything downstream blocks that convergence is asked the way a clear asks it (CA, 2026-09-25: only
+<strong>genuinely active</strong> downstream blocks, never <strong>advanced active</strong>), with one difference: a carried exit downstream
+is inert <strong>even when its loser carried it on further</strong>. Only a result somebody recorded below the meeting blocks it.
+Until 2026-10-11 a carry that went one hop further read as a played match, and the second walkover, a main-draw
+result, was refused although nobody had played anything below it.</p>
+<p>The result is the draw that recording the two exits in the other order leaves. A convergence recorded after the first exit&#x27;s carrier
+was already sent on as that matchUp&#x27;s loser takes that loss back: a double exit has no loser, so the carrier leaves the
+loser seat and the seat is served as a double exit&#x27;s loser target is (census run-17 baseline, COMPASS 16/13 under
+<code>doubleExitPropagateBye: false</code>). A CLEAR of either exit&#x27;s origin
+keeps the stricter reading: an origin whose carried walkover an unrelated arrival has since won is not clearable.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="a-withdrawn-exit-releases-the-seat-it-won">A withdrawn exit releases the seat it won<a href="#a-withdrawn-exit-releases-the-seat-it-won" class="hash-link" aria-label="Direct link to A withdrawn exit releases the seat it won" title="Direct link to A withdrawn exit releases the seat it won" translate="no">​</a></h3>
+<p>Since 7.5.0. A carried exit awards its seat to whoever stands opposite, and that winner may advance.
+When the origin is re-scored and the exit withdrawn, the advancement is released, including where
+the next matchUp was itself decided by an exit carried in on the other side. The seat is emptied
+and the exit there stands pending the next arrival.</p>
+<p>The release follows the award across its own winner link. In DOUBLE_ELIMINATION the Backdraw final&#x27;s
+winner goes on into the Main structure; when the exit that decided the Backdraw final for them is
+withdrawn, they are taken back out of the seat the link gave them too, so the re-derived winner can
+take it (census 20506968, DOUBLE_ELIMINATION 8/6).</p>
+<p>When the Backdraw final itself becomes a double exit, the exit it produces into the Main final is awarded to the
+finalist left standing there, on the side they now hold. Taking the Backdraw finalist out leaves the Main finalist
+alone, and a lone position sits on its own bracket side, so the side can change with the release. Before this the
+award was read from the draw as it stood before the release and named the empty side: the Main final read
+<code>WALKOVER</code> won by nobody, with its only finalist on the other side, until a later result rewrote it (census F2,
+20506968, DOUBLE_ELIMINATION 8/6 under <code>doubleExitPropagateBye: false</code>).</p>
+<p>A carried exit follows the link too (CA ruling 2026-10-23; census 9304724, DOUBLE_ELIMINATION 8/6). When the Main
+structure&#x27;s final is recorded as a WALKOVER, its loser drops into the Backdraw final. If that matchUp holds a BYE, the
+loser passes it across the link into the grand final, and their exit goes with them (RULE 1): the grand final is a
+WALKOVER won by the Main final&#x27;s winner. RULE 1 re-propagates onto wherever the carrier lands, and a structure&#x27;s last
+round has nowhere further in its own structure, so the carrier is found where the holder&#x27;s winner edge leads.</p>
+<p>A BYE in the Backdraw final follows the link too. A BYE there carries the other finalist into the
+Main structure, and when it is taken back (a double exit corrected, its loser arriving for the seat)
+the finalist it carried is taken back out of the Main final with it (census run-17 baseline,
+DOUBLE_ELIMINATION 8/5). A Backdraw finalist in the Main final under the Main position of a semi-final
+that now has no result came across the link, not by advancing within Main, and is taken back the same
+way (DOUBLE_ELIMINATION 8/4).</p>
+<p>A carrier taken back out of the Backdraw final leaves the grand final too, with the exit they carried there. A
+walkover&#x27;s loser can carry it through the Backdraw on a double exit&#x27;s produced exits, across the link and into the
+grand final, which the Main side then wins by that walkover. When the double exit is re-scored to a single result, its
+loser meets the carrier in the Backdraw and the carrier stops there. The grand final was decided only by the carry
+leaving with them, a walkover now awarded to a seat nobody holds, so it is released with them and waits for the Main
+final&#x27;s winner and the Backdraw champion. Before this it kept the carrier, and the next Backdraw champion could not be
+seated there (Phase C closure gate, openings policy off, DOUBLE_ELIMINATION 8/4 seeds 21117689, 21124430, 21128630,
+21129654 and 21157227: <code>aCarrierLeavingTheBackdrawLeavesTheGrandFinal</code>). The same holds wherever a participant
+leaves the structure that sent them across a link: a matchUp decided only by the carry that leaves with them, its award
+naming an empty seat, is released with them, as it is when a BYE they passed is taken back.</p>
+<p>It also takes back the BYE the award placed. A matchUp won over a carried exit has that exit as its
+loser, and where the loser link leads to another structure the seat there becomes a BYE nobody can
+fill. When the withdrawal leaves that matchUp undecided, its loser is a participant again, and the
+BYE goes unless another exit still claims it (census run-17 baseline, COMPASS 16/13 under
+<code>doubleExitPropagateBye: false</code>).</p>
+<p>A BYE claimed further on goes the same way. A double exit&#x27;s produced exit can decide a matchUp a round
+on, and the BYE claimed for that matchUp&#x27;s loser stands on the double exit&#x27;s account. When the double
+exit is re-derived to a single exit, the exit it produced is withdrawn and so is that BYE. The
+re-derived matchUp&#x27;s own loser seat, which showed the produced exit while it was a double exit, is owed its
+BYE again when the single exit is awarded, because its losing side is still the produced exit (census run-17
+baseline, COMPASS 16/13 and 16/14 under <code>doubleExitPropagateBye: false</code>). A single exit still pending is owed
+it only where forward play gives a pending exit one: where a double exit produced the exit straight into the
+matchUp. An exit relayed past a BYE leaves its matchUp&#x27;s loser seat empty until it is awarded, in every order
+(census openings policy-off, COMPASS 16/13 21078668: <code>West|2|2</code>).</p>
+<p>A seat that becomes a BYE keeps nothing it was awarded. When a correction takes a fed loser back out and the seat they
+held becomes the BYE nobody can fill, an advancement a produced exit gave that seat is taken back first, and the BYE
+lands in the fed matchUp beside the exit it now holds; a BYE is never won. Before this the BYE was placed a round on,
+where the award had carried the seat, in front of the seat owed to the other feeder (census run 18,
+MODIFIED_FEED_IN_CHAMPIONSHIP 32/29 under <code>doubleExitPropagateBye: false</code>: <code>Main|2|1</code> re-scored as a double default
+left <code>Consolation|3|4</code> a BYE).</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="a-loser-who-is-nobody-holds-no-seat">A loser who is nobody holds no seat<a href="#a-loser-who-is-nobody-holds-no-seat" class="hash-link" aria-label="Direct link to A loser who is nobody holds no seat" title="Direct link to A loser who is nobody holds no seat" translate="no">​</a></h3>
+<p>A matchUp an exit decided for an empty seat has nobody on its losing side. When that matchUp becomes a
+double exit, the loser it had sent on is taken back, and there is no participant to take. Before this
+the removal looked for a participant with no id, which matched every BYE and open seat in the loser
+structure: each BYE&#x27;s advancement there was released while the BYEs themselves stood, and an unfilled
+seed slot was dropped (census run 17, COMPASS 32/30 under <code>doubleExitPropagateBye: false</code>: the BYE two
+BYEs had sent on into <code>South|3|1</code> was taken back).</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="a-clear-takes-back-only-the-side-it-cleared">A clear takes back only the side it cleared<a href="#a-clear-takes-back-only-the-side-it-cleared" class="hash-link" aria-label="Direct link to A clear takes back only the side it cleared" title="Direct link to A clear takes back only the side it cleared" translate="no">​</a></h3>
+<p>Clearing a position takes back what that position&#x27;s side carried, and nothing from the other side.
+When the cleared position was never in the matchUp and nothing was removed from it, the matchUp
+can only lose what stood on the side holding no position. The side holding a position keeps its
+carried exit, and the matchUp re-derives to the pending exit that carry gives it. Before this, an
+unknown side was cleared as both: a relabel through a DOUBLE_ELIMINATION Backdraw dropped a carried
+<code>WALKOVER</code> from the occupied side, and the produced exit that arrived next was awarded to the
+participant carrying it (census 20490105, DOUBLE_ELIMINATION 16/13).</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="the-decider-holds-the-finals-finalists">The decider holds the final&#x27;s finalists<a href="#the-decider-holds-the-finals-finalists" class="hash-link" aria-label="Direct link to The decider holds the final&#x27;s finalists" title="Direct link to The decider holds the final&#x27;s finalists" translate="no">​</a></h3>
+<p>In DOUBLE_ELIMINATION the decider is seated from the final as it stands: its first seat holds the
+final&#x27;s winner and its second the final&#x27;s loser, or nobody when the final was an exit with no
+loser to seat. A participant left there from an earlier result of the final is replaced, so a
+corrected final seats its decider without refusing (census 20477784, DOUBLE_ELIMINATION 8/4).</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="a-carry-comes-home-with-its-carrier">A carry comes home with its carrier<a href="#a-carry-comes-home-with-its-carrier" class="hash-link" aria-label="Direct link to A carry comes home with its carrier" title="Direct link to A carry comes home with its carrier" translate="no">​</a></h3>
+<p>Since 7.9.0. A loser carrying an exit into a seat beside a BYE is advanced past it, and the carry is
+written where they land — including past a BYE that arrives after them, and past consecutive BYEs.
+When the BYE that advanced them is withdrawn, its double exit re-scored as a played result, the
+carrier comes back and the carry comes with them: it is merged onto the matchUp they return to and
+that matchUp re-derives to the pending state their arrival would have written, so whoever arrives
+next meets an exit, not an ordinary opponent, and two carried exits meeting there converge by the
+rule above. Only a participant&#x27;s own carry travels this way: a double exit&#x27;s produced exit stays
+where the double exit put it, and a carry whose origin is itself being relabelled as a played result
+is withdrawn, not re-seated. Before this a carry that stood <strong>pending</strong> a round on was lost on the
+pull-back and its carrier won a match they had walked over (census 20057285,
+FIRST_ROUND_LOSER_CONSOLATION 8/8); a carry that had <strong>decided</strong> its onward matchUp already came
+home. This holds however far the carrier went: a carrier who passed more than one BYE is taken back out of every
+round those BYEs moved them through, and the carry comes home from wherever it was written. Before this, a carry written
+two BYEs on stayed there, decided over an empty seat, and decided the matchUp against whoever arrived (census de
+9300487, DOUBLE_ELIMINATION 16/13: a default carried past two Backdraw BYEs stayed in <code>Backdraw|3|1</code> and was charged to
+a participant who never defaulted).</p>
+<p>Since 7.10.0 two more cases hold. <strong>A carry past a BYE in a structure&#x27;s last round survives the
+BYE&#x27;s withdrawal</strong>: there is nowhere further for the carrier to land, so the carried exit is recorded
+beside the BYE, and when the BYE is withdrawn the matchUp re-derives to the exit the carrier holds
+rather than becoming an ordinary match (census 20318646, COMPASS 8/8 — the South final). Both arrival
+orders, carrier first or BYE first, now reach the same state. Since A1 (2026-10-17) the carry is recorded beside the
+BYE in every round, not only the last (<a href="#rules-settled-by-the-census-in-a1-2026-10-17" class="">below</a>). And <strong>a carry written past a late BYE
+names the exit&#x27;s origin</strong>, as every other hop does, not the BYE matchUp it passed, so a convergence it
+later dissolves still re-advances its winner (census 20267598, FEED_IN_CHAMPIONSHIP_TO_SF 16/15).</p>
+<p><strong>A carrier passing a BYE onto a side a dissolved double exit decided brings its own exit.</strong> Two
+carriers can converge in a matchUp whose produced exit then decides the next one for the participant
+opposite. When one of them is replaced by a BYE, the convergence dissolves and the other passes the BYE
+onto the side that double exit had decided. That side now records the carrier&#x27;s own exit, naming its
+origin, as it does when the BYE comes first. Before this it kept only the dissolved double exit&#x27;s
+record, which was then withdrawn, and the matchUp went back to TO_BE_PLAYED with a defaulted participant
+in it (census run 17, OLYMPIC 16/16 under <code>doubleExitPropagateBye: false</code>).</p>
+<p>The same holds when the matchUp the carrier lands in is held by a BYE or by a double exit rather
+than decided by one: the side the carrier takes records the carrier&#x27;s own exit, replacing the record
+a dissolved double exit left there. The carrier&#x27;s origin is read from the stored draw, not from the
+view the cascade started with, so a carrier crossing two BYEs in one cascade still names the
+matchUp they exited. Before this the South final went back to TO_BE_PLAYED when the late entry came
+last, and to a walkover when it came first (census run 17, OLYMPIC 32 with 29 and 30 participants,
+under <code>doubleExitPropagateBye: false</code>).</p>
+<p><strong>A carried exit stands only where its carrier stands.</strong> A participant&#x27;s own walkover or default is
+written in the loser seat they land in and in each matchUp they are carried into past a BYE, always
+beside them. When a BYE they passed is replaced — a double exit relabelled as a played result, its
+loser taking the BYE&#x27;s seat — they come home, and a copy left where they no longer stand is
+withdrawn when the mutation settles, with whatever it had decided. Before this the copy stayed and
+decided that matchUp for whoever arrived next (census run 18, FEED_IN_CHAMPIONSHIP_TO_SF and
+MODIFIED_FEED_IN_CHAMPIONSHIP 16/14: a result refused after it had written, and two positions sent on
+by one matchUp).</p>
+<p><strong>A converging exit&#x27;s carrier leaves with the carry only where nothing was played.</strong> When the exit
+that sent a carrier over its loser link converges, the carrier is taken back out of the loser seat.
+If they went on from the seat, they are released carry and all, and an award the carry made does not
+make their position active, where every one of these holds: the seat&#x27;s matchUp has no score and is a
+BYE or an exit, and every matchUp they went on to has no score and is a BYE, undecided, or decided by
+an exit carried into it. Otherwise, where they went on or where the seat&#x27;s matchUp was decided by
+anything but exits, the position is cleared, and the clear still refuses an active position
+(<code>ERR_ACTIVE_DRAW_POSITION</code>). A carrier who went no further from a seat that only exits decided is
+released in place: they leave the seat, and the seat&#x27;s award to them goes. No entry reaches the
+clear&#x27;s refusal today. The release is reached only where the converging exit met a carried one, and
+a carried exit decides every matchUp its carrier reaches and is changed only at its origin, so the
+carrier goes on only past BYEs (census A1 wave 5, COMPASS 32/27 21155795 and 32/30 21063079:
+<code>aCarrierPastAByeIsReleasedWhenItsExitConverges</code>, <code>aCarrierWhoWentOnOnlyAsACarrierIsReleasedWithTheCarry</code>).</p>
+<p><strong>A seat emptied for the winner holds no carry.</strong> When a played win is re-entered as a walkover or
+default the other way, the old winner is taken out of the rounds they reached, and the seat each removal
+empties is the one the new winner takes next. A single exit decides nothing there: the exit is the new
+loser&#x27;s, and it goes with them. Only a double exit, which sends nobody, records a produced exit on that
+seat. Before this, the empty seat was stamped with the new loser&#x27;s exit as though they had been carried
+into it. On a BYE the stamp stood beside the new winner and went past the BYE with them. It then either
+converged with the exit waiting there into a double exit nobody had entered, or, once the copy was
+withdrawn as stranded, took the new winner&#x27;s advancement back with it (census S8, FEED_IN_CHAMPIONSHIP
+16/11 and COMPASS 32/27: <code>aSeatEmptiedForTheWinnerHoldsNoCarry</code>).</p>
+<p><strong>A produced exit supersedes a stale relay on its own side.</strong> A produced exit relayed past a BYE
+waits, on the side its path arrives at, in a matchUp no position has reached yet. When a loser takes
+that BYE&#x27;s seat and the matchUp they meet there produces its own exit, it travels the same path onto
+the same side: it replaces the relay, which came the same way, rather than meeting it. Only an exit
+standing on the OTHER side converges with it. The draw then equals the one forward play leaves, with
+the loser&#x27;s result entered first. Before this the two were read as a convergence, a double exit that
+produced onward over a matchUp nobody had played (census run 18, FEED_IN_CHAMPIONSHIP_TO_SF 16/13).</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="an-arrival-carrying-an-exit-converges-with-a-pending-exit">An arrival carrying an exit converges with a pending exit<a href="#an-arrival-carrying-an-exit-converges-with-a-pending-exit" class="hash-link" aria-label="Direct link to An arrival carrying an exit converges with a pending exit" title="Direct link to An arrival carrying an exit converges with a pending exit" translate="no">​</a></h3>
+<p>Since 7.5.0. A loser carrying a <code>WALKOVER</code> or <code>DEFAULTED</code> can reach a matchUp that already holds a
+pending exit, a carried one or one a director recorded before the opponent arrived. The arrival is
+placed and nothing is awarded to it: the two exits converge into a double exit by the rule above.
+The participant who exited never takes the exit standing there. Since 7.7.0 this includes a carrier
+advanced in past a BYE: the convergence stands, rather than reverting to <code>TO_BE_PLAYED</code>.</p>
+<p>Since 7.9.0 a convergence written by an arrival produces onward exactly as one written by a carried
+exit does; a seat held open for an occupant who is leaving is read before the arrival; a held exit
+that meets a seat a carrier was awarded converges there, and the converged matchUp serves its loser
+link; and a double exit landing in a consolation target withdraws the stale advances its earlier
+state had left standing there, so its re-derived winner goes on.</p>
+<p>Since 7.10.0 <strong>an exit carried on from a convergence names no stale winner</strong>. With
+<code>doubleExitPropagateBye: false</code> a double exit produces an exit over its loser link; where that exit
+meets one already standing, the target converges and carries an exit onward. The onward matchUp is
+awarded by RULE 2 (the side without the exit wins), never to the side the exit came in on, so the
+participant who arrives there takes it (census 20346401, 20349817 and 20352232 — DOUBLE_ELIMINATION
+8/8, COMPASS 16/11, FIRST_MATCH_LOSER_CONSOLATION 16/13).</p>
+<p>A position advanced past a BYE that arrives opposite a carrier converges by the same rule rather
+than being awarded the seat (census 20460396, DOUBLE_ELIMINATION 16/14). Whether the occupant carries
+an exit is read from the side the advancement actually reaches, not the side the caller named
+(census 20522496, DOUBLE_ELIMINATION 8/7).</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="either-origin-of-a-converged-double-exit-clears-to-the-kept-origins-draw">Either origin of a converged double exit clears to the kept origin&#x27;s draw<a href="#either-origin-of-a-converged-double-exit-clears-to-the-kept-origins-draw" class="hash-link" aria-label="Direct link to Either origin of a converged double exit clears to the kept origin&#x27;s draw" title="Direct link to Either origin of a converged double exit clears to the kept origin&#x27;s draw" translate="no">​</a></h3>
+<p>Since 7.5.0. When two exits have converged into a double exit and nothing downstream is active,
+either origin can be cleared, and the draw afterwards is the draw the kept origin alone would have
+produced: the double exit and whatever it produced downstream are unwound, and the kept origin&#x27;s
+carried exit is replayed forward.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="rules-settled-by-the-census-in-s6-2026-10-15">Rules settled by the census in S6 (2026-10-15)<a href="#rules-settled-by-the-census-in-s6-2026-10-15" class="hash-link" aria-label="Direct link to Rules settled by the census in S6 (2026-10-15)" title="Direct link to Rules settled by the census in S6 (2026-10-15)" translate="no">​</a></h3>
+<p>Each held across every entry order of the census history that exposed it, under <code>doubleExitPropagateBye: false</code>
+unless stated.</p>
+<ul>
+<li class=""><strong>A loser seat already holding a BYE is settled, and nothing is produced onto it.</strong> A produced walkover awarded to an
+empty seat claims the BYE its loser would have taken; when a carrier later converges that matchUp, the double exit&#x27;s
+loser seat is that BYE. Owing the seat the produced exit instead was measured and rejected: it opened census seeds
+and a new order dependence (COMPASS 32/30, 20694910). The BYE a matchUp claimed while it was a single exit, and alone,
+is taken back when a correction makes it a double exit, and its loser seat receives the produced exit.</li>
+<li class=""><strong>A withdrawn origin leaves the kept exit its own label.</strong> A mixed convergence is stored as a DOUBLE_WALKOVER; once
+the walkover side is withdrawn, the double default&#x27;s produced exit is a DEFAULTED, as direct entry writes it
+(COMPASS 32/27, 20521366).</li>
+<li class=""><strong>A carry&#x27;s own exit relabels the matchUp whose entry it replaces</strong>, and <strong>a participant brought home past a BYE
+takes only their own carry</strong>: the carry whose source matchUp they played in (COMPASS and OLYMPIC 32, 20715025,
+20779675, 20865978).</li>
+<li class=""><strong>A carrier is not carried past a holder&#x27;s BYE when the draw settles</strong>: a BYE the other holder left is not one an
+exit passes, as for a held exit (FEED_IN_CHAMPIONSHIP 16/14, 20833621, a refusal after a write).</li>
+<li class=""><strong>An unwind does not walk on through a result it leaves standing</strong>; <strong>a holder&#x27;s BYE leaves every round it reached</strong>;
+<strong>a dissolved convergence takes back the BYEs it claimed onward, and a re-derived one keeps the BYE claims of others</strong>;
+<strong>a relabel into an exit takes back an award over a carried exit too</strong>; <strong>a convergence produces onto a seat an exit
+has awarded</strong>; <strong>a loser-link award survives the withdrawal of its seat&#x27;s BYE</strong>; and <strong>a removal walks on only
+through a real partner</strong> (a hole is not a drawPosition, <a class="" href="/competition-factory/docs/concepts/draw-positions">drawPositions</a> § 5). Census s13, s14,
+s16 and run 19 residuals; each pinned by a named test.</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="rules-settled-by-the-census-in-s7-2026-10-15">Rules settled by the census in S7 (2026-10-15)<a href="#rules-settled-by-the-census-in-s7-2026-10-15" class="hash-link" aria-label="Direct link to Rules settled by the census in S7 (2026-10-15)" title="Direct link to Rules settled by the census in S7 (2026-10-15)" translate="no">​</a></h3>
+<p>Read from census run 20, under <code>doubleExitPropagateBye: false</code>; each pinned by a named test.</p>
+<ul>
+<li class=""><strong>An unwind walks on through a result a dissolved convergence produced.</strong> &quot;A result it leaves standing&quot; is one whose
+exits all come from origins the unwind keeps. An exit produced by a convergence that holds one of the withdrawn
+origins is not such a result, even before the walk has reached the convergence itself: re-scoring the origin dissolves
+the convergence, and what it produced goes too (DOUBLE_ELIMINATION 8, 20994634 and 20932043:
+<code>anUnwindWalksOnThroughADissolvedConvergence</code>).</li>
+<li class=""><strong>A BYE claim survives the exit withdrawn beside it.</strong> One side of a matchUp can hold both an exit an origin sent there
+and a claim on the BYE the seat now is (a matchUp whose loser is nobody). Withdrawing the exit leaves the claim, so the
+BYE is taken back when the claimant later gains a real loser (COMPASS 16/13, 20964176:
+<code>aByeClaimSurvivesTheExitWithdrawnBesideIt</code>).</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="rules-settled-by-the-census-in-s8-2026-10-16">Rules settled by the census in S8 (2026-10-16)<a href="#rules-settled-by-the-census-in-s8-2026-10-16" class="hash-link" aria-label="Direct link to Rules settled by the census in S8 (2026-10-16)" title="Direct link to Rules settled by the census in S8 (2026-10-16)" translate="no">​</a></h3>
+<p>Read from the S8 closing re-sweep, which replayed the stored schedules of runs 13–20 at one ref. Each seed had passed in
+its own run and failed at that ref; each was bisected by replay to the commit that exposed it, and each rule is pinned
+by a named test that fails without it.</p>
+<ul>
+<li class=""><strong>A removal walks through a hole into the matchUp it feeds.</strong> A lone position&#x27;s partner is a hole. The removal walks
+on only into the next-round matchUp its own matchUp feeds, so a carry that passed a lone BYE comes back with the BYE;
+it does not walk into any other matchUp holding a hole (COMPASS 32/27 20611808, FEED_IN_CHAMPIONSHIP_TO_SF 8/7
+20650915: <code>aRemovalWalksThroughAHoleIntoTheMatchUpItFeeds</code>).</li>
+<li class=""><strong>A relabel withdraws its carry from every BYE-held matchUp it reached.</strong> A carry passing BYEs in consecutive rounds
+is recorded on each of them; a relabel to a played result takes it back from all of them, not the first (two
+FEED_IN_CHAMPIONSHIP consolation stalls, 20544709 and 20576342:
+<code>aRelabelWithdrawsTheCarryFromEveryByeHeldMatchUp</code>).</li>
+<li class=""><strong>A seat emptied for the winner holds no carry</strong> (above; FEED_IN_CHAMPIONSHIP 16/11 20532286, COMPASS 32/27
+20585407: <code>aSeatEmptiedForTheWinnerHoldsNoCarry</code>).</li>
+<li class=""><strong>An unwind takes back what it sent on through a result it leaves standing.</strong> S7&#x27;s stop at a result whose exits come
+only from kept origins still holds, but a participant the unwind is taking back who was sent on through that result
+is taken back too. Across a link the participant is followed, not the drawPosition (DOUBLE_ELIMINATION 8/6 20590443,
+and 20701264 into the Decider: <code>anUnwindTakesBackWhatItSentOnThroughAStandingResult</code>).</li>
+<li class=""><strong>A withdrawn arrival leaves the award its exit made.</strong> A settle re-reads a matchUp&#x27;s winner only when it withdraws
+an exit entry; withdrawing an arrival record alone leaves the award (CURTIS_CONSOLATION 16/13 20669990:
+<code>aWithdrawnArrivalLeavesTheAwardItsExitMade</code>).</li>
+<li class=""><strong>A pending exit awaiting an arrival can still deliver.</strong> A held exit sent on as a pending walkover, whose other seat
+holds neither a participant nor a BYE, is a feeder that can still deliver someone, not a dead end; the result no
+longer depends on whether a later walkover is entered first or last (OLYMPIC 32/30 20609643:
+<code>aPendingExitAwaitingAnArrivalCanDeliver</code>).</li>
+<li class=""><strong>A Decider holds nobody until its final is decided.</strong> When the Main final is left with no winner, both Decider seats
+are cleared; a final decided for a seat its winner has not reached keeps the seats its links made
+(DOUBLE_ELIMINATION 8/5 20722665: <code>aDeciderHoldsNobodyUntilItsFinalIsDecided</code>).</li>
+<li class=""><strong>A carrier under a stale double exit is not awarded.</strong> An occupant carrying an exit is not awarded a produced exit
+on a matchUp that still reads a double exit from an earlier pass of the same mutation (OLYMPIC 32/30 20625776:
+<code>aCarrierUnderAStaleDoubleExitIsNotAwarded</code>).</li>
+<li class=""><strong>A dissolved convergence owes its loser seat the BYE again.</strong> Under <code>doubleExitPropagateBye: false</code> a convergence
+takes back the BYE its single exit claimed and its loser seat holds the produced exit. When the convergence dissolves
+back into a single exit over a loser link, with its winner standing, the produced exit is withdrawn and the BYE is
+placed again, because the losing side is still the produced exit and can never send a loser. A walkover corrected
+to a played result leaves the draw that the played result alone leaves (COMPASS 8/8 20853116:
+<code>aDissolvedConvergenceOwesItsLoserSeatTheByeAgain</code>).</li>
+<li class=""><strong>A produced convergence crosses the link it reaches.</strong> A convergence the settle produces onward can advance a
+participant through BYEs to the source round of a WINNER link, opposite a BYE; they cross the link as one advanced
+there by any other route does, because the crossing is asked again after the production and not only before it
+(DOUBLE_ELIMINATION 16/11 21138954: <code>aProducedConvergenceCrossesTheLinkItReaches</code>).</li>
+<li class=""><strong>An exit re-delivered into its own seat is not sent on.</strong> A double exit that re-settles (one side&#x27;s carried exit
+becoming a produced one) propagates again. Where its produced exit, passed on through a BYE, reaches the matchUp its
+first pass left pending with that same exit on the arrival side, nothing new has arrived: the pending exit stays
+pending and is not advanced from as though decided. A double walkover corrected to a default leaves the draw that
+the default alone leaves (DOUBLE_ELIMINATION 16/11 21030358: <code>anExitReDeliveredIntoItsOwnSeatIsNotSentOn</code>).</li>
+<li class=""><strong>A double exit&#x27;s own position leaves every round it reached.</strong> A participant arriving opposite a double exit&#x27;s
+produced exit is advanced at once, past any BYE beyond; when their own exit then converges the matchUp, the
+position is taken back from every round it went on to, a double exit there included, since a double exit
+advances nobody. When that leaves a single produced exit, it awards no empty seat and stands pending, as forward
+play lands it. A double default corrected to a walkover leaves the draw that the walkover alone leaves
+(FEED_IN_CHAMPIONSHIP 16/11 21123326: <code>aDoubleExitsOwnPositionLeavesEveryRoundItReached</code>).</li>
+<li class=""><strong>A loser seat holding a BYE is not converged.</strong> A convergence whose loser seat already holds a BYE leaves that
+matchUp a BYE, even when the matchUp also holds a pending exit and nobody else: the BYE is the record of the loser
+who will never arrive, and the pending exit passes through it. A BYE placed in a seat a convergence had produced into
+therefore reaches the draw the same results reach with the BYE placed first (COMPASS 32/31 20551581:
+<code>aLoserSeatHoldingAByeIsNotConverged</code>).</li>
+<li class=""><strong>A result past a convergence&#x27;s BYE fixes the kind.</strong> A convergence has nobody to lose, so it claims a BYE for its
+loser seat; what it decided includes that BYE, and a result recorded by the participant the BYE passed on is a
+result on the loser&#x27;s path. Re-entering one of the converged exits as a played result is refused
+(<code>CANNOT_CHANGE_OUTCOME</code>) over an untouched draw; before, the BYE&#x27;s withdrawal took that participant back out and left
+their result standing on an undecided matchUp. With nothing recorded past the BYE the correction is accepted
+(COMPASS 32/27 21027128, under <code>allowChangePropagation</code>: <code>aResultPastAConvergencesByeFixesTheKind</code>).</li>
+<li class=""><strong>An exit re-entered as the other exit relabels its carry, even after its winner played on.</strong> A walkover
+re-entered as a default for the same winner (or the reverse) relabels the exit its loser carries, on every route,
+including the one taken once that winner has played on. The draw is the one the new exit entered directly reaches
+(COMPASS 16/14 6141627: <code>aRelabelledExitPastAPlayedWinnerRelabelsItsCarry</code>).</li>
+<li class=""><strong>A BYE origin waits for its feeder to deliver.</strong> A double exit&#x27;s produced exit records an origin for the other side
+of the matchUp it reaches, read from the paired feeder. A feeder reading <code>BYE</code> beside a seat that holds neither a
+participant nor a BYE has delivered nothing: whoever reaches that seat goes on through the BYE, so the side is not
+decided and records no origin, whether the BYE was placed before the double exit or after it
+(FIRST_MATCH_LOSER_CONSOLATION 8/7 20498521, <code>propagateExitStatus: false</code>, default <code>doubleExitPropagateBye</code>:
+<code>aByeOriginWaitsForItsFeederToDeliver</code>).</li>
+<li class=""><strong>A Decider is not a loser seat a BYE can fill.</strong> The Decider is the one target that the Main final&#x27;s winner link and
+loser link both feed, and <code>reconcileDecider</code> writes both of its seats from the final. A final won against an exit has
+no loser, and the Decider is a <code>DEAD_RUBBER</code> holding the champion, under either policy and in every entry order.
+Before, the BYE owed to the final&#x27;s loser seat was placed in the Decider, in the seat the champion was owed, in some
+entry orders only (census R11, DOUBLE_ELIMINATION 8/5 21037067, <code>propagateExitStatus: true</code>:
+<code>aFinalWonWithNoLoserLeavesItsDeciderADeadRubberInEveryOrder</code>).</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="rules-settled-by-the-census-in-a1-2026-10-17">Rules settled by the census in A1 (2026-10-17)<a href="#rules-settled-by-the-census-in-a1-2026-10-17" class="hash-link" aria-label="Direct link to Rules settled by the census in A1 (2026-10-17)" title="Direct link to Rules settled by the census in A1 (2026-10-17)" translate="no">​</a></h3>
+<p>Read from the A1 do-undo triage: a probe applied to the scheduled draw and then cleared must leave the draw it found.
+In each case the scheduled draw is the one forward play reaches from the standing results; each rule is pinned by a
+named test that fails without it.</p>
+<ul>
+<li class="">
+<p><strong>A cleared loser seat leaves no award behind.</strong> A loser sent into a seat opposite a produced exit is awarded it on
+arrival. When the result that sent them is re-scored or cleared, their seat empties and the produced exit stands
+pending again, on the seat&#x27;s own matchUp and on one reached past a BYE. The advance the award made leaves with the
+occupant, as direct entry of the exit alone leaves it; an exit that keeps its award keeps its advance, and that
+reservation goes with the exit when the exit is withdrawn. A carried exit, or a produced one that came straight down its
+loser link, keeps its award, as direct entry writes it; and a source that becomes a double exit leaves the seat to its
+own cascade, which places the BYE (CURTIS_CONSOLATION 32/27 9000062, DOUBLE_ELIMINATION 8/4 20537779:
+<code>aClearedLoserSeatLeavesNoAwardBehind</code>).</p>
+</li>
+<li class="">
+<p><strong>A seat&#x27;s occupant takes their award&#x27;s advance with them</strong> (A1 int2). The release of a leaving occupant asks of the
+produced exit beside them whether its award stands with the seat empty (<code>awardStands</code>), and keeps the advance in the
+next round only then: read before the award was withdrawn, the award looked like the exit&#x27;s own advance and stayed
+(FEED_IN_CHAMPIONSHIP_TO_SF 16/11 21041635: <code>aWithdrawnAwardTakesBackTheAdvanceItMade</code>; 116 census rows).</p>
+</li>
+<li class="">
+<p><strong>A Main final&#x27;s exit came over its winner link.</strong> A produced exit in a DOUBLE_ELIMINATION Main final is not one
+that arrived over a loser link, though a walk from its source&#x27;s loser target leads back to it through the Backdraw&#x27;s
+winner links: a double exit converging with it there, once cleared, leaves it awarding no empty seat (DE 8/5
+21033335: <code>aMainFinalsExitCameOverItsWinnerLink</code>).</p>
+</li>
+<li class="">
+<p><strong>A final decided during the settle seats its champion at once.</strong> When a held exit is sent into a final and the
+final is decided by it, the champion crosses into the decider within the same call (the link advancement is asked
+again after the settle), not on the next (DE 8/5 21037067: <code>aFinalDecidedByAHeldExitSeatsItsChampionAtOnce</code>).</p>
+</li>
+<li class="">
+<p><strong>A released position takes its BYE origin with it; a removed position, its arrival.</strong> The BYE origin a released
+position recorded for its feeder goes with the release, as its arrival does (COMPASS 8/8 21031039:
+<code>aReleasedPositionTakesItsByeOriginWithIt</code>); and a position taken out of every later round by a cleared first-round
+result takes the arrival each of those rounds recorded (SINGLE_ELIMINATION 16/14 21137642:
+<code>aRemovedPositionTakesItsArrivalWithIt</code>).</p>
+</li>
+<li class="">
+<p><strong>A standing result keeps what it sent over its loser link.</strong> Unwinding a double exit visits a matchUp onward only
+for what the double exit sent through it; when that matchUp&#x27;s own result stands, its loser target is not reset, so
+the carry it sent there stays (COMPASS 16/14 21027146 under <code>doubleExitPropagateBye: false</code>:
+<code>aStandingResultKeepsWhatItSentOverItsLoserLink</code>).</p>
+</li>
+<li class="">
+<p><strong>A released position takes its arrival with it.</strong> A position released from a round it had won its way into leaves
+no record of that arrival: the feeder named there is undecided again and sent nobody (FIRST_MATCH_LOSER_CONSOLATION
+16/13 20483283 under <code>allowChangePropagation</code>: <code>aReleasedPositionTakesItsArrivalWithIt</code>).</p>
+</li>
+<li class="">
+<p><strong>A BYE origin goes with the exit opposite it.</strong> The BYE origin a produced exit writes opposite itself on meeting a
+BYE is withdrawn with that exit, so a BYE matchUp reads as it did before the exit arrived (FEED_IN_CHAMPIONSHIP 16/11
+20532286: <code>aByeOriginLivesAsLongAsTheExitOppositeIt</code>).</p>
+</li>
+<li class="">
+<p><strong>A seat emptied further on leaves no award behind.</strong> A loser taken back is released from every placement their
+loss led to, a link further on as well as in the structure they were fed into; a produced exit awarded to a seat
+they no longer hold stands pending again, and its reservation in the next round stays, as the seat the loser was fed
+into already did (COMPASS 32/30 20733408 under <code>doubleExitPropagateBye: false</code>:
+<code>aSeatEmptiedFurtherOnLeavesNoAwardBehind</code>).</p>
+</li>
+<li class="">
+<p><strong>An exit that has delivered nobody is no origin.</strong> A single exit delivers its winner only once someone holds the
+winning seat. Pending, or awarded to a seat still awaiting its arrival, it records no arrival on the side it feeds,
+as a BYE matchUp awaiting its other side records no BYE origin (COMPASS 32/31 20551581 under
+<code>doubleExitPropagateBye: false</code>: <code>anExitThatDeliveredNobodyIsNoOrigin</code>).</p>
+</li>
+<li class="">
+<p><strong>A dissolved convergence keeps an award that came down its loser link.</strong> A convergence a correction dissolves
+settles as the kept exit alone would leave it, and that includes the award: a produced exit that came straight down
+its loser link keeps its award to the seat still awaiting its arrival, and reserves that seat in the next round, as
+entering the same results once each does in any order. Only an exit relayed past a BYE stands pending (COMPASS 32/31
+20551581 under <code>doubleExitPropagateBye: false</code>: <code>aDissolvedConvergenceKeepsItsLoserLinkAward</code>).</p>
+</li>
+<li class="">
+<p><strong>The seat left opposite a BYE goes on.</strong> A BYE advances the drawPosition opposite it when it lands, occupied or
+not, and two BYEs meeting send one BYE on. When one of the two is withdrawn, the empty seat now opposite the BYE that
+stays goes on into the next matchUp, where it has room, as it would have had that BYE landed alone; a position that
+entered the round from an earlier one is a reservation, and is not moved (COMPASS 32/30 20694910 under
+<code>doubleExitPropagateBye: false</code>: <code>theSeatLeftOppositeAByeGoesOn</code>).</p>
+</li>
+<li class="">
+<p><strong>A reason is attributed by where it came from, not by what it says.</strong> <code>sideStatusCodes</code> holds the scoring
+policy&#x27;s reason per side (<code>{ 2: &#x27;DM&#x27; }</code>), split from the positional <code>matchUpStatusCodes</code> a client submits. A
+propagation or convergence write stores the array <code>deriveStatusCodes</code> builds from provenance, where a side that
+exited with no recorded reason shows the bare outcome code (<code>[&#x27;DEF&#x27;]</code>, <code>[&#x27;WO&#x27;]</code>), or re-stores the matchUp&#x27;s own
+array, which may be such a display. Either array is display only and is not split: the write keeps the reasons the matchUp already holds and the source&#x27;s own side-keyed reason, on the side
+it arrived at. The source&#x27;s positional array is read for display only, never as a reason. Before this, a double
+default reached in one entry order stored <code>{ 1: &#x27;DEF&#x27;, 2: &#x27;DEF&#x27; }</code> and in the other stored nothing. A client&#x27;s array
+is split as before, and no code is reserved by value (FIRST_MATCH_LOSER_CONSOLATION 32:
+<code>aDerivedOutcomeCodeIsNeverASideReason</code>).</p>
+</li>
+<li class="">
+<p><strong>What forward play sends on from a result is sent on from a re-derived one.</strong> A removal re-derives the matchUp it
+vacates (a cleared BYE or double exit puts it back to the exit it held) and used to stop there. It is now asked of
+the settled draw (<code>settleForwardConsequences</code>), and answered by the forward primitive: a decided matchUp&#x27;s winner
+goes on into its next matchUp; its losing participant is directed over its loser link, the exit carried on as a
+direction carries it; and a pending exit holding one lone empty seat makes its reservation. An empty seat goes on, or
+is reserved, only for an exit that came straight down its origin&#x27;s link, never one relayed past a BYE, and only from
+the round it entered the structure in, since an award to an empty seat advances nobody. A FIRST_MATCHUP link is asked
+only of a loser it feeds (COMPASS 32 20503744, OLYMPIC 32/29 9100068:
+<code>aDissolvedConvergenceAdvancesTheReDerivedAward</code>, <code>aWithdrawnByeSendsTheReDerivedLoserOn</code>).</p>
+</li>
+<li class="">
+<p><strong>A cleared seat&#x27;s loser link is served from the matchUp as it re-derived.</strong> The removal took back whatever the
+matchUp had sent over a loser link into another structure, before asking what the re-derived matchUp sends. A
+re-derived exit whose loser is nobody keeps the BYE at its loser seat, a loser already standing where the link leads
+stays there, and a BYE another live double exit still claims stays as well (COMPASS 32/30 20694910 and 20485116:
+<code>aClearedSeatKeepsTheByeItsReDerivedExitHolds</code>, <code>aClearedSeatKeepsTheLoserItsReDerivedResultDirected</code>; COMPASS 16,
+built by hand: <code>aClearedSeatKeepsTheByeALiveDoubleExitClaims</code>).</p>
+</li>
+<li class="">
+<p><strong>A BYE origin goes when its feeder stops delivering.</strong> A BYE matchUp delivers once both its seats are filled, a BYE
+in one and a participant in the other, and only then is the <code>{ BYE, BYE }</code> origin it gives the side it feeds true.
+When that participant leaves again (a result clearing whose loser had been sent there), their position stays advanced
+past the BYE, so no release reaches the matchUp holding the origin; the origin goes with the delivery, and the draw is
+the one in which the participant never arrived (FIRST_ROUND_LOSER_CONSOLATION 16/14 21029590:
+<code>aByeOriginGoesWhenItsFeederSeatEmpties</code>; 9 census rows on three draw types).</p>
+</li>
+<li class="">
+<p><strong>A carry past a BYE the forward settle puts back is carried again.</strong> A direction the forward settle makes can
+re-form a double exit whose loser seat takes its BYE again, in front of a carrier whose carry past it a removal had
+taken back. The carry past a late BYE is asked again once the forward settle has written, so the carrier&#x27;s exit
+stands in the matchUp beyond as forward play writes it (COMPASS 32/32 21097909:
+<code>aCarryPastAByeTheSettleReplacesIsCarriedAgain</code>).</p>
+</li>
+<li class="">
+<p><strong>A carrier arriving at the seat an exit awaits converges with it</strong> (A1 wave 3). A single exit awarded to a seat
+nobody has reached is waiting for whoever arrives there. When the arrival is a participant carrying their own walkover
+or default past a BYE, two exits meet, and the matchUp is the double exit their convergence makes, as it is when the
+carrier&#x27;s exit was recorded first and the other arrived after. The convergence then produces onward and serves its
+loser link as any convergence does: what the single exit had sent on is withdrawn, and the first carrier, sent over
+the loser link as that exit&#x27;s loser, comes back, since a double exit has no loser. Before this the carrier took the
+award and won on the exit they had brought, and which of the two draws a schedule reached depended on its order
+(COMPASS 32/27 21028022, 25 census rows: <code>aCarrierArrivingAtTheSeatAnExitAwaitsConverges</code>; COMPASS 16/16 20672521:
+<code>aByeRecordsNoArrivalByResult</code>; DOUBLE_ELIMINATION 8/5 20722665, where re-entering a double default now returns the
+draw the same results reach entered once: <code>aDeciderHoldsNobodyUntilItsFinalIsDecided</code>).</p>
+</li>
+<li class="">
+<p><strong>A carrier sent into a BYE matchUp records its carry there</strong> (A1 wave 3). A carrier a late BYE sends on, into a
+matchUp a BYE already holds, writes their exit beside that BYE, as the carry rule above states for every matchUp a
+carry passes. Before this the second BYE matchUp recorded nothing, so when its BYE went, the exit coming back stood
+alone and awarded the carrier a match they had walked over (COMPASS 32/27 21137946, 8 census rows:
+<code>aCarrierPassingIntoAByeMatchUpRecordsItsCarry</code>).</p>
+</li>
+<li class="">
+<p><strong>A seat a BYE carried into a round goes on past the next BYE</strong> (A1 wave 3). The settle pass that sends on the seat
+left opposite a BYE (above) treats a position that entered the round from an earlier one as a reservation, and does
+not move it. A position a BYE carried in, empty opposite that BYE in the earlier round, is not a reservation: the BYE
+there advanced it, and the BYE here advances it again, as forward play does in every order (MODIFIED_FEED_IN_CHAMPIONSHIP
+32/27 21029862, FEED_IN_CHAMPIONSHIP_TO_SF 32 21072304, 4 census rows: <code>aSeatAByeCarriedInGoesOnPastTheNextBye</code>).</p>
+</li>
+<li class="">
+<p><strong>A passer comes back when the holder&#x27;s BYE goes, even beside a held seat</strong> (A1 wave 3). A carrier who passed a BYE
+that a BYE holder had left in the next round goes back with that BYE when the holder&#x27;s exit is sent on, and the exit
+meets their carry there. The matchUp they had decided onward keeps its award where the seat opposite is held: its
+occupant may have gone on, and the convergence&#x27;s produced exit awards them the same seat. Before this the carrier
+stayed onward, beside the produced exit, and the matchUp read as an undecided walkover holding two participants
+(FEED_IN_CHAMPIONSHIP_TO_SF 16/14 21089693, CURTIS_CONSOLATION 16 21143807, MODIFIED_FEED_IN_CHAMPIONSHIP 16
+21046667 under <code>allowChangePropagation</code>: <code>aPasserComesBackWhenTheHoldersByeGoes</code>).</p>
+</li>
+<li class="">
+<p><strong>An award taken back takes back the BYE it sent over its loser link</strong> (A1 wave 4). A produced exit awarded to the
+participant who arrives opposite it has nobody for a loser, so its loser seat gets a BYE, which the award claims.
+When that participant leaves again, over either link, the award goes and the exit stands pending; a pending exit
+sends nothing over its loser link, so the BYE goes with the award, as it does when a double exit is unwound. Before
+this the loser seat stayed a BYE that no rebuild of the standing results places (COMPASS 32/27 21081040 and 16/14
+21086952 under <code>doubleExitPropagateBye: false</code>, 7 census rows: <code>anUndoneAwardTakesBackItsLoserSeatBye</code>).</p>
+</li>
+<li class="">
+<p><strong>A BYE matchUp&#x27;s loser seat keeps its BYE</strong> (A1 wave 4). A BYE matchUp&#x27;s loser is a BYE, so the ordinary BYE cascade
+gives its loser seat a BYE that no double exit claims. A double exit&#x27;s cascade that reaches a BYE standing unclaimed
+in the loser seat of a matchUp that holds a BYE records no claim on it, since the BYE predates the cascade; and
+unwinding a double exit keeps a loser-seat BYE while the matchUp feeding it still holds a BYE. Before this a double
+exit cleared beside a BYE matchUp took that BYE&#x27;s loser seat with it (COMPASS 16/15 21036395 and 32/27 21060039, 5
+census rows: <code>aByeMatchUpsLoserSeatKeepsItsBye</code>). An unclaimed BYE fed by a matchUp with no BYE is still claimed:
+FIRST_MATCH_LOSER&#x27;s BYE for a loser who has already won a match stands for a reason a later result can take away,
+and the exit that makes the loser nobody is then the BYE&#x27;s only lasting reason. Skipping that claim let the unwind of
+one exit clear the seat while another exit still owed it its BYE, and the consolation stalled (FIRST_MATCH_LOSER_CONSOLATION
+8/8 9000230, all three arms: <code>aFirstMatchLoserByeIsClaimedByTheExitThatOwesIt</code>).</p>
+</li>
+<li class="">
+<p><strong>A carrier a BYE displaces leaves no carry in any round</strong> (A1 wave 4). A carrier&#x27;s carry is written in the seat
+they land in and in each matchUp a BYE sends them into. When a propagated BYE takes their seat, the carry is
+withdrawn from every matchUp their position reached, not only the furthest. Before this a BYE-vs-BYE matchUp could
+keep an entry naming a feeder that had become a BYE, in some entry orders and not others (COMPASS 32/31 21079296, 6
+census rows: <code>aDisplacedCarrierLeavesNoCarryInAnyRound</code>).</p>
+</li>
+<li class="">
+<p><strong>An exit carried past a BYE converges with a pending exit beyond it</strong> (A1 wave 4). When a convergence&#x27;s produced exit
+is carried past a BYE into a matchUp that nobody has reached and that already holds a pending exit on its other
+side, the two exits meet there and the matchUp converges, as it does when the pending exit is the one to arrive
+second. Before this a convergence re-formed by a clear left that matchUp a single WALKOVER (COMPASS 32/29 21129718,
+2 census rows: <code>aCarryPastAByeMeetsAPendingExit</code>).</p>
+</li>
+<li class="">
+<p><strong>A dissolved convergence keeps the BYE its single exit sends, and only the claims a single exit makes</strong> (A1 wave 4).
+Unwinding a double exit that had converged with an awarded single exit re-derives the matchUp to that exit, which
+has nobody for a loser and sends its loser seat a BYE, as forward play does (COMPASS 32/27 21034527:
+<code>aDissolvedConvergenceSendsItsSingleExitsBye</code>). A single exit records no claim on a BYE that others already claim,
+because forward play claims only a seat it fills. So when a convergence dissolves to a single exit, its claim on a
+BYE that others still claim is withdrawn, and the BYE stays theirs (COMPASS 32/31 21055187 under
+<code>doubleExitPropagateBye: false</code>: <code>aDissolvedConvergenceLeavesASharedByeClaim</code>).</p>
+</li>
+<li class="">
+<p><strong>A carry past a convergence&#x27;s BYE is written on the first entry</strong> (A1 wave 5). A convergence the settle produces
+serves its loser link, and the BYE it places there can stand in front of a carrier. That carry is written in the
+same call, not when the same outcome is entered a second time. Before this the matchUp beyond the BYE stayed
+TO_BE_PLAYED under the carrier until a second, identical entry wrote it (COMPASS 32, 6 census rows, e.g. 32/27
+21138626: <code>aCarryPastAConvergencesByeIsCarriedOnTheFirstEntry</code>).</p>
+</li>
+<li class="">
+<p><strong>A carrier who went on only as a carrier is released with the carry</strong> (A1 wave 5). When the exit that sent a carrier
+over its loser link converges, the carrier no longer lost anything and leaves the loser seat. If they had gone on
+from that seat past a BYE, or out of a matchUp only exits decided, into matchUps where nothing was played and only
+carried exits decided anything, the release takes the whole carry back and the seat is served as a double exit&#x27;s
+loser seat. Before this the release refused the position as active, because an award made by the opponent&#x27;s carried
+exit had reached it, and the director&#x27;s call was refused ERR_ACTIVE_DRAW_POSITION after the draw had moved (COMPASS
+32/27 21155795 and 32/30 21063079, 4 census rows: <code>aCarrierPastAByeIsReleasedWhenItsExitConverges</code>). A carrier who
+went on by a played result is cleared, and refused, as before.</p>
+</li>
+<li class="">
+<p><strong>A BYE origin goes with the carry a BYE displaces</strong> (A1 wave 5). When a propagated BYE takes a carrier&#x27;s seat, the
+carry is withdrawn from every matchUp the seat reached, and a BYE origin written opposite that carry goes with it,
+as it does when a double exit is unwound. Before this the origin stood opposite no exit (COMPASS 32/30 21063079:
+<code>aByeOriginGoesWithTheCarryItStoodOpposite</code>).</p>
+</li>
+<li class="">
+<p><strong>A carry entry is written in each matchUp it is carried into past a BYE, in any round and in either entry order.</strong>
+A participant carrying their own walkover or default into a seat beside a BYE goes through it, and the BYE matchUp
+records their carry beside the BYE, whether the carrier was seated first and the BYE arrived after them or the BYE
+stood there first. Before this the BYE-first order recorded the carry only in a structure&#x27;s last round, so the same
+results entered in the two orders left two draws (COMPASS 32, census A1: <code>Southwest|1|2</code> and <code>Southeast|1|1</code>).
+Withdrawing the copy instead, once the carry is recorded where the carrier landed, was measured and rejected: a
+pull-back reads the BYE matchUp&#x27;s copy to find the carry it takes home. Such a copy is not a held exit once its
+carrier&#x27;s seat has gone to a BYE because a correction made the carrier&#x27;s origin a double exit; only that double exit&#x27;s
+produced exit is sent on from there (COMPASS 32/27 20521366: <code>theWholeDrawIsTheSameInEveryOrder</code>). Pinned by
+<code>aCarryPastAnEarlierRoundByeIsRecordedInEitherOrder</code>.</p>
+</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="rules-settled-by-census-phase-b-2026-10-20">Rules settled by census Phase B (2026-10-20)<a href="#rules-settled-by-census-phase-b-2026-10-20" class="hash-link" aria-label="Direct link to Rules settled by census Phase B (2026-10-20)" title="Direct link to Rules settled by census Phase B (2026-10-20)" translate="no">​</a></h3>
+<ul>
+<li class=""><strong>A seat fed by a BYE matchUp keeps its BYE when its last claim goes.</strong> A BYE matchUp&#x27;s loser is a BYE, so the seat
+it feeds across a link holds a BYE for that reason. Such a seat&#x27;s BYE can also carry a double exit&#x27;s claim, placed
+before the feeder became a BYE matchUp. When that double exit dissolved and its claim was withdrawn, the BYE was cleared
+with it, though the feeder still held its BYE. Withdrawing a claim now keeps the BYE while the seat&#x27;s feeder holds one,
+as unwinding a double exit already did (COMPASS 32/32 30007402 under <code>doubleExitPropagateBye: false</code>:
+<code>aSeatFedByAByeMatchUpKeepsItsByeWhenItsLastClaimGoes</code>).</li>
+<li class=""><strong>A relabel reaches the carry on a BYE-held matchUp.</strong> An exit re-entered as the other exit, the winner unchanged
+(WALKOVER and DEFAULTED, either way), relabels its loser&#x27;s carry. A carry can stop on a matchUp that reads BYE because a
+double exit elsewhere claimed its other seat, and the relabel, which looks for the loser&#x27;s standing matchUp and passes
+over a BYE, left that entry&#x27;s label as it was. When the claim later went and the BYE with it, the matchUp was decided
+by the old label. The relabel now rewrites the label on every BYE-held matchUp where the loser&#x27;s carry is recorded,
+and only the label: the BYE is never re-derived, and the entry&#x27;s BYE claims stay (CURTIS_CONSOLATION 8/6 30009232
+under <code>doubleExitPropagateBye: false</code>: <code>aRelabelReachesTheCarryOnAByeHeldMatchUp</code>).</li>
+<li class=""><strong>A single carried exit follows its feeder’s current side on an unscored, undecided matchUp.</strong>
+Where advanced drawPosition numbering interleaves, rule 3 can assign a feeder a different side after
+positions arrive or leave. At the end of a call, a lone carried provenance entry is re-keyed to its
+source feeder’s current side when the target has exactly two winner feeders in the same structure.
+This preserves the source and exit status; it does not move a position or change an outcome. Targets
+with a winning side, any played score, or a concluded status are excluded; single walkover/default statuses
+without a winner remain eligible because they can describe an exit pending on an empty seat. Census policy-off 30030527
+(MODIFIED_FEED_IN_CHAMPIONSHIP 32/32) pins both entry orders, the shrunk and full histories, and the
+result-dependent boundaries in <code>aCarriedExitFollowsItsFeederSide</code>. This accommodates unstable side
+keys without changing draw-position rule 3; Mentat P59 remains open.</li>
+<li class=""><strong>A convergence a call dissolved is owed its BYE back.</strong> Under <code>doubleExitPropagateBye: false</code>, a single exit that
+becomes a double exit gives up the BYE its loser seat held on its account, and its loser seat takes the produced
+exit instead. When a later call re-derives it to an awarded single exit, it again has nobody to lose, so the seat is
+owed that BYE. Two dissolving paths already gave it back (a re-derived convergence, and an unwound double exit); a
+convergence dissolved because an exit was withdrawn from it did not, and the seat stood empty, its matchUp decided
+for an empty side. The BYE is now owed once the call has settled, for every matchUp that was a double exit before the
+call and is an awarded single exit after it; a convergence that dissolves and converges again within one call is
+owed nothing (COMPASS 32/30 30004303 under <code>doubleExitPropagateBye: false</code>:
+<code>aConvergenceACallDissolvedIsOwedItsByeBack</code>).</li>
+<li class=""><strong>Resolved (Mentat P58, 2026-10-22): a BYE matchUp&#x27;s loser-seat BYE no longer depends on a claim.</strong> That BYE can have
+two reasons, the matchUp feeding the seat is a BYE matchUp and a double exit whose produced exit it relays makes its
+loser nobody, and the retired <code>byeClaims</code> ledger kept or omitted the double exit&#x27;s claim by which came first (CA
+ruling (b), 2026-10-20, left such claims out of the census round trip). Whether the BYE stands is now read from the
+draw (see &quot;Why a loser seat&#x27;s BYE is read from the draw&quot;), the claims are gone, and the round trip compares the seat
+whole: census Phase B 30004303&#x27;s schedule and probes replay clean (<code>aByeFedLoserSeatRoundTripsWhole</code>).</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="nothing-to-do-is-success-not-failure">Nothing to do is success, not failure<a href="#nothing-to-do-is-success-not-failure" class="hash-link" aria-label="Direct link to Nothing to do is success, not failure" title="Direct link to Nothing to do is success, not failure" translate="no">​</a></h3>
+<p>Several situations look like a failure to place a participant but are simply an absence of one. The
+clearest is a pending propagated exit whose losing side is an empty feed slot: there is no loser to
+direct into the consolation <em>yet</em>, and one will be directed when the slot fills. These return
+success.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Jhr7" id="statuses-that-do-not-propagate">Statuses that do not propagate<a href="#statuses-that-do-not-propagate" class="hash-link" aria-label="Direct link to Statuses that do not propagate" title="Direct link to Statuses that do not propagate" translate="no">​</a></h2>
+<ul>
+<li class="">
+<p><strong><code>RETIRED</code></strong> is an exit for the purpose of activity checks. Whether it is <strong>carried into a
+consolation structure is decided by policy</strong>, not by the engine — see
+<code>propagateRetirementAsExit</code> below.</p>
+<p>This paragraph previously stated flatly that a retirement is never carried onward. That was never
+what the code did, and it is not a question the engine should answer: a retirement is a completed
+match with a score and a winner, and whether the retiring player is then treated as unable to
+continue differs by governing body and by event.</p>
+</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Jhr7" id="propagateretirementasexit"><code>propagateRetirementAsExit</code><a href="#propagateretirementasexit" class="hash-link" aria-label="Direct link to propagateretirementasexit" title="Direct link to propagateretirementasexit" translate="no">​</a></h3>
+<p>A scoring-policy setting, effective only when <code>propagateExitStatus</code> is also on.</p>
+<table><thead><tr><th>value</th><th>effect on the retiring player&#x27;s consolation matchUp</th></tr></thead><tbody><tr><td><code>true</code></td><td>a <code>WALKOVER</code> to the opponent — the retiree is treated as unable to continue</td></tr><tr><td><code>false</code> <em>(default)</em></td><td>left <code>TO_BE_PLAYED</code> — the retiree is an ordinary loser who may still play</td></tr></tbody></table>
+<p>Placement is identical either way: the retiring player is directed to the linked structure in both
+cases, as any other loser is. Only what happens to them <strong>on arrival</strong> differs.</p>
+<p>This <strong>does</strong> change behaviour for a caller passing <code>propagateExitStatus: true</code> under the default
+policy: a retirement used to carry onward there. That is the point — it is the one place the engine
+was answering a rules question on a federation&#x27;s behalf. <code>POLICY_SCORING_USTA</code> sets it <code>true</code>
+explicitly, so its observable behaviour is unchanged. A provider with <code>propagateExitStatus</code> off —
+the factory default — is unaffected either way.</p>
+<p>It resolves the way <code>propagateExitStatus</code> does, since 7.5.0: <code>policy ?? param ?? false</code>. A policy
+that sets it, <code>true</code> or <code>false</code>, wins over the call; the call decides only where the policy is
+silent; absent both it is <code>false</code>. A tournament director under a policy that ends a retiree&#x27;s
+participation cannot keep that participant in the draw by passing <code>false</code> on the call.</p>
+<p>The single gate is <code>validExitToPropagate</code> in <code>directLoser.ts</code>. <code>progressExitStatus</code> also names
+<code>RETIRED</code>, but it runs after the decision to propagate has been taken, so it can only choose the
+label the exit carries — it cannot suppress one.</p>
+<ul>
+<li class=""><strong><code>BYE</code></strong> is not an exit. It is an absence of an opponent, and it propagates by advancing the
+participant who has no one to play.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Jhr7" id="related">Related<a href="#related" class="hash-link" aria-label="Direct link to Related" title="Direct link to Related" translate="no">​</a></h2>
+<ul>
+<li class=""><a class="" href="/competition-factory/docs/concepts/exit-profiles">Exit Profiles</a> — the path a participant took between structures</li>
+<li class=""><a class="" href="/competition-factory/docs/concepts/finishing-positions">Finishing Positions</a> — how positions are derived across linked structures</li>
+<li class=""><a class="" href="/competition-factory/docs/concepts/draw-links">Draw Links</a> — how losers reach a target structure</li>
+<li class=""><a class="" href="/competition-factory/docs/testing/exit-propagation-harness">Exit-propagation harness</a> — how these guarantees are tested</li>
+</ul></div></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"><a class="pagination-nav__link pagination-nav__link--prev" href="/competition-factory/docs/concepts/outcome-pipeline"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">The outcome pipeline</div></a><a class="pagination-nav__link pagination-nav__link--next" href="/competition-factory/docs/concepts/finishing-positions"><div class="pagination-nav__sublabel">Next</div><div class="pagination-nav__label">Finishing Positions</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_sral thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#overview" class="table-of-contents__link toc-highlight">Overview</a></li><li><a href="#the-pending-propagated-exit" class="table-of-contents__link toc-highlight">The pending propagated exit</a></li><li><a href="#propagateexitstatus" class="table-of-contents__link toc-highlight"><code>propagateExitStatus</code></a></li><li><a href="#bye-provenance-byefrompropagation" class="table-of-contents__link toc-highlight">BYE provenance: <code>byeFromPropagation</code></a></li><li><a href="#exit-provenance-sideexitprovenance" class="table-of-contents__link toc-highlight">Exit provenance: <code>sideExitProvenance</code></a><ul><li><a href="#why-not-matchupstatuscodes" class="table-of-contents__link toc-highlight">Why not <code>matchUpStatusCodes</code></a></li><li><a href="#why-this-one-carries-a-matchupid-when-byefrompropagation-refuses-to" class="table-of-contents__link toc-highlight">Why this one carries a matchUpId when <code>byeFromPropagation</code> refuses to</a></li><li><a href="#why-a-loser-seats-bye-is-read-from-the-draw" class="table-of-contents__link toc-highlight">Why a loser seat&#39;s BYE is read from the draw</a></li></ul></li><li><a href="#guarantees" class="table-of-contents__link toc-highlight">Guarantees</a><ul><li><a href="#re-applying-the-same-double-exit-does-nothing" class="table-of-contents__link toc-highlight">Re-applying the same double exit does nothing</a></li><li><a href="#a-rejected-mutation-does-not-alter-the-draw" class="table-of-contents__link toc-highlight">A rejected mutation does not alter the draw</a></li><li><a href="#which-double-exit-a-convergence-becomes-does-not-depend-on-entry-order" class="table-of-contents__link toc-highlight">Which double exit a convergence becomes does not depend on entry order</a></li><li><a href="#what-a-double-exit-produces-downstream-keeps-its-flavour" class="table-of-contents__link toc-highlight">What a double exit produces downstream keeps its flavour</a></li><li><a href="#a-correction-lands-where-the-direct-entry-lands" class="table-of-contents__link toc-highlight">A correction lands where the direct entry lands</a></li><li><a href="#a-team-duals-double-exit-is-unwound-by-its-lines-or-protected-from-them" class="table-of-contents__link toc-highlight">A team dual&#39;s double exit is unwound by its lines, or protected from them</a></li><li><a href="#an-exit-never-discards-a-placement-and-says-when-it-kept-one" class="table-of-contents__link toc-highlight">An exit never discards a placement, and says when it kept one</a></li><li><a href="#a-produced-exit-awards-no-empty-seat-on-any-path" class="table-of-contents__link toc-highlight">A produced exit awards no empty seat, on any path</a></li><li><a href="#a-pending-exits-reservation-goes-with-it" class="table-of-contents__link toc-highlight">A pending exit&#39;s reservation goes with it</a></li><li><a href="#an-exit-that-meets-a-bye-leaves-a-bye-behind" class="table-of-contents__link toc-highlight">An exit that meets a BYE leaves a BYE behind</a></li><li><a href="#two-held-exits-meet-past-their-own-byes" class="table-of-contents__link toc-highlight">Two held exits meet past their own BYEs</a></li><li><a href="#a-held-exit-goes-on-to-a-seat-awaiting-its-arrival" class="table-of-contents__link toc-highlight">A held exit goes on to a seat awaiting its arrival</a></li><li><a href="#a-carry-past-a-bye-a-holder-takes-back-comes-back-with-it" class="table-of-contents__link toc-highlight">A carry past a BYE a holder takes back comes back with it</a></li><li><a href="#a-carried-exit-is-corrected-at-its-origin" class="table-of-contents__link toc-highlight">A carried exit is corrected at its origin</a></li><li><a href="#a-relabel-out-of-a-convergence-and-back-into-one" class="table-of-contents__link toc-highlight">A relabel out of a convergence, and back into one</a></li><li><a href="#a-recorded-result-downstream-fixes-the-kind-of-a-correction" class="table-of-contents__link toc-highlight">A recorded result downstream fixes the kind of a correction</a></li><li><a href="#an-exit-arriving-at-a-seat-already-decided-for-it-is-carried-past" class="table-of-contents__link toc-highlight">An exit arriving at a seat already decided for it is carried past</a></li><li><a href="#two-carried-exits-converge-over-what-they-carried" class="table-of-contents__link toc-highlight">Two carried exits converge over what they carried</a></li><li><a href="#a-withdrawn-exit-releases-the-seat-it-won" class="table-of-contents__link toc-highlight">A withdrawn exit releases the seat it won</a></li><li><a href="#a-loser-who-is-nobody-holds-no-seat" class="table-of-contents__link toc-highlight">A loser who is nobody holds no seat</a></li><li><a href="#a-clear-takes-back-only-the-side-it-cleared" class="table-of-contents__link toc-highlight">A clear takes back only the side it cleared</a></li><li><a href="#the-decider-holds-the-finals-finalists" class="table-of-contents__link toc-highlight">The decider holds the final&#39;s finalists</a></li><li><a href="#a-carry-comes-home-with-its-carrier" class="table-of-contents__link toc-highlight">A carry comes home with its carrier</a></li><li><a href="#an-arrival-carrying-an-exit-converges-with-a-pending-exit" class="table-of-contents__link toc-highlight">An arrival carrying an exit converges with a pending exit</a></li><li><a href="#either-origin-of-a-converged-double-exit-clears-to-the-kept-origins-draw" class="table-of-contents__link toc-highlight">Either origin of a converged double exit clears to the kept origin&#39;s draw</a></li><li><a href="#rules-settled-by-the-census-in-s6-2026-10-15" class="table-of-contents__link toc-highlight">Rules settled by the census in S6 (2026-10-15)</a></li><li><a href="#rules-settled-by-the-census-in-s7-2026-10-15" class="table-of-contents__link toc-highlight">Rules settled by the census in S7 (2026-10-15)</a></li><li><a href="#rules-settled-by-the-census-in-s8-2026-10-16" class="table-of-contents__link toc-highlight">Rules settled by the census in S8 (2026-10-16)</a></li><li><a href="#rules-settled-by-the-census-in-a1-2026-10-17" class="table-of-contents__link toc-highlight">Rules settled by the census in A1 (2026-10-17)</a></li><li><a href="#rules-settled-by-census-phase-b-2026-10-20" class="table-of-contents__link toc-highlight">Rules settled by census Phase B (2026-10-20)</a></li><li><a href="#nothing-to-do-is-success-not-failure" class="table-of-contents__link toc-highlight">Nothing to do is success, not failure</a></li></ul></li><li><a href="#statuses-that-do-not-propagate" class="table-of-contents__link toc-highlight">Statuses that do not propagate</a><ul><li><a href="#propagateretirementasexit" class="table-of-contents__link toc-highlight"><code>propagateRetirementAsExit</code></a></li></ul></li><li><a href="#related" class="table-of-contents__link toc-highlight">Related</a></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 CourtHive</div></div></div></footer></div>
+</body>
+</html>
