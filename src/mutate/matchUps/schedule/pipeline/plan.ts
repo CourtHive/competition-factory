@@ -8,9 +8,10 @@ import { getMatchUpId } from '@Functions/global/extractors';
 import { carryPastMidnight } from './carryPastMidnight';
 import { playedOrderGate } from './playedOrderGate';
 
-// types
+// constants and types
 import type { DatePlan, Minutes, PlanningView, VenuePlan } from './view';
 import { ScheduleTimesResult } from '@Types/factoryTypes';
+import { BYE } from '@Constants/matchUpStatusConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 /**
@@ -168,6 +169,8 @@ function planDate({
   const individualParticipantProfiles: PlaceVenueRoundsArgs['individualParticipantProfiles'] = {};
   const matchUpNotBeforeTimes: PlaceVenueRoundsArgs['matchUpNotBeforeTimes'] = {};
   for (const matchUp of hydrated) {
+    // a BYE is never played: its schedule raises no not-before time
+    if (matchUp.matchUpStatus === BYE) continue;
     if (matchUp.schedule?.scheduledDate && sameDay(scheduleDate, extractDate(matchUp.schedule.scheduledDate))) {
       processNextMatchUps({ matchUpPotentialParticipantIds, matchUpNotBeforeTimes, matchUp });
     }

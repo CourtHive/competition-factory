@@ -29,6 +29,8 @@ type Source = {
   caseId: string;
   note: string;
   options?: Record<string, unknown>;
+  /** a change to the built view, for a record shape the engine's own methods do not write */
+  amendView?: (view: any) => void;
   build: () => void;
   claims: (plan: SchedulePlan, ids: MatchUpIds) => void;
 };
@@ -76,6 +78,73 @@ function expectEqual(actual: unknown, expected: unknown, what: string) {
 }
 
 const timeOf = (plan: SchedulePlan, matchUpId: string) => plan.matchUpScheduleTimes[matchUpId];
+
+/** two events at the one-court venue, each with its own participants; the second event's format is `format` */
+function twoEvents({
+  format,
+  courtsCount = 1,
+  secondVenue,
+}: {
+  format?: string;
+  courtsCount?: number;
+  secondVenue?: boolean;
+}) {
+  const venueProfiles = [{ venueId: VENUE, courtsCount, startTime: '10:00', endTime: '20:00' }];
+  if (secondVenue)
+    venueProfiles.push({ venueId: 'second-venue', courtsCount: 1, startTime: '10:00', endTime: '20:00' });
+  mocksEngine.generateTournamentRecord({
+    venueProfiles,
+    drawProfiles: [
+      { drawSize: 2, uniqueParticipants: true },
+      { drawSize: 4, uniqueParticipants: true },
+    ],
+    startDate: DAYS[0],
+    endDate: DAYS[1],
+    setState: true,
+  });
+  const { tournamentRecord } = tournamentEngine.getTournament();
+  if (format) {
+    const result: any = tournamentEngine.setMatchUpFormat({
+      drawId: tournamentRecord.events[1].drawDefinitions[0].drawId,
+      matchUpFormat: format,
+    });
+    if (!result.success) throw new Error('format');
+  }
+}
+function eventMatchUps(eventIndex: number, roundNumber: number) {
+  const { tournamentRecord } = tournamentEngine.getTournament();
+  const drawId = tournamentRecord.events[eventIndex].drawDefinitions[0].drawId;
+  return tournamentEngine
+    .allTournamentMatchUps({ matchUpFilters: { drawIds: [drawId], roundNumbers: [roundNumber] } })
+    .matchUps.sort((a: any, b: any) => a.roundPosition - b.roundPosition);
+}
+function profileEventRound(eventIndex: number, roundNumber: number, scheduleDate = DAYS[0]) {
+  const { tournamentRecord } = tournamentEngine.getTournament();
+  const event = tournamentRecord.events[eventIndex];
+  const drawDefinition = event.drawDefinitions[0];
+  const result: any = tournamentEngine.addSchedulingProfileRound({
+    round: {
+      structureId: drawDefinition.structures[0].structureId,
+      tournamentId: tournamentRecord.tournamentId,
+      drawId: drawDefinition.drawId,
+      eventId: event.eventId,
+      roundNumber,
+    },
+    venueId: VENUE,
+    scheduleDate,
+  });
+  if (!result.success) throw new Error('profile');
+}
+function timeMatchUp(matchUp: any, schedule: Record<string, unknown>) {
+  const result: any = tournamentEngine.addMatchUpScheduleItems({
+    schedule: { scheduledDate: DAYS[0], ...schedule },
+    matchUpId: matchUp.matchUpId,
+    drawId: matchUp.drawId,
+  });
+  if (!result.success) throw new Error('schedule');
+}
+const firstCourtId = () => tournamentEngine.getVenuesAndCourts().courts[0].courtId;
+const timesOf = (plan: SchedulePlan, matchUps: any[]) => matchUps.map(({ matchUpId }) => timeOf(plan, matchUpId));
 
 export const schedulingCaseSources: Source[] = [
   {
@@ -208,6 +277,115 @@ export const schedulingCaseSources: Source[] = [
       expectEqual(plan.noTimeMatchUpIds[DAYS[0]], [], 'not reported as untimed');
     },
   },
+  {
+    caseId: 'scheduling.plan.booking-holds-its-own-minutes.v1',
+    note:
+      'A standard best-of-3 matchUp (90 minutes, § 3.3) is timed at 10:00 on the only court; a round of timed ' +
+      "SET3-S:T20/TB7 matchUps (60 minutes) is profiled. The court is held for the timed matchUp's own 90 minutes, not " +
+      "the profiled round's 60, so the round starts at 11:30 and 12:30.",
+    build: () => {
+      twoEvents({ format: 'SET3-S:T20/TB7' });
+      timeMatchUp(eventMatchUps(0, 1)[0], { scheduledTime: '10:00', venueId: VENUE, courtId: firstCourtId() });
+      profileEventRound(1, 1);
+    },
+    claims: (plan) => {
+      expectEqual(timesOf(plan, eventMatchUps(1, 1)), ['11:30', '12:30'], 'after the 90 minute booking');
+    },
+  },
+  {
+    caseId: 'scheduling.plan.bookings-survive-a-malformed-matchup.v1',
+    note:
+      'A matchUp timed at 10:00 on the only court, and a matchUp elsewhere in the view with three draw positions. ' +
+      'A booking reads a schedule, not draw positions: the court is still held, and the profiled matchUp starts at 11:30.',
+    build: () => {
+      twoEvents({});
+      timeMatchUp(eventMatchUps(0, 1)[0], { scheduledTime: '10:00', venueId: VENUE, courtId: firstCourtId() });
+      profileEventRound(1, 1);
+    },
+    amendView: (view) => {
+      const final = eventMatchUps(1, 2)[0];
+      view.hydrated.find(({ matchUpId }: any) => matchUpId === final.matchUpId).drawPositions = [1, 2, 3];
+    },
+    claims: (plan) => {
+      expectEqual(timesOf(plan, eventMatchUps(1, 1))[0], '11:30', 'the court is still booked');
+    },
+  },
+  {
+    caseId: 'scheduling.plan.venue-only-booking-takes-a-court.v1',
+    note:
+      "A matchUp timed at 10:00 at the venue with no court holds one of the venue's courts for its 90 minutes: the " +
+      'profiled matchUp on the only court starts at 11:30.',
+    build: () => {
+      twoEvents({});
+      timeMatchUp(eventMatchUps(0, 1)[0], { scheduledTime: '10:00', venueId: VENUE });
+      profileEventRound(1, 1);
+    },
+    claims: (plan) => {
+      expectEqual(timesOf(plan, eventMatchUps(1, 1))[0], '11:30', 'a court of the venue is held');
+    },
+  },
+  {
+    caseId: 'scheduling.plan.timed-without-a-venue-books-no-court.v1',
+    note:
+      'In a tournament with two venues, a matchUp timed at 10:00 with neither a venue nor a court claims no court: ' +
+      'the profiled matchUp takes the court at 10:00 (its participants are still held, § 3.4).',
+    build: () => {
+      twoEvents({ secondVenue: true });
+      timeMatchUp(eventMatchUps(0, 1)[0], { scheduledTime: '10:00' });
+      profileEventRound(1, 1);
+    },
+    claims: (plan) => {
+      expectEqual(timesOf(plan, eventMatchUps(1, 1))[0], '10:00', 'no court is held');
+    },
+  },
+  {
+    caseId: 'scheduling.plan.timed-without-a-venue-at-the-only-venue.v1',
+    note:
+      'In a tournament with exactly one venue, a matchUp timed at 10:00 with no venue is at that venue (CA 2026-10-25): ' +
+      'it holds the only court until 11:30, so the profiled matchUp is timed at 11:30.',
+    build: () => {
+      twoEvents({});
+      timeMatchUp(eventMatchUps(0, 1)[0], { scheduledTime: '10:00' });
+      profileEventRound(1, 1);
+    },
+    claims: (plan) => {
+      expectEqual(timesOf(plan, eventMatchUps(1, 1))[0], '11:30', 'the only venue holds it');
+    },
+  },
+  {
+    caseId: 'scheduling.plan.scheduled-bye-holds-no-one.v1',
+    note:
+      'A BYE carries a schedule (10:00 on day 2) and the final is profiled on day 2 under a daily limit of one singles ' +
+      "matchUp. A BYE is never played: it adds nothing to its participant's day and raises no not-before time, so the " +
+      'final is timed at 10:00, not held over the limit.',
+    build: () => {
+      mocksEngine.generateTournamentRecord({
+        venueProfiles: [{ venueId: VENUE, courtsCount: 2, startTime: '10:00', endTime: '20:00' }],
+        drawProfiles: [{ drawSize: 4, participantsCount: 3 }],
+        startDate: DAYS[0],
+        endDate: DAYS[1],
+        setState: true,
+      });
+      const firstRound = eventMatchUps(0, 1);
+      const played = firstRound.find((m: any) => m.matchUpStatus !== 'BYE');
+      const bye = firstRound.find((m: any) => m.matchUpStatus === 'BYE');
+      timeMatchUp(played, { scheduledTime: '10:00', venueId: VENUE });
+      const { outcome } = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 1 });
+      let result: any = tournamentEngine.setMatchUpStatus({
+        matchUpId: played.matchUpId,
+        drawId: played.drawId,
+        outcome,
+      });
+      if (!result.success) throw new Error('score');
+      timeMatchUp(bye, { scheduledDate: DAYS[1], scheduledTime: '10:00', venueId: VENUE });
+      result = tournamentEngine.setMatchUpDailyLimits({ dailyLimits: { SINGLES: 1, total: 1 } });
+      if (!result.success) throw new Error('daily limits');
+      profileEventRound(0, 2, DAYS[1]);
+    },
+    claims: (plan) => {
+      expectEqual(timesOf(plan, eventMatchUps(0, 2)), ['10:00'], 'the final is not held by the BYE');
+    },
+  },
 ];
 
 /**
@@ -223,7 +401,7 @@ export function authoredSchedulingCases(): KernelCase[] {
   }
 }
 
-function authoredCase({ caseId, note, options = {}, build, claims }: Source): KernelCase {
+function authoredCase({ caseId, note, options = {}, amendView, build, claims }: Source): KernelCase {
   setRandomSource(20260302);
   setClock('2026-03-01T08:00:00.000Z');
   build();
@@ -233,6 +411,7 @@ function authoredCase({ caseId, note, options = {}, build, claims }: Source): Ke
     tournamentRecords: { [tournamentRecord.tournamentId]: tournamentRecord },
   });
   if ('error' in view) throw new Error(`${caseId}: ${JSON.stringify(view.error)}`);
+  amendView?.(view);
   const plan = planSchedule({ ...options, view });
   claims(plan, matchUpIds());
   return {

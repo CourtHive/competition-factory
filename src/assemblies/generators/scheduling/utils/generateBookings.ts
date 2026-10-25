@@ -1,10 +1,9 @@
-import { matchUpFormatTimes } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
+import { matchUpFormatTimes, resolveTimingDetails } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
 import { getScheduleTiming } from '@Query/extensions/matchUpFormatTiming/getScheduleTiming';
 import { addDaysToDate, endOnTheDay } from '@Tools/civilDateTime';
 import { calculatePeriodLength } from './calculatePeriodLength';
 import { extractDate, extractTime } from '@Tools/dateTime';
 import { hasSchedule } from '@Query/matchUp/hasSchedule';
-import { validMatchUps } from '@Validators/validMatchUp';
 
 // constants and types
 import { MISSING_MATCHUPS, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
@@ -29,6 +28,8 @@ type GenerateBookingsArgs = {
   matchUps?: HydratedMatchUp[];
   periodLength?: number;
   scheduleDate?: string;
+  /** the tournament's only venue, when it has exactly one: a timed matchUp with no venue is booked there */
+  soleVenueId?: string;
   venueIds?: string[];
 };
 export function generateBookings({
@@ -40,11 +41,13 @@ export function generateBookings({
   venueIds = [],
   periodLength,
   scheduleDate,
+  soleVenueId,
   matchUps,
 }: GenerateBookingsArgs) {
   if (!eventTimings && typeof tournamentRecords !== 'object') return { error: MISSING_TOURNAMENT_RECORDS };
 
-  if (!validMatchUps(matchUps) && !Array.isArray(dateScheduledMatchUps)) return { error: MISSING_MATCHUPS };
+  // a booking reads a matchUp's schedule, never its draw positions: one malformed matchUp must not drop every booking
+  if (!Array.isArray(matchUps) && !Array.isArray(dateScheduledMatchUps)) return { error: MISSING_MATCHUPS };
 
   periodLength =
     periodLength ??
@@ -55,37 +58,40 @@ export function generateBookings({
 
   const eventDetails = eventTimings ?? getEventBookingTimings(tournamentRecords ?? {});
 
-  const defaultTiming = {
-    averageTimes: [{ minutes: { default: averageMatchUpMinutes } }],
-    recoveryTimes: [{ minutes: { default: defaultRecoveryMinutes } }],
-  };
-
   dateScheduledMatchUps ??= matchUps?.filter((matchUp) => {
     const schedule = matchUp.schedule;
     // compare calendar dates: a stored scheduledDate may carry a time component
+    // a BYE is never played: it holds no court and no participant, so it is not already scheduled
     return (
-      hasSchedule({ schedule }) && (!scheduleDate || extractDate(schedule?.scheduledDate) === extractDate(scheduleDate))
+      matchUp.matchUpStatus !== BYE &&
+      hasSchedule({ schedule }) &&
+      (!scheduleDate || extractDate(schedule?.scheduledDate) === extractDate(scheduleDate))
     );
   });
 
+  // a timed matchUp with no venue is at the tournament's only venue, if it has exactly one; otherwise it books no court
+  const venueOf = (matchUp: HydratedMatchUp) => matchUp.schedule?.venueId ?? soleVenueId;
   const inVenues = (matchUp: HydratedMatchUp) =>
-    (!venueIds.length || venueIds.includes(matchUp.schedule?.venueId ?? '')) && matchUp.matchUpStatus !== BYE;
+    (!venueIds.length || venueIds.includes(venueOf(matchUp) ?? '')) && matchUp.matchUpStatus !== BYE;
   const relevantMatchUps = dateScheduledMatchUps?.filter(inVenues);
 
   const timingOf = ({ eventId, matchUpFormat }: HydratedMatchUp) => {
     const { eventType, scheduleTiming } = eventDetails[eventId];
-    const timingDetails = {
-      ...scheduleTiming,
-      defaultTiming,
+    // the same minutes the matchUp is timed with (§ 3.3): the record's timing, else the default policy
+    const timingDetails = resolveTimingDetails({
+      defaultAverageMinutes: averageMatchUpMinutes,
+      scheduleTiming,
+      defaultRecoveryMinutes,
       matchUpFormat,
-    };
+    });
     // an event with no type was always read untyped here: the timing falls back to its defaults
     return matchUpFormatTimes({ eventType: eventType as EventTypeUnion, timingDetails });
   };
 
   const bookings: Booking[] = (relevantMatchUps ?? []).map((matchUp) => {
     const { averageMinutes, recoveryMinutes } = timingOf(matchUp);
-    const { courtId, venueId } = matchUp.schedule ?? {};
+    const courtId = matchUp.schedule?.courtId;
+    const venueId = venueOf(matchUp);
     const startTime = extractTime(matchUp.schedule?.scheduledTime);
     // a booking that would end past midnight holds its court to the end of its day (scheduling-pipeline.md § 9.8)
     const { endTime } = endOnTheDay(startTime, averageMinutes);
@@ -101,7 +107,8 @@ export function generateBookings({
     const { averageMinutes, recoveryMinutes } = timingOf(matchUp);
     const { minutesPastMidnight } = endOnTheDay(extractTime(schedule?.scheduledTime), averageMinutes);
     if (!minutesPastMidnight) continue;
-    const { courtId, venueId } = schedule ?? {};
+    const courtId = schedule?.courtId;
+    const venueId = venueOf(matchUp);
     const endTime = endOnTheDay('00:00', minutesPastMidnight).endTime;
     bookings.push({ recoveryMinutes, averageMinutes, periodLength, startTime: '00:00', courtId, endTime, venueId });
   }

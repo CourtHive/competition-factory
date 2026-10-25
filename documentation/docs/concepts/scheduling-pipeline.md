@@ -186,6 +186,25 @@ conformance cases.
 9. **Not-before times** are compared as text. That orders them correctly only because every not-before time the
    scheduler writes is a tidied `HH:MM`.
 
+### 3.9 Court bookings
+
+A matchUp already timed on the date holds a court; the venue's slots (§ 4 step 2) are computed around what is held.
+Rules decided 2026-10-25 (debate-ruled, CA-reviewed):
+
+1. **Its own minutes.** A timed matchUp holds a court for its own average minutes, resolved as § 3.3 resolves them: the
+   record's timing, else the scheduling policy, else a timed format's own minutes. It never takes the minutes of the
+   round being placed. Recovery holds participants (§ 3.4), never the court.
+2. **A BYE holds nothing.** A BYE is never played: whatever schedule it carries, it holds no court, adds nothing to a
+   participant's day (§ 3.5) and raises no not-before time.
+3. **No venue.** A timed matchUp with no venue is at the tournament's only venue with courts on the date, when there is
+   exactly one; otherwise it holds no court. Its participants are held either way.
+4. **A venue but no court.** A timed matchUp at a venue with no court holds one court of that venue for its minutes:
+   capacity is the rule, which court is not part of the result. When no court is free for its whole length it still
+   holds one.
+5. **A booking reads a schedule and a status, nothing else.** A malformed matchUp elsewhere in the view (draw positions
+   that are not valid) changes no booking; it used to switch every booking off, so the date read as free. A booking
+   that cannot be read stops the run with its error rather than leaving every court free.
+
 ## 4. The timed pipeline: `scheduleProfileRounds`
 
 The call runs in three stages: a **view**, everything the decisions below read, resolved once from the records; a
