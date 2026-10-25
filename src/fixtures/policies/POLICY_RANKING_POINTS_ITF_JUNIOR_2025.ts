@@ -14,7 +14,8 @@
  * Tournament Levels (mapped to factory levels):
  *   Level 1: Grand Slam & Youth Olympic Games
  *   Level 2: ITF World Tennis Tour Junior Finals (8 players, places 1–8)
- *   Level 3: not used (earlier versions put the European Championships here: a Tennis Europe event, not an ITF grade)
+ *   Level 3: International Team Competitions (earlier versions put the European Championships here, a Tennis Europe
+ *            event and not an ITF grade)
  *   Level 4: J500
  *   Level 5: J300
  *   Level 6: J200
@@ -34,15 +35,16 @@
  *   - Grand Slam qualifying: 30 for a qualifier who loses in the first round of the main draw, 20 for a loss in
  *     the final round of qualifying. The tables give no qualifying points at other grades.
  *
- * Not encoded:
- *   - International Team Competition points (per player-position win, best result only, best 8 teams)
+ *   - International Team Competitions (level 3): a #1 singles, #2 singles or doubles win in the quarterfinal, semifinal
+ *     or final earns points; a player keeps one result only, their best, and it counts among their six best singles
+ *     results (CA, 2026-10-25). Only the best 8 teams reach those rounds; a 5th–8th classification tie earns nothing
  */
 
 import { MAIN, QUALIFYING, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
 import type { AggregationRules, AwardProfile } from '@Types/rankingTypes';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { ITF_JUNIOR } from '@Constants/pointsAuthorityConstants';
-import { SINGLES, DOUBLES } from '@Constants/eventConstants';
+import { SINGLES, DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
 
 // ─── Singles ─────────────────────────────────────────────────────────────────
 
@@ -116,6 +118,22 @@ const standardSingles: AwardProfile = {
   },
 };
 
+// ─── International Team Competitions (Level 3) ──────────────────────────────
+// Points per player win by line, in the round the tie was played; one result per player, their best.
+const internationalTeamCompetition: AwardProfile = {
+  profileName: 'International Team Competition',
+  levels: [3],
+  eventTypes: [TEAM_EVENT],
+  tieWinPoints: {
+    bestOnly: true,
+    rounds: {
+      '2': { singles: [95, 75], doubles: [75] }, // final
+      '3-4': { singles: [75, 50], doubles: [50] }, // semifinal
+      '5-8': { singles: [50, 20], doubles: [20] }, // quarterfinal
+    },
+  },
+};
+
 // ─── Doubles ─────────────────────────────────────────────────────────────────
 // Points as the table gives them; the combined ranking counts a quarter of them (the Doubles bucket's weight).
 
@@ -166,9 +184,10 @@ const aggregationRules: AggregationRules = {
   countingBuckets: [
     {
       bucketName: 'Singles',
-      eventTypes: [SINGLES],
+      // an International Team Competition result counts among the six best singles results (Reg. 10 (i))
+      eventTypes: [SINGLES, TEAM_EVENT],
       bestOfCount: 6,
-      pointComponents: ['positionPoints'],
+      pointComponents: ['positionPoints', 'linePoints'],
       bestPerSeries,
     },
     {
@@ -199,6 +218,9 @@ const awardProfiles: AwardProfile[] = [
   grandSlamSingles,
   grandSlamQualifyingSingles,
   grandSlamDoubles,
+
+  // International Team Competitions
+  internationalTeamCompetition,
 
   // J500 through J30 (catch-all)
   standardSingles,

@@ -16,7 +16,7 @@ import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { SPLIT_EVEN, TEAM_ONLY } from '@Constants/rankingConstants';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
-import type { AwardProfile } from '@Types/rankingTypes';
+import type { AwardProfile, TieWinPoints } from '@Types/rankingTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
 
@@ -122,6 +122,64 @@ function awardLinePointsToWinningSide({
       });
     }
   }
+}
+
+type TieSide = { sideNumber?: number; participantId?: string };
+type TieMatchUp = { winningSide?: number; matchUpType?: string; collectionPosition?: number; sides?: TieSide[] };
+type TeamMatchUp = {
+  winningSide?: number;
+  finishingPositionRange?: { loser?: number[] };
+  sides?: TieSide[];
+  tieMatchUps?: TieMatchUp[];
+};
+type TieWin = { personId: string; value: number; round: string; collectionPosition?: number };
+
+/**
+ * The tie wins a team's players earned in one structure, valued by AwardProfile.tieWinPoints: the tie's round (the
+ * team draw positions its loser takes, '2' final, '3-4' semifinal, '5-8' quarterfinal) and the line (singles or
+ * doubles, by collectionPosition). A player's own win counts whether or not the team won the tie.
+ */
+function collectTieWins({
+  participantIndividualIdsMap,
+  participantPersonMap,
+  structureMatchUpIds,
+  mappedMatchUps,
+  participantId,
+  tieWinPoints,
+}: {
+  participantIndividualIdsMap: Record<string, string[]>;
+  participantPersonMap: Record<string, string>;
+  mappedMatchUps: Record<string, TeamMatchUp>;
+  structureMatchUpIds: string[];
+  tieWinPoints: TieWinPoints;
+  participantId: string;
+}): TieWin[] {
+  const wins: TieWin[] = [];
+  for (const matchUpId of structureMatchUpIds) {
+    const teamMatchUp = mappedMatchUps[matchUpId];
+    const sideNumber = teamMatchUp?.sides?.find((side) => side.participantId === participantId)?.sideNumber;
+    const loserRange = teamMatchUp?.finishingPositionRange?.loser;
+    if (!sideNumber || !loserRange?.length) continue;
+
+    const round = unique(loserRange).join('-');
+    const roundValues = tieWinPoints.rounds[round];
+    if (!roundValues) continue;
+
+    for (const tieMatchUp of teamMatchUp.tieMatchUps ?? []) {
+      if (tieMatchUp.winningSide !== sideNumber || !tieMatchUp.collectionPosition) continue;
+      const lineValues = tieMatchUp.matchUpType === DOUBLES ? roundValues.doubles : roundValues.singles;
+      const value = lineValues?.[tieMatchUp.collectionPosition - 1];
+      if (!value) continue;
+
+      const winnerId = tieMatchUp.sides?.find((side) => side.sideNumber === sideNumber)?.participantId;
+      if (!winnerId) continue;
+      for (const individualId of participantIndividualIdsMap[winnerId] ?? [winnerId]) {
+        const personId = participantPersonMap[individualId];
+        if (personId) wins.push({ personId, value, round, collectionPosition: tieMatchUp.collectionPosition });
+      }
+    }
+  }
+  return wins;
 }
 
 function calculateTeamLinePoints({
@@ -671,6 +729,8 @@ function processAllParticipations({
   // The participant's place in their round robin group, when the draw has one: a playoff participation is read in
   // its light (AwardProfile.luckyLoserRoundRobin).
   const groupOrder = structureParticipation.find((p) => p.groupOrder)?.groupOrder;
+  const tieWins: TieWin[] = [];
+  let tieWinProfile: AwardProfile | undefined;
 
   for (const structureParticipationEntry of structureParticipation) {
     const participation = groupOrder
@@ -692,6 +752,23 @@ function processAllParticipations({
     });
 
     if (skip) continue;
+
+    if (participantType === TEAM_PARTICIPANT && awardProfile?.tieWinPoints) {
+      tieWinProfile = awardProfile;
+      const structureMatchUpIds = ((participant.matchUps ?? []) as { structureId?: string; matchUpId: string }[])
+        .filter((matchUp) => matchUp.structureId === participation.structureId)
+        .map((matchUp) => matchUp.matchUpId);
+      tieWins.push(
+        ...collectTieWins({
+          tieWinPoints: awardProfile.tieWinPoints,
+          participantIndividualIdsMap,
+          participantPersonMap,
+          structureMatchUpIds,
+          mappedMatchUps,
+          participantId,
+        }),
+      );
+    }
 
     if (participantType === TEAM_PARTICIPANT && awardProfile) {
       const ppw = Array.isArray(awardProfile.perWinPoints)
@@ -718,6 +795,37 @@ function processAllParticipations({
       });
     }
   }
+
+  if (tieWinProfile?.tieWinPoints) {
+    const pointsAuthorityForTies = tieWinProfile.pointsAuthority ?? pointsAuthority;
+    for (const win of bestTieWins(tieWins, tieWinProfile.tieWinPoints.bestOnly)) {
+      if (!personPoints[win.personId]) personPoints[win.personId] = [];
+      personPoints[win.personId].push({
+        linePoints: win.value,
+        collectionPosition: win.collectionPosition,
+        rangeAccessor: win.round,
+        pointsAuthority: pointsAuthorityForTies,
+        profileName: tieWinProfile.profileName,
+        category: resolveAwardCategory(category, gender),
+        eventType,
+        startDate,
+        endDate,
+        drawId,
+        level,
+      });
+    }
+  }
+}
+
+// With bestOnly, each person keeps their single best tie win (ITF Juniors: one result per player per competition).
+function bestTieWins(tieWins: TieWin[], bestOnly?: boolean): TieWin[] {
+  if (!bestOnly) return tieWins;
+  const best = new Map<string, TieWin>();
+  for (const win of tieWins) {
+    const current = best.get(win.personId);
+    if (!current || win.value > current.value) best.set(win.personId, win);
+  }
+  return [...best.values()];
 }
 
 function buildAndDistributeAward({
