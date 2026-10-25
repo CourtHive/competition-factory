@@ -276,7 +276,7 @@ export function scheduleVenueRounds({
         details.courtsCount &&
         details.scheduleTimes?.length &&
         details.matchUpsToSchedule?.length &&
-        scheduledThisPass <= details.courtsCount
+        scheduledThisPass < details.courtsCount
       ) {
         const { scheduleTime, attempts = 0 } = details.scheduleTimes.shift() as ScheduleTime;
         const scheduledMatchUp = details.matchUpsToSchedule.find((matchUp) =>
