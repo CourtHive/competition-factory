@@ -1,6 +1,6 @@
 import { setMatchUpFirstClassOrTimeItem } from '@Mutate/timeItems/matchUps/setMatchUpFirstClassOrTimeItem';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { dateValidation } from '@Validators/regex';
+import { canonicalDate } from '@Tools/canonicalClock';
 import { checkPlayedOrder } from './playedOrder';
 import { extractDate } from '@Tools/dateTime';
 
@@ -21,10 +21,9 @@ export function addMatchUpScheduledDate({
   const stack = 'addMatchUpScheduledDate';
   if (!matchUpId) return { error: MISSING_MATCHUP_ID };
 
-  const validDate = dateToSchedule && dateValidation.test(dateToSchedule);
-  if (dateToSchedule && !validDate) return { error: INVALID_DATE };
-
-  const scheduledDate = extractDate(dateToSchedule);
+  // a real calendar day, stored as YYYY-MM-DD (scheduling-pipeline.md § 9.9); an absent value or '' clears it
+  const scheduledDate = dateToSchedule ? canonicalDate(dateToSchedule) : '';
+  if (scheduledDate === undefined) return { error: INVALID_DATE };
 
   // validate scheduledDate falls within tournament date range
   if (scheduledDate && tournamentRecord?.startDate && tournamentRecord?.endDate) {

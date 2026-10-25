@@ -14,29 +14,24 @@
  * needs an offset or an absolute moment — `timeZone` / `zonedDateTime`.
  */
 
-import { isISODateString, extractDate } from '@Tools/plainDate';
+import { canonicalTime } from '@Tools/canonicalClock';
 import { zeroPad } from '@Tools/dateTimeInternals';
 import { timeValidation } from '@Validators/regex';
+import { extractDate } from '@Tools/plainDate';
 
+/** Whether a value is a time (`canonicalClock.ts`: `HH:MM` and the forms that convert to it unambiguously). */
 export function isTimeString(timeString) {
-  if (typeof timeString !== 'string') return false;
-  const noZ = timeString.split('Z')[0];
-  const parts: string[] = noZ.split(':');
-  const isNumeric = parts.every((part) => !Number.isNaN(Number.parseInt(part)));
-  const invalid = parts.length < 2 || !isNumeric || Number.parseInt(parts[0]) > 23 || Number.parseInt(parts[1]) > 60;
-  return !invalid;
+  return canonicalTime(timeString) !== undefined;
 }
 
-/** Normalize a time string to `HH:MM`, discarding seconds; undefined when not a time. */
+/** A time as `HH:MM`, seconds discarded, a 12-hour time converted; undefined when not a time. */
 export function tidyTime(timeString): string | undefined {
-  return isTimeString(timeString) ? timeString.split(':').slice(0, 2).map(zeroPad).join(':') : undefined;
+  return canonicalTime(timeString);
 }
 
-/** The wall-clock part of an ISO string, or of a bare time string. */
+/** The wall-clock part of an ISO date-time, or a bare time, as `HH:MM`; undefined when not a time. */
 export function extractTime(dateString): string | undefined {
-  return isISODateString(dateString) && dateString.indexOf('T') > 0
-    ? tidyTime(dateString.split('T').reverse()[0])
-    : tidyTime(dateString);
+  return canonicalTime(dateString);
 }
 
 export function splitTime(value) {

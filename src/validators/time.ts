@@ -1,17 +1,15 @@
-import { timeValidation } from './regex';
+import { canonicalTime } from '@Tools/canonicalClock';
 
 function getInt(value) {
   return parseInt(value);
 }
 
+/** Both are times (scheduling-pipeline.md § 9.9) and the end does not come before the start. */
 export function validTimePeriod({ startTime = '', endTime = '' } = {}) {
-  if (!startTime || !endTime || !timeValidation.test(startTime) || !timeValidation.test(endTime)) return false;
-
-  const [startHour, startMinute] = startTime.split(':').map(getInt);
-  const [endHour, endMinute] = endTime.split(':').map(getInt);
-
-  if (endHour < startHour) return false;
-  return !(startHour === endHour && endMinute < startMinute);
+  const start = canonicalTime(startTime);
+  const end = canonicalTime(endTime);
+  // canonical HH:MM orders as a string
+  return !!start && !!end && end >= start;
 }
 
 export function startTimeSort(a, b) {

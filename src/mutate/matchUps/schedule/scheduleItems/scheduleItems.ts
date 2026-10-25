@@ -6,6 +6,7 @@ import { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems
 import { allocateTeamMatchUpCourts } from '@Mutate/matchUps/schedule/allocateTeamMatchUpCourts';
 import { getMatchUpOfficialConflicts } from '@Query/officiating/getMatchUpOfficialConflicts';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { canonicalDate, canonicalTime, isClearingValue } from '@Tools/canonicalClock';
 import { assignMatchUpCourt } from '@Mutate/matchUps/schedule/assignMatchUpCourt';
 import { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue';
 import { addMatchUpTimeItem } from '@Mutate/timeItems/matchUps/matchUpTimeItems';
@@ -16,10 +17,10 @@ import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
 import { scheduleLockConflicts } from '@Query/matchUp/isScheduleLocked';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { checkPlayedOrder, PendingPlacements } from './playedOrder';
-import { dateValidation, validTimeString } from '@Validators/regex';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { findParticipant } from '@Acquire/findParticipant';
+import { validTimeString } from '@Validators/regex';
 import { isConvertableInteger } from '@Tools/math';
 import { competitionNow } from '@Tools/clock';
 import { ensureInt } from '@Tools/ensureInt';
@@ -712,7 +713,7 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
  * pure pass first.
  *
  * NOTHING here is a second spelling of a rule. Each check calls the SAME predicate its writer
- * calls: `validTimeValue`, `dateValidation`, `isConvertableInteger`, `calledBeforeTournamentStart`.
+ * calls: `canonicalTime`, `canonicalDate`, `validTimeValue`, `isConvertableInteger`, `calledBeforeTournamentStart`.
  * A guard that restated its writer's rule is how the two come to disagree.
  *
  * Tournament-range checks are included deliberately. They read `tournamentRecord`, but nothing here
@@ -796,7 +797,10 @@ export function checkScheduleValues({
 
   // `!== undefined` throughout, matching the apply path's own guard: an absent key is "leave it",
   // `null` is the explicit clear.
-  for (const timeValue of [scheduledTime, startTime, stopTime, resumeTime, endTime]) {
+  // a scheduled time converts to HH:MM or is refused (scheduling-pipeline.md § 9.9); '' clears it
+  if (!isClearingValue(scheduledTime) && !canonicalTime(scheduledTime)) return { error: INVALID_TIME };
+  // the match clock's times are instants, validated as they always were
+  for (const timeValue of [startTime, stopTime, resumeTime, endTime]) {
     if (timeValue !== undefined && timeValue !== null && !validTimeValue(timeValue)) return { error: INVALID_TIME };
   }
 
@@ -804,7 +808,7 @@ export function checkScheduleValues({
     return { error: INVALID_VALUES, info: 'courtOrder must be convertable to an integer' };
 
   if (scheduledDate !== undefined && scheduledDate !== null && scheduledDate) {
-    if (!dateValidation.test(scheduledDate)) return { error: INVALID_DATE };
+    if (!canonicalDate(scheduledDate)) return { error: INVALID_DATE };
     const date = extractDate(scheduledDate);
     if (date && tournamentRecord?.startDate && tournamentRecord?.endDate) {
       const scheduleTime = new Date(date).getTime();

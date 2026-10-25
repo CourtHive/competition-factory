@@ -14,6 +14,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
 // constants
+import { COMPLETED, DEFAULTED } from '@Constants/matchUpStatusConstants';
+import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
 import {
   INVALID_VALUES,
   MISSING_DRAW_DEFINITION,
@@ -21,8 +23,6 @@ import {
   INVALID_PARTICIPANT_ID,
   NOT_FOUND,
 } from '@Constants/errorConditionConstants';
-import { COMPLETED, DEFAULTED } from '@Constants/matchUpStatusConstants';
-import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
 
 // ----------------------------------------------------------------
 // headToHead — branch coverage
@@ -292,7 +292,7 @@ describe('personRequests branch coverage', () => {
   it('addPersonRequests with DO_NOT_SCHEDULE and invalid date/time', () => {
     const { personId } = setupWithPersonRequests();
 
-    // Invalid date format → extractDate returns undefined → request still passes (non-date-filtered)
+    // a date or a time that is not one refuses the request (scheduling-pipeline.md § 9.9)
     const result = tournamentEngine.addPersonRequests({
       personId,
       requests: [
@@ -304,8 +304,24 @@ describe('personRequests branch coverage', () => {
         },
       ],
     });
-    // Still succeeds — request is added without date/time validation (non-matching extractDate returns the original)
-    expect(result.success).toEqual(true);
+    expect(result.error).toEqual(INVALID_VALUES);
+    const { personRequests } = tournamentEngine.getPersonRequests();
+    expect((personRequests?.[personId] ?? []).some(({ date }) => date === 'bad-date')).toEqual(false);
+  });
+
+  it('modifyPersonRequests refuses a request whose date is not a calendar day', () => {
+    const { personId } = setupWithPersonRequests();
+    const result = tournamentEngine.modifyPersonRequests({
+      personId,
+      requests: [{ requestType: DO_NOT_SCHEDULE, date: '2026-02-30', startTime: '08:00', endTime: '10:00' }],
+    });
+    expect(result.error).toEqual(INVALID_VALUES);
+  });
+
+  it('modifyPersonRequests refuses a request that is not an object', () => {
+    setupWithPersonRequests();
+    const result = tournamentEngine.modifyPersonRequests({ requests: ['not a request'] });
+    expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('modifyPersonRequests without personId modifies across all personIds', () => {
@@ -496,11 +512,26 @@ describe('mergePersonRequests branch coverage', () => {
           requestType: DO_NOT_SCHEDULE,
           date: '2025-07-01T00:00:00.000Z',
           startTime: '09:30:00',
-          endTime: '12:00:00',
+          endTime: '12:00 PM',
         },
       ],
     });
     expect(result.mergeCount).toEqual(1);
+    expect(personRequests['p1'][0]).toMatchObject({ date: '2025-07-01', startTime: '09:30', endTime: '12:00' });
+  });
+
+  it('one request with an invalid time refuses them all', () => {
+    const personRequests: any = {};
+    const result = mergePersonRequests({
+      personRequests,
+      personId: 'p1',
+      requests: [
+        { requestType: DO_NOT_SCHEDULE, date: '2025-07-01', startTime: '09:00', endTime: '10:00' },
+        { requestType: DO_NOT_SCHEDULE, date: '2025-07-01', startTime: '23:60', endTime: '24:00' },
+      ],
+    });
+    expect(result).toEqual({ mergeCount: 0, valid: false });
+    expect(personRequests['p1']).toBeUndefined();
   });
 
   it('DO_NOT_SCHEDULE with missing date still includes request', () => {

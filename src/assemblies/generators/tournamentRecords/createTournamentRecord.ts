@@ -3,8 +3,7 @@ import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { extensionConstants } from '@Constants/extensionConstants';
 import { factoryVersion } from '@Functions/global/factoryVersion';
 import { isValidExtension } from '@Validators/isValidExtension';
-import { validDateString } from '@Validators/regex';
-import { isISODateString } from '@Tools/dateTime';
+import { canonicalDate } from '@Tools/canonicalClock';
 import { nowMs } from '@Tools/clock';
 import { UUID } from '@Tools/UUID';
 
@@ -16,17 +15,17 @@ import { INVALID_DATE, INVALID_TIME_ZONE } from '@Constants/errorConditionConsta
 export function createTournamentRecord(params): any {
   const { tournamentRecord, tournamentRecords, activeTournamentId, ...attributes } = params ?? {};
   attributes.tournamentId ??= UUID();
-  if (attributes.startDate && !isISODateString(attributes.startDate) && !validDateString.test(attributes.startDate)) {
+  if (attributes.startDate && !canonicalDate(attributes.startDate)) {
     return { error: INVALID_DATE };
   }
 
-  if (attributes.endDate && !isISODateString(attributes.endDate) && !validDateString.test(attributes.endDate)) {
+  if (attributes.endDate && !canonicalDate(attributes.endDate)) {
     return { error: INVALID_DATE };
   }
 
   if (attributes.activeDates) {
     const activeDates = attributes.activeDates.filter(Boolean);
-    if (!activeDates.every((d) => isISODateString(d) || validDateString.test(d))) {
+    if (!activeDates.every((d) => !!canonicalDate(d))) {
       return { error: INVALID_DATE };
     }
     if (activeDates.length) {

@@ -1,11 +1,13 @@
 import { setMatchUpFirstClassOrTimeItem } from '@Mutate/timeItems/matchUps/setMatchUpFirstClassOrTimeItem';
+import { canonicalDate, canonicalTime, isClearingValue } from '@Tools/canonicalClock';
+import { addMatchUpScheduledDate } from './scheduleItems/addMatchUpScheduledDate';
 import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
-import { convertTime, extractDate, validTimeValue } from '@Tools/dateTime';
 import { matchUpTimeModifiers } from '@Query/matchUp/timeModifiers';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { checkPlayedOrder } from './scheduleItems/playedOrder';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { mustBeAnArray } from '@Tools/mustBeAnArray';
+import { extractDate } from '@Tools/dateTime';
 
 // constants and types
 import { MUTUALLY_EXCLUSIVE_TIME_MODIFIERS, SCHEDULED_TIME, TIME_MODIFIERS } from '@Constants/timeItemConstants';
@@ -42,8 +44,13 @@ export function addMatchUpScheduledTime(params: AddMatchUpScheduledTimeArgs) {
 
   if (!matchUpId) return decorateResult({ result: { error: MISSING_MATCHUP_ID }, stack });
 
-  // must support undefined as a value so that scheduledTime can be cleared
-  if (!validTimeValue(scheduledTime)) return decorateResult({ result: { error: INVALID_TIME }, stack });
+  // a time is stored only as HH:MM (scheduling-pipeline.md § 9.9): anything that does not convert to it unambiguously is
+  // refused; an absent value, null or '' clears it
+  const clearing = isClearingValue(scheduledTime);
+  if (!clearing && !canonicalTime(scheduledTime)) return decorateResult({ result: { error: INVALID_TIME }, stack });
+  // a date-time carries its date, which must be a real day
+  const timeDate = clearing ? undefined : extractDate(scheduledTime) || undefined;
+  if (timeDate && !canonicalDate(timeDate)) return decorateResult({ result: { error: INVALID_TIME }, stack });
 
   if (!matchUp) {
     const result = findDrawMatchUp({ drawDefinition, matchUpId });
@@ -56,10 +63,20 @@ export function addMatchUpScheduledTime(params: AddMatchUpScheduledTimeArgs) {
     if (refusal) return decorateResult({ result: refusal, stack });
   }
 
-  const timeDate = extractDate(scheduledTime);
-
-  const scheduledDate = scheduledMatchUpDate({ matchUp }).scheduledDate;
-  const keepDate = timeDate && !scheduledDate;
+  // a matchUp with no date takes the date-time's date as its scheduledDate, and the time is stored as HH:MM: the date is
+  // never kept inside the time
+  if (timeDate && !scheduledMatchUpDate({ matchUp }).scheduledDate) {
+    const result = addMatchUpScheduledDate({
+      playedOrderChecked: true,
+      scheduledDate: timeDate,
+      removePriorValues,
+      tournamentRecord,
+      drawDefinition,
+      disableNotice,
+      matchUpId,
+    });
+    if (result.error) return decorateResult({ result, stack });
+  }
 
   const existingTimeModifiers = matchUpTimeModifiers({ matchUp }).timeModifiers ?? [];
 
@@ -76,14 +93,11 @@ export function addMatchUpScheduledTime(params: AddMatchUpScheduledTimeArgs) {
     if (result?.error) return decorateResult({ result, stack });
   }
 
-  // All times stored as military time
-  const militaryTime = convertTime(scheduledTime, true, keepDate);
-
   return setMatchUpFirstClassOrTimeItem({
     duplicateValues: false,
     attribute: 'scheduledTime',
     itemType: SCHEDULED_TIME,
-    value: militaryTime,
+    value: clearing ? undefined : canonicalTime(scheduledTime),
     removePriorValues,
     tournamentRecord,
     drawDefinition,

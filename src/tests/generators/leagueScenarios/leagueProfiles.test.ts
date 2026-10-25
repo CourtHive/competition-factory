@@ -9,7 +9,7 @@ import { MALE } from '@Constants/genderConstants';
 
 it('can generate Teams and venues from leagueProfiles', () => {
   const startDate = '2022-01-01';
-  const endDate = '2022-04-31'; // four months for league
+  const endDate = '2022-04-30'; // four months for league (April has 30 days)
   const leagueProfiles = [
     {
       tieFormatName: COLLEGE_DEFAULT,

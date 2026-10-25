@@ -3,7 +3,7 @@ import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { isValidWeekdaysValue } from '@Validators/isValidWeekdaysValue';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { requireParams } from '@Helpers/parameters/requireParams';
-import { dateValidation } from '@Validators/regex';
+import { canonicalDate } from '@Tools/canonicalClock';
 import { extractDate } from '@Tools/dateTime';
 
 // constants and types
@@ -16,7 +16,7 @@ import { ResultType } from '@Types/factoryTypes';
 export function setEventStartDate({ tournamentRecord, event, startDate }) {
   const paramsCheck = requireParams({ tournamentRecord, event }, [TOURNAMENT_RECORD, EVENT]);
   if (paramsCheck.error) return paramsCheck;
-  if (!dateValidation.test(startDate)) return { error: INVALID_DATE };
+  if (!canonicalDate(startDate)) return { error: INVALID_DATE };
   const result = getTournamentDates(tournamentRecord);
   const stack = 'setEventStartDate';
   if (result.error) return decorateResult({ result, stack });
@@ -57,7 +57,7 @@ export function setEventEndDate(params) {
   const { tournamentRecord, event, endDate } = params;
   const paramsCheck = requireParams({ tournamentRecord, event }, [TOURNAMENT_RECORD, EVENT]);
   if (paramsCheck.error) return paramsCheck;
-  if (!dateValidation.test(endDate)) return { error: INVALID_DATE };
+  if (!canonicalDate(endDate)) return { error: INVALID_DATE };
   const result = getTournamentDates(tournamentRecord);
   if (result.error) return result;
   const { tournamentStartDate, tournamentEndDate } = result;
@@ -101,13 +101,13 @@ export function setEventDates(params: SetEventDatesArgs) {
   const paramsCheck = checkRequiredParameters(params, [
     { tournamentRecord: true, event: true },
     {
-      [VALIDATE]: (value) => dateValidation.test(value),
+      [VALIDATE]: (value) => !!canonicalDate(value),
       [INVALID]: INVALID_DATE,
       startDate: false,
       endDate: false,
     },
     {
-      [VALIDATE]: (value) => value.filter(Boolean).every((d) => dateValidation.test(d)),
+      [VALIDATE]: (value) => value.filter(Boolean).every((d) => !!canonicalDate(d)),
       [INVALID]: INVALID_DATE,
       activeDates: false,
     },
@@ -158,7 +158,7 @@ function getTournamentDates(
   tournamentRecord,
 ): ResultType & { tournamentStartDate?: number; tournamentEndDate?: number } {
   const { startDate, endDate } = tournamentRecord;
-  if (!dateValidation.test(startDate) || !dateValidation.test(endDate)) {
+  if (!canonicalDate(startDate) || !canonicalDate(endDate)) {
     return decorateResult({
       result: { error: INVALID_TOURNAMENT_DATES },
       context: { startDate, endDate },

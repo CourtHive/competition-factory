@@ -80,7 +80,9 @@ it('scheduleMatchUps (bulk) writes scheduledTime + venueId first-class and is da
 
   const rec = tournamentEngine.getTournament().tournamentRecord;
   const scheduled = rec.events[0].drawDefinitions[0].structures[0].matchUps.find((m: any) => m.schedule?.scheduledTime);
-  expect(scheduled.schedule.scheduledTime).toContain(startDate); // ISO carries the date
+  // the date and the time are stored apart, the time as HH:MM (scheduling-pipeline.md § 9.9)
+  expect(scheduled.schedule.scheduledDate).toEqual(startDate);
+  expect(scheduled.schedule.scheduledTime).toMatch(/^\d{2}:\d{2}$/);
   expect(scheduled.schedule.venueId).toBeDefined();
   expect(scheduleTimeItemTypes(scheduled)).toEqual([]);
 

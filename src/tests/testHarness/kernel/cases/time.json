@@ -24,16 +24,16 @@
     "note": "rule 2: a one-character part is padded"
   },
   {
-    "caseId": "clock.tidy.single-digit-minute.v1",
+    "caseId": "clock.tidy.single-digit-minute.v2",
     "operation": "kernel.time.tidy@1",
     "input": {
       "time": "8:5"
     },
     "expected": {
-      "kind": "value",
-      "value": "08:05"
+      "kind": "error",
+      "code": "NOT_A_TIME"
     },
-    "note": "rule 2: both parts padded"
+    "note": "§ 9.9 rule 1: minutes are two digits; `8:5` is not a time"
   },
   {
     "caseId": "clock.tidy.seconds-dropped.v1",
@@ -48,64 +48,112 @@
     "note": "rule 2: only the first two parts are kept"
   },
   {
-    "caseId": "clock.tidy.sixty-minutes.v1",
+    "caseId": "clock.tidy.sixty-minutes.v2",
     "operation": "kernel.time.tidy@1",
     "input": {
       "time": "23:60"
     },
     "expected": {
-      "kind": "value",
-      "value": "23:60"
+      "kind": "error",
+      "code": "NOT_A_TIME"
     },
-    "note": "rule 1: minutes up to 60 are a time (§ 9.9: refused once built)"
+    "note": "§ 9.9 rule 1: minutes at most 59"
   },
   {
-    "caseId": "clock.tidy.negative-hour.v1",
+    "caseId": "clock.tidy.negative-hour.v2",
     "operation": "kernel.time.tidy@1",
     "input": {
       "time": "-1:00"
     },
     "expected": {
-      "kind": "value",
-      "value": "-1:00"
+      "kind": "error",
+      "code": "NOT_A_TIME"
     },
-    "note": "rule 1: a signed integer begins the part (§ 9.9: refused once built)"
+    "note": "§ 9.9 rule 1: no sign"
   },
   {
-    "caseId": "clock.tidy.zulu-kept-verbatim.v1",
+    "caseId": "clock.tidy.zulu-refused.v2",
     "operation": "kernel.time.tidy@1",
     "input": {
       "time": "08:00Z"
     },
     "expected": {
-      "kind": "value",
-      "value": "08:00Z"
+      "kind": "error",
+      "code": "NOT_A_TIME"
     },
-    "note": "rules 1-2: the Z is dropped to judge, the part kept as written (§ 9.9: refused once built)"
+    "note": "§ 9.9 rule 1: a zone without a date is not a time"
   },
   {
-    "caseId": "clock.tidy.leading-space-kept.v1",
+    "caseId": "clock.tidy.leading-space-refused.v2",
     "operation": "kernel.time.tidy@1",
     "input": {
       "time": " 8:00"
     },
     "expected": {
-      "kind": "value",
-      "value": " 8:00"
+      "kind": "error",
+      "code": "NOT_A_TIME"
     },
-    "note": "rules 1-2: leading whitespace allowed, a two-character part not padded (§ 9.9: refused once built)"
+    "note": "§ 9.9 rule 1: nothing before the time"
   },
   {
-    "caseId": "clock.tidy.meridiem-kept.v1",
+    "caseId": "clock.tidy.meridiem-converted.v2",
     "operation": "kernel.time.tidy@1",
     "input": {
       "time": "08:30 PM"
     },
     "expected": {
       "kind": "value",
-      "value": "08:30 PM"
+      "value": "20:30"
     },
-    "note": "rules 1-2: trailing characters ignored to judge, kept as written (§ 9.9: refused once built)"
+    "note": "§ 9.9 rules 1-2: a 12-hour time is converted"
+  },
+  {
+    "caseId": "clock.tidy.meridiem-midnight.v1",
+    "operation": "kernel.time.tidy@1",
+    "input": {
+      "time": "12:15 AM"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "00:15"
+    },
+    "note": "rules 1-2: 12 AM is the first hour"
+  },
+  {
+    "caseId": "clock.tidy.meridiem-noon.v1",
+    "operation": "kernel.time.tidy@1",
+    "input": {
+      "time": "12:00 pm"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "12:00"
+    },
+    "note": "rules 1-2: 12 PM is noon; either case"
+  },
+  {
+    "caseId": "clock.tidy.meridiem-out-of-range.v1",
+    "operation": "kernel.time.tidy@1",
+    "input": {
+      "time": "13:30 PM"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "NOT_A_TIME"
+    },
+    "note": "rule 1: a 12-hour time has hours 1 to 12"
+  },
+  {
+    "caseId": "clock.tidy.trailing-text.v1",
+    "operation": "kernel.time.tidy@1",
+    "input": {
+      "time": "08:00 h"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "NOT_A_TIME"
+    },
+    "note": "rule 1: nothing after the time"
   },
   {
     "caseId": "clock.tidy.hour-24.v1",
@@ -240,28 +288,28 @@
     "note": "rule 4"
   },
   {
-    "caseId": "clock.minutes.sixty-minutes.v1",
+    "caseId": "clock.minutes.sixty-minutes.v2",
     "operation": "kernel.time.minutes@1",
     "input": {
       "time": "23:60"
     },
     "expected": {
       "kind": "value",
-      "value": 1440
+      "value": 0
     },
-    "note": "rule 4 on rule 1's 23:60 (§ 9.9: refused once built)"
+    "note": "rule 4: 23:60 is not a time (§ 9.9), so zero"
   },
   {
-    "caseId": "clock.minutes.negative-hour.v1",
+    "caseId": "clock.minutes.negative-hour.v2",
     "operation": "kernel.time.minutes@1",
     "input": {
       "time": "-1:00"
     },
     "expected": {
       "kind": "value",
-      "value": -60
+      "value": 0
     },
-    "note": "rule 4 on rule 1's -1:00 (§ 9.9: refused once built)"
+    "note": "rule 4: -1:00 is not a time (§ 9.9), so zero"
   },
   {
     "caseId": "clock.minutes.not-a-time.v1",
@@ -288,16 +336,16 @@
     "note": "rules 3-4"
   },
   {
-    "caseId": "clock.minutes.untidy.v1",
+    "caseId": "clock.minutes.unpadded-minute.v2",
     "operation": "kernel.time.minutes@1",
     "input": {
       "time": "8:5"
     },
     "expected": {
       "kind": "value",
-      "value": 485
+      "value": 0
     },
-    "note": "rules 2 and 4"
+    "note": "rule 4: 8:5 is not a time (§ 9.9), so zero"
   },
   {
     "caseId": "clock.from-minutes.midnight.v1",
@@ -516,7 +564,7 @@
     "note": "rule 6: wraps in both directions"
   },
   {
-    "caseId": "clock.add-wrapping.untidy.v1",
+    "caseId": "clock.add-wrapping.unpadded-minute.v2",
     "operation": "kernel.time.addWrapping@1",
     "input": {
       "time": "8:5",
@@ -524,9 +572,9 @@
     },
     "expected": {
       "kind": "value",
-      "value": "08:15"
+      "value": "00:00"
     },
-    "note": "rules 2 and 6"
+    "note": "rule 6: 8:5 is not a time (§ 9.9); a booking with no time ends at 00:00"
   },
   {
     "caseId": "clock.add-wrapping.not-a-time.v1",
@@ -566,16 +614,64 @@
     "note": "rule 7: the date part"
   },
   {
-    "caseId": "clock.date.unchecked-calendar.v1",
+    "caseId": "clock.date.off-the-calendar.v2",
     "operation": "kernel.date.extract@1",
     "input": {
       "value": "2026-02-30"
     },
     "expected": {
-      "kind": "value",
-      "value": "2026-02-30"
+      "kind": "error",
+      "code": "NOT_A_DATE"
     },
-    "note": "rule 7: month and day in range, the calendar not checked (§ 9.9: refused once built)"
+    "note": "§ 9.9 rule 7: a real calendar day; February 2026 has 28"
+  },
+  {
+    "caseId": "clock.date.leap-day.v1",
+    "operation": "kernel.date.extract@1",
+    "input": {
+      "value": "2028-02-29"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "2028-02-29"
+    },
+    "note": "rule 7: 2028 is a leap year"
+  },
+  {
+    "caseId": "clock.date.not-a-leap-year.v1",
+    "operation": "kernel.date.extract@1",
+    "input": {
+      "value": "2100-02-29"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "NOT_A_DATE"
+    },
+    "note": "rule 7: a century not divisible by 400 is not a leap year"
+  },
+  {
+    "caseId": "clock.date.thirty-first-of-april.v1",
+    "operation": "kernel.date.extract@1",
+    "input": {
+      "value": "2026-04-31"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "NOT_A_DATE"
+    },
+    "note": "rule 7: April has 30 days"
+  },
+  {
+    "caseId": "clock.date.date-time-off-the-calendar.v1",
+    "operation": "kernel.date.extract@1",
+    "input": {
+      "value": "2026-02-30T09:00"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "NOT_A_DATE"
+    },
+    "note": "rule 7: a date-time's date is checked too"
   },
   {
     "caseId": "clock.date.unpadded.v1",

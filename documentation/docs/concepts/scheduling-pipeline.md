@@ -151,20 +151,21 @@ schedule write refuses it with `ANACHRONISM` (see [schedule governor: played ord
 
 Every time the scheduler reads or writes is a **wall-clock time at the venue**: hours and minutes, with no date and no
 time zone. The scheduler never converts between zones, and every comparison it makes is on one scheduling day. The
-canonical form is `HH:MM` (00–23, 00–59); the rules below are what the engine reads today, including the readings
-that are wider than the canonical form, which § 9.9 decides to refuse, and the 23:59 cap, which § 9.8 decides to
-replace. They are pinned by the `kernel.time.*` conformance cases until those changes land.
+canonical form is `HH:MM` (00–23, 00–59), and every write validates through it and stores it (§ 9.9). The 23:59
+cap, which § 9.8 decides to replace, is how the engine reads today. The rules are pinned by the `kernel.time.*`
+conformance cases.
 
-1. **A time.** A string is a time when, with anything after a `Z` dropped and split on `:`, it has at least two parts,
-   each beginning with an integer (leading whitespace and a sign allowed, trailing characters ignored), with hours at
-   most 23 and minutes at most 60. Anything else (`24:00`, `12`, `noon`, `08:xx`, the empty string) is not a time.
-2. **Tidying.** A time is written as its first two parts, each padded to two characters when it has only one, and
-   otherwise kept as it is: `8:00` → `08:00`, `8:5` → `08:05`, `08:00:00` → `08:00`; but `08:00Z`, ` 8:00` and
-   `08:30 PM` are kept verbatim, since their parts are already two characters or more.
-3. **A date-time's time.** A full ISO date-time contributes the time after its `T` (`2026-03-02T09:15:30.000Z` →
-   `09:15`). A date and time separated by a space is not read as a time.
+1. **A time.** A string is a time when it is `H:MM` or `HH:MM`, optionally with seconds (`HH:MM:SS`, a fraction
+   allowed), with hours at most 23, minutes and seconds at most 59; or a 12-hour time, `h:mm AM` or `h:mm PM`, hours 1
+   to 12; or an ISO date-time (rule 3). Nothing before or after it is allowed. Anything else (`24:00`, `23:60`,
+   `-1:00`, `8:5`, `08:00Z`, ` 8:00`, `13:30 PM`, `12`, `noon`, the empty string) is not a time.
+2. **Tidying.** A time is written as `HH:MM`: `8:00` → `08:00`, `08:00:00` → `08:00`, `8:30 PM` → `20:30`,
+   `12:15 AM` → `00:15`.
+3. **A date-time's time.** An ISO date-time, zoned or not, contributes the time after its `T`
+   (`2026-03-02T09:15:30.000Z` → `09:15`); the zone is not applied. A date and time separated by a space is not read
+   as a time.
 4. **Minutes past midnight.** A time's hours × 60 + minutes, read from its tidied form, and zero for anything that is
-   not a time. So `23:60` is 1440 and `-1:00` is −60.
+   not a time.
 5. **From minutes.** Minutes past midnight are written as `HH:MM`, the hours wrapping at 24: 1440 is `00:00`, 1500 is
    `01:00`.
 6. **Within the day.** A time plus minutes stays on the scheduling day: a result at or past midnight is **`23:59`**,
@@ -172,8 +173,9 @@ replace. They are pinned by the `kernel.time.*` conformance cases until those ch
    23:59, and the next day starts clean (§ 9.8). Anything that is not a time counts as `00:00`. A court **booking's**
    end is the exception: it is computed by wrapping, so a matchUp booked at 23:30 for 90 minutes ends at `01:00`, before
    it starts on that court's day.
-7. **A calendar day.** The date part, `YYYY-MM-DD`, of an ISO date or date-time; two days are the same when their date
-   parts are. A month and day in range are accepted without checking the calendar (`2026-02-30`).
+7. **A calendar day.** The date part, `YYYY-MM-DD`, of an ISO date or date-time, and a real day on the (proleptic
+   Gregorian) calendar: `2026-02-30` and `2026-04-31` are not dates, `2028-02-29` is. Two days are the same when their
+   date parts are.
 8. **Garman slots** are computed in minutes on the scheduling day (§ 4, step 2) and written back as `HH:MM`.
 9. **Not-before times** are compared as text. That orders them correctly only because every not-before time the
    scheduler writes is a tidied `HH:MM`.
@@ -348,14 +350,17 @@ the calls that decide placements; the bulk and reschedule mutations write the ti
      23:59 cap and the wrapping booking end decided move.
    - **A start after midnight is on the next date** (CA 2026-10-25: _"if it starts past midnight it is technically
      scheduled for the next day"_): a 00:30 start has the next `scheduledDate`. There is no separate session day.
-9. **The clock reads more than `HH:MM`** (§ 3.8). **DECIDED (CA 2026-10-25): invalid forms are refused**; built
-   after this record.
+9. **The clock reads more than `HH:MM`** (§ 3.8). **DECIDED (CA 2026-10-25): invalid forms are refused. Built.**
    - **At the write**, a date must be a real calendar date, `YYYY-MM-DD` (`2026-02-30` is refused), and a time must
      convert unambiguously to `HH:MM` (00–23, 00–59), which is what is stored: `8:00`, `08:00:00`, an ISO date-time
-     and a 12-hour time (`8:30 PM`, which the write already converts to `20:30`) are accepted; `23:60`, `24:00`,
-     `-1:00`, `08:00Z` and ` 8:00` are refused.
+     and a 12-hour time (`8:30 PM` is stored as `20:30`) are accepted; `23:60`, `24:00`, `-1:00`, `08:00Z` and
+     ` 8:00` are refused. The writes: a matchUp's scheduled time and date and its schedule items; court and venue
+     availability, bookings and a venue's default times; person requests (one request with a date or a time that is
+     not one refuses the call); tournament and event dates, which are checked against the calendar and stored as
+     sent. A scheduled time given as a date-time stores its time, and its date when the matchUp has none.
    - **At the read**, stored records keep working: the same unambiguous forms are normalised, and anything else reads
-     as no time (as a value that is not a time does today), listed by an audit so it can be corrected.
+     as no time, as a value that is not a time did before. Production holds no such value (below), so the audit that
+     would list them is not built.
    - **Measured 2026-10-25** (read-only, every tournament record in production): scheduled times 43,527, all
      canonical; court availability times 8,682 and dates 4,473, all canonical; scheduled dates 66,580 canonical and
      154 empty strings (a cleared date, which already reads as no date); no date out of the calendar. So the refusals
