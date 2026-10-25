@@ -5,8 +5,8 @@ import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { defined } from '@Tests/helpers/defined';
-import { setRandomSource } from '@Tools/prng';
 import { afterEach, expect, it } from 'vitest';
+import { setRandomSource } from '@Tools/prng';
 import { setClock } from '@Tools/clock';
 
 // constants
