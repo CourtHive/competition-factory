@@ -138,11 +138,13 @@ describe('the external protocol', () => {
         .invokeAll([request, request])
         .map(({ kind }) => kind),
     ).toEqual(['exception', 'exception']);
-    expect(externalAdapter('true').invoke(request.operation, request.input)).toEqual({
+    // the commands read their stdin before answering: one that exits without reading it races the write (EPIPE), which
+    // is still an exception, but not the one this case names
+    expect(externalAdapter('cat > /dev/null').invoke(request.operation, request.input)).toEqual({
       kind: 'exception',
       message: 'no answer for request 0',
     });
-    expect(externalAdapter('echo nope').invoke(request.operation, request.input)).toEqual({
+    expect(externalAdapter('cat > /dev/null; echo nope').invoke(request.operation, request.input)).toEqual({
       kind: 'exception',
       message: 'answer 0 is not JSON',
     });
