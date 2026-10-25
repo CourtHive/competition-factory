@@ -69,7 +69,8 @@ type ResolveTimingDetailsArgs = {
   defaultAverageMinutes?: number;
   categoryType?: string;
   matchUpFormat?: string;
-  scheduleTiming: ReturnType<typeof getScheduleTiming>['scheduleTiming'];
+  /** absent when the record states no timing: the default policy then decides */
+  scheduleTiming?: ReturnType<typeof getScheduleTiming>['scheduleTiming'];
 };
 
 /**
@@ -107,7 +108,7 @@ export function resolveTimingDetails({
   // substitute POLICY_SCHEDULING_DEFAULT so per-format averages and
   // recovery times take effect instead of a flat 90/0. Explicit
   // tournament/event extensions still win via the existing precedence.
-  let policyWithFallback = scheduleTiming.policy ?? POLICY_SCHEDULING_DEFAULT[POLICY_TYPE_SCHEDULING];
+  let policyWithFallback = scheduleTiming?.policy ?? POLICY_SCHEDULING_DEFAULT[POLICY_TYPE_SCHEDULING];
 
   // For a timed format not specifically enumerated by the policy, the
   // policy-wide `defaultTimes.averageTimes` (typically a flat 90) would
@@ -137,7 +138,7 @@ export function resolveTimingDetails({
     // doubles event took the ADULT figure (30) instead of its own (60).
     // An explicitly-passed categoryType still wins, which is why this is `??`
     // rather than a plain removal of the key.
-    categoryType: categoryType ?? scheduleTiming.categoryType,
+    categoryType: categoryType ?? scheduleTiming?.categoryType,
     defaultTiming,
   };
 

@@ -1,5 +1,5 @@
+import { matchUpFormatTimes, resolveTimingDetails } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
 import { calculatePeriodLength } from '@Assemblies/generators/scheduling/utils/calculatePeriodLength';
-import { matchUpFormatTimes } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
 import { getScheduleTiming } from '@Query/extensions/matchUpFormatTiming/getScheduleTiming';
 import { competitionScheduleMatchUps } from '@Query/matchUps/competitionScheduleMatchUps';
 import { extractDate, extractTime, sameDay, timeStringMinutes } from '@Tools/dateTime';
@@ -128,19 +128,15 @@ export function calculateScheduleTimes({
   relevantMatchUps.push(...dateMatchUps);
   relevantMatchUps.push(...completedMatchUps);
 
-  const defaultTiming = {
-    averageTimes: [{ minutes: { default: averageMatchUpMinutes } }],
-    recoveryTimes: [{ minutes: { default: defaultRecoveryMinutes } }],
-  };
-
   const timingOf = ({ eventId, matchUpFormat }: { eventId: string; matchUpFormat?: string }) => {
     const { event, scheduleTiming } = eventDetails[eventId];
     const eventType = event?.eventType;
-    const timingDetails = {
-      ...scheduleTiming,
-      defaultTiming,
+    const timingDetails = resolveTimingDetails({
+      defaultAverageMinutes: averageMatchUpMinutes,
+      scheduleTiming,
+      defaultRecoveryMinutes,
       matchUpFormat,
-    };
+    });
     return matchUpFormatTimes({ eventType, timingDetails });
   };
 

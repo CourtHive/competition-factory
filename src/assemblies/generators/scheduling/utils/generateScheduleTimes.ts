@@ -83,16 +83,24 @@ export function generateScheduleTimes({
   startTime = startTime ?? getDateTimeBoundary({ courts, scheduleDate, startTime: true });
   endTime = endTime ?? getDateTimeBoundary({ courts, scheduleDate, endTime: true });
 
-  const { bookings, dateScheduledMatchUps } = generateBookings({
+  // the tournament's only venue with courts on the date, if it has exactly one: a matchUp timed with no venue is there
+  const dateVenueIds = new Set((venues ?? allCourts ?? []).map(({ venueId }) => venueId));
+  const soleVenueId = dateVenueIds.size === 1 ? [...dateVenueIds][0] : undefined;
+
+  const bookingsResult = generateBookings({
     defaultRecoveryMinutes,
     averageMatchUpMinutes,
     tournamentRecords,
     eventTimings,
     scheduleDate,
     periodLength,
+    soleVenueId,
     venueIds,
     matchUps,
   });
+  // a booking that cannot be read must not leave every court reading as free: the error is returned, never ignored
+  if (bookingsResult.error) return { error: bookingsResult.error };
+  const { bookings, dateScheduledMatchUps } = bookingsResult;
 
   const timingParameters = {
     calculateStartTimeFromCourts,

@@ -2524,5 +2524,2474 @@
       }
     },
     "note": "Both semifinals were played on day 2 and the final is profiled on day 1: every slot on day 1 is before its played sources, so the final is held back under the played order and not reported as merely untimed."
+  },
+  {
+    "caseId": "scheduling.plan.booking-holds-its-own-minutes.v1",
+    "operation": "kernel.scheduling.plan@1",
+    "input": {
+      "view": {
+        "matchUpDependencies": {
+          "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1": {
+            "dependentMatchUpIds": [],
+            "participantIds": ["bb341e9c-9a49-4187-832a-2aa5f3c575db", "9813f467-3ada-4ff6-be1e-19d5f389d12a"],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          },
+          "c9fadd87-d5d0-4701-9701-00991181d1b6": {
+            "dependentMatchUpIds": ["3c8ee078-1333-47b6-84c9-14822c4b7810"],
+            "participantIds": ["f1356f46-6f0d-49a7-ad64-c65b26e0eee2", "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb"],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          },
+          "3c8ee078-1333-47b6-84c9-14822c4b7810": {
+            "dependentMatchUpIds": [],
+            "participantIds": [
+              "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
+              "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
+              "279aed96-e712-4e36-bca2-b692b8f1a046",
+              "d955965e-ddf6-418d-b0fe-c9b059d09320"
+            ],
+            "matchUpIds": ["c9fadd87-d5d0-4701-9701-00991181d1b6", "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"],
+            "sources": [["c9fadd87-d5d0-4701-9701-00991181d1b6", "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"], [], []]
+          },
+          "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": {
+            "dependentMatchUpIds": ["3c8ee078-1333-47b6-84c9-14822c4b7810"],
+            "participantIds": ["279aed96-e712-4e36-bca2-b692b8f1a046", "d955965e-ddf6-418d-b0fe-c9b059d09320"],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          }
+        },
+        "dailyLimitOverrides": {
+          "tournaments": {},
+          "participants": {}
+        },
+        "playedOrderFacts": {},
+        "personRequests": {},
+        "eventTimings": {
+          "2c584ab6-76cf-4734-9e75-9ea58adf447d": {
+            "eventType": "SINGLES",
+            "scheduleTiming": {}
+          },
+          "a918b95d-298b-4055-bcb1-8db249a1a8f5": {
+            "eventType": "SINGLES",
+            "scheduleTiming": {}
+          }
+        },
+        "timedMinutes": {
+          "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1": {
+            "averageMinutes": 90,
+            "recoveryMinutes": 60,
+            "typeChangeRecoveryMinutes": 60
+          }
+        },
+        "reachability": {
+          "matchUps": {
+            "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1": {
+              "certain": ["bb341e9c-9a49-4187-832a-2aa5f3c575db", "9813f467-3ada-4ff6-be1e-19d5f389d12a"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "c9fadd87-d5d0-4701-9701-00991181d1b6": {
+              "certain": ["f1356f46-6f0d-49a7-ad64-c65b26e0eee2", "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": {
+              "certain": ["279aed96-e712-4e36-bca2-b692b8f1a046", "d955965e-ddf6-418d-b0fe-c9b059d09320"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "3c8ee078-1333-47b6-84c9-14822c4b7810": {
+              "certain": [],
+              "potential": [
+                "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
+                "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
+                "279aed96-e712-4e36-bca2-b692b8f1a046",
+                "d955965e-ddf6-418d-b0fe-c9b059d09320"
+              ],
+              "nearPotential": [
+                "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
+                "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
+                "279aed96-e712-4e36-bca2-b692b8f1a046",
+                "d955965e-ddf6-418d-b0fe-c9b059d09320"
+              ]
+            }
+          },
+          "upstream": {
+            "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1": [],
+            "c9fadd87-d5d0-4701-9701-00991181d1b6": [],
+            "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": [],
+            "3c8ee078-1333-47b6-84c9-14822c4b7810": [
+              "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a",
+              "c9fadd87-d5d0-4701-9701-00991181d1b6"
+            ]
+          },
+          "linkedTargets": {}
+        },
+        "dateCourts": {
+          "2026-03-02": [
+            {
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
+              "courtName": "Court 1",
+              "venueId": "venue-1",
+              "dateAvailability": [
+                {
+                  "startTime": "10:00",
+                  "endTime": "20:00"
+                },
+                {
+                  "date": "2026-03-02",
+                  "startTime": "10:00",
+                  "endTime": "20:00"
+                },
+                {
+                  "date": "2026-03-03",
+                  "startTime": "10:00",
+                  "endTime": "20:00"
+                }
+              ]
+            }
+          ]
+        },
+        "hydrated": [
+          {
+            "matchUpId": "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "eventId": "2c584ab6-76cf-4734-9e75-9ea58adf447d",
+            "drawId": "089919a7-da51-4248-b63a-0158e35b7f7e",
+            "structureId": "089919a7-da51-4248-b63a-0158e35b7f7e-s-0",
+            "roundNumber": 1,
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "matchUpFormat": "SET3-S:6/TB7",
+            "drawPositions": [1, 2],
+            "schedule": {
+              "scheduledDate": "2026-03-02",
+              "scheduledTime": "10:00",
+              "timeAfterRecovery": "12:30",
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
+              "venueId": "venue-1"
+            },
+            "sides": [
+              {
+                "participantId": "bb341e9c-9a49-4187-832a-2aa5f3c575db",
+                "participant": {
+                  "participantId": "bb341e9c-9a49-4187-832a-2aa5f3c575db",
+                  "person": {
+                    "personId": "5201bcad-f774-4fde-b830-6553ec42d7fa"
+                  }
+                }
+              },
+              {
+                "participantId": "9813f467-3ada-4ff6-be1e-19d5f389d12a",
+                "participant": {
+                  "participantId": "9813f467-3ada-4ff6-be1e-19d5f389d12a",
+                  "person": {
+                    "personId": "7fb62cb8-54af-4657-b276-729dac4c2aca"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "matchUpId": "c9fadd87-d5d0-4701-9701-00991181d1b6",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "eventId": "a918b95d-298b-4055-bcb1-8db249a1a8f5",
+            "drawId": "da4835b5-4905-48fb-909b-3cb49795f00c",
+            "structureId": "da4835b5-4905-48fb-909b-3cb49795f00c-s-0",
+            "roundNumber": 1,
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "matchUpFormat": "SET3-S:T20/TB7",
+            "drawPositions": [1, 2],
+            "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810",
+            "winnerTo": {
+              "matchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810"
+            },
+            "schedule": {},
+            "sides": [
+              {
+                "participantId": "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
+                "participant": {
+                  "participantId": "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
+                  "person": {
+                    "personId": "c3ee1a11-c9d4-49b4-bcec-321508741316"
+                  }
+                }
+              },
+              {
+                "participantId": "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
+                "participant": {
+                  "participantId": "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
+                  "person": {
+                    "personId": "aac333ee-39a4-499f-bed8-f359a1e172ee"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "matchUpId": "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "eventId": "a918b95d-298b-4055-bcb1-8db249a1a8f5",
+            "drawId": "da4835b5-4905-48fb-909b-3cb49795f00c",
+            "structureId": "da4835b5-4905-48fb-909b-3cb49795f00c-s-0",
+            "roundNumber": 1,
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "matchUpFormat": "SET3-S:T20/TB7",
+            "drawPositions": [3, 4],
+            "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810",
+            "winnerTo": {
+              "matchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810"
+            },
+            "schedule": {},
+            "sides": [
+              {
+                "participantId": "279aed96-e712-4e36-bca2-b692b8f1a046",
+                "participant": {
+                  "participantId": "279aed96-e712-4e36-bca2-b692b8f1a046",
+                  "person": {
+                    "personId": "3820ca5c-3ba1-4e7b-a3fe-5a1a642b104f"
+                  }
+                }
+              },
+              {
+                "participantId": "d955965e-ddf6-418d-b0fe-c9b059d09320",
+                "participant": {
+                  "participantId": "d955965e-ddf6-418d-b0fe-c9b059d09320",
+                  "person": {
+                    "personId": "16783996-9c9a-4684-bb78-9f95fa6bc32b"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "matchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "eventId": "a918b95d-298b-4055-bcb1-8db249a1a8f5",
+            "drawId": "da4835b5-4905-48fb-909b-3cb49795f00c",
+            "structureId": "da4835b5-4905-48fb-909b-3cb49795f00c-s-0",
+            "roundNumber": 2,
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "matchUpFormat": "SET3-S:T20/TB7",
+            "schedule": {},
+            "sides": [{}, {}],
+            "potentialParticipants": [
+              [
+                {
+                  "participantId": "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
+                  "person": {
+                    "personId": "c3ee1a11-c9d4-49b4-bcec-321508741316"
+                  }
+                },
+                {
+                  "participantId": "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
+                  "person": {
+                    "personId": "aac333ee-39a4-499f-bed8-f359a1e172ee"
+                  }
+                }
+              ],
+              [
+                {
+                  "participantId": "279aed96-e712-4e36-bca2-b692b8f1a046",
+                  "person": {
+                    "personId": "3820ca5c-3ba1-4e7b-a3fe-5a1a642b104f"
+                  }
+                },
+                {
+                  "participantId": "d955965e-ddf6-418d-b0fe-c9b059d09320",
+                  "person": {
+                    "personId": "16783996-9c9a-4684-bb78-9f95fa6bc32b"
+                  }
+                }
+              ]
+            ]
+          }
+        ],
+        "courts": [
+          {
+            "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
+            "venueId": "venue-1"
+          }
+        ],
+        "dates": [
+          {
+            "scheduleDate": "2026-03-02",
+            "venues": [
+              {
+                "venueId": "venue-1",
+                "rounds": [
+                  {
+                    "round": {
+                      "structureId": "da4835b5-4905-48fb-909b-3cb49795f00c-s-0",
+                      "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+                      "drawId": "da4835b5-4905-48fb-909b-3cb49795f00c",
+                      "eventId": "a918b95d-298b-4055-bcb1-8db249a1a8f5",
+                      "roundNumber": 1
+                    },
+                    "matchUpIds": ["c9fadd87-d5d0-4701-9701-00991181d1b6", "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"],
+                    "profiledMatchUpIds": [
+                      "c9fadd87-d5d0-4701-9701-00991181d1b6",
+                      "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"
+                    ],
+                    "minutes": {
+                      "averageMinutes": 60,
+                      "recoveryMinutes": 60,
+                      "typeChangeRecoveryMinutes": 60
+                    },
+                    "periodLength": 30
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {}
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "recoveryTimeDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "playedOrderDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "dependencyDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "overLimitMatchUpDetails": {
+          "2026-03-02": []
+        },
+        "scheduleTimesRemaining": {
+          "2026-03-02": {
+            "venue-1": [
+              {
+                "scheduleTime": "13:30"
+              },
+              {
+                "scheduleTime": "14:30"
+              },
+              {
+                "scheduleTime": "15:30"
+              },
+              {
+                "scheduleTime": "16:30"
+              },
+              {
+                "scheduleTime": "17:30"
+              },
+              {
+                "scheduleTime": "18:30"
+              }
+            ]
+          }
+        },
+        "skippedScheduleTimes": {
+          "2026-03-02": {}
+        },
+        "matchUpScheduleTimes": {
+          "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1": "10:00",
+          "c9fadd87-d5d0-4701-9701-00991181d1b6": "11:30",
+          "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": "12:30"
+        },
+        "overLimitMatchUpIds": {
+          "2026-03-02": []
+        },
+        "scheduledMatchUpIds": {
+          "2026-03-02": ["c9fadd87-d5d0-4701-9701-00991181d1b6", "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"]
+        },
+        "noFormatMatchUpIds": {
+          "2026-03-02": []
+        },
+        "noTimeMatchUpIds": {
+          "2026-03-02": []
+        },
+        "requestConflicts": {
+          "2026-03-02": []
+        },
+        "placements": {
+          "2026-03-02": {
+            "venue-1": [
+              {
+                "matchUpId": "c9fadd87-d5d0-4701-9701-00991181d1b6",
+                "scheduleTime": "11:30"
+              },
+              {
+                "matchUpId": "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a",
+                "scheduleTime": "12:30"
+              }
+            ]
+          }
+        },
+        "unplaced": {
+          "2026-03-02": {
+            "venue-1": []
+          }
+        }
+      }
+    },
+    "note": "A standard best-of-3 matchUp (90 minutes, § 3.3) is timed at 10:00 on the only court; a round of timed SET3-S:T20/TB7 matchUps (60 minutes) is profiled. The court is held for the timed matchUp's own 90 minutes, not the profiled round's 60, so the round starts at 11:30 and 12:30."
+  },
+  {
+    "caseId": "scheduling.plan.bookings-survive-a-malformed-matchup.v1",
+    "operation": "kernel.scheduling.plan@1",
+    "input": {
+      "view": {
+        "matchUpDependencies": {
+          "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1": {
+            "dependentMatchUpIds": [],
+            "participantIds": ["bb341e9c-9a49-4187-832a-2aa5f3c575db", "9813f467-3ada-4ff6-be1e-19d5f389d12a"],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          },
+          "c9fadd87-d5d0-4701-9701-00991181d1b6": {
+            "dependentMatchUpIds": ["3c8ee078-1333-47b6-84c9-14822c4b7810"],
+            "participantIds": ["f1356f46-6f0d-49a7-ad64-c65b26e0eee2", "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb"],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          },
+          "3c8ee078-1333-47b6-84c9-14822c4b7810": {
+            "dependentMatchUpIds": [],
+            "participantIds": [
+              "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
+              "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
+              "279aed96-e712-4e36-bca2-b692b8f1a046",
+              "d955965e-ddf6-418d-b0fe-c9b059d09320"
+            ],
+            "matchUpIds": ["c9fadd87-d5d0-4701-9701-00991181d1b6", "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"],
+            "sources": [["c9fadd87-d5d0-4701-9701-00991181d1b6", "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"], [], []]
+          },
+          "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": {
+            "dependentMatchUpIds": ["3c8ee078-1333-47b6-84c9-14822c4b7810"],
+            "participantIds": ["279aed96-e712-4e36-bca2-b692b8f1a046", "d955965e-ddf6-418d-b0fe-c9b059d09320"],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          }
+        },
+        "dailyLimitOverrides": {
+          "tournaments": {},
+          "participants": {}
+        },
+        "playedOrderFacts": {},
+        "personRequests": {},
+        "eventTimings": {
+          "2c584ab6-76cf-4734-9e75-9ea58adf447d": {
+            "eventType": "SINGLES",
+            "scheduleTiming": {}
+          },
+          "a918b95d-298b-4055-bcb1-8db249a1a8f5": {
+            "eventType": "SINGLES",
+            "scheduleTiming": {}
+          }
+        },
+        "timedMinutes": {
+          "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1": {
+            "averageMinutes": 90,
+            "recoveryMinutes": 60,
+            "typeChangeRecoveryMinutes": 60
+          }
+        },
+        "reachability": {
+          "matchUps": {
+            "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1": {
+              "certain": ["bb341e9c-9a49-4187-832a-2aa5f3c575db", "9813f467-3ada-4ff6-be1e-19d5f389d12a"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "c9fadd87-d5d0-4701-9701-00991181d1b6": {
+              "certain": ["f1356f46-6f0d-49a7-ad64-c65b26e0eee2", "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": {
+              "certain": ["279aed96-e712-4e36-bca2-b692b8f1a046", "d955965e-ddf6-418d-b0fe-c9b059d09320"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "3c8ee078-1333-47b6-84c9-14822c4b7810": {
+              "certain": [],
+              "potential": [
+                "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
+                "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
+                "279aed96-e712-4e36-bca2-b692b8f1a046",
+                "d955965e-ddf6-418d-b0fe-c9b059d09320"
+              ],
+              "nearPotential": [
+                "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
+                "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
+                "279aed96-e712-4e36-bca2-b692b8f1a046",
+                "d955965e-ddf6-418d-b0fe-c9b059d09320"
+              ]
+            }
+          },
+          "upstream": {
+            "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1": [],
+            "c9fadd87-d5d0-4701-9701-00991181d1b6": [],
+            "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": [],
+            "3c8ee078-1333-47b6-84c9-14822c4b7810": [
+              "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a",
+              "c9fadd87-d5d0-4701-9701-00991181d1b6"
+            ]
+          },
+          "linkedTargets": {}
+        },
+        "dateCourts": {
+          "2026-03-02": [
+            {
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
+              "courtName": "Court 1",
+              "venueId": "venue-1",
+              "dateAvailability": [
+                {
+                  "startTime": "10:00",
+                  "endTime": "20:00"
+                },
+                {
+                  "date": "2026-03-02",
+                  "startTime": "10:00",
+                  "endTime": "20:00"
+                },
+                {
+                  "date": "2026-03-03",
+                  "startTime": "10:00",
+                  "endTime": "20:00"
+                }
+              ]
+            }
+          ]
+        },
+        "hydrated": [
+          {
+            "matchUpId": "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "eventId": "2c584ab6-76cf-4734-9e75-9ea58adf447d",
+            "drawId": "089919a7-da51-4248-b63a-0158e35b7f7e",
+            "structureId": "089919a7-da51-4248-b63a-0158e35b7f7e-s-0",
+            "roundNumber": 1,
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "matchUpFormat": "SET3-S:6/TB7",
+            "drawPositions": [1, 2],
+            "schedule": {
+              "scheduledDate": "2026-03-02",
+              "scheduledTime": "10:00",
+              "timeAfterRecovery": "12:30",
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
+              "venueId": "venue-1"
+            },
+            "sides": [
+              {
+                "participantId": "bb341e9c-9a49-4187-832a-2aa5f3c575db",
+                "participant": {
+                  "participantId": "bb341e9c-9a49-4187-832a-2aa5f3c575db",
+                  "person": {
+                    "personId": "5201bcad-f774-4fde-b830-6553ec42d7fa"
+                  }
+                }
+              },
+              {
+                "participantId": "9813f467-3ada-4ff6-be1e-19d5f389d12a",
+                "participant": {
+                  "participantId": "9813f467-3ada-4ff6-be1e-19d5f389d12a",
+                  "person": {
+                    "personId": "7fb62cb8-54af-4657-b276-729dac4c2aca"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "matchUpId": "c9fadd87-d5d0-4701-9701-00991181d1b6",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "eventId": "a918b95d-298b-4055-bcb1-8db249a1a8f5",
+            "drawId": "da4835b5-4905-48fb-909b-3cb49795f00c",
+            "structureId": "da4835b5-4905-48fb-909b-3cb49795f00c-s-0",
+            "roundNumber": 1,
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "matchUpFormat": "SET3-S:6/TB7",
+            "drawPositions": [1, 2],
+            "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810",
+            "winnerTo": {
+              "matchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810"
+            },
+            "schedule": {},
+            "sides": [
+              {
+                "participantId": "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
+                "participant": {
+                  "participantId": "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
+                  "person": {
+                    "personId": "c3ee1a11-c9d4-49b4-bcec-321508741316"
+                  }
+                }
+              },
+              {
+                "participantId": "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
+                "participant": {
+                  "participantId": "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
+                  "person": {
+                    "personId": "aac333ee-39a4-499f-bed8-f359a1e172ee"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "matchUpId": "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "eventId": "a918b95d-298b-4055-bcb1-8db249a1a8f5",
+            "drawId": "da4835b5-4905-48fb-909b-3cb49795f00c",
+            "structureId": "da4835b5-4905-48fb-909b-3cb49795f00c-s-0",
+            "roundNumber": 1,
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "matchUpFormat": "SET3-S:6/TB7",
+            "drawPositions": [3, 4],
+            "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810",
+            "winnerTo": {
+              "matchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810"
+            },
+            "schedule": {},
+            "sides": [
+              {
+                "participantId": "279aed96-e712-4e36-bca2-b692b8f1a046",
+                "participant": {
+                  "participantId": "279aed96-e712-4e36-bca2-b692b8f1a046",
+                  "person": {
+                    "personId": "3820ca5c-3ba1-4e7b-a3fe-5a1a642b104f"
+                  }
+                }
+              },
+              {
+                "participantId": "d955965e-ddf6-418d-b0fe-c9b059d09320",
+                "participant": {
+                  "participantId": "d955965e-ddf6-418d-b0fe-c9b059d09320",
+                  "person": {
+                    "personId": "16783996-9c9a-4684-bb78-9f95fa6bc32b"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "matchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "eventId": "a918b95d-298b-4055-bcb1-8db249a1a8f5",
+            "drawId": "da4835b5-4905-48fb-909b-3cb49795f00c",
+            "structureId": "da4835b5-4905-48fb-909b-3cb49795f00c-s-0",
+            "roundNumber": 2,
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "matchUpFormat": "SET3-S:6/TB7",
+            "drawPositions": [1, 2, 3],
+            "schedule": {},
+            "sides": [{}, {}],
+            "potentialParticipants": [
+              [
+                {
+                  "participantId": "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
+                  "person": {
+                    "personId": "c3ee1a11-c9d4-49b4-bcec-321508741316"
+                  }
+                },
+                {
+                  "participantId": "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
+                  "person": {
+                    "personId": "aac333ee-39a4-499f-bed8-f359a1e172ee"
+                  }
+                }
+              ],
+              [
+                {
+                  "participantId": "279aed96-e712-4e36-bca2-b692b8f1a046",
+                  "person": {
+                    "personId": "3820ca5c-3ba1-4e7b-a3fe-5a1a642b104f"
+                  }
+                },
+                {
+                  "participantId": "d955965e-ddf6-418d-b0fe-c9b059d09320",
+                  "person": {
+                    "personId": "16783996-9c9a-4684-bb78-9f95fa6bc32b"
+                  }
+                }
+              ]
+            ]
+          }
+        ],
+        "courts": [
+          {
+            "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
+            "venueId": "venue-1"
+          }
+        ],
+        "dates": [
+          {
+            "scheduleDate": "2026-03-02",
+            "venues": [
+              {
+                "venueId": "venue-1",
+                "rounds": [
+                  {
+                    "round": {
+                      "structureId": "da4835b5-4905-48fb-909b-3cb49795f00c-s-0",
+                      "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+                      "drawId": "da4835b5-4905-48fb-909b-3cb49795f00c",
+                      "eventId": "a918b95d-298b-4055-bcb1-8db249a1a8f5",
+                      "roundNumber": 1
+                    },
+                    "matchUpIds": ["c9fadd87-d5d0-4701-9701-00991181d1b6", "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"],
+                    "profiledMatchUpIds": [
+                      "c9fadd87-d5d0-4701-9701-00991181d1b6",
+                      "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"
+                    ],
+                    "minutes": {
+                      "averageMinutes": 90,
+                      "recoveryMinutes": 60,
+                      "typeChangeRecoveryMinutes": 60
+                    },
+                    "periodLength": 30
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {}
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "recoveryTimeDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "playedOrderDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "dependencyDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "overLimitMatchUpDetails": {
+          "2026-03-02": []
+        },
+        "scheduleTimesRemaining": {
+          "2026-03-02": {
+            "venue-1": [
+              {
+                "scheduleTime": "14:30"
+              },
+              {
+                "scheduleTime": "16:00"
+              },
+              {
+                "scheduleTime": "17:30"
+              }
+            ]
+          }
+        },
+        "skippedScheduleTimes": {
+          "2026-03-02": {}
+        },
+        "matchUpScheduleTimes": {
+          "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1": "10:00",
+          "c9fadd87-d5d0-4701-9701-00991181d1b6": "11:30",
+          "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": "13:00"
+        },
+        "overLimitMatchUpIds": {
+          "2026-03-02": []
+        },
+        "scheduledMatchUpIds": {
+          "2026-03-02": ["c9fadd87-d5d0-4701-9701-00991181d1b6", "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"]
+        },
+        "noFormatMatchUpIds": {
+          "2026-03-02": []
+        },
+        "noTimeMatchUpIds": {
+          "2026-03-02": []
+        },
+        "requestConflicts": {
+          "2026-03-02": []
+        },
+        "placements": {
+          "2026-03-02": {
+            "venue-1": [
+              {
+                "matchUpId": "c9fadd87-d5d0-4701-9701-00991181d1b6",
+                "scheduleTime": "11:30"
+              },
+              {
+                "matchUpId": "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a",
+                "scheduleTime": "13:00"
+              }
+            ]
+          }
+        },
+        "unplaced": {
+          "2026-03-02": {
+            "venue-1": []
+          }
+        }
+      }
+    },
+    "note": "A matchUp timed at 10:00 on the only court, and a matchUp elsewhere in the view with three draw positions. A booking reads a schedule, not draw positions: the court is still held, and the profiled matchUp starts at 11:30."
+  },
+  {
+    "caseId": "scheduling.plan.venue-only-booking-takes-a-court.v1",
+    "operation": "kernel.scheduling.plan@1",
+    "input": {
+      "view": {
+        "matchUpDependencies": {
+          "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1": {
+            "dependentMatchUpIds": [],
+            "participantIds": ["bb341e9c-9a49-4187-832a-2aa5f3c575db", "9813f467-3ada-4ff6-be1e-19d5f389d12a"],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          },
+          "c9fadd87-d5d0-4701-9701-00991181d1b6": {
+            "dependentMatchUpIds": ["3c8ee078-1333-47b6-84c9-14822c4b7810"],
+            "participantIds": ["f1356f46-6f0d-49a7-ad64-c65b26e0eee2", "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb"],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          },
+          "3c8ee078-1333-47b6-84c9-14822c4b7810": {
+            "dependentMatchUpIds": [],
+            "participantIds": [
+              "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
+              "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
+              "279aed96-e712-4e36-bca2-b692b8f1a046",
+              "d955965e-ddf6-418d-b0fe-c9b059d09320"
+            ],
+            "matchUpIds": ["c9fadd87-d5d0-4701-9701-00991181d1b6", "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"],
+            "sources": [["c9fadd87-d5d0-4701-9701-00991181d1b6", "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"], [], []]
+          },
+          "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": {
+            "dependentMatchUpIds": ["3c8ee078-1333-47b6-84c9-14822c4b7810"],
+            "participantIds": ["279aed96-e712-4e36-bca2-b692b8f1a046", "d955965e-ddf6-418d-b0fe-c9b059d09320"],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          }
+        },
+        "dailyLimitOverrides": {
+          "tournaments": {},
+          "participants": {}
+        },
+        "playedOrderFacts": {},
+        "personRequests": {},
+        "eventTimings": {
+          "2c584ab6-76cf-4734-9e75-9ea58adf447d": {
+            "eventType": "SINGLES",
+            "scheduleTiming": {}
+          },
+          "a918b95d-298b-4055-bcb1-8db249a1a8f5": {
+            "eventType": "SINGLES",
+            "scheduleTiming": {}
+          }
+        },
+        "timedMinutes": {
+          "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1": {
+            "averageMinutes": 90,
+            "recoveryMinutes": 60,
+            "typeChangeRecoveryMinutes": 60
+          }
+        },
+        "reachability": {
+          "matchUps": {
+            "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1": {
+              "certain": ["bb341e9c-9a49-4187-832a-2aa5f3c575db", "9813f467-3ada-4ff6-be1e-19d5f389d12a"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "c9fadd87-d5d0-4701-9701-00991181d1b6": {
+              "certain": ["f1356f46-6f0d-49a7-ad64-c65b26e0eee2", "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": {
+              "certain": ["279aed96-e712-4e36-bca2-b692b8f1a046", "d955965e-ddf6-418d-b0fe-c9b059d09320"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "3c8ee078-1333-47b6-84c9-14822c4b7810": {
+              "certain": [],
+              "potential": [
+                "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
+                "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
+                "279aed96-e712-4e36-bca2-b692b8f1a046",
+                "d955965e-ddf6-418d-b0fe-c9b059d09320"
+              ],
+              "nearPotential": [
+                "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
+                "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
+                "279aed96-e712-4e36-bca2-b692b8f1a046",
+                "d955965e-ddf6-418d-b0fe-c9b059d09320"
+              ]
+            }
+          },
+          "upstream": {
+            "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1": [],
+            "c9fadd87-d5d0-4701-9701-00991181d1b6": [],
+            "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": [],
+            "3c8ee078-1333-47b6-84c9-14822c4b7810": [
+              "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a",
+              "c9fadd87-d5d0-4701-9701-00991181d1b6"
+            ]
+          },
+          "linkedTargets": {}
+        },
+        "dateCourts": {
+          "2026-03-02": [
+            {
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
+              "courtName": "Court 1",
+              "venueId": "venue-1",
+              "dateAvailability": [
+                {
+                  "startTime": "10:00",
+                  "endTime": "20:00"
+                },
+                {
+                  "date": "2026-03-02",
+                  "startTime": "10:00",
+                  "endTime": "20:00"
+                },
+                {
+                  "date": "2026-03-03",
+                  "startTime": "10:00",
+                  "endTime": "20:00"
+                }
+              ]
+            }
+          ]
+        },
+        "hydrated": [
+          {
+            "matchUpId": "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "eventId": "2c584ab6-76cf-4734-9e75-9ea58adf447d",
+            "drawId": "089919a7-da51-4248-b63a-0158e35b7f7e",
+            "structureId": "089919a7-da51-4248-b63a-0158e35b7f7e-s-0",
+            "roundNumber": 1,
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "matchUpFormat": "SET3-S:6/TB7",
+            "drawPositions": [1, 2],
+            "schedule": {
+              "scheduledDate": "2026-03-02",
+              "scheduledTime": "10:00",
+              "timeAfterRecovery": "12:30",
+              "venueId": "venue-1"
+            },
+            "sides": [
+              {
+                "participantId": "bb341e9c-9a49-4187-832a-2aa5f3c575db",
+                "participant": {
+                  "participantId": "bb341e9c-9a49-4187-832a-2aa5f3c575db",
+                  "person": {
+                    "personId": "5201bcad-f774-4fde-b830-6553ec42d7fa"
+                  }
+                }
+              },
+              {
+                "participantId": "9813f467-3ada-4ff6-be1e-19d5f389d12a",
+                "participant": {
+                  "participantId": "9813f467-3ada-4ff6-be1e-19d5f389d12a",
+                  "person": {
+                    "personId": "7fb62cb8-54af-4657-b276-729dac4c2aca"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "matchUpId": "c9fadd87-d5d0-4701-9701-00991181d1b6",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "eventId": "a918b95d-298b-4055-bcb1-8db249a1a8f5",
+            "drawId": "da4835b5-4905-48fb-909b-3cb49795f00c",
+            "structureId": "da4835b5-4905-48fb-909b-3cb49795f00c-s-0",
+            "roundNumber": 1,
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "matchUpFormat": "SET3-S:6/TB7",
+            "drawPositions": [1, 2],
+            "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810",
+            "winnerTo": {
+              "matchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810"
+            },
+            "schedule": {},
+            "sides": [
+              {
+                "participantId": "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
+                "participant": {
+                  "participantId": "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
+                  "person": {
+                    "personId": "c3ee1a11-c9d4-49b4-bcec-321508741316"
+                  }
+                }
+              },
+              {
+                "participantId": "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
+                "participant": {
+                  "participantId": "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
+                  "person": {
+                    "personId": "aac333ee-39a4-499f-bed8-f359a1e172ee"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "matchUpId": "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "eventId": "a918b95d-298b-4055-bcb1-8db249a1a8f5",
+            "drawId": "da4835b5-4905-48fb-909b-3cb49795f00c",
+            "structureId": "da4835b5-4905-48fb-909b-3cb49795f00c-s-0",
+            "roundNumber": 1,
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "matchUpFormat": "SET3-S:6/TB7",
+            "drawPositions": [3, 4],
+            "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810",
+            "winnerTo": {
+              "matchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810"
+            },
+            "schedule": {},
+            "sides": [
+              {
+                "participantId": "279aed96-e712-4e36-bca2-b692b8f1a046",
+                "participant": {
+                  "participantId": "279aed96-e712-4e36-bca2-b692b8f1a046",
+                  "person": {
+                    "personId": "3820ca5c-3ba1-4e7b-a3fe-5a1a642b104f"
+                  }
+                }
+              },
+              {
+                "participantId": "d955965e-ddf6-418d-b0fe-c9b059d09320",
+                "participant": {
+                  "participantId": "d955965e-ddf6-418d-b0fe-c9b059d09320",
+                  "person": {
+                    "personId": "16783996-9c9a-4684-bb78-9f95fa6bc32b"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "matchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "eventId": "a918b95d-298b-4055-bcb1-8db249a1a8f5",
+            "drawId": "da4835b5-4905-48fb-909b-3cb49795f00c",
+            "structureId": "da4835b5-4905-48fb-909b-3cb49795f00c-s-0",
+            "roundNumber": 2,
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "matchUpFormat": "SET3-S:6/TB7",
+            "schedule": {},
+            "sides": [{}, {}],
+            "potentialParticipants": [
+              [
+                {
+                  "participantId": "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
+                  "person": {
+                    "personId": "c3ee1a11-c9d4-49b4-bcec-321508741316"
+                  }
+                },
+                {
+                  "participantId": "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
+                  "person": {
+                    "personId": "aac333ee-39a4-499f-bed8-f359a1e172ee"
+                  }
+                }
+              ],
+              [
+                {
+                  "participantId": "279aed96-e712-4e36-bca2-b692b8f1a046",
+                  "person": {
+                    "personId": "3820ca5c-3ba1-4e7b-a3fe-5a1a642b104f"
+                  }
+                },
+                {
+                  "participantId": "d955965e-ddf6-418d-b0fe-c9b059d09320",
+                  "person": {
+                    "personId": "16783996-9c9a-4684-bb78-9f95fa6bc32b"
+                  }
+                }
+              ]
+            ]
+          }
+        ],
+        "courts": [
+          {
+            "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
+            "venueId": "venue-1"
+          }
+        ],
+        "dates": [
+          {
+            "scheduleDate": "2026-03-02",
+            "venues": [
+              {
+                "venueId": "venue-1",
+                "rounds": [
+                  {
+                    "round": {
+                      "structureId": "da4835b5-4905-48fb-909b-3cb49795f00c-s-0",
+                      "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+                      "drawId": "da4835b5-4905-48fb-909b-3cb49795f00c",
+                      "eventId": "a918b95d-298b-4055-bcb1-8db249a1a8f5",
+                      "roundNumber": 1
+                    },
+                    "matchUpIds": ["c9fadd87-d5d0-4701-9701-00991181d1b6", "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"],
+                    "profiledMatchUpIds": [
+                      "c9fadd87-d5d0-4701-9701-00991181d1b6",
+                      "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"
+                    ],
+                    "minutes": {
+                      "averageMinutes": 90,
+                      "recoveryMinutes": 60,
+                      "typeChangeRecoveryMinutes": 60
+                    },
+                    "periodLength": 30
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {}
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "recoveryTimeDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "playedOrderDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "dependencyDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "overLimitMatchUpDetails": {
+          "2026-03-02": []
+        },
+        "scheduleTimesRemaining": {
+          "2026-03-02": {
+            "venue-1": [
+              {
+                "scheduleTime": "14:30"
+              },
+              {
+                "scheduleTime": "16:00"
+              },
+              {
+                "scheduleTime": "17:30"
+              }
+            ]
+          }
+        },
+        "skippedScheduleTimes": {
+          "2026-03-02": {}
+        },
+        "matchUpScheduleTimes": {
+          "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1": "10:00",
+          "c9fadd87-d5d0-4701-9701-00991181d1b6": "11:30",
+          "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": "13:00"
+        },
+        "overLimitMatchUpIds": {
+          "2026-03-02": []
+        },
+        "scheduledMatchUpIds": {
+          "2026-03-02": ["c9fadd87-d5d0-4701-9701-00991181d1b6", "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"]
+        },
+        "noFormatMatchUpIds": {
+          "2026-03-02": []
+        },
+        "noTimeMatchUpIds": {
+          "2026-03-02": []
+        },
+        "requestConflicts": {
+          "2026-03-02": []
+        },
+        "placements": {
+          "2026-03-02": {
+            "venue-1": [
+              {
+                "matchUpId": "c9fadd87-d5d0-4701-9701-00991181d1b6",
+                "scheduleTime": "11:30"
+              },
+              {
+                "matchUpId": "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a",
+                "scheduleTime": "13:00"
+              }
+            ]
+          }
+        },
+        "unplaced": {
+          "2026-03-02": {
+            "venue-1": []
+          }
+        }
+      }
+    },
+    "note": "A matchUp timed at 10:00 at the venue with no court holds one of the venue's courts for its 90 minutes: the profiled matchUp on the only court starts at 11:30."
+  },
+  {
+    "caseId": "scheduling.plan.timed-without-a-venue-books-no-court.v1",
+    "operation": "kernel.scheduling.plan@1",
+    "input": {
+      "view": {
+        "matchUpDependencies": {
+          "a918b95d-298b-4055-bcb1-8db249a1a8f5": {
+            "dependentMatchUpIds": [],
+            "participantIds": ["5201bcad-f774-4fde-b830-6553ec42d7fa", "7fb62cb8-54af-4657-b276-729dac4c2aca"],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          },
+          "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": {
+            "dependentMatchUpIds": ["9125c67f-f5f2-431a-b46e-f6d6dc6b8db3"],
+            "participantIds": ["aac333ee-39a4-499f-bed8-f359a1e172ee", "c3ee1a11-c9d4-49b4-bcec-321508741316"],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          },
+          "9125c67f-f5f2-431a-b46e-f6d6dc6b8db3": {
+            "dependentMatchUpIds": [],
+            "participantIds": [
+              "aac333ee-39a4-499f-bed8-f359a1e172ee",
+              "c3ee1a11-c9d4-49b4-bcec-321508741316",
+              "16783996-9c9a-4684-bb78-9f95fa6bc32b",
+              "3820ca5c-3ba1-4e7b-a3fe-5a1a642b104f"
+            ],
+            "matchUpIds": ["4e0a510e-0922-4c44-8cc8-eeaad3b42d2a", "3c8ee078-1333-47b6-84c9-14822c4b7810"],
+            "sources": [["4e0a510e-0922-4c44-8cc8-eeaad3b42d2a", "3c8ee078-1333-47b6-84c9-14822c4b7810"], [], []]
+          },
+          "3c8ee078-1333-47b6-84c9-14822c4b7810": {
+            "dependentMatchUpIds": ["9125c67f-f5f2-431a-b46e-f6d6dc6b8db3"],
+            "participantIds": ["16783996-9c9a-4684-bb78-9f95fa6bc32b", "3820ca5c-3ba1-4e7b-a3fe-5a1a642b104f"],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          }
+        },
+        "dailyLimitOverrides": {
+          "tournaments": {},
+          "participants": {}
+        },
+        "playedOrderFacts": {},
+        "personRequests": {},
+        "eventTimings": {
+          "eb01bcbe-281f-4bdc-af91-0335f19e6708": {
+            "eventType": "SINGLES",
+            "scheduleTiming": {}
+          },
+          "b93c5eb4-17ee-4c40-a2d6-8dd82438200e": {
+            "eventType": "SINGLES",
+            "scheduleTiming": {}
+          }
+        },
+        "timedMinutes": {
+          "a918b95d-298b-4055-bcb1-8db249a1a8f5": {
+            "averageMinutes": 90,
+            "recoveryMinutes": 60,
+            "typeChangeRecoveryMinutes": 60
+          }
+        },
+        "reachability": {
+          "matchUps": {
+            "a918b95d-298b-4055-bcb1-8db249a1a8f5": {
+              "certain": ["5201bcad-f774-4fde-b830-6553ec42d7fa", "7fb62cb8-54af-4657-b276-729dac4c2aca"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": {
+              "certain": ["aac333ee-39a4-499f-bed8-f359a1e172ee", "c3ee1a11-c9d4-49b4-bcec-321508741316"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "3c8ee078-1333-47b6-84c9-14822c4b7810": {
+              "certain": ["16783996-9c9a-4684-bb78-9f95fa6bc32b", "3820ca5c-3ba1-4e7b-a3fe-5a1a642b104f"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "9125c67f-f5f2-431a-b46e-f6d6dc6b8db3": {
+              "certain": [],
+              "potential": [
+                "aac333ee-39a4-499f-bed8-f359a1e172ee",
+                "c3ee1a11-c9d4-49b4-bcec-321508741316",
+                "16783996-9c9a-4684-bb78-9f95fa6bc32b",
+                "3820ca5c-3ba1-4e7b-a3fe-5a1a642b104f"
+              ],
+              "nearPotential": [
+                "aac333ee-39a4-499f-bed8-f359a1e172ee",
+                "c3ee1a11-c9d4-49b4-bcec-321508741316",
+                "16783996-9c9a-4684-bb78-9f95fa6bc32b",
+                "3820ca5c-3ba1-4e7b-a3fe-5a1a642b104f"
+              ]
+            }
+          },
+          "upstream": {
+            "a918b95d-298b-4055-bcb1-8db249a1a8f5": [],
+            "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": [],
+            "3c8ee078-1333-47b6-84c9-14822c4b7810": [],
+            "9125c67f-f5f2-431a-b46e-f6d6dc6b8db3": [
+              "3c8ee078-1333-47b6-84c9-14822c4b7810",
+              "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"
+            ]
+          },
+          "linkedTargets": {}
+        },
+        "dateCourts": {
+          "2026-03-02": [
+            {
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
+              "courtName": "Court 1",
+              "venueId": "venue-1",
+              "dateAvailability": [
+                {
+                  "startTime": "10:00",
+                  "endTime": "20:00"
+                },
+                {
+                  "date": "2026-03-02",
+                  "startTime": "10:00",
+                  "endTime": "20:00"
+                },
+                {
+                  "date": "2026-03-03",
+                  "startTime": "10:00",
+                  "endTime": "20:00"
+                }
+              ]
+            },
+            {
+              "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff",
+              "courtName": "Court 1",
+              "venueId": "second-venue",
+              "dateAvailability": [
+                {
+                  "startTime": "10:00",
+                  "endTime": "20:00"
+                },
+                {
+                  "date": "2026-03-02",
+                  "startTime": "10:00",
+                  "endTime": "20:00"
+                },
+                {
+                  "date": "2026-03-03",
+                  "startTime": "10:00",
+                  "endTime": "20:00"
+                }
+              ]
+            }
+          ]
+        },
+        "hydrated": [
+          {
+            "matchUpId": "a918b95d-298b-4055-bcb1-8db249a1a8f5",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "eventId": "eb01bcbe-281f-4bdc-af91-0335f19e6708",
+            "drawId": "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1",
+            "structureId": "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1-s-0",
+            "roundNumber": 1,
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "matchUpFormat": "SET3-S:6/TB7",
+            "drawPositions": [1, 2],
+            "schedule": {
+              "scheduledDate": "2026-03-02",
+              "scheduledTime": "10:00",
+              "timeAfterRecovery": "12:30"
+            },
+            "sides": [
+              {
+                "participantId": "5201bcad-f774-4fde-b830-6553ec42d7fa",
+                "participant": {
+                  "participantId": "5201bcad-f774-4fde-b830-6553ec42d7fa",
+                  "person": {
+                    "personId": "7804a3c8-3b11-474d-8d3d-0cf0abdfcc9f"
+                  }
+                }
+              },
+              {
+                "participantId": "7fb62cb8-54af-4657-b276-729dac4c2aca",
+                "participant": {
+                  "participantId": "7fb62cb8-54af-4657-b276-729dac4c2aca",
+                  "person": {
+                    "personId": "cf8290a7-90d7-41b7-a1b1-8203f77a8a07"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "matchUpId": "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "eventId": "b93c5eb4-17ee-4c40-a2d6-8dd82438200e",
+            "drawId": "c9fadd87-d5d0-4701-9701-00991181d1b6",
+            "structureId": "c9fadd87-d5d0-4701-9701-00991181d1b6-s-0",
+            "roundNumber": 1,
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "matchUpFormat": "SET3-S:6/TB7",
+            "drawPositions": [1, 2],
+            "winnerMatchUpId": "9125c67f-f5f2-431a-b46e-f6d6dc6b8db3",
+            "winnerTo": {
+              "matchUpId": "9125c67f-f5f2-431a-b46e-f6d6dc6b8db3"
+            },
+            "schedule": {},
+            "sides": [
+              {
+                "participantId": "aac333ee-39a4-499f-bed8-f359a1e172ee",
+                "participant": {
+                  "participantId": "aac333ee-39a4-499f-bed8-f359a1e172ee",
+                  "person": {
+                    "personId": "585fef86-e651-4ec5-a6ba-7374f4bb55ed"
+                  }
+                }
+              },
+              {
+                "participantId": "c3ee1a11-c9d4-49b4-bcec-321508741316",
+                "participant": {
+                  "participantId": "c3ee1a11-c9d4-49b4-bcec-321508741316",
+                  "person": {
+                    "personId": "8ebc82e0-0fe8-4180-bfd5-4fa5734f7e36"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "matchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "eventId": "b93c5eb4-17ee-4c40-a2d6-8dd82438200e",
+            "drawId": "c9fadd87-d5d0-4701-9701-00991181d1b6",
+            "structureId": "c9fadd87-d5d0-4701-9701-00991181d1b6-s-0",
+            "roundNumber": 1,
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "matchUpFormat": "SET3-S:6/TB7",
+            "drawPositions": [3, 4],
+            "winnerMatchUpId": "9125c67f-f5f2-431a-b46e-f6d6dc6b8db3",
+            "winnerTo": {
+              "matchUpId": "9125c67f-f5f2-431a-b46e-f6d6dc6b8db3"
+            },
+            "schedule": {},
+            "sides": [
+              {
+                "participantId": "16783996-9c9a-4684-bb78-9f95fa6bc32b",
+                "participant": {
+                  "participantId": "16783996-9c9a-4684-bb78-9f95fa6bc32b",
+                  "person": {
+                    "personId": "aec1e051-40d8-423f-a15c-fc4c6de08081"
+                  }
+                }
+              },
+              {
+                "participantId": "3820ca5c-3ba1-4e7b-a3fe-5a1a642b104f",
+                "participant": {
+                  "participantId": "3820ca5c-3ba1-4e7b-a3fe-5a1a642b104f",
+                  "person": {
+                    "personId": "dc951a62-e2e6-45a7-abb9-ad9adde59aa1"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "matchUpId": "9125c67f-f5f2-431a-b46e-f6d6dc6b8db3",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "eventId": "b93c5eb4-17ee-4c40-a2d6-8dd82438200e",
+            "drawId": "c9fadd87-d5d0-4701-9701-00991181d1b6",
+            "structureId": "c9fadd87-d5d0-4701-9701-00991181d1b6-s-0",
+            "roundNumber": 2,
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "matchUpFormat": "SET3-S:6/TB7",
+            "schedule": {},
+            "sides": [{}, {}],
+            "potentialParticipants": [
+              [
+                {
+                  "participantId": "aac333ee-39a4-499f-bed8-f359a1e172ee",
+                  "person": {
+                    "personId": "585fef86-e651-4ec5-a6ba-7374f4bb55ed"
+                  }
+                },
+                {
+                  "participantId": "c3ee1a11-c9d4-49b4-bcec-321508741316",
+                  "person": {
+                    "personId": "8ebc82e0-0fe8-4180-bfd5-4fa5734f7e36"
+                  }
+                }
+              ],
+              [
+                {
+                  "participantId": "16783996-9c9a-4684-bb78-9f95fa6bc32b",
+                  "person": {
+                    "personId": "aec1e051-40d8-423f-a15c-fc4c6de08081"
+                  }
+                },
+                {
+                  "participantId": "3820ca5c-3ba1-4e7b-a3fe-5a1a642b104f",
+                  "person": {
+                    "personId": "dc951a62-e2e6-45a7-abb9-ad9adde59aa1"
+                  }
+                }
+              ]
+            ]
+          }
+        ],
+        "courts": [
+          {
+            "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
+            "venueId": "venue-1"
+          },
+          {
+            "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff",
+            "venueId": "second-venue"
+          }
+        ],
+        "dates": [
+          {
+            "scheduleDate": "2026-03-02",
+            "venues": [
+              {
+                "venueId": "venue-1",
+                "rounds": [
+                  {
+                    "round": {
+                      "structureId": "c9fadd87-d5d0-4701-9701-00991181d1b6-s-0",
+                      "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+                      "drawId": "c9fadd87-d5d0-4701-9701-00991181d1b6",
+                      "eventId": "b93c5eb4-17ee-4c40-a2d6-8dd82438200e",
+                      "roundNumber": 1
+                    },
+                    "matchUpIds": ["4e0a510e-0922-4c44-8cc8-eeaad3b42d2a", "3c8ee078-1333-47b6-84c9-14822c4b7810"],
+                    "profiledMatchUpIds": [
+                      "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a",
+                      "3c8ee078-1333-47b6-84c9-14822c4b7810"
+                    ],
+                    "minutes": {
+                      "averageMinutes": 90,
+                      "recoveryMinutes": 60,
+                      "typeChangeRecoveryMinutes": 60
+                    },
+                    "periodLength": 30
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {}
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "recoveryTimeDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "playedOrderDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "dependencyDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "overLimitMatchUpDetails": {
+          "2026-03-02": []
+        },
+        "scheduleTimesRemaining": {
+          "2026-03-02": {
+            "venue-1": [
+              {
+                "scheduleTime": "13:00"
+              },
+              {
+                "scheduleTime": "14:30"
+              },
+              {
+                "scheduleTime": "16:00"
+              },
+              {
+                "scheduleTime": "17:30"
+              }
+            ]
+          }
+        },
+        "skippedScheduleTimes": {
+          "2026-03-02": {}
+        },
+        "matchUpScheduleTimes": {
+          "a918b95d-298b-4055-bcb1-8db249a1a8f5": "10:00",
+          "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": "10:00",
+          "3c8ee078-1333-47b6-84c9-14822c4b7810": "11:30"
+        },
+        "overLimitMatchUpIds": {
+          "2026-03-02": []
+        },
+        "scheduledMatchUpIds": {
+          "2026-03-02": ["4e0a510e-0922-4c44-8cc8-eeaad3b42d2a", "3c8ee078-1333-47b6-84c9-14822c4b7810"]
+        },
+        "noFormatMatchUpIds": {
+          "2026-03-02": []
+        },
+        "noTimeMatchUpIds": {
+          "2026-03-02": []
+        },
+        "requestConflicts": {
+          "2026-03-02": []
+        },
+        "placements": {
+          "2026-03-02": {
+            "venue-1": [
+              {
+                "matchUpId": "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a",
+                "scheduleTime": "10:00"
+              },
+              {
+                "matchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810",
+                "scheduleTime": "11:30"
+              }
+            ]
+          }
+        },
+        "unplaced": {
+          "2026-03-02": {
+            "venue-1": []
+          }
+        }
+      }
+    },
+    "note": "In a tournament with two venues, a matchUp timed at 10:00 with neither a venue nor a court claims no court: the profiled matchUp takes the court at 10:00 (its participants are still held, § 3.4)."
+  },
+  {
+    "caseId": "scheduling.plan.timed-without-a-venue-at-the-only-venue.v1",
+    "operation": "kernel.scheduling.plan@1",
+    "input": {
+      "view": {
+        "matchUpDependencies": {
+          "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1": {
+            "dependentMatchUpIds": [],
+            "participantIds": ["bb341e9c-9a49-4187-832a-2aa5f3c575db", "9813f467-3ada-4ff6-be1e-19d5f389d12a"],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          },
+          "c9fadd87-d5d0-4701-9701-00991181d1b6": {
+            "dependentMatchUpIds": ["3c8ee078-1333-47b6-84c9-14822c4b7810"],
+            "participantIds": ["f1356f46-6f0d-49a7-ad64-c65b26e0eee2", "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb"],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          },
+          "3c8ee078-1333-47b6-84c9-14822c4b7810": {
+            "dependentMatchUpIds": [],
+            "participantIds": [
+              "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
+              "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
+              "279aed96-e712-4e36-bca2-b692b8f1a046",
+              "d955965e-ddf6-418d-b0fe-c9b059d09320"
+            ],
+            "matchUpIds": ["c9fadd87-d5d0-4701-9701-00991181d1b6", "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"],
+            "sources": [["c9fadd87-d5d0-4701-9701-00991181d1b6", "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"], [], []]
+          },
+          "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": {
+            "dependentMatchUpIds": ["3c8ee078-1333-47b6-84c9-14822c4b7810"],
+            "participantIds": ["279aed96-e712-4e36-bca2-b692b8f1a046", "d955965e-ddf6-418d-b0fe-c9b059d09320"],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          }
+        },
+        "dailyLimitOverrides": {
+          "tournaments": {},
+          "participants": {}
+        },
+        "playedOrderFacts": {},
+        "personRequests": {},
+        "eventTimings": {
+          "2c584ab6-76cf-4734-9e75-9ea58adf447d": {
+            "eventType": "SINGLES",
+            "scheduleTiming": {}
+          },
+          "a918b95d-298b-4055-bcb1-8db249a1a8f5": {
+            "eventType": "SINGLES",
+            "scheduleTiming": {}
+          }
+        },
+        "timedMinutes": {
+          "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1": {
+            "averageMinutes": 90,
+            "recoveryMinutes": 60,
+            "typeChangeRecoveryMinutes": 60
+          }
+        },
+        "reachability": {
+          "matchUps": {
+            "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1": {
+              "certain": ["bb341e9c-9a49-4187-832a-2aa5f3c575db", "9813f467-3ada-4ff6-be1e-19d5f389d12a"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "c9fadd87-d5d0-4701-9701-00991181d1b6": {
+              "certain": ["f1356f46-6f0d-49a7-ad64-c65b26e0eee2", "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": {
+              "certain": ["279aed96-e712-4e36-bca2-b692b8f1a046", "d955965e-ddf6-418d-b0fe-c9b059d09320"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "3c8ee078-1333-47b6-84c9-14822c4b7810": {
+              "certain": [],
+              "potential": [
+                "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
+                "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
+                "279aed96-e712-4e36-bca2-b692b8f1a046",
+                "d955965e-ddf6-418d-b0fe-c9b059d09320"
+              ],
+              "nearPotential": [
+                "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
+                "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
+                "279aed96-e712-4e36-bca2-b692b8f1a046",
+                "d955965e-ddf6-418d-b0fe-c9b059d09320"
+              ]
+            }
+          },
+          "upstream": {
+            "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1": [],
+            "c9fadd87-d5d0-4701-9701-00991181d1b6": [],
+            "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": [],
+            "3c8ee078-1333-47b6-84c9-14822c4b7810": [
+              "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a",
+              "c9fadd87-d5d0-4701-9701-00991181d1b6"
+            ]
+          },
+          "linkedTargets": {}
+        },
+        "dateCourts": {
+          "2026-03-02": [
+            {
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
+              "courtName": "Court 1",
+              "venueId": "venue-1",
+              "dateAvailability": [
+                {
+                  "startTime": "10:00",
+                  "endTime": "20:00"
+                },
+                {
+                  "date": "2026-03-02",
+                  "startTime": "10:00",
+                  "endTime": "20:00"
+                },
+                {
+                  "date": "2026-03-03",
+                  "startTime": "10:00",
+                  "endTime": "20:00"
+                }
+              ]
+            }
+          ]
+        },
+        "hydrated": [
+          {
+            "matchUpId": "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "eventId": "2c584ab6-76cf-4734-9e75-9ea58adf447d",
+            "drawId": "089919a7-da51-4248-b63a-0158e35b7f7e",
+            "structureId": "089919a7-da51-4248-b63a-0158e35b7f7e-s-0",
+            "roundNumber": 1,
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "matchUpFormat": "SET3-S:6/TB7",
+            "drawPositions": [1, 2],
+            "schedule": {
+              "scheduledDate": "2026-03-02",
+              "scheduledTime": "10:00",
+              "timeAfterRecovery": "12:30"
+            },
+            "sides": [
+              {
+                "participantId": "bb341e9c-9a49-4187-832a-2aa5f3c575db",
+                "participant": {
+                  "participantId": "bb341e9c-9a49-4187-832a-2aa5f3c575db",
+                  "person": {
+                    "personId": "5201bcad-f774-4fde-b830-6553ec42d7fa"
+                  }
+                }
+              },
+              {
+                "participantId": "9813f467-3ada-4ff6-be1e-19d5f389d12a",
+                "participant": {
+                  "participantId": "9813f467-3ada-4ff6-be1e-19d5f389d12a",
+                  "person": {
+                    "personId": "7fb62cb8-54af-4657-b276-729dac4c2aca"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "matchUpId": "c9fadd87-d5d0-4701-9701-00991181d1b6",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "eventId": "a918b95d-298b-4055-bcb1-8db249a1a8f5",
+            "drawId": "da4835b5-4905-48fb-909b-3cb49795f00c",
+            "structureId": "da4835b5-4905-48fb-909b-3cb49795f00c-s-0",
+            "roundNumber": 1,
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "matchUpFormat": "SET3-S:6/TB7",
+            "drawPositions": [1, 2],
+            "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810",
+            "winnerTo": {
+              "matchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810"
+            },
+            "schedule": {},
+            "sides": [
+              {
+                "participantId": "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
+                "participant": {
+                  "participantId": "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
+                  "person": {
+                    "personId": "c3ee1a11-c9d4-49b4-bcec-321508741316"
+                  }
+                }
+              },
+              {
+                "participantId": "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
+                "participant": {
+                  "participantId": "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
+                  "person": {
+                    "personId": "aac333ee-39a4-499f-bed8-f359a1e172ee"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "matchUpId": "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "eventId": "a918b95d-298b-4055-bcb1-8db249a1a8f5",
+            "drawId": "da4835b5-4905-48fb-909b-3cb49795f00c",
+            "structureId": "da4835b5-4905-48fb-909b-3cb49795f00c-s-0",
+            "roundNumber": 1,
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "matchUpFormat": "SET3-S:6/TB7",
+            "drawPositions": [3, 4],
+            "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810",
+            "winnerTo": {
+              "matchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810"
+            },
+            "schedule": {},
+            "sides": [
+              {
+                "participantId": "279aed96-e712-4e36-bca2-b692b8f1a046",
+                "participant": {
+                  "participantId": "279aed96-e712-4e36-bca2-b692b8f1a046",
+                  "person": {
+                    "personId": "3820ca5c-3ba1-4e7b-a3fe-5a1a642b104f"
+                  }
+                }
+              },
+              {
+                "participantId": "d955965e-ddf6-418d-b0fe-c9b059d09320",
+                "participant": {
+                  "participantId": "d955965e-ddf6-418d-b0fe-c9b059d09320",
+                  "person": {
+                    "personId": "16783996-9c9a-4684-bb78-9f95fa6bc32b"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "matchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "eventId": "a918b95d-298b-4055-bcb1-8db249a1a8f5",
+            "drawId": "da4835b5-4905-48fb-909b-3cb49795f00c",
+            "structureId": "da4835b5-4905-48fb-909b-3cb49795f00c-s-0",
+            "roundNumber": 2,
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "matchUpFormat": "SET3-S:6/TB7",
+            "schedule": {},
+            "sides": [{}, {}],
+            "potentialParticipants": [
+              [
+                {
+                  "participantId": "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
+                  "person": {
+                    "personId": "c3ee1a11-c9d4-49b4-bcec-321508741316"
+                  }
+                },
+                {
+                  "participantId": "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
+                  "person": {
+                    "personId": "aac333ee-39a4-499f-bed8-f359a1e172ee"
+                  }
+                }
+              ],
+              [
+                {
+                  "participantId": "279aed96-e712-4e36-bca2-b692b8f1a046",
+                  "person": {
+                    "personId": "3820ca5c-3ba1-4e7b-a3fe-5a1a642b104f"
+                  }
+                },
+                {
+                  "participantId": "d955965e-ddf6-418d-b0fe-c9b059d09320",
+                  "person": {
+                    "personId": "16783996-9c9a-4684-bb78-9f95fa6bc32b"
+                  }
+                }
+              ]
+            ]
+          }
+        ],
+        "courts": [
+          {
+            "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
+            "venueId": "venue-1"
+          }
+        ],
+        "dates": [
+          {
+            "scheduleDate": "2026-03-02",
+            "venues": [
+              {
+                "venueId": "venue-1",
+                "rounds": [
+                  {
+                    "round": {
+                      "structureId": "da4835b5-4905-48fb-909b-3cb49795f00c-s-0",
+                      "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+                      "drawId": "da4835b5-4905-48fb-909b-3cb49795f00c",
+                      "eventId": "a918b95d-298b-4055-bcb1-8db249a1a8f5",
+                      "roundNumber": 1
+                    },
+                    "matchUpIds": ["c9fadd87-d5d0-4701-9701-00991181d1b6", "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"],
+                    "profiledMatchUpIds": [
+                      "c9fadd87-d5d0-4701-9701-00991181d1b6",
+                      "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"
+                    ],
+                    "minutes": {
+                      "averageMinutes": 90,
+                      "recoveryMinutes": 60,
+                      "typeChangeRecoveryMinutes": 60
+                    },
+                    "periodLength": 30
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {}
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "recoveryTimeDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "playedOrderDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "dependencyDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "overLimitMatchUpDetails": {
+          "2026-03-02": []
+        },
+        "scheduleTimesRemaining": {
+          "2026-03-02": {
+            "venue-1": [
+              {
+                "scheduleTime": "14:30"
+              },
+              {
+                "scheduleTime": "16:00"
+              },
+              {
+                "scheduleTime": "17:30"
+              }
+            ]
+          }
+        },
+        "skippedScheduleTimes": {
+          "2026-03-02": {}
+        },
+        "matchUpScheduleTimes": {
+          "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1": "10:00",
+          "c9fadd87-d5d0-4701-9701-00991181d1b6": "11:30",
+          "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": "13:00"
+        },
+        "overLimitMatchUpIds": {
+          "2026-03-02": []
+        },
+        "scheduledMatchUpIds": {
+          "2026-03-02": ["c9fadd87-d5d0-4701-9701-00991181d1b6", "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"]
+        },
+        "noFormatMatchUpIds": {
+          "2026-03-02": []
+        },
+        "noTimeMatchUpIds": {
+          "2026-03-02": []
+        },
+        "requestConflicts": {
+          "2026-03-02": []
+        },
+        "placements": {
+          "2026-03-02": {
+            "venue-1": [
+              {
+                "matchUpId": "c9fadd87-d5d0-4701-9701-00991181d1b6",
+                "scheduleTime": "11:30"
+              },
+              {
+                "matchUpId": "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a",
+                "scheduleTime": "13:00"
+              }
+            ]
+          }
+        },
+        "unplaced": {
+          "2026-03-02": {
+            "venue-1": []
+          }
+        }
+      }
+    },
+    "note": "In a tournament with exactly one venue, a matchUp timed at 10:00 with no venue is at that venue (CA 2026-10-25): it holds the only court until 11:30, so the profiled matchUp is timed at 11:30."
+  },
+  {
+    "caseId": "scheduling.plan.scheduled-bye-holds-no-one.v1",
+    "operation": "kernel.scheduling.plan@1",
+    "input": {
+      "view": {
+        "matchUpDependencies": {
+          "93ad131a-f64c-49e5-b2b8-4a825b67aca3": {
+            "dependentMatchUpIds": ["d47031ed-7798-4443-aeb4-21a6e4082bc5"],
+            "participantIds": ["8ed092c1-15c7-4870-8e5d-83bef613ba34"],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          },
+          "d47031ed-7798-4443-aeb4-21a6e4082bc5": {
+            "dependentMatchUpIds": [],
+            "participantIds": [
+              "8ed092c1-15c7-4870-8e5d-83bef613ba34",
+              "8983f025-583f-487f-9429-e29a88817828",
+              "47241964-3a23-4400-be9a-839013bfc8a8"
+            ],
+            "matchUpIds": ["93ad131a-f64c-49e5-b2b8-4a825b67aca3", "0cfb0d77-e887-4c4e-b16b-a16f6276194f"],
+            "sources": [["93ad131a-f64c-49e5-b2b8-4a825b67aca3", "0cfb0d77-e887-4c4e-b16b-a16f6276194f"], [], []]
+          },
+          "0cfb0d77-e887-4c4e-b16b-a16f6276194f": {
+            "dependentMatchUpIds": ["d47031ed-7798-4443-aeb4-21a6e4082bc5"],
+            "participantIds": ["8983f025-583f-487f-9429-e29a88817828", "47241964-3a23-4400-be9a-839013bfc8a8"],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          }
+        },
+        "dailyLimitOverrides": {
+          "tournaments": {
+            "09731d85-6f11-4782-a403-0f23c348c0f8": {
+              "SINGLES": 1,
+              "total": 1
+            }
+          },
+          "participants": {}
+        },
+        "matchUpDailyLimits": {
+          "SINGLES": 1,
+          "total": 1
+        },
+        "playedOrderFacts": {
+          "e4b6f994-a2e7-4435-ad49-f374c8d9c541": {
+            "0cfb0d77-e887-4c4e-b16b-a16f6276194f": {
+              "scheduledDate": "2026-03-02",
+              "scheduledTime": "10:00",
+              "matchUpStatus": "COMPLETED",
+              "roundNumber": 1,
+              "played": true
+            },
+            "d47031ed-7798-4443-aeb4-21a6e4082bc5": {
+              "matchUpStatus": "TO_BE_PLAYED",
+              "roundNumber": 2,
+              "played": false
+            },
+            "93ad131a-f64c-49e5-b2b8-4a825b67aca3": {
+              "scheduledDate": "2026-03-03",
+              "scheduledTime": "10:00",
+              "matchUpStatus": "BYE",
+              "roundNumber": 1,
+              "played": false
+            }
+          }
+        },
+        "personRequests": {},
+        "eventTimings": {
+          "5ff6b9df-fd44-411f-a2de-4dbb49788ad0": {
+            "eventType": "SINGLES",
+            "scheduleTiming": {}
+          }
+        },
+        "timedMinutes": {
+          "0cfb0d77-e887-4c4e-b16b-a16f6276194f": {
+            "averageMinutes": 90,
+            "recoveryMinutes": 60,
+            "typeChangeRecoveryMinutes": 60
+          },
+          "93ad131a-f64c-49e5-b2b8-4a825b67aca3": {
+            "averageMinutes": 90,
+            "recoveryMinutes": 60,
+            "typeChangeRecoveryMinutes": 60
+          }
+        },
+        "reachability": {
+          "matchUps": {
+            "0cfb0d77-e887-4c4e-b16b-a16f6276194f": {
+              "certain": ["8983f025-583f-487f-9429-e29a88817828", "47241964-3a23-4400-be9a-839013bfc8a8"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "93ad131a-f64c-49e5-b2b8-4a825b67aca3": {
+              "certain": ["8ed092c1-15c7-4870-8e5d-83bef613ba34"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "d47031ed-7798-4443-aeb4-21a6e4082bc5": {
+              "certain": ["8ed092c1-15c7-4870-8e5d-83bef613ba34", "8983f025-583f-487f-9429-e29a88817828"],
+              "potential": [],
+              "nearPotential": []
+            }
+          },
+          "upstream": {
+            "0cfb0d77-e887-4c4e-b16b-a16f6276194f": [],
+            "93ad131a-f64c-49e5-b2b8-4a825b67aca3": [],
+            "d47031ed-7798-4443-aeb4-21a6e4082bc5": [
+              "0cfb0d77-e887-4c4e-b16b-a16f6276194f",
+              "93ad131a-f64c-49e5-b2b8-4a825b67aca3"
+            ]
+          },
+          "linkedTargets": {}
+        },
+        "dateCourts": {
+          "2026-03-03": [
+            {
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
+              "courtName": "Court 1",
+              "venueId": "venue-1",
+              "dateAvailability": [
+                {
+                  "startTime": "10:00",
+                  "endTime": "20:00"
+                },
+                {
+                  "date": "2026-03-02",
+                  "startTime": "10:00",
+                  "endTime": "20:00"
+                },
+                {
+                  "date": "2026-03-03",
+                  "startTime": "10:00",
+                  "endTime": "20:00"
+                }
+              ]
+            },
+            {
+              "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff",
+              "courtName": "Court 2",
+              "venueId": "venue-1",
+              "dateAvailability": [
+                {
+                  "startTime": "10:00",
+                  "endTime": "20:00"
+                },
+                {
+                  "date": "2026-03-02",
+                  "startTime": "10:00",
+                  "endTime": "20:00"
+                },
+                {
+                  "date": "2026-03-03",
+                  "startTime": "10:00",
+                  "endTime": "20:00"
+                }
+              ]
+            }
+          ]
+        },
+        "hydrated": [
+          {
+            "matchUpId": "0cfb0d77-e887-4c4e-b16b-a16f6276194f",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "eventId": "5ff6b9df-fd44-411f-a2de-4dbb49788ad0",
+            "drawId": "e4b6f994-a2e7-4435-ad49-f374c8d9c541",
+            "structureId": "e4b6f994-a2e7-4435-ad49-f374c8d9c541-s-0",
+            "roundNumber": 1,
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "COMPLETED",
+            "matchUpFormat": "SET3-S:6/TB7",
+            "winningSide": 1,
+            "drawPositions": [3, 4],
+            "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+            "winnerTo": {
+              "matchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5"
+            },
+            "schedule": {
+              "scheduledDate": "2026-03-02",
+              "scheduledTime": "10:00",
+              "timeAfterRecovery": "12:30",
+              "venueId": "venue-1"
+            },
+            "score": {
+              "sets": [
+                {
+                  "side1Score": 6,
+                  "side2Score": 1
+                },
+                {
+                  "side1Score": 6,
+                  "side2Score": 1
+                }
+              ]
+            },
+            "sides": [
+              {
+                "participantId": "8983f025-583f-487f-9429-e29a88817828",
+                "participant": {
+                  "participantId": "8983f025-583f-487f-9429-e29a88817828",
+                  "person": {
+                    "personId": "b9b6736f-5258-45e7-99eb-08cbd18ac4af"
+                  }
+                }
+              },
+              {
+                "participantId": "47241964-3a23-4400-be9a-839013bfc8a8",
+                "participant": {
+                  "participantId": "47241964-3a23-4400-be9a-839013bfc8a8",
+                  "person": {
+                    "personId": "76083920-b6e4-4951-8432-9c0ca756c68e"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "matchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "eventId": "5ff6b9df-fd44-411f-a2de-4dbb49788ad0",
+            "drawId": "e4b6f994-a2e7-4435-ad49-f374c8d9c541",
+            "structureId": "e4b6f994-a2e7-4435-ad49-f374c8d9c541-s-0",
+            "roundNumber": 2,
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "matchUpFormat": "SET3-S:6/TB7",
+            "drawPositions": [1, 3],
+            "schedule": {},
+            "sides": [
+              {
+                "participantId": "8ed092c1-15c7-4870-8e5d-83bef613ba34",
+                "participant": {
+                  "participantId": "8ed092c1-15c7-4870-8e5d-83bef613ba34",
+                  "person": {
+                    "personId": "bce503f7-b931-4077-b931-d527fefdee9a"
+                  }
+                }
+              },
+              {
+                "participantId": "8983f025-583f-487f-9429-e29a88817828",
+                "participant": {
+                  "participantId": "8983f025-583f-487f-9429-e29a88817828",
+                  "person": {
+                    "personId": "b9b6736f-5258-45e7-99eb-08cbd18ac4af"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "matchUpId": "93ad131a-f64c-49e5-b2b8-4a825b67aca3",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "eventId": "5ff6b9df-fd44-411f-a2de-4dbb49788ad0",
+            "drawId": "e4b6f994-a2e7-4435-ad49-f374c8d9c541",
+            "structureId": "e4b6f994-a2e7-4435-ad49-f374c8d9c541-s-0",
+            "roundNumber": 1,
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "BYE",
+            "matchUpFormat": "SET3-S:6/TB7",
+            "drawPositions": [1, 2],
+            "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+            "winnerTo": {
+              "matchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5"
+            },
+            "schedule": {
+              "scheduledDate": "2026-03-03",
+              "scheduledTime": "10:00",
+              "timeAfterRecovery": "12:30",
+              "venueId": "venue-1"
+            },
+            "sides": [
+              {
+                "participantId": "8ed092c1-15c7-4870-8e5d-83bef613ba34",
+                "participant": {
+                  "participantId": "8ed092c1-15c7-4870-8e5d-83bef613ba34",
+                  "person": {
+                    "personId": "bce503f7-b931-4077-b931-d527fefdee9a"
+                  }
+                }
+              },
+              {}
+            ]
+          }
+        ],
+        "courts": [
+          {
+            "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
+            "venueId": "venue-1"
+          },
+          {
+            "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff",
+            "venueId": "venue-1"
+          }
+        ],
+        "dates": [
+          {
+            "scheduleDate": "2026-03-03",
+            "venues": [
+              {
+                "venueId": "venue-1",
+                "rounds": [
+                  {
+                    "round": {
+                      "structureId": "e4b6f994-a2e7-4435-ad49-f374c8d9c541-s-0",
+                      "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+                      "drawId": "e4b6f994-a2e7-4435-ad49-f374c8d9c541",
+                      "eventId": "5ff6b9df-fd44-411f-a2de-4dbb49788ad0",
+                      "roundNumber": 2
+                    },
+                    "matchUpIds": ["d47031ed-7798-4443-aeb4-21a6e4082bc5"],
+                    "profiledMatchUpIds": ["d47031ed-7798-4443-aeb4-21a6e4082bc5"],
+                    "minutes": {
+                      "averageMinutes": 90,
+                      "recoveryMinutes": 60,
+                      "typeChangeRecoveryMinutes": 60
+                    },
+                    "periodLength": 30
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {}
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "recoveryTimeDeferredMatchUpIds": {
+          "2026-03-03": {}
+        },
+        "playedOrderDeferredMatchUpIds": {
+          "2026-03-03": {}
+        },
+        "dependencyDeferredMatchUpIds": {
+          "2026-03-03": {}
+        },
+        "overLimitMatchUpDetails": {
+          "2026-03-03": []
+        },
+        "scheduleTimesRemaining": {
+          "2026-03-03": {
+            "venue-1": [
+              {
+                "scheduleTime": "10:00"
+              },
+              {
+                "scheduleTime": "11:00"
+              },
+              {
+                "scheduleTime": "12:00"
+              },
+              {
+                "scheduleTime": "12:30"
+              },
+              {
+                "scheduleTime": "13:30"
+              },
+              {
+                "scheduleTime": "14:00"
+              },
+              {
+                "scheduleTime": "15:00"
+              },
+              {
+                "scheduleTime": "15:30"
+              },
+              {
+                "scheduleTime": "16:30"
+              },
+              {
+                "scheduleTime": "17:00"
+              },
+              {
+                "scheduleTime": "18:00"
+              },
+              {
+                "scheduleTime": "18:30"
+              }
+            ]
+          }
+        },
+        "skippedScheduleTimes": {
+          "2026-03-03": {}
+        },
+        "matchUpScheduleTimes": {
+          "d47031ed-7798-4443-aeb4-21a6e4082bc5": "10:00"
+        },
+        "overLimitMatchUpIds": {
+          "2026-03-03": []
+        },
+        "scheduledMatchUpIds": {
+          "2026-03-03": ["d47031ed-7798-4443-aeb4-21a6e4082bc5"]
+        },
+        "noFormatMatchUpIds": {
+          "2026-03-03": []
+        },
+        "noTimeMatchUpIds": {
+          "2026-03-03": []
+        },
+        "requestConflicts": {
+          "2026-03-03": []
+        },
+        "placements": {
+          "2026-03-03": {
+            "venue-1": [
+              {
+                "matchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+                "scheduleTime": "10:00"
+              }
+            ]
+          }
+        },
+        "unplaced": {
+          "2026-03-03": {
+            "venue-1": []
+          }
+        }
+      }
+    },
+    "note": "A BYE carries a schedule (10:00 on day 2) and the final is profiled on day 2 under a daily limit of one singles matchUp. A BYE is never played: it adds nothing to its participant's day and raises no not-before time, so the final is timed at 10:00, not held over the limit."
   }
 ]
