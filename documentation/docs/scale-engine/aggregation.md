@@ -345,14 +345,28 @@ aggregationRules: {
 }
 ```
 
-| Criterion               | Resolution                                                                                  |
-| ----------------------- | ------------------------------------------------------------------------------------------- |
-| `'highestSingleResult'` | Highest individual `points` value among counting results                                    |
-| `'mostCountingResults'` | More counting results wins                                                                  |
-| `'mostWins'`            | More total `winCount` across counting results wins                                          |
-| `'headToHead'`          | The winner of the two players' head-to-head record, from the caller's `headToHead` function |
+| Criterion                     | Resolution                                                                                  |
+| ----------------------------- | ------------------------------------------------------------------------------------------- |
+| `'highestSingleResult'`       | Highest individual `points` value among counting results                                    |
+| `'mostCountingResults'`       | More counting results wins                                                                  |
+| `'mostWins'`                  | More total `winCount` across counting results wins                                          |
+| `'headToHead'`                | The winner of the two players' head-to-head record, from the caller's `headToHead` function |
+| `{ levelPoints, eventTypes }` | A countback by level: the points of counting results at each listed level in turn           |
 
 Tied entries that remain unresolved after all criteria share the same rank.
+
+### levelPoints countback
+
+A criterion object compares the tied entries' counting results level by level, in the order listed, until one
+earned more points there. `eventTypes` narrows which results count. The ITF Junior countback (Reg. 11) is Grand Slam
+singles, then singles at each grade from J500 down, then the same for doubles:
+
+```js
+tiebreakCriteria: [
+  { levelPoints: [1, 4, 5, 6, 7, 8, 9], eventTypes: [SINGLES] },
+  { levelPoints: [1, 4, 5, 6, 7, 8, 9], eventTypes: [DOUBLES] },
+],
+```
 
 ### headToHead
 

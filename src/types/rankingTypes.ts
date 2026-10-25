@@ -176,6 +176,14 @@ export interface AwardProfile extends AwardProfileScope {
   /** Points by finishing position (key = max finishingPositionRange value) */
   finishingPositionRanges?: Record<number, PositionValue>;
 
+  /**
+   * Points by place within a round robin group (1 = group winner), read from the round robin participation. For a
+   * round robin to elimination format, where the playoffs carry the finishing positions but the group places earn
+   * points of their own (ITF Juniors J60/J30: 2nd place 5, 3rd and 4th 2 with a match won). A value may require a
+   * win (`{ value: 2, requireWin: true }`).
+   */
+  groupOrderPoints?: Record<number, PositionValue>;
+
   /** Alternative: awards based on finishing round won/lost */
   finishingRound?: Record<number, { won?: PositionValue; lost?: PositionValue }>;
 
@@ -628,7 +636,22 @@ export type PointComponent = 'points' | 'positionPoints' | 'perWinPoints' | 'bon
 
 export type DoublesAttribution = 'fullToEach' | 'splitEven' | 'teamOnly';
 
-export type TiebreakCriterion = 'headToHead' | 'mostWins' | 'highestSingleResult' | 'mostCountingResults' | 'rating';
+export type TiebreakCriterion =
+  'headToHead' | 'mostWins' | 'highestSingleResult' | 'mostCountingResults' | 'rating' | LevelPointsCountback;
+
+/**
+ * A countback by level: tied entries are separated by the points of their counting results at each level in turn,
+ * in the order listed, until one has more. The ITF Junior countback (Reg. 11) is Grand Slam singles, then singles
+ * at each grade from J500 down, then the same for doubles:
+ * `{ levelPoints: [1, 4, 5, 6, 7, 8, 9], eventTypes: [SINGLES] }`, then the same with `[DOUBLES]`.
+ */
+export interface LevelPointsCountback {
+  /** The levels to compare, one at a time, in order */
+  levelPoints: number[];
+
+  /** Only counting results of these eventTypes (undefined = all) */
+  eventTypes?: EventTypeUnion[];
+}
 
 // ─── Point Award Output ──────────────────────────────────────────────
 

@@ -578,6 +578,10 @@ export type StructureParticipation = {
   structureId: string;
   winCount: number;
   drawId: string;
+  /** Round robin group stage only (withRankingProfile): the participant's resolved place within their group. */
+  groupOrder?: number;
+  /** Round robin group stage only (withRankingProfile): the number of positions in that group. */
+  groupSize?: number;
 };
 
 export type MappedParticipant = {

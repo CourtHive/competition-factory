@@ -8,6 +8,7 @@ import type {
   RankingListWarning,
   CategoryAggregationRule,
   TiebreakCriterion,
+  LevelPointsCountback,
   AggregationRules,
   RankingListAward,
   RankingListEntry,
@@ -533,11 +534,13 @@ function sortAndRankEntries(
 }
 
 function applyTiebreaker(
-  criterion: string,
+  criterion: TiebreakCriterion | string,
   a: RankingListEntry,
   b: RankingListEntry,
   context: TiebreakContext,
 ): number {
+  if (typeof criterion === 'object') return levelPointsCountback(criterion, a, b);
+
   switch (criterion) {
     case 'headToHead': {
       // Only between exactly two tied entries: across three or more, pairwise
@@ -562,4 +565,19 @@ function applyTiebreaker(
     default:
       return 0;
   }
+}
+
+// The first level, in the order given, at which one entry's counting results earned more points than the other's.
+function levelPointsCountback(criterion: LevelPointsCountback, a: RankingListEntry, b: RankingListEntry): number {
+  const { levelPoints = [], eventTypes } = criterion;
+  const pointsAt = (entry: RankingListEntry, level: number) =>
+    entry.countingResults
+      .filter((r) => r.level === level && (!eventTypes?.length || eventTypes.includes(r.eventType)))
+      .reduce((sum, r) => sum + (r.points || 0), 0);
+
+  for (const level of levelPoints) {
+    const difference = pointsAt(b, level) - pointsAt(a, level);
+    if (difference !== 0) return difference;
+  }
+  return 0;
 }

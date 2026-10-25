@@ -84,10 +84,12 @@ default such rows to `'UNSPECIFIED'`. The published CourtHive fixtures declare:
 
 `POLICY_RANKING_POINTS_ITF_JUNIOR` encodes the 2026 ITF World Tennis Tour Juniors Regulations (Reg. 10 and 31):
 the six best singles results plus one quarter of the six best doubles results (the Doubles bucket's
-[`weight`](/docs/scale-engine/aggregation#weight)), with no main draw points until a round is won.
+[`weight`](/docs/scale-engine/aggregation#weight)), with no main draw points until a round is won, round robin group places scored with
+[`groupOrderPoints`](#round-robin-group-places), and ties separated by the Reg. 11 countback (a
+[`levelPoints`](/docs/scale-engine/aggregation#levelpoints-countback) tiebreak).
 `POLICY_RANKING_POINTS_ITF_JUNIOR_2025` keeps the 2025 tables, which differ only in the ITF Junior Finals; use it to
-score 2025 results as they were awarded. The policy file's header lists what neither encodes (the Reg. 11 tiebreak,
-International Team Competition points, round robin group places).
+score 2025 results as they were awarded. The policy file's header lists what neither encodes (the
+better-of-two-editions rule of Reg. 10, International Team Competition points).
 
 The vocabulary intentionally aligns with `TierClassification.system` so a
 tournament's tier-system (`'ATP'`, `'ITF_JUNIOR'`, `'PPA'`, …) lines up with
@@ -272,6 +274,29 @@ awardProfiles: [
 > This is a change: the singular previously scored zero, so a profile narrowed by
 > `drawSize` tied with a catch-all and the tie fell to declaration order. A policy that
 > relied on losing that tie now selects the narrower profile instead.
+
+## Round Robin Group Places
+
+In a round robin to elimination draw the playoffs carry the finishing positions, but a group place can earn points
+of its own. `groupOrderPoints` is keyed by the place within the group (1 = group winner) and read from the round
+robin participation, whatever `finishingPositionPoints.participationOrders` says. A value may require a match won.
+The 2026 ITF Junior J60/J30 format:
+
+```js
+{
+  drawTypes: [ROUND_ROBIN_WITH_PLAYOFF],
+  finishingPositionPoints: { participationOrders: [2] }, // the playoff, from the quarterfinals
+  finishingPositionRanges: { 1: 60, 2: 36, 4: 18, 8: 10 },
+  groupOrderPoints: {
+    2: 5,
+    3: { value: 2, requireWin: true },
+    4: { value: 2, requireWin: true },
+  },
+}
+```
+
+A participant who earns points in more than one participation keeps the larger award, so a group winner is scored by
+the playoff. A group place is read only from a finished group (`groupOrder`, never a provisional order).
 
 ## Position Value Resolution
 

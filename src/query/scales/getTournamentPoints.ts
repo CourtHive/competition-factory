@@ -244,7 +244,13 @@ function resolvePositionPoints({ awardProfile, participation, level, drawSize })
     accessor = participantWon ? 1 : Math.pow(2, participation.finishingRound);
   }
 
-  const { finishingPositionPoints = {}, finishingPositionRanges, finishingRound, flights } = awardProfile;
+  const {
+    finishingPositionPoints = {},
+    finishingPositionRanges,
+    groupOrderPoints,
+    finishingRound,
+    flights,
+  } = awardProfile;
 
   const participationOrders = finishingPositionPoints.participationOrders;
   const isValidOrder = !participationOrders || participationOrders.includes(participationOrder);
@@ -270,6 +276,22 @@ function resolvePositionPoints({ awardProfile, participation, level, drawSize })
     if (valueObj) {
       ({ awardPoints, requireWin: winRequired } = getAwardPoints({
         participantWon,
+        flightNumber,
+        valueObj,
+        drawSize,
+        flights,
+        level,
+      }));
+    }
+  }
+
+  // A round robin group place earns points of its own, independent of finishingPositionPoints.participationOrders:
+  // only the group stage's participation carries a groupOrder.
+  const { groupOrder } = participation;
+  if (!awardPoints && groupOrderPoints && groupOrder) {
+    const valueObj = groupOrderPoints[groupOrder];
+    if (valueObj) {
+      ({ awardPoints, requireWin: winRequired } = getAwardPoints({
         flightNumber,
         valueObj,
         drawSize,
