@@ -5,6 +5,7 @@ import { PlaceVenueRoundsArgs, scheduleVenueRounds, VenueRoundDetails } from './
 import { generateScheduleTimes } from '@Generators/scheduling/utils/generateScheduleTimes';
 import { extractDate, sameDay, timeStringMinutes } from '@Tools/dateTime';
 import { getMatchUpId } from '@Functions/global/extractors';
+import { carryPastMidnight } from './carryPastMidnight';
 import { playedOrderGate } from './playedOrderGate';
 
 // types
@@ -171,6 +172,17 @@ function planDate({
       processNextMatchUps({ matchUpPotentialParticipantIds, matchUpNotBeforeTimes, matchUp });
     }
   }
+
+  // a recovery on the day before that runs past midnight books its participants from 00:00 (§ 9.8)
+  carryPastMidnight({
+    matchUpPotentialParticipantIds,
+    individualParticipantProfiles,
+    matchUpNotBeforeTimes,
+    clearScheduleDates,
+    scheduleDate,
+    view,
+    plan,
+  });
 
   // every matchUp profiled on the date, at any venue: a dependency outside it is not waited for
   const allDateMatchUpIds = datePlan.venues.flatMap((venue) => venue.rounds.flatMap((round) => round.matchUpIds));
