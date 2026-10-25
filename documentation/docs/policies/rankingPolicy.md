@@ -73,13 +73,21 @@ The field is **optional** — policies that don't declare it produce awards with
 `pointsAuthority: undefined`, and downstream consumers (e.g. courthive-rankings)
 default such rows to `'UNSPECIFIED'`. The published CourtHive fixtures declare:
 
-| Policy                             | `pointsAuthority` |
-| ---------------------------------- | ----------------- |
-| `POLICY_RANKING_POINTS_ATP`        | `ATP`             |
-| `POLICY_RANKING_POINTS_WTA`        | `WTA`             |
-| `POLICY_RANKING_POINTS_ITF_WTT`    | `ITF`             |
-| `POLICY_RANKING_POINTS_ITF_JUNIOR` | `ITF_JUNIOR`      |
-| `POLICY_RANKING_POINTS_BASIC`      | _(unset)_         |
+| Policy                                  | `pointsAuthority` |
+| --------------------------------------- | ----------------- |
+| `POLICY_RANKING_POINTS_ATP`             | `ATP`             |
+| `POLICY_RANKING_POINTS_WTA`             | `WTA`             |
+| `POLICY_RANKING_POINTS_ITF_WTT`         | `ITF`             |
+| `POLICY_RANKING_POINTS_ITF_JUNIOR`      | `ITF_JUNIOR`      |
+| `POLICY_RANKING_POINTS_ITF_JUNIOR_2025` | `ITF_JUNIOR`      |
+| `POLICY_RANKING_POINTS_BASIC`           | _(unset)_         |
+
+`POLICY_RANKING_POINTS_ITF_JUNIOR` encodes the 2026 ITF World Tennis Tour Juniors Regulations (Reg. 10 and 31):
+the six best singles results plus one quarter of the six best doubles results (the Doubles bucket's
+[`weight`](/docs/scale-engine/aggregation#weight)), with no main draw points until a round is won.
+`POLICY_RANKING_POINTS_ITF_JUNIOR_2025` keeps the 2025 tables, which differ only in the ITF Junior Finals; use it to
+score 2025 results as they were awarded. The policy file's header lists what neither encodes (the Reg. 11 tiebreak,
+International Team Competition points, round robin group places).
 
 The vocabulary intentionally aligns with `TierClassification.system` so a
 tournament's tier-system (`'ATP'`, `'ITF_JUNIOR'`, `'PPA'`, …) lines up with

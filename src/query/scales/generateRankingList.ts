@@ -420,7 +420,7 @@ function computePersonEntry({
     bucketTotals = {};
 
     for (const [bucketIndex, bucket] of countingBuckets.entries()) {
-      const { eventTypes, maxResultsPerLevel: bucketMaxPerLevel, mandatoryRules } = bucket;
+      const { eventTypes, maxResultsPerLevel: bucketMaxPerLevel, mandatoryRules, weight } = bucket;
 
       // `bucketName` is optional on the policy. Fall back to a positional label
       // so `bucketTotals` never carries an `undefined` key and both views of
@@ -445,6 +445,7 @@ function computePersonEntry({
         bestOfCount: bucketBestOf,
         maxResultsPerLevel: bucketMaxPerLevel,
         mandatoryRules,
+        weight,
       });
 
       totalPoints += subTotal;
