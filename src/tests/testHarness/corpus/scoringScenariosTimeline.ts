@@ -425,7 +425,7 @@ export const TIMELINE_SCENARIOS: TimelineScenario[] = [
  * The refused cells (spec § 8): one format code from each, chosen from the matrix gate's harvest. Each
  * scenario offers a point and a game, both refused, then set totals, accepted.
  */
-export const REFUSED_CELL_CODES = ['SET1-S:O3', 'HAL2A-S:O3', 'INN4XA-S:O3', 'INN4XA-S:O3-M:T50'];
+export const REFUSED_CELL_CODES = ['SET1-S:O3', 'HAL2A-S:O3', 'INN4XA-S:O3', 'INN4XA-S:O3-M:T50', 'SET3XA-S:O3'];
 
 function refusedCellScenario(matchUpFormat: string, cell: string) {
   return scoringEngineScenario({
