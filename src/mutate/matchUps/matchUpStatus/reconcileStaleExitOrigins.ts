@@ -7,6 +7,7 @@ import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { applyWithdrawnExits } from './applyWithdrawnExits';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
+import { settleUnlessIdle } from './indexPrecheck';
 import {
   carriedExitStatus,
   getSideExitProvenance,
@@ -66,15 +67,37 @@ export function reconcileStaleExitOrigins({
   event?: Event;
 }): (ResultType & { rederived?: string[] }) | undefined {
   if (!drawDefinition) return undefined;
-  // the matchUps this reconciliation re-derived from a double exit to a single one: the caller settles those again
-  const rederived: string[] = [];
-
   // `setMatchUpStatus` only carries a `matchUpsMap` in its result context on the exit-propagation
   // path — measured absent on four of five submissions of the P40 sequence, including the one that
   // matters. Building it here rather than trusting the context is what makes the reconciliation run
   // on every mutation; the map is a view over the same stored matchUps, so writes through it land.
   const resolvedMap = matchUpsMap?.drawMatchUps?.length ? matchUpsMap : getMatchUpsMap({ drawDefinition });
   if (!resolvedMap?.drawMatchUps?.length) return undefined;
+
+  // nothing stale on the structural index: the relays' hydration would find the same, and write nothing
+  return settleUnlessIdle({
+    detect: (inContextDrawMatchUps) =>
+      hasStaleExitOrigins({ inContextDrawMatchUps, drawDefinition, matchUpsMap: resolvedMap }),
+    run: () => withdrawStaleExits({ tournamentRecord, drawDefinition, matchUpsMap: resolvedMap, event }),
+    site: 'reconcileStaleExitOrigins',
+    idle: undefined,
+    drawDefinition,
+  });
+}
+
+function withdrawStaleExits({
+  tournamentRecord,
+  drawDefinition,
+  matchUpsMap: resolvedMap,
+  event,
+}: {
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+  event?: Event;
+}): (ResultType & { rederived?: string[] }) | undefined {
+  // the matchUps this reconciliation re-derived from a double exit to a single one: the caller settles those again
+  const rederived: string[] = [];
 
   // the chain cannot be longer than the draw, so this is a fixpoint with a structural bound rather
   // than a `while (true)` that trusts the data to terminate
