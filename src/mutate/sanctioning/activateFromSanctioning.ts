@@ -14,6 +14,7 @@ import type {
   SanctioningPolicy,
   ComplianceRecord,
   ComplianceItem,
+  FacilityTransitProposal,
   VenueProposal,
   EventProposal,
 } from '@Types/sanctioningTypes';
@@ -21,6 +22,7 @@ import type {
   SanctioningAuthority,
   TournamentSanction,
   UnifiedEventID,
+  VenueTransitEntry,
   Tournament,
   Venue,
   Event,
@@ -389,5 +391,50 @@ export function activateFromSanctioning({
     sanctioningRecord.compliance = compliance;
   }
 
-  return { ...SUCCESS, tournamentRecord };
+  // --- Sanctioned transit, by facility, onto the activated venues ---
+  const { venueTransits, unresolvedTransits } = sanctionedTransits(
+    proposal.venueTransits,
+    tournamentRecord.venues ?? [],
+    sanctioningRecord.sanctioningId,
+  );
+  if (venueTransits.length) tournamentRecord.scheduling = { ...tournamentRecord.scheduling, venueTransits };
+
+  return { ...SUCCESS, tournamentRecord, ...(unresolvedTransits.length ? { unresolvedTransits } : {}) };
+}
+
+/**
+ * The proposal's transit, keyed by facility, as venue pairs (scheduling-pipeline.md § 3.4): every pair of a venue of the
+ * one facility and a venue of the other, each a sanctioned floor (CA 2026-10-25). A facility no activated venue carries
+ * resolves to nothing and is reported, never dropped silently; a pair within one facility needs no transit.
+ */
+function sanctionedTransits(
+  proposed: FacilityTransitProposal[] | undefined,
+  venues: Venue[],
+  sanctioningId: string,
+): { venueTransits: VenueTransitEntry[]; unresolvedTransits: FacilityTransitProposal[] } {
+  const venueTransits: VenueTransitEntry[] = [];
+  const unresolvedTransits: FacilityTransitProposal[] = [];
+  const venueIdsOf = (facilityId: string) =>
+    venues.filter((venue) => venue.facilityId === facilityId).map(({ venueId }) => venueId);
+  for (const transit of proposed ?? []) {
+    const [from, to] = transit.facilityIds ?? [];
+    const fromVenueIds = from ? venueIdsOf(from) : [];
+    const toVenueIds = to ? venueIdsOf(to) : [];
+    const valid = Number.isInteger(transit.minutes) && transit.minutes >= 0 && from !== to;
+    if (!valid || !fromVenueIds.length || !toVenueIds.length) {
+      unresolvedTransits.push(transit);
+      continue;
+    }
+    for (const fromVenueId of fromVenueIds) {
+      for (const toVenueId of toVenueIds) {
+        venueTransits.push({
+          venueIds: [fromVenueId, toVenueId],
+          minutes: transit.minutes,
+          ...(transit.oneWay ? { oneWay: true } : {}),
+          sanctioned: { minutes: transit.minutes, sanctioningId },
+        });
+      }
+    }
+  }
+  return { venueTransits, unresolvedTransits };
 }
