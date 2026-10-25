@@ -3,6 +3,7 @@ import { calculatePeriodLength } from '@Generators/scheduling/utils/calculatePer
 import { generateVirtualCourts } from '@Generators/scheduling/utils/generateVirtualCourts';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getCourtsAvailableAtPeriodStart } from './getCourtsAvailableAtPeriodStart';
+import { getDateTimeBoundary } from '@Generators/scheduling/utils/getTimeBoundary';
 import { courtGenerator } from '@Assemblies/generators/scheduling/courtGenerator';
 import { getFirstTimeSlotStartTime } from './getFirstTimeSlotStartTime';
 import { generateRange } from '@Tools/arrays';
@@ -21,7 +22,11 @@ export function getScheduleTimes(params): ResultType & {
   const paramsCheck = checkRequiredParameters(params, [{ courts: true, _ofType: ARRAY }]);
   if (paramsCheck.error) return paramsCheck;
 
-  let { date = getUTCdateString(), startTime = '08:00', endTime = '19:00', periodLength, courts } = params;
+  let { date = getUTCdateString(), startTime, endTime, periodLength, courts } = params;
+  // the day runs from the courts' earliest opening to their latest closing on the date, unless the caller bounds it
+  startTime = startTime ?? getDateTimeBoundary({ courts, scheduleDate: extractDate(date), startTime: true });
+  endTime = endTime ?? getDateTimeBoundary({ courts, scheduleDate: extractDate(date), endTime: true });
+  if (!startTime || !endTime) return { scheduleTimes: [], timingProfile: [], totalMatchUps: 0 };
 
   const {
     calculateStartTimeFromCourts = true,
@@ -118,13 +123,13 @@ export function getScheduleTimes(params): ResultType & {
     const matchesCalculation = accumulatedTime / averageMatchUpMinutes;
     const calculatedTotal = period ? matchesCalculation * (period - 1) + averageCourts : averageCourts;
 
-    // used to increment cumulativeMatches
-    // difference between current calculation and previous calculation
-    // if no available courts then Zero so that cumulativeMatches does not increase
-    // if available courts but no previously available courts then newCourts;
-    const calculationDifference = !availableToScheduleCount
-      ? 0
-      : (previousAvailableCourts && calculatedTotal - previousCalculation) || newCourts;
+    // what the period adds to cumulativeMatches: nothing with no courts available; the newly available courts after a
+    // period with none (an opening, or a reopening after a closure); otherwise the change in the calculated total. This
+    // read `(previous && difference) || newCourts`, so a difference of exactly 0 added the new courts instead.
+    let calculationDifference = 0;
+    if (availableToScheduleCount) {
+      calculationDifference = previousAvailableCourts ? calculatedTotal - previousCalculation : newCourts;
+    }
 
     previousCalculation = calculatedTotal;
     previousAvailableCourts = availableToScheduleCount;

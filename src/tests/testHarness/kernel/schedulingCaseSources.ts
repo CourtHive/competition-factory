@@ -464,6 +464,41 @@ export const schedulingCaseSources: Source[] = [
       expectEqual([timeOf(plan, ids['R1.1']), timeOf(plan, ids['R2.1'])], ['10:00', '12:30'], 'both rounds on day 2');
     },
   },
+  {
+    caseId: 'scheduling.plan.venue-turn-is-its-open-courts.v1',
+    note:
+      'Two venues (6 courts and 1) share one field of 16 players across two draws, their rounds profiled at both. A ' +
+      "venue's turn ends once it has placed as many matchUps as it has courts open on the date (CA 2026-10-25); it ran " +
+      'to one more, counting every court of the venue. The turns decide which venue reaches a shared player first: ' +
+      '17 matchUps are timed, not 16.',
+    build: () => {
+      const venues = [0, 1].map((index) => ({ venueId: `venue-${index}`, rounds: [] as any[] }));
+      for (const [draw, roundNumber, venue] of [
+        [0, 1, 0],
+        [1, 1, 1],
+        [0, 2, 1],
+        [1, 2, 0],
+      ])
+        venues[venue].rounds.push({ drawId: `draw-${draw}`, roundNumber });
+      mocksEngine.generateTournamentRecord({
+        venueProfiles: [6, 1].map((courtsCount, index) => ({
+          venueId: `venue-${index}`,
+          startTime: '08:00',
+          endTime: '20:00',
+          courtsCount,
+        })),
+        drawProfiles: [0, 1].map((draw) => ({ drawId: `draw-${draw}`, drawSize: 16, uniqueParticipants: false })),
+        schedulingProfile: [{ scheduleDate: DAYS[0], venues }],
+        participantsProfile: { participantsCount: 16 },
+        startDate: DAYS[0],
+        endDate: DAYS[0],
+        setState: true,
+      });
+    },
+    claims: (plan) => {
+      expectEqual(plan.scheduledMatchUpIds[DAYS[0]].length, 17, 'matchUps timed');
+    },
+  },
 ];
 
 /**
