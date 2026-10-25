@@ -18,6 +18,7 @@ import { assignMatchUpCourt } from '@Mutate/matchUps/schedule/assignMatchUpCourt
 import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
 import { findDrawDefinition } from '@Acquire/findDrawDefinition';
 import { getMatchUpId } from '@Functions/global/extractors';
+import { endOnTheDay } from '@Tools/civilDateTime';
 import { nowMs } from '@Tools/clock';
 
 // constants and types
@@ -265,7 +266,8 @@ function tryScheduleMatchUp({
     matchUpScheduleCourtIds[matchUpId] = courtId;
 
     const startTime = scheduleTime;
-    const endTime = addMinutesToTimeString(startTime, averageMatchUpMinutes);
+    // a booking that would end past midnight holds its court to the end of its day (scheduling-pipeline.md § 9.8)
+    const { endTime } = endOnTheDay(startTime, averageMatchUpMinutes);
     const booking = {
       averageMatchUpMinutes,
       recoveryMinutes,

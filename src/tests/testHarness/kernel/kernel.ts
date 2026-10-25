@@ -11,6 +11,7 @@
 import { planningViewFromData, requiredPlanningViewKeys } from '@Mutate/matchUps/schedule/pipeline/viewCodec';
 import { dayMinutesToTimeString, extractTime, tidyTime, timeStringMinutes } from '@Tools/plainTime';
 import { addMinutesWithinDay } from '@Mutate/matchUps/schedule/scheduleMatchUps/timeWithinDay';
+import { addMinutesToDateTime, endOnTheDay } from '@Tools/civilDateTime';
 import { planSchedule } from '@Mutate/matchUps/schedule/pipeline/plan';
 import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
 import { stringify } from '@Helpers/matchUpFormatCode/stringify';
@@ -141,6 +142,19 @@ const clockOperations: Record<string, KernelOperation> = {
     capability: 'clock',
     validate: (input) => isText(input, 'time') ?? isMinutes(input),
     run: (input) => ({ kind: 'value', value: addMinutesToTimeString(input.time, input.minutes) }),
+  },
+  'kernel.time.endOnTheDay@1': {
+    capability: 'clock',
+    validate: (input) => isText(input, 'time') ?? isMinutes(input),
+    run: (input) => ({ kind: 'value', value: endOnTheDay(input.time, input.minutes as number) }),
+  },
+  'kernel.civil.addMinutes@1': {
+    capability: 'clock',
+    validate: (input) => isText(input, 'date') ?? isText(input, 'time') ?? isMinutes(input),
+    run: (input) => {
+      const result = addMinutesToDateTime({ date: input.date, time: input.time, minutes: input.minutes as number });
+      return result ? { kind: 'value', value: result } : { kind: 'error', code: 'NOT_A_DATE_TIME' };
+    },
   },
   'kernel.date.extract@1': {
     capability: 'clock',
