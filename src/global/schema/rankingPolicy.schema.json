@@ -541,6 +541,11 @@
           "description": "Which PointAward components to sum. If omitted, sums total points."
         },
         "bestOfCount": { "type": "number", "description": "How many best results to count (0 or undefined = all)" },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Multiplier on the bucket total after selection (default 1; ITF Junior doubles: 0.25)"
+        },
         "maxResultsPerLevel": { "type": "object", "additionalProperties": { "type": "number" } },
         "minResults": { "type": "number", "description": "Minimum results in this bucket required" },
         "levels": {

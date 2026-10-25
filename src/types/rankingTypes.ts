@@ -570,6 +570,13 @@ export interface CountingBucket {
   /** How many best results to count from this bucket (0 or undefined = all) */
   bestOfCount?: number;
 
+  /**
+   * Multiplier applied to the bucket's total after its counting results are selected (default 1). The ITF Junior
+   * combined ranking counts one quarter of the six best doubles results: `weight: 0.25`. The awards keep their own
+   * points; `bucketTotal` and the ranking total carry the weighted value.
+   */
+  weight?: number;
+
   /** Max results from a single tournament level within this bucket */
   maxResultsPerLevel?: Record<number, number>;
 

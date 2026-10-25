@@ -11,6 +11,7 @@ type ProcessBucketResultsArgs = {
   bestOfCount: number;
   maxResultsPerLevel?: Record<number, number>;
   mandatoryRules?: MandatoryRule[];
+  weight?: number;
 };
 
 export function processBucketResults({
@@ -19,6 +20,7 @@ export function processBucketResults({
   bestOfCount,
   maxResultsPerLevel,
   mandatoryRules,
+  weight,
 }: ProcessBucketResultsArgs): {
   counting: ScoredAward[];
   dropped: ScoredAward[];
@@ -69,7 +71,10 @@ export function processBucketResults({
 
   // 4. Mandatory selection + optional fill
   if (mandatoryRules?.length) {
-    return withAdditive(processMandatory(capped, levelDropped, bestOfCount, mandatoryRules), additive);
+    return weighted(
+      withAdditive(processMandatory(capped, levelDropped, bestOfCount, mandatoryRules), additive),
+      weight,
+    );
   }
 
   // No mandatory rules — standard bestOfCount
@@ -77,7 +82,20 @@ export function processBucketResults({
   const dropped = [...(bestOfCount > 0 ? capped.slice(bestOfCount) : []), ...levelDropped];
   const bucketTotal = counting.reduce((sum, sa) => sum + sa.value, 0);
 
-  return withAdditive({ counting, dropped, bucketTotal }, additive);
+  return weighted(withAdditive({ counting, dropped, bucketTotal }, additive), weight);
+}
+
+/**
+ * Scale the bucket's total by its policy weight (ITF Junior counts a quarter of the six best doubles results).
+ * Selection is by unweighted value, so a uniform weight cannot change which results count; the awards keep their
+ * own points and only the total is scaled.
+ */
+function weighted(
+  result: { counting: ScoredAward[]; dropped: ScoredAward[]; bucketTotal: number },
+  weight: number | undefined,
+): { counting: ScoredAward[]; dropped: ScoredAward[]; bucketTotal: number } {
+  if (weight === undefined || weight === 1) return result;
+  return { ...result, bucketTotal: result.bucketTotal * weight };
 }
 
 /**

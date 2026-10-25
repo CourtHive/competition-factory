@@ -121,6 +121,18 @@ The `pointComponents` array specifies which fields on each award to sum for the 
 - `0` — Count all results (no limit)
 - `N > 0` — Count only the best N results; remaining are dropped
 
+### weight
+
+A multiplier on the bucket's total, applied after its counting results are selected (default `1`). The ITF Junior
+combined ranking counts the six best singles results plus one quarter of the six best doubles results:
+
+```js
+{ bucketName: 'Doubles', eventTypes: [DOUBLES], bestOfCount: 6, weight: 0.25 }
+```
+
+Selection uses each award's own points, so a weight never changes which results count. The awards keep their own
+points; the bucket's `bucketTotal` and the participant's `totalPoints` carry the weighted value.
+
 ### maxResultsPerLevel
 
 Limits how many results from a specific tournament level count toward the bucket:
