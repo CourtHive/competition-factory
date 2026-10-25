@@ -14,6 +14,7 @@ import { extractDate, isValidDateString } from '@Tools/dateTime';
 import { isConvertableInteger, isPowerOf2 } from '@Tools/math';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { filterMatchUps } from '@Query/filterMatchUps';
+import { addDaysToDate } from '@Tools/civilDateTime';
 import { findEvent } from '@Acquire/findEvent';
 
 // constants and types
@@ -304,13 +305,18 @@ export function buildSchedulingView({
   };
 }
 
-/** the minutes of every matchUp already timed on a planned date, from its own format and event */
+/**
+ * The minutes of every matchUp already timed on a planned date or on the day before one, from its own format and event:
+ * a recovery on the day before that runs past midnight carries into the planned date (§ 9.8)
+ */
 function timedMinutesOf(
   hydrated: HydratedMatchUp[],
   dates: DatePlan[],
   tournamentRecords: { [tournamentId: string]: Tournament },
 ) {
-  const planned = new Set(dates.map(({ scheduleDate }) => scheduleDate));
+  const planned = new Set(
+    dates.flatMap(({ scheduleDate }) => [scheduleDate, addDaysToDate(scheduleDate, -1) ?? scheduleDate]),
+  );
   const memo = new Map<string, Minutes | undefined>();
   const timedMinutes: PlanningView['timedMinutes'] = {};
   for (const matchUp of hydrated) {
@@ -318,8 +324,8 @@ function timedMinutesOf(
     if (!scheduledTime || !planned.has(extractDate(scheduledDate))) continue;
     const minutes = timedMatchUpMinutes({ tournamentRecords, matchUp, memo });
     if (minutes) {
-      const { recoveryMinutes, typeChangeRecoveryMinutes } = minutes;
-      timedMinutes[matchUp.matchUpId] = { recoveryMinutes, typeChangeRecoveryMinutes };
+      const { averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes } = minutes;
+      timedMinutes[matchUp.matchUpId] = { averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes };
     }
   }
   return timedMinutes;

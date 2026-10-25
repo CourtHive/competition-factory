@@ -39,7 +39,7 @@ type ProcessAlreadyScheduledMatchUpsArgs = {
  * participants were free again the moment its average minutes ran out (C1, SCHEDULING_PIPELINE_VNEXT.md § 5). Such a
  * matchUp's minutes come from its own format and event.
  */
-export type Minutes = { recoveryMinutes?: number; typeChangeRecoveryMinutes?: number };
+export type Minutes = { averageMinutes?: number; recoveryMinutes?: number; typeChangeRecoveryMinutes?: number };
 function alreadyScheduledMinutes({
   tournamentRecords,
   timedMinutes,
