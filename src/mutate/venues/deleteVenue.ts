@@ -54,7 +54,7 @@ export function deleteVenue(params: DeleteVenueArgs): {
   })?.appliedPolicies;
 
   const allowModificationWhenMatchUpsScheduled =
-    force ?? appliedPolicies?.[POLICY_TYPE_SCHEDULING]?.allowDeletionWithScoresPresent?.venues;
+    force ?? appliedPolicies?.[POLICY_TYPE_SCHEDULING]?.allowModificationWhenMatchUpsScheduled?.venues;
 
   if (!matchUpsToUnschedule.length || allowModificationWhenMatchUpsScheduled) {
     for (const tournamentRecord of Object.values(tournamentRecords)) {

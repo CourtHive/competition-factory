@@ -66,7 +66,7 @@ export function modifyCourtAvailability({
     })?.appliedPolicies;
 
     const allowModificationWhenMatchUpsScheduled =
-      force ?? appliedPolicies?.[POLICY_TYPE_SCHEDULING]?.allowDeletionWithScoresPresent?.courts;
+      force ?? appliedPolicies?.[POLICY_TYPE_SCHEDULING]?.allowModificationWhenMatchUpsScheduled?.courts;
 
     // Check each scheduled matchUp against the new availability windows.
     // Completed matchUps are historical — their schedule reflects what
