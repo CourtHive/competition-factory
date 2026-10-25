@@ -15,7 +15,8 @@
  * needs an offset or an absolute moment — `timeZone` / `zonedDateTime`.
  */
 
-import { dateValidation, validDateString } from '@Validators/regex';
+import { canonicalDate } from '@Tools/canonicalClock';
+import { dateValidation } from '@Validators/regex';
 import { isDate } from '@Tools/dateTimeInternals';
 import { now } from '@Tools/clock';
 
@@ -28,13 +29,21 @@ export function isISODateString(dateString) {
   return re.test(dateString);
 }
 
+const DAY_SHAPE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Whether a value is a real calendar date, `YYYY-MM-DD` or an ISO date-time's date (`canonicalClock.ts`). */
 export function isValidDateString(scheduleDate) {
-  return isISODateString(scheduleDate) || validDateString.test(scheduleDate);
+  return canonicalDate(scheduleDate) !== undefined;
 }
 
-/** The calendar-day part of an ISO string, discarding any time and any zone designator. */
+/**
+ * The calendar-day part of an ISO string, discarding any time and any zone designator; '' when the day is not on the
+ * calendar (`2026-02-30`).
+ */
 export function extractDate(dateString): string {
-  return isISODateString(dateString) || dateValidation.test(dateString) ? dateString.split('T')[0] : '';
+  if (!(isISODateString(dateString) || dateValidation.test(dateString))) return '';
+  const day = dateString.split('T')[0];
+  return DAY_SHAPE.test(day) && !canonicalDate(day) ? '' : day;
 }
 
 export function formatDate(date?, separator = '-', format = 'YMD'): string {

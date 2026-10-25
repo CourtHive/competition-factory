@@ -45,7 +45,7 @@ export function modifyCourtAvailability({
   const dateResult = validDateAvailability({ dateAvailability });
   if (dateResult.error) return dateResult;
 
-  const { updatedDateAvailability, totalMergeCount } = sortAndMergeDateAvailability(dateAvailability);
+  const { updatedDateAvailability, totalMergeCount } = sortAndMergeDateAvailability(dateResult.canonicalAvailability);
   dateAvailability = updatedDateAvailability;
 
   const courtResult = findCourt({ tournamentRecord, courtId });

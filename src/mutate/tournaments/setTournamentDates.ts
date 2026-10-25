@@ -7,8 +7,8 @@ import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { isValidWeekdaysValue } from '@Validators/isValidWeekdaysValue';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { addNotice } from '@Global/state/globalState';
+import { canonicalDate } from '@Tools/canonicalClock';
 import { generateDateRange } from '@Tools/dateTime';
-import { dateValidation } from '@Validators/regex';
 
 // constants and types
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
@@ -60,13 +60,13 @@ export function setTournamentDates(params: SetTournamentDatesArgs): ResultType &
   const paramsCheck = checkRequiredParameters(params, [
     { tournamentRecord: true },
     {
-      [VALIDATE]: (value) => dateValidation.test(value),
+      [VALIDATE]: (value) => !!canonicalDate(value),
       [INVALID]: INVALID_DATE,
       startDate: false,
       endDate: false,
     },
     {
-      [VALIDATE]: (value) => value.filter(Boolean).every((d) => dateValidation.test(d)),
+      [VALIDATE]: (value) => value.filter(Boolean).every((d) => !!canonicalDate(d)),
       [INVALID]: INVALID_DATE,
       activeDates: false,
     },

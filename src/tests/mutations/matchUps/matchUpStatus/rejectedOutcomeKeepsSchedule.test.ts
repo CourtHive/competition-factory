@@ -3,7 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // constants
-import { CANNOT_CHANGE_WINNING_SIDE, INVALID_TIME } from '@Constants/errorConditionConstants';
+import { CANNOT_CHANGE_WINNING_SIDE, INVALID_DATE, INVALID_TIME } from '@Constants/errorConditionConstants';
 
 /**
  * A REFUSED `setMatchUpStatus` must not leave the `schedule` it was given.
@@ -73,10 +73,11 @@ const LOSING_OUTCOME = {
 
 it('leaves the schedule untouched when the outcome is refused', () => {
   const { drawId, matchUpId, scheduleOf } = scenario();
+  const { startDate } = tournamentEngine.getTournament().tournamentRecord;
   expect(scheduleOf().scheduledTime).toBeUndefined();
 
   const result: any = tournamentEngine.setMatchUpStatus({
-    schedule: { scheduledTime: '2026-09-23T08:00', courtOrder: 3 },
+    schedule: { scheduledTime: `${startDate}T08:00`, courtOrder: 3 },
     outcome: LOSING_OUTCOME,
     matchUpId,
     drawId,
@@ -92,9 +93,10 @@ it('leaves the schedule untouched when the outcome is refused', () => {
 
 it('still applies the schedule when the outcome is accepted', () => {
   const { drawId, matchUpId, scheduleOf } = scenario();
+  const { startDate } = tournamentEngine.getTournament().tournamentRecord;
 
   const result: any = tournamentEngine.setMatchUpStatus({
-    schedule: { scheduledTime: '2026-09-23T08:00', courtOrder: 3 },
+    schedule: { scheduledTime: `${startDate}T08:00`, courtOrder: 3 },
     outcome: { winningSide: 1, score: { sets: WINNING_SETS } },
     matchUpId,
     drawId,
@@ -102,8 +104,26 @@ it('still applies the schedule when the outcome is accepted', () => {
 
   expect(result.error).toBeUndefined();
   const after = scheduleOf();
-  expect(after.scheduledTime).toEqual('2026-09-23T08:00');
+  // the date-time is stored apart, the time as HH:MM (scheduling-pipeline.md § 9.9)
+  expect(after.scheduledTime).toEqual('08:00');
+  expect(after.scheduledDate).toEqual(startDate);
   expect(after.courtOrder).toEqual(3);
+});
+
+it('refuses a date-time outside the tournament before the outcome it accompanied lands', () => {
+  const { drawId, matchUpId, scheduleOf } = scenario();
+
+  const result: any = tournamentEngine.setMatchUpStatus({
+    schedule: { scheduledTime: '1999-01-01T08:00' },
+    outcome: { winningSide: 1, score: { sets: WINNING_SETS } },
+    matchUpId,
+    drawId,
+  });
+
+  expect(result.error).toEqual(INVALID_DATE);
+  expect(scheduleOf().scheduledTime).toBeUndefined();
+  const matchUp: any = tournamentEngine.allTournamentMatchUps().matchUps.find((m: any) => m.matchUpId === matchUpId);
+  expect(matchUp.score?.scoreStringSide1).toEqual('6-1 6-1');
 });
 
 /**

@@ -157,28 +157,26 @@ describe('negative controls: the cases reject a wrong implementation', () => {
   const scoring = scoringCases as KernelCase[];
   const grammar = grammarCases as KernelCase[];
 
-  it('a stricter clock (trimmed, suffixes dropped) fails exactly the cases that pin the lenient readings', () => {
+  it('a lenient clock (anything that starts like a time, kept as written) fails exactly the cases § 9.9 refuses', () => {
     const tidy = kernelOperations['kernel.time.tidy@1'];
-    const strict: KernelOperation = {
+    const lenient: KernelOperation = {
       ...tidy,
       run: (input) => {
         const result = tidy.run(input);
-        if (result.kind !== 'value') return result;
-        return {
-          kind: 'value',
-          value: String(result.value)
-            .trim()
-            .replace(/[^\d:].*$/, '')
-            .padStart(5, '0'),
-        };
+        const time = String(input.time);
+        return result.kind === 'error' && /^\s*-?\d+:\d/.test(time) ? { kind: 'value', value: time } : result;
       },
     };
-    const wrong = directAdapter({ ...kernelOperations, 'kernel.time.tidy@1': strict });
+    const wrong = directAdapter({ ...kernelOperations, 'kernel.time.tidy@1': lenient });
     expect(failures(wrong, time).map((c) => c.caseId)).toEqual([
-      'clock.tidy.negative-hour.v1',
-      'clock.tidy.zulu-kept-verbatim.v1',
-      'clock.tidy.leading-space-kept.v1',
-      'clock.tidy.meridiem-kept.v1',
+      'clock.tidy.single-digit-minute.v2',
+      'clock.tidy.sixty-minutes.v2',
+      'clock.tidy.negative-hour.v2',
+      'clock.tidy.zulu-refused.v2',
+      'clock.tidy.leading-space-refused.v2',
+      'clock.tidy.meridiem-out-of-range.v1',
+      'clock.tidy.trailing-text.v1',
+      'clock.tidy.hour-24.v1',
     ]);
   });
 

@@ -8,6 +8,7 @@ import venueTemplate from '@Assemblies/generators/templates/venueTemplate';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { clearPrimaryVenue } from './clearPrimaryVenue';
+import { canonicalTime } from '@Tools/canonicalClock';
 import { addNotice } from '@Global/state/globalState';
 import { findVenue } from '@Query/venues/findVenue';
 import { modifyVenueNotice } from './venueNotices';
@@ -220,6 +221,8 @@ export function venueModify({ tournamentRecord, modifications, venueId, force }:
   }
 
   validReplacementAttributes.forEach((attribute) => Object.assign(venue, { [attribute]: modifications[attribute] }));
+  if (modStartTime) venue.defaultStartTime = canonicalTime(modStartTime);
+  if (modEndTime) venue.defaultEndTime = canonicalTime(modEndTime);
 
   // Handle isPrimary modifications; a venue that loses its primary flag to this one is modified too
   let clearedPrimaryVenues: Venue[] = [];
@@ -237,8 +240,10 @@ export function venueModify({ tournamentRecord, modifications, venueId, force }:
     if (Array.isArray(modifications.dateAvailability) && modifications.dateAvailability.length) {
       const result = validDateAvailability({ dateAvailability: modifications.dateAvailability });
       if (result.error) return result;
+      venue.dateAvailability = result.canonicalAvailability;
+    } else {
+      venue.dateAvailability = modifications.dateAvailability;
     }
-    venue.dateAvailability = modifications.dateAvailability;
   }
 
   // Handle court deletions
