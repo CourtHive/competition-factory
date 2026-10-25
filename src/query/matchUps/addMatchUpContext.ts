@@ -457,7 +457,7 @@ export function addMatchUpContext({
   return matchUpWithContext;
 }
 
-function annotateScoreSets(matchUpWithContext, matchUpFormat) {
+export function annotateScoreSets(matchUpWithContext, matchUpFormat) {
   const parsedFormat = parse(matchUpFormat);
   const { bestOf, finalSetFormat, setFormat } = parsedFormat ?? {};
   if (!finalSetFormat?.tiebreakSet && !setFormat?.tiebreakSet && !setFormat?.timed) return;
@@ -488,9 +488,10 @@ function annotateScoreSets(matchUpWithContext, matchUpFormat) {
     });
 }
 
-function buildMatchUpSides({
+export function buildMatchUpSides({
   sourceDrawPositionRoundRanges,
   collectionAssignmentDetail,
+  assignmentsByPosition = undefined as Map<number, PositionAssignment> | undefined,
   positionAssignments,
   seedAssignments,
   drawPositions,
@@ -521,6 +522,7 @@ function buildMatchUpSides({
 
     const side = getSide({
       ...collectionAssignmentDetail,
+      assignmentsByPosition,
       positionAssignments,
       hasFedDrawPosition,
       displaySideNumber,

@@ -3,7 +3,10 @@ import { carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProven
 import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { PREDICTED_CALL, predictSettleWork, type SettleSite } from './settleWork';
 import { compareNotices, compareShadow, plannedNotices } from './shadow';
+import { buildStructuralIndex } from '@Query/matchUps/structuralIndex';
+import { addGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
 import { convergence, isRelabel, planDirection } from './direction';
+import { compareIndex, type IndexComparison } from './indexOracle';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { positionTargets } from '@Query/matchUp/positionTargets';
@@ -60,6 +63,8 @@ export function decideOutcomeV2(args: BuildViewArgs): {
 
   if (mode === OUTCOME_PIPELINE_V2 && refusal) return { refused: toResult(refusal) };
   if (mode !== OUTCOME_PIPELINE_DIFFERENTIAL) return {};
+  // § 3.1.1's index oracle, read before v1 writes: the index of the draw as the call found it against the view's hydration
+  const indexed = indexOracle(args, view);
 
   // S2b: the route and the write on this matchUp, planned BEFORE v1 runs, checked against it after
   // TEAM auto-calc: a dual whose result is computed from its lines takes the PROJECTED winner and score in
@@ -116,6 +121,13 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   };
 
   function compareWithV1(v1Result: ResultType) {
+    if (indexed && !indexed.equal)
+      throw new OutcomePipelineDivergence({
+        matchUpId: args.request.matchUpId,
+        v1: `hydrated ${indexed.matchUpId} ${indexed.field} = ${indexed.hydrated}`,
+        v2: `index:${indexed.field} ${indexed.matchUpId} = ${indexed.index}`,
+      });
+    differentialTally('index', indexed ? 'compared' : 'deferred');
     const comparison = compareDecisions(refusal, v1Result?.error?.code);
     if (!comparison.agree)
       throw new OutcomePipelineDivergence({
@@ -708,4 +720,28 @@ function workingViewAfter({
   recordSettleEvent({ kind: 'predicted', site: PREDICTED_CALL });
   for (const site of settle) recordSettleEvent({ kind: 'predicted', site });
   return { matchUps: structuredClone(working.inContextDrawMatchUps), settle };
+}
+
+/**
+ * THE INDEX ORACLE (§ 3.1.1, S2): the structural index of the draw as the call found it, against the view's hydration
+ * of the same draw, on every field the outcome logic reads. Taken with the view's own step on a draw stored without its
+ * edges (`addGoesTo`, onto the index as the view takes it onto its hydration). Undefined for a draw the index does not
+ * yet cover (TEAM), which the tally counts as deferred.
+ */
+function indexOracle(args: BuildViewArgs, view: OutcomeView): IndexComparison | undefined {
+  if (!args.drawDefinition || !view.inContextDrawMatchUps) return undefined;
+  const index = buildStructuralIndex({
+    tournamentRecord: args.tournamentRecord,
+    drawDefinition: args.drawDefinition,
+    event: args.event,
+  });
+  if (index.unsupported) return undefined;
+  if (!hasStoredGoesTo({ drawDefinition: args.drawDefinition }))
+    addGoesTo({
+      inContextDrawMatchUps: index.matchUps,
+      drawDefinition: args.drawDefinition,
+      matchUpsMap: args.matchUpsMap,
+      inContextOnly: true,
+    });
+  return compareIndex({ hydrated: view.inContextDrawMatchUps, index: index.matchUps })[0] ?? { equal: true };
 }

@@ -5,6 +5,7 @@ import { HydratedSide } from '@Types/hydrated';
 export function getSide({
   drawPositionCollectionAssignment,
   sideNumberCollectionAssignment,
+  assignmentsByPosition,
   positionAssignments,
   hasFedDrawPosition,
   displaySideNumber,
@@ -13,6 +14,8 @@ export function getSide({
   sideNumber,
 }: {
   positionAssignments: PositionAssignment[];
+  /** `positionAssignments` by drawPosition, the first assignment of each, built once by a caller that joins many sides */
+  assignmentsByPosition?: Map<number, PositionAssignment>;
   drawPositionCollectionAssignment?: any;
   sideNumberCollectionAssignment?: any;
   seedAssignments?: SeedAssignment[];
@@ -21,9 +24,10 @@ export function getSide({
   drawPosition?: number;
   sideNumber: number;
 }) {
-  const assignment = positionAssignments.find(
-    (assignment) => assignment.drawPosition && assignment.drawPosition === drawPosition,
-  );
+  const mapped = drawPosition ? assignmentsByPosition?.get(drawPosition) : undefined;
+  const assignment = assignmentsByPosition
+    ? mapped
+    : positionAssignments.find((assignment) => assignment.drawPosition && assignment.drawPosition === drawPosition);
   const dpc = drawPosition && drawPositionCollectionAssignment;
   const snc = sideNumber && sideNumberCollectionAssignment;
   const participantId = dpc ? dpc[drawPosition]?.participantId : assignment?.participantId;

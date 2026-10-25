@@ -1,6 +1,5 @@
 import { ensureInt } from '@Tools/ensureInt';
 import { numericSort } from '@Tools/sorting';
-import { overlap } from '@Tools/arrays';
 
 // types
 import { RoundProfile } from '@Types/factoryTypes';
@@ -23,6 +22,31 @@ type GetOrderedDrawPositionsArgs = {
  */
 const isDrawPosition = (position: unknown): boolean =>
   position !== undefined && position !== null && !Number.isNaN(ensureInt(position));
+
+/**
+ * THE FIRST PAIR HOLDING ANY OF `drawPositions`, as `pairs.find((pair) => overlap(pair, drawPositions))` answers it, by
+ * an index built once per round profile's `pairedDrawPositions` array. Hydration asks this of every matchUp in a
+ * round, so the scan made sides quadratic in the round's size (SE 256: 0.82 ms of a 1.5 ms structural index). Keyed by
+ * the array's identity: a round profile is built per hydration and never written after.
+ */
+const pairIndexes = new WeakMap<object, Map<unknown, number>>();
+function pairHolding(pairs: (number | undefined)[][] | undefined, drawPositions: unknown[]) {
+  if (!pairs) return undefined;
+  let index = pairIndexes.get(pairs);
+  if (!index) {
+    index = new Map();
+    pairs.forEach((pair, i) => {
+      for (const position of pair ?? []) if (!index?.has(position)) index?.set(position, i);
+    });
+    pairIndexes.set(pairs, index);
+  }
+  let first: number | undefined;
+  for (const position of drawPositions) {
+    const i = index.get(position);
+    if (i !== undefined && (first === undefined || i < first)) first = i;
+  }
+  return first === undefined ? undefined : pairs[first];
+}
 
 export function getOrderedDrawPositions({ drawPositions, roundProfile, roundNumber }: GetOrderedDrawPositionsArgs) {
   const unassignedDrawPositions = [undefined, undefined];
@@ -49,8 +73,7 @@ export function getOrderedDrawPositions({ drawPositions, roundProfile, roundNumb
 
   const targetRoundProfile = roundProfile?.[roundNumber];
   const pairedDrawPositions = targetRoundProfile?.pairedDrawPositions;
-  const displayOrder =
-    pairedDrawPositions?.find((pair) => overlap(pair ?? [], realDrawPositions)) ?? unassignedDrawPositions;
+  const displayOrder = pairHolding(pairedDrawPositions, realDrawPositions) ?? unassignedDrawPositions;
 
   /**
    * THE FED/ADVANCED TEST. A drawPosition that is present in the PRIOR round of this structure
@@ -75,9 +98,6 @@ export function getOrderedDrawPositions({ drawPositions, roundProfile, roundNumb
    * `getRoundMatchUps` says the same thing in its own words: *"ADVANCED fed positions are NOT
    * guaranteed to be in numeric order"*.
    */
-  const priorRoundDrawPositions = (roundProfile?.[roundNumber - 1]?.drawPositions ?? [])
-    .filter(isDrawPosition)
-    .map(ensureInt);
 
   // ############# IMPORTANT DO NOT CHANGE #################
   // when both present, drawPositions are always sorted numerically
@@ -143,6 +163,9 @@ export function getOrderedDrawPositions({ drawPositions, roundProfile, roundNumb
     const [onlyDrawPosition] = realDrawPositions;
     // An empty prior round reads as "not advanced", which lands on the historical assumption — a
     // lone position on a feed round is the fed one — and that is the right fallback.
+    const priorRoundDrawPositions = (roundProfile?.[roundNumber - 1]?.drawPositions ?? [])
+      .filter(isDrawPosition)
+      .map(ensureInt);
     const hasAdvanced = priorRoundDrawPositions.includes(ensureInt(onlyDrawPosition));
     const orderedDrawPositions = hasAdvanced ? [undefined, onlyDrawPosition] : [onlyDrawPosition, undefined];
     return { orderedDrawPositions, displayOrder: orderedDrawPositions };
