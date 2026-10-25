@@ -234,14 +234,13 @@ describe('ITF Junior points from a played draw', () => {
 
     const awards = eventPoints({ policyDefinitions, eventId, level: 2 });
     const points = awards.map((a) => a.positionPoints).sort((a, b) => b - a);
-    const [first, second, , fourth, fifth, sixth, , eighth] = JUNIOR_FINALS[year];
-    // The 3rd/4th and 7th/8th place matches are not read (the engine takes a place from the first playoff round),
-    // so both players in each score as 4th and as 8th: a known gap, recorded in the policy header.
-    expect(points).toEqual([first, second, fourth, fourth, fifth, sixth, eighth, eighth]);
+    // every place 1–8, including the matches for 3rd and 7th (the playoffs' second round)
+    expect(points).toEqual(JUNIOR_FINALS[year]);
   });
 
-  it('scores the 2026 J60 Round Robin to Elimination playoff, and the 2025 policy has no such table', () => {
+  it('scores the 2026 J60 Round Robin to Elimination by playoff and group place; 2025 has no such table', () => {
     const {
+      drawIds: [drawId],
       eventIds: [eventId],
     } = mocksEngine.generateTournamentRecord({
       drawProfiles: [
@@ -257,9 +256,26 @@ describe('ITF Junior points from a played draw', () => {
     });
 
     const awards2026 = eventPoints({ policyDefinitions: POLICY_RANKING_POINTS_ITF_JUNIOR, eventId, level: 8 });
-    const points = awards2026.map((a) => a.positionPoints).sort((a, b) => b - a);
-    // the eight group winners play off from the quarterfinals; round robin places are not encoded
-    expect(points).toEqual([60, 36, 18, 18, 10, 10, 10, 10]);
+    const pointsOf = (participantId: string) =>
+      awards2026.find((a) => a.participantId === participantId)?.positionPoints ?? 0;
+
+    // the eight group winners play off from the quarterfinals
+    const groups = groupPlaces(drawId);
+    expect(groups.length).toEqual(32);
+    const winners = groups.filter((g) => g.groupOrder === 1);
+    expect(winners.map((g) => pointsOf(g.participantId)).sort((a, b) => b - a)).toEqual([
+      60, 36, 18, 18, 10, 10, 10, 10,
+    ]);
+
+    // 2nd place earns 5; 3rd and 4th earn 2 only with a match won
+    for (const { participantId, groupOrder, winCount } of groups.filter((g) => g.groupOrder > 1)) {
+      const expected = groupOrder === 2 ? 5 : (winCount && 2) || 0;
+      expect(pointsOf(participantId)).toEqual(expected);
+    }
+    // the draw exercises both sides of the match-won condition
+    const thirdOrFourth = groups.filter((g) => g.groupOrder > 2);
+    expect(thirdOrFourth.some((g) => g.winCount)).toEqual(true);
+    expect(thirdOrFourth.some((g) => !g.winCount)).toEqual(true);
 
     // 2025 has no Round Robin to Elimination table: the elimination table cannot read a group place
     const awards2025 = eventPoints({ policyDefinitions: POLICY_RANKING_POINTS_ITF_JUNIOR_2025, eventId, level: 8 });
@@ -326,6 +342,68 @@ describe('ITF Junior combined ranking: doubles count at a quarter', () => {
     const [entry] = generateRankingList({ pointAwards, aggregationRules: rules, asOfDate: '2026-07-01' });
     // every doubles award is level 4, so all seven are mandatory and count
     expect(entry.totalPoints).toEqual((doublesBest6 + 27) / 4);
+  });
+});
+
+describe('ITF Junior ties: the Reg. 11 countback', () => {
+  const aggregationRules = POLICY_RANKING_POINTS_ITF_JUNIOR[POLICY_TYPE_RANKING_POINTS].aggregationRules;
+  const asOfDate = '2026-07-01';
+
+  function award(personId: string, eventType: string, level: number, points: number) {
+    return { personId, eventType, level, points, positionPoints: points, endDate: '2026-06-01' };
+  }
+  function ranks(pointAwards: any[], rules: AggregationRules = aggregationRules) {
+    const entries = generateRankingList({ pointAwards, aggregationRules: rules, asOfDate });
+    return Object.fromEntries(entries.map((e) => [e.personId, { rank: e.rank, total: e.totalPoints }]));
+  }
+
+  it('encodes Grand Slam then each grade from J500 down, singles before doubles', () => {
+    expect(aggregationRules.tiebreakCriteria).toEqual([
+      { levelPoints: [1, 4, 5, 6, 7, 8, 9], eventTypes: [SINGLES] },
+      { levelPoints: [1, 4, 5, 6, 7, 8, 9], eventTypes: [DOUBLES] },
+    ]);
+  });
+
+  it('separates a tie by Grand Slam singles points first', () => {
+    // both 600: a Grand Slam quarterfinal and a J300 title, against a J500 title and a J100 title
+    const pointAwards = [
+      award('b', SINGLES, 4, 500),
+      award('b', SINGLES, 7, 100),
+      award('a', SINGLES, 1, 300),
+      award('a', SINGLES, 5, 300),
+    ];
+    expect(ranks(pointAwards)).toEqual({ a: { rank: 1, total: 600 }, b: { rank: 2, total: 600 } });
+
+    // without the countback the two share the rank
+    const untied = { ...aggregationRules, tiebreakCriteria: [] };
+    expect(ranks(pointAwards, untied)).toEqual({ a: { rank: 1, total: 600 }, b: { rank: 1, total: 600 } });
+  });
+
+  it('then by singles points grade by grade, the higher grade first', () => {
+    // no Grand Slam points; equal totals; 'a' has more J500 points, though 'b' has more J300 points
+    const pointAwards = [
+      award('b', SINGLES, 5, 300),
+      award('b', SINGLES, 9, 50),
+      award('a', SINGLES, 4, 250),
+      award('a', SINGLES, 6, 100),
+    ];
+    expect(ranks(pointAwards)).toEqual({ a: { rank: 1, total: 350 }, b: { rank: 2, total: 350 } });
+  });
+
+  it('then by doubles, once every singles level is equal', () => {
+    const pointAwards = [
+      award('a', SINGLES, 4, 250),
+      award('b', SINGLES, 4, 250),
+      award('b', DOUBLES, 4, 100),
+      award('a', DOUBLES, 1, 100),
+    ];
+    // each total is 250 + 100 / 4; the Grand Slam doubles result decides
+    expect(ranks(pointAwards)).toEqual({ a: { rank: 1, total: 275 }, b: { rank: 2, total: 275 } });
+  });
+
+  it('leaves a tie the countback cannot separate as a shared rank', () => {
+    const pointAwards = [award('a', SINGLES, 4, 250), award('b', SINGLES, 4, 250)];
+    expect(ranks(pointAwards)).toEqual({ a: { rank: 1, total: 250 }, b: { rank: 1, total: 250 } });
   });
 });
 
@@ -398,4 +476,15 @@ function qualifierParticipantIds(drawId: string): string[] {
 
 function drawMatchUps(drawId: string): any[] {
   return defined(tournamentEngine.allDrawMatchUps({ drawId, inContext: true }).matchUps, 'matchUps');
+}
+
+// Each participant's place in their round robin group, and the matches they won there.
+function groupPlaces(drawId: string): { participantId: string; groupOrder: number; winCount: number }[] {
+  const { participants } = tournamentEngine.getParticipants({ withRankingProfile: true });
+  return (participants ?? []).flatMap((participant: any) => {
+    const draw = participant.draws?.find((d: any) => d.drawId === drawId);
+    const group = draw?.structureParticipation?.find((s: any) => s.groupOrder);
+    if (!group) return [];
+    return [{ participantId: participant.participantId, groupOrder: group.groupOrder, winCount: group.winCount }];
+  });
 }

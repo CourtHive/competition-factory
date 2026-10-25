@@ -21,16 +21,15 @@
  *   - Combined ranking: the six best singles results plus one quarter of the six best doubles results (Reg. 10),
  *     encoded as the Doubles bucket's `weight: 0.25`
  *   - Rolling 52-week period (Reg. 13)
+ *   - Ties: Grand Slam singles points, then singles points grade by grade from J500 down, then the same for doubles
+ *     (Reg. 11), all within the counting results
  *   - No main draw points until a round is won; a bye is not a win, a walkover or retirement is (Reg. 31a)
  *   - Grand Slam qualifying: 30 for a qualifier who loses in the first round of the main draw, 20 for a loss in
  *     the final round of qualifying. The tables give no qualifying points at other grades.
  *
  * Not encoded:
- *   - The tiebreak countback by Grand Slam, then grade-by-grade points (Reg. 11)
  *   - Counting only the better of two editions of the same J100-or-higher tournament (Reg. 10)
  *   - International Team Competition points (per player-position win, best result only, best 8 teams)
- *   - ITF Junior Finals 3rd and 7th: the engine reads a place from the first playoff round only, so the 3rd/4th
- *     and 7th/8th place matches are not read and both players score as 4th (and 8th)
  */
 
 import { MAIN, QUALIFYING, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
@@ -73,14 +72,14 @@ const grandSlamQualifyingSingles: AwardProfile = {
 };
 
 // ── ITF World Tennis Tour Junior Finals (Level 2, places 1–8) ──────────────
-// Two groups of four, then playoffs for every place. Points are read from the playoffs (participationOrder 2): a
-// round robin group does not report a place.
+// Two groups of four, then playoffs for every place: the semifinals and the 5th–8th classification
+// (participationOrder 2), then the matches for 3rd and 7th (participationOrder 3). Places come from the playoffs.
 const juniorFinalsSingles: AwardProfile = {
   profileName: 'ITF Junior Finals Singles',
   levels: [2],
   drawTypes: [ROUND_ROBIN_WITH_PLAYOFF],
   eventTypes: [SINGLES],
-  finishingPositionPoints: { participationOrders: [2] },
+  finishingPositionPoints: { participationOrders: [2, 3] },
   finishingPositionRanges: {
     1: 850,
     2: 600,
@@ -168,6 +167,13 @@ const aggregationRules: AggregationRules = {
       pointComponents: ['positionPoints'],
       weight: 0.25,
     },
+  ],
+
+  // Reg. 11: Grand Slam singles points, then singles points grade by grade from J500 down; then the same for
+  // doubles. The ITF Junior Finals are not a grade, so they are not in the countback.
+  tiebreakCriteria: [
+    { levelPoints: [1, 4, 5, 6, 7, 8, 9], eventTypes: [SINGLES] },
+    { levelPoints: [1, 4, 5, 6, 7, 8, 9], eventTypes: [DOUBLES] },
   ],
 };
 

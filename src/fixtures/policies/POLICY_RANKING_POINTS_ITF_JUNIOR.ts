@@ -21,19 +21,17 @@
  *   - Combined ranking: the six best singles results plus one quarter of the six best doubles results (Reg. 10),
  *     encoded as the Doubles bucket's `weight: 0.25`
  *   - Rolling 52-week period (Reg. 13)
+ *   - Ties: Grand Slam singles points, then singles points grade by grade from J500 down, then the same for doubles
+ *     (Reg. 11), all within the counting results
  *   - No main draw points until a round is won; a bye is not a win, a walkover or retirement is (Reg. 31a)
  *   - Grand Slam qualifying: 30 for a qualifier who loses in the first round of the main draw, 20 for a loss in
  *     the final round of qualifying. The tables give no qualifying points at other grades.
  *
  * Not encoded:
- *   - The tiebreak countback by Grand Slam, then grade-by-grade points (Reg. 11)
  *   - Counting only the better of two editions of the same J100-or-higher tournament (Reg. 10)
  *   - International Team Competition points (per player-position win, best result only, best 8 teams)
- *   - ITF Junior Finals 3rd and 7th: the engine reads a place from the first playoff round only, so the 3rd/4th
- *     and 7th/8th place matches are not read and both players score as 4th (and 8th)
- *   - J60/J30 Round Robin to Elimination: the playoff places (QF onward) are encoded; the round robin places
- *     (2nd: 5/2 points, 3rd–4th: 2/1 with a match won) are not, because the engine does not report a
- *     participant's place within a round robin group
+ *   - J60/J30 Round Robin to Elimination: a Lucky Loser Round Robin (a 2nd place given a quarterfinal spot) who
+ *     loses that quarterfinal earns 2nd place points under the regulations; here they earn quarterfinal points
  */
 
 import { MAIN, QUALIFYING, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
@@ -76,14 +74,14 @@ const grandSlamQualifyingSingles: AwardProfile = {
 };
 
 // ── ITF World Tennis Tour Junior Finals (Level 2, places 1–8) ──────────────
-// Two groups of four, then playoffs for every place. Points are read from the playoffs (participationOrder 2): a
-// round robin group does not report a place.
+// Two groups of four, then playoffs for every place: the semifinals and the 5th–8th classification
+// (participationOrder 2), then the matches for 3rd and 7th (participationOrder 3). Places come from the playoffs.
 const juniorFinalsSingles: AwardProfile = {
   profileName: 'ITF Junior Finals Singles',
   levels: [2],
   drawTypes: [ROUND_ROBIN_WITH_PLAYOFF],
   eventTypes: [SINGLES],
-  finishingPositionPoints: { participationOrders: [2] },
+  finishingPositionPoints: { participationOrders: [2, 3] },
   finishingPositionRanges: {
     1: 1000,
     2: 700,
@@ -115,7 +113,8 @@ const standardSingles: AwardProfile = {
 };
 
 // ── J60 and J30 Round Robin to Elimination (Levels 8–9) ─────────────────────
-// Group winners play off from the quarterfinals; only the playoff (participationOrder 2) is encoded here.
+// Group winners play off from the quarterfinals (participationOrder 2). The other group places earn points of their
+// own: 2nd place, and 3rd and 4th with a match won.
 const roundRobinToEliminationSingles: AwardProfile = {
   profileName: 'Round Robin to Elimination Singles',
   levels: [8, 9],
@@ -128,6 +127,11 @@ const roundRobinToEliminationSingles: AwardProfile = {
     2: { level: { 8: 36, 9: 18 } },
     4: { level: { 8: 18, 9: 9 } },
     8: { level: { 8: 10, 9: 5 } },
+  },
+  groupOrderPoints: {
+    2: { level: { 8: 5, 9: 2 } },
+    3: { level: { 8: 2, 9: 1 }, requireWin: true },
+    4: { level: { 8: 2, 9: 1 }, requireWin: true },
   },
 };
 
@@ -188,6 +192,13 @@ const aggregationRules: AggregationRules = {
       pointComponents: ['positionPoints'],
       weight: 0.25,
     },
+  ],
+
+  // Reg. 11: Grand Slam singles points, then singles points grade by grade from J500 down; then the same for
+  // doubles. The ITF Junior Finals are not a grade, so they are not in the countback.
+  tiebreakCriteria: [
+    { levelPoints: [1, 4, 5, 6, 7, 8, 9], eventTypes: [SINGLES] },
+    { levelPoints: [1, 4, 5, 6, 7, 8, 9], eventTypes: [DOUBLES] },
   ],
 };
 

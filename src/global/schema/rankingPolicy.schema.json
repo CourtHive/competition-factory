@@ -93,6 +93,11 @@
           "description": "Points by finishing position. Key = max finishingPositionRange value (1=champion, 2=finalist, 4=semifinalist, etc.). Value is a PositionValue.",
           "additionalProperties": { "$ref": "#/definitions/PositionValue" }
         },
+        "groupOrderPoints": {
+          "type": "object",
+          "description": "Points by place within a round robin group (1 = group winner), read from the round robin participation. A value may require a win.",
+          "additionalProperties": { "$ref": "#/definitions/PositionValue" }
+        },
         "finishingRound": {
           "type": "object",
           "description": "Alternative to finishingPositionRanges: awards based on round number with separate won/lost values.",
@@ -774,8 +779,22 @@
     },
 
     "TiebreakCriterion": {
-      "type": "string",
-      "enum": ["headToHead", "mostWins", "highestSingleResult", "mostCountingResults", "rating"]
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": ["headToHead", "mostWins", "highestSingleResult", "mostCountingResults", "rating"]
+        },
+        {
+          "type": "object",
+          "description": "Countback by level: compare the points of counting results at each level in turn, in the order listed",
+          "properties": {
+            "levelPoints": { "type": "array", "items": { "type": "number" }, "minItems": 1 },
+            "eventTypes": { "type": "array", "items": { "$ref": "#/definitions/EventType" } }
+          },
+          "required": ["levelPoints"],
+          "additionalProperties": false
+        }
+      ]
     }
   }
 }
