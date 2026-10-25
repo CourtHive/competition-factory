@@ -171,9 +171,10 @@ conformance cases.
    `01:00`.
 6. **Within the day.** A time plus minutes stays on the scheduling day: a result at or past midnight is **`23:59`**,
    the end of the day, and a negative one is `00:00`. A recovery that would end after midnight therefore ends at
-   23:59, and the next day starts clean (§ 9.8). Anything that is not a time counts as `00:00`. A court **booking's**
-   end is the exception: it is computed by wrapping, so a matchUp booked at 23:30 for 90 minutes ends at `01:00`, before
-   it starts on that court's day.
+   23:59, and the next day starts clean (§ 9.8, not yet built for recovery). Anything that is not a time counts as
+   `00:00`. A court **booking** that would end past midnight holds its court to 23:59 on its own day and from `00:00`
+   on the next date for the minutes that remain: a matchUp booked at 23:30 for 90 minutes holds the court until 01:00
+   of the next date (§ 9.8). A booking's end used to wrap, ending at 01:00 of its own day, before it started.
 7. **A calendar day.** The date part, `YYYY-MM-DD`, of an ISO date or date-time, and a real day on the (proleptic
    Gregorian) calendar: `2026-02-30` and `2026-04-31` are not dates, `2028-02-29` is. Two days are the same when their
    date parts are.
@@ -327,11 +328,14 @@ the calls that decide placements; the bulk and reschedule mutations write the ti
    TMX's results drawer, the corpus report) and misread the mixed shape. Each person request also gets its own id: a
    time code had given every request added in one call the same one. Pinned by
    `scheduling.plan.person-request-on-a-placed-side.v1`.
-8. **Crossing midnight. DECIDED (CA 2026-10-25): crossed only when necessary, backwards compatible**; built after
-   this record. Today the scheduler works one day at a time and stops at 23:59 (§ 3.8, rule 6): a matchUp at 23:00
-   with 90 minutes and a 60-minute recovery holds its participants only until 23:59, so a dependent the next morning
-   is not held; the policy's overnight times (`overnightTimes`) are not read; a stored `endDate` after midnight is not
-   read when bookings are built, while a booking's own end wraps to the early morning of the same day. The rule:
+8. **Crossing midnight. DECIDED (CA 2026-10-25): crossed only when necessary, backwards compatible.** Built: the
+   date-time arithmetic (`kernel.civil.addMinutes@1`) and court bookings carried into the next date
+   (`kernel.time.endOnTheDay@1`), in every scheduler that builds bookings; no corpus scenario moved. Not yet built: a
+   participant's recovery carried past midnight, the overnight times on top of it, and a stored `endDate`. The
+   scheduler still keeps a participant's day to one date and stops recovery at 23:59 (§ 3.8, rule 6): a matchUp at
+   23:00 with 90 minutes and a 60-minute recovery holds its participants only until 23:59, so a dependent the next
+   morning is not held; the policy's overnight times (`overnightTimes`) are not read; a stored `endDate` after
+   midnight is not read when bookings are built, which take a matchUp's average minutes instead. The rule:
    - **A date with no time is unchanged.** `scheduledDate` alone remains a complete schedule ("on that day, time to be
      set"); with no time there is nothing to add minutes to, so no booking and no recovery follow from it.
    - **`scheduledTime` is unchanged.** It is the start, `HH:MM` on the venue's wall clock, on `scheduledDate`; a start

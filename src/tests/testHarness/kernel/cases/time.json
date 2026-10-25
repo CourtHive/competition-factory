@@ -720,5 +720,316 @@
       "code": "NOT_A_DATE"
     },
     "note": "rule 7"
+  },
+  {
+    "caseId": "clock.end-on-the-day.within.v1",
+    "operation": "kernel.time.endOnTheDay@1",
+    "input": {
+      "time": "08:00",
+      "minutes": 90
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "endTime": "09:30",
+        "minutesPastMidnight": 0
+      }
+    },
+    "note": "rule 6: a booking that ends before midnight ends on its day"
+  },
+  {
+    "caseId": "clock.end-on-the-day.to-last-minute.v1",
+    "operation": "kernel.time.endOnTheDay@1",
+    "input": {
+      "time": "22:29",
+      "minutes": 90
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "endTime": "23:59",
+        "minutesPastMidnight": 0
+      }
+    },
+    "note": "rule 6"
+  },
+  {
+    "caseId": "clock.end-on-the-day.at-midnight.v1",
+    "operation": "kernel.time.endOnTheDay@1",
+    "input": {
+      "time": "22:30",
+      "minutes": 90
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "endTime": "23:59",
+        "minutesPastMidnight": 0
+      }
+    },
+    "note": "rule 6: ending at midnight holds the court to the end of the day, nothing past it"
+  },
+  {
+    "caseId": "clock.end-on-the-day.past-midnight.v1",
+    "operation": "kernel.time.endOnTheDay@1",
+    "input": {
+      "time": "23:30",
+      "minutes": 90
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "endTime": "23:59",
+        "minutesPastMidnight": 60
+      }
+    },
+    "note": "rule 6 (§ 9.8): the day holds it to 23:59 and the next date from 00:00 for 60 minutes"
+  },
+  {
+    "caseId": "clock.end-on-the-day.days-long.v1",
+    "operation": "kernel.time.endOnTheDay@1",
+    "input": {
+      "time": "10:00",
+      "minutes": 2000
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "endTime": "23:59",
+        "minutesPastMidnight": 1160
+      }
+    },
+    "note": "rule 6: the minutes past midnight are counted, not wrapped"
+  },
+  {
+    "caseId": "clock.end-on-the-day.not-a-time.v1",
+    "operation": "kernel.time.endOnTheDay@1",
+    "input": {
+      "time": "xx",
+      "minutes": 30
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "endTime": "00:00",
+        "minutesPastMidnight": 0
+      }
+    },
+    "note": "rule 6: a booking with no time ends at 00:00"
+  },
+  {
+    "caseId": "civil.add.same-day.v1",
+    "operation": "kernel.civil.addMinutes@1",
+    "input": {
+      "date": "2026-03-02",
+      "time": "09:00",
+      "minutes": 90
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "date": "2026-03-02",
+        "time": "10:30"
+      }
+    },
+    "note": "§ 9.8: a result before midnight is on the same date"
+  },
+  {
+    "caseId": "civil.add.past-midnight.v1",
+    "operation": "kernel.civil.addMinutes@1",
+    "input": {
+      "date": "2026-03-02",
+      "time": "23:30",
+      "minutes": 90
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "date": "2026-03-03",
+        "time": "01:00"
+      }
+    },
+    "note": "§ 9.8: a result past midnight is on the next date"
+  },
+  {
+    "caseId": "civil.add.at-midnight.v1",
+    "operation": "kernel.civil.addMinutes@1",
+    "input": {
+      "date": "2026-03-02",
+      "time": "23:00",
+      "minutes": 60
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "date": "2026-03-03",
+        "time": "00:00"
+      }
+    },
+    "note": "§ 9.8: midnight is the next date's 00:00"
+  },
+  {
+    "caseId": "civil.add.month-end.v1",
+    "operation": "kernel.civil.addMinutes@1",
+    "input": {
+      "date": "2026-04-30",
+      "time": "23:00",
+      "minutes": 120
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "date": "2026-05-01",
+        "time": "01:00"
+      }
+    },
+    "note": "§ 9.8: across a month"
+  },
+  {
+    "caseId": "civil.add.year-end.v1",
+    "operation": "kernel.civil.addMinutes@1",
+    "input": {
+      "date": "2026-12-31",
+      "time": "22:00",
+      "minutes": 180
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "date": "2027-01-01",
+        "time": "01:00"
+      }
+    },
+    "note": "§ 9.8: across a year"
+  },
+  {
+    "caseId": "civil.add.leap-day.v1",
+    "operation": "kernel.civil.addMinutes@1",
+    "input": {
+      "date": "2028-02-28",
+      "time": "23:00",
+      "minutes": 120
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "date": "2028-02-29",
+        "time": "01:00"
+      }
+    },
+    "note": "§ 9.8: into a leap day"
+  },
+  {
+    "caseId": "civil.add.not-a-leap-year.v1",
+    "operation": "kernel.civil.addMinutes@1",
+    "input": {
+      "date": "2100-02-28",
+      "time": "23:00",
+      "minutes": 120
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "date": "2100-03-01",
+        "time": "01:00"
+      }
+    },
+    "note": "§ 9.8: 2100 has no February 29"
+  },
+  {
+    "caseId": "civil.add.backwards.v1",
+    "operation": "kernel.civil.addMinutes@1",
+    "input": {
+      "date": "2026-03-01",
+      "time": "00:30",
+      "minutes": -60
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "date": "2026-02-28",
+        "time": "23:30"
+      }
+    },
+    "note": "§ 9.8: minutes may be negative"
+  },
+  {
+    "caseId": "civil.add.days-long.v1",
+    "operation": "kernel.civil.addMinutes@1",
+    "input": {
+      "date": "2026-03-02",
+      "time": "10:00",
+      "minutes": 4320
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "date": "2026-03-05",
+        "time": "10:00"
+      }
+    },
+    "note": "§ 9.8: three days"
+  },
+  {
+    "caseId": "civil.add.no-dst.v1",
+    "operation": "kernel.civil.addMinutes@1",
+    "input": {
+      "date": "2026-03-08",
+      "time": "01:30",
+      "minutes": 60
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "date": "2026-03-08",
+        "time": "02:30"
+      }
+    },
+    "note": "§ 9.8: no zone, so no daylight-saving gap (02:30 exists in civil time)"
+  },
+  {
+    "caseId": "civil.add.invalid-date.v1",
+    "operation": "kernel.civil.addMinutes@1",
+    "input": {
+      "date": "2026-02-30",
+      "time": "09:00",
+      "minutes": 30
+    },
+    "expected": {
+      "kind": "error",
+      "code": "NOT_A_DATE_TIME"
+    },
+    "note": "§ 9.9: not a calendar day"
+  },
+  {
+    "caseId": "civil.add.invalid-time.v1",
+    "operation": "kernel.civil.addMinutes@1",
+    "input": {
+      "date": "2026-03-02",
+      "time": "24:00",
+      "minutes": 30
+    },
+    "expected": {
+      "kind": "error",
+      "code": "NOT_A_DATE_TIME"
+    },
+    "note": "§ 9.9: not a time"
+  },
+  {
+    "caseId": "civil.add.before-1970.v1",
+    "operation": "kernel.civil.addMinutes@1",
+    "input": {
+      "date": "1969-12-31",
+      "time": "23:30",
+      "minutes": 60
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "date": "1970-01-01",
+        "time": "00:30"
+      }
+    },
+    "note": "§ 9.8: the day count is signed"
   }
 ]
