@@ -649,7 +649,10 @@ third, asking `hasForwardWork`: about one hydration a call fewer again (deep BYE
 forced idle, 100 tests fail on `precheck:settleForwardConsequences`. `reconcileLinkAdvancements` fourth, asking
 `getUnearnedLinkAdvancements`: deep BYE: the route 1,066 → 756 (1.9 a call). The pass acts rarely, so a v1 test pins
 it: a qualifier's main-draw seat is released when its qualifying final is cleared, and a detector forced idle leaves
-the participant seated.
+the participant seated. `reconcileStaleExitOrigins` fifth, asking `hasStaleExitOrigins` of the
+index: the pass already skipped its hydration unless stored data showed a candidate, and now skips it when the
+candidate's links show nothing stale (deep BYE: the route 756 → 616, 1.5 a call); forced idle, 32 exit-propagation
+tests fail under v1.
 
 ## 8. What the corpus pins
 
