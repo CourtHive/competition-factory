@@ -15,6 +15,7 @@ import { getByeCrossing, matchUpHoldsBye } from '@Query/drawDefinition/getByeCro
 import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
+import { settleUnlessIdle } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
@@ -3361,10 +3362,33 @@ export function settleHeldExits({
   tournamentRecord?: Tournament;
   event?: Event;
 }) {
-  const stack = 'settleHeldExits';
   if (!drawDefinition) return { ...SUCCESS };
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
+  // nothing held, stranded, crossing or beside a BYE on the structural index: the pass's hydrations would find the
+  // same, and write nothing
+  return settleUnlessIdle({
+    run: () => settleHeldExitsPass({ tournamentRecord, appliedPolicies, drawDefinition, matchUpsMap, event }),
+    detect: (inContextDrawMatchUps) => hasHeldExitWork({ inContextDrawMatchUps, drawDefinition, matchUpsMap }),
+    idle: { ...SUCCESS } as ResultType & { produced?: boolean },
+    site: 'settleHeldExits',
+    drawDefinition,
+  });
+}
 
+function settleHeldExitsPass({
+  tournamentRecord,
+  appliedPolicies,
+  drawDefinition,
+  matchUpsMap,
+  event,
+}: {
+  appliedPolicies?: PolicyDefinitions;
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+  event?: Event;
+}): ResultType & { produced?: boolean } {
+  const stack = 'settleHeldExits';
   // under EITHER policy: a produced exit can come to rest beside a seat that becomes a BYE only later, whichever policy
   // placed it (CA, 2026-10-04, "BYE holder, exit sent on"; matrix cell 337)
   const sent = sendHeldExitsOn({ tournamentRecord, appliedPolicies, drawDefinition, matchUpsMap, event, stack });

@@ -641,7 +641,10 @@ disagreement is a divergence keyed `precheck:<pass>`, raised when the call is co
 oracle sees the draw as the call found it, this one each state a settle pass meets after the call's writes. Passes
 move one at a time, each with its `verify:hydrations` v1 ceiling lowered. `reconcileByeAdvancements` first: about one
 hydration a call fewer on every census arm (matrix BYE: DOUBLE_WALKOVER 1,735 → 1,536); over the mutations suite under
-`differential`, no disagreement.
+`differential`, no disagreement. `settleHeldExits` second, asking `hasHeldExitWork` (the predicate v2's has-work check
+already uses) with the pass's own `getMatchUpsMap`, so no map is built twice: its three sub-passes each hydrated, and
+the census arms fall 32–45% (matrix BYE: DOUBLE_WALKOVER 1,536 → 945; deep BYE: the route 2,636 → 1,442, 6.6 → 3.6 a
+call). A detector forced idle is caught: 230 exit-propagation tests fail on `precheck:settleHeldExits`.
 
 ## 8. What the corpus pins
 
