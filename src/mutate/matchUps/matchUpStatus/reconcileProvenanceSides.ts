@@ -3,6 +3,7 @@ import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { settleUnlessIdle } from './indexPrecheck';
 
 // constants and types
 import { completedMatchUpStatuses, WALKOVER, DEFAULTED } from '@Constants/matchUpStatusConstants';
@@ -42,6 +43,27 @@ export function reconcileProvenanceSides({
 }): void {
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
   if (!provenanceCandidates(matchUpsMap).length) return;
+  // nothing misplaced on the structural index: the pass's hydration would find the same, and write nothing
+  settleUnlessIdle({
+    detect: (inContextDrawMatchUps) => findMisplacedProvenance({ inContextDrawMatchUps, matchUpsMap }),
+    run: () => rekeyMisplaced({ tournamentRecord, drawDefinition, matchUpsMap, event }),
+    site: 'reconcileProvenanceSides',
+    idle: undefined,
+    drawDefinition,
+  });
+}
+
+function rekeyMisplaced({
+  tournamentRecord,
+  drawDefinition,
+  matchUpsMap,
+  event,
+}: {
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+  event?: Event;
+}): void {
   const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
   for (const { stored, expected, entry } of findMisplacedProvenance({ inContextDrawMatchUps, matchUpsMap })) {
     setSideExitProvenance({ matchUp: stored, provenance: { [expected]: entry } });

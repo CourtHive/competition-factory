@@ -652,7 +652,8 @@ it: a qualifier's main-draw seat is released when its qualifying final is cleare
 the participant seated. `reconcileStaleExitOrigins` fifth, asking `hasStaleExitOrigins` of the
 index: the pass already skipped its hydration unless stored data showed a candidate, and now skips it when the
 candidate's links show nothing stale (deep BYE: the route 756 → 616, 1.5 a call); forced idle, 32 exit-propagation
-tests fail under v1.
+tests fail under v1. `reconcileProvenanceSides` sixth, asking `findMisplacedProvenance` after the same
+stored-data candidate check (matrix BYE: WALKOVER propagated 870 → 668); forced idle, 4 mutation tests fail under v1.
 
 ## 8. What the corpus pins
 
