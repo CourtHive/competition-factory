@@ -1,4 +1,5 @@
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import { describe, expect, it } from 'vitest';
 import {
   INVALID_VALUES,
@@ -69,8 +70,8 @@ describe('getTimeItem', () => {
 
     const element = {
       timeItems: [
-        { itemType: 'TEST', value: 'old', createdAt: older.toISOString() },
-        { itemType: 'TEST', value: 'new', createdAt: now.toISOString() },
+        { itemType: 'TEST', itemValue: 'old', createdAt: older.toISOString() },
+        { itemType: 'TEST', itemValue: 'new', createdAt: now.toISOString() },
       ],
     };
 
@@ -79,14 +80,14 @@ describe('getTimeItem', () => {
       itemType: 'TEST',
     });
 
-    expect(result.timeItem.value).toEqual('new');
+    expect(result.timeItem?.itemValue).toEqual('new');
   });
 
   it('filters by itemSubTypes when provided', () => {
     const element = {
       timeItems: [
-        { itemType: 'TEST', itemSubTypes: ['A'], value: 'typeA', createdAt: new Date().toISOString() },
-        { itemType: 'TEST', itemSubTypes: ['B'], value: 'typeB', createdAt: new Date().toISOString() },
+        { itemType: 'TEST', itemSubTypes: ['A'], itemValue: 'typeA', createdAt: new Date().toISOString() },
+        { itemType: 'TEST', itemSubTypes: ['B'], itemValue: 'typeB', createdAt: new Date().toISOString() },
       ],
     };
 
@@ -96,15 +97,15 @@ describe('getTimeItem', () => {
       itemSubTypes: ['A'],
     });
 
-    expect(result.timeItem.value).toEqual('typeA');
+    expect(result.timeItem?.itemValue).toEqual('typeA');
   });
 
   it('returns previousItems when returnPreviousValues is true', () => {
     const element = {
       timeItems: [
-        { itemType: 'TEST', value: 'v1', createdAt: '2024-01-01' },
-        { itemType: 'TEST', value: 'v2', createdAt: '2024-01-02' },
-        { itemType: 'TEST', value: 'v3', createdAt: '2024-01-03' },
+        { itemType: 'TEST', itemValue: 'v1', createdAt: '2024-01-01' },
+        { itemType: 'TEST', itemValue: 'v2', createdAt: '2024-01-02' },
+        { itemType: 'TEST', itemValue: 'v3', createdAt: '2024-01-03' },
       ],
     };
 
@@ -114,16 +115,16 @@ describe('getTimeItem', () => {
       returnPreviousValues: true,
     });
 
-    expect(result.timeItem.value).toEqual('v3');
+    expect(result.timeItem?.itemValue).toEqual('v3');
     expect(result.previousItems).toHaveLength(2);
-    expect(result.previousItems[0].value).toEqual('v1');
+    expect(result.previousItems[0].itemValue).toEqual('v1');
   });
 
   it('does not return previousItems when returnPreviousValues is false', () => {
     const element = {
       timeItems: [
-        { itemType: 'TEST', value: 'v1', createdAt: '2024-01-01' },
-        { itemType: 'TEST', value: 'v2', createdAt: '2024-01-02' },
+        { itemType: 'TEST', itemValue: 'v1', createdAt: '2024-01-01' },
+        { itemType: 'TEST', itemValue: 'v2', createdAt: '2024-01-02' },
       ],
     };
 
@@ -140,8 +141,8 @@ describe('getTimeItem', () => {
   it('handles timeItems with undefined createdAt', () => {
     const element = {
       timeItems: [
-        { itemType: 'TEST', value: 'v1', createdAt: undefined },
-        { itemType: 'TEST', value: 'v2', createdAt: undefined },
+        { itemType: 'TEST', itemValue: 'v1', createdAt: undefined },
+        { itemType: 'TEST', itemValue: 'v2', createdAt: undefined },
       ],
     };
 
@@ -157,9 +158,9 @@ describe('getTimeItem', () => {
   it('filters multiple itemSubTypes', () => {
     const element = {
       timeItems: [
-        { itemType: 'TEST', itemSubTypes: ['A'], value: 'typeA', createdAt: new Date().toISOString() },
-        { itemType: 'TEST', itemSubTypes: ['B'], value: 'typeB', createdAt: new Date().toISOString() },
-        { itemType: 'TEST', itemSubTypes: ['C'], value: 'typeC', createdAt: new Date().toISOString() },
+        { itemType: 'TEST', itemSubTypes: ['A'], itemValue: 'typeA', createdAt: new Date().toISOString() },
+        { itemType: 'TEST', itemSubTypes: ['B'], itemValue: 'typeB', createdAt: new Date().toISOString() },
+        { itemType: 'TEST', itemSubTypes: ['C'], itemValue: 'typeC', createdAt: new Date().toISOString() },
       ],
     };
 
@@ -169,12 +170,12 @@ describe('getTimeItem', () => {
       itemSubTypes: ['A', 'C'],
     });
 
-    expect(['typeA', 'typeC']).toContain(result.timeItem.value);
+    expect(['typeA', 'typeC']).toContain(result.timeItem?.itemValue);
   });
 
   it('returns empty previousItems when only one timeItem matches', () => {
     const element = {
-      timeItems: [{ itemType: 'TEST', value: 'only', createdAt: new Date().toISOString() }],
+      timeItems: [{ itemType: 'TEST', itemValue: 'only', createdAt: new Date().toISOString() }],
     };
 
     const result = getTimeItem({
@@ -183,12 +184,12 @@ describe('getTimeItem', () => {
       returnPreviousValues: true,
     });
 
-    expect(result.timeItem.value).toEqual('only');
+    expect(result.timeItem?.itemValue).toEqual('only');
     expect(result.previousItems).toEqual([]);
   });
 
   it('makes deep copy of timeItem', () => {
-    const timeItem = { itemType: 'TEST', value: { nested: 'data' }, createdAt: new Date().toISOString() };
+    const timeItem = { itemType: 'TEST', itemValue: { nested: 'data' }, createdAt: new Date().toISOString() };
     const element = { timeItems: [timeItem] };
 
     const result = getTimeItem({
@@ -197,10 +198,10 @@ describe('getTimeItem', () => {
     });
 
     // Modify returned timeItem
-    result.timeItem.value.nested = 'modified';
+    defined(result.timeItem).itemValue.nested = 'modified';
 
     // Original should be unchanged
-    expect(timeItem.value.nested).toEqual('data');
+    expect(timeItem.itemValue.nested).toEqual('data');
   });
 });
 
@@ -237,7 +238,7 @@ describe('getDrawDefinitionTimeItem', () => {
   it('returns timeItem from drawDefinition', () => {
     const drawDefinition = {
       drawId: 'test',
-      timeItems: [{ itemType: 'TEST', value: 'test', createdAt: new Date().toISOString() }],
+      timeItems: [{ itemType: 'TEST', itemValue: 'test', createdAt: new Date().toISOString() }],
     };
 
     const result = getDrawDefinitionTimeItem({
@@ -245,15 +246,15 @@ describe('getDrawDefinitionTimeItem', () => {
       itemType: 'TEST',
     });
 
-    expect(result.timeItem.value).toEqual('test');
+    expect(result.timeItem?.itemValue).toEqual('test');
   });
 
   it('returns previousItems when requested', () => {
     const drawDefinition = {
       drawId: 'test',
       timeItems: [
-        { itemType: 'TEST', value: 'v1', createdAt: '2024-01-01' },
-        { itemType: 'TEST', value: 'v2', createdAt: '2024-01-02' },
+        { itemType: 'TEST', itemValue: 'v1', createdAt: '2024-01-01' },
+        { itemType: 'TEST', itemValue: 'v2', createdAt: '2024-01-02' },
       ],
     };
 
@@ -263,7 +264,7 @@ describe('getDrawDefinitionTimeItem', () => {
       returnPreviousValues: true,
     });
 
-    expect(result.timeItem.value).toEqual('v2');
+    expect(result.timeItem?.itemValue).toEqual('v2');
     expect(result.previousItems).toHaveLength(1);
   });
 });
@@ -301,7 +302,7 @@ describe('getEventTimeItem', () => {
   it('returns timeItem from event', () => {
     const event = {
       eventId: 'test',
-      timeItems: [{ itemType: 'TEST', value: 'test', createdAt: new Date().toISOString() }],
+      timeItems: [{ itemType: 'TEST', itemValue: 'test', createdAt: new Date().toISOString() }],
     };
 
     const result = getEventTimeItem({
@@ -309,15 +310,15 @@ describe('getEventTimeItem', () => {
       itemType: 'TEST',
     });
 
-    expect(result.timeItem.value).toEqual('test');
+    expect(result.timeItem?.itemValue).toEqual('test');
   });
 
   it('filters by itemSubTypes', () => {
     const event = {
       eventId: 'test',
       timeItems: [
-        { itemType: 'TEST', itemSubTypes: ['A'], value: 'typeA', createdAt: new Date().toISOString() },
-        { itemType: 'TEST', itemSubTypes: ['B'], value: 'typeB', createdAt: new Date().toISOString() },
+        { itemType: 'TEST', itemSubTypes: ['A'], itemValue: 'typeA', createdAt: new Date().toISOString() },
+        { itemType: 'TEST', itemSubTypes: ['B'], itemValue: 'typeB', createdAt: new Date().toISOString() },
       ],
     };
 
@@ -327,7 +328,7 @@ describe('getEventTimeItem', () => {
       itemSubTypes: ['B'],
     });
 
-    expect(result.timeItem.value).toEqual('typeB');
+    expect(result.timeItem?.itemValue).toEqual('typeB');
   });
 });
 
@@ -363,14 +364,14 @@ describe('getTournamentTimeItem', () => {
 
   it('returns timeItem from tournamentRecord', () => {
     const { tournamentRecord } = mocksEngine.generateTournamentRecord();
-    tournamentRecord.timeItems = [{ itemType: 'TEST', value: 'test', createdAt: new Date().toISOString() }];
+    tournamentRecord.timeItems = [{ itemType: 'TEST', itemValue: 'test', createdAt: new Date().toISOString() }];
 
     const result = getTournamentTimeItem({
       tournamentRecord,
       itemType: 'TEST',
     });
 
-    expect(result.timeItem.value).toEqual('test');
+    expect(result.timeItem?.itemValue).toEqual('test');
   });
 });
 
@@ -434,7 +435,7 @@ describe('getParticipantTimeItem', () => {
 
     const participantId = tournamentRecord.participants[0].participantId;
     tournamentRecord.participants[0].timeItems = [
-      { itemType: 'TEST', value: 'test', createdAt: new Date().toISOString() },
+      { itemType: 'TEST', itemValue: 'test', createdAt: new Date().toISOString() },
     ];
 
     const result = getParticipantTimeItem({
@@ -443,7 +444,7 @@ describe('getParticipantTimeItem', () => {
       itemType: 'TEST',
     });
 
-    expect(result.timeItem.value).toEqual('test');
+    expect(result.timeItem.itemValue).toEqual('test');
   });
 
   it('filters by itemSubTypes', () => {
@@ -453,8 +454,8 @@ describe('getParticipantTimeItem', () => {
 
     const participantId = tournamentRecord.participants[0].participantId;
     tournamentRecord.participants[0].timeItems = [
-      { itemType: 'TEST', itemSubTypes: ['A'], value: 'typeA', createdAt: new Date().toISOString() },
-      { itemType: 'TEST', itemSubTypes: ['B'], value: 'typeB', createdAt: new Date().toISOString() },
+      { itemType: 'TEST', itemSubTypes: ['A'], itemValue: 'typeA', createdAt: new Date().toISOString() },
+      { itemType: 'TEST', itemSubTypes: ['B'], itemValue: 'typeB', createdAt: new Date().toISOString() },
     ];
 
     const result = getParticipantTimeItem({
@@ -464,7 +465,7 @@ describe('getParticipantTimeItem', () => {
       itemSubTypes: ['A'],
     });
 
-    expect(result.timeItem.value).toEqual('typeA');
+    expect(result.timeItem.itemValue).toEqual('typeA');
   });
 
   it('returns previousItems when requested', () => {
@@ -474,8 +475,8 @@ describe('getParticipantTimeItem', () => {
 
     const participantId = tournamentRecord.participants[0].participantId;
     tournamentRecord.participants[0].timeItems = [
-      { itemType: 'TEST', value: 'v1', createdAt: '2024-01-01' },
-      { itemType: 'TEST', value: 'v2', createdAt: '2024-01-02' },
+      { itemType: 'TEST', itemValue: 'v1', createdAt: '2024-01-01' },
+      { itemType: 'TEST', itemValue: 'v2', createdAt: '2024-01-02' },
     ];
 
     const result = getParticipantTimeItem({
@@ -485,7 +486,7 @@ describe('getParticipantTimeItem', () => {
       returnPreviousValues: true,
     });
 
-    expect(result.timeItem.value).toEqual('v2');
+    expect(result.timeItem.itemValue).toEqual('v2');
     expect(result.previousItems).toHaveLength(1);
   });
 });

@@ -1,5 +1,6 @@
 import { POLICY_RANKING_POINTS_WTA } from '@Fixtures/policies/POLICY_RANKING_POINTS_WTA';
 import { getAwardProfile } from '@Query/scales/getAwardProfile';
+import { defined } from '@Tests/helpers/defined';
 import scaleEngine from '@Engines/scaleEngine';
 import { describe, expect, it } from 'vitest';
 import { mocksEngine } from '../../..';
@@ -51,10 +52,10 @@ describe('WTA 2026 Policy Structure', () => {
     const singles = aggregationRules.countingBuckets[0];
     expect(singles.bucketName).toEqual('Singles');
     expect(singles.bestOfCount).toEqual(19);
-    expect(singles.mandatoryRules.length).toEqual(2);
-    expect(singles.mandatoryRules[0].ruleName).toEqual('Grand Slams');
-    expect(singles.mandatoryRules[1].ruleName).toEqual('WTA 1000 Combined');
-    expect(singles.mandatoryRules[1].bestOfCount).toEqual(6);
+    expect(singles.mandatoryRules?.length).toEqual(2);
+    expect(singles.mandatoryRules?.[0].ruleName).toEqual('Grand Slams');
+    expect(singles.mandatoryRules?.[1].ruleName).toEqual('WTA 1000 Combined');
+    expect(singles.mandatoryRules?.[1].bestOfCount).toEqual(6);
 
     const doubles = aggregationRules.countingBuckets[1];
     expect(doubles.bucketName).toEqual('Doubles');
@@ -244,10 +245,10 @@ describe('WTA 2026 Ranking Points Values', () => {
       participation: { participationOrder: 1, rankingStage: MAIN },
       level: 1,
     });
-    expect(awardProfile.finishingPositionRanges[1]).toEqual(2000);
-    expect(awardProfile.finishingPositionRanges[2]).toEqual(1300);
-    expect(awardProfile.finishingPositionRanges[4]).toEqual(780);
-    expect(awardProfile.finishingPositionRanges[128]).toEqual(10);
+    expect(awardProfile?.finishingPositionRanges?.[1]).toEqual(2000);
+    expect(awardProfile?.finishingPositionRanges?.[2]).toEqual(1300);
+    expect(awardProfile?.finishingPositionRanges?.[4]).toEqual(780);
+    expect(awardProfile?.finishingPositionRanges?.[128]).toEqual(10);
   });
 
   it('WTA Finals champion gets 1500 points', () => {
@@ -257,10 +258,10 @@ describe('WTA 2026 Ranking Points Values', () => {
       participation: { participationOrder: 1, rankingStage: MAIN },
       level: 2,
     });
-    expect(awardProfile.finishingPositionRanges[1]).toEqual(1500);
-    expect(awardProfile.finishingPositionRanges[2]).toEqual(1080);
-    expect(awardProfile.finishingPositionRanges[4]).toEqual(750);
-    expect(awardProfile.finishingPositionRanges[8]).toEqual(375);
+    expect(awardProfile?.finishingPositionRanges?.[1]).toEqual(1500);
+    expect(awardProfile?.finishingPositionRanges?.[2]).toEqual(1080);
+    expect(awardProfile?.finishingPositionRanges?.[4]).toEqual(750);
+    expect(awardProfile?.finishingPositionRanges?.[8]).toEqual(375);
   });
 
   it('WTA 1000 Singles has drawSize threshold for R64', () => {
@@ -270,12 +271,12 @@ describe('WTA 2026 Ranking Points Values', () => {
       participation: { participationOrder: 1, rankingStage: MAIN },
       level: 3,
     });
-    expect(awardProfile.finishingPositionRanges[1]).toEqual(1000);
+    expect(awardProfile?.finishingPositionRanges?.[1]).toEqual(1000);
     // R64 is an array with drawSize threshold conditions
-    expect(Array.isArray(awardProfile.finishingPositionRanges[64])).toEqual(true);
-    expect(awardProfile.finishingPositionRanges[64][0].drawSize).toEqual(64);
-    expect(awardProfile.finishingPositionRanges[64][0].value).toEqual(35);
-    expect(awardProfile.finishingPositionRanges[64][1].value).toEqual(10);
+    expect(Array.isArray(awardProfile?.finishingPositionRanges?.[64])).toEqual(true);
+    expect(awardProfile?.finishingPositionRanges?.[64][0].drawSize).toEqual(64);
+    expect(awardProfile?.finishingPositionRanges?.[64][0].value).toEqual(35);
+    expect(awardProfile?.finishingPositionRanges?.[64][1].value).toEqual(10);
   });
 
   it('ITF Circuit Singles values are level-keyed', () => {
@@ -286,7 +287,7 @@ describe('WTA 2026 Ranking Points Values', () => {
       level: 7,
     });
     // W100 champion = 100
-    expect(awardProfile.finishingPositionRanges[1]).toEqual({ level: { 7: 100, 8: 75, 9: 50, 10: 35, 11: 15 } });
+    expect(awardProfile?.finishingPositionRanges?.[1]).toEqual({ level: { 7: 100, 8: 75, 9: 50, 10: 35, 11: 15 } });
   });
 
   it('WTA Qualifying values are level-keyed', () => {
@@ -297,11 +298,11 @@ describe('WTA 2026 Ranking Points Values', () => {
       level: 1,
     });
     // GS qualifier = 40
-    expect(awardProfile.finishingPositionRanges[1]).toEqual({
+    expect(awardProfile?.finishingPositionRanges?.[1]).toEqual({
       level: { 1: 40, 3: 30, 4: 25, 5: 18, 6: 6, 7: 5, 8: 3, 9: 2, 10: 1 },
     });
     // GS Q1 loser = 2
-    expect(awardProfile.finishingPositionRanges[8]).toEqual({ level: { 1: 2 } });
+    expect(awardProfile?.finishingPositionRanges?.[8]).toEqual({ level: { 1: 2 } });
   });
 
   it('Standard Doubles (L5-10) first-round loss = 1 point', () => {
@@ -311,7 +312,7 @@ describe('WTA 2026 Ranking Points Values', () => {
       participation: { participationOrder: 1, rankingStage: MAIN },
       level: 5,
     });
-    expect(awardProfile.finishingPositionRanges[16]).toEqual(1);
+    expect(awardProfile?.finishingPositionRanges?.[16]).toEqual(1);
   });
 
   it('ITF W15 Doubles has no R16 points', () => {
@@ -321,8 +322,8 @@ describe('WTA 2026 Ranking Points Values', () => {
       participation: { participationOrder: 1, rankingStage: MAIN },
       level: 11,
     });
-    expect(awardProfile.finishingPositionRanges[1]).toEqual(15);
-    expect(awardProfile.finishingPositionRanges[16]).toBeUndefined();
+    expect(awardProfile?.finishingPositionRanges?.[1]).toEqual(15);
+    expect(defined(awardProfile?.finishingPositionRanges, 'finishingPositionRanges')[16]).toBeUndefined();
   });
 
   it('Grand Slam Doubles Qualifying awards 40 points', () => {
@@ -332,7 +333,7 @@ describe('WTA 2026 Ranking Points Values', () => {
       participation: { participationOrder: 1, rankingStage: QUALIFYING },
       level: 1,
     });
-    expect(awardProfile.finishingPositionRanges[1]).toEqual(40);
+    expect(awardProfile?.finishingPositionRanges?.[1]).toEqual(40);
   });
 });
 
