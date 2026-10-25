@@ -241,6 +241,28 @@ describe('negative controls: the cases reject a wrong implementation', () => {
     expect(failures(wrong, grammar).map((c) => c.caseId)).toEqual(['grammar.stringify.noad-best-of-5.v1']);
   });
 
+  it('a lenient parse (trimmed, empty sections and numberless tiebreaks dropped) fails exactly the closed readings', () => {
+    const parse = kernelOperations['kernel.format.parse@1'];
+    const lenient: KernelOperation = {
+      ...parse,
+      run: (input) => {
+        const code = String(input.matchUpFormat)
+          .trim()
+          .replace(/-F:$/, '')
+          .replaceAll(/\/TB(?=-|$)/g, '');
+        return parse.run({ matchUpFormat: code });
+      },
+    };
+    const wrong = directAdapter({ ...kernelOperations, 'kernel.format.parse@1': lenient });
+    expect(failures(wrong, grammar).map((c) => c.caseId)).toEqual([
+      'grammar.parse.trailing-space.v1',
+      'grammar.parse.leading-space.v1',
+      'grammar.parse.empty-final-section.v1',
+      'grammar.parse.tiebreak-with-no-number.v1',
+      'grammar.parse.final-tiebreak-with-no-number.v1',
+    ]);
+  });
+
   it('the right implementation fails none, through either adapter', () => {
     for (const adapter of adapters) expect(failures(adapter, cases)).toEqual([]);
   });

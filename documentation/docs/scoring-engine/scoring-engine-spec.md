@@ -1282,6 +1282,6 @@ on a cited id the matrix does not hold, and on a cell line that names no section
 
 - [Core API reference](./scoring-engine-api.md), [event handlers](./event-handlers.md) and
   [format support](./format-support.md): the engine's surface, which this page specifies.
-- [matchUpFormat codes](/docs/codes/matchup-format): the grammar § 3 resolves.
+- [matchUpFormat grammar specification](/docs/codes/matchup-format-grammar): the grammar § 3 resolves; [matchUpFormat codes](/docs/codes/matchup-format) is the guide to writing codes.
 - [The outcome pipeline](../concepts/outcome-pipeline.md): the same kind of specification for
   `setMatchUpStatus`, which this page follows.

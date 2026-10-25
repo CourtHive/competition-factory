@@ -2,54 +2,108 @@
   {
     "caseId": "grammar.parse.standard-best-of-3.v1",
     "operation": "kernel.format.parse@1",
-    "input": { "matchUpFormat": "SET3-S:6/TB7" },
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7"
+    },
     "expected": {
       "kind": "value",
-      "value": { "bestOf": 3, "setFormat": { "setTo": 6, "tiebreakAt": 6, "tiebreakFormat": { "tiebreakTo": 7 } } }
+      "value": {
+        "bestOf": 3,
+        "setFormat": {
+          "setTo": 6,
+          "tiebreakAt": 6,
+          "tiebreakFormat": {
+            "tiebreakTo": 7
+          }
+        }
+      }
     }
   },
   {
     "caseId": "grammar.parse.noad-best-of-5.v1",
     "operation": "kernel.format.parse@1",
-    "input": { "matchUpFormat": "SET5-S:6NOAD/TB7" },
+    "input": {
+      "matchUpFormat": "SET5-S:6NOAD/TB7"
+    },
     "expected": {
       "kind": "value",
       "value": {
         "bestOf": 5,
-        "setFormat": { "setTo": 6, "NoAD": true, "tiebreakAt": 6, "tiebreakFormat": { "tiebreakTo": 7 } }
+        "setFormat": {
+          "setTo": 6,
+          "NoAD": true,
+          "tiebreakAt": 6,
+          "tiebreakFormat": {
+            "tiebreakTo": 7
+          }
+        }
       }
     }
   },
   {
     "caseId": "grammar.parse.match-tiebreak-final.v1",
     "operation": "kernel.format.parse@1",
-    "input": { "matchUpFormat": "SET3-S:6/TB7-F:TB10" },
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7-F:TB10"
+    },
     "expected": {
       "kind": "value",
       "value": {
         "bestOf": 3,
-        "setFormat": { "setTo": 6, "tiebreakAt": 6, "tiebreakFormat": { "tiebreakTo": 7 } },
-        "finalSetFormat": { "tiebreakSet": { "tiebreakTo": 10 } }
+        "setFormat": {
+          "setTo": 6,
+          "tiebreakAt": 6,
+          "tiebreakFormat": {
+            "tiebreakTo": 7
+          }
+        },
+        "finalSetFormat": {
+          "tiebreakSet": {
+            "tiebreakTo": 10
+          }
+        }
       }
     }
   },
   {
     "caseId": "grammar.parse.tiebreak-only-set.v1",
     "operation": "kernel.format.parse@1",
-    "input": { "matchUpFormat": "SET1-S:TB10" },
-    "expected": { "kind": "value", "value": { "bestOf": 1, "setFormat": { "tiebreakSet": { "tiebreakTo": 10 } } } }
+    "input": {
+      "matchUpFormat": "SET1-S:TB10"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "bestOf": 1,
+        "setFormat": {
+          "tiebreakSet": {
+            "tiebreakTo": 10
+          }
+        }
+      }
+    }
   },
   {
     "caseId": "grammar.parse.unknown-section.v1",
     "operation": "kernel.format.parse@1",
-    "input": { "matchUpFormat": "SET3-S:6/TB7-Q:1" },
-    "expected": { "kind": "error", "code": "UNPARSEABLE_FORMAT" }
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7-Q:1"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    }
   },
   {
     "caseId": "grammar.parse.not-a-format.v1",
     "operation": "kernel.format.parse@1",
-    "input": { "matchUpFormat": "BOGUS" },
-    "expected": { "kind": "error", "code": "UNPARSEABLE_FORMAT" }
+    "input": {
+      "matchUpFormat": "BOGUS"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    }
   },
   {
     "caseId": "grammar.stringify.standard-best-of-3.v1",
@@ -57,10 +111,19 @@
     "input": {
       "formatStructure": {
         "bestOf": 3,
-        "setFormat": { "setTo": 6, "tiebreakAt": 6, "tiebreakFormat": { "tiebreakTo": 7 } }
+        "setFormat": {
+          "setTo": 6,
+          "tiebreakAt": 6,
+          "tiebreakFormat": {
+            "tiebreakTo": 7
+          }
+        }
       }
     },
-    "expected": { "kind": "value", "value": "SET3-S:6/TB7" }
+    "expected": {
+      "kind": "value",
+      "value": "SET3-S:6/TB7"
+    }
   },
   {
     "caseId": "grammar.stringify.noad-best-of-5.v1",
@@ -68,10 +131,20 @@
     "input": {
       "formatStructure": {
         "bestOf": 5,
-        "setFormat": { "setTo": 6, "NoAD": true, "tiebreakAt": 6, "tiebreakFormat": { "tiebreakTo": 7 } }
+        "setFormat": {
+          "setTo": 6,
+          "NoAD": true,
+          "tiebreakAt": 6,
+          "tiebreakFormat": {
+            "tiebreakTo": 7
+          }
+        }
       }
     },
-    "expected": { "kind": "value", "value": "SET5-S:6NOAD/TB7" }
+    "expected": {
+      "kind": "value",
+      "value": "SET5-S:6NOAD/TB7"
+    }
   },
   {
     "caseId": "grammar.stringify.match-tiebreak-final.v1",
@@ -79,11 +152,24 @@
     "input": {
       "formatStructure": {
         "bestOf": 3,
-        "setFormat": { "setTo": 6, "tiebreakAt": 6, "tiebreakFormat": { "tiebreakTo": 7 } },
-        "finalSetFormat": { "tiebreakSet": { "tiebreakTo": 10 } }
+        "setFormat": {
+          "setTo": 6,
+          "tiebreakAt": 6,
+          "tiebreakFormat": {
+            "tiebreakTo": 7
+          }
+        },
+        "finalSetFormat": {
+          "tiebreakSet": {
+            "tiebreakTo": 10
+          }
+        }
       }
     },
-    "expected": { "kind": "value", "value": "SET3-S:6/TB7-F:TB10" }
+    "expected": {
+      "kind": "value",
+      "value": "SET3-S:6/TB7-F:TB10"
+    }
   },
   {
     "caseId": "grammar.stringify.redundant-tiebreak-at.v1",
@@ -91,16 +177,1260 @@
     "input": {
       "formatStructure": {
         "bestOf": 1,
-        "setFormat": { "setTo": 4, "tiebreakAt": 4, "tiebreakFormat": { "tiebreakTo": 7 } }
+        "setFormat": {
+          "setTo": 4,
+          "tiebreakAt": 4,
+          "tiebreakFormat": {
+            "tiebreakTo": 7
+          }
+        }
       }
     },
-    "expected": { "kind": "value", "value": "SET1-S:4/TB7" },
+    "expected": {
+      "kind": "value",
+      "value": "SET1-S:4/TB7"
+    },
     "note": "@n is omitted when tiebreakAt equals setTo"
   },
   {
     "caseId": "grammar.stringify.not-an-object.v1",
     "operation": "kernel.format.stringify@1",
-    "input": { "formatStructure": "SET3-S:6/TB7" },
-    "expected": { "kind": "refused", "reason": "INVALID_INPUT" }
+    "input": {
+      "formatStructure": "SET3-S:6/TB7"
+    },
+    "expected": {
+      "kind": "refused",
+      "reason": "INVALID_INPUT"
+    }
+  },
+  {
+    "caseId": "grammar.parse.trailing-space.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7 "
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 2 rule 2, § 4: a closed lenient reading (CA 2026-10-02); there is no trimming"
+  },
+  {
+    "caseId": "grammar.parse.leading-space.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": " SET3-S:6/TB7"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 2 rule 2"
+  },
+  {
+    "caseId": "grammar.parse.empty-final-section.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7-F:"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 2 rule 5, § 4: a closed lenient reading"
+  },
+  {
+    "caseId": "grammar.parse.tiebreak-with-no-number.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 4: a closed lenient reading"
+  },
+  {
+    "caseId": "grammar.parse.final-tiebreak-with-no-number.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7-F:6/TB"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 4: a closed lenient reading"
+  },
+  {
+    "caseId": "grammar.parse.trailing-text.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7;DROP"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 2 rule 2"
+  },
+  {
+    "caseId": "grammar.parse.empty-string.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": ""
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 2 rule 1"
+  },
+  {
+    "caseId": "grammar.parse.trailing-separator.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7-"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 2 rule 5"
+  },
+  {
+    "caseId": "grammar.parse.empty-section.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3--S:6/TB7"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 2 rule 5"
+  },
+  {
+    "caseId": "grammar.parse.no-set-section.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 3.2 rule 3: S is required"
+  },
+  {
+    "caseId": "grammar.parse.lower-case-root.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "set3-S:6/TB7"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 2 rule 3"
+  },
+  {
+    "caseId": "grammar.parse.mixed-case-noad.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6NoAD/TB7"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 2 rule 3"
+  },
+  {
+    "caseId": "grammar.parse.leading-zero-count.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET03-S:6/TB7"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 2 rule 4"
+  },
+  {
+    "caseId": "grammar.parse.leading-zero-games.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:06/TB7"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 2 rule 4"
+  },
+  {
+    "caseId": "grammar.parse.fractional-tiebreak-at.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7@6.5"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 2 rule 4"
+  },
+  {
+    "caseId": "grammar.parse.zero-games.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:0/TB7"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 2 rule 4"
+  },
+  {
+    "caseId": "grammar.parse.zero-count.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET0-S:6/TB7"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 2 rule 4"
+  },
+  {
+    "caseId": "grammar.parse.zero-minutes.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "T0"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 2 rule 4"
+  },
+  {
+    "caseId": "grammar.parse.beyond-safe-integer.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET9007199254740993-S:6"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 2 rule 4: at most 2^53 - 1"
+  },
+  {
+    "caseId": "grammar.parse.head-modifiers-out-of-order.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3AX-S:T10"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 3.2 rule 1: X, then A, then the unknown modifiers"
+  },
+  {
+    "caseId": "grammar.parse.sections-out-of-order.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7-F:TB10-G:TN"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 3.2 rule 3: S, G, F, M"
+  },
+  {
+    "caseId": "grammar.parse.match-section-first.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-M:T90-S:6/TB7"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 3.2 rule 3"
+  },
+  {
+    "caseId": "grammar.parse.final-on-a-count-of-one.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET1-S:6/TB7-F:TB10"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 3.2 rule 5"
+  },
+  {
+    "caseId": "grammar.parse.exactly-on-a-games-set.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3X-S:6/TB7"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 3.2 rule 4: on SET, X requires a timed segment"
+  },
+  {
+    "caseId": "grammar.parse.combined-total-best-of-three.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:P21"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 3.2 rule 6"
+  },
+  {
+    "caseId": "grammar.parse.combined-total-as-final.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7-F:P21"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 3.2 rule 6"
+  },
+  {
+    "caseId": "grammar.parse.combined-total-margin-of-one.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET1-S:P21WB1"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 3.4: a combined total's margin is at least 2"
+  },
+  {
+    "caseId": "grammar.parse.deuce-count-zero.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7-G:TN0D"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 3.3"
+  },
+  {
+    "caseId": "grammar.parse.match-clock-zero.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7-M:T0"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 3.3 and § 2 rule 4"
+  },
+  {
+    "caseId": "grammar.parse.win-by-before-noad.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6WB1NOAD"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 3.4 rule 1: NOAD before WB"
+  },
+  {
+    "caseId": "grammar.parse.two-tiebreaks.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7/TB7"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 3.4 rule 1"
+  },
+  {
+    "caseId": "grammar.parse.modifier-on-a-games-tiebreak.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7@RALLY"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 3.4 rule 1: @ on a standard set is a number"
+  },
+  {
+    "caseId": "grammar.parse.number-on-a-tiebreak-set.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:TB10@7"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 3.4 rule 2: @ on a tiebreak-only set is a modifier"
+  },
+  {
+    "caseId": "grammar.parse.noad-after-modifier.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:TB11@RALLYNOAD"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 3.4 rule 2 (validator debate G8)"
+  },
+  {
+    "caseId": "grammar.parse.noad-on-a-timed-tiebreak.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "T10/TB7NOAD"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 3.4 rule 3"
+  },
+  {
+    "caseId": "grammar.parse.tiebreak-at-five.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7@5"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "bestOf": 3,
+        "setFormat": {
+          "setTo": 6,
+          "tiebreakAt": 5,
+          "tiebreakFormat": {
+            "tiebreakTo": 7
+          }
+        }
+      }
+    },
+    "note": "§ 5: tiebreakAt as written"
+  },
+  {
+    "caseId": "grammar.parse.advantage-set-win-by-one.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6NOADWB1"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "bestOf": 3,
+        "setFormat": {
+          "setTo": 6,
+          "NoAD": true,
+          "noTiebreak": true,
+          "winBy": 1
+        }
+      }
+    },
+    "note": "§ 5: winBy only when it is not 2"
+  },
+  {
+    "caseId": "grammar.parse.exactly-timed.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3X-S:T10"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "exactly": 3,
+        "setFormat": {
+          "timed": true,
+          "minutes": 10
+        }
+      }
+    },
+    "note": "§ 5: exactly, no bestOf"
+  },
+  {
+    "caseId": "grammar.parse.exactly-aggregate-decider.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3XA-S:T10-F:TB1"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "exactly": 3,
+        "aggregate": true,
+        "setFormat": {
+          "timed": true,
+          "minutes": 10
+        },
+        "finalSetFormat": {
+          "tiebreakSet": {
+            "tiebreakTo": 1
+          }
+        }
+      }
+    },
+    "note": "§ 5"
+  },
+  {
+    "caseId": "grammar.parse.other-root-aggregate.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "HAL2A-S:T45"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "bestOf": 2,
+        "matchRoot": "HAL",
+        "aggregate": true,
+        "setFormat": {
+          "timed": true,
+          "minutes": 45
+        }
+      }
+    },
+    "note": "§ 5: matchRoot only when not SET"
+  },
+  {
+    "caseId": "grammar.parse.unknown-match-modifiers.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3ZQ-S:6/TB7"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "bestOf": 3,
+        "matchMods": ["Z", "Q"],
+        "setFormat": {
+          "setTo": 6,
+          "tiebreakAt": 6,
+          "tiebreakFormat": {
+            "tiebreakTo": 7
+          }
+        }
+      }
+    },
+    "note": "§ 3.2 rule 1, § 5: kept in order"
+  },
+  {
+    "caseId": "grammar.parse.outs.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:O3"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "bestOf": 3,
+        "setFormat": {
+          "outs": 3
+        }
+      }
+    },
+    "note": "§ 5"
+  },
+  {
+    "caseId": "grammar.parse.combined-total-win-by.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET1-S:P21WB2"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "bestOf": 1,
+        "setFormat": {
+          "combinedPointTotal": 21,
+          "tieResolution": "WIN_BY_MARGIN",
+          "winningMargin": 2
+        }
+      }
+    },
+    "note": "§ 5"
+  },
+  {
+    "caseId": "grammar.parse.combined-total-deciding-point.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET1-S:P21DP"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "bestOf": 1,
+        "setFormat": {
+          "combinedPointTotal": 21,
+          "tieResolution": "DECIDING_POINT"
+        }
+      }
+    },
+    "note": "§ 5"
+  },
+  {
+    "caseId": "grammar.parse.simplified-timed.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "T10P/TB1@RALLY"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "simplified": true,
+        "bestOf": 1,
+        "setFormat": {
+          "timed": true,
+          "minutes": 10,
+          "based": "P",
+          "tiebreakFormat": {
+            "tiebreakTo": 1
+          },
+          "modifier": "RALLY"
+        }
+      }
+    },
+    "note": "§ 3.1, § 5"
+  },
+  {
+    "caseId": "grammar.parse.rally-tiebreak-set.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:TB11NOAD@RALLY"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "bestOf": 3,
+        "setFormat": {
+          "tiebreakSet": {
+            "tiebreakTo": 11,
+            "NoAD": true,
+            "modifier": "RALLY"
+          }
+        }
+      }
+    },
+    "note": "§ 3.4 rule 2"
+  },
+  {
+    "caseId": "grammar.parse.consecutive-game.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7-G:3C2D"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "bestOf": 3,
+        "setFormat": {
+          "setTo": 6,
+          "tiebreakAt": 6,
+          "tiebreakFormat": {
+            "tiebreakTo": 7
+          }
+        },
+        "gameFormat": {
+          "type": "CONSECUTIVE",
+          "count": 3,
+          "deuceAfter": 2
+        }
+      }
+    },
+    "note": "§ 3.3, § 5"
+  },
+  {
+    "caseId": "grammar.parse.all-sections.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7-G:TN3D-F:TB10-M:T90"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "bestOf": 3,
+        "setFormat": {
+          "setTo": 6,
+          "tiebreakAt": 6,
+          "tiebreakFormat": {
+            "tiebreakTo": 7
+          }
+        },
+        "gameFormat": {
+          "type": "TRADITIONAL",
+          "deuceAfter": 3
+        },
+        "finalSetFormat": {
+          "tiebreakSet": {
+            "tiebreakTo": 10
+          }
+        },
+        "matchUpConstraint": {
+          "timed": true,
+          "minutes": 90
+        }
+      }
+    },
+    "note": "§ 3.2 rule 3: S, G, F, M"
+  },
+  {
+    "caseId": "grammar.parse.best-of-four.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET4-S:6/TB7"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "bestOf": 4,
+        "setFormat": {
+          "setTo": 6,
+          "tiebreakAt": 6,
+          "tiebreakFormat": {
+            "tiebreakTo": 7
+          }
+        }
+      }
+    },
+    "note": "an even count is a format (scoring spec § 3.1)"
+  },
+  {
+    "caseId": "grammar.canonical.redundant-tiebreak-at.v1",
+    "operation": "kernel.format.canonical@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7@6"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "SET3-S:6/TB7"
+    },
+    "note": "§ 4"
+  },
+  {
+    "caseId": "grammar.canonical.redundant-tiebreak-at-noad.v1",
+    "operation": "kernel.format.canonical@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6NOAD/TB7@6"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "SET3-S:6NOAD/TB7"
+    },
+    "note": "§ 4"
+  },
+  {
+    "caseId": "grammar.canonical.explicit-win-by-two.v1",
+    "operation": "kernel.format.canonical@1",
+    "input": {
+      "matchUpFormat": "SET3-S:5WB2"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "SET3-S:5"
+    },
+    "note": "§ 4"
+  },
+  {
+    "caseId": "grammar.canonical.exactly-one.v1",
+    "operation": "kernel.format.canonical@1",
+    "input": {
+      "matchUpFormat": "SET1X-S:T10"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "SET1-S:T10"
+    },
+    "note": "§ 4"
+  },
+  {
+    "caseId": "grammar.canonical.exactly-one-aggregate.v1",
+    "operation": "kernel.format.canonical@1",
+    "input": {
+      "matchUpFormat": "SET1XA-S:T10"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "SET1A-S:T10"
+    },
+    "note": "§ 4"
+  },
+  {
+    "caseId": "grammar.canonical.identical-final.v1",
+    "operation": "kernel.format.canonical@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6-F:6"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "SET3-S:6"
+    },
+    "note": "§ 4"
+  },
+  {
+    "caseId": "grammar.canonical.identical-final-once-rewritten.v1",
+    "operation": "kernel.format.canonical@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7-F:6/TB7@6"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "SET3-S:6/TB7"
+    },
+    "note": "§ 4: both are rewritten before they are compared"
+  },
+  {
+    "caseId": "grammar.canonical.timed-games-basis.v1",
+    "operation": "kernel.format.canonical@1",
+    "input": {
+      "matchUpFormat": "SET1-S:T20G"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "SET1-S:T20"
+    },
+    "note": "§ 4"
+  },
+  {
+    "caseId": "grammar.canonical.timed-games-basis-with-tiebreak.v1",
+    "operation": "kernel.format.canonical@1",
+    "input": {
+      "matchUpFormat": "SET3-S:T20G/TB7"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "SET3-S:T20/TB7"
+    },
+    "note": "§ 4"
+  },
+  {
+    "caseId": "grammar.canonical.canonical-is-itself.v1",
+    "operation": "kernel.format.canonical@1",
+    "input": {
+      "matchUpFormat": "SET5-S:6/TB7-F:6/TB7@12"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "SET5-S:6/TB7-F:6/TB7@12"
+    },
+    "note": "§ 1"
+  },
+  {
+    "caseId": "grammar.canonical.not-a-code.v1",
+    "operation": "kernel.format.canonical@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7 "
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 1: a string that is not a code has no canonical form"
+  },
+  {
+    "caseId": "grammar.valid.standard.v1",
+    "operation": "kernel.format.isValid@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7"
+    },
+    "expected": {
+      "kind": "value",
+      "value": true
+    },
+    "note": "§ 6"
+  },
+  {
+    "caseId": "grammar.valid.not-a-code.v1",
+    "operation": "kernel.format.isValid@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB"
+    },
+    "expected": {
+      "kind": "value",
+      "value": false
+    },
+    "note": "§ 6: not well-formed"
+  },
+  {
+    "caseId": "grammar.valid.empty.v1",
+    "operation": "kernel.format.isValid@1",
+    "input": {
+      "matchUpFormat": ""
+    },
+    "expected": {
+      "kind": "value",
+      "value": false
+    },
+    "note": "§ 2 rule 1"
+  },
+  {
+    "caseId": "grammar.valid.tiebreak-at-s-less-one.v1",
+    "operation": "kernel.format.isValid@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7@5"
+    },
+    "expected": {
+      "kind": "value",
+      "value": true
+    },
+    "note": "§ 6 rule 1: S - 1 is allowed"
+  },
+  {
+    "caseId": "grammar.valid.tiebreak-below-s-less-one.v1",
+    "operation": "kernel.format.isValid@1",
+    "input": {
+      "matchUpFormat": "SET3-S:6/TB7@4"
+    },
+    "expected": {
+      "kind": "value",
+      "value": false
+    },
+    "note": "§ 6 rule 1 (CA 2026-10-18)"
+  },
+  {
+    "caseId": "grammar.valid.short-set-below-s-less-one.v1",
+    "operation": "kernel.format.isValid@1",
+    "input": {
+      "matchUpFormat": "SET3-S:4/TB7@2"
+    },
+    "expected": {
+      "kind": "value",
+      "value": false
+    },
+    "note": "§ 6 rule 1"
+  },
+  {
+    "caseId": "grammar.valid.final-tiebreak-at-twelve.v1",
+    "operation": "kernel.format.isValid@1",
+    "input": {
+      "matchUpFormat": "SET5-S:6/TB7-F:6/TB7@12"
+    },
+    "expected": {
+      "kind": "value",
+      "value": true
+    },
+    "note": "§ 6 rule 1: above setTo is allowed"
+  },
+  {
+    "caseId": "grammar.valid.aggregate-of-standard-sets.v1",
+    "operation": "kernel.format.isValid@1",
+    "input": {
+      "matchUpFormat": "SET3A-S:6/TB7"
+    },
+    "expected": {
+      "kind": "value",
+      "value": false
+    },
+    "note": "§ 6 rule 2 (CA 2026-10-18)"
+  },
+  {
+    "caseId": "grammar.valid.aggregate-standard-final.v1",
+    "operation": "kernel.format.isValid@1",
+    "input": {
+      "matchUpFormat": "SET3A-S:T10-F:6"
+    },
+    "expected": {
+      "kind": "value",
+      "value": false
+    },
+    "note": "§ 6 rule 2: without X the final segment is summed"
+  },
+  {
+    "caseId": "grammar.valid.exactly-aggregate-standard-decider.v1",
+    "operation": "kernel.format.isValid@1",
+    "input": {
+      "matchUpFormat": "SET3XA-S:T10-F:6"
+    },
+    "expected": {
+      "kind": "value",
+      "value": true
+    },
+    "note": "§ 6 rule 2: with X the final segment is the decider, not summed"
+  },
+  {
+    "caseId": "grammar.valid.equivalent-spelling.v1",
+    "operation": "kernel.format.isValid@1",
+    "input": {
+      "matchUpFormat": "SET3-S:5WB2"
+    },
+    "expected": {
+      "kind": "value",
+      "value": true
+    },
+    "note": "§ 4: an equivalent spelling is valid"
+  },
+  {
+    "caseId": "grammar.stringify.default-win-by-dropped.v1",
+    "operation": "kernel.format.stringify@1",
+    "input": {
+      "formatStructure": {
+        "bestOf": 3,
+        "setFormat": {
+          "setTo": 5,
+          "noTiebreak": true,
+          "winBy": 2
+        }
+      }
+    },
+    "expected": {
+      "kind": "value",
+      "value": "SET3-S:5"
+    },
+    "note": "§ 7: winBy only when it is not 2"
+  },
+  {
+    "caseId": "grammar.stringify.identical-final-dropped.v1",
+    "operation": "kernel.format.stringify@1",
+    "input": {
+      "formatStructure": {
+        "bestOf": 3,
+        "setFormat": {
+          "setTo": 6,
+          "tiebreakAt": 6,
+          "tiebreakFormat": {
+            "tiebreakTo": 7
+          }
+        },
+        "finalSetFormat": {
+          "setTo": 6,
+          "tiebreakAt": 6,
+          "tiebreakFormat": {
+            "tiebreakTo": 7
+          }
+        }
+      }
+    },
+    "expected": {
+      "kind": "value",
+      "value": "SET3-S:6/TB7"
+    },
+    "note": "§ 7"
+  },
+  {
+    "caseId": "grammar.stringify.final-on-one-set-dropped.v1",
+    "operation": "kernel.format.stringify@1",
+    "input": {
+      "formatStructure": {
+        "bestOf": 1,
+        "setFormat": {
+          "setTo": 6,
+          "tiebreakAt": 6,
+          "tiebreakFormat": {
+            "tiebreakTo": 7
+          }
+        },
+        "finalSetFormat": {
+          "tiebreakSet": {
+            "tiebreakTo": 10
+          }
+        }
+      }
+    },
+    "expected": {
+      "kind": "value",
+      "value": "SET1-S:6/TB7"
+    },
+    "note": "§ 7"
+  },
+  {
+    "caseId": "grammar.stringify.section-order.v1",
+    "operation": "kernel.format.stringify@1",
+    "input": {
+      "formatStructure": {
+        "bestOf": 3,
+        "setFormat": {
+          "setTo": 6,
+          "tiebreakAt": 6,
+          "tiebreakFormat": {
+            "tiebreakTo": 7
+          }
+        },
+        "matchUpConstraint": {
+          "timed": true,
+          "minutes": 90
+        },
+        "finalSetFormat": {
+          "tiebreakSet": {
+            "tiebreakTo": 10
+          }
+        },
+        "gameFormat": {
+          "type": "CONSECUTIVE",
+          "count": 3
+        }
+      }
+    },
+    "expected": {
+      "kind": "value",
+      "value": "SET3-S:6/TB7-G:3C-F:TB10-M:T90"
+    },
+    "note": "§ 7: S, G, F, M whatever the object's key order"
+  },
+  {
+    "caseId": "grammar.stringify.games-basis-dropped.v1",
+    "operation": "kernel.format.stringify@1",
+    "input": {
+      "formatStructure": {
+        "bestOf": 1,
+        "setFormat": {
+          "timed": true,
+          "minutes": 20,
+          "based": "G"
+        }
+      }
+    },
+    "expected": {
+      "kind": "value",
+      "value": "SET1-S:T20"
+    },
+    "note": "§ 7: based only when P"
+  },
+  {
+    "caseId": "grammar.stringify.exactly-one.v1",
+    "operation": "kernel.format.stringify@1",
+    "input": {
+      "formatStructure": {
+        "exactly": 1,
+        "setFormat": {
+          "timed": true,
+          "minutes": 10
+        }
+      }
+    },
+    "expected": {
+      "kind": "value",
+      "value": "SET1-S:T10"
+    },
+    "note": "§ 7: X only for a count above 1"
+  },
+  {
+    "caseId": "grammar.stringify.exactly-on-a-games-set.v1",
+    "operation": "kernel.format.stringify@1",
+    "input": {
+      "formatStructure": {
+        "exactly": 3,
+        "setFormat": {
+          "setTo": 6,
+          "tiebreakAt": 6,
+          "tiebreakFormat": {
+            "tiebreakTo": 7
+          }
+        }
+      }
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNSTRINGIFIABLE_FORMAT"
+    },
+    "note": "§ 7: never a code parse refuses"
+  },
+  {
+    "caseId": "grammar.stringify.no-count.v1",
+    "operation": "kernel.format.stringify@1",
+    "input": {
+      "formatStructure": {
+        "setFormat": {
+          "setTo": 6,
+          "tiebreakAt": 6,
+          "tiebreakFormat": {
+            "tiebreakTo": 7
+          }
+        }
+      }
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNSTRINGIFIABLE_FORMAT"
+    },
+    "note": "§ 7"
+  },
+  {
+    "caseId": "grammar.stringify.no-set-format.v1",
+    "operation": "kernel.format.stringify@1",
+    "input": {
+      "formatStructure": {
+        "bestOf": 3
+      }
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNSTRINGIFIABLE_FORMAT"
+    },
+    "note": "§ 7"
+  },
+  {
+    "caseId": "grammar.stringify.unwritable-game-format.v1",
+    "operation": "kernel.format.stringify@1",
+    "input": {
+      "formatStructure": {
+        "bestOf": 3,
+        "setFormat": {
+          "setTo": 6,
+          "tiebreakAt": 6,
+          "tiebreakFormat": {
+            "tiebreakTo": 7
+          }
+        },
+        "gameFormat": {
+          "type": "SOMETHING"
+        }
+      }
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNSTRINGIFIABLE_FORMAT"
+    },
+    "note": "§ 7"
+  },
+  {
+    "caseId": "grammar.stringify.combined-total-best-of-three.v1",
+    "operation": "kernel.format.stringify@1",
+    "input": {
+      "formatStructure": {
+        "bestOf": 3,
+        "setFormat": {
+          "combinedPointTotal": 21,
+          "tieResolution": "ALLOW"
+        }
+      }
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNSTRINGIFIABLE_FORMAT"
+    },
+    "note": "§ 7, § 3.2 rule 6"
   }
 ]
