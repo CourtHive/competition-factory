@@ -14,6 +14,7 @@ import { DEFAULTED } from '@Constants/matchUpStatusConstants';
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { SINGLES, TEAM } from '@Constants/eventConstants';
 import {
+  INCOMPATIBLE_MATCHUP_STATUS,
   INVALID_STRUCTURE,
   INVALID_MATCHUP,
   INVALID_VALUES,
@@ -42,7 +43,7 @@ it('can remove scores from adHoc matchUps', () => {
   let matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
   let scoredMatchUps = matchUps.filter(checkScoreHasValue);
   // expect all of the matchUps to be scored
-  expect(matchUps?.length).toEqual(scoredMatchUps.length);
+  expect(matchUps.length).toEqual(scoredMatchUps.length);
 
   let resetResult = tournamentEngine.resetAdHocMatchUps();
   expect(resetResult.error).toEqual(MISSING_DRAW_DEFINITION);
@@ -58,7 +59,7 @@ it('can remove scores from adHoc matchUps', () => {
   let unScoredMatchUps = matchUps.filter(({ score }) => !checkScoreHasValue({ score }));
 
   // expect only half of the matchUps to be scored
-  expect(scoredMatchUps.length).toEqual(matchUps?.length / 2);
+  expect(scoredMatchUps.length).toEqual(matchUps.length / 2);
 
   // expect participant assignments to remain
   expect(
@@ -88,7 +89,7 @@ it('can remove scores from adHoc matchUps', () => {
   unScoredMatchUps = matchUps.filter(({ score }) => !checkScoreHasValue({ score }));
 
   expect(scoredMatchUps.length).toEqual(0);
-  expect(unScoredMatchUps.length).toEqual(matchUps?.length);
+  expect(unScoredMatchUps.length).toEqual(matchUps.length);
   expect(
     unScoredMatchUps.flatMap((m) => m.sides?.flatMap((s) => s.participant?.participantId)).filter(Boolean).length,
   ).toEqual(0);
@@ -114,7 +115,7 @@ it('can reset adHoc matchUps by matchUpIds', () => {
   });
 
   let matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
-  expect(matchUps?.every(checkScoreHasValue)).toBe(true);
+  expect(matchUps.every(checkScoreHasValue)).toBe(true);
 
   // reset specific matchUps by matchUpIds (round 1 matchUps only)
   const round1MatchUpIds = matchUps.filter((m) => m.roundNumber === 1).map(getMatchUpId);
@@ -378,15 +379,14 @@ it('returns error when resetScorecard fails for TEAM matchUps', async () => {
 
   // Mock resetScorecard to return an error
   const resetScorecardModule = await import('@Mutate/matchUps/resetScorecard');
-  const spy = vi.spyOn(resetScorecardModule, 'resetScorecard').mockReturnValue({
-    error: { message: 'Mock resetScorecard error', code: 'MOCK_ERROR' },
-  });
+  const spy = vi.spyOn(resetScorecardModule, 'resetScorecard').mockReturnValue({ error: INVALID_MATCHUP });
 
   const resetResult = tournamentEngine.resetAdHocMatchUps({
     matchUpIds: teamMatchUpIds,
     drawId,
   });
-  expect(resetResult.error).toBeDefined();
+  expect(spy).toHaveBeenCalled();
+  expect(resetResult.error).toEqual(INVALID_MATCHUP);
 
   spy.mockRestore();
 });
@@ -418,7 +418,7 @@ it('returns error when resetMatchUpLineUps fails for TEAM matchUps with removeAs
   // Mock resetMatchUpLineUps to return an error
   const lineUpsModule = await import('@Mutate/matchUps/lineUps/resetMatchUpLineUps');
   const spy = vi.spyOn(lineUpsModule, 'resetMatchUpLineUps').mockReturnValue({
-    error: { ...INVALID_MATCHUP, message: 'Mock resetMatchUpLineUps error' },
+    error: INVALID_MATCHUP,
   });
 
   const resetResult = tournamentEngine.resetAdHocMatchUps({
@@ -426,11 +426,8 @@ it('returns error when resetMatchUpLineUps fails for TEAM matchUps with removeAs
     removeAssignments: true,
     drawId,
   });
-  // NOTE: source code line 60 returns `result` (resetScorecard result) not `resetLineUpResult`
-  // so when resetMatchUpLineUps fails, the resetScorecard success result is returned
-  // This exercises the error branch even though the returned value reflects resetScorecard's result
   expect(spy).toHaveBeenCalled();
-  expect(resetResult).toBeDefined();
+  expect(resetResult.error).toEqual(INVALID_MATCHUP);
 
   spy.mockRestore();
 });
@@ -459,14 +456,15 @@ it('returns error when setMatchUpState fails', async () => {
   // Mock setMatchUpState to return an error
   const setMatchUpStateModule = await import('@Mutate/matchUps/matchUpStatus/setMatchUpState');
   const spy = vi.spyOn(setMatchUpStateModule, 'setMatchUpState').mockReturnValue({
-    error: { message: 'Mock setMatchUpState error', code: 'MOCK_ERROR' },
+    error: INCOMPATIBLE_MATCHUP_STATUS,
   });
 
   const resetResult = tournamentEngine.resetAdHocMatchUps({
     matchUpIds,
     drawId,
   });
-  expect(resetResult.error).toBeDefined();
+  expect(spy).toHaveBeenCalled();
+  expect(resetResult.error).toEqual(INCOMPATIBLE_MATCHUP_STATUS);
 
   spy.mockRestore();
 });
