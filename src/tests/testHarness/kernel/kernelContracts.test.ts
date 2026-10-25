@@ -1,6 +1,7 @@
 import { directAdapter, kernelOperations, serializedAdapter, validateCases } from './kernel';
 import type { KernelAdapter, KernelCase, KernelOperation, KernelResult } from './kernel';
 import { batchedAdapter, externalAdapter, stdioCommand } from './externalAdapter';
+import scoringReduceCases from './cases/scoringReduce.json';
 import schedulingCases from './cases/scheduling.json';
 import { canonicalJson } from '@Tools/canonicalJson';
 import grammarCases from './cases/grammar.json';
@@ -18,7 +19,13 @@ import timeCases from './cases/time.json';
  * implementation bundled and run as its own process (`stdio.ts`), one batch per run. `KERNEL_EXTERNAL_ADAPTER=<command>`
  * adds any other implementation that speaks the protocol.
  */
-const cases = [...scoringCases, ...grammarCases, ...schedulingCases, ...timeCases] as KernelCase[];
+const cases = [
+  ...scoringCases,
+  ...scoringReduceCases,
+  ...grammarCases,
+  ...schedulingCases,
+  ...timeCases,
+] as KernelCase[];
 const requests = cases.map(({ operation, input }) => ({ operation, input }));
 
 const externalCommand = process.env.KERNEL_EXTERNAL_ADAPTER;
@@ -227,6 +234,30 @@ describe('negative controls: the cases reject a wrong implementation', () => {
       'scoring.points-to-game.standard.fifteen-forty.v1',
       'scoring.points-to-game.standard.advantage-out.v1',
       'scoring.points-to-game.noad.fifteen-forty.v1',
+    ]);
+  });
+
+  it("a reducer that ignores a point's value and the competition's server rule fails exactly those cases", () => {
+    const reduce = kernelOperations['kernel.scoring.reduce@1'];
+    const unitsAndAlternation: KernelOperation = {
+      ...reduce,
+      run: (input) => {
+        const {
+          pointMultipliers: _multipliers,
+          competitionFormat: _competition,
+          ...configuration
+        } = (input.configuration ?? {}) as Record<string, unknown>;
+        const timeline = (input.timeline as any[]).map(({ data, ...entry }) => {
+          const { scoreValue: _value, ...rest } = data ?? {};
+          return { ...entry, data: rest };
+        });
+        return reduce.run({ configuration, timeline });
+      },
+    };
+    const wrong = directAdapter({ ...kernelOperations, 'kernel.scoring.reduce@1': unitsAndAlternation });
+    expect(failures(wrong, scoringReduceCases as KernelCase[]).map((c) => c.caseId)).toEqual([
+      'scoring.reduce.point-values.v1',
+      'scoring.reduce.winner-serves.v1',
     ]);
   });
 

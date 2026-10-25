@@ -1,4 +1,5 @@
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { harvestScoringReduce } from '../kernel/harvestScoringReduce';
 import { factoryVersion } from '@Functions/global/factoryVersion';
 import { getSchemaWriteMode } from '@Global/state/globalState';
 import { canonicalHash, canonicalObject } from './hash';
@@ -152,6 +153,9 @@ export function scoringEngineScenario(args: ScoringScenarioArgs) {
       );
       steps.push({ directive: { method: action.method, params: action.params ?? {} }, result, patch: [], hash });
     });
+    // the timeline the calls left, as a reducer case (a record reloaded without its timeline has none)
+    const configuration = { matchUpFormat, ...(competitionFormat ? { competitionFormat } : {}) };
+    harvestScoringReduce(scenarioId, configuration, (holder.engine.getState() as any).history?.entries);
     return {
       corpusVersion: 1,
       factoryVersion: factoryVersion(),

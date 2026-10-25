@@ -113,6 +113,7 @@
     "corpus:authored": "CORPUS_OUT=.corpus-out/authored TZ=UTC vitest run src/tests/corpus/authoredSources.test.ts",
     "corpus:scheduling": "CORPUS_OUT=.corpus-out/scheduling TZ=UTC vitest run src/tests/corpus/schedulingSources.test.ts",
     "kernel:harvest-scheduling": "node -e \"const fs=require('node:fs');fs.rmSync('.kernel-cases',{recursive:true,force:true});fs.mkdirSync('.kernel-cases')\" && SCHEDULING_PLAN_CASES=.kernel-cases/scheduling.jsonl SCHEDULING_SCALE=1 TZ=UTC vitest run src/tests/corpus/schedulingSources.test.ts src/tests/corpus/schedulingScale.test.ts src/tests/mutations/scheduling --testTimeout=3600000",
+    "kernel:harvest-scoring": "node -e \"const fs=require('node:fs');fs.mkdirSync('.kernel-cases',{recursive:true});fs.rmSync('.kernel-cases/scoring-reduce.jsonl',{force:true})\" && SCORING_REDUCE_CASES=.kernel-cases/scoring-reduce.jsonl pnpm corpus:scoring",
     "kernel:conformance": "KERNEL_CASES=.kernel-cases/scheduling.jsonl TZ=UTC vitest run src/tests/testHarness/kernel",
     "corpus:scheduling-scale": "SCHEDULING_SCALE=1 CORPUS_OUT=.corpus-out/scheduling-scale TZ=UTC vitest run src/tests/corpus/schedulingScale.test.ts --testTimeout=3600000",
     "corpus:scoring": "node -e \"require('node:fs').rmSync('.corpus-out/scoring',{recursive:true,force:true})\" && CORPUS_OUT=.corpus-out/scoring CORPUS_CONFORMANCE_OUT=.corpus-out/scoring TZ=UTC vitest run src/tests/corpus/scoringSource.test.ts src/tests/corpus/scoringTimeline.test.ts src/tests/scoring/conformance",
