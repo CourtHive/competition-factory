@@ -3,11 +3,23 @@ import { extractDate, extractTime } from '@Tools/dateTime';
 // types
 import { HydratedMatchUp } from '@Types/hydrated';
 
-type ScheduledSortedMatchUpsArgs = {
-  matchUps: HydratedMatchUp[];
-  schedulingProfile: any[];
+/** What the sort reads: the schedule, and the coordinates of the round for the scheduling-profile order. */
+type ScheduleSortable = {
+  schedule?: { scheduledDate?: string; scheduledTime?: string };
+  structureId?: string;
+  roundNumber?: number;
+  eventId?: string;
+  drawId?: string;
 };
-export function scheduledSortedMatchUps({ schedulingProfile, matchUps = [] }: ScheduledSortedMatchUpsArgs) {
+
+type ScheduledSortedMatchUpsArgs<T extends ScheduleSortable> = {
+  schedulingProfile: any[];
+  matchUps: T[];
+};
+export function scheduledSortedMatchUps<T extends ScheduleSortable = HydratedMatchUp>({
+  schedulingProfile,
+  matchUps = [],
+}: ScheduledSortedMatchUpsArgs<T>): T[] {
   const profileHash = {};
 
   // hash is used to store a sort order value for scheduled rounds
@@ -27,7 +39,7 @@ export function scheduledSortedMatchUps({ schedulingProfile, matchUps = [] }: Sc
     });
   }
 
-  const sortedMatchUps: HydratedMatchUp[] = [];
+  const sortedMatchUps: T[] = [];
   const dateGroups = { noScheduledDate: [] };
 
   // 1. Segregate matchUps by date (date can come from schedule.scheduledDate or schedule.scheduledTime)

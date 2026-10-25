@@ -6,9 +6,18 @@ import { decorateResult } from '@Functions/global/decorateResult';
 
 // constants
 import { INVALID_MATCHUP_STATUS, INVALID_MATCHUP_STATUS_BYE } from '@Constants/errorConditionConstants';
+import type { DrawDefinition, Event, MatchUp, Structure, Tournament } from '@Types/tournamentTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
+type AttemptToSetMatchUpStatusBYEArgs = {
+  tournamentRecord?: Tournament;
+  drawDefinition?: DrawDefinition;
+  preserveScheduling?: boolean;
+  structure?: Structure;
+  matchUp: MatchUp;
+  event?: Event;
+};
 export function attemptToSetMatchUpStatusBYE({
   preserveScheduling,
   tournamentRecord,
@@ -16,7 +25,7 @@ export function attemptToSetMatchUpStatusBYE({
   structure,
   matchUp,
   event,
-}) {
+}: AttemptToSetMatchUpStatusBYEArgs) {
   const stack = 'attemptToSetMatchUpStatusBYE';
   if (matchUp?.winningSide) {
     return decorateResult({

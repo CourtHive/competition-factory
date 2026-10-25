@@ -58,6 +58,7 @@ it('should return the publish state of all events', () => {
   let stateResult = tournamentEngine.getPublishState({ eventIds: ['bogus'] });
   expect(stateResult.error).toEqual(EVENT_NOT_FOUND);
 
+  // @ts-expect-error -- deliberately not a string: this asserts the INVALID_VALUES refusal
   stateResult = tournamentEngine.getPublishState({ eventIds: [100] });
   expect(stateResult.error).toEqual(INVALID_VALUES);
 
@@ -67,6 +68,7 @@ it('should return the publish state of all events', () => {
   stateResult = tournamentEngine.getPublishState({ eventId: 'e1', drawIds: ['e1-d1'] });
   expect(stateResult.publishState['e1-d1'].status.published).toEqual(true);
 
+  // @ts-expect-error -- deliberately not a string: this asserts the INVALID_VALUES refusal
   stateResult = tournamentEngine.getPublishState({ eventId: 'e1', drawIds: [1] });
   expect(stateResult.error).toEqual(INVALID_VALUES);
 

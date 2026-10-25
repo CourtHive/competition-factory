@@ -2,11 +2,11 @@ import { generateDateRange, timeStringMinutes } from '@Tools/dateTime';
 
 // constants and types
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import { Court, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Court } from '@Types/tournamentTypes';
 
 // bulk update when tournament dates change
-export function updateCourtAvailability({ tournamentRecord }) {
+export function updateCourtAvailability({ tournamentRecord }: { tournamentRecord?: Tournament }) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
 
   const { startDate, endDate } = tournamentRecord;

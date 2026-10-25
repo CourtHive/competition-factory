@@ -54,6 +54,8 @@ export type FactoryEngine = {
  * directly.
  */
 type EngineHintKeys = {
+  /** Presented to unlock a mutation-locked element; read by the engine's checkMutationLock on every mutation. */
+  lockToken?: string;
   tournamentId?: string;
   eventId?: string;
   drawId?: string;

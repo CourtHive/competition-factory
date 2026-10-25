@@ -21,7 +21,7 @@ export function attachFlightProfile({
   event,
   flightProfile,
 }: {
-  deleteExisting?: boolean;
+  deleteExisting?: boolean | null; // null is handled as false
   tournamentRecord?: any;
   disableNotice?: boolean;
   event?: any;

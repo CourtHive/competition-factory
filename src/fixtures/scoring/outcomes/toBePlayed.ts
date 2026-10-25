@@ -1,4 +1,5 @@
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import type { MatchUp } from '@Types/tournamentTypes';
 
 export const toBePlayed = {
   matchUpStatus: TO_BE_PLAYED,
@@ -12,4 +13,4 @@ export const toBePlayed = {
   },
   matchUpFormat: undefined,
   winningSide: undefined,
-};
+} satisfies Partial<MatchUp>;

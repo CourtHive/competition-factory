@@ -321,7 +321,7 @@ describe('attemptToSetMatchUpStatusBYE branch coverage', () => {
       tournamentRecord: undefined,
       drawDefinition: undefined,
       structure: undefined,
-      matchUp: { winningSide: 1 },
+      matchUp: { matchUpId: 'm1', winningSide: 1 },
     });
     expect(result.error).toEqual(INVALID_MATCHUP_STATUS);
   });
@@ -331,12 +331,13 @@ describe('attemptToSetMatchUpStatusBYE branch coverage', () => {
       tournamentRecord: undefined,
       drawDefinition: undefined,
       structure: {
+        structureId: 's1',
         positionAssignments: [
           { drawPosition: 1, participantId: 'p1' },
           { drawPosition: 2, participantId: 'p2' },
         ],
       },
-      matchUp: { drawPositions: [1, 2] },
+      matchUp: { matchUpId: 'm1', drawPositions: [1, 2] },
     });
     expect(result.error).toBeDefined();
   });

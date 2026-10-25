@@ -51,9 +51,13 @@ export const hasAttributeValues = (a) => (o) => Object.keys(a).every((key) => o[
 export const hav = hasAttributeValues;
 
 // useful in notifications where back end does not recognize undefined for updates
-export function undefinedToNull(obj: object, shallow?: boolean) {
+/** isObject as a type guard, for callers that accept any input. */
+const isRecord = (value: unknown): value is { [key: string]: unknown } => isObject(value);
+
+/** Any input is accepted: undefined becomes null, and a non-object is returned as it is. */
+export function undefinedToNull(obj: unknown, shallow?: boolean) {
   if (obj === undefined) return null;
-  if (!isObject(obj) || obj === null) return obj;
+  if (!isRecord(obj)) return obj;
 
   const definedKeys = Object.keys(obj);
   const notNull = (value) => (value === undefined ? null : value);
