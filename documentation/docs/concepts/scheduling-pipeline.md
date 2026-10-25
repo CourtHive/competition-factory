@@ -167,7 +167,7 @@ conformance cases.
 1. **A time.** A string is a time when it is `H:MM` or `HH:MM`, optionally with seconds (`HH:MM:SS`, a fraction
    allowed), with hours at most 23, minutes and seconds at most 59; or a 12-hour time, `h:mm AM` or `h:mm PM`, hours 1
    to 12; or an ISO date-time (rule 3). Nothing before or after it is allowed. Anything else (`24:00`, `23:60`,
-   `-1:00`, `8:5`, `08:00Z`, ` 8:00`, `13:30 PM`, `12`, `noon`, the empty string) is not a time.
+   `-1:00`, `8:5`, `08:00Z`, `" 8:00"`, `13:30 PM`, `12`, `noon`, the empty string) is not a time.
 2. **Tidying.** A time is written as `HH:MM`: `8:00` → `08:00`, `08:00:00` → `08:00`, `8:30 PM` → `20:30`,
    `12:15 AM` → `00:15`.
 3. **A date-time's time.** An ISO date-time, zoned or not, contributes the time after its `T`
@@ -426,7 +426,7 @@ the calls that decide placements; the bulk and reschedule mutations write the ti
    - **At the write**, a date must be a real calendar date, `YYYY-MM-DD` (`2026-02-30` is refused), and a time must
      convert unambiguously to `HH:MM` (00–23, 00–59), which is what is stored: `8:00`, `08:00:00`, an ISO date-time
      and a 12-hour time (`8:30 PM` is stored as `20:30`) are accepted; `23:60`, `24:00`, `-1:00`, `08:00Z` and
-     ` 8:00` are refused. The writes: a matchUp's scheduled time and date and its schedule items; court and venue
+     `" 8:00"` are refused. The writes: a matchUp's scheduled time and date and its schedule items; court and venue
      availability, bookings and a venue's default times; person requests (one request with a date or a time that is
      not one refuses the call); tournament and event dates, which are checked against the calendar and stored as
      sent. A scheduled time given as a date-time stores its time, and its date when the matchUp has none.
