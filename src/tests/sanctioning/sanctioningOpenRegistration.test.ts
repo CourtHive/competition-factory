@@ -45,6 +45,13 @@ function approve() {
   ]);
 }
 
+// getSanctioningRecord is typed as a union whose error member has no sanctioningRecord; narrow it
+function currentRecord() {
+  const result = sanctioningEngine.getSanctioningRecord();
+  if (!('sanctioningRecord' in result)) throw new Error('expected a sanctioningRecord');
+  return result.sanctioningRecord;
+}
+
 describe('openProposalRegistration', () => {
   beforeEach(() => {
     sanctioningEngine.reset();
@@ -57,7 +64,7 @@ describe('openProposalRegistration', () => {
     expect(result.tournamentId).toBeDefined();
     expect(result.registrationProfile.entriesOpen).toBeDefined();
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let record: any = currentRecord();
     expect(record.proposal.tournamentId).toEqual(result.tournamentId);
     expect(record.proposal.registrationProfile.entriesOpen).toBeDefined();
   });
@@ -105,21 +112,21 @@ describe('openProposalRegistration', () => {
   it('assigns a stable eventId to each proposed event (idempotent across re-open)', () => {
     approve();
     sanctioningEngine.openProposalRegistration({});
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let record: any = currentRecord();
     const events = record.proposal.events;
     expect(events.every((e: any) => typeof e.eventId === 'string' && e.eventId.length > 0)).toBe(true);
     const firstIds = events.map((e: any) => e.eventId);
 
     // Re-opening/adjusting registration must not mint fresh eventIds.
     sanctioningEngine.openProposalRegistration({ registrationProfile: { entryMethod: 'online' } });
-    let reopened: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let reopened: any = currentRecord();
     expect(reopened.proposal.events.map((e: any) => e.eventId)).toEqual(firstIds);
   });
 
   it('activation reuses the eventIds assigned at open-registration (id-join, not name-join)', () => {
     approve();
     sanctioningEngine.openProposalRegistration({});
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let record: any = currentRecord();
     const openedEventIds = record.proposal.events.map((e: any) => e.eventId);
 
     let activation: any = sanctioningEngine.activateFromSanctioning({ sanctioningPolicy: testPolicy });

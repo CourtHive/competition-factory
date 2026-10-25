@@ -4,6 +4,7 @@ import { canonicalHash } from '../testHarness/corpus/hash';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import { setRandomSource } from '@Tools/prng';
 import { afterEach, expect, it } from 'vitest';
 import { setClock } from '@Tools/clock';
@@ -79,7 +80,8 @@ it('writes a scenario the schema accepts, with a refusal step that changes nothi
   const scenario = write();
   expect(scenario.steps).toHaveLength(5);
   expect(scenario.steps[0].result).toEqual({ success: true });
-  const mainStructure = scenario.initial.record.events[0].drawDefinitions[0].structures[0];
+  // generate() is seeded, so this is the record the scenario starts from
+  const mainStructure = defined(generate().events?.[0]?.drawDefinitions?.[0]?.structures?.[0], 'mainStructure');
   expect(scenario.steps[0].coordinates).toEqual({
     structureName: mainStructure.structureName,
     eventIndex: 0,

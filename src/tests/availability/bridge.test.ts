@@ -4,7 +4,7 @@
  * Test suite for translation between Availability Engine and TODS format.
  */
 
-import { HydratedVenue } from 'tods-competition-factory';
+import type { HydratedVenue } from '@Types/hydrated';
 import { describe, it, expect } from 'vitest';
 import {
   railsToDateAvailability,
@@ -229,7 +229,7 @@ describe('applyAvailabilityToTournamentRecord', () => {
     // Should have dateAvailability in result
     expect((result.venues[0] as HydratedVenue).dateAvailability).toBeDefined();
     expect((result.venues[0] as HydratedVenue).dateAvailability).toHaveLength(1);
-    expect((result.venues[0] as HydratedVenue).dateAvailability[0]).toMatchObject({
+    expect((result.venues[0] as HydratedVenue).dateAvailability?.[0]).toMatchObject({
       date: TEST_DAY,
       startTime: '08:00',
       endTime: '18:00',

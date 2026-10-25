@@ -266,8 +266,7 @@ describe('competition policy attachment and state initialization', () => {
     tournamentEngine.initializeCompetitionState({ drawId, participantIds });
 
     const { competitionState } = tournamentEngine.getCompetitionState({ drawId });
-    const firstState = Object.values(competitionState.participantStates)[0];
-    expect(firstState.baselineRating).toBe(0);
+    expect(Object.values(competitionState.participantStates)[0]).toMatchObject({ baselineRating: 0 });
   });
 
   test('reset clears competition state', () => {
@@ -643,7 +642,7 @@ describe('policy fixtures', () => {
     const policy = POLICY_COMPETITION_STANDARD[POLICY_TYPE_COMPETITION];
     expect(policy.policyName).toBe('Standard DrawMatic Competition');
     expect(policy.ratingPolicy.dynamicFormRating.enabled).toBe(true);
-    expect(policy.ratingPolicy.pressureRating).toBeUndefined();
+    expect('pressureRating' in policy.ratingPolicy).toBe(false);
     expect(policy.victoryPolicy.primaryRanking).toBe('WINS');
     expect(policy.processingGranularity).toBe('PER_ROUND');
   });

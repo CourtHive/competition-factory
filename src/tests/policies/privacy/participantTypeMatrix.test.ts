@@ -46,8 +46,7 @@ function teamsAbsentPolicy() {
 /** `teams` named explicitly as denied, rather than merely absent from the template. */
 function teamsDeniedPolicy() {
   const policy = structuredClone(POLICY_PRIVACY_DEFAULT);
-  policy[POLICY_TYPE_PARTICIPANT].participant.teams = false;
-  policy[POLICY_TYPE_PARTICIPANT].participant.groups = false;
+  Object.assign(policy[POLICY_TYPE_PARTICIPANT].participant, { teams: false, groups: false });
   return policy;
 }
 

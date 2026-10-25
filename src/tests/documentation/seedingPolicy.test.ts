@@ -2,6 +2,7 @@ import { getValidSeedBlocks, isValidSeedPosition } from '@Query/drawDefinition/s
 import { getSeedBlocks } from '@Query/drawDefinition/getSeedBlocks';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import { expect, it } from 'vitest';
 
 // Constants
@@ -177,7 +178,9 @@ it('validSeedPositions.ignore is what lets a seed sit off its seed block', () =>
   const structureId = drawDefinition.structures[0].structureId;
 
   const { validSeedBlocks } = getValidSeedBlocks({ structure: drawDefinition.structures[0] });
-  const seedBlockPositions: number[] = validSeedBlocks.flatMap((block: any) => block.drawPositions);
+  const seedBlockPositions: number[] = defined(validSeedBlocks, 'validSeedBlocks').flatMap(
+    (block: any) => block.drawPositions,
+  );
   const offBlockPosition = [...Array(32).keys()]
     .map((index) => index + 1)
     .find((drawPosition) => !seedBlockPositions.includes(drawPosition));

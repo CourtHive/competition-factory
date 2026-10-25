@@ -1,5 +1,6 @@
 import { tournamentEngine } from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import { expect, test } from 'vitest';
 
 test('getEvents can hydrate', () => {
@@ -12,21 +13,21 @@ test('getEvents can hydrate', () => {
 
   tournamentEngine.setState(tournamentRecord);
 
-  let events = tournamentEngine.getEvents().events;
+  let events = defined(tournamentEngine.getEvents().events, 'events');
   expect(events.length).toEqual(2);
-  expect(events[0].tournamentId).toBeUndefined();
+  expect(events[0]).not.toHaveProperty('tournamentId');
 
-  events = tournamentEngine.getEvents({ inContext: true }).events;
+  events = defined(tournamentEngine.getEvents({ inContext: true }).events, 'events');
   expect(events.length).toEqual(2);
-  expect(events[0].tournamentId).not.toBeUndefined();
-  events = tournamentEngine.getEvents({ eventIds: ['eventId1'] }).events;
+  expect(events[0]).toHaveProperty('tournamentId', tournamentRecord.tournamentId);
+  events = defined(tournamentEngine.getEvents({ eventIds: ['eventId1'] }).events, 'events');
   expect(events.length).toEqual(1);
-  events = tournamentEngine.getEvents({ drawIds: ['drawId1'] }).events;
+  events = defined(tournamentEngine.getEvents({ drawIds: ['drawId1'] }).events, 'events');
   expect(events.length).toEqual(1);
   const eventScaleValues = tournamentEngine.getEvents({
     withScaleValues: true,
   }).eventScaleValues;
-  expect(eventScaleValues.eventId1).toEqual({
+  expect(eventScaleValues?.eventId1).toEqual({
     draws: { drawId1: { ratingsStats: {}, ratings: {}, ranking: {} } },
     ratingsStats: {},
     ratings: {},

@@ -20,9 +20,10 @@ function createMatchUp(format: string): MatchUp {
     matchUpId: 'test-match',
     matchUpFormat: format,
     matchUpStatus: TO_BE_PLAYED,
+    matchUpType: 'SINGLES',
     score: { sets: [] },
     sides: [{ sideNumber: 1 }, { sideNumber: 2 }],
-  } as MatchUp;
+  };
 }
 
 // ─── addPoint: Standard tennis scoring ────────────────────────────────────

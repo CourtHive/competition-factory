@@ -103,6 +103,13 @@ function createApprovedViaEngine() {
 // validateProposal — remaining branch gaps
 // ===========================================================================
 
+// getSanctioningRecord is typed as a union whose error member has no sanctioningRecord; narrow it
+function currentRecord() {
+  const result = sanctioningEngine.getSanctioningRecord();
+  if (!('sanctioningRecord' in result)) throw new Error('expected a sanctioningRecord');
+  return result.sanctioningRecord;
+}
+
 describe('validateProposal — safety / medical / anti-corruption plans', () => {
   it('flags missing safetyPlan when required', () => {
     const policy: SanctioningPolicy = { ...basePolicy, requireSafetyPlan: true };
@@ -446,7 +453,7 @@ describe('Amendment edge cases', () => {
     expect(result.autoApproved).toBe(true);
 
     // tournamentName should still be the original since REMOVED is skipped
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let record: any = currentRecord();
     expect(record.proposal.tournamentName).toEqual('Coverage Open');
   });
 
@@ -459,7 +466,7 @@ describe('Amendment edge cases', () => {
     let result: any = sanctioningEngine.proposeAmendment({ changes, sanctioningPolicy: basePolicy });
     expect(result.success).toBe(true);
     // The status field is not in AMENDABLE_FIELD_PREFIXES, so it shouldn't be applied
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let record: any = currentRecord();
     expect(record.status).toEqual(APPROVED);
   });
 
@@ -546,7 +553,7 @@ describe('Compliance edge cases', () => {
       { method: 'transitionToPostEvent', params: {} },
     ]);
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let record: any = currentRecord();
     const item = record.compliance.items[0];
     sanctioningEngine.submitComplianceItem({ itemId: item.itemId });
     sanctioningEngine.verifyComplianceItem({ itemId: item.itemId });
@@ -574,7 +581,7 @@ describe('Compliance edge cases', () => {
       { method: 'transitionToPostEvent', params: {} },
     ]);
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let record: any = currentRecord();
     const item = record.compliance.items[0];
     sanctioningEngine.waiveComplianceItem({ itemId: item.itemId, reason: 'Not applicable' });
 
@@ -634,7 +641,7 @@ describe('Compliance edge cases', () => {
       { method: 'transitionToPostEvent', params: {} },
     ]);
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let record: any = currentRecord();
     const requiredItems = record.compliance.items.filter((i: any) => i.required);
     for (const item of requiredItems) {
       sanctioningEngine.submitComplianceItem({ itemId: item.itemId });
@@ -642,7 +649,7 @@ describe('Compliance edge cases', () => {
     }
 
     sanctioningEngine.closeApplication({ closedBy: 'Admin', reason: 'All done' });
-    record = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    record = currentRecord();
     expect(record.status).toEqual(CLOSED);
     expect(record.compliance.status).toEqual('COMPLIANT');
     expect(record.compliance.completedAt).toBeDefined();

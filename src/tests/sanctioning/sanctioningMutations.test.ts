@@ -218,7 +218,7 @@ describe('transitionStatus — transition guard branches', () => {
         items: [
           { itemId: 'i1', itemType: 'RESULTS_SUBMISSION', description: 'R', required: true, status: 'VERIFIED' },
           { itemId: 'i2', itemType: 'FINANCIAL_RECONCILIATION', description: 'F', required: true, status: 'WAIVED' },
-          { itemId: 'i3', itemType: 'OFFICIALS_REPORT', description: 'O', required: false, status: 'PENDING' },
+          { itemId: 'i3', itemType: 'SUPERVISOR_REPORT', description: 'O', required: false, status: 'PENDING' },
         ],
       },
     });
@@ -601,7 +601,7 @@ describe('compliance — PENDING status branch and guards', () => {
         status: 'IN_PROGRESS',
         items: [
           { itemId: 'i1', itemType: 'RESULTS_SUBMISSION', description: 'R', required: true, status: 'PENDING' },
-          { itemId: 'i2', itemType: 'OFFICIALS_REPORT', description: 'O', required: false, status: 'PENDING' },
+          { itemId: 'i2', itemType: 'SUPERVISOR_REPORT', description: 'O', required: false, status: 'PENDING' },
         ],
       },
     });
@@ -639,7 +639,7 @@ describe('compliance — PENDING status branch and guards', () => {
             status: 'PENDING',
             deadline: '2025-01-01',
           },
-          { itemId: 'dl2', itemType: 'OFFICIALS_REPORT', description: 'O', required: false, status: 'PENDING' },
+          { itemId: 'dl2', itemType: 'SUPERVISOR_REPORT', description: 'O', required: false, status: 'PENDING' },
         ],
       },
     });
@@ -678,7 +678,7 @@ describe('compliance — PENDING status branch and guards', () => {
       status: POST_EVENT,
       compliance: {
         status: 'PENDING',
-        items: [{ itemId: 'x1', itemType: 'R', description: 'R', required: true, status: 'PENDING' }],
+        items: [{ itemId: 'x1', itemType: 'RESULTS_SUBMISSION', description: 'R', required: true, status: 'PENDING' }],
       },
     });
     let result: any = submitComplianceItem({ sanctioningRecord: record, itemId: 'bogus' });
@@ -690,7 +690,7 @@ describe('compliance — PENDING status branch and guards', () => {
       status: POST_EVENT,
       compliance: {
         status: 'PENDING',
-        items: [{ itemId: 'x1', itemType: 'R', description: 'R', required: true, status: 'PENDING' }],
+        items: [{ itemId: 'x1', itemType: 'RESULTS_SUBMISSION', description: 'R', required: true, status: 'PENDING' }],
       },
     });
     let result: any = submitComplianceItem({
@@ -716,7 +716,7 @@ describe('compliance — PENDING status branch and guards', () => {
       status: POST_EVENT,
       compliance: {
         status: 'PENDING',
-        items: [{ itemId: 'x1', itemType: 'R', description: 'R', required: true, status: SUBMITTED }],
+        items: [{ itemId: 'x1', itemType: 'RESULTS_SUBMISSION', description: 'R', required: true, status: SUBMITTED }],
       },
     });
     let result: any = verifyComplianceItem({ sanctioningRecord: record, itemId: 'bogus' });
@@ -729,8 +729,8 @@ describe('compliance — PENDING status branch and guards', () => {
       compliance: {
         status: 'PENDING',
         items: [
-          { itemId: 'x1', itemType: 'R', description: 'R', required: true, status: SUBMITTED },
-          { itemId: 'x2', itemType: 'O', description: 'O', required: false, status: 'PENDING' },
+          { itemId: 'x1', itemType: 'RESULTS_SUBMISSION', description: 'R', required: true, status: SUBMITTED },
+          { itemId: 'x2', itemType: 'SUPERVISOR_REPORT', description: 'O', required: false, status: 'PENDING' },
         ],
       },
     });
@@ -762,7 +762,7 @@ describe('compliance — PENDING status branch and guards', () => {
     const record = makeRecord({
       compliance: {
         status: 'PENDING',
-        items: [{ itemId: 'x1', itemType: 'R', description: 'R', required: true, status: 'PENDING' }],
+        items: [{ itemId: 'x1', itemType: 'RESULTS_SUBMISSION', description: 'R', required: true, status: 'PENDING' }],
       },
     });
     let result: any = waiveComplianceItem({ sanctioningRecord: record, itemId: 'bogus' });
@@ -773,7 +773,7 @@ describe('compliance — PENDING status branch and guards', () => {
     const record = makeRecord({
       compliance: {
         status: 'PENDING',
-        items: [{ itemId: 'x1', itemType: 'R', description: 'R', required: false, status: 'PENDING' }],
+        items: [{ itemId: 'x1', itemType: 'RESULTS_SUBMISSION', description: 'R', required: false, status: 'PENDING' }],
       },
     });
     let result: any = waiveComplianceItem({ sanctioningRecord: record, itemId: 'x1' });
@@ -792,7 +792,14 @@ describe('compliance — PENDING status branch and guards', () => {
       compliance: {
         status: 'PENDING',
         items: [
-          { itemId: 'x1', itemType: 'R', description: 'R', required: true, status: 'PENDING', deadline: '2020-01-01' },
+          {
+            itemId: 'x1',
+            itemType: 'RESULTS_SUBMISSION',
+            description: 'R',
+            required: true,
+            status: 'PENDING',
+            deadline: '2020-01-01',
+          },
         ],
       },
     });
@@ -804,7 +811,7 @@ describe('compliance — PENDING status branch and guards', () => {
     const record = makeRecord({
       compliance: {
         status: 'PENDING',
-        items: [{ itemId: 'x1', itemType: 'R', description: 'R', required: true, status: 'PENDING' }],
+        items: [{ itemId: 'x1', itemType: 'RESULTS_SUBMISSION', description: 'R', required: true, status: 'PENDING' }],
       },
     });
     let result: any = checkComplianceDeadlines({ sanctioningRecord: record, asOfDate: '2030-01-01' });
@@ -1029,12 +1036,12 @@ describe('activateFromSanctioning — guard paths', () => {
       tiers: [],
       postEventRequirements: [
         { itemType: 'RESULTS_SUBMISSION', description: 'Results', required: true, deadlineDays: 7 },
-        { itemType: 'SPECIAL_REPORT', description: 'Special', required: true, deadlineDays: 14, tiers: ['W100'] },
+        { itemType: 'SAFEGUARDING_REPORT', description: 'Special', required: true, deadlineDays: 14, tiers: ['W100'] },
       ],
     };
     let result: any = activateFromSanctioning({ sanctioningRecord: record, sanctioningPolicy: policy });
     expect(result.success).toBe(true);
-    // Only RESULTS_SUBMISSION should be included (SPECIAL_REPORT is for W100 only)
+    // Only RESULTS_SUBMISSION should be included (SAFEGUARDING_REPORT is for W100 only)
     expect(record.compliance!.items).toHaveLength(1);
     expect(record.compliance!.items[0].itemType).toEqual('RESULTS_SUBMISSION');
   });
@@ -1070,7 +1077,7 @@ describe('submitApplication — prior compliance gate and guards', () => {
     const priorRecord = makeRecord({
       compliance: {
         status: ISSUES_FLAGGED,
-        items: [{ itemId: 'p1', itemType: 'R', description: 'R', required: true, status: 'OVERDUE' }],
+        items: [{ itemId: 'p1', itemType: 'RESULTS_SUBMISSION', description: 'R', required: true, status: 'OVERDUE' }],
       },
     });
     let result: any = submitApplication({

@@ -69,6 +69,13 @@ function createAndGetRecord() {
   return result.sanctioningRecord;
 }
 
+// getSanctioningRecord is typed as a union whose error member has no sanctioningRecord; narrow it
+function currentRecord() {
+  const result = sanctioningEngine.getSanctioningRecord();
+  if (!('sanctioningRecord' in result)) throw new Error('expected a sanctioningRecord');
+  return result.sanctioningRecord;
+}
+
 describe('Sanctioning Workflow — Submit → Review → Approve', () => {
   beforeEach(() => {
     sanctioningEngine.reset();
@@ -397,7 +404,7 @@ describe('Sanctioning Workflow — Multi-Level Endorsement', () => {
     sanctioningEngine.requestEndorsement({ endorserId: 'fed-a', endorserName: 'Federation A' });
     sanctioningEngine.requestEndorsement({ endorserId: 'fed-b', endorserName: 'Federation B' });
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let record: any = currentRecord();
     expect(record.endorsements).toHaveLength(2);
     // Convenience field should be the first endorsement
     expect(record.endorsement?.endorserId).toEqual('fed-a');
@@ -409,7 +416,7 @@ describe('Sanctioning Workflow — Multi-Level Endorsement', () => {
     sanctioningEngine.requestEndorsement({ endorserId: 'fed-a', endorserName: 'Old Name' });
     sanctioningEngine.requestEndorsement({ endorserId: 'fed-a', endorserName: 'New Name' });
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let record: any = currentRecord();
     expect(record.endorsements).toHaveLength(1);
     expect(record.endorsements[0].endorserName).toEqual('New Name');
   });
@@ -422,7 +429,7 @@ describe('Sanctioning Workflow — Multi-Level Endorsement', () => {
 
     sanctioningEngine.declineEndorsement({ endorserId: 'fed-b', declineReason: 'Venue issue' });
 
-    let record: any = sanctioningEngine.getSanctioningRecord().sanctioningRecord;
+    let record: any = currentRecord();
     const fedB = record.endorsements.find((e: any) => e.endorserId === 'fed-b');
     expect(fedB.status).toEqual('DECLINED');
 

@@ -2,9 +2,11 @@ import { tournamentEngine } from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, test } from 'vitest';
 
+// types
+import type { ResultType } from '@Types/factoryTypes';
+
 // constants
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { SINGLES, DOUBLES } from '@Constants/eventConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
 import { MALE, FEMALE } from '@Constants/genderConstants';
@@ -143,11 +145,10 @@ describe('mocksEngine.generateTournamentRecord — preset participants', () => {
     const matchUps = tr1.events[0].drawDefinitions[0].structures[0].matchUps;
     const r1 = matchUps.filter((m) => m.roundNumber === 1).sort((a, b) => a.roundPosition - b.roundPosition);
     for (const mu of r1) {
-      const r = tournamentEngine.setMatchUpStatus({
-        drawId,
+      const r: ResultType = tournamentEngine.setMatchUpStatus({
+        outcome: mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-3 6-2', winningSide: 1 }).outcome,
         matchUpId: mu.matchUpId,
-        matchUpStatus: COMPLETED,
-        outcome: { winningSide: 1, scoreString: '6-3 6-2' },
+        drawId,
       });
       expect(r.success).toEqual(true);
     }

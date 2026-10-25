@@ -6,7 +6,7 @@ import matchUpEngineSync from '@Assemblies/engines/matchUp';
 import { setDevContext } from '@Global/state/globalState';
 
 // constants
-import { INVALID_OBJECT, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import { INVALID_OBJECT, INVALID_TIE_FORMAT, MISSING_VALUE } from '@Constants/errorConditionConstants';
 
 describe('matchUpEngine', () => {
   beforeEach(() => {
@@ -243,9 +243,9 @@ describe('matchUpEngine', () => {
 
     it('does not call setState for rollback when snapshot is falsy', () => {
       setupMatchUp();
-      vi.spyOn(scoreGovernor, 'checkScoreHasValue').mockReturnValueOnce({ error: 'TEST_ERROR' });
-      const result = matchUpEngineSync.checkScoreHasValue({});
-      expect(result?.error).toEqual('TEST_ERROR');
+      vi.spyOn(scoreGovernor, 'validateTieFormat').mockReturnValueOnce({ error: INVALID_TIE_FORMAT });
+      const result = matchUpEngineSync.validateTieFormat({});
+      expect(result?.error).toEqual(INVALID_TIE_FORMAT);
       expect(result?.rolledBack).toBe(false);
     });
 
@@ -253,23 +253,23 @@ describe('matchUpEngine', () => {
 
     it('notifies subscribers when result has success and no delay/doNotNotify', () => {
       setupMatchUp();
-      vi.spyOn(scoreGovernor, 'checkScoreHasValue').mockReturnValueOnce({ success: true });
-      const result = matchUpEngineSync.checkScoreHasValue({});
+      vi.spyOn(scoreGovernor, 'validateTieFormat').mockReturnValueOnce({ success: true });
+      const result = matchUpEngineSync.validateTieFormat({});
       expect(result?.success).toBe(true);
     });
 
     it('skips notification and deleteNotices when delayNotify is true', () => {
       setupMatchUp();
-      vi.spyOn(scoreGovernor, 'checkScoreHasValue').mockReturnValueOnce({ success: true });
-      const result = matchUpEngineSync.checkScoreHasValue({ delayNotify: true });
+      vi.spyOn(scoreGovernor, 'validateTieFormat').mockReturnValueOnce({ success: true });
+      const result = matchUpEngineSync.validateTieFormat({ delayNotify: true });
       // delayNotify: notify=false, !success=false, doNotNotify=false → deleteNotices NOT called
       expect(result?.success).toBe(true);
     });
 
     it('skips notification but calls deleteNotices when doNotNotify is true', () => {
       setupMatchUp();
-      vi.spyOn(scoreGovernor, 'checkScoreHasValue').mockReturnValueOnce({ success: true });
-      const result = matchUpEngineSync.checkScoreHasValue({ doNotNotify: true });
+      vi.spyOn(scoreGovernor, 'validateTieFormat').mockReturnValueOnce({ success: true });
+      const result = matchUpEngineSync.validateTieFormat({ doNotNotify: true });
       // doNotNotify: notify=false, !success=false, doNotNotify=true → deleteNotices called
       expect(result?.success).toBe(true);
     });

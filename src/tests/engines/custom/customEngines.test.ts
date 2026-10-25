@@ -46,7 +46,6 @@ describe('Custom Engines Documentation Examples', () => {
       askEngine.importMethods({
         setMatchUpStatus: governors.matchUpGovernor.setMatchUpStatus,
         setMatchUpState: governors.matchUpGovernor.setMatchUpState,
-        setState: governors.queryGovernor.setState,
         allTournamentMatchUps: governors.queryGovernor.allTournamentMatchUps,
       });
 
@@ -147,7 +146,6 @@ describe('Custom Engines Documentation Examples', () => {
       syncEngine.reset();
 
       syncEngine.importMethods({
-        setState: governors.queryGovernor.setState,
         getParticipants: governors.queryGovernor.getParticipants,
         addEvent: governors.eventGovernor.addEvent,
       });

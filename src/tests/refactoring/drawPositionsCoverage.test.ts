@@ -604,7 +604,7 @@ describe('positionSwap edge cases', () => {
       },
     } = tournamentEngine.getEvent({ drawId });
 
-    const byes = [];
+    const byes: number[] = [];
     structure.structures.forEach((sub) => {
       sub.positionAssignments.forEach((a) => {
         if (a.bye) byes.push(a.drawPosition);
