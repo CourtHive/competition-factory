@@ -3,13 +3,13 @@ import { getSchedulingProfile, schedulingProfileRepairRefusal } from '@Mutate/to
 import { EventBookingTimings, getEventBookingTimings } from '@Generators/scheduling/utils/generateBookings';
 import { timedMatchUpMinutes } from '@Mutate/matchUps/schedule/schedulers/processAlreadyScheduledMatchUps';
 import { DrawPlayedOrderFacts, drawPlayedOrderFacts } from '../scheduleItems/playedOrder';
+import { defaultTransitMinutes, venueTransitPairs } from '@Query/venues/getVenueTransits';
 import { getContainedStructures } from '@Query/drawDefinition/getContainedStructures';
 import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import { getPersonRequests } from '@Query/matchUps/scheduling/getPersonRequests';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
 import { findMatchUpFormatTiming } from '@Acquire/findMatchUpFormatTiming';
-import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
 import { extractDate, isValidDateString } from '@Tools/dateTime';
 import { isConvertableInteger, isPowerOf2 } from '@Tools/math';
@@ -22,7 +22,6 @@ import { findEvent } from '@Acquire/findEvent';
 // constants and types
 import { BYE, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { ErrorType, NO_VALID_DATES } from '@Constants/errorConditionConstants';
-import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
 import { HydratedCourt, HydratedMatchUp } from '@Types/hydrated';
 import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
@@ -353,23 +352,22 @@ function playedOrderFactsOf(tournamentRecords: { [tournamentId: string]: Tournam
 }
 
 /**
- * Transit between the records' venues (§ 3.4): the attached scheduling policy's `defaultTimes.transitMinutes` for a pair
- * of venues with no stated minutes (no policy stating it, no transit), and the venues that share a facility (none
- * between them). Absent when nothing applies, so a view without transit plans as before.
+ * Transit between the records' venues (§ 3.4): the stated pairs by direction (`scheduling.venueTransits`), the venues that
+ * share a facility (none between them), and the attached scheduling policy's `defaultTimes.transitMinutes` for a pair with
+ * no stated minutes (no policy stating it, no transit). Absent when nothing applies, so a view without transit plans as
+ * before.
  */
 function venueTransit(tournamentRecords: { [tournamentId: string]: Tournament }): VenueTransit | undefined {
   const facilityIds: { [venueId: string]: string } = {};
-  let defaultMinutes: number | undefined;
   for (const tournamentRecord of Object.values(tournamentRecords)) {
     for (const venue of tournamentRecord.venues ?? [])
       if (venue.facilityId) facilityIds[venue.venueId] = venue.facilityId;
-    const stated = getAppliedPolicies({ tournamentRecord }).appliedPolicies?.[POLICY_TYPE_SCHEDULING]?.defaultTimes
-      ?.transitMinutes;
-    if (typeof stated === 'number' && stated > (defaultMinutes ?? -1)) defaultMinutes = stated;
   }
+  const pairs = venueTransitPairs(tournamentRecords);
   const transit: VenueTransit = definedAttributes({
     facilityIds: Object.keys(facilityIds).length ? facilityIds : undefined,
-    defaultMinutes,
+    pairs: Object.keys(pairs).length ? pairs : undefined,
+    defaultMinutes: defaultTransitMinutes(tournamentRecords),
   });
   return Object.keys(transit).length ? transit : undefined;
 }

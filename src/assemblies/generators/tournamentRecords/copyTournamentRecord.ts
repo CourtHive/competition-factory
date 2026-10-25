@@ -60,6 +60,10 @@ export function copyTournamentRecord(params: CopyTournamentRecordArgs) {
     participants: params.copyParticipants ? (params.tournamentRecord.participants?.map(copyParticipant) ?? []) : [],
     parentOrganisation: makeDeepCopy({ ...params.tournamentRecord.parentOrganisation }, false, true),
     venues: makeDeepCopy(params.tournamentRecord.venues ?? [], false, true),
+    // transit between the venues copied travels with them (scheduling-pipeline.md § 3.4)
+    ...(params.tournamentRecord.scheduling?.venueTransits?.length
+      ? { scheduling: { venueTransits: makeDeepCopy(params.tournamentRecord.scheduling.venueTransits, false, true) } }
+      : {}),
     extensions: filteredExtensions(params.tournamentRecord.extensions),
     timeItems: filteredTimeItems(params.tournamentRecord.timeItems),
     events: params.tournamentRecord.events?.map(copyEvent) ?? [],

@@ -10,3 +10,4 @@ export { modifyCourt } from '@Mutate/venues/modifyCourt';
 export { modifyVenue } from '@Mutate/venues/modifyVenue';
 export { addVenueOtherId } from '@Mutate/venues/addVenueOtherId';
 export { addVenue } from '@Mutate/venues/addVenue';
+export { removeVenueTransit, setVenueTransit, setVenueTransits } from '@Mutate/venues/venueTransits';

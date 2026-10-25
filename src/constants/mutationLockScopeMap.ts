@@ -240,6 +240,9 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   modifyVenue: 'VENUES',
   addVenueOtherId: 'VENUES',
   addVenue: 'VENUES',
+  setVenueTransit: 'VENUES',
+  setVenueTransits: 'VENUES',
+  removeVenueTransit: 'VENUES',
 
   // PUBLISHING — publishingGovernor/mutate
   publishEventSeeding: 'PUBLISHING',
