@@ -499,6 +499,21 @@ export const schedulingCaseSources: Source[] = [
       expectEqual(plan.scheduledMatchUpIds[DAYS[0]].length, 17, 'matchUps timed');
     },
   },
+  {
+    caseId: 'scheduling.plan.booking-no-court-can-hold-is-reported.v1',
+    note:
+      "A matchUp timed at 19:00 at the venue with no court runs 90 minutes, past the courts' 20:00 close: no court's free " +
+      'time ends around it, so it holds none, and the plan reports it under unbookedMatchUpIds rather than dropping it ' +
+      '(§ 3.9 rule 4).',
+    build: () => {
+      twoEvents({});
+      timeMatchUp(eventMatchUps(0, 1)[0], { scheduledTime: '19:00', venueId: VENUE });
+      profileEventRound(1, 1);
+    },
+    claims: (plan) => {
+      expectEqual(plan.unbookedMatchUpIds[DAYS[0]], { [VENUE]: [eventMatchUps(0, 1)[0].matchUpId] }, 'reported');
+    },
+  },
 ];
 
 /**

@@ -66,7 +66,6 @@ describe('processAlreadyScheduledMatchUps — exclusion flags', () => {
     const individualParticipantProfiles: any = {};
 
     processAlreadyScheduledMatchUps({
-      matchUpPotentialParticipantIds: {},
       participantReachability: getParticipantReachability({ matchUps }),
       individualParticipantProfiles,
       dateScheduledMatchUpIds: ['completed-no-date'],
@@ -93,7 +92,6 @@ describe('processAlreadyScheduledMatchUps — exclusion flags', () => {
     const individualParticipantProfiles: any = {};
 
     processAlreadyScheduledMatchUps({
-      matchUpPotentialParticipantIds: {},
       participantReachability: getParticipantReachability({ matchUps }),
       individualParticipantProfiles,
       dateScheduledMatchUpIds: ['bye-no-date'],
@@ -127,7 +125,6 @@ describe('processAlreadyScheduledMatchUps — exclusion flags', () => {
     const individualParticipantProfiles: any = {};
 
     processAlreadyScheduledMatchUps({
-      matchUpPotentialParticipantIds: {},
       participantReachability: getParticipantReachability({ matchUps }),
       individualParticipantProfiles,
       dateScheduledMatchUpIds: ['prior-1', 'prior-2'],
@@ -157,7 +154,6 @@ describe('processAlreadyScheduledMatchUps — exclusion flags', () => {
     const individualParticipantProfiles: any = {};
 
     processAlreadyScheduledMatchUps({
-      matchUpPotentialParticipantIds: {},
       participantReachability: getParticipantReachability({ matchUps }),
       individualParticipantProfiles,
       dateScheduledMatchUpIds: ['today-1'],
@@ -187,7 +183,6 @@ describe('processAlreadyScheduledMatchUps — exclusion flags', () => {
     const individualParticipantProfiles: any = {};
 
     processAlreadyScheduledMatchUps({
-      matchUpPotentialParticipantIds: {},
       participantReachability: getParticipantReachability({ matchUps }),
       individualParticipantProfiles,
       dateScheduledMatchUpIds: ['hand-scheduled'],
@@ -213,7 +208,6 @@ describe('processAlreadyScheduledMatchUps — exclusion flags', () => {
     const individualParticipantProfiles: any = {};
 
     processAlreadyScheduledMatchUps({
-      matchUpPotentialParticipantIds: {},
       participantReachability: getParticipantReachability({ matchUps }),
       individualParticipantProfiles,
       dateScheduledMatchUpIds: ['in-progress-no-date'],
@@ -243,7 +237,6 @@ describe('processAlreadyScheduledMatchUps — exclusion flags', () => {
     const individualParticipantProfiles: any = {};
 
     processAlreadyScheduledMatchUps({
-      matchUpPotentialParticipantIds: {},
       participantReachability: getParticipantReachability({ matchUps }),
       individualParticipantProfiles,
       excludeNoDateCompleted: false,
@@ -271,7 +264,6 @@ describe('processAlreadyScheduledMatchUps — exclusion flags', () => {
     const individualParticipantProfiles: any = {};
 
     processAlreadyScheduledMatchUps({
-      matchUpPotentialParticipantIds: {},
       participantReachability: getParticipantReachability({ matchUps }),
       individualParticipantProfiles,
       dateScheduledMatchUpIds: ['prior-1'],
@@ -312,7 +304,6 @@ describe('processAlreadyScheduledMatchUps — exclusion flags', () => {
     const individualParticipantProfiles: any = {};
 
     processAlreadyScheduledMatchUps({
-      matchUpPotentialParticipantIds: {},
       participantReachability: getParticipantReachability({ matchUps }),
       individualParticipantProfiles,
       excludeNoDateCompleted: false,
@@ -345,7 +336,6 @@ describe('processAlreadyScheduledMatchUps — exclusion flags', () => {
     const matchUpScheduleTimes: Record<string, string> = {};
 
     processAlreadyScheduledMatchUps({
-      matchUpPotentialParticipantIds: {},
       participantReachability: getParticipantReachability({ matchUps }),
       individualParticipantProfiles: {},
       dateScheduledMatchUpIds: ['completed-no-date'],
@@ -384,7 +374,6 @@ describe('processAlreadyScheduledMatchUps — exclusion flags', () => {
     const individualParticipantProfiles: any = {};
 
     processAlreadyScheduledMatchUps({
-      matchUpPotentialParticipantIds: {},
       participantReachability: getParticipantReachability({ matchUps }),
       individualParticipantProfiles,
       dateScheduledMatchUpIds: ['doubles-prior'],

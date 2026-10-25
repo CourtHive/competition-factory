@@ -16,7 +16,6 @@ import {
 } from '@Constants/matchUpStatusConstants';
 
 type GetMatchUpsToScheduleArgs = {
-  matchUpPotentialParticipantIds?: { [key: string]: string[] };
   matchUpScheduleTimes?: { [key: string]: string };
   matchUpNotBeforeTimes?: { [key: string]: any };
   dateScheduledMatchUpIds?: string[];
@@ -34,7 +33,6 @@ export function getMatchUpsToSchedule(params: GetMatchUpsToScheduleArgs): {
   if (paramsCheck.error) return paramsCheck;
 
   const {
-    matchUpPotentialParticipantIds,
     dateScheduledMatchUpIds = [],
     matchUpNotBeforeTimes,
     matchUpScheduleTimes,
@@ -70,33 +68,31 @@ export function getMatchUpsToSchedule(params: GetMatchUpsToScheduleArgs): {
 
   // for optimization, build up an object for each tournament and an array for each draw with target matchUps
   // keep track of matchUps counts per participant and don't add matchUps for participants beyond those limits
-  const matchUpMap =
-    matchUpPotentialParticipantIds && matchUpNotBeforeTimes
-      ? matchUpsToSchedule.reduce(
-          (aggregator, matchUp) => {
-            const { drawId, tournamentId } = matchUp;
+  const matchUpMap = matchUpNotBeforeTimes
+    ? matchUpsToSchedule.reduce(
+        (aggregator, matchUp) => {
+          const { drawId, tournamentId } = matchUp;
 
-            if (!aggregator.matchUpMap[tournamentId]) aggregator.matchUpMap[tournamentId] = {};
-            if (!aggregator.matchUpMap[tournamentId][drawId]) {
-              aggregator.matchUpMap[tournamentId][drawId] = [matchUp];
-            } else {
-              aggregator.matchUpMap[tournamentId][drawId].push(matchUp);
-            }
+          if (!aggregator.matchUpMap[tournamentId]) aggregator.matchUpMap[tournamentId] = {};
+          if (!aggregator.matchUpMap[tournamentId][drawId]) {
+            aggregator.matchUpMap[tournamentId][drawId] = [matchUp];
+          } else {
+            aggregator.matchUpMap[tournamentId][drawId].push(matchUp);
+          }
 
-            // since this matchUp is to be scheduled, update the matchUpPotentialParticipantIds
-            processNextMatchUps({
-              matchUpPotentialParticipantIds,
-              matchUpNotBeforeTimes,
-              // a matchUp about to be (re)scheduled raises no not-before time from where it was timed before, which may
-              // be another date: its targets wait only for where it is placed now (§ 4 step 2)
-              matchUp: { ...matchUp, schedule: { ...matchUp.schedule, timeAfterRecovery: undefined } },
-            });
+          // since this matchUp is to be scheduled, update the matchUpNotBeforeTimes
+          processNextMatchUps({
+            matchUpNotBeforeTimes,
+            // a matchUp about to be (re)scheduled raises no not-before time from where it was timed before, which may
+            // be another date: its targets wait only for where it is placed now (§ 4 step 2)
+            matchUp: { ...matchUp, schedule: { ...matchUp.schedule, timeAfterRecovery: undefined } },
+          });
 
-            return aggregator;
-          },
-          { matchUpMap: {} },
-        ).matchUpMap
-      : {};
+          return aggregator;
+        },
+        { matchUpMap: {} },
+      ).matchUpMap
+    : {};
 
   return { matchUpsToSchedule, matchUpMap };
 }

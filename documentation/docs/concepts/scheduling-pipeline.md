@@ -213,7 +213,8 @@ Rules decided 2026-10-25 (debate-ruled, CA-reviewed):
    exactly one; otherwise it holds no court. Its participants are held either way.
 4. **A venue but no court.** A timed matchUp at a venue with no court holds one court of that venue for its minutes:
    capacity is the rule, which court is not part of the result. When no court is free for its whole length it still
-   holds one.
+   holds one. When no court's free time ends around it (it runs past every court's close), it holds none and is
+   reported in `unbookedMatchUpIds[date][venueId]` rather than dropped silently.
 5. **A booking reads a schedule and a status, nothing else.** A malformed matchUp elsewhere in the view (draw positions
    that are not valid) changes no booking; it used to switch every booking off, so the date read as free. A booking
    that cannot be read stops the run with its error rather than leaving every court free.
@@ -338,7 +339,8 @@ part, what `kernel.scheduling.plan@2` compares (CA 2026-10-25):
 - `placements[date][venueId]`: `{ matchUpId, scheduleTime }` in write order (venue, tournament, draw, profile order);
   `scheduledMatchUpIds[date]`: the same ids, in the same order;
 - `matchUpScheduleTimes[matchUpId]`: the time of every matchUp timed on a planned date, stored or placed;
-- `unplaced[date][venueId]`: the profiled matchUps no slot took; `noTimeMatchUpIds[date]`: those, each venue's in
+- `unplaced[date][venueId]`: the profiled matchUps no slot took; `unbookedMatchUpIds[date][venueId]`: matchUps timed at
+  a venue with no court that no court could hold (§ 3.9 rule 4); `noTimeMatchUpIds[date]`: those, each venue's in
   turn; `noFormatMatchUpIds[date]`: matchUps of profiled rounds with no format;
 - **why a matchUp was refused**, each refused matchUp's **first** refusal with its facts:
   `recoveryTimeDeferredMatchUpIds[date][matchUpId]` (`scheduleTime`, `blockingParticipantIds`, `notBeforeTime`),

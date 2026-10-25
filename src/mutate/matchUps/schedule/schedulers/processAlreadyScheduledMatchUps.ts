@@ -13,7 +13,6 @@ import { Tournament } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 type ProcessAlreadyScheduledMatchUpsArgs = {
-  matchUpPotentialParticipantIds: { [key: string]: string[] };
   matchUpNotBeforeTimes: { [key: string]: any };
   matchUpScheduleTimes: { [key: string]: string };
   dateScheduledMatchUps?: HydratedMatchUp[];
@@ -90,7 +89,6 @@ export function timedMatchUpMinutes({
   return minutes;
 }
 export function processAlreadyScheduledMatchUps({
-  matchUpPotentialParticipantIds,
   individualParticipantProfiles,
   excludeNoDateCompleted = true,
   dateScheduledMatchUpIds,
@@ -132,7 +130,7 @@ export function processAlreadyScheduledMatchUps({
     dateScheduledMatchUpIds = dateScheduledMatchUps.map(getMatchUpId);
   }
 
-  // first build up a map of matchUpNotBeforeTimes and matchUpPotentialParticipantIds
+  // first build up a map of matchUpNotBeforeTimes
   // based on already scheduled matchUps
   const clearDate = Array.isArray(clearScheduleDates) ? clearScheduleDates.includes(scheduleDate) : clearScheduleDates;
 
@@ -190,7 +188,6 @@ export function processAlreadyScheduledMatchUps({
       updateTimeAfterRecovery({
         typeChangeRecoveryMinutes,
         individualParticipantProfiles,
-        matchUpPotentialParticipantIds,
         matchUpNotBeforeTimes,
         reachability: participantReachability,
         averageMatchUpMinutes,

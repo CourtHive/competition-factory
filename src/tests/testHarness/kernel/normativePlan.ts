@@ -16,6 +16,7 @@ export function normativePlan(plan: SchedulePlan) {
     unplaced: plan.unplaced,
     noTimeMatchUpIds: plan.noTimeMatchUpIds,
     noFormatMatchUpIds: plan.noFormatMatchUpIds,
+    unbookedMatchUpIds: plan.unbookedMatchUpIds,
     overLimitMatchUpIds: plan.overLimitMatchUpIds,
     requestConflicts: plan.requestConflicts,
     overLimitMatchUpDetails: mapDates(plan.overLimitMatchUpDetails, firstPerMatchUp),

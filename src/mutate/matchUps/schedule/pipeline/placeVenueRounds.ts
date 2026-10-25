@@ -57,7 +57,6 @@ export type PlaceVenueRoundsArgs = {
   venueScheduledRoundDetails: { [venueId: string]: VenueRoundDetails };
   overLimitMatchUpDetails: ByDate<OverLimitMatchUpDetail[]>;
   individualParticipantProfiles: IndividualParticipantProfiles;
-  matchUpPotentialParticipantIds: { [matchUpId: string]: string[] };
   scheduleDateRequestConflicts: ByDate<RequestConflict[]>;
   matchUpDependencies: { [matchUpId: string]: { matchUpIds: string[] } };
   matchUpScheduleTimes: { [matchUpId: string]: string };
@@ -89,7 +88,6 @@ function tryScheduleMatchUp({
   playedOrderRefusal,
   dependencyDeferredMatchUpIds,
   individualParticipantProfiles,
-  matchUpPotentialParticipantIds,
   scheduleDateRequestConflicts,
   matchUpScheduleTimes,
   matchUpNotBeforeTimes,
@@ -219,7 +217,6 @@ function tryScheduleMatchUp({
 
   updateTimeAfterRecovery({
     typeChangeRecoveryMinutes,
-    matchUpPotentialParticipantIds,
     individualParticipantProfiles,
     matchUpNotBeforeTimes,
     averageMatchUpMinutes,
@@ -240,7 +237,6 @@ export function scheduleVenueRounds({
   playedOrderDeferredMatchUpIds,
   dependencyDeferredMatchUpIds,
   individualParticipantProfiles,
-  matchUpPotentialParticipantIds,
   scheduleDateRequestConflicts,
   venueScheduledRoundDetails,
   playedOrderRefusal,
@@ -287,7 +283,6 @@ export function scheduleVenueRounds({
             playedOrderRefusal,
             dependencyDeferredMatchUpIds,
             individualParticipantProfiles,
-            matchUpPotentialParticipantIds,
             scheduleDateRequestConflicts,
             matchUpScheduleTimes,
             matchUpNotBeforeTimes,

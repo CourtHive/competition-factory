@@ -62,7 +62,6 @@ export function scheduleMatchUps(params) {
     recoveryMinutes: statedRecoveryMinutes,
     recoveryMinutesMap: statedRecoveryMinutesMap, // for matchUpIds batched by averageMatchUpMinutes: varying recovery
 
-    matchUpPotentialParticipantIds = {},
     individualParticipantProfiles = {},
     matchUpNotBeforeTimes = {},
     matchUpDailyLimits = {},
@@ -121,7 +120,6 @@ export function scheduleMatchUps(params) {
   competitionMatchUps.forEach((matchUp) => {
     if (matchUp.schedule?.scheduledDate && sameDay(scheduleDate, extractDate(matchUp.schedule.scheduledDate))) {
       processNextMatchUps({
-        matchUpPotentialParticipantIds,
         matchUpNotBeforeTimes,
         matchUp,
       });
@@ -167,7 +165,7 @@ export function scheduleMatchUps(params) {
   const recoveryTimeDeferred = {};
   const dependencyDeferred = {};
 
-  // first build up a map of matchUpNotBeforeTimes and matchUpPotentialParticipantIds
+  // first build up a map of matchUpNotBeforeTimes
   // based on already scheduled matchUps
   const dateScheduledMatchUps = competitionMatchUps.filter(({ matchUpId }) =>
     dateScheduledMatchUpIds?.includes(matchUpId),
@@ -185,7 +183,6 @@ export function scheduleMatchUps(params) {
       const mappedRecoveryMinutes = recoveryMinutesMap?.[matchUp.matchUpId];
       updateTimeAfterRecovery({
         recoveryMinutes: mappedRecoveryMinutes || recoveryMinutes,
-        matchUpPotentialParticipantIds,
         individualParticipantProfiles,
         matchUpNotBeforeTimes,
         averageMatchUpMinutes,
@@ -237,9 +234,8 @@ export function scheduleMatchUps(params) {
         aggregator.matchUpMap[tournamentId][drawId].push(matchUp);
       }
 
-      // since this matchUp is to be scheduled, update the matchUpPotentialParticipantIds
+      // since this matchUp is to be scheduled, update the matchUpNotBeforeTimes
       processNextMatchUps({
-        matchUpPotentialParticipantIds,
         matchUpNotBeforeTimes,
         matchUp,
       });
@@ -313,7 +309,6 @@ export function scheduleMatchUps(params) {
 
       updateTimeAfterRecovery({
         recoveryMinutes: mappedRecoveryMinutes || recoveryMinutes,
-        matchUpPotentialParticipantIds,
         individualParticipantProfiles,
         matchUpNotBeforeTimes,
         averageMatchUpMinutes,

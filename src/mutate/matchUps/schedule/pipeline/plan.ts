@@ -63,6 +63,8 @@ export type SchedulePlan = {
   requestConflicts: PlaceVenueRoundsArgs['requestConflicts'];
   skippedScheduleTimes: PlaceVenueRoundsArgs['skippedScheduleTimes'];
   scheduleTimesRemaining: ByDate<{ [venueId: string]: ScheduleTimesResult[] }>;
+  /** matchUps timed at a venue with no court that no court could hold: they run past every court's close (§ 3.9) */
+  unbookedMatchUpIds: ByDate<{ [venueId: string]: string[] }>;
 };
 
 /** a venue's slots are sized by the greatest average among its timed rounds; absent when none profiles a matchUp */
@@ -98,6 +100,7 @@ export function planSchedule({
     overLimitMatchUpDetails: {},
     scheduleTimesRemaining: {},
     skippedScheduleTimes: {},
+    unbookedMatchUpIds: {},
     matchUpScheduleTimes: {},
     overLimitMatchUpIds: {},
     scheduledMatchUpIds: {},
@@ -163,22 +166,21 @@ function planDate({
   ];
   plan.placements[scheduleDate] = {};
   plan.unplaced[scheduleDate] = {};
+  plan.unbookedMatchUpIds[scheduleDate] = {};
 
   // the date's bookkeeping: who may yet play each matchUp, each participant's day, and when each matchUp may start
-  const matchUpPotentialParticipantIds: PlaceVenueRoundsArgs['matchUpPotentialParticipantIds'] = {};
   const individualParticipantProfiles: PlaceVenueRoundsArgs['individualParticipantProfiles'] = {};
   const matchUpNotBeforeTimes: PlaceVenueRoundsArgs['matchUpNotBeforeTimes'] = {};
   for (const matchUp of hydrated) {
     // a BYE is never played: its schedule raises no not-before time
     if (matchUp.matchUpStatus === BYE) continue;
     if (matchUp.schedule?.scheduledDate && sameDay(scheduleDate, extractDate(matchUp.schedule.scheduledDate))) {
-      processNextMatchUps({ matchUpPotentialParticipantIds, matchUpNotBeforeTimes, matchUp });
+      processNextMatchUps({ matchUpNotBeforeTimes, matchUp });
     }
   }
 
   // a recovery on the day before that runs past midnight books its participants from 00:00 (§ 9.8)
   carryPastMidnight({
-    matchUpPotentialParticipantIds,
     individualParticipantProfiles,
     matchUpNotBeforeTimes,
     clearScheduleDates,
@@ -197,7 +199,11 @@ function planDate({
     const venueCourts = view.courts.filter((court) => court.venueId === venue.venueId);
 
     // the venue's slots, around what is already booked on its courts that day
-    const { scheduleTimes = [], dateScheduledMatchUpIds } = generateScheduleTimes({
+    const {
+      scheduleTimes = [],
+      dateScheduledMatchUpIds,
+      unbookedMatchUpIds = [],
+    } = generateScheduleTimes({
       courtIds: venueCourts.map((court) => court.courtId),
       dateCourts: view.dateCourts[scheduleDate] ?? [],
       averageMatchUpMinutes: slotMinutes,
@@ -209,11 +215,12 @@ function planDate({
       scheduleDate,
     });
 
+    if (unbookedMatchUpIds.length) plan.unbookedMatchUpIds[scheduleDate][venue.venueId] = unbookedMatchUpIds;
+
     const already = processAlreadyScheduledMatchUps({
       matchUpScheduleTimes: plan.matchUpScheduleTimes,
       participantReachability: reachability,
       dateScheduledMatchUpIds: dateScheduledMatchUpIds as string[],
-      matchUpPotentialParticipantIds,
       individualParticipantProfiles,
       excludeNoDateCompleted,
       greatestAverageMinutes,
@@ -231,7 +238,6 @@ function planDate({
       orderedMatchUpIds: venue.rounds.flatMap((round) => round.matchUpIds),
       dateScheduledMatchUpIds: already.dateScheduledMatchUpIds,
       matchUpScheduleTimes: plan.matchUpScheduleTimes,
-      matchUpPotentialParticipantIds,
       clearDate: already.clearDate,
       matchUpNotBeforeTimes,
       matchUps: hydrated,
@@ -267,7 +273,6 @@ function planDate({
     venues: datePlan.venues,
     checkPotentialRequestConflicts,
     individualParticipantProfiles,
-    matchUpPotentialParticipantIds,
     scheduleDateRequestConflicts,
     venueScheduledRoundDetails,
     matchUpNotBeforeTimes,

@@ -15,7 +15,6 @@ import type { Minutes, PlanningView } from './view';
 import type { SchedulePlan } from './plan';
 
 type CarryArgs = {
-  matchUpPotentialParticipantIds: PlaceVenueRoundsArgs['matchUpPotentialParticipantIds'];
   individualParticipantProfiles: PlaceVenueRoundsArgs['individualParticipantProfiles'];
   matchUpNotBeforeTimes: PlaceVenueRoundsArgs['matchUpNotBeforeTimes'];
   clearScheduleDates?: boolean | string[];
@@ -33,7 +32,6 @@ type CarryArgs = {
  * recovery is read (C1). The policy's overnight times are not added.
  */
 export function carryPastMidnight({
-  matchUpPotentialParticipantIds,
   individualParticipantProfiles,
   matchUpNotBeforeTimes,
   clearScheduleDates,
@@ -90,7 +88,6 @@ export function carryPastMidnight({
     if (past) {
       processNextMatchUps({
         linkedTargetIds: view.reachability.linkedTargets?.[matchUpId],
-        matchUpPotentialParticipantIds,
         matchUpNotBeforeTimes,
         timeAfterRecovery,
         matchUp,
