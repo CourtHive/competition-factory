@@ -6,9 +6,9 @@ import { decorateResult } from '@Functions/global/decorateResult';
 
 // constants
 import { INVALID_MATCHUP_STATUS, INVALID_MATCHUP_STATUS_BYE } from '@Constants/errorConditionConstants';
+import type { DrawDefinition, Event, MatchUp, Structure, Tournament } from '@Types/tournamentTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import type { DrawDefinition, Event, MatchUp, Structure, Tournament } from '@Types/tournamentTypes';
 
 type AttemptToSetMatchUpStatusBYEArgs = {
   tournamentRecord?: Tournament;

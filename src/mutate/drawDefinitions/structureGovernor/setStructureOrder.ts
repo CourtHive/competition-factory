@@ -5,9 +5,9 @@ import { numericSortValue } from '@Tools/arrays';
 
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
-import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 
 type SetStructureOrderArgs = {
   /** structureId -> structureOrder; values are validated with isConvertableInteger, so numeric strings pass */

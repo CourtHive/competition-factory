@@ -2,8 +2,8 @@ import { generateDateRange, timeStringMinutes } from '@Tools/dateTime';
 
 // constants and types
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
-import { SUCCESS } from '@Constants/resultConstants';
 import { Court, Tournament } from '@Types/tournamentTypes';
+import { SUCCESS } from '@Constants/resultConstants';
 
 // bulk update when tournament dates change
 export function updateCourtAvailability({ tournamentRecord }: { tournamentRecord?: Tournament }) {
