@@ -6,8 +6,8 @@ import { expect, it } from 'vitest';
 import { AD_HOC, SINGLE_ELIMINATION, FEED_IN_CHAMPIONSHIP, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
-import { MALE } from '@Constants/genderConstants';
 import { DOUBLES } from '@Constants/eventConstants';
+import { MALE } from '@Constants/genderConstants';
 
 /**
  * Draw entries for a bracketed draw are a committed field: any two entrants may be drawn against
