@@ -243,7 +243,7 @@ describe('getNumericSeedValue branch coverage', () => {
 describe('getHomeParticipantId branch coverage', () => {
   it('returns error when matchUp is missing', () => {
     const result = getHomeParticipantId({} as any);
-    expect(result.error).toEqual(MISSING_MATCHUP);
+    expect(result).toMatchObject({ error: MISSING_MATCHUP });
   });
 
   it('returns homeParticipantId when schedule is falsy', () => {

@@ -45,11 +45,13 @@ const inconsistencies = () => {
   return getDrawInconsistencies({ drawDefinition }).inconsistencies?.map((i: any) => i.issueType) ?? [];
 };
 
+type Cell = { roundPosition: number; occupiedSide: number; matchUpStatus: string };
+
 generate();
-const CELLS = getMatchUps()
+const CELLS: Cell[] = getMatchUps()
   .filter((m: any) => m.structureName === 'East' && m.roundNumber === 2)
   .filter((m: any) => m.sides.filter((side: any) => side.participantId).length === 1)
-  .flatMap((m: any) => {
+  .flatMap((m: any): Cell[] => {
     const occupiedSide = m.sides.find((side: any) => side.participantId).sideNumber;
     return [WALKOVER, DEFAULTED].map((matchUpStatus) => ({
       roundPosition: m.roundPosition,

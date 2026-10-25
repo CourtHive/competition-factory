@@ -1,6 +1,7 @@
 import { getScenarioScheduleProjection } from '@Query/matchUps/scheduling/getScenarioScheduleProjection';
 import { applyScheduleScenario } from '@Mutate/matchUps/schedule/applyScheduleScenario';
 import { validateScheduleScenario } from '@Validators/validateScheduleScenario';
+import type { ResultType } from '@Types/factoryTypes';
 import { expect, it } from 'vitest';
 import {
   rebaseScheduleScenario,
@@ -64,7 +65,7 @@ it('applyScheduleScenario guards missing records and applies via the tournamentR
     events: [],
     scheduling: { scenarios: [{ scenarioId: 's1', scenarioName: 'A', placements: [] }] },
   };
-  const result = applyScheduleScenario({ tournamentRecord, scenarioId: 's1' });
+  const result: ResultType & { applied?: number } = applyScheduleScenario({ tournamentRecord, scenarioId: 's1' });
   expect(result.success).toEqual(true);
   expect(result.applied).toEqual(0);
 });

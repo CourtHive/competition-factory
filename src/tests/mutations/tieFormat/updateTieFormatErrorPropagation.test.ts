@@ -75,7 +75,6 @@ describe('updateTieFormat error propagation', () => {
       tieFormat: { collectionDefinitions: [], winCriteria: { valueGoal: 1 } } as any,
       tournamentRecord,
       drawDefinition,
-      structureId: structure.structureId,
       structure,
       event,
     });

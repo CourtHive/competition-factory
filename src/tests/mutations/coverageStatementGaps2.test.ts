@@ -10,8 +10,10 @@ import { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';
 import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
 import { addPoint, formatGameScore } from '@Mutate/scoring/addPoint';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
+import type { ResultType } from '@Types/factoryTypes';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import { expect, it, describe } from 'vitest';
 
 // constants and fixtures
@@ -262,7 +264,7 @@ describe('getParticipantResults uncovered paths', () => {
         score: { sets: [] },
       },
     ] as any;
-    const { participantResults } = getParticipantResults({ matchUps });
+    const participantResults = defined(getParticipantResults({ matchUps }).participantResults, 'participantResults');
     expect(participantResults['p1'].matchUpsCancelled).toBe(1);
     expect(participantResults['p2'].matchUpsCancelled).toBe(1);
   });
@@ -301,7 +303,7 @@ describe('getParticipantResults uncovered paths', () => {
         ],
       },
     ] as any;
-    const { participantResults } = getParticipantResults({ matchUps });
+    const participantResults = defined(getParticipantResults({ matchUps }).participantResults, 'participantResults');
     // team matchUp has tieMatchUps — perPlayer set to 0, tieMatchUps processed
     expect(participantResults['teamA']).toBeDefined();
   });
@@ -342,7 +344,7 @@ describe('getParticipantResults uncovered paths', () => {
         ],
       },
     ] as any;
-    const { participantResults } = getParticipantResults({ matchUps });
+    const participantResults = defined(getParticipantResults({ matchUps }).participantResults, 'participantResults');
     expect(participantResults['teamA'].tieDoublesWon).toBe(1);
     expect(participantResults['teamB'].tieDoublesLost).toBe(1);
     expect(participantResults['teamB'].tieSinglesWon).toBe(1);
@@ -379,7 +381,7 @@ describe('getParticipantResults uncovered paths', () => {
         score: { sets: [] },
       },
     ] as any;
-    const { participantResults } = getParticipantResults({ matchUps });
+    const participantResults = defined(getParticipantResults({ matchUps }).participantResults, 'participantResults');
     expect(participantResults['p2'].walkovers).toBe(1);
     expect(participantResults['p3'].defaults).toBe(1);
     expect(participantResults['p6'].retirements).toBe(1);
@@ -404,7 +406,7 @@ describe('getParticipantResults uncovered paths', () => {
         },
       },
     ] as any;
-    const { participantResults } = getParticipantResults({ matchUps });
+    const participantResults = defined(getParticipantResults({ matchUps }).participantResults, 'participantResults');
     expect(participantResults['p1'].gamesWon).toBe(6);
     expect(participantResults['p2'].gamesLost).toBe(6);
   });
@@ -429,25 +431,28 @@ describe('getTournamentPoints guard paths', () => {
 // 5. generateOutcome.ts — DOUBLE_WALKOVER, DOUBLE_DEFAULT,
 //    invalid values, DEFAULTED with score, aggregate scoring
 // ----------------------------------------------------------------
+// generateOutcome returns either an error or { outcome }; ResultType alone has no `outcome`
+type OutcomeResult = ResultType & { outcome?: unknown };
+
 describe('generateOutcome uncovered paths', () => {
   it('returns error for invalid matchUpFormat', () => {
-    const result = generateOutcome({ matchUpFormat: 'INVALID' });
+    const result: OutcomeResult = generateOutcome({ matchUpFormat: 'INVALID' });
     expect(result.error).toEqual(INVALID_MATCHUP_FORMAT);
   });
 
   it('returns error for non-object matchUpStatusProfile', () => {
-    const result = generateOutcome({ matchUpStatusProfile: 'not-an-object' });
+    const result: OutcomeResult = generateOutcome({ matchUpStatusProfile: 'not-an-object' });
     expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('returns error for NaN parameters', () => {
-    const result = generateOutcome({ sideWeight: 'abc' });
+    const result: OutcomeResult = generateOutcome({ sideWeight: 'abc' });
     expect(result.error).toEqual(INVALID_VALUES);
   });
 
   it('handles matchUpStatusProfile with large values (coverage of reduce path)', () => {
     // 10% in all: within the limit, so an outcome is generated
-    const result = generateOutcome({
+    const result: OutcomeResult = generateOutcome({
       matchUpStatusProfile: { [WALKOVER]: 5, [RETIRED]: 5 },
     });
     expect(result.outcome).toBeDefined();
