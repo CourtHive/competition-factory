@@ -7,6 +7,7 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findStructure } from '@Acquire/findStructure';
+import { settleUnlessIdle } from './indexPrecheck';
 
 // constants and types
 import type { DrawDefinition, DrawLink, Event, Tournament } from '@Types/tournamentTypes';
@@ -42,6 +43,25 @@ export function reconcileMissedLinkAdvancements({
   );
   if (!drawDefinition || !winnerLinks.length) return undefined;
 
+  // no advancement missed on the structural index: the pass's hydration would find the same, and write nothing
+  return settleUnlessIdle({
+    detect: (inContextDrawMatchUps) => findMissedLinkAdvancements({ drawDefinition, inContextDrawMatchUps }),
+    run: () => advanceMissed({ tournamentRecord, drawDefinition, event }),
+    site: 'reconcileMissedLinkAdvancements',
+    idle: undefined,
+    drawDefinition,
+  });
+}
+
+function advanceMissed({
+  tournamentRecord,
+  drawDefinition,
+  event,
+}: {
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  event?: Event;
+}): ResultType | undefined {
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
   const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
 
