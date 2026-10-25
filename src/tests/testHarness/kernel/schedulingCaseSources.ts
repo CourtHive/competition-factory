@@ -620,6 +620,28 @@ export const schedulingCaseSources: Source[] = [
     },
     claims: (plan) => expectEqual(timesOf(plan, eventMatchUps(1, 1)), ['00:00'], 'no carry from a cleared date'),
   },
+  {
+    caseId: 'scheduling.plan.overnight-rest-holds-a-junior.v1',
+    note:
+      'A junior first-round matchUp is timed at 21:00 on the first date (90 minutes: play ends 22:30). The default ' +
+      "policy's overnight rest for JUNIOR is 12 hours, so its players are not free before 10:30 on the next date, though " +
+      'the venue opens at 08:00 and recovery alone ends the night before (§ 9.8). One court of 90-minute matchUps has ' +
+      'slots at 08:00, 09:30 and 11:00: the final takes 11:00.',
+    build: () => {
+      mocksEngine.generateTournamentRecord({
+        venueProfiles: [{ venueId: VENUE, courtsCount: 1, startTime: '08:00', endTime: '23:00' }],
+        drawProfiles: [{ drawSize: 4, category: { categoryType: 'JUNIOR', ageCategoryCode: 'U18' } }],
+        policyDefinitions: POLICY_SCHEDULING_DEFAULT,
+        startDate: DAYS[0],
+        endDate: DAYS[1],
+        setState: true,
+      });
+      for (const firstRound of eventMatchUps(0, 1)) timeMatchUp(firstRound, { scheduledTime: '21:00', venueId: VENUE });
+      profileEventRound(0, 2, DAYS[1]);
+    },
+    claims: (plan) =>
+      expectEqual(timesOf(plan, eventMatchUps(0, 2)), ['11:00'], 'the first slot after the overnight rest'),
+  },
 ];
 
 /**

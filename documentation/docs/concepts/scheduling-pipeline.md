@@ -417,9 +417,12 @@ the calls that decide placements; the bulk and reschedule mutations write the ti
 8. **Crossing midnight. DECIDED (CA 2026-10-25): crossed only when necessary, backwards compatible.** Built: the
    date-time arithmetic (`kernel.civil.addMinutes@1`); court bookings carried into the next date
    (`kernel.time.endOnTheDay@1`), in every scheduler that builds bookings; and a participant's recovery carried into
-   the next date by the profile planner (§ 3.8, rule 6). No corpus scenario moved. Not yet built: the policy's
-   overnight times (`overnightTimes`) on top of a carried recovery, which are not read, and a stored `endDate` after
-   midnight, which bookings do not read (they take a matchUp's average minutes). The rule:
+   the next date by the profile planner (§ 3.8, rule 6). No corpus scenario moved. The policy's overnight rest
+   (`overnightTimes`, category-dependent: 12 hours for JUNIOR in the default policy, none otherwise) is held by the
+   profile planner too: a matchUp timed on the day before holds its participants from `00:00` until the later of its
+   carried recovery and its end of play plus the overnight minutes, so a junior finishing at 22:30 is not free before
+   10:30 (`scheduling.plan.overnight-rest-holds-a-junior.v1`). Not yet built: a stored `endDate` after midnight, which
+   bookings do not read (they take a matchUp's average minutes), and either carry in the direct scheduler. The rule:
    - **A date with no time is unchanged.** `scheduledDate` alone remains a complete schedule ("on that day, time to be
      set"); with no time there is nothing to add minutes to, so no booking and no recovery follow from it.
    - **`scheduledTime` is unchanged.** It is the start, `HH:MM` on the venue's wall clock, on `scheduledDate`; a start
@@ -434,7 +437,8 @@ the calls that decide placements; the bulk and reschedule mutations write the ti
      computed as a UTC instant, or as a day count since 1970-01-01 × 1440 plus minutes past midnight. A
      daylight-saving change inside a matchUp is ignored, by definition. Zones apply only at the edges (now, an
      embargo, display), always by an explicit IANA zone on the record, never the host's.
-   - A booking or a recovery that ends past midnight carries into the next date, with the overnight times on top.
+   - A booking or a recovery that ends past midnight carries into the next date; overnight rest is counted from the end
+     of play, and the later of the two holds the participant.
    - Nothing carries from a planned date whose schedule the call clears: what was stored there is gone (the court
      bookings now read this as the recovery carry already did, 2026-10-25).
    - **The consequence:** a schedule that never crosses midnight is placed exactly as today; only the placements the
