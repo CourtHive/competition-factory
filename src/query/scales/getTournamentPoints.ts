@@ -271,6 +271,13 @@ function resolvePositionPoints({ awardProfile, participation, level, drawSize })
     }
   }
 
+  // A Lucky Loser Round Robin: placed into the playoff without winning their group, they earn playoff points only by
+  // winning a playoff match. Otherwise their group place scores (groupOrderPoints, read from the group participation).
+  const { participantGroupOrder, winCount } = participation;
+  if (awardProfile.luckyLoserRoundRobin && participantGroupOrder > 1 && participationOrder > 1 && !winCount) {
+    awardPoints = 0;
+  }
+
   if (!awardPoints && finishingRound && participationOrder === 1 && accessor) {
     const valueObj = finishingRound[accessor];
     if (valueObj) {
@@ -661,7 +668,14 @@ function processAllParticipations({
   pointsAuthority,
   drawId,
 }) {
-  for (const participation of structureParticipation) {
+  // The participant's place in their round robin group, when the draw has one: a playoff participation is read in
+  // its light (AwardProfile.luckyLoserRoundRobin).
+  const groupOrder = structureParticipation.find((p) => p.groupOrder)?.groupOrder;
+
+  for (const structureParticipationEntry of structureParticipation) {
+    const participation = groupOrder
+      ? { ...structureParticipationEntry, participantGroupOrder: groupOrder }
+      : structureParticipationEntry;
     const { awardProfile, skip } = processParticipation({
       participation,
       awardProfiles,

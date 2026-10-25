@@ -93,6 +93,10 @@
           "description": "Points by finishing position. Key = max finishingPositionRange value (1=champion, 2=finalist, 4=semifinalist, etc.). Value is a PositionValue.",
           "additionalProperties": { "$ref": "#/definitions/PositionValue" }
         },
+        "luckyLoserRoundRobin": {
+          "type": "boolean",
+          "description": "Round robin to elimination: a playoff participant who did not win their group earns playoff points only by winning a playoff match; otherwise their group place scores."
+        },
         "groupOrderPoints": {
           "type": "object",
           "description": "Points by place within a round robin group (1 = group winner), read from the round robin participation. A value may require a win.",
