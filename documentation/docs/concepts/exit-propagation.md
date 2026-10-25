@@ -642,6 +642,17 @@ DOUBLE_ELIMINATION 8/5). A Backdraw finalist in the Main final under the Main po
 that now has no result came across the link, not by advancing within Main, and is taken back the same
 way (DOUBLE_ELIMINATION 8/4).
 
+A carrier taken back out of the Backdraw final leaves the grand final too, with the exit they carried there. A
+walkover's loser can carry it through the Backdraw on a double exit's produced exits, across the link and into the
+grand final, which the Main side then wins by that walkover. When the double exit is re-scored to a single result, its
+loser meets the carrier in the Backdraw and the carrier stops there. The grand final was decided only by the carry
+leaving with them, a walkover now awarded to a seat nobody holds, so it is released with them and waits for the Main
+final's winner and the Backdraw champion. Before this it kept the carrier, and the next Backdraw champion could not be
+seated there (Phase C closure gate, openings policy off, DOUBLE_ELIMINATION 8/4 seeds 21117689, 21124430, 21128630,
+21129654 and 21157227: `aCarrierLeavingTheBackdrawLeavesTheGrandFinal`). The same holds wherever a participant
+leaves the structure that sent them across a link: a matchUp decided only by the carry that leaves with them, its award
+naming an empty seat, is released with them, as it is when a BYE they passed is taken back.
+
 It also takes back the BYE the award placed. A matchUp won over a carried exit has that exit as its
 loser, and where the loser link leads to another structure the seat there becomes a BYE nobody can
 fill. When the withdrawal leaves that matchUp undecided, its loser is a participant again, and the
