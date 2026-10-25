@@ -4,8 +4,8 @@
     "matrix BYE: DOUBLE_WALKOVER": {
       "calls": 199,
       "hydrations": {
-        "total": 391,
-        "worst": 14
+        "total": 358,
+        "worst": 13
       },
       "getMatchUpsMap": {
         "total": 1642,
@@ -15,8 +15,8 @@
     "matrix EXIT: DOUBLE_WALKOVER": {
       "calls": 199,
       "hydrations": {
-        "total": 565,
-        "worst": 12
+        "total": 424,
+        "worst": 11
       },
       "getMatchUpsMap": {
         "total": 1640,
@@ -26,8 +26,8 @@
     "matrix BYE: WALKOVER propagated": {
       "calls": 270,
       "hydrations": {
-        "total": 668,
-        "worst": 8
+        "total": 466,
+        "worst": 7
       },
       "getMatchUpsMap": {
         "total": 1860,
@@ -37,8 +37,8 @@
     "matrix BYE: DEFAULTED propagated": {
       "calls": 270,
       "hydrations": {
-        "total": 669,
-        "worst": 9
+        "total": 467,
+        "worst": 8
       },
       "getMatchUpsMap": {
         "total": 1873,
@@ -48,7 +48,7 @@
     "deep BYE: the route": {
       "calls": 398,
       "hydrations": {
-        "total": 584,
+        "total": 582,
         "worst": 6
       },
       "getMatchUpsMap": {
@@ -70,7 +70,7 @@
     "deep EXIT: the route": {
       "calls": 396,
       "hydrations": {
-        "total": 585,
+        "total": 561,
         "worst": 6
       },
       "getMatchUpsMap": {
@@ -81,7 +81,7 @@
     "deep EXIT: the correction": {
       "calls": 34,
       "hydrations": {
-        "total": 78,
+        "total": 74,
         "worst": 7
       },
       "getMatchUpsMap": {

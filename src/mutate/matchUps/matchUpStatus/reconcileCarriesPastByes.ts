@@ -4,6 +4,7 @@ import { matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { isAnyExit, isExit } from '@Validators/isExit';
+import { settleUnlessIdle } from './indexPrecheck';
 
 // constants and types
 import type { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
@@ -41,6 +42,28 @@ export function reconcileCarriesPastByes({
   event?: Event;
 }): ResultType | undefined {
   if (!drawDefinition) return undefined;
+  const matchUpsMap = getMatchUpsMap({ drawDefinition });
+  // the cheap read first: a BYE matchUp recording a carried exit, before the index is built
+  if (!carryCandidates(matchUpsMap, new Set()).length) return undefined;
+  // no carry owed on the structural index: the pass's hydration would find the same, and write nothing
+  return settleUnlessIdle({
+    detect: (inContextDrawMatchUps) => findOwedCarry({ inContextDrawMatchUps, drawDefinition, matchUpsMap }),
+    run: () => carryPastByes({ tournamentRecord, drawDefinition, event }),
+    site: 'reconcileCarriesPastByes',
+    idle: undefined,
+    drawDefinition,
+  });
+}
+
+function carryPastByes({
+  tournamentRecord,
+  drawDefinition,
+  event,
+}: {
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  event?: Event;
+}): ResultType | undefined {
   const carriedOn = new Set<string>();
   // each carry settles one BYE matchUp; bounded as a draw is
   for (let pass = 0; pass < 16; pass += 1) {

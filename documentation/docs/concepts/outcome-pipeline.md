@@ -654,6 +654,9 @@ index: the pass already skipped its hydration unless stored data showed a candid
 candidate's links show nothing stale (deep BYE: the route 756 → 616, 1.5 a call); forced idle, 32 exit-propagation
 tests fail under v1. `reconcileProvenanceSides` sixth, asking `findMisplacedProvenance` after the same
 stored-data candidate check (matrix BYE: WALKOVER propagated 870 → 668); forced idle, 4 mutation tests fail under v1.
+`reconcileCarriesPastByes` seventh, asking `findOwedCarry` once before its loop, after its cheap check for a BYE
+matchUp recording a carried exit (matrix BYE: WALKOVER propagated 668 → 466); forced idle, 29 mutation tests fail
+under v1.
 
 ## 8. What the corpus pins
 
