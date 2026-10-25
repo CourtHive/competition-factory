@@ -19,7 +19,7 @@ import { stringify } from '@Helpers/matchUpFormatCode/stringify';
 import { resolveSetType } from '@Tools/scoring/scoringUtilities';
 import { addMinutesToTimeString } from '@Tools/dateTime';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
-import { extractDate } from '@Tools/plainDate';
+import { extractDate, sameDay } from '@Tools/plainDate';
 
 // constants
 import { IN_PROGRESS } from '@Constants/matchUpStatusConstants';
@@ -156,6 +156,11 @@ const clockOperations: Record<string, KernelOperation> = {
       const result = addMinutesToDateTime({ date: input.date, time: input.time, minutes: input.minutes as number });
       return result ? { kind: 'value', value: result } : { kind: 'error', code: 'NOT_A_DATE_TIME' };
     },
+  },
+  'kernel.date.sameDay@1': {
+    capability: 'clock',
+    validate: (input) => isText(input, 'date1') ?? isText(input, 'date2'),
+    run: (input) => ({ kind: 'value', value: sameDay(input.date1, input.date2) }),
   },
   'kernel.date.extract@1': {
     capability: 'clock',

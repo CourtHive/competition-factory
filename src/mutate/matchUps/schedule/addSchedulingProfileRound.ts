@@ -2,8 +2,8 @@ import { firstClassGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafO
 import { getCompetitionDateRange } from '@Query/tournaments/getCompetitionDateRange';
 import { getProfileRoundKey } from '@Query/matchUps/scheduling/schedulingUtils';
 import { setSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
+import { extractDate, isValidDateString, sameDay } from '@Tools/dateTime';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { isValidDateString, sameDay } from '@Tools/dateTime';
 import { isObject } from '@Tools/objects';
 
 // constants and types
@@ -36,12 +36,13 @@ export function addSchedulingProfileRound({ tournamentRecords, scheduleDate, ven
     const { startDate, endDate } = getCompetitionDateRange({
       tournamentRecords,
     });
-    const dateObject = new Date(scheduleDate);
-    if ((startDate && dateObject < new Date(startDate)) || (endDate && dateObject > new Date(endDate))) {
+    // a profile date is stored as its calendar day (§ 3.8 rule 7), compared as text with the tournament's dates
+    const day = extractDate(scheduleDate);
+    if ((startDate && day < extractDate(startDate)) || (endDate && day > extractDate(endDate))) {
       return { error: INVALID_DATE };
     }
 
-    dateProfile = { scheduleDate, venues: [] };
+    dateProfile = { scheduleDate: day, venues: [] };
     schedulingProfile.push(dateProfile);
   }
 
