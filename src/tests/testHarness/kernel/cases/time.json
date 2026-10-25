@@ -722,6 +722,90 @@
     "note": "rule 7"
   },
   {
+    "caseId": "clock.date.date-time-with-offset.v1",
+    "operation": "kernel.date.extract@1",
+    "input": {
+      "value": "2026-03-02T23:30:00+05:30"
+    },
+    "expected": {
+      "kind": "value",
+      "value": "2026-03-02"
+    },
+    "note": "rule 7: the date part as written; the offset is not applied"
+  },
+  {
+    "caseId": "clock.date.space-separated.v1",
+    "operation": "kernel.date.extract@1",
+    "input": {
+      "value": "2026-03-02 09:15"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "NOT_A_DATE"
+    },
+    "note": "rule 7: a date and time separated by a space is not read, as rule 3 does not read its time"
+  },
+  {
+    "caseId": "clock.date.date-time-not-a-time.v1",
+    "operation": "kernel.date.extract@1",
+    "input": {
+      "value": "2026-03-02T25:00"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "NOT_A_DATE"
+    },
+    "note": "rule 7: a date-time whose time is not a time is not a date-time"
+  },
+  {
+    "caseId": "clock.date.week-date.v1",
+    "operation": "kernel.date.extract@1",
+    "input": {
+      "value": "2026-W10"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "NOT_A_DATE"
+    },
+    "note": "rule 7: an ISO week date is not YYYY-MM-DD"
+  },
+  {
+    "caseId": "clock.date.ordinal-date.v1",
+    "operation": "kernel.date.extract@1",
+    "input": {
+      "value": "2026-061"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "NOT_A_DATE"
+    },
+    "note": "rule 7: an ISO ordinal date is not YYYY-MM-DD"
+  },
+  {
+    "caseId": "clock.date.basic-format.v1",
+    "operation": "kernel.date.extract@1",
+    "input": {
+      "value": "20260302"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "NOT_A_DATE"
+    },
+    "note": "rule 7: the basic (unhyphenated) format is not YYYY-MM-DD"
+  },
+  {
+    "caseId": "clock.date.year-month.v1",
+    "operation": "kernel.date.extract@1",
+    "input": {
+      "value": "2026-03"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "NOT_A_DATE"
+    },
+    "note": "rule 7: a month is not a day"
+  },
+  {
     "caseId": "clock.end-on-the-day.within.v1",
     "operation": "kernel.time.endOnTheDay@1",
     "input": {
