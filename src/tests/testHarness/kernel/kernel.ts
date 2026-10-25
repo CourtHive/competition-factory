@@ -9,11 +9,15 @@
  * translation (positional helpers, parsed shapes, transport), never the expected result.
  */
 import { planningViewFromData, requiredPlanningViewKeys } from '@Mutate/matchUps/schedule/pipeline/viewCodec';
+import { dayMinutesToTimeString, extractTime, tidyTime, timeStringMinutes } from '@Tools/plainTime';
+import { addMinutesWithinDay } from '@Mutate/matchUps/schedule/scheduleMatchUps/timeWithinDay';
 import { planSchedule } from '@Mutate/matchUps/schedule/pipeline/plan';
 import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
 import { stringify } from '@Helpers/matchUpFormatCode/stringify';
 import { resolveSetType } from '@Tools/scoring/scoringUtilities';
+import { addMinutesToTimeString } from '@Tools/dateTime';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { extractDate } from '@Tools/plainDate';
 
 // constants
 import { IN_PROGRESS } from '@Constants/matchUpStatusConstants';
@@ -34,7 +38,7 @@ export type KernelCase = {
 };
 
 export type KernelOperation = {
-  capability: 'scoring' | 'grammar' | 'scheduling';
+  capability: 'scoring' | 'grammar' | 'scheduling' | 'clock';
   validate: (input: Record<string, unknown>) => string | undefined; // why the input is malformed, if it is
   run: (input: Record<string, unknown>) => KernelResult;
 };
@@ -99,8 +103,58 @@ function validatePlanInput(input: Record<string, unknown>) {
   return undefined;
 }
 
+/** the clock's primitives (scheduling-pipeline.md § 3.8): a string in, a time, a number or a date out */
+const isText = (input: Record<string, unknown>, key: string) =>
+  typeof input[key] === 'string' ? undefined : `${key} must be a string`;
+const isMinutes = (input: Record<string, unknown>) =>
+  Number.isInteger(input.minutes) ? undefined : 'minutes must be an integer';
+const timeOrRefusal = (time: string | undefined): KernelResult =>
+  time ? { kind: 'value', value: time } : { kind: 'error', code: 'NOT_A_TIME' };
+
+const clockOperations: Record<string, KernelOperation> = {
+  'kernel.time.tidy@1': {
+    capability: 'clock',
+    validate: (input) => isText(input, 'time'),
+    run: (input) => timeOrRefusal(tidyTime(input.time)),
+  },
+  'kernel.time.extract@1': {
+    capability: 'clock',
+    validate: (input) => isText(input, 'value'),
+    run: (input) => timeOrRefusal(extractTime(input.value)),
+  },
+  'kernel.time.minutes@1': {
+    capability: 'clock',
+    validate: (input) => isText(input, 'time'),
+    run: (input) => ({ kind: 'value', value: timeStringMinutes(input.time) }),
+  },
+  'kernel.time.fromMinutes@1': {
+    capability: 'clock',
+    validate: (input) => (isCount(input.minutes) ? undefined : 'minutes must be a non-negative integer'),
+    run: (input) => ({ kind: 'value', value: dayMinutesToTimeString(input.minutes) }),
+  },
+  'kernel.time.addWithinDay@1': {
+    capability: 'clock',
+    validate: (input) => isText(input, 'time') ?? isMinutes(input),
+    run: (input) => ({ kind: 'value', value: addMinutesWithinDay(input.time as string, input.minutes as number) }),
+  },
+  'kernel.time.addWrapping@1': {
+    capability: 'clock',
+    validate: (input) => isText(input, 'time') ?? isMinutes(input),
+    run: (input) => ({ kind: 'value', value: addMinutesToTimeString(input.time, input.minutes) }),
+  },
+  'kernel.date.extract@1': {
+    capability: 'clock',
+    validate: (input) => isText(input, 'value'),
+    run: (input) => {
+      const date = extractDate(input.value);
+      return date ? { kind: 'value', value: date } : { kind: 'error', code: 'NOT_A_DATE' };
+    },
+  },
+};
+
 // The registry is a closed, frozen map: an operation not listed here is refused, never guessed at.
 export const kernelOperations: Readonly<Record<string, KernelOperation>> = Object.freeze({
+  ...clockOperations,
   'kernel.scoring.pointsToGame@1': {
     capability: 'scoring',
     validate: (input) => {

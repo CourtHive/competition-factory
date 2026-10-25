@@ -147,6 +147,37 @@ times set and at or before. A same-day placement with no time, or a played match
 profile scheduler asks it of each slot it offers (§ 4, step 4.2) and then once of its whole plan (§ 4, step 5); every
 schedule write refuses it with `ANACHRONISM` (see [schedule governor: played order](../governors/schedule-governor.md)).
 
+### 3.8 The clock
+
+Every time the scheduler reads or writes is a **wall-clock time at the venue**: hours and minutes, with no date and no
+time zone. The scheduler never converts between zones, and every comparison it makes is on one scheduling day. The
+canonical form is `HH:MM` (00–23, 00–59); the rules below are what the engine reads today, including the readings
+that are wider than the canonical form, which § 9.9 decides to refuse, and the 23:59 cap, which § 9.8 decides to
+replace. They are pinned by the `kernel.time.*` conformance cases until those changes land.
+
+1. **A time.** A string is a time when, with anything after a `Z` dropped and split on `:`, it has at least two parts,
+   each beginning with an integer (leading whitespace and a sign allowed, trailing characters ignored), with hours at
+   most 23 and minutes at most 60. Anything else (`24:00`, `12`, `noon`, `08:xx`, the empty string) is not a time.
+2. **Tidying.** A time is written as its first two parts, each padded to two characters when it has only one, and
+   otherwise kept as it is: `8:00` → `08:00`, `8:5` → `08:05`, `08:00:00` → `08:00`; but `08:00Z`, ` 8:00` and
+   `08:30 PM` are kept verbatim, since their parts are already two characters or more.
+3. **A date-time's time.** A full ISO date-time contributes the time after its `T` (`2026-03-02T09:15:30.000Z` →
+   `09:15`). A date and time separated by a space is not read as a time.
+4. **Minutes past midnight.** A time's hours × 60 + minutes, read from its tidied form, and zero for anything that is
+   not a time. So `23:60` is 1440 and `-1:00` is −60.
+5. **From minutes.** Minutes past midnight are written as `HH:MM`, the hours wrapping at 24: 1440 is `00:00`, 1500 is
+   `01:00`.
+6. **Within the day.** A time plus minutes stays on the scheduling day: a result at or past midnight is **`23:59`**,
+   the end of the day, and a negative one is `00:00`. A recovery that would end after midnight therefore ends at
+   23:59, and the next day starts clean (§ 9.8). Anything that is not a time counts as `00:00`. A court **booking's**
+   end is the exception: it is computed by wrapping, so a matchUp booked at 23:30 for 90 minutes ends at `01:00`, before
+   it starts on that court's day.
+7. **A calendar day.** The date part, `YYYY-MM-DD`, of an ISO date or date-time; two days are the same when their date
+   parts are. A month and day in range are accepted without checking the calendar (`2026-02-30`).
+8. **Garman slots** are computed in minutes on the scheduling day (§ 4, step 2) and written back as `HH:MM`.
+9. **Not-before times** are compared as text. That orders them correctly only because every not-before time the
+   scheduler writes is a tidied `HH:MM`.
+
 ## 4. The timed pipeline: `scheduleProfileRounds`
 
 The call runs in three stages: a **view**, everything the decisions below read, resolved once from the records; a
@@ -293,6 +324,44 @@ the calls that decide placements; the bulk and reschedule mutations write the ti
    TMX's results drawer, the corpus report) and misread the mixed shape. Each person request also gets its own id: a
    time code had given every request added in one call the same one. Pinned by
    `scheduling.plan.person-request-on-a-placed-side.v1`.
+8. **Crossing midnight. DECIDED (CA 2026-10-25): crossed only when necessary, backwards compatible**; built after
+   this record. Today the scheduler works one day at a time and stops at 23:59 (§ 3.8, rule 6): a matchUp at 23:00
+   with 90 minutes and a 60-minute recovery holds its participants only until 23:59, so a dependent the next morning
+   is not held; the policy's overnight times (`overnightTimes`) are not read; a stored `endDate` after midnight is not
+   read when bookings are built, while a booking's own end wraps to the early morning of the same day. The rule:
+   - **A date with no time is unchanged.** `scheduledDate` alone remains a complete schedule ("on that day, time to be
+     set"); with no time there is nothing to add minutes to, so no booking and no recovery follow from it.
+   - **`scheduledTime` is unchanged.** It is the start, `HH:MM` on the venue's wall clock, on `scheduledDate`; a start
+     never crosses midnight. A legacy `scheduledTime` holding an ISO date-time (written when the matchUp had no
+     `scheduledDate`) is read as that date and time, as today.
+   - **Date-time arithmetic runs only when a time is present and minutes are added** (an end, a recovery, a booking):
+     a calendar date-time, a date and a wall-clock time with no zone on the proleptic Gregorian calendar, in whole
+     minutes. A result before midnight is `HH:MM` on the same date, exactly as today; only a result past midnight is
+     on the next date (2026-03-02 23:30 plus 90 minutes is 2026-03-03 01:00), and it is stored only where an end is
+     stored already, as `endDate`.
+   - It is UTC-instant arithmetic (UTC has no daylight saving), so it needs no date library: a date-time can be
+     computed as a UTC instant, or as a day count since 1970-01-01 × 1440 plus minutes past midnight. A
+     daylight-saving change inside a matchUp is ignored, by definition. Zones apply only at the edges (now, an
+     embargo, display), always by an explicit IANA zone on the record, never the host's.
+   - A booking or a recovery that ends past midnight carries into the next date, with the overnight times on top.
+   - **The consequence:** a schedule that never crosses midnight is placed exactly as today; only the placements the
+     23:59 cap and the wrapping booking end decided move.
+   - **A start after midnight is on the next date** (CA 2026-10-25: _"if it starts past midnight it is technically
+     scheduled for the next day"_): a 00:30 start has the next `scheduledDate`. There is no separate session day.
+9. **The clock reads more than `HH:MM`** (§ 3.8). **DECIDED (CA 2026-10-25): invalid forms are refused**; built
+   after this record.
+   - **At the write**, a date must be a real calendar date, `YYYY-MM-DD` (`2026-02-30` is refused), and a time must
+     convert unambiguously to `HH:MM` (00–23, 00–59), which is what is stored: `8:00`, `08:00:00`, an ISO date-time
+     and a 12-hour time (`8:30 PM`, which the write already converts to `20:30`) are accepted; `23:60`, `24:00`,
+     `-1:00`, `08:00Z` and ` 8:00` are refused.
+   - **At the read**, stored records keep working: the same unambiguous forms are normalised, and anything else reads
+     as no time (as a value that is not a time does today), listed by an audit so it can be corrected.
+   - **Measured 2026-10-25** (read-only, every tournament record in production): scheduled times 43,527, all
+     canonical; court availability times 8,682 and dates 4,473, all canonical; scheduled dates 66,580 canonical and
+     154 empty strings (a cleared date, which already reads as no date); no date out of the calendar. So the refusals
+     change no stored schedule, and the empty-string date is the only legacy form the read has to keep reading as
+     absent. The match clock's times (start, stop, resume, end) are a different kind of value, instants: 10,395 are
+     ISO instants (`…T…Z`) and 746 bare `HH:MM`; they are outside this rule.
 
 ## Related
 

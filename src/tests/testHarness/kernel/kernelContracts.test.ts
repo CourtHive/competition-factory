@@ -6,6 +6,7 @@ import { canonicalJson } from '@Tools/canonicalJson';
 import grammarCases from './cases/grammar.json';
 import scoringCases from './cases/scoring.json';
 import { describe, expect, it } from 'vitest';
+import timeCases from './cases/time.json';
 
 /**
  * Language-neutral kernel cases, run through this implementation's adapters. Each expectation was authored from
@@ -17,7 +18,7 @@ import { describe, expect, it } from 'vitest';
  * implementation bundled and run as its own process (`stdio.ts`), one batch per run. `KERNEL_EXTERNAL_ADAPTER=<command>`
  * adds any other implementation that speaks the protocol.
  */
-const cases = [...scoringCases, ...grammarCases, ...schedulingCases] as KernelCase[];
+const cases = [...scoringCases, ...grammarCases, ...schedulingCases, ...timeCases] as KernelCase[];
 const requests = cases.map(({ operation, input }) => ({ operation, input }));
 
 const externalCommand = process.env.KERNEL_EXTERNAL_ADAPTER;
@@ -137,11 +138,13 @@ describe('the external protocol', () => {
         .invokeAll([request, request])
         .map(({ kind }) => kind),
     ).toEqual(['exception', 'exception']);
-    expect(externalAdapter('true').invoke(request.operation, request.input)).toEqual({
+    // the commands read their stdin before answering: one that exits without reading it races the write (EPIPE), which
+    // is still an exception, but not the one this case names
+    expect(externalAdapter('cat > /dev/null').invoke(request.operation, request.input)).toEqual({
       kind: 'exception',
       message: 'no answer for request 0',
     });
-    expect(externalAdapter('echo nope').invoke(request.operation, request.input)).toEqual({
+    expect(externalAdapter('cat > /dev/null; echo nope').invoke(request.operation, request.input)).toEqual({
       kind: 'exception',
       message: 'answer 0 is not JSON',
     });
@@ -150,8 +153,48 @@ describe('the external protocol', () => {
 
 describe('negative controls: the cases reject a wrong implementation', () => {
   const scheduling = schedulingCases as KernelCase[];
+  const time = timeCases as KernelCase[];
   const scoring = scoringCases as KernelCase[];
   const grammar = grammarCases as KernelCase[];
+
+  it('a stricter clock (trimmed, suffixes dropped) fails exactly the cases that pin the lenient readings', () => {
+    const tidy = kernelOperations['kernel.time.tidy@1'];
+    const strict: KernelOperation = {
+      ...tidy,
+      run: (input) => {
+        const result = tidy.run(input);
+        if (result.kind !== 'value') return result;
+        return {
+          kind: 'value',
+          value: String(result.value)
+            .trim()
+            .replace(/[^\d:].*$/, '')
+            .padStart(5, '0'),
+        };
+      },
+    };
+    const wrong = directAdapter({ ...kernelOperations, 'kernel.time.tidy@1': strict });
+    expect(failures(wrong, time).map((c) => c.caseId)).toEqual([
+      'clock.tidy.negative-hour.v1',
+      'clock.tidy.zulu-kept-verbatim.v1',
+      'clock.tidy.leading-space-kept.v1',
+      'clock.tidy.meridiem-kept.v1',
+    ]);
+  });
+
+  it('a within-day add that wraps past midnight fails exactly the midnight cases', () => {
+    const wraps: KernelOperation = {
+      ...kernelOperations['kernel.time.addWithinDay@1'],
+      run: (input) => kernelOperations['kernel.time.addWrapping@1'].run(input),
+    };
+    const wrong = directAdapter({ ...kernelOperations, 'kernel.time.addWithinDay@1': wraps });
+    expect(failures(wrong, time).map((c) => c.caseId)).toEqual([
+      'clock.add-within-day.at-midnight.v1',
+      'clock.add-within-day.past-midnight.v1',
+      'clock.add-within-day.negative.v1',
+      'clock.add-within-day.not-a-time.v1',
+    ]);
+  });
 
   it('a planner that ignores the played order fails the played-order case, and only it', () => {
     const plan = kernelOperations['kernel.scheduling.plan@1'];
