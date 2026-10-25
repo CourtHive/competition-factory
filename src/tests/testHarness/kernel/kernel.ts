@@ -17,6 +17,7 @@ import { planSchedule } from '@Mutate/matchUps/schedule/pipeline/plan';
 import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
 import { stringify } from '@Helpers/matchUpFormatCode/stringify';
 import { resolveSetType } from '@Tools/scoring/scoringUtilities';
+import { normativeReduction } from './normativeReduction';
 import { addMinutesToTimeString } from '@Tools/dateTime';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { extractDate, sameDay } from '@Tools/plainDate';
@@ -80,6 +81,21 @@ function pointsToGame(input: Record<string, unknown>): KernelResult {
   const result = calculatePointsTo(matchUp, formatStructure, setType, formatStructure.setFormat, 0);
   if (!result) return { kind: 'error', code: 'NOT_CALCULABLE' };
   return { kind: 'value', value: result.pointsToGame };
+}
+
+/** a reduction's input: a configuration object, when given, and a timeline of entries that each name a type (§ 12.1) */
+function validateReduceInput(input: Record<string, unknown>) {
+  const { configuration, timeline } = input;
+  if (
+    configuration !== undefined &&
+    (typeof configuration !== 'object' || Array.isArray(configuration) || !configuration)
+  )
+    return 'configuration must be an object';
+  if (!Array.isArray(timeline)) return 'timeline must be an array';
+  const named = (entry: unknown) =>
+    !!entry && typeof entry === 'object' && !Array.isArray(entry) && typeof (entry as any).type === 'string';
+  if (!timeline.every(named)) return 'every timeline entry is an object with a string type';
+  return undefined;
 }
 
 /** the options a profile plan takes beside its view, and the type each must have */
@@ -185,6 +201,15 @@ export const kernelOperations: Readonly<Record<string, KernelOperation>> = Objec
       return undefined;
     },
     run: pointsToGame,
+  },
+  // the scoring reducer (scoring-engine-spec.md § 12.1): a configuration and a timeline, replayed from a fresh score
+  'kernel.scoring.reduce@1': {
+    capability: 'scoring',
+    validate: validateReduceInput,
+    run: (input) => ({
+      kind: 'value',
+      value: normativeReduction((input.configuration ?? {}) as Record<string, any>, input.timeline as any[]),
+    }),
   },
   // the profile scheduler's plan: from a planning view (`viewCodec.ts`) and the call's options, the placements and the
   // reasons for every matchUp left unplaced (scheduling-pipeline.md § 4)

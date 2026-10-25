@@ -1,3 +1,4 @@
+import { harvestScoringReduce } from '../kernel/harvestScoringReduce';
 import { createSeededRandom, setRandomSource } from '@Tools/prng';
 import { factoryVersion } from '@Functions/global/factoryVersion';
 import { getSchemaWriteMode } from '@Global/state/globalState';
@@ -7,8 +8,8 @@ import { isComplete } from '@Query/scoring/isComplete';
 import { canonicalJson } from '@Tools/canonicalJson';
 import { addPoint } from '@Mutate/scoring/addPoint';
 import { setClock } from '@Tools/clock';
-import fs from 'fs';
 import path from 'path';
+import fs from 'fs';
 
 // constants
 import {
@@ -118,6 +119,9 @@ export function scoringScenario({
     hash,
   });
   const postCompletionChanged = canonicalJson(observable(matchUp)) !== before;
+  // the stream as a reducer timeline: every point it played, the one after the end included
+  const timeline = steps.slice(1).map(({ directive }) => ({ type: 'point', data: directive.params }));
+  harvestScoringReduce(`scoring/${slug(matchUpFormat)}/${stream.name}-seed-${seed}`, { matchUpFormat }, timeline);
   setRandomSource();
   setClock();
   return {
