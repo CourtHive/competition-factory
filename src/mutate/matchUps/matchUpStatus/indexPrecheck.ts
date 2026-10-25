@@ -53,7 +53,7 @@ export function settleUnlessIdle<T, F>({
   if (getOutcomePipeline() !== OUTCOME_PIPELINE_DIFFERENTIAL) return predictedIdle ? idle : run();
 
   const hydrated = asOracle(() => getAllDrawMatchUps({ inContext: true, drawDefinition }).matchUps ?? []);
-  const expected = detect(hydrated);
+  const expected = asOracle(() => detect(hydrated));
   if (hasWork(expected) !== hasWork(found))
     pending.push({ site, index: JSON.stringify(found ?? null), hydrated: JSON.stringify(expected ?? null) });
   if (!predictedIdle) return run();

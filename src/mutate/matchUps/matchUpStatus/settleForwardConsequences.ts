@@ -10,6 +10,7 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { pushGlobalLog } from '@Functions/global/globalLog';
+import { settleUnlessIdle } from './indexPrecheck';
 import { isExit } from '@Validators/isExit';
 
 // constants and types
@@ -97,6 +98,20 @@ export function settleForwardConsequences(
 ): (ResultType & { exhausted?: string; settled?: number }) | undefined {
   const { drawDefinition } = params;
   if (!drawDefinition || isLuckyBasedDraw(drawDefinition.drawType)) return undefined;
+  // nothing owed on the structural index: the pass's first hydration would find the same, and write nothing
+  return settleUnlessIdle({
+    detect: (inContextDrawMatchUps) => hasForwardWork({ ...params, inContextDrawMatchUps }),
+    run: () => settleForward({ ...params, drawDefinition }),
+    site: 'settleForwardConsequences',
+    idle: undefined,
+    drawDefinition,
+  });
+}
+
+function settleForward(
+  params: SettleArgs & { drawDefinition: DrawDefinition },
+): (ResultType & { exhausted?: string; settled?: number }) | undefined {
+  const { drawDefinition } = params;
   const done = new Set<string>();
   for (let pass = 0; pass < PASS_LIMIT; pass += 1) {
     const owed = findOwed({ ...params, drawDefinition, done });
