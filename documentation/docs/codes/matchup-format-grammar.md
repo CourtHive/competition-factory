@@ -213,5 +213,13 @@ date in their notes.
 Measured against the factory's own formats: no fixture, test or harvested code uses a bare `-G:TN` or a modifier
 that is not upper-case letters; the codes that newly parse (`SET3X-S:6/TB7`, `SET4X-S:6`, `SET2X-S:TB10`,
 `SET3XA-S:O3`, `SET7XA-S:TB11`) were each written by a test or a page expecting them to. No corpus scenario's
-content moved; three `SET3-S:6-F:6` scoring scenarios are filed under the cell their format now reads as. Stored
-production formats were not measured.
+content moved; three `SET3-S:6-F:6` scoring scenarios are filed under the cell their format now reads as.
+
+**Measured in production 2026-10-25** (read-only, every tournament record: 49,936 tournaments, 715,482 stored
+`matchUpFormat` values, 106 distinct codes, from events, draws, structures, matchUps and tieFormat collections). Every
+one of the 106 parses, and none reads differently under these rulings: the same parse object, canonical form and
+validity before and after. No stored code uses `-G:TN`, a modifier that is not upper-case letters, `X` on a `SET`-root
+standard set, or a final segment identical to the set segment. Four stored codes are equivalent spellings (a redundant
+`@{at}`: `SET3-S:4/TB7@4-F:TB10`, 1,137 values in 33 tournaments, and three rarer ones), and four are refused for new
+use and read where stored (§ 6: `SET1-S:10/TB7@8`, `SET1-S:11/TB7@8`, `SET1-S:12/TB7@8` and `SET3A-S:6/TB7-F:TB10`,
+seven values in four tournaments).
