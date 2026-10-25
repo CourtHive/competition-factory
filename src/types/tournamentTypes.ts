@@ -912,6 +912,9 @@ export interface Score {
   notes?: string;
   scoreStringSide1?: string;
   scoreStringSide2?: string;
+  /** The current game's points on an in-progress matchUp (e.g. '30'), as live scoring records them. */
+  side1PointScore?: number | string;
+  side2PointScore?: number | string;
   sets?: Set[];
   timeItems?: TimeItem[];
   updatedAt?: Date | string;

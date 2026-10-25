@@ -520,14 +520,15 @@ describe('attemptToSetMatchUpStatusBYE success path', () => {
   it('sets BYE status when matchUp includes bye-assigned drawPosition', () => {
     let result: any = attemptToSetMatchUpStatusBYE({
       tournamentRecord: { tournamentId: 'test' },
-      drawDefinition: {},
+      drawDefinition: { drawId: 'd1' },
       structure: {
+        structureId: 's1',
         positionAssignments: [
           { drawPosition: 1, participantId: 'p1' },
           { drawPosition: 2, bye: true },
         ],
       },
-      matchUp: { drawPositions: [1, 2] },
+      matchUp: { matchUpId: 'm1', drawPositions: [1, 2] },
     });
     expect(result.success).toEqual(true);
   });
@@ -537,12 +538,13 @@ describe('attemptToSetMatchUpStatusBYE success path', () => {
       tournamentRecord: undefined,
       drawDefinition: undefined,
       structure: {
+        structureId: 's1',
         positionAssignments: [
           { drawPosition: 1, participantId: 'p1' },
           { drawPosition: 2, participantId: 'p2' },
         ],
       },
-      matchUp: { drawPositions: [1, 2] },
+      matchUp: { matchUpId: 'm1', drawPositions: [1, 2] },
     });
     expect(result.error).toEqual(INVALID_MATCHUP_STATUS_BYE);
   });
@@ -786,8 +788,8 @@ describe('attemptToSetMatchUpStatusBYE edge cases', () => {
     let result: any = attemptToSetMatchUpStatusBYE({
       tournamentRecord: undefined,
       drawDefinition: undefined,
-      structure: {},
-      matchUp: { drawPositions: [1, 2] },
+      structure: { structureId: 's1' },
+      matchUp: { matchUpId: 'm1', drawPositions: [1, 2] },
     });
     expect(result.error).toEqual(INVALID_MATCHUP_STATUS_BYE);
   });
@@ -797,9 +799,10 @@ describe('attemptToSetMatchUpStatusBYE edge cases', () => {
       tournamentRecord: undefined,
       drawDefinition: undefined,
       structure: {
+        structureId: 's1',
         positionAssignments: [{ drawPosition: 1, bye: true }],
       },
-      matchUp: {},
+      matchUp: { matchUpId: 'm1' },
     });
     expect(result.error).toEqual(INVALID_MATCHUP_STATUS_BYE);
   });

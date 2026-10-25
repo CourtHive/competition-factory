@@ -1,7 +1,7 @@
 {
-  // tsconfig.json with the test files put back. tsconfig.json excludes them so the build typecheck stays
-  // fast and does not load test-only code; this config exists so `verify:test-types`
-  // (scripts/verify/tscRatchet.mjs) can count their type errors and hold each file's count from rising.
+  // tsconfig.json with the test files put back. `pnpm check-types` compiles THIS config, so a type error in a
+  // test file fails it like one in src (test-types reached 0 on 2026-10-25 and the per-file ratchet was retired).
+  // tsconfig.json keeps excluding them for the build, which must not load test-only code.
   "extends": "./tsconfig.json",
   "exclude": ["dist", "src/**/scratch/**", "**/*tsconfig*/**"]
 }

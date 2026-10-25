@@ -1562,6 +1562,8 @@
         "scoreStringSide2": {
           "type": "string"
         },
+        "side1PointScore": { "type": ["number", "string"] },
+        "side2PointScore": { "type": ["number", "string"] },
         "sets": {
           "type": "array",
           "items": {

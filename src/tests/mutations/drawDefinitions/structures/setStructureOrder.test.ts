@@ -62,3 +62,22 @@ it('setStructureOrder refuses a non-integer orderMap before reordering any struc
   result = tournamentEngine.setStructureOrder({ drawId, orderMap: null });
   expect(result.error).toEqual(INVALID_VALUES);
 });
+
+it('stores a numeric-string structureOrder as the number', () => {
+  const {
+    tournamentRecord,
+    drawIds: [drawId],
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawSize: 32, drawType: COMPASS }],
+  });
+  tournamentEngine.setState(tournamentRecord);
+
+  const structureIds = tournamentEngine.getEvent({ drawId }).drawDefinition.structures.map(xa('structureId'));
+  // isConvertableInteger accepts '2', so the map validates; the record must hold 2, not '2' (CODES types it a number)
+  const orderMap = Object.assign({}, ...structureIds.map((structureId, index) => ({ [structureId]: `${index + 1}` })));
+  const result = tournamentEngine.setStructureOrder({ drawId, orderMap });
+  expect(result.success).toEqual(true);
+
+  const structuresOrder = tournamentEngine.getEvent({ drawId }).drawDefinition.structures.map(xa('structureOrder'));
+  expect(structuresOrder).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+});

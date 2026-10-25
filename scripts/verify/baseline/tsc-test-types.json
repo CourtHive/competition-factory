@@ -1,9 +1,0 @@
-{
-  "src/tests/mutations/coverageBranchBulk.test.ts": 4,
-  "src/tests/mutations/coverageBranchExpanded.test.ts": 2,
-  "src/tests/mutations/matchUps/score/scoreStringsDerived.test.ts": 2,
-  "src/tests/mutations/venues/venuesCoverage.test.ts": 4,
-  "src/tests/refactoring/matchUpScoreStatusCoverage.test.ts": 4,
-  "src/tests/refactoring/qualifierLuckyLoserSeedsCoverage.test.ts": 1,
-  "src/tests/refactoring/tieFormat.coverage.test.ts": 1
-}

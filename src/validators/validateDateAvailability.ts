@@ -10,7 +10,8 @@ import {
   MISSING_DATE_AVAILABILITY,
 } from '@Constants/errorConditionConstants';
 
-export function validDateAvailability({ dateAvailability }) {
+/** Validates untrusted input, so it accepts anything and checks the shape itself. */
+export function validDateAvailability({ dateAvailability }: { dateAvailability?: unknown }) {
   if (!dateAvailability) return { error: MISSING_DATE_AVAILABILITY };
   if (!Array.isArray(dateAvailability)) return { error: INVALID_DATE_AVAILABILITY };
 
