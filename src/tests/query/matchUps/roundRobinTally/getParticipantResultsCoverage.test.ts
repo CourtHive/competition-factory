@@ -1,6 +1,7 @@
 import { getParticipantResults } from '@Query/matchUps/roundRobinTally/getParticipantResults';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import { describe, expect, it } from 'vitest';
 
 // constants
@@ -26,9 +27,10 @@ describe('getParticipantResults coverage', () => {
         } as any,
       ],
     });
+    const participantResults = defined(result.participantResults, 'participantResults');
     expect(result.participantResults).toBeDefined();
-    expect(result.participantResults['p1']?.matchUpsCancelled).toBe(1);
-    expect(result.participantResults['p2']?.matchUpsCancelled).toBe(1);
+    expect(participantResults['p1']?.matchUpsCancelled).toBe(1);
+    expect(participantResults['p2']?.matchUpsCancelled).toBe(1);
   });
 
   it('counts walkovers, defaults, and retirements correctly', () => {
@@ -63,11 +65,12 @@ describe('getParticipantResults coverage', () => {
         } as any,
       ],
     });
+    const participantResults = defined(result.participantResults, 'participantResults');
 
-    expect(result.participantResults['p2']?.walkovers).toBe(1);
-    expect(result.participantResults['p3']?.defaults).toBe(1);
-    expect(result.participantResults['p4']?.retirements).toBe(1);
-    expect(result.participantResults['p1']?.matchUpsWon).toBe(3);
+    expect(participantResults['p2']?.walkovers).toBe(1);
+    expect(participantResults['p3']?.defaults).toBe(1);
+    expect(participantResults['p4']?.retirements).toBe(1);
+    expect(participantResults['p1']?.matchUpsWon).toBe(3);
   });
 
   it('processes sets and games tallies', () => {
@@ -89,13 +92,14 @@ describe('getParticipantResults coverage', () => {
         } as any,
       ],
     });
+    const participantResults = defined(result.participantResults, 'participantResults');
 
-    expect(result.participantResults['p1']?.setsWon).toBe(2);
-    expect(result.participantResults['p1']?.setsLost).toBe(0);
-    expect(result.participantResults['p1']?.gamesWon).toBe(12);
-    expect(result.participantResults['p1']?.gamesLost).toBe(7);
-    expect(result.participantResults['p2']?.setsWon).toBe(0);
-    expect(result.participantResults['p2']?.setsLost).toBe(2);
+    expect(participantResults['p1']?.setsWon).toBe(2);
+    expect(participantResults['p1']?.setsLost).toBe(0);
+    expect(participantResults['p1']?.gamesWon).toBe(12);
+    expect(participantResults['p1']?.gamesLost).toBe(7);
+    expect(participantResults['p2']?.setsWon).toBe(0);
+    expect(participantResults['p2']?.setsLost).toBe(2);
   });
 
   it('handles excludeMatchUpStatuses tally policy', () => {
@@ -122,9 +126,10 @@ describe('getParticipantResults coverage', () => {
       ],
       tallyPolicy: { excludeMatchUpStatuses: [WALKOVER] },
     });
+    const participantResults = defined(result.participantResults, 'participantResults');
 
     // WALKOVER should be excluded
-    expect(result.participantResults['p1']?.matchUpsWon).toBe(1);
+    expect(participantResults['p1']?.matchUpsWon).toBe(1);
   });
 
   it('filters by participantIds when provided', () => {
@@ -151,10 +156,11 @@ describe('getParticipantResults coverage', () => {
       ],
       participantIds: ['p1', 'p2'], // only include matchUps with both p1 and p2
     });
+    const participantResults = defined(result.participantResults, 'participantResults');
 
     // Only the p1 vs p2 matchUp should be counted
-    expect(result.participantResults['p1']?.matchUpsWon).toBe(1);
-    expect(result.participantResults['p3']).toBeUndefined();
+    expect(participantResults['p1']?.matchUpsWon).toBe(1);
+    expect(participantResults['p3']).toBeUndefined();
   });
 
   it('handles TEAM matchUps with tieMatchUps', () => {
@@ -175,7 +181,7 @@ describe('getParticipantResults coverage', () => {
       });
       expect(result.participantResults).toBeDefined();
       // With TEAM matchUps, tieMatchUps tally should have been processed
-      const ids = Object.keys(result.participantResults);
+      const ids = Object.keys(defined(result.participantResults, 'participantResults'));
       expect(ids.length).toBeGreaterThan(0);
     }
   });
@@ -194,8 +200,9 @@ describe('getParticipantResults coverage', () => {
         } as any,
       ],
     });
-    expect(result.participantResults['p1']?.matchUpsWon).toBe(1);
-    expect(result.participantResults['p1']?.setsWon).toBe(0);
+    const participantResults = defined(result.participantResults, 'participantResults');
+    expect(participantResults['p1']?.matchUpsWon).toBe(1);
+    expect(participantResults['p1']?.setsWon).toBe(0);
   });
 
   it('tracks victories and defeats arrays', () => {
@@ -212,8 +219,9 @@ describe('getParticipantResults coverage', () => {
         } as any,
       ],
     });
+    const participantResults = defined(result.participantResults, 'participantResults');
 
-    expect(result.participantResults['p1']?.victories).toContain('p2');
-    expect(result.participantResults['p2']?.defeats).toContain('p1');
+    expect(participantResults['p1']?.victories).toContain('p2');
+    expect(participantResults['p2']?.defeats).toContain('p1');
   });
 });

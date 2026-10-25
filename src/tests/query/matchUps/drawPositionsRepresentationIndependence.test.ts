@@ -176,7 +176,7 @@ it.each([
   expect(candidates.length).toBeGreaterThan(0);
 
   /** rewrite ONE matchUp to this spelling and report its hydrated sides */
-  const sidesFor = (candidate: Candidate, drawPositions: any): string => {
+  const sidesFor = (candidate: Candidate, drawPositions: any): Omit<Reading, 'spelling'> => {
     const record = structuredClone(base);
     const drawDefinition = record.events[0].drawDefinitions.find((draw: any) => draw.drawId === drawId);
     const target = findStoredMatchUp(drawDefinition, candidate);
