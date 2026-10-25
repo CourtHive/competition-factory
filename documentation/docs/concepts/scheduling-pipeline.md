@@ -178,8 +178,10 @@ conformance cases.
    on the next date for the minutes that remain: a matchUp booked at 23:30 for 90 minutes holds the court until 01:00
    of the next date (§ 9.8). A booking's end used to wrap, ending at 01:00 of its own day, before it started.
 7. **A calendar day.** The date part, `YYYY-MM-DD`, of an ISO date or date-time, and a real day on the (proleptic
-   Gregorian) calendar: `2026-02-30` and `2026-04-31` are not dates, `2028-02-29` is. Two days are the same when their
-   date parts are.
+   Gregorian) calendar: `2026-02-30` and `2026-04-31` are not dates, `2028-02-29` is. A date-time is one whose time
+   is a time (rule 1): its date is read as written, the zone not applied. Nothing else is a date: a date and time
+   separated by a space (`2026-03-02 09:15`), an ISO week date (`2026-W10`), an ordinal date (`2026-061`), the basic
+   format (`20260302`) and a month (`2026-03`) are not read. Two days are the same when their date parts are.
 8. **Garman slots** are computed in minutes on the scheduling day (§ 4, step 2) and written back as `HH:MM`.
 9. **Not-before times** are compared as text. That orders them correctly only because every not-before time the
    scheduler writes is a tidied `HH:MM`.

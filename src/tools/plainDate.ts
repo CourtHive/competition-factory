@@ -16,7 +16,6 @@
  */
 
 import { canonicalDate } from '@Tools/canonicalClock';
-import { dateValidation } from '@Validators/regex';
 import { isDate } from '@Tools/dateTimeInternals';
 import { now } from '@Tools/clock';
 
@@ -29,21 +28,18 @@ export function isISODateString(dateString) {
   return re.test(dateString);
 }
 
-const DAY_SHAPE = /^\d{4}-\d{2}-\d{2}$/;
-
 /** Whether a value is a real calendar date, `YYYY-MM-DD` or an ISO date-time's date (`canonicalClock.ts`). */
 export function isValidDateString(scheduleDate) {
   return canonicalDate(scheduleDate) !== undefined;
 }
 
 /**
- * The calendar-day part of an ISO string, discarding any time and any zone designator; '' when the day is not on the
- * calendar (`2026-02-30`).
+ * The calendar day of a `YYYY-MM-DD` date or an ISO date-time, discarding any time and any zone designator; '' for
+ * anything else: a day not on the calendar (`2026-02-30`), a date and time separated by a space, or another ISO shape
+ * (`2026-W10`, `2026-061`, `20260302`, `2026-03`).
  */
 export function extractDate(dateString): string {
-  if (!(isISODateString(dateString) || dateValidation.test(dateString))) return '';
-  const day = dateString.split('T')[0];
-  return DAY_SHAPE.test(day) && !canonicalDate(day) ? '' : day;
+  return canonicalDate(dateString) ?? '';
 }
 
 export function formatDate(date?, separator = '-', format = 'YMD'): string {
