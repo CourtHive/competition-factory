@@ -21,8 +21,8 @@ import { isObject } from '@Tools/objects';
 
 // constants and types
 import { CONTAINER, MAIN, PLAY_OFF, QUALIFYING } from '@Constants/drawDefinitionConstants';
-import { UNGROUPED, UNPAIRED } from '@Constants/entryStatusConstants';
 import type { DrawDefinition, Structure } from '@Types/tournamentTypes';
+import { UNGROUPED, UNPAIRED } from '@Constants/entryStatusConstants';
 import type { ScheduleConflict } from '@Types/factoryTypes';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { WIN_RATIO } from '@Constants/statsConstants';
