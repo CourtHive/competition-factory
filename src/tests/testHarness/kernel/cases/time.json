@@ -806,6 +806,110 @@
     "note": "rule 7: a month is not a day"
   },
   {
+    "caseId": "clock.same-day.dates.v1",
+    "operation": "kernel.date.sameDay@1",
+    "input": {
+      "date1": "2026-09-09",
+      "date2": "2026-09-09"
+    },
+    "expected": {
+      "kind": "value",
+      "value": true
+    },
+    "note": "rule 7"
+  },
+  {
+    "caseId": "clock.same-day.next-day.v1",
+    "operation": "kernel.date.sameDay@1",
+    "input": {
+      "date1": "2026-09-09",
+      "date2": "2026-09-10"
+    },
+    "expected": {
+      "kind": "value",
+      "value": false
+    },
+    "note": "rule 7"
+  },
+  {
+    "caseId": "clock.same-day.negative-offset.v1",
+    "operation": "kernel.date.sameDay@1",
+    "input": {
+      "date1": "2026-09-09",
+      "date2": "2026-09-09T22:00:00-05:00"
+    },
+    "expected": {
+      "kind": "value",
+      "value": true
+    },
+    "note": "rule 7: the date part as written; the zone is not applied"
+  },
+  {
+    "caseId": "clock.same-day.positive-offset.v1",
+    "operation": "kernel.date.sameDay@1",
+    "input": {
+      "date1": "2026-09-09",
+      "date2": "2026-09-09T01:00:00+05:00"
+    },
+    "expected": {
+      "kind": "value",
+      "value": true
+    },
+    "note": "rule 7: the date part as written"
+  },
+  {
+    "caseId": "clock.same-day.zulu.v1",
+    "operation": "kernel.date.sameDay@1",
+    "input": {
+      "date1": "2026-09-09",
+      "date2": "2026-09-09T22:00:00Z"
+    },
+    "expected": {
+      "kind": "value",
+      "value": true
+    },
+    "note": "rule 7"
+  },
+  {
+    "caseId": "clock.same-day.two-date-times.v1",
+    "operation": "kernel.date.sameDay@1",
+    "input": {
+      "date1": "2026-09-09T23:30",
+      "date2": "2026-09-09T00:15"
+    },
+    "expected": {
+      "kind": "value",
+      "value": true
+    },
+    "note": "rule 7: the times are discarded"
+  },
+  {
+    "caseId": "clock.same-day.off-the-calendar.v1",
+    "operation": "kernel.date.sameDay@1",
+    "input": {
+      "date1": "2026-02-30",
+      "date2": "2026-02-30"
+    },
+    "expected": {
+      "kind": "value",
+      "value": false
+    },
+    "note": "rule 7: a value that is not a date is the same day as nothing"
+  },
+  {
+    "caseId": "clock.same-day.space-separated.v1",
+    "operation": "kernel.date.sameDay@1",
+    "input": {
+      "date1": "2026-09-09",
+      "date2": "2026-09-09 10:00"
+    },
+    "expected": {
+      "kind": "value",
+      "value": false
+    },
+    "note": "rule 7: a space-separated date-time is not a date"
+  },
+  {
     "caseId": "clock.end-on-the-day.within.v1",
     "operation": "kernel.time.endOnTheDay@1",
     "input": {

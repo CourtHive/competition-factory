@@ -181,7 +181,11 @@ conformance cases.
    Gregorian) calendar: `2026-02-30` and `2026-04-31` are not dates, `2028-02-29` is. A date-time is one whose time
    is a time (rule 1): its date is read as written, the zone not applied. Nothing else is a date: a date and time
    separated by a space (`2026-03-02 09:15`), an ISO week date (`2026-W10`), an ordinal date (`2026-061`), the basic
-   format (`20260302`) and a month (`2026-03`) are not read. Two days are the same when their date parts are.
+   format (`20260302`) and a month (`2026-03`) are not read. Two values are on the same day when both have a date
+   part and the date parts are equal; the time and any zone designator are ignored, and the runtime's zone never
+   enters. A value with no date part is on no day. Every same-day test the scheduler makes (profile dates, stored
+   scheduled dates, court availability dates, person requests) reads it so, and a profile date given as a date-time is
+   stored as its day.
 8. **Garman slots** are computed in minutes on the scheduling day (§ 4, step 2) and written back as `HH:MM`.
 9. **Not-before times** are compared as text. That orders them correctly only because every not-before time the
    scheduler writes is a tidied `HH:MM`.

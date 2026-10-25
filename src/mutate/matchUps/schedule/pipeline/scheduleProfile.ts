@@ -76,8 +76,8 @@ export function scheduleProfileVNext(params: ScheduleProfileVNextArgs) {
     }),
   );
 
-  // the original form of the date strings
-  const profileDates = view.dateSchedulingProfiles.map(({ scheduleDate }) => scheduleDate);
+  // the planned dates as calendar days, the keys every other member of the result uses (§ 3.8 rule 7)
+  const profileDates = view.dates.map(({ scheduleDate }) => scheduleDate);
   auditAutoScheduling({
     tournamentRecords,
     autoSchedulingAudit: {
