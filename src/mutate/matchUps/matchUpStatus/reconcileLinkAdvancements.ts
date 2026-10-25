@@ -3,6 +3,7 @@ import { getUnearnedLinkAdvancements } from '@Query/drawDefinition/getUnearnedLi
 import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { settleUnlessIdle } from './indexPrecheck';
 
 // constants and types
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
@@ -54,6 +55,25 @@ export function reconcileLinkAdvancements({
   event?: Event;
 }): ResultType | undefined {
   if (!drawDefinition?.links?.length) return undefined;
+  // no placement unearned on the structural index: the pass's first hydration would find the same, and write nothing
+  return settleUnlessIdle({
+    detect: (inContextDrawMatchUps) => getUnearnedLinkAdvancements({ inContextDrawMatchUps, drawDefinition }),
+    run: () => releaseUnearned({ tournamentRecord, drawDefinition, event }),
+    site: 'reconcileLinkAdvancements',
+    idle: undefined,
+    drawDefinition,
+  });
+}
+
+function releaseUnearned({
+  tournamentRecord,
+  drawDefinition,
+  event,
+}: {
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  event?: Event;
+}): ResultType | undefined {
   // Built from the draw, never taken from the caller's context: `setMatchUpStatus`'s result context can carry a map
   // whose matchUps are detached copies, and reading one decided a held walkover's grand final as undecided and
   // released the Decider seat it had just earned (de 9301605). So it takes no map.

@@ -4,89 +4,89 @@
     "matrix BYE: DOUBLE_WALKOVER": {
       "calls": 199,
       "hydrations": {
-        "total": 756,
-        "worst": 17
+        "total": 600,
+        "worst": 16
       },
       "getMatchUpsMap": {
-        "total": 1798,
-        "worst": 12
+        "total": 1642,
+        "worst": 11
       }
     },
     "matrix EXIT: DOUBLE_WALKOVER": {
       "calls": 199,
       "hydrations": {
-        "total": 1032,
-        "worst": 15
+        "total": 876,
+        "worst": 14
       },
       "getMatchUpsMap": {
-        "total": 1796,
-        "worst": 12
+        "total": 1640,
+        "worst": 11
       }
     },
     "matrix BYE: WALKOVER propagated": {
       "calls": 270,
       "hydrations": {
-        "total": 1129,
-        "worst": 11
+        "total": 912,
+        "worst": 10
       },
       "getMatchUpsMap": {
-        "total": 2077,
-        "worst": 13
+        "total": 1860,
+        "worst": 12
       }
     },
     "matrix BYE: DEFAULTED propagated": {
       "calls": 270,
       "hydrations": {
-        "total": 1127,
-        "worst": 11
+        "total": 910,
+        "worst": 10
       },
       "getMatchUpsMap": {
-        "total": 2090,
-        "worst": 13
+        "total": 1873,
+        "worst": 12
       }
     },
     "deep BYE: the route": {
       "calls": 398,
       "hydrations": {
-        "total": 1066,
-        "worst": 8
+        "total": 756,
+        "worst": 7
       },
       "getMatchUpsMap": {
-        "total": 3065,
-        "worst": 12
+        "total": 2755,
+        "worst": 11
       }
     },
     "deep BYE: the correction": {
       "calls": 34,
       "hydrations": {
-        "total": 152,
-        "worst": 10
+        "total": 126,
+        "worst": 9
       },
       "getMatchUpsMap": {
-        "total": 272,
-        "worst": 11
+        "total": 246,
+        "worst": 10
       }
     },
     "deep EXIT: the route": {
       "calls": 396,
       "hydrations": {
-        "total": 1078,
-        "worst": 9
+        "total": 770,
+        "worst": 8
       },
       "getMatchUpsMap": {
-        "total": 3060,
-        "worst": 12
+        "total": 2752,
+        "worst": 11
       }
     },
     "deep EXIT: the correction": {
       "calls": 34,
       "hydrations": {
-        "total": 145,
-        "worst": 10
+        "total": 119,
+        "worst": 9
       },
       "getMatchUpsMap": {
-        "total": 269,
-        "worst": 11
+        "total": 243,
+        "worst": 10
       }
     },
     "TEAM lines: DOUBLE_WALKOVER": {

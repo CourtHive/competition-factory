@@ -399,6 +399,48 @@ describe('removeQualifier integration via setMatchUpStatus', () => {
     expect(result.success).toEqual(true);
     expect(result.qualifierRemoved).toBeUndefined();
   });
+
+  /**
+   * The qualifier's main-draw seat is earned by the qualifying final. Cleared, the placement is unearned and
+   * `reconcileLinkAdvancements` releases it: the seat stays a qualifier's, empty. That pass asks the structural index
+   * before it hydrates (`indexPrecheck.ts`), so a precheck that wrongly called it idle would leave the participant
+   * seated: this fails under v1 with the detector forced idle.
+   */
+  it('releases the main-draw seat of a qualifier whose qualifying final is cleared', () => {
+    const { drawId, qualifyingStructure } = setupQualifyingTournament();
+    completeQualifyingMatchUps(drawId, qualifyingStructure.structureId);
+    const qualifyingFinal = getCompletedFinalRoundMatchUp(qualifyingStructure.structureId);
+
+    let result: any = tournamentEngine.setMatchUpStatus({
+      matchUpId: qualifyingFinal.matchUpId,
+      outcome: toBePlayed,
+      drawId,
+    });
+    expect(result.success).toEqual(true);
+    const { outcome } = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-4 6-4', winningSide: 1 });
+    result = tournamentEngine.setMatchUpStatus({
+      policyDefinitions: { [POLICY_TYPE_PROGRESSION]: { autoPlaceQualifiers: true } },
+      matchUpId: qualifyingFinal.matchUpId,
+      outcome,
+      drawId,
+    });
+    expect(result.success).toEqual(true);
+    const qualifierSeats = () =>
+      tournamentEngine
+        .getEvent({ drawId })
+        .drawDefinition.structures.find(({ stage }) => stage === MAIN)
+        .positionAssignments.filter((assignment) => assignment.qualifier);
+    expect(qualifierSeats().some((assignment) => assignment.participantId)).toEqual(true);
+
+    result = tournamentEngine.setMatchUpStatus({
+      matchUpId: qualifyingFinal.matchUpId,
+      outcome: toBePlayed,
+      drawId,
+    });
+    expect(result.success).toEqual(true);
+    expect(qualifierSeats().length).toBeGreaterThan(0);
+    expect(qualifierSeats().filter((assignment) => assignment.participantId)).toEqual([]);
+  });
 });
 
 // =====================================================================

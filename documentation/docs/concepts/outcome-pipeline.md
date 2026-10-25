@@ -646,7 +646,10 @@ already uses) with the pass's own `getMatchUpsMap`, so no map is built twice: it
 the census arms fall 32–45% (matrix BYE: DOUBLE_WALKOVER 1,536 → 945; deep BYE: the route 2,636 → 1,442, 6.6 → 3.6 a
 call). A detector forced idle is caught: 230 exit-propagation tests fail on `precheck:settleHeldExits`. `settleForwardConsequences`
 third, asking `hasForwardWork`: about one hydration a call fewer again (deep BYE: the route 1,442 → 1,066, 2.7 a call);
-forced idle, 100 tests fail on `precheck:settleForwardConsequences`.
+forced idle, 100 tests fail on `precheck:settleForwardConsequences`. `reconcileLinkAdvancements` fourth, asking
+`getUnearnedLinkAdvancements`: deep BYE: the route 1,066 → 756 (1.9 a call). The pass acts rarely, so a v1 test pins
+it: a qualifier's main-draw seat is released when its qualifying final is cleared, and a detector forced idle leaves
+the participant seated.
 
 ## 8. What the corpus pins
 
