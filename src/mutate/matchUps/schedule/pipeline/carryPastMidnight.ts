@@ -29,11 +29,7 @@ type CarryArgs = {
  * midnight books its participants on this date from 00:00 to the minute recovery ends, and its dependents may not
  * start before it. A matchUp whose recovery ends before midnight carries nothing, so a schedule that never crosses
  * midnight is planned as before. The minutes are the matchUp's own (its format and event), as a timed matchUp's
- * recovery is read (C1).
- *
- * Overnight rest (§ 9.8): a matchUp's participants also rest its policy's overnight minutes (a JUNIOR rule in the
- * default policy, 12 hours) between its end of play and their first matchUp of the next date. That rest is held from
- * 00:00 like a carried recovery, and the later of the two applies: a junior finishing at 20:00 is not free before 08:00.
+ * recovery is read (C1). Overnight rest is warned, not held (CA 2026-10-25): `getOvernightRestWarnings`.
  */
 export function carryPastMidnight({
   individualParticipantProfiles,
@@ -55,18 +51,8 @@ export function carryPastMidnight({
     const averageMinutes = minutes?.averageMinutes ?? 0;
     const recoveryMinutes = minutes?.recoveryMinutes ?? 0;
     const typeChangeRecoveryMinutes = minutes?.typeChangeRecoveryMinutes || recoveryMinutes;
-    const overnightPast = endOnTheDay(
-      scheduleTime,
-      averageMinutes + (minutes?.overnightMinutes ?? 0),
-    ).minutesPastMidnight;
-    const past = Math.max(
-      endOnTheDay(scheduleTime, averageMinutes + recoveryMinutes).minutesPastMidnight,
-      overnightPast,
-    );
-    const typeChangePast = Math.max(
-      endOnTheDay(scheduleTime, averageMinutes + typeChangeRecoveryMinutes).minutesPastMidnight,
-      overnightPast,
-    );
+    const past = endOnTheDay(scheduleTime, averageMinutes + recoveryMinutes).minutesPastMidnight;
+    const typeChangePast = endOnTheDay(scheduleTime, averageMinutes + typeChangeRecoveryMinutes).minutesPastMidnight;
     if (!past && !typeChangePast) continue;
 
     const timeAfterRecovery = endOnTheDay('00:00', past).endTime;

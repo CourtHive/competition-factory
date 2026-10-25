@@ -418,11 +418,19 @@ the calls that decide placements; the bulk and reschedule mutations write the ti
    date-time arithmetic (`kernel.civil.addMinutes@1`); court bookings carried into the next date
    (`kernel.time.endOnTheDay@1`), in every scheduler that builds bookings; and a participant's recovery carried into
    the next date by the profile planner (§ 3.8, rule 6). No corpus scenario moved. The policy's overnight rest
-   (`overnightTimes`, category-dependent: 12 hours for JUNIOR in the default policy, none otherwise) is held by the
-   profile planner too: a matchUp timed on the day before holds its participants from `00:00` until the later of its
-   carried recovery and its end of play plus the overnight minutes, so a junior finishing at 22:30 is not free before
-   10:30 (`scheduling.plan.overnight-rest-holds-a-junior.v1`). Not yet built: a stored `endDate` after midnight, which
-   bookings do not read (they take a matchUp's average minutes), and either carry in the direct scheduler. The rule:
+   (`overnightTimes`, category-dependent: 12 hours for JUNIOR in the default policy, none otherwise) is **warned, not
+   held** (CA 2026-10-25: a guideline a player may waive). No scheduler moves a placement for it
+   (`scheduling.plan.overnight-rest-is-warned-not-held.v1`); every scheduler (the profile planner, `scheduleMatchUps`,
+   the grid and the pro scheduler) returns `overnightRestWarnings`, a list per date of the participant, the matchUp
+   and its time, the previous matchUp and its end, and the rest found and required, for each date it placed and the
+   date after, a dry run included. The rest is counted from the previous day's last end of play: a recorded
+   `endTime` (an `endTime` before its start ended after midnight), else the start plus the average minutes. A matchUp
+   of the day before still undecided warns for the matchUp its winner or loser goes to, with no `participantId`:
+   whoever advances. Only a placement with a time is measured; a court order alone has none. The category is the
+   event's stated `categoryType`, else JUNIOR when its `ageCategoryCode` is an under-age code of 18 or less (`U14`,
+   `16U`): the same reading every timing lookup now makes, so a U-coded event also takes the JUNIOR recovery times.
+   Not yet built: a stored `endDate` after midnight, which bookings do not read (they take a matchUp's average
+   minutes), and either carry in the direct scheduler. The rule:
    - **A date with no time is unchanged.** `scheduledDate` alone remains a complete schedule ("on that day, time to be
      set"); with no time there is nothing to add minutes to, so no booking and no recovery follow from it.
    - **`scheduledTime` is unchanged.** It is the start, `HH:MM` on the venue's wall clock, on `scheduledDate`; a start
@@ -438,7 +446,7 @@ the calls that decide placements; the bulk and reschedule mutations write the ti
      daylight-saving change inside a matchUp is ignored, by definition. Zones apply only at the edges (now, an
      embargo, display), always by an explicit IANA zone on the record, never the host's.
    - A booking or a recovery that ends past midnight carries into the next date; overnight rest is counted from the end
-     of play, and the later of the two holds the participant.
+     of play and warned, never held.
    - Nothing carries from a planned date whose schedule the call clears: what was stored there is gone (the court
      bookings now read this as the recovery carry already did, 2026-10-25).
    - **The consequence:** a schedule that never crosses midnight is placed exactly as today; only the placements the

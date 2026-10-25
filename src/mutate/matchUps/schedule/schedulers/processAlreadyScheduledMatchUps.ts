@@ -2,6 +2,7 @@ import type { ParticipantReachability } from '@Mutate/matchUps/schedule/schedule
 import { modifyParticipantDayMatchUps } from '@Mutate/matchUps/schedule/scheduleMatchUps/participantDayLoad';
 import { updateTimeAfterRecovery } from '@Mutate/matchUps/schedule/scheduleMatchUps/updateTimeAfterRecovery';
 import { findMatchUpFormatTiming } from '@Acquire/findMatchUpFormatTiming';
+import { timingCategoryType } from '@Query/event/timingCategoryType';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import { findEvent } from '@Acquire/findEvent';
@@ -38,13 +39,7 @@ type ProcessAlreadyScheduledMatchUpsArgs = {
  * participants were free again the moment its average minutes ran out (C1, SCHEDULING_PIPELINE_VNEXT.md § 5). Such a
  * matchUp's minutes come from its own format and event.
  */
-export type Minutes = {
-  averageMinutes?: number;
-  recoveryMinutes?: number;
-  typeChangeRecoveryMinutes?: number;
-  /** minimum rest between this matchUp's end and its participants' first matchUp of the next date (§ 9.8) */
-  overnightMinutes?: number;
-};
+export type Minutes = { averageMinutes?: number; recoveryMinutes?: number; typeChangeRecoveryMinutes?: number };
 function alreadyScheduledMinutes({
   tournamentRecords,
   timedMinutes,
@@ -83,7 +78,7 @@ export function timedMatchUpMinutes({
   const { category, eventType } = event ?? {};
   const timing = findMatchUpFormatTiming({
     categoryName: category?.categoryName ?? category?.ageCategoryCode,
-    categoryType: category?.categoryType,
+    categoryType: timingCategoryType(category),
     tournamentId: matchUp.tournamentId,
     matchUpFormat: matchUp.matchUpFormat,
     eventId: matchUp.eventId,

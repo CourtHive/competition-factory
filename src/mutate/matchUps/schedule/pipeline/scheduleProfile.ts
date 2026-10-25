@@ -1,4 +1,5 @@
 import { auditAutoScheduling } from '@Mutate/matchUps/schedule/schedulers/auditAutoScheduling';
+import { overnightRestWarningsFor } from '@Query/matchUps/scheduling/getOvernightRestWarnings';
 import { clearScheduledMatchUps } from '@Mutate/matchUps/schedule/clearScheduledMatchUps';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { disableNotifications, enableNotifications } from '@Global/state/globalState';
@@ -91,6 +92,13 @@ export function scheduleProfileVNext(params: ScheduleProfileVNextArgs) {
     },
   });
 
+  // overnight rest is warned, not held (§ 9.8), read with the plan's placements (a dry run writes none)
+  const overnightRestWarnings = overnightRestWarningsFor({
+    scheduleDates: profileDates,
+    tournamentRecords: dryRun ? working : tournamentRecords,
+    scheduleOverrides: planScheduleOverrides(plan.placements),
+  });
+
   return {
     ...SUCCESS,
     schedulingProfileModifications: firstView.schedulingProfileModifications,
@@ -108,8 +116,20 @@ export function scheduleProfileVNext(params: ScheduleProfileVNextArgs) {
     playedOrderDeferredMatchUpIds: plan.playedOrderDeferredMatchUpIds,
     noFormatMatchUpIds: plan.noFormatMatchUpIds,
     scheduledDates: profileDates,
+    overnightRestWarnings,
     noTimeMatchUpIds,
   };
+}
+
+function planScheduleOverrides(placements: ReturnType<typeof planSchedule>['placements']) {
+  const overrides: { [matchUpId: string]: { scheduledDate: string; scheduledTime: string } } = {};
+  for (const [scheduledDate, venues] of Object.entries(placements)) {
+    for (const venuePlacements of Object.values(venues)) {
+      for (const { matchUpId, scheduleTime } of venuePlacements)
+        overrides[matchUpId] = { scheduledDate, scheduledTime: scheduleTime };
+    }
+  }
+  return overrides;
 }
 
 /** the records with the dates cleared, on a copy: what the plan reads when a call clears dates first */

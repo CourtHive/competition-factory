@@ -11,6 +11,7 @@ import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
 import { findMatchUpFormatTiming } from '@Acquire/findMatchUpFormatTiming';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
+import { timingCategoryType } from '@Query/event/timingCategoryType';
 import { extractDate, isValidDateString } from '@Tools/dateTime';
 import { isConvertableInteger, isPowerOf2 } from '@Tools/math';
 import { definedAttributes } from '@Tools/definedAttributes';
@@ -54,13 +55,7 @@ export type ProfileRound = {
 type VenueProfile = { venueId: string; rounds?: ProfileRound[] };
 type DateProfile = { scheduleDate: string; venues?: VenueProfile[] };
 
-export type Minutes = {
-  averageMinutes?: number;
-  recoveryMinutes?: number;
-  typeChangeRecoveryMinutes?: number;
-  /** minimum rest between this matchUp's end and its participants' first matchUp of the next date (§ 9.8) */
-  overnightMinutes?: number;
-};
+export type Minutes = { averageMinutes?: number; recoveryMinutes?: number; typeChangeRecoveryMinutes?: number };
 
 export type RoundPlan = {
   round: ProfileRound;
@@ -199,7 +194,7 @@ function roundMinutes(
   const { eventType, category } = event ?? {};
   const timing = findMatchUpFormatTiming({
     categoryName: category?.categoryName ?? category?.ageCategoryCode,
-    categoryType: category?.categoryType,
+    categoryType: timingCategoryType(category),
     tournamentId: round.tournamentId,
     eventId: round.eventId,
     tournamentRecords,
@@ -207,16 +202,8 @@ function roundMinutes(
     eventType,
   });
   if ('error' in timing) return { error: timing.error };
-  const { averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes, overnightMinutes } = timing;
-  return {
-    minutes: definedAttributes({
-      // zero is the policy's "no rule": carried only when a rule applies
-      overnightMinutes: overnightMinutes || undefined,
-      typeChangeRecoveryMinutes,
-      recoveryMinutes,
-      averageMinutes,
-    }),
-  };
+  const { averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes } = timing;
+  return { minutes: { averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes } };
 }
 
 export function buildSchedulingView({
@@ -344,13 +331,8 @@ function timedMinutesOf(
     if (!scheduledTime || !planned.has(extractDate(scheduledDate))) continue;
     const minutes = timedMatchUpMinutes({ tournamentRecords, matchUp, memo });
     if (minutes) {
-      const { averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes, overnightMinutes } = minutes;
-      timedMinutes[matchUp.matchUpId] = definedAttributes({
-        averageMinutes,
-        recoveryMinutes,
-        typeChangeRecoveryMinutes,
-        overnightMinutes: overnightMinutes || undefined,
-      });
+      const { averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes } = minutes;
+      timedMinutes[matchUp.matchUpId] = { averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes };
     }
   }
   return timedMinutes;

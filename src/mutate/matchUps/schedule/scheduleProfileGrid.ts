@@ -1,5 +1,6 @@
 import { getSchedulingProfile, schedulingProfileRepairRefusal } from '@Mutate/tournaments/schedulingProfile';
 import { proAutoSchedule } from '@Mutate/matchUps/schedule/schedulers/proScheduler/proAutoSchedule';
+import { overnightRestWarningsFor } from '@Query/matchUps/scheduling/getOvernightRestWarnings';
 import { clearScheduledMatchUps } from '@Mutate/matchUps/schedule/clearScheduledMatchUps';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getContainedStructures } from '@Query/drawDefinition/getContainedStructures';
@@ -287,6 +288,7 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
       courtIds: resolveTargetCourtIds(dateCourtIds, courtIdsFilter),
       matchUpDailyLimits: limits.matchUpDailyLimits,
       dailyLimitOverrides: limits.dailyLimitOverrides,
+      overnightRestWarnings: false,
       dailyLimitsWarnOnly: waived,
       minCourtGridRows,
       tournamentRecords,
@@ -312,11 +314,15 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
     }
   }
 
+  // overnight rest is warned, not held (§ 9.8): measured for a placement with a time (a court order alone has none)
+  const overnightRestWarnings = overnightRestWarningsFor({ scheduleDates: scheduledDates, tournamentRecords });
+
   return {
     ...SUCCESS,
     scheduledMatchUpIds,
     notScheduledMatchUpIds,
     dailyLimitWarningMatchUpIds,
+    overnightRestWarnings,
     overLimitMatchUpIds,
     scheduledDates,
   };

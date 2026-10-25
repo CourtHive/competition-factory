@@ -2,6 +2,7 @@ import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParame
 import { getContainedStructures } from '@Query/drawDefinition/getContainedStructures';
 import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import { findMatchUpFormatTiming } from '@Acquire/findMatchUpFormatTiming';
+import { timingCategoryType } from '@Query/event/timingCategoryType';
 import { isConvertableInteger, isPowerOf2 } from '@Tools/math';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { getMatchUpId } from '@Functions/global/extractors';
@@ -142,7 +143,7 @@ export function getScheduledRoundsDetails(params: GetScheduledRoundsDetailsArgs)
       const { categoryName, ageCategoryCode } = category ?? {};
       const { typeChangeRecoveryMinutes, recoveryMinutes, averageMinutes, error } = findMatchUpFormatTiming({
         categoryName: categoryName ?? ageCategoryCode,
-        categoryType: category?.categoryType,
+        categoryType: timingCategoryType(category),
         tournamentId: round.tournamentId,
         eventId: round.eventId,
         tournamentRecords,

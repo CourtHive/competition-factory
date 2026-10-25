@@ -1,5 +1,6 @@
 import { getScheduleTiming } from '@Query/extensions/matchUpFormatTiming/getScheduleTiming';
 import { findMatchUpFormatTiming } from '@Acquire/findMatchUpFormatTiming';
+import { timingCategoryType } from '@Query/event/timingCategoryType';
 import { findEvent } from '@Acquire/findEvent';
 
 // constants and types
@@ -56,7 +57,7 @@ export function resolveScheduleMatchUpsTiming({
     const category = event?.category;
     const timing = findMatchUpFormatTiming({
       categoryName: category?.categoryName ?? category?.ageCategoryCode,
-      categoryType: category?.categoryType,
+      categoryType: timingCategoryType(category),
       eventType: event?.eventType,
       tournamentRecords,
       matchUpFormat,
