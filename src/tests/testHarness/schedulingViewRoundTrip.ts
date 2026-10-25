@@ -1,4 +1,6 @@
+import type { SchedulePlan } from '@Mutate/matchUps/schedule/pipeline/plan';
 import { appendFileSync, readFileSync } from 'node:fs';
+import { normativePlan } from './kernel/normativePlan';
 import { afterAll, beforeAll, expect } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
 import { currentTestSeed } from './seedMathRandom';
@@ -13,7 +15,7 @@ import { relative } from 'node:path';
  */
 const out = process.env.SCHEDULING_VIEW_ROUND_TRIP;
 /**
- * `SCHEDULING_PLAN_CASES=<file>` also writes every call checked as a `kernel.scheduling.plan@1` case, one JSON line each
+ * `SCHEDULING_PLAN_CASES=<file>` also writes every call checked as a `kernel.scheduling.plan@2` case, one JSON line each
  * (`pnpm kernel:harvest-scheduling`): RECORDED cases, which pin this implementation's plans for a second one to meet.
  * They are generated, never committed; the authored cases in `kernel/cases/scheduling.json` are the committed ones.
  */
@@ -70,8 +72,8 @@ function recordedCase({ view, options, plan }: { view: unknown; options: unknown
   const hash = createHash('sha256').update(canonicalJson(input)).digest('hex').slice(0, 16);
   return {
     caseId: `scheduling.recorded.${hash}.v1`,
-    operation: 'kernel.scheduling.plan@1',
-    expected: { kind: 'value', value: plan },
+    operation: 'kernel.scheduling.plan@2',
+    expected: { kind: 'value', value: normativePlan(plan as SchedulePlan) },
     input,
   };
 }

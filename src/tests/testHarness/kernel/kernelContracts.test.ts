@@ -196,12 +196,12 @@ describe('negative controls: the cases reject a wrong implementation', () => {
   });
 
   it('a planner that ignores the played order fails the played-order case, and only it', () => {
-    const plan = kernelOperations['kernel.scheduling.plan@1'];
+    const plan = kernelOperations['kernel.scheduling.plan@2'];
     const ignoresPlayedOrder: KernelOperation = {
       ...plan,
       run: (input) => plan.run({ ...input, view: { ...(input.view as object), playedOrderFacts: {} } }),
     };
-    const wrong = directAdapter({ ...kernelOperations, 'kernel.scheduling.plan@1': ignoresPlayedOrder });
+    const wrong = directAdapter({ ...kernelOperations, 'kernel.scheduling.plan@2': ignoresPlayedOrder });
     expect(failures(wrong, scheduling).map((c) => c.caseId)).toEqual([
       'scheduling.plan.played-source-on-a-later-date.v1',
     ]);

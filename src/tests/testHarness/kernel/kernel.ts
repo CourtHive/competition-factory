@@ -20,6 +20,7 @@ import { resolveSetType } from '@Tools/scoring/scoringUtilities';
 import { addMinutesToTimeString } from '@Tools/dateTime';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { extractDate, sameDay } from '@Tools/plainDate';
+import { normativePlan } from './normativePlan';
 
 // constants
 import { IN_PROGRESS } from '@Constants/matchUpStatusConstants';
@@ -187,6 +188,7 @@ export const kernelOperations: Readonly<Record<string, KernelOperation>> = Objec
   },
   // the profile scheduler's plan: from a planning view (`viewCodec.ts`) and the call's options, the placements and the
   // reasons for every matchUp left unplaced (scheduling-pipeline.md § 4)
+  // the whole plan, retry traces included: superseded by @2 (CA 2026-10-25), kept while a second implementation moves
   'kernel.scheduling.plan@1': {
     capability: 'scheduling',
     validate: validatePlanInput,
@@ -194,6 +196,16 @@ export const kernelOperations: Readonly<Record<string, KernelOperation>> = Objec
       const options = (input.options ?? {}) as Record<string, any>;
       const plan = planSchedule({ ...options, view: planningViewFromData(input.view as Record<string, unknown>) });
       return { kind: 'value', value: plan };
+    },
+  },
+  // the plan's normative part (scheduling-pipeline.md § 7): placements, unplaced, and each refusal's first reason
+  'kernel.scheduling.plan@2': {
+    capability: 'scheduling',
+    validate: validatePlanInput,
+    run: (input) => {
+      const options = (input.options ?? {}) as Record<string, any>;
+      const plan = planSchedule({ ...options, view: planningViewFromData(input.view as Record<string, unknown>) });
+      return { kind: 'value', value: normativePlan(plan) };
     },
   },
   'kernel.format.parse@1': {
