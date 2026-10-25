@@ -123,6 +123,8 @@ engine.deleteCourt({
 });
 ```
 
+A scheduling policy can allow the change without `force`: when `force` is not given, `allowModificationWhenMatchUpsScheduled.courts` in the applied [scheduling policy](../policies/scheduling.md) decides. An explicit `force` (`true` or `false`) always wins; with neither, the call is refused. In 7.21.0 and earlier the flag was read under the wrong key and had no effect.
+
 ---
 
 ## deleteCourts
@@ -141,6 +143,8 @@ engine.deleteCourts({
 ## deleteVenue
 
 If a venue has scheduled matchUps then it will not be deleted unless `{ force: true }` in which case all relevant matchUps will be unscheduled.
+
+A scheduling policy can allow the change without `force`: when `force` is not given, `allowModificationWhenMatchUpsScheduled.venues` in the applied [scheduling policy](../policies/scheduling.md) decides. An explicit `force` (`true` or `false`) always wins; with neither, the call is refused. In 7.21.0 and earlier the flag was read under the wrong key and had no effect.
 
 Deleting a primary venue does **not** auto-promote another venue — the caller must explicitly designate a new primary via `modifyVenue`.
 
@@ -468,6 +472,8 @@ const modifications = {
 };
 engine.modifyVenue({ venueId, modifications });
 ```
+
+A modification that removes a court with scheduled matchUps is refused unless `force: true` is passed or, when `force` is not given, the applied [scheduling policy](../policies/scheduling.md) sets `allowModificationWhenMatchUpsScheduled.venues`. In 7.21.0 and earlier the flag was read under the wrong key and had no effect.
 
 **Notes:**
 
