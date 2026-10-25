@@ -1738,5 +1738,69 @@
       "code": "UNSTRINGIFIABLE_FORMAT"
     },
     "note": "§ 7: 6/TB7@2 reads back as a tiebreak at two games"
+  },
+  {
+    "caseId": "grammar.parse.two-to-the-fifty-three.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET9007199254740992-S:6"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 2 rule 4: at most 2^53 - 1; 2^53 is not a number of a code"
+  },
+  {
+    "caseId": "grammar.parse.exactly-one-with-a-match-modifier.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET1XZ-S:T10"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 4: X on a count of 1 is an equivalent spelling only when no other match modifier follows it"
+  },
+  {
+    "caseId": "grammar.stringify.tiebreak-at-without-a-tiebreak.v1",
+    "operation": "kernel.format.stringify@1",
+    "input": {
+      "formatStructure": {
+        "bestOf": 3,
+        "setFormat": {
+          "setTo": 6,
+          "noTiebreak": true,
+          "tiebreakAt": 5
+        }
+      }
+    },
+    "expected": {
+      "kind": "value",
+      "value": "SET3-S:6"
+    },
+    "note": "§ 7: @{at} is written only with a tiebreak"
+  },
+  {
+    "caseId": "grammar.stringify.tiebreak-with-no-target.v1",
+    "operation": "kernel.format.stringify@1",
+    "input": {
+      "formatStructure": {
+        "bestOf": 3,
+        "setFormat": {
+          "setTo": 6,
+          "tiebreakFormat": {
+            "tiebreakTo": 0
+          },
+          "tiebreakAt": 6
+        }
+      }
+    },
+    "expected": {
+      "kind": "value",
+      "value": "SET3-S:6"
+    },
+    "note": "§ 7: a tiebreak with no target (0 or absent) is no tiebreak"
   }
 ]

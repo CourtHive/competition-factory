@@ -124,6 +124,7 @@ These say the same thing as their canonical form and are well-formed; `stringify
 | a timed segment's `G`                                                 | `T10G` → `T10`; `S:T20G/TB7` → `S:T20/TB7`                             |
 | a `-G:TN` section with no deuce count, the default game               | `SET3-S:6/TB7-G:TN` → `SET3-S:6/TB7`                                   |
 
+`X` on a count of 1 is an equivalent spelling only when no other match modifier follows it: `SET1XZ` is not a code.
 Nothing else is an equivalent spelling. A string that is not canonical once these are rewritten is not a code: that
 is how leading zeros, sections out of order and modifiers out of order are refused (rule 2.4, § 3.2), and how the
 three lenient readings below stay closed.
@@ -186,7 +187,9 @@ A stored code of either kind parses and scores as it always did; only setting it
 sections in the order `S`, `G`, `F`, `M`, omits a final segment identical to the set segment, a final segment on a
 count of 1 and the default game (`TRADITIONAL` with no `deuceAfter`), writes `winBy` only when it is not 2,
 `tiebreakAt` only when it is not `setTo`, `based` only when it is `P`, and the head as root, count, `X` (only for a count above 1), `A`, then the match modifiers. With its second
-argument, `preserveRedundant`, it also writes a `tiebreakAt` equal to `setTo`.
+argument, `preserveRedundant`, it also writes a `tiebreakAt` equal to `setTo`. A `tiebreakAt` is written only with a
+tiebreak (`{ setTo: 6, noTiebreak: true, tiebreakAt: 5 }` is `S:6`), and a tiebreak with no target (`tiebreakTo` of 0
+or absent) is no tiebreak.
 
 On other objects it never writes a string `parse` refuses. It returns undefined for a value that is not an object, an
 object with neither `bestOf` nor `exactly` or with no `setFormat`, a game format it cannot write, a modifier that is
