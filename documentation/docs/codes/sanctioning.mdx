@@ -164,6 +164,15 @@ populating `sanction` from the record: the governing body becomes `authority`, e
 that actually endorsed), the reviewer and approval date become `decisionRecord`, and the policy and
 its version become `ruleset`.
 
+### Sanctioned transit between venues
+
+A proposal may state the time to get between the places played at, `venueTransits: [{ facilityIds: [a, b], minutes,
+oneWay? }]`, keyed by `facilityId` because the proposal's own venue ids do not survive activation: the canonical venues
+replace them. Activation states each one for every pair of a venue of the one facility and a venue of the other, in
+`tournamentRecord.scheduling.venueTransits`, as a **sanctioned floor**: a director may raise the minutes but never lower
+them, nor remove the pair (see [setVenueTransit](../governors/venue-governor.md#setvenuetransit)). A facility that no
+activated venue carries, or a malformed transit, is returned in `unresolvedTransits` rather than dropped.
+
 ## A naming caution
 
 "Sanction" is not universal. Most federations use it for approval, but at least one uses it in its

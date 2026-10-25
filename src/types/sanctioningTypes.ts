@@ -1,3 +1,5 @@
+import type { OfficialRoleSubtype } from './officiatingTypes';
+import type { PresenceRules } from './presencePolicyTypes';
 import type {
   Category,
   CountryCodeUnion,
@@ -21,8 +23,6 @@ import type {
   UnifiedEventID,
   WheelchairClassUnion,
 } from './tournamentTypes';
-import type { OfficialRoleSubtype } from './officiatingTypes';
-import type { PresenceRules } from './presencePolicyTypes';
 
 // ---------------------------------------------------------------------------
 // Status & State Machine
@@ -241,6 +241,12 @@ export interface TournamentProposal {
   proposedEndDate: string;
   hostCountryCode?: CountryCodeUnion;
   venues?: VenueProposal[];
+  /**
+   * Transit between the places played at, as the sanctioning body states it (scheduling-pipeline.md § 3.4): keyed by
+   * `facilityId`, the identity that survives activation (a proposal's own venueIds are replaced by the canonical venues).
+   * Activation states it for every pair of the two facilities' venues as a sanctioned floor (CA 2026-10-25).
+   */
+  venueTransits?: FacilityTransitProposal[];
   indoorOutdoor?: IndoorOutdoorUnion;
   surfaceCategory?: SurfaceCategoryUnion;
   localTimeZone?: string;
@@ -674,3 +680,10 @@ export type SanctioningDirective = {
 };
 
 export type SanctioningDirectives = SanctioningDirective[];
+
+/** a sanctioned transit between two facilities, `oneWay` from the first to the second */
+export interface FacilityTransitProposal {
+  facilityIds: [string, string];
+  minutes: number;
+  oneWay?: boolean;
+}
