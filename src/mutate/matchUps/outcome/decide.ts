@@ -50,7 +50,7 @@ import {
  * THE SHAPES v2 OWNS (§ 3.7: one place, so reverting a slice's PR takes its shapes out). S2: the local write, the
  * matchUp's own result with no winner before or after, no exit, nothing directed, no tally and no settle work.
  */
-const OWNED_SHAPES = new Set<PlanShape>(['local']);
+const OWNED_SHAPES = new Set<PlanShape>(['local', 'direction']);
 
 /**
  * The call planned against the view (§ 3.1 step 3), the same under `v2` and `differential`: the route, the write on the

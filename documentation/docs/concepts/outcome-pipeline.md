@@ -485,7 +485,14 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   it, a cleared live score, or the same result submitted again, which changes nothing but stamps),
   with no winner before or after, no exit, nothing directed, no tally and no settle work. It leaves the record, the notices and the result v1 leaves for the same call
   (`ownedLocalWrites.test.ts`, under a fixed clock); an owned call takes no hydration, and its
-  `updateInContextMatchUp` is built only for a subscriber, after the call has succeeded.
+  `updateInContextMatchUp` is built only for a subscriber, after the call has succeeded. Since S3
+  v2 also owns the **first direction**: a result naming a winner, not an exit, whose winner goes
+  into the next matchUp of the same structure (holding no BYE, exit or result) and whose loser, if
+  a link takes them, arrives on a free seat carrying nothing, with no settle work after. It writes
+  v1's notices for it (the next matchUp's `modifyMatchUp` named `assignMatchUpDrawPosition`, a
+  `modifyPositionAssignments` for the structure the loser is placed in) and returns v1's direction
+  `context` (`ownedDirectionWrites.test.ts`). Under `v2` the mutations suite has about 10,000 calls
+  v2 writes as a direction.
 - **`differential`**: v2 plans the whole call before v1 runs, then checks v1's result against it,
   and a disagreement throws `OutcomePipelineDivergence` naming the matchUp and both answers. The
   plan covers the refusal, the route, the write on the matchUp, the winner's direction, the

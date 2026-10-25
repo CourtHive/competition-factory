@@ -1,7 +1,12 @@
-import { deferInContextMatchUp, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getInContextMatchUp } from '@Mutate/matchUps/score/modifyMatchUpScore';
+import { findStructure } from '@Acquire/findStructure';
 import { getTopics } from '@Global/state/globalState';
 import { applyOutcomeOps } from './ops';
+import {
+  deferInContextMatchUp,
+  modifyMatchUpNotice,
+  modifyPositionAssignmentsNotice,
+} from '@Mutate/notifications/drawNotifications';
 
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
@@ -22,7 +27,8 @@ import type { OutcomeOp } from './ops';
  * working view's copies before this ran, so an id they name is in the draw.
  *
  * THE NOTICES are v1's for the same write: a `modifyMatchUp` for each matchUp written (with the draw and the matchUp's
- * own top-level structure stamped, `modifyMatchUpNotice`), and for the call's matchUp the `updateInContextMatchUp` a
+ * own top-level structure stamped, `modifyMatchUpNotice`), a `modifyPositionAssignments` for each structure a loser is
+ * placed in (S3: the direction shape), and for the call's matchUp the `updateInContextMatchUp` a
  * subscriber receives, built when the notices are read, after the call has succeeded, and only for a subscriber
  * (CA, 2026-10-24: projection bounded to the changed node, never on an error).
  */
@@ -38,6 +44,7 @@ export function applyOwnedPlan({ args, ops }: { args: BuildViewArgs; ops: Outcom
       ops.flatMap((op) => (op.op === 'setMatchUpResult' || op.op === 'setMatchUpDrawPositions' ? [op.matchUpId] : [])),
     ),
   ];
+  const resulted = new Set(ops.flatMap((op) => (op.op === 'setMatchUpResult' ? [op.matchUpId] : [])));
   const stored = new Map(args.matchUpsMap?.drawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
   const subscribed = getTopics().topics.includes(UPDATE_INCONTEXT_MATCHUP);
   for (const matchUpId of written) {
@@ -50,7 +57,9 @@ export function applyOwnedPlan({ args, ops }: { args: BuildViewArgs; ops: Outcom
         matchUpId,
       });
     modifyMatchUpNotice({
-      context: 'modifyMatchUpScore',
+      // v1's writers name themselves: the call's result is `modifyMatchUpScore`'s, a winner's seat in the next matchUp
+      // is `assignMatchUpDrawPosition`'s (`directWinner`)
+      context: resulted.has(matchUpId) ? 'modifyMatchUpScore' : 'assignMatchUpDrawPosition',
       eventId: event?.eventId,
       drawDefinition,
       tournamentId,
@@ -58,5 +67,13 @@ export function applyOwnedPlan({ args, ops }: { args: BuildViewArgs; ops: Outcom
       event,
     });
   }
-  return { ...SUCCESS };
+  // a loser placed across a link: the structure whose assignments changed, announced once (v1's `directLoser`)
+  const placedIn = [...new Set(ops.flatMap((op) => (op.op === 'assignPosition' ? [op.structureId] : [])))];
+  for (const structureId of placedIn) {
+    const { structure } = findStructure({ drawDefinition, structureId });
+    if (structure) modifyPositionAssignmentsNotice({ drawDefinition, tournamentId, structure, event });
+  }
+  // a direction returns the context `directParticipants` builds, which carries something only for an exit (S5): empty
+  const directed = ops.some((op) => op.op === 'setMatchUpDrawPositions' || op.op === 'assignPosition');
+  return directed ? { ...SUCCESS, context: {} } : { ...SUCCESS };
 }
