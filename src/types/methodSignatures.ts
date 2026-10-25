@@ -100,6 +100,7 @@ import type { removeTieMatchUpParticipantId } from '@Mutate/matchUps/lineUps/rem
 import type { modifyIndividualParticipantIds } from '@Mutate/participants/modifyIndividualParticipantIds';
 import type { modifyParticipantsSignInStatus } from '@Mutate/participants/modifyParticipantsSignInStatus';
 import type { addTournamentOtherId, setTournamentOtherIds } from '@Mutate/tournaments/tournamentOtherIds';
+import type { removeVenueTransit, setVenueTransit, setVenueTransits } from '@Mutate/venues/venueTransits';
 import type { getTournamentActionableMatchUps } from '@Query/tournaments/getTournamentActionableMatchUps';
 import type { exportMatchUpJSON, mcpValidator, validateMCPMatch } from '@Validators/scoring/mcpValidator';
 import type { anonymizeTournamentRecord } from '@Generators/tournamentRecords/anonymizeTournamentRecord';
@@ -510,6 +511,7 @@ import type { meetCondition } from '@Mutate/sanctioning/meetCondition';
 import type { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
 import type { resetTieFormat } from '@Mutate/tieFormat/resetTieFormat';
 import type { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import type { getVenueTransits } from '@Query/venues/getVenueTransits';
 import type { checkValidEntries } from '@Validators/checkValidEntries';
 import type { validateTieFormat } from '@Validators/validateTieFormat';
 import type { stringify } from '@Helpers/matchUpFormatCode/stringify';
@@ -1124,6 +1126,7 @@ export interface MethodSignatures {
   getVenueData: EngineMethod<typeof getVenueData>;
   getVenuesAndCourts: EngineMethod<typeof getVenuesAndCourts>;
   getVenuesReport: EngineMethod<typeof getVenuesReport>;
+  getVenueTransits: EngineMethod<typeof getVenueTransits>;
   getWinner: EngineMethod<typeof getWinner>;
   groupByMatch: EngineMethod<typeof groupByMatch>;
   hasLuckyRounds: EngineMethod<typeof hasLuckyRounds>;
@@ -1272,6 +1275,7 @@ export interface MethodSignatures {
   removeSuspension: EngineMethod<typeof removeSuspension>;
   removeTieMatchUpParticipantId: EngineMethod<typeof removeTieMatchUpParticipantId>;
   removeTournamentExtension: EngineMethod<typeof removeTournamentExtension>;
+  removeVenueTransit: EngineMethod<typeof removeVenueTransit>;
   renameStructures: EngineMethod<typeof renameStructures>;
   reorderUpcomingMatchUps: EngineMethod<typeof reorderUpcomingMatchUps>;
   repairMalformedLink: EngineMethod<typeof repairMalformedLink>;
@@ -1340,6 +1344,8 @@ export interface MethodSignatures {
   setTournamentStartDate: EngineMethod<typeof setTournamentStartDate>;
   setTournamentStatus: EngineMethod<typeof setTournamentStatus>;
   setTournamentTier: EngineMethod<typeof setTournamentTier>;
+  setVenueTransit: EngineMethod<typeof setVenueTransit>;
+  setVenueTransits: EngineMethod<typeof setVenueTransits>;
   shiftAdHocRounds: EngineMethod<typeof shiftAdHocRounds>;
   shotParser: EngineMethod<typeof shotParser>;
   shotSplitter: EngineMethod<typeof shotSplitter>;

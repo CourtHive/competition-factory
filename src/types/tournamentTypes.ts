@@ -57,6 +57,8 @@ export interface Tournament {
     profile?: any;
     dailyLimits?: any;
     timing?: any;
+    /** transit between pairs of venues (scheduling-pipeline.md § 3.4): first-class, never a legacy extension */
+    venueTransits?: VenueTransitEntry[];
     // Alternate ("contingency") scheduling plans a tournament director builds
     // off the current schedule, cycles through, and can commit as the official
     // schedule (uncompleted matchUps only). Persisted first-class — NEVER a
@@ -3068,4 +3070,15 @@ export interface TournamentSanction {
   submissionWindow?: { from?: string; to?: string; timeZone?: string };
   extensions?: Extension[];
   timeItems?: TimeItem[];
+}
+
+/**
+ * Minutes to get between two venues (scheduling-pipeline.md § 3.4). Symmetric unless `oneWay`, when it runs from
+ * `venueIds[0]` to `venueIds[1]` only. `sanctioned` records a sanctioning body's value, a floor `minutes` never goes below.
+ */
+export interface VenueTransitEntry {
+  venueIds: [string, string];
+  minutes: number;
+  oneWay?: boolean;
+  sanctioned?: { minutes: number; sanctioningId?: string };
 }

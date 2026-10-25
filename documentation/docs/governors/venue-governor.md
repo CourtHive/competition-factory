@@ -148,6 +148,8 @@ A scheduling policy can allow the change without `force`: when `force` is not gi
 
 Deleting a primary venue does **not** auto-promote another venue — the caller must explicitly designate a new primary via `modifyVenue`.
 
+Deleting a venue also removes every transit pair that names it (see [setVenueTransit](#setvenuetransit)), in the record where it is deleted.
+
 ```js
 engine.deleteVenue({ venueId, force });
 ```
@@ -336,6 +338,19 @@ const { courts } = engine.getCourts({
 
 ---
 
+## getVenueTransits
+
+Returns the transit between venues as stored (`venueTransits`, the pairs each record states), the effective minutes by
+direction (`transitPairs`: a symmetric pair both ways, a one-way pair one way; where linked records state one pair
+differently, the greater), and the attached scheduling policy's default (`defaultMinutes`, absent when no policy states
+one). See [the scheduling pipeline](../concepts/scheduling-pipeline.md), § 3.4.
+
+```js
+const { venueTransits, transitPairs, defaultMinutes } = engine.getVenueTransits();
+```
+
+---
+
 ## getVenuesAndCourts
 
 Returns venues and courts from a tournament record or competition, with optional filtering and hydration.
@@ -480,5 +495,48 @@ A modification that removes a court with scheduled matchUps is refused unless `f
 - When modifying `defaultStartTime` or `defaultEndTime`, the engine validates the **resulting pair** (merging with existing values). For example, if the venue already has `defaultStartTime: '09:00'` and you modify only `defaultEndTime`, the pair `('09:00', newEndTime)` is validated.
 - `dateAvailability` replaces the entire venue-level availability array when provided
 - Setting `isPrimary: true` automatically clears `isPrimary` from any previously-primary venue. Setting `isPrimary: false` removes the property entirely (clean serialization). See [Primary Venue](../concepts/venues-courts.md#primary-venue)
+
+---
+
+## removeVenueTransit
+
+Removes the transit stated for a pair of venues, which then takes the scheduling policy's default. A pair with a
+sanctioned value cannot be removed.
+
+```js
+engine.removeVenueTransit({ venueIds: [venueIdA, venueIdB], oneWay });
+```
+
+---
+
+## setVenueTransit
+
+Sets the minutes to get between two venues: when a participant's consecutive matchUps on a date are at different venues,
+the later may not start before the earlier's play ends plus the **greater** of its recovery and the transit. The pair is
+stored once in `tournamentRecord.scheduling.venueTransits`, in either order; with `oneWay: true` it runs from
+`venueIds[0]` to `venueIds[1]` only. Minutes are whole and non-negative. A pair carrying a sanctioned value is never set
+below it. Venues sharing a `facilityId` need no transit; a pair with no stated minutes takes the policy's
+`defaultTimes.transitMinutes` (30 in the default scheduling policy). See
+[the scheduling pipeline](../concepts/scheduling-pipeline.md), § 3.4.
+
+```js
+engine.setVenueTransit({ venueIds: [venueIdA, venueIdB], minutes: 45 });
+engine.setVenueTransit({ venueIds: [venueIdB, venueIdA], minutes: 60, oneWay: true });
+```
+
+---
+
+## setVenueTransits
+
+Sets many pairs at once, as a sanctioning import or a venues page would: each entry is
+`{ venueIds, minutes, oneWay?, sanctioned? }`, validated as in `setVenueTransit`. A sanctioned value is kept beside the
+minutes in effect and is a floor for them. With `replace: true`, pairs not given are removed, except sanctioned ones.
+
+```js
+engine.setVenueTransits({
+  venueTransits: [{ venueIds: [venueIdA, venueIdB], minutes: 45, sanctioned: { minutes: 40, sanctioningId } }],
+  replace: false,
+});
+```
 
 ---

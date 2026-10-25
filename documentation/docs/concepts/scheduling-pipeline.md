@@ -134,8 +134,10 @@ holds participants, never courts. The minutes from one venue to another are, in 
 direction (a pair stated once applies both ways; a one-way value only its way); none when the two venues share a
 `facilityId` (one physical place); else the scheduling policy's `defaultTimes.transitMinutes` (the default policy
 states 30). With no policy stating it there is no transit, and a matchUp with no venue, or two matchUps at the same
-venue, take none. The planning view carries this as `transit` (`defaultMinutes`, `pairs` by direction, `facilityIds`);
-where a record states the pairs is decided separately.
+venue, take none. Minutes are whole. A record states the pairs once each in `scheduling.venueTransits`
+(`{ venueIds, minutes, oneWay?, sanctioned? }`; a sanctioned value is a floor the minutes never go below), pruned when a
+venue is deleted; where linked records state one pair differently, the greater applies. The planning view carries this
+as `transit` (`defaultMinutes`, `pairs` by direction, `facilityIds`).
 
 ### 3.5 Daily limits
 
