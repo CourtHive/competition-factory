@@ -589,13 +589,11 @@ describe('getDraftState branch coverage', () => {
 
 describe('processAlreadyScheduledMatchUps branch coverage', () => {
   it('builds dateScheduledMatchUpIds from matchUps when not provided', () => {
-    const matchUpPotentialParticipantIds = {};
     const individualParticipantProfiles = {};
     const matchUpNotBeforeTimes = {};
     const matchUpScheduleTimes = {};
 
     const result = processAlreadyScheduledMatchUps({
-      matchUpPotentialParticipantIds,
       participantReachability: { matchUps: {}, upstream: {}, linkedTargets: {} },
       individualParticipantProfiles,
       dateScheduledMatchUpIds: undefined as any,
@@ -625,7 +623,6 @@ describe('processAlreadyScheduledMatchUps branch coverage', () => {
 
   it('returns empty alreadyScheduled when clearDate is true', () => {
     const result = processAlreadyScheduledMatchUps({
-      matchUpPotentialParticipantIds: {},
       participantReachability: { matchUps: {}, upstream: {}, linkedTargets: {} },
       individualParticipantProfiles: {},
       dateScheduledMatchUpIds: ['m1'],
@@ -642,7 +639,6 @@ describe('processAlreadyScheduledMatchUps branch coverage', () => {
 
   it('handles clearScheduleDates as an array', () => {
     const result = processAlreadyScheduledMatchUps({
-      matchUpPotentialParticipantIds: {},
       participantReachability: { matchUps: {}, upstream: {}, linkedTargets: {} },
       individualParticipantProfiles: {},
       dateScheduledMatchUpIds: ['m1'],
@@ -660,7 +656,6 @@ describe('processAlreadyScheduledMatchUps branch coverage', () => {
   it('handles clearScheduleDates array that does not include scheduleDate', () => {
     const matchUpScheduleTimes: Record<string, any> = {};
     const result = processAlreadyScheduledMatchUps({
-      matchUpPotentialParticipantIds: {},
       participantReachability: { matchUps: {}, upstream: {}, linkedTargets: {} },
       individualParticipantProfiles: {},
       dateScheduledMatchUpIds: ['m1'],
@@ -680,7 +675,6 @@ describe('processAlreadyScheduledMatchUps branch coverage', () => {
   it('skips matchUps without scheduleTime in already scheduled', () => {
     const matchUpScheduleTimes: Record<string, any> = {};
     processAlreadyScheduledMatchUps({
-      matchUpPotentialParticipantIds: {},
       participantReachability: { matchUps: {}, upstream: {}, linkedTargets: {} },
       individualParticipantProfiles: {},
       dateScheduledMatchUpIds: ['m1'],

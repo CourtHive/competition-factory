@@ -51,6 +51,7 @@ export function generateScheduleTimes({
   endTime,
 }: GenerateScheduleTimesArgs): {
   dateScheduledMatchUps?: HydratedMatchUp[];
+  unbookedMatchUpIds?: string[];
   scheduleTimes?: ScheduleTimesResult[];
   dateScheduledMatchUpIds?: string[];
   error?: ErrorType;
@@ -114,7 +115,7 @@ export function generateScheduleTimes({
     endTime,
     courts,
   };
-  const { scheduleTimes } = getScheduleTimes(timingParameters);
+  const { scheduleTimes, unbookedMatchUpIds } = getScheduleTimes(timingParameters);
 
   // if a single venue specified, or only one venue available, return venueId
   const venueId = (venueIds?.length === 1 && venueIds[0]) || (venues?.length === 1 && venues[0].venueId) || undefined;
@@ -125,6 +126,7 @@ export function generateScheduleTimes({
   return {
     dateScheduledMatchUpIds,
     dateScheduledMatchUps,
+    unbookedMatchUpIds,
     scheduleTimes,
     venueId,
   };

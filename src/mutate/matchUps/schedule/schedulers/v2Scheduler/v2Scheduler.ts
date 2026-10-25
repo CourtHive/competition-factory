@@ -31,7 +31,6 @@ import { SUCCESS } from '@Constants/resultConstants';
 function evaluateCourt({
   recoveryTimeDeferredMatchUpIds,
   checkPotentialRequestConflicts,
-  matchUpPotentialParticipantIds,
   individualParticipantProfiles,
   matchUpNotBeforeTimes,
   venueEarliestCourtTime,
@@ -111,7 +110,6 @@ function evaluateCourt({
   const recoveryMinutes = details.minutesMap?.[matchUpId]?.recoveryMinutes;
 
   updateTimeAfterRecovery({
-    matchUpPotentialParticipantIds,
     individualParticipantProfiles,
     matchUpNotBeforeTimes,
     averageMatchUpMinutes,
@@ -135,7 +133,6 @@ function evaluateCourt({
 function findBestCourtTime({
   recoveryTimeDeferredMatchUpIds,
   checkPotentialRequestConflicts,
-  matchUpPotentialParticipantIds,
   individualParticipantProfiles,
   matchUpNotBeforeTimes,
   venueEarliestCourtTime,
@@ -159,7 +156,6 @@ function findBestCourtTime({
     return evaluateCourt({
       recoveryTimeDeferredMatchUpIds,
       checkPotentialRequestConflicts,
-      matchUpPotentialParticipantIds,
       individualParticipantProfiles,
       matchUpNotBeforeTimes,
       venueEarliestCourtTime,
@@ -184,7 +180,6 @@ function tryScheduleMatchUp({
   recoveryTimeDeferredMatchUpIds,
   checkPotentialRequestConflicts,
   dependencyDeferredMatchUpIds,
-  matchUpPotentialParticipantIds,
   individualParticipantProfiles,
   scheduleDateRequestConflicts,
   matchUpNotBeforeTimes,
@@ -241,7 +236,6 @@ function tryScheduleMatchUp({
   const courtTime = findBestCourtTime({
     recoveryTimeDeferredMatchUpIds,
     checkPotentialRequestConflicts,
-    matchUpPotentialParticipantIds,
     individualParticipantProfiles,
     matchUpNotBeforeTimes,
     venueEarliestCourtTime,
@@ -357,7 +351,6 @@ function scheduleVenuePass({
   recoveryTimeDeferredMatchUpIds,
   checkPotentialRequestConflicts,
   dependencyDeferredMatchUpIds,
-  matchUpPotentialParticipantIds,
   individualParticipantProfiles,
   scheduleDateRequestConflicts,
   matchUpNotBeforeTimes,
@@ -396,7 +389,6 @@ function scheduleVenuePass({
         recoveryTimeDeferredMatchUpIds,
         checkPotentialRequestConflicts,
         dependencyDeferredMatchUpIds,
-        matchUpPotentialParticipantIds,
         individualParticipantProfiles,
         scheduleDateRequestConflicts,
         matchUpNotBeforeTimes,
@@ -455,7 +447,6 @@ function scheduleVenueRounds({
   recoveryTimeDeferredMatchUpIds,
   checkPotentialRequestConflicts,
   dependencyDeferredMatchUpIds,
-  matchUpPotentialParticipantIds,
   individualParticipantProfiles,
   scheduleDateRequestConflicts,
   venueScheduledRoundDetails,
@@ -490,7 +481,6 @@ function scheduleVenueRounds({
         recoveryTimeDeferredMatchUpIds,
         checkPotentialRequestConflicts,
         dependencyDeferredMatchUpIds,
-        matchUpPotentialParticipantIds,
         individualParticipantProfiles,
         scheduleDateRequestConflicts,
         matchUpNotBeforeTimes,
@@ -611,7 +601,6 @@ export function v2Scheduler({
   for (const dateSchedulingProfile of dateSchedulingProfiles ?? []) {
     const scheduleDate = extractDate(dateSchedulingProfile?.scheduleDate);
     const venues = dateSchedulingProfile?.venues ?? [];
-    const matchUpPotentialParticipantIds = {};
     const individualParticipantProfiles = {};
 
     // recording a matchUp into a participant's day is idempotent: re-evaluating a court does not count it twice
@@ -635,7 +624,6 @@ export function v2Scheduler({
     matchUps?.forEach((matchUp) => {
       if (matchUp.schedule?.scheduledDate && sameDay(scheduleDate, extractDate(matchUp.schedule.scheduledDate))) {
         processNextMatchUps({
-          matchUpPotentialParticipantIds,
           matchUpNotBeforeTimes,
           matchUp,
         });
@@ -648,7 +636,6 @@ export function v2Scheduler({
       venueScheduledRoundDetails,
       allDateMatchUpIds,
     } = getVenueSchedulingDetails({
-      matchUpPotentialParticipantIds,
       individualParticipantProfiles,
       excludeNoDateCompleted,
       containedStructureIds,
@@ -708,7 +695,6 @@ export function v2Scheduler({
       recoveryTimeDeferredMatchUpIds,
       checkPotentialRequestConflicts,
       dependencyDeferredMatchUpIds,
-      matchUpPotentialParticipantIds,
       individualParticipantProfiles,
       scheduleDateRequestConflicts,
       venueScheduledRoundDetails,

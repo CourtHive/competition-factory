@@ -95,7 +95,8 @@ export function generateBookings({
     const startTime = extractTime(matchUp.schedule?.scheduledTime);
     // a booking that would end past midnight holds its court to the end of its day (scheduling-pipeline.md § 9.8)
     const { endTime } = endOnTheDay(startTime, averageMinutes);
-    return { recoveryMinutes, averageMinutes, periodLength, startTime, courtId, endTime, venueId };
+    const { matchUpId } = matchUp;
+    return { recoveryMinutes, averageMinutes, periodLength, matchUpId, startTime, courtId, endTime, venueId };
   });
 
   // a matchUp of the day before that runs past midnight holds its court from 00:00 into this date
@@ -110,7 +111,17 @@ export function generateBookings({
     const courtId = schedule?.courtId;
     const venueId = venueOf(matchUp);
     const endTime = endOnTheDay('00:00', minutesPastMidnight).endTime;
-    bookings.push({ recoveryMinutes, averageMinutes, periodLength, startTime: '00:00', courtId, endTime, venueId });
+    const { matchUpId } = matchUp;
+    bookings.push({
+      recoveryMinutes,
+      averageMinutes,
+      periodLength,
+      matchUpId,
+      startTime: '00:00',
+      courtId,
+      endTime,
+      venueId,
+    });
   }
 
   return { bookings, relevantMatchUps, dateScheduledMatchUps };
@@ -118,6 +129,7 @@ export function generateBookings({
 
 type Booking = {
   recoveryMinutes?: number;
+  matchUpId?: string;
   averageMinutes?: number;
   periodLength?: number;
   startTime?: string;

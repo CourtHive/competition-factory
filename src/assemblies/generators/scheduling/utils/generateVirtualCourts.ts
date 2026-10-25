@@ -40,6 +40,7 @@ export function generateVirtualCourts(params) {
     { courtBookings: {}, unassignedBookings: [] },
   );
 
+  const unbookedMatchUpIds: string[] = [];
   const inProcessCourts = courts.map((court, index) => {
     const { courtId, courtName } = court;
     const bookingsThisCourt = courtBookings[courtId] ?? [];
@@ -118,6 +119,8 @@ export function generateVirtualCourts(params) {
       const virtualCourt = inProcessCourts.find(({ courtId }) => courtId === bestCourt.courtId);
       virtualCourt?.dateAvailability.bookings.push(booking);
     } else {
+      // no court has free time that ends around it (it runs past every court's close): reported, never silently dropped
+      if (unassignedBooking.matchUpId) unbookedMatchUpIds.push(unassignedBooking.matchUpId);
       pushGlobalLog({ method: 'generateVirtualCourts', unassignedBooking });
     }
   }
@@ -128,5 +131,5 @@ export function generateVirtualCourts(params) {
     courtId,
   }));
 
-  return { virtualCourts, assignedBookings };
+  return { virtualCourts, assignedBookings, unbookedMatchUpIds };
 }

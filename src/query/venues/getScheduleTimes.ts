@@ -15,6 +15,8 @@ import { ARRAY } from '@Constants/attributeConstants';
 const ROUNDING_EPSILON = 1e-9;
 
 export function getScheduleTimes(params): ResultType & {
+  /** timed matchUps at a venue with no court that no court could hold (§ 3.9 rule 4) */
+  unbookedMatchUpIds?: string[];
   scheduleTimes?: ScheduleTimesResult[];
   totalMatchUps?: number;
   timingProfile?: any;
@@ -66,7 +68,7 @@ export function getScheduleTimes(params): ResultType & {
     courts = courtGenerator({ startTime, endTime, count: courtsCount, date });
   }
 
-  const { virtualCourts } = generateVirtualCourts({
+  const { virtualCourts, unbookedMatchUpIds } = generateVirtualCourts({
     remainingScheduleTimes,
     clearScheduleDates,
     scheduleDate: date,
@@ -163,5 +165,5 @@ export function getScheduleTimes(params): ResultType & {
     }, [])
     .flat();
 
-  return { scheduleTimes, timingProfile, totalMatchUps };
+  return { scheduleTimes, timingProfile, totalMatchUps, unbookedMatchUpIds };
 }
