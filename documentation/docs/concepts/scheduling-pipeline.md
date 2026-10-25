@@ -117,6 +117,13 @@ participants further away are not, by design, 2026-10-16). A matchUp already tim
 whether or not the profile is scheduling it, completed or not, for its own minutes. A recorded `endTime` replaces the
 average in the free time.
 
+**Its own minutes** (CA 2026-10-25): a matchUp already timed on the date holds its participants for its own average
+(from its format) plus its own recovery, once, whatever venues the date profiles; a matchUp the plan places holds them
+for its round's average, the same figure its recovery is checked with. No figure from its venue or another round
+lengthens or shortens it (the engine used the greatest average of any venue profiled on the date). A matchUp about to be
+scheduled raises no not-before time from where it was timed before, which may be another date: the matchUps it feeds
+wait only for where it is placed now.
+
 ### 3.5 Daily limits
 
 A participant's **day load** is every matchUp they are certain to play on the date, plus, per draw, the longest
@@ -133,8 +140,8 @@ limit. A matchUp is **over the limit** when adding it takes any certain or poten
 
 ### 3.6 Person requests
 
-A `DO_NOT_SCHEDULE` request on a date blocks a placement whose projected window (start to start plus the round's
-greatest average minutes) overlaps the request's window at all. The people checked are the matchUp's individual
+A `DO_NOT_SCHEDULE` request on a date blocks a placement whose projected window (start to start plus the matchUp's own
+average minutes, its round's; CA 2026-10-25) overlaps the request's window at all. The people checked are the matchUp's individual
 participants (a pair's two individuals) and, by default, its potential participants'.
 
 ### 3.7 Played order
