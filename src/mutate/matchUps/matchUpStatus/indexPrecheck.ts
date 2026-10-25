@@ -2,6 +2,7 @@ import { buildStructuralIndex } from '@Query/matchUps/structuralIndex';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getOutcomePipeline } from '@Global/state/globalState';
 import { captureRecord } from '@Tools/recordDiff';
+import { asOracle } from './precheckOracleMark';
 
 // constants and types
 import { OUTCOME_PIPELINE_DIFFERENTIAL } from '@Constants/outcomePipelineConstants';
@@ -29,18 +30,6 @@ import type { HydratedMatchUp } from '@Types/hydrated';
  */
 type PrecheckDivergence = { site: string; index: string; hydrated: string };
 const pending: PrecheckDivergence[] = [];
-
-// what the oracle reads and runs is instrumentation, not the pipeline's cost: `verify:hydrations` reads this mark
-let oracleDepth = 0;
-export const inPrecheckOracle = () => oracleDepth > 0;
-function asOracle<T>(read: () => T): T {
-  oracleDepth += 1;
-  try {
-    return read();
-  } finally {
-    oracleDepth -= 1;
-  }
-}
 
 const hasWork = (found: unknown) => (Array.isArray(found) ? found.length > 0 : !!found);
 

@@ -162,6 +162,8 @@ const top =
   (fn: string): Selector =>
   (site) =>
     !site.nested && site.fn === fn;
+// the `getMatchUpsMap` builds the pipeline asks for itself; the settle precheck's completeness run builds its own
+const pipelineMap: Selector = (site) => top('getMatchUpsMap')(site) && !viewOracleRead(site);
 
 function playCell(arm: string, cell: (typeof ALL_CELLS)[number], policy?: any): CallRecord[] {
   setSubscriptions({});
@@ -473,7 +475,7 @@ const GATED: {
   },
   {
     allowance: () => 0,
-    selector: top('getMatchUpsMap'),
+    selector: pipelineMap,
     name: 'getMatchUpsMap',
   },
 ];
@@ -486,7 +488,7 @@ function measureArms(records: CallRecord[]): Record<string, ArmCeilings> {
       const { total, worst } = distribution(inArm, selector);
       return { total, worst };
     };
-    arms[arm] = { calls: inArm.length, hydrations: read(hydration), getMatchUpsMap: read(top('getMatchUpsMap')) };
+    arms[arm] = { calls: inArm.length, hydrations: read(hydration), getMatchUpsMap: read(pipelineMap) };
   }
   return arms;
 }

@@ -1,4 +1,4 @@
-import { inPrecheckOracle } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
+import { inPrecheckOracle } from '@Mutate/matchUps/matchUpStatus/precheckOracleMark';
 import { performance } from 'node:perf_hooks';
 
 /**
