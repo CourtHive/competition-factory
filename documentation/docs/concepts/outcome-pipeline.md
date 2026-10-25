@@ -631,6 +631,17 @@ mutations suite: 66,154 calls, 1,873,656 entries compared, none different; 15,94
 deferred. Measured against a full in-context hydration (median of 15): SINGLE_ELIMINATION 32 to 256 at 11–13%,
 FEED_IN_CHAMPIONSHIP 64, ROUND_ROBIN 32, DOUBLE_ELIMINATION 64 and COMPASS 64 at 11–13%, linear in the draw.
 
+**v1's settle passes ask the index first** (`matchUpStatus/indexPrecheck.ts`; the v1 win CA agreed 2026-10-24). Most
+of v1's settle passes hydrate the whole draw on every call only to run a detector that usually finds nothing, and a
+pass whose detector finds nothing writes nothing. So a pass first asks its own detector of the structural index, built
+with what the pass hydrates with (the draw alone), and returns without hydrating when it finds no work; a TEAM draw,
+which the index does not cover, hydrates as before. In `differential` the detector is asked of a hydration too, and a
+disagreement is a divergence keyed `precheck:<pass>`, raised when the call is compared and the call restored: the index
+oracle sees the draw as the call found it, this one each state a settle pass meets after the call's writes. Passes
+move one at a time, each with its `verify:hydrations` v1 ceiling lowered. `reconcileByeAdvancements` first: about one
+hydration a call fewer on every census arm (matrix BYE: DOUBLE_WALKOVER 1,735 → 1,536); over the mutations suite under
+`differential`, no disagreement.
+
 ## 8. What the corpus pins
 
 |                                   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |

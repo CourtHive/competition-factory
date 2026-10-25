@@ -156,12 +156,14 @@ const anyHydration: Selector = (site) =>
  */
 const viewOracleRead: Selector = (site) =>
   getOutcomePipeline() === OUTCOME_PIPELINE_DIFFERENTIAL &&
-  /^(hydrateShadow@viewOracle|apply@overlay|indexOracle@decide)/.test(site.caller);
+  /^(hydrateShadow@viewOracle|apply@overlay|indexOracle@decide|precheckOracle@indexPrecheck)/.test(site.caller);
 const hydration: Selector = (site) => anyHydration(site) && !viewOracleRead(site);
 const top =
   (fn: string): Selector =>
   (site) =>
     !site.nested && site.fn === fn;
+// the `getMatchUpsMap` builds the pipeline asks for itself; the settle precheck's completeness run builds its own
+const pipelineMap: Selector = (site) => top('getMatchUpsMap')(site) && !viewOracleRead(site);
 
 function playCell(arm: string, cell: (typeof ALL_CELLS)[number], policy?: any): CallRecord[] {
   setSubscriptions({});
@@ -473,7 +475,7 @@ const GATED: {
   },
   {
     allowance: () => 0,
-    selector: top('getMatchUpsMap'),
+    selector: pipelineMap,
     name: 'getMatchUpsMap',
   },
 ];
@@ -486,7 +488,7 @@ function measureArms(records: CallRecord[]): Record<string, ArmCeilings> {
       const { total, worst } = distribution(inArm, selector);
       return { total, worst };
     };
-    arms[arm] = { calls: inArm.length, hydrations: read(hydration), getMatchUpsMap: read(top('getMatchUpsMap')) };
+    arms[arm] = { calls: inArm.length, hydrations: read(hydration), getMatchUpsMap: read(pipelineMap) };
   }
   return arms;
 }
@@ -539,7 +541,7 @@ it.skipIf(!gated)(
       );
     if (mode === OUTCOME_PIPELINE_DIFFERENTIAL)
       process.stdout.write(
-        `[verify:hydrations] the view oracle's own hydrations, outside the ceiling: ${
+        `[verify:hydrations] the oracles' own hydrations (view, index, settle precheck), outside the ceiling: ${
           distribution(records, (site) => anyHydration(site) && viewOracleRead(site)).total
         }\n`,
       );
