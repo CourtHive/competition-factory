@@ -12,6 +12,26 @@ import {
   MISSING_SET_OBJECT,
 } from '@Constants/errorConditionConstants';
 
+/**
+ * The set-level fields analyzeSet reports (its `analysis` object), which analyzeMatchUp spreads into its own result
+ * for the set it is asked about. Listed here so that spread is visible to callers.
+ */
+export type SetAnalysisFields = {
+  isValidStandardSetOutcome?: boolean;
+  isValidTiebreakSetOutcome?: boolean;
+  sideTiebreakScoresCount?: number;
+  hasTiebreakCondition?: boolean;
+  sidePointScoresCount?: number;
+  sideGameScoresCount?: number;
+  expectTiebreakSet?: boolean;
+  isValidSetOutcome?: boolean;
+  isValidSetNumber?: boolean;
+  isDecidingSet?: boolean;
+  isTiebreakSet?: boolean;
+  leadingSide?: number;
+  isValidSet?: boolean;
+};
+
 export function analyzeSet(params) {
   const { setObject, matchUpScoringFormat } = params;
   if (!setObject) return { error: MISSING_SET_OBJECT };

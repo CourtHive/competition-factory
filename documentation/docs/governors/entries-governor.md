@@ -212,6 +212,10 @@ engine.destroyPairEntry({
 });
 ```
 
+Refused before the first write when the event would not take the individuals back (gender, category, role, or an
+unknown participant): the PAIR's entry stays, and the record is unchanged. The same holds for each pair in
+`destroyPairEntries`.
+
 **What it does:**
 
 1. Removes PAIR participant from event.entries

@@ -194,10 +194,10 @@ describe('activateFromSanctioning — supplied compliance item ids', () => {
   const compliancePolicy: SanctioningPolicy = {
     ...testPolicy,
     postEventRequirements: [
-      { itemType: 'RESULTS', description: 'Submit results', required: true, deadlineDays: 7 },
-      { itemType: 'FINANCIAL', description: 'Submit levy', required: true, deadlineDays: 30 },
+      { itemType: 'RESULTS_SUBMISSION', description: 'Submit results', required: true, deadlineDays: 7 },
+      { itemType: 'FINANCIAL_RECONCILIATION', description: 'Submit levy', required: true, deadlineDays: 30 },
     ],
-  } as SanctioningPolicy;
+  };
 
   beforeEach(() => sanctioningEngine.reset());
 

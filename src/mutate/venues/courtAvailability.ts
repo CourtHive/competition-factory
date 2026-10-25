@@ -45,7 +45,7 @@ export function modifyCourtAvailability({
   const dateResult = validDateAvailability({ dateAvailability });
   if (dateResult.error) return dateResult;
 
-  const { updatedDateAvailability, totalMergeCount } = sortAndMergeDateAvailability(dateAvailability);
+  const { updatedDateAvailability, totalMergeCount } = sortAndMergeDateAvailability(dateResult.canonicalAvailability);
   dateAvailability = updatedDateAvailability;
 
   const courtResult = findCourt({ tournamentRecord, courtId });
@@ -66,7 +66,7 @@ export function modifyCourtAvailability({
     })?.appliedPolicies;
 
     const allowModificationWhenMatchUpsScheduled =
-      force ?? appliedPolicies?.[POLICY_TYPE_SCHEDULING]?.allowDeletionWithScoresPresent?.courts;
+      force ?? appliedPolicies?.[POLICY_TYPE_SCHEDULING]?.allowModificationWhenMatchUpsScheduled?.courts;
 
     // Check each scheduled matchUp against the new availability windows.
     // Completed matchUps are historical — their schedule reflects what

@@ -9,7 +9,7 @@ type GetContextContentArgs = {
   policyDefinitions?: PolicyDefinitions;
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
-  contextProfile?: ContextProfile;
+  contextProfile?: ContextProfile | null; // null is handled as absent
   event?: Event;
 };
 export function getContextContent({

@@ -489,6 +489,70 @@ describe('exactly | INN | standard(tiebreak) — INN3X-S:6/TB7: exactly three in
   });
 });
 
+// Exactly N is a format on every root and every kind of set (CA 2026-10-25): SET3X-S:6/TB7 is INN3X-S:6/TB7
+// on the SET root, and the root changes nothing about a set (scoring specification § 3.4).
+describe('exactly | SET | standard(tiebreak) — SET3X-S:6/TB7: exactly three tie-break sets', () => {
+  const format = 'SET3X-S:6/TB7';
+  const SET = { 1: games('111111'), 2: games('222222') };
+
+  it('X: two sets won early are a lead, not a win', () => {
+    segmentConforms(format, seq(SET[1], SET[1]), {
+      sets: [
+        [6, 0],
+        [6, 0],
+      ],
+      complete: false,
+    });
+  });
+
+  it('X: once all three are played the side with more sets wins', () => {
+    segmentConforms(format, seq(SET[1], SET[1], SET[2]), {
+      sets: [
+        [6, 0],
+        [6, 0],
+        [0, 6],
+      ],
+      winningSide: 1,
+      complete: true,
+    });
+  });
+
+  it('a set takes its tie-break at six all', () => {
+    segmentConforms(format, seq(games('121212121212'), '1111111'), { sets: [[7, 6, [7, 0]]], complete: false });
+  });
+});
+
+describe('exactly | SET | standard(advantage) — SET3X-S:6: exactly three advantage sets', () => {
+  const format = 'SET3X-S:6';
+  const SET = { 1: games('111111'), 2: games('222222') };
+
+  it('X: two sets won early are a lead, not a win', () => {
+    segmentConforms(format, seq(SET[1], SET[1]), {
+      sets: [
+        [6, 0],
+        [6, 0],
+      ],
+      complete: false,
+    });
+  });
+
+  it('X: once all three are played the side with more sets wins', () => {
+    segmentConforms(format, seq(SET[1], SET[2], SET[2]), {
+      sets: [
+        [6, 0],
+        [0, 6],
+        [0, 6],
+      ],
+      winningSide: 2,
+      complete: true,
+    });
+  });
+
+  it('an advantage set has no tie-break: six all goes on until a side is two games clear', () => {
+    segmentConforms(format, games('12121212121211'), { sets: [[8, 6]], complete: false });
+  });
+});
+
 /*
  * Each case below is derived from the definition and FAILS against the engine. The expectation is the
  * definition's, kept unchanged and skipped for review; the comment records what the engine did.

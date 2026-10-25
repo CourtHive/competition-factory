@@ -9,7 +9,7 @@ A further check, `verify:ecosystem`, runs downstream consumer tests against the 
 | Step                       | Catches                                                                                                                                                                                                                                                                                                                                                         | Cost   |
 | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
 | `verify:generated`         | a generated module (enum exports/constants, engine methods, method signatures) is stale; and `check:request-shapes` — a request shape reaching for bare `any` or bare `string` where a closed union exists; and `verify:any-count` — a directory gaining `any`; and `verify:constant-names` — a test using a constant's NAME as its value                       | ~2 s   |
-| `verify:types`             | type errors anywhere in `src`; and `verify:test-types` — a test file gaining tsc errors (test files are excluded from `tsc --noEmit`); and `verify:implicit-any` — a directory gaining implicit `any`                                                                                                                                                           | ~25 s  |
+| `verify:types`             | type errors anywhere in `src`, test files included (`tsconfig.tests.json`); and `verify:implicit-any` — a directory gaining implicit `any`                                                                                                                                                                                                                      | ~25 s  |
 | `verify:lint`              | style + cognitive-complexity violations; zero-warnings rule                                                                                                                                                                                                                                                                                                     | ~5 s   |
 | `verify:exit-tenant`       | a NEW file in `src/` reaching for `matchUpStatusCodes` — the LEGACY array whose per-side exit tenant was evicted (P37); reads `sideExitProvenance` instead. Allowlisted by FILE, with a reason each, and a stale entry fails so the list ratchets down                                                                                                          | ~0 s   |
 | `verify:outcome-spec`      | outcome v2 deciding by a name its spec does not state: every `Route` id named in `outcome-pipeline.md` § 3, every refusal row `refusals.ts` raises a row of § 2 (outcome v2 executor plan G5); `--self-test` first                                                                                                                                              | ~0 s   |
@@ -50,7 +50,6 @@ The baselines live under `scripts/verify/baseline/`:
 - **`coverage-headroom.json`** — items of margin per metric before the coverage floor. A change may spend 25 by default (`--budget=N`); accept a new margin with `node scripts/verify/coverage-headroom.mjs --update-baseline`. Percentages hide how close the floor is — 95.09 % against a 95 floor was **39 statements** out of 43,284 — so this tracks the number in items.
 - **`hydrations.json`** — v1's draw hydrations and `getMatchUpsMap` builds per census arm (`calls`, `total`, `worst`); may only fall. Lower it with `PIPELINE_HYDRATIONS=1 HYDRATIONS_UPDATE=1 OUTCOME_PIPELINE=v1 TZ=UTC npx vitest run src/tests/mutations/exitPropagation/pipelineCost.test.ts`; a rise is written only with `HYDRATIONS_ACCEPT_RISE=1` as well.
 - **`any-count.json`** — `any` per directory in non-test `src`; it may only fall (`verify:any-count`, below).
-- **`tsc-test-types.json`** — tsc errors per test file; may only fall (`verify:test-types`, below).
 - **`tsc-implicit-any.json`** — implicit `any` (TS7xxx) per directory in non-test `src`; may only fall (`verify:implicit-any`, below).
 - **`tsc-hard-union.json`** — tsc errors per directory under the 8.0.0 hard `Structure`/`DrawLink` unions; may only fall (`verify:hard-union`, below).
 
@@ -164,20 +163,19 @@ sweep found three topic-priority tests and a ranking test with the same mistake.
 - `pnpm verify:constant-names` runs `--self-test` first, which proves it fires on a name and stays quiet on a
   value, a code the source uses, a comment and an allowed entry.
 
-## `verify:test-types` and `verify:implicit-any` — two tsc counts that may only go down
+## `verify:implicit-any` — a tsc count that may only go down
 
 `scripts/verify/tscRatchet.mjs`, run by `verify:types` after `tsc --noEmit`.
 
-- **`verify:test-types`** compiles `tsconfig.tests.json` (tsconfig.json with the test files put back) and
-  counts every tsc error per test file against `baseline/tsc-test-types.json`. `tsconfig.json` excludes
-  `*.test.ts`, so before this a type-level assertion in a test was never checked: measured 2026-10-07, a
-  deliberate error in `src/tests/forge/typedSignatures.test.ts` produced 0 tsc errors, and one of its cases
-  had already broken silently. The starting point was 873 errors in 124 files; a file at 0 stays at 0.
+- **`verify:test-types` (retired 2026-10-25)** held each test file's tsc errors from rising while test files
+  were excluded from the type check (a deliberate error in `src/tests/forge/typedSignatures.test.ts` produced
+  0 errors, measured 2026-10-07). It started at 873 errors in 124 files and reached 0; `check-types` and
+  `verify:types` now compile `tsconfig.tests.json`, so a test-file type error fails outright.
 - **`verify:implicit-any`** compiles `tsconfig.json` with `--noImplicitAny` and counts TS7xxx errors per
   directory against `baseline/tsc-implicit-any.json` (7,776 at the start). It closes the gap
   `verify:any-count` leaves: removing an explicit `x: any` by leaving `x` unannotated passes that check.
 
-Both follow `verify:any-count`'s rules: a rise, or a new key with errors, fails; `--update-baseline` writes
+It follows `verify:any-count`'s rules: a rise, or a new key with errors, fails; `--update-baseline` writes
 lower counts and refuses a rise unless `--accept-rise`; a tsc run that exits non-zero with no parsable
 error fails rather than reading as clean. `node scripts/verify/tscRatchet.mjs --self-test` proves the
 parsing and the rise rule.

@@ -3,6 +3,7 @@ import { removeAssignment } from '@Tests/mutations/drawDefinitions/testingUtilit
 import POLICY_SCORING_DEFAULT from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
 import POLICY_SCORING_USTA from '@Fixtures/policies/POLICY_SCORING_USTA';
 import { setSubscriptions } from '@Global/state/globalState';
+import type { PolicyDefinitions } from '@Types/factoryTypes';
 import tournamentEngine from '@Tests/engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { unique } from '@Tools/arrays';
@@ -1009,7 +1010,15 @@ test('FMLC: resetting a source while its propagated exit is still PENDING is all
 // Whether setting main R2P2 to WALKOVER propagates an exit into the consolation
 // (a consolation matchUp becomes WALKOVER) is now gated by the scoring policy's
 // propagateExitStatus, with an explicit params flag overriding it.
-function consolationHasPropagatedExit({ suffix, policyDefinitions, propagateExitStatus }) {
+function consolationHasPropagatedExit({
+  suffix,
+  policyDefinitions,
+  propagateExitStatus,
+}: {
+  policyDefinitions?: PolicyDefinitions;
+  propagateExitStatus?: boolean;
+  suffix: string;
+}) {
   const drawId = `policyGate-${suffix}`;
   mocksEngine.generateTournamentRecord({
     policyDefinitions: PRODUCED_EXIT_POLICY,

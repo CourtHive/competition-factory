@@ -1,4 +1,5 @@
 import { getAwardProfile } from '@Query/scales/getAwardProfile';
+import type { AwardProfile } from '@Types/rankingTypes';
 import tournamentEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';
 import { mocksEngine } from '../../..';
@@ -10,7 +11,7 @@ import { MISSING_POLICY_DEFINITION } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { SINGLES } from '@Constants/eventConstants';
 
-const awardProfiles = [
+const awardProfiles: AwardProfile[] = [
   /*
   {
     requireWinDefault: false,
@@ -40,7 +41,6 @@ const awardProfiles = [
   {
     eventTypes: [SINGLES],
     drawTypes: [],
-    finishingStageSequence: 1,
     finishingRound: { 1: { won: 30, lost: 15 }, 2: { won: 15 } },
   },
 ];
@@ -74,7 +74,7 @@ it('will fail without ranking point policy definition', () => {
       rankingStage: MAIN,
       flightNumber: 1,
     },
-  };
+  } as const;
 
   const { awardProfile } = getAwardProfile({ awardProfiles, ...awardCriteria });
   expect(awardProfile).not.toBeUndefined();

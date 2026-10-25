@@ -1,16 +1,16 @@
-import { captureRecord } from '@Tools/recordDiff';
 import { generatePatch } from '../../../forge/jsonPatch';
+import { captureRecord } from '@Tools/recordDiff';
 import { applyOutcomeOps } from './ops';
 
 // constants and types
+import type { DrawDefinition, Tournament } from '@Types/tournamentTypes';
+import type { OutcomeOp } from './ops';
 import {
   MODIFY_DRAW_DEFINITION,
   MODIFY_MATCHUP,
   MODIFY_POSITION_ASSIGNMENTS,
   UPDATE_INCONTEXT_MATCHUP,
 } from '@Constants/topicConstants';
-import type { DrawDefinition, Tournament } from '@Types/tournamentTypes';
-import type { OutcomeOp } from './ops';
 
 /**
  * The outcome pipeline, v2: the SHADOW APPLY (executor plan § 6 S1; F7 (a)). v2 writes nothing. In `differential`, a
@@ -18,39 +18,14 @@ import type { OutcomeOp } from './ops';
  * record v1 wrote. A difference is a divergence: either the plan missed a write or v1 made one the spec does not
  * state.
  *
- * STAMPS ARE NORMALISED until Phase C's F2 lands in v1 (debate-ruled 2026-10-24, pending CA review). v1 stamps once
- * per notice, and every top-level structure on each, so its values cannot equal F2 (i)'s:
- *  - a structure's `updatedAt` is left out entirely, presence included (a stated blind spot);
- *  - a matchUp's and the draw's `updatedAt` are compared as present or absent, not by value.
- * The values v2 writes are held to F2 (i) by `outcomeOps.test.ts`; `shadowStampExpiry.test.ts` fails once v1 stamps
- * once per call, and the normalisation comes out with it.
+ * STAMPS ARE COMPARED BY VALUE. v1 stamps each entity once per call, and only the structure holding the matchUp, as
+ * v2 does (F2 (i), CA 2026-10-19).
  */
-
-export const STAMP = '<stamped>';
 
 type Json = Record<string, unknown>;
 
-/** a record's JSON with stamps normalised as above; drawDefinition stamps by presence, structure stamps removed */
-export function normaliseStamps(record: Json): Json {
-  for (const event of (record.events as Json[] | undefined) ?? []) {
-    for (const drawDefinition of (event.drawDefinitions as Json[] | undefined) ?? []) {
-      if (drawDefinition.updatedAt) drawDefinition.updatedAt = STAMP;
-      const visit = (structure: Json) => {
-        delete structure.updatedAt;
-        for (const matchUp of (structure.matchUps as Json[] | undefined) ?? []) {
-          if (matchUp.updatedAt) matchUp.updatedAt = STAMP;
-          for (const tieMatchUp of (matchUp.tieMatchUps as Json[] | undefined) ?? [])
-            if (tieMatchUp.updatedAt) tieMatchUp.updatedAt = STAMP;
-        }
-        for (const child of (structure.structures as Json[] | undefined) ?? []) visit(child);
-      };
-      for (const structure of (drawDefinition.structures as Json[] | undefined) ?? []) visit(structure);
-    }
-  }
-  return record;
-}
-
-export type ShadowResult = { equal: true } | { equal: false; path: string; v1: string; v2: string };
+/** equal, with the shadow-applied record (what the view oracle hydrates), or the first difference */
+export type ShadowResult = { equal: true; shadow: Json } | { equal: false; path: string; v1: string; v2: string };
 
 const shown = (value: unknown) => (value === undefined ? 'absent' : JSON.stringify(value)?.slice(0, 160));
 
@@ -59,11 +34,13 @@ const shown = (value: unknown) => (value === undefined ? 'absent' : JSON.stringi
  * live record after v1. Returns the first difference, by JSON Pointer, with what each side holds there.
  */
 export function compareShadow({
+  stampedBefore,
   before,
   record,
   drawId,
   ops,
 }: {
+  stampedBefore?: Set<string>;
   record: Tournament;
   before: string;
   drawId: string;
@@ -74,13 +51,13 @@ export function compareShadow({
     .flatMap((event) => (event.drawDefinitions as Json[] | undefined) ?? [])
     .find((draw) => draw.drawId === drawId);
   if (!drawDefinition) return { equal: false, path: `/drawDefinitions/${drawId}`, v1: 'present', v2: 'not found' };
-  const applied = applyOutcomeOps(drawDefinition as unknown as DrawDefinition, ops);
+  const applied = applyOutcomeOps(drawDefinition as unknown as DrawDefinition, ops, stampedBefore);
   if (applied.error) return { equal: false, path: '(ops)', v1: 'applied', v2: applied.error };
 
-  const v1 = normaliseStamps(JSON.parse(captureRecord(record)) as Json);
-  const v2 = normaliseStamps(JSON.parse(captureRecord(shadow)) as Json);
+  const v1 = JSON.parse(captureRecord(record)) as Json;
+  const v2 = JSON.parse(captureRecord(shadow)) as Json;
   const [first] = generatePatch(v2, v1);
-  if (!first) return { equal: true };
+  if (!first) return { equal: true, shadow: v2 };
   const at = (root: Json) =>
     first.path
       .split('/')

@@ -2,6 +2,7 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { addGoesTo } from '@Query/matchUps/addGoesTo';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import { describe, expect, it } from 'vitest';
 
 // constants
@@ -47,15 +48,20 @@ describe('addGoesTo argument robustness', () => {
 
   it('derives loser edges with BOTH optional args', () => {
     const { drawDefinition } = seed();
-    const { matchUps, matchUpsMap } = getAllDrawMatchUps({ inContext: true, drawDefinition });
-    const result: any = addGoesTo({ drawDefinition, inContextDrawMatchUps: matchUps, matchUpsMap });
+    const drawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition });
+    const matchUps = defined(drawMatchUps.matchUps, 'matchUps');
+    const result: any = addGoesTo({
+      drawDefinition,
+      inContextDrawMatchUps: matchUps,
+      matchUpsMap: drawMatchUps.matchUpsMap,
+    });
     expect(result.error).toBeUndefined();
     expect(loserCount(matchUps)).toEqual(8); // the caller's own array is enriched in place
   });
 
   it('derives loser edges given the ARRAY ONLY — the combination that used to throw', () => {
     const { drawDefinition } = seed();
-    const { matchUps } = getAllDrawMatchUps({ inContext: true, drawDefinition });
+    const matchUps = defined(getAllDrawMatchUps({ inContext: true, drawDefinition }).matchUps, 'matchUps');
     expect(loserCount(matchUps)).toEqual(0);
 
     const result: any = addGoesTo({ drawDefinition, inContextDrawMatchUps: matchUps });

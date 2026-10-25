@@ -135,7 +135,7 @@ legacyMode('can add events, venues, and schedule matchUps and modify drawDefinit
       averageMatchUpMinutes: 90,
       courts: result.courts,
       startTime: '08:00',
-      endTime: ' 19:00',
+      endTime: '19:00',
       periodLength: 30,
       date: d200101,
     };
@@ -345,16 +345,18 @@ legacyMode('can add events, venues, and schedule matchUps and modify drawDefinit
 
     matchUp = matchUps.find((matchUp) => matchUp.matchUpId === matchUpId);
 
-    expect(matchUp.timeItems[0].itemType).toEqual(SCHEDULED_TIME);
-    expect(matchUp.timeItems[1].itemType).toEqual(ASSIGN_VENUE);
+    // scheduleMatchUps writes the date and the time apart (scheduling-pipeline.md § 9.9): the date first
+    expect(matchUp.timeItems[0].itemType).toEqual(SCHEDULED_DATE);
+    expect(matchUp.timeItems[1].itemType).toEqual(SCHEDULED_TIME);
     expect(matchUp.timeItems[2].itemType).toEqual(ASSIGN_VENUE);
     expect(matchUp.timeItems[3].itemType).toEqual(ASSIGN_VENUE);
-    expect(matchUp.timeItems[4].itemType).toEqual(ASSIGN_COURT);
+    expect(matchUp.timeItems[4].itemType).toEqual(ASSIGN_VENUE);
     expect(matchUp.timeItems[5].itemType).toEqual(ASSIGN_COURT);
     expect(matchUp.timeItems[6].itemType).toEqual(ASSIGN_COURT);
-    expect(matchUp.timeItems[7].itemType).toEqual(SCHEDULED_DATE);
-    expect(matchUp.timeItems[8].itemType).toEqual(SCHEDULED_TIME);
-    expect(matchUp.timeItems[9].itemType).toEqual(START_TIME);
+    expect(matchUp.timeItems[7].itemType).toEqual(ASSIGN_COURT);
+    expect(matchUp.timeItems[8].itemType).toEqual(SCHEDULED_DATE);
+    expect(matchUp.timeItems[9].itemType).toEqual(SCHEDULED_TIME);
+    expect(matchUp.timeItems[10].itemType).toEqual(START_TIME);
 
     ({ schedule } = matchUp);
     expect(schedule.courtId).toEqual(courtId);
@@ -527,7 +529,7 @@ it('adds venueId to matchUp.schedule when court is assigned', () => {
   const timingParameters = {
     averageMatchUpMinutes: 90,
     startTime: '08:00',
-    endTime: ' 19:00',
+    endTime: '19:00',
     periodLength: 30,
     courts,
     date,

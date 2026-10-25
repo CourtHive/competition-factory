@@ -1,5 +1,5 @@
-import { captureRecord } from '@Tools/recordDiff';
 import { generatePatch } from '../../../forge/jsonPatch';
+import { captureRecord } from '@Tools/recordDiff';
 
 /**
  * SETTLE TELEMETRY: what v1's settle passes cannot report through a result (outcome v2 executor plan § 2.7, § 5 Phase C).
@@ -12,7 +12,8 @@ import { generatePatch } from '../../../forge/jsonPatch';
  * census harness around each step it observes; module state, because the harness is single-threaded.
  */
 export type SettleEvent = {
-  kind: 'bound' | 'dropped-error' | 'wrote';
+  /** `predicted`: v2's has-work predicate for a pass, recorded before v1's passes run (`outcome/settleWork.ts`) */
+  kind: 'bound' | 'dropped-error' | 'wrote' | 'predicted';
   /** the loop or pass */
   site: string;
   detail?: string;

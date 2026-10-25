@@ -112,6 +112,25 @@ export function reconcileStaleExitOrigins({
   return rederived.length ? { rederived } : undefined;
 }
 
+/**
+ * THE PASS'S DETECTOR: a stale origin or a stale relay in the draw. The loop above acts on them; v2's has-work predicate
+ * (`outcome/settleWork.ts`) asks it of the working view, so the two cannot drift. An error reading a relay is work: the
+ * pass would return it.
+ */
+export function hasStaleExitOrigins({
+  inContextDrawMatchUps,
+  drawDefinition,
+  matchUpsMap,
+}: {
+  inContextDrawMatchUps?: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+}): boolean {
+  if (getStaleOrigins({ drawDefinition, matchUpsMap }).length) return true;
+  const relays = getStaleRelays({ inContextDrawMatchUps, drawDefinition, matchUpsMap });
+  return !!relays.error || !!relays.staleRelays?.length;
+}
+
 /** The sourceMatchUpIds named by a carried-exit entry which no longer describe their source. */
 function getStaleOrigins({
   drawDefinition,
@@ -168,9 +187,12 @@ type Relay = { matchUp: MatchUp; structureId: string; sourceMatchUpId: string };
  * matchUps each still holding a BYE.
  */
 function getStaleRelays({
+  inContextDrawMatchUps: given,
   drawDefinition,
   matchUpsMap,
 }: {
+  /** a hydration of this draw already taken (the working view's), so none is taken here */
+  inContextDrawMatchUps?: HydratedMatchUp[];
   drawDefinition: DrawDefinition;
   matchUpsMap: MatchUpsMap;
 }): ResultType & { staleRelays?: Relay[] } {
@@ -192,7 +214,8 @@ function getStaleRelays({
   }
   if (!candidates.length) return { staleRelays: [] };
 
-  const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
+  const inContextDrawMatchUps =
+    given ?? getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
   // a source whose links cannot be read refuses the reconciliation; it is never read as "reaches nothing"
   let refused: ResultType | undefined;
   const targetsOf = (matchUpId: string) => {

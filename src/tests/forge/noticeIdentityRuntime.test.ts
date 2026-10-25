@@ -169,7 +169,7 @@ describe('notice identity — runtime conformance', () => {
 
   it('every ledger entry names a real topic', () => {
     // A ledger keyed to a renamed topic silently excuses nothing — or worse, reads as coverage.
-    const values = new Set(Object.values(topicConstants).filter((v) => typeof v === 'string'));
+    const values = new Set<string>(Object.values(topicConstants).filter((v) => typeof v === 'string'));
     expect(Object.keys(GENERATION_KNOWN_GAPS).filter((k) => !values.has(k))).toEqual([]);
   });
 });

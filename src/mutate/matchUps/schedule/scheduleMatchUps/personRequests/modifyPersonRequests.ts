@@ -1,5 +1,6 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getPersonRequests } from '@Query/matchUps/scheduling/getPersonRequests';
+import { canonicalRequest, ClockRequest } from './canonicalRequest';
 import { mergePersonRequests } from './mergePersonRequests';
 import { savePersonRequests } from './savePersonRequests';
 
@@ -18,24 +19,27 @@ export function modifyPersonRequests(params) {
   ]);
   if (paramsCheck.error) return paramsCheck;
 
-  const requestIds = requests.map(({ requestId }) => requestId).filter(Boolean);
+  // a request carrying a date or a time that is not one refuses the call before anything is changed (§ 9.9)
+  const canonical = (requests as unknown[]).map(canonicalRequest);
+  if (canonical.some(({ valid }) => !valid)) return { error: INVALID_VALUES, info: 'invalid date or time' };
+  const canonicalRequests = canonical.map(({ request }) => request as ClockRequest);
+
+  const requestIds = canonicalRequests.map(({ requestId }) => requestId).filter(Boolean);
 
   const { personRequests } = getPersonRequests({ tournamentRecords });
   const modifyRequests = (personId) => {
     if (personRequests) {
-      personRequests[personId] = personRequests[personId]
-        .map((request) => {
-          // if requestId not in requestIds then return unmodified
-          if (!requestIds.includes(request.requestId)) return request;
+      personRequests[personId] = personRequests[personId].flatMap((request) => {
+        // if requestId not in requestIds then return unmodified
+        if (!requestIds.includes(request.requestId)) return [request];
 
-          // find the updatedRequest
-          const modification = requests.find((updatedRequest) => updatedRequest.requestId === request.requestId);
-          // FEATURE: returning an updatedRequest without a requestType will remove it
-          if (!modification.requestType) return undefined;
+        // find the updatedRequest
+        const modification = canonicalRequests.find((updatedRequest) => updatedRequest.requestId === request.requestId);
+        // FEATURE: returning an updatedRequest without a requestType will remove it
+        if (!modification?.requestType) return [];
 
-          return Object.assign(request, modification);
-        })
-        .filter(Boolean);
+        return [Object.assign(request, modification)];
+      });
     }
   };
   if (personId && personRequests?.[personId]) {
@@ -46,7 +50,7 @@ export function modifyPersonRequests(params) {
     }
   }
 
-  const newRequests = requests.filter((request) => !request.requestId);
+  const newRequests = canonicalRequests.filter((request) => !request.requestId);
   if (newRequests.length) {
     mergePersonRequests({ personRequests, personId, requests: newRequests });
   }

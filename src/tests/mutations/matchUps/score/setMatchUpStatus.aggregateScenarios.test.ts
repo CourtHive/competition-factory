@@ -1,6 +1,8 @@
 import { COMPLETED } from '@Constants/tournamentConstants';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
+import type { ResultType } from '@Types/factoryTypes';
+import { defined } from '@Tests/helpers/defined';
 import { expect, it } from 'vitest';
 
 // constants
@@ -21,7 +23,7 @@ function generateMatchUpOutcome(params: { matchUpFormat: string }) {
   });
 
   tournamentEngine.setState(tournamentRecord);
-  const { matchUps } = tournamentEngine.allTournamentMatchUps();
+  const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
 
   return {
     tournamentRecord,
@@ -79,7 +81,7 @@ it('correctly calculates aggregate winner for SET3XA-S:T10 with uneven scores (3
     winningSide: 1, // Should be side 1 based on aggregate (30 > 2)
   };
 
-  const setStatusResult = tournamentEngine.setMatchUpStatus({
+  const setStatusResult: ResultType = tournamentEngine.setMatchUpStatus({
     matchUpId: matchUp.matchUpId,
     outcome,
     drawId,
@@ -87,18 +89,22 @@ it('correctly calculates aggregate winner for SET3XA-S:T10 with uneven scores (3
 
   expect(setStatusResult.success).toBe(true);
 
-  const { matchUps: updatedMatchUps } = tournamentEngine.allTournamentMatchUps({
-    matchUpFilters: { matchUpIds: [matchUp.matchUpId] },
-  });
+  const updatedMatchUps = defined(
+    tournamentEngine.allTournamentMatchUps({
+      matchUpFilters: { matchUpIds: [matchUp.matchUpId] },
+    }).matchUps,
+    'updatedMatchUps',
+  );
 
   const updatedMatchUp = updatedMatchUps[0];
+  const sets = defined(updatedMatchUp.score?.sets, 'score.sets');
 
   // Verify aggregate calculation: side1 = 30, side2 = 2, so side1 wins
   expect(updatedMatchUp.winningSide).toBe(1);
   expect(updatedMatchUp.matchUpStatus).toBe('COMPLETED');
 
-  const aggregateSide1 = updatedMatchUp.score.sets.reduce((sum, set) => sum + (set.side1Score || 0), 0);
-  const aggregateSide2 = updatedMatchUp.score.sets.reduce((sum, set) => sum + (set.side2Score || 0), 0);
+  const aggregateSide1 = sets.reduce((sum, set) => sum + (set.side1Score || 0), 0);
+  const aggregateSide2 = sets.reduce((sum, set) => sum + (set.side2Score || 0), 0);
 
   expect(aggregateSide1).toBe(30);
   expect(aggregateSide2).toBe(2);

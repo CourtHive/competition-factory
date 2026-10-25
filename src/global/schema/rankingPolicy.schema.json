@@ -93,6 +93,38 @@
           "description": "Points by finishing position. Key = max finishingPositionRange value (1=champion, 2=finalist, 4=semifinalist, etc.). Value is a PositionValue.",
           "additionalProperties": { "$ref": "#/definitions/PositionValue" }
         },
+        "tieWinPoints": {
+          "type": "object",
+          "description": "Team events: points for a player's own tie win, by the tie's round (the loser's position range: '2' final, '3-4' semifinal, '5-8' quarterfinal) and line (singles/doubles by collectionPosition).",
+          "properties": {
+            "rounds": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "singles": { "type": "array", "items": { "type": "number" } },
+                  "doubles": { "type": "array", "items": { "type": "number" } }
+                },
+                "additionalProperties": false
+              }
+            },
+            "bestOnly": {
+              "type": "boolean",
+              "description": "Each player keeps only their single best tie win in the event"
+            }
+          },
+          "required": ["rounds"],
+          "additionalProperties": false
+        },
+        "luckyLoserRoundRobin": {
+          "type": "boolean",
+          "description": "Round robin to elimination: a playoff participant who did not win their group earns playoff points only by winning a playoff match; otherwise their group place scores."
+        },
+        "groupOrderPoints": {
+          "type": "object",
+          "description": "Points by place within a round robin group (1 = group winner), read from the round robin participation. A value may require a win.",
+          "additionalProperties": { "$ref": "#/definitions/PositionValue" }
+        },
         "finishingRound": {
           "type": "object",
           "description": "Alternative to finishingPositionRanges: awards based on round number with separate won/lost values.",
@@ -541,6 +573,17 @@
           "description": "Which PointAward components to sum. If omitted, sums total points."
         },
         "bestOfCount": { "type": "number", "description": "How many best results to count (0 or undefined = all)" },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Multiplier on the bucket total after selection (default 1; ITF Junior doubles: 0.25)"
+        },
+        "bestPerSeries": {
+          "type": "object",
+          "description": "Count only the best result from each tournament series (tournamentSeriesId) at these levels (all when omitted)",
+          "properties": { "levels": { "type": "array", "items": { "type": "number" } } },
+          "additionalProperties": false
+        },
         "maxResultsPerLevel": { "type": "object", "additionalProperties": { "type": "number" } },
         "minResults": { "type": "number", "description": "Minimum results in this bucket required" },
         "levels": {
@@ -765,12 +808,26 @@
 
     "PointComponent": {
       "type": "string",
-      "enum": ["positionPoints", "perWinPoints", "bonusPoints", "qualityWinPoints"]
+      "enum": ["positionPoints", "perWinPoints", "bonusPoints", "qualityWinPoints", "linePoints"]
     },
 
     "TiebreakCriterion": {
-      "type": "string",
-      "enum": ["headToHead", "mostWins", "highestSingleResult", "mostCountingResults", "rating"]
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": ["headToHead", "mostWins", "highestSingleResult", "mostCountingResults", "rating"]
+        },
+        {
+          "type": "object",
+          "description": "Countback by level: compare the points of counting results at each level in turn, in the order listed",
+          "properties": {
+            "levelPoints": { "type": "array", "items": { "type": "number" }, "minItems": 1 },
+            "eventTypes": { "type": "array", "items": { "$ref": "#/definitions/EventType" } }
+          },
+          "required": ["levelPoints"],
+          "additionalProperties": false
+        }
+      ]
     }
   }
 }

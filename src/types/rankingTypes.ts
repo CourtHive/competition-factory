@@ -176,6 +176,28 @@ export interface AwardProfile extends AwardProfileScope {
   /** Points by finishing position (key = max finishingPositionRange value) */
   finishingPositionRanges?: Record<number, PositionValue>;
 
+  /**
+   * Points by place within a round robin group (1 = group winner), read from the round robin participation. For a
+   * round robin to elimination format, where the playoffs carry the finishing positions but the group places earn
+   * points of their own (ITF Juniors J60/J30: 2nd place 5, 3rd and 4th 2 with a match won). A value may require a
+   * win (`{ value: 2, requireWin: true }`).
+   */
+  groupOrderPoints?: Record<number, PositionValue>;
+
+  /**
+   * Round robin to elimination: a participant placed into the playoff without winning their group (a Lucky Loser
+   * Round Robin, filling a place a group winner could not take) earns playoff points only by winning a playoff match;
+   * if they lose their first, their group place scores (`groupOrderPoints`). ITF Juniors: an LLRR who loses the
+   * quarterfinal earns 2nd place points, and semifinal points or better by winning it.
+   */
+  luckyLoserRoundRobin?: boolean;
+
+  /**
+   * Team events: points for a player's own match win within a tie, by the tie's round and the line won. ITF Juniors
+   * International Team Competitions: a #1 singles, #2 singles or doubles win in the final, semifinal or quarterfinal.
+   */
+  tieWinPoints?: TieWinPoints;
+
   /** Alternative: awards based on finishing round won/lost */
   finishingRound?: Record<number, { won?: PositionValue; lost?: PositionValue }>;
 
@@ -232,8 +254,11 @@ export type PositionValue = number | PositionValueObject | PositionValueObject[]
 export interface PositionValueObject {
   value?: number;
 
-  /** Level-keyed lookup. Record<level, value> or array indexed by level-1. */
-  level?: Record<number, number | FlightValues> | (number | FlightValues)[];
+  /**
+   * Level-keyed lookup. Record<level, value> or array indexed by level-1. A level's value may also be a list of
+   * per-flight entries (`[{ flight: 1, value: 300 }, { f: 2, v: 195 }]`), which getAwardPoints matches by flightNumber.
+   */
+  level?: Record<number, number | FlightValues | FlightValueEntry[]> | (number | FlightValues | FlightValueEntry[])[];
 
   /** Flight-keyed lookup. Array indexed by flightNumber-1. */
   flights?: number[];
@@ -256,6 +281,14 @@ export interface PositionValueObject {
   /** For finishingRound: separate won/lost values */
   won?: number | PositionValueObject;
   lost?: number | PositionValueObject;
+}
+
+/** One flight's points in a level's list form. `f` and `v` are the short forms getAwardPoints also reads. */
+export interface FlightValueEntry {
+  flight?: number;
+  value?: number;
+  f?: number;
+  v?: number;
 }
 
 /** Flight-keyed values (typically arrays indexed by flightNumber-1) */
@@ -281,6 +314,20 @@ export interface PerWinPointsDef {
 
   /** Max line positions that earn points */
   limit?: number;
+}
+
+/**
+ * Points for a player's own win in a team tie (AwardProfile.tieWinPoints). A tie's round is keyed by the team draw
+ * positions its loser takes, as a range: '2' = final, '3-4' = semifinal, '5-8' = quarterfinal. The range is exact, so
+ * a classification tie (a loser taking '7-8') is not a quarterfinal, and a round without a key earns nothing. Within a
+ * round, `singles` and `doubles` are indexed by the tie matchUp's collectionPosition (index 0 = position 1). The win
+ * counts whether or not the team won the tie, and the award goes to each player of the winning side.
+ */
+export interface TieWinPoints {
+  rounds: Record<string, { singles?: number[]; doubles?: number[] }>;
+
+  /** Each player keeps only their single best tie win in the event (default: every win is an award) */
+  bestOnly?: boolean;
 }
 
 /** Line-position-keyed values for team events */
@@ -559,6 +606,20 @@ export interface CountingBucket {
   /** How many best results to count from this bucket (0 or undefined = all) */
   bestOfCount?: number;
 
+  /**
+   * Multiplier applied to the bucket's total after its counting results are selected (default 1). The ITF Junior
+   * combined ranking counts one quarter of the six best doubles results: `weight: 0.25`. The awards keep their own
+   * points; `bucketTotal` and the ranking total carry the weighted value.
+   */
+  weight?: number;
+
+  /**
+   * Count only the best result from each tournament series (Tournament.tournamentSeriesId) within the window: the
+   * ITF Junior "best result from up to two editions of the same J100 or higher graded tournament" (Reg. 10). Applies
+   * to awards at `levels` (all levels when omitted); an award without a series is unaffected. The others are dropped.
+   */
+  bestPerSeries?: { levels?: number[] };
+
   /** Max results from a single tournament level within this bucket */
   maxResultsPerLevel?: Record<number, number>;
 
@@ -606,11 +667,27 @@ export interface MandatoryRule {
  * Do not, however, mix `'points'` with the granular components in one bucket:
  * there it would count the same award's total twice.
  */
-export type PointComponent = 'points' | 'positionPoints' | 'perWinPoints' | 'bonusPoints' | 'qualityWinPoints';
+export type PointComponent =
+  'points' | 'positionPoints' | 'perWinPoints' | 'bonusPoints' | 'qualityWinPoints' | 'linePoints';
 
 export type DoublesAttribution = 'fullToEach' | 'splitEven' | 'teamOnly';
 
-export type TiebreakCriterion = 'headToHead' | 'mostWins' | 'highestSingleResult' | 'mostCountingResults' | 'rating';
+export type TiebreakCriterion =
+  'headToHead' | 'mostWins' | 'highestSingleResult' | 'mostCountingResults' | 'rating' | LevelPointsCountback;
+
+/**
+ * A countback by level: tied entries are separated by the points of their counting results at each level in turn,
+ * in the order listed, until one has more. The ITF Junior countback (Reg. 11) is Grand Slam singles, then singles
+ * at each grade from J500 down, then the same for doubles:
+ * `{ levelPoints: [1, 4, 5, 6, 7, 8, 9], eventTypes: [SINGLES] }`, then the same with `[DOUBLES]`.
+ */
+export interface LevelPointsCountback {
+  /** The levels to compare, one at a time, in order */
+  levelPoints: number[];
+
+  /** Only counting results of these eventTypes (undefined = all) */
+  eventTypes?: EventTypeUnion[];
+}
 
 // ─── Point Award Output ──────────────────────────────────────────────
 
@@ -624,6 +701,8 @@ export interface PointAward {
 
   // Context
   tournamentId?: string;
+  /** The tournament across its editions (Tournament.tournamentSeriesId), when the record carries one */
+  tournamentSeriesId?: string;
   eventId?: string;
   drawId: string;
   structureId?: string;

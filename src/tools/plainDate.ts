@@ -15,7 +15,7 @@
  * needs an offset or an absolute moment — `timeZone` / `zonedDateTime`.
  */
 
-import { dateValidation, validDateString } from '@Validators/regex';
+import { canonicalDate } from '@Tools/canonicalClock';
 import { isDate } from '@Tools/dateTimeInternals';
 import { now } from '@Tools/clock';
 
@@ -28,13 +28,18 @@ export function isISODateString(dateString) {
   return re.test(dateString);
 }
 
+/** Whether a value is a real calendar date, `YYYY-MM-DD` or an ISO date-time's date (`canonicalClock.ts`). */
 export function isValidDateString(scheduleDate) {
-  return isISODateString(scheduleDate) || validDateString.test(scheduleDate);
+  return canonicalDate(scheduleDate) !== undefined;
 }
 
-/** The calendar-day part of an ISO string, discarding any time and any zone designator. */
+/**
+ * The calendar day of a `YYYY-MM-DD` date or an ISO date-time, discarding any time and any zone designator; '' for
+ * anything else: a day not on the calendar (`2026-02-30`), a date and time separated by a space, or another ISO shape
+ * (`2026-W10`, `2026-061`, `20260302`, `2026-03`).
+ */
 export function extractDate(dateString): string {
-  return isISODateString(dateString) || dateValidation.test(dateString) ? dateString.split('T')[0] : '';
+  return canonicalDate(dateString) ?? '';
 }
 
 export function formatDate(date?, separator = '-', format = 'YMD'): string {
@@ -142,8 +147,17 @@ export function weekdays(date: any = now(), firstDayOfWeek = 0): string[] {
   }
 }
 
-/** Whether two values fall on the same calendar day, in the runtime's local zone. */
+/**
+ * Whether two values are on the same calendar day (scheduling-pipeline.md § 3.8 rule 7). A date or date-time string is
+ * read as written, its time and any zone designator discarded, so no runtime zone enters: `2026-03-02` and
+ * `2026-03-02T20:00-05:00` are the same day everywhere. A string that is not a date is the same day as nothing. Two
+ * `Date` objects are compared in the runtime's zone, as before.
+ */
 export function sameDay(date1, date2) {
+  if (typeof date1 === 'string' || typeof date2 === 'string') {
+    const day = canonicalDate(date1);
+    return day !== undefined && day === canonicalDate(date2);
+  }
   const d1 = new Date(date1);
   const d2 = new Date(date2);
   return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();

@@ -1,6 +1,7 @@
 import * as queryGovernor from '@Assemblies/governors/queryGovernor';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import { expect, it, describe } from 'vitest';
 
 // The transforms must be reachable both on the engine (client: getScheduleProjection injects the
@@ -49,7 +50,9 @@ describe('facility schedule governor/engine exposure', () => {
     const viaGovernor = queryGovernor.getScheduleProjection({ tournamentRecord: record, venueIds: ['v1'] });
     expect(viaGovernor.scheduleCells).toHaveLength(1);
 
-    const grid = queryGovernor.mergeFacilitySchedule({ projections: [viaGovernor.scheduleCells] });
+    const grid = queryGovernor.mergeFacilitySchedule({
+      projections: [defined(viaGovernor.scheduleCells, 'scheduleCells')],
+    });
     expect(grid.venues.v1.courts[courtId].dates['2025-01-01']).toHaveLength(1);
     expect(grid.conflicts).toEqual([]);
   });

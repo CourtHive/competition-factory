@@ -31,8 +31,8 @@ const seedingsDenied = POLICY_PRIVACY_DEFAULT;
 
 function seedingsPermitted() {
   const policy = structuredClone(POLICY_PRIVACY_DEFAULT);
-  policy[POLICY_TYPE_PARTICIPANT].participant.seedings = true;
-  policy[POLICY_TYPE_PARTICIPANT].participant.individualParticipants.seedings = true;
+  Object.assign(policy[POLICY_TYPE_PARTICIPANT].participant, { seedings: true });
+  Object.assign(policy[POLICY_TYPE_PARTICIPANT].participant.individualParticipants, { seedings: true });
   return policy;
 }
 

@@ -1,5 +1,8 @@
 import { getParticipantReachability, ParticipantReachability } from '../scheduleMatchUps/getParticipantReachability';
 import { getSchedulingProfile, schedulingProfileRepairRefusal } from '@Mutate/tournaments/schedulingProfile';
+import { EventBookingTimings, getEventBookingTimings } from '@Generators/scheduling/utils/generateBookings';
+import { timedMatchUpMinutes } from '@Mutate/matchUps/schedule/schedulers/processAlreadyScheduledMatchUps';
+import { DrawPlayedOrderFacts, drawPlayedOrderFacts } from '../scheduleItems/playedOrder';
 import { getContainedStructures } from '@Query/drawDefinition/getContainedStructures';
 import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import { getPersonRequests } from '@Query/matchUps/scheduling/getPersonRequests';
@@ -11,6 +14,7 @@ import { extractDate, isValidDateString } from '@Tools/dateTime';
 import { isConvertableInteger, isPowerOf2 } from '@Tools/math';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { filterMatchUps } from '@Query/filterMatchUps';
+import { addDaysToDate } from '@Tools/civilDateTime';
 import { findEvent } from '@Acquire/findEvent';
 
 // constants and types
@@ -65,26 +69,47 @@ export type RoundPlan = {
 export type VenuePlan = { venueId: string; rounds: RoundPlan[] };
 export type DatePlan = { scheduleDate: string; venues: VenuePlan[] };
 
-export type SchedulingView = {
-  tournamentRecords: { [tournamentId: string]: Tournament };
-  /** the profile as validated, and what validation changed and found (spec § 2) */
-  schedulingProfile: DateProfile[];
-  schedulingProfileModifications?: number;
-  schedulingProfileIssues: string[];
-  /** the profile's own date objects for the dates planned, in order */
-  dateSchedulingProfiles: DateProfile[];
+/**
+ * What the PLANNER decides from, and all it reads: plain data resolved once from the records, so the plan is a function
+ * of this alone (it can be built from a literal, or from a view a bug report attached). The one non-JSON member is
+ * `reachability.upstream`, a Set per matchUp on the day-load hot path; `viewCodec.ts` carries it as an array.
+ */
+export type PlanningView = {
   matchUpDependencies: ReturnType<typeof getMatchUpDependencies>['matchUpDependencies'];
   dailyLimitOverrides: ReturnType<typeof getMatchUpDailyLimits>['dailyLimitOverrides'];
   matchUpDailyLimits: ReturnType<typeof getMatchUpDailyLimits>['matchUpDailyLimits'];
   personRequests: ReturnType<typeof getPersonRequests>['personRequests'];
   /** the matchUps as hydrated for scheduling, in hydration order (the timed scheduler's own `matchUps`) */
   hydrated: HydratedMatchUp[];
-  matchUps: Map<string, HydratedMatchUp>;
   reachability: ParticipantReachability;
   /** the courts the call may use: every court, enabled or not, narrowed to `courtIds` when the call names any */
   courts: HydratedCourt[];
-  minutes: Map<string, Minutes>;
+  /** per planned date, the courts available that day (disabled venues and courts left out), which the slots are cut
+   * from */
+  dateCourts: { [scheduleDate: string]: HydratedCourt[] };
+  /** every event's type and scheduling-policy timing: what an existing booking's length is read from */
+  eventTimings: EventBookingTimings;
+  /** the matchUps already timed on a planned date, their own minutes (format and event): their recovery holds their
+   * participants */
+  timedMinutes: { [matchUpId: string]: Minutes };
+  /** per draw anyone has played in, its stored matchUps as the played order reads them */
+  playedOrderFacts: { [drawId: string]: DrawPlayedOrderFacts };
   dates: DatePlan[];
+};
+
+/**
+ * The view a call builds: the planner's, plus what only the entry and the write side read: the profile itself, the
+ * records, and the matchUps by id.
+ */
+export type SchedulingView = PlanningView & {
+  /** the profile as validated, and what validation changed and found (spec § 2) */
+  schedulingProfile: DateProfile[];
+  schedulingProfileModifications?: number;
+  schedulingProfileIssues: string[];
+  /** the profile's own date objects for the dates planned, in order */
+  dateSchedulingProfiles: DateProfile[];
+  tournamentRecords: { [tournamentId: string]: Tournament };
+  matchUps: Map<string, HydratedMatchUp>;
 };
 
 type BuildSchedulingViewArgs = {
@@ -216,7 +241,6 @@ export function buildSchedulingView({
     matchUp.matchUpStatus !== BYE &&
     (!matchUp.matchUpStatus || !completedMatchUpStatuses.includes(matchUp.matchUpStatus));
 
-  const minutes = new Map<string, Minutes>();
   const dates: DatePlan[] = dateProfiles.map((dateProfile) => {
     // a matchUp belongs to the first venue that profiles it on the date
     const claimed = new Set<string>();
@@ -239,7 +263,6 @@ export function buildSchedulingView({
             return { ...unscheduled, noFormatMatchUpIds };
           }
           const profiledMatchUpIds = inRound.filter(schedulable).map(({ matchUpId }) => matchUpId);
-          for (const matchUpId of profiledMatchUpIds) minutes.set(matchUpId, roundTiming);
           const matchUpIds = profiledMatchUpIds.filter((matchUpId) => !claimed.has(matchUpId));
           matchUpIds.forEach((matchUpId) => claimed.add(matchUpId));
           return { round, matchUpIds, profiledMatchUpIds, minutes: roundTiming, periodLength: roundPeriodLength };
@@ -253,6 +276,12 @@ export function buildSchedulingView({
   const courts = Array.isArray(courtIds) ? allCourts.filter(({ courtId }) => courtIds.includes(courtId)) : allCourts;
   const { matchUpDailyLimits, dailyLimitOverrides } = getMatchUpDailyLimits({ tournamentRecords });
   const { personRequests } = getPersonRequests({ requestType: DO_NOT_SCHEDULE, tournamentRecords });
+  const dateCourts = Object.fromEntries(
+    dates.map(({ scheduleDate }) => [
+      scheduleDate,
+      getVenuesAndCourts({ dates: [scheduleDate], ignoreDisabled: true, tournamentRecords }).courts ?? [],
+    ]),
+  );
 
   return {
     matchUps: new Map(hydrated.map((matchUp) => [matchUp.matchUpId, matchUp])),
@@ -265,10 +294,53 @@ export function buildSchedulingView({
     tournamentRecords,
     schedulingProfile,
     personRequests,
+    timedMinutes: timedMinutesOf(hydrated, dates, tournamentRecords),
+    playedOrderFacts: playedOrderFactsOf(tournamentRecords),
+    eventTimings: getEventBookingTimings(tournamentRecords),
     reachability,
+    dateCourts,
     hydrated,
-    minutes,
     courts,
     dates,
   };
+}
+
+/**
+ * The minutes of every matchUp already timed on a planned date or on the day before one, from its own format and event:
+ * a recovery on the day before that runs past midnight carries into the planned date (§ 9.8)
+ */
+function timedMinutesOf(
+  hydrated: HydratedMatchUp[],
+  dates: DatePlan[],
+  tournamentRecords: { [tournamentId: string]: Tournament },
+) {
+  const planned = new Set(
+    dates.flatMap(({ scheduleDate }) => [scheduleDate, addDaysToDate(scheduleDate, -1) ?? scheduleDate]),
+  );
+  const memo = new Map<string, Minutes | undefined>();
+  const timedMinutes: PlanningView['timedMinutes'] = {};
+  for (const matchUp of hydrated) {
+    const { scheduledDate, scheduledTime } = matchUp.schedule ?? {};
+    if (!scheduledTime || !planned.has(extractDate(scheduledDate))) continue;
+    const minutes = timedMatchUpMinutes({ tournamentRecords, matchUp, memo });
+    if (minutes) {
+      const { averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes } = minutes;
+      timedMinutes[matchUp.matchUpId] = { averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes };
+    }
+  }
+  return timedMinutes;
+}
+
+/** the played order's stored facts for every draw anyone has played in; a draw nobody has played in imposes nothing */
+function playedOrderFactsOf(tournamentRecords: { [tournamentId: string]: Tournament }) {
+  const facts: PlanningView['playedOrderFacts'] = {};
+  for (const tournamentRecord of Object.values(tournamentRecords)) {
+    for (const event of tournamentRecord.events ?? []) {
+      for (const drawDefinition of event.drawDefinitions ?? []) {
+        const drawFacts = drawPlayedOrderFacts(drawDefinition);
+        if (drawFacts) facts[drawDefinition.drawId] = drawFacts;
+      }
+    }
+  }
+  return facts;
 }

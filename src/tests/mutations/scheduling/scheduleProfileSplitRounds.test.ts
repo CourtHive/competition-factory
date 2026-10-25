@@ -190,7 +190,7 @@ it('Can split rounds across multiple venues', () => {
 
   expect(Object.keys(result.schedulerResult.matchUpScheduleTimes).length).toEqual(24);
   expect(result.schedulerResult.skippedScheduleTimes[startDate].second.length).toEqual(0);
-  expect(result.schedulerResult.scheduleTimesRemaining[startDate].first.length).toEqual(14);
+  expect(result.schedulerResult.scheduleTimesRemaining[startDate].first.length).toEqual(15);
   expect(result.schedulerResult.scheduleTimesRemaining[startDate].second.length).toEqual(7);
 });
 

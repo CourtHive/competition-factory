@@ -73,13 +73,25 @@ The field is **optional** — policies that don't declare it produce awards with
 `pointsAuthority: undefined`, and downstream consumers (e.g. courthive-rankings)
 default such rows to `'UNSPECIFIED'`. The published CourtHive fixtures declare:
 
-| Policy                             | `pointsAuthority` |
-| ---------------------------------- | ----------------- |
-| `POLICY_RANKING_POINTS_ATP`        | `ATP`             |
-| `POLICY_RANKING_POINTS_WTA`        | `WTA`             |
-| `POLICY_RANKING_POINTS_ITF_WTT`    | `ITF`             |
-| `POLICY_RANKING_POINTS_ITF_JUNIOR` | `ITF_JUNIOR`      |
-| `POLICY_RANKING_POINTS_BASIC`      | _(unset)_         |
+| Policy                                  | `pointsAuthority` |
+| --------------------------------------- | ----------------- |
+| `POLICY_RANKING_POINTS_ATP`             | `ATP`             |
+| `POLICY_RANKING_POINTS_WTA`             | `WTA`             |
+| `POLICY_RANKING_POINTS_ITF_WTT`         | `ITF`             |
+| `POLICY_RANKING_POINTS_ITF_JUNIOR`      | `ITF_JUNIOR`      |
+| `POLICY_RANKING_POINTS_ITF_JUNIOR_2025` | `ITF_JUNIOR`      |
+| `POLICY_RANKING_POINTS_BASIC`           | _(unset)_         |
+
+`POLICY_RANKING_POINTS_ITF_JUNIOR` encodes the 2026 ITF World Tennis Tour Juniors Regulations (Reg. 10 and 31):
+the six best singles results plus one quarter of the six best doubles results (the Doubles bucket's
+[`weight`](/docs/scale-engine/aggregation#weight)), with no main draw points until a round is won, round robin group places scored with
+[`groupOrderPoints`](#round-robin-group-places), and ties separated by the Reg. 11 countback (a
+[`levelPoints`](/docs/scale-engine/aggregation#levelpoints-countback) tiebreak).
+`POLICY_RANKING_POINTS_ITF_JUNIOR_2025` keeps the 2025 tables, which differ only in the ITF Junior Finals; use it to
+score 2025 results as they were awarded. Both count only the best result from up to two editions of the same
+J100-or-higher tournament (Reg. 10) with [`bestPerSeries`](/docs/scale-engine/aggregation#bestperseries), matching
+editions by `Tournament.tournamentSeriesId`. International Team Competitions (level 3) are scored with
+[`tieWinPoints`](#team-tie-wins), and a player's one ITC result counts among their six best singles results.
 
 The vocabulary intentionally aligns with `TierClassification.system` so a
 tournament's tier-system (`'ATP'`, `'ITF_JUNIOR'`, `'PPA'`, …) lines up with
@@ -264,6 +276,55 @@ awardProfiles: [
 > This is a change: the singular previously scored zero, so a profile narrowed by
 > `drawSize` tied with a catch-all and the tie fell to declaration order. A policy that
 > relied on losing that tie now selects the narrower profile instead.
+
+## Round Robin Group Places
+
+In a round robin to elimination draw the playoffs carry the finishing positions, but a group place can earn points
+of its own. `groupOrderPoints` is keyed by the place within the group (1 = group winner) and read from the round
+robin participation, whatever `finishingPositionPoints.participationOrders` says. A value may require a match won.
+The 2026 ITF Junior J60/J30 format:
+
+```js
+{
+  drawTypes: [ROUND_ROBIN_WITH_PLAYOFF],
+  finishingPositionPoints: { participationOrders: [2] }, // the playoff, from the quarterfinals
+  finishingPositionRanges: { 1: 60, 2: 36, 4: 18, 8: 10 },
+  groupOrderPoints: {
+    2: 5,
+    3: { value: 2, requireWin: true },
+    4: { value: 2, requireWin: true },
+  },
+}
+```
+
+A participant who earns points in more than one participation keeps the larger award, so a group winner is scored by
+the playoff. A group place is read only from a finished group (`groupOrder`, never a provisional order).
+
+`luckyLoserRoundRobin: true` covers a Lucky Loser Round Robin: a group runner-up placed into the playoff in place of a
+group winner. They earn playoff points only by winning a playoff match; if they lose their first, their group place
+scores instead. The ITF Juniors rule: an LLRR who loses the quarterfinal earns 2nd place points, not quarterfinal points.
+
+## Team Tie Wins
+
+`tieWinPoints` scores a player's own match win inside a team tie, by the tie's round and the line won, whether or not
+the team won the tie. A round is keyed by the team draw positions the tie's loser takes, as an exact range, so a
+classification tie for 5th–8th (`'7-8'`) is not a quarterfinal (`'5-8'`). `singles` and `doubles` are indexed by the
+line's `collectionPosition`. The awards carry `linePoints`. The ITF Junior International Team Competitions:
+
+```js
+{
+  levels: [3],
+  eventTypes: [TEAM_EVENT],
+  tieWinPoints: {
+    bestOnly: true, // one result per player: their best
+    rounds: {
+      '2': { singles: [95, 75], doubles: [75] }, // final: #1 singles, #2 singles, doubles
+      '3-4': { singles: [75, 50], doubles: [50] }, // semifinal
+      '5-8': { singles: [50, 20], doubles: [20] }, // quarterfinal
+    },
+  },
+}
+```
 
 ## Position Value Resolution
 

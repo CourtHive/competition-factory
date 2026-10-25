@@ -5,8 +5,6 @@
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "declaration": true,
-    "downlevelIteration": true,
-    "ignoreDeprecations": "6.0",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "importHelpers": true,
@@ -24,7 +22,6 @@
     "rootDir": ".",
     "sourceMap": false,
     "strict": true,
-    "baseUrl": "./",
     "paths": {
       "@Generators/*": ["./src/assemblies/generators/*"],
       "@Engines/*": ["./src/tests/engines/*"],

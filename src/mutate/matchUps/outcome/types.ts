@@ -61,8 +61,14 @@ export type Refusal = {
 /** what the refusal function may ask of the draw; built once per call by `buildOutcomeView` */
 export type OutcomeView = {
   hasDrawDefinition: boolean;
-  /** the one hydration the view was built from: another view of the same draw in the same call reuses it */
+  /**
+   * the draw the view decides on: the structural index (§ 3.1.1), or for a draw it does not cover yet (TEAM) the one
+   * hydration; another view of the same draw in the same call reuses it. An index entry shares nested objects with the
+   * stored matchUp, so it is read before the call writes, never after.
+   */
   inContextDrawMatchUps?: HydratedMatchUp[];
+  /** `inContextDrawMatchUps` is the structural index, not a hydration */
+  structural?: boolean;
   /** the call's `matchUpFormat` parses (true when none was given) */
   formatRecognized: boolean;
   drawType?: string;
@@ -215,7 +221,7 @@ export type Route =
   | 'winner' // attemptToSetWinningSide: write the result, then direct
   | 'line-score' // a line of a dual that is being rescored: write the score, the dual recomputes
   | 'remove-directed' // a score or status without a winner over a decided matchUp: take the direction back
-  | 'noop' // already in the requested double exit
+  | 'noop' // already in the requested double exit, or a clear of a BYE: nothing changes
   | 'only-score' // a winner exists and the status is directing: write the score
   | 'completed-to-double-exit' // remove the directed participants, then advance the double exit
   | 'existing-winner-removed' // a winner exists, the status is not directing: take the direction back
@@ -246,8 +252,10 @@ export type BuildViewArgs = {
   policyDefinitions?: PolicyDefinitions;
   /** the caller's map of the draw (`setMatchUpStatus` builds one for the whole call), so the view does not build its own */
   matchUpsMap?: MatchUpsMap;
-  /** a hydration of this draw already taken in this call (the line's, for its dual's view), so the view takes no other */
+  /** a view of this draw already taken in this call (the line's, for its dual's view), so the view takes no other */
   inContextDrawMatchUps?: HydratedMatchUp[];
+  /** `inContextDrawMatchUps` is the structural index */
+  structural?: boolean;
   event?: Event;
   request: OutcomeRequest;
 };

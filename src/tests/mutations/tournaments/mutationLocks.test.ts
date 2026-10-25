@@ -1,6 +1,7 @@
 import { tournamentGovernor } from '@Assemblies/governors';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import { expect, it, describe } from 'vitest';
 
 // constants
@@ -47,8 +48,11 @@ describe('Mutation Locks', () => {
     expect(result.success).toEqual(true);
 
     // The feature gate should now be enabled, so scoring is locked on that draw
-    const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const matchUp = matchUps.find((m) => m.drawPositions?.filter(Boolean).length === 2);
+    const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
+    const matchUp = defined(
+      matchUps.find((m) => m.drawPositions?.filter(Boolean).length === 2),
+      'matchUp',
+    );
 
     const scoreResult = tournamentEngine.setMatchUpStatus({
       matchUpId: matchUp.matchUpId,
@@ -77,7 +81,7 @@ describe('Mutation Locks', () => {
     tournamentEngine.addMutationLock({ scope: 'SCHEDULING', lockToken: 'token-1' });
     tournamentEngine.addMutationLock({ scope: 'SCORING', lockToken: 'token-2' });
 
-    const { mutationLocks } = tournamentEngine.getMutationLocks();
+    const mutationLocks = defined(tournamentEngine.getMutationLocks().mutationLocks, 'mutationLocks');
     expect(mutationLocks.length).toEqual(2);
     expect(mutationLocks.map((l) => l.scope).sort()).toEqual(['SCHEDULING', 'SCORING']);
   });
@@ -107,7 +111,7 @@ describe('Mutation Locks', () => {
     expect(result.success).toEqual(true);
     expect(result.lockId).toEqual(lockId);
 
-    const { mutationLocks } = tournamentEngine.getMutationLocks();
+    const mutationLocks = defined(tournamentEngine.getMutationLocks().mutationLocks, 'mutationLocks');
     expect(mutationLocks.length).toEqual(1);
     expect(mutationLocks[0].expiresAt).toEqual('2099-06-01T00:00:00.000Z');
   });
@@ -303,8 +307,11 @@ describe('Mutation Locks', () => {
       setState: true,
     });
 
-    const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const matchUp = matchUps.find((m) => m.drawPositions?.filter(Boolean).length === 2);
+    const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
+    const matchUp = defined(
+      matchUps.find((m) => m.drawPositions?.filter(Boolean).length === 2),
+      'matchUp',
+    );
 
     // Add lock on the draw
     tournamentEngine.addMutationLock({
@@ -347,8 +354,11 @@ describe('Mutation Locks', () => {
       eventId,
     });
 
-    const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const matchUp = matchUps.find((m) => m.drawPositions?.filter(Boolean).length === 2);
+    const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
+    const matchUp = defined(
+      matchUps.find((m) => m.drawPositions?.filter(Boolean).length === 2),
+      'matchUp',
+    );
 
     // Scoring a matchUp in this draw should be blocked by the event-level lock
     const result = tournamentEngine.setMatchUpStatus({
@@ -373,8 +383,11 @@ describe('Mutation Locks', () => {
       lockToken: 'tournament-token',
     });
 
-    const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const matchUp = matchUps.find((m) => m.drawPositions?.filter(Boolean).length === 2);
+    const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
+    const matchUp = defined(
+      matchUps.find((m) => m.drawPositions?.filter(Boolean).length === 2),
+      'matchUp',
+    );
 
     const result = tournamentEngine.setMatchUpStatus({
       matchUpId: matchUp.matchUpId,
@@ -398,17 +411,26 @@ describe('Mutation Locks', () => {
     tournamentEngine.addMutationLock({ scope: 'SCORING', lockToken: 'token-2', eventId });
     tournamentEngine.addMutationLock({ scope: 'DRAWS', lockToken: 'token-3', drawId });
 
-    const { mutationLocks } = tournamentEngine.getMutationLocks();
+    const mutationLocks = defined(tournamentEngine.getMutationLocks().mutationLocks, 'mutationLocks');
     expect(mutationLocks.length).toEqual(3);
 
-    const tournamentLock = mutationLocks.find((l) => l.scope === 'SCHEDULING');
+    const tournamentLock = defined(
+      mutationLocks.find((l) => l.scope === 'SCHEDULING'),
+      'tournamentLock',
+    );
     expect(tournamentLock.eventId).toBeUndefined();
     expect(tournamentLock.drawId).toBeUndefined();
 
-    const eventLock = mutationLocks.find((l) => l.scope === 'SCORING');
+    const eventLock = defined(
+      mutationLocks.find((l) => l.scope === 'SCORING'),
+      'eventLock',
+    );
     expect(eventLock.eventId).toEqual(eventId);
 
-    const drawLock = mutationLocks.find((l) => l.scope === 'DRAWS');
+    const drawLock = defined(
+      mutationLocks.find((l) => l.scope === 'DRAWS'),
+      'drawLock',
+    );
     expect(drawLock.drawId).toEqual(drawId);
   });
 
@@ -441,7 +463,10 @@ describe('Mutation Locks', () => {
     tournamentEngine.addMutationLock({ scope: 'SCHEDULING', lockToken: 'token-1' });
     tournamentEngine.addMutationLock({ scope: 'SCORING', lockToken: 'token-2' });
 
-    const { mutationLocks } = tournamentEngine.getMutationLocks({ scope: 'SCHEDULING' });
+    const mutationLocks = defined(
+      tournamentEngine.getMutationLocks({ scope: 'SCHEDULING' }).mutationLocks,
+      'mutationLocks',
+    );
     expect(mutationLocks.length).toEqual(1);
     expect(mutationLocks[0].scope).toEqual('SCHEDULING');
   });
@@ -474,7 +499,7 @@ describe('Mutation Locks', () => {
     expect(result2.success).toEqual(true);
     expect(result2.removedCount).toEqual(0);
 
-    const { mutationLocks } = tournamentEngine.getMutationLocks();
+    const mutationLocks = defined(tournamentEngine.getMutationLocks().mutationLocks, 'mutationLocks');
     expect(mutationLocks.length).toEqual(1);
     expect(mutationLocks[0].scope).toEqual('SCORING');
   });

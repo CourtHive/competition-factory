@@ -3,6 +3,7 @@ import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps
 import { accumulate } from '@Functions/reducers/accumulate';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import { generateRange } from '@Tools/arrays';
 import { it, test, expect } from 'vitest';
 import { isOdd } from '@Tools/math';
@@ -162,14 +163,17 @@ test.each(scenarios)(
 
     const drawDefinition = tournamentEngine.getEvent({ drawId }).drawDefinition;
     const mainStructure = drawDefinition.structures.find((structure) => structure.stage === MAIN);
-    const matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
+    const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
     const consolationMatchUps = matchUps.filter((matchUp) => matchUp.stage === CONSOLATION);
-    const positionAssignments = tournamentEngine.getPositionAssignments({
-      structure: mainStructure,
-    }).positionAssignments;
+    const positionAssignments = defined(
+      tournamentEngine.getPositionAssignments({ structure: mainStructure }).positionAssignments,
+      'positionAssignments',
+    );
     const positionAssignmentMap = Object.assign(
       {},
-      ...positionAssignments.map((assignment) => ({ [assignment.participantId]: assignment.drawPosition })),
+      ...positionAssignments.map((assignment) => ({
+        [defined(assignment.participantId, 'participantId')]: assignment.drawPosition,
+      })),
     );
 
     const finishingRounds: number[] = [];
@@ -177,15 +181,16 @@ test.each(scenarios)(
       const { sides, finishingRound, roundNumber } = matchUp;
       if (roundNumber !== 1 && isOdd(finishingRound)) return;
 
-      sides.forEach((side) => {
+      defined(sides, 'sides').forEach((side) => {
         const { participantId, sourceDrawPositionRange } = side;
         if (sourceDrawPositionRange) {
           const range = sourceDrawPositionRange.split('-').map(Number);
           const positionRange = generateRange(range[0], range[1] + 1);
-          const participantOriginDrawPosition = positionAssignmentMap[participantId];
+          const participantOriginDrawPosition = positionAssignmentMap[defined(participantId, 'participantId')];
           const check = positionRange.includes(participantOriginDrawPosition);
           expect(check).toEqual(true);
-          if (!finishingRounds.includes(finishingRound)) finishingRounds.push(finishingRound);
+          const round = defined(finishingRound, 'finishingRound');
+          if (!finishingRounds.includes(round)) finishingRounds.push(round);
         }
       });
     });

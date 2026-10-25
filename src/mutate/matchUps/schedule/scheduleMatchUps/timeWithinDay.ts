@@ -1,7 +1,5 @@
 import { dayMinutesToTimeString, timeStringMinutes } from '@Tools/dateTime';
-
-// the last minute of the day being scheduled
-export const END_OF_DAY = '23:59';
+import { END_OF_DAY } from '@Tools/civilDateTime';
 
 /**
  * A time `minutes` after `timeString` on the SAME day. The scheduler works one day at a time, so a time that would

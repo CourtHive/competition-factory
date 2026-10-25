@@ -1,4 +1,4 @@
-import { getCapturedClock } from '@Global/state/globalState';
+import { getCapturedClock, writeLegacyEnabled } from '@Global/state/globalState';
 import { isAnyExit } from '@Validators/isExit';
 
 // constants and types
@@ -42,12 +42,18 @@ export type AbstainReason =
   | 'tallied' // a round robin, ad hoc or lucky structure: the tally (S3)
   | 'schedule' // the call carries a schedule (§ 3.5.8)
   | 'notes' // the call carries notes
-  | 'unchanged' // the write changes nothing but stamps, which S1's shadow comparison cannot see (debate-ruled)
+  | 'unchanged' // the write changes nothing but stamps: comparable by value since F2 (i) is in v1, owned from S2
   | 'no-record' // the draw is not held in the tournament record's events: nothing to fold the plan into
   | 'edges' // the draw stores no edges, which v1 writes first (`ensureGoesTo`): S2's setEdges
-  | 'clock'; // no captured instant (a call outside the engine): the timestamps a write takes cannot be reproduced
+  | 'clock' // no captured instant (a call outside the engine): the timestamps a write takes cannot be reproduced
+  | 'settle' // a settle pass has work on the working view (S2's has-work predicates, `settleWork.ts`)
+  | 'write-mode'; // LEGACY or BRIDGE: v1 writes `scoredTime` as a timeItem there, which the reducer does not (F6)
 
-export type OutcomePlan = { ops: OutcomeOp[]; abstain?: undefined } | { abstain: AbstainReason; ops?: undefined };
+/** which of the allowlist's shapes a complete plan is: `local` (the matchUp's own result) or the first `direction` */
+export type PlanShape = 'local' | 'direction';
+export type OutcomePlan =
+  | { ops: OutcomeOp[]; shape: PlanShape; abstain?: undefined }
+  | { abstain: AbstainReason; ops?: undefined; shape?: undefined };
 
 const LOCAL_ROUTES = new Set<Route>(['clear', 'clear-score', 'remove-directed', 'only-score']);
 const LOCAL_STATUSES = new Set<string | undefined>([IN_PROGRESS, SUSPENDED, AWAITING_RESULT, INCOMPLETE, TO_BE_PLAYED]);
@@ -131,6 +137,7 @@ function abstainReason(args: {
 }): AbstainReason | undefined {
   const { request, view, write, direction } = args;
   if (view.isTeam || view.line || view.matchUpTieId || view.existing.collectionId) return 'team';
+  if (writeLegacyEnabled()) return 'write-mode';
   if (!view.draw.storesEdges) return 'edges';
   if (request.carries?.schedule) return 'schedule';
   if (request.carries?.notes) return 'notes';
@@ -205,19 +212,28 @@ export function planOutcome(args: {
     );
   }
   // a plain loser arrival: the loser on the seat the link feeds. The matchUp they land in is not stamped: its stored
-  // object does not change (the write is on the structure's assignments), so it is not a touched entity (F2 (i), and v1)
+  // object does not change (the write is on the structure's assignments), so it is not a touched entity (F2 (i), and v1).
+  // The structure whose assignments change is, so it is stamped (v1's `modifyPositionAssignmentsNotice`).
   const loser = args.direction?.loser;
-  if (loser?.arrives && view.targets.loserStructureId && view.targets.loserTargetDrawPosition) {
-    ops.push({
-      op: 'assignPosition',
-      structureId: view.targets.loserStructureId,
-      drawPosition: view.targets.loserTargetDrawPosition,
-      participantId: loser.participantId,
-    });
-  }
+  const { loserStructureId, loserTargetDrawPosition } = view.targets;
+  const arrival: OutcomeOp[] =
+    loser?.arrives && loserStructureId && loserTargetDrawPosition
+      ? [
+          {
+            op: 'assignPosition',
+            structureId: loserStructureId,
+            drawPosition: loserTargetDrawPosition,
+            participantId: loser.participantId,
+          },
+          ...(loserStructureId === structureId
+            ? []
+            : [{ op: 'stampUpdatedAt', entity: 'structure', id: loserStructureId } as const]),
+        ]
+      : [];
   ops.push(
+    ...arrival,
     { op: 'stampUpdatedAt', entity: 'structure', id: structureId },
     { op: 'stampUpdatedAt', entity: 'drawDefinition', id: drawDefinition.drawId },
   );
-  return { ops };
+  return { ops, shape: args.route === 'winner' ? 'direction' : 'local' };
 }

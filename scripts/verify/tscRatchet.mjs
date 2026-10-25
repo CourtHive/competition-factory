@@ -1,23 +1,18 @@
 #!/usr/bin/env node
 /**
- * verify:test-types and verify:implicit-any — two tsc error counts that may only go DOWN.
+ * verify:implicit-any and verify:hard-union — tsc error counts that may only go DOWN.
  *
  * WHY THIS EXISTS
- * `tsconfig.json` excludes `*.test.ts` from `tsc --noEmit`, so a type error in a test file is never
- * reported. That made `src/tests/forge/typedSignatures.test.ts` — whose header says "the real value
- * is `pnpm check-types` failing if signatures regress" — a guard on nothing: measured 2026-10-07, a
- * deliberate type error in it produced 0 tsc errors, and its "unknown methods fall back to the open
- * shape" case had already broken silently when its example method gained a signature. Checking every
- * test file at once is 874 errors in 125 files, so this is a ratchet, not a switch: a file's count may
- * only fall, and a file at 0 stays at 0.
+ * Test files were once excluded from `tsc --noEmit` (a deliberate type error in
+ * `src/tests/forge/typedSignatures.test.ts` produced 0 errors, measured 2026-10-07), so a `test-types` mode here
+ * held 874 errors per file from rising. It reached 0 on 2026-10-25 and was retired: `pnpm check-types` now
+ * compiles `tsconfig.tests.json`, so a test-file type error fails like any other.
  *
  * `noImplicitAny` is off (tsconfig.base.json), so `verify:any-count` alone lets `any` return as an
  * implicit parameter: an explicit `x: any` removed by leaving `x` unannotated passes it. The second
  * count closes that: tsc's implicit-any codes (TS7xxx) in non-test `src`, per directory.
  *
  * WHAT IT COUNTS
- *   test-types    every tsc error, per FILE, compiling `tsconfig.tests.json` (tsconfig.json with test
- *                 files included). Keyed per file because a test file is a unit someone fixes whole.
  *   implicit-any  TS7xxx errors only, per DIRECTORY (non-recursive), compiling `tsconfig.json` with
  *                 `--noImplicitAny`. Keyed per directory, like verify:any-count, so parallel PRs in
  *                 different areas do not conflict over the baseline.
@@ -35,7 +30,7 @@
  *                 quietly go back. `src/types/typeAssertions` is not counted (its soft-form assertions fail
  *                 under the hard form by design). At 0 everywhere, 8.0.0 can delete the `never` fields.
  *
- * Run:        node scripts/verify/tscRatchet.mjs <test-types|implicit-any|hard-union> [--update-baseline [--accept-rise]]
+ * Run:        node scripts/verify/tscRatchet.mjs <implicit-any|hard-union> [--update-baseline [--accept-rise]]
  * Self-test:  node scripts/verify/tscRatchet.mjs --self-test
  */
 import { readFileSync, writeFileSync, existsSync, mkdtempSync, cpSync, rmSync } from 'node:fs';
@@ -45,15 +40,12 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const TSC = join(ROOT, 'node_modules', '.bin', 'tsc');
+// TS7 (the native compiler), installed as the `typescript7` alias beside TS6 and called by path: with both installed,
+// which one `.bin/tsc` links is not something to depend on. Measured 2026-10-24: every error at the same file, line and
+// column under both (the then test-types count: 33 of 866 carried TS2739/TS2741 under TS7 where TS6 says TS2345).
+const TSC = join(ROOT, 'node_modules', 'typescript7', 'bin', 'tsc');
 
 const COUNTS = {
-  'test-types': {
-    args: ['--noEmit', '--pretty', 'false', '-p', 'tsconfig.tests.json'],
-    keyOf: (file) => file,
-    counts: () => true,
-    fix: 'Fix the type error in the test (the file is now type-checked; see tsconfig.tests.json).',
-  },
   'implicit-any': {
     args: ['--noEmit', '--pretty', 'false', '-p', 'tsconfig.json', '--noImplicitAny'],
     keyOf: (file) => dirname(file),
@@ -113,7 +105,7 @@ function prepareHardUnion() {
     config,
     JSON.stringify({
       extends: join(ROOT, 'tsconfig.json'),
-      compilerOptions: { baseUrl: ROOT, rootDir: '/', paths },
+      compilerOptions: { rootDir: '/', paths },
       include: [join(ROOT, 'src/**/*.ts'), join(ROOT, 'src/**/*.js')],
       exclude: ['dist', 'src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/scratch/**'].map((glob) => join(ROOT, glob)),
     }),
@@ -235,9 +227,6 @@ function selfTest() {
     '  a continuation line that is not an error',
   ].join('\n');
 
-  const tests = tally(output, COUNTS['test-types']);
-  expect('test-types counts every error per file', tests['src/tests/a.test.ts'], 2);
-  expect('test-types keys by file', tests['src/area/c.ts'], 2);
   const implicit = tally(output, COUNTS['implicit-any']);
   expect('implicit-any counts only TS7xxx, per directory', implicit['src/area'], 2);
   expect('implicit-any ignores other codes', implicit['src/tests'], undefined);

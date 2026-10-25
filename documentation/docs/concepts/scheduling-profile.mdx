@@ -235,7 +235,7 @@ const {
   noTimeMatchUpIds, // MatchUps that couldn't be fit into available time
   noFormatMatchUpIds, // MatchUps of profiled rounds with no matchUpFormat: not placed
   overLimitMatchUpIds, // MatchUps blocked by daily limits
-  requestConflicts, // Array of { date, conflicts } for participant conflicts
+  requestConflicts, // by date: { [date]: [{ request, scheduleTimes, matchUpIds }] }, the person requests placements broke
 } = result;
 
 console.log(`Scheduled ${scheduledMatchUpIds.length} matches`);
@@ -308,7 +308,7 @@ const result = tournamentEngine.scheduleProfileRounds({
 });
 
 console.log('Would schedule:', result.scheduledMatchUpIds.length);
-console.log('Would have conflicts:', result.requestConflicts.length);
+console.log('Would have conflicts:', Object.values(result.requestConflicts).flat().length);
 ```
 
 ## Validation

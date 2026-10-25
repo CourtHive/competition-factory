@@ -8,6 +8,7 @@ import type {
   RankingListWarning,
   CategoryAggregationRule,
   TiebreakCriterion,
+  LevelPointsCountback,
   AggregationRules,
   RankingListAward,
   RankingListEntry,
@@ -420,7 +421,7 @@ function computePersonEntry({
     bucketTotals = {};
 
     for (const [bucketIndex, bucket] of countingBuckets.entries()) {
-      const { eventTypes, maxResultsPerLevel: bucketMaxPerLevel, mandatoryRules } = bucket;
+      const { eventTypes, maxResultsPerLevel: bucketMaxPerLevel, mandatoryRules, weight, bestPerSeries } = bucket;
 
       // `bucketName` is optional on the policy. Fall back to a positional label
       // so `bucketTotals` never carries an `undefined` key and both views of
@@ -445,6 +446,8 @@ function computePersonEntry({
         bestOfCount: bucketBestOf,
         maxResultsPerLevel: bucketMaxPerLevel,
         mandatoryRules,
+        weight,
+        bestPerSeries,
       });
 
       totalPoints += subTotal;
@@ -532,11 +535,13 @@ function sortAndRankEntries(
 }
 
 function applyTiebreaker(
-  criterion: string,
+  criterion: TiebreakCriterion | string,
   a: RankingListEntry,
   b: RankingListEntry,
   context: TiebreakContext,
 ): number {
+  if (typeof criterion === 'object') return levelPointsCountback(criterion, a, b);
+
   switch (criterion) {
     case 'headToHead': {
       // Only between exactly two tied entries: across three or more, pairwise
@@ -561,4 +566,19 @@ function applyTiebreaker(
     default:
       return 0;
   }
+}
+
+// The first level, in the order given, at which one entry's counting results earned more points than the other's.
+function levelPointsCountback(criterion: LevelPointsCountback, a: RankingListEntry, b: RankingListEntry): number {
+  const { levelPoints = [], eventTypes } = criterion;
+  const pointsAt = (entry: RankingListEntry, level: number) =>
+    entry.countingResults
+      .filter((r) => r.level === level && (!eventTypes?.length || eventTypes.includes(r.eventType)))
+      .reduce((sum, r) => sum + (r.points || 0), 0);
+
+  for (const level of levelPoints) {
+    const difference = pointsAt(b, level) - pointsAt(a, level);
+    if (difference !== 0) return difference;
+  }
+  return 0;
 }

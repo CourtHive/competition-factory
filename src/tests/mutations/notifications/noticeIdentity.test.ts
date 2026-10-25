@@ -78,7 +78,7 @@ describe('notice identity envelope', () => {
   it('every precisely-typed TopicPayloadMap key is a real topic constant', async () => {
     // Guards the drift the map is most exposed to: its keys are hand-written strings that must match
     // topicConstants exactly. A renamed or mistyped key silently types nothing and never fires.
-    const topicValues = new Set(Object.values(topicConstants).filter((v) => typeof v === 'string'));
+    const topicValues = new Set<string>(Object.values(topicConstants).filter((v) => typeof v === 'string'));
 
     // Read the map's declared keys from source — the type itself is erased at runtime.
     const fs = await import('fs');

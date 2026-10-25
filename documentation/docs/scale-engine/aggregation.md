@@ -121,6 +121,31 @@ The `pointComponents` array specifies which fields on each award to sum for the 
 - `0` — Count all results (no limit)
 - `N > 0` — Count only the best N results; remaining are dropped
 
+### weight
+
+A multiplier on the bucket's total, applied after its counting results are selected (default `1`). The ITF Junior
+combined ranking counts the six best singles results plus one quarter of the six best doubles results:
+
+```js
+{ bucketName: 'Doubles', eventTypes: [DOUBLES], bestOfCount: 6, weight: 0.25 }
+```
+
+Selection uses each award's own points, so a weight never changes which results count. The awards keep their own
+points; the bucket's `bucketTotal` and the participant's `totalPoints` carry the weighted value.
+
+### bestPerSeries
+
+Counts only the best result from each tournament series within the window. A series is the same tournament across its
+editions: CODES `Tournament.tournamentSeriesId`, stamped on each award by `getTournamentPointAwards`. The ITF Junior
+rule (Reg. 10) is the best result from up to two editions of the same J100 or higher graded tournament:
+
+```js
+{ bucketName: 'Singles', eventTypes: [SINGLES], bestOfCount: 6, bestPerSeries: { levels: [1, 4, 5, 6, 7] } }
+```
+
+`levels` limits the rule to awards at those levels (all levels when omitted). An award without a
+`tournamentSeriesId` is unaffected. The other editions' results move to `droppedResults`.
+
 ### maxResultsPerLevel
 
 Limits how many results from a specific tournament level count toward the bucket:
@@ -333,14 +358,28 @@ aggregationRules: {
 }
 ```
 
-| Criterion               | Resolution                                                                                  |
-| ----------------------- | ------------------------------------------------------------------------------------------- |
-| `'highestSingleResult'` | Highest individual `points` value among counting results                                    |
-| `'mostCountingResults'` | More counting results wins                                                                  |
-| `'mostWins'`            | More total `winCount` across counting results wins                                          |
-| `'headToHead'`          | The winner of the two players' head-to-head record, from the caller's `headToHead` function |
+| Criterion                     | Resolution                                                                                  |
+| ----------------------------- | ------------------------------------------------------------------------------------------- |
+| `'highestSingleResult'`       | Highest individual `points` value among counting results                                    |
+| `'mostCountingResults'`       | More counting results wins                                                                  |
+| `'mostWins'`                  | More total `winCount` across counting results wins                                          |
+| `'headToHead'`                | The winner of the two players' head-to-head record, from the caller's `headToHead` function |
+| `{ levelPoints, eventTypes }` | A countback by level: the points of counting results at each listed level in turn           |
 
 Tied entries that remain unresolved after all criteria share the same rank.
+
+### levelPoints countback
+
+A criterion object compares the tied entries' counting results level by level, in the order listed, until one
+earned more points there. `eventTypes` narrows which results count. The ITF Junior countback (Reg. 11) is Grand Slam
+singles, then singles at each grade from J500 down, then the same for doubles:
+
+```js
+tiebreakCriteria: [
+  { levelPoints: [1, 4, 5, 6, 7, 8, 9], eventTypes: [SINGLES] },
+  { levelPoints: [1, 4, 5, 6, 7, 8, 9], eventTypes: [DOUBLES] },
+],
+```
 
 ### headToHead
 

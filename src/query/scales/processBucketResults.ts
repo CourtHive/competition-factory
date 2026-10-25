@@ -11,6 +11,8 @@ type ProcessBucketResultsArgs = {
   bestOfCount: number;
   maxResultsPerLevel?: Record<number, number>;
   mandatoryRules?: MandatoryRule[];
+  weight?: number;
+  bestPerSeries?: { levels?: number[] };
 };
 
 export function processBucketResults({
@@ -19,6 +21,8 @@ export function processBucketResults({
   bestOfCount,
   maxResultsPerLevel,
   mandatoryRules,
+  weight,
+  bestPerSeries,
 }: ProcessBucketResultsArgs): {
   counting: ScoredAward[];
   dropped: ScoredAward[];
@@ -46,13 +50,16 @@ export function processBucketResults({
   // 2. Sort descending by score
   scoredAwards.sort((a, b) => b.value - a.value);
 
+  // 2b. One result per tournament series: the best edition counts, the others are dropped
+  const { kept: eligible, dropped: seriesDropped } = bestOfEachSeries(scoredAwards, bestPerSeries);
+
   // 3. Apply maxResultsPerLevel caps
-  let capped = scoredAwards;
-  let levelDropped: ScoredAward[] = [];
+  let capped = eligible;
+  let levelDropped: ScoredAward[] = [...seriesDropped];
   if (maxResultsPerLevel) {
     const levelCounts: Record<number, number> = {};
     capped = [];
-    for (const sa of scoredAwards) {
+    for (const sa of eligible) {
       const lvl = sa.award.level;
       if (lvl === undefined || !maxResultsPerLevel[lvl]) {
         capped.push(sa);
@@ -69,7 +76,10 @@ export function processBucketResults({
 
   // 4. Mandatory selection + optional fill
   if (mandatoryRules?.length) {
-    return withAdditive(processMandatory(capped, levelDropped, bestOfCount, mandatoryRules), additive);
+    return weighted(
+      withAdditive(processMandatory(capped, levelDropped, bestOfCount, mandatoryRules), additive),
+      weight,
+    );
   }
 
   // No mandatory rules — standard bestOfCount
@@ -77,7 +87,47 @@ export function processBucketResults({
   const dropped = [...(bestOfCount > 0 ? capped.slice(bestOfCount) : []), ...levelDropped];
   const bucketTotal = counting.reduce((sum, sa) => sum + sa.value, 0);
 
-  return withAdditive({ counting, dropped, bucketTotal }, additive);
+  return weighted(withAdditive({ counting, dropped, bucketTotal }, additive), weight);
+}
+
+/**
+ * Keep only the best-valued award of each tournament series (awards arrive sorted best first). An award with no
+ * tournamentSeriesId, or at a level outside `levels`, is always kept.
+ */
+function bestOfEachSeries(
+  scoredAwards: ScoredAward[],
+  bestPerSeries: { levels?: number[] } | undefined,
+): { kept: ScoredAward[]; dropped: ScoredAward[] } {
+  if (!bestPerSeries) return { kept: scoredAwards, dropped: [] };
+
+  const { levels } = bestPerSeries;
+  const seen = new Set<string>();
+  const kept: ScoredAward[] = [];
+  const dropped: ScoredAward[] = [];
+  for (const sa of scoredAwards) {
+    const { tournamentSeriesId: series, level } = sa.award;
+    const applies = series && (!levels || levels.includes(level));
+    if (applies && seen.has(series)) {
+      dropped.push(sa);
+    } else {
+      if (applies) seen.add(series);
+      kept.push(sa);
+    }
+  }
+  return { kept, dropped };
+}
+
+/**
+ * Scale the bucket's total by its policy weight (ITF Junior counts a quarter of the six best doubles results).
+ * Selection is by unweighted value, so a uniform weight cannot change which results count; the awards keep their
+ * own points and only the total is scaled.
+ */
+function weighted(
+  result: { counting: ScoredAward[]; dropped: ScoredAward[]; bucketTotal: number },
+  weight: number | undefined,
+): { counting: ScoredAward[]; dropped: ScoredAward[]; bucketTotal: number } {
+  if (weight === undefined || weight === 1) return result;
+  return { ...result, bucketTotal: result.bucketTotal * weight };
 }
 
 /**

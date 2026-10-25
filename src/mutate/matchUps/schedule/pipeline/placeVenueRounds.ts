@@ -57,7 +57,6 @@ export type PlaceVenueRoundsArgs = {
   venueScheduledRoundDetails: { [venueId: string]: VenueRoundDetails };
   overLimitMatchUpDetails: ByDate<OverLimitMatchUpDetail[]>;
   individualParticipantProfiles: IndividualParticipantProfiles;
-  matchUpPotentialParticipantIds: { [matchUpId: string]: string[] };
   scheduleDateRequestConflicts: ByDate<RequestConflict[]>;
   matchUpDependencies: { [matchUpId: string]: { matchUpIds: string[] } };
   matchUpScheduleTimes: { [matchUpId: string]: string };
@@ -89,7 +88,6 @@ function tryScheduleMatchUp({
   playedOrderRefusal,
   dependencyDeferredMatchUpIds,
   individualParticipantProfiles,
-  matchUpPotentialParticipantIds,
   scheduleDateRequestConflicts,
   matchUpScheduleTimes,
   matchUpNotBeforeTimes,
@@ -187,7 +185,9 @@ function tryScheduleMatchUp({
     return false;
   }
 
-  const averageMatchUpMinutes = details.greatestAverageMinutes;
+  // a placed matchUp holds its participants, and checks their requests, for its own minutes: its round's average, the
+  // same figure its recovery is checked with (§ 3.4, § 3.6; CA 2026-10-25), never the venue's greatest
+  const averageMatchUpMinutes = details.minutesMap?.[matchUpId]?.averageMinutes ?? details.greatestAverageMinutes;
 
   const { conflicts } = checkRequestConflicts({
     potentials: checkPotentialRequestConflicts,
@@ -217,7 +217,6 @@ function tryScheduleMatchUp({
 
   updateTimeAfterRecovery({
     typeChangeRecoveryMinutes,
-    matchUpPotentialParticipantIds,
     individualParticipantProfiles,
     matchUpNotBeforeTimes,
     averageMatchUpMinutes,
@@ -238,7 +237,6 @@ export function scheduleVenueRounds({
   playedOrderDeferredMatchUpIds,
   dependencyDeferredMatchUpIds,
   individualParticipantProfiles,
-  matchUpPotentialParticipantIds,
   scheduleDateRequestConflicts,
   venueScheduledRoundDetails,
   playedOrderRefusal,
@@ -274,7 +272,7 @@ export function scheduleVenueRounds({
         details.courtsCount &&
         details.scheduleTimes?.length &&
         details.matchUpsToSchedule?.length &&
-        scheduledThisPass <= details.courtsCount
+        scheduledThisPass < details.courtsCount
       ) {
         const { scheduleTime, attempts = 0 } = details.scheduleTimes.shift() as ScheduleTime;
         const scheduledMatchUp = details.matchUpsToSchedule.find((matchUp) =>
@@ -285,7 +283,6 @@ export function scheduleVenueRounds({
             playedOrderRefusal,
             dependencyDeferredMatchUpIds,
             individualParticipantProfiles,
-            matchUpPotentialParticipantIds,
             scheduleDateRequestConflicts,
             matchUpScheduleTimes,
             matchUpNotBeforeTimes,

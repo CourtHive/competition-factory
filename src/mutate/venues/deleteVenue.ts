@@ -54,7 +54,7 @@ export function deleteVenue(params: DeleteVenueArgs): {
   })?.appliedPolicies;
 
   const allowModificationWhenMatchUpsScheduled =
-    force ?? appliedPolicies?.[POLICY_TYPE_SCHEDULING]?.allowDeletionWithScoresPresent?.venues;
+    force ?? appliedPolicies?.[POLICY_TYPE_SCHEDULING]?.allowModificationWhenMatchUpsScheduled?.venues;
 
   if (!matchUpsToUnschedule.length || allowModificationWhenMatchUpsScheduled) {
     for (const tournamentRecord of Object.values(tournamentRecords)) {
@@ -90,7 +90,15 @@ export function deleteVenue(params: DeleteVenueArgs): {
   return { ...SUCCESS };
 }
 
-export function deleteVenues({ tournamentRecord, venueIds, force }) {
+export function deleteVenues({
+  tournamentRecord,
+  venueIds,
+  force,
+}: {
+  tournamentRecord?: Tournament;
+  venueIds?: string[];
+  force?: boolean;
+}) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   if (!Array.isArray(venueIds)) return { error: INVALID_VALUES };
 

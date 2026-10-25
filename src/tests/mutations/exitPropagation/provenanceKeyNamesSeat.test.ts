@@ -47,6 +47,7 @@ function staleKeys(drawId: string): string[] {
 
 test.skipIf(!enabled).for(WINDOWS)(
   'window %s: no carried exit is keyed away from its carrier',
+  { timeout: 3_600_000 },
   (window) => {
     const file = path.join(schedulesDir, `sched-${window}.jsonl`);
     const scenarios = fs
@@ -88,5 +89,4 @@ test.skipIf(!enabled).for(WINDOWS)(
     expect(steps).toBeGreaterThan(5000);
     expect(found).toEqual([]);
   },
-  3_600_000,
 );

@@ -32,6 +32,7 @@
  * a tiebreaker only.
  */
 
+import type { AggregationRules, AwardProfile, QualityWinProfile } from '@Types/rankingTypes';
 import { SINGLES, DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import {
@@ -56,7 +57,7 @@ import {
 
 // ── Page 2: Round Robin (Levels 3-5) ──────────────────────────────────────────
 // Points per win. Max 5 matches at L3-5.
-const roundRobinL3to5 = {
+const roundRobinL3to5: AwardProfile = {
   profileName: 'Round Robin L3-5',
   drawTypes: [ROUND_ROBIN],
   levels: [3, 4, 5],
@@ -68,7 +69,7 @@ const roundRobinL3to5 = {
 
 // ── Page 2: Round Robin (Levels 6-7) ─────────────────────────────────────────
 // Points per win + champion/finalist bonus. Max 4 matches at L6-7.
-const roundRobinL6to7 = {
+const roundRobinL6to7: AwardProfile = {
   profileName: 'Round Robin L6-7',
   drawTypes: [ROUND_ROBIN],
   levels: [6, 7],
@@ -99,7 +100,7 @@ const roundRobinL6to7 = {
 // The perWinPoints for those brackets differ (41/25/14, 34/21/11, 27/16/9 at L3/4/5).
 // Lower brackets use 2nd-place values as a conservative approximation.
 
-const rrWithPlayoffL3to5_PreliminaryRR = {
+const rrWithPlayoffL3to5_PreliminaryRR: AwardProfile = {
   profileName: 'RR Playoff L3-5: Preliminary RR',
   drawTypes: [ROUND_ROBIN_WITH_PLAYOFF],
   levels: [3, 4, 5],
@@ -109,7 +110,7 @@ const rrWithPlayoffL3to5_PreliminaryRR = {
   },
 };
 
-const rrWithPlayoffL3to5_ChampionMain = {
+const rrWithPlayoffL3to5_ChampionMain: AwardProfile = {
   profileName: 'RR Playoff L3-5: Champion Bracket Main Draw',
   drawTypes: [ROUND_ROBIN_WITH_PLAYOFF],
   levels: [3, 4, 5],
@@ -120,7 +121,7 @@ const rrWithPlayoffL3to5_ChampionMain = {
   },
 };
 
-const rrWithPlayoffL3to5_ChampionConsolation = {
+const rrWithPlayoffL3to5_ChampionConsolation: AwardProfile = {
   profileName: 'RR Playoff L3-5: Champion Bracket Consolation',
   drawTypes: [ROUND_ROBIN_WITH_PLAYOFF],
   levels: [3, 4, 5],
@@ -136,7 +137,7 @@ const rrWithPlayoffL3to5_ChampionConsolation = {
 //   3rd place: L3: 34, L4: 21, L5: 11
 //   4th place: L3: 27, L4: 16, L5: 9
 // Until bracket differentiation is verified, using PLAY_OFF stage with 2nd-place values.
-const rrWithPlayoffL3to5_PlacementBrackets = {
+const rrWithPlayoffL3to5_PlacementBrackets: AwardProfile = {
   profileName: 'RR Playoff L3-5: Placement Brackets (2nd/3rd/4th)',
   drawTypes: [ROUND_ROBIN_WITH_PLAYOFF],
   levels: [3, 4, 5],
@@ -152,7 +153,7 @@ const rrWithPlayoffL3to5_PlacementBrackets = {
 
 // ── Page 2: Round Robin with First Match Consolation Playoff (Levels 6-7) ─────
 // At L6-7 all brackets simplify: Main Draw 20/12, Consolation/Other 10/6
-const rrWithPlayoffL6to7 = {
+const rrWithPlayoffL6to7: AwardProfile = {
   profileName: 'RR Playoff L6-7',
   drawTypes: [ROUND_ROBIN_WITH_PLAYOFF],
   levels: [6, 7],
@@ -170,7 +171,7 @@ const rrWithPlayoffL6to7 = {
 
 // ── Page 4: Team Tournaments (Levels 1-7) ─────────────────────────────────────
 // Points per win by line position. Max 5 matches at L3-5, max 4 at L6-7.
-const teamTournaments = {
+const teamTournaments: AwardProfile = {
   profileName: 'Team Tournaments',
   levels: [1, 2, 3, 4, 5, 6, 7],
   eventTypes: [TEAM_EVENT],
@@ -192,7 +193,7 @@ const teamTournaments = {
 // For tournaments flighted into draws of 16 or fewer players.
 // Round Robin, Round Robin with Playoff, and Team Tournaments are excluded.
 // Position points by flight + consolation per-win points by flight.
-const flightedL4 = {
+const flightedL4: AwardProfile = {
   profileName: 'Flighted L4',
   drawTypes: [
     MODIFIED_FEED_IN_CHAMPIONSHIP,
@@ -222,7 +223,7 @@ const flightedL4 = {
 // ── Page 8: Flighted Level 5 Tournament ───────────────────────────────────────
 // For tournaments flighted into draws of 16 or fewer players.
 // Round Robin, Round Robin with Playoff, and Team Tournaments are excluded.
-const flightedL5 = {
+const flightedL5: AwardProfile = {
   profileName: 'Flighted L5',
   drawTypes: [
     MODIFIED_FEED_IN_CHAMPIONSHIP,
@@ -257,7 +258,7 @@ const flightedL5 = {
 //   5: Curtis Consolation Winner, 6: Curtis Consolation Runner Up
 //   8: Curtis Consolation SF (7-8), 12: Curtis Consolation QF (9-12)
 //   16: Curtis Consolation R16 (13-16), 32: Reached R32 (17-32)
-const curtisConsolation = {
+const curtisConsolation: AwardProfile = {
   profileName: 'Curtis Consolation L1-5',
   drawTypes: [CURTIS_CONSOLATION],
   levels: [1, 2, 3, 4, 5],
@@ -294,7 +295,7 @@ const curtisConsolation = {
 //   128: FIC R64 Qualifier — R1 losers from 128-draw fed in (97-128)
 //   192: Reached FIC R128 (129-192)
 //   256: FIC R128 Qualifier — R1 losers from 192 & 256-draw fed in (193-256)
-const ficThroughQF_L1to5 = {
+const ficThroughQF_L1to5: AwardProfile = {
   profileName: 'FIC through QF L1-5',
   drawTypes: [FEED_IN_CHAMPIONSHIP_TO_QF],
   levels: [1, 2, 3, 4, 5],
@@ -343,7 +344,7 @@ const ficThroughQF_L1to5 = {
 //   128: FIC R64 Qualifier — R1 losers from 128-draw (97-128)
 //   192: Reached FIC R128 (129-192)
 //   256: FIC R128 Qualifier — R1 losers from 192 & 256-draw (193-256)
-const ficThroughR16WithPlayoffs_L1to5 = {
+const ficThroughR16WithPlayoffs_L1to5: AwardProfile = {
   profileName: 'FIC through R16 + QF Playoffs L1-5',
   drawTypes: [FEED_IN_CHAMPIONSHIP_TO_R16],
   levels: [1, 2, 3, 4, 5],
@@ -384,7 +385,7 @@ const ficThroughR16WithPlayoffs_L1to5 = {
 // Players earn points per round for Levels 1-5.
 // Position points for main draw (participationOrder 1).
 // Per-win consolation points for non-main structures (participationOrders 2-5).
-const eliminationL1to5 = {
+const eliminationL1to5: AwardProfile = {
   profileName: 'Elimination L1-5',
   drawTypes: [
     MODIFIED_FEED_IN_CHAMPIONSHIP,
@@ -427,7 +428,7 @@ const eliminationL1to5 = {
 //
 // Note: For Level 7 only compass is approved. For Level 6 only compass and
 // modified feed-in are approved. But the profile covers all draw types for safety.
-const eliminationL6to7 = {
+const eliminationL6to7: AwardProfile = {
   profileName: 'Elimination L6-7',
   drawTypes: [
     MODIFIED_FEED_IN_CHAMPIONSHIP,
@@ -456,7 +457,7 @@ const eliminationL6to7 = {
 // ─── Quality Win Profiles ────────────────────────────────────────────────────
 
 // ── Page 8: Bonus Points for Wins vs. Ranked Opponents ───────────────────────
-const qualityWinProfiles = [
+const qualityWinProfiles: QualityWinProfile[] = [
   {
     rankingScaleName: 'USTA_JUNIOR',
     rankingSnapshot: 'tournamentStart' as const,
@@ -489,7 +490,7 @@ const qualityWinProfiles = [
 //     100% to the younger category's list, but only for participants who have
 //     at least one direct result in the younger category
 //     (requireParticipationInTarget: true).
-const aggregationRules = {
+const aggregationRules: AggregationRules = {
   rollingPeriodDays: 365,
   separateByGender: true,
   perCategory: true,
@@ -578,7 +579,7 @@ const aggregationRules = {
  *   8. Elimination L1-5 (broad drawType catch-all for L1-5)
  *   9. Elimination L6-7 (broad drawType catch-all for L6-7)
  */
-const awardProfiles = [
+const awardProfiles: AwardProfile[] = [
   // RR with Playoff bracket profiles (most specific)
   rrWithPlayoffL3to5_ChampionMain,
   rrWithPlayoffL3to5_ChampionConsolation,

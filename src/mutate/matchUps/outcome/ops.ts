@@ -1,6 +1,7 @@
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
-import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
+import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
+import { getCapturedStamps } from '@Global/state/globalState';
 import { nowIso } from '@Tools/clock';
 
 // constants and types
@@ -26,10 +27,10 @@ import type {
  * Ops grow by slice. S1 holds the result of the matchUp and the stamps: what a call that touches only its own
  * matchUp writes (measured 2026-10-24: status, score, winner, codes, `schedule.scoredTime`, and `updatedAt`).
  *
- * STAMPS ARE F2 (i): one per TOUCHED entity per call, the matchUp, its own structure and the draw. v1 still stamps once
- * per notice and every top-level structure on each, so until Phase C changes v1 the `differential` shadow comparison
- * normalises stamps (debate-ruled 2026-10-24, pending CA review; see `shadow.ts`). The values v2 writes are held to
- * F2 (i) by their own tests, not by that comparison.
+ * STAMPS ARE F2 (i): one per TOUCHED entity per call, the matchUp, its own structure and the draw. v1 keeps the same
+ * rule for the draw and its matchUps (`drawNotifications.ts` `stampUpdatedAt`), and `differential` compares those by
+ * value. v1's matchUp notice still stamps every top-level structure, so structure stamps are left out of that comparison
+ * (CA, 2026-10-24, a temporary blind spot; see `shadow.ts`) and held to F2 (i) by v2's own tests.
  */
 export type OutcomeOp =
   | {
@@ -74,8 +75,33 @@ export function nextStamp(previous: string | undefined, now: string = nowIso()):
 
 type Stamped = { updatedAt?: string };
 
-function stamp(target: Stamped | undefined) {
-  if (target) target.updatedAt = nextStamp(target.updatedAt);
+/**
+ * Once per call, as v1 (`drawNotifications.ts` `stampUpdatedAt`): an entity this engine call has already stamped keeps
+ * its stamp. `stampedBefore` names those the live call stamped before the plan was folded, which a COPY of the draw
+ * cannot tell from the call's ledger; the ledger itself covers the live draw.
+ */
+function stamp(target: Stamped | undefined, key: string, stampedBefore?: Set<string>) {
+  const stamped = getCapturedStamps();
+  if (target && !stampedBefore?.has(key) && !stamped?.has(target)) {
+    target.updatedAt = nextStamp(target.updatedAt);
+    stamped?.add(target);
+  }
+}
+
+/**
+ * The draw's entities this engine call has already stamped, as `entity:id` keys. An `executionQueue`, or a
+ * competition call over several records, can stamp the draw before this `setMatchUpStatus` runs; a shadow copy of the
+ * draw cannot see that, so the keys are read from the live draw before v1 writes.
+ */
+export function stampedInThisCall(drawDefinition?: DrawDefinition): Set<string> {
+  const keys = new Set<string>();
+  const stamped = getCapturedStamps();
+  if (!stamped || !drawDefinition) return keys;
+  if (stamped.has(drawDefinition)) keys.add(`drawDefinition:${drawDefinition.drawId}`);
+  const { matchUps, structures } = indexDraw(drawDefinition);
+  for (const [structureId, structure] of structures) if (stamped.has(structure)) keys.add(`structure:${structureId}`);
+  for (const [matchUpId, matchUp] of matchUps) if (stamped.has(matchUp)) keys.add(`matchUp:${matchUpId}`);
+  return keys;
 }
 
 function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMatchUpResult' }>) {
@@ -123,7 +149,11 @@ function indexDraw(drawDefinition: DrawDefinition) {
  * the draw given, never against a hydrated copy. An op naming something the draw does not hold is a planner defect,
  * returned rather than ignored, so a shadow apply cannot pass by writing nothing.
  */
-export function applyOutcomeOps(drawDefinition: DrawDefinition, ops: OutcomeOp[]): { error?: string } {
+export function applyOutcomeOps(
+  drawDefinition: DrawDefinition,
+  ops: OutcomeOp[],
+  stampedBefore?: Set<string>,
+): { error?: string } {
   const { matchUps, structureOf, structures } = indexDraw(drawDefinition);
   for (const op of ops) {
     if (op.op === 'setMatchUpResult' || op.op === 'setMatchUpDrawPositions') {
@@ -146,11 +176,11 @@ export function applyOutcomeOps(drawDefinition: DrawDefinition, ops: OutcomeOp[]
       assignment.participantId = op.participantId;
     } else if (op.entity === 'drawDefinition') {
       if (op.id !== drawDefinition.drawId) return { error: `stampUpdatedAt: not this draw ${op.id}` };
-      stamp(drawDefinition as Stamped);
+      stamp(drawDefinition as Stamped, `drawDefinition:${op.id}`, stampedBefore);
     } else {
       const target = op.entity === 'matchUp' ? matchUps.get(op.id) : structures.get(op.id);
       if (!target) return { error: `stampUpdatedAt: no ${op.entity} ${op.id}` };
-      stamp(target as Stamped);
+      stamp(target as Stamped, `${op.entity}:${op.id}`, stampedBefore);
     }
   }
   return {};

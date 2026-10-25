@@ -9,11 +9,8 @@ import {
 import { DOUBLES_MATCHUP, SINGLES_MATCHUP } from '@Constants/matchUpTypes';
 import { ANY, FEMALE, MALE, MIXED } from '@Constants/genderConstants';
 import { INVALID_GENDER } from '@Constants/errorConditionConstants';
-import { TEAM_EVENT } from '@Constants/eventConstants';
 
-const referenceEvent = { eventType: TEAM_EVENT, eventId: 'eventId' };
-
-const scenarios = [
+const scenarios: { params: Parameters<typeof tieFormatGenderValidityCheck>[0]; expectation: object }[] = [
   {
     params: {
       referenceGender: MALE,
@@ -163,7 +160,6 @@ const scenarios = [
       referenceGender: MIXED,
       matchUpType: DOUBLES_MATCHUP,
       gender: MIXED,
-      referenceEvent,
     },
     expectation: { valid: true },
   },
@@ -172,7 +168,6 @@ const scenarios = [
       referenceGender: MIXED,
       matchUpType: DOUBLES_MATCHUP,
       gender: FEMALE,
-      referenceEvent,
     },
     expectation: { valid: true },
   },
@@ -181,7 +176,6 @@ const scenarios = [
       referenceGender: MIXED,
       matchUpType: SINGLES_MATCHUP,
       gender: FEMALE,
-      referenceEvent,
     },
     expectation: { valid: true },
   },
@@ -190,7 +184,6 @@ const scenarios = [
       referenceGender: MIXED,
       matchUpType: SINGLES_MATCHUP,
       gender: MALE,
-      referenceEvent,
     },
     expectation: { valid: true },
   },
@@ -199,7 +192,6 @@ const scenarios = [
       referenceGender: MIXED,
       matchUpType: DOUBLES_MATCHUP,
       gender: MALE,
-      referenceEvent,
     },
     expectation: { valid: true },
   },

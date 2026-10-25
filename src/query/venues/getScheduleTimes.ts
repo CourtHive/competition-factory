@@ -3,16 +3,20 @@ import { calculatePeriodLength } from '@Generators/scheduling/utils/calculatePer
 import { generateVirtualCourts } from '@Generators/scheduling/utils/generateVirtualCourts';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getCourtsAvailableAtPeriodStart } from './getCourtsAvailableAtPeriodStart';
+import { getDateTimeBoundary } from '@Generators/scheduling/utils/getTimeBoundary';
 import { courtGenerator } from '@Assemblies/generators/scheduling/courtGenerator';
 import { getFirstTimeSlotStartTime } from './getFirstTimeSlotStartTime';
 import { generateRange } from '@Tools/arrays';
-import { ensureInt } from '@Tools/ensureInt';
 
 // constants and types
 import { ScheduleTimesResult, ResultType } from '@Types/factoryTypes';
 import { ARRAY } from '@Constants/attributeConstants';
 
+const ROUNDING_EPSILON = 1e-9;
+
 export function getScheduleTimes(params): ResultType & {
+  /** timed matchUps at a venue with no court that no court could hold (§ 3.9 rule 4) */
+  unbookedMatchUpIds?: string[];
   scheduleTimes?: ScheduleTimesResult[];
   totalMatchUps?: number;
   timingProfile?: any;
@@ -20,7 +24,11 @@ export function getScheduleTimes(params): ResultType & {
   const paramsCheck = checkRequiredParameters(params, [{ courts: true, _ofType: ARRAY }]);
   if (paramsCheck.error) return paramsCheck;
 
-  let { date = getUTCdateString(), startTime = '08:00', endTime = '19:00', periodLength, courts } = params;
+  let { date = getUTCdateString(), startTime, endTime, periodLength, courts } = params;
+  // the day runs from the courts' earliest opening to their latest closing on the date, unless the caller bounds it
+  startTime = startTime ?? getDateTimeBoundary({ courts, scheduleDate: extractDate(date), startTime: true });
+  endTime = endTime ?? getDateTimeBoundary({ courts, scheduleDate: extractDate(date), endTime: true });
+  if (!startTime || !endTime) return { scheduleTimes: [], timingProfile: [], totalMatchUps: 0 };
 
   const {
     calculateStartTimeFromCourts = true,
@@ -60,7 +68,7 @@ export function getScheduleTimes(params): ResultType & {
     courts = courtGenerator({ startTime, endTime, count: courtsCount, date });
   }
 
-  const { virtualCourts } = generateVirtualCourts({
+  const { virtualCourts, unbookedMatchUpIds } = generateVirtualCourts({
     remainingScheduleTimes,
     clearScheduleDates,
     scheduleDate: date,
@@ -117,19 +125,24 @@ export function getScheduleTimes(params): ResultType & {
     const matchesCalculation = accumulatedTime / averageMatchUpMinutes;
     const calculatedTotal = period ? matchesCalculation * (period - 1) + averageCourts : averageCourts;
 
-    // used to increment cumulativeMatches
-    // difference between current calculation and previous calculation
-    // if no available courts then Zero so that cumulativeMatches does not increase
-    // if available courts but no previously available courts then newCourts;
-    const calculationDifference = !availableToScheduleCount
-      ? 0
-      : (previousAvailableCourts && calculatedTotal - previousCalculation) || newCourts;
+    // what the period adds to cumulativeMatches: nothing with no courts available; the newly available courts after a
+    // period with none (an opening, or a reopening after a closure); otherwise the change in the calculated total. This
+    // read `(previous && difference) || newCourts`, so a difference of exactly 0 added the new courts instead.
+    let calculationDifference = 0;
+    if (availableToScheduleCount) {
+      calculationDifference = previousAvailableCourts ? calculatedTotal - previousCalculation : newCourts;
+    }
 
     previousCalculation = calculatedTotal;
     previousAvailableCourts = availableToScheduleCount;
     cumulativeMatches += calculationDifference;
 
-    const addToSchedule = ensureInt(cumulativeMatches) - totalMatchUps;
+    // the matches expected by this period, to the NEAREST whole match, as Brian Garman's published tables round them
+    // ("The Revised Garman System", 2009-10: 10 courts of 1 hr 30 min matches total 10, 10, 13, 17, 20, ... 77, 80).
+    // Truncating left a period short whenever the fraction passed one half: one court of 90-minute matchUps in
+    // 30-minute periods took its second matchUp at 12:00, not 11:30 (CA 2026-10-24). The epsilon keeps a sum that is a
+    // half in exact arithmetic from rounding down on floating-point drift.
+    const addToSchedule = Math.round(cumulativeMatches + ROUNDING_EPSILON) - totalMatchUps;
     totalMatchUps += addToSchedule;
 
     return {
@@ -152,5 +165,5 @@ export function getScheduleTimes(params): ResultType & {
     }, [])
     .flat();
 
-  return { scheduleTimes, timingProfile, totalMatchUps };
+  return { scheduleTimes, timingProfile, totalMatchUps, unbookedMatchUpIds };
 }

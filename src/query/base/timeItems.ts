@@ -66,7 +66,22 @@ export function getTimeItem(params: TimeItemArgs): TimeItemResult & ResultType {
   }
 }
 
-export function getDrawDefinitionTimeItem({ returnPreviousValues, drawDefinition, itemSubTypes, itemType }) {
+// What every element-specific lookup below returns: the item (and, on request, the items it superseded), or the
+// info / error that explains why there is none.
+type ElementTimeItemResult = ResultType & { timeItem?: TimeItem; previousItems?: TimeItem[] };
+
+type GetDrawDefinitionTimeItemArgs = {
+  returnPreviousValues?: boolean;
+  drawDefinition: DrawDefinition;
+  itemSubTypes?: string[];
+  itemType: string;
+};
+export function getDrawDefinitionTimeItem({
+  returnPreviousValues,
+  drawDefinition,
+  itemSubTypes,
+  itemType,
+}: GetDrawDefinitionTimeItemArgs): ElementTimeItemResult {
   if (!drawDefinition) return { error: MISSING_DRAW_ID };
   if (!drawDefinition.timeItems) return { info: NOT_FOUND };
 
@@ -85,7 +100,12 @@ type GetEventTimeItemArgs = {
   itemType: string;
   event: Event;
 };
-export function getEventTimeItem({ returnPreviousValues, itemSubTypes, itemType, event }: GetEventTimeItemArgs) {
+export function getEventTimeItem({
+  returnPreviousValues,
+  itemSubTypes,
+  itemType,
+  event,
+}: GetEventTimeItemArgs): ElementTimeItemResult {
   if (!event) return { error: MISSING_EVENT };
   if (!event.timeItems) return { info: NOT_FOUND };
 
@@ -109,7 +129,7 @@ export function getTournamentTimeItem({
   tournamentRecord,
   itemSubTypes,
   itemType,
-}: GetTournamentTimeItemArgs) {
+}: GetTournamentTimeItemArgs): ElementTimeItemResult {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   if (!tournamentRecord.timeItems) return { info: NOT_FOUND };
 
@@ -122,13 +142,20 @@ export function getTournamentTimeItem({
   return (timeItem && { timeItem, previousItems }) ?? { info };
 }
 
+type GetParticipantTimeItemArgs = {
+  returnPreviousValues?: boolean;
+  tournamentRecord: Tournament;
+  itemSubTypes?: string[];
+  participantId: string;
+  itemType: string;
+};
 export function getParticipantTimeItem({
   returnPreviousValues,
   tournamentRecord,
   participantId,
   itemSubTypes,
   itemType,
-}) {
+}: GetParticipantTimeItemArgs): ElementTimeItemResult {
   const paramsCheck = requireParams({ tournamentRecord, participantId }, [TOURNAMENT_RECORD, PARTICIPANT_ID]);
   if (paramsCheck.error) return paramsCheck;
 

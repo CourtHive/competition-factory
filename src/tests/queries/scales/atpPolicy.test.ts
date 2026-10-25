@@ -1,5 +1,6 @@
 import { POLICY_RANKING_POINTS_ATP } from '@Fixtures/policies/POLICY_RANKING_POINTS_ATP';
 import { getAwardProfile } from '@Query/scales/getAwardProfile';
+import { defined } from '@Tests/helpers/defined';
 import scaleEngine from '@Engines/scaleEngine';
 import { describe, expect, it } from 'vitest';
 import { mocksEngine } from '../../..';
@@ -45,17 +46,17 @@ describe('ATP 2026 Policy Structure', () => {
     expect(aggregationRules.rollingPeriodDays).toEqual(364);
     expect(aggregationRules.separateByGender).toEqual(false);
     expect(aggregationRules.perCategory).toEqual(false);
-    expect(aggregationRules.countingBuckets.length).toEqual(2);
+    expect(aggregationRules.countingBuckets?.length).toEqual(2);
 
-    const singles = aggregationRules.countingBuckets[0];
+    const singles = defined(aggregationRules.countingBuckets, 'countingBuckets')[0];
     expect(singles.bucketName).toEqual('Singles');
     expect(singles.bestOfCount).toEqual(19);
     expect(singles.eventTypes).toEqual([SINGLES]);
-    expect(singles.mandatoryRules.length).toEqual(2);
-    expect(singles.mandatoryRules[0].ruleName).toEqual('Grand Slams');
-    expect(singles.mandatoryRules[1].ruleName).toEqual('ATP 1000');
+    expect(singles.mandatoryRules?.length).toEqual(2);
+    expect(singles.mandatoryRules?.[0].ruleName).toEqual('Grand Slams');
+    expect(singles.mandatoryRules?.[1].ruleName).toEqual('ATP 1000');
 
-    const doubles = aggregationRules.countingBuckets[1];
+    const doubles = defined(aggregationRules.countingBuckets, 'countingBuckets')[1];
     expect(doubles.bucketName).toEqual('Doubles');
     expect(doubles.bestOfCount).toEqual(18);
     expect(doubles.eventTypes).toEqual([DOUBLES]);
@@ -234,9 +235,9 @@ describe('ATP 2026 Ranking Points Values', () => {
       participation: { participationOrder: 1, rankingStage: MAIN },
       level: 1,
     });
-    expect(awardProfile.finishingPositionRanges[1]).toEqual(2000);
-    expect(awardProfile.finishingPositionRanges[2]).toEqual(1300);
-    expect(awardProfile.finishingPositionRanges[128]).toEqual(10);
+    expect(awardProfile?.finishingPositionRanges?.[1]).toEqual(2000);
+    expect(awardProfile?.finishingPositionRanges?.[2]).toEqual(1300);
+    expect(awardProfile?.finishingPositionRanges?.[128]).toEqual(10);
   });
 
   it('ATP 1000 level-keyed values resolve correctly', () => {
@@ -246,11 +247,11 @@ describe('ATP 2026 Ranking Points Values', () => {
       participation: { participationOrder: 1, rankingStage: MAIN },
       level: 3,
     });
-    expect(awardProfile.finishingPositionRanges[1]).toEqual(1000);
+    expect(awardProfile?.finishingPositionRanges?.[1]).toEqual(1000);
     // R64 is level-keyed: level 3 = 30, level 4 = 10
-    expect(awardProfile.finishingPositionRanges[64]).toEqual({ level: { 3: 30, 4: 10 } });
+    expect(awardProfile?.finishingPositionRanges?.[64]).toEqual({ level: { 3: 30, 4: 10 } });
     // R128 only for level 3
-    expect(awardProfile.finishingPositionRanges[128]).toEqual({ level: { 3: 10 } });
+    expect(awardProfile?.finishingPositionRanges?.[128]).toEqual({ level: { 3: 10 } });
   });
 
   it('Challenger singles values are level-keyed', () => {
@@ -260,7 +261,7 @@ describe('ATP 2026 Ranking Points Values', () => {
       participation: { participationOrder: 1, rankingStage: MAIN },
       level: 9,
     });
-    expect(awardProfile.finishingPositionRanges[1]).toEqual({
+    expect(awardProfile?.finishingPositionRanges?.[1]).toEqual({
       level: { 9: 175, 10: 125, 11: 100, 12: 75, 13: 50, 14: 25, 15: 15 },
     });
   });
@@ -273,7 +274,7 @@ describe('ATP 2026 Ranking Points Values', () => {
       level: 5,
     });
     // Position 1 (qualifier) at level 5 = 16
-    expect(awardProfile.finishingPositionRanges[1]).toEqual({
+    expect(awardProfile?.finishingPositionRanges?.[1]).toEqual({
       level: { 3: 20, 4: 30, 5: 16, 6: 25, 7: 8, 8: 13, 9: 6, 10: 5, 11: 4, 12: 4, 13: 3 },
     });
   });
@@ -286,10 +287,9 @@ describe('ATP 2026 Ranking Points Values', () => {
       participation: { participationOrder: 1, rankingStage: MAIN },
       level: 2,
     });
-    expect(awardProfile.perWinPoints.value).toEqual(200);
-    expect(awardProfile.perWinPoints.participationOrders).toEqual([1]);
-    expect(awardProfile.finishingPositionRanges[1]).toEqual(900);
-    expect(awardProfile.finishingPositionRanges[2]).toEqual(400);
+    expect(awardProfile?.perWinPoints).toEqual({ participationOrders: [1], value: 200 });
+    expect(awardProfile?.finishingPositionRanges?.[1]).toEqual(900);
+    expect(awardProfile?.finishingPositionRanges?.[2]).toEqual(400);
   });
 
   it('Grand Slam Doubles champion gets 2000 points', () => {
@@ -299,8 +299,8 @@ describe('ATP 2026 Ranking Points Values', () => {
       participation: { participationOrder: 1, rankingStage: MAIN },
       level: 1,
     });
-    expect(awardProfile.finishingPositionRanges[1]).toEqual(2000);
-    expect(awardProfile.finishingPositionRanges[2]).toEqual(1200);
+    expect(awardProfile?.finishingPositionRanges?.[1]).toEqual(2000);
+    expect(awardProfile?.finishingPositionRanges?.[2]).toEqual(1200);
   });
 
   it('ATP 250 Doubles R16 is level-keyed (L7 only)', () => {
@@ -310,7 +310,7 @@ describe('ATP 2026 Ranking Points Values', () => {
       participation: { participationOrder: 1, rankingStage: MAIN },
       level: 7,
     });
-    expect(awardProfile.finishingPositionRanges[16]).toEqual({ level: { 7: 20 } });
+    expect(awardProfile?.finishingPositionRanges?.[16]).toEqual({ level: { 7: 20 } });
   });
 });
 

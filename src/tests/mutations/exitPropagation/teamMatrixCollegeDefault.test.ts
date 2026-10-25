@@ -29,11 +29,11 @@ test('composes 240 cells, each with its own seed', () => {
 
 test.skipIf(!enabled).for(CELLS)(
   'team $tieFormatName lines=$lineUps $drawType $drawSize/$participantsCount $exitStatus propagate=$propagateExitStatus',
+  { timeout: 180_000 },
   (cell) => {
     const failures = runMatrixCell(cell, `team-${cell.seed}`);
     expect(failures, 'nothing playable').toBeDefined();
     const report = (failures ?? []).map((f) => `${f.property} @ ${f.matchUpId.slice(0, 8)}\n  ${f.detail}`).join('\n');
     expect(report).toEqual('');
   },
-  180_000,
 );

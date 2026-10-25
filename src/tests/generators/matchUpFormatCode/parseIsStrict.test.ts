@@ -27,6 +27,10 @@ describe('junk is refused by parse and isValid alike', () => {
     // NOAD goes before a modifier; after it, the modifier read as `RALLYNOAD` and rally scoring was lost
     ['NOAD swallowed by a tiebreak modifier', 'SET3-S:TB11@RALLYNOAD'],
     ['NOAD swallowed by a timed modifier', 'SET3-S:T10@RALLYNOAD'],
+    // a modifier is upper-case letters (CA 2026-10-25): `@rally` scored side-out
+    ['a lower-case tiebreak modifier', 'SET3-S:TB11@rally'],
+    ['a lower-case timed modifier', 'SET3-S:T10@rally'],
+    ['a modifier that is not letters', 'SET3-S:TB11@R_1'],
   ])('%s: %s', (_, code) => {
     expect(both(code)).toEqual({ parsed: false, valid: false });
   });
@@ -51,18 +55,18 @@ describe('well-formed codes are accepted by both, including equivalent spellings
 
   it('an equivalent spelling parses to the same thing as its canonical form', () => {
     expect(parse('SET3-S:6NOAD/TB7@6')).toEqual(parse('SET3-S:6NOAD/TB7'));
-    // the identical final set is kept, and it is the set format
-    const withFinal: any = parse('SET3-S:6-F:6');
-    expect(withFinal.setFormat).toEqual(parse('SET3-S:6')?.setFormat);
-    expect(withFinal.finalSetFormat).toEqual(withFinal.setFormat);
+    // the identical final set, the timed G and the default game are not kept (CA 2026-10-25)
+    expect(parse('SET3-S:6-F:6')).toEqual(parse('SET3-S:6'));
+    expect(parse('SET3-S:6/TB7-F:6/TB7@6')).toEqual(parse('SET3-S:6/TB7'));
+    expect(parse('SET1-S:T20G')).toEqual(parse('SET1-S:T20'));
+    expect(parse('SET3-S:6/TB7-G:TN')).toEqual(parse('SET3-S:6/TB7'));
   });
 });
 
 describe('stringify never writes a code parse refuses', () => {
-  it('exactly on a games set, and a game format it cannot write, give undefined', () => {
-    expect(
-      stringify({ exactly: 3, setFormat: { setTo: 6, tiebreakAt: 6, tiebreakFormat: { tiebreakTo: 7 } } }),
-    ).toBeUndefined();
+  it('a game format or a modifier it cannot write gives undefined', () => {
+    expect(stringify({ bestOf: 3, setFormat: { tiebreakSet: { tiebreakTo: 11, modifier: 'rally' } } })).toBeUndefined();
+    expect(stringify({ bestOf: 1, setFormat: { timed: true, minutes: 10, modifier: 'R_1' } })).toBeUndefined();
     expect(stringify({ bestOf: 3, setFormat: { setTo: 6 }, gameFormat: { type: 'BOGUS' } })).toBeUndefined();
   });
 

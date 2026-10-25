@@ -216,10 +216,10 @@ describe('Participant Experience report', () => {
     const log = generate(PARTICIPANT_RECOVERY_REPORT);
     const rollup = generate(PARTICIPANT_EXPERIENCE_REPORT);
 
-    const shortInLog = new Set(
+    const shortInLog = new Set<string>(
       log.rows.filter((r: any) => (r.recoveryDeficit ?? 0) > 0).map((r: any) => r.participantId),
     );
-    const shortInRollup = new Set(
+    const shortInRollup = new Set<string>(
       rollup.rows.filter((r: any) => r.shortRecoveryCount > 0).map((r: any) => r.participantId),
     );
     // Both derive from one core; a divergence means the roll-up drifted.

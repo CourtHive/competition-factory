@@ -2,8 +2,8 @@
  * RFC 8785 JSON Canonicalization Scheme (JCS).
  *
  * The golden corpus hashes and diffs tournament records across implementations, so two engines
- * that agree on content must produce the same bytes. JCS is the published answer, and Go and Rust
- * both have conforming libraries, which is why the corpus adopts a standard rather than its own
+ * that agree on content must produce the same bytes. JCS is the published answer, with conforming
+ * libraries in most languages, which is why the corpus adopts a standard rather than its own
  * rules. The rules, as the RFC states them:
  *
  *   - object keys sorted by UTF-16 code unit (the default JavaScript string order);

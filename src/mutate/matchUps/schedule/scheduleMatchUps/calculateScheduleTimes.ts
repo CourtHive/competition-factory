@@ -1,9 +1,10 @@
+import { matchUpFormatTimes, resolveTimingDetails } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
 import { calculatePeriodLength } from '@Assemblies/generators/scheduling/utils/calculatePeriodLength';
-import { matchUpFormatTimes } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
-import { addMinutesToTimeString, extractTime, sameDay, timeStringMinutes } from '@Tools/dateTime';
 import { getScheduleTiming } from '@Query/extensions/matchUpFormatTiming/getScheduleTiming';
 import { competitionScheduleMatchUps } from '@Query/matchUps/competitionScheduleMatchUps';
+import { extractDate, extractTime, sameDay, timeStringMinutes } from '@Tools/dateTime';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
+import { addDaysToDate, endOnTheDay } from '@Tools/civilDateTime';
 import { getScheduleTimes } from '@Query/venues/getScheduleTimes';
 import { getMatchUpId } from '@Functions/global/extractors';
 
@@ -127,36 +128,47 @@ export function calculateScheduleTimes({
   relevantMatchUps.push(...dateMatchUps);
   relevantMatchUps.push(...completedMatchUps);
 
-  const defaultTiming = {
-    averageTimes: [{ minutes: { default: averageMatchUpMinutes } }],
-    recoveryTimes: [{ minutes: { default: defaultRecoveryMinutes } }],
-  };
-
-  const bookings = relevantMatchUps?.map(({ eventId, schedule, matchUpFormat }) => {
+  const timingOf = ({ eventId, matchUpFormat }: { eventId: string; matchUpFormat?: string }) => {
     const { event, scheduleTiming } = eventDetails[eventId];
     const eventType = event?.eventType;
-    const timingDetails = {
-      ...scheduleTiming,
-      defaultTiming,
+    const timingDetails = resolveTimingDetails({
+      defaultAverageMinutes: averageMatchUpMinutes,
+      scheduleTiming,
+      defaultRecoveryMinutes,
       matchUpFormat,
-    };
-    const { averageMinutes, recoveryMinutes } = matchUpFormatTimes({
-      eventType,
-      timingDetails,
     });
-    const { courtId, venueId } = schedule;
-    const startTime = extractTime(schedule.scheduledTime);
-    const endTime = addMinutesToTimeString(startTime, averageMinutes);
-    return {
-      recoveryMinutes,
-      averageMinutes,
-      periodLength,
-      startTime,
-      endTime,
-      courtId,
-      venueId,
-    };
+    return matchUpFormatTimes({ eventType, timingDetails });
+  };
+
+  const bookings = relevantMatchUps.map((matchUp) => {
+    const { averageMinutes, recoveryMinutes } = timingOf(matchUp);
+    const { courtId, venueId } = matchUp.schedule;
+    const startTime = extractTime(matchUp.schedule.scheduledTime);
+    // a booking that would end past midnight holds its court to the end of its day (scheduling-pipeline.md § 9.8)
+    const { endTime } = endOnTheDay(startTime, averageMinutes);
+    return { recoveryMinutes, averageMinutes, periodLength, startTime, endTime, courtId, venueId };
   });
+
+  // a matchUp of the day before that runs past midnight holds its court from 00:00 into this date
+  const previousDate = addDaysToDate(extractDate(scheduleDate), -1);
+  const previousDateMatchUps = previousDate
+    ? competitionScheduleMatchUps({
+        matchUpFilters: { ...matchUpFilters, scheduledDate: previousDate },
+        sortDateMatchUps: false,
+        tournamentRecords,
+      })
+    : undefined;
+  for (const matchUp of [
+    ...(previousDateMatchUps?.dateMatchUps ?? []),
+    ...(previousDateMatchUps?.completedMatchUps ?? []),
+  ]) {
+    const { averageMinutes, recoveryMinutes } = timingOf(matchUp);
+    const { minutesPastMidnight } = endOnTheDay(extractTime(matchUp.schedule?.scheduledTime), averageMinutes);
+    if (!minutesPastMidnight) continue;
+    const { courtId, venueId } = matchUp.schedule ?? {};
+    const endTime = endOnTheDay('00:00', minutesPastMidnight).endTime;
+    bookings.push({ recoveryMinutes, averageMinutes, periodLength, startTime: '00:00', endTime, courtId, venueId });
+  }
 
   const timingParameters = {
     calculateStartTimeFromCourts,

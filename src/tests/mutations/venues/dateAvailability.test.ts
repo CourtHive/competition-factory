@@ -1,5 +1,6 @@
 import { validDateAvailability } from '@Validators/validateDateAvailability';
 import { Availability } from '@Types/tournamentTypes';
+import type { ResultType } from '@Types/factoryTypes';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
@@ -21,7 +22,7 @@ const d220202 = '2022-02-02';
 
 test('will not allow saving of Invalid Date in dateAvailability', () => {
   let dateAvailability: Availability[] = [{ date: d210102, startTime: '09:00', endTime: '16:00' }];
-  let result = validDateAvailability({ dateAvailability });
+  let result: ResultType = validDateAvailability({ dateAvailability });
   expect(result.valid).toEqual(true);
 
   result = validDateAvailability({ dateAvailability: 'not an array' });
@@ -230,11 +231,11 @@ it('can add events, venues, and modify court availbility', () => {
   expect(Object.values(result.matchUpScheduleTimes)).toEqual([
     '09:00', // QF
     '09:00', // QF
-    '10:30', // QF
+    '10:00', // QF
     '11:00', // QF
-    '12:00', // SF
+    '11:30', // SF
     '14:00', // SF
-    '15:30', // F
+    '16:00', // F
   ]);
 
   result = tournamentEngine.scheduleProfileRounds({
@@ -244,11 +245,11 @@ it('can add events, venues, and modify court availbility', () => {
   expect(Object.values(result.matchUpScheduleTimes)).toEqual([
     '09:00',
     '09:00',
-    '10:00',
-    '10:45',
-    '11:30',
+    '09:45',
+    '10:30',
+    '11:15',
+    '12:00',
     '14:00',
-    '15:45',
   ]);
 
   result = tournamentEngine.scheduleProfileRounds({
@@ -258,11 +259,11 @@ it('can add events, venues, and modify court availbility', () => {
   expect(Object.values(result.matchUpScheduleTimes)).toEqual([
     '09:00',
     '09:00',
-    '10:00',
-    '10:40',
-    '11:30',
+    '09:40',
+    '10:20',
+    '11:10',
+    '11:50',
     '14:00',
-    '15:40',
   ]);
 
   result = tournamentEngine.scheduleProfileRounds({
@@ -272,11 +273,11 @@ it('can add events, venues, and modify court availbility', () => {
   expect(Object.values(result.matchUpScheduleTimes)).toEqual([
     '09:00',
     '09:00',
-    '09:50',
-    '10:35',
-    '11:20',
+    '09:30',
+    '10:15',
+    '11:00',
+    '11:45',
     '14:00',
-    '15:30',
   ]);
 });
 

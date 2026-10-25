@@ -116,6 +116,8 @@ export default {
   setCapturedClock,
   getCapturedCompetitionClock,
   setCapturedCompetitionClock,
+  getCapturedStamps,
+  setCapturedStamps,
   getCallRandomSource,
   setCallRandomSource,
   deleteNotice,
@@ -157,6 +159,15 @@ export function getCapturedCompetitionClock(): number | undefined {
 
 export function setCapturedCompetitionClock(timeStamp?: number) {
   getInstanceState().capturedCompetitionClock = timeStamp;
+}
+
+// Per request, like the captured clock: one request's stamps must not mark another's entities as stamped.
+export function getCapturedStamps(): WeakSet<object> | undefined {
+  return asyncLocalStorage.getStore()?.capturedStamps;
+}
+
+export function setCapturedStamps(stamps?: WeakSet<object>) {
+  getInstanceState().capturedStamps = stamps;
 }
 
 // Per request, like the captured clock: a seeded call's stream must not reach a request overlapping it.

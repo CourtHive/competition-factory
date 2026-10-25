@@ -27,6 +27,7 @@ import { getEventProperties } from '@Query/event/getEventProperties';
 import { validDrawPositions } from '@Validators/validDrawPositions';
 import { mapNumbersToIndexes } from '@Tools/mapNumbersToIndexes';
 import { setDevContext } from '@Global/state/globalState';
+import type { ResultType } from '@Types/factoryTypes';
 import { getCourts } from '@Query/venues/getCourts';
 import { expect, it, describe } from 'vitest';
 
@@ -35,6 +36,7 @@ import { VOLUNTARY_CONSOLATION, MAIN, QUALIFYING, CONSOLATION } from '@Constants
 import { DIRECT_ACCEPTANCE, UNGROUPED, ALTERNATE } from '@Constants/entryStatusConstants';
 import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
+import { SEEDING } from '@Constants/scaleConstants';
 import {
   INVALID_VALUES,
   MISSING_COURT_ID,
@@ -156,7 +158,7 @@ describe('autoSeeding branch coverage', () => {
       tournamentRecord: {} as any,
       drawDefinition: {} as any,
       policyDefinitions: {},
-      scaleAttributes: {},
+      scaleAttributes: { scaleType: SEEDING },
       scaleName: 'test',
       drawSize: 8,
       drawId: 'd1',
@@ -179,7 +181,7 @@ describe('autoSeeding branch coverage', () => {
       tournamentRecord: {} as any,
       drawDefinition: { entries: [] } as any,
       policyDefinitions,
-      scaleAttributes: {},
+      scaleAttributes: { scaleType: SEEDING },
       scaleName: 'test',
       drawSize: 8,
       drawId: 'd1',
@@ -897,19 +899,24 @@ describe('getStageEntries branch coverage', () => {
 // ----------------------------------------------------------------
 // 22. getEventProperties — 5 uncovered branches
 // ----------------------------------------------------------------
+type EventPropertiesResult = ResultType & { entryScaleAttributes?: { participantId?: string }[] };
+
 describe('getEventProperties branch coverage', () => {
   it('returns error when tournamentRecord is missing', () => {
-    const result = getEventProperties({ tournamentRecord: undefined, event: {} });
+    const result: EventPropertiesResult = getEventProperties({ tournamentRecord: undefined, event: {} });
     expect(result.error).toEqual(MISSING_TOURNAMENT_RECORD);
   });
 
   it('returns error when event is missing', () => {
-    const result = getEventProperties({ tournamentRecord: { tournamentId: 't1' }, event: undefined });
+    const result: EventPropertiesResult = getEventProperties({
+      tournamentRecord: { tournamentId: 't1' },
+      event: undefined,
+    });
     expect(result.error).toEqual(MISSING_EVENT);
   });
 
   it('returns empty scale attributes when no participants match entries', () => {
-    const result = getEventProperties({
+    const result: EventPropertiesResult = getEventProperties({
       tournamentRecord: { tournamentId: 't1', participants: [] },
       event: { eventId: 'e1', entries: [{ participantId: 'p1' }] },
     });
@@ -917,7 +924,7 @@ describe('getEventProperties branch coverage', () => {
   });
 
   it('returns scale attributes for entered participants', () => {
-    const result = getEventProperties({
+    const result: EventPropertiesResult = getEventProperties({
       tournamentRecord: {
         tournamentId: 't1',
         participants: [{ participantId: 'p1', participantName: 'Test' }],
@@ -925,7 +932,7 @@ describe('getEventProperties branch coverage', () => {
       event: { eventId: 'e1', entries: [{ participantId: 'p1' }], category: { categoryName: 'U18' } },
     });
     expect(result.entryScaleAttributes?.length).toBe(1);
-    expect(result.entryScaleAttributes[0].participantId).toBe('p1');
+    expect(result.entryScaleAttributes?.[0]?.participantId).toBe('p1');
   });
 });
 

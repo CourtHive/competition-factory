@@ -90,6 +90,7 @@ the old one.
 | 14  | `ERR_UNCHANGED_CANNOT_CHANGE_WINNING_SIDE` | changing the winner of a matchUp whose winner has been played on, without `allowChangePropagation`                                                                                                                                                                                                                                                                                                                                        | `winningSideWithDownstreamDependencies`                                                                                |
 | 15  | `ERR_NO_VALID_ACTIONS`                     | downstream is active, the matchUp has propagated, the call names no winner and no directing status, and auto-calc is on                                                                                                                                                                                                                                                                                                                   | `resolveAndApplyOutcome`                                                                                               |
 | 16  | `ERR_INVALID_TIME`                         | the `schedule` carries a time that does not parse (validated before the write, applied after)                                                                                                                                                                                                                                                                                                                                             | `addMatchUpScheduleItems` with `validateOnly`                                                                          |
+| 25  | `ERR_INVALID_DATE`                         | the `schedule` carries a date, or a date-time's date, outside the tournament or off the calendar (#5774; validated before the write, so the outcome does not land)                                                                                                                                                                                                                                                                        | `addMatchUpScheduleItems` with `validateOnly`                                                                          |
 | 17  | `ERR_ACTIVE_DRAW_POSITION`                 | a direction would move a participant off a position already played on                                                                                                                                                                                                                                                                                                                                                                     | `reconcileFedLoserEligibility`, BYE and qualifier assignment                                                           |
 | 18  | `ERR_MUTATION_LOCKED`                      | the tournament holds a mutation lock whose scope covers the method                                                                                                                                                                                                                                                                                                                                                                        | engine, before the pipeline                                                                                            |
 | 19  | `ERR_FORCED`                               | **OPEN**: observed by the corpus from a `setMatchUpStatus` step; its origin is outside the twelve files and not yet traced                                                                                                                                                                                                                                                                                                                |                                                                                                                        |
@@ -147,6 +148,15 @@ winner or a double exit). A matchUp that has never sent anything downstream cann
 anything there, so a first entry always takes the propagating branch. With both true, a named winner
 goes to `winningSideWithDownstreamDependencies`; a directing status or disabled auto-calc goes to
 `applyMatchUpValues`; anything else is `ERR_NO_VALID_ACTIONS`.
+
+**A clear of a BYE changes nothing**, and is asked before the dispatch: a request with no winner, no
+score with value and no status but `TO_BE_PLAYED`, made of a matchUp stored as a `BYE`, succeeds as
+`noop` and still applies its schedule. A BYE has no result to clear, and **a `TO_BE_PLAYED` matchUp with
+a BYE side never occurs** (CA, 2026-10-24; punch-list P26). Until then the clear was accepted and wrote
+`TO_BE_PLAYED` against nobody: four seeds of census window sched-w1, on both arms. v1 and v2 ask the one
+predicate (`clearsABye`); the harness invariant `TO_BE_PLAYED_BESIDE_BYE` checks the shape at every
+census step (`aClearedByeStaysABye.test.ts`). The lines of a BYE dual are not that shape: the dual is the
+BYE, and its lines stay TO_BE_PLAYED, as they are generated (CA, 2026-10-24).
 
 **The route v2 names** (`Route`, `src/mutate/matchUps/outcome/types.ts`) is the table's last column for
 a call that reaches `attemptToSetMatchUpStatus`; `refused` is any of its three refusals. The dispatch
@@ -320,6 +330,18 @@ After the write, and only on success:
 6. **Notifications** (MODIFY_MATCHUP and the draw's topics) are emitted; the factory extension's
    `timeStamp` is written by the engine after the call.
 
+   **An entity's `updatedAt` is stamped once per call** (F2 (i), CA 2026-10-19): the call's captured instant, or the
+   previous stamp + 1 ms when that is already as late, however many notices the call raises for it. An
+   `executionQueue` is one call. Until 2026-10-24 v1 stamped at each notice, so one first-round score moved the draw's
+   stamp on by 2 ms (`oneStampPerEntityPerCall.test.ts`). A state provider without the optional
+   `getCapturedStamps`/`setCapturedStamps` hooks keeps no ledger and stamps at each notice, as before.
+
+   **The touched entities** are the matchUps the call writes, the draw, the top-level structure holding each matchUp
+   written (a round robin's container, the dual's structure for a line), and any structure whose position
+   assignments change (a loser fed across a link). A matchUp notice stamped every top-level structure until
+   2026-10-24, so a CURTIS main score stamped its Play Off. A matchUp that no top-level structure holds still stamps
+   every structure.
+
 ## 6. Guarantees
 
 - **A refusal changes nothing** (`ERROR_IMPLIES_NO_MUTATION`). The checks in § 2 run above every
@@ -339,13 +361,25 @@ After the write, and only on success:
     result in a type that admits none, so a release that one day declares an error does not compile.
   - `reconcileScoredTimes` cannot fail by construction. Its notice's only error is a missing matchUp,
     which the pass's guard keeps from reaching it (`settlePassesCannotFail.test.ts`).
-  - `reconcileMissedLinkAdvancements` stays **open** (outcome v2 executor plan, "v1 errors handed to v2").
-    `directWinner` can return an error there: a target matchUp with no free slot
-    (`ERR_EXISTING_POSITION_ASSIGNMENT`), or one from the advance it makes onward. The pass drops it, so it
-    is never a refusal; it is known only once the cascade has written, and whether a placement will fail
-    depends on `yieldSquattingPropagatedBye`, which can itself write before it decides, so no pure check
-    can be asked for it in advance. Reached 41 times over the suite and the frozen census windows,
-    never with an error (2026-10-22). It is not made a refusal: that would be an error after a write.
+  - `reconcileMissedLinkAdvancements` **returns** the error of the direction it makes, and the call is
+    refused on it (CA, 2026-10-24). `directWinner` can return one there: a target matchUp with no free slot
+    (`ERR_EXISTING_POSITION_ASSIGNMENT`), or one from the advance it makes onward. It is known only once the
+    cascade has written, and whether a placement will fail depends on `yieldSquattingPropagatedBye`, which
+    can itself write before it decides, so no pure check can be asked for it in advance. It was dropped
+    until 2026-10-24; it was never reached with an error over the suite and the frozen census windows
+    (2026-10-22), nor over ~97,000 census schedules (settle telemetry, 2026-10-24). A refusal here is an
+    error after a write, accepted because it is not reached; v2 plans it before its first write
+    (`aSettlePassReportsWhatItCannotDo.test.ts`).
+- **A settle loop that reaches its bound with work left refuses the call** with `SETTLE_BOUND_REACHED`,
+  naming the loop (F9 (i), CA 2026-10-19 and 2026-10-24). The bounded loops are `propagateExitFrom`,
+  `sendHeldExitsOn`, `produceStrandedConvergences`, `crossLinksThroughByes` and `reconcileLinkAdvancements`;
+  their limits are `SETTLE_PASS_LIMITS`. Each asks once more whether work is left before refusing, so a draw
+  needing exactly its limit is not refused. None was reached on ~97,000 census schedules; like the dropped
+  error above, a refusal at a bound is an error after a write, accepted because it is not reached, and v2
+  plans it before its first write (`aSettleLoopAtItsBoundRefuses.test.ts`). **The one exception is the
+  forward settle** (`settleForwardConsequences`): it is a repair loop that a record missing many winner
+  advancements reaches, so it keeps its success with a `FORWARD_SETTLE_EXHAUSTED` warning naming the matchUp
+  still owed, and the next call settles the rest (CA, 2026-10-24).
 
   Measured 2026-10-22 over the suite and the frozen census windows w1, w2 and de: the release was reached
   4 times and the notice 3,922 times, never with an error.
@@ -442,8 +476,16 @@ The mode is process-wide, set with
 restores `v1`, and an unknown mode is `INVALID_VALUES`.
 
 - **`v1`** (the default): nothing is built and nothing is decided by v2.
-- **`v2`**: v2 decides the refusals. A refusal it raises is the call's result and v1 is not asked;
-  an outcome it accepts is handed to v1, which routes and writes as under `v1`.
+- **`v2`**: v2 decides the refusals. A refusal it raises is the call's result and v1 is not asked.
+  An outcome it accepts is planned (§ 7.2); a call whose complete plan is a shape v2 owns is written
+  by v2 (`outcome/apply.ts`: the plan's ops folded into the stored draw by the one reducer, then
+  v1's own notices for what was written) and v1 is not asked; every other call is handed to v1
+  whole, which routes and writes as under `v1`. Since S2 v2 owns the **local** write: the
+  matchUp's own result (an in-progress, suspended or corrected live score, a format change with
+  it, a cleared live score), with no winner before or after, no exit, nothing directed, no tally
+  and no settle work. It leaves the record, the notices and the result v1 leaves for the same call
+  (`ownedLocalWrites.test.ts`, under a fixed clock); an owned call takes no hydration, and its
+  `updateInContextMatchUp` is built only for a subscriber, after the call has succeeded.
 - **`differential`**: v2 plans the whole call before v1 runs, then checks v1's result against it,
   and a disagreement throws `OutcomePipelineDivergence` naming the matchUp and both answers. The
   plan covers the refusal, the route, the write on the matchUp, the winner's direction, the
@@ -520,29 +562,94 @@ result, no winner before or after) and the **first direction** (a played result 
 only consequence is the winner's position in the next matchUp of the same structure). The reasons are the work list of
 the slices that follow:
 
-| reason         | the call                                                                                                       | taken on by                                  |
-| -------------- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| `team`         | is a dual or one of its lines                                                                                  | S7                                           |
-| `schedule`     | carries a schedule                                                                                             | a later slice (§ 3.5.8 of the executor plan) |
-| `notes`        | carries notes                                                                                                  | a later slice                                |
-| `status-codes` | carries the client's positional status codes, split into side codes at the write                               | S2                                           |
-| `exit`         | has an exit status before or after                                                                             | S5                                           |
-| `winner`       | takes away or changes a winner already stored, so what it directed is taken back                               | S4                                           |
-| `loser`        | has a loser link, so the loser goes somewhere                                                                  | S3                                           |
-| `link`         | sends its winner into another structure                                                                        | S3                                           |
-| `cascade`      | sends its winner to a matchUp holding a BYE, an exit or a result, so the winner goes on or meets it            | S5                                           |
-| `route`        | takes a route, or reaches a status, that S1 does not plan as ops                                               | S2                                           |
-| `provenance`   | is on a matchUp holding side-exit provenance the score write may clear or rescue                               | S5                                           |
-| `tallied`      | is in a round-robin, ad hoc or lucky structure, whose tally the write updates                                  | S3                                           |
-| `unchanged`    | would change nothing but stamps                                                                                | S2 (with F2 in v1)                           |
-| `no-record`    | is on a draw the tournament record's events do not hold, so there is nothing to fold the plan into             | none: a shadow needs the record              |
-| `edges`        | is on a draw that stores no winner and loser edges, which v1 writes first (`ensureGoesTo`)                     | S2 (`setEdges`)                              |
-| `clock`        | is made outside an engine call, with no captured instant, so the timestamps a write takes cannot be reproduced | none: production calls go through the engine |
+| reason         | the call                                                                                                           | taken on by                                     |
+| -------------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- |
+| `team`         | is a dual or one of its lines                                                                                      | S7                                              |
+| `schedule`     | carries a schedule                                                                                                 | a later slice (§ 3.5.8 of the executor plan)    |
+| `notes`        | carries notes                                                                                                      | a later slice                                   |
+| `status-codes` | carries the client's positional status codes, split into side codes at the write                                   | S2                                              |
+| `exit`         | has an exit status before or after                                                                                 | S5                                              |
+| `winner`       | takes away or changes a winner already stored, so what it directed is taken back                                   | S4                                              |
+| `loser`        | has a loser link, so the loser goes somewhere                                                                      | S3                                              |
+| `link`         | sends its winner into another structure                                                                            | S3                                              |
+| `cascade`      | sends its winner to a matchUp holding a BYE, an exit or a result, so the winner goes on or meets it                | S5                                              |
+| `route`        | takes a route, or reaches a status, that S1 does not plan as ops                                                   | S2                                              |
+| `provenance`   | is on a matchUp holding side-exit provenance the score write may clear or rescue                                   | S5                                              |
+| `tallied`      | is in a round-robin, ad hoc or lucky structure, whose tally the write updates                                      | S3                                              |
+| `unchanged`    | would change nothing but stamps                                                                                    | S2 (with F2 in v1)                              |
+| `no-record`    | is on a draw the tournament record's events do not hold, so there is nothing to fold the plan into                 | none: a shadow needs the record                 |
+| `edges`        | is on a draw that stores no winner and loser edges, which v1 writes first (`ensureGoesTo`)                         | S2 (`setEdges`)                                 |
+| `clock`        | is made outside an engine call, with no captured instant, so the timestamps a write takes cannot be reproduced     | none: production calls go through the engine    |
+| `settle`       | leaves a settle pass work on the working view (S2's has-work predicates, `settleWork.ts`), leftover state included | none: S2 owns only a call no pass has work for  |
+| `write-mode`   | is made in LEGACY or BRIDGE write mode, where v1 writes `scoredTime` as a timeItem, which the reducer does not     | a later slice (F6: BRIDGE in with its evidence) |
 
 **In `differential`**, a complete plan is folded into the record as it stood before v1 ran and compared with the record
-v1 wrote. Until Phase C's F2 lands in v1, stamps are normalised in that comparison (debate-ruled 2026-10-24, pending
-CA review): a structure's `updatedAt` is left out, and a matchUp's and the draw's are compared as present or absent.
-v1 stamps once per notice and every top-level structure on each, so no value comparison can pass yet.
+v1 wrote, every `updatedAt` by value: v1 stamps each touched entity once per call, as v2 does (F2 (i), § 5 step 6).
+Until 2026-10-24 stamps were normalised there (structures left out, the draw and matchUps by presence), because v1
+stamped at each notice and every top-level structure on each.
+
+**The working view** (`outcome/overlay.ts`; executor plan § 3.2) is the draw as a plan's ops will leave it, read
+without writing the record: what S2's has-work predicates for the settle passes read, where v1 reads the draw it has
+written. A matchUp or structure an op writes gets a stored-shape working copy, the ops are folded into the copies by
+the same reducer as the shadow apply, and the matchUps an op wrote, with those whose sides read a reassigned
+drawPosition, are derived again from the copies: by indexing again the top-level structures that hold them (below), or,
+on a TEAM draw the index does not cover, by projection, the factory's own `getAllDrawMatchUps` filtered to their ids
+over a matchUps map assembled from the call's (CA, 2026-10-24). Each replaces its entry in v2's copy of the view's
+draw.
+
+**The view oracle** checks it in `differential`: after every complete plan, the working view, folded before v1 wrote,
+is compared field by field (sides, status, winner, score, drawPositions, `finishingPositionRange`, `feedRound` and
+`hasFedDrawPosition`, the edges and the exit records: what v2 reads) with one hydration of the shadow-applied record.
+Until the view moved onto the index it also compared `schedule`, `drawPositionsRange`, `preFeedRound`, `roundFactor`
+and `readyToScore`, which nothing in v2 reads; `schedule.scoredTime` is read from the stored matchUps. A difference is a
+divergence keyed `view:<field>`. Measured 2026-10-24 over the exitPropagation and matchUps suites: 9,184 views
+compared, none different; with re-derivation removed, 103 exitPropagation files fail. The oracle's own reads (the
+shadow's hydration, a TEAM working view's projection, and the index oracle's hydration below) are test instrumentation:
+`verify:hydrations` keeps them out of `differential`'s ceiling and reports them apart (2,184 over its census). Under
+`v2`, a TEAM working view's projection is the pipeline's own work and counts.
+
+**The structural index** (`buildStructuralIndex`, `src/query/matchUps/structuralIndex.ts`; executor plan § 3.1.1, CA
+2026-10-24: v2 decides on stored data and a structural index, never on a hydration) is one entry per matchUp in the
+hydrated shape, carrying only what the outcome logic reads. A probe of every read v2's view, planners and settle
+predicates make found that set to be the stored matchUp, its structure and round-robin container, the round profile's
+`feedRound` and `hasFedDrawPosition`, the inherited `matchUpType` and `matchUpFormat`, and its sides' `sideNumber`,
+`drawPosition`, `participantId`, `bye` and `qualifier`. A side's `participant` is read only as a presence test, so the
+index carries `{ participantId }` for a participant the tournament holds, as hydration carries the record. No participant
+record, round name, schedule detail or policy is read. The sides and the round profile come from the functions
+hydration calls (`buildMatchUpSides`, `getRoundMatchUps`), and a tiebreak-only or timed set is annotated as hydration
+annotates it, so the two derive each field once. A draw holding a TEAM matchUp is not indexed yet: a line's sides come
+from its dual's line-ups.
+
+**The view decides on the index.** `buildOutcomeView` builds it, not a hydration, and the working view and the settle
+predicates read it; only a TEAM draw is still hydrated. So under `v2` a call costs v1's hydrations and nothing more
+(`verify:hydrations`; the TEAM arm v1 + 1), and a call v2 refuses takes none. An index entry shares nested objects
+(`score`, `sideExitProvenance`) with the stored matchUp, so the view is read before the call writes, never after.
+
+**The index oracle** holds it to the hydration in `differential`: before v1 writes, the view's index of the draw as the
+call found it is compared, field by field, with one hydration of the same draw taken for the purpose, after the view's
+own step on a draw stored without its edges. A difference is a divergence keyed `index:<field>`. Measured 2026-10-24 over the
+mutations suite: 66,154 calls, 1,873,656 entries compared, none different; 15,940 calls on TEAM draws are tallied as
+deferred. Measured against a full in-context hydration (median of 15): SINGLE_ELIMINATION 32 to 256 at 11–13%,
+FEED_IN_CHAMPIONSHIP 64, ROUND_ROBIN 32, DOUBLE_ELIMINATION 64 and COMPASS 64 at 11–13%, linear in the draw.
+
+**v1's settle passes ask the index first** (`matchUpStatus/indexPrecheck.ts`; the v1 win CA agreed 2026-10-24). Most
+of v1's settle passes hydrate the whole draw on every call only to run a detector that usually finds nothing, and a
+pass whose detector finds nothing writes nothing. So a pass first asks its own detector of the structural index, built
+with what the pass hydrates with (the draw alone), and returns without hydrating when it finds no work; a TEAM draw,
+which the index does not cover, hydrates as before. In `differential` the detector is asked of a hydration too, and a
+disagreement is a divergence keyed `precheck:<pass>`, raised when the call is compared and the call restored: the index
+oracle sees the draw as the call found it, this one each state a settle pass meets after the call's writes. Passes
+move one at a time, each with its `verify:hydrations` v1 ceiling lowered. `reconcileByeAdvancements` first: about one
+hydration a call fewer on every census arm (matrix BYE: DOUBLE_WALKOVER 1,735 → 1,536); over the mutations suite under
+`differential`, no disagreement. `settleHeldExits` second, asking `hasHeldExitWork` (the predicate v2's has-work check
+already uses) with the pass's own `getMatchUpsMap`, so no map is built twice: its three sub-passes each hydrated, and
+the census arms fall 32–45% (matrix BYE: DOUBLE_WALKOVER 1,536 → 945; deep BYE: the route 2,636 → 1,442, 6.6 → 3.6 a
+call). A detector forced idle is caught: 230 exit-propagation tests fail on `precheck:settleHeldExits`. `settleForwardConsequences`
+third, asking `hasForwardWork`: about one hydration a call fewer again (deep BYE: the route 1,442 → 1,066, 2.7 a call);
+forced idle, 100 tests fail on `precheck:settleForwardConsequences`. `reconcileLinkAdvancements` fourth, asking
+`getUnearnedLinkAdvancements`: deep BYE: the route 1,066 → 756 (1.9 a call). The pass acts rarely, so a v1 test pins
+it: a qualifier's main-draw seat is released when its qualifying final is cleared, and a detector forced idle leaves
+the participant seated.
 
 ## 8. What the corpus pins
 

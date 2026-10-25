@@ -9,7 +9,9 @@ import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types
-import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import type { DrawDefinition, DrawLink, Event, Tournament } from '@Types/tournamentTypes';
+import type { HydratedMatchUp } from '@Types/hydrated';
+import type { ResultType } from '@Types/factoryTypes';
 
 /**
  * Direct every participant who DECIDED a round feeding another structure over a WINNER link, and is not there yet.
@@ -34,15 +36,68 @@ export function reconcileMissedLinkAdvancements({
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
   event?: Event;
-}): void {
+}): ResultType | undefined {
   const winnerLinks = (drawDefinition?.links ?? []).filter(
     (link) => isRoundWinnerLink(link, drawDefinition) && link.target?.structureId !== link.source?.structureId,
   );
-  if (!drawDefinition || !winnerLinks.length) return;
+  if (!drawDefinition || !winnerLinks.length) return undefined;
 
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
   const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
 
+  for (const missed of findMissedLinkAdvancements({ drawDefinition, inContextDrawMatchUps })) {
+    const { matchUp, winningDrawPosition, winnerMatchUp, winnerMatchUpDrawPositionIndex, winnerTargetLink } = missed;
+    const directed = directWinner({
+      sourceMatchUpStatus: matchUp.matchUpStatus,
+      sourceMatchUpId: matchUp.matchUpId,
+      winnerMatchUpDrawPositionIndex,
+      projectedWinningSide: undefined,
+      dualMatchUp: undefined,
+      inContextDrawMatchUps,
+      winningDrawPosition,
+      tournamentRecord,
+      winnerTargetLink,
+      drawDefinition,
+      winnerMatchUp,
+      matchUpsMap,
+      event,
+    });
+    // returned, not dropped (Phase C prerequisite 2, CA 2026-10-24): never reached on ~97,000 census schedules, and
+    // still recorded for the census when it is
+    if (directed?.error) {
+      recordSettleEvent({
+        kind: 'dropped-error',
+        site: 'reconcileMissedLinkAdvancements',
+        detail: `${matchUp.matchUpId}: ${directed.error.code ?? directed.error}`,
+      });
+      return directed;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * THE PASS'S DETECTOR: every decided feeder of a winner link whose winner is not seated in the matchUp the link sends
+ * them to, read from one hydration. The pass directs each; v2's has-work predicate (`outcome/settleWork.ts`) asks it of
+ * the working view, so the two cannot drift.
+ */
+export function findMissedLinkAdvancements({
+  inContextDrawMatchUps,
+  drawDefinition,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+}) {
+  const missed: {
+    winnerMatchUpDrawPositionIndex?: number;
+    winnerMatchUp: HydratedMatchUp;
+    winningDrawPosition: number;
+    winnerTargetLink: DrawLink;
+    matchUp: HydratedMatchUp;
+  }[] = [];
+  const winnerLinks = (drawDefinition.links ?? []).filter(
+    (link) => isRoundWinnerLink(link, drawDefinition) && link.target?.structureId !== link.source?.structureId,
+  );
   for (const link of winnerLinks) {
     const { structureId, roundNumber } = link.source ?? {};
     const targetStructure = findStructure({ drawDefinition, structureId: link.target?.structureId })?.structure;
@@ -70,29 +125,8 @@ export function reconcileMissedLinkAdvancements({
       // seated in the matchUp the link sends them to — NOT merely present in its structure: a DOUBLE_ELIMINATION
       // Backdraw champion already holds a Main drawPosition from the round they lost there
       if (winnerMatchUp.sides?.some((side) => side?.participantId === participantId)) continue;
-
-      const directed = directWinner({
-        sourceMatchUpStatus: matchUp.matchUpStatus,
-        sourceMatchUpId: matchUp.matchUpId,
-        winnerMatchUpDrawPositionIndex,
-        projectedWinningSide: undefined,
-        dualMatchUp: undefined,
-        inContextDrawMatchUps,
-        winningDrawPosition,
-        tournamentRecord,
-        winnerTargetLink,
-        drawDefinition,
-        winnerMatchUp,
-        matchUpsMap,
-        event,
-      });
-      // the pass is `void` and its caller has written: the error is recorded for the census, not returned (Phase C)
-      if (directed?.error)
-        recordSettleEvent({
-          kind: 'dropped-error',
-          site: 'reconcileMissedLinkAdvancements',
-          detail: `${matchUp.matchUpId}: ${directed.error.code ?? directed.error}`,
-        });
+      missed.push({ matchUp, winningDrawPosition, winnerMatchUp, winnerMatchUpDrawPositionIndex, winnerTargetLink });
     }
   }
+  return missed;
 }

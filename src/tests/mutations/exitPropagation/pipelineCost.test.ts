@@ -146,12 +146,24 @@ const matrixCell = (drawType: string, exitStatus: string) =>
   );
 
 // the functions a draw-wide HYDRATION is asked for through, at the top of the stack
-const hydration: Selector = (site) =>
+const anyHydration: Selector = (site) =>
   !site.nested && site.inContext && ['getAllDrawMatchUps', 'getDrawMatchUps'].includes(site.fn);
+/**
+ * THE VIEW ORACLE'S OWN READS (§ 3.2; test-only, `differential` only): the shadow's hydration and the working view's
+ * projection, made to check the view, not to decide the call. Kept out of the pipeline's cost under `differential`
+ * and reported apart. Under `v2`, where S2 will fold owned calls into the working view, its projection is the
+ * pipeline's own work and counts.
+ */
+const viewOracleRead: Selector = (site) =>
+  getOutcomePipeline() === OUTCOME_PIPELINE_DIFFERENTIAL &&
+  /^(hydrateShadow@viewOracle|apply@overlay|indexOracle@decide|precheckOracle@indexPrecheck)/.test(site.caller);
+const hydration: Selector = (site) => anyHydration(site) && !viewOracleRead(site);
 const top =
   (fn: string): Selector =>
   (site) =>
     !site.nested && site.fn === fn;
+// the `getMatchUpsMap` builds the pipeline asks for itself; the settle precheck's completeness run builds its own
+const pipelineMap: Selector = (site) => top('getMatchUpsMap')(site) && !viewOracleRead(site);
 
 function playCell(arm: string, cell: (typeof ALL_CELLS)[number], policy?: any): CallRecord[] {
   setSubscriptions({});
@@ -423,13 +435,14 @@ it.skipIf(!enabled)(
  *
  * - A count that RISES fails. A count that FALLS passes and says so; `HYDRATIONS_UPDATE=1` writes
  *   the lower number, and writes a rise only with `HYDRATIONS_ACCEPT_RISE=1` as well.
- * - The baseline is v1's. Under `v2` each call may cost v1's count plus the view's own reads: one
- *   hydration, and no map (the view takes `setMatchUpStatus`'s). Until S2 every call is one v2
- *   abstains from, which is the bound G3 sets for it (v1 + 1). Under `differential` (the
- *   checkpoint gate's mode) it may cost one more: the read of the draw after v1 ran, shared by every
- *   check. Since S1 a dual's view reuses its line's hydration, so no arm needs an exception. Each
- *   allowance is the measured cost, so one more hydration per call fails on every arm (review of
- *   #5741: at +3 for differential, eight arms sat one per call under the ceiling).
+ * - The baseline is v1's. Under `v2` each call costs v1's count and nothing more: since S2 the view
+ *   decides on the structural index (§ 3.1.1), not a hydration, and takes `setMatchUpStatus`'s map.
+ *   The TEAM arm's view still hydrates (the index does not cover TEAM yet): v1 + 1 there. Under
+ *   `differential` (the checkpoint gate's mode) a call may cost one more: the read of the draw after
+ *   v1 ran, shared by every check; the oracles' own hydrations are reported apart. A dual's view
+ *   reuses its line's, so no arm needs a further exception. Each allowance is the measured cost, so
+ *   one more hydration per call fails on every arm (falsified 2026-10-24: a view that hydrates again
+ *   fails every matrix arm under `v2`).
  * - The baseline is written under `v1` only, and a census whose arms or call counts differ from it
  *   fails: those are a different census, not a cheaper one.
  */
@@ -439,16 +452,30 @@ const BASELINE = path.resolve(process.cwd(), 'scripts/verify/baseline/hydrations
 type Ceiling = { total: number; worst: number };
 type ArmCeilings = { calls: number; hydrations: Ceiling; getMatchUpsMap: Ceiling };
 
-/** what each mode may add to each call, on top of v1's count: the measured cost, not a margin */
-const GATED: { name: keyof Omit<ArmCeilings, 'calls'>; selector: Selector; allowance: Record<string, number> }[] = [
+/**
+ * What each mode may add to each call, on top of v1's count: the measured cost, not a margin. Since S2 the view decides
+ * on the structural index (§ 3.1.1) and takes no hydration, so `v2` adds none; a TEAM draw, which the index does not
+ * cover yet, still costs its view one. `differential` adds the read of the draw after v1 ran.
+ */
+const viewHydrations = (arm: string) => (arm.startsWith('TEAM') ? 1 : 0);
+const GATED: {
+  name: keyof Omit<ArmCeilings, 'calls'>;
+  selector: Selector;
+  allowance: (mode: string, arm: string) => number;
+}[] = [
   {
-    allowance: { [OUTCOME_PIPELINE_V1]: 0, [OUTCOME_PIPELINE_V2]: 1, [OUTCOME_PIPELINE_DIFFERENTIAL]: 2 },
+    allowance: (mode, arm) =>
+      ({
+        [OUTCOME_PIPELINE_V1]: 0,
+        [OUTCOME_PIPELINE_V2]: viewHydrations(arm),
+        [OUTCOME_PIPELINE_DIFFERENTIAL]: viewHydrations(arm) + 1,
+      })[mode] ?? 0,
     name: 'hydrations',
     selector: hydration,
   },
   {
-    allowance: { [OUTCOME_PIPELINE_V1]: 0, [OUTCOME_PIPELINE_V2]: 0, [OUTCOME_PIPELINE_DIFFERENTIAL]: 0 },
-    selector: top('getMatchUpsMap'),
+    allowance: () => 0,
+    selector: pipelineMap,
     name: 'getMatchUpsMap',
   },
 ];
@@ -461,7 +488,7 @@ function measureArms(records: CallRecord[]): Record<string, ArmCeilings> {
       const { total, worst } = distribution(inArm, selector);
       return { total, worst };
     };
-    arms[arm] = { calls: inArm.length, hydrations: read(hydration), getMatchUpsMap: read(top('getMatchUpsMap')) };
+    arms[arm] = { calls: inArm.length, hydrations: read(hydration), getMatchUpsMap: read(pipelineMap) };
   }
   return arms;
 }
@@ -470,7 +497,8 @@ it.skipIf(!gated)(
   'the hydration gate: no arm asks the draw for more than v1 did',
   () => {
     const mode = getOutcomePipeline();
-    const measured = measureArms(collectCensus().records);
+    const { records } = collectCensus();
+    const measured = measureArms(records);
     const baseline: Record<string, ArmCeilings> | undefined = fs.existsSync(BASELINE)
       ? JSON.parse(fs.readFileSync(BASELINE, 'utf8')).arms
       : undefined;
@@ -483,7 +511,7 @@ it.skipIf(!gated)(
         const now = measured[arm];
         expect(now.calls, `${arm}: setMatchUpStatus calls`).toEqual(ceilings.calls);
         for (const { name, allowance: allowed } of GATED) {
-          const allowance = allowed[mode];
+          const allowance = allowed(mode, arm);
           const limit = {
             total: ceilings[name].total + allowance * ceilings.calls,
             worst: ceilings[name].worst + allowance,
@@ -510,6 +538,12 @@ it.skipIf(!gated)(
     if (falls.length && mode === OUTCOME_PIPELINE_V1)
       process.stdout.write(
         `[verify:hydrations] ${falls.length} below the ceiling (lower it with HYDRATIONS_UPDATE=1):\n  ${falls.join('\n  ')}\n`,
+      );
+    if (mode === OUTCOME_PIPELINE_DIFFERENTIAL)
+      process.stdout.write(
+        `[verify:hydrations] the oracles' own hydrations (view, index, settle precheck), outside the ceiling: ${
+          distribution(records, (site) => anyHydration(site) && viewOracleRead(site)).total
+        }\n`,
       );
     expect(rises, `asked the draw for more than the ceiling allows under ${mode}`).toEqual([]);
   },

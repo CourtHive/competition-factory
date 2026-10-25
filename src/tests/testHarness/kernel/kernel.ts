@@ -1,6 +1,6 @@
 /**
  * The scoring kernel test seam (pilot): versioned, serializable operations over stable internal contracts, so a
- * case written as data can run against this implementation and, later, against a second one (the Go port) through
+ * case written as data can run against this implementation and, later, against a second implementation through
  * its own adapter. Test infrastructure only: nothing here is exported from the package, registered on an engine or
  * reachable from server dispatch. Plan: Mentat/planning/FACTORY_TEST_INFRASTRUCTURE_PLAN.md (item E).
  *
@@ -8,10 +8,19 @@
  * each side needs to win the current game", which a port may compute however it likes. The adapter owns the
  * translation (positional helpers, parsed shapes, transport), never the expected result.
  */
+import { planningViewFromData, requiredPlanningViewKeys } from '@Mutate/matchUps/schedule/pipeline/viewCodec';
+import { dayMinutesToTimeString, extractTime, tidyTime, timeStringMinutes } from '@Tools/plainTime';
+import { addMinutesWithinDay } from '@Mutate/matchUps/schedule/scheduleMatchUps/timeWithinDay';
+import { addMinutesToDateTime, endOnTheDay } from '@Tools/civilDateTime';
+import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
+import { planSchedule } from '@Mutate/matchUps/schedule/pipeline/plan';
 import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
 import { stringify } from '@Helpers/matchUpFormatCode/stringify';
 import { resolveSetType } from '@Tools/scoring/scoringUtilities';
+import { addMinutesToTimeString } from '@Tools/dateTime';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { extractDate, sameDay } from '@Tools/plainDate';
+import { normativePlan } from './normativePlan';
 
 // constants
 import { IN_PROGRESS } from '@Constants/matchUpStatusConstants';
@@ -32,7 +41,7 @@ export type KernelCase = {
 };
 
 export type KernelOperation = {
-  capability: 'scoring' | 'grammar';
+  capability: 'scoring' | 'grammar' | 'scheduling' | 'clock';
   validate: (input: Record<string, unknown>) => string | undefined; // why the input is malformed, if it is
   run: (input: Record<string, unknown>) => KernelResult;
 };
@@ -73,8 +82,100 @@ function pointsToGame(input: Record<string, unknown>): KernelResult {
   return { kind: 'value', value: result.pointsToGame };
 }
 
+/** the options a profile plan takes beside its view, and the type each must have */
+const PLAN_OPTIONS: Record<string, (value: unknown) => boolean> = {
+  clearScheduleDates: (value) =>
+    typeof value === 'boolean' || (Array.isArray(value) && value.every((date) => typeof date === 'string')),
+  checkPotentialRequestConflicts: (value) => typeof value === 'boolean',
+  excludeNoDateCompleted: (value) => typeof value === 'boolean',
+  excludePriorDates: (value) => typeof value === 'boolean',
+  periodLength: isCount,
+};
+
+function validatePlanInput(input: Record<string, unknown>) {
+  const view = input.view as Record<string, unknown> | undefined;
+  if (!view || typeof view !== 'object' || Array.isArray(view)) return 'view must be an object';
+  const missing = requiredPlanningViewKeys().filter((key) => !Object.hasOwn(view, key));
+  if (missing.length) return `view is missing ${missing.join(', ')}`;
+  const options = (input.options ?? {}) as Record<string, unknown>;
+  if (typeof options !== 'object' || Array.isArray(options)) return 'options must be an object';
+  for (const [key, value] of Object.entries(options)) {
+    if (!Object.hasOwn(PLAN_OPTIONS, key)) return `unknown option ${key}`;
+    if (!PLAN_OPTIONS[key](value)) return `option ${key} has the wrong type`;
+  }
+  return undefined;
+}
+
+/** the clock's primitives (scheduling-pipeline.md § 3.8): a string in, a time, a number or a date out */
+const isText = (input: Record<string, unknown>, key: string) =>
+  typeof input[key] === 'string' ? undefined : `${key} must be a string`;
+const isMinutes = (input: Record<string, unknown>) =>
+  Number.isInteger(input.minutes) ? undefined : 'minutes must be an integer';
+const timeOrRefusal = (time: string | undefined): KernelResult =>
+  time ? { kind: 'value', value: time } : { kind: 'error', code: 'NOT_A_TIME' };
+
+const clockOperations: Record<string, KernelOperation> = {
+  'kernel.time.tidy@1': {
+    capability: 'clock',
+    validate: (input) => isText(input, 'time'),
+    run: (input) => timeOrRefusal(tidyTime(input.time)),
+  },
+  'kernel.time.extract@1': {
+    capability: 'clock',
+    validate: (input) => isText(input, 'value'),
+    run: (input) => timeOrRefusal(extractTime(input.value)),
+  },
+  'kernel.time.minutes@1': {
+    capability: 'clock',
+    validate: (input) => isText(input, 'time'),
+    run: (input) => ({ kind: 'value', value: timeStringMinutes(input.time) }),
+  },
+  'kernel.time.fromMinutes@1': {
+    capability: 'clock',
+    validate: (input) => (isCount(input.minutes) ? undefined : 'minutes must be a non-negative integer'),
+    run: (input) => ({ kind: 'value', value: dayMinutesToTimeString(input.minutes) }),
+  },
+  'kernel.time.addWithinDay@1': {
+    capability: 'clock',
+    validate: (input) => isText(input, 'time') ?? isMinutes(input),
+    run: (input) => ({ kind: 'value', value: addMinutesWithinDay(input.time as string, input.minutes as number) }),
+  },
+  'kernel.time.addWrapping@1': {
+    capability: 'clock',
+    validate: (input) => isText(input, 'time') ?? isMinutes(input),
+    run: (input) => ({ kind: 'value', value: addMinutesToTimeString(input.time, input.minutes) }),
+  },
+  'kernel.time.endOnTheDay@1': {
+    capability: 'clock',
+    validate: (input) => isText(input, 'time') ?? isMinutes(input),
+    run: (input) => ({ kind: 'value', value: endOnTheDay(input.time, input.minutes as number) }),
+  },
+  'kernel.civil.addMinutes@1': {
+    capability: 'clock',
+    validate: (input) => isText(input, 'date') ?? isText(input, 'time') ?? isMinutes(input),
+    run: (input) => {
+      const result = addMinutesToDateTime({ date: input.date, time: input.time, minutes: input.minutes as number });
+      return result ? { kind: 'value', value: result } : { kind: 'error', code: 'NOT_A_DATE_TIME' };
+    },
+  },
+  'kernel.date.sameDay@1': {
+    capability: 'clock',
+    validate: (input) => isText(input, 'date1') ?? isText(input, 'date2'),
+    run: (input) => ({ kind: 'value', value: sameDay(input.date1, input.date2) }),
+  },
+  'kernel.date.extract@1': {
+    capability: 'clock',
+    validate: (input) => isText(input, 'value'),
+    run: (input) => {
+      const date = extractDate(input.value);
+      return date ? { kind: 'value', value: date } : { kind: 'error', code: 'NOT_A_DATE' };
+    },
+  },
+};
+
 // The registry is a closed, frozen map: an operation not listed here is refused, never guessed at.
 export const kernelOperations: Readonly<Record<string, KernelOperation>> = Object.freeze({
+  ...clockOperations,
   'kernel.scoring.pointsToGame@1': {
     capability: 'scoring',
     validate: (input) => {
@@ -85,9 +186,31 @@ export const kernelOperations: Readonly<Record<string, KernelOperation>> = Objec
     },
     run: pointsToGame,
   },
+  // the profile scheduler's plan: from a planning view (`viewCodec.ts`) and the call's options, the placements and the
+  // reasons for every matchUp left unplaced (scheduling-pipeline.md § 4)
+  // the whole plan, retry traces included: superseded by @2 (CA 2026-10-25), kept while a second implementation moves
+  'kernel.scheduling.plan@1': {
+    capability: 'scheduling',
+    validate: validatePlanInput,
+    run: (input) => {
+      const options = (input.options ?? {}) as Record<string, any>;
+      const plan = planSchedule({ ...options, view: planningViewFromData(input.view as Record<string, unknown>) });
+      return { kind: 'value', value: plan };
+    },
+  },
+  // the plan's normative part (scheduling-pipeline.md § 7): placements, unplaced, and each refusal's first reason
+  'kernel.scheduling.plan@2': {
+    capability: 'scheduling',
+    validate: validatePlanInput,
+    run: (input) => {
+      const options = (input.options ?? {}) as Record<string, any>;
+      const plan = planSchedule({ ...options, view: planningViewFromData(input.view as Record<string, unknown>) });
+      return { kind: 'value', value: normativePlan(plan) };
+    },
+  },
   'kernel.format.parse@1': {
     capability: 'grammar',
-    validate: (input) => (typeof input.matchUpFormat === 'string' ? undefined : 'matchUpFormat must be a string'),
+    validate: (input) => isText(input, 'matchUpFormat'),
     run: (input) => {
       const parsed = parse(input.matchUpFormat as string);
       return parsed ? { kind: 'value', value: parsed } : { kind: 'error', code: 'UNPARSEABLE_FORMAT' };
@@ -104,6 +227,20 @@ export const kernelOperations: Readonly<Record<string, KernelOperation>> = Objec
       return code ? { kind: 'value', value: code } : { kind: 'error', code: 'UNSTRINGIFIABLE_FORMAT' };
     },
   },
+  'kernel.format.canonical@1': {
+    capability: 'grammar',
+    validate: (input) => isText(input, 'matchUpFormat'),
+    run: (input) => {
+      const parsed = parse(input.matchUpFormat as string);
+      const code = parsed && stringify(parsed);
+      return code ? { kind: 'value', value: code } : { kind: 'error', code: 'UNPARSEABLE_FORMAT' };
+    },
+  },
+  'kernel.format.isValid@1': {
+    capability: 'grammar',
+    validate: (input) => isText(input, 'matchUpFormat'),
+    run: (input) => ({ kind: 'value', value: isValidMatchUpFormat({ matchUpFormat: input.matchUpFormat as string }) }),
+  },
 });
 
 function invokeOperation(operations: Readonly<Record<string, KernelOperation>>, name: string, input: unknown) {
@@ -119,6 +256,15 @@ function invokeOperation(operations: Readonly<Record<string, KernelOperation>>, 
   } catch (error) {
     return { kind: 'exception', message: error instanceof Error ? error.message : String(error) } as KernelResult;
   }
+}
+
+/**
+ * A value as it arrives across the JSON wire. Not a deep copy: what JSON cannot carry (an undefined member, a Set, a
+ * Date's type) is meant to be lost, because that is what a second implementation receives and answers.
+ */
+export function overTheWire<T>(value: T): T {
+  const text = JSON.stringify(value);
+  return text === undefined ? (undefined as T) : JSON.parse(text);
 }
 
 /** In-process: the operation receives the caller's input object. */

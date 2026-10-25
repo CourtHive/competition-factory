@@ -6,7 +6,8 @@ import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 
 // constants and types
 import { completedMatchUpStatuses, WALKOVER, DEFAULTED } from '@Constants/matchUpStatusConstants';
-import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
+import type { MatchUpsMap } from '@Types/factoryTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 // A single exit without a winning side can still be pending on an empty seat (the census target is WALKOVER).
@@ -40,31 +41,9 @@ export function reconcileProvenanceSides({
   event?: Event;
 }): void {
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
-  const candidates = matchUpsMap.drawMatchUps.filter((matchUp) => {
-    if (matchUp.winningSide || completedStatuses.has(matchUp.matchUpStatus ?? '') || checkScoreHasValue({ matchUp }))
-      return false;
-    const sides = Object.keys(matchUp.sideExitProvenance ?? {});
-    return sides.length === 1 && !!carriedExitStatus(matchUp.sideExitProvenance?.[sides[0]]);
-  });
-  if (!candidates.length) return;
-
-  const inContext = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
-  const byId = new Map(inContext.map((matchUp) => [matchUp.matchUpId, matchUp]));
-  for (const stored of candidates) {
-    const target = byId.get(stored.matchUpId);
-    if (!target) continue;
-    const [current] = Object.keys(stored.sideExitProvenance ?? {}).map(Number);
-    const entry = stored.sideExitProvenance?.[current];
-    const feeders = inContext
-      .filter((matchUp) => matchUp.winnerMatchUpId === target.matchUpId && matchUp.structureId === target.structureId)
-      .sort((a, b) => (a.roundPosition ?? 0) - (b.roundPosition ?? 0));
-    if (feeders.length !== 2 || !entry?.sourceMatchUpId) continue;
-    const feeder = feederReached(entry.sourceMatchUpId, target, byId);
-    const index = feeders.findIndex((candidate) => candidate.matchUpId === feeder?.matchUpId);
-    if (index === -1) continue;
-    const expected = feederSide(target, feeders[index], feeders[1 - index], index);
-    if (!expected || expected === current) continue;
-
+  if (!provenanceCandidates(matchUpsMap).length) return;
+  const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
+  for (const { stored, expected, entry } of findMisplacedProvenance({ inContextDrawMatchUps, matchUpsMap })) {
     setSideExitProvenance({ matchUp: stored, provenance: { [expected]: entry } });
     modifyMatchUpNotice({
       tournamentId: tournamentRecord?.tournamentId,
@@ -75,6 +54,50 @@ export function reconcileProvenanceSides({
       event,
     });
   }
+}
+
+type Provenance = NonNullable<MatchUp['sideExitProvenance']>;
+type ProvenanceEntry = NonNullable<Provenance[keyof Provenance]>;
+
+function provenanceCandidates(matchUpsMap: MatchUpsMap) {
+  return matchUpsMap.drawMatchUps.filter((matchUp) => {
+    if (matchUp.winningSide || completedStatuses.has(matchUp.matchUpStatus ?? '') || checkScoreHasValue({ matchUp }))
+      return false;
+    const sides = Object.keys(matchUp.sideExitProvenance ?? {});
+    return sides.length === 1 && !!carriedExitStatus(matchUp.sideExitProvenance?.[sides[0]]);
+  });
+}
+
+/**
+ * THE PASS'S DETECTOR: every carried exit keyed to the wrong side for the feeder that reached it. The pass re-keys each;
+ * v2's has-work predicate (`outcome/settleWork.ts`) asks it of the working view, so the two cannot drift.
+ */
+export function findMisplacedProvenance({
+  inContextDrawMatchUps,
+  matchUpsMap,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  matchUpsMap: MatchUpsMap;
+}) {
+  const misplaced: { stored: MatchUp; expected: number; entry: ProvenanceEntry }[] = [];
+  const byId = new Map(inContextDrawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
+  for (const stored of provenanceCandidates(matchUpsMap)) {
+    const target = byId.get(stored.matchUpId);
+    if (!target) continue;
+    const [current] = Object.keys(stored.sideExitProvenance ?? {}).map(Number);
+    const entry = stored.sideExitProvenance?.[current];
+    const feeders = inContextDrawMatchUps
+      .filter((matchUp) => matchUp.winnerMatchUpId === target.matchUpId && matchUp.structureId === target.structureId)
+      .sort((a, b) => (a.roundPosition ?? 0) - (b.roundPosition ?? 0));
+    if (feeders.length !== 2 || !entry?.sourceMatchUpId) continue;
+    const feeder = feederReached(entry.sourceMatchUpId, target, byId);
+    const index = feeders.findIndex((candidate) => candidate.matchUpId === feeder?.matchUpId);
+    if (index === -1) continue;
+    const expected = feederSide(target, feeders[index], feeders[1 - index], index);
+    if (!expected || expected === current) continue;
+    misplaced.push({ stored, expected, entry });
+  }
+  return misplaced;
 }
 
 /** the matchUp feeding `target` that the source's winner path passes through, within the target's structure */

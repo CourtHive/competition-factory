@@ -363,10 +363,10 @@ describe('INTENNSE format', () => {
   });
 
   it('with traditional game format', () => {
-    expectRoundTrip('SET3-S:T10-G:TN', {
+    expectRoundTrip('SET3-S:T10-G:TN3D', {
       bestOf: 3,
       setFormat: { timed: true, minutes: 10 },
-      gameFormat: { type: TRADITIONAL },
+      gameFormat: { type: TRADITIONAL, deuceAfter: 3 },
     });
   });
 });
@@ -833,7 +833,6 @@ describe('Cross-sport comprehensive round-trip', () => {
     // Padel Star Point
     'SET3-S:6/TB7-G:TN3D',
     'SET3-S:6/TB7-G:TN1D',
-    'SET3-S:6/TB7-G:TN',
     'SET3-S:4-G:3C3D',
     // Squash
     'SET5-S:TB11',
@@ -852,7 +851,7 @@ describe('Cross-sport comprehensive round-trip', () => {
     'SET3-S:4/TB5-G:3C',
     // INTENNSE
     'SET7XA-S:T10P',
-    'SET3-S:T10-G:TN',
+    'SET3-S:T10-G:TN3D',
     // Volleyball
     'SET5-S:TB25-F:TB15',
     'SET3-S:TB21-F:TB15',

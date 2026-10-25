@@ -1,7 +1,9 @@
 import { getStructureMatchUps } from '@Query/structure/getStructureMatchUps';
 import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { tournamentEngine } from '@Engines/syncEngine';
+import type { ResultType } from '@Types/factoryTypes';
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import { describe, expect, it } from 'vitest';
 
 describe('resetQualifyingStructure()', () => {
@@ -21,15 +23,17 @@ describe('resetQualifyingStructure()', () => {
     });
 
     tournamentEngine.setState(tournamentRecord);
-    const { events } = tournamentEngine.getEvents();
+    const events = defined(tournamentEngine.getEvents().events, 'events');
 
-    const drawDefinition = events[0].drawDefinitions[0];
+    const drawDefinition = defined(events[0].drawDefinitions?.[0], 'drawDefinition');
     expect(drawDefinition).toBeDefined();
 
-    const qualifyingStructure = drawDefinition.structures?.find((structure) => structure.stage === QUALIFYING);
-    expect(qualifyingStructure).toBeDefined();
+    const qualifyingStructure = defined(
+      drawDefinition.structures?.find((structure) => structure.stage === QUALIFYING),
+      'qualifyingStructure',
+    );
 
-    const result = tournamentEngine.resetQualifyingStructure({
+    const result: ResultType = tournamentEngine.resetQualifyingStructure({
       drawDefinition,
       structureId: qualifyingStructure.structureId,
     });

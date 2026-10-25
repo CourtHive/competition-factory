@@ -1,17 +1,21 @@
+import { EventBookingTimings, generateBookings } from './generateBookings';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
 import { getScheduleTimes } from '@Query/venues/getScheduleTimes';
 import { calculatePeriodLength } from './calculatePeriodLength';
+import { getMatchUpId } from '@Functions/global/extractors';
 import { getDateTimeBoundary } from './getTimeBoundary';
-import { generateBookings } from './generateBookings';
-import { xa } from '@Tools/extractAttributes';
 
 // constants and types
 import { ErrorType, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
+import { HydratedCourt, HydratedMatchUp } from '@Types/hydrated';
 import { ScheduleTimesResult } from '@Types/factoryTypes';
 import { Tournament } from '@Types/tournamentTypes';
-import { HydratedMatchUp } from '@Types/hydrated';
 
 type GenerateScheduleTimesArgs = {
+  /** the courts available on the date, already resolved (`ignoreDisabled` for the date): when given with
+   * `eventTimings`, no record is read */
+  dateCourts?: HydratedCourt[];
+  eventTimings?: EventBookingTimings;
   tournamentRecords?: { [key: string]: Tournament };
   calculateStartTimeFromCourts?: boolean;
   remainingScheduleTimes?: string[];
@@ -36,8 +40,10 @@ export function generateScheduleTimes({
   clearScheduleDates,
   tournamentRecords,
   tournamentRecord,
+  eventTimings,
   periodLength,
   scheduleDate,
+  dateCourts,
   startTime,
   venueIds,
   courtIds,
@@ -45,6 +51,7 @@ export function generateScheduleTimes({
   endTime,
 }: GenerateScheduleTimesArgs): {
   dateScheduledMatchUps?: HydratedMatchUp[];
+  unbookedMatchUpIds?: string[];
   scheduleTimes?: ScheduleTimesResult[];
   dateScheduledMatchUpIds?: string[];
   error?: ErrorType;
@@ -53,7 +60,8 @@ export function generateScheduleTimes({
   if (tournamentRecord && !tournamentRecords) {
     tournamentRecords = { [tournamentRecord.tournamentId]: tournamentRecord };
   }
-  if (typeof tournamentRecords !== 'object' || !Object.keys(tournamentRecords).length)
+  const resolved = dateCourts && eventTimings;
+  if (!resolved && (typeof tournamentRecords !== 'object' || !Object.keys(tournamentRecords).length))
     return { error: MISSING_TOURNAMENT_RECORDS };
 
   periodLength =
@@ -63,11 +71,9 @@ export function generateScheduleTimes({
       averageMatchUpMinutes,
     });
 
-  const { courts: allCourts, venues } = getVenuesAndCourts({
-    dates: [scheduleDate],
-    ignoreDisabled: true,
-    tournamentRecords,
-  });
+  const { courts: allCourts, venues } = resolved
+    ? { courts: dateCourts, venues: undefined }
+    : getVenuesAndCourts({ dates: [scheduleDate], ignoreDisabled: true, tournamentRecords });
 
   // courtIds, when provided, narrows capacity to the selected courts of the venues
   const courts =
@@ -78,15 +84,24 @@ export function generateScheduleTimes({
   startTime = startTime ?? getDateTimeBoundary({ courts, scheduleDate, startTime: true });
   endTime = endTime ?? getDateTimeBoundary({ courts, scheduleDate, endTime: true });
 
-  const { bookings, dateScheduledMatchUps } = generateBookings({
+  // the tournament's only venue with courts on the date, if it has exactly one: a matchUp timed with no venue is there
+  const dateVenueIds = new Set((venues ?? allCourts ?? []).map(({ venueId }) => venueId));
+  const soleVenueId = dateVenueIds.size === 1 ? [...dateVenueIds][0] : undefined;
+
+  const bookingsResult = generateBookings({
     defaultRecoveryMinutes,
     averageMatchUpMinutes,
     tournamentRecords,
+    eventTimings,
     scheduleDate,
     periodLength,
+    soleVenueId,
     venueIds,
     matchUps,
   });
+  // a booking that cannot be read must not leave every court reading as free: the error is returned, never ignored
+  if (bookingsResult.error) return { error: bookingsResult.error };
+  const { bookings, dateScheduledMatchUps } = bookingsResult;
 
   const timingParameters = {
     calculateStartTimeFromCourts,
@@ -100,16 +115,18 @@ export function generateScheduleTimes({
     endTime,
     courts,
   };
-  const { scheduleTimes } = getScheduleTimes(timingParameters);
+  const { scheduleTimes, unbookedMatchUpIds } = getScheduleTimes(timingParameters);
 
   // if a single venue specified, or only one venue available, return venueId
   const venueId = (venueIds?.length === 1 && venueIds[0]) || (venues?.length === 1 && venues[0].venueId) || undefined;
 
-  const dateScheduledMatchUpIds = dateScheduledMatchUps?.map(xa('matchUpId'));
+  // the ids read directly: `xa` deep-copies the whole hydrated matchUp to read one attribute
+  const dateScheduledMatchUpIds = dateScheduledMatchUps?.map(getMatchUpId);
 
   return {
     dateScheduledMatchUpIds,
     dateScheduledMatchUps,
+    unbookedMatchUpIds,
     scheduleTimes,
     venueId,
   };

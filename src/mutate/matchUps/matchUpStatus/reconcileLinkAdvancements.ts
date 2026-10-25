@@ -3,9 +3,12 @@ import { getUnearnedLinkAdvancements } from '@Query/drawDefinition/getUnearnedLi
 import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { settleUnlessIdle } from './indexPrecheck';
 
-// types
+// constants and types
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
+import type { ResultType } from '@Types/factoryTypes';
 
 /** a release that declares an `error` is not assignable here; see "It cannot fail, by construction" */
 type ReleaseCannotFail = void | { error?: never };
@@ -37,6 +40,10 @@ type ReleaseCannotFail = void | { error?: never };
  * success, and its declared result carries no `error`. `ReleaseCannotFail` holds it there: a release that one day
  * declares an error stops this file compiling, rather than having it dropped here (outcome v2 executor plan, Phase C
  * prerequisite 2). Measured 2026-10-22: reached 4 times over the suite, never with an error.
+ *
+ * Its loop bound is the one way it reports anything: each pass releases at least one placement, so the bound is not
+ * reached on a finite draw, and if it were the call is refused (F9 (i), CA 2026-10-24) rather than stopping silently.
+ * Not reached on ~97,000 census schedules (settle telemetry, 2026-10-24).
  */
 export function reconcileLinkAdvancements({
   tournamentRecord,
@@ -46,23 +53,43 @@ export function reconcileLinkAdvancements({
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
   event?: Event;
-}): void {
-  if (!drawDefinition?.links?.length) return;
+}): ResultType | undefined {
+  if (!drawDefinition?.links?.length) return undefined;
+  // no placement unearned on the structural index: the pass's first hydration would find the same, and write nothing
+  return settleUnlessIdle({
+    detect: (inContextDrawMatchUps) => getUnearnedLinkAdvancements({ inContextDrawMatchUps, drawDefinition }),
+    run: () => releaseUnearned({ tournamentRecord, drawDefinition, event }),
+    site: 'reconcileLinkAdvancements',
+    idle: undefined,
+    drawDefinition,
+  });
+}
+
+function releaseUnearned({
+  tournamentRecord,
+  drawDefinition,
+  event,
+}: {
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  event?: Event;
+}): ResultType | undefined {
   // Built from the draw, never taken from the caller's context: `setMatchUpStatus`'s result context can carry a map
   // whose matchUps are detached copies, and reading one decided a held walkover's grand final as undecided and
   // released the Decider seat it had just earned (de 9301605). So it takes no map.
   const resolvedMap = getMatchUpsMap({ drawDefinition });
 
   // each pass releases at least one placement, and a draw holds finitely many
+  let remaining = 0;
   for (let guard = (resolvedMap?.drawMatchUps?.length ?? 0) + 1; guard > 0; guard -= 1) {
     const inContextDrawMatchUps =
       getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap: resolvedMap }).matchUps ?? [];
     const unearned = getUnearnedLinkAdvancements({ inContextDrawMatchUps, drawDefinition });
-    if (!unearned.length) return;
+    if (!unearned.length) return undefined;
 
     const before = unearned.length;
     for (const { link, participantId } of unearned) {
-      const released: ReleaseCannotFail = releaseLinkedWinnerAdvancement({
+      releaseLinkedWinnerAdvancement({
         roundNumber: link.source.roundNumber,
         structureId: link.source.structureId,
         matchUpsMap: resolvedMap,
@@ -71,8 +98,7 @@ export function reconcileLinkAdvancements({
         drawDefinition,
         participantId,
         event,
-      });
-      void released;
+      }) satisfies ReleaseCannotFail;
     }
     const after = getUnearnedLinkAdvancements({
       inContextDrawMatchUps:
@@ -80,8 +106,11 @@ export function reconcileLinkAdvancements({
       drawDefinition,
     }).length;
     // nothing this pass could release (a placement already played on): leave it for the inconsistency to report
-    if (after >= before) return;
+    if (after >= before) return undefined;
+    remaining = after;
   }
-  // every exit from the loop above returns: reaching here is the bound (F9), recorded for the census
+  // at the bound: refused only if a placement is still unearned (F9 (i), CA 2026-10-24), and recorded for the census
+  if (!remaining) return undefined;
   recordSettleEvent({ kind: 'bound', site: 'reconcileLinkAdvancements' });
+  return { error: SETTLE_BOUND_REACHED, info: 'reconcileLinkAdvancements' };
 }

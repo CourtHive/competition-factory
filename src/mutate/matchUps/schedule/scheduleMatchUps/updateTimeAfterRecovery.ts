@@ -13,7 +13,6 @@ import {
 import { HydratedMatchUp } from '@Types/hydrated';
 
 type UpdateTimeAfterRecoveryArgs = {
-  matchUpPotentialParticipantIds: { [key: string]: string[] };
   matchUpNotBeforeTimes: { [key: string]: any };
   reachability: ParticipantReachability;
   typeChangeRecoveryMinutes?: number;
@@ -24,7 +23,6 @@ type UpdateTimeAfterRecoveryArgs = {
   matchUp: HydratedMatchUp;
 };
 export function updateTimeAfterRecovery({
-  matchUpPotentialParticipantIds,
   individualParticipantProfiles,
   typeChangeRecoveryMinutes,
   averageMatchUpMinutes = 0,
@@ -80,7 +78,6 @@ export function updateTimeAfterRecovery({
 
   processNextMatchUps({
     linkedTargetIds: reachability.linkedTargets?.[matchUp.matchUpId],
-    matchUpPotentialParticipantIds,
     matchUpNotBeforeTimes,
     timeAfterRecovery,
     matchUp,

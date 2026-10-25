@@ -1,5 +1,6 @@
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import { expect, it } from 'vitest';
 
 // constants
@@ -22,15 +23,18 @@ it.each(scenarios)('can return available matchUps count for AdHoc structures', (
     setState: true,
   });
 
-  let matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
+  let matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
   expect(matchUps.length).toBe((drawSize / 2) * roundsCount);
   let availableResult = tournamentEngine.getAvailableMatchUpsCount();
   expect(availableResult.error).toEqual(MISSING_DRAW_DEFINITION);
   availableResult = tournamentEngine.getAvailableMatchUpsCount({ drawId });
   expect(availableResult.availableMatchUpsCount).toEqual(0);
 
-  const lastRoundNumber = availableResult.lastRoundNumber;
-  matchUps = tournamentEngine.allTournamentMatchUps({ matchUpFilters: { roundNumbers: [lastRoundNumber] } }).matchUps;
+  const lastRoundNumber = defined(availableResult.lastRoundNumber, 'lastRoundNumber');
+  matchUps = defined(
+    tournamentEngine.allTournamentMatchUps({ matchUpFilters: { roundNumbers: [lastRoundNumber] } }).matchUps,
+    'matchUps',
+  );
   const matchUpIds = matchUps.map(getMatchUpId).slice(0, matchUpsToDeleteCount);
   const deletionResult = tournamentEngine.deleteAdHocMatchUps({
     matchUpIds,

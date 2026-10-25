@@ -1,6 +1,7 @@
 import { POLICY_RANKING_POINTS_USTA_JUNIOR } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_USTA_JUNIOR';
 import { getAwardProfile } from '@Query/scales/getAwardProfile';
 import { describe, expect, it, afterEach } from 'vitest';
+import type { AwardProfile } from '@Types/rankingTypes';
 import scaleEngine from '@Engines/scaleEngine';
 import { mocksEngine } from '../../..';
 
@@ -205,7 +206,7 @@ describe('Specificity scoring', () => {
 
 describe('Priority override', () => {
   it('explicit priority overrides specificity scoring', () => {
-    const highSpecificity = {
+    const highSpecificity: AwardProfile = {
       profileName: 'High Specificity',
       drawTypes: [SINGLE_ELIMINATION],
       levels: [1, 2, 3],
@@ -214,7 +215,7 @@ describe('Priority override', () => {
       // specificity score: drawTypes(1) + levels(1) + eventTypes(1) = 3
     };
 
-    const lowSpecificityHighPriority = {
+    const lowSpecificityHighPriority: AwardProfile = {
       profileName: 'Priority Override',
       levels: [1, 2, 3],
       priority: 10,

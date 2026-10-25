@@ -243,7 +243,7 @@ describe('getNumericSeedValue branch coverage', () => {
 describe('getHomeParticipantId branch coverage', () => {
   it('returns error when matchUp is missing', () => {
     const result = getHomeParticipantId({} as any);
-    expect(result.error).toEqual(MISSING_MATCHUP);
+    expect('error' in result ? result.error : undefined).toEqual(MISSING_MATCHUP);
   });
 
   it('returns homeParticipantId when schedule is falsy', () => {
@@ -321,7 +321,7 @@ describe('attemptToSetMatchUpStatusBYE branch coverage', () => {
       tournamentRecord: undefined,
       drawDefinition: undefined,
       structure: undefined,
-      matchUp: { winningSide: 1 },
+      matchUp: { matchUpId: 'm1', winningSide: 1 },
     });
     expect(result.error).toEqual(INVALID_MATCHUP_STATUS);
   });
@@ -331,12 +331,13 @@ describe('attemptToSetMatchUpStatusBYE branch coverage', () => {
       tournamentRecord: undefined,
       drawDefinition: undefined,
       structure: {
+        structureId: 's1',
         positionAssignments: [
           { drawPosition: 1, participantId: 'p1' },
           { drawPosition: 2, participantId: 'p2' },
         ],
       },
-      matchUp: { drawPositions: [1, 2] },
+      matchUp: { matchUpId: 'm1', drawPositions: [1, 2] },
     });
     expect(result.error).toBeDefined();
   });
@@ -588,13 +589,11 @@ describe('getDraftState branch coverage', () => {
 
 describe('processAlreadyScheduledMatchUps branch coverage', () => {
   it('builds dateScheduledMatchUpIds from matchUps when not provided', () => {
-    const matchUpPotentialParticipantIds = {};
     const individualParticipantProfiles = {};
     const matchUpNotBeforeTimes = {};
     const matchUpScheduleTimes = {};
 
     const result = processAlreadyScheduledMatchUps({
-      matchUpPotentialParticipantIds,
       participantReachability: { matchUps: {}, upstream: {}, linkedTargets: {} },
       individualParticipantProfiles,
       dateScheduledMatchUpIds: undefined as any,
@@ -624,7 +623,6 @@ describe('processAlreadyScheduledMatchUps branch coverage', () => {
 
   it('returns empty alreadyScheduled when clearDate is true', () => {
     const result = processAlreadyScheduledMatchUps({
-      matchUpPotentialParticipantIds: {},
       participantReachability: { matchUps: {}, upstream: {}, linkedTargets: {} },
       individualParticipantProfiles: {},
       dateScheduledMatchUpIds: ['m1'],
@@ -641,7 +639,6 @@ describe('processAlreadyScheduledMatchUps branch coverage', () => {
 
   it('handles clearScheduleDates as an array', () => {
     const result = processAlreadyScheduledMatchUps({
-      matchUpPotentialParticipantIds: {},
       participantReachability: { matchUps: {}, upstream: {}, linkedTargets: {} },
       individualParticipantProfiles: {},
       dateScheduledMatchUpIds: ['m1'],
@@ -659,7 +656,6 @@ describe('processAlreadyScheduledMatchUps branch coverage', () => {
   it('handles clearScheduleDates array that does not include scheduleDate', () => {
     const matchUpScheduleTimes: Record<string, any> = {};
     const result = processAlreadyScheduledMatchUps({
-      matchUpPotentialParticipantIds: {},
       participantReachability: { matchUps: {}, upstream: {}, linkedTargets: {} },
       individualParticipantProfiles: {},
       dateScheduledMatchUpIds: ['m1'],
@@ -679,7 +675,6 @@ describe('processAlreadyScheduledMatchUps branch coverage', () => {
   it('skips matchUps without scheduleTime in already scheduled', () => {
     const matchUpScheduleTimes: Record<string, any> = {};
     processAlreadyScheduledMatchUps({
-      matchUpPotentialParticipantIds: {},
       participantReachability: { matchUps: {}, upstream: {}, linkedTargets: {} },
       individualParticipantProfiles: {},
       dateScheduledMatchUpIds: ['m1'],

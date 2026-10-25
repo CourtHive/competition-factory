@@ -312,7 +312,7 @@ function computeRecoveryTimes({
     >[0]['scheduleTiming'];
     const timingDetails = resolveTimingDetails({
       matchUpFormat: matchUp.matchUpFormat ?? matchUpFormat,
-      categoryType: resolvedScheduleTiming.categoryType,
+      categoryType: resolvedScheduleTiming?.categoryType,
       scheduleTiming: resolvedScheduleTiming,
     });
     ({

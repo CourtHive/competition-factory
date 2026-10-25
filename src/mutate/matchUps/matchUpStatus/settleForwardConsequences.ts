@@ -10,6 +10,7 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { pushGlobalLog } from '@Functions/global/globalLog';
+import { settleUnlessIdle } from './indexPrecheck';
 import { isExit } from '@Validators/isExit';
 
 // constants and types
@@ -97,6 +98,20 @@ export function settleForwardConsequences(
 ): (ResultType & { exhausted?: string; settled?: number }) | undefined {
   const { drawDefinition } = params;
   if (!drawDefinition || isLuckyBasedDraw(drawDefinition.drawType)) return undefined;
+  // nothing owed on the structural index: the pass's first hydration would find the same, and write nothing
+  return settleUnlessIdle({
+    detect: (inContextDrawMatchUps) => hasForwardWork({ ...params, inContextDrawMatchUps }),
+    run: () => settleForward({ ...params, drawDefinition }),
+    site: 'settleForwardConsequences',
+    idle: undefined,
+    drawDefinition,
+  });
+}
+
+function settleForward(
+  params: SettleArgs & { drawDefinition: DrawDefinition },
+): (ResultType & { exhausted?: string; settled?: number }) | undefined {
+  const { drawDefinition } = params;
   const done = new Set<string>();
   for (let pass = 0; pass < PASS_LIMIT; pass += 1) {
     const owed = findOwed({ ...params, drawDefinition, done });
@@ -112,10 +127,26 @@ export function settleForwardConsequences(
   return { exhausted: owed.matchUpId, settled: PASS_LIMIT };
 }
 
-function findOwed(params: SettleArgs & { drawDefinition: DrawDefinition; done: Set<string> }): Owed | undefined {
+/**
+ * THE PASS'S DETECTOR: whether the draw owes a forward answer. The pass acts on each `findOwed` finds; v2's has-work
+ * predicate (`outcome/settleWork.ts`) asks this of the working view, so the two cannot drift.
+ */
+export function hasForwardWork(params: SettleArgs & Hydrated): boolean {
   const { drawDefinition } = params;
-  const matchUpsMap = getMatchUpsMap({ drawDefinition });
-  const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
+  if (!drawDefinition || isLuckyBasedDraw(drawDefinition.drawType)) return false;
+  return !!findOwed({ ...params, drawDefinition, done: new Set() });
+}
+
+/** a map and hydration of this draw already taken (the working view's), so none is taken here */
+type Hydrated = { matchUpsMap?: MatchUpsMap; inContextDrawMatchUps?: HydratedMatchUp[] };
+
+function findOwed(
+  params: SettleArgs & Hydrated & { drawDefinition: DrawDefinition; done: Set<string> },
+): Owed | undefined {
+  const { drawDefinition } = params;
+  const matchUpsMap = params.matchUpsMap ?? getMatchUpsMap({ drawDefinition });
+  const inContextDrawMatchUps =
+    params.inContextDrawMatchUps ?? getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
   const assignments = new Map<string, PositionAssignment[]>();
   const reading: Reading = {
     ...params,

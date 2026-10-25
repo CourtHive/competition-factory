@@ -179,9 +179,14 @@ export function releaseAdvancedDrawPosition({
     // same seat. Kept out, the carrier stood here beside the produced exit, the matchUp a round on read both, and the
     // forward order decided which (census A1 wave 3 R11b: FEED_IN_CHAMPIONSHIP_TO_SF 16 21089693, CURTIS_CONSOLATION 16
     // 21143807, MODIFIED_FEED_IN_CHAMPIONSHIP 16 21046667: `aPasserComesBackWhenTheHoldersByeGoes`).
+    // So too when the occupant LEAVES the structure that sent them across a link (`occupantLeaving`) and the award names
+    // a seat nobody holds, so nobody can have gone on from it (Phase C closure gate, openings policy off, 2026-10-25,
+    // DOUBLE_ELIMINATION 8/4 21157227: a carrier taken back out of the Backdraw final stayed in the grand final, a
+    // walkover won by its emptied seat, and the next Backdraw champion was refused there;
+    // `aCarrierLeavingTheBackdrawLeavesTheGrandFinal`).
     const awardedPosition = getWinningSideDrawPosition({ drawDefinition, structureId, matchUp });
     const decidedByLeavingCarry =
-      passedByeReleased &&
+      (passedByeReleased || (occupantLeaving && !awardedPosition)) &&
       !!matchUp.winningSide &&
       !!carriesLeaving.get(matchUp.matchUpId) &&
       awardedPosition !== drawPosition;

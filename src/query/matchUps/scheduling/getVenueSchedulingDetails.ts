@@ -12,7 +12,6 @@ import { Tournament } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 type GetVenueSchedulingDetailsArgs = {
-  matchUpPotentialParticipantIds: { [key: string]: string[] };
   individualParticipantProfiles: { [key: string]: any };
   tournamentRecords: { [key: string]: Tournament };
   matchUpScheduleTimes: { [key: string]: string };
@@ -32,7 +31,6 @@ type GetVenueSchedulingDetailsArgs = {
 };
 
 export function getVenueSchedulingDetails({
-  matchUpPotentialParticipantIds,
   individualParticipantProfiles,
   excludeNoDateCompleted,
   containedStructureIds,
@@ -116,7 +114,6 @@ export function getVenueSchedulingDetails({
     }
 
     const processResult = processAlreadyScheduledMatchUps({
-      matchUpPotentialParticipantIds,
       individualParticipantProfiles,
       excludeNoDateCompleted,
       dateScheduledMatchUpIds,
@@ -139,7 +136,6 @@ export function getVenueSchedulingDetails({
     if (byeScheduledMatchUpDetails?.length) allDateScheduledByeMatchUpDetails.push(...byeScheduledMatchUpDetails);
 
     const { matchUpsToSchedule, matchUpMap } = getMatchUpsToSchedule({
-      matchUpPotentialParticipantIds,
       orderedMatchUpIds: venueMatchUpIds,
       dateScheduledMatchUpIds,
       matchUpNotBeforeTimes,

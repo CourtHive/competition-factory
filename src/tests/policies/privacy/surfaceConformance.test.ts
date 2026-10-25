@@ -168,7 +168,7 @@ describe('the fixture can prove anything at all', () => {
   });
 
   it('emits every participantType, and staff, so the matrix is not hypothetical', () => {
-    const types = new Set(fixture.participants.map((participant: any) => participant.participantType));
+    const types = new Set<string>(fixture.participants.map((participant: any) => participant.participantType));
     expect([...types].sort((a, b) => a.localeCompare(b, 'en'))).toEqual(['GROUP', 'INDIVIDUAL', 'PAIR', 'TEAM']);
   });
 });

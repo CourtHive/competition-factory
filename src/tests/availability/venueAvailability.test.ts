@@ -14,6 +14,9 @@ import { AvailabilityEngine } from '@Assemblies/engines/availability/Availabilit
 import { BLOCK_TYPES } from '@Assemblies/governors/availabilityGovernor/types';
 import { describe, it, expect, beforeEach } from 'vitest';
 
+// types
+import type { Venue } from '@Types/tournamentTypes';
+
 // constants
 import { MAINTENANCE } from '@Constants/bookingTypeConstants';
 
@@ -30,7 +33,7 @@ function makeCourtRef(courtId = COURT_1) {
   return { tournamentId: TOURNAMENT_ID, venueId: VENUE_ID, courtId };
 }
 
-function makeBasicRecord() {
+function makeBasicRecord(): { tournamentId: string; startDate: string; endDate: string; venues: Venue[] } {
   return {
     tournamentId: TOURNAMENT_ID,
     startDate: '2026-06-15',
@@ -85,9 +88,7 @@ describe('Venue-level loading from tournament record', () => {
 
   it('loads date-specific venue dateAvailability', () => {
     const record = makeBasicRecord();
-    record.venues[0].dateAvailability = [
-      { date: '2026-06-15', startTime: '09:00', endTime: '18:00', venueId: VENUE_ID },
-    ];
+    record.venues[0].dateAvailability = [{ date: '2026-06-15', startTime: '09:00', endTime: '18:00' }];
 
     const engine = new AvailabilityEngine();
     engine.init(record, { tournamentId: TOURNAMENT_ID });
@@ -100,7 +101,7 @@ describe('Venue-level loading from tournament record', () => {
     const record = makeBasicRecord();
     record.venues[0].defaultStartTime = '08:00';
     record.venues[0].defaultEndTime = '20:00';
-    record.venues[0].dateAvailability = [{ startTime: '07:00', endTime: '22:00', venueId: VENUE_ID }];
+    record.venues[0].dateAvailability = [{ startTime: '07:00', endTime: '22:00' }];
 
     const engine = new AvailabilityEngine();
     engine.init(record, { tournamentId: TOURNAMENT_ID });
@@ -117,7 +118,6 @@ describe('Venue-level loading from tournament record', () => {
         date: '2026-06-15',
         startTime: '08:00',
         endTime: '20:00',
-        venueId: VENUE_ID,
         bookings: [{ startTime: '12:00', endTime: '13:00', bookingType: MAINTENANCE }],
       },
     ];

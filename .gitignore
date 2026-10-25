@@ -61,6 +61,8 @@ dist
 
 # golden corpus harvest output (never committed; see corpus/README.md)
 .corpus-out/
+# generated kernel conformance cases (pnpm kernel:harvest-scheduling); never committed
+.kernel-cases/
 .notice-coverage/
 
 # verify:docs-examples scratch (removed in finally; ignored in case a run is killed)

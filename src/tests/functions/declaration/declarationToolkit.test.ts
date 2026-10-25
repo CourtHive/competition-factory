@@ -4,6 +4,9 @@ import { registerCreatedRecord } from '@Functions/declaration/registerCreatedRec
 import { createRecordStore } from '@Functions/declaration/recordStore';
 import { describe, expect, it } from 'vitest';
 
+// types
+import type { ResultType } from '@Types/factoryTypes';
+
 // constants
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 
@@ -29,7 +32,8 @@ describe('declaration toolkit — createRecordStore (injected idKey + not-found 
     expect(store.getRecords()).toEqual({});
     expect(store.getActiveId()).toBeUndefined();
 
-    expect(store.setRecord({ widgetId: 'w1', n: 1 } as any).success).toEqual(true);
+    const setResult: ResultType = store.setRecord({ widgetId: 'w1', n: 1 } as any);
+    expect(setResult.success).toEqual(true);
     expect(store.getRecord('w1')).toEqual({ widgetId: 'w1', n: 1 });
   });
 
@@ -57,7 +61,8 @@ describe('declaration toolkit — createRecordStore (injected idKey + not-found 
 
     store.setRecord({ widgetId: 'w1' } as any);
     store.setActiveId('w1');
-    expect(store.removeRecord('w1').success).toEqual(true);
+    const removeResult: ResultType = store.removeRecord('w1');
+    expect(removeResult.success).toEqual(true);
     expect(store.getActiveId()).toBeUndefined(); // active cleared when the active record is removed
   });
 

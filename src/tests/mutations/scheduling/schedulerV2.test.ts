@@ -55,9 +55,10 @@ test('supports v2 scheduler', () => {
   expect(Object.values(result.scheduledMatchUpIds).map((x: any) => x.length)).toEqual([24, 6, 1]);
 
   let { matchUps } = tournamentEngine.allCompetitionMatchUps();
-  let roundSchedules = matchUps.map(({ schedule: { scheduledTime, courtName }, roundNumber }) => [
+  // the date and the time are stored apart (scheduling-pipeline.md § 9.9); joined here as the expectations read them
+  let roundSchedules = matchUps.map(({ schedule: { scheduledDate, scheduledTime, courtName }, roundNumber }) => [
     roundNumber,
-    scheduledTime,
+    `${scheduledDate}T${scheduledTime}`,
     courtName,
   ]);
 
@@ -110,9 +111,9 @@ test('supports v2 scheduler', () => {
   expect(Object.values(result.scheduledMatchUpIds).map((x: any) => x.length)).toEqual([24, 6, 1]);
 
   matchUps = tournamentEngine.allCompetitionMatchUps().matchUps;
-  roundSchedules = matchUps.map(({ schedule: { scheduledTime, courtName }, roundNumber }) => [
+  roundSchedules = matchUps.map(({ schedule: { scheduledDate, scheduledTime, courtName }, roundNumber }) => [
     roundNumber,
-    scheduledTime,
+    `${scheduledDate}T${scheduledTime}`,
     courtName,
   ]);
 
@@ -231,7 +232,11 @@ test('scheduling v2 respects DO_NOT_SCHEDULE requests', () => {
   let { matchUps } = tournamentEngine.allCompetitionMatchUps();
   let roundSchedules = matchUps
     .filter(({ matchUpStatus }) => matchUpStatus === TO_BE_PLAYED)
-    .map(({ schedule: { scheduledTime, courtName }, roundNumber }) => [scheduledTime, roundNumber, courtName]);
+    .map(({ schedule: { scheduledDate, scheduledTime, courtName }, roundNumber }) => [
+      `${scheduledDate}T${scheduledTime}`,
+      roundNumber,
+      courtName,
+    ]);
 
   expect(roundSchedules).toStrictEqual([
     ['2022-01-01T08:00', 1, '1'],

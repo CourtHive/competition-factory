@@ -118,7 +118,7 @@ describe('addCertificationRequirement — guards', () => {
       certificationFamily: '',
       certificationLevel: 'Gold',
       organisationId: 'org-1',
-      requirements: [{ itemId: 'i1', itemType: 'EXAM', description: 'Pass exam' }],
+      requirements: [{ itemId: 'i1', description: 'Pass exam', required: true }],
     });
     expect(result.error).toEqual(INVALID_VALUES);
     expect(result.context.message).toBe('Missing certificationFamily');
@@ -130,7 +130,7 @@ describe('addCertificationRequirement — guards', () => {
       certificationFamily: 'ITF',
       certificationLevel: '',
       organisationId: 'org-1',
-      requirements: [{ itemId: 'i1', itemType: 'EXAM', description: 'Pass exam' }],
+      requirements: [{ itemId: 'i1', description: 'Pass exam', required: true }],
     });
     expect(result.error).toEqual(INVALID_VALUES);
     expect(result.context.message).toBe('Missing certificationLevel');
@@ -142,7 +142,7 @@ describe('addCertificationRequirement — guards', () => {
       certificationFamily: 'ITF',
       certificationLevel: 'Gold',
       organisationId: '',
-      requirements: [{ itemId: 'i1', itemType: 'EXAM', description: 'Pass exam' }],
+      requirements: [{ itemId: 'i1', description: 'Pass exam', required: true }],
     });
     expect(result.error).toEqual(INVALID_VALUES);
     expect(result.context.message).toBe('Missing organisationId');
@@ -344,7 +344,7 @@ describe('modifyEvaluation — guards and branches', () => {
         overallRating: 5,
         scores: [{ criterionId: 'cr1', sectionId: 's1', value: 5 }],
         comments: 'Excellent performance',
-        documentReference: 'doc-ref-1',
+        documentReference: { documentType: 'EVALUATION_FORM', documentId: 'doc-ref-1' },
         tournamentId: 'tid-1',
         tournamentName: 'Test Open',
         matchUpId: 'mid-1',
@@ -356,7 +356,7 @@ describe('modifyEvaluation — guards and branches', () => {
     expect(result.evaluation.overallRating).toBe(5);
     expect(result.evaluation.scores).toHaveLength(1);
     expect(result.evaluation.comments).toBe('Excellent performance');
-    expect(result.evaluation.documentReference).toBe('doc-ref-1');
+    expect(result.evaluation.documentReference).toEqual({ documentType: 'EVALUATION_FORM', documentId: 'doc-ref-1' });
     expect(result.evaluation.tournamentId).toBe('tid-1');
     expect(result.evaluation.tournamentName).toBe('Test Open');
     expect(result.evaluation.matchUpId).toBe('mid-1');

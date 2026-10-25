@@ -130,6 +130,10 @@
         "tournamentRank": {
           "type": "string"
         },
+        "tournamentSeriesId": {
+          "type": "string",
+          "description": "The same tournament across its editions: the same value every year it is held, where tournamentId is one edition."
+        },
         "tournamentGroups": {
           "type": "array",
           "items": {
@@ -1562,6 +1566,8 @@
         "scoreStringSide2": {
           "type": "string"
         },
+        "side1PointScore": { "type": ["number", "string"] },
+        "side2PointScore": { "type": ["number", "string"] },
         "sets": {
           "type": "array",
           "items": {

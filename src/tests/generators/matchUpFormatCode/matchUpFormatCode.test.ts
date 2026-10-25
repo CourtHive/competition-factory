@@ -400,14 +400,15 @@ it('supports an even number of timed sets', () => {
   expect(stringifiedWithFinalSet).toEqual(withFinalSetFormat);
 });
 
-it('accepts odd bestOf and rejects even non-timed sets without X suffix', () => {
+it('accepts any bestOf, and exactly N on a standard set (CA 2026-10-25)', () => {
   const format = 'SET4-S:6';
   const parsed = matchUpFormatCode.parse(format);
   expect(parsed).toEqual({ bestOf: 4, setFormat: { setTo: 6, noTiebreak: true } });
 
   const format2 = 'SET4X-S:6';
   const parsed2 = matchUpFormatCode.parse(format2);
-  expect(parsed2).toBeUndefined();
+  expect(parsed2).toEqual({ exactly: 4, setFormat: { setTo: 6, noTiebreak: true } });
+  expect(matchUpFormatCode.stringify(parsed2)).toEqual(format2);
 });
 
 it('can parse and stringify "exactly" with X suffix for timed sets', () => {
@@ -599,15 +600,15 @@ it('supports -G:TN1D golden point format', () => {
   expect(isValidMatchUpFormat({ matchUpFormat: format })).toEqual(true);
 });
 
+// -G:TN is the default traditional game: an equivalent spelling of no -G: section (CA 2026-10-25)
 it('supports -G:TN (explicit traditional, no deuce cap)', () => {
   const format = 'SET3-S:6/TB7-G:TN';
   const parsed = matchUpFormatCode.parse(format);
   expect(parsed).toEqual({
     bestOf: 3,
     setFormat: { setTo: 6, tiebreakAt: 6, tiebreakFormat: { tiebreakTo: 7 } },
-    gameFormat: { type: TRADITIONAL },
   });
-  expect(matchUpFormatCode.stringify(parsed)).toEqual(format);
+  expect(matchUpFormatCode.stringify(parsed)).toEqual('SET3-S:6/TB7');
   expect(isValidMatchUpFormat({ matchUpFormat: format })).toEqual(true);
 });
 

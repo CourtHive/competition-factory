@@ -2,11 +2,13 @@ import { setState, getMatchUp, getMatchUps, reset, getState } from '@Assemblies/
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as scoreGovernor from '@Assemblies/governors/scoreGovernor';
 import { useEngineCatch } from '@Tests/testHarness/engineCatch';
+import * as notifyModule from '@Global/state/notifySubscribers';
 import matchUpEngineSync from '@Assemblies/engines/matchUp';
 import { setDevContext } from '@Global/state/globalState';
+import * as globalState from '@Global/state/globalState';
 
 // constants
-import { INVALID_OBJECT, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import { INVALID_OBJECT, INVALID_TIE_FORMAT, MISSING_VALUE } from '@Constants/errorConditionConstants';
 
 describe('matchUpEngine', () => {
   beforeEach(() => {
@@ -243,9 +245,12 @@ describe('matchUpEngine', () => {
 
     it('does not call setState for rollback when snapshot is falsy', () => {
       setupMatchUp();
-      vi.spyOn(scoreGovernor, 'checkScoreHasValue').mockReturnValueOnce({ error: 'TEST_ERROR' });
-      const result = matchUpEngineSync.checkScoreHasValue({});
-      expect(result?.error).toEqual('TEST_ERROR');
+      // validateTieFormat({}) returns INVALID_TIE_FORMAT unmocked too, so the spy check is what proves the
+      // mocked failure is the one being rolled back.
+      const spy = vi.spyOn(scoreGovernor, 'validateTieFormat').mockReturnValueOnce({ error: INVALID_TIE_FORMAT });
+      const result = matchUpEngineSync.validateTieFormat({});
+      expect(spy).toHaveBeenCalled();
+      expect(result?.error).toEqual(INVALID_TIE_FORMAT);
       expect(result?.rolledBack).toBe(false);
     });
 
@@ -253,33 +258,49 @@ describe('matchUpEngine', () => {
 
     it('notifies subscribers when result has success and no delay/doNotNotify', () => {
       setupMatchUp();
-      vi.spyOn(scoreGovernor, 'checkScoreHasValue').mockReturnValueOnce({ success: true });
-      const result = matchUpEngineSync.checkScoreHasValue({});
+      vi.spyOn(scoreGovernor, 'validateTieFormat').mockReturnValueOnce({ success: true });
+      const notify = vi.spyOn(notifyModule, 'notifySubscribers');
+      const deleteNotices = vi.spyOn(globalState, 'deleteNotices');
+      const result = matchUpEngineSync.validateTieFormat({});
       expect(result?.success).toBe(true);
+      expect(notify).toHaveBeenCalledTimes(1);
+      expect(deleteNotices).toHaveBeenCalledTimes(1);
     });
 
     it('skips notification and deleteNotices when delayNotify is true', () => {
       setupMatchUp();
-      vi.spyOn(scoreGovernor, 'checkScoreHasValue').mockReturnValueOnce({ success: true });
-      const result = matchUpEngineSync.checkScoreHasValue({ delayNotify: true });
-      // delayNotify: notify=false, !success=false, doNotNotify=false → deleteNotices NOT called
+      vi.spyOn(scoreGovernor, 'validateTieFormat').mockReturnValueOnce({ success: true });
+      const notify = vi.spyOn(notifyModule, 'notifySubscribers');
+      const deleteNotices = vi.spyOn(globalState, 'deleteNotices');
+      const result = matchUpEngineSync.validateTieFormat({ delayNotify: true });
+      // delayNotify: the notices are kept for the caller to flush later
       expect(result?.success).toBe(true);
+      expect(notify).not.toHaveBeenCalled();
+      expect(deleteNotices).not.toHaveBeenCalled();
     });
 
     it('skips notification but calls deleteNotices when doNotNotify is true', () => {
       setupMatchUp();
-      vi.spyOn(scoreGovernor, 'checkScoreHasValue').mockReturnValueOnce({ success: true });
-      const result = matchUpEngineSync.checkScoreHasValue({ doNotNotify: true });
-      // doNotNotify: notify=false, !success=false, doNotNotify=true → deleteNotices called
+      vi.spyOn(scoreGovernor, 'validateTieFormat').mockReturnValueOnce({ success: true });
+      const notify = vi.spyOn(notifyModule, 'notifySubscribers');
+      const deleteNotices = vi.spyOn(globalState, 'deleteNotices');
+      const result = matchUpEngineSync.validateTieFormat({ doNotNotify: true });
+      // doNotNotify: nothing is sent, and the notices are discarded
       expect(result?.success).toBe(true);
+      expect(notify).not.toHaveBeenCalled();
+      expect(deleteNotices).toHaveBeenCalledTimes(1);
     });
 
     it('calls deleteNotices when result has no success property', () => {
       setupMatchUp();
       // checkScoreHasValue returns boolean - no .success property
+      const notify = vi.spyOn(notifyModule, 'notifySubscribers');
+      const deleteNotices = vi.spyOn(globalState, 'deleteNotices');
       const result = matchUpEngineSync.checkScoreHasValue({});
-      // !result?.success is true → deleteNotices called
+      // no `success` on the result: nothing is sent, and the notices are discarded
       expect(typeof result).toBe('boolean');
+      expect(notify).not.toHaveBeenCalled();
+      expect(deleteNotices).toHaveBeenCalledTimes(1);
     });
   });
 

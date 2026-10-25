@@ -76,6 +76,7 @@ export type ImplemtationGlobalStateTypes = {
   modified: boolean;
   capturedClock?: number; // epoch ms an outer engine call captured; see tools/clock.ts
   capturedCompetitionClock?: number; // likewise, when a competition provider is installed
+  capturedStamps?: WeakSet<object>; // the entities an outer engine call has stamped `updatedAt` on; see tools/clock.ts
   callRandomSource?: () => number; // a seeded engine call's stream for unthreaded draws; see tools/prng.ts
 };
 
@@ -299,6 +300,19 @@ export function setCapturedCompetitionClock(timeStamp?: number) {
 }
 
 /**
+ * The entities an outer engine call has stamped `updatedAt` on, so each is stamped once per call (F2 (i), CA
+ * 2026-10-19). Opened and released with the captured clock. Optional hooks like it: a provider without them has no
+ * ledger, and an entity is then stamped at each notice, as before.
+ */
+export function getCapturedStamps(): WeakSet<object> | undefined {
+  return _globalStateProvider.getCapturedStamps?.();
+}
+
+export function setCapturedStamps(stamps?: WeakSet<object>) {
+  _globalStateProvider.setCapturedStamps?.(stamps);
+}
+
+/**
  * The random stream a seeded engine call scoped for the draws its seed does not reach through `random`
  * (tools/prng.ts `withCallRandomSource`). Optional provider hooks, like the captured clock: a provider without
  * them scopes nothing, and is deliberately NOT given a process-wide fallback, which would hand one request's
@@ -506,10 +520,31 @@ export function getNotices(params: GetNoticesArgs): any[] {
  * exposed (back-compat with pre-5.0.0 providers).
  */
 export function getPayloads(params: GetNoticesArgs): any[] {
-  if (typeof _globalStateProvider.getPayloads === 'function') {
-    return _globalStateProvider.getPayloads(params);
-  }
-  return _globalStateProvider.getNotices(params);
+  const payloads =
+    typeof _globalStateProvider.getPayloads === 'function'
+      ? _globalStateProvider.getPayloads(params)
+      : _globalStateProvider.getNotices(params);
+  return Array.isArray(payloads) ? resolveDeferred(payloads) : payloads;
+}
+
+/**
+ * A notice's payload may be DEFERRED: built only when the notices are read, which the engine does once a call has
+ * succeeded (a call that errors deletes its notices unread). So a payload that costs a hydration, the in-context
+ * matchUp of `UPDATE_INCONTEXT_MATCHUP`, is never built for a refused call, nor for a topic no one subscribes to
+ * (CA, 2026-10-24). A deferred payload that builds nothing is dropped. Provider-agnostic: a provider stores the
+ * payload as it is given.
+ */
+export const DEFERRED_PAYLOAD = '__deferredPayload';
+
+function resolveDeferred<T>(payloads: T[]): T[] {
+  const builderOf = (payload: T) => (payload as Record<string, unknown> | undefined)?.[DEFERRED_PAYLOAD];
+  if (!payloads.some((payload) => typeof builderOf(payload) === 'function')) return payloads;
+  return payloads.flatMap((payload) => {
+    const build = builderOf(payload);
+    if (typeof build !== 'function') return [payload];
+    const built = (build as () => T | undefined)();
+    return built ? [built] : [];
+  });
 }
 
 export type DeleteNoticeArgs = {

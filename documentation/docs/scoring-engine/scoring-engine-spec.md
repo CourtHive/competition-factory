@@ -380,7 +380,8 @@ another sport.
 ### 3.4 Roots, modifiers and the clock
 
 - **The root changes nothing about a set's rules**, with one exception: whether points build games in a
-  timed set (§ 6.2). `FRM7-S:TB11` scores as `SET7-S:TB11`, and `INN3X-S:6/TB7`'s sets take their
+  timed set (§ 6.2). Exactly N (`X`) is a format on every root and every kind of set (CA 2026-10-25): the
+  grammar refused it on a `SET` root unless a segment was timed, so `SET3X-S:6/TB7` scores as `INN3X-S:6/TB7`. `FRM7-S:TB11` scores as `SET7-S:TB11`, and `INN3X-S:6/TB7`'s sets take their
   tiebreak at six all (`tiebreakSets`, "FRM7-S:TB11"; `timedSegments`, "exactly | INN | standard(tiebreak)").
 - **An unknown match modifier is kept, not scored**: `SET3Z-S:6/TB7` plays as `SET3-S:6/TB7`
   (`finalSegments`, "unknownModifiers").
@@ -1207,7 +1208,6 @@ on a cited id the matrix does not hold, and on a cell line that names no section
 - `bestOf | SET | set:standard(tiebreak) | final:same | game:traditional(deuceCap) | noClock | knownModifiers` — § 3.5, § 4.1, § 4.3; `tiebreakSetVariants` (`SET3-S:6/TB7-G:TN3D`, `SET3-S:6/TB7-G:TN1D`, `SET3-S:6/TB7-G:TN2D`)
 - `bestOf | SET | set:standard(tiebreak) | final:tiebreakSet | game:traditional(deuceCap) | noClock | knownModifiers` — § 3.5, § 4.1, § 4.3, § 5; `tiebreakSetVariants` (`SET3-S:6/TB7-G:TN3D-F:TB10`)
 - `bestOf | SET | set:standard(advantage) | final:same | game:traditional | noClock | knownModifiers` — § 4.1, § 4.2 rule 1, § 9.1; `advantageAndShortSets` (`SET3-S:6`, `SET1-S:8`, `SET5-S:6`), `noTiebreakIsNoTiebreak.test.ts`
-- `bestOf | SET | set:standard(advantage) | final:standard(advantage) | game:traditional | noClock | knownModifiers` — § 3.2, § 4.2 rule 1, § 4.5; `advantageAndShortSets` (`SET3-S:6-F:6`, `SET5-S:6-F:6`)
 - `bestOf | SET | set:standard(advantage) | final:same | game:consecutive | noClock | knownModifiers` — § 3.5, § 4.1 rule 4, § 4.2 rule 1; `advantageAndShortSets` (`SET5-S:5-G:3C`, `SET3-S:4-G:2C`)
 - `bestOf | SET | set:standard(advantage,noAD) | final:same | game:traditional | noClock | knownModifiers` — § 4.1 rule 2, § 4.2 rule 1; `advantageAndShortSets` (`SET3-S:6NOAD`, `SET1-S:5NOAD`); corpus `scoring/set3-s-6noad/*`
 - `bestOf | SET | set:standard(advantage,noAD) | final:tiebreakSet | game:traditional | noClock | knownModifiers` — § 4.1, § 4.2, § 4.5, § 5; `advantageAndShortSets` (`SET3-S:4NOAD-F:TB7`)
@@ -1216,6 +1216,8 @@ on a cited id the matrix does not hold, and on a cell line that names no section
 - `bestOf | SET | set:standard(advantage,winBy1) | final:tiebreakSet | game:traditional | noClock | knownModifiers` — § 4.2 rule 1, § 4.5, § 5; `advantageAndShortSets` (`SET3-S:4WB1-F:TB7`)
 - `bestOf | SET | set:standard(advantage,noAD,winBy1) | final:same | game:traditional | noClock | knownModifiers` — § 4.1 rule 2, § 4.2 rule 1; `advantageAndShortSets` (`SET3-S:4NOADWB1`, `SET1-S:4NOADWB1`)
 - `exactly | INN | set:standard(tiebreak) | final:same | game:traditional | noClock | knownModifiers` — § 3.4, § 4.2, § 9.2; `timedSegments` (`INN3X-S:6/TB7`)
+- `exactly | SET | set:standard(tiebreak) | final:same | game:traditional | noClock | knownModifiers` — § 3.4, § 4.2, § 9.2; `timedSegments` (`SET3X-S:6/TB7`; exactly N on every root, CA 2026-10-25)
+- `exactly | SET | set:standard(advantage) | final:same | game:traditional | noClock | knownModifiers` — § 3.4, § 4.2, § 9.2; `timedSegments` (`SET3X-S:6`, `SET4X-S:6`)
 
 **Tiebreak-only segments**
 
@@ -1230,6 +1232,8 @@ on a cited id the matrix does not hold, and on a cell line that names no section
 - `bestOf | MAP | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers` — § 3.4, § 5, § 9.1; `tiebreakSets` (`MAP3-S:TB13`, `MAP5-S:TB13`)
 - `bestOf+aggregate | SET | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers` — § 5, § 9.3; `tiebreakSets` (`SET3A-S:TB11`)
 - `exactly | HAL | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers` — § 5, § 9.2; `tiebreakSets` (`HAL2X-S:TB11`, `HAL3X-S:TB11`)
+- `exactly | SET | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers` — § 3.4, § 5, § 9.2; `tiebreakSets` (`SET3X-S:TB11`, `SET2X-S:TB10`)
+- `exactly+aggregate | SET | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers` — § 5, § 9.3 rule 4; `tiebreakSets` (`SET3XA-S:TB11`, `SET7XA-S:TB11`)
 
 **Timed segments**
 
@@ -1277,11 +1281,12 @@ on a cited id the matrix does not hold, and on a cell line that names no section
 - `bestOf+aggregate | HAL | set:outs | final:same | game:traditional | noClock | knownModifiers` — § 3.3, § 8; `formatMatrix.test.ts` (`HAL2A-S:O3`)
 - `exactly+aggregate | INN | set:outs | final:same | game:traditional | noClock | knownModifiers` — § 3.3, § 8; `formatMatrix.test.ts`, `inputLevels.test.ts` (`INN4XA-S:O3`)
 - `exactly+aggregate | INN | set:outs | final:same | game:traditional | clock | knownModifiers` — § 3.3, § 3.4, § 8; `formatMatrix.test.ts` (`INN4XA-S:O3-M:T50`)
+- `exactly+aggregate | SET | set:outs | final:same | game:traditional | noClock | knownModifiers` — § 3.3, § 3.4, § 8; `formatMatrix.test.ts` (`SET3XA-S:O3`)
 
 ## Related
 
 - [Core API reference](./scoring-engine-api.md), [event handlers](./event-handlers.md) and
   [format support](./format-support.md): the engine's surface, which this page specifies.
-- [matchUpFormat codes](/docs/codes/matchup-format): the grammar § 3 resolves.
+- [matchUpFormat grammar specification](/docs/codes/matchup-format-grammar): the grammar § 3 resolves; [matchUpFormat codes](/docs/codes/matchup-format) is the guide to writing codes.
 - [The outcome pipeline](../concepts/outcome-pipeline.md): the same kind of specification for
   `setMatchUpStatus`, which this page follows.

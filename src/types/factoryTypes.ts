@@ -54,6 +54,8 @@ export type FactoryEngine = {
  * directly.
  */
 type EngineHintKeys = {
+  /** Presented to unlock a mutation-locked element; read by the engine's checkMutationLock on every mutation. */
+  lockToken?: string;
   tournamentId?: string;
   eventId?: string;
   drawId?: string;
@@ -576,6 +578,10 @@ export type StructureParticipation = {
   structureId: string;
   winCount: number;
   drawId: string;
+  /** Round robin group stage only (withRankingProfile): the participant's resolved place within their group. */
+  groupOrder?: number;
+  /** Round robin group stage only (withRankingProfile): the number of positions in that group. */
+  groupSize?: number;
 };
 
 export type MappedParticipant = {
@@ -847,6 +853,11 @@ export type PairingProfile = {
 };
 
 export type GenerateDrawDefinitionArgs = {
+  /**
+   * Passed through to the drawType's generator: `groupSize` for ROUND_ROBIN and ROUND_ROBIN_WITH_PLAYOFF,
+   * `playoffGroups` for ROUND_ROBIN_WITH_PLAYOFF.
+   */
+  structureOptions?: { groupSize?: number; [key: string]: unknown };
   automated?: boolean | { seedsOnly: boolean };
   playoffAttributes?: PlayoffAttributes;
   policyDefinitions?: PolicyDefinitions;

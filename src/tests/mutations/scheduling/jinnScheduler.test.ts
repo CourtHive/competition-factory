@@ -26,7 +26,7 @@ it.each([
       { drawId: 'idM18', winnerFinishingPositionRange: '1-8' },
     ],
     dependencyDeferredCount: 0,
-    recoveryDeferredCount: 446,
+    recoveryDeferredCount: 485,
     timeProfiles: {
       idM16: {
         main1st: ['08:00'],

@@ -1,6 +1,7 @@
 import { advanceDrawPosition } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { settleUnlessIdle } from './indexPrecheck';
 
 // constants and types
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
@@ -33,14 +34,30 @@ export function reconcileByeAdvancements({
   event?: Event;
 }): ResultType | undefined {
   if (!drawDefinition) return undefined;
+  // nothing owed on the structural index: the pass's first hydration would find the same, and write nothing
+  return settleUnlessIdle({
+    run: () => advanceOwedByes({ tournamentRecord, drawDefinition, event }),
+    site: 'reconcileByeAdvancements',
+    detect: findOwedByeAdvance,
+    idle: undefined,
+    drawDefinition,
+  });
+}
+
+function advanceOwedByes({
+  tournamentRecord,
+  drawDefinition,
+  event,
+}: {
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  event?: Event;
+}): ResultType | undefined {
   // each advance seats one participant; bounded as a draw is
   for (let pass = 0; pass < 32; pass += 1) {
     const matchUpsMap = getMatchUpsMap({ drawDefinition });
     const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
-    const byId = new Map(inContextDrawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
-    const owed = inContextDrawMatchUps
-      .map((matchUp) => owedAdvance(matchUp, byId) ?? owedSeatAdvance(matchUp, byId, inContextDrawMatchUps))
-      .find(Boolean);
+    const owed = findOwedByeAdvance(inContextDrawMatchUps);
     if (!owed) return undefined;
     const result = advanceDrawPosition({
       drawPositionToAdvance: owed.drawPosition,
@@ -54,6 +71,19 @@ export function reconcileByeAdvancements({
     if (result?.error) return result;
   }
   return undefined;
+}
+
+/**
+ * THE PASS'S DETECTOR: the first advance a BYE still owes, read from a hydration of the draw. The pass acts on it; v2's
+ * has-work predicate (`outcome/settleWork.ts`) asks it of the working view, so the two cannot drift.
+ */
+export function findOwedByeAdvance(
+  inContextDrawMatchUps: HydratedMatchUp[],
+): { matchUpId: string; drawPosition: number } | undefined {
+  const byId = new Map(inContextDrawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
+  return inContextDrawMatchUps
+    .map((matchUp) => owedAdvance(matchUp, byId) ?? owedSeatAdvance(matchUp, byId, inContextDrawMatchUps))
+    .find(Boolean);
 }
 
 /** the participant a BYE matchUp still owes its next matchUp, where that matchUp has a seat for them and no result */

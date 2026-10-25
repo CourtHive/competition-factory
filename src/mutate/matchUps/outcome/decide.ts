@@ -1,20 +1,29 @@
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
+import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
 import { carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
+import { PREDICTED_CALL, predictSettleWork, type SettleSite } from './settleWork';
+import { compareNotices, compareShadow, plannedNotices } from './shadow';
+import { addGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
+import { planOutcome, type OutcomePlan, type PlanShape } from './plan';
 import { convergence, isRelabel, planDirection } from './direction';
+import { compareIndex, type IndexComparison } from './indexOracle';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { cloneState, restoreState } from '@Tools/cloneState';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
+import { compareViews, hydrateShadow } from './viewOracle';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
 import { observeWrite, planWrite } from './write';
 import { captureRecord } from '@Tools/recordDiff';
+import { createWorkingView } from './overlay';
 import { refuseOutcome } from './refusals';
+import { stampedInThisCall } from './ops';
 import { buildOutcomeView } from './view';
-import { compareNotices, compareShadow, plannedNotices } from './shadow';
+import { applyOwnedPlan } from './apply';
 import { chooseRoute } from './route';
-import { planOutcome } from './plan';
 import {
   getNoticeBuffer,
   getOutcomePipeline,
@@ -30,11 +39,46 @@ import { BYE, DEAD_RUBBER, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusC
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { ResultType } from '@Types/factoryTypes';
+import type { OutcomeOp } from './ops';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
 } from '@Constants/outcomePipelineConstants';
+
+/**
+ * THE SHAPES v2 OWNS (§ 3.7: one place, so reverting a slice's PR takes its shapes out). S2: the local write, the
+ * matchUp's own result with no winner before or after, no exit, nothing directed, no tally and no settle work.
+ */
+const OWNED_SHAPES = new Set<PlanShape>(['local']);
+
+/**
+ * The call planned against the view (§ 3.1 step 3), the same under `v2` and `differential`: the route, the write on the
+ * matchUp and the direction, then the plan as ops behind the fail-closed allowlist, then the working view after them and
+ * the settle passes' has-work predicates. A plan that leaves a pass work abstains `settle`.
+ */
+function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal) {
+  // TEAM auto-calc: a dual whose result is computed from its lines takes the PROJECTED winner and score in
+  // place of the call's before anything is routed, as `handleTeamAutoCalc` rewrites v1's parameters
+  const planned = autoCalculated(args.request, view);
+  const route = refusal ? undefined : chooseRoute(planned, view);
+  const plan = route ? planWrite(planned, view, route) : undefined;
+  const direction = route ? planDirection(planned, view, route) : undefined;
+  const allowed = planOutcome({
+    tournamentRecord: args.tournamentRecord,
+    drawDefinition: args.drawDefinition,
+    request: planned,
+    write: plan,
+    direction,
+    route,
+    view,
+  });
+  // the working view after the plan (§ 3.2), folded before anything is written to the stored objects it reads
+  const folded = allowed.ops ? workingViewAfter({ args, view, ops: allowed.ops }) : undefined;
+  const settleWork = folded && 'settle' in folded ? folded.settle : [];
+  const outcome: OutcomePlan = settleWork.length ? { abstain: 'settle' } : allowed;
+  return { planned, route, plan, direction, folded, outcome };
+}
 
 /**
  * The routing point. Under `v1` nothing is built and nothing is decided. Under `v2` a refusal is
@@ -44,37 +88,35 @@ import {
  */
 export function decideOutcomeV2(args: BuildViewArgs): {
   refused?: ResultType;
+  owned?: ResultType;
   compare?: (v1Result: ResultType) => void;
 } {
   const mode = getOutcomePipeline();
   if (mode === OUTCOME_PIPELINE_V1) return {};
 
+  // a precheck disagreement belongs to the call that met it: whatever an earlier call left is not this call's
+  takePrecheckDivergences();
   const view = buildOutcomeView(args);
   const refusal: Refusal | undefined = refuseOutcome(args.request, view);
 
-  if (mode === OUTCOME_PIPELINE_V2 && refusal) return { refused: toResult(refusal) };
+  if (mode === OUTCOME_PIPELINE_V2) {
+    if (refusal) return { refused: toResult(refusal) };
+    // S2: a call whose complete plan is a shape v2 owns is written by v2, and v1 is not asked (F1 (a), fail-closed)
+    const { outcome } = planCall(args, view);
+    return outcome.ops && OWNED_SHAPES.has(outcome.shape) ? { owned: applyOwnedPlan({ args, ops: outcome.ops }) } : {};
+  }
   if (mode !== OUTCOME_PIPELINE_DIFFERENTIAL) return {};
+  // § 3.1.1's index oracle, read before v1 writes: the index of the draw as the call found it against the view's hydration
+  const indexed = indexOracle(args, view);
 
-  // S2b: the route and the write on this matchUp, planned BEFORE v1 runs, checked against it after
-  // TEAM auto-calc: a dual whose result is computed from its lines takes the PROJECTED winner and score in
-  // place of the call's before anything is routed, as `handleTeamAutoCalc` rewrites v1's parameters
-  const planned = autoCalculated(args.request, view);
-  const route = refusal ? undefined : chooseRoute(planned, view);
-  const plan = route ? planWrite(planned, view, route) : undefined;
-  const direction = route ? planDirection(planned, view, route) : undefined;
+  const { planned, route, plan, direction, folded, outcome } = planCall(args, view, refusal);
   const dual = route ? planDual(args, view) : undefined;
-  // S1: the same plan as ops, behind the fail-closed allowlist; a complete one is shadow-applied once v1 has written,
-  // to the record as it stands here (one canonical capture, taken only for a complete plan)
-  const outcome = planOutcome({
-    tournamentRecord: args.tournamentRecord,
-    drawDefinition: args.drawDefinition,
-    request: planned,
-    write: plan,
-    direction,
-    route,
-    view,
-  });
   const shadowBefore = outcome.ops && args.tournamentRecord ? captureRecord(args.tournamentRecord) : undefined;
+  // what this engine call already stamped, which the copy cannot know (F2 (i): an entity is stamped once per call)
+  const stampedBefore = shadowBefore ? stampedInThisCall(args.drawDefinition) : undefined;
+  // a copy of the working view is kept for the view oracle, since a hydrated matchUp may share a nested object with the
+  // stored one v1 then writes
+  const viewAfter = shadowBefore ? folded : undefined;
 
   // AN ERROR CHANGES NOTHING (CA, 2026-10-18), and a divergence is an error raised after v1 has written: what the
   // call touches is captured here, before v1 runs, and written back into the same objects before the divergence leaves
@@ -100,6 +142,21 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   };
 
   function compareWithV1(v1Result: ResultType) {
+    // a settle pass that skipped its hydration on the index's word, where a hydration said otherwise (`indexPrecheck.ts`)
+    const [precheck] = takePrecheckDivergences();
+    if (precheck)
+      throw new OutcomePipelineDivergence({
+        matchUpId: args.request.matchUpId,
+        v1: `hydrated ${precheck.site} found ${precheck.hydrated}`,
+        v2: `precheck:${precheck.site} index found ${precheck.index}`,
+      });
+    if (indexed && !indexed.equal)
+      throw new OutcomePipelineDivergence({
+        matchUpId: args.request.matchUpId,
+        v1: `hydrated ${indexed.matchUpId} ${indexed.field} = ${indexed.hydrated}`,
+        v2: `index:${indexed.field} ${indexed.matchUpId} = ${indexed.index}`,
+      });
+    differentialTally('index', indexed ? 'compared' : 'deferred');
     const comparison = compareDecisions(refusal, v1Result?.error?.code);
     if (!comparison.agree)
       throw new OutcomePipelineDivergence({
@@ -151,6 +208,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
       record: args.tournamentRecord,
       before: shadowBefore,
       ops: outcome.ops,
+      stampedBefore,
     });
     if (!shadow.equal)
       throw new OutcomePipelineDivergence({
@@ -159,6 +217,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
         v2: `shadow-applied ${outcome.ops.length} ops: ${shadow.path} = ${shadow.v2}`,
       });
     differentialTally('shadow:applied', 'compared');
+    checkViewOracle(shadow.shadow);
     const noticed = compareNotices({
       planned: plannedNotices({ ops: outcome.ops, matchUpId: args.request.matchUpId as string }),
       added: (getNoticeBuffer() ?? []).slice(notices?.length ?? 0),
@@ -167,6 +226,20 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     if (!noticed.equal)
       throw new OutcomePipelineDivergence({ matchUpId: args.request.matchUpId, v1: noticed.v1, v2: noticed.v2 });
     differentialTally('shadow:notices', 'compared');
+  }
+  /** § 3.2's view oracle: the working view after the plan against a hydration of the shadow-applied record */
+  function checkViewOracle(shadow: Record<string, unknown>) {
+    if (!viewAfter || 'error' in viewAfter || !args.drawDefinition) return differentialTally('view', 'deferred');
+    const record = hydrateShadow({ shadow, drawId: args.drawDefinition.drawId });
+    if (!record) return differentialTally('view', 'deferred');
+    const compared = compareViews({ record, view: viewAfter.matchUps });
+    if (!compared.equal)
+      throw new OutcomePipelineDivergence({
+        matchUpId: args.request.matchUpId,
+        v1: `wrote ${compared.matchUp} ${compared.field} = ${compared.record}`,
+        v2: `view:${compared.field} ${compared.matchUp} = ${compared.view}`,
+      });
+    differentialTally('view', 'compared');
   }
 }
 
@@ -188,7 +261,12 @@ function planDual(args: BuildViewArgs, view: OutcomeView): DualPlan | undefined 
     winningSide,
   };
   // the dual's entry in the line's own hydration: the dual's view takes no second one (S1, executor plan § 3.2)
-  const dualView = buildOutcomeView({ ...args, request, inContextDrawMatchUps: view.inContextDrawMatchUps });
+  const dualView = buildOutcomeView({
+    ...args,
+    request,
+    inContextDrawMatchUps: view.inContextDrawMatchUps,
+    structural: view.structural,
+  });
   return { matchUpId: line.dualMatchUpId, winningSide, direction: planDirection(request, dualView, 'winner') };
 }
 
@@ -641,4 +719,68 @@ function toResult(refusal: Refusal): ResultType {
     ...(refusal.info ? { info: refusal.info } : {}),
     ...(refusal.context ? { context: refusal.context } : {}),
   };
+}
+
+/** fold a complete plan into a working view of the draw as the call found it; a deep copy, for the view oracle */
+function workingViewAfter({
+  args,
+  view,
+  ops,
+}: {
+  args: BuildViewArgs;
+  view: OutcomeView;
+  ops?: OutcomeOp[];
+}): { matchUps: HydratedMatchUp[]; settle: SettleSite[] } | { error: string } | undefined {
+  if (!ops || !args.drawDefinition || !args.matchUpsMap || !view.inContextDrawMatchUps) return undefined;
+  const working = createWorkingView({
+    inContextDrawMatchUps: view.inContextDrawMatchUps,
+    structural: view.structural,
+    tournamentRecord: args.tournamentRecord,
+    drawDefinition: args.drawDefinition,
+    matchUpsMap: args.matchUpsMap,
+    event: args.event,
+  });
+  const applied = working.apply(ops);
+  if (applied.error) return { error: applied.error };
+  // S2's has-work predicates, recorded for the census to set against v1's per-pass writes (nothing outside telemetry)
+  const settle = predictSettleWork({
+    propagateExitStatus: args.request.flags.propagateExitStatus,
+    inContextDrawMatchUps: view.inContextDrawMatchUps,
+    tournamentRecord: args.tournamentRecord,
+    drawDefinition: args.drawDefinition,
+    event: args.event,
+    working,
+    ops,
+  });
+  recordSettleEvent({ kind: 'predicted', site: PREDICTED_CALL });
+  for (const site of settle) recordSettleEvent({ kind: 'predicted', site });
+  return { matchUps: structuredClone(working.inContextDrawMatchUps), settle };
+}
+
+/**
+ * THE INDEX ORACLE (§ 3.1.1, S2): the view decides on the structural index of the draw as the call found it; here it is
+ * held to one hydration of the same draw, taken for the purpose, on every field the outcome logic reads, after the view's
+ * own step on a draw stored without its edges (`addGoesTo`, onto the hydration as the view takes it onto the index).
+ * Read before v1 writes: an index entry shares nested objects with the stored matchUp. Test instrumentation:
+ * `verify:hydrations` keeps its hydration out of `differential`'s ceiling. Undefined for a draw the view hydrated (TEAM),
+ * which the tally counts as deferred.
+ */
+function indexOracle(args: BuildViewArgs, view: OutcomeView): IndexComparison | undefined {
+  if (!args.drawDefinition || !view.structural || !view.inContextDrawMatchUps) return undefined;
+  const hydrated =
+    getAllDrawMatchUps({
+      tournamentRecord: args.tournamentRecord,
+      drawDefinition: args.drawDefinition,
+      matchUpsMap: args.matchUpsMap,
+      inContext: true,
+      event: args.event,
+    }).matchUps ?? [];
+  if (!hasStoredGoesTo({ drawDefinition: args.drawDefinition }))
+    addGoesTo({
+      inContextDrawMatchUps: hydrated,
+      drawDefinition: args.drawDefinition,
+      matchUpsMap: args.matchUpsMap,
+      inContextOnly: true,
+    });
+  return compareIndex({ hydrated, index: view.inContextDrawMatchUps })[0] ?? { equal: true };
 }

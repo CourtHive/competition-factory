@@ -22,7 +22,7 @@ export function getParticipantPoints({ pointAwards, personId, aggregationRules =
     let totalPoints = 0;
 
     for (const [bucketIndex, bucket] of countingBuckets.entries()) {
-      const { eventTypes, maxResultsPerLevel: bucketMaxPerLevel, mandatoryRules } = bucket;
+      const { eventTypes, maxResultsPerLevel: bucketMaxPerLevel, mandatoryRules, weight, bestPerSeries } = bucket;
 
       // Same positional fallback generateRankingList uses, so a bucket is
       // labelled identically whichever of the two reports on it.
@@ -41,6 +41,8 @@ export function getParticipantPoints({ pointAwards, personId, aggregationRules =
         bestOfCount: bucketBestOf,
         maxResultsPerLevel: bucketMaxPerLevel,
         mandatoryRules,
+        weight,
+        bestPerSeries,
       });
 
       totalPoints += bucketTotal;

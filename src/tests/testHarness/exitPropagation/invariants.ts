@@ -187,6 +187,24 @@ function matchUpInvariants(matchUp: any): InvariantViolation[] {
     );
   }
 
+  /**
+   * A matchUp with a BYE side is a BYE (`progressExitStatus` RULE 1): its participant advances through it. One standing
+   * at TO_BE_PLAYED reads as a fixture to be scheduled against nobody, and it never occurs (CA, 2026-10-24; punch-list
+   * P26). None of the BYE rules above saw it, because each reads a matchUp that IS a `BYE`, and this one has stopped
+   * being one. Measured before the fix on sched-w1 (both arms, 18,000 steps): 4 seeds, every one a clear accepted on a
+   * BYE matchUp; sched-w2: 0. `clearsABye` now leaves a BYE the BYE it is.
+   *
+   * Not the lines of a TEAM dual: a BYE dual's lines are generated at TO_BE_PLAYED with the dual's BYE side, which is how
+   * a dual that is never played is represented, and they stay so (CA, 2026-10-24: "it's ok to leave the lines as they are
+   * today"). The dual itself is the BYE.
+   */
+  if (byeSide && !matchUp.collectionId && (!matchUpStatus || matchUpStatus === TO_BE_PLAYED)) {
+    record(
+      'TO_BE_PLAYED_BESIDE_BYE',
+      `matchUpStatus ${matchUpStatus ?? 'absent'} with side ${byeSide.sideNumber} a BYE (drawPosition ${byeSide.drawPosition})`,
+    );
+  }
+
   const emptyWinningSide = winningSideHoldsNobody(matchUp);
   if (emptyWinningSide) {
     record('WINNING_SIDE_EMPTY', emptyWinningSide);

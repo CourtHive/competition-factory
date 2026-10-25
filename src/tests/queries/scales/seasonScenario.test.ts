@@ -1,6 +1,7 @@
 import { completeDrawMatchUps } from '@Generators/mocks/completeDrawMatchUps';
 import { tournamentEngine } from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import { defined } from '@Tests/helpers/defined';
 import { generateRange } from '@Tools/arrays';
 import { addDays } from '@Tools/dateTime';
 import { expect, it } from 'vitest';
@@ -8,10 +9,12 @@ import fs from 'fs';
 
 // constants
 import { ROUND_ROBIN, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
+import type { UnmintedTieFormat } from '@Mutate/tieFormat/checkTieFormat';
 import { SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
+import type { DrawTypeUnion } from '@Types/tournamentTypes';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 
 const displayAggregateResults = false;
@@ -22,7 +25,7 @@ const exportOnIncomplete = false; // enable for troubleshooting
 // a tiebreak at time: the playoff structures refuse a format that can end level (spec § 9.7 rule 4)
 const matchUpFormat = 'SET1-S:T30/TB7';
 
-const tieFormat = {
+const tieFormat: UnmintedTieFormat = {
   collectionDefinitions: [
     {
       collectionName: 'Male Singles',
@@ -52,7 +55,18 @@ const tieFormat = {
   winCriteria: { valueGoal: 2 },
 };
 
-const scenarios = [
+type Scenario = {
+  finishingPositionRangeBounsPoints: { [key: string]: number };
+  structureOptions?: { groupSize: number };
+  participantsPerTeam: number;
+  drawType: DrawTypeUnion;
+  matchUpsCount: number;
+  roundsCount: number;
+  teamsCount: number;
+  drawSize: number;
+};
+
+const scenarios: Scenario[] = [
   {
     finishingPositionRangeBounsPoints: { '1-1': 1 },
     participantsPerTeam: 2,
@@ -100,32 +114,35 @@ it.each(scenarios.slice(1))('can aggregate team scores across SINGLES/DOUBLES ev
   // Since 7.0.0 `validateTieFormat` enforces collectionIds, and `generateEventsFromTieFormat`
   // validates its `tieFormat` param at the door. A hand-written tieFormat carries none, so it is
   // minted first — the same two lines a consumer writes after upgrading.
-  tournamentEngine.mintCollectionIds({ tieFormat });
+  const minted = defined(tournamentEngine.mintCollectionIds({ tieFormat }).tieFormat, 'minted tieFormat');
 
   const result = tournamentEngine.generateEventsFromTieFormat({
     uuids: ['e-1', 'e-2', 'e-3'], // used for eventIds to facilitate testing
     addEntriesFromTeams: true,
     addEvents: true,
-    tieFormat,
+    tieFormat: minted,
   });
   expect(result.events.length).toBe(3);
 
-  const teamParticipants = tournamentEngine.getParticipants({
-    participantFilters: { participantTypes: [TEAM_PARTICIPANT] },
-    withIndividualParticipants: true,
-  }).participants;
+  const teamParticipants = defined(
+    tournamentEngine.getParticipants({
+      participantFilters: { participantTypes: [TEAM_PARTICIPANT] },
+      withIndividualParticipants: true,
+    }).participants,
+    'participants',
+  );
 
-  const events = tournamentEngine.getEvents().events;
+  const events = defined(tournamentEngine.getEvents().events, 'events');
   for (const event of events) {
     const { eventType, gender } = event;
     if (eventType === SINGLES_EVENT) continue;
-    const participantPairs: string[] = [];
+    const participantPairs: string[][] = [];
     for (const teamParticipant of teamParticipants) {
-      const femaleParticipantIds = teamParticipant.individualParticipants
-        .filter((p) => p.person.sex === FEMALE)
+      const femaleParticipantIds = defined(teamParticipant.individualParticipants, 'individualParticipants')
+        .filter((p) => defined(p.person, 'person').sex === FEMALE)
         .map((p) => p.participantId);
-      const maleParticipantIds = teamParticipant.individualParticipants
-        .filter((p) => p.person.sex === MALE)
+      const maleParticipantIds = defined(teamParticipant.individualParticipants, 'individualParticipants')
+        .filter((p) => defined(p.person, 'person').sex === MALE)
         .map((p) => p.participantId);
       const individualParticipantIds = (gender === FEMALE && femaleParticipantIds.slice(0, participantsPerTeam)) ||
         (gender === MALE && maleParticipantIds.slice(0, participantsPerTeam)) || [
@@ -150,7 +167,7 @@ it.each(scenarios.slice(1))('can aggregate team scores across SINGLES/DOUBLES ev
   const { structureOptions, drawType, teamsCount, matchUpsCount, finishingPositionRangeBounsPoints } = scenario;
   // Now iterate through the season consistng of drawSize # of tournaments
   generateRange(0, teamsCount * roundsCount).forEach((i) => {
-    const events = tournamentEngine.getEvents().events;
+    const events = defined(tournamentEngine.getEvents().events, 'events');
     let drawNumber = 1;
     for (const event of events) {
       const { eventId } = event;
@@ -162,7 +179,7 @@ it.each(scenarios.slice(1))('can aggregate team scores across SINGLES/DOUBLES ev
         eventId,
       });
       expect(result.success).toBe(true);
-      const { drawDefinition } = result;
+      const drawDefinition = defined(result.drawDefinition, 'drawDefinition');
       const completionResult = completeDrawMatchUps({
         completeRoundRobinPlayoffs: true,
         randomWinningSide: true,
@@ -184,9 +201,8 @@ it.each(scenarios.slice(1))('can aggregate team scores across SINGLES/DOUBLES ev
     }
 
     const { startDate, tournamentName } = tournamentEngine.getTournamentInfo().tournamentInfo;
-    const { teamResults } = tournamentEngine.getAggregateTeamResults({
-      finishingPositionRangeBounsPoints,
-    });
+    const aggregate = tournamentEngine.getAggregateTeamResults({ finishingPositionRangeBounsPoints });
+    const teamResults = defined('teamResults' in aggregate ? aggregate.teamResults : undefined, 'teamResults');
 
     for (const teamParticipantId of Object.keys(teamResults)) {
       if (!aggregateTeamResults[teamParticipantId]) {
@@ -235,7 +251,9 @@ it.each(scenarios.slice(1))('can aggregate team scores across SINGLES/DOUBLES ev
     });
     expect(result.success).toBe(true);
 
-    tournamentEngine.setState(result.tournamentRecord);
+    tournamentEngine.setState(
+      defined('tournamentRecord' in result ? result.tournamentRecord : undefined, 'tournamentRecord'),
+    );
   });
 
   if (displayAggregateResults) {

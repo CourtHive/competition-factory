@@ -1,15 +1,17 @@
+import { addNotice, deleteNotice, DEFERRED_PAYLOAD, getCapturedStamps } from '@Global/state/globalState';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getDrawPositionSides } from '@Query/matchUps/getDrawPositionSides';
 import { drawOrigin, eventOrigin } from '@Query/readModel/readModelRows';
-import { addNotice, deleteNotice } from '@Global/state/globalState';
+import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { nowMs } from '@Tools/clock';
 
 // constants and types
 import { ErrorType, MISSING_DRAW_DEFINITION, MISSING_MATCHUP } from '@Constants/errorConditionConstants';
+import { DrawDefinition, MatchUp, Structure } from '@Types/tournamentTypes';
 import { DRAW_DEFINITION, STRUCTURE } from '@Constants/attributeConstants';
-import { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
+import type { HydratedMatchUp } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   ADD_DRAW_DEFINITION,
@@ -23,46 +25,46 @@ import {
   UPDATE_INCONTEXT_MATCHUP,
 } from '@Constants/topicConstants';
 
+/**
+ * The next `updatedAt` for an entity: now, or 1 ms past its previous stamp when that is already now or later, so a
+ * stamp always moves on (an ordering value, not an event instant). Under a fixed or backward clock an equality-only
+ * bump gave T, T+1, T.
+ *
+ * ONCE PER CALL (F2 (i), CA 2026-10-19): inside an engine call, an entity already stamped in that call keeps its stamp,
+ * so a stamp means "changed in this call" however many notices the call raised for it. v2 writes the same value
+ * (`outcome/ops.ts` `nextStamp`). Outside an engine call, or with a state provider that keeps no ledger, every
+ * stamp moves on, as before.
+ */
+function stampUpdatedAt(entity?: { updatedAt?: string | Date } | null) {
+  const stamped = getCapturedStamps();
+  if (!entity || stamped?.has(entity)) return undefined;
+  const previous = entity.updatedAt;
+  const prevMs = typeof previous === 'string' ? new Date(previous).getTime() : previous?.getTime();
+  const timeStamp = nowMs();
+  const next = prevMs !== undefined && !Number.isNaN(prevMs) && timeStamp <= prevMs ? prevMs + 1 : timeStamp;
+  entity.updatedAt = new Date(next).toISOString();
+  stamped?.add(entity);
+  return undefined;
+}
+
 function drawUpdatedAt(drawDefinition: DrawDefinition, structureIds?: string[]) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
-  let timeStamp = nowMs();
-  if (drawDefinition.updatedAt) {
-    // strictly greater than the previous stamp, as stampMatchUpUpdatedAt does: under a fixed or
-    // backward clock an equality-only bump gave T, T+1, T. An ordering value, not an event instant.
-    const prevMs = new Date(drawDefinition.updatedAt).getTime();
-    if (!Number.isNaN(prevMs) && timeStamp <= prevMs) timeStamp = prevMs + 1;
-  }
-  const updatedAt = new Date(timeStamp).toISOString();
-
   const relevantStructureIds = structureIds?.filter(Boolean);
 
-  drawDefinition.updatedAt = updatedAt;
+  stampUpdatedAt(drawDefinition);
   drawDefinition.structures?.filter(Boolean).forEach((structure) => {
     if (!relevantStructureIds?.length || relevantStructureIds?.includes(structure.structureId)) {
-      structure.updatedAt = updatedAt;
+      stampUpdatedAt(structure);
     }
   });
 
   return { ...SUCCESS };
 }
 
-/**
- * Stamp an ISO UTC timestamp on a matchUp to mark that it has just been
- * modified. Mirrors the monotonic bump used by `drawUpdatedAt` — if the
- * wall-clock reads the same millisecond as the previously-recorded
- * timestamp, we bump by 1ms so every mutation produces a strictly-
- * greater `updatedAt`. Safe no-op on a falsy matchUp.
- */
+/** Stamp a matchUp to mark that it has just been modified: `stampUpdatedAt`, so once per call. */
 function stampMatchUpUpdatedAt(matchUp?: MatchUp | null) {
-  if (!matchUp) return;
-  let timeStamp = nowMs();
-  const previous = matchUp.updatedAt;
-  if (previous) {
-    const prevMs = typeof previous === 'string' ? new Date(previous).getTime() : previous.getTime();
-    if (!Number.isNaN(prevMs) && timeStamp <= prevMs) timeStamp = prevMs + 1;
-  }
-  matchUp.updatedAt = new Date(timeStamp).toISOString();
+  stampUpdatedAt(matchUp);
 }
 
 type AddMatchUpsNoticeArgs = {
@@ -183,6 +185,18 @@ function resolveStructureId(drawDefinition?: DrawDefinition, matchUpId?: string)
   return search(drawDefinition.structures);
 }
 
+/**
+ * The top-level structure whose subtree holds the matchUp: a round robin's container for a group's matchUp, and the
+ * structure of the dual for one of its lines. The level `drawUpdatedAt` stamps at.
+ */
+function topLevelStructureId(drawDefinition: DrawDefinition, matchUpId: string): string | undefined {
+  const holds = (structure: Structure): boolean =>
+    !!matchUpsOf(structure)?.some(
+      (matchUp) => matchUp.matchUpId === matchUpId || matchUp.tieMatchUps?.some((line) => line.matchUpId === matchUpId),
+    ) || !!structuresOf(structure)?.some(holds);
+  return drawDefinition.structures?.find(holds)?.structureId;
+}
+
 export function modifyMatchUpNotice({
   drawDefinition,
   tournamentId,
@@ -203,12 +217,12 @@ export function modifyMatchUpNotice({
   const resolvedEventId = eventId ?? event?.eventId;
 
   if (drawDefinition) {
-    // DELIBERATELY the caller-supplied structureId only, NOT the resolved one below. This argument
-    // decides which structures get their `updatedAt` stamped by `drawUpdatedAt`; widening it to the
-    // resolved id would narrow stamping from "every structure" to "one" at 57 call sites — a
-    // behaviour change to timestamps consumers may sync on. Notice attribution and updatedAt
-    // stamping are separate concerns and are kept separate here.
-    const structureIds = structureId ? [structureId] : undefined;
+    // the draw and the ONE top-level structure that holds the matchUp are stamped (F2 (i), CA 2026-10-19): a stamp
+    // means "changed in this call", and the other structures did not change. Until 2026-10-24 every top-level
+    // structure was stamped unless the caller named one; nothing in the factory or its consumers reads a structure's
+    // stamp. A matchUp no top-level structure is found to hold still stamps every structure, as before.
+    const stampedStructureId = topLevelStructureId(drawDefinition, matchUp.matchUpId) ?? structureId;
+    const structureIds = stampedStructureId ? [stampedStructureId] : undefined;
     modifyDrawNotice({
       drawDefinition,
       structureIds,
@@ -259,6 +273,35 @@ export function modifyMatchUpNotice({
     key: matchUp.matchUpId,
   });
 
+  return { ...SUCCESS };
+}
+
+/**
+ * `UPDATE_INCONTEXT_MATCHUP` with the in-context matchUp built only when the notices are read, after the call has
+ * succeeded (`globalState.getPayloads`): a refused call, which deletes its notices, builds none. Keyed by the matchUp,
+ * so a call that writes it more than once builds it once, as the call left it.
+ */
+export function deferInContextMatchUp({
+  inContextMatchUp,
+  tournamentId,
+  matchUpId,
+}: {
+  inContextMatchUp: () => HydratedMatchUp | undefined;
+  tournamentId?: string;
+  matchUpId: string;
+}) {
+  addNotice({
+    payload: {
+      [DEFERRED_PAYLOAD]: () => {
+        const built = inContextMatchUp();
+        return built ? { inContextMatchUp: built, tournamentId } : undefined;
+      },
+      tournamentId,
+      matchUpId,
+    },
+    topic: UPDATE_INCONTEXT_MATCHUP,
+    key: matchUpId,
+  });
   return { ...SUCCESS };
 }
 

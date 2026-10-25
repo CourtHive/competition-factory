@@ -7,7 +7,8 @@ import { ASSIGN_PARTICIPANT } from '@Constants/positionActionConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { AD_HOC, SWISS } from '@Constants/drawDefinitionConstants';
-import { DOUBLES, MALE } from '@Constants/eventConstants';
+import { DOUBLES } from '@Constants/eventConstants';
+import { MALE } from '@Constants/genderConstants';
 
 /**
  * A person can play in at most one matchUp per round.

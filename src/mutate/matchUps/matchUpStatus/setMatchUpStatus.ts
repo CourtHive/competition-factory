@@ -22,6 +22,7 @@ import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentR
 import type { DeciderSnapshot } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
 import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
 import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -38,9 +39,9 @@ import { findEvent } from '@Acquire/findEvent';
 import { isString } from '@Tools/objects';
 
 // constants and types
-import { PolicyDefinitions, ResultType, ResultWarning, TournamentRecords } from '@Types/factoryTypes';
+import { INVALID_VALUES, INVALID_WINNING_SIDE, SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
+import { MatchUpsMap, PolicyDefinitions, ResultType, ResultWarning, TournamentRecords } from '@Types/factoryTypes';
 import { POLICY_TYPE_SCORING, POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
-import { INVALID_VALUES, INVALID_WINNING_SIDE } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { DRAW_DEFINITION, MATCHUP_ID } from '@Constants/attributeConstants';
 import { SCHEDULE_PRESERVED_ON_EXIT } from '@Constants/scheduleConstants';
@@ -173,6 +174,12 @@ function settleDraw({
 }): ResultType {
   const { tournamentRecord, drawDefinition, event } = params;
 
+  // a participant who decided a round feeding another structure is seated there, before the decider is settled
+  const crossedFirst = observePass('reconcileMissedLinkAdvancements', drawDefinition, () =>
+    reconcileMissedLinkAdvancements({ tournamentRecord, drawDefinition, event }),
+  );
+  if (crossedFirst?.error) return crossedFirst;
+
   // a FIRST_MATCHUP consolation seat holds the reservation the settled first round says it should
   const reserved = observePass('reconcileConsolationReservations', drawDefinition, () =>
     reconcileConsolationReservations({ tournamentRecord, drawDefinition, event }),
@@ -219,9 +226,10 @@ function settleDraw({
   // the decider is settled: asked only before it, the crossing waited for the NEXT call (census int2 nonrt,
   // DOUBLE_ELIMINATION 8/5 21037067: a double walkover at `Main|2|1` sent the Backdraw's held exit into the final,
   // which its champion won and was not seated in the decider until the same outcome was entered again)
-  observePass('reconcileMissedLinkAdvancements', drawDefinition, () =>
+  const crossed = observePass('reconcileMissedLinkAdvancements', drawDefinition, () =>
     reconcileMissedLinkAdvancements({ tournamentRecord, drawDefinition, event }),
   );
+  if (crossed?.error) return crossed;
 
   // a provenance entry follows its feeder's side as the seats settle (CA ruling (1), 2026-10-20)
   observePass('reconcileProvenanceSides', drawDefinition, () =>
@@ -422,6 +430,8 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     event,
   });
   if (v2.refused) return decorateResult({ result: v2.refused, stack });
+  // S2: a call v2 owns has been written by it (`outcome/apply.ts`); v1 is not asked, and the warnings are v1's own
+  if (v2.owned) return ownedResult({ owned: v2.owned, params, matchUpsMap, neverPlayedBefore, stack });
 
   // A REFUSED CALL STORES NONE OF THE MISSING EDGES (CA, 2026-10-18: "no, a refused call does not store a draw's
   // missing edges. v1 should no longer do so."). `setMatchUpState` writes them before deciding anything, and takes
@@ -484,14 +494,6 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     v2.compare?.(settled);
     return refuse(settled);
   }
-  // a participant who decided a round feeding another structure is seated there, before the decider is settled
-  observePass('reconcileMissedLinkAdvancements', params.drawDefinition, () =>
-    reconcileMissedLinkAdvancements({
-      drawDefinition: params.drawDefinition,
-      tournamentRecord: params.tournamentRecord,
-      event: params.event,
-    }),
-  );
   const drawSettled = settleDraw({ deciderSnapshotBefore, finalsBefore, params });
   if (drawSettled.error) {
     v2.compare?.(drawSettled);
@@ -529,13 +531,17 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   }
   // and, last, nobody stands across a link out of a matchUp that has no result. After `settleDraw`, not before:
   // a held exit is decided there, and a placement made for it is not unearned (de 9301605, the Decider).
-  observePass('reconcileLinkAdvancements', params.drawDefinition, () =>
+  const released = observePass('reconcileLinkAdvancements', params.drawDefinition, () =>
     reconcileLinkAdvancements({
       drawDefinition: params.drawDefinition,
       tournamentRecord: params.tournamentRecord,
       event: params.event,
     }),
   );
+  if (released?.error) {
+    v2.compare?.(released);
+    return refuse(released);
+  }
   // and once everything has settled, no matchUp left without a result keeps the `scoredTime` it was stamped with. Last,
   // because the passes above can take a result away: `settleHeldExits` turns an exit holder into a BYE, and the
   // forward settle and the link passes release what was placed. Asked before them, the stamp outlived the result
@@ -550,8 +556,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   );
   const warnings = [
     ...(forward?.exhausted ? [{ code: FORWARD_SETTLE_EXHAUSTED, matchUpIds: [forward.exhausted] }] : []),
-    ...schedulePreservedWarnings({ matchUps: matchUpsMap.drawMatchUps, neverPlayedBefore }),
-    ...(disableScoreValidation || !outcome?.score?.sets?.length ? [] : recordedScoreWarnings(params)),
+    ...callWarnings({ params, matchUpsMap, neverPlayedBefore, disableScoreValidation, outcome }),
   ];
   if (warnings.length) Object.assign(result, { warnings: [...(result.warnings ?? []), ...warnings] });
 
@@ -667,7 +672,7 @@ function propagateExitFrom({
 }): ResultType | undefined {
   let iterate = true;
   let failsafe = 0;
-  while (iterate && failsafe < 10) {
+  while (iterate && failsafe < SETTLE_PASS_LIMITS.exitLevels) {
     iterate = false;
     failsafe += 1;
     // set the consolation matchUp's status (e.g. WALKOVER when only one participant has arrived)
@@ -691,7 +696,41 @@ function propagateExitFrom({
       iterate = true;
     }
   }
-  // stopped at the bound with a level still to propagate to (F9): recorded for the census, success as before
-  if (iterate) recordSettleEvent({ kind: 'bound', site: 'propagateExitFrom', detail: context.loserMatchUp?.matchUpId });
+  // stopped at the bound with a level still to propagate to: refused (F9 (i), CA 2026-10-24), and recorded for the census
+  if (iterate) {
+    recordSettleEvent({ kind: 'bound', site: 'propagateExitFrom', detail: context.loserMatchUp?.matchUpId });
+    return { error: SETTLE_BOUND_REACHED, info: 'propagateExitFrom' };
+  }
   return undefined;
+}
+
+/** what a call that succeeded warns of, whichever pipeline wrote it: a schedule kept on what can no longer be played,
+ * and a recorded score its format does not support */
+type CallWarningsArgs = {
+  outcome?: SetMatchUpStatusArgs['outcome'];
+  params: SetMatchUpStatusArgs;
+  disableScoreValidation?: boolean;
+  neverPlayedBefore: Set<string>;
+  matchUpsMap: MatchUpsMap;
+};
+function callWarnings({ params, matchUpsMap, neverPlayedBefore, disableScoreValidation, outcome }: CallWarningsArgs) {
+  return [
+    ...schedulePreservedWarnings({ matchUps: matchUpsMap.drawMatchUps, neverPlayedBefore }),
+    ...(disableScoreValidation || !outcome?.score?.sets?.length ? [] : recordedScoreWarnings(params)),
+  ];
+}
+
+/** a call v2 wrote: its result, with the warnings v1 would add for the same write */
+type OwnedResultArgs = {
+  params: SetMatchUpStatusArgs;
+  neverPlayedBefore: Set<string>;
+  matchUpsMap: MatchUpsMap;
+  owned: ResultType;
+  stack: string;
+};
+function ownedResult({ owned, params, matchUpsMap, neverPlayedBefore, stack }: OwnedResultArgs) {
+  if (owned.error) return decorateResult({ result: owned, stack });
+  const { disableScoreValidation, outcome } = params;
+  const warnings = callWarnings({ params, matchUpsMap, neverPlayedBefore, disableScoreValidation, outcome });
+  return decorateResult({ result: warnings.length ? { ...owned, warnings } : owned, stack });
 }

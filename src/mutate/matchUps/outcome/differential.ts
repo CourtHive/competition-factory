@@ -8,6 +8,7 @@ import {
   MISSING_ASSIGNMENTS,
   MISSING_DRAW_POSITIONS,
   INVALID_TIME,
+  INVALID_DATE,
   MUTATION_LOCKED,
   UNRECOGNIZED_MATCHUP_STATUS,
 } from '@Constants/errorConditionConstants';
@@ -21,7 +22,11 @@ import {
  * `refused` route stays an apply-stage refusal. Every other disagreement throws, with both answers and the matchUp named.
  */
 export const APPLY_STAGE_CODES: ReadonlySet<string> = new Set([
+  // the schedule a call carries is checked by v1 before the outcome lands (`checkScheduleValues`); v2 abstains on a
+  // call that carries one (`plan.ts`, 'schedule'), so a malformed time, and a date or date-time outside the tournament
+  // (#5774), are v1's alone
   INVALID_TIME.code,
+  INVALID_DATE.code,
   DRAW_POSITION_ACTIVE.code,
   MUTATION_LOCKED.code,
   'ERR_FORCED', // § 2 row 19: observed by the corpus, no constant declares it (spec OPEN 2)

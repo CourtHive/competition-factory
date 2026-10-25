@@ -5,8 +5,10 @@ import { expect, it } from 'vitest';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
+type CountSetsArgs = Parameters<typeof countSets>[0];
+
 it('can count normal sets', () => {
-  const matchUp = {
+  const matchUp: CountSetsArgs = {
     matchUpStatus: COMPLETED,
     matchUpFormat: FORMAT_STANDARD,
     score: {
@@ -33,7 +35,7 @@ it('can count normal sets', () => {
 });
 
 it('can count tiebreak sets', () => {
-  const matchUp = {
+  const matchUp: CountSetsArgs = {
     matchUpStatus: COMPLETED,
     matchUpFormat: FORMAT_STANDARD,
     score: {

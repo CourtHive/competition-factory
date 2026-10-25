@@ -1,7 +1,8 @@
-import { dateValidation, timeValidation } from './regex';
+import { canonicalDate, canonicalTime } from '@Tools/canonicalClock';
 import { validTimePeriod } from './time';
 
-// constants
+// constants and types
+import { Availability, Booking } from '@Types/tournamentTypes';
 import {
   INVALID_DATE,
   INVALID_TIME,
@@ -10,7 +11,12 @@ import {
   MISSING_DATE_AVAILABILITY,
 } from '@Constants/errorConditionConstants';
 
-export function validDateAvailability({ dateAvailability }) {
+/**
+ * Every date is a calendar day and every time a wall-clock time (scheduling-pipeline.md § 9.9). A valid result carries
+ * the availability in canonical form, `canonicalAvailability`, `YYYY-MM-DD` and `HH:MM`, which is what a writer stores.
+ * Validates untrusted input, so it accepts anything and checks the shape itself.
+ */
+export function validDateAvailability({ dateAvailability }: { dateAvailability?: unknown }) {
   if (!dateAvailability) return { error: MISSING_DATE_AVAILABILITY };
   if (!Array.isArray(dateAvailability)) return { error: INVALID_DATE_AVAILABILITY };
 
@@ -36,14 +42,31 @@ export function validDateAvailability({ dateAvailability }) {
     }
   }
 
-  return { valid: true };
+  return { valid: true, canonicalAvailability: dateAvailability.map(canonicalAvailability) };
+}
+
+function canonicalAvailability(availability: Availability): Availability {
+  const canonical: Availability = {
+    ...availability,
+    startTime: canonicalTime(availability.startTime),
+    endTime: canonicalTime(availability.endTime),
+  };
+  if (availability.date) canonical.date = canonicalDate(availability.date);
+  if (Array.isArray(availability.bookings)) {
+    canonical.bookings = availability.bookings.map((booking: Booking) => ({
+      ...booking,
+      startTime: canonicalTime(booking.startTime),
+      endTime: canonicalTime(booking.endTime),
+    }));
+  }
+  return canonical;
 }
 
 const DATE_NOTE = 'Dates must be formated => YYYY-MM-DD';
 const TIME_NOTE = 'Times must be 24 hour => 00:00';
 
 function validateDate(date) {
-  if (date && !dateValidation.test(date)) {
+  if (date && !canonicalDate(date)) {
     return {
       error: INVALID_DATE,
       dateAvailability: { date },
@@ -54,21 +77,21 @@ function validateDate(date) {
 }
 
 function validateTimePair(startTime, endTime) {
-  if (!timeValidation.test(startTime)) {
+  if (!canonicalTime(startTime)) {
     return {
       error: INVALID_TIME,
       dateAvailability: { startTime },
       info: TIME_NOTE,
     };
   }
-  if (!timeValidation.test(endTime)) {
+  if (!canonicalTime(endTime)) {
     return {
       error: INVALID_TIME,
       dateAvailability: { endTime },
       info: TIME_NOTE,
     };
   }
-  if (startTime === endTime) {
+  if (canonicalTime(startTime) === canonicalTime(endTime)) {
     return {
       error: INVALID_TIME,
       dateAvailability: { startTime, endTime },

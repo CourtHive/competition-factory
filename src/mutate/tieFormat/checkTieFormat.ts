@@ -6,11 +6,16 @@ import { takeUUID } from '@Tools/UUID';
 import { INSUFFICIENT_UUIDS } from '@Constants/errorConditionConstants';
 
 // types
-import { TieFormat } from '@Types/tournamentTypes';
+import { CollectionDefinition, TieFormat } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
 
+/** A tieFormat whose collections may not have their `collectionId`s yet: what this function exists to accept. */
+export type UnmintedTieFormat = Omit<TieFormat, 'collectionDefinitions'> & {
+  collectionDefinitions: (Omit<CollectionDefinition, 'collectionId'> & { collectionId?: string })[];
+};
+
 type CheckTieFormatArgs = {
-  tieFormat: TieFormat;
+  tieFormat: UnmintedTieFormat | TieFormat;
   uuids?: string[];
 };
 /**
@@ -46,5 +51,7 @@ export function checkTieFormat({ tieFormat, uuids }: CheckTieFormatArgs): Result
     collectionDefinition.collectionId = uuid;
   }
 
-  return { tieFormat };
+  // Every collectionDefinition now carries a collectionId (the loop returns early otherwise), which is what
+  // distinguishes a TieFormat from an UnmintedTieFormat.
+  return { tieFormat: tieFormat as TieFormat };
 }

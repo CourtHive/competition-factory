@@ -4,6 +4,7 @@ import { requireParams } from '@Helpers/parameters/requireParams';
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { clearPrimaryVenue } from './clearPrimaryVenue';
+import { canonicalTime } from '@Tools/canonicalClock';
 import { addNotice } from '@Global/state/globalState';
 import { modifyVenueNotice } from './venueNotices';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
@@ -82,6 +83,7 @@ function venueAdd({ tournamentRecord, disableNotice, context, venue }: AddVenueA
   if (venue.dateAvailability?.length) {
     const result = validDateAvailability({ dateAvailability: venue.dateAvailability });
     if (result.error) return result;
+    venue.dateAvailability = result.canonicalAvailability;
   }
 
   if (venue.defaultStartTime || venue.defaultEndTime) {
@@ -91,6 +93,8 @@ function venueAdd({ tournamentRecord, disableNotice, context, venue }: AddVenueA
     if (!validTimePeriod({ startTime: venue.defaultStartTime, endTime: venue.defaultEndTime })) {
       return { error: INVALID_VALUES, info: 'defaultEndTime must be after defaultStartTime' };
     }
+    venue.defaultStartTime = canonicalTime(venue.defaultStartTime);
+    venue.defaultEndTime = canonicalTime(venue.defaultEndTime);
   }
 
   if (context) {

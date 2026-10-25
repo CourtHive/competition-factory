@@ -79,9 +79,9 @@ describe('ITF WTT 2020 Ranking Points Values', () => {
       level: 1,
     });
     // Qualifier points: L1=4, L2=3, L3=3, L4=2
-    expect(awardProfile.finishingPositionRanges[1]).toEqual({ level: { 1: 4, 2: 3, 3: 3, 4: 2 } });
+    expect(awardProfile?.finishingPositionRanges?.[1]).toEqual({ level: { 1: 4, 2: 3, 3: 3, 4: 2 } });
     // Final round qualifying loser = 1 for all levels
-    expect(awardProfile.finishingPositionRanges[2]).toEqual(1);
+    expect(awardProfile?.finishingPositionRanges?.[2]).toEqual(1);
   });
 
   it('$25,000 +H qualifier gets 4 points', () => {
@@ -92,7 +92,7 @@ describe('ITF WTT 2020 Ranking Points Values', () => {
       participation: { participationOrder: 1, rankingStage: QUALIFYING },
       level: 1,
     });
-    expect(awardProfile.finishingPositionRanges[1].level[1]).toEqual(4);
+    expect(awardProfile?.finishingPositionRanges?.[1]).toMatchObject({ level: { 1: 4 } });
   });
 
   it('$25,000 qualifier gets 3 points', () => {
@@ -103,7 +103,7 @@ describe('ITF WTT 2020 Ranking Points Values', () => {
       participation: { participationOrder: 1, rankingStage: QUALIFYING },
       level: 2,
     });
-    expect(awardProfile.finishingPositionRanges[1].level[2]).toEqual(3);
+    expect(awardProfile?.finishingPositionRanges?.[1]).toMatchObject({ level: { 2: 3 } });
   });
 
   it('$15,000 qualifier gets 2 points', () => {
@@ -114,7 +114,7 @@ describe('ITF WTT 2020 Ranking Points Values', () => {
       participation: { participationOrder: 1, rankingStage: QUALIFYING },
       level: 4,
     });
-    expect(awardProfile.finishingPositionRanges[1].level[4]).toEqual(2);
+    expect(awardProfile?.finishingPositionRanges?.[1]).toMatchObject({ level: { 4: 2 } });
   });
 
   it('qualifying doubles have same point structure as singles', () => {
@@ -133,7 +133,7 @@ describe('ITF WTT 2020 Ranking Points Values', () => {
       level: 1,
     });
     // Same point values for singles and doubles qualifying
-    expect(doublesProfile.finishingPositionRanges[1]).toEqual(singlesProfile.finishingPositionRanges[1]);
-    expect(doublesProfile.finishingPositionRanges[2]).toEqual(singlesProfile.finishingPositionRanges[2]);
+    expect(doublesProfile?.finishingPositionRanges?.[1]).toEqual(singlesProfile?.finishingPositionRanges?.[1]);
+    expect(doublesProfile?.finishingPositionRanges?.[2]).toEqual(singlesProfile?.finishingPositionRanges?.[2]);
   });
 });

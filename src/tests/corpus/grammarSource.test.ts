@@ -36,9 +36,10 @@ it('writes every grammar input as a scenario that validates, reads back and reco
   expect(scenarios).toHaveLength(inputs.length);
 
   for (const scenario of scenarios) {
+    const { scenarioId } = scenario;
     const ok = validate(scenario);
-    if (!ok) console.log(scenario.scenarioId, ajv.errorsText(validate.errors));
-    expect({ id: scenario.scenarioId, valid: ok }).toEqual({ id: scenario.scenarioId, valid: true });
+    if (!ok) console.log(scenarioId, ajv.errorsText(validate.errors));
+    expect({ id: scenarioId, valid: ok }).toEqual({ id: scenarioId, valid: true });
     expect(replayAsReader(scenario)).toEqual([]);
     expect({ id: scenario.scenarioId, grammar: replayGrammar(scenario) }).toEqual({
       id: scenario.scenarioId,

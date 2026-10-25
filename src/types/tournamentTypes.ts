@@ -79,6 +79,12 @@ export interface Tournament {
   tournamentName?: string;
   tournamentOtherIds?: UnifiedTournamentID[];
   tournamentRank?: string;
+  /**
+   * CODES first-class: the same tournament across its editions — the same value every year it is held, where
+   * `tournamentId` is one edition. A ranking that counts only the better of two editions of one tournament (ITF
+   * Juniors Reg. 10) reads it from the point awards (`CountingBucket.bestPerSeries`).
+   */
+  tournamentSeriesId?: string;
   tournamentStatus?: TournamentStatusUnion;
   /**
    * When the competition was cancelled.
@@ -912,6 +918,9 @@ export interface Score {
   notes?: string;
   scoreStringSide1?: string;
   scoreStringSide2?: string;
+  /** The current game's points on an in-progress matchUp (e.g. '30'), as live scoring records them. */
+  side1PointScore?: number | string;
+  side2PointScore?: number | string;
   sets?: Set[];
   timeItems?: TimeItem[];
   updatedAt?: Date | string;

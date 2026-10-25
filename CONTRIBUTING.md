@@ -96,9 +96,9 @@ pnpm verify
 (`pnpm verify:all` adds an ecosystem sweep against sibling CourtHive checkouts. It is a maintainer
 tool and is not run in CI; you do not need it.)
 
-A Husky pre-commit hook runs `lint-staged` plus a type check, so staged files are linted and
-formatted on commit. Since 7.7.0 it also runs the cheap gates CI's `gates` job runs — `verify:generated`
-(with the `any-count` ratchet), the three type ratchets (`test-types`, `implicit-any`, `hard-union`) and
+A Husky pre-commit hook runs `lint-staged` plus a type check of `src` AND the test files, so staged files are
+linted and formatted on commit. Since 7.7.0 it also runs the cheap gates CI's `gates` job runs — `verify:generated`
+(with the `any-count` ratchet), the two type ratchets (`implicit-any`, `hard-union`) and
 `verify:exit-tenant` — about 20 seconds, so a ratchet rise is refused at `git commit` rather than twenty
 minutes into a CI run.
 

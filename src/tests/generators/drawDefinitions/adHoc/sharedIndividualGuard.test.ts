@@ -12,7 +12,8 @@ import {
 import { AD_HOC, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
-import { DOUBLES, MALE } from '@Constants/eventConstants';
+import { DOUBLES } from '@Constants/eventConstants';
+import { MALE } from '@Constants/genderConstants';
 
 /**
  * A person must never appear on both sides of a matchUp.

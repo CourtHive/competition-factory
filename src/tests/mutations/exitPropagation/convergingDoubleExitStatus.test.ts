@@ -1,5 +1,6 @@
 import { collapseDoubleExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getDrawDefinition } from '@Tests/testHarness/exitPropagation/transitions';
+import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import { setSubscriptions } from '@Global/state/globalState';
 import { expect, it } from 'vitest';
 import {
@@ -31,7 +32,7 @@ import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, RETIRED, WALKOVER } from '@
  * claim would put a `DEF` badge beside an innocent name.
  */
 
-it.each([
+const COLLAPSE_CASES: { label: string; sides: (MatchUpStatusUnion | undefined)[]; expected: MatchUpStatusUnion }[] = [
   { label: 'both walkovers', sides: [WALKOVER, WALKOVER], expected: DOUBLE_WALKOVER },
   { label: 'both defaults', sides: [DEFAULTED, DEFAULTED], expected: DOUBLE_DEFAULT },
   { label: 'a default meeting a walkover', sides: [DEFAULTED, WALKOVER], expected: DOUBLE_WALKOVER },
@@ -40,12 +41,21 @@ it.each([
   { label: 'a retirement is not default-flavoured', sides: [RETIRED, DEFAULTED], expected: DOUBLE_WALKOVER },
   { label: 'an unknown side does not force a default', sides: [DEFAULTED, undefined], expected: DOUBLE_DEFAULT },
   { label: 'nothing known at all', sides: [undefined, undefined], expected: DOUBLE_WALKOVER },
-])('$label collapses to $expected', ({ sides, expected }) => {
+];
+
+it.each(COLLAPSE_CASES)('$label collapses to $expected', ({ sides, expected }) => {
   expect(collapseDoubleExitStatus(sides)).toEqual(expected);
 });
 
 it('is order-invariant for every pair', () => {
-  const statuses = [WALKOVER, DEFAULTED, RETIRED, DOUBLE_WALKOVER, DOUBLE_DEFAULT, undefined];
+  const statuses: (MatchUpStatusUnion | undefined)[] = [
+    WALKOVER,
+    DEFAULTED,
+    RETIRED,
+    DOUBLE_WALKOVER,
+    DOUBLE_DEFAULT,
+    undefined,
+  ];
   for (const first of statuses) {
     for (const second of statuses) {
       expect(

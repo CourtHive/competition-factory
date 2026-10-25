@@ -2,11 +2,13 @@ import { reverseScore } from '@Assemblies/generators/score/reverseScore';
 import { validateScore } from '@Validators/validateScore';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import { expect, describe, test } from 'vitest';
 
 // constants and types
 import { COMPLETED, RETIRED, IN_PROGRESS, SUSPENDED } from '@Constants/matchUpStatusConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+import type { ResultType } from '@Types/factoryTypes';
 import type { Score } from '@Types/tournamentTypes';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -147,7 +149,7 @@ describe('setMatchUpStatus preserves point scores', () => {
       matchUpStatus: COMPLETED,
     };
 
-    const result = tournamentEngine.setMatchUpStatus({
+    const result: ResultType = tournamentEngine.setMatchUpStatus({
       matchUpId: 'm-1-1',
       drawId,
       outcome,
@@ -155,13 +157,16 @@ describe('setMatchUpStatus preserves point scores', () => {
     });
     expect(result.success).toBe(true);
 
-    const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const matchUp = matchUps.find((m) => m.matchUpId === 'm-1-1');
+    const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
+    const matchUp = defined(
+      matchUps.find((m) => m.matchUpId === 'm-1-1'),
+      'matchUp',
+    );
     expect(matchUp).toBeDefined();
 
-    const set1 = matchUp.score.sets.find((s) => s.setNumber === 1);
-    expect(set1.side1PointScore).toBe(30);
-    expect(set1.side2PointScore).toBe(15);
+    const set1 = defined(matchUp.score?.sets, 'sets').find((s) => s.setNumber === 1);
+    expect(set1?.side1PointScore).toBe(30);
+    expect(set1?.side2PointScore).toBe(15);
   });
 
   test('does not filter out sets with only point scores (no game/tiebreak scores)', () => {
@@ -192,7 +197,7 @@ describe('setMatchUpStatus preserves point scores', () => {
       matchUpStatus: RETIRED,
     };
 
-    const result = tournamentEngine.setMatchUpStatus({
+    const result: ResultType = tournamentEngine.setMatchUpStatus({
       matchUpId: 'm-1-1',
       drawId,
       outcome,
@@ -200,16 +205,19 @@ describe('setMatchUpStatus preserves point scores', () => {
     });
     expect(result.success).toBe(true);
 
-    const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const matchUp = matchUps.find((m) => m.matchUpId === 'm-1-1');
+    const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
+    const matchUp = defined(
+      matchUps.find((m) => m.matchUpId === 'm-1-1'),
+      'matchUp',
+    );
 
     // Both sets should be preserved — the second set has point scores only
-    expect(matchUp.score.sets.length).toBe(2);
+    expect(matchUp?.score?.sets?.length).toBe(2);
 
-    const set2 = matchUp.score.sets.find((s) => s.setNumber === 2);
+    const set2 = defined(matchUp.score?.sets, 'sets').find((s) => s.setNumber === 2);
     expect(set2).toBeDefined();
-    expect(set2.side1PointScore).toBe(40);
-    expect(set2.side2PointScore).toBe(30);
+    expect(set2?.side1PointScore).toBe(40);
+    expect(set2?.side2PointScore).toBe(30);
   });
 });
 
@@ -242,27 +250,30 @@ describe('setMatchUpStatus persists IN_PROGRESS partial scores', () => {
       matchUpStatus: IN_PROGRESS,
     };
 
-    const result = tournamentEngine.setMatchUpStatus({
+    const result: ResultType = tournamentEngine.setMatchUpStatus({
       matchUpId: 'm-1-1',
       drawId,
       outcome,
     });
     expect(result.success).toBe(true);
 
-    const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const matchUp = matchUps.find((m: any) => m.matchUpId === 'm-1-1');
+    const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
+    const matchUp = defined(
+      matchUps.find((m: any) => m.matchUpId === 'm-1-1'),
+      'matchUp',
+    );
     expect(matchUp).toBeDefined();
-    expect(matchUp.matchUpStatus).toBe(IN_PROGRESS);
+    expect(matchUp?.matchUpStatus).toBe(IN_PROGRESS);
 
     // Score strings must be generated from sets
-    expect(matchUp.score.scoreStringSide1).toBe('2-1');
-    expect(matchUp.score.scoreStringSide2).toBe('1-2');
+    expect(matchUp?.score?.scoreStringSide1).toBe('2-1');
+    expect(matchUp?.score?.scoreStringSide2).toBe('1-2');
 
     // Score must persist — not empty
-    expect(matchUp.score.sets).toBeDefined();
-    expect(matchUp.score.sets.length).toBe(1);
+    expect(matchUp?.score?.sets).toBeDefined();
+    expect(matchUp?.score?.sets?.length).toBe(1);
 
-    const set1 = matchUp.score.sets[0];
+    const set1 = defined(matchUp.score?.sets, 'sets')[0];
     expect(set1.side1Score).toBe(2);
     expect(set1.side2Score).toBe(1);
     expect(set1.side1PointScore).toBe('15');
@@ -293,7 +304,7 @@ describe('setMatchUpStatus persists IN_PROGRESS partial scores', () => {
       matchUpStatus: IN_PROGRESS,
     };
 
-    const result = tournamentEngine.setMatchUpStatus({
+    const result: ResultType = tournamentEngine.setMatchUpStatus({
       matchUpId: 'm-1-1',
       drawId,
       outcome,
@@ -308,8 +319,8 @@ describe('setMatchUpStatus persists IN_PROGRESS partial scores', () => {
 
     expect(matchUp).toBeDefined();
     expect(matchUp.score.sets.length).toBe(1);
-    expect(matchUp.score.sets[0].side1PointScore).toBe('15');
-    expect(matchUp.score.sets[0].side2PointScore).toBe('30');
+    expect(defined(matchUp.score?.sets, 'sets')[0].side1PointScore).toBe('15');
+    expect(defined(matchUp.score?.sets, 'sets')[0].side2PointScore).toBe('30');
   });
 
   test('SUSPENDED status with score persists through setMatchUpStatus', () => {
@@ -327,19 +338,22 @@ describe('setMatchUpStatus persists IN_PROGRESS partial scores', () => {
       matchUpStatus: SUSPENDED,
     };
 
-    const result = tournamentEngine.setMatchUpStatus({
+    const result: ResultType = tournamentEngine.setMatchUpStatus({
       matchUpId: 'm-1-1',
       drawId,
       outcome,
     });
     expect(result.success).toBe(true);
 
-    const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const matchUp = matchUps.find((m: any) => m.matchUpId === 'm-1-1');
-    expect(matchUp.matchUpStatus).toBe(SUSPENDED);
-    expect(matchUp.score.sets.length).toBe(1);
-    expect(matchUp.score.sets[0].side1Score).toBe(3);
-    expect(matchUp.score.sets[0].side2Score).toBe(2);
+    const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
+    const matchUp = defined(
+      matchUps.find((m: any) => m.matchUpId === 'm-1-1'),
+      'matchUp',
+    );
+    expect(matchUp?.matchUpStatus).toBe(SUSPENDED);
+    expect(matchUp?.score?.sets?.length).toBe(1);
+    expect(matchUp?.score?.sets?.[0].side1Score).toBe(3);
+    expect(matchUp?.score?.sets?.[0].side2Score).toBe(2);
   });
 
   test('SUSPENDED status without score persists through setMatchUpStatus', () => {
@@ -349,16 +363,19 @@ describe('setMatchUpStatus persists IN_PROGRESS partial scores', () => {
       setState: true,
     });
 
-    const result = tournamentEngine.setMatchUpStatus({
+    const result: ResultType = tournamentEngine.setMatchUpStatus({
       matchUpId: 'm-1-1',
       drawId,
       outcome: { matchUpStatus: SUSPENDED },
     });
     expect(result.success).toBe(true);
 
-    const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const matchUp = matchUps.find((m: any) => m.matchUpId === 'm-1-1');
-    expect(matchUp.matchUpStatus).toBe(SUSPENDED);
+    const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
+    const matchUp = defined(
+      matchUps.find((m: any) => m.matchUpId === 'm-1-1'),
+      'matchUp',
+    );
+    expect(matchUp?.matchUpStatus).toBe(SUSPENDED);
   });
 
   test('partial score without point scores persists through setMatchUpStatus', () => {
@@ -382,18 +399,21 @@ describe('setMatchUpStatus persists IN_PROGRESS partial scores', () => {
       matchUpStatus: IN_PROGRESS,
     };
 
-    const result = tournamentEngine.setMatchUpStatus({
+    const result: ResultType = tournamentEngine.setMatchUpStatus({
       matchUpId: 'm-1-1',
       drawId,
       outcome,
     });
     expect(result.success).toBe(true);
 
-    const { matchUps } = tournamentEngine.allTournamentMatchUps();
-    const matchUp = matchUps.find((m: any) => m.matchUpId === 'm-1-1');
-    expect(matchUp.score.sets.length).toBe(1);
-    expect(matchUp.score.sets[0].side1Score).toBe(4);
-    expect(matchUp.score.sets[0].side2Score).toBe(3);
+    const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
+    const matchUp = defined(
+      matchUps.find((m: any) => m.matchUpId === 'm-1-1'),
+      'matchUp',
+    );
+    expect(matchUp?.score?.sets?.length).toBe(1);
+    expect(matchUp?.score?.sets?.[0].side1Score).toBe(4);
+    expect(matchUp?.score?.sets?.[0].side2Score).toBe(3);
   });
 });
 

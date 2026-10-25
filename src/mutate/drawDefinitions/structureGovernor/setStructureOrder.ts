@@ -5,10 +5,25 @@ import { numericSortValue } from '@Tools/arrays';
 
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 
-export function setStructureOrder({ drawDefinition, tournamentRecord, disableNotice, orderMap, event }): ResultType {
+type SetStructureOrderArgs = {
+  /** structureId -> structureOrder; values are validated with isConvertableInteger, so numeric strings pass */
+  orderMap?: { [structureId: string]: number | string };
+  drawDefinition?: DrawDefinition;
+  tournamentRecord?: Tournament;
+  disableNotice?: boolean;
+  event?: Event;
+};
+export function setStructureOrder({
+  tournamentRecord,
+  drawDefinition,
+  disableNotice,
+  orderMap,
+  event,
+}: SetStructureOrderArgs): ResultType {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
   if (!orderMap || typeof orderMap !== 'object' || !Object.values(orderMap).every((val) => isConvertableInteger(val)))
     return decorateResult({
@@ -19,7 +34,8 @@ export function setStructureOrder({ drawDefinition, tournamentRecord, disableNot
   drawDefinition.structures ??= [];
   drawDefinition.structures.forEach((structure) => {
     const structureOrder = orderMap[structure.structureId];
-    if (structureOrder) structure.structureOrder = structureOrder;
+    // orderMap values may be numeric strings (validated above); structureOrder is stored as the number
+    if (structureOrder) structure.structureOrder = Number(structureOrder);
   });
 
   drawDefinition.structures.sort((a, b) => numericSortValue(a.structureOrder) - numericSortValue(b.structureOrder));

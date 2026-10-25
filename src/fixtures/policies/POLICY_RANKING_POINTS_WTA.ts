@@ -26,6 +26,7 @@
  *     PositionValue array form with drawSize threshold conditions
  */
 
+import type { AggregationRules, AwardProfile } from '@Types/rankingTypes';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { SINGLES, DOUBLES } from '@Constants/eventConstants';
@@ -34,7 +35,7 @@ import { WTA } from '@Constants/pointsAuthorityConstants';
 // ─── Singles Main Draw Profiles ──────────────────────────────────────────────
 
 // ── Grand Slams (Level 1, 128-draw) ─────────────────────────────────────────
-const grandSlamSingles = {
+const grandSlamSingles: AwardProfile = {
   profileName: 'Grand Slam Singles',
   levels: [1],
   eventTypes: [SINGLES],
@@ -61,7 +62,7 @@ const grandSlamSingles = {
 //   Knockout: 1500 - 855 = 645
 //
 // These fixed values are approximations. Actual points vary by RR record.
-const wtaFinalsSingles = {
+const wtaFinalsSingles: AwardProfile = {
   profileName: 'WTA Finals Singles',
   levels: [2],
   eventTypes: [SINGLES],
@@ -76,7 +77,7 @@ const wtaFinalsSingles = {
 // ── WTA 1000 Singles (Level 3) ──────────────────────────────────────────────
 // Draw sizes: 96 (combined: IW, Miami, Madrid, Rome, etc.) or 64/60/56
 // All share W through R32; R64 and R128 differ by draw size.
-const wta1000Singles = {
+const wta1000Singles: AwardProfile = {
   profileName: 'WTA 1000 Singles',
   levels: [3],
   eventTypes: [SINGLES],
@@ -99,7 +100,7 @@ const wta1000Singles = {
 // ── WTA 500 Singles (Level 4) ───────────────────────────────────────────────
 // Draw sizes: 56 or 32
 // R32 and R64 differ by draw size.
-const wta500Singles = {
+const wta500Singles: AwardProfile = {
   profileName: 'WTA 500 Singles',
   levels: [4],
   eventTypes: [SINGLES],
@@ -119,7 +120,7 @@ const wta500Singles = {
 };
 
 // ── WTA 250 Singles (Level 5, 32-draw) ──────────────────────────────────────
-const wta250Singles = {
+const wta250Singles: AwardProfile = {
   profileName: 'WTA 250 Singles',
   levels: [5],
   eventTypes: [SINGLES],
@@ -135,7 +136,7 @@ const wta250Singles = {
 };
 
 // ── WTA 125 Singles (Level 6, 32-draw) ──────────────────────────────────────
-const wta125Singles = {
+const wta125Singles: AwardProfile = {
   profileName: 'WTA 125 Singles',
   levels: [6],
   eventTypes: [SINGLES],
@@ -165,7 +166,7 @@ const wta125Singles = {
 //   W35 (L10): W=35  F=23 SF=14 QF=8  R16=4/3  R32=2/- R64=1/-
 //   W15 (L11): W=15  F=10 SF=6  QF=3  R16=1/-
 //                                       (48M/32M)
-const itfCircuitSingles = {
+const itfCircuitSingles: AwardProfile = {
   profileName: 'ITF Circuit Singles',
   levels: [7, 8, 9, 10, 11],
   eventTypes: [SINGLES],
@@ -203,7 +204,7 @@ const itfCircuitSingles = {
 //   2 = Final qualifying round loser (Q3 at Grand Slams, Q2 at 2-round events)
 //   4 = Earlier qualifying round loser (Q2 at Grand Slams, Q1 at 2-round events)
 //   8 = First round qualifying loser (Q1 at Grand Slams only)
-const qualifyingSingles = {
+const qualifyingSingles: AwardProfile = {
   profileName: 'WTA Qualifying Singles',
   levels: [1, 3, 4, 5, 6, 7, 8, 9, 10],
   eventTypes: [SINGLES],
@@ -219,7 +220,7 @@ const qualifyingSingles = {
 // ─── Doubles Main Draw Profiles ──────────────────────────────────────────────
 
 // ── Grand Slam Doubles (Level 1, 64-draw) ───────────────────────────────────
-const grandSlamDoubles = {
+const grandSlamDoubles: AwardProfile = {
   profileName: 'Grand Slam Doubles',
   levels: [1],
   eventTypes: [DOUBLES],
@@ -237,7 +238,7 @@ const grandSlamDoubles = {
 
 // ── WTA Finals Doubles (Level 2) ────────────────────────────────────────────
 // Fixed position-based values (no per-match-played complexity for doubles).
-const wtaFinalsDoubles = {
+const wtaFinalsDoubles: AwardProfile = {
   profileName: 'WTA Finals Doubles',
   levels: [2],
   eventTypes: [DOUBLES],
@@ -250,7 +251,7 @@ const wtaFinalsDoubles = {
 };
 
 // ── WTA 1000 Doubles (Level 3, 28/32-draw) ─────────────────────────────────
-const wta1000Doubles = {
+const wta1000Doubles: AwardProfile = {
   profileName: 'WTA 1000 Doubles',
   levels: [3],
   eventTypes: [DOUBLES],
@@ -266,7 +267,7 @@ const wta1000Doubles = {
 };
 
 // ── WTA 500 Doubles (Level 4, 24/16-draw) ──────────────────────────────────
-const wta500Doubles = {
+const wta500Doubles: AwardProfile = {
   profileName: 'WTA 500 Doubles',
   levels: [4],
   eventTypes: [DOUBLES],
@@ -282,7 +283,7 @@ const wta500Doubles = {
 
 // ── Standard Doubles: WTA 250 through ITF W35 (Levels 5-10, 16-draw) ───────
 // All these levels use 16-draw doubles with R16 = 1 (first round).
-const standardDoubles = {
+const standardDoubles: AwardProfile = {
   profileName: 'WTA 250–ITF W35 Doubles',
   levels: [5, 6, 7, 8, 9, 10],
   eventTypes: [DOUBLES],
@@ -298,7 +299,7 @@ const standardDoubles = {
 
 // ── ITF W15 Doubles (Level 11, 16-draw) ─────────────────────────────────────
 // No points for first-round loss (R16) at W15 doubles.
-const itfW15Doubles = {
+const itfW15Doubles: AwardProfile = {
   profileName: 'ITF W15 Doubles',
   levels: [11],
   eventTypes: [DOUBLES],
@@ -314,7 +315,7 @@ const itfW15Doubles = {
 // ─── Doubles Qualifying Profile ──────────────────────────────────────────────
 
 // ── Grand Slam Doubles Qualifying (Level 1 only) ────────────────────────────
-const grandSlamDoublesQualifying = {
+const grandSlamDoublesQualifying: AwardProfile = {
   profileName: 'Grand Slam Doubles Qualifying',
   levels: [1],
   eventTypes: [DOUBLES],
@@ -341,7 +342,7 @@ const grandSlamDoublesQualifying = {
 // Doubles: best 12 results from all eligible events.
 //
 // Minimum requirements: 3 tournaments or 10 pts in 1 tournament.
-const aggregationRules = {
+const aggregationRules: AggregationRules = {
   rollingPeriodDays: 364, // 52 weeks
   separateByGender: false, // WTA is women's tour only
   perCategory: false,
@@ -384,7 +385,7 @@ const aggregationRules = {
  *   6. ITF Circuit (broad, level-keyed)
  *   7. Standard Doubles (broad, level-keyed)
  */
-const awardProfiles = [
+const awardProfiles: AwardProfile[] = [
   // WTA Finals (most specific: level 2)
   wtaFinalsSingles,
   wtaFinalsDoubles,

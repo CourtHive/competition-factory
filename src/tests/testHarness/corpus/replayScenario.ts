@@ -1,14 +1,14 @@
 import { canonicalHash, canonicalObject } from './hash';
 import tournamentEngine from '@Engines/syncEngine';
 import { setRandomSource } from '@Tools/prng';
-import { setClock } from '@Tools/clock';
 import { applyPatch } from './applyPatch';
+import { setClock } from '@Tools/clock';
 
 export type Mismatch = { step: number; expected: string; actual: string; result?: unknown };
 
 /**
  * The READER contract: apply each step's patch to the previous state and check the hash.
- * This is what a consumer with no engine (the Rust reader) does; it proves the patches and hashes
+ * This is what a consumer with no engine (a reader) does; it proves the patches and hashes
  * are self-consistent without running anything.
  */
 export function replayAsReader(scenario: any): Mismatch[] {

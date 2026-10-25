@@ -1,5 +1,6 @@
 import { findingLocation, findingProvenance, harnessRevision } from '@Tests/testHarness/exitPropagation/findingRecord';
 import { generateSchedule, prepareDraw, randomConfig, replay } from '@Tests/testHarness/exitPropagation/sweep';
+import { tallySettlePredictions } from '@Tests/testHarness/exitPropagation/settlePredictions';
 import { emptyCoverage } from '@Tests/testHarness/exitPropagation/properties';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { setSubscriptions } from '@Global/state/globalState';
@@ -150,8 +151,10 @@ test.skipIf(!enabled)(
         const key = `${event.kind}:${event.site}`;
         settleCounts[key] = (settleCounts[key] ?? 0) + 1;
       }
-      // a pass's writes are counted only (every call has some); a bound or a dropped error is listed with its seed
-      const notable = settle.filter((event) => event.kind !== 'wrote');
+      tallySettlePredictions(settle, settleCounts);
+      // a pass's writes and v2's predictions are counted only (every call has some); a bound or a dropped error is
+      // listed with its seed
+      const notable = settle.filter((event) => event.kind !== 'wrote' && event.kind !== 'predicted');
       if (notable.length)
         fs.appendFileSync(
           outPath,
