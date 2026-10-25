@@ -37,7 +37,7 @@ vi.mock('@Query/matchUps/drawMatchUps', async (importOriginal) => {
 
 afterEach(() => {
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
-  setSubscriptions({});
+  setSubscriptions({ subscriptions: {} });
 });
 
 /** a round-2 matchUp with nobody in it, given a winner: refused because the draw says it has no participants */

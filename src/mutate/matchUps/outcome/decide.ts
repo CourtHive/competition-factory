@@ -4,6 +4,7 @@ import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetr
 import { PREDICTED_CALL, predictSettleWork, type SettleSite } from './settleWork';
 import { compareNotices, compareShadow, plannedNotices } from './shadow';
 import { addGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
+import { planOutcome, type OutcomePlan, type PlanShape } from './plan';
 import { convergence, isRelabel, planDirection } from './direction';
 import { compareIndex, type IndexComparison } from './indexOracle';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -14,13 +15,13 @@ import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { compareViews, hydrateShadow } from './viewOracle';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
-import { planOutcome, type OutcomePlan } from './plan';
 import { observeWrite, planWrite } from './write';
 import { captureRecord } from '@Tools/recordDiff';
 import { createWorkingView } from './overlay';
 import { refuseOutcome } from './refusals';
 import { stampedInThisCall } from './ops';
 import { buildOutcomeView } from './view';
+import { applyOwnedPlan } from './apply';
 import { chooseRoute } from './route';
 import {
   getNoticeBuffer,
@@ -45,36 +46,23 @@ import {
 } from '@Constants/outcomePipelineConstants';
 
 /**
- * The routing point. Under `v1` nothing is built and nothing is decided. Under `v2` a refusal is
- * returned as the result the entry hands back, shaped as every other refusal is (`error`, `info`,
- * `context`). Under `differential` the refusal is kept, v1 runs, and `compare` throws
- * `OutcomePipelineDivergence` if the two answers differ on anything but an apply-stage code.
+ * THE SHAPES v2 OWNS (§ 3.7: one place, so reverting a slice's PR takes its shapes out). S2: the local write, the
+ * matchUp's own result with no winner before or after, no exit, nothing directed, no tally and no settle work.
  */
-export function decideOutcomeV2(args: BuildViewArgs): {
-  refused?: ResultType;
-  compare?: (v1Result: ResultType) => void;
-} {
-  const mode = getOutcomePipeline();
-  if (mode === OUTCOME_PIPELINE_V1) return {};
+const OWNED_SHAPES = new Set<PlanShape>(['local']);
 
-  const view = buildOutcomeView(args);
-  const refusal: Refusal | undefined = refuseOutcome(args.request, view);
-
-  if (mode === OUTCOME_PIPELINE_V2 && refusal) return { refused: toResult(refusal) };
-  if (mode !== OUTCOME_PIPELINE_DIFFERENTIAL) return {};
-  // § 3.1.1's index oracle, read before v1 writes: the index of the draw as the call found it against the view's hydration
-  const indexed = indexOracle(args, view);
-
-  // S2b: the route and the write on this matchUp, planned BEFORE v1 runs, checked against it after
+/**
+ * The call planned against the view (§ 3.1 step 3), the same under `v2` and `differential`: the route, the write on the
+ * matchUp and the direction, then the plan as ops behind the fail-closed allowlist, then the working view after them and
+ * the settle passes' has-work predicates. A plan that leaves a pass work abstains `settle`.
+ */
+function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal) {
   // TEAM auto-calc: a dual whose result is computed from its lines takes the PROJECTED winner and score in
   // place of the call's before anything is routed, as `handleTeamAutoCalc` rewrites v1's parameters
   const planned = autoCalculated(args.request, view);
   const route = refusal ? undefined : chooseRoute(planned, view);
   const plan = route ? planWrite(planned, view, route) : undefined;
   const direction = route ? planDirection(planned, view, route) : undefined;
-  const dual = route ? planDual(args, view) : undefined;
-  // S1: the same plan as ops, behind the fail-closed allowlist; a complete one is shadow-applied once v1 has written,
-  // to the record as it stands here (one canonical capture, taken only for a complete plan)
   const allowed = planOutcome({
     tournamentRecord: args.tournamentRecord,
     drawDefinition: args.drawDefinition,
@@ -84,11 +72,42 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     route,
     view,
   });
-  // the working view after the plan (§ 3.2), folded now, before v1 writes the stored objects it reads, and asked whether
-  // any settle pass has work (S2): a plan whose call leaves a pass work is not complete, and abstains
+  // the working view after the plan (§ 3.2), folded before anything is written to the stored objects it reads
   const folded = allowed.ops ? workingViewAfter({ args, view, ops: allowed.ops }) : undefined;
   const settleWork = folded && 'settle' in folded ? folded.settle : [];
   const outcome: OutcomePlan = settleWork.length ? { abstain: 'settle' } : allowed;
+  return { planned, route, plan, direction, folded, outcome };
+}
+
+/**
+ * The routing point. Under `v1` nothing is built and nothing is decided. Under `v2` a refusal is
+ * returned as the result the entry hands back, shaped as every other refusal is (`error`, `info`,
+ * `context`). Under `differential` the refusal is kept, v1 runs, and `compare` throws
+ * `OutcomePipelineDivergence` if the two answers differ on anything but an apply-stage code.
+ */
+export function decideOutcomeV2(args: BuildViewArgs): {
+  refused?: ResultType;
+  owned?: ResultType;
+  compare?: (v1Result: ResultType) => void;
+} {
+  const mode = getOutcomePipeline();
+  if (mode === OUTCOME_PIPELINE_V1) return {};
+
+  const view = buildOutcomeView(args);
+  const refusal: Refusal | undefined = refuseOutcome(args.request, view);
+
+  if (mode === OUTCOME_PIPELINE_V2) {
+    if (refusal) return { refused: toResult(refusal) };
+    // S2: a call whose complete plan is a shape v2 owns is written by v2, and v1 is not asked (F1 (a), fail-closed)
+    const { outcome } = planCall(args, view);
+    return outcome.ops && OWNED_SHAPES.has(outcome.shape) ? { owned: applyOwnedPlan({ args, ops: outcome.ops }) } : {};
+  }
+  if (mode !== OUTCOME_PIPELINE_DIFFERENTIAL) return {};
+  // § 3.1.1's index oracle, read before v1 writes: the index of the draw as the call found it against the view's hydration
+  const indexed = indexOracle(args, view);
+
+  const { planned, route, plan, direction, folded, outcome } = planCall(args, view, refusal);
+  const dual = route ? planDual(args, view) : undefined;
   const shadowBefore = outcome.ops && args.tournamentRecord ? captureRecord(args.tournamentRecord) : undefined;
   // what this engine call already stamped, which the copy cannot know (F2 (i): an entity is stamped once per call)
   const stampedBefore = shadowBefore ? stampedInThisCall(args.drawDefinition) : undefined;

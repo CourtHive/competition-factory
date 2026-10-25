@@ -34,7 +34,7 @@ vi.mock('@Query/matchUps/structuralIndex', async (importOriginal) => {
 afterEach(() => {
   plant.field = undefined;
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
-  setSubscriptions({});
+  setSubscriptions({ subscriptions: {} });
 });
 
 function scoreFirstRound() {

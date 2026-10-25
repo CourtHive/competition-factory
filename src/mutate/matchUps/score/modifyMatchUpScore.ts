@@ -408,7 +408,7 @@ function updateTallyIfNeeded({
   return { matchUpFormat: resolvedFormat };
 }
 
-function getInContextMatchUp({ tournamentRecord, drawDefinition, matchUpId }) {
+export function getInContextMatchUp({ tournamentRecord, drawDefinition, matchUpId }) {
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
   if (!matchUpsMap) return undefined;
 

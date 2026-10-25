@@ -40,7 +40,7 @@ import { isString } from '@Tools/objects';
 
 // constants and types
 import { INVALID_VALUES, INVALID_WINNING_SIDE, SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
-import { PolicyDefinitions, ResultType, ResultWarning, TournamentRecords } from '@Types/factoryTypes';
+import { MatchUpsMap, PolicyDefinitions, ResultType, ResultWarning, TournamentRecords } from '@Types/factoryTypes';
 import { POLICY_TYPE_SCORING, POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { DRAW_DEFINITION, MATCHUP_ID } from '@Constants/attributeConstants';
@@ -430,6 +430,8 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     event,
   });
   if (v2.refused) return decorateResult({ result: v2.refused, stack });
+  // S2: a call v2 owns has been written by it (`outcome/apply.ts`); v1 is not asked, and the warnings are v1's own
+  if (v2.owned) return ownedResult({ owned: v2.owned, params, matchUpsMap, neverPlayedBefore, stack });
 
   // A REFUSED CALL STORES NONE OF THE MISSING EDGES (CA, 2026-10-18: "no, a refused call does not store a draw's
   // missing edges. v1 should no longer do so."). `setMatchUpState` writes them before deciding anything, and takes
@@ -554,8 +556,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   );
   const warnings = [
     ...(forward?.exhausted ? [{ code: FORWARD_SETTLE_EXHAUSTED, matchUpIds: [forward.exhausted] }] : []),
-    ...schedulePreservedWarnings({ matchUps: matchUpsMap.drawMatchUps, neverPlayedBefore }),
-    ...(disableScoreValidation || !outcome?.score?.sets?.length ? [] : recordedScoreWarnings(params)),
+    ...callWarnings({ params, matchUpsMap, neverPlayedBefore, disableScoreValidation, outcome }),
   ];
   if (warnings.length) Object.assign(result, { warnings: [...(result.warnings ?? []), ...warnings] });
 
@@ -701,4 +702,35 @@ function propagateExitFrom({
     return { error: SETTLE_BOUND_REACHED, info: 'propagateExitFrom' };
   }
   return undefined;
+}
+
+/** what a call that succeeded warns of, whichever pipeline wrote it: a schedule kept on what can no longer be played,
+ * and a recorded score its format does not support */
+type CallWarningsArgs = {
+  outcome?: SetMatchUpStatusArgs['outcome'];
+  params: SetMatchUpStatusArgs;
+  disableScoreValidation?: boolean;
+  neverPlayedBefore: Set<string>;
+  matchUpsMap: MatchUpsMap;
+};
+function callWarnings({ params, matchUpsMap, neverPlayedBefore, disableScoreValidation, outcome }: CallWarningsArgs) {
+  return [
+    ...schedulePreservedWarnings({ matchUps: matchUpsMap.drawMatchUps, neverPlayedBefore }),
+    ...(disableScoreValidation || !outcome?.score?.sets?.length ? [] : recordedScoreWarnings(params)),
+  ];
+}
+
+/** a call v2 wrote: its result, with the warnings v1 would add for the same write */
+type OwnedResultArgs = {
+  params: SetMatchUpStatusArgs;
+  neverPlayedBefore: Set<string>;
+  matchUpsMap: MatchUpsMap;
+  owned: ResultType;
+  stack: string;
+};
+function ownedResult({ owned, params, matchUpsMap, neverPlayedBefore, stack }: OwnedResultArgs) {
+  if (owned.error) return decorateResult({ result: owned, stack });
+  const { disableScoreValidation, outcome } = params;
+  const warnings = callWarnings({ params, matchUpsMap, neverPlayedBefore, disableScoreValidation, outcome });
+  return decorateResult({ result: warnings.length ? { ...owned, warnings } : owned, stack });
 }
