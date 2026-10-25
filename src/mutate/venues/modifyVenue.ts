@@ -180,7 +180,7 @@ export function venueModify({ tournamentRecord, modifications, venueId, force }:
   })?.appliedPolicies;
 
   const allowModificationWhenMatchUpsScheduled =
-    force ?? appliedPolicies?.[POLICY_TYPE_SCHEDULING]?.allowDeletionWithScoresPresent?.venues;
+    force ?? appliedPolicies?.[POLICY_TYPE_SCHEDULING]?.allowModificationWhenMatchUpsScheduled?.venues;
 
   const { matchUps: venueMatchUps } = getScheduledVenueMatchUps({
     tournamentRecord: record,

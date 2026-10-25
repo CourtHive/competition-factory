@@ -68,7 +68,7 @@ export function courtDeletion({ tournamentRecord, disableNotice, courtId, force 
   })?.appliedPolicies;
 
   const allowModificationWhenMatchUpsScheduled =
-    force ?? appliedPolicies?.[POLICY_TYPE_SCHEDULING]?.allowDeletionWithScoresPresent?.courts;
+    force ?? appliedPolicies?.[POLICY_TYPE_SCHEDULING]?.allowModificationWhenMatchUpsScheduled?.courts;
 
   if (!matchUps?.length || allowModificationWhenMatchUpsScheduled) {
     for (const matchUp of matchUps ?? []) {
