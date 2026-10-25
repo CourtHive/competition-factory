@@ -310,6 +310,28 @@ Per date, every scheduling call reports what it placed (`scheduledMatchUpIds`) a
 unplaced. The corpus records this report as the scheduling step's value: matchUpIds only, sorted, per date and reason,
 without the attempts the engine made on the way (those trace one implementation's loop, not a rule).
 
+### 7.1 The plan
+
+The timed pipeline's plan (§ 4) is keyed by canonical date (§ 3.8 rule 7), each date planned once. Its **normative**
+part, what `kernel.scheduling.plan@2` compares (CA 2026-10-25):
+
+- `placements[date][venueId]`: `{ matchUpId, scheduleTime }` in write order (venue, tournament, draw, profile order);
+  `scheduledMatchUpIds[date]`: the same ids, in the same order;
+- `matchUpScheduleTimes[matchUpId]`: the time of every matchUp timed on a planned date, stored or placed;
+- `unplaced[date][venueId]`: the profiled matchUps no slot took; `noTimeMatchUpIds[date]`: those, each venue's in
+  turn; `noFormatMatchUpIds[date]`: matchUps of profiled rounds with no format;
+- **why a matchUp was refused**, each refused matchUp's **first** refusal with its facts:
+  `recoveryTimeDeferredMatchUpIds[date][matchUpId]` (`scheduleTime`, `blockingParticipantIds`, `notBeforeTime`),
+  `dependencyDeferredMatchUpIds[date][matchUpId]` (`scheduleTime`, `remainingDependencies`),
+  `playedOrderDeferredMatchUpIds[date][matchUpId]` (`scheduleTime`, `blockingMatchUps`),
+  `overLimitMatchUpIds[date]` with `overLimitMatchUpDetails[date]` (the first attempt per matchUp), and
+  `requestConflicts[date]`.
+
+Every planned date has every key, empty when nothing applies. The rest is **informative**: every later refusal of the
+same matchUp, `skippedScheduleTimes` (the slots no matchUp took and how often each was offered) and
+`scheduleTimesRemaining` (the slots left over). They trace how one implementation's slot loop ran, depend on its retry
+bound, and are not compared; `kernel.scheduling.plan@1`, which compared them too, is superseded.
+
 ## 8. Guarantees
 
 These are checked on every scheduling call the corpus records and the suite makes (`corpus/INVARIANTS.md`):

@@ -3,6 +3,7 @@ import { buildSchedulingView } from '@Mutate/matchUps/schedule/pipeline/view';
 import { planSchedule } from '@Mutate/matchUps/schedule/pipeline/plan';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import { normativePlan } from './normativePlan';
 import { setRandomSource } from '@Tools/prng';
 import { setClock } from '@Tools/clock';
 import { overTheWire } from './kernel';
@@ -13,7 +14,7 @@ import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
 import type { KernelCase } from './kernel';
 
 /**
- * The authored `kernel.scheduling.plan@1` cases: one small tournament per rule of `scheduling-pipeline.md` § 3 and § 4,
+ * The authored `kernel.scheduling.plan@2` cases: one small tournament per rule of `scheduling-pipeline.md` § 3 and § 4,
  * small enough that the whole plan can be read and checked by hand. Each source states its rule as CLAIMS on the plan,
  * derived from the spec rather than from the engine (a Garman slot computed from the formula, a recovery added up), and
  * the case is written only if the plan meets them. The case file then pins the whole plan, so a change anywhere in it is
@@ -416,9 +417,9 @@ function authoredCase({ caseId, note, options = {}, amendView, build, claims }: 
   claims(plan, matchUpIds());
   return {
     caseId,
-    operation: 'kernel.scheduling.plan@1',
+    operation: 'kernel.scheduling.plan@2',
     input: { view: planningViewData(view), options },
-    expected: { kind: 'value', value: overTheWire(plan) },
+    expected: { kind: 'value', value: overTheWire(normativePlan(plan)) },
     note,
   };
 }

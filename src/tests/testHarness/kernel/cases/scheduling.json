@@ -1,7 +1,7 @@
 [
   {
     "caseId": "scheduling.plan.first-slot-fills-every-court.v1",
-    "operation": "kernel.scheduling.plan@1",
+    "operation": "kernel.scheduling.plan@2",
     "input": {
       "view": {
         "matchUpDependencies": {
@@ -293,78 +293,12 @@
     "expected": {
       "kind": "value",
       "value": {
-        "recoveryTimeDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "playedOrderDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "dependencyDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "overLimitMatchUpDetails": {
-          "2026-03-02": []
-        },
-        "scheduleTimesRemaining": {
-          "2026-03-02": {
-            "venue-1": [
-              {
-                "scheduleTime": "11:00"
-              },
-              {
-                "scheduleTime": "12:00"
-              },
-              {
-                "scheduleTime": "12:30"
-              },
-              {
-                "scheduleTime": "13:30"
-              },
-              {
-                "scheduleTime": "14:00"
-              },
-              {
-                "scheduleTime": "15:00"
-              },
-              {
-                "scheduleTime": "15:30"
-              },
-              {
-                "scheduleTime": "16:30"
-              },
-              {
-                "scheduleTime": "17:00"
-              },
-              {
-                "scheduleTime": "18:00"
-              },
-              {
-                "scheduleTime": "18:30"
-              }
-            ]
-          }
-        },
-        "skippedScheduleTimes": {
-          "2026-03-02": {}
-        },
         "matchUpScheduleTimes": {
           "93ad131a-f64c-49e5-b2b8-4a825b67aca3": "10:00",
           "0cfb0d77-e887-4c4e-b16b-a16f6276194f": "10:00"
         },
-        "overLimitMatchUpIds": {
-          "2026-03-02": []
-        },
         "scheduledMatchUpIds": {
           "2026-03-02": ["93ad131a-f64c-49e5-b2b8-4a825b67aca3", "0cfb0d77-e887-4c4e-b16b-a16f6276194f"]
-        },
-        "noFormatMatchUpIds": {
-          "2026-03-02": []
-        },
-        "noTimeMatchUpIds": {
-          "2026-03-02": []
-        },
-        "requestConflicts": {
-          "2026-03-02": []
         },
         "placements": {
           "2026-03-02": {
@@ -384,6 +318,30 @@
           "2026-03-02": {
             "venue-1": []
           }
+        },
+        "noTimeMatchUpIds": {
+          "2026-03-02": []
+        },
+        "noFormatMatchUpIds": {
+          "2026-03-02": []
+        },
+        "overLimitMatchUpIds": {
+          "2026-03-02": []
+        },
+        "requestConflicts": {
+          "2026-03-02": []
+        },
+        "overLimitMatchUpDetails": {
+          "2026-03-02": []
+        },
+        "recoveryTimeDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "dependencyDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "playedOrderDeferredMatchUpIds": {
+          "2026-03-02": {}
         }
       }
     },
@@ -391,7 +349,7 @@
   },
   {
     "caseId": "scheduling.plan.garman-one-court.v1",
-    "operation": "kernel.scheduling.plan@1",
+    "operation": "kernel.scheduling.plan@2",
     "input": {
       "view": {
         "matchUpDependencies": {
@@ -658,57 +616,12 @@
     "expected": {
       "kind": "value",
       "value": {
-        "recoveryTimeDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "playedOrderDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "dependencyDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "overLimitMatchUpDetails": {
-          "2026-03-02": []
-        },
-        "scheduleTimesRemaining": {
-          "2026-03-02": {
-            "venue-1": [
-              {
-                "scheduleTime": "13:00"
-              },
-              {
-                "scheduleTime": "14:30"
-              },
-              {
-                "scheduleTime": "16:00"
-              },
-              {
-                "scheduleTime": "17:30"
-              }
-            ]
-          }
-        },
-        "skippedScheduleTimes": {
-          "2026-03-02": {}
-        },
         "matchUpScheduleTimes": {
           "e4b6f994-a2e7-4435-ad49-f374c8d9c541": "10:00",
           "93ad131a-f64c-49e5-b2b8-4a825b67aca3": "11:30"
         },
-        "overLimitMatchUpIds": {
-          "2026-03-02": []
-        },
         "scheduledMatchUpIds": {
           "2026-03-02": ["e4b6f994-a2e7-4435-ad49-f374c8d9c541", "93ad131a-f64c-49e5-b2b8-4a825b67aca3"]
-        },
-        "noFormatMatchUpIds": {
-          "2026-03-02": []
-        },
-        "noTimeMatchUpIds": {
-          "2026-03-02": []
-        },
-        "requestConflicts": {
-          "2026-03-02": []
         },
         "placements": {
           "2026-03-02": {
@@ -728,6 +641,30 @@
           "2026-03-02": {
             "venue-1": []
           }
+        },
+        "noTimeMatchUpIds": {
+          "2026-03-02": []
+        },
+        "noFormatMatchUpIds": {
+          "2026-03-02": []
+        },
+        "overLimitMatchUpIds": {
+          "2026-03-02": []
+        },
+        "requestConflicts": {
+          "2026-03-02": []
+        },
+        "overLimitMatchUpDetails": {
+          "2026-03-02": []
+        },
+        "recoveryTimeDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "dependencyDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "playedOrderDeferredMatchUpIds": {
+          "2026-03-02": {}
         }
       }
     },
@@ -735,7 +672,7 @@
   },
   {
     "caseId": "scheduling.plan.final-waits-for-recovery.v1",
-    "operation": "kernel.scheduling.plan@1",
+    "operation": "kernel.scheduling.plan@2",
     "input": {
       "view": {
         "matchUpDependencies": {
@@ -1044,92 +981,10 @@
     "expected": {
       "kind": "value",
       "value": {
-        "recoveryTimeDeferredMatchUpIds": {
-          "2026-03-02": {
-            "d47031ed-7798-4443-aeb4-21a6e4082bc5": [
-              {
-                "scheduleTime": "11:00",
-                "blockingParticipantIds": [
-                  "8ed092c1-15c7-4870-8e5d-83bef613ba34",
-                  "47241964-3a23-4400-be9a-839013bfc8a8",
-                  "7130243e-2939-45dd-84c4-588e3bf77f95",
-                  "8983f025-583f-487f-9429-e29a88817828"
-                ],
-                "notBeforeTime": "12:30"
-              },
-              {
-                "scheduleTime": "12:00",
-                "blockingParticipantIds": [
-                  "8ed092c1-15c7-4870-8e5d-83bef613ba34",
-                  "47241964-3a23-4400-be9a-839013bfc8a8",
-                  "7130243e-2939-45dd-84c4-588e3bf77f95",
-                  "8983f025-583f-487f-9429-e29a88817828"
-                ],
-                "notBeforeTime": "12:30"
-              }
-            ]
-          }
-        },
-        "playedOrderDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "dependencyDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "overLimitMatchUpDetails": {
-          "2026-03-02": []
-        },
-        "scheduleTimesRemaining": {
-          "2026-03-02": {
-            "venue-1": [
-              {
-                "scheduleTime": "13:30"
-              },
-              {
-                "scheduleTime": "14:00"
-              },
-              {
-                "scheduleTime": "15:00"
-              },
-              {
-                "scheduleTime": "15:30"
-              },
-              {
-                "scheduleTime": "16:30"
-              },
-              {
-                "scheduleTime": "17:00"
-              },
-              {
-                "scheduleTime": "18:00"
-              },
-              {
-                "scheduleTime": "18:30"
-              }
-            ]
-          }
-        },
-        "skippedScheduleTimes": {
-          "2026-03-02": {
-            "venue-1": [
-              {
-                "scheduleTime": "11:00",
-                "attempts": 1
-              },
-              {
-                "scheduleTime": "12:00",
-                "attempts": 1
-              }
-            ]
-          }
-        },
         "matchUpScheduleTimes": {
           "93ad131a-f64c-49e5-b2b8-4a825b67aca3": "10:00",
           "0cfb0d77-e887-4c4e-b16b-a16f6276194f": "10:00",
           "d47031ed-7798-4443-aeb4-21a6e4082bc5": "12:30"
-        },
-        "overLimitMatchUpIds": {
-          "2026-03-02": []
         },
         "scheduledMatchUpIds": {
           "2026-03-02": [
@@ -1137,15 +992,6 @@
             "0cfb0d77-e887-4c4e-b16b-a16f6276194f",
             "d47031ed-7798-4443-aeb4-21a6e4082bc5"
           ]
-        },
-        "noFormatMatchUpIds": {
-          "2026-03-02": []
-        },
-        "noTimeMatchUpIds": {
-          "2026-03-02": []
-        },
-        "requestConflicts": {
-          "2026-03-02": []
         },
         "placements": {
           "2026-03-02": {
@@ -1169,6 +1015,41 @@
           "2026-03-02": {
             "venue-1": []
           }
+        },
+        "noTimeMatchUpIds": {
+          "2026-03-02": []
+        },
+        "noFormatMatchUpIds": {
+          "2026-03-02": []
+        },
+        "overLimitMatchUpIds": {
+          "2026-03-02": []
+        },
+        "requestConflicts": {
+          "2026-03-02": []
+        },
+        "overLimitMatchUpDetails": {
+          "2026-03-02": []
+        },
+        "recoveryTimeDeferredMatchUpIds": {
+          "2026-03-02": {
+            "d47031ed-7798-4443-aeb4-21a6e4082bc5": {
+              "scheduleTime": "11:00",
+              "blockingParticipantIds": [
+                "8ed092c1-15c7-4870-8e5d-83bef613ba34",
+                "47241964-3a23-4400-be9a-839013bfc8a8",
+                "7130243e-2939-45dd-84c4-588e3bf77f95",
+                "8983f025-583f-487f-9429-e29a88817828"
+              ],
+              "notBeforeTime": "12:30"
+            }
+          }
+        },
+        "dependencyDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "playedOrderDeferredMatchUpIds": {
+          "2026-03-02": {}
         }
       }
     },
@@ -1176,7 +1057,7 @@
   },
   {
     "caseId": "scheduling.plan.person-request-on-a-placed-side.v1",
-    "operation": "kernel.scheduling.plan@1",
+    "operation": "kernel.scheduling.plan@2",
     "input": {
       "view": {
         "matchUpDependencies": {
@@ -1324,59 +1205,34 @@
     "expected": {
       "kind": "value",
       "value": {
-        "recoveryTimeDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "playedOrderDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "dependencyDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "overLimitMatchUpDetails": {
-          "2026-03-02": []
-        },
-        "scheduleTimesRemaining": {
-          "2026-03-02": {
-            "venue-1": [
-              {
-                "scheduleTime": "13:00"
-              },
-              {
-                "scheduleTime": "14:30"
-              },
-              {
-                "scheduleTime": "16:00"
-              },
-              {
-                "scheduleTime": "17:30"
-              }
-            ]
-          }
-        },
-        "skippedScheduleTimes": {
-          "2026-03-02": {
-            "venue-1": [
-              {
-                "scheduleTime": "10:00",
-                "attempts": 1
-              }
-            ]
-          }
-        },
         "matchUpScheduleTimes": {
           "9f9448bf-64e8-41ff-a4fc-fea40b2fac0d": "11:30"
-        },
-        "overLimitMatchUpIds": {
-          "2026-03-02": []
         },
         "scheduledMatchUpIds": {
           "2026-03-02": ["9f9448bf-64e8-41ff-a4fc-fea40b2fac0d"]
         },
+        "placements": {
+          "2026-03-02": {
+            "venue-1": [
+              {
+                "matchUpId": "9f9448bf-64e8-41ff-a4fc-fea40b2fac0d",
+                "scheduleTime": "11:30"
+              }
+            ]
+          }
+        },
+        "unplaced": {
+          "2026-03-02": {
+            "venue-1": []
+          }
+        },
+        "noTimeMatchUpIds": {
+          "2026-03-02": []
+        },
         "noFormatMatchUpIds": {
           "2026-03-02": []
         },
-        "noTimeMatchUpIds": {
+        "overLimitMatchUpIds": {
           "2026-03-02": []
         },
         "requestConflicts": {
@@ -1395,20 +1251,17 @@
             }
           ]
         },
-        "placements": {
-          "2026-03-02": {
-            "venue-1": [
-              {
-                "matchUpId": "9f9448bf-64e8-41ff-a4fc-fea40b2fac0d",
-                "scheduleTime": "11:30"
-              }
-            ]
-          }
+        "overLimitMatchUpDetails": {
+          "2026-03-02": []
         },
-        "unplaced": {
-          "2026-03-02": {
-            "venue-1": []
-          }
+        "recoveryTimeDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "dependencyDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "playedOrderDeferredMatchUpIds": {
+          "2026-03-02": {}
         }
       }
     },
@@ -1416,7 +1269,7 @@
   },
   {
     "caseId": "scheduling.plan.daily-limit-holds-the-final.v1",
-    "operation": "kernel.scheduling.plan@1",
+    "operation": "kernel.scheduling.plan@2",
     "input": {
       "view": {
         "matchUpDependencies": {
@@ -1734,14 +1587,43 @@
     "expected": {
       "kind": "value",
       "value": {
-        "recoveryTimeDeferredMatchUpIds": {
-          "2026-03-02": {}
+        "matchUpScheduleTimes": {
+          "93ad131a-f64c-49e5-b2b8-4a825b67aca3": "10:00",
+          "0cfb0d77-e887-4c4e-b16b-a16f6276194f": "10:00"
         },
-        "playedOrderDeferredMatchUpIds": {
-          "2026-03-02": {}
+        "scheduledMatchUpIds": {
+          "2026-03-02": ["93ad131a-f64c-49e5-b2b8-4a825b67aca3", "0cfb0d77-e887-4c4e-b16b-a16f6276194f"]
         },
-        "dependencyDeferredMatchUpIds": {
-          "2026-03-02": {}
+        "placements": {
+          "2026-03-02": {
+            "venue-1": [
+              {
+                "matchUpId": "93ad131a-f64c-49e5-b2b8-4a825b67aca3",
+                "scheduleTime": "10:00"
+              },
+              {
+                "matchUpId": "0cfb0d77-e887-4c4e-b16b-a16f6276194f",
+                "scheduleTime": "10:00"
+              }
+            ]
+          }
+        },
+        "unplaced": {
+          "2026-03-02": {
+            "venue-1": []
+          }
+        },
+        "noTimeMatchUpIds": {
+          "2026-03-02": []
+        },
+        "noFormatMatchUpIds": {
+          "2026-03-02": []
+        },
+        "overLimitMatchUpIds": {
+          "2026-03-02": ["d47031ed-7798-4443-aeb4-21a6e4082bc5"]
+        },
+        "requestConflicts": {
+          "2026-03-02": []
         },
         "overLimitMatchUpDetails": {
           "2026-03-02": [
@@ -1813,89 +1695,14 @@
             }
           ]
         },
-        "scheduleTimesRemaining": {
-          "2026-03-02": {
-            "venue-1": [
-              {
-                "scheduleTime": "12:00"
-              },
-              {
-                "scheduleTime": "12:30"
-              },
-              {
-                "scheduleTime": "13:30"
-              },
-              {
-                "scheduleTime": "14:00"
-              },
-              {
-                "scheduleTime": "15:00"
-              },
-              {
-                "scheduleTime": "15:30"
-              },
-              {
-                "scheduleTime": "16:30"
-              },
-              {
-                "scheduleTime": "17:00"
-              },
-              {
-                "scheduleTime": "18:00"
-              },
-              {
-                "scheduleTime": "18:30"
-              }
-            ]
-          }
+        "recoveryTimeDeferredMatchUpIds": {
+          "2026-03-02": {}
         },
-        "skippedScheduleTimes": {
-          "2026-03-02": {
-            "venue-1": [
-              {
-                "scheduleTime": "11:00",
-                "attempts": 1
-              }
-            ]
-          }
+        "dependencyDeferredMatchUpIds": {
+          "2026-03-02": {}
         },
-        "matchUpScheduleTimes": {
-          "93ad131a-f64c-49e5-b2b8-4a825b67aca3": "10:00",
-          "0cfb0d77-e887-4c4e-b16b-a16f6276194f": "10:00"
-        },
-        "overLimitMatchUpIds": {
-          "2026-03-02": ["d47031ed-7798-4443-aeb4-21a6e4082bc5"]
-        },
-        "scheduledMatchUpIds": {
-          "2026-03-02": ["93ad131a-f64c-49e5-b2b8-4a825b67aca3", "0cfb0d77-e887-4c4e-b16b-a16f6276194f"]
-        },
-        "noFormatMatchUpIds": {
-          "2026-03-02": []
-        },
-        "noTimeMatchUpIds": {
-          "2026-03-02": []
-        },
-        "requestConflicts": {
-          "2026-03-02": []
-        },
-        "placements": {
-          "2026-03-02": {
-            "venue-1": [
-              {
-                "matchUpId": "93ad131a-f64c-49e5-b2b8-4a825b67aca3",
-                "scheduleTime": "10:00"
-              },
-              {
-                "matchUpId": "0cfb0d77-e887-4c4e-b16b-a16f6276194f",
-                "scheduleTime": "10:00"
-              }
-            ]
-          }
-        },
-        "unplaced": {
-          "2026-03-02": {
-            "venue-1": []
-          }
+        "playedOrderDeferredMatchUpIds": {
+          "2026-03-02": {}
         }
       }
     },
@@ -1903,7 +1710,7 @@
   },
   {
     "caseId": "scheduling.plan.no-court-available.v1",
-    "operation": "kernel.scheduling.plan@1",
+    "operation": "kernel.scheduling.plan@2",
     "input": {
       "view": {
         "matchUpDependencies": {
@@ -2019,40 +1826,8 @@
     "expected": {
       "kind": "value",
       "value": {
-        "recoveryTimeDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "playedOrderDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "dependencyDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "overLimitMatchUpDetails": {
-          "2026-03-02": []
-        },
-        "scheduleTimesRemaining": {
-          "2026-03-02": {
-            "venue-1": []
-          }
-        },
-        "skippedScheduleTimes": {
-          "2026-03-02": {}
-        },
         "matchUpScheduleTimes": {},
-        "overLimitMatchUpIds": {
-          "2026-03-02": []
-        },
         "scheduledMatchUpIds": {
-          "2026-03-02": []
-        },
-        "noFormatMatchUpIds": {
-          "2026-03-02": []
-        },
-        "noTimeMatchUpIds": {
-          "2026-03-02": ["9f9448bf-64e8-41ff-a4fc-fea40b2fac0d"]
-        },
-        "requestConflicts": {
           "2026-03-02": []
         },
         "placements": {
@@ -2064,6 +1839,30 @@
           "2026-03-02": {
             "venue-1": ["9f9448bf-64e8-41ff-a4fc-fea40b2fac0d"]
           }
+        },
+        "noTimeMatchUpIds": {
+          "2026-03-02": ["9f9448bf-64e8-41ff-a4fc-fea40b2fac0d"]
+        },
+        "noFormatMatchUpIds": {
+          "2026-03-02": []
+        },
+        "overLimitMatchUpIds": {
+          "2026-03-02": []
+        },
+        "requestConflicts": {
+          "2026-03-02": []
+        },
+        "overLimitMatchUpDetails": {
+          "2026-03-02": []
+        },
+        "recoveryTimeDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "dependencyDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "playedOrderDeferredMatchUpIds": {
+          "2026-03-02": {}
         }
       }
     },
@@ -2071,7 +1870,7 @@
   },
   {
     "caseId": "scheduling.plan.played-source-on-a-later-date.v1",
-    "operation": "kernel.scheduling.plan@1",
+    "operation": "kernel.scheduling.plan@2",
     "input": {
       "view": {
         "matchUpDependencies": {
@@ -2396,7 +2195,39 @@
     "expected": {
       "kind": "value",
       "value": {
+        "matchUpScheduleTimes": {},
+        "scheduledMatchUpIds": {
+          "2026-03-02": []
+        },
+        "placements": {
+          "2026-03-02": {
+            "venue-1": []
+          }
+        },
+        "unplaced": {
+          "2026-03-02": {
+            "venue-1": ["d47031ed-7798-4443-aeb4-21a6e4082bc5"]
+          }
+        },
+        "noTimeMatchUpIds": {
+          "2026-03-02": []
+        },
+        "noFormatMatchUpIds": {
+          "2026-03-02": []
+        },
+        "overLimitMatchUpIds": {
+          "2026-03-02": []
+        },
+        "requestConflicts": {
+          "2026-03-02": []
+        },
+        "overLimitMatchUpDetails": {
+          "2026-03-02": []
+        },
         "recoveryTimeDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "dependencyDeferredMatchUpIds": {
           "2026-03-02": {}
         },
         "playedOrderDeferredMatchUpIds": {
@@ -2425,101 +2256,6 @@
               ]
             }
           }
-        },
-        "dependencyDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "overLimitMatchUpDetails": {
-          "2026-03-02": []
-        },
-        "scheduleTimesRemaining": {
-          "2026-03-02": {
-            "venue-1": []
-          }
-        },
-        "skippedScheduleTimes": {
-          "2026-03-02": {
-            "venue-1": [
-              {
-                "scheduleTime": "10:00",
-                "attempts": 10
-              },
-              {
-                "scheduleTime": "10:00",
-                "attempts": 10
-              },
-              {
-                "scheduleTime": "11:00",
-                "attempts": 10
-              },
-              {
-                "scheduleTime": "12:00",
-                "attempts": 10
-              },
-              {
-                "scheduleTime": "12:30",
-                "attempts": 10
-              },
-              {
-                "scheduleTime": "13:30",
-                "attempts": 10
-              },
-              {
-                "scheduleTime": "14:00",
-                "attempts": 10
-              },
-              {
-                "scheduleTime": "15:00",
-                "attempts": 10
-              },
-              {
-                "scheduleTime": "15:30",
-                "attempts": 10
-              },
-              {
-                "scheduleTime": "16:30",
-                "attempts": 10
-              },
-              {
-                "scheduleTime": "17:00",
-                "attempts": 10
-              },
-              {
-                "scheduleTime": "18:00",
-                "attempts": 10
-              },
-              {
-                "scheduleTime": "18:30",
-                "attempts": 10
-              }
-            ]
-          }
-        },
-        "matchUpScheduleTimes": {},
-        "overLimitMatchUpIds": {
-          "2026-03-02": []
-        },
-        "scheduledMatchUpIds": {
-          "2026-03-02": []
-        },
-        "noFormatMatchUpIds": {
-          "2026-03-02": []
-        },
-        "noTimeMatchUpIds": {
-          "2026-03-02": []
-        },
-        "requestConflicts": {
-          "2026-03-02": []
-        },
-        "placements": {
-          "2026-03-02": {
-            "venue-1": []
-          }
-        },
-        "unplaced": {
-          "2026-03-02": {
-            "venue-1": ["d47031ed-7798-4443-aeb4-21a6e4082bc5"]
-          }
         }
       }
     },
@@ -2527,7 +2263,7 @@
   },
   {
     "caseId": "scheduling.plan.booking-holds-its-own-minutes.v1",
-    "operation": "kernel.scheduling.plan@1",
+    "operation": "kernel.scheduling.plan@2",
     "input": {
       "view": {
         "matchUpDependencies": {
@@ -2855,64 +2591,13 @@
     "expected": {
       "kind": "value",
       "value": {
-        "recoveryTimeDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "playedOrderDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "dependencyDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "overLimitMatchUpDetails": {
-          "2026-03-02": []
-        },
-        "scheduleTimesRemaining": {
-          "2026-03-02": {
-            "venue-1": [
-              {
-                "scheduleTime": "13:30"
-              },
-              {
-                "scheduleTime": "14:30"
-              },
-              {
-                "scheduleTime": "15:30"
-              },
-              {
-                "scheduleTime": "16:30"
-              },
-              {
-                "scheduleTime": "17:30"
-              },
-              {
-                "scheduleTime": "18:30"
-              }
-            ]
-          }
-        },
-        "skippedScheduleTimes": {
-          "2026-03-02": {}
-        },
         "matchUpScheduleTimes": {
           "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1": "10:00",
           "c9fadd87-d5d0-4701-9701-00991181d1b6": "11:30",
           "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": "12:30"
         },
-        "overLimitMatchUpIds": {
-          "2026-03-02": []
-        },
         "scheduledMatchUpIds": {
           "2026-03-02": ["c9fadd87-d5d0-4701-9701-00991181d1b6", "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"]
-        },
-        "noFormatMatchUpIds": {
-          "2026-03-02": []
-        },
-        "noTimeMatchUpIds": {
-          "2026-03-02": []
-        },
-        "requestConflicts": {
-          "2026-03-02": []
         },
         "placements": {
           "2026-03-02": {
@@ -2932,6 +2617,30 @@
           "2026-03-02": {
             "venue-1": []
           }
+        },
+        "noTimeMatchUpIds": {
+          "2026-03-02": []
+        },
+        "noFormatMatchUpIds": {
+          "2026-03-02": []
+        },
+        "overLimitMatchUpIds": {
+          "2026-03-02": []
+        },
+        "requestConflicts": {
+          "2026-03-02": []
+        },
+        "overLimitMatchUpDetails": {
+          "2026-03-02": []
+        },
+        "recoveryTimeDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "dependencyDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "playedOrderDeferredMatchUpIds": {
+          "2026-03-02": {}
         }
       }
     },
@@ -2939,7 +2648,7 @@
   },
   {
     "caseId": "scheduling.plan.bookings-survive-a-malformed-matchup.v1",
-    "operation": "kernel.scheduling.plan@1",
+    "operation": "kernel.scheduling.plan@2",
     "input": {
       "view": {
         "matchUpDependencies": {
@@ -3268,55 +2977,13 @@
     "expected": {
       "kind": "value",
       "value": {
-        "recoveryTimeDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "playedOrderDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "dependencyDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "overLimitMatchUpDetails": {
-          "2026-03-02": []
-        },
-        "scheduleTimesRemaining": {
-          "2026-03-02": {
-            "venue-1": [
-              {
-                "scheduleTime": "14:30"
-              },
-              {
-                "scheduleTime": "16:00"
-              },
-              {
-                "scheduleTime": "17:30"
-              }
-            ]
-          }
-        },
-        "skippedScheduleTimes": {
-          "2026-03-02": {}
-        },
         "matchUpScheduleTimes": {
           "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1": "10:00",
           "c9fadd87-d5d0-4701-9701-00991181d1b6": "11:30",
           "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": "13:00"
         },
-        "overLimitMatchUpIds": {
-          "2026-03-02": []
-        },
         "scheduledMatchUpIds": {
           "2026-03-02": ["c9fadd87-d5d0-4701-9701-00991181d1b6", "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"]
-        },
-        "noFormatMatchUpIds": {
-          "2026-03-02": []
-        },
-        "noTimeMatchUpIds": {
-          "2026-03-02": []
-        },
-        "requestConflicts": {
-          "2026-03-02": []
         },
         "placements": {
           "2026-03-02": {
@@ -3336,6 +3003,30 @@
           "2026-03-02": {
             "venue-1": []
           }
+        },
+        "noTimeMatchUpIds": {
+          "2026-03-02": []
+        },
+        "noFormatMatchUpIds": {
+          "2026-03-02": []
+        },
+        "overLimitMatchUpIds": {
+          "2026-03-02": []
+        },
+        "requestConflicts": {
+          "2026-03-02": []
+        },
+        "overLimitMatchUpDetails": {
+          "2026-03-02": []
+        },
+        "recoveryTimeDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "dependencyDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "playedOrderDeferredMatchUpIds": {
+          "2026-03-02": {}
         }
       }
     },
@@ -3343,7 +3034,7 @@
   },
   {
     "caseId": "scheduling.plan.venue-only-booking-takes-a-court.v1",
-    "operation": "kernel.scheduling.plan@1",
+    "operation": "kernel.scheduling.plan@2",
     "input": {
       "view": {
         "matchUpDependencies": {
@@ -3670,55 +3361,13 @@
     "expected": {
       "kind": "value",
       "value": {
-        "recoveryTimeDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "playedOrderDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "dependencyDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "overLimitMatchUpDetails": {
-          "2026-03-02": []
-        },
-        "scheduleTimesRemaining": {
-          "2026-03-02": {
-            "venue-1": [
-              {
-                "scheduleTime": "14:30"
-              },
-              {
-                "scheduleTime": "16:00"
-              },
-              {
-                "scheduleTime": "17:30"
-              }
-            ]
-          }
-        },
-        "skippedScheduleTimes": {
-          "2026-03-02": {}
-        },
         "matchUpScheduleTimes": {
           "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1": "10:00",
           "c9fadd87-d5d0-4701-9701-00991181d1b6": "11:30",
           "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": "13:00"
         },
-        "overLimitMatchUpIds": {
-          "2026-03-02": []
-        },
         "scheduledMatchUpIds": {
           "2026-03-02": ["c9fadd87-d5d0-4701-9701-00991181d1b6", "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"]
-        },
-        "noFormatMatchUpIds": {
-          "2026-03-02": []
-        },
-        "noTimeMatchUpIds": {
-          "2026-03-02": []
-        },
-        "requestConflicts": {
-          "2026-03-02": []
         },
         "placements": {
           "2026-03-02": {
@@ -3738,6 +3387,30 @@
           "2026-03-02": {
             "venue-1": []
           }
+        },
+        "noTimeMatchUpIds": {
+          "2026-03-02": []
+        },
+        "noFormatMatchUpIds": {
+          "2026-03-02": []
+        },
+        "overLimitMatchUpIds": {
+          "2026-03-02": []
+        },
+        "requestConflicts": {
+          "2026-03-02": []
+        },
+        "overLimitMatchUpDetails": {
+          "2026-03-02": []
+        },
+        "recoveryTimeDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "dependencyDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "playedOrderDeferredMatchUpIds": {
+          "2026-03-02": {}
         }
       }
     },
@@ -3745,7 +3418,7 @@
   },
   {
     "caseId": "scheduling.plan.timed-without-a-venue-books-no-court.v1",
-    "operation": "kernel.scheduling.plan@1",
+    "operation": "kernel.scheduling.plan@2",
     "input": {
       "view": {
         "matchUpDependencies": {
@@ -4096,58 +3769,13 @@
     "expected": {
       "kind": "value",
       "value": {
-        "recoveryTimeDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "playedOrderDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "dependencyDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "overLimitMatchUpDetails": {
-          "2026-03-02": []
-        },
-        "scheduleTimesRemaining": {
-          "2026-03-02": {
-            "venue-1": [
-              {
-                "scheduleTime": "13:00"
-              },
-              {
-                "scheduleTime": "14:30"
-              },
-              {
-                "scheduleTime": "16:00"
-              },
-              {
-                "scheduleTime": "17:30"
-              }
-            ]
-          }
-        },
-        "skippedScheduleTimes": {
-          "2026-03-02": {}
-        },
         "matchUpScheduleTimes": {
           "a918b95d-298b-4055-bcb1-8db249a1a8f5": "10:00",
           "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": "10:00",
           "3c8ee078-1333-47b6-84c9-14822c4b7810": "11:30"
         },
-        "overLimitMatchUpIds": {
-          "2026-03-02": []
-        },
         "scheduledMatchUpIds": {
           "2026-03-02": ["4e0a510e-0922-4c44-8cc8-eeaad3b42d2a", "3c8ee078-1333-47b6-84c9-14822c4b7810"]
-        },
-        "noFormatMatchUpIds": {
-          "2026-03-02": []
-        },
-        "noTimeMatchUpIds": {
-          "2026-03-02": []
-        },
-        "requestConflicts": {
-          "2026-03-02": []
         },
         "placements": {
           "2026-03-02": {
@@ -4167,6 +3795,30 @@
           "2026-03-02": {
             "venue-1": []
           }
+        },
+        "noTimeMatchUpIds": {
+          "2026-03-02": []
+        },
+        "noFormatMatchUpIds": {
+          "2026-03-02": []
+        },
+        "overLimitMatchUpIds": {
+          "2026-03-02": []
+        },
+        "requestConflicts": {
+          "2026-03-02": []
+        },
+        "overLimitMatchUpDetails": {
+          "2026-03-02": []
+        },
+        "recoveryTimeDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "dependencyDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "playedOrderDeferredMatchUpIds": {
+          "2026-03-02": {}
         }
       }
     },
@@ -4174,7 +3826,7 @@
   },
   {
     "caseId": "scheduling.plan.timed-without-a-venue-at-the-only-venue.v1",
-    "operation": "kernel.scheduling.plan@1",
+    "operation": "kernel.scheduling.plan@2",
     "input": {
       "view": {
         "matchUpDependencies": {
@@ -4500,55 +4152,13 @@
     "expected": {
       "kind": "value",
       "value": {
-        "recoveryTimeDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "playedOrderDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "dependencyDeferredMatchUpIds": {
-          "2026-03-02": {}
-        },
-        "overLimitMatchUpDetails": {
-          "2026-03-02": []
-        },
-        "scheduleTimesRemaining": {
-          "2026-03-02": {
-            "venue-1": [
-              {
-                "scheduleTime": "14:30"
-              },
-              {
-                "scheduleTime": "16:00"
-              },
-              {
-                "scheduleTime": "17:30"
-              }
-            ]
-          }
-        },
-        "skippedScheduleTimes": {
-          "2026-03-02": {}
-        },
         "matchUpScheduleTimes": {
           "f6a4efb6-35b4-4190-99b7-f3b081ef0fa1": "10:00",
           "c9fadd87-d5d0-4701-9701-00991181d1b6": "11:30",
           "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a": "13:00"
         },
-        "overLimitMatchUpIds": {
-          "2026-03-02": []
-        },
         "scheduledMatchUpIds": {
           "2026-03-02": ["c9fadd87-d5d0-4701-9701-00991181d1b6", "4e0a510e-0922-4c44-8cc8-eeaad3b42d2a"]
-        },
-        "noFormatMatchUpIds": {
-          "2026-03-02": []
-        },
-        "noTimeMatchUpIds": {
-          "2026-03-02": []
-        },
-        "requestConflicts": {
-          "2026-03-02": []
         },
         "placements": {
           "2026-03-02": {
@@ -4568,6 +4178,30 @@
           "2026-03-02": {
             "venue-1": []
           }
+        },
+        "noTimeMatchUpIds": {
+          "2026-03-02": []
+        },
+        "noFormatMatchUpIds": {
+          "2026-03-02": []
+        },
+        "overLimitMatchUpIds": {
+          "2026-03-02": []
+        },
+        "requestConflicts": {
+          "2026-03-02": []
+        },
+        "overLimitMatchUpDetails": {
+          "2026-03-02": []
+        },
+        "recoveryTimeDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "dependencyDeferredMatchUpIds": {
+          "2026-03-02": {}
+        },
+        "playedOrderDeferredMatchUpIds": {
+          "2026-03-02": {}
         }
       }
     },
@@ -4575,7 +4209,7 @@
   },
   {
     "caseId": "scheduling.plan.scheduled-bye-holds-no-one.v1",
-    "operation": "kernel.scheduling.plan@1",
+    "operation": "kernel.scheduling.plan@2",
     "input": {
       "view": {
         "matchUpDependencies": {
@@ -4900,80 +4534,11 @@
     "expected": {
       "kind": "value",
       "value": {
-        "recoveryTimeDeferredMatchUpIds": {
-          "2026-03-03": {}
-        },
-        "playedOrderDeferredMatchUpIds": {
-          "2026-03-03": {}
-        },
-        "dependencyDeferredMatchUpIds": {
-          "2026-03-03": {}
-        },
-        "overLimitMatchUpDetails": {
-          "2026-03-03": []
-        },
-        "scheduleTimesRemaining": {
-          "2026-03-03": {
-            "venue-1": [
-              {
-                "scheduleTime": "10:00"
-              },
-              {
-                "scheduleTime": "11:00"
-              },
-              {
-                "scheduleTime": "12:00"
-              },
-              {
-                "scheduleTime": "12:30"
-              },
-              {
-                "scheduleTime": "13:30"
-              },
-              {
-                "scheduleTime": "14:00"
-              },
-              {
-                "scheduleTime": "15:00"
-              },
-              {
-                "scheduleTime": "15:30"
-              },
-              {
-                "scheduleTime": "16:30"
-              },
-              {
-                "scheduleTime": "17:00"
-              },
-              {
-                "scheduleTime": "18:00"
-              },
-              {
-                "scheduleTime": "18:30"
-              }
-            ]
-          }
-        },
-        "skippedScheduleTimes": {
-          "2026-03-03": {}
-        },
         "matchUpScheduleTimes": {
           "d47031ed-7798-4443-aeb4-21a6e4082bc5": "10:00"
         },
-        "overLimitMatchUpIds": {
-          "2026-03-03": []
-        },
         "scheduledMatchUpIds": {
           "2026-03-03": ["d47031ed-7798-4443-aeb4-21a6e4082bc5"]
-        },
-        "noFormatMatchUpIds": {
-          "2026-03-03": []
-        },
-        "noTimeMatchUpIds": {
-          "2026-03-03": []
-        },
-        "requestConflicts": {
-          "2026-03-03": []
         },
         "placements": {
           "2026-03-03": {
@@ -4989,6 +4554,30 @@
           "2026-03-03": {
             "venue-1": []
           }
+        },
+        "noTimeMatchUpIds": {
+          "2026-03-03": []
+        },
+        "noFormatMatchUpIds": {
+          "2026-03-03": []
+        },
+        "overLimitMatchUpIds": {
+          "2026-03-03": []
+        },
+        "requestConflicts": {
+          "2026-03-03": []
+        },
+        "overLimitMatchUpDetails": {
+          "2026-03-03": []
+        },
+        "recoveryTimeDeferredMatchUpIds": {
+          "2026-03-03": {}
+        },
+        "dependencyDeferredMatchUpIds": {
+          "2026-03-03": {}
+        },
+        "playedOrderDeferredMatchUpIds": {
+          "2026-03-03": {}
         }
       }
     },
