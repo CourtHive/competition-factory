@@ -237,6 +237,17 @@ engine.deleteParticipants({
 });
 ```
 
+Deleting an INDIVIDUAL also deletes every PAIR that contains them. Every refusal is decided before the first write,
+so a refused call changes nothing:
+
+- `EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT` when a participant being deleted, or a PAIR deleted with one, is
+  placed in a draw (a PAIR placed in a DOUBLES draw blocks the deletion of either of its individuals);
+- `CANNOT_REMOVE_PARTICIPANTS` when none of the `participantIds` is in the tournament;
+- a refusal from removing their entries, as `removeEventEntries` would make it.
+
+Entries are removed from every event, flight and draw for the participants deleted and for the PAIRs deleted with
+them, so no entry is left pointing at a deleted participant.
+
 Notices: `DELETE_PARTICIPANTS` lists every participant actually removed (a PAIR removed along with its individual
 participant is included), and groupings that lost a member are announced with `MODIFY_PARTICIPANTS`.
 

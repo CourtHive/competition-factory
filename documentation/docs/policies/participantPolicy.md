@@ -65,6 +65,15 @@ Two invariants hold everywhere:
 A template array acts as an allow-list, but it is only evaluated for keys the source object actually carries. An attribute absent from the source is never examined, so a rule written to _withhold_ something that is sometimes missing fails **open**. Where a value must be withheld unless explicitly permitted, gate it with a predicate at the call site rather than relying on the template alone — this is what `getTournamentInfo` does for `Contact.isPublic`.
 :::
 
+## The bundled default: `POLICY_PRIVACY_DEFAULT`
+
+The default privacy policy publishes, for each individual, the **teams** they belong to (as `withGroupings` attaches
+them), limited to names: `participantId`, `participantName`, `participantOtherName` and `participantType`. A school or
+team name is not private, and a draw display with participant detail TEAM reads `teams[0].participantName`. The
+template applies to every element of `teams`, so a team's contacts, online resources, members and role
+responsibilities stay stripped. `groups` is not named, so it is withheld. In 7.21.0 and earlier the default named no
+`teams` key, and the attribute filter dropped them.
+
 ## Staff contacts
 
 `tournamentContacts` on [getTournamentInfo](../governors/query-governor.md#gettournamentinfo) is the one participant population the caller's policy does **not** govern. It is filtered with the bundled `POLICY_PRIVACY_STAFF` instead, because a contact stripped of `participantRoleResponsibilities` is not a contact — a caller supplying a strict competitor policy would otherwise receive a contact list it could not use.

@@ -129,7 +129,7 @@ is how leading zeros, sections out of order and modifiers out of order are refus
 three lenient readings below stay closed.
 
 **Closed lenient readings** (CA 2026-10-02). Each was once read as `SET3-S:6/TB7` and printed canonically; each is
-now not a code: a trailing space (`SET3-S:6/TB7 `), an empty final section (`SET3-S:6/TB7-F:`) and a tiebreak with no
+now not a code: a trailing space (`"SET3-S:6/TB7 "`), an empty final section (`SET3-S:6/TB7-F:`) and a tiebreak with no
 number (`SET3-S:6/TB`, `SET3-S:6/TB7-F:6/TB`).
 
 **An equivalent spelling parses to its canonical form's object** (CA 2026-10-25): `parse('SET3-S:6-F:6')` has no
