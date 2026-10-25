@@ -40,6 +40,7 @@
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { zonedWallClockToMs, zonedParts } from '@Tools/zonedDateTime';
+import { timingCategoryType } from '@Query/event/timingCategoryType';
 import {
   getMatchUpFormatTiming,
   matchUpFormatTimes,
@@ -400,7 +401,7 @@ function makeTimingResolver({
       categoryName: category?.categoryName ?? category?.ageCategoryCode,
       // Passed explicitly as well as via `event`: an explicit value still wins,
       // and published factories at or below 6.29.1 discard the resolved one.
-      categoryType: category?.categoryType ?? category?.subType,
+      categoryType: timingCategoryType(category),
       matchUpFormat: matchUp.matchUpFormat ?? '',
       eventType: matchUp.matchUpType,
       policyDefinitions,

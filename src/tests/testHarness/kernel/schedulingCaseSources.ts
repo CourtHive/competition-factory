@@ -620,6 +620,27 @@ export const schedulingCaseSources: Source[] = [
     },
     claims: (plan) => expectEqual(timesOf(plan, eventMatchUps(1, 1)), ['00:00'], 'no carry from a cleared date'),
   },
+  {
+    caseId: 'scheduling.plan.overnight-rest-is-warned-not-held.v1',
+    note:
+      'A junior first-round matchUp is timed at 21:00 on the first date (90 minutes: play ends 22:30). The default ' +
+      "policy's overnight rest for JUNIOR is 12 hours, which a player may waive: it is warned, not held (§ 9.8, CA " +
+      '2026-10-25). Recovery alone ends the night before, so the final takes the first slot of the next date, 08:00.',
+    build: () => {
+      mocksEngine.generateTournamentRecord({
+        venueProfiles: [{ venueId: VENUE, courtsCount: 1, startTime: '08:00', endTime: '23:00' }],
+        drawProfiles: [{ drawSize: 4, category: { categoryType: 'JUNIOR', ageCategoryCode: 'U18' } }],
+        policyDefinitions: POLICY_SCHEDULING_DEFAULT,
+        startDate: DAYS[0],
+        endDate: DAYS[1],
+        setState: true,
+      });
+      for (const firstRound of eventMatchUps(0, 1)) timeMatchUp(firstRound, { scheduledTime: '21:00', venueId: VENUE });
+      profileEventRound(0, 2, DAYS[1]);
+    },
+    claims: (plan) =>
+      expectEqual(timesOf(plan, eventMatchUps(0, 2)), ['08:00'], 'the overnight rest does not hold the final'),
+  },
 ];
 
 /**

@@ -2,6 +2,7 @@ import { checkDailyLimits, DailyLimitOverrides } from '@Mutate/matchUps/schedule
 import { getParticipantReachability } from '@Mutate/matchUps/schedule/scheduleMatchUps/getParticipantReachability';
 import { modifyParticipantDayMatchUps } from '@Mutate/matchUps/schedule/scheduleMatchUps/participantDayLoad';
 import { getParticipantClashes } from '@Mutate/matchUps/schedule/scheduleMatchUps/participantClashes';
+import { overnightRestWarningsFor } from '@Query/matchUps/scheduling/getOvernightRestWarnings';
 import { competitionScheduleMatchUps } from '@Query/matchUps/competitionScheduleMatchUps';
 import { matchUpChronologicalSort } from '@Functions/sorters/matchUpChronologicalSort';
 import { bulkScheduleMatchUps } from '@Mutate/matchUps/schedule/bulkScheduleMatchUps';
@@ -12,6 +13,7 @@ import { validMatchUps } from '@Validators/validMatchUp';
 import { isObject } from '@Tools/objects';
 
 // constants and types
+import type { OvernightRestWarning } from '@Query/matchUps/scheduling/getOvernightRestWarnings';
 import { INVALID_VALUES, MISSING_CONTEXT } from '@Constants/errorConditionConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
@@ -25,6 +27,8 @@ type ProAutoScheduleArgs = {
   dailyLimitOverrides?: DailyLimitOverrides;
   /** the limits are asked but not enforced: a placement over one is made and reported in dailyLimitWarningMatchUpIds */
   dailyLimitsWarnOnly?: boolean;
+  /** false: the caller reports overnight rest itself, once for all its dates (the grid) */
+  overnightRestWarnings?: boolean;
   /**
    * @deprecated ignored: completed matchUps are never scheduled (CA 2026-10-23); the write skips one and it is reported
    * not scheduled. Removed at the next major.
@@ -101,10 +105,23 @@ function findOpenCourtIndex(
   return availableCourts.findIndex((court: any) => !isClosedAt(courtClosures[court?.schedule?.courtId], scheduledTime));
 }
 
+/** overnight rest is warned, not held (§ 9.8): measured for a placement with a time (a court order alone has none) */
+type OvernightRestOfArgs = {
+  tournamentRecords: { [key: string]: Tournament };
+  warnOvernightRest: boolean;
+  scheduledDate: string;
+};
+function overnightRestOf({ warnOvernightRest, scheduledDate, tournamentRecords }: OvernightRestOfArgs) {
+  return warnOvernightRest
+    ? overnightRestWarningsFor({ scheduleDates: [scheduledDate], tournamentRecords })
+    : undefined;
+}
+
 export function proAutoSchedule({
   dailyLimitsWarnOnly,
   dailyLimitOverrides,
   matchUpDailyLimits,
+  overnightRestWarnings: warnOvernightRest = true,
   minCourtGridRows = 10,
   tournamentRecords,
   scheduledDate,
@@ -114,6 +131,7 @@ export function proAutoSchedule({
   notScheduled?: HydratedMatchUp[];
   scheduled?: HydratedMatchUp[];
   dailyLimitWarningMatchUpIds?: string[];
+  overnightRestWarnings?: { [scheduleDate: string]: OvernightRestWarning[] };
   overLimitMatchUpIds?: string[];
 } {
   if (!validMatchUps(matchUps)) return { error: INVALID_VALUES };
@@ -271,9 +289,11 @@ export function proAutoSchedule({
 
   // a warning is reported only for a placement the write made
   const warned = dailyLimitWarningMatchUpIds.filter((matchUpId) => !unwritten.has(matchUpId));
+  const overnightRestWarnings = overnightRestOf({ warnOvernightRest, scheduledDate, tournamentRecords });
   return {
     ...writeResult,
     dailyLimitWarningMatchUpIds: warned,
+    overnightRestWarnings,
     scheduled: written,
     overLimitMatchUpIds,
     notScheduled,

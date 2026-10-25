@@ -54,5 +54,7 @@ export function findMatchUpFormatTiming({
     recoveryMinutes: timing?.recoveryMinutes || defaultRecoveryMinutes,
     averageMinutes: timing?.averageMinutes || defaultAverageMinutes,
     typeChangeRecoveryMinutes: timing?.typeChangeRecoveryMinutes || timing?.recoveryMinutes || defaultRecoveryMinutes,
+    // minimum rest across a day boundary (category-dependent; undefined when no policy configures it: no rule)
+    overnightMinutes: timing?.overnightMinutes,
   };
 }

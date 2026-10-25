@@ -29,7 +29,7 @@ type CarryArgs = {
  * midnight books its participants on this date from 00:00 to the minute recovery ends, and its dependents may not
  * start before it. A matchUp whose recovery ends before midnight carries nothing, so a schedule that never crosses
  * midnight is planned as before. The minutes are the matchUp's own (its format and event), as a timed matchUp's
- * recovery is read (C1). The policy's overnight times are not added.
+ * recovery is read (C1). Overnight rest is warned, not held (CA 2026-10-25): `getOvernightRestWarnings`.
  */
 export function carryPastMidnight({
   individualParticipantProfiles,

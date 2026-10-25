@@ -1,4 +1,5 @@
 import { firstClassGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
+import { timingCategoryType } from '@Query/event/timingCategoryType';
 import { findExtension } from '@Acquire/findExtension';
 import { findPolicy } from '@Acquire/findPolicy';
 
@@ -24,7 +25,7 @@ export function getScheduleTiming({
 }: GetScheduleTimingArgs) {
   categoryName = categoryName ?? event?.category?.categoryName ?? event?.category?.ageCategoryCode;
 
-  categoryType = categoryType ?? event?.category?.categoryType ?? event?.category?.subType;
+  categoryType = categoryType ?? timingCategoryType(event?.category);
 
   // A caller-supplied scheduling policy wins over whatever is attached to the
   // record, matching the `policyDefinitions ?? appliedPolicies` idiom used

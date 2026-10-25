@@ -11,6 +11,7 @@ import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
 import { findMatchUpFormatTiming } from '@Acquire/findMatchUpFormatTiming';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
+import { timingCategoryType } from '@Query/event/timingCategoryType';
 import { extractDate, isValidDateString } from '@Tools/dateTime';
 import { isConvertableInteger, isPowerOf2 } from '@Tools/math';
 import { definedAttributes } from '@Tools/definedAttributes';
@@ -193,7 +194,7 @@ function roundMinutes(
   const { eventType, category } = event ?? {};
   const timing = findMatchUpFormatTiming({
     categoryName: category?.categoryName ?? category?.ageCategoryCode,
-    categoryType: category?.categoryType,
+    categoryType: timingCategoryType(category),
     tournamentId: round.tournamentId,
     eventId: round.eventId,
     tournamentRecords,
