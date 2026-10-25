@@ -1,10 +1,10 @@
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
-import { defined } from '@Tests/helpers/defined';
-import type { ResultType } from '@Types/factoryTypes';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
+import type { ResultType } from '@Types/factoryTypes';
+import { defined } from '@Tests/helpers/defined';
 import { it, expect, vi } from 'vitest';
 
 // constants

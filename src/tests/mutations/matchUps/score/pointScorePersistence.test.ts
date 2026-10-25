@@ -1,8 +1,8 @@
 import { reverseScore } from '@Assemblies/generators/score/reverseScore';
 import { validateScore } from '@Validators/validateScore';
-import { defined } from '@Tests/helpers/defined';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';
+import { defined } from '@Tests/helpers/defined';
 import { expect, describe, test } from 'vitest';
 
 // constants and types
