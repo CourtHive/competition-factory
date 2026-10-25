@@ -184,6 +184,14 @@ export interface AwardProfile extends AwardProfileScope {
    */
   groupOrderPoints?: Record<number, PositionValue>;
 
+  /**
+   * Round robin to elimination: a participant placed into the playoff without winning their group (a Lucky Loser
+   * Round Robin, filling a place a group winner could not take) earns playoff points only by winning a playoff match;
+   * if they lose their first, their group place scores (`groupOrderPoints`). ITF Juniors: an LLRR who loses the
+   * quarterfinal earns 2nd place points, and semifinal points or better by winning it.
+   */
+  luckyLoserRoundRobin?: boolean;
+
   /** Alternative: awards based on finishing round won/lost */
   finishingRound?: Record<number, { won?: PositionValue; lost?: PositionValue }>;
 

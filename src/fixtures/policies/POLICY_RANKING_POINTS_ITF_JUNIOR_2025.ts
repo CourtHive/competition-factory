@@ -3,8 +3,13 @@
  *
  * Source: 2025 ITF World Tennis Tour Juniors Regulations, Regulations 10–14 (Combined Junior Ranking) and
  * Regulation 31 (Allocation of Points, points tables). Kept so 2025 results can be scored as they were awarded;
- * the current policy is POLICY_RANKING_POINTS_ITF_JUNIOR (2026), which differs only in the ITF Junior Finals row
- * and adds a J60/J30 Round Robin to Elimination table.
+ * the current policy is POLICY_RANKING_POINTS_ITF_JUNIOR (2026), which adds a J60/J30 Round Robin to Elimination
+ * table.
+ *
+ * The ITF Junior Finals row is NOT the 2025 Regulations' (published 13 December 2024: 850/600/480/420/370/320/280/
+ * 240). The 2025 Finals awarded the winners 1000 points, "for the first time" (ITF, 2025 Finals media page and line-up
+ * article), which is the 2026 table's value, so the 2026 row is used (CA, 2026-10-25). Only the winner's value is
+ * confirmed for 2025; the 2025 Finals Special Regulations (published 28 March 2025) were not retrievable.
  *
  * Tournament Levels (mapped to factory levels):
  *   Level 1: Grand Slam & Youth Olympic Games
@@ -82,14 +87,14 @@ const juniorFinalsSingles: AwardProfile = {
   eventTypes: [SINGLES],
   finishingPositionPoints: { participationOrders: [2, 3] },
   finishingPositionRanges: {
-    1: 850,
-    2: 600,
-    3: 480,
-    4: 420,
-    5: 370,
-    6: 320,
-    7: 280,
-    8: 240,
+    1: 1000,
+    2: 700,
+    3: 550,
+    4: 490,
+    5: 420,
+    6: 360,
+    7: 320,
+    8: 260,
   },
 };
 

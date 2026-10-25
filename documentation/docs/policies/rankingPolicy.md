@@ -300,6 +300,10 @@ The 2026 ITF Junior J60/J30 format:
 A participant who earns points in more than one participation keeps the larger award, so a group winner is scored by
 the playoff. A group place is read only from a finished group (`groupOrder`, never a provisional order).
 
+`luckyLoserRoundRobin: true` covers a Lucky Loser Round Robin: a group runner-up placed into the playoff in place of a
+group winner. They earn playoff points only by winning a playoff match; if they lose their first, their group place
+scores instead. The ITF Juniors rule: an LLRR who loses the quarterfinal earns 2nd place points, not quarterfinal points.
+
 ## Position Value Resolution
 
 The keys in `finishingPositionRanges` are [accessors](/docs/concepts/finishing-positions#accessor) — each key equals `Math.max(finishingPositionRange)` for the corresponding draw round. See [Finishing Positions](/docs/concepts/finishing-positions) for how these values are computed from draw structures.

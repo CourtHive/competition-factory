@@ -12,6 +12,7 @@ import { describe, expect, it } from 'vitest';
 import {
   MAIN,
   PLAYOFF,
+  PLAY_OFF,
   QUALIFYING,
   ROUND_ROBIN_WITH_PLAYOFF,
   SINGLE_ELIMINATION,
@@ -40,7 +41,7 @@ const DOUBLES_TABLE: Record<number, number[]> = {
   9: [25, 13, 6, 3],
 };
 const JUNIOR_FINALS: Record<string, number[]> = {
-  '2025': [850, 600, 480, 420, 370, 320, 280, 240],
+  '2025': [1000, 700, 550, 490, 420, 360, 320, 260], // the 2025 Finals awarded the 2026 table (see the policy header)
   '2026': [1000, 700, 550, 490, 420, 360, 320, 260],
 };
 const ACCESSORS = [1, 2, 4, 8, 16, 32];
@@ -330,6 +331,33 @@ describe('ITF Junior points from a played draw', () => {
   });
 });
 
+describe('ITF Junior 2026 J60: a Lucky Loser Round Robin (Reg. 44 g)', () => {
+  const withoutRule = (() => {
+    const policy: any = structuredClone(POLICY_RANKING_POINTS_ITF_JUNIOR);
+    for (const profile of policy[POLICY_TYPE_RANKING_POINTS].awardProfiles) delete profile.luckyLoserRoundRobin;
+    return policy;
+  })();
+
+  it('loses the quarterfinal: earns 2nd place points (5), not quarterfinal points (10)', () => {
+    const { eventId, luckyLoserId } = drawWithLuckyLoser({ luckyLoserWinsQuarterfinal: false });
+    const pointsOf = (policyDefinitions: any) =>
+      eventPoints({ policyDefinitions, eventId, level: 8 }).find((a) => a.participantId === luckyLoserId)
+        ?.positionPoints;
+
+    expect(pointsOf(POLICY_RANKING_POINTS_ITF_JUNIOR)).toEqual(5);
+    // the contrast: without the rule the quarterfinal loss would score
+    expect(pointsOf(withoutRule)).toEqual(10);
+  });
+
+  it('wins the quarterfinal: earns semifinal points or better', () => {
+    const { eventId, luckyLoserId } = drawWithLuckyLoser({ luckyLoserWinsQuarterfinal: true });
+    const award = eventPoints({ policyDefinitions: POLICY_RANKING_POINTS_ITF_JUNIOR, eventId, level: 8 }).find(
+      (a) => a.participantId === luckyLoserId,
+    );
+    expect([60, 36, 18]).toContain(award?.positionPoints);
+  });
+});
+
 describe('ITF Junior combined ranking: doubles count at a quarter', () => {
   const aggregationRules = POLICY_RANKING_POINTS_ITF_JUNIOR[POLICY_TYPE_RANKING_POINTS].aggregationRules;
 
@@ -534,4 +562,65 @@ function groupPlaces(drawId: string): { participantId: string; groupOrder: numbe
     if (!group) return [];
     return [{ participantId: participant.participantId, groupOrder: group.groupOrder, winCount: group.winCount }];
   });
+}
+
+// A 2026 J60 round robin to elimination: 32 players in groups of four, the group winners into a quarterfinal
+// playoff. A group runner-up replaces the winner in the first playoff place as a Lucky Loser Round Robin, then the
+// playoff is played with that player winning or losing the quarterfinal.
+function drawWithLuckyLoser({ luckyLoserWinsQuarterfinal }: { luckyLoserWinsQuarterfinal: boolean }) {
+  const {
+    drawIds: [drawId],
+    eventIds: [eventId],
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [
+      {
+        drawSize: 32,
+        eventType: SINGLES,
+        drawType: ROUND_ROBIN_WITH_PLAYOFF,
+        structureOptions: { groupSize: 4, playoffGroups: [{ finishingPositions: [1], structureName: 'Playoff' }] },
+      },
+    ],
+    setState: true,
+  });
+  const scoreWith = (matchUpId: string, winningSide: number) => {
+    const { outcome } = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide });
+    const result: any = tournamentEngine.setMatchUpStatus({ matchUpId, drawId, outcome });
+    expect(result.success).toEqual(true);
+  };
+
+  for (const matchUp of drawMatchUps(drawId).filter((m) => m.stage !== PLAY_OFF)) scoreWith(matchUp.matchUpId, 1);
+
+  const structures = tournamentEngine.getEvent({ drawId }).drawDefinition.structures;
+  const groups = defined(
+    structures.find((s: any) => s.stage !== PLAY_OFF),
+    'round robin',
+  );
+  const playoff = defined(
+    structures.find((s: any) => s.stage === PLAY_OFF),
+    'playoff',
+  );
+  let result: any = tournamentEngine.automatedPlayoffPositioning({ drawId, structureId: groups.structureId });
+  expect(result.success).toEqual(true);
+
+  const luckyLoserId = defined(
+    groupPlaces(drawId).find((g) => g.groupOrder === 2),
+    'a group runner-up',
+  ).participantId;
+  const playoffSeat = { drawId, structureId: playoff.structureId, drawPosition: 1 };
+  result = tournamentEngine.removeDrawPositionAssignment(playoffSeat);
+  expect(result.success).toEqual(true);
+  result = tournamentEngine.luckyLoserDrawPositionAssignment({ ...playoffSeat, luckyLoserParticipantId: luckyLoserId });
+  expect(result.success).toEqual(true);
+
+  for (let pass = 0; pass < 4; pass++) {
+    const ready = drawMatchUps(drawId).filter((m) => m.stage === PLAY_OFF && !m.winningSide && m.readyToScore);
+    for (const matchUp of ready) {
+      const luckyLoserSide = matchUp.sides.find((side: any) => side.participantId === luckyLoserId)?.sideNumber;
+      if (!luckyLoserSide) scoreWith(matchUp.matchUpId, 1);
+      else scoreWith(matchUp.matchUpId, luckyLoserWinsQuarterfinal ? luckyLoserSide : 3 - luckyLoserSide);
+    }
+  }
+  expect(drawMatchUps(drawId).every((m) => m.winningSide)).toEqual(true);
+
+  return { eventId, luckyLoserId };
 }

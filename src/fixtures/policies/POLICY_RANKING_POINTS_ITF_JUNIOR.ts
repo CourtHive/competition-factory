@@ -31,8 +31,6 @@
  *
  * Not encoded:
  *   - International Team Competition points (per player-position win, best result only, best 8 teams)
- *   - J60/J30 Round Robin to Elimination: a Lucky Loser Round Robin (a 2nd place given a quarterfinal spot) who
- *     loses that quarterfinal earns 2nd place points under the regulations; here they earn quarterfinal points
  */
 
 import { MAIN, QUALIFYING, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
@@ -123,6 +121,9 @@ const roundRobinToEliminationSingles: AwardProfile = {
   eventTypes: [SINGLES],
   // No requireWinForPoints: it counts playoff wins only, and a group winner has already won a match (Reg. 31a ii)
   finishingPositionPoints: { participationOrders: [2] },
+  // A Lucky Loser Round Robin (a 2nd place given a quarterfinal place) who loses the quarterfinal earns 2nd place
+  // points; semifinal points or better by winning it (Reg. 44 g)
+  luckyLoserRoundRobin: true,
   finishingPositionRanges: {
     1: { level: { 8: 60, 9: 30 } },
     2: { level: { 8: 36, 9: 18 } },
