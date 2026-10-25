@@ -31,6 +31,7 @@
  */
 
 import { MAIN, QUALIFYING, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
+import type { AggregationRules, AwardProfile } from '@Types/rankingTypes';
 import { SINGLES, DOUBLES, TEAM_EVENT } from '@Constants/eventConstants';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { ATP } from '@Constants/pointsAuthorityConstants';
@@ -38,7 +39,7 @@ import { ATP } from '@Constants/pointsAuthorityConstants';
 // ─── Singles Main Draw Profiles ──────────────────────────────────────────────
 
 // ── Grand Slams (Level 1, 128-draw) ─────────────────────────────────────────
-const grandSlamSingles = {
+const grandSlamSingles: AwardProfile = {
   profileName: 'Grand Slam Singles',
   levels: [1],
   eventTypes: [SINGLES],
@@ -65,7 +66,7 @@ const grandSlamSingles = {
 //   Champion: 400 (SF) + 500 (F) = 900
 //   Finalist: 400 (SF) = 400
 //   SF losers: 0
-const atpFinalsSingles = {
+const atpFinalsSingles: AwardProfile = {
   profileName: 'ATP Finals Singles',
   levels: [2],
   drawTypes: [ROUND_ROBIN_WITH_PLAYOFF],
@@ -85,7 +86,7 @@ const atpFinalsSingles = {
 // ── ATP 1000 Singles (Levels 3-4) ───────────────────────────────────────────
 // L3 = 96-draw: R64=30, R128=10
 // L4 = 48/56-draw: R64=10, no R128
-const atp1000Singles = {
+const atp1000Singles: AwardProfile = {
   profileName: 'ATP 1000 Singles',
   levels: [3, 4],
   eventTypes: [SINGLES],
@@ -105,7 +106,7 @@ const atp1000Singles = {
 // ── ATP Tour 500 Singles (Levels 5-6) ───────────────────────────────────────
 // L5 = 48-draw: R32=25
 // L6 = 32-draw: no R32 points (first-round loss = 0)
-const atp500Singles = {
+const atp500Singles: AwardProfile = {
   profileName: 'ATP 500 Singles',
   levels: [5, 6],
   eventTypes: [SINGLES],
@@ -123,7 +124,7 @@ const atp500Singles = {
 // ── ATP Tour 250 Singles (Levels 7-8) ───────────────────────────────────────
 // L7 = 48-draw: R32=13
 // L8 = 32-draw: no R32 points (first-round loss = 0)
-const atp250Singles = {
+const atp250Singles: AwardProfile = {
   profileName: 'ATP 250 Singles',
   levels: [7, 8],
   eventTypes: [SINGLES],
@@ -140,7 +141,7 @@ const atp250Singles = {
 
 // ── Challenger & ITF Singles (Levels 9-15, 32-draw) ─────────────────────────
 // No points for first-round loss (R32) at any of these levels.
-const challengerItfSingles = {
+const challengerItfSingles: AwardProfile = {
   profileName: 'Challenger & ITF Singles',
   levels: [9, 10, 11, 12, 13, 14, 15],
   eventTypes: [SINGLES],
@@ -161,7 +162,7 @@ const challengerItfSingles = {
 // Q3 = final round qualifying loss = 16 pts
 // Q2 = second round qualifying loss = 8 pts
 // Q1 = first round qualifying loss = 0 pts
-const grandSlamQualifyingSingles = {
+const grandSlamQualifyingSingles: AwardProfile = {
   profileName: 'Grand Slam Qualifying Singles',
   levels: [1],
   eventTypes: [SINGLES],
@@ -184,7 +185,7 @@ const grandSlamQualifyingSingles = {
 // L8 (ATP 250 32-draw): Q=13, FRQ=7
 // L9-13 (Challengers): see level-keyed values
 // L14-15 (ITF): no ATP qualifying points (ITF qualifying handled by ITF policy)
-const standardQualifyingSingles = {
+const standardQualifyingSingles: AwardProfile = {
   profileName: 'Qualifying Singles',
   levels: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
   eventTypes: [SINGLES],
@@ -198,7 +199,7 @@ const standardQualifyingSingles = {
 // ─── Doubles Main Draw Profiles ──────────────────────────────────────────────
 
 // ── Grand Slam Doubles (Level 1, 64-draw) ───────────────────────────────────
-const grandSlamDoubles = {
+const grandSlamDoubles: AwardProfile = {
   profileName: 'Grand Slam Doubles',
   levels: [1],
   eventTypes: [DOUBLES],
@@ -215,7 +216,7 @@ const grandSlamDoubles = {
 
 // ── ATP Finals Doubles (Level 2, Round Robin with Playoff) ──────────────────
 // Same scoring structure as singles: 200/RR win, 400 SF, 500 F
-const atpFinalsDoubles = {
+const atpFinalsDoubles: AwardProfile = {
   profileName: 'ATP Finals Doubles',
   levels: [2],
   drawTypes: [ROUND_ROBIN_WITH_PLAYOFF],
@@ -234,7 +235,7 @@ const atpFinalsDoubles = {
 
 // ── ATP 1000 Doubles (Levels 3-4, 24-32 draw) ──────────────────────────────
 // Same points for both 32-draw and 24/28-draw ATP 1000 doubles
-const atp1000Doubles = {
+const atp1000Doubles: AwardProfile = {
   profileName: 'ATP 1000 Doubles',
   levels: [3, 4],
   eventTypes: [DOUBLES],
@@ -249,7 +250,7 @@ const atp1000Doubles = {
 };
 
 // ── ATP Tour 500 Doubles (Levels 5-6, 16-draw) ─────────────────────────────
-const atp500Doubles = {
+const atp500Doubles: AwardProfile = {
   profileName: 'ATP 500 Doubles',
   levels: [5, 6],
   eventTypes: [DOUBLES],
@@ -265,7 +266,7 @@ const atp500Doubles = {
 // ── ATP 250 Doubles (Levels 7-8) ────────────────────────────────────────────
 // L7 = 24-draw: has R16=20
 // L8 = 16-draw: no R16 points
-const atp250Doubles = {
+const atp250Doubles: AwardProfile = {
   profileName: 'ATP 250 Doubles',
   levels: [7, 8],
   eventTypes: [DOUBLES],
@@ -280,7 +281,7 @@ const atp250Doubles = {
 };
 
 // ── Challenger & ITF Doubles (Levels 9-15) ──────────────────────────────────
-const challengerItfDoubles = {
+const challengerItfDoubles: AwardProfile = {
   profileName: 'Challenger & ITF Doubles',
   levels: [9, 10, 11, 12, 13, 14, 15],
   eventTypes: [DOUBLES],
@@ -299,7 +300,7 @@ const challengerItfDoubles = {
 // United Cup awards 500 ATP ranking points to the winning team's players.
 // Full details in ATP Rulebook Section 4.03 G (not available in this source).
 // For now, modeled as a simplified team event.
-const unitedCup = {
+const unitedCup: AwardProfile = {
   profileName: 'United Cup',
   eventTypes: [TEAM_EVENT],
   finishingPositionRanges: {
@@ -316,7 +317,7 @@ const unitedCup = {
 // Mandatory counting: Grand Slam and ATP 1000 results always count even if
 // they are worse than optional results. If a player doesn't play a mandatory
 // event, a zero-point placeholder effectively counts toward their 19 tournaments.
-const aggregationRules = {
+const aggregationRules: AggregationRules = {
   rollingPeriodDays: 364, // 52 weeks
   separateByGender: false, // ATP is men's tour only
   perCategory: false,
@@ -354,7 +355,7 @@ const aggregationRules = {
  *   5. Challenger & ITF main draw (broad levels, catch-all)
  *   6. United Cup (team event catch-all)
  */
-const awardProfiles = [
+const awardProfiles: AwardProfile[] = [
   // ATP Finals (most specific: drawType + level)
   atpFinalsSingles,
   atpFinalsDoubles,

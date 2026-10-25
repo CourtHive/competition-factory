@@ -444,7 +444,7 @@ describe('getParticipantTimeItem', () => {
       itemType: 'TEST',
     });
 
-    expect(result.timeItem.itemValue).toEqual('test');
+    expect(result.timeItem?.itemValue).toEqual('test');
   });
 
   it('filters by itemSubTypes', () => {
@@ -465,7 +465,7 @@ describe('getParticipantTimeItem', () => {
       itemSubTypes: ['A'],
     });
 
-    expect(result.timeItem.itemValue).toEqual('typeA');
+    expect(result.timeItem?.itemValue).toEqual('typeA');
   });
 
   it('returns previousItems when requested', () => {
@@ -486,7 +486,7 @@ describe('getParticipantTimeItem', () => {
       returnPreviousValues: true,
     });
 
-    expect(result.timeItem.itemValue).toEqual('v2');
+    expect(result.timeItem?.itemValue).toEqual('v2');
     expect(result.previousItems).toHaveLength(1);
   });
 });

@@ -1,4 +1,5 @@
 import { generateRankingList } from '@Query/scales/generateRankingList';
+import type { AggregationRules } from '@Types/rankingTypes';
 import { describe, expect, it } from 'vitest';
 
 // types
@@ -356,7 +357,7 @@ describe('generateRankingList — crossCategory', () => {
     ];
 
     // Tennis Canada-style: no rules, age-eligible filter via categoryFilter at call site.
-    const aggregationRules = {
+    const aggregationRules: AggregationRules = {
       countingBuckets: [{ bucketName: 'singles', pointComponents: ['positionPoints'], bestOfCount: 5 }],
     };
     const pointPoolModel: PointPoolModel = 'shared';

@@ -23,6 +23,7 @@
  */
 
 import { QUALIFYING, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
+import type { AggregationRules, AwardProfile } from '@Types/rankingTypes';
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { SINGLES, DOUBLES } from '@Constants/eventConstants';
 import { ITF } from '@Constants/pointsAuthorityConstants';
@@ -44,7 +45,7 @@ import { ITF } from '@Constants/pointsAuthorityConstants';
 //   $25,000    (L2): Q=3, FRQ=1
 //   $15,000 +H (L3): Q=3, FRQ=1
 //   $15,000    (L4): Q=2, FRQ=1
-const qualifyingSingles = {
+const qualifyingSingles: AwardProfile = {
   profileName: 'ITF WTT Qualifying Singles',
   levels: [1, 2, 3, 4],
   drawTypes: [SINGLE_ELIMINATION],
@@ -60,7 +61,7 @@ const qualifyingSingles = {
 // Per the ITF rules: "In Doubles competitions at ITF tournaments, the same points
 // are awarded between Quarter Final and Winner rounds as in Singles."
 // In the 2020 qualifying-only system, doubles qualifying follows the same structure.
-const qualifyingDoubles = {
+const qualifyingDoubles: AwardProfile = {
   profileName: 'ITF WTT Qualifying Doubles',
   levels: [1, 2, 3, 4],
   drawTypes: [SINGLE_ELIMINATION],
@@ -92,7 +93,7 @@ const qualifyingDoubles = {
 
 // ITF World Tennis Ranking: best 14 results from rolling 52 weeks.
 // Ranking lists are separate by gender but not by category.
-const aggregationRules = {
+const aggregationRules: AggregationRules = {
   rollingPeriodDays: 364, // 52 weeks
   separateByGender: true,
   perCategory: false,
@@ -101,7 +102,7 @@ const aggregationRules = {
 
 // ─── Assembled Policy ────────────────────────────────────────────────────────
 
-const awardProfiles = [qualifyingSingles, qualifyingDoubles];
+const awardProfiles: AwardProfile[] = [qualifyingSingles, qualifyingDoubles];
 
 export const POLICY_RANKING_POINTS_ITF_WTT = {
   [POLICY_TYPE_RANKING_POINTS]: {

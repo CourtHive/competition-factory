@@ -1,5 +1,6 @@
 import { POLICY_RANKING_POINTS_ATP } from '@Fixtures/policies/POLICY_RANKING_POINTS_ATP';
 import { getAwardProfile } from '@Query/scales/getAwardProfile';
+import { defined } from '@Tests/helpers/defined';
 import scaleEngine from '@Engines/scaleEngine';
 import { describe, expect, it } from 'vitest';
 import { mocksEngine } from '../../..';
@@ -45,9 +46,9 @@ describe('ATP 2026 Policy Structure', () => {
     expect(aggregationRules.rollingPeriodDays).toEqual(364);
     expect(aggregationRules.separateByGender).toEqual(false);
     expect(aggregationRules.perCategory).toEqual(false);
-    expect(aggregationRules.countingBuckets.length).toEqual(2);
+    expect(aggregationRules.countingBuckets?.length).toEqual(2);
 
-    const singles = aggregationRules.countingBuckets[0];
+    const singles = defined(aggregationRules.countingBuckets, 'countingBuckets')[0];
     expect(singles.bucketName).toEqual('Singles');
     expect(singles.bestOfCount).toEqual(19);
     expect(singles.eventTypes).toEqual([SINGLES]);
@@ -55,7 +56,7 @@ describe('ATP 2026 Policy Structure', () => {
     expect(singles.mandatoryRules?.[0].ruleName).toEqual('Grand Slams');
     expect(singles.mandatoryRules?.[1].ruleName).toEqual('ATP 1000');
 
-    const doubles = aggregationRules.countingBuckets[1];
+    const doubles = defined(aggregationRules.countingBuckets, 'countingBuckets')[1];
     expect(doubles.bucketName).toEqual('Doubles');
     expect(doubles.bestOfCount).toEqual(18);
     expect(doubles.eventTypes).toEqual([DOUBLES]);

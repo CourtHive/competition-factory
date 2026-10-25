@@ -317,6 +317,7 @@ describe('generateRankingList — branch coverage', () => {
 
       const result = generateRankingList({
         pointAwards: awards,
+        // @ts-expect-error -- deliberately not a TiebreakCriterion: this test is about the runtime fallback for one
         aggregationRules: { tiebreakCriteria: ['unknownCriterion'] },
       });
 

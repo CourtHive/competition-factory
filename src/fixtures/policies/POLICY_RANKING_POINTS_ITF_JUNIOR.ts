@@ -25,11 +25,12 @@ import { MAIN, QUALIFYING, ROUND_ROBIN } from '@Constants/drawDefinitionConstant
 import { POLICY_TYPE_RANKING_POINTS } from '@Constants/policyConstants';
 import { ITF_JUNIOR } from '@Constants/pointsAuthorityConstants';
 import { SINGLES, DOUBLES } from '@Constants/eventConstants';
+import type { AwardProfile } from '@Types/rankingTypes';
 
 // ─── Singles Main Draw Profiles ──────────────────────────────────────────────
 
 // ── Grand Slam & Youth Olympics (Level 1, 128-draw) ─────────────────────────
-const grandSlamSingles = {
+const grandSlamSingles: AwardProfile = {
   profileName: 'Grand Slam Singles',
   levels: [1],
   eventTypes: [SINGLES],
@@ -46,7 +47,7 @@ const grandSlamSingles = {
 
 // ── Junior Masters (Level 2, Round Robin, 8 players) ────────────────────────
 // Positions 1st through 8th based on final RR standings
-const mastersSingles = {
+const mastersSingles: AwardProfile = {
   profileName: 'Junior Masters Singles',
   levels: [2],
   drawTypes: [ROUND_ROBIN],
@@ -64,7 +65,7 @@ const mastersSingles = {
 };
 
 // ── European Championships (Level 3) ────────────────────────────────────────
-const europeanChampSingles = {
+const europeanChampSingles: AwardProfile = {
   profileName: 'European Championships Singles',
   levels: [3],
   eventTypes: [SINGLES],
@@ -80,7 +81,7 @@ const europeanChampSingles = {
 };
 
 // ── Grade A through J30 (Levels 4-9) ────────────────────────────────────────
-const standardSingles = {
+const standardSingles: AwardProfile = {
   profileName: 'Standard Singles',
   levels: [4, 5, 6, 7, 8, 9],
   eventTypes: [SINGLES],
@@ -98,7 +99,7 @@ const standardSingles = {
 // ─── Singles Qualifying Profiles ─────────────────────────────────────────────
 
 // ── Grand Slam Qualifying (Level 1, 2 rounds) ──────────────────────────────
-const grandSlamQualifyingSingles = {
+const grandSlamQualifyingSingles: AwardProfile = {
   profileName: 'Grand Slam Qualifying Singles',
   levels: [1],
   eventTypes: [SINGLES],
@@ -110,7 +111,7 @@ const grandSlamQualifyingSingles = {
 };
 
 // ── Standard Qualifying (Levels 4-9, 2 rounds) ─────────────────────────────
-const standardQualifyingSingles = {
+const standardQualifyingSingles: AwardProfile = {
   profileName: 'Qualifying Singles',
   levels: [4, 5, 6, 7, 8, 9],
   eventTypes: [SINGLES],
@@ -124,7 +125,7 @@ const standardQualifyingSingles = {
 // ─── Doubles Profiles ────────────────────────────────────────────────────────
 
 // ── Grand Slam Doubles (Level 1) ────────────────────────────────────────────
-const grandSlamDoubles = {
+const grandSlamDoubles: AwardProfile = {
   profileName: 'Grand Slam Doubles',
   levels: [1],
   eventTypes: [DOUBLES],
@@ -139,7 +140,7 @@ const grandSlamDoubles = {
 };
 
 // ── European Championships Doubles (Level 3) ────────────────────────────────
-const europeanChampDoubles = {
+const europeanChampDoubles: AwardProfile = {
   profileName: 'European Championships Doubles',
   levels: [3],
   eventTypes: [DOUBLES],
@@ -154,7 +155,7 @@ const europeanChampDoubles = {
 };
 
 // ── Grade A through J30 Doubles (Levels 4-9) ────────────────────────────────
-const standardDoubles = {
+const standardDoubles: AwardProfile = {
   profileName: 'Standard Doubles',
   levels: [4, 5, 6, 7, 8, 9],
   eventTypes: [DOUBLES],
@@ -170,6 +171,9 @@ const standardDoubles = {
 
 // ─── Aggregation Rules ───────────────────────────────────────────────────────
 
+// Not annotated `AggregationRules`: the Doubles bucket's `weight: 0.25` (ITF's combined ranking counts doubles at
+// 25%) is not a CountingBucket field, and generateRankingList does not read it, so the weighting is not applied.
+// Tracked in Mentat TASKS.md; annotating would mean dropping the rule or typing a field the engine ignores.
 const aggregationRules = {
   rollingPeriodDays: 364, // 52 weeks
   separateByGender: true,
@@ -194,7 +198,7 @@ const aggregationRules = {
 
 // ─── Assembled Policy ────────────────────────────────────────────────────────
 
-const awardProfiles = [
+const awardProfiles: AwardProfile[] = [
   // Masters (most specific: drawType + level)
   mastersSingles,
 

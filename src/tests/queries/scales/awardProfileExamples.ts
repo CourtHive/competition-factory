@@ -1,3 +1,4 @@
+import type { AwardProfile } from '@Types/rankingTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
 // prettier-ignore
@@ -15,7 +16,7 @@ export const awardProfileFlights = {
           { flight: 1, v: 300 },
           { f: 2, v: 195 },
           { f: 3, v: 150 },
-          { f: 3, v: 105 },
+          { f: 4, v: 105 },
         ],
       },
     },
@@ -28,7 +29,7 @@ export const awardProfileFlights = {
     participationOrders: [2, 3, 4, 5],
     level: { 4: { f: [84, 54, 42, 29] }, 5: { f: [47, 30, 23, 16] }},
   },
-};
+} satisfies AwardProfile;
 
 export const awardProfilePercentageFlights = {
   dateRanges: [{ startDate: undefined, endDate: undefined }], // optional
@@ -48,7 +49,7 @@ export const awardProfilePercentageFlights = {
     participationOrders: [2, 3, 4, 5],
     level: { 4: 84, 5: 47 },
   },
-};
+} satisfies AwardProfile;
 
 export const awardProfileExpandedLevels = {
   dateRanges: [{ startDate: undefined, endDate: undefined }], // optional
@@ -72,11 +73,11 @@ export const awardProfileExpandedLevels = {
     128: [{ level: { 1: 120, 2: 66, 3: 36, 4: 22, 5: 12 } }],
     256: [{ level: { 1: 90, 2: 33, 3: 18, 4: 11, 5: 6 } }],
   },
-};
+} satisfies AwardProfile;
 
 export const awardProfileLevels = {
   dateRanges: [{ startDate: undefined, endDate: undefined }], // optional
-  maxlevel: 5, // this awardProfile is only valid for levels up to 5
+  maxLevel: 5, // this awardProfile is only valid for levels up to 5
   perWinPoints: {
     // this can also be an array so that drawSize can be used to differentiate (see above example)
     participationOrders: [2, 3, 4, 5],
@@ -95,7 +96,7 @@ export const awardProfileLevels = {
     128: { level: [120, 66, 36, 22, 12] },
     256: { level: [90, 33, 18, 11, 6] },
   },
-};
+} satisfies AwardProfile;
 
 export const awardProfileLevelLines = {
   dateRanges: [{ startDate: undefined, endDate: undefined }], // optional
@@ -111,7 +112,7 @@ export const awardProfileLevelLines = {
       7: { line: [14, 12, 10, 9, 7, 6], limit: 4 },
     },
   },
-};
+} satisfies AwardProfile;
 
 export const awardProfileThresholds = {
   dateRanges: [{ startDate: undefined, endDate: undefined }], // optional
@@ -138,4 +139,4 @@ export const awardProfileThresholds = {
     128: [{ value: 120 }],
     256: [{ value: 90 }],
   },
-};
+} satisfies AwardProfile;

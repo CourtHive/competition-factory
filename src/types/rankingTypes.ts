@@ -232,8 +232,11 @@ export type PositionValue = number | PositionValueObject | PositionValueObject[]
 export interface PositionValueObject {
   value?: number;
 
-  /** Level-keyed lookup. Record<level, value> or array indexed by level-1. */
-  level?: Record<number, number | FlightValues> | (number | FlightValues)[];
+  /**
+   * Level-keyed lookup. Record<level, value> or array indexed by level-1. A level's value may also be a list of
+   * per-flight entries (`[{ flight: 1, value: 300 }, { f: 2, v: 195 }]`), which getAwardPoints matches by flightNumber.
+   */
+  level?: Record<number, number | FlightValues | FlightValueEntry[]> | (number | FlightValues | FlightValueEntry[])[];
 
   /** Flight-keyed lookup. Array indexed by flightNumber-1. */
   flights?: number[];
@@ -256,6 +259,14 @@ export interface PositionValueObject {
   /** For finishingRound: separate won/lost values */
   won?: number | PositionValueObject;
   lost?: number | PositionValueObject;
+}
+
+/** One flight's points in a level's list form. `f` and `v` are the short forms getAwardPoints also reads. */
+export interface FlightValueEntry {
+  flight?: number;
+  value?: number;
+  f?: number;
+  v?: number;
 }
 
 /** Flight-keyed values (typically arrays indexed by flightNumber-1) */

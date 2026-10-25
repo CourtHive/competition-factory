@@ -1,5 +1,6 @@
 import { POLICY_RANKING_POINTS_USTA_JUNIOR_2025 } from '@Tests/fixtures/policies/POLICY_RANKING_POINTS_USTA_JUNIOR_2025';
 import { getAwardProfile } from '@Query/scales/getAwardProfile';
+import { defined } from '@Tests/helpers/defined';
 import scaleEngine from '@Engines/scaleEngine';
 import { describe, expect, it } from 'vitest';
 import { mocksEngine } from '../../..';
@@ -58,7 +59,7 @@ describe('USTA Junior 2025 Policy Structure', () => {
   });
 
   it('has 3 counting buckets', () => {
-    const buckets = policy.aggregationRules.countingBuckets;
+    const buckets = defined(policy.aggregationRules.countingBuckets, 'countingBuckets');
     expect(buckets.length).toEqual(3);
     expect(buckets[0].bucketName).toEqual('Singles');
     expect(buckets[0].bestOfCount).toEqual(6);
