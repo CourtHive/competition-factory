@@ -44,8 +44,8 @@ import {
 
 // constants and types
 import type { BuildViewArgs, OutcomeRequest, OutcomeView, Reservation, ThroughBye } from './types';
+import { FIRST_MATCHUP, LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { BYE, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { FIRST_MATCHUP, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import type { MatchUpsMap } from '@Types/factoryTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
@@ -389,6 +389,7 @@ function swapPath({
       (candidate.drawPositions?.includes(positionA) || (!!positionB && candidate.drawPositions?.includes(positionB))),
   );
   return {
+    relabels: swapRelabels({ drawDefinition, structureId, inContextMatchUp, winningSide: winningSide as 1 | 2 }),
     positionA,
     positionB,
     pathMatchUpIds: path.map(({ matchUpId }) => matchUpId),
@@ -398,6 +399,51 @@ function swapPath({
     ),
     linkedOut: (drawDefinition.links ?? []).some((link) => link.source?.structureId === structureId),
   };
+}
+
+/**
+ * A swap's relabel in the structures this one feeds, as v1's `swapWinnerLoser` relabels the structures downstream:
+ * each seat the old winner holds takes the old loser and each the old loser holds takes the old winner, each guarded on
+ * the id it writes. Planned only where the structure's links out carry no condition (no FIRST_MATCHUP feed to
+ * reconcile), it is fed by no loser link (no origin structure to exchange re-entries in) and by no winner link but one
+ * back from a structure it feeds, and every other structure either participant stands in is one of those links'
+ * targets; otherwise undefined.
+ */
+function swapRelabels({
+  inContextMatchUp,
+  drawDefinition,
+  structureId,
+  winningSide,
+}: {
+  inContextMatchUp: HydratedMatchUp;
+  drawDefinition: DrawDefinition;
+  structureId: string;
+  winningSide: 1 | 2;
+}): { structureId: string; drawPosition: number; participantId: string }[] | undefined {
+  const links = drawDefinition.links ?? [];
+  const out = links.filter((link) => link.source?.structureId === structureId);
+  if (out.some((link) => link.linkCondition)) return undefined;
+  const targets = new Set(out.map((link) => link.target?.structureId));
+  // fed by a LOSER link, the structure is an origin's target, whose re-entries v1 exchanges by origin positions: v1's.
+  // A WINNER link back from a structure this one feeds (DOUBLE_ELIMINATION's Backdraw champion into the Main final)
+  // re-enters on the participant's own position here, which the path exchange already covers
+  const fedBy = links.filter((link) => link.target?.structureId === structureId);
+  if (fedBy.some((link) => link.linkType === LOSER || !targets.has(link.source?.structureId))) return undefined;
+  const winnerId = inContextMatchUp.sides?.find((side) => side.sideNumber === winningSide)?.participantId;
+  const loserId = inContextMatchUp.sides?.find((side) => side.sideNumber === 3 - winningSide)?.participantId;
+  const relabels: { structureId: string; drawPosition: number; participantId: string }[] = [];
+  for (const structure of drawDefinition.structures ?? []) {
+    if (structure.structureId === structureId) continue;
+    for (const assignment of positionAssignmentsOf(structure) ?? []) {
+      const held = assignment.participantId;
+      if (!held || (held !== winnerId && held !== loserId)) continue;
+      if (!targets.has(structure.structureId)) return undefined;
+      const participantId = held === winnerId ? loserId : winnerId;
+      if (participantId)
+        relabels.push({ structureId: structure.structureId, drawPosition: assignment.drawPosition, participantId });
+    }
+  }
+  return relabels;
 }
 
 /** a stored matchUp's status codes and whether it holds exit provenance, as the write that re-derives them reads them */

@@ -199,6 +199,13 @@ export type OutcomeView = {
       pathMatchUpIds: string[];
       pathCarriesExit: boolean;
       linkedOut: boolean;
+      /**
+       * the relabel downstream, when it is plannable: the seats in other structures whose occupant changes identity
+       * (the old winner's becomes the old loser's and the reverse), every such structure a plain loser link's target from
+       * this one. Undefined when the structure links out otherwise, is fed by a link itself, or a participant stands
+       * anywhere else
+       */
+      relabels?: { structureId: string; drawPosition: number; participantId: string }[];
     };
     /**
      * P51 group 2: the loserMatchUp is a single exit already decided for the seat the loser arrives in, with a result

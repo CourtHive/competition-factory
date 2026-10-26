@@ -312,6 +312,29 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'DOUBLE_ELIMINATION (S4): a swap relabels the Backdraw seat, its played result kept',
+    {
+      drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
+      setup: [
+        { target: R1(1, 'Main'), outcome: won(1) },
+        { target: R1(2, 'Main'), outcome: won(1) },
+        { target: R1(3, 'Main'), outcome: won(1) },
+        { target: R1(4, 'Main'), outcome: won(1) },
+        { target: R1(1, 'Backdraw'), outcome: won(1) },
+        { target: R1(2, 'Backdraw'), outcome: won(1) },
+      ],
+      steps: [{ target: R1(1, 'Main'), outcome: won(2), params: { allowChangePropagation: true } }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S4): a swap relabels the consolation seat of the loser',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(2, 'Main'), outcome: won(2) }],
+      steps: [{ target: R1(2, 'Main'), outcome: won(1), params: { allowChangePropagation: true } }],
+    },
+  ],
+  [
     'DOUBLE_ELIMINATION: a Main first-round result sends the winner on and the loser into the Backdraw',
     { drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION }, steps: [{ target: R1(1, 'Main'), outcome: won(1) }] },
   ],
