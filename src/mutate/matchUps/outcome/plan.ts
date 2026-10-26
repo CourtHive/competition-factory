@@ -81,8 +81,9 @@ function plainLoserReason(view: OutcomeView, direction: DirectionPlan): AbstainR
   if (!targets.loserStructureId || !targets.loserTargetDrawPosition || !targets.loserTargetSeat?.free) return 'loser';
   // v1's `propagateLoserSeed` writes a seeded loser's seed into the structure they are placed in: not an op yet
   if (loser.participantId && targets.seededParticipantIds?.includes(loser.participantId)) return 'loser';
-  if (targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit || targets.loserTargetSeat.opponentBye)
-    return 'cascade';
+  if (targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit) return 'cascade';
+  // opposite a BYE the loser goes on at once: planned when the matchUp they go on into is clean (`loserThroughBye`)
+  if (targets.loserTargetSeat.opponentBye && !targets.loserThroughBye) return 'cascade';
   return undefined;
 }
 
@@ -306,6 +307,15 @@ export function planOutcome(args: {
           },
         ]
       : [];
+  // a loser placed opposite a BYE goes on through it: their position joins the next matchUp, which is stamped
+  const through =
+    loser?.arrives && view.targets.loserTargetSeat?.opponentBye ? view.targets.loserThroughBye : undefined;
+  const throughBye: OutcomeOp[] = through
+    ? [
+        { op: 'setMatchUpDrawPositions', matchUpId: through.matchUpId, drawPositions: through.drawPositions },
+        { op: 'stampUpdatedAt', entity: 'matchUp', id: through.matchUpId },
+      ]
+    : [];
   // a kept-out loser's BYE on the seat the link feeds (v1's `directLoser`), unless a reservation placed it already
   const keptOut = loser?.bye && !loser.arrives && !view.targets.loserTargetSeat?.bye ? loser.bye : undefined;
   const keptOutBye = keptOut && loserMatchUpId ? seatBye({ ...keptOut, matchUpId: loserMatchUpId }) : [];
@@ -327,6 +337,7 @@ export function planOutcome(args: {
     : [];
   ops.push(
     ...seated,
+    ...throughBye,
     ...structureStamps(seated, structureId),
     ...tally,
     // the top-level structure: a round robin group's container, as v1 stamps it

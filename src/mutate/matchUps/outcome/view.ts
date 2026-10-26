@@ -311,6 +311,45 @@ function winnerTarget(
   };
 }
 
+/**
+ * THE MATCHUP A LOSER PLACED OPPOSITE A BYE GOES ON INTO, as v1 sends them (`advanceIntoWinnerMatchUp`): their position joins
+ * the BYE matchUp's winner matchUp in the same structure. Planned only for a clean arrival there: the next matchUp is
+ * `TO_BE_PLAYED`, holds no BYE, exit, carry, provenance or result, has no earlier advance of the BYE's position to
+ * replace, and does not then feed a FIRST_MATCHUP reservation. Undefined otherwise (a cascade v1 runs).
+ */
+function loserThroughBye(
+  loserMatchUp: HydratedMatchUp | undefined,
+  drawPosition: number | undefined,
+  draw: DrawContext,
+): OutcomeView['targets']['loserThroughBye'] {
+  if (!loserMatchUp || !drawPosition || loserMatchUp.matchUpStatus !== BYE) return undefined;
+  const { targetMatchUps, targetLinks } = positionTargets({ ...draw, matchUpId: loserMatchUp.matchUpId }) ?? {};
+  const next = targetMatchUps?.winnerMatchUp;
+  if (!next || targetLinks?.winnerTargetLink || next.structureId !== loserMatchUp.structureId) return undefined;
+  const target = winnerTarget(next, loserMatchUp.matchUpId, draw);
+  if (
+    !target ||
+    target.matchUpStatus !== TO_BE_PLAYED ||
+    target.hasBye ||
+    target.carriesExit ||
+    target.carriedStatuses.length ||
+    target.holdsResult ||
+    Object.keys(next.sideExitProvenance ?? {}).length
+  )
+    return undefined;
+  // the loser's own position may stand there already, advanced structurally while their seat was empty: they occupy
+  // it, and v1 announces the matchUp. The BYE's position standing there is an earlier advance v1 replaces: not planned
+  const byePositions = (loserMatchUp.drawPositions ?? []).filter((position) => position && position !== drawPosition);
+  if (target.drawPositions.some((position) => byePositions.includes(position))) return undefined;
+  const drawPositions = [...new Set([...target.drawPositions, drawPosition])].sort((a, b) => a - b);
+  if (drawPositions.length > 2) return undefined;
+  if (drawPositions.length === 2) {
+    const onward = positionTargets({ ...draw, matchUpId: next.matchUpId })?.targetLinks?.loserTargetLink;
+    if (onward?.linkCondition === FIRST_MATCHUP) return undefined;
+  }
+  return { matchUpId: next.matchUpId, drawPositions };
+}
+
 /** the stored assignment a loser link feeds: free (no participant, no BYE), or what holds it */
 function loserTargetSeat(
   drawDefinition: DrawDefinition,
@@ -876,6 +915,11 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         targetData?.targetMatchUps?.loserMatchUp?.structureId,
         targetData?.targetMatchUps?.loserTargetDrawPosition,
         targetData?.targetMatchUps?.loserMatchUp?.drawPositions,
+      ),
+      loserThroughBye: loserThroughBye(
+        targetData?.targetMatchUps?.loserMatchUp,
+        targetData?.targetMatchUps?.loserTargetDrawPosition,
+        draw,
       ),
       seededParticipantIds: (structure?.seedAssignments ?? []).flatMap(({ participantId }) =>
         participantId ? [participantId] : [],
