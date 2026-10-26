@@ -253,7 +253,7 @@ function swapReason(view: OutcomeView, write?: MatchUpWrite): AbstainReason | un
   if (!write?.winningSide || write.matchUpStatus !== COMPLETED || view.existing.matchUpStatus !== COMPLETED)
     return 'route';
   if (!swap) return 'route';
-  if (swap.linkedOut) return 'link';
+  if (swap.linkedOut && !swap.relabels) return 'link';
   if (swap.pathCarriesExit) return 'cascade';
   return undefined;
 }
@@ -456,10 +456,13 @@ function swapOps(view: OutcomeView, route: Route | undefined): OutcomeOp[] {
   const swap = view.targets.swap;
   const structureId = view.targets.source.structureId;
   if (route !== 'swap' || !swap || !structureId) return [];
-  return swap.pathMatchUpIds.flatMap((matchUpId): OutcomeOp[] => [
-    { op: 'exchangeDrawPositions', matchUpId, structureId, positionA: swap.positionA, positionB: swap.positionB },
-    { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
-  ]);
+  return [
+    ...swap.pathMatchUpIds.flatMap((matchUpId): OutcomeOp[] => [
+      { op: 'exchangeDrawPositions', matchUpId, structureId, positionA: swap.positionA, positionB: swap.positionB },
+      { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
+    ]),
+    ...(swap.relabels ?? []).map((relabel): OutcomeOp => ({ op: 'relabelPosition', ...relabel })),
+  ];
 }
 
 /** the direction whose placements are written: none for a re-entered winner, who stands where the first entry put them */

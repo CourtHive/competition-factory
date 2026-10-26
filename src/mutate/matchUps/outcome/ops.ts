@@ -83,6 +83,16 @@ export type OutcomeOp =
       positionB?: number;
     }
   | {
+      op: 'relabelPosition';
+      /**
+       * a swap's relabel downstream (S4): the seat's occupant changes identity, nothing else; v1 announces and stamps
+       * nothing for it (`swapWinnerLoser`)
+       */
+      structureId: string;
+      drawPosition: number;
+      participantId: string;
+    }
+  | {
       op: 'clearPosition';
       /** a loser taken back out of the structure a link placed them in (S4): their seat emptied */
       structureId: string;
@@ -128,6 +138,7 @@ export type OutcomeOpName =
   | 'setMatchUpResult'
   | 'setMatchUpDrawPositions'
   | 'exchangeDrawPositions'
+  | 'relabelPosition'
   | 'assignPosition'
   | 'clearPosition'
   | 'setMatchUpStatusCodes'
@@ -249,7 +260,7 @@ function foldMatchUpWrite(
   return {};
 }
 
-function foldAssignPosition(op: OpOf<'assignPosition'>, { structures }: DrawIndex): Folded {
+function foldAssignPosition(op: OpOf<'assignPosition'> | OpOf<'relabelPosition'>, { structures }: DrawIndex): Folded {
   const assignment = positionAssignmentsOf(structures.get(op.structureId))?.find(
     (candidate) => candidate.drawPosition === op.drawPosition,
   );
@@ -368,6 +379,7 @@ function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition
     case 'setMatchUpDrawPositions':
       return foldMatchUpWrite(op, index, drawDefinition);
     case 'assignPosition':
+    case 'relabelPosition':
       return foldAssignPosition(op, index);
     case 'exchangeDrawPositions':
       return foldExchange(op, index, drawDefinition);

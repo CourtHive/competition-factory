@@ -179,7 +179,7 @@ export function createWorkingView({
 
       // a reassigned or emptied drawPosition changes the sides of every matchUp in that structure that holds it
       for (const op of ops) {
-        if (op.op !== 'assignPosition' && op.op !== 'clearPosition') continue;
+        if (op.op !== 'assignPosition' && op.op !== 'clearPosition' && op.op !== 'relabelPosition') continue;
         for (const matchUp of matchUpsOf(structureHolding(op.structureId)) ?? [])
           if (matchUp.drawPositions?.includes(op.drawPosition)) affected.add(matchUp.matchUpId);
       }

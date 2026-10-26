@@ -550,9 +550,13 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   `swapWinnerLoser`: in the source structure the two positions are exchanged in every later round
   that holds either (each announced as `swapWinnerLoser`, before the score), a decided matchUp's
   winner carried across the re-sort, and nothing is placed or removed. It is owned when the result is a
-  played one before and after, the structure has no link out of it (so nothing downstream is
-  relabelled and no `FIRST_MATCHUP` feed reconciled), and no matchUp on the path holds an exit or
-  exit provenance.
+  played one before and after, and no matchUp on the path holds an exit or exit provenance. Downstream,
+  in each structure this one feeds, the two participants' seats change identity (`relabelPosition`),
+  every result there kept: owned when the structure's links out carry no condition (no
+  `FIRST_MATCHUP` feed to reconcile), no loser link feeds it (no origin structure whose re-entries
+  v1 exchanges by origin positions), a winner link feeds it only back from a structure it feeds
+  (`DOUBLE_ELIMINATION`'s Backdraw champion re-entering the Main final on their own position, which
+  the path covers), and neither participant stands anywhere but those targets.
 - **`differential`**: v2 plans the whole call before v1 runs, then checks v1's result against it,
   and a disagreement throws `OutcomePipelineDivergence` naming the matchUp and both answers. The
   plan covers the refusal, the route, the write on the matchUp, the winner's direction, the
@@ -622,6 +626,7 @@ says and what lands are one thing. The reducer decides nothing and refuses nothi
 | `setMatchUpDrawPositions` | the positions placed in a matchUp, as v1 stores them: numbers, ascending (a winner's position joining the next matchUp, or taken back out of it: `removedDrawPosition`, whose result goes with the participant, as `removeSubsequentRoundsParticipant` takes it; with `placedDrawPosition` too when one write replaces a changed winner)         |
 | `assignPosition`          | a participant on a structure's stored assignment for a drawPosition (a loser fed across a link)                                                                                                                                                                                                                                                  |
 | `exchangeDrawPositions`   | a swap's relabel in a later round of its structure: the old winner's and the old loser's positions exchanged and sorted, a decided matchUp's winner carried across the re-sort with its score and side facts (v1's `exchangeMatchUpPositions`, the same function)                                                                                |
+| `relabelPosition`         | a swap's relabel downstream: a seat's occupant changes identity (the old winner's becomes the old loser's and the reverse), nothing else, announced and stamped by nothing, as v1's `swapWinnerLoser` writes it                                                                                                                                  |
 | `clearPosition`           | a structure's stored assignment for a drawPosition emptied, and the participant's seed entry there removed (a loser taken back out of the structure a link placed them in)                                                                                                                                                                       |
 | `setMatchUpStatusCodes`   | a matchUp's status codes, re-derived from its provenance (the matchUp a loser is taken back out of)                                                                                                                                                                                                                                              |
 | `assignBye`               | a BYE on a structure's stored assignment for a drawPosition, marked `byeFromPropagation` (a `FIRST_MATCHUP` reservation)                                                                                                                                                                                                                         |
