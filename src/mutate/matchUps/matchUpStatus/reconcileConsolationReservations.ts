@@ -5,10 +5,11 @@ import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { findStructure } from '@Acquire/findStructure';
+import { settleUnlessIdle } from './indexPrecheck';
 import { isAnyExit } from '@Validators/isExit';
 
 // constants and types
-import type { DrawDefinition, DrawLink, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
+import type { DrawDefinition, DrawLink, Event, MatchUp, PositionAssignment, Tournament } from '@Types/tournamentTypes';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
@@ -45,9 +46,33 @@ export function reconcileConsolationReservations({
 }): (ResultType & { withdrawn?: boolean }) | undefined {
   const links = (drawDefinition?.links ?? []).filter((link) => link.linkCondition === FIRST_MATCHUP);
   if (!drawDefinition || !links.length) return undefined;
+  const matchUpsMap = getMatchUpsMap({ drawDefinition });
+  // no reservation owed or stale on the structural index: the pass's hydration would find the same, and write nothing
+  return settleUnlessIdle({
+    detect: (inContextDrawMatchUps) => findReservationWork({ inContextDrawMatchUps, drawDefinition, matchUpsMap }),
+    run: () => reconcileReservations({ tournamentRecord, drawDefinition, matchUpsMap, event, links }),
+    site: 'reconcileConsolationReservations',
+    idle: undefined,
+    drawDefinition,
+  });
+}
+
+function reconcileReservations({
+  tournamentRecord,
+  drawDefinition,
+  matchUpsMap,
+  event,
+  links,
+}: {
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+  event?: Event;
+  links: DrawLink[];
+}): (ResultType & { withdrawn?: boolean }) | undefined {
   const reservationsBefore = reservedSeats({ drawDefinition, links });
 
-  const matchUpsMap = getMatchUpsMap({ drawDefinition });
+  // the wrapper's map: built immediately before, with no write between, so the same view over the stored matchUps
   const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
 
   for (const link of links) {
@@ -117,6 +142,100 @@ export function reconcileConsolationReservations({
   }
   const reservationsAfter = new Set(reservedSeats({ drawDefinition, links }));
   return reservationsBefore.some((seat) => !reservationsAfter.has(seat)) ? { withdrawn: true } : undefined;
+}
+
+/**
+ * THE PASS'S DETECTOR: the fed seats whose reservation the pass would place or withdraw, as `structureId|drawPosition`,
+ * each decided as the pass decides it. A matchUp with two drawPositions and no result owes a reservation when both its
+ * first-round feeders hold a scored win and its loser's seat holds no BYE (`propagateConsolationBye`), and has a stale
+ * one when they do not and the seat holds a propagated BYE; a matchUp a correction left with one drawPosition has a
+ * stale one when its feeders, asked by `winnerMatchUpId`, do not both hold a scored win (`withdrawStaleReservation`).
+ * The v1 settle precheck (`indexPrecheck.ts`) and v2's has-work predicate (`outcome/settleWork.ts`) both ask it.
+ */
+export function findReservationWork({
+  inContextDrawMatchUps,
+  drawDefinition,
+  matchUpsMap,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+}): string[] {
+  const work: string[] = [];
+  const links = (drawDefinition.links ?? []).filter((link) => link.linkCondition === FIRST_MATCHUP);
+  for (const link of links) {
+    const { structureId, roundNumber } = link.source ?? {};
+    const structure = findStructure({ drawDefinition, structureId })?.structure;
+    if (!structure || !structureId) continue;
+    const positionAssignments = getPositionAssignments({ structure }).positionAssignments ?? [];
+    const structureMatchUps = getMappedStructureMatchUps({ matchUpsMap, structureId });
+    const open = structureMatchUps.filter(
+      (matchUp: MatchUp) =>
+        matchUp.roundNumber === roundNumber &&
+        !matchUp.collectionId &&
+        !matchUp.winningSide &&
+        matchUp.matchUpStatus !== BYE &&
+        !isAnyExit(matchUp.matchUpStatus),
+    );
+    for (const matchUp of open) {
+      const key = seatWork({
+        matchUp,
+        structureMatchUps,
+        positionAssignments,
+        inContextDrawMatchUps,
+        drawDefinition,
+        matchUpsMap,
+        structureId,
+      });
+      if (key) work.push(key);
+    }
+  }
+  return work;
+}
+
+/** the seat one open matchUp's reservation would be placed in or withdrawn from, as the pass decides it; else undefined */
+function seatWork({
+  inContextDrawMatchUps,
+  positionAssignments,
+  structureMatchUps,
+  drawDefinition,
+  matchUpsMap,
+  structureId,
+  matchUp,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  positionAssignments: PositionAssignment[];
+  drawDefinition: DrawDefinition;
+  structureMatchUps: MatchUp[];
+  matchUpsMap: MatchUpsMap;
+  structureId: string;
+  matchUp: MatchUp;
+}): string | undefined {
+  const targetData = positionTargets({ matchUpId: matchUp.matchUpId, inContextDrawMatchUps, drawDefinition });
+  const { loserMatchUp, loserTargetDrawPosition } = targetData?.targetMatchUps ?? {};
+  const { loserTargetLink } = targetData?.targetLinks ?? {};
+  if (!loserMatchUp || loserTargetDrawPosition === undefined) return undefined;
+  const seat = (
+    getPositionAssignments({ drawDefinition, structureId: loserMatchUp.structureId }).positionAssignments ?? []
+  ).find((assignment) => assignment.drawPosition === loserTargetDrawPosition);
+  const reserved = !!seat?.bye && !!seat.byeFromPropagation;
+  const key = `${loserMatchUp.structureId}|${loserTargetDrawPosition}`;
+  const positions = (matchUp.drawPositions ?? []).filter(Boolean);
+  if (positions.length === 2) {
+    const isByeMatchUp = positionAssignments.some(
+      (assignment) => assignment.bye && matchUp.drawPositions?.includes(assignment.drawPosition),
+    );
+    if (isByeMatchUp || loserTargetLink?.linkCondition !== FIRST_MATCHUP) return undefined;
+    const won = firstRoundFeedersWon({ drawPositions: positions, structureId, matchUpsMap });
+    return (won && !seat?.bye) || (!won && reserved) ? key : undefined;
+  }
+  if (!reserved) return undefined;
+  const feederPositions = structureMatchUps
+    .filter((feeder) => feeder.winnerMatchUpId === matchUp.matchUpId)
+    .flatMap((feeder) => feeder.drawPositions ?? [])
+    .filter(Boolean);
+  if (feederPositions.length < 2) return undefined;
+  return firstRoundFeedersWon({ drawPositions: feederPositions, structureId, matchUpsMap }) ? undefined : key;
 }
 
 /** The propagated BYEs standing in the seats `FIRST_MATCHUP` links feed, as `structureId|drawPosition` */
