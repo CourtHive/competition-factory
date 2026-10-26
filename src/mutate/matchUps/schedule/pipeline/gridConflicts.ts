@@ -16,7 +16,7 @@ import { ensureInt } from '@Tools/ensureInt';
 import type { ParticipantReachability } from '../scheduleMatchUps/getParticipantReachability';
 import type { NormalizedTimes } from '@Query/matchUps/scheduling/getParticipantRest';
 import type { SchedulingTiming } from '@Query/matchUps/scheduling/schedulingTiming';
-import type { Tournament } from '@Types/tournamentTypes';
+import type { MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import {
@@ -46,7 +46,7 @@ export type ConflictsMatchUp = {
   matchUpId: string;
   drawId?: string;
   matchUpType?: string;
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
   stage?: string;
   stageSequence?: number;
   roundNumber?: number;
@@ -101,23 +101,22 @@ export function buildConflictsView({
 
   const tournamentOf = (matchUp: HydratedMatchUp) =>
     tournamentRecords[matchUp.tournamentId] ?? Object.values(tournamentRecords)[0];
-  // keyed by a tournamentId read from the matchUps: Maps, so no id reaches an inherited member
-  const timingResolvers = new Map<string, (matchUp: HydratedMatchUp) => SchedulingTiming>();
-  const zones = new Map<string, string | undefined>();
-  const timingOf = (tournamentId: string, matchUp: HydratedMatchUp) => {
-    let resolve = timingResolvers.get(tournamentId);
+  // each tournament's timing and zone, resolved once: keyed by the tournament record, not by an id the matchUps carry
+  const timingResolvers = new Map<Tournament, (matchUp: HydratedMatchUp) => SchedulingTiming>();
+  const zones = new Map<Tournament, string | undefined>();
+  const timingOf = (tournamentRecord: Tournament, matchUp: HydratedMatchUp) => {
+    let resolve = timingResolvers.get(tournamentRecord);
     if (!resolve) {
-      resolve = makeTimingResolver(tournamentOf(matchUp));
-      timingResolvers.set(tournamentId, resolve);
+      resolve = makeTimingResolver(tournamentRecord);
+      timingResolvers.set(tournamentRecord, resolve);
     }
     return resolve(matchUp);
   };
 
   const resolved = matchUps.map((matchUp): ConflictsMatchUp => {
-    const tournamentId = matchUp.tournamentId ?? '';
-    if (!zones.has(tournamentId))
-      zones.set(tournamentId, getTournamentTimeZone({ tournamentRecord: tournamentOf(matchUp) }).timeZone);
-    const timeZone = zones.get(tournamentId);
+    const tournamentRecord = tournamentOf(matchUp);
+    if (!zones.has(tournamentRecord)) zones.set(tournamentRecord, getTournamentTimeZone({ tournamentRecord }).timeZone);
+    const timeZone = zones.get(tournamentRecord);
     const normalized = normalizeTimes(matchUp, { utcOffsetMinutes: 0, timeZone });
     const { courtId, courtOrder, scheduledDate, scheduledTime } = matchUp.schedule ?? {};
     return {
@@ -137,7 +136,7 @@ export function buildConflictsView({
       finished: isFinished(matchUp),
       played: wasPlayed(matchUp),
       times: timeZone ? normalized : { ...normalized, calledMs: null, scoredMs: null, scoredDate: null },
-      timing: timingOf(tournamentId, matchUp),
+      timing: timingOf(tournamentRecord, matchUp),
     };
   });
 
