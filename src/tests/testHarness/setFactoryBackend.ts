@@ -13,6 +13,7 @@ import { randomSource, setRandomSource } from '@Tools/prng';
 import { afterAll, beforeEach, expect } from 'vitest';
 import { canonicalHash, canonicalObject } from './corpus/hash';
 import { createBackendBridge } from './backendBridge';
+import { differingPaths } from './backendDiff';
 import { BACKEND_EXCLUSIONS } from './backendExclusions';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
@@ -64,6 +65,22 @@ if (mode) {
     implements: (methodName) => methods.has(methodName),
     invoke: (call) => (mode === 'external' ? external(call) : differential(call)),
   };
+
+  // the scoring engine class, per instance (scoringBackend.ts): compared only, so only under differential
+  if (mode === 'differential') {
+    const scoringMethods = listed(command, '--scoring-methods');
+    if (scoringMethods.length) {
+      const { routeScoringEngine } = await import('./scoringBackend');
+      routeScoringEngine({
+        counted: (method) => {
+          const counts = (routed[currentFile] ??= {});
+          counts[`scoring.${method}`] = (counts[`scoring.${method}`] ?? 0) + 1;
+        },
+        methods: scoringMethods,
+        bridge,
+      });
+    }
+  }
 
   beforeEach(() => {
     currentFile = expect.getState().testPath ?? '';
@@ -161,18 +178,13 @@ if (mode) {
   }
 }
 
-/** up to ten paths at which two plain values differ, each with both values (this engine's first) */
-function differingPaths(ours: any, theirs: any, path = '', out: string[] = []): string[] {
-  if (out.length >= 10) return out;
-  const isObject = (value: any) => value !== null && typeof value === 'object';
-  if (isObject(ours) && isObject(theirs) && Array.isArray(ours) === Array.isArray(theirs)) {
-    for (const key of new Set([...Object.keys(ours), ...Object.keys(theirs)]))
-      differingPaths(ours[key], theirs[key], `${path}/${key}`, out);
-  } else if (JSON.stringify(ours) !== JSON.stringify(theirs)) {
-    const show = (value: any) => (value === undefined ? 'absent' : JSON.stringify(value).slice(0, 80));
-    out.push(`${path} (${show(ours)} vs ${show(theirs)})`);
+/** the names an executable lists with a flag; none when it does not know the flag */
+function listed(command: string, flag: string): string[] {
+  try {
+    return JSON.parse(execFileSync(command, [flag], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }));
+  } catch {
+    return [];
   }
-  return out;
 }
 
 /** the params as the caller gave them: without the records and the active tournament the engine adds (the call

@@ -57,6 +57,26 @@ subscribers for (a method announces to a subscribed topic instead of writing, as
 `{ declined: reason }` for a call it does not implement with these params, which this engine then runs itself; the
 report counts declined calls separately.
 
+## The scoring engine class
+
+`ScoringEngine` is a class, not an engine method, so it is routed per instance (`scoringBackend.ts`), under
+`differential` only. `<command> --scoring-methods` lists the class methods it answers. The first routed call on an
+instance opens a **session** in the serving process from the instance as it stands (its options, `getState()` and
+`getSupplementaryState()`); every later call on that instance goes to the same session, so the second implementation
+keeps its own timeline and redo stack. After each call the two are compared on the scoring corpus's observable: what
+the call returned, the score, the timeline's shape, the servers, the undo and redo depths and the players on court, or
+the refusal's message. A call that replaces the instance's state (`setState`, `loadSupplementaryState`, `reset`,
+`markHardBoundary`) reopens its session at the next routed call. Only the outermost call on an instance is routed.
+
+```json
+{
+  "session": "scoring-1234-1",
+  "create": { "options": {}, "state": {}, "supplementary": {} },
+  "method": "addPoint",
+  "params": { "winner": 0 }
+}
+```
+
 ## When a test disagrees
 
 The error names the method, what differs and a file holding the call as sent. Pipe that file to the executable to
