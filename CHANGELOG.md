@@ -1,5 +1,59 @@
 # Changelog
 
+## [7.23.0](https://github.com/CourtHive/competition-factory/compare/v7.22.0...v7.23.0) (2026-10-26)
+
+
+### Features
+
+* **outcome:** v2 owns a call that changes nothing but stamps (S2) ([#5817](https://github.com/CourtHive/competition-factory/issues/5817)) ([1086ba5](https://github.com/CourtHive/competition-factory/commit/1086ba54a6f4dba8fd602bcf37f5a42948b4556a))
+* **outcome:** v2 owns a cleared result taking its winner back (S4, remove-directed) ([#5845](https://github.com/CourtHive/competition-factory/issues/5845)) ([0f9f1e7](https://github.com/CourtHive/competition-factory/commit/0f9f1e75ee3fd7c5c816df79234a27656ddcb89a))
+* **outcome:** v2 owns a final (S3) ([#5827](https://github.com/CourtHive/competition-factory/issues/5827)) ([4fe8eff](https://github.com/CourtHive/competition-factory/commit/4fe8effa5fe65dab09016daf02527ea675199e7a))
+* **outcome:** v2 owns a loser placed opposite a BYE going on through it ([#5839](https://github.com/CourtHive/competition-factory/issues/5839)) ([6946b1b](https://github.com/CourtHive/competition-factory/commit/6946b1ba4dbc1ef71afc8b412d92261a3278913f))
+* **outcome:** v2 owns a new score beneath an active downstream (S4, apply-values) ([#5843](https://github.com/CourtHive/competition-factory/issues/5843)) ([edc25e8](https://github.com/CourtHive/competition-factory/commit/edc25e899aceb00994a6bc876635ba744344b641))
+* **outcome:** v2 owns a result in a lucky draw's pre-feed round ([#5842](https://github.com/CourtHive/competition-factory/issues/5842)) ([f3a0dbd](https://github.com/CourtHive/competition-factory/commit/f3a0dbdadf90d89fb381f22d87365d9306c9d07b))
+* **outcome:** v2 owns a winner going on past a BYE in their next matchUp ([#5840](https://github.com/CourtHive/competition-factory/issues/5840)) ([1b53fbc](https://github.com/CourtHive/competition-factory/commit/1b53fbce0fcba3b4dcd13b8df8222f514c1307f7))
+* **outcome:** v2 owns an ad hoc result and its one-round structure's tally ([#5841](https://github.com/CourtHive/competition-factory/issues/5841)) ([2b5880f](https://github.com/CourtHive/competition-factory/commit/2b5880f17e89a890674869aab029aff6cfabe3eb))
+* **outcome:** v2 owns the BYE that takes a kept-out FMLC loser's seat ([#5838](https://github.com/CourtHive/competition-factory/issues/5838)) ([82d5989](https://github.com/CourtHive/competition-factory/commit/82d59898e20fca229d1dd0905f6a5346e67fae31))
+* **outcome:** v2 owns the first direction (S3, executor plan § 6 S3) ([#5818](https://github.com/CourtHive/competition-factory/issues/5818)) ([c80f92f](https://github.com/CourtHive/competition-factory/commit/c80f92f0fe7391a5b58458bd5b63d319a9722ef0))
+* **outcome:** v2 owns the FIRST_MATCHUP reservation a winner's arrival makes ([#5836](https://github.com/CourtHive/competition-factory/issues/5836)) ([1aeb5b4](https://github.com/CourtHive/competition-factory/commit/1aeb5b4bbe0e942fb25fb7314da35545a9c53b9e))
+* **outcome:** v2 owns the FMLC round-2 loser feed and arrivals into a consolation holding a BYE ([#5837](https://github.com/CourtHive/competition-factory/issues/5837)) ([d5a3eb9](https://github.com/CourtHive/competition-factory/commit/d5a3eb93157cd48a4fab0a8063a7333d5a04576d))
+* **outcome:** v2 plans and owns a round robin group's tally (S3) ([#5830](https://github.com/CourtHive/competition-factory/issues/5830)) ([284632e](https://github.com/CourtHive/competition-factory/commit/284632e129dbd038677bb6093079671fc27b7e7f))
+* **sanctioning:** sanctioned transit between venues, keyed by facility ([#5808](https://github.com/CourtHive/competition-factory/issues/5808)) ([f843206](https://github.com/CourtHive/competition-factory/commit/f8432067345dc0ef398b7e96f2e1d69efa485b5a))
+* **scheduling:** overnight rest is warned, not held; JUNIOR detected from under-age codes ([#5814](https://github.com/CourtHive/competition-factory/issues/5814)) ([0af307a](https://github.com/CourtHive/competition-factory/commit/0af307a06986e4fd0170f5df9d48b0cb123c1d36))
+* **scheduling:** transit between venues holds a participant (planner rule, view, cases) ([#5803](https://github.com/CourtHive/competition-factory/issues/5803)) ([636a710](https://github.com/CourtHive/competition-factory/commit/636a7104f2d8c35cf0cbc97216727447341461e0))
+* **venues:** transit between venues stored in the record (step b) ([#5806](https://github.com/CourtHive/competition-factory/issues/5806)) ([0321d12](https://github.com/CourtHive/competition-factory/commit/0321d129f895c6661c24ba82009eaf61018e154c))
+
+
+### Bug Fixes
+
+* **deps:** update tods-competition-factory to 7.22.0 ([#5813](https://github.com/CourtHive/competition-factory/issues/5813)) ([6b22aaf](https://github.com/CourtHive/competition-factory/commit/6b22aafd1c3cf62f1e7da616925e7a83e8beb7c0))
+* **grammar:** no @ without a tiebreak, numbers at most 2^53 - 1; two spec lines ([#5815](https://github.com/CourtHive/competition-factory/issues/5815)) ([9cb65cc](https://github.com/CourtHive/competition-factory/commit/9cb65cc4b317413b1ecb3847a370c870363fca65))
+* **hydration:** a line resolves its format through its dual ([#5831](https://github.com/CourtHive/competition-factory/issues/5831)) ([321d38a](https://github.com/CourtHive/competition-factory/commit/321d38aa16988f4668b5e35cb3283be617be6a99))
+* **hydration:** lines of a BYE dual, potentials' targets, half-stored edges, the empty-dual lineUp ([#5828](https://github.com/CourtHive/competition-factory/issues/5828)) ([8a38d59](https://github.com/CourtHive/competition-factory/commit/8a38d5901f07c2cc0664d04de8e303aecd309379))
+* **hydration:** recovery carries its date, endTime reads as the others do, a draw's policy times it ([#5829](https://github.com/CourtHive/competition-factory/issues/5829)) ([e107227](https://github.com/CourtHive/competition-factory/commit/e10722737f34aed0ae63a840a02451430af34454))
+* **scheduling:** no scheduler places the lines of a BYE dual ([#5824](https://github.com/CourtHive/competition-factory/issues/5824)) ([5cfb001](https://github.com/CourtHive/competition-factory/commit/5cfb00190dcd18c357bdfdb9509f9ee1a9542fad))
+
+
+### Performance
+
+* **acquire:** an out-of-context findDrawMatchUp reads the stored matchUp from the map ([#5821](https://github.com/CourtHive/competition-factory/issues/5821)) ([d1aa8ed](https://github.com/CourtHive/competition-factory/commit/d1aa8edbe285362a720951387628c6b0bf11ef57))
+* **matchUpStatus:** consolation reservations ask the structural index; v2's predicate exact ([#5834](https://github.com/CourtHive/competition-factory/issues/5834)) ([3785252](https://github.com/CourtHive/competition-factory/commit/3785252bb75c71c2b36a41e9d887365a3fd1e987))
+* **matchUpStatus:** reconcileCarriesPastByes asks the structural index before it hydrates ([#5807](https://github.com/CourtHive/competition-factory/issues/5807)) ([7166027](https://github.com/CourtHive/competition-factory/commit/7166027e00208d6c15195b50dfbbab41ec517aeb))
+* **matchUpStatus:** reconcileMissedLinkAdvancements asks the structural index before it hydrates ([#5809](https://github.com/CourtHive/competition-factory/issues/5809)) ([25d82af](https://github.com/CourtHive/competition-factory/commit/25d82afffcdc72a26c2f2d4d4676e8f39e3e1c56))
+* **matchUpStatus:** reconcileProvenanceSides asks the structural index before it hydrates ([#5805](https://github.com/CourtHive/competition-factory/issues/5805)) ([555da94](https://github.com/CourtHive/competition-factory/commit/555da94e34ffbf89a95d25984dd47677361361d6))
+* **matchUpStatus:** reconcileStaleExitOrigins asks the structural index before it hydrates ([#5804](https://github.com/CourtHive/competition-factory/issues/5804)) ([6440175](https://github.com/CourtHive/competition-factory/commit/6440175ede7f5479c3a5c6358830d9fa7a7dc3c5))
+* **scheduling:** direct scheduling 3.5x faster on a large compass draw, 6x with doubles ([#5820](https://github.com/CourtHive/competition-factory/issues/5820)) ([211758e](https://github.com/CourtHive/competition-factory/commit/211758e2a577fdc61ce4b2dea81a66ae7ea30dd7))
+
+
+### Documentation
+
+* **7.x:** 7.22.0 in the 7.x journey: Phase C closed, the hydration gains, adoption notes ([#5816](https://github.com/CourtHive/competition-factory/issues/5816)) ([bcffabf](https://github.com/CourtHive/competition-factory/commit/bcffabf40e7298d4e8af29454e9eef2aa494efda))
+* **7.x:** 7.23.0 adoption notes, performance against 7.22.0, the release row ([#5847](https://github.com/CourtHive/competition-factory/issues/5847)) ([9eab68a](https://github.com/CourtHive/competition-factory/commit/9eab68a11011e938782026670aaba8e5710533ac))
+* **codes:** online resources examples link to courthive.com, not example.com ([#5844](https://github.com/CourtHive/competition-factory/issues/5844)) ([78481ee](https://github.com/CourtHive/competition-factory/commit/78481ee8887bb43cdfef4fa99afb125a2f153aaa))
+* **codes:** online resources page, with the matchUp VIDEO/STREAM/STATS convention ([#5822](https://github.com/CourtHive/competition-factory/issues/5822)) ([6a5cf91](https://github.com/CourtHive/competition-factory/commit/6a5cf91ef6c20645cf62280c8fa4a3f598a4e84e))
+* **concepts:** hydration's order and states, a format's minutes, disabled link targets ([#5835](https://github.com/CourtHive/competition-factory/issues/5835)) ([28256e3](https://github.com/CourtHive/competition-factory/commit/28256e333d26ebff677e03f0eefdb219dd898d22))
+* **concepts:** what hydration derives, the fields the scheduling pipeline reads ([#5832](https://github.com/CourtHive/competition-factory/issues/5832)) ([a12436f](https://github.com/CourtHive/competition-factory/commit/a12436f6b2fc9919a887027d1a6e65b1067d881a))
+
 ## [7.22.0](https://github.com/CourtHive/competition-factory/compare/v7.21.0...v7.22.0) (2026-10-25)
 
 
