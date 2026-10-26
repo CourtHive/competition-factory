@@ -52,8 +52,10 @@ describe('a clear of a BYE matchUp', () => {
 
   it('still applies the schedule it carries', () => {
     const bye = firstRoundBye();
+    // a date within the tournament: mocksEngine dates it from today, so a literal date is refused once it has passed
+    const { startDate } = tournamentEngine.getTournament().tournamentRecord;
     const result: any = tournamentEngine.setMatchUpStatus({
-      schedule: { scheduledDate: '2026-10-25' },
+      schedule: { scheduledDate: startDate },
       matchUpId: bye.matchUpId,
       outcome: CLEAR,
       drawId: 'd',
@@ -61,7 +63,7 @@ describe('a clear of a BYE matchUp', () => {
     expect(result.success).toEqual(true);
     expect(stored(bye.matchUpId).matchUpStatus).toEqual(BYE);
     const { matchUp } = tournamentEngine.findMatchUp({ drawId: 'd', matchUpId: bye.matchUpId, inContext: true });
-    expect(matchUp.schedule?.scheduledDate).toEqual('2026-10-25');
+    expect(matchUp.schedule?.scheduledDate).toEqual(startDate);
   });
 
   /**
