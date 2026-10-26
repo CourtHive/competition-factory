@@ -2,6 +2,7 @@ import { directAdapter, kernelOperations, serializedAdapter, validateCases } fro
 import type { KernelAdapter, KernelCase, KernelOperation, KernelResult } from './kernel';
 import { batchedAdapter, externalAdapter, stdioCommand } from './externalAdapter';
 import scoringReduceCases from './cases/scoringReduce.json';
+import schedulingViewCases from './cases/schedulingView.json';
 import schedulingCases from './cases/scheduling.json';
 import { canonicalJson } from '@Tools/canonicalJson';
 import grammarCases from './cases/grammar.json';
@@ -24,6 +25,7 @@ const cases = [
   ...scoringReduceCases,
   ...grammarCases,
   ...schedulingCases,
+  ...schedulingViewCases,
   ...timeCases,
 ] as KernelCase[];
 const requests = cases.map(({ operation, input }) => ({ operation, input }));

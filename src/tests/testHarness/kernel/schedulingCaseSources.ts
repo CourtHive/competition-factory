@@ -6,6 +6,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { normativePlan } from './normativePlan';
 import { setRandomSource } from '@Tools/prng';
 import { setClock } from '@Tools/clock';
+import { viewOptionsOf } from './viewOptions';
 import { overTheWire } from './kernel';
 
 // constants and types
@@ -646,34 +647,46 @@ export const schedulingCaseSources: Source[] = [
 /**
  * Each source built, planned and held to its claims; the case it yields pins the whole plan. Every source is built on a
  * seeded random source and a fixed clock, so its ids and its view are the same whichever test builds it.
+ *
+ * Each source also yields a `kernel.scheduling.view@1` case: the records it built and the call's view options in, the
+ * view as built (before any `amendView`) out. A plan case is graded from a given view; a view case grades the view
+ * itself, the hydration, the graph and the profile's rounds a second implementation must derive from the records.
  */
-export function authoredSchedulingCases(): KernelCase[] {
+export function authoredSchedulingCases(): { plan: KernelCase[]; view: KernelCase[] } {
   try {
-    return schedulingCaseSources.map(authoredCase);
+    const built = schedulingCaseSources.map(authoredCases);
+    return { plan: built.map(({ plan }) => plan), view: built.map(({ view }) => view) };
   } finally {
     setRandomSource();
     setClock();
   }
 }
 
-function authoredCase({ caseId, note, options = {}, amendView, build, claims }: Source): KernelCase {
+function authoredCases({ caseId, note, options = {}, amendView, build, claims }: Source) {
   setRandomSource(20260302);
   setClock('2026-03-01T08:00:00.000Z');
   build();
   const { tournamentRecord } = tournamentEngine.getTournament();
-  const view = buildSchedulingView({
-    ...options,
-    tournamentRecords: { [tournamentRecord.tournamentId]: tournamentRecord },
-  });
+  const tournamentRecords = { [tournamentRecord.tournamentId]: tournamentRecord };
+  const recordsIn = overTheWire(tournamentRecords);
+  const view = buildSchedulingView({ ...options, tournamentRecords });
   if ('error' in view) throw new Error(`${caseId}: ${JSON.stringify(view.error)}`);
+  const viewCase: KernelCase = {
+    caseId: caseId.replace(/^scheduling\.plan\./, 'scheduling.view.'),
+    operation: 'kernel.scheduling.view@1',
+    input: { tournamentRecords: recordsIn, options: viewOptionsOf(options) },
+    expected: { kind: 'value', value: overTheWire(planningViewData(view)) },
+    note,
+  };
   amendView?.(view);
   const plan = planSchedule({ ...options, view });
   claims(plan, matchUpIds());
-  return {
+  const planCase: KernelCase = {
     caseId,
     operation: 'kernel.scheduling.plan@2',
     input: { view: planningViewData(view), options },
     expected: { kind: 'value', value: overTheWire(normativePlan(plan)) },
     note,
   };
+  return { plan: planCase, view: viewCase };
 }
