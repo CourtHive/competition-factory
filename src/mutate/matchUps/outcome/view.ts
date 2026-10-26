@@ -1060,6 +1060,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         allAssignments.some((assignment) => assignment.bye && assignment.drawPosition === position),
       ),
       rotatingPartners: isRotatingPartnerDraw(drawDefinition, event),
+      winRatio: structure?.finishingPosition === WIN_RATIO,
       combinedPointRoundRobin:
         structure?.finishingPosition === WIN_RATIO &&
         !!parse(incomingFormat ?? storedFormat ?? '')?.setFormat?.combinedPointTotal,

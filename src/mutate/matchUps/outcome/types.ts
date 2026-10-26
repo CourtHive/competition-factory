@@ -255,6 +255,11 @@ export type OutcomeView = {
     tallied: boolean;
     /** the draw stores its winner and loser edges; v1 writes them first on one that does not (edge repair) */
     storesEdges: boolean;
+    /**
+     * the matchUp's structure feeds its playoffs by finishing position (WIN_RATIO): v1 answers a winner cleared or
+     * changed there with the playoff structures it reaches (`checkConnectedStructures`), a read of the whole structure
+     */
+    winRatio?: boolean;
   };
 };
 

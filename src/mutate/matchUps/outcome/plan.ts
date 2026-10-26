@@ -335,6 +335,8 @@ function abstainReason(args: {
   const reentered = reentersWinner(view, args.route, write);
   // S4: a decided result cleared while its downstream is untouched takes back what it directed (`remove-directed`)
   const removing = args.route === REMOVE_DIRECTED && !!view.existing.winningSide && !write?.winningSide;
+  // a winner cleared in a WIN_RATIO structure: v1 reports the playoff structures it reaches, which v2 does not read
+  if (removing && view.draw.winRatio) return 'link';
   if (removing) {
     const removal = removalReason(view, direction);
     if (removal) return removal;

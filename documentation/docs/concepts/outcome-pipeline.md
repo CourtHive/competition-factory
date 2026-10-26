@@ -526,10 +526,13 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   winner's position in a clean next matchUp of the same structure, takes the position back out, with
   that matchUp's score; a loser the result placed across a link is taken back out with it when they
   still hold the seat the link fed, in a matchUp they have not played (no result, exit, provenance or
-  BYE beside them): the seat is emptied and their seed entry there goes, and the matchUp's codes are
-  re-derived from its provenance, as v1's `removeDirectedLoser` writes them (`[]` where it stored
-  none, which announces the matchUp). A `FIRST_MATCHUP` link, whose removal may take a BYE back, stays
-  v1's. The same winner entered again while nothing downstream is active (the
+  BYE beside them): the seat is emptied and their seed entry there goes, and, when the call names a
+  status, the matchUp's codes are re-derived from its provenance, as v1's `removeDirectedLoser`
+  writes them (`[]` where it stored none, which announces the matchUp). A `FIRST_MATCHUP` link, whose
+  removal may take a BYE back, stays v1's. So does a winner cleared in a structure that feeds its
+  playoffs by finishing position (`WIN_RATIO`): v1 answers it with the playoff structures it reaches
+  (`connectedStructures`, from `checkConnectedStructures`), a read of the whole structure. The same
+  winner entered again while nothing downstream is active (the
   `winner` route) is directed once more by v1, whose placements find the winner and the loser where
   the first entry put them; v2 writes the matchUp's own result and places nobody. That is planned
   when the stored result is a played `COMPLETED` one, the winner stands in a clean next matchUp of
