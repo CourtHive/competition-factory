@@ -2,6 +2,7 @@ import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/
 import { isValidMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
+import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { correctionKindChange } from '@Mutate/matchUps/matchUpStatus/correctionKindGuard';
 import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinningSide';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
@@ -10,8 +11,8 @@ import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount'
 import { resolveScoringFormat } from '@Query/hierarchical/resolveScoringFormat';
 import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { isDeciderStructure } from '@Query/drawDefinition/deciderStructures';
+import { getPolicyDefinitions } from '@Query/extensions/getAppliedPolicies';
 import { lastSetFormatIsTimed } from '@Query/matchUp/lastSetFormatisTimed';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
@@ -39,7 +40,6 @@ import {
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
-import { POLICY_TYPE_PROGRESSION, POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { BYE, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCHUP, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import type { BuildViewArgs, OutcomeRequest, OutcomeView } from './types';
@@ -55,6 +55,11 @@ import type {
   SideExitProvenanceEntry,
   Structure,
 } from '@Types/tournamentTypes';
+import {
+  POLICY_TYPE_PROGRESSION,
+  POLICY_TYPE_ROUND_ROBIN_TALLY,
+  POLICY_TYPE_SCORING,
+} from '@Constants/policyConstants';
 
 /**
  * The outcome pipeline, v2: the view.
@@ -454,6 +459,53 @@ function drawToDecideOn(
   return { inContextDrawMatchUps: hydrated.matchUps, structural: false };
 }
 
+/**
+ * A round robin group's tally inputs, as v1's `updateTallyIfNeeded` reads them (`modifyMatchUpScore.ts`): the group's
+ * matchUps (the index's entries; the planner substitutes the call's own result), its position assignments, the format
+ * v1 resolves (the call's, the matchUp's own, the container's, the draw's, the event's) and the round robin tally policy
+ * v1 reads with no call-level policy. A TEAM dual's tally (S7) and a line of one are not asked.
+ */
+function roundRobinGroup({
+  inContextDrawMatchUps,
+  inContextMatchUp,
+  drawDefinition,
+  matchUp,
+  args,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  inContextMatchUp?: HydratedMatchUp;
+  drawDefinition: DrawDefinition;
+  args: BuildViewArgs;
+  matchUp: MatchUp;
+}): OutcomeView['group'] {
+  const containerStructureId = inContextMatchUp?.containerStructureId;
+  const structureId = inContextMatchUp?.structureId;
+  if (!containerStructureId || !structureId || matchUp.collectionId || matchUp.tieMatchUps) return undefined;
+  const { structure: container } = findStructure({ drawDefinition, structureId: containerStructureId });
+  const group = structuresOf(container)?.find((child) => child.structureId === structureId);
+  if (!group) return undefined;
+  const { tournamentRecord, event, request } = args;
+  const { policyDefinitions } = getPolicyDefinitions({
+    policyTypes: [POLICY_TYPE_ROUND_ROBIN_TALLY],
+    tournamentRecord,
+    drawDefinition,
+    event,
+  });
+  return {
+    containerStructureId,
+    structureId,
+    matchUps: inContextDrawMatchUps.filter((candidate) => candidate.structureId === structureId),
+    positionAssignments: positionAssignmentsOf(group) ?? [],
+    matchUpFormat:
+      request.matchUpFormat ??
+      matchUp.matchUpFormat ??
+      container?.matchUpFormat ??
+      drawDefinition.matchUpFormat ??
+      event?.matchUpFormat,
+    policyDefinitions,
+  };
+}
+
 export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
   const { tournamentRecord, drawDefinition, event, request, policyDefinitions } = args;
   const empty: OutcomeView = {
@@ -768,6 +820,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         targetData?.targetMatchUps?.winnerMatchUp?.matchUpId,
       ),
     },
+    group: roundRobinGroup({ inContextDrawMatchUps, inContextMatchUp, drawDefinition, matchUp, args }),
     draw: {
       // v1's `updateTallyIfNeeded`, on the structure it reads: the container a round-robin group sits in
       tallied:

@@ -6,6 +6,7 @@ import type {
   Event,
   MatchUpStatusCodeElement,
   MatchUpStatusUnion,
+  PositionAssignment,
   Score,
   Tournament,
 } from '@Types/tournamentTypes';
@@ -198,6 +199,16 @@ export type OutcomeView = {
     priorLosses: { 1: number; 2: number };
   };
   /** § 3: facts the routes ask */
+  /** a round robin group's tally inputs (S3: the tally planned as `setParticipantResults`); absent elsewhere */
+  group?: {
+    /** the round robin's container: the top-level structure a write stamps (F2 (i)) */
+    containerStructureId: string;
+    structureId: string;
+    matchUps: HydratedMatchUp[];
+    positionAssignments: PositionAssignment[];
+    matchUpFormat?: string;
+    policyDefinitions?: PolicyDefinitions;
+  };
   draw: {
     isAdHoc: boolean;
     /** a dual in a round-robin container (§ 3 `team round robin`) */

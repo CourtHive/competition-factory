@@ -1,3 +1,4 @@
+import { writeAssignmentResults } from '@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults';
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
@@ -12,6 +13,7 @@ import type {
   MatchUpStatusUnion,
   Score,
   Structure,
+  TallyResult,
 } from '@Types/tournamentTypes';
 
 /**
@@ -56,10 +58,18 @@ export type OutcomeOp =
       /** the participant placed at the drawPosition's stored assignment (a loser fed across a link) */
       participantId: string;
     }
+  | {
+      op: 'setParticipantResults';
+      /** a round robin's group: its position assignments take the tallies (`writeAssignmentResults`, v1's writer) */
+      structureId: string;
+      /** each participant's tally after the call, as `tallyParticipantResults` gives it */
+      participantResults: { [participantId: string]: TallyResult };
+    }
   | { op: 'stampUpdatedAt'; entity: 'matchUp' | 'structure' | 'drawDefinition'; id: string };
 
 /** the op vocabulary as a literal union, which `verify:outcome-spec` holds to the spec; checked against `OutcomeOp` */
-export type OutcomeOpName = 'setMatchUpResult' | 'setMatchUpDrawPositions' | 'assignPosition' | 'stampUpdatedAt';
+export type OutcomeOpName =
+  'setMatchUpResult' | 'setMatchUpDrawPositions' | 'assignPosition' | 'setParticipantResults' | 'stampUpdatedAt';
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 const opNamesMatch: Same<OutcomeOpName, OutcomeOp['op']> = true;
 export const OUTCOME_OP_NAMES_MATCH = opNamesMatch;
@@ -130,18 +140,23 @@ function indexDraw(drawDefinition: DrawDefinition) {
   const matchUps = new Map<string, MatchUp>();
   const structureOf = new Map<string, string>();
   const structures = new Map<string, Structure>();
+  // a round robin's groups, by id: the structures a tally is written in
+  const groups = new Map<string, Structure>();
   const visit = (structure: Structure) => {
     for (const matchUp of matchUpsOf(structure) ?? []) {
       matchUps.set(matchUp.matchUpId, matchUp);
       structureOf.set(matchUp.matchUpId, structure.structureId);
     }
-    for (const child of structuresOf(structure) ?? []) visit(child);
+    for (const child of structuresOf(structure) ?? []) {
+      groups.set(child.structureId, child);
+      visit(child);
+    }
   };
   for (const structure of drawDefinition.structures ?? []) {
     structures.set(structure.structureId, structure);
     visit(structure);
   }
-  return { matchUps, structureOf, structures };
+  return { matchUps, structureOf, structures, groups };
 }
 
 /**
@@ -154,7 +169,7 @@ export function applyOutcomeOps(
   ops: OutcomeOp[],
   stampedBefore?: Set<string>,
 ): { error?: string } {
-  const { matchUps, structureOf, structures } = indexDraw(drawDefinition);
+  const { matchUps, structureOf, structures, groups } = indexDraw(drawDefinition);
   for (const op of ops) {
     if (op.op === 'setMatchUpResult' || op.op === 'setMatchUpDrawPositions') {
       const matchUp = matchUps.get(op.matchUpId);
@@ -174,6 +189,10 @@ export function applyOutcomeOps(
       );
       if (!assignment) return { error: `assignPosition: no drawPosition ${op.drawPosition} in ${op.structureId}` };
       assignment.participantId = op.participantId;
+    } else if (op.op === 'setParticipantResults') {
+      const positionAssignments = positionAssignmentsOf(groups.get(op.structureId));
+      if (!positionAssignments) return { error: `setParticipantResults: no group ${op.structureId}` };
+      writeAssignmentResults({ positionAssignments, participantResults: op.participantResults });
     } else if (op.entity === 'drawDefinition') {
       if (op.id !== drawDefinition.drawId) return { error: `stampUpdatedAt: not this draw ${op.id}` };
       stamp(drawDefinition as Stamped, `drawDefinition:${op.id}`, stampedBefore);
