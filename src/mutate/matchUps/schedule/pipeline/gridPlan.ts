@@ -1,8 +1,8 @@
 import { getParticipantReachability, ParticipantReachability } from '../scheduleMatchUps/getParticipantReachability';
 import { checkDailyLimits, DailyLimitOverrides } from '../scheduleMatchUps/checkDailyLimits';
-import { modifyParticipantDayMatchUps } from '../scheduleMatchUps/participantDayLoad';
 import { competitionScheduleMatchUps } from '@Query/matchUps/competitionScheduleMatchUps';
 import { matchUpChronologicalSort } from '@Functions/sorters/matchUpChronologicalSort';
+import { modifyParticipantDayMatchUps } from '../scheduleMatchUps/participantDayLoad';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { getParticipantClashes } from '../scheduleMatchUps/participantClashes';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
