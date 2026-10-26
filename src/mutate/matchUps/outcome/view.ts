@@ -357,6 +357,16 @@ function sideDrawPosition(matchUp: HydratedMatchUp | undefined, sideNumber: 1 | 
   return matchUp?.sides?.find((side) => side.sideNumber === sideNumber)?.drawPosition;
 }
 
+/** a stored matchUp's status codes and whether it holds exit provenance, as the write that re-derives them reads them */
+function storedSideRecord(matchUpsMap: MatchUpsMap, matchUpId?: string): OutcomeView['targets']['loserMatchUpRecord'] {
+  const stored = matchUpId ? matchUpsMap.drawMatchUps.find((m) => m.matchUpId === matchUpId) : undefined;
+  if (!stored) return undefined;
+  return {
+    matchUpStatusCodes: stored.matchUpStatusCodes,
+    provenance: Object.values(stored.sideExitProvenance ?? {}).some(Boolean),
+  };
+}
+
 /** the stored assignment a loser link feeds: free (no participant, no BYE), or what holds it */
 function loserTargetSeat(
   drawDefinition: DrawDefinition,
@@ -990,6 +1000,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       ),
       loserMatchUpStatus: targetData?.targetMatchUps?.loserMatchUp?.matchUpStatus,
       loserMatchUpHasResult: hasResult(targetData?.targetMatchUps?.loserMatchUp),
+      loserMatchUpRecord: storedSideRecord(matchUpsMap, targetData?.targetMatchUps?.loserMatchUp?.matchUpId),
       winner: winnerTarget(targetData?.targetMatchUps?.winnerMatchUp, request.matchUpId, draw),
       winnerThroughBye: {
         1: throughBye(targetData?.targetMatchUps?.winnerMatchUp, sideDrawPosition(inContextMatchUp, 1), draw),
@@ -1049,6 +1060,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         allAssignments.some((assignment) => assignment.bye && assignment.drawPosition === position),
       ),
       rotatingPartners: isRotatingPartnerDraw(drawDefinition, event),
+      winRatio: structure?.finishingPosition === WIN_RATIO,
       combinedPointRoundRobin:
         structure?.finishingPosition === WIN_RATIO &&
         !!parse(incomingFormat ?? storedFormat ?? '')?.setFormat?.combinedPointTotal,

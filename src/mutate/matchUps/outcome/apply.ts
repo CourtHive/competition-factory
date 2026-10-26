@@ -51,7 +51,10 @@ export function applyOwnedPlan({
   const written = [
     ...new Set(
       ops.flatMap((op) =>
-        op.op === 'setMatchUpResult' || op.op === 'setMatchUpDrawPositions' || op.op === 'setMatchUpBye'
+        op.op === 'setMatchUpResult' ||
+        op.op === 'setMatchUpDrawPositions' ||
+        op.op === 'setMatchUpBye' ||
+        op.op === 'setMatchUpStatusCodes'
           ? [op.matchUpId]
           : [],
       ),
@@ -59,6 +62,8 @@ export function applyOwnedPlan({
   ];
   const resulted = new Set(ops.flatMap((op) => (op.op === 'setMatchUpResult' ? [op.matchUpId] : [])));
   const byes = new Set(ops.flatMap((op) => (op.op === 'setMatchUpBye' ? [op.matchUpId] : [])));
+  // a loser taken back out: their matchUp's codes re-derived, announced as v1's `removeDirectedLoser` announces it
+  const recoded = new Set(ops.flatMap((op) => (op.op === 'setMatchUpStatusCodes' ? [op.matchUpId] : [])));
   // a position taken back out of a later round: v1's `removeSubsequentRoundsParticipant` names the position, no event
   const removed = new Map(
     ops.flatMap((op) =>
@@ -84,7 +89,7 @@ export function applyOwnedPlan({
       // is `assignMatchUpDrawPosition`'s (`directWinner`), a FIRST_MATCHUP reservation's matchUp `setMatchUpStatusBye`'s
       context: removedPosition
         ? `removeSubsequentDrawPosition-${removedPosition}`
-        : matchUpContext(matchUpId, resulted, byes),
+        : matchUpContext(matchUpId, resulted, byes, recoded),
       eventId: noticeEvent?.eventId,
       drawDefinition,
       tournamentId,
@@ -106,7 +111,8 @@ export function applyOwnedPlan({
   return shape === 'direction' ? { ...SUCCESS, context: {} } : { ...SUCCESS };
 }
 
-function matchUpContext(matchUpId: string, resulted: Set<string>, byes: Set<string>): string {
+function matchUpContext(matchUpId: string, resulted: Set<string>, byes: Set<string>, recoded: Set<string>): string {
   if (resulted.has(matchUpId)) return 'modifyMatchUpScore';
+  if (recoded.has(matchUpId)) return 'removeDirectedLoser';
   return byes.has(matchUpId) ? 'setMatchUpStatusBye' : 'assignMatchUpDrawPosition';
 }

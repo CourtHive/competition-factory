@@ -13,6 +13,7 @@ import { TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import {
   AD_HOC,
   DOUBLE_ELIMINATION,
+  FEED_IN_CHAMPIONSHIP,
   FIRST_MATCH_LOSER_CONSOLATION,
   LUCKY_DRAW,
   ROUND_ROBIN,
@@ -55,6 +56,7 @@ afterEach(() => {
 
 const TOPICS = [MODIFY_MATCHUP, MODIFY_DRAW_DEFINITION, MODIFY_POSITION_ASSIGNMENTS, UPDATE_INCONTEXT_MATCHUP];
 const won = (winningSide: 1 | 2) => generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide }).outcome;
+const cleared = { matchUpStatus: TO_BE_PLAYED, score: { scoreStringSide1: '', scoreStringSide2: '' } };
 const walkover = (winningSide: 1 | 2) =>
   generateOutcomeFromScoreString({ matchUpStatus: WALKOVER, winningSide }).outcome;
 
@@ -238,6 +240,30 @@ const SCENARIOS: [string, Scenario][] = [
           outcome: generateOutcomeFromScoreString({ scoreString: '6-3 6-3', winningSide: 1 }).outcome,
         },
       ],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION (S4): a cleared result takes its winner back and its loser out of the Backdraw',
+    {
+      drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
+      setup: [{ target: R1(1, 'Main'), outcome: won(1) }],
+      steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION (S4): a result cleared with no status named leaves the Backdraw matchUp its codes',
+    {
+      drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
+      setup: [{ target: R1(1, 'Main'), outcome: won(1) }],
+      steps: [{ target: R1(1, 'Main'), outcome: { score: { scoreStringSide1: '', scoreStringSide2: '' } } }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S4): a cleared result takes its loser back out of the consolation',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(2, 'Main'), outcome: won(2) }],
+      steps: [{ target: R1(2, 'Main'), outcome: cleared }],
     },
   ],
   [
