@@ -498,7 +498,9 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   under the same conditions. An ad hoc matchUp's winner directs nothing, and its structure's tally is
   planned when it holds one round (a Swiss's later rounds stay v1's). A result in a lucky draw's
   pre-feed round (a round of odd size) directs nothing either: v1 advances no one from it, the
-  advancement being chosen afterwards (`luckyDrawAdvancement`); an FMLC loser fed into the consolation's round 2 included (the seat `positionTargets`
+  advancement being chosen afterwards (`luckyDrawAdvancement`). The first correction is owned too
+  (S4): a new played score beneath an active downstream that keeps its winner (`apply-values`), which
+  writes the matchUp's values and re-directs nothing; an FMLC loser fed into the consolation's round 2 included (the seat `positionTargets`
   reports is the one `directLoser` takes). A loser that feed keeps out (they have won before) is
   owned too: their seat takes a propagated BYE and its matchUp becomes a BYE, as `directLoser` places
   it, or nothing is written when a reservation made the seat a BYE already; a BYE that would meet

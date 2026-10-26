@@ -124,6 +124,18 @@ function reservationReason(view: OutcomeView, winningSide: 1 | 2): boolean {
   );
 }
 
+/** the values written beneath an active downstream: a played result, nothing directed */
+function applyValuesReason({
+  write,
+  direction,
+}: {
+  write?: MatchUpWrite;
+  direction?: DirectionPlan;
+}): AbstainReason | undefined {
+  if (!write || write.matchUpStatus !== COMPLETED || direction) return 'route';
+  return undefined;
+}
+
 /** a first entry naming a winner, whose direction is the winner's position in the next matchUp and nothing else */
 function directionReason(args: {
   request: OutcomeRequest;
@@ -226,9 +238,14 @@ function abstainReason(args: {
   if (view.draw.perMatchUpCompetition && (request.winningSide || write?.winningSide)) return 'competition';
   if (isAnyExit(request.matchUpStatus) || isAnyExit(view.existing.matchUpStatus) || isAnyExit(write?.matchUpStatus))
     return 'exit';
-  if (view.existing.winningSide) return 'winner';
-  const directing = !!(request.winningSide || write?.winningSide || direction);
-  const shape = directing ? directionReason(args) : localReason(args);
+  // S4: a score changed beneath an active downstream keeps its winner and re-directs nothing (`apply-values`)
+  const sameWinner =
+    args.route === 'apply-values' && !!write?.winningSide && write.winningSide === view.existing.winningSide;
+  if (view.existing.winningSide && !sameWinner) return 'winner';
+  const directing = !sameWinner && !!(request.winningSide || write?.winningSide || direction);
+  let shape: AbstainReason | undefined;
+  if (sameWinner) shape = applyValuesReason(args);
+  else shape = directing ? directionReason(args) : localReason(args);
   if (shape) return shape;
   if (view.existing.hasSideExitProvenance || view.existing.carriedExit) return 'provenance';
   // a round robin group's tally is planned (`setParticipantResults`, S3); an ad hoc, lucky or TEAM tally is not yet

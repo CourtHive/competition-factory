@@ -183,6 +183,20 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'SINGLE_ELIMINATION (S4): a new score beneath an active downstream keeps its winner (apply-values)',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [
+        { target: R1(1), outcome: won(1) },
+        { target: R1(2), outcome: won(2) },
+        { target: { roundNumber: 2, roundPosition: 1 }, outcome: won(1) },
+      ],
+      steps: [
+        { target: R1(1), outcome: generateOutcomeFromScoreString({ scoreString: '7-5 6-4', winningSide: 1 }).outcome },
+      ],
+    },
+  ],
+  [
     'DOUBLE_ELIMINATION: a Main first-round result sends the winner on and the loser into the Backdraw',
     { drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION }, steps: [{ target: R1(1, 'Main'), outcome: won(1) }] },
   ],
