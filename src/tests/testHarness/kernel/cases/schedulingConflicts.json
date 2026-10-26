@@ -1856,5 +1856,809 @@
       }
     },
     "note": "Court 1: order 1 at 11:00, order 2 at 10:00, different draws: order 2 is WARNED for its time."
+  },
+  {
+    "caseId": "scheduling.conflicts.a-played-matchup-recovers-from-its-start.v1",
+    "operation": "kernel.scheduling.conflicts@1",
+    "input": {
+      "view": {
+        "positionDependencies": {},
+        "matchUps": [
+          {
+            "matchUpId": "1bc6bc1d-06e9-4ee2-b378-66e2afec366d",
+            "drawId": "7ab09417-744c-4101-8a24-5f413ace6a2b",
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "COMPLETED",
+            "stage": "MAIN",
+            "stageSequence": 1,
+            "roundNumber": 1,
+            "roundPosition": 1,
+            "schedule": {
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
+              "courtOrder": 1,
+              "scheduledDate": "2026-03-02",
+              "scheduledTime": "10:00"
+            },
+            "neverPlayed": false,
+            "noCourtTime": false,
+            "finished": true,
+            "played": true,
+            "times": {
+              "endMs": null,
+              "scoredMs": null,
+              "scoredDate": null,
+              "startMs": null,
+              "calledMs": null,
+              "scheduledMs": 1772445600000
+            },
+            "timing": {
+              "averageMinutes": 90,
+              "recoveryMinutes": 60,
+              "typeChangeRecoveryMinutes": 60
+            }
+          },
+          {
+            "matchUpId": "43d6645f-c553-47ce-9463-4a6892ceb930",
+            "drawId": "332e24c0-33b9-495c-bfa7-33df46ed1417",
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "stage": "MAIN",
+            "stageSequence": 1,
+            "roundNumber": 1,
+            "roundPosition": 1,
+            "schedule": {
+              "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff",
+              "courtOrder": 2,
+              "scheduledDate": "2026-03-02",
+              "scheduledTime": "11:00"
+            },
+            "neverPlayed": false,
+            "noCourtTime": false,
+            "finished": false,
+            "played": true,
+            "times": {
+              "endMs": null,
+              "scoredMs": null,
+              "scoredDate": null,
+              "startMs": null,
+              "calledMs": null,
+              "scheduledMs": 1772449200000
+            },
+            "timing": {
+              "averageMinutes": 90,
+              "recoveryMinutes": 60,
+              "typeChangeRecoveryMinutes": 60
+            }
+          }
+        ],
+        "matchUpDependencies": {
+          "1bc6bc1d-06e9-4ee2-b378-66e2afec366d": {
+            "dependentMatchUpIds": [],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          },
+          "43d6645f-c553-47ce-9463-4a6892ceb930": {
+            "dependentMatchUpIds": [],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          }
+        },
+        "useDeepDependencies": false,
+        "reachability": {
+          "matchUps": {
+            "1bc6bc1d-06e9-4ee2-b378-66e2afec366d": {
+              "certain": ["58f2eed1-a587-4aa3-be64-18b94e5de732", "7cc1c2e5-640f-4800-95be-2330926b20df"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "43d6645f-c553-47ce-9463-4a6892ceb930": {
+              "certain": ["58f2eed1-a587-4aa3-be64-18b94e5de732", "7cc1c2e5-640f-4800-95be-2330926b20df"],
+              "potential": [],
+              "nearPotential": []
+            }
+          },
+          "upstream": {
+            "1bc6bc1d-06e9-4ee2-b378-66e2afec366d": [],
+            "43d6645f-c553-47ce-9463-4a6892ceb930": []
+          },
+          "linkedTargets": {}
+        }
+      }
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "courtIssues": {
+          "7ba8d890-c415-4ddb-8b66-60040f347884": [],
+          "a27a7677-b13f-4e11-8901-849e7dd5f8ff": [
+            {
+              "matchUpId": "43d6645f-c553-47ce-9463-4a6892ceb930",
+              "issue": "WARNING",
+              "issueType": "participantConflict",
+              "issueIds": ["1bc6bc1d-06e9-4ee2-b378-66e2afec366d"]
+            }
+          ]
+        },
+        "rowIssues": [
+          [],
+          [
+            {
+              "matchUpId": "43d6645f-c553-47ce-9463-4a6892ceb930",
+              "issueType": "participantConflict",
+              "issueIds": ["1bc6bc1d-06e9-4ee2-b378-66e2afec366d"],
+              "issue": "WARNING"
+            }
+          ]
+        ]
+      }
+    },
+    "note": "Back to back at 10:00 and 11:00 as before, the first played and scored with no end recorded: it is free at its start plus its average minutes (11:30), recovered at 12:30, so the later matchUp is WARNED."
+  },
+  {
+    "caseId": "scheduling.conflicts.a-recorded-end-clears-the-recovery.v1",
+    "operation": "kernel.scheduling.conflicts@1",
+    "input": {
+      "view": {
+        "positionDependencies": {},
+        "matchUps": [
+          {
+            "matchUpId": "1bc6bc1d-06e9-4ee2-b378-66e2afec366d",
+            "drawId": "7ab09417-744c-4101-8a24-5f413ace6a2b",
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "COMPLETED",
+            "stage": "MAIN",
+            "stageSequence": 1,
+            "roundNumber": 1,
+            "roundPosition": 1,
+            "schedule": {
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
+              "courtOrder": 1,
+              "scheduledDate": "2026-03-02",
+              "scheduledTime": "10:00"
+            },
+            "neverPlayed": false,
+            "noCourtTime": false,
+            "finished": true,
+            "played": true,
+            "times": {
+              "endMs": 1772448300000,
+              "scoredMs": null,
+              "scoredDate": null,
+              "startMs": null,
+              "calledMs": null,
+              "scheduledMs": 1772445600000
+            },
+            "timing": {
+              "averageMinutes": 90,
+              "recoveryMinutes": 60,
+              "typeChangeRecoveryMinutes": 60
+            }
+          },
+          {
+            "matchUpId": "43d6645f-c553-47ce-9463-4a6892ceb930",
+            "drawId": "332e24c0-33b9-495c-bfa7-33df46ed1417",
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "stage": "MAIN",
+            "stageSequence": 1,
+            "roundNumber": 1,
+            "roundPosition": 1,
+            "schedule": {
+              "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff",
+              "courtOrder": 2,
+              "scheduledDate": "2026-03-02",
+              "scheduledTime": "12:00"
+            },
+            "neverPlayed": false,
+            "noCourtTime": false,
+            "finished": false,
+            "played": true,
+            "times": {
+              "endMs": null,
+              "scoredMs": null,
+              "scoredDate": null,
+              "startMs": null,
+              "calledMs": null,
+              "scheduledMs": 1772452800000
+            },
+            "timing": {
+              "averageMinutes": 90,
+              "recoveryMinutes": 60,
+              "typeChangeRecoveryMinutes": 60
+            }
+          }
+        ],
+        "matchUpDependencies": {
+          "1bc6bc1d-06e9-4ee2-b378-66e2afec366d": {
+            "dependentMatchUpIds": [],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          },
+          "43d6645f-c553-47ce-9463-4a6892ceb930": {
+            "dependentMatchUpIds": [],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          }
+        },
+        "useDeepDependencies": false,
+        "reachability": {
+          "matchUps": {
+            "1bc6bc1d-06e9-4ee2-b378-66e2afec366d": {
+              "certain": ["58f2eed1-a587-4aa3-be64-18b94e5de732", "7cc1c2e5-640f-4800-95be-2330926b20df"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "43d6645f-c553-47ce-9463-4a6892ceb930": {
+              "certain": ["58f2eed1-a587-4aa3-be64-18b94e5de732", "7cc1c2e5-640f-4800-95be-2330926b20df"],
+              "potential": [],
+              "nearPotential": []
+            }
+          },
+          "upstream": {
+            "1bc6bc1d-06e9-4ee2-b378-66e2afec366d": [],
+            "43d6645f-c553-47ce-9463-4a6892ceb930": []
+          },
+          "linkedTargets": {}
+        }
+      }
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "courtIssues": {
+          "7ba8d890-c415-4ddb-8b66-60040f347884": [],
+          "a27a7677-b13f-4e11-8901-849e7dd5f8ff": []
+        },
+        "rowIssues": [[], []]
+      }
+    },
+    "note": "The first played from 10:00 and ended at 10:45, the second at 12:00: by its start it would recover at 12:30, but its recorded end is plausible and recovers it at 11:45, so the later matchUp is clear."
+  },
+  {
+    "caseId": "scheduling.conflicts.deep-a-gap-beyond-adjacent-rows.v1",
+    "operation": "kernel.scheduling.conflicts@1",
+    "input": {
+      "view": {
+        "positionDependencies": {},
+        "matchUps": [
+          {
+            "matchUpId": "d868f265-a38e-4597-a1fc-47a144e31b15",
+            "drawId": "dbeb5066-79cb-4ddf-8eb4-1d0362f91233",
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "stage": "MAIN",
+            "stageSequence": 1,
+            "roundNumber": 1,
+            "roundPosition": 1,
+            "winnerMatchUpId": "49dd101d-1ad3-4d26-b5dc-67b3f47d732b",
+            "schedule": {
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
+              "courtOrder": 1,
+              "scheduledDate": "2026-03-02"
+            },
+            "neverPlayed": false,
+            "noCourtTime": false,
+            "finished": false,
+            "played": true,
+            "times": {
+              "endMs": null,
+              "scoredMs": null,
+              "scoredDate": null,
+              "startMs": null,
+              "calledMs": null,
+              "scheduledMs": null
+            },
+            "timing": {
+              "averageMinutes": 90,
+              "recoveryMinutes": 60,
+              "typeChangeRecoveryMinutes": 60
+            }
+          },
+          {
+            "matchUpId": "4e91cb31-23e5-471d-a6cc-ab25de617d31",
+            "drawId": "dbeb5066-79cb-4ddf-8eb4-1d0362f91233",
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "stage": "MAIN",
+            "stageSequence": 1,
+            "roundNumber": 4,
+            "roundPosition": 1,
+            "schedule": {
+              "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff",
+              "courtOrder": 3,
+              "scheduledDate": "2026-03-02"
+            },
+            "neverPlayed": false,
+            "noCourtTime": false,
+            "finished": false,
+            "played": true,
+            "times": {
+              "endMs": null,
+              "scoredMs": null,
+              "scoredDate": null,
+              "startMs": null,
+              "calledMs": null,
+              "scheduledMs": null
+            },
+            "timing": {
+              "averageMinutes": 90,
+              "recoveryMinutes": 60,
+              "typeChangeRecoveryMinutes": 60
+            }
+          }
+        ],
+        "matchUpDependencies": {
+          "d868f265-a38e-4597-a1fc-47a144e31b15": {
+            "dependentMatchUpIds": ["49dd101d-1ad3-4d26-b5dc-67b3f47d732b"],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          },
+          "49dd101d-1ad3-4d26-b5dc-67b3f47d732b": {
+            "dependentMatchUpIds": ["d61b80e0-4f18-4829-b222-93adf532e0b8"],
+            "participantIds": [],
+            "matchUpIds": ["d868f265-a38e-4597-a1fc-47a144e31b15", "ae1432ab-0ef8-4d49-a069-a63fdccbf897"],
+            "sources": [["d868f265-a38e-4597-a1fc-47a144e31b15", "ae1432ab-0ef8-4d49-a069-a63fdccbf897"], [], []]
+          },
+          "ae1432ab-0ef8-4d49-a069-a63fdccbf897": {
+            "dependentMatchUpIds": ["49dd101d-1ad3-4d26-b5dc-67b3f47d732b"],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          },
+          "8f61ccb7-c034-44f3-bfa6-478a4198a3a6": {
+            "dependentMatchUpIds": ["de134a1a-e3c2-4743-b654-0b3e4168a90f"],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          },
+          "de134a1a-e3c2-4743-b654-0b3e4168a90f": {
+            "dependentMatchUpIds": ["d61b80e0-4f18-4829-b222-93adf532e0b8"],
+            "participantIds": [],
+            "matchUpIds": ["8f61ccb7-c034-44f3-bfa6-478a4198a3a6", "b57728c9-da59-4339-b6b8-9efb7d0b59a3"],
+            "sources": [["8f61ccb7-c034-44f3-bfa6-478a4198a3a6", "b57728c9-da59-4339-b6b8-9efb7d0b59a3"], [], []]
+          },
+          "b57728c9-da59-4339-b6b8-9efb7d0b59a3": {
+            "dependentMatchUpIds": ["de134a1a-e3c2-4743-b654-0b3e4168a90f"],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          },
+          "0d8bdd6f-2751-45ab-95e5-04fac83f0a59": {
+            "dependentMatchUpIds": ["45bc0e81-cd29-4d49-9e54-0be7627626e7"],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          },
+          "45bc0e81-cd29-4d49-9e54-0be7627626e7": {
+            "dependentMatchUpIds": ["7f231656-2f7f-4076-9700-9be9dbdcdc6a"],
+            "participantIds": [],
+            "matchUpIds": ["0d8bdd6f-2751-45ab-95e5-04fac83f0a59", "5fb4107a-2c7a-483f-ab0e-dbfa9709f822"],
+            "sources": [["0d8bdd6f-2751-45ab-95e5-04fac83f0a59", "5fb4107a-2c7a-483f-ab0e-dbfa9709f822"], [], []]
+          },
+          "5fb4107a-2c7a-483f-ab0e-dbfa9709f822": {
+            "dependentMatchUpIds": ["45bc0e81-cd29-4d49-9e54-0be7627626e7"],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          },
+          "b89b99ea-8cb6-4ef3-971c-adfbcae11540": {
+            "dependentMatchUpIds": ["2d7ae811-dda0-4697-a3d9-d3d495eedf87"],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          },
+          "2d7ae811-dda0-4697-a3d9-d3d495eedf87": {
+            "dependentMatchUpIds": ["7f231656-2f7f-4076-9700-9be9dbdcdc6a"],
+            "participantIds": [],
+            "matchUpIds": ["b89b99ea-8cb6-4ef3-971c-adfbcae11540", "3fa901c4-d6cc-46fa-9c61-116a4e9291d5"],
+            "sources": [["b89b99ea-8cb6-4ef3-971c-adfbcae11540", "3fa901c4-d6cc-46fa-9c61-116a4e9291d5"], [], []]
+          },
+          "3fa901c4-d6cc-46fa-9c61-116a4e9291d5": {
+            "dependentMatchUpIds": ["2d7ae811-dda0-4697-a3d9-d3d495eedf87"],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          },
+          "d61b80e0-4f18-4829-b222-93adf532e0b8": {
+            "dependentMatchUpIds": ["4e91cb31-23e5-471d-a6cc-ab25de617d31"],
+            "participantIds": [],
+            "matchUpIds": [
+              "d868f265-a38e-4597-a1fc-47a144e31b15",
+              "ae1432ab-0ef8-4d49-a069-a63fdccbf897",
+              "49dd101d-1ad3-4d26-b5dc-67b3f47d732b",
+              "8f61ccb7-c034-44f3-bfa6-478a4198a3a6",
+              "b57728c9-da59-4339-b6b8-9efb7d0b59a3",
+              "de134a1a-e3c2-4743-b654-0b3e4168a90f"
+            ],
+            "sources": [
+              ["49dd101d-1ad3-4d26-b5dc-67b3f47d732b", "de134a1a-e3c2-4743-b654-0b3e4168a90f"],
+              [
+                "d868f265-a38e-4597-a1fc-47a144e31b15",
+                "ae1432ab-0ef8-4d49-a069-a63fdccbf897",
+                "8f61ccb7-c034-44f3-bfa6-478a4198a3a6",
+                "b57728c9-da59-4339-b6b8-9efb7d0b59a3"
+              ],
+              []
+            ]
+          },
+          "7f231656-2f7f-4076-9700-9be9dbdcdc6a": {
+            "dependentMatchUpIds": ["4e91cb31-23e5-471d-a6cc-ab25de617d31"],
+            "participantIds": [],
+            "matchUpIds": [
+              "0d8bdd6f-2751-45ab-95e5-04fac83f0a59",
+              "5fb4107a-2c7a-483f-ab0e-dbfa9709f822",
+              "45bc0e81-cd29-4d49-9e54-0be7627626e7",
+              "b89b99ea-8cb6-4ef3-971c-adfbcae11540",
+              "3fa901c4-d6cc-46fa-9c61-116a4e9291d5",
+              "2d7ae811-dda0-4697-a3d9-d3d495eedf87"
+            ],
+            "sources": [
+              ["45bc0e81-cd29-4d49-9e54-0be7627626e7", "2d7ae811-dda0-4697-a3d9-d3d495eedf87"],
+              [
+                "0d8bdd6f-2751-45ab-95e5-04fac83f0a59",
+                "5fb4107a-2c7a-483f-ab0e-dbfa9709f822",
+                "b89b99ea-8cb6-4ef3-971c-adfbcae11540",
+                "3fa901c4-d6cc-46fa-9c61-116a4e9291d5"
+              ],
+              []
+            ]
+          },
+          "4e91cb31-23e5-471d-a6cc-ab25de617d31": {
+            "dependentMatchUpIds": [],
+            "participantIds": [],
+            "matchUpIds": [
+              "d868f265-a38e-4597-a1fc-47a144e31b15",
+              "ae1432ab-0ef8-4d49-a069-a63fdccbf897",
+              "49dd101d-1ad3-4d26-b5dc-67b3f47d732b",
+              "8f61ccb7-c034-44f3-bfa6-478a4198a3a6",
+              "b57728c9-da59-4339-b6b8-9efb7d0b59a3",
+              "de134a1a-e3c2-4743-b654-0b3e4168a90f",
+              "d61b80e0-4f18-4829-b222-93adf532e0b8",
+              "0d8bdd6f-2751-45ab-95e5-04fac83f0a59",
+              "5fb4107a-2c7a-483f-ab0e-dbfa9709f822",
+              "45bc0e81-cd29-4d49-9e54-0be7627626e7",
+              "b89b99ea-8cb6-4ef3-971c-adfbcae11540",
+              "3fa901c4-d6cc-46fa-9c61-116a4e9291d5",
+              "2d7ae811-dda0-4697-a3d9-d3d495eedf87",
+              "7f231656-2f7f-4076-9700-9be9dbdcdc6a"
+            ],
+            "sources": [
+              ["d61b80e0-4f18-4829-b222-93adf532e0b8", "7f231656-2f7f-4076-9700-9be9dbdcdc6a"],
+              [
+                "49dd101d-1ad3-4d26-b5dc-67b3f47d732b",
+                "de134a1a-e3c2-4743-b654-0b3e4168a90f",
+                "45bc0e81-cd29-4d49-9e54-0be7627626e7",
+                "2d7ae811-dda0-4697-a3d9-d3d495eedf87"
+              ],
+              [
+                "d868f265-a38e-4597-a1fc-47a144e31b15",
+                "ae1432ab-0ef8-4d49-a069-a63fdccbf897",
+                "8f61ccb7-c034-44f3-bfa6-478a4198a3a6",
+                "b57728c9-da59-4339-b6b8-9efb7d0b59a3",
+                "0d8bdd6f-2751-45ab-95e5-04fac83f0a59",
+                "5fb4107a-2c7a-483f-ab0e-dbfa9709f822",
+                "b89b99ea-8cb6-4ef3-971c-adfbcae11540",
+                "3fa901c4-d6cc-46fa-9c61-116a4e9291d5"
+              ]
+            ]
+          }
+        },
+        "useDeepDependencies": true,
+        "reachability": {
+          "matchUps": {
+            "d868f265-a38e-4597-a1fc-47a144e31b15": {
+              "certain": ["5fd98efd-93da-48d7-9e8c-b11a50990d1d", "0613a360-eccc-42f6-8255-1d11a35b7a61"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "4e91cb31-23e5-471d-a6cc-ab25de617d31": {
+              "certain": [],
+              "potential": [],
+              "nearPotential": []
+            }
+          },
+          "upstream": {
+            "d868f265-a38e-4597-a1fc-47a144e31b15": [],
+            "4e91cb31-23e5-471d-a6cc-ab25de617d31": [
+              "0d8bdd6f-2751-45ab-95e5-04fac83f0a59",
+              "2d7ae811-dda0-4697-a3d9-d3d495eedf87",
+              "3fa901c4-d6cc-46fa-9c61-116a4e9291d5",
+              "45bc0e81-cd29-4d49-9e54-0be7627626e7",
+              "49dd101d-1ad3-4d26-b5dc-67b3f47d732b",
+              "5fb4107a-2c7a-483f-ab0e-dbfa9709f822",
+              "7f231656-2f7f-4076-9700-9be9dbdcdc6a",
+              "8f61ccb7-c034-44f3-bfa6-478a4198a3a6",
+              "ae1432ab-0ef8-4d49-a069-a63fdccbf897",
+              "b57728c9-da59-4339-b6b8-9efb7d0b59a3",
+              "b89b99ea-8cb6-4ef3-971c-adfbcae11540",
+              "d61b80e0-4f18-4829-b222-93adf532e0b8",
+              "d868f265-a38e-4597-a1fc-47a144e31b15",
+              "de134a1a-e3c2-4743-b654-0b3e4168a90f"
+            ]
+          },
+          "linkedTargets": {
+            "d868f265-a38e-4597-a1fc-47a144e31b15": ["4e91cb31-23e5-471d-a6cc-ab25de617d31"]
+          }
+        }
+      }
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "courtIssues": {
+          "7ba8d890-c415-4ddb-8b66-60040f347884": [
+            {
+              "matchUpId": "d868f265-a38e-4597-a1fc-47a144e31b15",
+              "issue": "ISSUE",
+              "issueType": "matchUpConflict",
+              "issueIds": ["4e91cb31-23e5-471d-a6cc-ab25de617d31"]
+            }
+          ],
+          "a27a7677-b13f-4e11-8901-849e7dd5f8ff": [
+            {
+              "matchUpId": "4e91cb31-23e5-471d-a6cc-ab25de617d31",
+              "issue": "ISSUE",
+              "issueType": "matchUpConflict",
+              "issueIds": ["d868f265-a38e-4597-a1fc-47a144e31b15"]
+            }
+          ]
+        },
+        "rowIssues": [
+          [
+            {
+              "matchUpId": "d868f265-a38e-4597-a1fc-47a144e31b15",
+              "issueType": "matchUpConflict",
+              "issueIds": ["4e91cb31-23e5-471d-a6cc-ab25de617d31"],
+              "issue": "ISSUE"
+            }
+          ],
+          [],
+          [
+            {
+              "matchUpId": "4e91cb31-23e5-471d-a6cc-ab25de617d31",
+              "issueType": "matchUpConflict",
+              "issueIds": ["d868f265-a38e-4597-a1fc-47a144e31b15"],
+              "issue": "ISSUE"
+            }
+          ]
+        ]
+      }
+    },
+    "note": "Sixteen players, a first-round matchUp on row 1 and the final on row 3, deep: three rounds apart with one row between, an ISSUE on both (the adjacent-row check alone sees nothing)."
+  },
+  {
+    "caseId": "scheduling.conflicts.deep-position-linked-sources-off-the-grid.v1",
+    "operation": "kernel.scheduling.conflicts@1",
+    "input": {
+      "view": {
+        "positionDependencies": {
+          "65c57b1d-ac7b-4b81-a09a-bd125b7c3b4b": [
+            "b5be4ab4-8196-464e-ab8d-015772bdde17",
+            "a03db62d-5067-4840-8440-06d6dff3e940",
+            "2622f8d5-c1d7-4b60-b0a5-0bac4e3e399e",
+            "e739cb28-aee4-403f-a4b5-af1ad95079b0",
+            "1467f484-7487-4395-91f4-d7ce71e37ae9",
+            "490bdc8b-3f06-474c-920e-59e5ee40c85b",
+            "e0371890-410e-4c72-9dec-bdfe85d26c0d",
+            "34e9580f-c477-4bcb-b235-1a1de3b4661a",
+            "77e6520d-db38-4ecf-9f1a-17a42431713b",
+            "0d1efa1e-7112-4215-bb61-15a47c2e5e23",
+            "7e28f188-482d-4e85-be88-cf578699a03d",
+            "c134ca29-291a-41d4-889a-d07ac98c06c8"
+          ]
+        },
+        "matchUps": [
+          {
+            "matchUpId": "b302edcb-dabd-4c89-a1ab-3ca252c70c2d",
+            "drawId": "caed84ff-fdf4-46b3-a95a-39866ef9d9b1",
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "stage": "PLAY_OFF",
+            "stageSequence": 1,
+            "roundNumber": 1,
+            "roundPosition": 1,
+            "schedule": {
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
+              "courtOrder": 1,
+              "scheduledDate": "2026-03-02"
+            },
+            "neverPlayed": false,
+            "noCourtTime": false,
+            "finished": false,
+            "played": true,
+            "times": {
+              "endMs": null,
+              "scoredMs": null,
+              "scoredDate": null,
+              "startMs": null,
+              "calledMs": null,
+              "scheduledMs": null
+            },
+            "timing": {
+              "averageMinutes": 90,
+              "recoveryMinutes": 60,
+              "typeChangeRecoveryMinutes": 60
+            }
+          }
+        ],
+        "matchUpDependencies": {
+          "b5be4ab4-8196-464e-ab8d-015772bdde17": {
+            "dependentMatchUpIds": ["b302edcb-dabd-4c89-a1ab-3ca252c70c2d"],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [["b302edcb-dabd-4c89-a1ab-3ca252c70c2d"], [], []]
+          },
+          "a03db62d-5067-4840-8440-06d6dff3e940": {
+            "dependentMatchUpIds": ["b302edcb-dabd-4c89-a1ab-3ca252c70c2d"],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [["b302edcb-dabd-4c89-a1ab-3ca252c70c2d"], [], []]
+          },
+          "e0371890-410e-4c72-9dec-bdfe85d26c0d": {
+            "dependentMatchUpIds": ["b302edcb-dabd-4c89-a1ab-3ca252c70c2d"],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [["b302edcb-dabd-4c89-a1ab-3ca252c70c2d"], [], []]
+          },
+          "34e9580f-c477-4bcb-b235-1a1de3b4661a": {
+            "dependentMatchUpIds": ["b302edcb-dabd-4c89-a1ab-3ca252c70c2d"],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [["b302edcb-dabd-4c89-a1ab-3ca252c70c2d"], [], []]
+          },
+          "2622f8d5-c1d7-4b60-b0a5-0bac4e3e399e": {
+            "dependentMatchUpIds": ["b302edcb-dabd-4c89-a1ab-3ca252c70c2d"],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [["b302edcb-dabd-4c89-a1ab-3ca252c70c2d"], [], []]
+          },
+          "e739cb28-aee4-403f-a4b5-af1ad95079b0": {
+            "dependentMatchUpIds": ["b302edcb-dabd-4c89-a1ab-3ca252c70c2d"],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [["b302edcb-dabd-4c89-a1ab-3ca252c70c2d"], [], []]
+          },
+          "77e6520d-db38-4ecf-9f1a-17a42431713b": {
+            "dependentMatchUpIds": ["b302edcb-dabd-4c89-a1ab-3ca252c70c2d"],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [["b302edcb-dabd-4c89-a1ab-3ca252c70c2d"], [], []]
+          },
+          "0d1efa1e-7112-4215-bb61-15a47c2e5e23": {
+            "dependentMatchUpIds": ["b302edcb-dabd-4c89-a1ab-3ca252c70c2d"],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [["b302edcb-dabd-4c89-a1ab-3ca252c70c2d"], [], []]
+          },
+          "1467f484-7487-4395-91f4-d7ce71e37ae9": {
+            "dependentMatchUpIds": ["b302edcb-dabd-4c89-a1ab-3ca252c70c2d"],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [["b302edcb-dabd-4c89-a1ab-3ca252c70c2d"], [], []]
+          },
+          "490bdc8b-3f06-474c-920e-59e5ee40c85b": {
+            "dependentMatchUpIds": ["b302edcb-dabd-4c89-a1ab-3ca252c70c2d"],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [["b302edcb-dabd-4c89-a1ab-3ca252c70c2d"], [], []]
+          },
+          "7e28f188-482d-4e85-be88-cf578699a03d": {
+            "dependentMatchUpIds": ["b302edcb-dabd-4c89-a1ab-3ca252c70c2d"],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [["b302edcb-dabd-4c89-a1ab-3ca252c70c2d"], [], []]
+          },
+          "c134ca29-291a-41d4-889a-d07ac98c06c8": {
+            "dependentMatchUpIds": ["b302edcb-dabd-4c89-a1ab-3ca252c70c2d"],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [["b302edcb-dabd-4c89-a1ab-3ca252c70c2d"], [], []]
+          },
+          "b302edcb-dabd-4c89-a1ab-3ca252c70c2d": {
+            "dependentMatchUpIds": [],
+            "participantIds": [],
+            "matchUpIds": [
+              "b5be4ab4-8196-464e-ab8d-015772bdde17",
+              "a03db62d-5067-4840-8440-06d6dff3e940",
+              "2622f8d5-c1d7-4b60-b0a5-0bac4e3e399e",
+              "e739cb28-aee4-403f-a4b5-af1ad95079b0",
+              "1467f484-7487-4395-91f4-d7ce71e37ae9",
+              "490bdc8b-3f06-474c-920e-59e5ee40c85b",
+              "e0371890-410e-4c72-9dec-bdfe85d26c0d",
+              "34e9580f-c477-4bcb-b235-1a1de3b4661a",
+              "77e6520d-db38-4ecf-9f1a-17a42431713b",
+              "0d1efa1e-7112-4215-bb61-15a47c2e5e23",
+              "7e28f188-482d-4e85-be88-cf578699a03d",
+              "c134ca29-291a-41d4-889a-d07ac98c06c8"
+            ],
+            "sources": [[], [], []]
+          }
+        },
+        "useDeepDependencies": true,
+        "reachability": {
+          "matchUps": {
+            "b302edcb-dabd-4c89-a1ab-3ca252c70c2d": {
+              "certain": [],
+              "potential": [],
+              "nearPotential": []
+            }
+          },
+          "upstream": {
+            "b302edcb-dabd-4c89-a1ab-3ca252c70c2d": [
+              "0d1efa1e-7112-4215-bb61-15a47c2e5e23",
+              "1467f484-7487-4395-91f4-d7ce71e37ae9",
+              "2622f8d5-c1d7-4b60-b0a5-0bac4e3e399e",
+              "34e9580f-c477-4bcb-b235-1a1de3b4661a",
+              "490bdc8b-3f06-474c-920e-59e5ee40c85b",
+              "77e6520d-db38-4ecf-9f1a-17a42431713b",
+              "7e28f188-482d-4e85-be88-cf578699a03d",
+              "a03db62d-5067-4840-8440-06d6dff3e940",
+              "b5be4ab4-8196-464e-ab8d-015772bdde17",
+              "c134ca29-291a-41d4-889a-d07ac98c06c8",
+              "e0371890-410e-4c72-9dec-bdfe85d26c0d",
+              "e739cb28-aee4-403f-a4b5-af1ad95079b0"
+            ]
+          },
+          "linkedTargets": {}
+        }
+      }
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "courtIssues": {
+          "7ba8d890-c415-4ddb-8b66-60040f347884": [
+            {
+              "matchUpId": "b302edcb-dabd-4c89-a1ab-3ca252c70c2d",
+              "issue": "WARNING",
+              "issueType": "positionLinkConflict",
+              "issueIds": [
+                "b5be4ab4-8196-464e-ab8d-015772bdde17",
+                "a03db62d-5067-4840-8440-06d6dff3e940",
+                "2622f8d5-c1d7-4b60-b0a5-0bac4e3e399e",
+                "e739cb28-aee4-403f-a4b5-af1ad95079b0",
+                "1467f484-7487-4395-91f4-d7ce71e37ae9",
+                "490bdc8b-3f06-474c-920e-59e5ee40c85b",
+                "e0371890-410e-4c72-9dec-bdfe85d26c0d",
+                "34e9580f-c477-4bcb-b235-1a1de3b4661a",
+                "77e6520d-db38-4ecf-9f1a-17a42431713b",
+                "0d1efa1e-7112-4215-bb61-15a47c2e5e23",
+                "7e28f188-482d-4e85-be88-cf578699a03d",
+                "c134ca29-291a-41d4-889a-d07ac98c06c8"
+              ]
+            }
+          ]
+        },
+        "rowIssues": [
+          [
+            {
+              "matchUpId": "b302edcb-dabd-4c89-a1ab-3ca252c70c2d",
+              "issueType": "positionLinkConflict",
+              "issueIds": [
+                "b5be4ab4-8196-464e-ab8d-015772bdde17",
+                "a03db62d-5067-4840-8440-06d6dff3e940",
+                "2622f8d5-c1d7-4b60-b0a5-0bac4e3e399e",
+                "e739cb28-aee4-403f-a4b5-af1ad95079b0",
+                "1467f484-7487-4395-91f4-d7ce71e37ae9",
+                "490bdc8b-3f06-474c-920e-59e5ee40c85b",
+                "e0371890-410e-4c72-9dec-bdfe85d26c0d",
+                "34e9580f-c477-4bcb-b235-1a1de3b4661a",
+                "77e6520d-db38-4ecf-9f1a-17a42431713b",
+                "0d1efa1e-7112-4215-bb61-15a47c2e5e23",
+                "7e28f188-482d-4e85-be88-cf578699a03d",
+                "c134ca29-291a-41d4-889a-d07ac98c06c8"
+              ],
+              "issue": "WARNING"
+            }
+          ]
+        ]
+      }
+    },
+    "note": "A round robin's playoff final on row 1 and none of its groups' matchUps on the grid, deep: its position-linked sources are unscheduled, a WARNING."
   }
 ]

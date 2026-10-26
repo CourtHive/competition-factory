@@ -22,6 +22,9 @@ import type { KernelCase } from './kernel';
  * standard set averages 90 minutes and recovers 60.
  */
 const DAY = '2026-03-02';
+const PARTICIPANT_WARNING = 'WARNING participantConflict';
+const ORDER_ISSUE = 'ISSUE matchUpConflict';
+const LATER = 'the later matchUp';
 const VENUE = 'venue-1';
 
 type Cell = { court: number; order: number; time?: string };
@@ -90,6 +93,18 @@ function expectEqual(actual: unknown, expected: unknown, what: string) {
 
 const twoEvents = () => tournament([{ drawSize: 2 }, { drawSize: 2 }]);
 
+/** the first event's matchUp played and won 6-1 6-1 */
+function score(matchUpId: string) {
+  const { tournamentRecord } = tournamentEngine.getTournament();
+  const { outcome } = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 1 });
+  const result: any = tournamentEngine.setMatchUpStatus({
+    drawId: tournamentRecord.events[0].drawDefinitions[0].drawId,
+    matchUpId,
+    outcome,
+  });
+  if (!result.success) throw new Error(`score: ${JSON.stringify(result.error)}`);
+}
+
 export const conflictsCaseSources: Source[] = [
   {
     caseId: 'scheduling.conflicts.target-before-its-sources-is-an-error.v1',
@@ -146,11 +161,7 @@ export const conflictsCaseSources: Source[] = [
       );
     },
     claims: (issues, ids) =>
-      expectEqual(
-        [issues[ids['E0.R1.1']], issues[ids['E1.R1.1']]],
-        [undefined, 'WARNING participantConflict'],
-        'issues',
-      ),
+      expectEqual([issues[ids['E0.R1.1']], issues[ids['E1.R1.1']]], [undefined, PARTICIPANT_WARNING], 'issues'),
   },
   {
     caseId: 'scheduling.conflicts.back-to-back-with-recovery-is-clear.v1',
@@ -182,7 +193,7 @@ export const conflictsCaseSources: Source[] = [
       });
       if (!result.success) throw new Error(`walkover: ${JSON.stringify(result.error)}`);
     },
-    claims: (issues, ids) => expectEqual(issues[ids['E1.R1.1']], undefined, 'the later matchUp'),
+    claims: (issues, ids) => expectEqual(issues[ids['E1.R1.1']], undefined, LATER),
   },
   {
     caseId: 'scheduling.conflicts.a-dependent-in-the-same-row.v1',
@@ -201,11 +212,7 @@ export const conflictsCaseSources: Source[] = [
       place({ 'R1.1': { court: 1, order: 1 }, 'R3.1': { court: 2, order: 2 } }, ids());
     },
     claims: (issues, ids) =>
-      expectEqual(
-        [issues[ids['R1.1']], issues[ids['R3.1']]],
-        ['ISSUE matchUpConflict', 'ISSUE matchUpConflict'],
-        'issues',
-      ),
+      expectEqual([issues[ids['R1.1']], issues[ids['R3.1']]], [ORDER_ISSUE, ORDER_ISSUE], 'issues'),
   },
   {
     caseId: 'scheduling.conflicts.next-row-another-court-short-of-recovery.v1',
@@ -225,7 +232,7 @@ export const conflictsCaseSources: Source[] = [
       tournament([{ drawSize: 4 }]);
       place({ 'R1.1': { court: 1, order: 1, time: '10:00' }, 'R2.1': { court: 1, order: 2, time: '11:00' } }, ids());
     },
-    claims: (issues, ids) => expectEqual(issues[ids['R2.1']], 'WARNING participantConflict', 'the final'),
+    claims: (issues, ids) => expectEqual(issues[ids['R2.1']], PARTICIPANT_WARNING, 'the final'),
   },
   {
     caseId: 'scheduling.conflicts.a-bye-holding-a-court.v1',
@@ -263,6 +270,70 @@ export const conflictsCaseSources: Source[] = [
         [undefined, 'WARNING courtTimeOrderConflict'],
         'issues',
       ),
+  },
+  {
+    caseId: 'scheduling.conflicts.a-played-matchup-recovers-from-its-start.v1',
+    note:
+      'Back to back at 10:00 and 11:00 as before, the first played and scored with no end recorded: it is free at its ' +
+      'start plus its average minutes (11:30), recovered at 12:30, so the later matchUp is WARNED.',
+    build: (ids) => {
+      twoEvents();
+      const labelled = ids();
+      place(
+        { 'E0.R1.1': { court: 1, order: 1, time: '10:00' }, 'E1.R1.1': { court: 2, order: 2, time: '11:00' } },
+        labelled,
+      );
+      score(labelled['E0.R1.1']);
+    },
+    claims: (issues, ids) => expectEqual(issues[ids['E1.R1.1']], PARTICIPANT_WARNING, LATER),
+  },
+  {
+    caseId: 'scheduling.conflicts.a-recorded-end-clears-the-recovery.v1',
+    note:
+      'The first played from 10:00 and ended at 10:45, the second at 12:00: by its start it would recover at 12:30, but ' +
+      'its recorded end is plausible and recovers it at 11:45, so the later matchUp is clear.',
+    build: (ids) => {
+      twoEvents();
+      const labelled = ids();
+      place(
+        { 'E0.R1.1': { court: 1, order: 1, time: '10:00' }, 'E1.R1.1': { court: 2, order: 2, time: '12:00' } },
+        labelled,
+      );
+      score(labelled['E0.R1.1']);
+      const { tournamentRecord } = tournamentEngine.getTournament();
+      const result: any = tournamentEngine.addMatchUpEndTime({
+        drawId: tournamentRecord.events[0].drawDefinitions[0].drawId,
+        matchUpId: labelled['E0.R1.1'],
+        endTime: '10:45',
+      });
+      if (!result.success) throw new Error(`end time: ${JSON.stringify(result.error)}`);
+    },
+    claims: (issues, ids) => expectEqual(issues[ids['E1.R1.1']], undefined, LATER),
+  },
+  {
+    caseId: 'scheduling.conflicts.deep-a-gap-beyond-adjacent-rows.v1',
+    note:
+      'Sixteen players, a first-round matchUp on row 1 and the final on row 3, deep: three rounds apart with one row ' +
+      'between, an ISSUE on both (the adjacent-row check alone sees nothing).',
+    useDeepDependencies: true,
+    build: (ids) => {
+      tournament([{ drawSize: 16 }]);
+      place({ 'R1.1': { court: 1, order: 1 }, 'R4.1': { court: 2, order: 3 } }, ids());
+    },
+    claims: (issues, ids) =>
+      expectEqual([issues[ids['R1.1']], issues[ids['R4.1']]], [ORDER_ISSUE, ORDER_ISSUE], 'issues'),
+  },
+  {
+    caseId: 'scheduling.conflicts.deep-position-linked-sources-off-the-grid.v1',
+    note:
+      "A round robin's playoff final on row 1 and none of its groups' matchUps on the grid, deep: its position-linked " +
+      'sources are unscheduled, a WARNING.',
+    useDeepDependencies: true,
+    build: (ids) => {
+      tournament([{ drawSize: 8, drawType: 'ROUND_ROBIN_WITH_PLAYOFF' }]);
+      place({ 'R1.1': { court: 1, order: 1 } }, ids());
+    },
+    claims: (issues, ids) => expectEqual(issues[ids['R1.1']], 'WARNING positionLinkConflict', 'the playoff final'),
   },
 ];
 
