@@ -167,6 +167,8 @@ export type OutcomeView = {
       bye: boolean;
       /** the matchUp's other seat holds somebody or a BYE: a BYE placed here would advance or meet them */
       opponentHeld: boolean;
+      /** the participant the seat holds: a re-entered result finds its loser already there (S4) */
+      participantId?: string;
     };
     /** a loser placed opposite a BYE goes on into this matchUp, holding these drawPositions after (planned, S3) */
     loserThroughBye?: ThroughBye;

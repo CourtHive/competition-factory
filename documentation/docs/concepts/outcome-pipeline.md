@@ -498,12 +498,9 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   under the same conditions. An ad hoc matchUp's winner directs nothing, and its structure's tally is
   planned when it holds one round (a Swiss's later rounds stay v1's). A result in a lucky draw's
   pre-feed round (a round of odd size) directs nothing either: v1 advances no one from it, the
-  advancement being chosen afterwards (`luckyDrawAdvancement`). The first correction is owned too
-  (S4): a new played score beneath an active downstream that keeps its winner (`apply-values`), which
-  writes the matchUp's values and re-directs nothing; and a decided result cleared while its downstream
-  is untouched (`remove-directed`), where all it directed is the winner's position in a clean next
-  matchUp of the same structure: the position is taken back out, with that matchUp's score; an FMLC loser fed into the consolation's round 2 included (the seat `positionTargets`
-  reports is the one `directLoser` takes). A loser that feed keeps out (they have won before) is
+  advancement being chosen afterwards (`luckyDrawAdvancement`). An FMLC loser fed into the
+  consolation's round 2 is included (the seat `positionTargets` reports is the one `directLoser`
+  takes). A loser that feed keeps out (they have won before) is
   owned too: their seat takes a propagated BYE and its matchUp becomes a BYE, as `directLoser` places
   it, or nothing is written when a reservation made the seat a BYE already; a BYE that would meet
   somebody in the other seat stays v1's. A seeded loser stays v1's: v1 carries the seed into the
@@ -522,7 +519,17 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   consolation, its matchUp's `modifyMatchUp` named `setMatchUpStatusBye`). A seat already a BYE needs
   nothing. A reservation that would meet somebody (the consolation matchUp's other seat held, or
   this call's own loser placed in it), a seat holding a participant or provenance, a stale
-  reservation to withdraw, and a BYE-only target beside a playoff link stay v1's.
+  reservation to withdraw, and a BYE-only target beside a playoff link stay v1's. The first
+  **corrections** are owned too (S4). A new played score beneath an active downstream that keeps its
+  winner (`apply-values`) writes the matchUp's values and re-directs nothing. A decided result
+  cleared while its downstream is untouched (`remove-directed`), where all it directed is the
+  winner's position in a clean next matchUp of the same structure, takes the position back out, with
+  that matchUp's score. The same winner entered again while nothing downstream is active (the
+  `winner` route) is directed once more by v1, whose placements find the winner and the loser where
+  the first entry put them; v2 writes the matchUp's own result and places nobody. That is planned
+  when the stored result is a played `COMPLETED` one, the winner stands in a clean next matchUp of
+  the same structure (or the matchUp is a final), and the loser, if a link takes them, holds the seat
+  it feeds in a matchUp with no result or exit; a draw with `FIRST_MATCHUP` reservations stays v1's.
 - **`differential`**: v2 plans the whole call before v1 runs, then checks v1's result against it,
   and a disagreement throws `OutcomePipelineDivergence` naming the matchUp and both answers. The
   plan covers the refusal, the route, the write on the matchUp, the winner's direction, the
