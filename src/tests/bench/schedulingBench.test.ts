@@ -1,12 +1,17 @@
 import { buildSchedulingView } from '@Mutate/matchUps/schedule/pipeline/view';
 import { planSchedule } from '@Mutate/matchUps/schedule/pipeline/plan';
+import { chunkArray, shuffleArray } from '@Tools/arrays';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import { setRandomSource } from '@Tools/prng';
 import { appendFileSync } from 'node:fs';
 import { it } from 'vitest';
 
 // constants and types
 import { COMPASS, CONSOLATION, FEED_IN_CHAMPIONSHIP, MAIN } from '@Constants/drawDefinitionConstants';
+import { DOUBLES_EVENT, SINGLES_EVENT } from '@Constants/eventConstants';
+import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
+import { COMPETITOR } from '@Constants/participantRoles';
 
 // Fixtures
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
@@ -34,7 +39,12 @@ function timed(record: any, run: () => any) {
     result = run();
     times.push(performance.now() - start);
   }
-  return { ms: Math.round(median(times)), success: !!result?.success, error: result?.error?.code };
+  return {
+    ms: Math.round(median(times)),
+    success: !!result?.success,
+    error: result?.error?.code,
+    ...(result?.placed === undefined ? {} : { placed: result.placed }),
+  };
 }
 
 function fixture() {
@@ -123,25 +133,77 @@ function timedPlan(record: any, params: any) {
 }
 
 /**
- * Direct scheduling on a COMPASS 128 (312 matchUps, one venue of 16 courts): `scheduleMatchUps` called day by day with
- * every matchUp not yet timed, until none is left. COMPASS multiplies the participants who can reach each potential
- * matchUp, which the 128 feed-in fixture does not: this is the case where the per-placement day-load rebuild and the
- * played-order hydration cost most (SCHEDULING_PIPELINE_VNEXT.md § 7.0, the direct-scheduling regression).
+ * Direct scheduling on a COMPASS 128 SINGLES (312 matchUps, one venue of 16 courts), and in a second pass with a
+ * COMPASS 64 DOUBLES beside it whose pairs are the same 128 players: `scheduleMatchUps` called day by day with every
+ * matchUp not yet timed, until none is left. COMPASS multiplies the participants who can reach each potential matchUp,
+ * which the 128 feed-in fixture does not, and the doubles pass puts every player in two draws, so their day loads,
+ * recovery and daily limits (SINGLES, DOUBLES and TOTAL) run across both (SCHEDULING_PIPELINE_VNEXT.md § 7.0, the
+ * direct-scheduling regression). Generated under a seeded random source: the players, the draws and the pairings are
+ * the same in every run.
  */
-function compassFixture() {
-  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
-    venueProfiles: [{ venueId: 'venue-c', courtsCount: 16, startTime: '08:00', endTime: '22:00' }],
-    drawProfiles: [{ drawSize: 128, drawType: COMPASS }],
-    policyDefinitions: POLICY_SCHEDULING_DEFAULT,
-    startDate: DAYS[0],
-    endDate: DAYS[2],
-  });
-  return tournamentRecord;
+const COMPASS_SEED = 12_802;
+const COMPASS_DAYS = ['2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05', '2026-11-06'];
+
+function compassFixture({ doubles }: { doubles: boolean }) {
+  setRandomSource(COMPASS_SEED);
+  try {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      venueProfiles: [{ venueId: 'venue-c', courtsCount: 16, startTime: '08:00', endTime: '22:00' }],
+      drawProfiles: [{ drawSize: 128, drawType: COMPASS, eventType: SINGLES_EVENT }],
+      participantsProfile: { participantsCount: 128 },
+      policyDefinitions: POLICY_SCHEDULING_DEFAULT,
+      startDate: COMPASS_DAYS[0],
+      endDate: COMPASS_DAYS.at(-1),
+    });
+    if (!doubles) return tournamentRecord;
+
+    // the singles players, paired by a seeded shuffle, entered in a COMPASS 64 DOUBLES
+    tournamentEngine.setState(tournamentRecord);
+    const individualIds = tournamentRecord.participants
+      .filter(({ participantType }) => participantType === INDIVIDUAL)
+      .map(({ participantId }) => participantId);
+    const shuffled = shuffleArray(individualIds);
+    const pairs = chunkArray(shuffled, 2).map((individualParticipantIds) => ({
+      participantRole: COMPETITOR,
+      participantType: PAIR,
+      individualParticipantIds,
+    }));
+    const added: any = tournamentEngine.addParticipants({ participants: pairs, returnParticipants: true });
+    if (!added.success) throw new Error('pairs');
+    const pairIds = added.participants.map(({ participantId }) => participantId);
+    const event: any = tournamentEngine.addEvent({ event: { eventName: 'Doubles', eventType: DOUBLES_EVENT } });
+    const { eventId } = event.event;
+    tournamentEngine.addEventEntries({ eventId, participantIds: pairIds });
+    const { drawDefinition } = tournamentEngine.generateDrawDefinition({ eventId, drawType: COMPASS, drawSize: 64 });
+    if (!tournamentEngine.addDrawDefinition({ eventId, drawDefinition }).success) throw new Error('doubles draw');
+    return tournamentEngine.getTournament().tournamentRecord;
+  } finally {
+    setRandomSource();
+  }
+}
+
+/** what must not vary between runs: the pairs, each draw's positions, and every matchUp's id */
+function compassShape(record: any) {
+  const pairs = record.participants
+    .filter(({ participantType }) => participantType === PAIR)
+    .map(({ participantId, individualParticipantIds }) => [participantId, ...individualParticipantIds]);
+  const draws = record.events.flatMap((event: any) =>
+    event.drawDefinitions.flatMap((drawDefinition: any) =>
+      drawDefinition.structures.map((structure: any) => ({
+        positions: structure.positionAssignments?.map(({ drawPosition, participantId, bye }) => [
+          drawPosition,
+          participantId ?? (bye ? 'BYE' : ''),
+        ]),
+        matchUpIds: structure.matchUps?.map(({ matchUpId }) => matchUpId),
+      })),
+    ),
+  );
+  return JSON.stringify({ pairs, draws });
 }
 
 function directDayByDay() {
   let placed = 0;
-  for (const scheduleDate of DAYS) {
+  for (const scheduleDate of COMPASS_DAYS) {
     const matchUpIds = tournamentEngine
       .allTournamentMatchUps({ inContext: true })
       .matchUps.filter((m: any) => !m.schedule?.scheduledTime && m.matchUpStatus !== 'BYE')
@@ -150,7 +212,7 @@ function directDayByDay() {
     const result = tournamentEngine.scheduleMatchUps({ scheduleDate, matchUpIds, venueIds: ['venue-c'] });
     placed += result.scheduledMatchUpIds?.length ?? 0;
   }
-  return { success: placed > 0 };
+  return { success: placed > 0, placed };
 }
 
 it.skipIf(!enabled)('scheduling bench', () => {
@@ -167,6 +229,19 @@ it.skipIf(!enabled)('scheduling bench', () => {
   const seIds = (record: any) =>
     record.events[1].drawDefinitions[0].structures[0].matchUps.map((m: any) => m.matchUpId);
 
+  // the doubles pass is the same players in pairs, and the seed makes it the same tournament every time
+  const compassDoubles = compassFixture({ doubles: true });
+  if (compassShape(compassDoubles) !== compassShape(compassFixture({ doubles: true })))
+    throw new Error('the seeded COMPASS fixture differs between builds');
+  const singlesIds = new Set(
+    compassDoubles.participants
+      .filter(({ participantType }) => participantType === INDIVIDUAL)
+      .map((p) => p.participantId),
+  );
+  const pairs = compassDoubles.participants.filter(({ participantType }) => participantType === PAIR);
+  if (pairs.length !== 64 || !pairs.every((pair) => pair.individualParticipantIds.every((id) => singlesIds.has(id))))
+    throw new Error('the doubles pairs are not the singles players');
+
   const results = {
     matchUpCount,
     playedCount,
@@ -182,7 +257,8 @@ it.skipIf(!enabled)('scheduling bench', () => {
     scheduleMatchUpsMid: timed(mid, () =>
       tournamentEngine.scheduleMatchUps({ scheduleDate: DAYS[1], matchUpIds: seIds(mid), venueIds: ['venue-2'] }),
     ),
-    compassDirect: timed(compassFixture(), directDayByDay),
+    compassDirect: timed(compassFixture({ doubles: false }), directDayByDay),
+    compassDoublesDirect: timed(compassDoubles, directDayByDay),
     eventId: se.eventId ? 'ok' : 'missing',
     // vNext against v1's dry run of the same call: the view, the plan, and both together
     dryRunFresh: timed(fresh, () => tournamentEngine.scheduleProfileRounds({ scheduleDates: DAYS, dryRun: true })),
