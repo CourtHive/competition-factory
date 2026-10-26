@@ -101,15 +101,23 @@ export function buildConflictsView({
 
   const tournamentOf = (matchUp: HydratedMatchUp) =>
     tournamentRecords[matchUp.tournamentId] ?? Object.values(tournamentRecords)[0];
-  const timingResolvers: { [tournamentId: string]: (matchUp: HydratedMatchUp) => SchedulingTiming } = {};
-  const zones: { [tournamentId: string]: string | undefined } = {};
+  // keyed by a tournamentId read from the matchUps: Maps, so no id reaches an inherited member
+  const timingResolvers = new Map<string, (matchUp: HydratedMatchUp) => SchedulingTiming>();
+  const zones = new Map<string, string | undefined>();
+  const timingOf = (tournamentId: string, matchUp: HydratedMatchUp) => {
+    let resolve = timingResolvers.get(tournamentId);
+    if (!resolve) {
+      resolve = makeTimingResolver(tournamentOf(matchUp));
+      timingResolvers.set(tournamentId, resolve);
+    }
+    return resolve(matchUp);
+  };
 
   const resolved = matchUps.map((matchUp): ConflictsMatchUp => {
     const tournamentId = matchUp.tournamentId ?? '';
-    timingResolvers[tournamentId] ??= makeTimingResolver(tournamentOf(matchUp));
-    if (!(tournamentId in zones))
-      zones[tournamentId] = getTournamentTimeZone({ tournamentRecord: tournamentOf(matchUp) }).timeZone;
-    const timeZone = zones[tournamentId];
+    if (!zones.has(tournamentId))
+      zones.set(tournamentId, getTournamentTimeZone({ tournamentRecord: tournamentOf(matchUp) }).timeZone);
+    const timeZone = zones.get(tournamentId);
     const normalized = normalizeTimes(matchUp, { utcOffsetMinutes: 0, timeZone });
     const { courtId, courtOrder, scheduledDate, scheduledTime } = matchUp.schedule ?? {};
     return {
@@ -129,7 +137,7 @@ export function buildConflictsView({
       finished: isFinished(matchUp),
       played: wasPlayed(matchUp),
       times: timeZone ? normalized : { ...normalized, calledMs: null, scoredMs: null, scoredDate: null },
-      timing: timingResolvers[tournamentId](matchUp),
+      timing: timingOf(tournamentId, matchUp),
     };
   });
 
