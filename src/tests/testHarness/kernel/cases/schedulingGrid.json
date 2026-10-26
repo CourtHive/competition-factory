@@ -1,0 +1,2210 @@
+[
+  {
+    "caseId": "scheduling.grid.first-open-court-row-by-row.v1",
+    "operation": "kernel.scheduling.grid@1",
+    "input": {
+      "view": {
+        "matchUpDependencies": {
+          "8bb1a63d-fb78-4981-b5e6-6bebc35c48e6": {
+            "matchUpIds": [],
+            "dependentMatchUpIds": ["1467f484-7487-4395-91f4-d7ce71e37ae9"]
+          },
+          "1467f484-7487-4395-91f4-d7ce71e37ae9": {
+            "matchUpIds": ["8bb1a63d-fb78-4981-b5e6-6bebc35c48e6", "caed84ff-fdf4-46b3-a95a-39866ef9d9b1"],
+            "dependentMatchUpIds": []
+          },
+          "caed84ff-fdf4-46b3-a95a-39866ef9d9b1": {
+            "matchUpIds": [],
+            "dependentMatchUpIds": ["1467f484-7487-4395-91f4-d7ce71e37ae9"]
+          },
+          "b5be4ab4-8196-464e-ab8d-015772bdde17": {
+            "matchUpIds": [],
+            "dependentMatchUpIds": ["490bdc8b-3f06-474c-920e-59e5ee40c85b"]
+          },
+          "490bdc8b-3f06-474c-920e-59e5ee40c85b": {
+            "matchUpIds": ["b5be4ab4-8196-464e-ab8d-015772bdde17", "2622f8d5-c1d7-4b60-b0a5-0bac4e3e399e"],
+            "dependentMatchUpIds": []
+          },
+          "2622f8d5-c1d7-4b60-b0a5-0bac4e3e399e": {
+            "matchUpIds": [],
+            "dependentMatchUpIds": ["490bdc8b-3f06-474c-920e-59e5ee40c85b"]
+          }
+        },
+        "courtClosures": {},
+        "scheduledDate": "2026-03-02",
+        "gridMatchUps": [],
+        "reachability": {
+          "matchUps": {
+            "8bb1a63d-fb78-4981-b5e6-6bebc35c48e6": {
+              "certain": ["28c8a730-ea1c-486b-9211-cb3a40bc0cfb", "53e05971-91bb-4313-9080-4a1fe803eab5"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "caed84ff-fdf4-46b3-a95a-39866ef9d9b1": {
+              "certain": ["ee2e3b64-62e5-4873-8d52-48cacdc14312", "fc69b721-e8e9-4304-853b-12e4234e9a72"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "b5be4ab4-8196-464e-ab8d-015772bdde17": {
+              "certain": ["0b4744d1-1c19-49db-a396-99c38580efac", "8d468a5f-0685-4427-ad61-c215c3cc1a90"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "2622f8d5-c1d7-4b60-b0a5-0bac4e3e399e": {
+              "certain": ["c6076aea-a07c-44fc-8684-8f70851acaca", "929707db-8eb3-4277-a265-08f8c56c2099"],
+              "potential": [],
+              "nearPotential": []
+            }
+          },
+          "upstream": {
+            "8bb1a63d-fb78-4981-b5e6-6bebc35c48e6": [],
+            "caed84ff-fdf4-46b3-a95a-39866ef9d9b1": [],
+            "b5be4ab4-8196-464e-ab8d-015772bdde17": [],
+            "2622f8d5-c1d7-4b60-b0a5-0bac4e3e399e": []
+          },
+          "linkedTargets": {}
+        },
+        "gridRows": [
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 1,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 1,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-1"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 2,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 2,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-2"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 3,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 3,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-3"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 4,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 4,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-4"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 5,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 5,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-5"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 6,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 6,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-6"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 7,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 7,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-7"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 8,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 8,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-8"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 9,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 9,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-9"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 10,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 10,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-10"
+          }
+        ],
+        "matchUps": [
+          {
+            "matchUpId": "8bb1a63d-fb78-4981-b5e6-6bebc35c48e6",
+            "drawId": "4bbf44c2-62bd-4f43-856c-ca2ab6c5b529",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "matchUpType": "SINGLES",
+            "schedule": {}
+          },
+          {
+            "matchUpId": "caed84ff-fdf4-46b3-a95a-39866ef9d9b1",
+            "drawId": "4bbf44c2-62bd-4f43-856c-ca2ab6c5b529",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "matchUpType": "SINGLES",
+            "schedule": {}
+          },
+          {
+            "matchUpId": "b5be4ab4-8196-464e-ab8d-015772bdde17",
+            "drawId": "4bbf44c2-62bd-4f43-856c-ca2ab6c5b529",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "matchUpType": "SINGLES",
+            "schedule": {}
+          },
+          {
+            "matchUpId": "2622f8d5-c1d7-4b60-b0a5-0bac4e3e399e",
+            "drawId": "4bbf44c2-62bd-4f43-856c-ca2ab6c5b529",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "matchUpType": "SINGLES",
+            "schedule": {}
+          }
+        ]
+      }
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "notScheduledMatchUpIds": [],
+        "dailyLimitWarningMatchUpIds": [],
+        "overLimitMatchUpIds": [],
+        "placements": [
+          {
+            "matchUpId": "8bb1a63d-fb78-4981-b5e6-6bebc35c48e6",
+            "schedule": {
+              "courtOrder": 1,
+              "venueId": "venue-1",
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+            }
+          },
+          {
+            "matchUpId": "caed84ff-fdf4-46b3-a95a-39866ef9d9b1",
+            "schedule": {
+              "courtOrder": 1,
+              "venueId": "venue-1",
+              "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+            }
+          },
+          {
+            "matchUpId": "b5be4ab4-8196-464e-ab8d-015772bdde17",
+            "schedule": {
+              "courtOrder": 2,
+              "venueId": "venue-1",
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+            }
+          },
+          {
+            "matchUpId": "2622f8d5-c1d7-4b60-b0a5-0bac4e3e399e",
+            "schedule": {
+              "courtOrder": 2,
+              "venueId": "venue-1",
+              "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+            }
+          }
+        ]
+      }
+    },
+    "note": "Eight players, two courts: the four first-round matchUps fill row 1 left to right, then row 2."
+  },
+  {
+    "caseId": "scheduling.grid.dependent-waits-for-the-next-row.v1",
+    "operation": "kernel.scheduling.grid@1",
+    "input": {
+      "view": {
+        "matchUpDependencies": {
+          "d47031ed-7798-4443-aeb4-21a6e4082bc5": {
+            "matchUpIds": [],
+            "dependentMatchUpIds": ["2dc9fbdd-f7e8-48f0-8b0f-0e4d7cbc70f2"]
+          },
+          "2dc9fbdd-f7e8-48f0-8b0f-0e4d7cbc70f2": {
+            "matchUpIds": ["d47031ed-7798-4443-aeb4-21a6e4082bc5", "8d8a89d2-9b8f-42d0-9931-6b259636799b"],
+            "dependentMatchUpIds": []
+          },
+          "8d8a89d2-9b8f-42d0-9931-6b259636799b": {
+            "matchUpIds": [],
+            "dependentMatchUpIds": ["2dc9fbdd-f7e8-48f0-8b0f-0e4d7cbc70f2"]
+          }
+        },
+        "courtClosures": {},
+        "scheduledDate": "2026-03-02",
+        "gridMatchUps": [],
+        "reachability": {
+          "matchUps": {
+            "d47031ed-7798-4443-aeb4-21a6e4082bc5": {
+              "certain": ["c88dbfc6-4fd8-4b96-bc69-bdfe560dbaed", "85b58bba-4ddb-44fd-bc51-e608ed080987"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "8d8a89d2-9b8f-42d0-9931-6b259636799b": {
+              "certain": ["36debe34-49a8-4033-9204-1fd1338d1099", "7a9789cd-319a-4d90-a994-8055fcf35aa5"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "2dc9fbdd-f7e8-48f0-8b0f-0e4d7cbc70f2": {
+              "certain": [],
+              "potential": [
+                "c88dbfc6-4fd8-4b96-bc69-bdfe560dbaed",
+                "85b58bba-4ddb-44fd-bc51-e608ed080987",
+                "36debe34-49a8-4033-9204-1fd1338d1099",
+                "7a9789cd-319a-4d90-a994-8055fcf35aa5"
+              ],
+              "nearPotential": [
+                "c88dbfc6-4fd8-4b96-bc69-bdfe560dbaed",
+                "85b58bba-4ddb-44fd-bc51-e608ed080987",
+                "36debe34-49a8-4033-9204-1fd1338d1099",
+                "7a9789cd-319a-4d90-a994-8055fcf35aa5"
+              ]
+            }
+          },
+          "upstream": {
+            "d47031ed-7798-4443-aeb4-21a6e4082bc5": [],
+            "8d8a89d2-9b8f-42d0-9931-6b259636799b": [],
+            "2dc9fbdd-f7e8-48f0-8b0f-0e4d7cbc70f2": [
+              "8d8a89d2-9b8f-42d0-9931-6b259636799b",
+              "d47031ed-7798-4443-aeb4-21a6e4082bc5"
+            ]
+          },
+          "linkedTargets": {}
+        },
+        "gridRows": [
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 1,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 1,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 1,
+                  "venueId": "venue-1",
+                  "courtId": "d2bfeb0d-f2bc-4f2b-8c6e-00d00fcca6fd"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 1,
+                  "venueId": "venue-1",
+                  "courtId": "b0df7133-23ba-4e04-890f-49c1d87cde65"
+                }
+              }
+            ],
+            "rowId": "rowId-1"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 2,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 2,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 2,
+                  "venueId": "venue-1",
+                  "courtId": "d2bfeb0d-f2bc-4f2b-8c6e-00d00fcca6fd"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 2,
+                  "venueId": "venue-1",
+                  "courtId": "b0df7133-23ba-4e04-890f-49c1d87cde65"
+                }
+              }
+            ],
+            "rowId": "rowId-2"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 3,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 3,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 3,
+                  "venueId": "venue-1",
+                  "courtId": "d2bfeb0d-f2bc-4f2b-8c6e-00d00fcca6fd"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 3,
+                  "venueId": "venue-1",
+                  "courtId": "b0df7133-23ba-4e04-890f-49c1d87cde65"
+                }
+              }
+            ],
+            "rowId": "rowId-3"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 4,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 4,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 4,
+                  "venueId": "venue-1",
+                  "courtId": "d2bfeb0d-f2bc-4f2b-8c6e-00d00fcca6fd"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 4,
+                  "venueId": "venue-1",
+                  "courtId": "b0df7133-23ba-4e04-890f-49c1d87cde65"
+                }
+              }
+            ],
+            "rowId": "rowId-4"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 5,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 5,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 5,
+                  "venueId": "venue-1",
+                  "courtId": "d2bfeb0d-f2bc-4f2b-8c6e-00d00fcca6fd"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 5,
+                  "venueId": "venue-1",
+                  "courtId": "b0df7133-23ba-4e04-890f-49c1d87cde65"
+                }
+              }
+            ],
+            "rowId": "rowId-5"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 6,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 6,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 6,
+                  "venueId": "venue-1",
+                  "courtId": "d2bfeb0d-f2bc-4f2b-8c6e-00d00fcca6fd"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 6,
+                  "venueId": "venue-1",
+                  "courtId": "b0df7133-23ba-4e04-890f-49c1d87cde65"
+                }
+              }
+            ],
+            "rowId": "rowId-6"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 7,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 7,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 7,
+                  "venueId": "venue-1",
+                  "courtId": "d2bfeb0d-f2bc-4f2b-8c6e-00d00fcca6fd"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 7,
+                  "venueId": "venue-1",
+                  "courtId": "b0df7133-23ba-4e04-890f-49c1d87cde65"
+                }
+              }
+            ],
+            "rowId": "rowId-7"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 8,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 8,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 8,
+                  "venueId": "venue-1",
+                  "courtId": "d2bfeb0d-f2bc-4f2b-8c6e-00d00fcca6fd"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 8,
+                  "venueId": "venue-1",
+                  "courtId": "b0df7133-23ba-4e04-890f-49c1d87cde65"
+                }
+              }
+            ],
+            "rowId": "rowId-8"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 9,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 9,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 9,
+                  "venueId": "venue-1",
+                  "courtId": "d2bfeb0d-f2bc-4f2b-8c6e-00d00fcca6fd"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 9,
+                  "venueId": "venue-1",
+                  "courtId": "b0df7133-23ba-4e04-890f-49c1d87cde65"
+                }
+              }
+            ],
+            "rowId": "rowId-9"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 10,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 10,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 10,
+                  "venueId": "venue-1",
+                  "courtId": "d2bfeb0d-f2bc-4f2b-8c6e-00d00fcca6fd"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 10,
+                  "venueId": "venue-1",
+                  "courtId": "b0df7133-23ba-4e04-890f-49c1d87cde65"
+                }
+              }
+            ],
+            "rowId": "rowId-10"
+          }
+        ],
+        "matchUps": [
+          {
+            "matchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+            "drawId": "0cfb0d77-e887-4c4e-b16b-a16f6276194f",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "matchUpType": "SINGLES",
+            "schedule": {}
+          },
+          {
+            "matchUpId": "8d8a89d2-9b8f-42d0-9931-6b259636799b",
+            "drawId": "0cfb0d77-e887-4c4e-b16b-a16f6276194f",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "matchUpType": "SINGLES",
+            "schedule": {}
+          },
+          {
+            "matchUpId": "2dc9fbdd-f7e8-48f0-8b0f-0e4d7cbc70f2",
+            "drawId": "0cfb0d77-e887-4c4e-b16b-a16f6276194f",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "matchUpType": "SINGLES",
+            "schedule": {}
+          }
+        ]
+      }
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "notScheduledMatchUpIds": [],
+        "dailyLimitWarningMatchUpIds": [],
+        "overLimitMatchUpIds": [],
+        "placements": [
+          {
+            "matchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+            "schedule": {
+              "courtOrder": 1,
+              "venueId": "venue-1",
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+            }
+          },
+          {
+            "matchUpId": "8d8a89d2-9b8f-42d0-9931-6b259636799b",
+            "schedule": {
+              "courtOrder": 1,
+              "venueId": "venue-1",
+              "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+            }
+          },
+          {
+            "matchUpId": "2dc9fbdd-f7e8-48f0-8b0f-0e4d7cbc70f2",
+            "schedule": {
+              "courtOrder": 2,
+              "venueId": "venue-1",
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+            }
+          }
+        ]
+      }
+    },
+    "note": "Four players, four courts, both rounds profiled: the final depends on both semifinals, so it is not on their row."
+  },
+  {
+    "caseId": "scheduling.grid.unplaced-source-defers.v1",
+    "operation": "kernel.scheduling.grid@1",
+    "input": {
+      "view": {
+        "matchUpDependencies": {
+          "e4b6f994-a2e7-4435-ad49-f374c8d9c541": {
+            "matchUpIds": [],
+            "dependentMatchUpIds": ["0cfb0d77-e887-4c4e-b16b-a16f6276194f"]
+          },
+          "0cfb0d77-e887-4c4e-b16b-a16f6276194f": {
+            "matchUpIds": ["e4b6f994-a2e7-4435-ad49-f374c8d9c541", "93ad131a-f64c-49e5-b2b8-4a825b67aca3"],
+            "dependentMatchUpIds": []
+          },
+          "93ad131a-f64c-49e5-b2b8-4a825b67aca3": {
+            "matchUpIds": [],
+            "dependentMatchUpIds": ["0cfb0d77-e887-4c4e-b16b-a16f6276194f"]
+          }
+        },
+        "courtClosures": {},
+        "scheduledDate": "2026-03-02",
+        "gridMatchUps": [],
+        "reachability": {
+          "matchUps": {
+            "e4b6f994-a2e7-4435-ad49-f374c8d9c541": {
+              "certain": ["f4d8caa5-5436-4490-9cbb-32e099b89fc8", "c88dbfc6-4fd8-4b96-bc69-bdfe560dbaed"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "93ad131a-f64c-49e5-b2b8-4a825b67aca3": {
+              "certain": ["7a9789cd-319a-4d90-a994-8055fcf35aa5", "36debe34-49a8-4033-9204-1fd1338d1099"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "0cfb0d77-e887-4c4e-b16b-a16f6276194f": {
+              "certain": [],
+              "potential": [
+                "f4d8caa5-5436-4490-9cbb-32e099b89fc8",
+                "c88dbfc6-4fd8-4b96-bc69-bdfe560dbaed",
+                "7a9789cd-319a-4d90-a994-8055fcf35aa5",
+                "36debe34-49a8-4033-9204-1fd1338d1099"
+              ],
+              "nearPotential": [
+                "f4d8caa5-5436-4490-9cbb-32e099b89fc8",
+                "c88dbfc6-4fd8-4b96-bc69-bdfe560dbaed",
+                "7a9789cd-319a-4d90-a994-8055fcf35aa5",
+                "36debe34-49a8-4033-9204-1fd1338d1099"
+              ]
+            }
+          },
+          "upstream": {
+            "e4b6f994-a2e7-4435-ad49-f374c8d9c541": [],
+            "93ad131a-f64c-49e5-b2b8-4a825b67aca3": [],
+            "0cfb0d77-e887-4c4e-b16b-a16f6276194f": [
+              "93ad131a-f64c-49e5-b2b8-4a825b67aca3",
+              "e4b6f994-a2e7-4435-ad49-f374c8d9c541"
+            ]
+          },
+          "linkedTargets": {}
+        },
+        "gridRows": [
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 1,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              }
+            ],
+            "rowId": "rowId-1"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 2,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              }
+            ],
+            "rowId": "rowId-2"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 3,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              }
+            ],
+            "rowId": "rowId-3"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 4,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              }
+            ],
+            "rowId": "rowId-4"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 5,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              }
+            ],
+            "rowId": "rowId-5"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 6,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              }
+            ],
+            "rowId": "rowId-6"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 7,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              }
+            ],
+            "rowId": "rowId-7"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 8,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              }
+            ],
+            "rowId": "rowId-8"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 9,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              }
+            ],
+            "rowId": "rowId-9"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 10,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              }
+            ],
+            "rowId": "rowId-10"
+          }
+        ],
+        "matchUps": [
+          {
+            "matchUpId": "0cfb0d77-e887-4c4e-b16b-a16f6276194f",
+            "drawId": "5ff6b9df-fd44-411f-a2de-4dbb49788ad0",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "matchUpType": "SINGLES",
+            "schedule": {}
+          },
+          {
+            "matchUpId": "e4b6f994-a2e7-4435-ad49-f374c8d9c541",
+            "drawId": "5ff6b9df-fd44-411f-a2de-4dbb49788ad0",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "matchUpType": "SINGLES",
+            "schedule": {}
+          },
+          {
+            "matchUpId": "93ad131a-f64c-49e5-b2b8-4a825b67aca3",
+            "drawId": "5ff6b9df-fd44-411f-a2de-4dbb49788ad0",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "matchUpType": "SINGLES",
+            "schedule": {}
+          }
+        ]
+      }
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "notScheduledMatchUpIds": [],
+        "dailyLimitWarningMatchUpIds": [],
+        "overLimitMatchUpIds": [],
+        "placements": [
+          {
+            "matchUpId": "e4b6f994-a2e7-4435-ad49-f374c8d9c541",
+            "schedule": {
+              "courtOrder": 1,
+              "venueId": "venue-1",
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+            }
+          },
+          {
+            "matchUpId": "93ad131a-f64c-49e5-b2b8-4a825b67aca3",
+            "schedule": {
+              "courtOrder": 2,
+              "venueId": "venue-1",
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+            }
+          },
+          {
+            "matchUpId": "0cfb0d77-e887-4c4e-b16b-a16f6276194f",
+            "schedule": {
+              "courtOrder": 3,
+              "venueId": "venue-1",
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+            }
+          }
+        ]
+      }
+    },
+    "note": "One court, the final profiled before the semifinals: while a source is unplaced the final is offered to the next row, so the semifinals take rows 1 and 2 and the final row 3."
+  },
+  {
+    "caseId": "scheduling.grid.over-a-daily-limit.v1",
+    "operation": "kernel.scheduling.grid@1",
+    "input": {
+      "view": {
+        "matchUpDependencies": {
+          "93ad131a-f64c-49e5-b2b8-4a825b67aca3": {
+            "matchUpIds": [],
+            "dependentMatchUpIds": ["d47031ed-7798-4443-aeb4-21a6e4082bc5"]
+          },
+          "d47031ed-7798-4443-aeb4-21a6e4082bc5": {
+            "matchUpIds": ["93ad131a-f64c-49e5-b2b8-4a825b67aca3", "0cfb0d77-e887-4c4e-b16b-a16f6276194f"],
+            "dependentMatchUpIds": []
+          },
+          "0cfb0d77-e887-4c4e-b16b-a16f6276194f": {
+            "matchUpIds": [],
+            "dependentMatchUpIds": ["d47031ed-7798-4443-aeb4-21a6e4082bc5"]
+          }
+        },
+        "matchUpDailyLimits": {
+          "total": 1
+        },
+        "courtClosures": {},
+        "scheduledDate": "2026-03-02",
+        "gridMatchUps": [],
+        "reachability": {
+          "matchUps": {
+            "93ad131a-f64c-49e5-b2b8-4a825b67aca3": {
+              "certain": ["8ed092c1-15c7-4870-8e5d-83bef613ba34", "47241964-3a23-4400-be9a-839013bfc8a8"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "0cfb0d77-e887-4c4e-b16b-a16f6276194f": {
+              "certain": ["7130243e-2939-45dd-84c4-588e3bf77f95", "8983f025-583f-487f-9429-e29a88817828"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "d47031ed-7798-4443-aeb4-21a6e4082bc5": {
+              "certain": [],
+              "potential": [
+                "8ed092c1-15c7-4870-8e5d-83bef613ba34",
+                "47241964-3a23-4400-be9a-839013bfc8a8",
+                "7130243e-2939-45dd-84c4-588e3bf77f95",
+                "8983f025-583f-487f-9429-e29a88817828"
+              ],
+              "nearPotential": [
+                "8ed092c1-15c7-4870-8e5d-83bef613ba34",
+                "47241964-3a23-4400-be9a-839013bfc8a8",
+                "7130243e-2939-45dd-84c4-588e3bf77f95",
+                "8983f025-583f-487f-9429-e29a88817828"
+              ]
+            }
+          },
+          "upstream": {
+            "93ad131a-f64c-49e5-b2b8-4a825b67aca3": [],
+            "0cfb0d77-e887-4c4e-b16b-a16f6276194f": [],
+            "d47031ed-7798-4443-aeb4-21a6e4082bc5": [
+              "0cfb0d77-e887-4c4e-b16b-a16f6276194f",
+              "93ad131a-f64c-49e5-b2b8-4a825b67aca3"
+            ]
+          },
+          "linkedTargets": {}
+        },
+        "gridRows": [
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 1,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 1,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-1"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 2,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 2,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-2"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 3,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 3,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-3"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 4,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 4,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-4"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 5,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 5,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-5"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 6,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 6,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-6"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 7,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 7,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-7"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 8,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 8,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-8"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 9,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 9,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-9"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 10,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 10,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-10"
+          }
+        ],
+        "matchUps": [
+          {
+            "matchUpId": "93ad131a-f64c-49e5-b2b8-4a825b67aca3",
+            "drawId": "e4b6f994-a2e7-4435-ad49-f374c8d9c541",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "matchUpType": "SINGLES",
+            "schedule": {}
+          },
+          {
+            "matchUpId": "0cfb0d77-e887-4c4e-b16b-a16f6276194f",
+            "drawId": "e4b6f994-a2e7-4435-ad49-f374c8d9c541",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "matchUpType": "SINGLES",
+            "schedule": {}
+          },
+          {
+            "matchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+            "drawId": "e4b6f994-a2e7-4435-ad49-f374c8d9c541",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "matchUpType": "SINGLES",
+            "schedule": {}
+          }
+        ]
+      }
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "notScheduledMatchUpIds": [],
+        "dailyLimitWarningMatchUpIds": [],
+        "overLimitMatchUpIds": ["d47031ed-7798-4443-aeb4-21a6e4082bc5"],
+        "placements": [
+          {
+            "matchUpId": "93ad131a-f64c-49e5-b2b8-4a825b67aca3",
+            "schedule": {
+              "courtOrder": 1,
+              "venueId": "venue-1",
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+            }
+          },
+          {
+            "matchUpId": "0cfb0d77-e887-4c4e-b16b-a16f6276194f",
+            "schedule": {
+              "courtOrder": 1,
+              "venueId": "venue-1",
+              "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+            }
+          }
+        ]
+      }
+    },
+    "note": "A limit of one matchUp a day: the semifinals are placed; every player who can reach the final has played once, so the final is over the limit and not placed."
+  },
+  {
+    "caseId": "scheduling.grid.limits-that-only-warn.v1",
+    "operation": "kernel.scheduling.grid@1",
+    "input": {
+      "view": {
+        "matchUpDependencies": {
+          "93ad131a-f64c-49e5-b2b8-4a825b67aca3": {
+            "matchUpIds": [],
+            "dependentMatchUpIds": ["d47031ed-7798-4443-aeb4-21a6e4082bc5"]
+          },
+          "d47031ed-7798-4443-aeb4-21a6e4082bc5": {
+            "matchUpIds": ["93ad131a-f64c-49e5-b2b8-4a825b67aca3", "0cfb0d77-e887-4c4e-b16b-a16f6276194f"],
+            "dependentMatchUpIds": []
+          },
+          "0cfb0d77-e887-4c4e-b16b-a16f6276194f": {
+            "matchUpIds": [],
+            "dependentMatchUpIds": ["d47031ed-7798-4443-aeb4-21a6e4082bc5"]
+          }
+        },
+        "dailyLimitsWarnOnly": true,
+        "matchUpDailyLimits": {
+          "total": 1
+        },
+        "courtClosures": {},
+        "scheduledDate": "2026-03-02",
+        "gridMatchUps": [],
+        "reachability": {
+          "matchUps": {
+            "93ad131a-f64c-49e5-b2b8-4a825b67aca3": {
+              "certain": ["8ed092c1-15c7-4870-8e5d-83bef613ba34", "47241964-3a23-4400-be9a-839013bfc8a8"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "0cfb0d77-e887-4c4e-b16b-a16f6276194f": {
+              "certain": ["7130243e-2939-45dd-84c4-588e3bf77f95", "8983f025-583f-487f-9429-e29a88817828"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "d47031ed-7798-4443-aeb4-21a6e4082bc5": {
+              "certain": [],
+              "potential": [
+                "8ed092c1-15c7-4870-8e5d-83bef613ba34",
+                "47241964-3a23-4400-be9a-839013bfc8a8",
+                "7130243e-2939-45dd-84c4-588e3bf77f95",
+                "8983f025-583f-487f-9429-e29a88817828"
+              ],
+              "nearPotential": [
+                "8ed092c1-15c7-4870-8e5d-83bef613ba34",
+                "47241964-3a23-4400-be9a-839013bfc8a8",
+                "7130243e-2939-45dd-84c4-588e3bf77f95",
+                "8983f025-583f-487f-9429-e29a88817828"
+              ]
+            }
+          },
+          "upstream": {
+            "93ad131a-f64c-49e5-b2b8-4a825b67aca3": [],
+            "0cfb0d77-e887-4c4e-b16b-a16f6276194f": [],
+            "d47031ed-7798-4443-aeb4-21a6e4082bc5": [
+              "0cfb0d77-e887-4c4e-b16b-a16f6276194f",
+              "93ad131a-f64c-49e5-b2b8-4a825b67aca3"
+            ]
+          },
+          "linkedTargets": {}
+        },
+        "gridRows": [
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 1,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 1,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-1"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 2,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 2,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-2"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 3,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 3,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-3"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 4,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 4,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-4"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 5,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 5,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-5"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 6,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 6,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-6"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 7,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 7,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-7"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 8,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 8,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-8"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 9,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 9,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-9"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 10,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 10,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-10"
+          }
+        ],
+        "matchUps": [
+          {
+            "matchUpId": "93ad131a-f64c-49e5-b2b8-4a825b67aca3",
+            "drawId": "e4b6f994-a2e7-4435-ad49-f374c8d9c541",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "matchUpType": "SINGLES",
+            "schedule": {}
+          },
+          {
+            "matchUpId": "0cfb0d77-e887-4c4e-b16b-a16f6276194f",
+            "drawId": "e4b6f994-a2e7-4435-ad49-f374c8d9c541",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "matchUpType": "SINGLES",
+            "schedule": {}
+          },
+          {
+            "matchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+            "drawId": "e4b6f994-a2e7-4435-ad49-f374c8d9c541",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "matchUpType": "SINGLES",
+            "schedule": {}
+          }
+        ]
+      }
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "notScheduledMatchUpIds": [],
+        "dailyLimitWarningMatchUpIds": ["d47031ed-7798-4443-aeb4-21a6e4082bc5"],
+        "overLimitMatchUpIds": [],
+        "placements": [
+          {
+            "matchUpId": "93ad131a-f64c-49e5-b2b8-4a825b67aca3",
+            "schedule": {
+              "courtOrder": 1,
+              "venueId": "venue-1",
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+            }
+          },
+          {
+            "matchUpId": "0cfb0d77-e887-4c4e-b16b-a16f6276194f",
+            "schedule": {
+              "courtOrder": 1,
+              "venueId": "venue-1",
+              "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+            }
+          },
+          {
+            "matchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+            "schedule": {
+              "courtOrder": 2,
+              "venueId": "venue-1",
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+            }
+          }
+        ]
+      }
+    },
+    "note": "The same limit, asked only to warn: the final is placed on row 2 and warned."
+  },
+  {
+    "caseId": "scheduling.grid.court-ids-narrow-the-grid.v1",
+    "operation": "kernel.scheduling.grid@1",
+    "input": {
+      "view": {
+        "matchUpDependencies": {
+          "0cfb0d77-e887-4c4e-b16b-a16f6276194f": {
+            "matchUpIds": [],
+            "dependentMatchUpIds": ["8d8a89d2-9b8f-42d0-9931-6b259636799b"]
+          },
+          "8d8a89d2-9b8f-42d0-9931-6b259636799b": {
+            "matchUpIds": ["0cfb0d77-e887-4c4e-b16b-a16f6276194f", "d47031ed-7798-4443-aeb4-21a6e4082bc5"],
+            "dependentMatchUpIds": []
+          },
+          "d47031ed-7798-4443-aeb4-21a6e4082bc5": {
+            "matchUpIds": [],
+            "dependentMatchUpIds": ["8d8a89d2-9b8f-42d0-9931-6b259636799b"]
+          }
+        },
+        "courtClosures": {},
+        "scheduledDate": "2026-03-02",
+        "gridMatchUps": [],
+        "reachability": {
+          "matchUps": {
+            "0cfb0d77-e887-4c4e-b16b-a16f6276194f": {
+              "certain": ["b9b6736f-5258-45e7-99eb-08cbd18ac4af", "76083920-b6e4-4951-8432-9c0ca756c68e"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "d47031ed-7798-4443-aeb4-21a6e4082bc5": {
+              "certain": ["2d1acfa4-6c8c-43d6-873a-0c34c2f2ca8c", "bce503f7-b931-4077-b931-d527fefdee9a"],
+              "potential": [],
+              "nearPotential": []
+            }
+          },
+          "upstream": {
+            "0cfb0d77-e887-4c4e-b16b-a16f6276194f": [],
+            "d47031ed-7798-4443-aeb4-21a6e4082bc5": []
+          },
+          "linkedTargets": {}
+        },
+        "gridRows": [
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 1,
+                  "venueId": "venue-1",
+                  "courtId": "d2bfeb0d-f2bc-4f2b-8c6e-00d00fcca6fd"
+                }
+              }
+            ],
+            "rowId": "rowId-1"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 2,
+                  "venueId": "venue-1",
+                  "courtId": "d2bfeb0d-f2bc-4f2b-8c6e-00d00fcca6fd"
+                }
+              }
+            ],
+            "rowId": "rowId-2"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 3,
+                  "venueId": "venue-1",
+                  "courtId": "d2bfeb0d-f2bc-4f2b-8c6e-00d00fcca6fd"
+                }
+              }
+            ],
+            "rowId": "rowId-3"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 4,
+                  "venueId": "venue-1",
+                  "courtId": "d2bfeb0d-f2bc-4f2b-8c6e-00d00fcca6fd"
+                }
+              }
+            ],
+            "rowId": "rowId-4"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 5,
+                  "venueId": "venue-1",
+                  "courtId": "d2bfeb0d-f2bc-4f2b-8c6e-00d00fcca6fd"
+                }
+              }
+            ],
+            "rowId": "rowId-5"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 6,
+                  "venueId": "venue-1",
+                  "courtId": "d2bfeb0d-f2bc-4f2b-8c6e-00d00fcca6fd"
+                }
+              }
+            ],
+            "rowId": "rowId-6"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 7,
+                  "venueId": "venue-1",
+                  "courtId": "d2bfeb0d-f2bc-4f2b-8c6e-00d00fcca6fd"
+                }
+              }
+            ],
+            "rowId": "rowId-7"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 8,
+                  "venueId": "venue-1",
+                  "courtId": "d2bfeb0d-f2bc-4f2b-8c6e-00d00fcca6fd"
+                }
+              }
+            ],
+            "rowId": "rowId-8"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 9,
+                  "venueId": "venue-1",
+                  "courtId": "d2bfeb0d-f2bc-4f2b-8c6e-00d00fcca6fd"
+                }
+              }
+            ],
+            "rowId": "rowId-9"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 10,
+                  "venueId": "venue-1",
+                  "courtId": "d2bfeb0d-f2bc-4f2b-8c6e-00d00fcca6fd"
+                }
+              }
+            ],
+            "rowId": "rowId-10"
+          }
+        ],
+        "matchUps": [
+          {
+            "matchUpId": "0cfb0d77-e887-4c4e-b16b-a16f6276194f",
+            "drawId": "93ad131a-f64c-49e5-b2b8-4a825b67aca3",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "matchUpType": "SINGLES",
+            "schedule": {}
+          },
+          {
+            "matchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+            "drawId": "93ad131a-f64c-49e5-b2b8-4a825b67aca3",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "matchUpType": "SINGLES",
+            "schedule": {}
+          }
+        ]
+      }
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "notScheduledMatchUpIds": [],
+        "dailyLimitWarningMatchUpIds": [],
+        "overLimitMatchUpIds": [],
+        "placements": [
+          {
+            "matchUpId": "0cfb0d77-e887-4c4e-b16b-a16f6276194f",
+            "schedule": {
+              "courtOrder": 1,
+              "venueId": "venue-1",
+              "courtId": "d2bfeb0d-f2bc-4f2b-8c6e-00d00fcca6fd"
+            }
+          },
+          {
+            "matchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+            "schedule": {
+              "courtOrder": 2,
+              "venueId": "venue-1",
+              "courtId": "d2bfeb0d-f2bc-4f2b-8c6e-00d00fcca6fd"
+            }
+          }
+        ]
+      }
+    },
+    "note": "Three courts, the call names the third: every placement is on it, one row each."
+  },
+  {
+    "caseId": "scheduling.grid.a-player-in-two-events-is-not-on-one-row-twice.v1",
+    "operation": "kernel.scheduling.grid@1",
+    "input": {
+      "view": {
+        "matchUpDependencies": {
+          "fb924dc9-07eb-4112-a5f0-8591f2e41bcb": {
+            "matchUpIds": [],
+            "dependentMatchUpIds": []
+          },
+          "4002017a-6468-4b49-92a9-ab0f59b77106": {
+            "matchUpIds": [],
+            "dependentMatchUpIds": []
+          }
+        },
+        "courtClosures": {},
+        "scheduledDate": "2026-03-02",
+        "gridMatchUps": [],
+        "reachability": {
+          "matchUps": {
+            "fb924dc9-07eb-4112-a5f0-8591f2e41bcb": {
+              "certain": ["0bb494b4-963d-477f-930d-047aadb232e9", "7071fa1e-3f2f-4031-99b3-a38b3049f8bd"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "4002017a-6468-4b49-92a9-ab0f59b77106": {
+              "certain": ["0bb494b4-963d-477f-930d-047aadb232e9", "7071fa1e-3f2f-4031-99b3-a38b3049f8bd"],
+              "potential": [],
+              "nearPotential": []
+            }
+          },
+          "upstream": {
+            "fb924dc9-07eb-4112-a5f0-8591f2e41bcb": [],
+            "4002017a-6468-4b49-92a9-ab0f59b77106": []
+          },
+          "linkedTargets": {}
+        },
+        "gridRows": [
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 1,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 1,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-1"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 2,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 2,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-2"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 3,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 3,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-3"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 4,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 4,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-4"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 5,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 5,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-5"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 6,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 6,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-6"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 7,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 7,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-7"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 8,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 8,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-8"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 9,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 9,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-9"
+          },
+          {
+            "matchUpIds": [],
+            "availableCourts": [
+              {
+                "schedule": {
+                  "courtOrder": 10,
+                  "venueId": "venue-1",
+                  "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+                }
+              },
+              {
+                "schedule": {
+                  "courtOrder": 10,
+                  "venueId": "venue-1",
+                  "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff"
+                }
+              }
+            ],
+            "rowId": "rowId-10"
+          }
+        ],
+        "matchUps": [
+          {
+            "matchUpId": "fb924dc9-07eb-4112-a5f0-8591f2e41bcb",
+            "drawId": "9f9448bf-64e8-41ff-a4fc-fea40b2fac0d",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "matchUpType": "SINGLES",
+            "schedule": {}
+          },
+          {
+            "matchUpId": "4002017a-6468-4b49-92a9-ab0f59b77106",
+            "drawId": "1bc6bc1d-06e9-4ee2-b378-66e2afec366d",
+            "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
+            "matchUpType": "SINGLES",
+            "schedule": {}
+          }
+        ]
+      }
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "notScheduledMatchUpIds": [],
+        "dailyLimitWarningMatchUpIds": [],
+        "overLimitMatchUpIds": [],
+        "placements": [
+          {
+            "matchUpId": "fb924dc9-07eb-4112-a5f0-8591f2e41bcb",
+            "schedule": {
+              "courtOrder": 1,
+              "venueId": "venue-1",
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+            }
+          },
+          {
+            "matchUpId": "4002017a-6468-4b49-92a9-ab0f59b77106",
+            "schedule": {
+              "courtOrder": 2,
+              "venueId": "venue-1",
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
+            }
+          }
+        ]
+      }
+    },
+    "note": "The same two players in two events, two courts: their first-round matchUps share both players, so the second is not on the first one's row."
+  }
+]
