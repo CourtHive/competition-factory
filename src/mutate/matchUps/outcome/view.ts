@@ -357,6 +357,49 @@ function sideDrawPosition(matchUp: HydratedMatchUp | undefined, sideNumber: 1 | 
   return matchUp?.sides?.find((side) => side.sideNumber === sideNumber)?.drawPosition;
 }
 
+/**
+ * A swap's relabel in its own structure, as v1's `swapWinnerLoser` finds it: the later-round matchUps holding the old
+ * winner's position or the old loser's, from the stored map. Only built for a call that may swap (a winner changing with
+ * `allowChangePropagation`).
+ */
+function swapPath({
+  inContextMatchUp,
+  drawDefinition,
+  matchUpsMap,
+  matchUp,
+  request,
+}: {
+  inContextMatchUp?: HydratedMatchUp;
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+  request: OutcomeRequest;
+  matchUp: MatchUp;
+}): OutcomeView['targets']['swap'] {
+  const winningSide = matchUp.winningSide;
+  if (!request.flags.allowChangePropagation || !request.winningSide || !winningSide) return undefined;
+  if (request.winningSide === winningSide || !inContextMatchUp?.structureId) return undefined;
+  const positionA = sideDrawPosition(inContextMatchUp, winningSide as 1 | 2);
+  const positionB = sideDrawPosition(inContextMatchUp, (3 - winningSide) as 1 | 2);
+  if (!positionA) return undefined;
+  const structureId = inContextMatchUp.structureId;
+  const roundNumber = inContextMatchUp.roundNumber ?? 0;
+  const path = (matchUpsMap.mappedMatchUps[structureId]?.matchUps ?? []).filter(
+    (candidate) =>
+      (candidate.roundNumber ?? 0) > roundNumber &&
+      (candidate.drawPositions?.includes(positionA) || (!!positionB && candidate.drawPositions?.includes(positionB))),
+  );
+  return {
+    positionA,
+    positionB,
+    pathMatchUpIds: path.map(({ matchUpId }) => matchUpId),
+    pathCarriesExit: path.some(
+      (candidate) =>
+        isAnyExit(candidate.matchUpStatus) || Object.values(candidate.sideExitProvenance ?? {}).some(Boolean),
+    ),
+    linkedOut: (drawDefinition.links ?? []).some((link) => link.source?.structureId === structureId),
+  };
+}
+
 /** a stored matchUp's status codes and whether it holds exit provenance, as the write that re-derives them reads them */
 function storedSideRecord(matchUpsMap: MatchUpsMap, matchUpId?: string): OutcomeView['targets']['loserMatchUpRecord'] {
   const stored = matchUpId ? matchUpsMap.drawMatchUps.find((m) => m.matchUpId === matchUpId) : undefined;
@@ -1001,6 +1044,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       loserMatchUpStatus: targetData?.targetMatchUps?.loserMatchUp?.matchUpStatus,
       loserMatchUpHasResult: hasResult(targetData?.targetMatchUps?.loserMatchUp),
       loserMatchUpRecord: storedSideRecord(matchUpsMap, targetData?.targetMatchUps?.loserMatchUp?.matchUpId),
+      swap: swapPath({ request, matchUp, inContextMatchUp, matchUpsMap, drawDefinition }),
       winner: winnerTarget(targetData?.targetMatchUps?.winnerMatchUp, request.matchUpId, draw),
       winnerThroughBye: {
         1: throughBye(targetData?.targetMatchUps?.winnerMatchUp, sideDrawPosition(inContextMatchUp, 1), draw),

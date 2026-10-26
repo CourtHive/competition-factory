@@ -1,6 +1,7 @@
 import { writeAssignmentResults } from '@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults';
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
+import { exchangeMatchUpPositions } from '@Mutate/matchUps/drawPositions/swapWinnerLoser';
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { getCapturedStamps } from '@Global/state/globalState';
 import { nowIso } from '@Tools/clock';
@@ -68,6 +69,20 @@ export type OutcomeOp =
       participantId: string;
     }
   | {
+      op: 'exchangeDrawPositions';
+      /**
+       * a swap's relabel in a later round of its structure (S4): the two positions exchanged in the matchUp and sorted,
+       * a decided matchUp's winner carried across the re-sort with its score and side facts (v1's
+       * `exchangeMatchUpPositions`, the same function)
+       */
+      matchUpId: string;
+      structureId: string;
+      /** the old winner's position */
+      positionA: number;
+      /** the old loser's position, when they held one */
+      positionB?: number;
+    }
+  | {
       op: 'clearPosition';
       /** a loser taken back out of the structure a link placed them in (S4): their seat emptied */
       structureId: string;
@@ -112,6 +127,7 @@ export type OutcomeOp =
 export type OutcomeOpName =
   | 'setMatchUpResult'
   | 'setMatchUpDrawPositions'
+  | 'exchangeDrawPositions'
   | 'assignPosition'
   | 'clearPosition'
   | 'setMatchUpStatusCodes'
@@ -242,6 +258,23 @@ function foldAssignPosition(op: OpOf<'assignPosition'>, { structures }: DrawInde
   return {};
 }
 
+function foldExchange(
+  op: OpOf<'exchangeDrawPositions'>,
+  { matchUps }: DrawIndex,
+  drawDefinition: DrawDefinition,
+): Folded {
+  const matchUp = matchUps.get(op.matchUpId);
+  if (!matchUp) return { error: `exchangeDrawPositions: no matchUp ${op.matchUpId}` };
+  exchangeMatchUpPositions({
+    structureId: op.structureId,
+    positionA: op.positionA,
+    positionB: op.positionB,
+    drawDefinition,
+    matchUp,
+  });
+  return {};
+}
+
 function foldClearPosition(op: OpOf<'clearPosition'>, { structures }: DrawIndex): Folded {
   const structure = structures.get(op.structureId);
   const assignment = positionAssignmentsOf(structure)?.find((candidate) => candidate.drawPosition === op.drawPosition);
@@ -336,6 +369,8 @@ function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition
       return foldMatchUpWrite(op, index, drawDefinition);
     case 'assignPosition':
       return foldAssignPosition(op, index);
+    case 'exchangeDrawPositions':
+      return foldExchange(op, index, drawDefinition);
     case 'clearPosition':
       return foldClearPosition(op, index);
     case 'setMatchUpStatusCodes':

@@ -5,8 +5,8 @@ import mocksEngine from '@Assemblies/engines/mock';
 
 // constants
 import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { MAIN, ROUND_ROBIN_WITH_PLAYOFF } from '@Constants/drawDefinitionConstants';
+import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 
 /**

@@ -496,6 +496,54 @@ function followWinnerAcrossResort({
 }
 
 /**
+ * Exchange two drawPositions in ONE matchUp, re-sorting, and carry a decided matchUp's winner across the re-sort. The
+ * write alone, announcing nothing: `exchangePathPositions` announces each matchUp, and outcome v2's reducer folds the
+ * same write for a swap it plans (`exchangeDrawPositions`), so the two cannot drift.
+ */
+export function exchangeMatchUpPositions({
+  drawDefinition,
+  structureId,
+  positionA,
+  positionB,
+  matchUp,
+}: {
+  drawDefinition: DrawDefinition;
+  positionA?: number;
+  positionB?: number;
+  structureId: string;
+  matchUp: MatchUp;
+}): void {
+  // read BEFORE the rewrite: which position won, in the array order the winningSide refers to
+  const winnerDrawPosition = getWinningSideDrawPosition({
+    matchUp: { ...matchUp, sides: undefined },
+    drawDefinition,
+    structureId,
+  });
+
+  // The substitution can leave a position out: the flipped loser has no drawPosition when their
+  // side was an empty fed slot, so `[4, 7]` becomes `[7]` once settled, its side read structurally.
+  // An array of nothing settles to `[]` (census seed 9100016, FEED_IN_CHAMPIONSHIP_TO_SF).
+  const substituted =
+    matchUp.drawPositions?.map((drawPosition) => {
+      if (drawPosition === positionA) return positionB;
+      if (positionB && drawPosition === positionB) return positionA;
+      return drawPosition;
+    }) ?? [];
+  // `normalizeDrawPositions` sorts and compacts. A lone survivor's side is no longer carried by a hole
+  // (census 9100555's DE Main final once read a side-2 walkover as won by the empty side 1 when a
+  // sort moved the hole); `followWinnerAcrossResort` reads it structurally.
+  matchUp.drawPositions = normalizeDrawPositions(substituted);
+  followWinnerAcrossResort({
+    existingWinnerDrawPosition: positionA,
+    drawDefinition,
+    structureId,
+    existingLoserDrawPosition: positionB,
+    winnerDrawPosition,
+    matchUp,
+  });
+}
+
+/**
  * Exchange two drawPositions in the given matchUps, re-sorting only where both positions are present
  * and carrying each decided matchUp's winner across the re-sort. Shared by the source structure's later
  * rounds and by the re-entry matchUps of an origin structure.
@@ -519,34 +567,7 @@ function exchangePathPositions({
 }) {
   const stack = 'swapWinnerLoser';
   matchUps.forEach((matchUp) => {
-    // read BEFORE the rewrite: which position won, in the array order the winningSide refers to
-    const winnerDrawPosition = getWinningSideDrawPosition({
-      matchUp: { ...matchUp, sides: undefined },
-      drawDefinition,
-      structureId,
-    });
-
-    // The substitution can leave a position out: the flipped loser has no drawPosition when their
-    // side was an empty fed slot, so `[4, 7]` becomes `[7]` once settled, its side read structurally.
-    // An array of nothing settles to `[]` (census seed 9100016, FEED_IN_CHAMPIONSHIP_TO_SF).
-    const substituted =
-      matchUp.drawPositions?.map((drawPosition) => {
-        if (drawPosition === positionA) return positionB;
-        if (positionB && drawPosition === positionB) return positionA;
-        return drawPosition;
-      }) ?? [];
-    // `normalizeDrawPositions` sorts and compacts. A lone survivor's side is no longer carried by a hole
-    // (census 9100555's DE Main final once read a side-2 walkover as won by the empty side 1 when a
-    // sort moved the hole); `followWinnerAcrossResort` reads it structurally.
-    matchUp.drawPositions = normalizeDrawPositions(substituted);
-    followWinnerAcrossResort({
-      existingWinnerDrawPosition: positionA,
-      drawDefinition,
-      structureId,
-      existingLoserDrawPosition: positionB,
-      winnerDrawPosition,
-      matchUp,
-    });
+    exchangeMatchUpPositions({ matchUp, structureId, positionA, positionB, drawDefinition });
     modifyMatchUpNotice({
       tournamentId: tournamentRecord?.tournamentId,
       eventId: event?.eventId,
