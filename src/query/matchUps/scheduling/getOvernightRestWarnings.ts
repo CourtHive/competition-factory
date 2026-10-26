@@ -1,6 +1,6 @@
 import { getIndividualParticipantIds } from '@Query/matchUp/getIndividualParticipantIds';
-import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import { findMatchUpFormatTiming } from '@Acquire/findMatchUpFormatTiming';
+import { getSchedulingMatchUps } from './getSchedulingMatchUps';
 import { timingCategoryType } from '@Query/event/timingCategoryType';
 import { extractDate, extractTime } from '@Tools/dateTime';
 import { addDaysToDate } from '@Tools/civilDateTime';
@@ -48,7 +48,7 @@ export function getOvernightRestWarnings({
   scheduleDates,
   scheduleOverrides = {},
 }: GetOvernightRestWarningsArgs): { [scheduleDate: string]: OvernightRestWarning[] } {
-  const matchUps = allCompetitionMatchUps({ tournamentRecords, inContext: true }).matchUps ?? [];
+  const matchUps = getSchedulingMatchUps({ tournamentRecords, nextMatchUps: false });
   const scheduleOf = (matchUp: HydratedMatchUp): Schedule => ({
     ...matchUp.schedule,
     ...scheduleOverrides[matchUp.matchUpId],

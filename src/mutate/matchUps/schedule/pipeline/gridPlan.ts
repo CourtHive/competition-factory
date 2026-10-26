@@ -1,6 +1,6 @@
 import { getParticipantReachability, ParticipantReachability } from '../scheduleMatchUps/getParticipantReachability';
 import { checkDailyLimits, DailyLimitOverrides } from '../scheduleMatchUps/checkDailyLimits';
-import { competitionScheduleMatchUps } from '@Query/matchUps/competitionScheduleMatchUps';
+import { getSchedulingMatchUps } from '@Query/matchUps/scheduling/getSchedulingMatchUps';
 import { matchUpChronologicalSort } from '@Functions/sorters/matchUpChronologicalSort';
 import { modifyParticipantDayMatchUps } from '../scheduleMatchUps/participantDayLoad';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
@@ -8,6 +8,7 @@ import { getParticipantClashes } from '../scheduleMatchUps/participantClashes';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
 import { getGridBookings } from '@Query/venues/getGridBookings';
 import { isObject } from '@Tools/objects';
+import { dateGridRows } from './gridRows';
 
 // constants and types
 import type { IndividualParticipantProfiles } from '../scheduleMatchUps/checkParticipantProfileInitialization';
@@ -121,14 +122,9 @@ export function buildGridDateView({
   courtIds,
   matchUps,
 }: BuildGridDateViewArgs): GridDateView | { error: ErrorType } {
-  const matchUpFilters = { localPerspective: true, scheduledDate };
-  const result = competitionScheduleMatchUps({
-    courtCompletedMatchUps: true,
-    withCourtGridRows: true,
-    minCourtGridRows,
-    tournamentRecords,
-    matchUpFilters,
-  });
+  // the competition as the records stand for this date (the dates before it written), projected, not hydrated
+  const competitionMatchUps = getSchedulingMatchUps({ tournamentRecords });
+  const result = dateGridRows({ matchUps: competitionMatchUps, tournamentRecords, minCourtGridRows, scheduledDate });
   if (result.error) return { error: result.error };
 
   const gridMatchUps: HydratedMatchUp[] = [];
@@ -157,6 +153,7 @@ export function buildGridDateView({
   const matchUpDependencies: GridDependencies = getMatchUpDependencies({
     matchUps: ordered.concat(gridMatchUps),
     includeParticipantDependencies: true,
+    competitionMatchUps,
     tournamentRecords,
   }).matchUpDependencies;
 
