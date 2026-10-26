@@ -668,7 +668,7 @@ function authoredCases({ caseId, note, options = {}, amendView, build, claims }:
   build();
   const { tournamentRecord } = tournamentEngine.getTournament();
   const tournamentRecords = { [tournamentRecord.tournamentId]: tournamentRecord };
-  const recordsIn = overTheWire(tournamentRecords);
+  const recordsIn = overTheWire(Object.values(tournamentRecords));
   const view = buildSchedulingView({ ...options, tournamentRecords });
   if ('error' in view) throw new Error(`${caseId}: ${JSON.stringify(view.error)}`);
   const viewCase: KernelCase = {

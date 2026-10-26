@@ -46,7 +46,7 @@ if (out || casesOut) {
     checking = true;
     try {
       const tournamentRecords = structuredClone(getTournamentRecords() ?? {});
-      const recordsIn = casesOut ? JSON.stringify(tournamentRecords) : '';
+      const recordsIn = casesOut ? JSON.stringify(Object.values(tournamentRecords)) : '';
       const result = checkViewRoundTrip({ tournamentRecords, params: event.params ?? {} });
       if (!result.planned) return undefined;
       checked += 1;

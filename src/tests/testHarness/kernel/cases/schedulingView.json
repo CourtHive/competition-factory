@@ -3,8 +3,8 @@
     "caseId": "scheduling.view.first-slot-fills-every-court.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -445,7 +445,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -742,8 +742,8 @@
     "caseId": "scheduling.view.garman-one-court.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -1162,7 +1162,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -1434,8 +1434,8 @@
     "caseId": "scheduling.view.final-waits-for-recovery.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -1883,7 +1883,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -2197,8 +2197,8 @@
     "caseId": "scheduling.view.person-request-on-a-placed-side.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -2509,7 +2509,7 @@
             }
           ]
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -2662,8 +2662,8 @@
     "caseId": "scheduling.view.daily-limit-holds-the-final.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -3117,7 +3117,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -3440,8 +3440,8 @@
     "caseId": "scheduling.view.no-court-available.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -3735,7 +3735,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -3856,8 +3856,8 @@
     "caseId": "scheduling.view.played-source-on-a-later-date.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -4351,7 +4351,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -4681,8 +4681,8 @@
     "caseId": "scheduling.view.booking-holds-its-own-minutes.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -5332,7 +5332,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -5665,8 +5665,8 @@
     "caseId": "scheduling.view.bookings-survive-a-malformed-matchup.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -6316,7 +6316,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -6649,8 +6649,8 @@
     "caseId": "scheduling.view.venue-only-booking-takes-a-court.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -7299,7 +7299,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -7631,8 +7631,8 @@
     "caseId": "scheduling.view.timed-without-a-venue-books-no-court.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -8308,7 +8308,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -8664,8 +8664,8 @@
     "caseId": "scheduling.view.timed-without-a-venue-at-the-only-venue.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -9313,7 +9313,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -9644,8 +9644,8 @@
     "caseId": "scheduling.view.scheduled-bye-holds-no-one.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -10112,7 +10112,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -10442,8 +10442,8 @@
     "caseId": "scheduling.view.stored-matchup-holds-its-own-minutes.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -11149,7 +11149,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -11555,8 +11555,8 @@
     "caseId": "scheduling.view.placed-matchup-holds-its-own-minutes.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -12257,7 +12257,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -12662,8 +12662,8 @@
     "caseId": "scheduling.view.request-window-is-the-matchup-minutes.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -13377,7 +13377,7 @@
             }
           ]
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -13775,8 +13775,8 @@
     "caseId": "scheduling.view.replanned-matchup-forgets-its-old-time.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -14230,7 +14230,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -14555,8 +14555,8 @@
     "caseId": "scheduling.view.venue-turn-is-its-open-courts.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-02",
@@ -16544,7 +16544,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -18767,8 +18767,8 @@
     "caseId": "scheduling.view.booking-no-court-can-hold-is-reported.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -19417,7 +19417,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -19749,8 +19749,8 @@
     "caseId": "scheduling.view.transit-longer-than-recovery-holds.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -20209,7 +20209,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -20524,8 +20524,8 @@
     "caseId": "scheduling.view.transit-shorter-than-recovery-adds-nothing.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -20984,7 +20984,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -21299,8 +21299,8 @@
     "caseId": "scheduling.view.transit-default-for-an-unstated-pair.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -21759,7 +21759,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -22074,8 +22074,8 @@
     "caseId": "scheduling.view.transit-none-within-a-facility.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -22534,7 +22534,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -22849,8 +22849,8 @@
     "caseId": "scheduling.view.transit-one-way-applies-one-way.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -23309,7 +23309,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -23624,8 +23624,8 @@
     "caseId": "scheduling.view.transit-default-from-the-policy.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -24402,7 +24402,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -25042,8 +25042,8 @@
     "caseId": "scheduling.view.cleared-date-carries-nothing.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -25582,7 +25582,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {
@@ -25836,8 +25836,8 @@
     "caseId": "scheduling.view.overnight-rest-is-warned-not-held.v1",
     "operation": "kernel.scheduling.view@1",
     "input": {
-      "tournamentRecords": {
-        "09731d85-6f11-4782-a403-0f23c348c0f8": {
+      "tournamentRecords": [
+        {
           "tournamentName": "Racket Rally",
           "startDate": "2026-03-02",
           "endDate": "2026-03-03",
@@ -26615,7 +26615,7 @@
             ]
           }
         }
-      },
+      ],
       "options": {}
     },
     "expected": {

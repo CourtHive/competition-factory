@@ -129,8 +129,10 @@ function validatePlanInput(input: Record<string, unknown>) {
 }
 
 function validateViewInput(input: Record<string, unknown>) {
-  const records = input.tournamentRecords as Record<string, unknown> | undefined;
-  if (!records || typeof records !== 'object' || Array.isArray(records)) return 'tournamentRecords must be an object';
+  const records = input.tournamentRecords;
+  const isRecord = (record: any) => !!record && typeof record === 'object' && typeof record.tournamentId === 'string';
+  if (!Array.isArray(records) || !records.every(isRecord))
+    return 'tournamentRecords must be an array of records, each with a tournamentId';
   const options = (input.options ?? {}) as Record<string, unknown>;
   if (typeof options !== 'object' || Array.isArray(options)) return 'options must be an object';
   for (const [key, value] of Object.entries(options)) {
@@ -140,10 +142,16 @@ function validateViewInput(input: Record<string, unknown>) {
   return undefined;
 }
 
-/** a scheduling call's view, as the plan reads it: the records' matchUps hydrated, the graph, the profile's rounds */
+/**
+ * a scheduling call's view, as the plan reads it: the records' matchUps hydrated, the graph, the profile's rounds. The
+ * records arrive as an array, in the order the call holds them (what is hydrated first is planned first), since the
+ * order of an object's keys is not something every language's JSON keeps.
+ */
 function schedulingView(input: Record<string, unknown>): KernelResult {
   const options = (input.options ?? {}) as Record<string, any>;
-  const tournamentRecords = input.tournamentRecords as Record<string, any>;
+  const tournamentRecords = Object.fromEntries(
+    (input.tournamentRecords as any[]).map((record) => [record.tournamentId, record]),
+  );
   const view = buildSchedulingView({ ...options, tournamentRecords });
   if ('error' in view) return { kind: 'error', code: view.error.code };
   return { kind: 'value', value: overTheWire(planningViewData(view)) };
