@@ -492,7 +492,9 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   v1's notices for it (the next matchUp's `modifyMatchUp` named `assignMatchUpDrawPosition`, a
   `modifyPositionAssignments` for the structure the loser is placed in) and returns v1's direction
   `context` (`ownedDirectionWrites.test.ts`). Under `v2` the mutations suite has about 10,000 calls
-  v2 writes as a direction.
+  v2 writes as a direction. A **final** is owned the same way: a winner with no next matchUp and no
+  winner link out of the structure (a qualifying final places its winner in the main draw, and stays
+  v1's), whose loser, if a link takes them, arrives as a plain placement.
 - **`differential`**: v2 plans the whole call before v1 runs, then checks v1's result against it,
   and a disagreement throws `OutcomePipelineDivergence` naming the matchUp and both answers. The
   plan covers the refusal, the route, the write on the matchUp, the winner's direction, the

@@ -85,7 +85,14 @@ it('handles potential BYES for FMLC consolation structures', () => {
   const roundMatchUps: any = getRoundMatchUps({
     matchUps: consolationMatchUps,
   }).roundMatchUps;
-  expect(roundMatchUps[2][0].potentialParticipants[0][1].bye).toEqual(true);
+  // a group's order follows the sources: the marker is one group's, wherever it stands (a loser skipping a BYE in the
+  // first round now reaches this matchUp too, CA 2026-10-26)
+  const groups = roundMatchUps[2][0].potentialParticipants;
+  expect(groups.some((group: any[]) => group.some((entry) => entry.bye))).toEqual(true);
+  // and no BYE matchUp of the consolation holds potentials
+  const byes = consolationMatchUps.filter(({ matchUpStatus }) => matchUpStatus === 'BYE');
+  expect(byes.length).toBeGreaterThan(0);
+  expect(byes.filter((matchUp: any) => matchUp.potentialParticipants?.length)).toEqual([]);
 });
 
 it('removes potential participants when side participant is known', () => {
