@@ -189,6 +189,18 @@ export type OutcomeView = {
      */
     loserMatchUpRecord?: { matchUpStatusCodes?: unknown[]; provenance: boolean };
     /**
+     * a swap's relabel in the source structure (S4, v1's `swapWinnerLoser`): the old winner's and the old loser's
+     * positions, the later-round matchUps holding either (read from the stored draw), whether any carries exit
+     * provenance or an exit status, and whether the structure has any link out of it (then the swap relabels downstream)
+     */
+    swap?: {
+      positionA: number;
+      positionB?: number;
+      pathMatchUpIds: string[];
+      pathCarriesExit: boolean;
+      linkedOut: boolean;
+    };
+    /**
      * P51 group 2: the loserMatchUp is a single exit already decided for the seat the loser arrives in, with a result
      * recorded below it. A carried exit arriving there is carried past it, as past a BYE, rather than converging.
      */

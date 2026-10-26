@@ -546,6 +546,13 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   seeded. The old loser's matchUp is announced first, as v1 announces it, then the result and the
   placements. A loser's matchUp has its codes re-derived only when the call names a status, as v1's
   `removeDirectedLoser` re-derives them (its `sourceMatchUpStatus`), for a clear and a changed winner alike.
+  A **swap** (`allowChangePropagation` with the other side winning) is a relabel, v1's
+  `swapWinnerLoser`: in the source structure the two positions are exchanged in every later round
+  that holds either (each announced as `swapWinnerLoser`, before the score), a decided matchUp's
+  winner carried across the re-sort, and nothing is placed or removed. It is owned when the result is a
+  played one before and after, the structure has no link out of it (so nothing downstream is
+  relabelled and no `FIRST_MATCHUP` feed reconciled), and no matchUp on the path holds an exit or
+  exit provenance.
 - **`differential`**: v2 plans the whole call before v1 runs, then checks v1's result against it,
   and a disagreement throws `OutcomePipelineDivergence` naming the matchUp and both answers. The
   plan covers the refusal, the route, the write on the matchUp, the winner's direction, the
@@ -614,6 +621,7 @@ says and what lands are one thing. The reducer decides nothing and refuses nothi
 | `setMatchUpResult`        | the matchUp's status, winner, score (as the call gave it, or blanked), a new format, status codes, and `schedule.scoredTime` by v1's rule: captured the first time the matchUp is scored, kept on corrections, removed with the score                                                                                                            |
 | `setMatchUpDrawPositions` | the positions placed in a matchUp, as v1 stores them: numbers, ascending (a winner's position joining the next matchUp, or taken back out of it: `removedDrawPosition`, whose result goes with the participant, as `removeSubsequentRoundsParticipant` takes it; with `placedDrawPosition` too when one write replaces a changed winner)         |
 | `assignPosition`          | a participant on a structure's stored assignment for a drawPosition (a loser fed across a link)                                                                                                                                                                                                                                                  |
+| `exchangeDrawPositions`   | a swap's relabel in a later round of its structure: the old winner's and the old loser's positions exchanged and sorted, a decided matchUp's winner carried across the re-sort with its score and side facts (v1's `exchangeMatchUpPositions`, the same function)                                                                                |
 | `clearPosition`           | a structure's stored assignment for a drawPosition emptied, and the participant's seed entry there removed (a loser taken back out of the structure a link placed them in)                                                                                                                                                                       |
 | `setMatchUpStatusCodes`   | a matchUp's status codes, re-derived from its provenance (the matchUp a loser is taken back out of)                                                                                                                                                                                                                                              |
 | `assignBye`               | a BYE on a structure's stored assignment for a drawPosition, marked `byeFromPropagation` (a `FIRST_MATCHUP` reservation)                                                                                                                                                                                                                         |

@@ -241,6 +241,23 @@ function changedWinnerReason(
   return undefined;
 }
 
+/**
+ * A swap (`allowChangePropagation` with the other side winning) is a relabel, v1's `swapWinnerLoser`: in the source
+ * structure the two positions are exchanged in every later round that holds either, a decided matchUp's winner carried
+ * across the re-sort, and nothing is placed or removed. Planned where that is all there is: a played result before and
+ * after, a structure with no link out of it (so nothing downstream is relabelled and no FIRST_MATCHUP feed reconciled),
+ * and no exit or exit provenance on the path. Anything else is v1's (S4).
+ */
+function swapReason(view: OutcomeView, write?: MatchUpWrite): AbstainReason | undefined {
+  const swap = view.targets.swap;
+  if (!write?.winningSide || write.matchUpStatus !== COMPLETED || view.existing.matchUpStatus !== COMPLETED)
+    return 'route';
+  if (!swap) return 'route';
+  if (swap.linkedOut) return 'link';
+  if (swap.pathCarriesExit) return 'cascade';
+  return undefined;
+}
+
 /** the values written beneath an active downstream: a played result, nothing directed */
 function applyValuesReason({
   write,
@@ -362,6 +379,8 @@ function abstainReason(args: {
   const reentered = reentersWinner(view, args.route, write);
   // S4: another winner with nothing downstream active: the old direction taken back, the new one made
   const changing = changesWinner(view, args.route, write);
+  // S4: a swap, the two participants' paths exchanged in their structure
+  const swapping = args.route === 'swap';
   // S4: a decided result cleared while its downstream is untouched takes back what it directed (`remove-directed`)
   const removing = args.route === REMOVE_DIRECTED && !!view.existing.winningSide && !write?.winningSide;
   // a winner cleared or changed in a WIN_RATIO structure: v1 reports the playoff structures it reaches, which v2 does not
@@ -370,12 +389,13 @@ function abstainReason(args: {
   if (removing) {
     const removal = removalReason(view, direction);
     if (removal) return removal;
-  } else if (view.existing.winningSide && !sameWinner && !reentered && !changing) return 'winner';
+  } else if (view.existing.winningSide && !sameWinner && !reentered && !changing && !swapping) return 'winner';
   const directing = !sameWinner && !!(request.winningSide || write?.winningSide || direction);
   let shape: AbstainReason | undefined;
   if (sameWinner) shape = applyValuesReason(args);
   else if (reentered) shape = reenteredReason(view, write, direction);
   else if (changing) shape = changedWinnerReason(view, write, direction);
+  else if (swapping) shape = swapReason(view, write);
   else shape = directing ? directionReason(args) : localReason(args);
   if (shape) return shape;
   if (view.existing.hasSideExitProvenance || view.existing.carriedExit) return 'provenance';
@@ -428,6 +448,20 @@ function winnerPlacementOps(
   ];
 }
 
+/**
+ * A swap's relabel in later rounds of its structure, each matchUp stamped: written before the result, as v1 announces
+ * the path (`exchangePathPositions`) and then the score
+ */
+function swapOps(view: OutcomeView, route: Route | undefined): OutcomeOp[] {
+  const swap = view.targets.swap;
+  const structureId = view.targets.source.structureId;
+  if (route !== 'swap' || !swap || !structureId) return [];
+  return swap.pathMatchUpIds.flatMap((matchUpId): OutcomeOp[] => [
+    { op: 'exchangeDrawPositions', matchUpId, structureId, positionA: swap.positionA, positionB: swap.positionB },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
+  ]);
+}
+
 /** the direction whose placements are written: none for a re-entered winner, who stands where the first entry put them */
 function placedDirection(
   view: OutcomeView,
@@ -435,7 +469,7 @@ function placedDirection(
   write: MatchUpWrite,
   direction?: DirectionPlan,
 ): DirectionPlan | undefined {
-  return reentersWinner(view, route, write) ? undefined : direction;
+  return reentersWinner(view, route, write) || route === 'swap' ? undefined : direction;
 }
 
 /** a cleared result taking back a winner it stored (S4) */
@@ -561,6 +595,7 @@ export function planOutcome(args: {
     ? { scoreStringSide1: '', scoreStringSide2: '' }
     : (request.score as Score | undefined);
   const ops: OutcomeOp[] = [
+    ...swapOps(view, args.route),
     ...replacedLoserOps(view, args.route, write, request.matchUpStatus),
     {
       op: 'setMatchUpResult',

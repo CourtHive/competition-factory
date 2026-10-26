@@ -8,8 +8,8 @@ import { setClock } from '@Tools/clock';
 
 // constants
 import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
-import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { COMPLETED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import {
   AD_HOC,
   DOUBLE_ELIMINATION,
@@ -62,7 +62,8 @@ const walkover = (winningSide: 1 | 2) =>
 
 // a round robin's matchUps have no roundPosition: `nth` picks the nth of the round in the structure instead
 type Target = { structureName?: string; roundNumber: number; roundPosition?: number; nth?: number };
-type Step = { target: Target; outcome: Record<string, unknown> };
+// `params`: further setMatchUpStatus arguments (a swap's `allowChangePropagation`)
+type Step = { target: Target; outcome: Record<string, unknown>; params?: Record<string, unknown> };
 // `setup`: steps played under v1 before the comparison starts, for a state the owned steps need but do not own
 type Scenario = { drawProfile: Record<string, unknown>; steps: Step[]; setup?: Step[] };
 
@@ -291,6 +292,26 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'SINGLE_ELIMINATION (S4): a swap exchanges the two positions in the next matchUp',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1), outcome: won(1) }],
+      steps: [{ target: R1(1), outcome: won(2), params: { allowChangePropagation: true } }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION (S4): a swap beneath a decided final relabels its path and keeps its result',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [
+        { target: R1(1), outcome: won(1) },
+        { target: R1(2), outcome: won(1) },
+        { target: { roundNumber: 2, roundPosition: 1 }, outcome: won(1) },
+      ],
+      steps: [{ target: R1(1), outcome: won(2), params: { allowChangePropagation: true } }],
+    },
+  ],
+  [
     'DOUBLE_ELIMINATION: a Main first-round result sends the winner on and the loser into the Backdraw',
     { drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION }, steps: [{ target: R1(1, 'Main'), outcome: won(1) }] },
   ],
@@ -345,9 +366,9 @@ function play(mode: OutcomePipelineMode, { drawProfile, steps, setup = [] }: Sce
   const matchUpIds = steps.map(({ target }) => findTarget(target));
   setOutcomePipeline(mode);
   v1Writes.count = 0;
-  const results = steps.map(({ outcome }, i) => {
+  const results = steps.map(({ outcome, params }, i) => {
     setClock(`2026-10-25T00:0${i + 1}:00.000Z`);
-    return tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId: matchUpIds[i], outcome });
+    return tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId: matchUpIds[i], outcome, ...params });
   });
   return {
     record: canonicalJson(tournamentEngine.getTournament().tournamentRecord),
