@@ -141,10 +141,18 @@ export type OutcomeView = {
     luckyPreFeed: boolean;
     sideParticipantIds: { 1?: string; 2?: string };
     sideDrawPositions: { 1?: number; 2?: number };
+    /**
+     * A FIRST_MATCHUP reservation the winner's arrival would make (S3), by the winning side: present only on a draw with
+     * such a link. `reserve` names the consolation seat and matchUp v1's `propagateConsolationBye` fills with a propagated BYE;
+     * `abstain` is a placement this plan does not make (the other seat held, an advancement) or a withdrawal.
+     */
+    reservations?: { 1: Reservation; 2: Reservation };
     /** a winner link leaves the structure from this round (a qualifying final's winner is placed in the main draw) */
     winnerLink?: boolean;
     /** the loser link, when there is one: its condition and the round it feeds */
     loserLink?: { linkCondition?: string; targetRoundNumber?: number };
+    /** a BYE-only target (a FIRST_MATCHUP feed beside a playoff link), where `directParticipants` places a BYE */
+    byeTarget?: boolean;
     /** the loserMatchUp's round in its own structure (an FMLC feed lands in round 2) */
     loserMatchUpRoundNumber?: number;
     /** the loserMatchUp's structure and drawPositions: where a kept-out loser's BYE lands */
@@ -221,8 +229,6 @@ export type OutcomeView = {
     combinedPointRoundRobin?: boolean;
     /** v1's score write updates a tally here (`updateTallyIfNeeded`): a round-robin container, ad hoc, or lucky */
     tallied: boolean;
-    /** the draw has a FIRST_MATCHUP loser link, whose unreachable seats v1 fills with a propagated BYE (S5) */
-    firstMatchFeed: boolean;
     /** the draw stores its winner and loser edges; v1 writes them first on one that does not (edge repair) */
     storesEdges: boolean;
   };
@@ -306,3 +312,16 @@ export type DirectionPlan = {
     withdrawn?: WithdrawnCarry;
   };
 };
+
+/** a winner's FIRST_MATCHUP reservation, as the view reads it (see `targets.reservations`) */
+export type Reservation =
+  | { kind: 'none' }
+  | { kind: 'abstain' }
+  | {
+      kind: 'reserve';
+      structureId: string;
+      drawPosition: number;
+      matchUpId: string;
+      /** the consolation matchUp's drawPositions: a loser this call places among them meets the BYE (a cascade) */
+      drawPositions: number[];
+    };
