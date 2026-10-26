@@ -123,9 +123,13 @@ export function inPlaceSubSort(arr, i, n, sortFx) {
 }
 export function chunkArray(arr, chunksize) {
   if (!Array.isArray(arr)) return [];
+  // appended in place: concatenating each element onto a copy of its chunk was quadratic in the chunk's length. An
+  // element that is itself an array is spread into its chunk, as concat spreads it
   return arr.reduce((all, one, i) => {
     const ch = Math.floor(i / chunksize);
-    all[ch] = [].concat(all[ch] ?? [], one);
+    all[ch] ??= [];
+    if (Array.isArray(one)) all[ch].push(...one);
+    else all[ch].push(one);
     return all;
   }, []);
 }

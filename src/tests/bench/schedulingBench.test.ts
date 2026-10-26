@@ -6,7 +6,7 @@ import { appendFileSync } from 'node:fs';
 import { it } from 'vitest';
 
 // constants and types
-import { CONSOLATION, FEED_IN_CHAMPIONSHIP, MAIN } from '@Constants/drawDefinitionConstants';
+import { COMPASS, CONSOLATION, FEED_IN_CHAMPIONSHIP, MAIN } from '@Constants/drawDefinitionConstants';
 
 // Fixtures
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
@@ -122,6 +122,37 @@ function timedPlan(record: any, params: any) {
   return { ms: Math.round(median(times)), success: true };
 }
 
+/**
+ * Direct scheduling on a COMPASS 128 (312 matchUps, one venue of 16 courts): `scheduleMatchUps` called day by day with
+ * every matchUp not yet timed, until none is left. COMPASS multiplies the participants who can reach each potential
+ * matchUp, which the 128 feed-in fixture does not: this is the case where the per-placement day-load rebuild and the
+ * played-order hydration cost most (SCHEDULING_PIPELINE_VNEXT.md § 7.0, the direct-scheduling regression).
+ */
+function compassFixture() {
+  const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+    venueProfiles: [{ venueId: 'venue-c', courtsCount: 16, startTime: '08:00', endTime: '22:00' }],
+    drawProfiles: [{ drawSize: 128, drawType: COMPASS }],
+    policyDefinitions: POLICY_SCHEDULING_DEFAULT,
+    startDate: DAYS[0],
+    endDate: DAYS[2],
+  });
+  return tournamentRecord;
+}
+
+function directDayByDay() {
+  let placed = 0;
+  for (const scheduleDate of DAYS) {
+    const matchUpIds = tournamentEngine
+      .allTournamentMatchUps({ inContext: true })
+      .matchUps.filter((m: any) => !m.schedule?.scheduledTime && m.matchUpStatus !== 'BYE')
+      .map((m: any) => m.matchUpId);
+    if (!matchUpIds.length) break;
+    const result = tournamentEngine.scheduleMatchUps({ scheduleDate, matchUpIds, venueIds: ['venue-c'] });
+    placed += result.scheduledMatchUpIds?.length ?? 0;
+  }
+  return { success: placed > 0 };
+}
+
 it.skipIf(!enabled)('scheduling bench', () => {
   const fresh = fixture();
   const matchUpCount = tournamentEngine.allTournamentMatchUps().matchUps.length;
@@ -151,6 +182,7 @@ it.skipIf(!enabled)('scheduling bench', () => {
     scheduleMatchUpsMid: timed(mid, () =>
       tournamentEngine.scheduleMatchUps({ scheduleDate: DAYS[1], matchUpIds: seIds(mid), venueIds: ['venue-2'] }),
     ),
+    compassDirect: timed(compassFixture(), directDayByDay),
     eventId: se.eventId ? 'ok' : 'missing',
     // vNext against v1's dry run of the same call: the view, the plan, and both together
     dryRunFresh: timed(fresh, () => tournamentEngine.scheduleProfileRounds({ scheduleDates: DAYS, dryRun: true })),
