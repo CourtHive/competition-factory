@@ -231,13 +231,19 @@ function targetByRoundOutcome({
     winnerMatchUp = winnerMatchUpId && winnerFeedProfile !== DRAW && findById(winnerMatchUpId);
     loserMatchUp = loserMatchUpId && loserFeedProfile !== DRAW && findById(loserMatchUpId);
 
-    if (winnerMatchUp || loserMatchUp) {
+    // the stored ids answer alone when they cover every edge the matchUp has: its winner's, and its loser's wherever a
+    // loser link exists. A matchUp storing only one keeps it, and the other is derived below from the links, as if
+    // none were stored (CA 2026-10-26, hydration OPEN-10)
+    const covered = !!winnerMatchUpId && (!!loserMatchUpId || !loserTargetLink);
+    if (covered && (winnerMatchUp || loserMatchUp)) {
       return {
         matchUp,
         targetLinks: { loserTargetLink, winnerTargetLink },
         targetMatchUps: { loserMatchUp, winnerMatchUp },
       };
     }
+    winnerMatchUp ||= undefined;
+    loserMatchUp ||= undefined;
   }
 
   const { roundPosition: sourceRoundPosition } = matchUp;

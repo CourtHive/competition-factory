@@ -727,6 +727,9 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         1: inContextMatchUp?.sides?.find((side) => side.sideNumber === 1)?.drawPosition,
         2: inContextMatchUp?.sides?.find((side) => side.sideNumber === 2)?.drawPosition,
       },
+      // a winner link out of the structure, with or without a winner matchUp (a qualifying final places its winner by
+      // position in the main structure): a final whose winner goes nowhere has none
+      winnerLink: !!targetData?.targetLinks?.winnerTargetLink,
       loserLink: targetData?.targetLinks?.loserTargetLink
         ? {
             linkCondition: targetData.targetLinks.loserTargetLink.linkCondition,

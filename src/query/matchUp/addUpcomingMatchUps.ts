@@ -115,6 +115,8 @@ function addEliminationUpcomingInfo({
   const winnerTo = getUpcomingInfo({ upcomingMatchUp: winnerMatchUp });
   let loserTo = getUpcomingInfo({ upcomingMatchUp: loserMatchUp });
 
+  // the matchUp a loser actually reaches: past a BYE, the next one to be played (CA 2026-10-26, hydration OPEN-3)
+  let loserReached = loserMatchUp;
   if (inContextMatchUp.matchUpStatus !== BYE && loserMatchUp?.matchUpStatus === BYE) {
     const { matchUp: nextMatchUp } =
       getNextToBePlayedMatchUp({
@@ -123,6 +125,7 @@ function addEliminationUpcomingInfo({
         inContextDrawMatchUps,
       }) ?? {};
     loserTo = (nextMatchUp && getUpcomingInfo({ upcomingMatchUp: nextMatchUp })) || loserTo;
+    if (nextMatchUp) loserReached = nextMatchUp;
   }
 
   const timeAfterRecovery = inContextMatchUp.schedule?.timeAfterRecovery;
@@ -135,9 +138,9 @@ function addEliminationUpcomingInfo({
   if (inContextMatchUp.drawPositions?.filter(Boolean).length) {
     addPotentialParticipants({
       targetLinks: targetData.targetLinks,
+      loserMatchUp: loserReached,
       inContextMatchUp,
       winnerMatchUp,
-      loserMatchUp,
       targetIndex,
     });
   }
@@ -187,9 +190,10 @@ function addPotentialParticipants({
   const winnerParticipantIds = getParticipantIds(winnerMatchUp?.sides);
   const loserParticipantIds = getParticipantIds(loserMatchUp?.sides);
   const winnerDetermined = participants.find(({ participantId }) => winnerParticipantIds.includes(participantId));
-  const winnerPotentials = !winnerDetermined ? participants : [];
+  // each target gets its own list: the FMLC marker below is the loser target's only (CA 2026-10-26, hydration OPEN-2)
+  const winnerPotentials = !winnerDetermined ? [...participants] : [];
   const loserDetermined = participants.find(({ participantId }) => loserParticipantIds.includes(participantId));
-  const loserPotentials = !loserDetermined ? participants : [];
+  const loserPotentials = !loserDetermined ? [...participants] : [];
   if (loserMatchUp && firstMatchUp && loserPotentials.length < 2) {
     loserPotentials.push({ bye: true, tbd: true }); // tbd: true indiciates that for FMLC, WO/DEF could propagate a player
   }
@@ -199,12 +203,13 @@ function addPotentialParticipants({
   // which a target is: the stored-id shortcut returns references without setting it, the full path copies with it set
   const inContextTarget = (target) => targetIndex.byMatchUpId.get(target.matchUpId) ?? target;
 
-  if (winnerPotentials.length && winnerMatchUp) {
+  // a BYE is never played: nobody is a potential participant of it (CA 2026-10-26, hydration OPEN-3)
+  if (winnerPotentials.length && winnerMatchUp && winnerMatchUp.matchUpStatus !== BYE) {
     const target = inContextTarget(winnerMatchUp);
     target.potentialParticipants ??= [];
     target.potentialParticipants.push(winnerPotentials);
   }
-  if (loserPotentials.length && loserMatchUp) {
+  if (loserPotentials.length && loserMatchUp && loserMatchUp.matchUpStatus !== BYE) {
     const target = inContextTarget(loserMatchUp);
     target.potentialParticipants ??= [];
     target.potentialParticipants.push(loserPotentials);

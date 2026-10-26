@@ -406,6 +406,23 @@ describe('chunkArray', () => {
   test('should handle chunk size larger than array', () => {
     expect(chunkArray([1, 2, 3], 10)).toEqual([[1, 2, 3]]);
   });
+
+  test('spreads an element that is itself an array, and takes a fractional size, as concatenation did', () => {
+    // the rule it had, element by element: each chunk concatenated with the element, so an array element is spread
+    const concatenated = (arr: any[], size: number) =>
+      arr.reduce((all, one, i) => {
+        const ch = Math.floor(i / size);
+        all[ch] = [].concat(all[ch] ?? [], one);
+        return all;
+      }, []);
+    const inputs: [any[], number][] = [
+      [[[1, 2], [3], 4, [5, [6]]], 2],
+      [[1, 2, 3, 4, 5, 6, 7], 1.5],
+      [[[], 1, []], 2],
+      [Array.from({ length: 1000 }, (_, i) => i), 7],
+    ];
+    for (const [arr, size] of inputs) expect(chunkArray(arr, size)).toEqual(concatenated(arr, size));
+  });
 });
 
 describe('chunkSizeProfile', () => {

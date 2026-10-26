@@ -100,3 +100,24 @@ it('the cached day loads equal getDayLoad, as matchUps are added and removed', (
   // the comparison ran, many times, over participants who had a day
   expect(compared).toBeGreaterThan(5_000);
 });
+
+it('counters are computed when read, and a returned profile still carries them', () => {
+  mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8 }], setState: true });
+  const { tournamentRecord } = tournamentEngine.getTournament();
+  const tournamentRecords = { [tournamentRecord.tournamentId]: tournamentRecord };
+  const dependencies = getMatchUpDependencies({ includeParticipantDependencies: true, tournamentRecords });
+  const matchUps = dependencies.matchUps ?? [];
+  const reachability = getParticipantReachability({ matchUpDependencies: dependencies.matchUpDependencies, matchUps });
+  const profiles: any = {};
+  const [first] = matchUps.filter((matchUp: any) => matchUp.roundNumber === 1);
+  modifyParticipantDayMatchUps({ individualParticipantProfiles: profiles, reachability, matchUp: first, value: 1 });
+  const [participantId] = Object.keys(profiles);
+  // serialized as a scheduler's result is, the profile carries its counters: the load with the one matchUp
+  const text = JSON.stringify(profiles[participantId]);
+  const serialized = JSON.parse(text);
+  expect(serialized.counters).toEqual(reference(profiles[participantId], reachability));
+  expect(serialized.counters[TOTAL]).toEqual(1);
+  // and a caller may still set them
+  profiles[participantId].counters = { [TOTAL]: 9 };
+  expect(profiles[participantId].counters).toEqual({ [TOTAL]: 9 });
+});
