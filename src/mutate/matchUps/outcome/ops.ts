@@ -66,6 +66,20 @@ export type OutcomeOp =
       participantId: string;
     }
   | {
+      op: 'clearPosition';
+      /** a loser taken back out of the structure a link placed them in (S4): their seat emptied */
+      structureId: string;
+      drawPosition: number;
+      /** whose seat it was: their seed entry in that structure goes with them (v1's `removeDirectedLoser`) */
+      participantId: string;
+    }
+  | {
+      op: 'setMatchUpStatusCodes';
+      /** a matchUp's status codes re-derived from its provenance (a loser taken back out of it, S4) */
+      matchUpId: string;
+      matchUpStatusCodes: MatchUpStatusCodeElement[];
+    }
+  | {
       op: 'assignBye';
       /** a FIRST_MATCHUP reservation (S3): the consolation seat a loser who has won can never fill */
       structureId: string;
@@ -97,6 +111,8 @@ export type OutcomeOpName =
   | 'setMatchUpResult'
   | 'setMatchUpDrawPositions'
   | 'assignPosition'
+  | 'clearPosition'
+  | 'setMatchUpStatusCodes'
   | 'assignBye'
   | 'setMatchUpBye'
   | 'setParticipantResults'
@@ -224,6 +240,28 @@ function foldAssignPosition(op: OpOf<'assignPosition'>, { structures }: DrawInde
   return {};
 }
 
+function foldClearPosition(op: OpOf<'clearPosition'>, { structures }: DrawIndex): Folded {
+  const structure = structures.get(op.structureId);
+  const assignment = positionAssignmentsOf(structure)?.find((candidate) => candidate.drawPosition === op.drawPosition);
+  if (!structure || !assignment)
+    return { error: `clearPosition: no drawPosition ${op.drawPosition} in ${op.structureId}` };
+  delete assignment.participantId;
+  // as v1 writes it: the structure's seeds without the participant, an absent list written empty
+  Object.assign(structure, {
+    seedAssignments: (structure.seedAssignments ?? []).filter(
+      ({ participantId }) => participantId !== op.participantId,
+    ),
+  });
+  return {};
+}
+
+function foldStatusCodes(op: OpOf<'setMatchUpStatusCodes'>, { matchUps }: DrawIndex): Folded {
+  const matchUp = matchUps.get(op.matchUpId);
+  if (!matchUp) return { error: `setMatchUpStatusCodes: no matchUp ${op.matchUpId}` };
+  matchUp.matchUpStatusCodes = structuredClone(op.matchUpStatusCodes);
+  return {};
+}
+
 function foldAssignBye(op: OpOf<'assignBye'>, { structures, groups }: DrawIndex): Folded {
   const positionAssignments = positionAssignmentsOf(structures.get(op.structureId) ?? groups.get(op.structureId));
   if (!positionAssignments) return { error: `assignBye: no structure ${op.structureId}` };
@@ -296,6 +334,10 @@ function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition
       return foldMatchUpWrite(op, index, drawDefinition);
     case 'assignPosition':
       return foldAssignPosition(op, index);
+    case 'clearPosition':
+      return foldClearPosition(op, index);
+    case 'setMatchUpStatusCodes':
+      return foldStatusCodes(op, index);
     case 'assignBye':
       return foldAssignBye(op, index);
     case 'setMatchUpBye':

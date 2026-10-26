@@ -184,6 +184,11 @@ export type OutcomeView = {
     loserMatchUpCarriesExit: boolean;
     loserMatchUpCarriedStatuses: string[];
     /**
+     * the loserMatchUp's stored side record: a loser taken back out of it has its codes re-derived from what provenance
+     * still holds (v1's `removeDirectedLoser`), so a matchUp storing none is written `[]` (S4)
+     */
+    loserMatchUpRecord?: { matchUpStatusCodes?: unknown[]; provenance: boolean };
+    /**
      * P51 group 2: the loserMatchUp is a single exit already decided for the seat the loser arrives in, with a result
      * recorded below it. A carried exit arriving there is carried past it, as past a BYE, rather than converging.
      */

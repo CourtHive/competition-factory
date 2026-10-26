@@ -127,12 +127,15 @@ function reservationReason(view: OutcomeView, winningSide: 1 | 2): boolean {
 
 /**
  * A cleared result's direction taken back, planned only where all it directed is the winner's position in a clean next
- * matchUp of the same structure: no loser link, nothing across a link, no FIRST_MATCHUP reservation the draw may hold,
- * and the next matchUp `TO_BE_PLAYED` with no BYE, exit, carry or result. Anything else is v1's (S4).
+ * matchUp of the same structure, and the loser, if a link took them, on the seat it fed in a matchUp they have not
+ * played (`removedLoserReason`): nothing across a winner link, no FIRST_MATCHUP reservation the draw may hold, and the
+ * next matchUp `TO_BE_PLAYED` with no BYE, exit, carry or result. Anything else is v1's (S4).
  */
 function removalReason(view: OutcomeView, direction?: DirectionPlan): AbstainReason | undefined {
   const { targets, existing } = view;
-  if (direction || targets.loserMatchUpId || targets.loserLink) return 'loser';
+  if (direction) return 'loser';
+  const loserReason = removedLoserReason(view);
+  if (loserReason) return loserReason;
   if (targets.reservations) return 'cascade';
   const target = targets.winner;
   if (!target) return targets.winnerLink ? 'link' : undefined;
@@ -140,6 +143,33 @@ function removalReason(view: OutcomeView, direction?: DirectionPlan): AbstainRea
   if (target.hasBye || target.carriesExit || target.carriedStatuses.length || target.holdsResult) return 'cascade';
   if (target.matchUpStatus !== TO_BE_PLAYED) return 'route';
   if (!heldInTarget(view, existing.winningSide as 1 | 2)) return 'route';
+  return undefined;
+}
+
+/** the loser of a stored result: who holds the side the winner did not */
+function storedLoserId(view: OutcomeView): string | undefined {
+  const winningSide = view.existing.winningSide;
+  return winningSide ? view.targets.sideParticipantIds[(3 - winningSide) as 1 | 2] : undefined;
+}
+
+/**
+ * A loser a cleared result had placed across a link, taken back out (v1's `removeDirectedLoser`): planned only where they
+ * still hold the seat the link fed, in a matchUp they have not played, with nobody gone on through a BYE beside them, no
+ * exit or provenance there, and no codes but none or an empty list (which v1 re-derives as `[]`). Not a FIRST_MATCHUP
+ * link, whose removal may take a BYE back too.
+ */
+function removedLoserReason(view: OutcomeView): AbstainReason | undefined {
+  const { targets } = view;
+  if (!targets.loserMatchUpId && !targets.loserLink) return undefined;
+  if (!targets.loserMatchUpId || targets.loserLink?.linkCondition) return 'loser';
+  const loserId = storedLoserId(view);
+  const seat = targets.loserTargetSeat;
+  if (!loserId || !targets.loserStructureId || !targets.loserTargetDrawPosition || seat?.participantId !== loserId)
+    return 'loser';
+  if (seat.opponentBye || targets.loserMatchUpStatus !== TO_BE_PLAYED) return 'cascade';
+  if (targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit) return 'cascade';
+  const record = targets.loserMatchUpRecord;
+  if (!record || record.provenance || record.matchUpStatusCodes?.length) return 'provenance';
   return undefined;
 }
 
@@ -355,6 +385,29 @@ function removedOps(view: OutcomeView, route: Route | undefined, write: MatchUpW
       removedDrawPosition: position,
     },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: targets.winnerMatchUpId },
+    ...removedLoserOps(view),
+  ];
+}
+
+/**
+ * the loser's seat across the link emptied, and their matchUp's codes re-derived (`[]`) where it stored none. Only that
+ * write announces the matchUp (v1's `removeDirectedLoser`), and its notice stamps the matchUp's structure, so the structure
+ * is stamped with it and not otherwise
+ */
+function removedLoserOps(view: OutcomeView): OutcomeOp[] {
+  const { loserMatchUpId, loserStructureId, loserTargetDrawPosition, loserMatchUpRecord } = view.targets;
+  const participantId = storedLoserId(view);
+  if (!loserMatchUpId || !loserStructureId || !loserTargetDrawPosition || !participantId) return [];
+  const codes: OutcomeOp[] = loserMatchUpRecord?.matchUpStatusCodes
+    ? []
+    : [
+        { op: 'setMatchUpStatusCodes', matchUpId: loserMatchUpId, matchUpStatusCodes: [] },
+        { op: 'stampUpdatedAt', entity: 'matchUp', id: loserMatchUpId },
+        { op: 'stampUpdatedAt', entity: 'structure', id: loserStructureId },
+      ];
+  return [
+    { op: 'clearPosition', structureId: loserStructureId, drawPosition: loserTargetDrawPosition, participantId },
+    ...codes,
   ];
 }
 

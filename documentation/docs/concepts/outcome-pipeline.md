@@ -524,7 +524,12 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   winner (`apply-values`) writes the matchUp's values and re-directs nothing. A decided result
   cleared while its downstream is untouched (`remove-directed`), where all it directed is the
   winner's position in a clean next matchUp of the same structure, takes the position back out, with
-  that matchUp's score. The same winner entered again while nothing downstream is active (the
+  that matchUp's score; a loser the result placed across a link is taken back out with it when they
+  still hold the seat the link fed, in a matchUp they have not played (no result, exit, provenance or
+  BYE beside them): the seat is emptied and their seed entry there goes, and the matchUp's codes are
+  re-derived from its provenance, as v1's `removeDirectedLoser` writes them (`[]` where it stored
+  none, which announces the matchUp). A `FIRST_MATCHUP` link, whose removal may take a BYE back, stays
+  v1's. The same winner entered again while nothing downstream is active (the
   `winner` route) is directed once more by v1, whose placements find the winner and the loser where
   the first entry put them; v2 writes the matchUp's own result and places nobody. That is planned
   when the stored result is a played `COMPLETED` one, the winner stands in a clean next matchUp of
@@ -598,6 +603,8 @@ says and what lands are one thing. The reducer decides nothing and refuses nothi
 | `setMatchUpResult`        | the matchUp's status, winner, score (as the call gave it, or blanked), a new format, status codes, and `schedule.scoredTime` by v1's rule: captured the first time the matchUp is scored, kept on corrections, removed with the score                                                                                                            |
 | `setMatchUpDrawPositions` | the positions placed in a matchUp, as v1 stores them: numbers, ascending (a winner's position joining the next matchUp, or taken back out of it: `removedDrawPosition`, whose result goes with the participant, as `removeSubsequentRoundsParticipant` takes it)                                                                                 |
 | `assignPosition`          | a participant on a structure's stored assignment for a drawPosition (a loser fed across a link)                                                                                                                                                                                                                                                  |
+| `clearPosition`           | a structure's stored assignment for a drawPosition emptied, and the participant's seed entry there removed (a loser taken back out of the structure a link placed them in)                                                                                                                                                                       |
+| `setMatchUpStatusCodes`   | a matchUp's status codes, re-derived from its provenance (the matchUp a loser is taken back out of)                                                                                                                                                                                                                                              |
 | `assignBye`               | a BYE on a structure's stored assignment for a drawPosition, marked `byeFromPropagation` (a `FIRST_MATCHUP` reservation)                                                                                                                                                                                                                         |
 | `setMatchUpBye`           | the reserved seat's matchUp a BYE, its score and winner removed (v1's `setMatchUpStatusBYE`)                                                                                                                                                                                                                                                     |
 | `setParticipantResults`   | a round robin group's, or a one-round ad hoc structure's, tallies on its position assignments, after the call (`writeAssignmentResults`, v1's own writer); for ad hoc the assignments are first rebuilt, one per participant its matchUps hold, as `updateTallyIfNeeded` rebuilds them; the tally stamps every top-level structure, as v1's does |
