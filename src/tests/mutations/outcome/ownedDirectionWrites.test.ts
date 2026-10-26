@@ -149,6 +149,18 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'FIRST_MATCH_LOSER_CONSOLATION: a consolation winner whose next matchUp holds a reservation BYE goes on past it',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      // both Main R1 feeders of Main R2-1 decided: its consolation seat is reserved with a BYE
+      setup: [
+        { target: R1(1, 'Main'), outcome: won(1) },
+        { target: R1(2, 'Main'), outcome: won(1) },
+      ],
+      steps: [{ target: R1(1, 'Consolation'), outcome: won(1) }],
+    },
+  ],
+  [
     'DOUBLE_ELIMINATION: a Main first-round result sends the winner on and the loser into the Backdraw',
     { drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION }, steps: [{ target: R1(1, 'Main'), outcome: won(1) }] },
   ],

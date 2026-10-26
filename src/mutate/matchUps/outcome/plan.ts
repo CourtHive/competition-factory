@@ -145,9 +145,12 @@ function directionReason(args: {
   const target = targets.winner;
   if (!target || target.structureId !== targets.source.structureId) return 'link';
   if (reservationReason(view, write.winningSide as 1 | 2)) return 'cascade';
-  if (target.hasBye || target.carriesExit || target.carriedStatuses.length || target.holdsResult) return 'cascade';
+  // a target holding a BYE sends the winner on past it: planned when where they go is clean (`winnerThroughBye`)
+  const through = target.hasBye ? targets.winnerThroughBye?.[write.winningSide as 1 | 2] : undefined;
+  if ((target.hasBye && !through) || target.carriesExit || target.carriedStatuses.length || target.holdsResult)
+    return 'cascade';
   // a target generated with no status (LUCKY_DRAW, adaptive) is written TO_BE_PLAYED by v1 as the winner arrives
-  if (target.matchUpStatus !== TO_BE_PLAYED) return 'route';
+  if (target.matchUpStatus !== TO_BE_PLAYED && !through) return 'route';
   if (!targets.sideDrawPositions[write.winningSide as 1 | 2]) return 'route';
   return undefined;
 }
@@ -307,15 +310,20 @@ export function planOutcome(args: {
           },
         ]
       : [];
-  // a loser placed opposite a BYE goes on through it: their position joins the next matchUp, which is stamped
-  const through =
+  // a participant placed opposite a BYE goes on through it, a loser fed onto the seat or a winner into a BYE-held
+  // target: their position joins the next matchUp, which is stamped
+  const loserThrough =
     loser?.arrives && view.targets.loserTargetSeat?.opponentBye ? view.targets.loserThroughBye : undefined;
-  const throughBye: OutcomeOp[] = through
-    ? [
-        { op: 'setMatchUpDrawPositions', matchUpId: through.matchUpId, drawPositions: through.drawPositions },
-        { op: 'stampUpdatedAt', entity: 'matchUp', id: through.matchUpId },
-      ]
-    : [];
+  const winnerThrough =
+    winner && view.targets.winner?.hasBye ? view.targets.winnerThroughBye?.[write.winningSide as 1 | 2] : undefined;
+  const throughBye = [loserThrough, winnerThrough].flatMap((through): OutcomeOp[] =>
+    through
+      ? [
+          { op: 'setMatchUpDrawPositions', matchUpId: through.matchUpId, drawPositions: through.drawPositions },
+          { op: 'stampUpdatedAt', entity: 'matchUp', id: through.matchUpId },
+        ]
+      : [],
+  );
   // a kept-out loser's BYE on the seat the link feeds (v1's `directLoser`), unless a reservation placed it already
   const keptOut = loser?.bye && !loser.arrives && !view.targets.loserTargetSeat?.bye ? loser.bye : undefined;
   const keptOutBye = keptOut && loserMatchUpId ? seatBye({ ...keptOut, matchUpId: loserMatchUpId }) : [];

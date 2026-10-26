@@ -487,13 +487,15 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   (`ownedLocalWrites.test.ts`, under a fixed clock); an owned call takes no hydration, and its
   `updateInContextMatchUp` is built only for a subscriber, after the call has succeeded. Since S3
   v2 also owns the **first direction**: a result naming a winner, not an exit, whose winner goes
-  into the next matchUp of the same structure (holding no BYE, exit or result) and whose loser, if
+  into the next matchUp of the same structure (holding no exit or result) and whose loser, if
   a link takes them, arrives on a free seat carrying nothing, with no settle work after. A loser
   placed opposite a BYE goes on through it at once, as v1 sends them (`advanceIntoWinnerMatchUp`):
   their position joins the next matchUp of that structure, or occupies it there when it was advanced
   structurally while their seat stood empty, and that matchUp is announced. Only a clean next matchUp
   is planned (`TO_BE_PLAYED`, no BYE, exit, carry, provenance or result, no earlier advance of the
-  BYE's position to replace, and no FIRST_MATCHUP reservation it would then raise); an FMLC loser fed into the consolation's round 2 included (the seat `positionTargets`
+  BYE's position to replace, and no FIRST_MATCHUP reservation it would then raise). A winner whose
+  next matchUp holds a BYE (a consolation seat a reservation filled) goes on past it the same way,
+  under the same conditions; an FMLC loser fed into the consolation's round 2 included (the seat `positionTargets`
   reports is the one `directLoser` takes). A loser that feed keeps out (they have won before) is
   owned too: their seat takes a propagated BYE and its matchUp becomes a BYE, as `directLoser` places
   it, or nothing is written when a reservation made the seat a BYE already; a BYE that would meet
