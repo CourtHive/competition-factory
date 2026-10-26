@@ -1,8 +1,11 @@
+import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
 import { getCapturedClock, writeLegacyEnabled } from '@Global/state/globalState';
+import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
+import { validMatchUps } from '@Validators/validMatchUp';
 import { isAnyExit } from '@Validators/isExit';
 
 // constants and types
-import type { DrawDefinition, MatchUpStatusUnion, Score, Tournament } from '@Types/tournamentTypes';
+import type { DrawDefinition, MatchUpStatusUnion, Score, TallyResult, Tournament } from '@Types/tournamentTypes';
 import type { DirectionPlan, MatchUpWrite, OutcomeRequest, OutcomeView, Route } from './types';
 import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import type { OutcomeOp } from './ops';
@@ -115,6 +118,45 @@ function directionReason(args: {
   return undefined;
 }
 
+/**
+ * A round robin group's tally after the call, as v1's `updateAssignmentParticipantResults` computes it: the group's
+ * matchUps with the call's result in place of the target's, tallied under the group's format and tally policy. Its
+ * participant results are written by `writeAssignmentResults`, v1's writer, through the reducer. Undefined where v1 would
+ * refuse the tally (a matchUp it cannot read), so the call abstains rather than plan what v1 refuses.
+ */
+function groupTally(
+  group: NonNullable<OutcomeView['group']>,
+  call: { matchUpId: string; matchUpWrite: MatchUpWrite; score?: Score; matchUpFormat?: string },
+): OutcomeOp[] | undefined {
+  const matchUps = group.matchUps.map((matchUp) =>
+    matchUp.matchUpId === call.matchUpId
+      ? {
+          ...matchUp,
+          matchUpStatus: call.matchUpWrite.matchUpStatus as MatchUpStatusUnion,
+          winningSide: call.matchUpWrite.winningSide as 1 | 2 | undefined,
+          score: call.score ?? matchUp.score,
+          ...(call.matchUpFormat ? { matchUpFormat: call.matchUpFormat } : {}),
+        }
+      : matchUp,
+  );
+  if (!validMatchUps(matchUps)) return undefined;
+  const { subOrderMap } = createSubOrderMap({ positionAssignments: group.positionAssignments });
+  const result = matchUps.length
+    ? tallyParticipantResults({
+        policyDefinitions: group.policyDefinitions,
+        matchUpFormat: group.matchUpFormat,
+        subOrderMap,
+        matchUps,
+      })
+    : undefined;
+  if (result && 'error' in result && result.error) return undefined;
+  const participantResults = (result as { participantResults?: Record<string, TallyResult> } | undefined)
+    ?.participantResults;
+  return [
+    { op: 'setParticipantResults', structureId: group.structureId, participantResults: participantResults ?? {} },
+  ];
+}
+
 /** the first reason this call is not S1's, or undefined when it is */
 function abstainReason(args: {
   request: OutcomeRequest;
@@ -137,7 +179,8 @@ function abstainReason(args: {
   const shape = directing ? directionReason(args) : localReason(args);
   if (shape) return shape;
   if (view.existing.hasSideExitProvenance || view.existing.carriedExit) return 'provenance';
-  if (view.draw.tallied) return 'tallied';
+  // a round robin group's tally is planned (`setParticipantResults`, S3); an ad hoc, lucky or TEAM tally is not yet
+  if (view.draw.tallied && !view.group) return 'tallied';
   return undefined;
 }
 
@@ -216,9 +259,24 @@ export function planOutcome(args: {
             : [{ op: 'stampUpdatedAt', entity: 'structure', id: loserStructureId } as const]),
         ]
       : [];
+  const tally = view.group
+    ? groupTally(view.group, { matchUpId, matchUpWrite: write, score, matchUpFormat: request.matchUpFormat })
+    : [];
+  if (!tally) return { abstain: 'tallied' };
+  // v1's tally announces the draw with no structure named (`updateAssignmentParticipantResults` → `modifyDrawNotice`),
+  // which stamps every top-level structure: a round robin with playoffs stamps its playoff structures too
+  const tallyStamps: OutcomeOp[] = view.group
+    ? (drawDefinition.structures ?? [])
+        .map(({ structureId: id }) => id)
+        .filter((id) => id !== (view.group?.containerStructureId ?? structureId))
+        .map((id) => ({ op: 'stampUpdatedAt', entity: 'structure', id }))
+    : [];
   ops.push(
     ...arrival,
-    { op: 'stampUpdatedAt', entity: 'structure', id: structureId },
+    ...tally,
+    // the top-level structure: a round robin group's container, as v1 stamps it
+    { op: 'stampUpdatedAt', entity: 'structure', id: view.group?.containerStructureId ?? structureId },
+    ...tallyStamps,
     { op: 'stampUpdatedAt', entity: 'drawDefinition', id: drawDefinition.drawId },
   );
   return { ops, shape: args.route === 'winner' ? 'direction' : 'local' };

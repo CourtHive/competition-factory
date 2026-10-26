@@ -7,8 +7,8 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { setClock } from '@Tools/clock';
 
 // constants
+import { DOUBLE_ELIMINATION, ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
-import { DOUBLE_ELIMINATION, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import {
   MODIFY_DRAW_DEFINITION,
@@ -48,7 +48,8 @@ afterEach(() => {
 const TOPICS = [MODIFY_MATCHUP, MODIFY_DRAW_DEFINITION, MODIFY_POSITION_ASSIGNMENTS, UPDATE_INCONTEXT_MATCHUP];
 const won = (winningSide: 1 | 2) => generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide }).outcome;
 
-type Target = { structureName?: string; roundNumber: number; roundPosition: number };
+// a round robin's matchUps have no roundPosition: `nth` picks the nth of the round in the structure instead
+type Target = { structureName?: string; roundNumber: number; roundPosition?: number; nth?: number };
 type Step = { target: Target; outcome: Record<string, unknown> };
 type Scenario = { drawProfile: Record<string, unknown>; steps: Step[] };
 
@@ -85,6 +86,16 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'ROUND_ROBIN: two results in one group, the second re-tallying the group (setParticipantResults)',
+    {
+      drawProfile: { drawSize: 8, drawType: ROUND_ROBIN },
+      steps: [
+        { target: { structureName: 'Group 1', roundNumber: 1, nth: 0 }, outcome: won(1) },
+        { target: { structureName: 'Group 1', roundNumber: 1, nth: 1 }, outcome: won(2) },
+      ],
+    },
+  ],
+  [
     'DOUBLE_ELIMINATION: a Main first-round result sends the winner on and the loser into the Backdraw',
     { drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION }, steps: [{ target: R1(1, 'Main'), outcome: won(1) }] },
   ],
@@ -92,13 +103,13 @@ const SCENARIOS: [string, Scenario][] = [
 
 function findTarget(target: Target): string {
   const matchUps = tournamentEngine.allDrawMatchUps({ drawId: 'd', inContext: true }).matchUps;
-  const found = matchUps.find(
+  const candidates = matchUps.filter(
     (matchUp: any) =>
       matchUp.roundNumber === target.roundNumber &&
-      matchUp.roundPosition === target.roundPosition &&
+      (target.roundPosition === undefined || matchUp.roundPosition === target.roundPosition) &&
       (!target.structureName || matchUp.structureName === target.structureName),
   );
-  return found.matchUpId;
+  return candidates[target.nth ?? 0].matchUpId;
 }
 
 /** the steps from a fresh record, every topic subscribed and the clock fixed */
