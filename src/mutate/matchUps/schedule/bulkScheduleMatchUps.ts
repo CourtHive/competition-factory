@@ -1,6 +1,6 @@
 import { bulkScheduleTournamentMatchUps } from '@Mutate/matchUps/schedule/bulkScheduleTournamentMatchUps';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
+import { getLeanMatchUpDependencies } from '@Query/matchUps/getLeanMatchUpDependencies';
 import { getMatchUpLocationIndex } from '@Acquire/locateMatchUp';
 import { getMatchUpId } from '@Functions/global/extractors';
 
@@ -67,10 +67,8 @@ export function bulkScheduleMatchUps(params: BulkScheduleMatchUpsArgs) {
     if (detail?.matchUpId && !detailTournamentIds[index]) notFoundMatchUpIds.push(detail.matchUpId);
   });
 
-  // one graph and one hydration for the whole call: both passes over every tournament reuse them
-  const { matchUpDependencies, matchUps: inContextMatchUps } = getMatchUpDependencies({
-    tournamentRecords,
-  });
+  // one graph for the whole call, read from the stored draws (no hydration): both passes over every tournament reuse it
+  const { matchUpDependencies, matchUps: inContextMatchUps } = getLeanMatchUpDependencies({ tournamentRecords });
 
   const tournamentBatches = Object.values(tournamentRecords)
     .map((tournamentRecord: Tournament) => {

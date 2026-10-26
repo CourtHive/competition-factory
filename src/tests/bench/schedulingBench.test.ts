@@ -242,6 +242,16 @@ it.skipIf(!enabled)('scheduling bench', () => {
   if (pairs.length !== 64 || !pairs.every((pair) => pair.individualParticipantIds.every((id) => singlesIds.has(id))))
     throw new Error('the doubles pairs are not the singles players');
 
+  // the grid as TMX renders it, after a grid run: the date's matchUps, then the conflicts over them
+  tournamentEngine.setState(structuredClone(fresh));
+  tournamentEngine.scheduleProfileGrid({ scheduleDates: DAYS });
+  const gridded = tournamentEngine.getTournament().tournamentRecord;
+  const dayMatchUps = () =>
+    tournamentEngine.competitionScheduleMatchUps({ matchUpFilters: { scheduledDate: DAYS[0] } }).dateMatchUps ?? [];
+  tournamentEngine.setState(structuredClone(gridded));
+  const griddedMatchUps = dayMatchUps();
+  if (!griddedMatchUps.some((m: any) => m.schedule?.courtOrder)) throw new Error('the grid run placed nothing');
+
   const results = {
     matchUpCount,
     playedCount,
@@ -273,6 +283,11 @@ it.skipIf(!enabled)('scheduling bench', () => {
       }),
     ),
     vNextMid: timed(mid, () => vNext({ scheduleDates: DAYS.slice(1), clearScheduleDates: DAYS.slice(1) })),
+    gridDayMatchUps: timed(gridded, () => ({ success: dayMatchUps().length > 0 })),
+    proConflicts: timed(gridded, () => {
+      const result: any = tournamentEngine.proConflicts({ matchUps: structuredClone(griddedMatchUps) });
+      return { success: !!result?.rowIssues };
+    }),
   };
   const line = JSON.stringify({ label: process.env.SCHEDULING_BENCH_LABEL ?? 'local', runs: RUNS, ...results });
   process.stderr.write(`\nSCHEDULING_BENCH ${line}\n`);
