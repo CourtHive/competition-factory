@@ -7,7 +7,8 @@ A stored draw holds matchUps as written: their positions, schedules, scores and 
 recovery time, the matchUps it feeds, and the participants who may yet arrive. This page states what hydration derives,
 and from what, precisely enough for a second implementation to reproduce it from a stored draw. Its scope is the
 fields the scheduling pipeline reads ([the scheduling pipeline](./scheduling-pipeline)); the planning view serializes
-exactly these for `kernel.scheduling.plan@2`. The rulings cited are CA's of 2026-10-26.
+exactly these for `kernel.scheduling.plan@2`, and `kernel.scheduling.view@1` grades the view built from the records. The
+rulings cited are CA's of 2026-10-26.
 
 ## 1. The merge
 
@@ -82,6 +83,17 @@ else the tournament, else the default policy (ruling OPEN-11), and the tournamen
 - `typeChangeTimeAfterRecovery` and `typeChangeDateAfterRecovery` likewise, with the singles-to-doubles recovery.
 - The arithmetic is on minutes past midnight: no clock, no time zone (ruling OPEN-7).
 
+**A format's minutes** are resolved block by block, the first block holding an entry for the category deciding: the
+event's timing by format, the tournament's, the policy's by format, the policy's `defaultTimes`, and finally a default
+average of 90 minutes and recovery of 0. An entry applies when it names no category, or names the event's category name
+or its timing category type; within a block, entries naming more categories are asked first. With no scheduling policy
+attached, the default scheduling policy is the policy. A timed format's own length (a whole-match cap, else the set
+minutes times the sets, the final set's own minutes for the last) replaces both the flat default average and the
+policy's `defaultTimes` average; a policy entry naming the format still wins. A recovery entry applies when its average
+range holds the matchUp's average, or when it names the format. Of an entry, the event type's minutes, else its default;
+the singles-to-doubles change (`SINGLES_DOUBLES` for a singles matchUp, `DOUBLES_SINGLES` for a doubles one), else the
+recovery.
+
 ## 5. The graph
 
 Hydration adds, for every matchUp of an elimination structure, the matchUp its winner goes to and the matchUp its
@@ -97,6 +109,7 @@ loser goes to; targets never cross draws.
 - `sidesTo` (round robin groups and other win-ratio structures, which have no `winnerTo`/`loserTo`): for each of the
   matchUp's positions, the next round's matchUp holding it.
 - A TEAM line has no edges: the graph lives on its dual, reached through `matchUpTieId` (ruling OPEN-5).
+- A target whose position the target structure marks `disableLinks` is no target: nothing goes there.
 
 `schedule.scheduleConflict` is set on a target scheduled before the source's recovery ends, comparing the date and
 the time where both dates are known (ruling OPEN-8).
@@ -112,6 +125,29 @@ The participants who may arrive at a matchUp from an undecided matchUp feeding i
 - In a first-match-loser consolation, a loser target receiving fewer than two participants also receives
   `{ bye: true, tbd: true }`: an exit could yet send someone. **The marker is the loser target's only** (ruling OPEN-2).
 - One group per contributing source, in source order. A TEAM line, and a win-ratio structure's matchUps, have none.
+
+## 7. Order and state
+
+The matchUps come in the order of the records, each record's events in order, each event's draws in order, then the
+record's matchUps outside any draw. The record set is keyed by tournamentId, so it is walked as its keys are: ids that
+are array indices first, ascending, then the others in the order they were added.
+
+Within a draw, by **state**, each state's matchUps in structure order:
+
+1. **Abandoned**: status `ABANDONED`.
+2. **Completed**: a completed status (`CANCELLED`, `COMPLETED`, `DEAD_RUBBER`, `DEFAULTED`, `DOUBLE_DEFAULT`,
+   `DOUBLE_WALKOVER`, `RETIRED`, `WALKOVER`) or a winning side; unless it is a BYE matchUp, which comes last.
+3. **Upcoming**: an upcoming status (`CHALLENGED`, `IN_PROGRESS`, `INCOMPLETE`, `SUSPENDED`, `TO_BE_PLAYED`) with both
+   positions filled; a TEAM line with both sides assigned.
+4. **Pending**: the rest.
+5. **BYE**: a matchUp holding a position assigned a BYE (a TEAM line never, by position).
+
+Structure order: by stage (qualifying, main, play-off and consolation, voluntary consolation), then round target, then
+the most positions assigned, then stage sequence, then the least finishing positions. Within a structure the stored
+order; a round robin's groups in order; a structure's TEAM lines after all its matchUps, dual by dual.
+
+The graph and the potentials are added in this order, so a target's potential participants are grouped in the order
+their sources come here.
 
 ## Related
 
