@@ -114,6 +114,7 @@ module.exports = {
           items: [
             'concepts/matchup-overview',
             'concepts/matchup-context',
+            'concepts/hydration',
             'concepts/matchup-filtering',
             'concepts/tieMatchUp',
             'concepts/lineUp',
