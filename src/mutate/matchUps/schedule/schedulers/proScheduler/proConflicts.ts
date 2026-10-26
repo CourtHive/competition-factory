@@ -1,6 +1,6 @@
 import { getParticipantClashes } from '@Mutate/matchUps/schedule/scheduleMatchUps/participantClashes';
+import { getLeanMatchUpDependencies } from '@Query/matchUps/getLeanMatchUpDependencies';
 import { matchUpWillNeverBePlayed } from '@Mutate/matchUps/schedule/byeScheduling';
-import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { courtTimeOrderConflicts } from './courtTimeOrder';
 import { validMatchUps } from '@Validators/validMatchUp';
@@ -72,11 +72,8 @@ export function proConflicts({
   });
 
   const drawIds = unique(matchUps.map(({ drawId }) => drawId));
-  const depsResult = getMatchUpDependencies({
-    includeParticipantDependencies: true,
-    tournamentRecords,
-    drawIds,
-  });
+  // the graph's participant dependencies are never read here, so it is read from the stored draws (no hydration)
+  const depsResult = getLeanMatchUpDependencies({ tournamentRecords, drawIds });
   const deps = depsResult.matchUpDependencies;
   const positionDeps = useDeepDependencies ? (depsResult.positionDependencies ?? {}) : {};
   const reachability = getParticipantReachability({ matchUpDependencies: deps, matchUps });
