@@ -538,7 +538,11 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   the first entry put them; v2 writes the matchUp's own result and places nobody. That is planned
   when the stored result is a played `COMPLETED` one, the winner stands in a clean next matchUp of
   the same structure (or the matchUp is a final), and the loser, if a link takes them, holds the seat
-  it feeds in a matchUp with no result or exit; a draw with `FIRST_MATCHUP` reservations stays v1's.
+  it feeds in a matchUp with no result or exit. A draw holding `FIRST_MATCHUP` links is not itself a
+  reason to abstain, for the re-entry or a clear: a reservation the call would leave standing, or one to
+  withdraw, is the consolation reservation pass's work, and its has-work predicate abstains the call
+  (`settle`); a BYE-only target beside a playoff link, whose BYE v1 takes back with the removal, stays
+  v1's.
   A **changed winner** while nothing downstream is active (the `winner` route, the other side) is v1's
   removal and then a first direction (`removeDirectedParticipants`, then `directParticipants`), and is owned
   where both halves are clean: what the old result directed is taken back as a clear would take it, and the
