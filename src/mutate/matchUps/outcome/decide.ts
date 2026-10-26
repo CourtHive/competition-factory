@@ -103,7 +103,9 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     if (refusal) return { refused: toResult(refusal) };
     // S2: a call whose complete plan is a shape v2 owns is written by v2, and v1 is not asked (F1 (a), fail-closed)
     const { outcome } = planCall(args, view);
-    return outcome.ops && OWNED_SHAPES.has(outcome.shape) ? { owned: applyOwnedPlan({ args, ops: outcome.ops }) } : {};
+    return outcome.ops && OWNED_SHAPES.has(outcome.shape)
+      ? { owned: applyOwnedPlan({ args, ops: outcome.ops, shape: outcome.shape }) }
+      : {};
   }
   if (mode !== OUTCOME_PIPELINE_DIFFERENTIAL) return {};
   // § 3.1.1's index oracle, read before v1 writes: the index of the draw as the call found it against the view's hydration

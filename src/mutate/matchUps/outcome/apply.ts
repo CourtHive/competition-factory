@@ -14,6 +14,7 @@ import { UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
 import type { ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import type { BuildViewArgs } from './types';
+import type { PlanShape } from './plan';
 import type { OutcomeOp } from './ops';
 
 /**
@@ -32,7 +33,15 @@ import type { OutcomeOp } from './ops';
  * subscriber receives, built when the notices are read, after the call has succeeded, and only for a subscriber
  * (CA, 2026-10-24: projection bounded to the changed node, never on an error).
  */
-export function applyOwnedPlan({ args, ops }: { args: BuildViewArgs; ops: OutcomeOp[] }): ResultType {
+export function applyOwnedPlan({
+  shape,
+  args,
+  ops,
+}: {
+  args: BuildViewArgs;
+  ops: OutcomeOp[];
+  shape: PlanShape;
+}): ResultType {
   const { drawDefinition, tournamentRecord, event } = args;
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
   const applied = applyOutcomeOps(drawDefinition, ops);
@@ -73,7 +82,7 @@ export function applyOwnedPlan({ args, ops }: { args: BuildViewArgs; ops: Outcom
     const { structure } = findStructure({ drawDefinition, structureId });
     if (structure) modifyPositionAssignmentsNotice({ drawDefinition, tournamentId, structure, event });
   }
-  // a direction returns the context `directParticipants` builds, which carries something only for an exit (S5): empty
-  const directed = ops.some((op) => op.op === 'setMatchUpDrawPositions' || op.op === 'assignPosition');
-  return directed ? { ...SUCCESS, context: {} } : { ...SUCCESS };
+  // a winner's route returns the context `directParticipants` builds, a final's included, which carries something only
+  // for an exit (S5): empty
+  return shape === 'direction' ? { ...SUCCESS, context: {} } : { ...SUCCESS };
 }
