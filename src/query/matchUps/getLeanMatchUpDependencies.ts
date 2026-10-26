@@ -1,6 +1,6 @@
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
-import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { buildStructuralIndex } from '@Query/matchUps/structuralIndex';
+import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { structuresOf } from '@Acquire/structureMembers';
 
 // types

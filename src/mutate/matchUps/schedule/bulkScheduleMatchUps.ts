@@ -1,6 +1,6 @@
 import { bulkScheduleTournamentMatchUps } from '@Mutate/matchUps/schedule/bulkScheduleTournamentMatchUps';
-import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getLeanMatchUpDependencies } from '@Query/matchUps/getLeanMatchUpDependencies';
+import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getMatchUpLocationIndex } from '@Acquire/locateMatchUp';
 import { getMatchUpId } from '@Functions/global/extractors';
 
