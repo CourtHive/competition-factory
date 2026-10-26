@@ -59,6 +59,12 @@ export function applyOwnedPlan({
   ];
   const resulted = new Set(ops.flatMap((op) => (op.op === 'setMatchUpResult' ? [op.matchUpId] : [])));
   const byes = new Set(ops.flatMap((op) => (op.op === 'setMatchUpBye' ? [op.matchUpId] : [])));
+  // a position taken back out of a later round: v1's `removeSubsequentRoundsParticipant` names the position, no event
+  const removed = new Map(
+    ops.flatMap((op) =>
+      op.op === 'setMatchUpDrawPositions' && op.removedDrawPosition ? [[op.matchUpId, op.removedDrawPosition]] : [],
+    ),
+  );
   const stored = new Map(args.matchUpsMap?.drawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
   const subscribed = getTopics().topics.includes(UPDATE_INCONTEXT_MATCHUP);
   for (const matchUpId of written) {
@@ -70,15 +76,20 @@ export function applyOwnedPlan({
         tournamentId,
         matchUpId,
       });
+    // a removal's notice is built as v1's `removeSubsequentRoundsParticipant` builds it, whose caller passes no event
+    const removedPosition = removed.get(matchUpId);
+    const noticeEvent = removedPosition ? undefined : event;
     modifyMatchUpNotice({
       // v1's writers name themselves: the call's result is `modifyMatchUpScore`'s, a winner's seat in the next matchUp
       // is `assignMatchUpDrawPosition`'s (`directWinner`), a FIRST_MATCHUP reservation's matchUp `setMatchUpStatusBye`'s
-      context: matchUpContext(matchUpId, resulted, byes),
-      eventId: event?.eventId,
+      context: removedPosition
+        ? `removeSubsequentDrawPosition-${removedPosition}`
+        : matchUpContext(matchUpId, resulted, byes),
+      eventId: noticeEvent?.eventId,
       drawDefinition,
       tournamentId,
       matchUp,
-      event,
+      event: noticeEvent,
     });
   }
   // a loser placed across a link, or a reserved seat: the structure whose assignments changed, announced once (v1's
