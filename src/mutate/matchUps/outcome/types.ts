@@ -160,7 +160,9 @@ export type OutcomeView = {
     /** the drawPosition the loser link feeds in the loser's structure (`positionTargets`) */
     loserTargetDrawPosition?: number;
     /** that stored assignment: free when it holds no participant, BYE or qualifier */
-    loserTargetSeat?: { free: boolean; opponentBye: boolean; structureHasBye: boolean };
+    loserTargetSeat?: { free: boolean; opponentBye: boolean };
+    /** the participants seeded in the source structure: a seeded loser placed across a link takes the seed with them */
+    seededParticipantIds?: string[];
     /** the loserMatchUp's status before this call: an exit already there converges with the carried one */
     loserMatchUpStatus?: MatchUpStatusUnion;
     /** the loserMatchUp has a result of its own (a score, a winner, COMPLETED or an exit): a relabel carries nothing there */

@@ -56,7 +56,8 @@ const won = (winningSide: 1 | 2) => generateOutcomeFromScoreString({ scoreString
 // a round robin's matchUps have no roundPosition: `nth` picks the nth of the round in the structure instead
 type Target = { structureName?: string; roundNumber: number; roundPosition?: number; nth?: number };
 type Step = { target: Target; outcome: Record<string, unknown> };
-type Scenario = { drawProfile: Record<string, unknown>; steps: Step[] };
+// `setup`: steps played under v1 before the comparison starts, for a state the owned steps need but do not own
+type Scenario = { drawProfile: Record<string, unknown>; steps: Step[]; setup?: Step[] };
 
 const R1 = (roundPosition: number, structureName?: string): Target => ({
   roundNumber: 1,
@@ -101,6 +102,20 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'FIRST_MATCH_LOSER_CONSOLATION: a round 2 loser whose first match it was is fed to the consolation round 2',
+    {
+      // 7 of 8: drawPosition 2 holds the BYE, so the Main R2 loser from that half played their first match there
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      // its loser is placed opposite the consolation's BYE and goes on through it (a cascade, v1's)
+      setup: [{ target: R1(2, 'Main'), outcome: won(1) }],
+      steps: [
+        { target: R1(3, 'Main'), outcome: won(1) },
+        { target: R1(4, 'Main'), outcome: won(1) },
+        { target: { structureName: 'Main', roundNumber: 2, roundPosition: 1 }, outcome: won(2) },
+      ],
+    },
+  ],
+  [
     'DOUBLE_ELIMINATION: a Main first-round result sends the winner on and the loser into the Backdraw',
     { drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION }, steps: [{ target: R1(1, 'Main'), outcome: won(1) }] },
   ],
@@ -128,7 +143,7 @@ function findTarget(target: Target): string {
 }
 
 /** the steps from a fresh record, every topic subscribed and the clock fixed */
-function play(mode: OutcomePipelineMode, { drawProfile, steps }: Scenario) {
+function play(mode: OutcomePipelineMode, { drawProfile, steps, setup = [] }: Scenario) {
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
   setClock('2026-10-25T00:00:00.000Z');
   setSubscriptions({ subscriptions: {} });
@@ -137,6 +152,10 @@ function play(mode: OutcomePipelineMode, { drawProfile, steps }: Scenario) {
     nonRandom: 1,
     setState: true,
   });
+  for (const { target, outcome } of setup) {
+    const result = tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId: findTarget(target), outcome });
+    if (!result.success) throw new Error(`setup step failed: ${JSON.stringify(target)}`);
+  }
   deleteNotices();
   const notices: string[] = [];
   setSubscriptions({
