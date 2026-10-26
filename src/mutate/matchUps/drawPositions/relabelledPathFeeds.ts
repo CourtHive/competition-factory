@@ -1,12 +1,12 @@
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { getDrawPositionWinCount, isUnscoredOutcome } from '@Query/matchUp/getDrawPositionWinCount';
-import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import {
+  structureMatchUpsInContext,
   departingLoserPathRefusal,
   reconcileFedLoserEligibility,
 } from '@Mutate/matchUps/drawPositions/reconcileFedLoserEligibility';
@@ -137,11 +137,17 @@ export function relabelledPathFeedRefusal({
   drawDefinition,
   matchUpStatus,
   structure,
+  fromIndex,
   matchUp,
   event,
   score,
 }: {
   inContextDrawMatchUps?: HydratedMatchUp[];
+  /**
+   * `inContextDrawMatchUps` is the whole draw, read in place of every hydration this makes (outcome v2's structural
+   * index). Not set, the structure's matchUps and the target's profile are hydrated, as v1 asks it
+   */
+  fromIndex?: boolean;
   existingWinnerDrawPosition?: number;
   existingLoserDrawPosition?: number;
   drawDefinition: DrawDefinition;
@@ -163,13 +169,8 @@ export function relabelledPathFeedRefusal({
   }).filter((feed) => feed.loserDrawPosition === existingWinnerDrawPosition);
   if (!feeds.length) return undefined;
 
-  const { matchUps } = getAllStructureMatchUps({
-    afterRecoveryTimes: false,
-    inContext: true,
-    drawDefinition,
-    structure,
-    event,
-  });
+  const indexed = fromIndex ? inContextDrawMatchUps : undefined;
+  const matchUps = structureMatchUpsInContext({ inContextDrawMatchUps: indexed, drawDefinition, structure, event });
   const sourceMatchUps = teamLevelMatchUps(matchUps ?? []);
   const winsIn = (drawPosition: number, from: number, to: number) =>
     getDrawPositionWinCount({
@@ -206,6 +207,7 @@ export function relabelledPathFeedRefusal({
       if (!drawPositions.length) continue;
       const fedDrawPosition = Math.min(...drawPositions);
       const { activeDrawPositions } = getStructureDrawPositionProfiles({
+        inContextDrawMatchUps: indexed,
         structureId: targetStructureId,
         drawDefinition,
       });
@@ -216,7 +218,12 @@ export function relabelledPathFeedRefusal({
       const departingLoserParticipantId = positionAssignments?.find(
         (assignment) => assignment.drawPosition === existingWinnerDrawPosition,
       )?.participantId;
-      const refusal = departingLoserPathRefusal({ departingLoserParticipantId, targetStructureId, drawDefinition });
+      const refusal = departingLoserPathRefusal({
+        inContextDrawMatchUps: indexed,
+        departingLoserParticipantId,
+        targetStructureId,
+        drawDefinition,
+      });
       if (refusal?.error) return refusal;
     }
   }

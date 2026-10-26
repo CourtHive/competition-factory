@@ -2,7 +2,6 @@ import type { MatchUpWrite, Refusal } from './types';
 import {
   DRAW_POSITION_ASSIGNED,
   DRAW_POSITION_OCCUPIED,
-  DRAW_POSITION_ACTIVE,
   INVALID_MATCHUP_STATUS,
   INVALID_MATCHUP_STATUS_BYE,
   MISSING_ASSIGNMENTS,
@@ -27,7 +26,7 @@ export const APPLY_STAGE_CODES: ReadonlySet<string> = new Set([
   // (#5774), are v1's alone
   INVALID_TIME.code,
   INVALID_DATE.code,
-  DRAW_POSITION_ACTIVE.code,
+  // DRAW_POSITION_ACTIVE is not one: v2 refuses a swap that meets an active FIRST_MATCHUP-fed seat (row 26, S4)
   MUTATION_LOCKED.code,
   'ERR_FORCED', // § 2 row 19: observed by the corpus, no constant declares it (spec OPEN 2)
   UNRECOGNIZED_MATCHUP_STATUS.code,

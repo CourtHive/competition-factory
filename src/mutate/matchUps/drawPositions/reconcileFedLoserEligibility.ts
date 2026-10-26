@@ -82,6 +82,7 @@ const fedDrawPosition = (loserMatchUp?: MatchUp): number | undefined => {
 export function fedLoserPlacementRefusal({
   prospectiveLoserDrawPosition,
   departingLoserDrawPosition,
+  inContextDrawMatchUps,
   flippedRoundNumber,
   loserTargetLink,
   drawDefinition,
@@ -89,6 +90,8 @@ export function fedLoserPlacementRefusal({
   structure,
   event,
 }: {
+  /** the draw's matchUps in context when the caller holds them (outcome v2's structural index), read in place of hydrations */
+  inContextDrawMatchUps?: HydratedMatchUp[];
   prospectiveLoserDrawPosition: number;
   departingLoserDrawPosition: number;
   loserTargetLink?: DrawLink;
@@ -103,13 +106,7 @@ export function fedLoserPlacementRefusal({
   const drawPosition = fedDrawPosition(loserMatchUp);
   if (!targetStructureId || !drawPosition) return undefined;
 
-  const { matchUps: sourceMatchUps } = getAllStructureMatchUps({
-    afterRecoveryTimes: false,
-    inContext: true,
-    drawDefinition,
-    structure,
-    event,
-  });
+  const sourceMatchUps = structureMatchUpsInContext({ inContextDrawMatchUps, drawDefinition, structure, event });
 
   if (!flippedRoundNumber) return undefined;
   const winsAfterTheFlip = getDrawPositionWinCount({
@@ -129,6 +126,7 @@ export function fedLoserPlacementRefusal({
   if (winsAfterTheFlip !== 0) {
     return departingLoserPathRefusal({
       departingLoserParticipantId: participantIdAt(departingLoserDrawPosition),
+      inContextDrawMatchUps,
       targetStructureId,
       drawDefinition,
     });
@@ -158,11 +156,30 @@ export function fedLoserPlacementRefusal({
 
   const { activeDrawPositions } = getStructureDrawPositionProfiles({
     structureId: targetStructureId,
+    inContextDrawMatchUps,
     drawDefinition,
   });
   if (!activeDrawPositions?.includes(drawPosition)) return undefined;
 
   return { error: DRAW_POSITION_ACTIVE };
+}
+
+/** a structure's matchUps in context: from the caller's, when it holds them, or hydrated */
+export function structureMatchUpsInContext({
+  inContextDrawMatchUps,
+  drawDefinition,
+  structure,
+  event,
+}: {
+  inContextDrawMatchUps?: HydratedMatchUp[];
+  drawDefinition: DrawDefinition;
+  structure: Structure;
+  event?: Event;
+}): HydratedMatchUp[] {
+  if (inContextDrawMatchUps)
+    return inContextDrawMatchUps.filter((matchUp) => matchUp.structureId === structure.structureId);
+  return getAllStructureMatchUps({ afterRecoveryTimes: false, inContext: true, drawDefinition, structure, event })
+    .matchUps;
 }
 
 /**
@@ -184,9 +201,11 @@ export function fedLoserPlacementRefusal({
  */
 export function departingLoserPathRefusal({
   departingLoserParticipantId,
+  inContextDrawMatchUps,
   targetStructureId,
   drawDefinition,
 }: {
+  inContextDrawMatchUps?: HydratedMatchUp[];
   departingLoserParticipantId?: string;
   drawDefinition: DrawDefinition;
   targetStructureId: string;
@@ -196,7 +215,11 @@ export function departingLoserPathRefusal({
   const held = positionAssignments?.find((assignment) => assignment.participantId === departingLoserParticipantId);
   if (!held) return undefined;
 
-  const { activeDrawPositions } = getStructureDrawPositionProfiles({ structureId: targetStructureId, drawDefinition });
+  const { activeDrawPositions } = getStructureDrawPositionProfiles({
+    structureId: targetStructureId,
+    inContextDrawMatchUps,
+    drawDefinition,
+  });
   return activeDrawPositions?.includes(held.drawPosition) ? { error: DRAW_POSITION_ACTIVE } : undefined;
 }
 

@@ -11,11 +11,17 @@ import { unique } from '@Tools/arrays';
 // constants and types
 import { INVALID_DRAW_POSITION } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Event, Structure } from '@Types/tournamentTypes';
+import type { HydratedMatchUp } from '@Types/hydrated';
 
 // active drawPositions occur in activeMatchUps...
 // ...which have a winningSide, a scoreString, or a completed matchUpStatus
 
 type GetStructureDrawPositionProfilesArgs = {
+  /**
+   * the draw's matchUps in context, when the caller already holds them (outcome v2 passes its structural index): read in
+   * place of a hydration of the whole draw
+   */
+  inContextDrawMatchUps?: HydratedMatchUp[];
   drawDefinition: DrawDefinition;
   findContainer?: boolean;
   structure?: Structure;
@@ -42,12 +48,14 @@ export function getStructureDrawPositionProfiles(params: GetStructureDrawPositio
   }
 
   // must use all draw matchUps to get active matchUps across all connected structures
-  const { matchUps: inContextDrawMatchUps } = getAllDrawMatchUps({
-    inContext: true,
-    matchUpFilters,
-    drawDefinition,
-    event,
-  });
+  const inContextDrawMatchUps =
+    params.inContextDrawMatchUps?.filter((matchUp) => !matchUp.collectionId) ??
+    getAllDrawMatchUps({
+      inContext: true,
+      matchUpFilters,
+      drawDefinition,
+      event,
+    }).matchUps;
 
   const inContextStructureMatchUps = inContextDrawMatchUps?.filter(
     (matchUp) => matchUp.structureId === structureId || containedStructureIds.includes(matchUp.structureId),
