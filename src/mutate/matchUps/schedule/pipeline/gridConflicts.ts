@@ -99,24 +99,18 @@ export function buildConflictsView({
   const matchUpDependencies = depsResult.matchUpDependencies;
   const reachability = getParticipantReachability({ matchUpDependencies, matchUps });
 
+  // each tournament's timing resolver and zone, made once; a matchUp finds its tournament by id (else the first)
+  const tournaments = Object.values(tournamentRecords).map((tournamentRecord) => ({
+    timeZone: getTournamentTimeZone({ tournamentRecord }).timeZone,
+    resolveTiming: makeTimingResolver(tournamentRecord),
+    tournamentId: tournamentRecord.tournamentId,
+  }));
   const tournamentOf = (matchUp: HydratedMatchUp) =>
-    tournamentRecords[matchUp.tournamentId] ?? Object.values(tournamentRecords)[0];
-  // each tournament's timing and zone, resolved once: keyed by the tournament record, not by an id the matchUps carry
-  const timingResolvers = new Map<Tournament, (matchUp: HydratedMatchUp) => SchedulingTiming>();
-  const zones = new Map<Tournament, string | undefined>();
-  const timingOf = (tournamentRecord: Tournament, matchUp: HydratedMatchUp) => {
-    let resolve = timingResolvers.get(tournamentRecord);
-    if (!resolve) {
-      resolve = makeTimingResolver(tournamentRecord);
-      timingResolvers.set(tournamentRecord, resolve);
-    }
-    return resolve(matchUp);
-  };
+    tournaments.find(({ tournamentId }) => tournamentId === matchUp.tournamentId) ?? tournaments[0];
 
   const resolved = matchUps.map((matchUp): ConflictsMatchUp => {
-    const tournamentRecord = tournamentOf(matchUp);
-    if (!zones.has(tournamentRecord)) zones.set(tournamentRecord, getTournamentTimeZone({ tournamentRecord }).timeZone);
-    const timeZone = zones.get(tournamentRecord);
+    const tournament = tournamentOf(matchUp);
+    const timeZone = tournament.timeZone;
     const normalized = normalizeTimes(matchUp, { utcOffsetMinutes: 0, timeZone });
     const { courtId, courtOrder, scheduledDate, scheduledTime } = matchUp.schedule ?? {};
     return {
@@ -136,7 +130,7 @@ export function buildConflictsView({
       finished: isFinished(matchUp),
       played: wasPlayed(matchUp),
       times: timeZone ? normalized : { ...normalized, calledMs: null, scoredMs: null, scoredDate: null },
-      timing: timingOf(tournamentRecord, matchUp),
+      timing: tournament.resolveTiming(matchUp),
     };
   });
 
