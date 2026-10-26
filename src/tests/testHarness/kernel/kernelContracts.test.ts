@@ -3,6 +3,7 @@ import type { KernelAdapter, KernelCase, KernelOperation, KernelResult } from '.
 import { batchedAdapter, externalAdapter, stdioCommand } from './externalAdapter';
 import scoringReduceCases from './cases/scoringReduce.json';
 import schedulingViewCases from './cases/schedulingView.json';
+import schedulingConflictsCases from './cases/schedulingConflicts.json';
 import schedulingGridCases from './cases/schedulingGrid.json';
 import schedulingCases from './cases/scheduling.json';
 import { canonicalJson } from '@Tools/canonicalJson';
@@ -28,6 +29,7 @@ const cases = [
   ...schedulingCases,
   ...schedulingViewCases,
   ...schedulingGridCases,
+  ...schedulingConflictsCases,
   ...timeCases,
 ] as KernelCase[];
 const requests = cases.map(({ operation, input }) => ({ operation, input }));
