@@ -136,7 +136,8 @@ function removalReason(view: OutcomeView, direction?: DirectionPlan): AbstainRea
   if (direction) return 'loser';
   const loserReason = removedLoserReason(view);
   if (loserReason) return loserReason;
-  if (targets.reservations) return 'cascade';
+  // a BYE-only target beside a playoff link (FMLC with a playoff): v1 takes back the BYE it placed there (`removeDirectedBye`)
+  if (targets.byeTarget) return 'loser';
   const target = targets.winner;
   if (!target) return targets.winnerLink ? 'link' : undefined;
   if (target.structureId !== targets.source.structureId) return 'link';
@@ -196,7 +197,6 @@ function reenteredReason(
   // a stored status that changes is refreshed on the arrivals the first entry sent on (v1's `refreshArrivals`)
   if (view.existing.matchUpStatus !== COMPLETED) return 'route';
   if (direction?.decider || direction?.produced || direction?.converged) return 'route';
-  if (targets.reservations) return 'cascade';
   const loser = direction?.loser;
   if (loser || targets.loserMatchUpId) {
     const seat = targets.loserTargetSeat;

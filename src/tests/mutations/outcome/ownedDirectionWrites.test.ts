@@ -335,6 +335,38 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'FIRST_MATCH_LOSER_CONSOLATION (S4): a Main round 3 result cleared, the draw holding FIRST_MATCHUP links',
+    {
+      drawProfile: { drawSize: 16, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [
+        { target: R1(1, 'Main'), outcome: won(1) },
+        { target: R1(2, 'Main'), outcome: won(1) },
+        { target: R1(3, 'Main'), outcome: won(1) },
+        { target: R1(4, 'Main'), outcome: won(1) },
+        { target: { structureName: 'Main', roundNumber: 2, roundPosition: 1 }, outcome: won(1) },
+        { target: { structureName: 'Main', roundNumber: 2, roundPosition: 2 }, outcome: won(1) },
+        { target: { structureName: 'Main', roundNumber: 3, roundPosition: 1 }, outcome: won(1) },
+      ],
+      steps: [{ target: { structureName: 'Main', roundNumber: 3, roundPosition: 1 }, outcome: cleared }],
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION (S4): a Main round 3 result entered again, the draw holding FIRST_MATCHUP links',
+    {
+      drawProfile: { drawSize: 16, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [
+        { target: R1(1, 'Main'), outcome: won(1) },
+        { target: R1(2, 'Main'), outcome: won(1) },
+        { target: R1(3, 'Main'), outcome: won(1) },
+        { target: R1(4, 'Main'), outcome: won(1) },
+        { target: { structureName: 'Main', roundNumber: 2, roundPosition: 1 }, outcome: won(1) },
+        { target: { structureName: 'Main', roundNumber: 2, roundPosition: 2 }, outcome: won(1) },
+        { target: { structureName: 'Main', roundNumber: 3, roundPosition: 1 }, outcome: won(1) },
+      ],
+      steps: [{ target: { structureName: 'Main', roundNumber: 3, roundPosition: 1 }, outcome: { winningSide: 1 } }],
+    },
+  ],
+  [
     'DOUBLE_ELIMINATION: a Main first-round result sends the winner on and the loser into the Backdraw',
     { drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION }, steps: [{ target: R1(1, 'Main'), outcome: won(1) }] },
   ],
