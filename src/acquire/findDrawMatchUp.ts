@@ -8,7 +8,7 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
 import { ContextContent, ContextProfile, MatchUpsMap, ParticipantsProfile } from '@Types/factoryTypes';
-import { DrawDefinition, Event, Participant, Structure, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, MatchUp, Participant, Structure, Tournament } from '@Types/tournamentTypes';
 import { ErrorType, MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { DRAW_DEFINITION, MATCHUP_ID } from '@Constants/attributeConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
@@ -82,6 +82,20 @@ export function findDrawMatchUp(params: FindDrawMatchUpArgs): {
   for (const structure of structures) {
     if (!structureHoldsMatchUp({ structureId: structure.structureId, matchUpsMap, matchUpId })) continue;
 
+    /**
+     * OUT OF CONTEXT, THE STORED MATCHUP IS READ FROM THE MAP. Asked for no context, the structure's read returns the
+     * stored matchUps (its own, its groups', and their tie matchUps) and discards the round profiles it builds to
+     * hydrate: the same objects are here in the map. Every scheduling write asked it once, so a run building a
+     * structure's round profiles per placement spent most of its time doing so (SCHEDULING_PIPELINE_VNEXT.md § 7.0,
+     * H0). A context profile still goes through the read, which may decorate what it returns.
+     */
+    if (!inContext && !contextProfile) {
+      const stored = getMappedStructureMatchUps({ matchUpsMap, structureId: structure.structureId });
+      const { matchUp } = getMatchUp({ matchUps: withTieMatchUps(stored), matchUpId });
+      if (matchUp) return { matchUp, structure };
+      continue;
+    }
+
     const { matchUps } = getAllStructureMatchUps({
       // IN CONTEXT, ONLY THIS MATCHUP IS HYDRATED. The structure's profiles — rounds, feeds, source
       // ranges — still come from all of its matchUps, which is everything a single matchUp's context
@@ -126,4 +140,9 @@ function structureHoldsMatchUp({
       matchUp.matchUpId === matchUpId ||
       matchUp.tieMatchUps?.some((tieMatchUp: any) => tieMatchUp.matchUpId === matchUpId),
   );
+}
+
+/** a structure's stored matchUps and, after them, the tie matchUps of each dual, as the structure's read lists them */
+function withTieMatchUps(matchUps: MatchUp[]): MatchUp[] {
+  return matchUps.concat(...matchUps.map((matchUp) => matchUp.tieMatchUps ?? []));
 }
