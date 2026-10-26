@@ -126,14 +126,14 @@ function directionReason(args: {
  */
 function groupTally(
   group: NonNullable<OutcomeView['group']>,
-  call: { matchUpId: string; write: MatchUpWrite; score?: Score; matchUpFormat?: string },
+  call: { matchUpId: string; matchUpWrite: MatchUpWrite; score?: Score; matchUpFormat?: string },
 ): OutcomeOp[] | undefined {
   const matchUps = group.matchUps.map((matchUp) =>
     matchUp.matchUpId === call.matchUpId
       ? {
           ...matchUp,
-          matchUpStatus: call.write.matchUpStatus as MatchUpStatusUnion,
-          winningSide: call.write.winningSide as 1 | 2 | undefined,
+          matchUpStatus: call.matchUpWrite.matchUpStatus as MatchUpStatusUnion,
+          winningSide: call.matchUpWrite.winningSide as 1 | 2 | undefined,
           score: call.score ?? matchUp.score,
           ...(call.matchUpFormat ? { matchUpFormat: call.matchUpFormat } : {}),
         }
@@ -260,7 +260,7 @@ export function planOutcome(args: {
         ]
       : [];
   const tally = view.group
-    ? groupTally(view.group, { matchUpId, write, score, matchUpFormat: request.matchUpFormat })
+    ? groupTally(view.group, { matchUpId, matchUpWrite: write, score, matchUpFormat: request.matchUpFormat })
     : [];
   if (!tally) return { abstain: 'tallied' };
   // v1's tally announces the draw with no structure named (`updateAssignmentParticipantResults` → `modifyDrawNotice`),
