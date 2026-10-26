@@ -144,11 +144,17 @@ export function addMinutes(startDate, minutes): Date {
   return new Date(date.getTime() + minutes * 60000);
 }
 
+/**
+ * A wall-clock `HH:MM` plus minutes, modulo a day: plain arithmetic on minutes past midnight, with no Date, no clock and
+ * no zone, so a daylight-saving change on the day the code runs cannot move it (CA 2026-10-26, hydration OPEN-7). A
+ * fraction of a minute is dropped, as the time is whole minutes; a value that is not a time gives '00:00'.
+ */
 export function addMinutesToTimeString(timeString?, minutes?): string {
   const validTimeString = extractTime(timeString);
   if (!validTimeString) return '00:00';
-  const minutesToAdd = Number.isNaN(minutes) ? 0 : minutes;
-  return extractTime(addMinutes(timeToDate(validTimeString), minutesToAdd).toISOString()) || '00:00';
+  const minutesToAdd = typeof minutes === 'number' && Number.isFinite(minutes) ? minutes : 0;
+  const total = Math.floor(timeStringMinutes(validTimeString) + minutesToAdd);
+  return dayMinutesToTimeString(((total % 1440) + 1440) % 1440);
 }
 
 export const dateTime = {

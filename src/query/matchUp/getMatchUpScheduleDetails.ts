@@ -1,5 +1,5 @@
 import { matchUpFormatTimes, resolveTimingDetails } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
-import { addMinutesToTimeString, extractDate, extractTime, getIsoDateString } from '@Tools/dateTime';
+import { addMinutesToTimeString, extractDate, extractTime, getIsoDateString, timeStringMinutes } from '@Tools/dateTime';
 import { getCachedVenueData, HydrationCache } from '@Query/matchUps/hydrationCache';
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
@@ -9,6 +9,7 @@ import { definedAttributes } from '@Tools/definedAttributes';
 import { matchUpStartTime } from '@Query/matchUp/startTime';
 import { attributeFilter } from '@Tools/attributeFilter';
 import { matchUpEndTime } from '@Query/matchUp/endTime';
+import { addDaysToDate } from '@Tools/civilDateTime';
 import { findEvent } from '@Acquire/findEvent';
 
 // constants and types
@@ -239,17 +240,18 @@ function buildFullSchedule({
   // the embargo filter strips it with the rest of the placement.
   const lock = firstClass.lock;
 
+  if (!scheduledDate && scheduledTime) scheduledDate = extractDate(scheduledTime);
+
   const recoveryTimes = computeRecoveryTimes({
     scheduleTiming,
     afterRecoveryTimes,
     matchUpFormat,
+    scheduledDate,
     matchUpType,
     matchUp,
     endTime,
     scheduledTime,
   });
-
-  if (!scheduledDate && scheduledTime) scheduledDate = extractDate(scheduledTime);
 
   const isoDateString = getIsoDateString({ scheduledDate, scheduledTime });
 
@@ -263,8 +265,10 @@ function buildFullSchedule({
 
   return definedAttributes({
     typeChangeTimeAfterRecovery: recoveryTimes.typeChangeTimeAfterRecovery,
+    typeChangeDateAfterRecovery: recoveryTimes.typeChangeDateAfterRecovery,
     typeChangeRecoveryMinutes: recoveryTimes.typeChangeRecoveryMinutes,
     timeAfterRecovery: recoveryTimes.timeAfterRecovery,
+    dateAfterRecovery: recoveryTimes.dateAfterRecovery,
     recoveryMinutes: recoveryTimes.recoveryMinutes,
     averageMinutes: recoveryTimes.averageMinutes,
     homeParticipantId,
@@ -292,16 +296,53 @@ function buildFullSchedule({
   });
 }
 
+/**
+ * The wall-clock time and the date a recovery ends (CA 2026-10-26, hydration OPEN-8): from the recorded end of play, else
+ * the start plus the average minutes, on the matchUp's date. An end of play recorded as a time earlier than the start was
+ * after midnight. Past midnight the date is the next day's; an unparseable time gives neither, not '00:00'.
+ */
+type AfterRecoveryArgs = { endTime?: string; scheduledTime?: string; scheduledDate?: string; minutes: number };
+function afterRecovery({ endTime, scheduledTime, scheduledDate, minutes }: AfterRecoveryArgs): {
+  time?: string;
+  date?: string;
+} {
+  const start = extractTime(scheduledTime);
+  const end = endTime ? extractTime(endTime) : undefined;
+  const from = endTime ? end : start;
+  if (!from) return {};
+  let fromDate = (endTime && extractDate(endTime)) || scheduledDate;
+  if (endTime && end && start && !extractDate(endTime) && timeStringMinutes(end) < timeStringMinutes(start))
+    fromDate = fromDate && addDaysToDate(fromDate, 1);
+  const total = Math.floor(timeStringMinutes(from) + minutes);
+  const days = Math.floor(total / 1440);
+  return {
+    time: addMinutesToTimeString(from, minutes),
+    date: fromDate ? (addDaysToDate(fromDate, days) ?? undefined) : undefined,
+  };
+}
+
+type ComputeRecoveryTimesArgs = {
+  scheduleTiming?: unknown;
+  afterRecoveryTimes?: boolean;
+  matchUpFormat?: string;
+  scheduledDate?: string;
+  matchUpType?: EventTypeUnion;
+  matchUp: { matchUpType?: EventTypeUnion; matchUpFormat?: string };
+  endTime?: string;
+  scheduledTime?: string;
+};
 function computeRecoveryTimes({
   scheduleTiming,
   afterRecoveryTimes,
   matchUpFormat,
+  scheduledDate,
   matchUpType,
   matchUp,
   endTime,
   scheduledTime,
-}) {
+}: ComputeRecoveryTimesArgs) {
   let timeAfterRecovery, averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes, typeChangeTimeAfterRecovery;
+  let dateAfterRecovery, typeChangeDateAfterRecovery;
 
   const eventType = matchUp.matchUpType ?? matchUpType;
   if (scheduleTiming && scheduledTime && afterRecoveryTimes && eventType) {
@@ -325,18 +366,34 @@ function computeRecoveryTimes({
     }));
 
     if (averageMinutes || recoveryMinutes) {
-      timeAfterRecovery = endTime
-        ? addMinutesToTimeString(extractTime(endTime), recoveryMinutes)
-        : addMinutesToTimeString(scheduledTime, averageMinutes + recoveryMinutes);
+      const minutes = endTime ? recoveryMinutes : averageMinutes + recoveryMinutes;
+      ({ time: timeAfterRecovery, date: dateAfterRecovery } = afterRecovery({
+        scheduledDate,
+        scheduledTime,
+        endTime,
+        minutes,
+      }));
     }
     if (typeChangeRecoveryMinutes) {
-      typeChangeTimeAfterRecovery = endTime
-        ? addMinutesToTimeString(extractTime(endTime), typeChangeRecoveryMinutes)
-        : addMinutesToTimeString(scheduledTime, averageMinutes + typeChangeRecoveryMinutes);
+      const minutes = endTime ? typeChangeRecoveryMinutes : averageMinutes + typeChangeRecoveryMinutes;
+      ({ time: typeChangeTimeAfterRecovery, date: typeChangeDateAfterRecovery } = afterRecovery({
+        scheduledDate,
+        scheduledTime,
+        endTime,
+        minutes,
+      }));
     }
   }
 
-  return { timeAfterRecovery, averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes, typeChangeTimeAfterRecovery };
+  return {
+    typeChangeDateAfterRecovery,
+    typeChangeTimeAfterRecovery,
+    typeChangeRecoveryMinutes,
+    dateAfterRecovery,
+    timeAfterRecovery,
+    recoveryMinutes,
+    averageMinutes,
+  };
 }
 
 type AllocatedCourt = { venueId?: string; courtId?: string; [key: string]: unknown };

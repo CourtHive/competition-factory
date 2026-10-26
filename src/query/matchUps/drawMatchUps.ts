@@ -2,6 +2,7 @@ import { addParticipantGroupings } from '@Query/drawDefinition/avoidance/addPart
 import { getScheduleTiming } from '@Query/extensions/matchUpFormatTiming/getScheduleTiming';
 import { getStructureMatchUps } from '@Query/structure/getStructureMatchUps';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
+import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getContextContent } from '@Query/hierarchical/getContextContent';
 import { addUpcomingMatchUps } from '@Query/matchUp/addUpcomingMatchUps';
 import { getExitProfiles } from '@Query/drawDefinition/getExitProfile';
@@ -15,6 +16,7 @@ import { getMatchUpsMap } from './getMatchUpsMap';
 // constants and types
 import { MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { GroupsMatchUpsResult, MatchUpsMap, ResultType } from '@Types/factoryTypes';
+import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 
@@ -79,8 +81,11 @@ export function getDrawMatchUps(params): GroupsMatchUpsResult {
 
   // Every draw, event, tournament and competition query reaches here, and not all of them derive these first:
   // a recovery time needs the scheduling policy's timing, and the published view needs the event's publish status.
-  if (afterRecoveryTimes && !scheduleTiming) {
-    scheduleTiming = getScheduleTiming({ policyDefinitions, tournamentRecord, event }).scheduleTiming;
+  // a draw with its own scheduling policy times its matchUps by it, not by its event's (CA 2026-10-26, hydration OPEN-11)
+  const drawSchedulingPolicy =
+    afterRecoveryTimes && getAppliedPolicies({ drawDefinition }).appliedPolicies?.[POLICY_TYPE_SCHEDULING];
+  if (afterRecoveryTimes && (!scheduleTiming || drawSchedulingPolicy)) {
+    scheduleTiming = getScheduleTiming({ policyDefinitions, tournamentRecord, drawDefinition, event }).scheduleTiming;
   }
   if (usePublishState && !publishStatus && event) {
     publishStatus = getEventPublishStatus({ event });

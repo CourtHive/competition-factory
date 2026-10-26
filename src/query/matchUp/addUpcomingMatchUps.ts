@@ -1,6 +1,6 @@
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { getParticipantIds } from '@Functions/global/extractors';
-import { timeStringMinutes } from '@Tools/dateTime';
+import { extractDate, timeStringMinutes } from '@Tools/dateTime';
 import { ensureInt } from '@Tools/ensureInt';
 import { numericSort } from '@Tools/sorting';
 import {
@@ -145,8 +145,13 @@ function addEliminationUpcomingInfo({
 
 function checkScheduleConflict({ scheduleConflictMatchUpIds, inContextMatchUp, timeAfterRecovery, upcomingTo }) {
   if (upcomingTo?.schedule?.scheduledTime) {
+    // date and time together where both dates are known: the next day's morning is not before tonight's recovery
+    // (CA 2026-10-26, hydration OPEN-8); a target with no date is compared by the clock, as it always was
+    const afterDate = inContextMatchUp.schedule?.dateAfterRecovery;
+    const targetDate = upcomingTo.schedule.scheduledDate ?? extractDate(upcomingTo.schedule.scheduledTime);
+    const earlierClock = timeStringMinutes(upcomingTo.schedule.scheduledTime) < timeStringMinutes(timeAfterRecovery);
     const scheduleConflict =
-      timeStringMinutes(upcomingTo.schedule.scheduledTime) < timeStringMinutes(timeAfterRecovery);
+      afterDate && targetDate ? targetDate < afterDate || (targetDate === afterDate && earlierClock) : earlierClock;
     if (scheduleConflict) {
       scheduleConflictMatchUpIds[upcomingTo.matchUpId] = inContextMatchUp.matchUpId;
       upcomingTo.schedule.scheduleConflict = inContextMatchUp.matchUpId;
