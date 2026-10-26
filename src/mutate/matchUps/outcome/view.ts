@@ -327,8 +327,6 @@ function loserTargetSeat(
   return {
     free: !assignment.participantId && !assignment.bye && !assignment.qualifier,
     opponentBye: assignments.some((a) => a.bye && opponents.includes(a.drawPosition)),
-    // a BYE anywhere in the loser's structure: a new arrival can set v1's BYE propagation going there (S5)
-    structureHasBye: assignments.some((a) => a.bye),
   };
 }
 
@@ -876,6 +874,9 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         targetData?.targetMatchUps?.loserMatchUp?.structureId,
         targetData?.targetMatchUps?.loserTargetDrawPosition,
         targetData?.targetMatchUps?.loserMatchUp?.drawPositions,
+      ),
+      seededParticipantIds: (structure?.seedAssignments ?? []).flatMap(({ participantId }) =>
+        participantId ? [participantId] : [],
       ),
       loserMatchUpStatus: targetData?.targetMatchUps?.loserMatchUp?.matchUpStatus,
       loserMatchUpHasResult: hasResult(targetData?.targetMatchUps?.loserMatchUp),

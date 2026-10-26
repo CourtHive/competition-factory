@@ -488,7 +488,10 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   `updateInContextMatchUp` is built only for a subscriber, after the call has succeeded. Since S3
   v2 also owns the **first direction**: a result naming a winner, not an exit, whose winner goes
   into the next matchUp of the same structure (holding no BYE, exit or result) and whose loser, if
-  a link takes them, arrives on a free seat carrying nothing, with no settle work after. It writes
+  a link takes them, arrives on a free seat carrying nothing and not opposite a BYE, with no settle
+  work after; an FMLC loser fed into the consolation's round 2 included (the seat `positionTargets`
+  reports is the one `directLoser` takes). A seeded loser stays v1's: v1 carries the seed into the
+  structure they are placed in (`propagateLoserSeed`), which is not yet an op. It writes
   v1's notices for it (the next matchUp's `modifyMatchUp` named `assignMatchUpDrawPosition`, a
   `modifyPositionAssignments` for the structure the loser is placed in) and returns v1's direction
   `context` (`ownedDirectionWrites.test.ts`). Under `v2` the mutations suite has about 10,000 calls

@@ -7,7 +7,6 @@ import { isAnyExit } from '@Validators/isExit';
 // constants and types
 import type { DrawDefinition, MatchUpStatusUnion, Score, TallyResult, Tournament } from '@Types/tournamentTypes';
 import type { DirectionPlan, MatchUpWrite, OutcomeRequest, OutcomeView, Route } from './types';
-import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import type { OutcomeOp } from './ops';
 import {
   AWAITING_RESULT,
@@ -68,8 +67,8 @@ function localReason({ route, write }: { route?: Route; write?: MatchUpWrite }):
 
 /**
  * A loser fed across a link joins the first direction only as a plain arrival: placed on a free seat, carrying
- * nothing, into a matchUp holding no result, exit or BYE. The FMLC feed into round 2 is left to v1: `directLoser`
- * seats it on the target's lowest position, which `positionTargets` does not say.
+ * nothing, into a matchUp holding no result, exit or BYE beside it. The FMLC feed into round 2 is included: the seat
+ * `positionTargets` reports is the one `directLoser` takes (no FIRST_MATCHUP test file in the suite differs, 2026-10-26).
  */
 function plainLoserReason(view: OutcomeView, direction: DirectionPlan): AbstainReason | undefined {
   const { targets } = view;
@@ -77,15 +76,11 @@ function plainLoserReason(view: OutcomeView, direction: DirectionPlan): AbstainR
   if (!loser && !targets.loserMatchUpId) return undefined;
   if (!loser?.arrives || loser.exit || loser.converged || loser.carriedPast || loser.bye || loser.withdrawn)
     return 'loser';
-  if (targets.loserLink?.linkCondition === FIRST_MATCHUP && targets.loserMatchUpRoundNumber === 2) return 'loser';
   if (targets.byeTarget) return 'loser';
   if (!targets.loserStructureId || !targets.loserTargetDrawPosition || !targets.loserTargetSeat?.free) return 'loser';
-  if (
-    targets.loserMatchUpHasResult ||
-    targets.loserMatchUpCarriesExit ||
-    targets.loserTargetSeat.opponentBye ||
-    targets.loserTargetSeat.structureHasBye
-  )
+  // v1's `propagateLoserSeed` writes a seeded loser's seed into the structure they are placed in: not an op yet
+  if (loser.participantId && targets.seededParticipantIds?.includes(loser.participantId)) return 'loser';
+  if (targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit || targets.loserTargetSeat.opponentBye)
     return 'cascade';
   return undefined;
 }
