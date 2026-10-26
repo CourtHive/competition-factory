@@ -666,7 +666,10 @@ stored-data candidate check (matrix BYE: WALKOVER propagated 870 → 668); force
 `reconcileCarriesPastByes` seventh, asking `findOwedCarry` once before its loop, after its cheap check for a BYE
 matchUp recording a carried exit (matrix BYE: WALKOVER propagated 668 → 466); forced idle, 29 mutation tests fail
 under v1. `reconcileMissedLinkAdvancements` eighth, asking `findMissedLinkAdvancements` (deep BYE:
-the route 582 → 534, 1.3 a call); forced idle, 4 mutation tests fail under v1.
+the route 582 → 534, 1.3 a call); forced idle, 4 mutation tests fail under v1. `reconcileConsolationReservations` ninth, asking
+`findReservationWork` (the fed seats whose `FIRST_MATCHUP` reservation the pass would place or withdraw); v2's has-work
+predicate asks the same detector, exact where it was scope (any result in a round such a link reads); forced idle, 20
+mutation tests fail under v1.
 
 ## 8. What the corpus pins
 
