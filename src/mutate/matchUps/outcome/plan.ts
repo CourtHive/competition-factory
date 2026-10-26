@@ -214,6 +214,33 @@ function reenteredReason(
   return undefined;
 }
 
+/**
+ * A played result's winner changed while nothing downstream is active (the `winner` route, the other side). v1 takes
+ * back what the old result directed (`removeDirectedParticipants`) and directs the new one (`directParticipants`), so it
+ * is planned where both halves are clean: the old direction as a removal would take it back (`removalReason`), and the
+ * new winner into the same next matchUp, the new loser onto the seat the old one leaves, carrying nothing. Anything else
+ * is v1's (S4).
+ */
+function changedWinnerReason(
+  view: OutcomeView,
+  write?: MatchUpWrite,
+  direction?: DirectionPlan,
+): AbstainReason | undefined {
+  const { targets, existing } = view;
+  if (!write?.winningSide || write.matchUpStatus !== COMPLETED || existing.matchUpStatus !== COMPLETED) return 'route';
+  if (direction?.decider || direction?.produced || direction?.converged) return 'route';
+  const removal = removalReason(view);
+  if (removal) return removal;
+  if (targets.winner ? !direction?.winner : direction?.winner) return 'route';
+  if (!targets.loserMatchUpId) return undefined;
+  const loser = direction?.loser;
+  if (!loser?.arrives || loser.exit || loser.bye || loser.carriedPast || loser.withdrawn || loser.converged)
+    return 'loser';
+  // v1's `propagateLoserSeed` writes a seeded loser's seed into the structure they are placed in: not an op yet
+  if (!loser.participantId || targets.seededParticipantIds?.includes(loser.participantId)) return 'loser';
+  return undefined;
+}
+
 /** the values written beneath an active downstream: a played result, nothing directed */
 function applyValuesReason({
   write,
@@ -333,18 +360,22 @@ function abstainReason(args: {
     args.route === 'apply-values' && !!write?.winningSide && write.winningSide === view.existing.winningSide;
   // S4: the same winner entered again with nothing downstream active, re-directed where they already stand
   const reentered = reentersWinner(view, args.route, write);
+  // S4: another winner with nothing downstream active: the old direction taken back, the new one made
+  const changing = changesWinner(view, args.route, write);
   // S4: a decided result cleared while its downstream is untouched takes back what it directed (`remove-directed`)
   const removing = args.route === REMOVE_DIRECTED && !!view.existing.winningSide && !write?.winningSide;
-  // a winner cleared in a WIN_RATIO structure: v1 reports the playoff structures it reaches, which v2 does not read
-  if (removing && view.draw.winRatio) return 'link';
+  // a winner cleared or changed in a WIN_RATIO structure: v1 reports the playoff structures it reaches, which v2 does not
+  // read
+  if ((removing || changing) && view.draw.winRatio) return 'link';
   if (removing) {
     const removal = removalReason(view, direction);
     if (removal) return removal;
-  } else if (view.existing.winningSide && !sameWinner && !reentered) return 'winner';
+  } else if (view.existing.winningSide && !sameWinner && !reentered && !changing) return 'winner';
   const directing = !sameWinner && !!(request.winningSide || write?.winningSide || direction);
   let shape: AbstainReason | undefined;
   if (sameWinner) shape = applyValuesReason(args);
   else if (reentered) shape = reenteredReason(view, write, direction);
+  else if (changing) shape = changedWinnerReason(view, write, direction);
   else shape = directing ? directionReason(args) : localReason(args);
   if (shape) return shape;
   if (view.existing.hasSideExitProvenance || view.existing.carriedExit) return 'provenance';
@@ -356,6 +387,45 @@ function abstainReason(args: {
 /** the stored winner entered again on the winner's route (S4) */
 function reentersWinner(view: OutcomeView, route: Route | undefined, write?: MatchUpWrite): boolean {
   return route === 'winner' && !!write?.winningSide && write.winningSide === view.existing.winningSide;
+}
+
+/** a stored winner replaced by the other side on the winner's route (S4) */
+function changesWinner(view: OutcomeView, route: Route | undefined, write?: MatchUpWrite): boolean {
+  return (
+    route === 'winner' &&
+    !!write?.winningSide &&
+    !!view.existing.winningSide &&
+    write.winningSide !== view.existing.winningSide
+  );
+}
+
+/**
+ * The winner's position joining the next matchUp, which v1 stores ascending. For a changed winner the old winner's
+ * position comes out as the new one goes in, and the matchUp's score with it (v1's `removeSubsequentRoundsParticipant`).
+ */
+function winnerPlacementOps(
+  view: OutcomeView,
+  route: Route | undefined,
+  write: MatchUpWrite,
+  winner?: DirectionPlan['winner'],
+): OutcomeOp[] {
+  const target = view.targets.winner;
+  const position = write.winningSide ? view.targets.sideDrawPositions[write.winningSide as 1 | 2] : undefined;
+  if (!winner || !position || !target) return [];
+  const replaced = changesWinner(view, route, write)
+    ? view.targets.sideDrawPositions[view.existing.winningSide as 1 | 2]
+    : undefined;
+  const kept = target.drawPositions.filter((candidate) => candidate !== replaced);
+  const drawPositions = [...new Set([...kept, position])].sort((a, b) => a - b);
+  return [
+    {
+      op: 'setMatchUpDrawPositions',
+      matchUpId: winner.matchUpId,
+      drawPositions,
+      ...(replaced ? { removedDrawPosition: replaced, placedDrawPosition: position } : {}),
+    },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: winner.matchUpId },
+  ];
 }
 
 /** the direction whose placements are written: none for a re-entered winner, who stands where the first entry put them */
@@ -373,13 +443,32 @@ function removesDirection(view: OutcomeView, route: Route | undefined, write: Ma
   return route === REMOVE_DIRECTED && !!view.existing.winningSide && !write.winningSide;
 }
 
-/** a cleared result's winner taken back out of the next matchUp, whose positions v1's writer then normalises */
+/**
+ * A cleared result's winner taken back out of the next matchUp, whose positions v1's writer then normalises, and its
+ * loser out of the seat a link placed them on. Not a changed winner's: its winner's position is replaced in the one write
+ * that places the new winner (`winnerPlacementOps`), and its loser is taken back first (`replacedLoserOps`).
+ */
+/**
+ * A changed winner's old loser, taken back out of the seat the link placed them on before anything else is written: v1
+ * removes the old direction (`removeDirectedParticipants`) before it writes the new result and directs it, so the old
+ * loser's matchUp is announced first and the result and the new placements after it
+ */
+function replacedLoserOps(
+  view: OutcomeView,
+  route: Route | undefined,
+  write: MatchUpWrite,
+  matchUpStatus?: MatchUpStatusUnion,
+): OutcomeOp[] {
+  return changesWinner(view, route, write) ? removedLoserOps(view, matchUpStatus) : [];
+}
+
 function removedOps(
   view: OutcomeView,
   route: Route | undefined,
   write: MatchUpWrite,
   matchUpStatus?: MatchUpStatusUnion,
 ): OutcomeOp[] {
+  if (changesWinner(view, route, write)) return [];
   const { targets, existing } = view;
   const position = existing.winningSide ? targets.sideDrawPositions[existing.winningSide as 1 | 2] : undefined;
   if (!removesDirection(view, route, write) || !position || !targets.winner || !targets.winnerMatchUpId) return [];
@@ -472,6 +561,7 @@ export function planOutcome(args: {
     ? { scoreStringSide1: '', scoreStringSide2: '' }
     : (request.score as Score | undefined);
   const ops: OutcomeOp[] = [
+    ...replacedLoserOps(view, args.route, write, request.matchUpStatus),
     {
       op: 'setMatchUpResult',
       matchUpId,
@@ -486,15 +576,10 @@ export function planOutcome(args: {
   // the first direction: the winner's position joins the next matchUp's, which v1 stores ascending
   const placing = placedDirection(view, args.route, write, args.direction);
   const winner = placing?.winner;
-  const winnerPosition = write.winningSide ? view.targets.sideDrawPositions[write.winningSide as 1 | 2] : undefined;
-  if (winner && winnerPosition && view.targets.winner) {
-    const drawPositions = [...new Set([...view.targets.winner.drawPositions, winnerPosition])].sort((a, b) => a - b);
-    ops.push(
-      { op: 'setMatchUpDrawPositions', matchUpId: winner.matchUpId, drawPositions },
-      { op: 'stampUpdatedAt', entity: 'matchUp', id: winner.matchUpId },
-    );
-  }
-  ops.push(...removedOps(view, args.route, write, request.matchUpStatus));
+  ops.push(
+    ...winnerPlacementOps(view, args.route, write, winner),
+    ...removedOps(view, args.route, write, request.matchUpStatus),
+  );
   // a plain loser arrival: the loser on the seat the link feeds. The matchUp they land in is not stamped: its stored
   // object does not change (the write is on the structure's assignments), so it is not a touched entity (F2 (i), and v1).
   // The structure whose assignments change is stamped below (v1's `modifyPositionAssignmentsNotice`).
