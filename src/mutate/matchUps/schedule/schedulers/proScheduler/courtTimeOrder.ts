@@ -39,13 +39,17 @@ type Slot = { matchUpId: string; order: number; minutes: number };
  * at 08:00 frees the court for the next 08:00 matchUp: a production report, 2026-10-11). Two matchUps in the SAME
  * `courtOrder` are a double booking, which `proConflicts` reports itself.
  */
-export function courtTimeOrderConflicts(matchUps: HydratedMatchUp[]): CourtTimeOrderConflict[] {
+export function courtTimeOrderConflicts(
+  matchUps: HydratedMatchUp[],
+  // whether a matchUp put nobody on the court: a caller that resolved it already passes its answer
+  noCourtTime: (matchUp: HydratedMatchUp) => boolean = usesNoCourtTime,
+): CourtTimeOrderConflict[] {
   const byCourt = new Map<string, Slot[]>();
   for (const matchUp of matchUps) {
     const { courtId, courtOrder, scheduledDate, scheduledTime } = matchUp.schedule ?? {};
     const time = extractTime(scheduledTime);
     const order = ensureInt(courtOrder);
-    if (!courtId || !time || !order || usesNoCourtTime(matchUp)) continue;
+    if (!courtId || !time || !order || noCourtTime(matchUp)) continue;
 
     const key = `${courtId}|${scheduledDate ?? ''}`;
     const slots = byCourt.get(key) ?? [];

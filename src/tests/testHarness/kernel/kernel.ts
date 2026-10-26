@@ -13,6 +13,11 @@ import { dayMinutesToTimeString, extractTime, tidyTime, timeStringMinutes } from
 import { addMinutesWithinDay } from '@Mutate/matchUps/schedule/scheduleMatchUps/timeWithinDay';
 import { buildSchedulingView } from '@Mutate/matchUps/schedule/pipeline/view';
 import { planGridDate } from '@Mutate/matchUps/schedule/pipeline/gridPlan';
+import {
+  checkConflicts,
+  conflictsViewFromData,
+  requiredConflictsViewKeys,
+} from '@Mutate/matchUps/schedule/pipeline/gridConflicts';
 import { addMinutesToDateTime, endOnTheDay } from '@Tools/civilDateTime';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { planSchedule } from '@Mutate/matchUps/schedule/pipeline/plan';
@@ -106,6 +111,13 @@ function validateReduceInput(input: Record<string, unknown>) {
   return undefined;
 }
 
+/** why a case's view is malformed: not an object, or missing a member the operation requires */
+function viewProblem(view: unknown, requiredKeys: string[]): string | undefined {
+  if (!view || typeof view !== 'object' || Array.isArray(view)) return 'view must be an object';
+  const missing = requiredKeys.filter((key) => !Object.hasOwn(view, key));
+  return missing.length ? `view is missing ${missing.join(', ')}` : undefined;
+}
+
 /** the options a profile plan takes beside its view, and the type each must have */
 const PLAN_OPTIONS: Record<string, (value: unknown) => boolean> = {
   clearScheduleDates: (value) =>
@@ -117,10 +129,8 @@ const PLAN_OPTIONS: Record<string, (value: unknown) => boolean> = {
 };
 
 function validatePlanInput(input: Record<string, unknown>) {
-  const view = input.view as Record<string, unknown> | undefined;
-  if (!view || typeof view !== 'object' || Array.isArray(view)) return 'view must be an object';
-  const missing = requiredPlanningViewKeys().filter((key) => !Object.hasOwn(view, key));
-  if (missing.length) return `view is missing ${missing.join(', ')}`;
+  const problem = viewProblem(input.view, requiredPlanningViewKeys());
+  if (problem) return problem;
   const options = (input.options ?? {}) as Record<string, unknown>;
   if (typeof options !== 'object' || Array.isArray(options)) return 'options must be an object';
   for (const [key, value] of Object.entries(options)) {
@@ -161,11 +171,12 @@ function schedulingView(input: Record<string, unknown>): KernelResult {
 
 /** a grid date's plan input: its view, with every member the plan requires */
 function validateGridInput(input: Record<string, unknown>) {
-  const view = input.view as Record<string, unknown> | undefined;
-  if (!view || typeof view !== 'object' || Array.isArray(view)) return 'view must be an object';
-  const missing = requiredGridViewKeys().filter((key) => !Object.hasOwn(view, key));
-  if (missing.length) return `view is missing ${missing.join(', ')}`;
-  return undefined;
+  return viewProblem(input.view, requiredGridViewKeys());
+}
+
+/** a grid's conflicts input: its view, with every member the check reads */
+function validateConflictsInput(input: Record<string, unknown>) {
+  return viewProblem(input.view, requiredConflictsViewKeys());
 }
 
 /** the clock's primitives (scheduling-pipeline.md § 3.8): a string in, a time, a number or a date out */
@@ -294,6 +305,16 @@ export const kernelOperations: Readonly<Record<string, KernelOperation>> = Objec
     run: (input) => ({
       kind: 'value',
       value: overTheWire(planGridDate(gridViewFromData(input.view as Record<string, unknown>))),
+    }),
+  },
+  // the court grid's conflicts (pro-scheduling.md, Conflict Types): from the grid's view, each grid matchUp's first issue
+  // by severity, per row and per court
+  'kernel.scheduling.conflicts@1': {
+    capability: 'scheduling',
+    validate: validateConflictsInput,
+    run: (input) => ({
+      kind: 'value',
+      value: overTheWire(checkConflicts(conflictsViewFromData(input.view as Record<string, unknown>))),
     }),
   },
   'kernel.format.parse@1': {

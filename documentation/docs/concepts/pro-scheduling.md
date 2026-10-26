@@ -590,20 +590,32 @@ rowIssues.forEach((row, rowIndex) => {
 
 #### Conflict Types
 
-| Conflict Type         | Severity | Description                                                                                        |
-| --------------------- | -------- | -------------------------------------------------------------------------------------------------- |
-| `courtDoubleBooking`  | CONFLICT | Two matchUps assigned to the same court slot                                                       |
-| `participantConflict` | CONFLICT | Same player in two matchUps of one row (simultaneous)                                              |
-| `participantConflict` | WARNING  | Same player in adjacent rows (back to back) without time for recovery                              |
-| `matchUpConflict`     | ERROR    | Dependent matchUp in an earlier row than its source                                                |
-| `matchUpConflict`     | CONFLICT | Dependent matchUp in the same row as its source                                                    |
-| `matchUpConflict`     | ISSUE    | Dependent matchUp in the row after a source two or more rounds back: no row for the rounds between |
-| `matchUpConflict`     | WARNING  | Dependent matchUp in the next row, on another court, without time for recovery                     |
+| Conflict Type                  | Severity | Description                                                                                                                           |
+| ------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `courtDoubleBooking`           | CONFLICT | Two matchUps assigned to the same court slot                                                                                          |
+| `participantConflict`          | CONFLICT | Same player in two matchUps of one row (simultaneous)                                                                                 |
+| `participantConflict`          | WARNING  | Same player in adjacent rows (back to back) without time for recovery                                                                 |
+| `matchUpConflict`              | ERROR    | Dependent matchUp in an earlier row than its source                                                                                   |
+| `matchUpConflict`              | CONFLICT | Dependent matchUp in the same row as its source                                                                                       |
+| `matchUpConflict`              | ISSUE    | Dependent matchUp in the row after a source two or more rounds back: no row for the rounds between                                    |
+| `matchUpConflict`              | WARNING  | Dependent matchUp in the next row, on another court, without time for recovery                                                        |
+| `byeScheduledOnCourt`          | WARNING  | A BYE holding a court: nobody will play on it                                                                                         |
+| `exitScheduledOnCourt`         | WARNING  | An exit the cascade produced holding a court                                                                                          |
+| `courtTimeOrderConflict`       | WARNING  | A later court order on a court holding a time no later than the order before it                                                       |
+| `potentialParticipantConflict` | WARNING  | (`useDeepDependencies`) a player who can reach two matchUps of a row, or of adjacent rows short of recovery, however many rounds away |
+| `positionLinkConflict`         | WARNING  | (`useDeepDependencies`) a matchUp whose position-linked sources are not on the grid                                                   |
 
-An adjacent-row WARNING is given only when the time between the two matchUps is short of recovery: the earlier
-matchUp's finish (its `endTime`, else its start plus average minutes) plus its recovery minutes falls after the later
-matchUp begins (its `startTime`, else `calledAt`, else `scheduledTime`). See
+Each matchUp is reported once, with the first issue it receives, in this order: ERROR, CONFLICT, ISSUE, WARNING, and a
+court-time order warning last. An adjacent-row WARNING is given only when the time between the two matchUps is short
+of recovery: the earlier matchUp's finish (its `endTime`, else its start plus average minutes) plus its recovery minutes
+falls after the later matchUp begins (its `startTime`, else `calledAt`, else `scheduledTime`). A matchUp finished
+without being played (a walkover) asks no recovery. The back-to-back `participantConflict` WARNING is given to the
+later matchUp; the same-court exemption applies to the `matchUpConflict` WARNING only, so a target following its source
+on the same court can still carry its players' back-to-back warning. See
 [proConflicts](/docs/governors/schedule-governor#proconflicts). `issueIds` names only the matchUps an issue is with.
+
+The conflicts are judged from a view of the grid (the dependency graph read from the stored draws, each matchUp's
+reachable participants, times and timing), and the check reads nothing else (`kernel.scheduling.conflicts@1`).
 
 #### Conflict Resolution Workflow
 

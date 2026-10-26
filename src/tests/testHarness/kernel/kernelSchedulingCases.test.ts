@@ -1,4 +1,5 @@
 import { authoredSchedulingCases } from './schedulingCaseSources';
+import { authoredConflictsCases } from './conflictsCaseSources';
 import { authoredGridCases } from './gridCaseSources';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { canonicalJson } from '@Tools/canonicalJson';
@@ -17,6 +18,7 @@ const files = {
   plan: path.join(__dirname, 'cases', 'scheduling.json'),
   view: path.join(__dirname, 'cases', 'schedulingView.json'),
   grid: path.join(__dirname, 'cases', 'schedulingGrid.json'),
+  conflicts: path.join(__dirname, 'cases', 'schedulingConflicts.json'),
 };
 
 function expectCommitted(file: string, cases: KernelCase[]) {
@@ -46,5 +48,11 @@ describe('the authored scheduling cases', () => {
     const grid = authoredGridCases();
     expect(grid.length).toBeGreaterThanOrEqual(7);
     expectCommitted(files.grid, grid);
+  });
+
+  it('the conflicts cases meet their claims and the closed-view property, and are the committed cases', () => {
+    const conflicts = authoredConflictsCases();
+    expect(conflicts.length).toBeGreaterThanOrEqual(12);
+    expectCommitted(files.conflicts, conflicts);
   });
 });
