@@ -50,10 +50,15 @@ export function applyOwnedPlan({
   const tournamentId = tournamentRecord?.tournamentId;
   const written = [
     ...new Set(
-      ops.flatMap((op) => (op.op === 'setMatchUpResult' || op.op === 'setMatchUpDrawPositions' ? [op.matchUpId] : [])),
+      ops.flatMap((op) =>
+        op.op === 'setMatchUpResult' || op.op === 'setMatchUpDrawPositions' || op.op === 'setMatchUpBye'
+          ? [op.matchUpId]
+          : [],
+      ),
     ),
   ];
   const resulted = new Set(ops.flatMap((op) => (op.op === 'setMatchUpResult' ? [op.matchUpId] : [])));
+  const byes = new Set(ops.flatMap((op) => (op.op === 'setMatchUpBye' ? [op.matchUpId] : [])));
   const stored = new Map(args.matchUpsMap?.drawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
   const subscribed = getTopics().topics.includes(UPDATE_INCONTEXT_MATCHUP);
   for (const matchUpId of written) {
@@ -67,8 +72,8 @@ export function applyOwnedPlan({
       });
     modifyMatchUpNotice({
       // v1's writers name themselves: the call's result is `modifyMatchUpScore`'s, a winner's seat in the next matchUp
-      // is `assignMatchUpDrawPosition`'s (`directWinner`)
-      context: resulted.has(matchUpId) ? 'modifyMatchUpScore' : 'assignMatchUpDrawPosition',
+      // is `assignMatchUpDrawPosition`'s (`directWinner`), a FIRST_MATCHUP reservation's matchUp `setMatchUpStatusBye`'s
+      context: matchUpContext(matchUpId, resulted, byes),
       eventId: event?.eventId,
       drawDefinition,
       tournamentId,
@@ -76,8 +81,11 @@ export function applyOwnedPlan({
       event,
     });
   }
-  // a loser placed across a link: the structure whose assignments changed, announced once (v1's `directLoser`)
-  const placedIn = [...new Set(ops.flatMap((op) => (op.op === 'assignPosition' ? [op.structureId] : [])))];
+  // a loser placed across a link, or a reserved seat: the structure whose assignments changed, announced once (v1's
+  // `directLoser`, `assignDrawPositionBye`)
+  const placedIn = [
+    ...new Set(ops.flatMap((op) => (op.op === 'assignPosition' || op.op === 'assignBye' ? [op.structureId] : []))),
+  ];
   for (const structureId of placedIn) {
     const { structure } = findStructure({ drawDefinition, structureId });
     if (structure) modifyPositionAssignmentsNotice({ drawDefinition, tournamentId, structure, event });
@@ -85,4 +93,9 @@ export function applyOwnedPlan({
   // a winner's route returns the context `directParticipants` builds, a final's included, which carries something only
   // for an exit (S5): empty
   return shape === 'direction' ? { ...SUCCESS, context: {} } : { ...SUCCESS };
+}
+
+function matchUpContext(matchUpId: string, resulted: Set<string>, byes: Set<string>): string {
+  if (resulted.has(matchUpId)) return 'modifyMatchUpScore';
+  return byes.has(matchUpId) ? 'setMatchUpStatusBye' : 'assignMatchUpDrawPosition';
 }

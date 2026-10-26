@@ -78,6 +78,7 @@ function plainLoserReason(view: OutcomeView, direction: DirectionPlan): AbstainR
   if (!loser?.arrives || loser.exit || loser.converged || loser.carriedPast || loser.bye || loser.withdrawn)
     return 'loser';
   if (targets.loserLink?.linkCondition === FIRST_MATCHUP && targets.loserMatchUpRoundNumber === 2) return 'loser';
+  if (targets.byeTarget) return 'loser';
   if (!targets.loserStructureId || !targets.loserTargetDrawPosition || !targets.loserTargetSeat?.free) return 'loser';
   if (
     targets.loserMatchUpHasResult ||
@@ -87,6 +88,23 @@ function plainLoserReason(view: OutcomeView, direction: DirectionPlan): AbstainR
   )
     return 'cascade';
   return undefined;
+}
+
+/**
+ * A FIRST_MATCHUP reservation is planned only as a seat filled with a BYE in a matchUp nobody else is in: a reservation
+ * the view could not plan, or one this call's own loser would meet (placed in the same consolation matchUp), is v1's.
+ */
+function reservationReason(view: OutcomeView, winningSide: 1 | 2): boolean {
+  const reservation = view.targets.reservations?.[winningSide];
+  if (reservation?.kind === 'abstain') return true;
+  if (reservation?.kind !== 'reserve') return false;
+  const { loserStructureId, loserTargetDrawPosition } = view.targets;
+  return (
+    loserStructureId === reservation.structureId &&
+    !!loserTargetDrawPosition &&
+    (reservation.drawPositions.includes(loserTargetDrawPosition) ||
+      loserTargetDrawPosition === reservation.drawPosition)
+  );
 }
 
 /** a first entry naming a winner, whose direction is the winner's position in the next matchUp and nothing else */
@@ -110,7 +128,7 @@ function directionReason(args: {
   if (final) return undefined;
   const target = targets.winner;
   if (!target || target.structureId !== targets.source.structureId) return 'link';
-  if (view.draw.firstMatchFeed) return 'cascade';
+  if (reservationReason(view, write.winningSide as 1 | 2)) return 'cascade';
   if (target.hasBye || target.carriesExit || target.carriedStatuses.length || target.holdsResult) return 'cascade';
   // a target generated with no status (LUCKY_DRAW, adaptive) is written TO_BE_PLAYED by v1 as the winner arrives
   if (target.matchUpStatus !== TO_BE_PLAYED) return 'route';
@@ -259,6 +277,25 @@ export function planOutcome(args: {
             : [{ op: 'stampUpdatedAt', entity: 'structure', id: loserStructureId } as const]),
         ]
       : [];
+  // the FIRST_MATCHUP reservation the winner's arrival makes (v1's `propagateConsolationBye`): the seat a BYE, its matchUp
+  // a BYE, both stamped; the consolation structure is stamped below with the arrival's, or here
+  const reservation = write.winningSide ? view.targets.reservations?.[write.winningSide as 1 | 2] : undefined;
+  const reserved: OutcomeOp[] =
+    reservation?.kind === 'reserve'
+      ? [
+          {
+            op: 'assignBye',
+            structureId: reservation.structureId,
+            drawPosition: reservation.drawPosition,
+            byeFromPropagation: true,
+          },
+          { op: 'setMatchUpBye', matchUpId: reservation.matchUpId },
+          { op: 'stampUpdatedAt', entity: 'matchUp', id: reservation.matchUpId },
+          ...(reservation.structureId === structureId || reservation.structureId === loserStructureId
+            ? []
+            : [{ op: 'stampUpdatedAt', entity: 'structure', id: reservation.structureId } as const]),
+        ]
+      : [];
   const tally = view.group
     ? groupTally(view.group, { matchUpId, matchUpWrite: write, score, matchUpFormat: request.matchUpFormat })
     : [];
@@ -273,6 +310,7 @@ export function planOutcome(args: {
     : [];
   ops.push(
     ...arrival,
+    ...reserved,
     ...tally,
     // the top-level structure: a round robin group's container, as v1 stamps it
     { op: 'stampUpdatedAt', entity: 'structure', id: view.group?.containerStructureId ?? structureId },

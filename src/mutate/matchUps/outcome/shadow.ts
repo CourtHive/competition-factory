@@ -73,12 +73,13 @@ export function compareShadow({
  * THE NOTICES a complete plan implies, by topic and key (executor plan § 3.5.5): the deduplicated buffer v1 leaves,
  * which a client's sync reads. Payloads are not compared in S1. Measured 2026-10-24 with every topic subscribed: a
  * matchUp written or stamped is a `modifyMatchUp`, the call's own matchUp an `updateInContextMatchUp`, the draw a
- * `modifyDrawDefinition`, and a structure an `assignPosition` writes a `modifyPositionAssignments` keyed by structureId.
+ * `modifyDrawDefinition`, and a structure an `assignPosition` or `assignBye` writes a `modifyPositionAssignments` keyed by structureId.
  */
 export function plannedNotices({ ops, matchUpId }: { ops: OutcomeOp[]; matchUpId: string }): Set<string> {
   const notices = new Set<string>([`${UPDATE_INCONTEXT_MATCHUP}|${matchUpId}`]);
   for (const op of ops) {
-    if (op.op === 'assignPosition') notices.add(`${MODIFY_POSITION_ASSIGNMENTS}|${op.structureId}`);
+    if (op.op === 'assignPosition' || op.op === 'assignBye')
+      notices.add(`${MODIFY_POSITION_ASSIGNMENTS}|${op.structureId}`);
     if (op.op !== 'stampUpdatedAt') continue;
     if (op.entity === 'matchUp') notices.add(`${MODIFY_MATCHUP}|${op.id}`);
     if (op.entity === 'drawDefinition') notices.add(`${MODIFY_DRAW_DEFINITION}|${op.id}`);

@@ -6,6 +6,7 @@ import { getCapturedStamps } from '@Global/state/globalState';
 import { nowIso } from '@Tools/clock';
 
 // constants and types
+import { BYE } from '@Constants/matchUpStatusConstants';
 import type {
   DrawDefinition,
   MatchUp,
@@ -59,6 +60,19 @@ export type OutcomeOp =
       participantId: string;
     }
   | {
+      op: 'assignBye';
+      /** a FIRST_MATCHUP reservation (S3): the consolation seat a loser who has won can never fill */
+      structureId: string;
+      drawPosition: number;
+      /** the marker `assignDrawPositionBye` writes for a propagation placement, so a withdrawal can recognise it */
+      byeFromPropagation: true;
+    }
+  | {
+      op: 'setMatchUpBye';
+      /** the matchUp the reserved seat is in: BYE, its score and winner removed (v1's `setMatchUpStatusBYE`) */
+      matchUpId: string;
+    }
+  | {
       op: 'setParticipantResults';
       /** a round robin's group: its position assignments take the tallies (`writeAssignmentResults`, v1's writer) */
       structureId: string;
@@ -69,7 +83,13 @@ export type OutcomeOp =
 
 /** the op vocabulary as a literal union, which `verify:outcome-spec` holds to the spec; checked against `OutcomeOp` */
 export type OutcomeOpName =
-  'setMatchUpResult' | 'setMatchUpDrawPositions' | 'assignPosition' | 'setParticipantResults' | 'stampUpdatedAt';
+  | 'setMatchUpResult'
+  | 'setMatchUpDrawPositions'
+  | 'assignPosition'
+  | 'assignBye'
+  | 'setMatchUpBye'
+  | 'setParticipantResults'
+  | 'stampUpdatedAt';
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 const opNamesMatch: Same<OutcomeOpName, OutcomeOp['op']> = true;
 export const OUTCOME_OP_NAMES_MATCH = opNamesMatch;
@@ -159,48 +179,112 @@ function indexDraw(drawDefinition: DrawDefinition) {
   return { matchUps, structureOf, structures, groups };
 }
 
+type DrawIndex = ReturnType<typeof indexDraw>;
+type OpOf<K extends OutcomeOp['op']> = Extract<OutcomeOp, { op: K }>;
+type Folded = { error?: string };
+
+function foldMatchUpWrite(
+  op: OpOf<'setMatchUpResult'> | OpOf<'setMatchUpDrawPositions'>,
+  { matchUps, structureOf }: DrawIndex,
+  drawDefinition: DrawDefinition,
+): Folded {
+  const matchUp = matchUps.get(op.matchUpId);
+  if (!matchUp) return { error: `${op.op}: no matchUp ${op.matchUpId}` };
+  if (op.op === 'setMatchUpResult') setMatchUpResult(matchUp, op);
+  // through the one writer, which normalises the positions and re-keys a side's facts if an occupant changes side
+  else
+    setMatchUpDrawPositions({
+      structureId: structureOf.get(op.matchUpId),
+      drawPositions: op.drawPositions,
+      drawDefinition,
+      matchUp,
+    });
+  return {};
+}
+
+function foldAssignPosition(op: OpOf<'assignPosition'>, { structures }: DrawIndex): Folded {
+  const assignment = positionAssignmentsOf(structures.get(op.structureId))?.find(
+    (candidate) => candidate.drawPosition === op.drawPosition,
+  );
+  if (!assignment) return { error: `assignPosition: no drawPosition ${op.drawPosition} in ${op.structureId}` };
+  assignment.participantId = op.participantId;
+  return {};
+}
+
+function foldAssignBye(op: OpOf<'assignBye'>, { structures, groups }: DrawIndex): Folded {
+  const positionAssignments = positionAssignmentsOf(structures.get(op.structureId) ?? groups.get(op.structureId));
+  if (!positionAssignments) return { error: `assignBye: no structure ${op.structureId}` };
+  let assignment = positionAssignments.find((candidate) => candidate.drawPosition === op.drawPosition);
+  // as `assignDrawPositionBye`: a position the matchUps name but the assignments do not is added
+  if (!assignment) {
+    assignment = { drawPosition: op.drawPosition };
+    positionAssignments.push(assignment);
+  }
+  assignment.bye = true;
+  assignment.participantId = undefined;
+  assignment.byeFromPropagation = true;
+  return {};
+}
+
+function foldSetMatchUpBye(op: OpOf<'setMatchUpBye'>, { matchUps }: DrawIndex): Folded {
+  const matchUp = matchUps.get(op.matchUpId);
+  if (!matchUp) return { error: `setMatchUpBye: no matchUp ${op.matchUpId}` };
+  Object.assign(matchUp, { matchUpStatus: BYE, score: undefined, winningSide: undefined });
+  return {};
+}
+
+function foldParticipantResults(op: OpOf<'setParticipantResults'>, { groups }: DrawIndex): Folded {
+  const positionAssignments = positionAssignmentsOf(groups.get(op.structureId));
+  if (!positionAssignments) return { error: `setParticipantResults: no group ${op.structureId}` };
+  writeAssignmentResults({ positionAssignments, participantResults: op.participantResults });
+  return {};
+}
+
+function foldStamp(
+  op: OpOf<'stampUpdatedAt'>,
+  { matchUps, structures }: DrawIndex,
+  drawDefinition: DrawDefinition,
+  stampedBefore?: Set<string>,
+): Folded {
+  if (op.entity === 'drawDefinition') {
+    if (op.id !== drawDefinition.drawId) return { error: `stampUpdatedAt: not this draw ${op.id}` };
+    stamp(drawDefinition as Stamped, `drawDefinition:${op.id}`, stampedBefore);
+    return {};
+  }
+  const target = op.entity === 'matchUp' ? matchUps.get(op.id) : structures.get(op.id);
+  if (!target) return { error: `stampUpdatedAt: no ${op.entity} ${op.id}` };
+  stamp(target as Stamped, `${op.entity}:${op.id}`, stampedBefore);
+  return {};
+}
+
 /**
  * Fold `ops`, in order, into `drawDefinition`: the live stored draw, or a stored-shape copy of it. Ids resolve against
  * the draw given, never against a hydrated copy. An op naming something the draw does not hold is a planner defect,
  * returned rather than ignored, so a shadow apply cannot pass by writing nothing.
  */
-export function applyOutcomeOps(
-  drawDefinition: DrawDefinition,
-  ops: OutcomeOp[],
-  stampedBefore?: Set<string>,
-): { error?: string } {
-  const { matchUps, structureOf, structures, groups } = indexDraw(drawDefinition);
+export function applyOutcomeOps(drawDefinition: DrawDefinition, ops: OutcomeOp[], stampedBefore?: Set<string>): Folded {
+  const index = indexDraw(drawDefinition);
   for (const op of ops) {
-    if (op.op === 'setMatchUpResult' || op.op === 'setMatchUpDrawPositions') {
-      const matchUp = matchUps.get(op.matchUpId);
-      if (!matchUp) return { error: `${op.op}: no matchUp ${op.matchUpId}` };
-      if (op.op === 'setMatchUpResult') setMatchUpResult(matchUp, op);
-      // through the one writer, which normalises the positions and re-keys a side's facts if an occupant changes side
-      else
-        setMatchUpDrawPositions({
-          structureId: structureOf.get(op.matchUpId),
-          drawPositions: op.drawPositions,
-          drawDefinition,
-          matchUp,
-        });
-    } else if (op.op === 'assignPosition') {
-      const assignment = positionAssignmentsOf(structures.get(op.structureId))?.find(
-        (candidate) => candidate.drawPosition === op.drawPosition,
-      );
-      if (!assignment) return { error: `assignPosition: no drawPosition ${op.drawPosition} in ${op.structureId}` };
-      assignment.participantId = op.participantId;
-    } else if (op.op === 'setParticipantResults') {
-      const positionAssignments = positionAssignmentsOf(groups.get(op.structureId));
-      if (!positionAssignments) return { error: `setParticipantResults: no group ${op.structureId}` };
-      writeAssignmentResults({ positionAssignments, participantResults: op.participantResults });
-    } else if (op.entity === 'drawDefinition') {
-      if (op.id !== drawDefinition.drawId) return { error: `stampUpdatedAt: not this draw ${op.id}` };
-      stamp(drawDefinition as Stamped, `drawDefinition:${op.id}`, stampedBefore);
-    } else {
-      const target = op.entity === 'matchUp' ? matchUps.get(op.id) : structures.get(op.id);
-      if (!target) return { error: `stampUpdatedAt: no ${op.entity} ${op.id}` };
-      stamp(target as Stamped, `${op.entity}:${op.id}`, stampedBefore);
-    }
+    const folded = foldOne(op, index, drawDefinition, stampedBefore);
+    if (folded.error) return folded;
   }
   return {};
+}
+
+function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition, stampedBefore?: Set<string>): Folded {
+  switch (op.op) {
+    case 'setMatchUpResult':
+    case 'setMatchUpDrawPositions':
+      return foldMatchUpWrite(op, index, drawDefinition);
+    case 'assignPosition':
+      return foldAssignPosition(op, index);
+    case 'assignBye':
+      return foldAssignBye(op, index);
+    case 'setMatchUpBye':
+      return foldSetMatchUpBye(op, index);
+    case 'setParticipantResults':
+      return foldParticipantResults(op, index);
+    default:
+      return foldStamp(op, index, drawDefinition, stampedBefore);
+  }
 }

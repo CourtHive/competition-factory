@@ -7,9 +7,14 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { setClock } from '@Tools/clock';
 
 // constants
-import { DOUBLE_ELIMINATION, ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import {
+  DOUBLE_ELIMINATION,
+  FIRST_MATCH_LOSER_CONSOLATION,
+  ROUND_ROBIN,
+  SINGLE_ELIMINATION,
+} from '@Constants/drawDefinitionConstants';
 import {
   MODIFY_DRAW_DEFINITION,
   MODIFY_MATCHUP,
@@ -101,6 +106,16 @@ const SCENARIOS: [string, Scenario][] = [
   ],
 ];
 
+// both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
+// consolation and the seat they would have taken is reserved with a BYE as the second winner arrives
+const FMLC_RESERVATION: Scenario = {
+  drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+  steps: [
+    { target: R1(1, 'Main'), outcome: won(1) },
+    { target: R1(2, 'Main'), outcome: won(2) },
+  ],
+};
+
 function findTarget(target: Target): string {
   const matchUps = tournamentEngine.allDrawMatchUps({ drawId: 'd', inContext: true }).matchUps;
   const candidates = matchUps.filter(
@@ -156,6 +171,23 @@ describe('under v2, the first direction is v2s, and leaves exactly what v1 leave
     expect(v1.v1Writes).toEqual(scenario.steps.length);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
 
+    expect(v2.v1Writes).toEqual(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+  });
+});
+
+describe('under v2, a FIRST_MATCHUP reservation is v2s', () => {
+  it('FIRST_MATCH_LOSER_CONSOLATION: the second winner into Main round 2 reserves its loser seat with a BYE', () => {
+    const v1 = play(OUTCOME_PIPELINE_V1, FMLC_RESERVATION);
+    // CONTROL: v1 reserved the seat, so the scenario exercises the reservation
+    const reserved = JSON.parse(v1.record)
+      .events[0].drawDefinitions[0].structures.find((structure: any) => structure.structureName === 'Consolation')
+      .positionAssignments.filter((assignment: any) => assignment.bye && assignment.byeFromPropagation);
+    expect(reserved.length).toEqual(1);
+
+    const v2 = play(OUTCOME_PIPELINE_V2, FMLC_RESERVATION);
     expect(v2.v1Writes).toEqual(0);
     expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);

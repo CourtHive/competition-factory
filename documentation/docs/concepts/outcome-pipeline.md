@@ -494,7 +494,16 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   `context` (`ownedDirectionWrites.test.ts`). Under `v2` the mutations suite has about 10,000 calls
   v2 writes as a direction. A **final** is owned the same way: a winner with no next matchUp and no
   winner link out of the structure (a qualifying final places its winner in the main draw, and stays
-  v1's), whose loser, if a link takes them, arrives as a plain placement.
+  v1's), whose loser, if a link takes them, arrives as a plain placement. A **`FIRST_MATCHUP`
+  reservation** the winner's arrival makes is owned with it: when the next matchUp then holds two
+  positions, no BYE and no result, and every first-round matchUp feeding it has a scored win (this
+  call's among them), its loser will have won and may not enter the consolation, so the seat the
+  link feeds is a BYE (marked `byeFromPropagation`) and its matchUp a BYE, as v1's
+  `propagateConsolationBye` writes them, with v1's notices (`modifyPositionAssignments` for the
+  consolation, its matchUp's `modifyMatchUp` named `setMatchUpStatusBye`). A seat already a BYE needs
+  nothing. A reservation that would meet somebody (the consolation matchUp's other seat held, or
+  this call's own loser placed in it), a seat holding a participant or provenance, a stale
+  reservation to withdraw, and a BYE-only target beside a playoff link stay v1's.
 - **`differential`**: v2 plans the whole call before v1 runs, then checks v1's result against it,
   and a disagreement throws `OutcomePipelineDivergence` naming the matchUp and both answers. The
   plan covers the refusal, the route, the write on the matchUp, the winner's direction, the
@@ -563,6 +572,8 @@ says and what lands are one thing. The reducer decides nothing and refuses nothi
 | `setMatchUpResult`        | the matchUp's status, winner, score (as the call gave it, or blanked), a new format, status codes, and `schedule.scoredTime` by v1's rule: captured the first time the matchUp is scored, kept on corrections, removed with the score |
 | `setMatchUpDrawPositions` | the positions placed in a matchUp, as v1 stores them: numbers, ascending (a winner's position joining the next matchUp)                                                                                                               |
 | `assignPosition`          | a participant on a structure's stored assignment for a drawPosition (a loser fed across a link)                                                                                                                                       |
+| `assignBye`               | a BYE on a structure's stored assignment for a drawPosition, marked `byeFromPropagation` (a `FIRST_MATCHUP` reservation)                                                                                                              |
+| `setMatchUpBye`           | the reserved seat's matchUp a BYE, its score and winner removed (v1's `setMatchUpStatusBYE`)                                                                                                                                          |
 | `setParticipantResults`   | a round robin group's tallies on its position assignments, after the call (`writeAssignmentResults`, v1's own writer); the tally stamps every top-level structure, as v1's does                                                       |
 | `stampUpdatedAt`          | one `updatedAt` per touched entity per call (F2 (i)): the call's captured instant, or the previous stamp + 1 ms when that is already as late                                                                                          |
 
