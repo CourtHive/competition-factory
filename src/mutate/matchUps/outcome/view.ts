@@ -1,6 +1,7 @@
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
 import { isValidMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
+import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -585,6 +586,62 @@ function firstMatchReservations({
 }
 
 /**
+ * AN AD HOC STRUCTURE'S TALLY, as v1's `updateTallyIfNeeded` takes it: every matchUp of the structure, under the call's format,
+ * the matchUp's, the structure's, the draw's or the event's, and assignments rebuilt as one per participant the matchUps
+ * hold, in the order they appear. A dual or a line is not tallied here.
+ */
+function adHocGroup({
+  inContextDrawMatchUps,
+  inContextMatchUp,
+  drawDefinition,
+  matchUp,
+  args,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  inContextMatchUp?: HydratedMatchUp;
+  drawDefinition: DrawDefinition;
+  args: BuildViewArgs;
+  matchUp: MatchUp;
+}): OutcomeView['group'] {
+  const structureId = inContextMatchUp?.structureId;
+  if (!structureId || matchUp.collectionId || matchUp.tieMatchUps) return undefined;
+  const { structure } = findStructure({ drawDefinition, structureId });
+  if (!structure || !isAdHoc({ structure })) return undefined;
+  const { tournamentRecord, event, request } = args;
+  const { policyDefinitions } = getPolicyDefinitions({
+    policyTypes: [POLICY_TYPE_ROUND_ROBIN_TALLY],
+    tournamentRecord,
+    drawDefinition,
+    event,
+  });
+  // in the structure's stored order, as v1 reads them (`getAllStructureMatchUps`). One round only: across rounds (a
+  // Swiss), v1 rebuilds the assignments from round 2's pairings alone (measured, `swissIntegration`), which is not
+  // modelled here, so a multi-round structure's tally stays v1's
+  const byId = new Map(inContextDrawMatchUps.map((candidate) => [candidate.matchUpId, candidate]));
+  const matchUps = (matchUpsOf(structure) ?? [])
+    .map((stored) => byId.get(stored.matchUpId))
+    .filter((candidate): candidate is HydratedMatchUp => !!candidate);
+  if (new Set(matchUps.map((candidate) => candidate.roundNumber)).size > 1) return undefined;
+  const participantIds = [
+    ...new Set(matchUps.flatMap((candidate) => (candidate.sides ?? []).map((side) => side.participantId))),
+  ].filter((participantId): participantId is string => !!participantId);
+  return {
+    containerStructureId: structureId,
+    structureId,
+    matchUps,
+    positionAssignments: participantIds.map((participantId) => ({ participantId }) as PositionAssignment),
+    matchUpFormat:
+      request.matchUpFormat ??
+      matchUp.matchUpFormat ??
+      structure.matchUpFormat ??
+      drawDefinition.matchUpFormat ??
+      event?.matchUpFormat,
+    policyDefinitions,
+    adHoc: true,
+  };
+}
+
+/**
  * A round robin group's tally inputs, as v1's `updateTallyIfNeeded` reads them (`modifyMatchUpScore.ts`): the group's
  * matchUps (the index's entries; the planner substitutes the call's own result), its position assignments, the format
  * v1 resolves (the call's, the matchUp's own, the container's, the draw's, the event's) and the round robin tally policy
@@ -969,7 +1026,9 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         targetData?.targetMatchUps?.winnerMatchUp?.matchUpId,
       ),
     },
-    group: roundRobinGroup({ inContextDrawMatchUps, inContextMatchUp, drawDefinition, matchUp, args }),
+    group:
+      roundRobinGroup({ inContextDrawMatchUps, inContextMatchUp, drawDefinition, matchUp, args }) ??
+      adHocGroup({ inContextDrawMatchUps, inContextMatchUp, drawDefinition, matchUp, args }),
     draw: {
       // v1's `updateTallyIfNeeded`, on the structure it reads: the container a round-robin group sits in
       tallied:
@@ -981,6 +1040,9 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       // v1 writes a draw's missing edges before deciding (`ensureGoesTo`): edge repair is S2's `setEdges`
       storesEdges: !goesTo,
       isAdHoc: !!isAdHoc({ structure }),
+      perMatchUpCompetition:
+        getCompetitionPolicy({ tournamentRecord, drawDefinition, event }).competitionPolicy?.processingGranularity ===
+        'PER_MATCHUP',
       teamRoundRobin: !!(matchUp.tieMatchUps && !matchUp.roundPosition && inContextMatchUp?.containerStructureId),
       includesBye: !!matchUp.drawPositions?.some((position) =>
         allAssignments.some((assignment) => assignment.bye && assignment.drawPosition === position),

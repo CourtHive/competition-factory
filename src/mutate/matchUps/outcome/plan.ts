@@ -48,7 +48,8 @@ export type AbstainReason =
   | 'edges' // the draw stores no edges, which v1 writes first (`ensureGoesTo`): S2's setEdges
   | 'clock' // no captured instant (a call outside the engine): the timestamps a write takes cannot be reproduced
   | 'settle' // a settle pass has work on the working view (S2's has-work predicates, `settleWork.ts`)
-  | 'write-mode'; // LEGACY or BRIDGE: v1 writes `scoredTime` as a timeItem there, which the reducer does not (F6)
+  | 'write-mode' // LEGACY or BRIDGE: v1 writes `scoredTime` as a timeItem there, which the reducer does not (F6)
+  | 'competition'; // a per-matchUp competition policy: v1 processes ratings on a result (`processCompetitionMatchUp`)
 
 /** which of the allowlist's shapes a complete plan is: `local` (the matchUp's own result) or the first `direction` */
 export type PlanShape = 'local' | 'direction';
@@ -137,6 +138,9 @@ function directionReason(args: {
   // a final: the winner has nowhere to go (no winner target or winner link, so no winner direction); only a loser
   // link may take the loser
   const final = !targets.winner && !targets.winnerLink && !!direction && !direction.winner;
+  // an ad hoc matchUp directs nothing: its winner goes nowhere and it has no loser link (planDirection plans none)
+  if (view.draw.isAdHoc && view.group?.adHoc && !direction && !targets.winner && !targets.loserMatchUpId)
+    return undefined;
   if (!direction?.winner && !final) return 'route';
   const loserReason = plainLoserReason(view, direction);
   if (loserReason) return loserReason;
@@ -190,7 +194,14 @@ function groupTally(
   const participantResults = (result as { participantResults?: Record<string, TallyResult> } | undefined)
     ?.participantResults;
   return [
-    { op: 'setParticipantResults', structureId: group.structureId, participantResults: participantResults ?? {} },
+    {
+      op: 'setParticipantResults',
+      structureId: group.structureId,
+      participantResults: participantResults ?? {},
+      ...(group.adHoc
+        ? { participantIds: group.positionAssignments.map(({ participantId }) => participantId as string) }
+        : {}),
+    },
   ];
 }
 
@@ -209,6 +220,7 @@ function abstainReason(args: {
   if (request.carries?.schedule) return 'schedule';
   if (request.carries?.notes) return 'notes';
   if (request.matchUpStatusCodes?.length) return 'status-codes';
+  if (view.draw.perMatchUpCompetition && (request.winningSide || write?.winningSide)) return 'competition';
   if (isAnyExit(request.matchUpStatus) || isAnyExit(view.existing.matchUpStatus) || isAnyExit(write?.matchUpStatus))
     return 'exit';
   if (view.existing.winningSide) return 'winner';
