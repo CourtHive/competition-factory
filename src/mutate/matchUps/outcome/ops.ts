@@ -12,6 +12,7 @@ import type {
   MatchUp,
   MatchUpStatusCodeElement,
   MatchUpStatusUnion,
+  PositionAssignment,
   Score,
   Structure,
   TallyResult,
@@ -74,10 +75,15 @@ export type OutcomeOp =
     }
   | {
       op: 'setParticipantResults';
-      /** a round robin's group: its position assignments take the tallies (`writeAssignmentResults`, v1's writer) */
+      /** a round robin's group or an ad hoc structure: its assignments take the tallies (`writeAssignmentResults`) */
       structureId: string;
       /** each participant's tally after the call, as `tallyParticipantResults` gives it */
       participantResults: { [participantId: string]: TallyResult };
+      /**
+       * an ad hoc structure's assignments, rebuilt first as v1's `updateTallyIfNeeded` rebuilds them: one per
+       * participant its matchUps hold, in the order they appear, holding nothing else
+       */
+      participantIds?: string[];
     }
   | { op: 'stampUpdatedAt'; entity: 'matchUp' | 'structure' | 'drawDefinition'; id: string };
 
@@ -233,8 +239,13 @@ function foldSetMatchUpBye(op: OpOf<'setMatchUpBye'>, { matchUps }: DrawIndex): 
   return {};
 }
 
-function foldParticipantResults(op: OpOf<'setParticipantResults'>, { groups }: DrawIndex): Folded {
-  const positionAssignments = positionAssignmentsOf(groups.get(op.structureId));
+function foldParticipantResults(op: OpOf<'setParticipantResults'>, { groups, structures }: DrawIndex): Folded {
+  const structure = groups.get(op.structureId) ?? structures.get(op.structureId);
+  if (structure && op.participantIds)
+    Object.assign(structure, {
+      positionAssignments: op.participantIds.map((participantId) => ({ participantId }) as PositionAssignment),
+    });
+  const positionAssignments = positionAssignmentsOf(structure);
   if (!positionAssignments) return { error: `setParticipantResults: no group ${op.structureId}` };
   writeAssignmentResults({ positionAssignments, participantResults: op.participantResults });
   return {};

@@ -11,6 +11,7 @@ import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipe
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { WALKOVER } from '@Constants/matchUpStatusConstants';
 import {
+  AD_HOC,
   DOUBLE_ELIMINATION,
   FIRST_MATCH_LOSER_CONSOLATION,
   ROUND_ROBIN,
@@ -158,6 +159,16 @@ const SCENARIOS: [string, Scenario][] = [
         { target: R1(2, 'Main'), outcome: won(1) },
       ],
       steps: [{ target: R1(1, 'Consolation'), outcome: won(1) }],
+    },
+  ],
+  [
+    'AD_HOC: two results in a one-round structure, each re-tallying it (assignments rebuilt from its matchUps)',
+    {
+      drawProfile: { drawSize: 8, drawType: AD_HOC, roundsCount: 1, automated: true },
+      steps: [
+        { target: { roundNumber: 1, nth: 0 }, outcome: won(1) },
+        { target: { roundNumber: 1, nth: 1 }, outcome: won(2) },
+      ],
     },
   ],
   [
