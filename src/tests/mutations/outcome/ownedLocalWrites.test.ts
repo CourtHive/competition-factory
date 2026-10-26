@@ -7,9 +7,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { setClock } from '@Tools/clock';
 
 // constants
+import { IN_PROGRESS, SUSPENDED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 import { BRIDGE, NATIVE, type SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
-import { IN_PROGRESS, SUSPENDED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import {
   MODIFY_DRAW_DEFINITION,
@@ -137,9 +137,9 @@ describe('under v2, a local write is v2s, and leaves exactly what v1 leaves', ()
 });
 
 describe('what v2 does not own goes to v1, whole', () => {
-  it('a result naming a winner (a direction): v1 writes it', () => {
-    const won = generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 1 }).outcome;
-    const v2 = play(OUTCOME_PIPELINE_V2, [() => ({ outcome: won })]);
+  it('an exit (a walkover): v1 writes it (exits are S5; a plain direction is v2s since S3, ownedDirectionWrites)', () => {
+    const walkover = { matchUpStatus: WALKOVER, winningSide: 1 };
+    const v2 = play(OUTCOME_PIPELINE_V2, [() => ({ outcome: walkover })]);
     expect(v2.results[0]).toMatchObject({ success: true });
     expect(v2.v1Writes).toEqual(1);
   });
