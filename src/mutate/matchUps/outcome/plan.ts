@@ -97,10 +97,14 @@ function directionReason(args: {
   const { view, route, write, direction } = args;
   const { targets } = view;
   if (route !== 'winner' || !write || write.matchUpStatus !== COMPLETED || !write.winningSide) return 'route';
-  if (!direction?.winner) return 'route';
+  // a final: the winner has nowhere to go (no winner target or winner link, so no winner direction); only a loser
+  // link may take the loser
+  const final = !targets.winner && !targets.winnerLink && !!direction && !direction.winner;
+  if (!direction?.winner && !final) return 'route';
   const loserReason = plainLoserReason(view, direction);
   if (loserReason) return loserReason;
   if (direction.decider || direction.produced || direction.converged) return 'route';
+  if (final) return undefined;
   const target = targets.winner;
   if (!target || target.structureId !== targets.source.structureId) return 'link';
   if (view.draw.firstMatchFeed) return 'cascade';

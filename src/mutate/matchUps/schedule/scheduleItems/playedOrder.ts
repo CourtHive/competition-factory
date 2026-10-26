@@ -108,6 +108,9 @@ export type DrawPlayedOrderFacts = { [matchUpId: string]: StoredPlayedOrderFacts
  * judge any number of placements without the draw. Undefined when nobody has played in the draw: it imposes nothing.
  */
 export function drawPlayedOrderFacts(drawDefinition: DrawDefinition): DrawPlayedOrderFacts | undefined {
+  // read from the stored matchUps first: a draw nobody has played in imposes nothing, and building the draw's matchUps
+  // to find that out, on every write of a scheduler's run, was most of a direct run's cost on a large draw
+  if (!storedMatchUpPlayed(drawDefinition)) return undefined;
   const rawMatchUps: MatchUp[] = allDrawMatchUps({ drawDefinition, inContext: false }).matchUps ?? [];
   if (!rawMatchUps.some(wasPlayed)) return undefined;
   const facts: DrawPlayedOrderFacts = {};
@@ -120,6 +123,16 @@ export function drawPlayedOrderFacts(drawDefinition: DrawDefinition): DrawPlayed
     };
   }
   return facts;
+}
+
+type StoredStructure = { matchUps?: MatchUp[]; structures?: StoredStructure[] };
+
+/** whether any matchUp the draw stores was played: every structure's, a round robin's groups' and every tie matchUp */
+function storedMatchUpPlayed(drawDefinition: DrawDefinition): boolean {
+  const played = (matchUp: MatchUp): boolean => wasPlayed(matchUp) || !!matchUp.tieMatchUps?.some(played);
+  const inStructure = (structure: StoredStructure): boolean =>
+    !!structure.matchUps?.some(played) || !!structure.structures?.some(inStructure);
+  return (drawDefinition.structures ?? []).some((structure) => inStructure(structure as StoredStructure));
 }
 
 const placementOf = ({ scheduledDate, scheduledTime }: Placement): Placement => ({ scheduledDate, scheduledTime });

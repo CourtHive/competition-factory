@@ -342,6 +342,9 @@ export function addMatchUpContext({
     }),
     ...sourceMatchUp,
   };
+  // a line of a BYE dual is a BYE: the dual carries the BYE, the line is stored TO_BE_PLAYED, and the stored status
+  // must not win here as every other stored attribute does (CA 2026-10-26, hydration OPEN-1)
+  if (isCollectionBye) matchUpWithContext.matchUpStatus = BYE;
 
   if (matchUpFormat && matchUp.score?.scoreStringSide1) {
     annotateScoreSets(matchUpWithContext, matchUpFormat);
