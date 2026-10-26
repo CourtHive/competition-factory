@@ -42,7 +42,7 @@ import {
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
-import type { BuildViewArgs, OutcomeRequest, OutcomeView, Reservation } from './types';
+import type { BuildViewArgs, OutcomeRequest, OutcomeView, Reservation, ThroughBye } from './types';
 import { BYE, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCHUP, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import type { MatchUpsMap } from '@Types/factoryTypes';
@@ -312,21 +312,22 @@ function winnerTarget(
 }
 
 /**
- * THE MATCHUP A LOSER PLACED OPPOSITE A BYE GOES ON INTO, as v1 sends them (`advanceIntoWinnerMatchUp`): their position joins
+ * THE MATCHUP A PARTICIPANT PLACED OPPOSITE A BYE GOES ON INTO (a loser fed onto the seat, or a winner into a BYE-held
+ * target), as v1 sends them (`advanceIntoWinnerMatchUp`): their position joins
  * the BYE matchUp's winner matchUp in the same structure. Planned only for a clean arrival there: the next matchUp is
  * `TO_BE_PLAYED`, holds no BYE, exit, carry, provenance or result, has no earlier advance of the BYE's position to
  * replace, and does not then feed a FIRST_MATCHUP reservation. Undefined otherwise (a cascade v1 runs).
  */
-function loserThroughBye(
-  loserMatchUp: HydratedMatchUp | undefined,
+function throughBye(
+  byeMatchUp: HydratedMatchUp | undefined,
   drawPosition: number | undefined,
   draw: DrawContext,
-): OutcomeView['targets']['loserThroughBye'] {
-  if (!loserMatchUp || !drawPosition || loserMatchUp.matchUpStatus !== BYE) return undefined;
-  const { targetMatchUps, targetLinks } = positionTargets({ ...draw, matchUpId: loserMatchUp.matchUpId }) ?? {};
+): ThroughBye | undefined {
+  if (!byeMatchUp || !drawPosition || byeMatchUp.matchUpStatus !== BYE) return undefined;
+  const { targetMatchUps, targetLinks } = positionTargets({ ...draw, matchUpId: byeMatchUp.matchUpId }) ?? {};
   const next = targetMatchUps?.winnerMatchUp;
-  if (!next || targetLinks?.winnerTargetLink || next.structureId !== loserMatchUp.structureId) return undefined;
-  const target = winnerTarget(next, loserMatchUp.matchUpId, draw);
+  if (!next || targetLinks?.winnerTargetLink || next.structureId !== byeMatchUp.structureId) return undefined;
+  const target = winnerTarget(next, byeMatchUp.matchUpId, draw);
   if (
     !target ||
     target.matchUpStatus !== TO_BE_PLAYED ||
@@ -339,7 +340,7 @@ function loserThroughBye(
     return undefined;
   // the loser's own position may stand there already, advanced structurally while their seat was empty: they occupy
   // it, and v1 announces the matchUp. The BYE's position standing there is an earlier advance v1 replaces: not planned
-  const byePositions = (loserMatchUp.drawPositions ?? []).filter((position) => position && position !== drawPosition);
+  const byePositions = (byeMatchUp.drawPositions ?? []).filter((position) => position && position !== drawPosition);
   if (target.drawPositions.some((position) => byePositions.includes(position))) return undefined;
   const drawPositions = [...new Set([...target.drawPositions, drawPosition])].sort((a, b) => a - b);
   if (drawPositions.length > 2) return undefined;
@@ -348,6 +349,11 @@ function loserThroughBye(
     if (onward?.linkCondition === FIRST_MATCHUP) return undefined;
   }
   return { matchUpId: next.matchUpId, drawPositions };
+}
+
+/** the drawPosition a side of the matchUp holds */
+function sideDrawPosition(matchUp: HydratedMatchUp | undefined, sideNumber: 1 | 2): number | undefined {
+  return matchUp?.sides?.find((side) => side.sideNumber === sideNumber)?.drawPosition;
 }
 
 /** the stored assignment a loser link feeds: free (no participant, no BYE), or what holds it */
@@ -916,7 +922,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         targetData?.targetMatchUps?.loserTargetDrawPosition,
         targetData?.targetMatchUps?.loserMatchUp?.drawPositions,
       ),
-      loserThroughBye: loserThroughBye(
+      loserThroughBye: throughBye(
         targetData?.targetMatchUps?.loserMatchUp,
         targetData?.targetMatchUps?.loserTargetDrawPosition,
         draw,
@@ -927,6 +933,10 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       loserMatchUpStatus: targetData?.targetMatchUps?.loserMatchUp?.matchUpStatus,
       loserMatchUpHasResult: hasResult(targetData?.targetMatchUps?.loserMatchUp),
       winner: winnerTarget(targetData?.targetMatchUps?.winnerMatchUp, request.matchUpId, draw),
+      winnerThroughBye: {
+        1: throughBye(targetData?.targetMatchUps?.winnerMatchUp, sideDrawPosition(inContextMatchUp, 1), draw),
+        2: throughBye(targetData?.targetMatchUps?.winnerMatchUp, sideDrawPosition(inContextMatchUp, 2), draw),
+      },
       reservations: firstMatchReservations({
         winnerMatchUp: targetData?.targetMatchUps?.winnerMatchUp,
         positionBySide: {

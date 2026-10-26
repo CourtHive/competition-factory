@@ -169,7 +169,9 @@ export type OutcomeView = {
       opponentHeld: boolean;
     };
     /** a loser placed opposite a BYE goes on into this matchUp, holding these drawPositions after (planned, S3) */
-    loserThroughBye?: { matchUpId: string; drawPositions: number[] };
+    loserThroughBye?: ThroughBye;
+    /** a winner whose target holds a BYE goes on past it into this matchUp, by the winning side (planned, S3) */
+    winnerThroughBye?: { 1?: ThroughBye; 2?: ThroughBye };
     /** the participants seeded in the source structure: a seeded loser placed across a link takes the seed with them */
     seededParticipantIds?: string[];
     /** the loserMatchUp's status before this call: an exit already there converges with the carried one */
@@ -336,3 +338,6 @@ export type Reservation =
       /** the consolation matchUp's drawPositions: a loser this call places among them meets the BYE (a cascade) */
       drawPositions: number[];
     };
+
+/** the matchUp a participant placed opposite a BYE goes on into, and its drawPositions once they are there */
+export type ThroughBye = { matchUpId: string; drawPositions: number[] };
