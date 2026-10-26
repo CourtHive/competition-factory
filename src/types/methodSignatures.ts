@@ -520,6 +520,7 @@ import type { resetScorecard } from '@Mutate/matchUps/resetScorecard';
 import type { addVenueOtherId } from '@Mutate/venues/addVenueOtherId';
 import type { getFlightProfile } from '@Query/event/getFlightProfile';
 import type { getScaledEntries } from '@Query/event/getScaledEntries';
+import type { getMatchUpUpset } from '@Query/matchUp/getMatchUpUpset';
 import type { eventMatchUps } from '@Query/matchUps/getEventMatchUps';
 import type { getRounds } from '@Query/matchUps/scheduling/getRounds';
 import type { getDrawData } from '@Query/drawDefinition/getDrawData';
@@ -1025,6 +1026,7 @@ export interface MethodSignatures {
   getMatchUpsStats: EngineMethod<typeof getMatchUpsStats>;
   getMatchUpsToSchedule: EngineMethod<typeof getMatchUpsToSchedule>;
   getMatchUpType: EngineMethod<typeof getMatchUpType>;
+  getMatchUpUpset: EngineMethod<typeof getMatchUpUpset>;
   getMaxEntryPosition: EngineMethod<typeof getMaxEntryPosition>;
   getMaxSetScore: EngineMethod<typeof getMaxSetScore>;
   getModifiedMatchUpFormatTiming: EngineMethod<typeof getModifiedMatchUpFormatTiming>;

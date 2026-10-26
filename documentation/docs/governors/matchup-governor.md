@@ -622,6 +622,36 @@ const { schedule } = engine.getMatchUpScheduleDetails({
 
 **8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getMatchUpType`](/docs/implementation/records/getMatchUpType). Package-export status is a separate decision.
 
+## getMatchUpUpset
+
+Whether a matchUp's result was an upset: the side that lost was the stronger on the chosen basis.
+
+```js
+const { isUpset, basis, winningSide, winnerValue, loserValue, info } = engine.getMatchUpUpset({
+  matchUp, // required: a matchUp object, e.g. from allTournamentMatchUps({ inContext: true })
+  scaleType, // optional: 'SEEDING' (default), 'RANKING' or 'RATING'
+  scaleName, // required for RANKING and RATING, e.g. 'WTN'
+  scaleAccessor, // optional: overrides the scale's declared value accessor
+  ascending, // optional: a RATING scale's direction, for a scale ratingsParameters does not know
+  singlesForDoubles, // optional: rate a doubles matchUp by its players' SINGLES values
+});
+```
+
+- **Only a fully scored result can be an upset**: `COMPLETED`, with a `winningSide` and a score whose every set is
+  finished and legal under the matchUp's `matchUpFormat` (the same completeness rule the score-entry dialog applies).
+  A retirement, walkover or default answers `isUpset: false` with `info: 'not a fully scored result'`.
+- **SEEDING**: the loser was seeded and the winner was unseeded or a lower seed (a higher number). `~` is
+  unseeded; a seed block such as `5-8` counts as its first seed.
+- **RANKING**: a lower ranking position is stronger. Both sides need a value on `scaleName`.
+- **RATING**: the direction is the scale's own, from `ratingsParameters` (lower WTN is stronger; higher UTR, ELO,
+  DUPR are). Values may be stored as strings. A pair is rated by its players' mean. Both sides need a value; a
+  scale of unknown direction is an error unless `ascending` is given.
+
+Ratings and rankings are read from the hydrated participants (`participant.ratings` / `participant.rankings` by
+matchUpType), as `getEventData` and `allTournamentMatchUps({ inContext: true })` provide them.
+
+---
+
 ## getMatchUpsStats
 
 Returns statistics for a collection of matchUps.
