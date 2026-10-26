@@ -372,7 +372,12 @@ function removesDirection(view: OutcomeView, route: Route | undefined, write: Ma
 }
 
 /** a cleared result's winner taken back out of the next matchUp, whose positions v1's writer then normalises */
-function removedOps(view: OutcomeView, route: Route | undefined, write: MatchUpWrite): OutcomeOp[] {
+function removedOps(
+  view: OutcomeView,
+  route: Route | undefined,
+  write: MatchUpWrite,
+  matchUpStatus?: MatchUpStatusUnion,
+): OutcomeOp[] {
   const { targets, existing } = view;
   const position = existing.winningSide ? targets.sideDrawPositions[existing.winningSide as 1 | 2] : undefined;
   if (!removesDirection(view, route, write) || !position || !targets.winner || !targets.winnerMatchUpId) return [];
@@ -385,26 +390,28 @@ function removedOps(view: OutcomeView, route: Route | undefined, write: MatchUpW
       removedDrawPosition: position,
     },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: targets.winnerMatchUpId },
-    ...removedLoserOps(view),
+    ...removedLoserOps(view, matchUpStatus),
   ];
 }
 
 /**
- * the loser's seat across the link emptied, and their matchUp's codes re-derived (`[]`) where it stored none. Only that
- * write announces the matchUp (v1's `removeDirectedLoser`), and its notice stamps the matchUp's structure, so the structure
- * is stamped with it and not otherwise
+ * the loser's seat across the link emptied, and their matchUp's codes re-derived (`[]`) where it stored none. v1's
+ * `removeDirectedLoser` re-derives them only when the call names a status (its `sourceMatchUpStatus`): a clear that names
+ * none leaves them as they are. Only that write announces the matchUp, and its notice stamps the matchUp's structure, so
+ * the structure is stamped with it and not otherwise
  */
-function removedLoserOps(view: OutcomeView): OutcomeOp[] {
+function removedLoserOps(view: OutcomeView, matchUpStatus?: MatchUpStatusUnion): OutcomeOp[] {
   const { loserMatchUpId, loserStructureId, loserTargetDrawPosition, loserMatchUpRecord } = view.targets;
   const participantId = storedLoserId(view);
   if (!loserMatchUpId || !loserStructureId || !loserTargetDrawPosition || !participantId) return [];
-  const codes: OutcomeOp[] = loserMatchUpRecord?.matchUpStatusCodes
-    ? []
-    : [
-        { op: 'setMatchUpStatusCodes', matchUpId: loserMatchUpId, matchUpStatusCodes: [] },
-        { op: 'stampUpdatedAt', entity: 'matchUp', id: loserMatchUpId },
-        { op: 'stampUpdatedAt', entity: 'structure', id: loserStructureId },
-      ];
+  const codes: OutcomeOp[] =
+    !matchUpStatus || loserMatchUpRecord?.matchUpStatusCodes
+      ? []
+      : [
+          { op: 'setMatchUpStatusCodes', matchUpId: loserMatchUpId, matchUpStatusCodes: [] },
+          { op: 'stampUpdatedAt', entity: 'matchUp', id: loserMatchUpId },
+          { op: 'stampUpdatedAt', entity: 'structure', id: loserStructureId },
+        ];
   return [
     { op: 'clearPosition', structureId: loserStructureId, drawPosition: loserTargetDrawPosition, participantId },
     ...codes,
@@ -485,7 +492,7 @@ export function planOutcome(args: {
       { op: 'stampUpdatedAt', entity: 'matchUp', id: winner.matchUpId },
     );
   }
-  ops.push(...removedOps(view, args.route, write));
+  ops.push(...removedOps(view, args.route, write, request.matchUpStatus));
   // a plain loser arrival: the loser on the seat the link feeds. The matchUp they land in is not stamped: its stored
   // object does not change (the write is on the structure's assignments), so it is not a touched entity (F2 (i), and v1).
   // The structure whose assignments change is stamped below (v1's `modifyPositionAssignmentsNotice`).

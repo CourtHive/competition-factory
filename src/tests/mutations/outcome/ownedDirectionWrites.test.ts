@@ -251,6 +251,14 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'DOUBLE_ELIMINATION (S4): a result cleared with no status named leaves the Backdraw matchUp its codes',
+    {
+      drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
+      setup: [{ target: R1(1, 'Main'), outcome: won(1) }],
+      steps: [{ target: R1(1, 'Main'), outcome: { score: { scoreStringSide1: '', scoreStringSide2: '' } } }],
+    },
+  ],
+  [
     'FEED_IN_CHAMPIONSHIP (S4): a cleared result takes its loser back out of the consolation',
     {
       drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },

@@ -72,6 +72,56 @@ it('writes nothing to the record', () => {
   expect(JSON.stringify(tournamentEngine.getTournament().tournamentRecord)).toEqual(before);
 });
 
+// each op that writes, folded alone: with no stamp beside it to copy what it names, the overlay must still copy it
+it.each([
+  [
+    'clearPosition',
+    (f: any): OutcomeOp => ({
+      op: 'clearPosition',
+      structureId: f.first.structureId,
+      drawPosition: f.winnerPosition,
+      participantId: f.participantId,
+    }),
+  ],
+  [
+    'assignPosition',
+    (f: any): OutcomeOp => ({
+      op: 'assignPosition',
+      structureId: f.first.structureId,
+      drawPosition: f.winnerPosition,
+      participantId: 'someone-else',
+    }),
+  ],
+  [
+    'assignBye',
+    (f: any): OutcomeOp => ({
+      op: 'assignBye',
+      structureId: f.first.structureId,
+      drawPosition: f.winnerPosition,
+      byeFromPropagation: true,
+    }),
+  ],
+  ['setMatchUpBye', (f: any): OutcomeOp => ({ op: 'setMatchUpBye', matchUpId: f.first.matchUpId })],
+  [
+    'setMatchUpStatusCodes',
+    (f: any): OutcomeOp => ({ op: 'setMatchUpStatusCodes', matchUpId: f.first.matchUpId, matchUpStatusCodes: [] }),
+  ],
+  [
+    'setMatchUpDrawPositions',
+    (f: any): OutcomeOp => ({
+      op: 'setMatchUpDrawPositions',
+      matchUpId: f.next.matchUpId,
+      drawPositions: [f.winnerPosition],
+    }),
+  ],
+])('writes nothing to the record for %s folded with no stamp beside it', (_name, opOf) => {
+  const fixture = firstRoundWin();
+  const participantId = fixture.first.sides.find((side: any) => side.sideNumber === 1).participantId;
+  const before = JSON.stringify(fixture.tournamentRecord);
+  expect(fixture.working.apply([opOf({ ...fixture, participantId })]).error).toBeUndefined();
+  expect(JSON.stringify(fixture.tournamentRecord)).toEqual(before);
+});
+
 it('keeps its work local: the matchUps written, not the draw', () => {
   const { working, ops, inContextDrawMatchUps } = firstRoundWin();
   working.apply(ops);
