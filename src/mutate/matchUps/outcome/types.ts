@@ -140,6 +140,8 @@ export type OutcomeView = {
     luckyPreFeed: boolean;
     sideParticipantIds: { 1?: string; 2?: string };
     sideDrawPositions: { 1?: number; 2?: number };
+    /** a winner link leaves the structure from this round (a qualifying final's winner is placed in the main draw) */
+    winnerLink?: boolean;
     /** the loser link, when there is one: its condition and the round it feeds */
     loserLink?: { linkCondition?: string; targetRoundNumber?: number };
     /** the loserMatchUp's round in its own structure (an FMLC feed lands in round 2) */

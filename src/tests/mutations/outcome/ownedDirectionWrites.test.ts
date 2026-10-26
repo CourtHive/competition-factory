@@ -74,6 +74,17 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'SINGLE_ELIMINATION: the final, after both semifinals (nothing is directed)',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      steps: [
+        { target: R1(1), outcome: won(1) },
+        { target: R1(2), outcome: won(2) },
+        { target: { roundNumber: 2, roundPosition: 1 }, outcome: won(1) },
+      ],
+    },
+  ],
+  [
     'DOUBLE_ELIMINATION: a Main first-round result sends the winner on and the loser into the Backdraw',
     { drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION }, steps: [{ target: R1(1, 'Main'), outcome: won(1) }] },
   ],
