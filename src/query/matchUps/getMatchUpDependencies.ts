@@ -32,6 +32,8 @@ type GetMatchUpDependenciesArgs = {
    * hydration of the competition
    */
   coversAllDraws?: boolean;
+  /** the competition's matchUps, as the scheduling projection gives them: position links read them, not a hydration */
+  competitionMatchUps?: HydratedMatchUp[];
 };
 
 export function getMatchUpDependencies(params: GetMatchUpDependenciesArgs): {
@@ -87,7 +89,9 @@ export function getMatchUpDependencies(params: GetMatchUpDependenciesArgs): {
   let matchUps: HydratedMatchUp[] | undefined = targetMatchUps;
 
   if (positionLinks.length) {
-    if (!params.coversAllDraws) matchUps = allCompetitionMatchUps({ nextMatchUps: true, tournamentRecords }).matchUps;
+    if (!params.coversAllDraws)
+      matchUps =
+        params.competitionMatchUps ?? allCompetitionMatchUps({ nextMatchUps: true, tournamentRecords }).matchUps;
 
     buildPositionDependencies({
       positionLinks,
