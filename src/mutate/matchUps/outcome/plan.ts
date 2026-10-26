@@ -74,6 +74,7 @@ function plainLoserReason(view: OutcomeView, direction: DirectionPlan): AbstainR
   const { targets } = view;
   const loser = direction.loser;
   if (!loser && !targets.loserMatchUpId) return undefined;
+  if (loser?.bye && !loser.arrives) return keptOutReason(view, loser.bye);
   if (!loser?.arrives || loser.exit || loser.converged || loser.carriedPast || loser.bye || loser.withdrawn)
     return 'loser';
   if (targets.byeTarget) return 'loser';
@@ -81,6 +82,25 @@ function plainLoserReason(view: OutcomeView, direction: DirectionPlan): AbstainR
   // v1's `propagateLoserSeed` writes a seeded loser's seed into the structure they are placed in: not an op yet
   if (loser.participantId && targets.seededParticipantIds?.includes(loser.participantId)) return 'loser';
   if (targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit || targets.loserTargetSeat.opponentBye)
+    return 'cascade';
+  return undefined;
+}
+
+/**
+ * A loser an FMLC feed keeps out (they have won before) leaves a BYE on the seat they would have taken, as v1's
+ * `directLoser` places it. Planned on the seat the link feeds when it is already that BYE (a reservation placed it) or is
+ * free in a matchUp nobody else is in and that holds no result or exit; anything else is v1's.
+ */
+function keptOutReason(
+  view: OutcomeView,
+  bye: { structureId: string; drawPosition: number },
+): AbstainReason | undefined {
+  const { targets } = view;
+  const seat = targets.loserTargetSeat;
+  if (targets.loserStructureId !== bye.structureId || targets.loserTargetDrawPosition !== bye.drawPosition || !seat)
+    return 'loser';
+  if (seat.bye) return undefined;
+  if (!seat.free || seat.opponentHeld || targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit)
     return 'cascade';
   return undefined;
 }
@@ -197,6 +217,23 @@ function abstainReason(args: {
   return undefined;
 }
 
+/** a seat filled with a propagated BYE and its matchUp a BYE (`assignDrawPositionBye`), the matchUp stamped */
+function seatBye(seat: { structureId: string; drawPosition: number; matchUpId: string }): OutcomeOp[] {
+  return [
+    { op: 'assignBye', structureId: seat.structureId, drawPosition: seat.drawPosition, byeFromPropagation: true },
+    { op: 'setMatchUpBye', matchUpId: seat.matchUpId },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: seat.matchUpId },
+  ];
+}
+
+/** each structure other than the call's whose assignments the ops change, stamped once (F2 (i)) */
+function structureStamps(ops: OutcomeOp[], structureId: string): OutcomeOp[] {
+  const seatedIn = ops.flatMap((op) =>
+    (op.op === 'assignPosition' || op.op === 'assignBye') && op.structureId !== structureId ? [op.structureId] : [],
+  );
+  return [...new Set(seatedIn)].map((id) => ({ op: 'stampUpdatedAt', entity: 'structure', id }));
+}
+
 /**
  * The ops of a complete plan for `request`, or the reason there is none. `write` and `direction` are what `planWrite`
  * and `planDirection` already decided; this re-states a complete one as ops and adds the stamps (F2 (i): the matchUp,
@@ -255,9 +292,9 @@ export function planOutcome(args: {
   }
   // a plain loser arrival: the loser on the seat the link feeds. The matchUp they land in is not stamped: its stored
   // object does not change (the write is on the structure's assignments), so it is not a touched entity (F2 (i), and v1).
-  // The structure whose assignments change is, so it is stamped (v1's `modifyPositionAssignmentsNotice`).
+  // The structure whose assignments change is stamped below (v1's `modifyPositionAssignmentsNotice`).
   const loser = args.direction?.loser;
-  const { loserStructureId, loserTargetDrawPosition } = view.targets;
+  const { loserStructureId, loserTargetDrawPosition, loserMatchUpId } = view.targets;
   const arrival: OutcomeOp[] =
     loser?.arrives && loserStructureId && loserTargetDrawPosition
       ? [
@@ -267,30 +304,15 @@ export function planOutcome(args: {
             drawPosition: loserTargetDrawPosition,
             participantId: loser.participantId,
           },
-          ...(loserStructureId === structureId
-            ? []
-            : [{ op: 'stampUpdatedAt', entity: 'structure', id: loserStructureId } as const]),
         ]
       : [];
-  // the FIRST_MATCHUP reservation the winner's arrival makes (v1's `propagateConsolationBye`): the seat a BYE, its matchUp
-  // a BYE, both stamped; the consolation structure is stamped below with the arrival's, or here
+  // a kept-out loser's BYE on the seat the link feeds (v1's `directLoser`), unless a reservation placed it already
+  const keptOut = loser?.bye && !loser.arrives && !view.targets.loserTargetSeat?.bye ? loser.bye : undefined;
+  const keptOutBye = keptOut && loserMatchUpId ? seatBye({ ...keptOut, matchUpId: loserMatchUpId }) : [];
+  // the FIRST_MATCHUP reservation the winner's arrival makes (v1's `propagateConsolationBye`)
   const reservation = write.winningSide ? view.targets.reservations?.[write.winningSide as 1 | 2] : undefined;
-  const reserved: OutcomeOp[] =
-    reservation?.kind === 'reserve'
-      ? [
-          {
-            op: 'assignBye',
-            structureId: reservation.structureId,
-            drawPosition: reservation.drawPosition,
-            byeFromPropagation: true,
-          },
-          { op: 'setMatchUpBye', matchUpId: reservation.matchUpId },
-          { op: 'stampUpdatedAt', entity: 'matchUp', id: reservation.matchUpId },
-          ...(reservation.structureId === structureId || reservation.structureId === loserStructureId
-            ? []
-            : [{ op: 'stampUpdatedAt', entity: 'structure', id: reservation.structureId } as const]),
-        ]
-      : [];
+  const reserved = reservation?.kind === 'reserve' ? seatBye(reservation) : [];
+  const seated = [...arrival, ...keptOutBye, ...reserved];
   const tally = view.group
     ? groupTally(view.group, { matchUpId, matchUpWrite: write, score, matchUpFormat: request.matchUpFormat })
     : [];
@@ -304,8 +326,8 @@ export function planOutcome(args: {
         .map((id) => ({ op: 'stampUpdatedAt', entity: 'structure', id }))
     : [];
   ops.push(
-    ...arrival,
-    ...reserved,
+    ...seated,
+    ...structureStamps(seated, structureId),
     ...tally,
     // the top-level structure: a round robin group's container, as v1 stamps it
     { op: 'stampUpdatedAt', entity: 'structure', id: view.group?.containerStructureId ?? structureId },

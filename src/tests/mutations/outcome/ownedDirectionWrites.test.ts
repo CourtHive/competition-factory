@@ -9,6 +9,7 @@ import { setClock } from '@Tools/clock';
 // constants
 import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import { WALKOVER } from '@Constants/matchUpStatusConstants';
 import {
   DOUBLE_ELIMINATION,
   FIRST_MATCH_LOSER_CONSOLATION,
@@ -52,6 +53,8 @@ afterEach(() => {
 
 const TOPICS = [MODIFY_MATCHUP, MODIFY_DRAW_DEFINITION, MODIFY_POSITION_ASSIGNMENTS, UPDATE_INCONTEXT_MATCHUP];
 const won = (winningSide: 1 | 2) => generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide }).outcome;
+const walkover = (winningSide: 1 | 2) =>
+  generateOutcomeFromScoreString({ matchUpStatus: WALKOVER, winningSide }).outcome;
 
 // a round robin's matchUps have no roundPosition: `nth` picks the nth of the round in the structure instead
 type Target = { structureName?: string; roundNumber: number; roundPosition?: number; nth?: number };
@@ -113,6 +116,29 @@ const SCENARIOS: [string, Scenario][] = [
         { target: R1(4, 'Main'), outcome: won(1) },
         { target: { structureName: 'Main', roundNumber: 2, roundPosition: 1 }, outcome: won(2) },
       ],
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION: a round 2 loser who has won is kept out, and a BYE takes their seat',
+    {
+      // the R2 loser won R1 (round position 2); no reservation stands, as R1 position 1 was a walkover, not a scored win
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [
+        { target: R1(1, 'Main'), outcome: walkover(1) },
+        { target: R1(2, 'Main'), outcome: won(1) },
+      ],
+      steps: [{ target: { structureName: 'Main', roundNumber: 2, roundPosition: 1 }, outcome: won(1) }],
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION: a round 2 loser who has won is kept out of a seat already reserved',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [
+        { target: R1(1, 'Main'), outcome: won(1) },
+        { target: R1(2, 'Main'), outcome: won(1) },
+      ],
+      steps: [{ target: { structureName: 'Main', roundNumber: 2, roundPosition: 1 }, outcome: won(2) }],
     },
   ],
   [

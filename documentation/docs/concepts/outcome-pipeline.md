@@ -490,7 +490,10 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   into the next matchUp of the same structure (holding no BYE, exit or result) and whose loser, if
   a link takes them, arrives on a free seat carrying nothing and not opposite a BYE, with no settle
   work after; an FMLC loser fed into the consolation's round 2 included (the seat `positionTargets`
-  reports is the one `directLoser` takes). A seeded loser stays v1's: v1 carries the seed into the
+  reports is the one `directLoser` takes). A loser that feed keeps out (they have won before) is
+  owned too: their seat takes a propagated BYE and its matchUp becomes a BYE, as `directLoser` places
+  it, or nothing is written when a reservation made the seat a BYE already; a BYE that would meet
+  somebody in the other seat stays v1's. A seeded loser stays v1's: v1 carries the seed into the
   structure they are placed in (`propagateLoserSeed`), which is not yet an op. It writes
   v1's notices for it (the next matchUp's `modifyMatchUp` named `assignMatchUpDrawPosition`, a
   `modifyPositionAssignments` for the structure the loser is placed in) and returns v1's direction
