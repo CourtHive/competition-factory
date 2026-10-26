@@ -1,12 +1,14 @@
 import {
   getTournamentId,
   getTournamentRecords,
+  hasTopic,
   restoreMutationStatus,
   setFactoryBackend,
   setTournamentId,
   setTournamentRecords,
 } from '@Global/state/globalState';
 import { errorConditionConstants } from '@Constants/errorConditionConstants';
+import { topicConstants } from '@Constants/topicConstants';
 import { randomSource, setRandomSource } from '@Tools/prng';
 import { afterAll, beforeEach, expect } from 'vitest';
 import { canonicalHash, canonicalObject } from './corpus/hash';
@@ -90,6 +92,8 @@ if (mode) {
       activeTournamentId: getTournamentId(),
       clock: new Date(timeStamp).toISOString(),
       seed: typeof source.state === 'function' ? source.state() : undefined,
+      // a method announces to a subscribed topic instead of writing (an audit, for one)
+      topics: Object.values(topicConstants).filter((topic) => hasTopic(topic)),
     };
     lastRequest = request;
     const answer = bridge.call(request);
