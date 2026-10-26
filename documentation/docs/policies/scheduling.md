@@ -115,6 +115,11 @@ The **Scheduling Policy** (`POLICY_TYPE_SCHEDULING`) controls scheduling behavio
 }
 ```
 
+**Which category a matchUp is timed by.** The `categoryTypes` above are matched against the event's timing
+category type: a stated `category.categoryType` (or `subType`) wins; otherwise an `ageCategoryCode` of 18 or under
+(`U14`, `16U`) reads as `JUNIOR`. Every timing lookup asks it, so an under-age event with no stated type takes the
+`JUNIOR` average, recovery and overnight times (since 7.23.0).
+
 ---
 
 ## Basic Examples
