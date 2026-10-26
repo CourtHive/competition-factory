@@ -8,9 +8,9 @@
  * each side needs to win the current game", which a port may compute however it likes. The adapter owns the
  * translation (positional helpers, parsed shapes, transport), never the expected result.
  */
-import { planningViewFromData, requiredPlanningViewKeys } from '@Mutate/matchUps/schedule/pipeline/viewCodec';
 import { dayMinutesToTimeString, extractTime, tidyTime, timeStringMinutes } from '@Tools/plainTime';
 import { addMinutesWithinDay } from '@Mutate/matchUps/schedule/scheduleMatchUps/timeWithinDay';
+import { buildSchedulingView } from '@Mutate/matchUps/schedule/pipeline/view';
 import { addMinutesToDateTime, endOnTheDay } from '@Tools/civilDateTime';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { planSchedule } from '@Mutate/matchUps/schedule/pipeline/plan';
@@ -22,6 +22,12 @@ import { addMinutesToTimeString } from '@Tools/dateTime';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { extractDate, sameDay } from '@Tools/plainDate';
 import { normativePlan } from './normativePlan';
+import { VIEW_OPTIONS } from './viewOptions';
+import {
+  planningViewData,
+  planningViewFromData,
+  requiredPlanningViewKeys,
+} from '@Mutate/matchUps/schedule/pipeline/viewCodec';
 
 // constants
 import { IN_PROGRESS } from '@Constants/matchUpStatusConstants';
@@ -120,6 +126,35 @@ function validatePlanInput(input: Record<string, unknown>) {
     if (!PLAN_OPTIONS[key](value)) return `option ${key} has the wrong type`;
   }
   return undefined;
+}
+
+function validateViewInput(input: Record<string, unknown>) {
+  const records = input.tournamentRecords;
+  const isRecord = (record: any) => !!record && typeof record === 'object' && typeof record.tournamentId === 'string';
+  if (!Array.isArray(records) || !records.every(isRecord))
+    return 'tournamentRecords must be an array of records, each with a tournamentId';
+  const options = (input.options ?? {}) as Record<string, unknown>;
+  if (typeof options !== 'object' || Array.isArray(options)) return 'options must be an object';
+  for (const [key, value] of Object.entries(options)) {
+    if (!Object.hasOwn(VIEW_OPTIONS, key)) return `unknown option ${key}`;
+    if (!VIEW_OPTIONS[key](value)) return `option ${key} has the wrong type`;
+  }
+  return undefined;
+}
+
+/**
+ * a scheduling call's view, as the plan reads it: the records' matchUps hydrated, the graph, the profile's rounds. The
+ * records arrive as an array, in the order the call holds them (what is hydrated first is planned first), since the
+ * order of an object's keys is not something every language's JSON keeps.
+ */
+function schedulingView(input: Record<string, unknown>): KernelResult {
+  const options = (input.options ?? {}) as Record<string, any>;
+  const tournamentRecords = Object.fromEntries(
+    (input.tournamentRecords as any[]).map((record) => [record.tournamentId, record]),
+  );
+  const view = buildSchedulingView({ ...options, tournamentRecords });
+  if ('error' in view) return { kind: 'error', code: view.error.code };
+  return { kind: 'value', value: overTheWire(planningViewData(view)) };
 }
 
 /** the clock's primitives (scheduling-pipeline.md § 3.8): a string in, a time, a number or a date out */
@@ -232,6 +267,13 @@ export const kernelOperations: Readonly<Record<string, KernelOperation>> = Objec
       const plan = planSchedule({ ...options, view: planningViewFromData(input.view as Record<string, unknown>) });
       return { kind: 'value', value: normativePlan(plan) };
     },
+  },
+  // the planning view a profile call decides from (scheduling-pipeline.md § 1 and § 3; hydration.md): from the records
+  // and the call's view options, the view as `viewCodec.ts` writes it, or the refusal that stops the call
+  'kernel.scheduling.view@1': {
+    capability: 'scheduling',
+    validate: validateViewInput,
+    run: schedulingView,
   },
   'kernel.format.parse@1': {
     capability: 'grammar',
