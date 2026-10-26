@@ -222,7 +222,8 @@ Rules decided 2026-10-25 (debate-ruled, CA-reviewed):
    the event's timing, else the default policy's average (90). It never takes the minutes of the round being placed.
    Recovery holds participants (§ 3.4), never the court.
 2. **A BYE holds nothing.** A BYE is never played: whatever schedule it carries, it holds no court, adds nothing to a
-   participant's day (§ 3.5) and raises no not-before time.
+   participant's day (§ 3.5) and raises no not-before time. The lines of a TEAM dual that is a BYE are BYEs too, and no
+   scheduler places them (since 7.23.0; a placement already made is not touched).
 3. **No venue.** A timed matchUp with no venue is at the tournament's only venue with courts on the date, when there is
    exactly one; otherwise it holds no court. Its participants are held either way.
 4. **A venue but no court.** A timed matchUp at a venue with no court holds one court of that venue for its minutes:
