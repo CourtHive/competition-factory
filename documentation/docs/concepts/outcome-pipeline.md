@@ -538,6 +538,14 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   when the stored result is a played `COMPLETED` one, the winner stands in a clean next matchUp of
   the same structure (or the matchUp is a final), and the loser, if a link takes them, holds the seat
   it feeds in a matchUp with no result or exit; a draw with `FIRST_MATCHUP` reservations stays v1's.
+  A **changed winner** while nothing downstream is active (the `winner` route, the other side) is v1's
+  removal and then a first direction (`removeDirectedParticipants`, then `directParticipants`), and is owned
+  where both halves are clean: what the old result directed is taken back as a clear would take it, and the
+  new winner goes into the same next matchUp (one write: the old winner's position out, with that matchUp's
+  score, and the new one in), and the new loser onto the seat the old one leaves, carrying nothing and not
+  seeded. The old loser's matchUp is announced first, as v1 announces it, then the result and the
+  placements. A loser's matchUp has its codes re-derived only when the call names a status, as v1's
+  `removeDirectedLoser` re-derives them (its `sourceMatchUpStatus`), for a clear and a changed winner alike.
 - **`differential`**: v2 plans the whole call before v1 runs, then checks v1's result against it,
   and a disagreement throws `OutcomePipelineDivergence` naming the matchUp and both answers. The
   plan covers the refusal, the route, the write on the matchUp, the winner's direction, the
@@ -604,7 +612,7 @@ says and what lands are one thing. The reducer decides nothing and refuses nothi
 | op                        | what it writes                                                                                                                                                                                                                                                                                                                                   |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `setMatchUpResult`        | the matchUp's status, winner, score (as the call gave it, or blanked), a new format, status codes, and `schedule.scoredTime` by v1's rule: captured the first time the matchUp is scored, kept on corrections, removed with the score                                                                                                            |
-| `setMatchUpDrawPositions` | the positions placed in a matchUp, as v1 stores them: numbers, ascending (a winner's position joining the next matchUp, or taken back out of it: `removedDrawPosition`, whose result goes with the participant, as `removeSubsequentRoundsParticipant` takes it)                                                                                 |
+| `setMatchUpDrawPositions` | the positions placed in a matchUp, as v1 stores them: numbers, ascending (a winner's position joining the next matchUp, or taken back out of it: `removedDrawPosition`, whose result goes with the participant, as `removeSubsequentRoundsParticipant` takes it; with `placedDrawPosition` too when one write replaces a changed winner)         |
 | `assignPosition`          | a participant on a structure's stored assignment for a drawPosition (a loser fed across a link)                                                                                                                                                                                                                                                  |
 | `clearPosition`           | a structure's stored assignment for a drawPosition emptied, and the participant's seed entry there removed (a loser taken back out of the structure a link placed them in)                                                                                                                                                                       |
 | `setMatchUpStatusCodes`   | a matchUp's status codes, re-derived from its provenance (the matchUp a loser is taken back out of)                                                                                                                                                                                                                                              |

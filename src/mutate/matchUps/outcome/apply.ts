@@ -64,10 +64,14 @@ export function applyOwnedPlan({
   const byes = new Set(ops.flatMap((op) => (op.op === 'setMatchUpBye' ? [op.matchUpId] : [])));
   // a loser taken back out: their matchUp's codes re-derived, announced as v1's `removeDirectedLoser` announces it
   const recoded = new Set(ops.flatMap((op) => (op.op === 'setMatchUpStatusCodes' ? [op.matchUpId] : [])));
-  // a position taken back out of a later round: v1's `removeSubsequentRoundsParticipant` names the position, no event
+  // a position taken back out of a later round: v1's `removeSubsequentRoundsParticipant` names the position, no event.
+  // Not when the same write places one (a changed winner): v1 announces the placement after the removal, and the
+  // notice buffer keeps the later of the two for the matchUp
   const removed = new Map(
     ops.flatMap((op) =>
-      op.op === 'setMatchUpDrawPositions' && op.removedDrawPosition ? [[op.matchUpId, op.removedDrawPosition]] : [],
+      op.op === 'setMatchUpDrawPositions' && op.removedDrawPosition && !op.placedDrawPosition
+        ? [[op.matchUpId, op.removedDrawPosition]]
+        : [],
     ),
   );
   const stored = new Map(args.matchUpsMap?.drawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));

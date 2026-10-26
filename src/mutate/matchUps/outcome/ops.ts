@@ -57,6 +57,8 @@ export type OutcomeOp =
        * too (v1's `removeSubsequentRoundsParticipant`, S4)
        */
       removedDrawPosition?: number;
+      /** the position placed in by the same write, when one is: a changed winner replacing the old one (S4) */
+      placedDrawPosition?: number;
     }
   | {
       op: 'assignPosition';

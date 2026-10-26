@@ -9,7 +9,7 @@ import { setClock } from '@Tools/clock';
 // constants
 import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
-import { TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { COMPLETED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import {
   AD_HOC,
   DOUBLE_ELIMINATION,
@@ -264,6 +264,30 @@ const SCENARIOS: [string, Scenario][] = [
       drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
       setup: [{ target: R1(2, 'Main'), outcome: won(2) }],
       steps: [{ target: R1(2, 'Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION (S4): a changed winner replaces the old one in the next matchUp',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1), outcome: won(1) }],
+      steps: [{ target: R1(1), outcome: won(2) }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION (S4): a changed winner replaces the old one, and the new loser takes the Backdraw seat',
+    {
+      drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
+      setup: [{ target: R1(1, 'Main'), outcome: won(1) }],
+      steps: [{ target: R1(1, 'Main'), outcome: won(2) }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION (S4): a changed winner naming its status re-derives the codes of the Backdraw matchUp',
+    {
+      drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
+      setup: [{ target: R1(1, 'Main'), outcome: won(1) }],
+      steps: [{ target: R1(1, 'Main'), outcome: { ...won(2), matchUpStatus: COMPLETED } }],
     },
   ],
   [
