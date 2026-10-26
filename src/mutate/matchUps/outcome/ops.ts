@@ -52,6 +52,11 @@ export type OutcomeOp =
       matchUpId: string;
       /** the positions placed in the matchUp, as v1 stores them: numbers, ascending */
       drawPositions: number[];
+      /**
+       * the position taken back out, when one is: the result goes with the participant, so the matchUp's score goes
+       * too (v1's `removeSubsequentRoundsParticipant`, S4)
+       */
+      removedDrawPosition?: number;
     }
   | {
       op: 'assignPosition';
@@ -198,13 +203,15 @@ function foldMatchUpWrite(
   if (!matchUp) return { error: `${op.op}: no matchUp ${op.matchUpId}` };
   if (op.op === 'setMatchUpResult') setMatchUpResult(matchUp, op);
   // through the one writer, which normalises the positions and re-keys a side's facts if an occupant changes side
-  else
+  else {
+    if (op.removedDrawPosition) delete matchUp.score;
     setMatchUpDrawPositions({
       structureId: structureOf.get(op.matchUpId),
       drawPositions: op.drawPositions,
       drawDefinition,
       matchUp,
     });
+  }
   return {};
 }
 

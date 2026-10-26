@@ -9,7 +9,7 @@ import { setClock } from '@Tools/clock';
 // constants
 import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
-import { WALKOVER } from '@Constants/matchUpStatusConstants';
+import { TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import {
   AD_HOC,
   DOUBLE_ELIMINATION,
@@ -193,6 +193,19 @@ const SCENARIOS: [string, Scenario][] = [
       ],
       steps: [
         { target: R1(1), outcome: generateOutcomeFromScoreString({ scoreString: '7-5 6-4', winningSide: 1 }).outcome },
+      ],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION (S4): a cleared result takes its winner back out of the next matchUp (remove-directed)',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1), outcome: won(1) }],
+      steps: [
+        {
+          target: R1(1),
+          outcome: { matchUpStatus: TO_BE_PLAYED, score: { scoreStringSide1: '', scoreStringSide2: '' } },
+        },
       ],
     },
   ],

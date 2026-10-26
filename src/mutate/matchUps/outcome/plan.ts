@@ -57,7 +57,8 @@ export type OutcomePlan =
   | { ops: OutcomeOp[]; shape: PlanShape; abstain?: undefined }
   | { abstain: AbstainReason; ops?: undefined; shape?: undefined };
 
-const LOCAL_ROUTES = new Set<Route>(['clear', 'clear-score', 'remove-directed', 'only-score']);
+const REMOVE_DIRECTED: Route = 'remove-directed';
+const LOCAL_ROUTES = new Set<Route>(['clear', 'clear-score', REMOVE_DIRECTED, 'only-score']);
 const LOCAL_STATUSES = new Set<string | undefined>([IN_PROGRESS, SUSPENDED, AWAITING_RESULT, INCOMPLETE, TO_BE_PLAYED]);
 
 function localReason({ route, write }: { route?: Route; write?: MatchUpWrite }): AbstainReason | undefined {
@@ -122,6 +123,25 @@ function reservationReason(view: OutcomeView, winningSide: 1 | 2): boolean {
     (reservation.drawPositions.includes(loserTargetDrawPosition) ||
       loserTargetDrawPosition === reservation.drawPosition)
   );
+}
+
+/**
+ * A cleared result's direction taken back, planned only where all it directed is the winner's position in a clean next
+ * matchUp of the same structure: no loser link, nothing across a link, no FIRST_MATCHUP reservation the draw may hold,
+ * and the next matchUp `TO_BE_PLAYED` with no BYE, exit, carry or result. Anything else is v1's (S4).
+ */
+function removalReason(view: OutcomeView, direction?: DirectionPlan): AbstainReason | undefined {
+  const { targets, existing } = view;
+  if (direction || targets.loserMatchUpId || targets.loserLink) return 'loser';
+  if (targets.reservations) return 'cascade';
+  const target = targets.winner;
+  if (!target) return targets.winnerLink ? 'link' : undefined;
+  if (target.structureId !== targets.source.structureId) return 'link';
+  if (target.hasBye || target.carriesExit || target.carriedStatuses.length || target.holdsResult) return 'cascade';
+  if (target.matchUpStatus !== TO_BE_PLAYED) return 'route';
+  const position = targets.sideDrawPositions[existing.winningSide as 1 | 2];
+  if (!position || !target.drawPositions.includes(position)) return 'route';
+  return undefined;
 }
 
 /** the values written beneath an active downstream: a played result, nothing directed */
@@ -241,7 +261,12 @@ function abstainReason(args: {
   // S4: a score changed beneath an active downstream keeps its winner and re-directs nothing (`apply-values`)
   const sameWinner =
     args.route === 'apply-values' && !!write?.winningSide && write.winningSide === view.existing.winningSide;
-  if (view.existing.winningSide && !sameWinner) return 'winner';
+  // S4: a decided result cleared while its downstream is untouched takes back what it directed (`remove-directed`)
+  const removing = args.route === REMOVE_DIRECTED && !!view.existing.winningSide && !write?.winningSide;
+  if (removing) {
+    const removal = removalReason(view, direction);
+    if (removal) return removal;
+  } else if (view.existing.winningSide && !sameWinner) return 'winner';
   const directing = !sameWinner && !!(request.winningSide || write?.winningSide || direction);
   let shape: AbstainReason | undefined;
   if (sameWinner) shape = applyValuesReason(args);
@@ -251,6 +276,28 @@ function abstainReason(args: {
   // a round robin group's tally is planned (`setParticipantResults`, S3); an ad hoc, lucky or TEAM tally is not yet
   if (view.draw.tallied && !view.group) return 'tallied';
   return undefined;
+}
+
+/** a cleared result taking back a winner it stored (S4) */
+function removesDirection(view: OutcomeView, route: Route | undefined, write: MatchUpWrite): boolean {
+  return route === REMOVE_DIRECTED && !!view.existing.winningSide && !write.winningSide;
+}
+
+/** a cleared result's winner taken back out of the next matchUp, whose positions v1's writer then normalises */
+function removedOps(view: OutcomeView, route: Route | undefined, write: MatchUpWrite): OutcomeOp[] {
+  const { targets, existing } = view;
+  const position = existing.winningSide ? targets.sideDrawPositions[existing.winningSide as 1 | 2] : undefined;
+  if (!removesDirection(view, route, write) || !position || !targets.winner || !targets.winnerMatchUpId) return [];
+  const drawPositions = targets.winner.drawPositions.filter((candidate) => candidate !== position);
+  return [
+    {
+      op: 'setMatchUpDrawPositions',
+      matchUpId: targets.winnerMatchUpId,
+      drawPositions,
+      removedDrawPosition: position,
+    },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: targets.winnerMatchUpId },
+  ];
 }
 
 /** a seat filled with a propagated BYE and its matchUp a BYE (`assignDrawPositionBye`), the matchUp stamped */
@@ -326,6 +373,7 @@ export function planOutcome(args: {
       { op: 'stampUpdatedAt', entity: 'matchUp', id: winner.matchUpId },
     );
   }
+  ops.push(...removedOps(view, args.route, write));
   // a plain loser arrival: the loser on the seat the link feeds. The matchUp they land in is not stamped: its stored
   // object does not change (the write is on the structure's assignments), so it is not a touched entity (F2 (i), and v1).
   // The structure whose assignments change is stamped below (v1's `modifyPositionAssignmentsNotice`).
