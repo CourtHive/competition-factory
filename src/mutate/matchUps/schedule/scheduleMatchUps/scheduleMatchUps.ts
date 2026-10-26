@@ -10,6 +10,7 @@ import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { resolveScheduleMatchUpsTiming } from './resolveScheduleMatchUpsTiming';
 import { getParticipantReachability } from './getParticipantReachability';
 import { checkDependenciesScheduled } from './checkDependenciesScheduled';
+import { hasByeSide } from '@Mutate/matchUps/schedule/byeScheduling';
 import { modifyParticipantDayMatchUps } from './participantDayLoad';
 import { updateTimeAfterRecovery } from './updateTimeAfterRecovery';
 import { calculateScheduleTimes } from './calculateScheduleTimes';
@@ -199,7 +200,8 @@ export function scheduleMatchUps(params) {
     const alreadyScheduled = dateScheduledMatchUpIds?.includes(matchUp.matchUpId);
 
     const doNotSchedule = [BYE, DEFAULTED, COMPLETED, ABANDONED, RETIRED, WALKOVER].includes(matchUp?.matchUpStatus);
-    return !alreadyScheduled && !matchUp.winningSide && !doNotSchedule;
+    // a line of a BYE dual is stored TO_BE_PLAYED but has a BYE side: it will never be played
+    return !alreadyScheduled && !matchUp.winningSide && !doNotSchedule && !hasByeSide(matchUp);
   });
 
   // for optimization, build up an object for each tournament and an array for each draw with target matchUps
