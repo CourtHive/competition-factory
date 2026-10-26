@@ -8,9 +8,11 @@
  * each side needs to win the current game", which a port may compute however it likes. The adapter owns the
  * translation (positional helpers, parsed shapes, transport), never the expected result.
  */
+import { gridViewFromData, requiredGridViewKeys } from '@Mutate/matchUps/schedule/pipeline/gridViewCodec';
 import { dayMinutesToTimeString, extractTime, tidyTime, timeStringMinutes } from '@Tools/plainTime';
 import { addMinutesWithinDay } from '@Mutate/matchUps/schedule/scheduleMatchUps/timeWithinDay';
 import { buildSchedulingView } from '@Mutate/matchUps/schedule/pipeline/view';
+import { planGridDate } from '@Mutate/matchUps/schedule/pipeline/gridPlan';
 import { addMinutesToDateTime, endOnTheDay } from '@Tools/civilDateTime';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { planSchedule } from '@Mutate/matchUps/schedule/pipeline/plan';
@@ -157,6 +159,15 @@ function schedulingView(input: Record<string, unknown>): KernelResult {
   return { kind: 'value', value: overTheWire(planningViewData(view)) };
 }
 
+/** a grid date's plan input: its view, with every member the plan requires */
+function validateGridInput(input: Record<string, unknown>) {
+  const view = input.view as Record<string, unknown> | undefined;
+  if (!view || typeof view !== 'object' || Array.isArray(view)) return 'view must be an object';
+  const missing = requiredGridViewKeys().filter((key) => !Object.hasOwn(view, key));
+  if (missing.length) return `view is missing ${missing.join(', ')}`;
+  return undefined;
+}
+
 /** the clock's primitives (scheduling-pipeline.md § 3.8): a string in, a time, a number or a date out */
 const isText = (input: Record<string, unknown>, key: string) =>
   typeof input[key] === 'string' ? undefined : `${key} must be a string`;
@@ -274,6 +285,16 @@ export const kernelOperations: Readonly<Record<string, KernelOperation>> = Objec
     capability: 'scheduling',
     validate: validateViewInput,
     run: schedulingView,
+  },
+  // the grid pipeline's date plan (scheduling-pipeline.md § 5): from the date's view, the placements (each matchUp and
+  // the cell it takes), what no row took, what is over a daily limit, and the placements warned
+  'kernel.scheduling.grid@1': {
+    capability: 'scheduling',
+    validate: validateGridInput,
+    run: (input) => ({
+      kind: 'value',
+      value: overTheWire(planGridDate(gridViewFromData(input.view as Record<string, unknown>))),
+    }),
   },
   'kernel.format.parse@1': {
     capability: 'grammar',

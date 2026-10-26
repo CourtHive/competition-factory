@@ -312,6 +312,12 @@ groups), skipping BYEs, completed matchUps and matchUps already on a court or a
 court order. The date's grid is its courts by rows; matchUps already timed are walked earliest first, so they land on
 earlier rows.
 
+**Each date is planned from its own view,** read from the records as the dates before it left them, so a placement on
+an earlier date is seen by a later one: the date's grid (its courts by rows, the cells already taken and the free cells
+on the call's courts), the matchUps to place, the dependency graph and the reachability over them and the matchUps
+already on the grid, the courts' closures, and the limits. The date's plan reads nothing else
+(`kernel.scheduling.grid@1`): each placement is a matchUp and the cell it takes (its court, venue and court order).
+
 Row by row, each remaining matchUp is placed on the row's first open court unless:
 
 - a matchUp it depends on, or one that depends on it, is already on the row;
