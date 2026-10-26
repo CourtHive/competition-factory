@@ -11,6 +11,7 @@ import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
 import { findMatchUpFormatTiming } from '@Acquire/findMatchUpFormatTiming';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
+import { hasByeSide } from '@Mutate/matchUps/schedule/byeScheduling';
 import { timingCategoryType } from '@Query/event/timingCategoryType';
 import { extractDate, isValidDateString } from '@Tools/dateTime';
 import { isConvertableInteger, isPowerOf2 } from '@Tools/math';
@@ -21,8 +22,8 @@ import { addDaysToDate } from '@Tools/civilDateTime';
 import { findEvent } from '@Acquire/findEvent';
 
 // constants and types
-import { BYE, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { ErrorType, NO_VALID_DATES } from '@Constants/errorConditionConstants';
+import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { HydratedCourt, HydratedMatchUp } from '@Types/hydrated';
 import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
@@ -244,8 +245,7 @@ export function buildSchedulingView({
   );
   // a completed matchUp is never scheduled again (CA 2026-10-23)
   const schedulable = (matchUp: HydratedMatchUp) =>
-    matchUp.matchUpStatus !== BYE &&
-    (!matchUp.matchUpStatus || !completedMatchUpStatuses.includes(matchUp.matchUpStatus));
+    !hasByeSide(matchUp) && (!matchUp.matchUpStatus || !completedMatchUpStatuses.includes(matchUp.matchUpStatus));
 
   const dates: DatePlan[] = dateProfiles.map((dateProfile) => {
     // a matchUp belongs to the first venue that profiles it on the date

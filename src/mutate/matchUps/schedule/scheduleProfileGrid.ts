@@ -7,11 +7,12 @@ import { getContainedStructures } from '@Query/drawDefinition/getContainedStruct
 import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
+import { hasByeSide } from '@Mutate/matchUps/schedule/byeScheduling';
 import { extractDate, isValidDateString } from '@Tools/dateTime';
 
 // constants and types
 import { ARRAY, OF_TYPE, SCHEDULE_DATES, TOURNAMENT_RECORDS, VALIDATE } from '@Constants/attributeConstants';
-import { BYE, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
+import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { NO_VALID_DATES } from '@Constants/errorConditionConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { TournamentRecords } from '@Types/factoryTypes';
@@ -81,7 +82,7 @@ function findRoundMatchUps(
     : null;
 
   return allMatchUps.filter((m: any) => {
-    if (m.matchUpStatus === BYE) return false;
+    if (hasByeSide(m)) return false;
     // a completed matchUp is never placed (CA 2026-10-23): it needs no court, and would push new placements down
     if (completedMatchUpStatuses.includes(m.matchUpStatus)) return false;
     if (m.schedule?.courtId) return false;

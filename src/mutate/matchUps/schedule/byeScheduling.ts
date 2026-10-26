@@ -57,6 +57,17 @@ export function matchUpWillNeverBePlayed({ matchUp }: { matchUp?: MatchUp }): bo
 }
 
 /**
+ * A matchUp with a BYE for a side, as hydrated: a BYE matchUp, or a line of a TEAM dual that is a BYE. Such a line is
+ * stored `TO_BE_PLAYED` (its dual carries the BYE), but its side takes the team position's BYE, and it will never be
+ * played, so no scheduler places it.
+ */
+export function hasByeSide(matchUp?: { matchUpStatus?: string; sides?: unknown[] }): boolean {
+  // a hydrated side carries `bye` from its position's assignment, though the side type does not declare it
+  const isBye = (side: unknown) => !!side && typeof side === 'object' && (side as { bye?: boolean }).bye === true;
+  return matchUp?.matchUpStatus === BYE || !!matchUp?.sides?.some(isBye);
+}
+
+/**
  * Whether a matchUp currently holds placement or order-of-play information.
  *
  * Used to decide whether assigning a BYE is an unambiguous action. If the matchUp
