@@ -1,6 +1,8 @@
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
+import { fedLoserPlacementRefusal } from '@Mutate/matchUps/drawPositions/reconcileFedLoserEligibility';
 import { isValidMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
+import { relabelledPathFeedRefusal } from '@Mutate/matchUps/drawPositions/relabelledPathFeeds';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
@@ -51,10 +53,12 @@ import type { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
 import type {
   DrawDefinition,
+  DrawLink,
   Event,
   MatchUp,
   MatchUpStatusUnion,
   PositionAssignment,
+  Score,
   SideExitProvenanceEntry,
   Structure,
 } from '@Types/tournamentTypes';
@@ -399,6 +403,66 @@ function swapPath({
     ),
     linkedOut: (drawDefinition.links ?? []).some((link) => link.source?.structureId === structureId),
   };
+}
+
+/**
+ * Whether a swap the call asks for meets an active fed seat across a FIRST_MATCHUP link: v1's two refusals, asked in
+ * v1's order before `swapWinnerLoser` writes anything, read on the view's own base (no hydration). Only asked for a call
+ * that may swap; both return at once unless a FIRST_MATCHUP feed is in reach.
+ */
+function swapMeetsActivePosition({
+  inContextDrawMatchUps,
+  inContextMatchUp,
+  loserTargetLink,
+  drawDefinition,
+  loserMatchUp,
+  structure,
+  matchUp,
+  request,
+  event,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  inContextMatchUp?: HydratedMatchUp;
+  drawDefinition: DrawDefinition;
+  loserTargetLink?: DrawLink;
+  loserMatchUp?: MatchUp;
+  structure?: Structure;
+  request: OutcomeRequest;
+  matchUp: MatchUp;
+  event?: Event;
+}): boolean {
+  const winningSide = matchUp.winningSide;
+  if (!request.flags.allowChangePropagation || !request.winningSide || !winningSide || !structure) return false;
+  if (request.winningSide === winningSide || !inContextMatchUp) return false;
+  const existingWinnerDrawPosition = sideDrawPosition(inContextMatchUp, winningSide as 1 | 2);
+  const existingLoserDrawPosition = sideDrawPosition(inContextMatchUp, (3 - winningSide) as 1 | 2);
+  const flippedRoundNumber = inContextMatchUp.roundNumber;
+  const placement = fedLoserPlacementRefusal({
+    loserTargetLink,
+    loserMatchUp,
+    prospectiveLoserDrawPosition: existingWinnerDrawPosition as number,
+    departingLoserDrawPosition: existingLoserDrawPosition as number,
+    inContextDrawMatchUps,
+    flippedRoundNumber,
+    drawDefinition,
+    structure,
+    event,
+  });
+  if (placement?.error) return true;
+  const pathFeed = relabelledPathFeedRefusal({
+    matchUpStatus: request.matchUpStatus,
+    existingWinnerDrawPosition,
+    existingLoserDrawPosition,
+    inContextDrawMatchUps,
+    score: request.score as Score | undefined,
+    flippedRoundNumber,
+    fromIndex: true,
+    drawDefinition,
+    structure,
+    matchUp,
+    event,
+  });
+  return !!pathFeed?.error;
 }
 
 /**
@@ -1046,6 +1110,17 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     },
     feedEligibilityBlockedBy: feed?.sourceRoundMatchUpId,
     correctionKindBlockedBy: kind?.blockingMatchUpId,
+    swapMeetsActivePosition: swapMeetsActivePosition({
+      loserTargetLink: targetData?.targetLinks?.loserTargetLink,
+      loserMatchUp: targetData?.targetMatchUps?.loserMatchUp,
+      inContextDrawMatchUps,
+      inContextMatchUp,
+      drawDefinition,
+      structure,
+      matchUp,
+      request,
+      event,
+    }),
     line,
     dualProjection,
     targets: {

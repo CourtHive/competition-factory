@@ -123,6 +123,11 @@ export type OutcomeView = {
   feedEligibilityBlockedBy?: string;
   /** § 2 row 22: a result recorded downstream fixes whether this outcome is an exit or a played result (P52) */
   correctionKindBlockedBy?: string;
+  /**
+   * § 2 row 26: a swap over a FIRST_MATCHUP link would have to place a loser on, or take one off, a fed seat that has
+   * played on (v1's `fedLoserPlacementRefusal` and `relabelledPathFeedRefusal`, asked before the swap writes)
+   */
+  swapMeetsActivePosition?: boolean;
   /** a line of a dual: what the dual projects once this line is written */
   line?: {
     dualMatchUpId: string;

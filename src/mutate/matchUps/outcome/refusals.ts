@@ -12,6 +12,7 @@ import {
   CANNOT_CHANGE_FEED_ELIGIBILITY,
   CANNOT_CHANGE_OUTCOME,
   CANNOT_CHANGE_WINNING_SIDE,
+  DRAW_POSITION_ACTIVE,
   INCOMPATIBLE_MATCHUP_STATUS,
   INVALID_MATCHUP_STATUS,
   INVALID_VALUES,
@@ -243,8 +244,15 @@ function refuseDispatch(request: OutcomeRequest, view: OutcomeView): Refusal | u
     : !!line && line.projectedWinningSide !== line.dualWinningSide;
 
   const validSwap = !view.isTeam && !dualWinningSideChange && !!winningSide && !!existing.winningSide;
-  if (flags.allowChangePropagation && validSwap && existing.winningSide !== winningSide && existing.roundPosition)
+  if (flags.allowChangePropagation && validSwap && existing.winningSide !== winningSide && existing.roundPosition) {
+    // row 26: the swap would place a loser on, or take one off, a FIRST_MATCHUP-fed seat that has played on; v1 asks it
+    // before the swap writes anything (`swapWinnerLoser`)
+    if (view.swapMeetsActivePosition)
+      return refuse(26, DRAW_POSITION_ACTIVE, {
+        info: 'the swap would change who holds a FIRST_MATCHUP-fed seat that has played on',
+      });
     return undefined;
+  }
 
   if (line && isDoubleExit(line.dualMatchUpStatus) && view.activeDownstream)
     return refuse(13, CANNOT_CHANGE_OUTCOME, {
