@@ -14,6 +14,7 @@ import {
   AD_HOC,
   DOUBLE_ELIMINATION,
   FIRST_MATCH_LOSER_CONSOLATION,
+  LUCKY_DRAW,
   ROUND_ROBIN,
   SINGLE_ELIMINATION,
 } from '@Constants/drawDefinitionConstants';
@@ -168,6 +169,16 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [
         { target: { roundNumber: 1, nth: 0 }, outcome: won(1) },
         { target: { roundNumber: 1, nth: 1 }, outcome: won(2) },
+      ],
+    },
+  ],
+  [
+    'LUCKY_DRAW: a result in a pre-feed round (an odd round) advances no one',
+    {
+      drawProfile: { drawSize: 6, drawType: LUCKY_DRAW },
+      steps: [
+        { target: R1(1), outcome: won(1) },
+        { target: R1(2), outcome: won(2) },
       ],
     },
   ],

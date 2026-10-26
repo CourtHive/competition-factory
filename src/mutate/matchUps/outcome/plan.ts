@@ -141,6 +141,9 @@ function directionReason(args: {
   // an ad hoc matchUp directs nothing: its winner goes nowhere and it has no loser link (planDirection plans none)
   if (view.draw.isAdHoc && view.group?.adHoc && !direction && !targets.winner && !targets.loserMatchUpId)
     return undefined;
+  // nor does a lucky draw's pre-feed round: v1 advances no one from it (`directParticipants`), the advancement is chosen
+  // later (`luckyDrawAdvancement`)
+  if (targets.luckyPreFeed && !direction && !targets.loserMatchUpId) return undefined;
   if (!direction?.winner && !final) return 'route';
   const loserReason = plainLoserReason(view, direction);
   if (loserReason) return loserReason;

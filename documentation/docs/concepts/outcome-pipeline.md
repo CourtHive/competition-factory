@@ -496,7 +496,9 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   BYE's position to replace, and no FIRST_MATCHUP reservation it would then raise). A winner whose
   next matchUp holds a BYE (a consolation seat a reservation filled) goes on past it the same way,
   under the same conditions. An ad hoc matchUp's winner directs nothing, and its structure's tally is
-  planned when it holds one round (a Swiss's later rounds stay v1's); an FMLC loser fed into the consolation's round 2 included (the seat `positionTargets`
+  planned when it holds one round (a Swiss's later rounds stay v1's). A result in a lucky draw's
+  pre-feed round (a round of odd size) directs nothing either: v1 advances no one from it, the
+  advancement being chosen afterwards (`luckyDrawAdvancement`); an FMLC loser fed into the consolation's round 2 included (the seat `positionTargets`
   reports is the one `directLoser` takes). A loser that feed keeps out (they have won before) is
   owned too: their seat takes a propagated BYE and its matchUp becomes a BYE, as `directLoser` places
   it, or nothing is written when a reservation made the seat a BYE already; a BYE that would meet
