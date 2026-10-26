@@ -1,5 +1,6 @@
 import { getReachableParticipantIds, ParticipantReachability } from './getParticipantReachability';
 import { checkParticipantProfileInitialization } from './checkParticipantProfileInitialization';
+import { transitMinutes, VenueTransit } from '../pipeline/transit';
 import { analyzeScheduleOverlap } from './analyzeScheduleOverlap';
 import { minutesDifference, timeToDate } from '@Tools/dateTime';
 import { addMinutesWithinDay } from './timeWithinDay';
@@ -13,6 +14,9 @@ type CheckRecoveryTimeArgs = {
   matchUp: HydratedMatchUp;
   scheduleTime: string;
   details?: any;
+  /** where the matchUp would be played, and the transit between venues (§ 3.4): absent, no transit applies */
+  transit?: VenueTransit;
+  venueId?: string;
 };
 export function checkRecoveryTime({
   individualParticipantProfiles,
@@ -21,6 +25,8 @@ export function checkRecoveryTime({
   scheduleTime,
   matchUp,
   details,
+  transit,
+  venueId,
 }: CheckRecoveryTimeArgs) {
   const participantIdDependencies = getReachableParticipantIds(reachability, matchUp.matchUpId).near;
 
@@ -34,6 +40,7 @@ export function checkRecoveryTime({
   const afterRecovery = (minutesOfRecovery: number) =>
     addMinutesWithinDay(scheduleTime, averageMatchUpMinutes + minutesOfRecovery);
   const timeAfterRecovery = afterRecovery(recoveryMinutes);
+  const proposedEndTime = afterRecovery(0);
   const typeChangeTimeAfterRecovery = afterRecovery(typeChangeRecoveryMinutes);
 
   // Collect the participantIds whose existing bookings overlap the proposed
@@ -65,7 +72,21 @@ export function checkRecoveryTime({
       };
       const existing = typeChange
         ? { ...booking, timeAfterRecovery: booking.typeChangeTimeAfterRecovery ?? booking.timeAfterRecovery }
-        : booking;
+        : { ...booking };
+      // at another venue each side is held until its play ends plus the transit to the other, when that is the later:
+      // recovery counts toward transit (§ 3.4; CA 2026-10-25)
+      if (booking.venueId && venueId && booking.venueId !== venueId) {
+        const fromBooking = transitMinutes(transit, booking.venueId, venueId);
+        const toBooking = transitMinutes(transit, venueId, booking.venueId);
+        if (fromBooking && booking.endTime) {
+          const arrival = addMinutesWithinDay(booking.endTime, fromBooking);
+          if (arrival > existing.timeAfterRecovery) existing.timeAfterRecovery = arrival;
+        }
+        if (toBooking) {
+          const arrival = addMinutesWithinDay(proposedEndTime, toBooking);
+          if (arrival > proposed.timeAfterRecovery) proposed.timeAfterRecovery = arrival;
+        }
+      }
       return analyzeScheduleOverlap(proposed, existing).hasOverlap;
     });
 

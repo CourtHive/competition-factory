@@ -65,6 +65,7 @@ The **Scheduling Policy** (`POLICY_TYPE_SCHEDULING`) controls scheduling behavio
           TEAM?: number;
         };
       }>;
+      transitMinutes?: number;                    // Between venues with no stated transit (default policy: 30)
     };
 
     // Default daily limits (overridable per participant)
@@ -113,6 +114,11 @@ The **Scheduling Policy** (`POLICY_TYPE_SCHEDULING`) controls scheduling behavio
   }
 }
 ```
+
+**Which category a matchUp is timed by.** The `categoryTypes` above are matched against the event's timing
+category type: a stated `category.categoryType` (or `subType`) wins; otherwise an `ageCategoryCode` of 18 or under
+(`U14`, `16U`) reads as `JUNIOR`. Every timing lookup asks it, so an under-age event with no stated type takes the
+`JUNIOR` average, recovery and overnight times (since 7.23.0).
 
 ---
 
@@ -528,6 +534,12 @@ This is what the [Participant Recovery Time](/docs/governors/report-governor#par
 ---
 
 ## Overnight Recovery
+
+`defaultTimes.transitMinutes` is the time to get between two venues when no transit is stated for the pair (see
+[setVenueTransit](../governors/venue-governor.md#setvenuetransit)). When a participant's consecutive matchUps on a date are
+at different venues, the later may not start before the earlier's play ends plus the greater of its recovery and the
+transit: recovery counts toward transit. Venues sharing a `facilityId` need none; with no policy stating it there is no
+transit. The default scheduling policy states 30.
 
 `defaultTimes.overnightTimes` sets the minimum rest between the **last matchUp of one day and the first of the next**. It differs from `recoveryTimes` in two ways that matter:
 

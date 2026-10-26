@@ -4,6 +4,7 @@ import { normativePlan } from './kernel/normativePlan';
 import { afterAll, beforeAll, expect } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
 import { currentTestSeed } from './seedMathRandom';
+import { viewOptionsOf } from './kernel/viewOptions';
 import { createHash } from 'node:crypto';
 import { relative } from 'node:path';
 
@@ -15,8 +16,10 @@ import { relative } from 'node:path';
  */
 const out = process.env.SCHEDULING_VIEW_ROUND_TRIP;
 /**
- * `SCHEDULING_PLAN_CASES=<file>` also writes every call checked as a `kernel.scheduling.plan@2` case, one JSON line each
- * (`pnpm kernel:harvest-scheduling`): RECORDED cases, which pin this implementation's plans for a second one to meet.
+ * `SCHEDULING_PLAN_CASES=<file>` also writes every call checked as a `kernel.scheduling.plan@2` case and a
+ * `kernel.scheduling.view@1` case (the records the call started from, in), one JSON line each
+ * (`pnpm kernel:harvest-scheduling`): RECORDED cases, which pin this implementation's plans and views for a second one
+ * to meet.
  * They are generated, never committed; the authored cases in `kernel/cases/scheduling.json` are the committed ones.
  */
 const casesOut = process.env.SCHEDULING_PLAN_CASES;
@@ -43,6 +46,7 @@ if (out || casesOut) {
     checking = true;
     try {
       const tournamentRecords = structuredClone(getTournamentRecords() ?? {});
+      const recordsIn = casesOut ? JSON.stringify(Object.values(tournamentRecords)) : '';
       const result = checkViewRoundTrip({ tournamentRecords, params: event.params ?? {} });
       if (!result.planned) return undefined;
       checked += 1;
@@ -50,7 +54,10 @@ if (out || casesOut) {
       const { harvest, ...check } = result;
       if (!check.samePlan || !check.viewUnchanged || check.readsRecords)
         failures.push({ test: currentTestSeed()?.name, ...check });
-      if (casesOut && !mocksThePipeline()) appendFileSync(casesOut, JSON.stringify(recordedCase(harvest)) + '\n');
+      if (casesOut && !mocksThePipeline()) {
+        appendFileSync(casesOut, JSON.stringify(recordedCase(harvest)) + '\n');
+        appendFileSync(casesOut, JSON.stringify(recordedViewCase(recordsIn, event.params ?? {}, harvest.view)) + '\n');
+      }
     } finally {
       checking = false;
     }
@@ -74,6 +81,18 @@ function recordedCase({ view, options, plan }: { view: unknown; options: unknown
     caseId: `scheduling.recorded.${hash}.v1`,
     operation: 'kernel.scheduling.plan@2',
     expected: { kind: 'value', value: normativePlan(plan as SchedulePlan) },
+    input,
+  };
+}
+
+/** the same call's view as a case: the records it started from and its view options in, the view out */
+function recordedViewCase(recordsText: string, params: Record<string, any>, view: unknown) {
+  const input = { tournamentRecords: JSON.parse(recordsText), options: viewOptionsOf(params) };
+  const hash = createHash('sha256').update(canonicalJson(input)).digest('hex').slice(0, 16);
+  return {
+    caseId: `scheduling.view.recorded.${hash}.v1`,
+    operation: 'kernel.scheduling.view@1',
+    expected: { kind: 'value', value: view },
     input,
   };
 }

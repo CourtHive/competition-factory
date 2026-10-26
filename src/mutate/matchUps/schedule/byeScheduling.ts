@@ -4,7 +4,7 @@ import { isExit } from '@Validators/isExit';
 
 // constants and types
 import { BYE } from '@Constants/matchUpStatusConstants';
-import { MatchUp } from '@Types/tournamentTypes';
+import { MatchUp, MatchUpStatusUnion } from '@Types/tournamentTypes';
 import {
   ALLOCATE_COURTS,
   ASSIGN_COURT,
@@ -54,6 +54,17 @@ export function matchUpWillNeverBePlayed({ matchUp }: { matchUp?: MatchUp }): bo
   if (!matchUp) return false;
   if (matchUp.matchUpStatus === BYE) return true;
   return isExit(matchUp.matchUpStatus) && isPropagatedExit({ matchUp });
+}
+
+/**
+ * A matchUp with a BYE for a side, as hydrated: a BYE matchUp, or a line of a TEAM dual that is a BYE. Such a line is
+ * stored `TO_BE_PLAYED` (its dual carries the BYE), but its side takes the team position's BYE, and it will never be
+ * played, so no scheduler places it.
+ */
+export function hasByeSide(matchUp?: { matchUpStatus?: MatchUpStatusUnion; sides?: unknown[] }): boolean {
+  // a hydrated side carries `bye` from its position's assignment, though the side type does not declare it
+  const isBye = (side: unknown) => !!side && typeof side === 'object' && (side as { bye?: boolean }).bye === true;
+  return matchUp?.matchUpStatus === BYE || !!matchUp?.sides?.some(isBye);
 }
 
 /**

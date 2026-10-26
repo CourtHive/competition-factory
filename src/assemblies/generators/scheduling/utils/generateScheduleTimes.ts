@@ -23,6 +23,8 @@ type GenerateScheduleTimesArgs = {
   averageMatchUpMinutes?: number;
   tournamentRecord?: Tournament;
   clearScheduleDates?: boolean | string[];
+  /** planned dates whose schedule the call clears (`generateBookings`) */
+  clearedDates?: string[];
   matchUps?: HydratedMatchUp[];
   courtIds?: string[];
   periodLength?: number;
@@ -38,6 +40,7 @@ export function generateScheduleTimes({
   defaultRecoveryMinutes,
   averageMatchUpMinutes,
   clearScheduleDates,
+  clearedDates,
   tournamentRecords,
   tournamentRecord,
   eventTimings,
@@ -95,6 +98,7 @@ export function generateScheduleTimes({
     eventTimings,
     scheduleDate,
     periodLength,
+    clearedDates,
     soleVenueId,
     venueIds,
     matchUps,

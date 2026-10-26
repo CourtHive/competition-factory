@@ -50,7 +50,7 @@ import {
  * THE SHAPES v2 OWNS (§ 3.7: one place, so reverting a slice's PR takes its shapes out). S2: the local write, the
  * matchUp's own result with no winner before or after, no exit, nothing directed, no tally and no settle work.
  */
-const OWNED_SHAPES = new Set<PlanShape>(['local']);
+const OWNED_SHAPES = new Set<PlanShape>(['local', 'direction']);
 
 /**
  * The call planned against the view (§ 3.1 step 3), the same under `v2` and `differential`: the route, the write on the
@@ -103,7 +103,9 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     if (refusal) return { refused: toResult(refusal) };
     // S2: a call whose complete plan is a shape v2 owns is written by v2, and v1 is not asked (F1 (a), fail-closed)
     const { outcome } = planCall(args, view);
-    return outcome.ops && OWNED_SHAPES.has(outcome.shape) ? { owned: applyOwnedPlan({ args, ops: outcome.ops }) } : {};
+    return outcome.ops && OWNED_SHAPES.has(outcome.shape)
+      ? { owned: applyOwnedPlan({ args, ops: outcome.ops, shape: outcome.shape }) }
+      : {};
   }
   if (mode !== OUTCOME_PIPELINE_DIFFERENTIAL) return {};
   // § 3.1.1's index oracle, read before v1 writes: the index of the draw as the call found it against the view's hydration

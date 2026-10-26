@@ -37,11 +37,14 @@ export function getDayLoad({
 
 /**
  * One draw's term of a day load, ready to answer "and with this matchUp added?" in a single scan: the certain count, the
- * longest chain of potential matchUps, and for each potential matchUp the longest chain ending at it and starting at it.
+ * longest chain of potential matchUps, and for each potential matchUp the longest chain ending at it. The longest chain
+ * starting at each is built only when a potential matchUp is first added to the term: a certain one, and the counters,
+ * need only the certain count and the longest chain.
  */
 type DrawTerm = {
-  startLength: Map<string, number>;
+  ordered: string[];
   endLength: Map<string, number>;
+  startLength?: Map<string, number>;
   certainCount: number;
   longest: number;
 };
@@ -54,13 +57,28 @@ function drawTerm(dayMatchUps: DayMatchUp[], upstream: ParticipantReachability['
     .map(({ matchUpId }) => matchUpId)
     .sort((a, b) => (upstream[a]?.size ?? 0) - (upstream[b]?.size ?? 0));
   const endLength = new Map<string, number>();
-  const startLength = new Map<string, number>();
   ordered.forEach((matchUpId, index) => {
+    const before = upstream[matchUpId];
     let longest = 0;
-    for (let prior = 0; prior < index; prior++)
-      if (upstream[matchUpId]?.has(ordered[prior])) longest = Math.max(longest, endLength.get(ordered[prior]) ?? 0);
+    // every matchUp upstream of this one comes before it, so endLength already holds those of the draw's day; read
+    // whichever is shorter, the upstream set or the matchUps before it
+    if (before && before.size < index) {
+      for (const prior of before) longest = Math.max(longest, endLength.get(prior) ?? 0);
+    } else if (before) {
+      for (let prior = 0; prior < index; prior++)
+        if (before.has(ordered[prior])) longest = Math.max(longest, endLength.get(ordered[prior]) ?? 0);
+    }
     endLength.set(matchUpId, longest + 1);
   });
+  const longest = ordered.length ? Math.max(...endLength.values()) : 0;
+  return { ordered, certainCount, longest, endLength };
+}
+
+/** the longest chain starting at each potential matchUp of a term, built once, on the first potential addition */
+function startLengths(term: DrawTerm, upstream: ParticipantReachability['upstream']): Map<string, number> {
+  if (term.startLength) return term.startLength;
+  const { ordered } = term;
+  const startLength = new Map<string, number>();
   for (let index = ordered.length - 1; index >= 0; index--) {
     const matchUpId = ordered[index];
     let longest = 0;
@@ -68,8 +86,8 @@ function drawTerm(dayMatchUps: DayMatchUp[], upstream: ParticipantReachability['
       if (upstream[ordered[later]]?.has(matchUpId)) longest = Math.max(longest, startLength.get(ordered[later]) ?? 0);
     startLength.set(matchUpId, longest + 1);
   }
-  const longest = ordered.length ? Math.max(...endLength.values()) : 0;
-  return { certainCount, longest, endLength, startLength };
+  term.startLength = startLength;
+  return startLength;
 }
 
 /**
@@ -83,7 +101,7 @@ function termWith(term: DrawTerm, adding: DayMatchUp, upstream: ParticipantReach
   let after = 0;
   for (const [matchUpId, length] of term.endLength)
     if (upstream[adding.matchUpId]?.has(matchUpId)) before = Math.max(before, length);
-  for (const [matchUpId, length] of term.startLength)
+  for (const [matchUpId, length] of startLengths(term, upstream))
     if (upstream[matchUpId]?.has(adding.matchUpId)) after = Math.max(after, length);
   return term.certainCount + Math.max(term.longest, before + 1 + after);
 }
@@ -213,8 +231,34 @@ export function modifyParticipantDayMatchUps({
     if (value > 0) {
       profile.dayMatchUps.push({ matchUpId, drawId, matchUpType, certain: certain.includes(participantId) });
     }
-    profile.counters = getParticipantDayLoads({ individualParticipantProfiles, reachability, participantId });
+    deferCounters(profile, () =>
+      getParticipantDayLoads({ individualParticipantProfiles, reachability, participantId }),
+    );
   }
+}
+
+/**
+ * `counters` is computed when it is first read, not on every change to the day: a placement changes the day of every
+ * participant who can reach it, and most of those are not asked about again before the next change. Read, it is
+ * computed once and kept as a plain value until the day changes again; it is enumerable either way, so a profile a
+ * scheduler returns carries it as before.
+ */
+function deferCounters(
+  profile: IndividualParticipantProfiles[string],
+  compute: () => { [counterName: string]: number },
+) {
+  Object.defineProperty(profile, 'counters', {
+    configurable: true,
+    enumerable: true,
+    get() {
+      const value = compute();
+      Object.defineProperty(profile, 'counters', { value, writable: true, enumerable: true, configurable: true });
+      return value;
+    },
+    set(value) {
+      Object.defineProperty(profile, 'counters', { value, writable: true, enumerable: true, configurable: true });
+    },
+  });
 }
 
 function longestChain(matchUpIds: string[], upstream: ParticipantReachability['upstream']): number {

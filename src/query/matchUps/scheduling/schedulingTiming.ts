@@ -34,6 +34,7 @@
  * 60, bare → 30.
  */
 import { getMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
+import { timingCategoryType } from '@Query/event/timingCategoryType';
 
 // types
 import { Tournament, Event } from '@Types/tournamentTypes';
@@ -62,7 +63,7 @@ function categoryOf(event?: Event): { categoryName?: string; categoryType?: stri
   const category = event?.category;
   return {
     categoryName: category?.categoryName ?? category?.ageCategoryCode,
-    categoryType: category?.categoryType ?? category?.subType,
+    categoryType: timingCategoryType(category),
   };
 }
 

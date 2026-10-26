@@ -1,0 +1,6964 @@
+[
+  {
+    "caseId": "scoring.reduce.empty-timeline.v1",
+    "operation": "kernel.scoring.reduce@1",
+    "input": {
+      "configuration": {
+        "matchUpFormat": "SET3-S:6/TB7"
+      },
+      "timeline": []
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "outcomes": [],
+        "matchUpStatus": "TO_BE_PLAYED",
+        "sets": [],
+        "points": [],
+        "server": {
+          "side": 0,
+          "derived": true
+        }
+      }
+    },
+    "note": "No entries: the match is to be played, no set is open, and side 1 is due to serve (§ 1.2, § 10.4)."
+  },
+  {
+    "caseId": "scoring.reduce.love-game.v1",
+    "operation": "kernel.scoring.reduce@1",
+    "input": {
+      "configuration": {
+        "matchUpFormat": "SET3-S:6/TB7"
+      },
+      "timeline": [
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        }
+      ]
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "outcomes": ["recorded", "recorded", "recorded", "recorded"],
+        "matchUpStatus": "IN_PROGRESS",
+        "sets": [
+          {
+            "setNumber": 1,
+            "side1Score": 1,
+            "side2Score": 0,
+            "side1GameScores": [4, 0],
+            "side2GameScores": [0, 0]
+          }
+        ],
+        "game": {
+          "score": [0, 0],
+          "pointsPlayed": 0
+        },
+        "points": [
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [24, 24],
+            "pointsToMatch": [48, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 0,
+            "pointNumber": 1,
+            "set": 0,
+            "game": 0,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [23, 24],
+            "pointsToMatch": [47, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 1,
+            "pointNumber": 2,
+            "set": 0,
+            "game": 0,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [22, 24],
+            "pointsToMatch": [46, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 2,
+            "pointNumber": 3,
+            "set": 0,
+            "game": 0,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [21, 25],
+            "pointsToMatch": [45, 49],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 3,
+            "pointNumber": 4,
+            "set": 0,
+            "game": 0,
+            "number": 3,
+            "score": "0-0"
+          }
+        ],
+        "server": {
+          "side": 1,
+          "derived": true
+        }
+      }
+    },
+    "note": "Four straight points win a game (ITF Rule 5); the receiver serves the next game (Rule 9)."
+  },
+  {
+    "caseId": "scoring.reduce.advantage-not-a-game.v1",
+    "operation": "kernel.scoring.reduce@1",
+    "input": {
+      "configuration": {
+        "matchUpFormat": "SET3-S:6/TB7"
+      },
+      "timeline": [
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        }
+      ]
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "outcomes": ["recorded", "recorded", "recorded", "recorded", "recorded", "recorded", "recorded"],
+        "matchUpStatus": "IN_PROGRESS",
+        "sets": [
+          {
+            "setNumber": 1,
+            "side1Score": 0,
+            "side2Score": 0,
+            "side1GameScores": [4],
+            "side2GameScores": [3]
+          }
+        ],
+        "game": {
+          "score": [4, 3],
+          "pointsPlayed": 7
+        },
+        "points": [
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [24, 24],
+            "pointsToMatch": [48, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 0,
+            "pointNumber": 1,
+            "set": 0,
+            "game": 0,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [23, 24],
+            "pointsToMatch": [47, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 1,
+            "pointNumber": 2,
+            "set": 0,
+            "game": 0,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [22, 24],
+            "pointsToMatch": [46, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 2,
+            "pointNumber": 3,
+            "set": 0,
+            "game": 0,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [21, 25],
+            "pointsToMatch": [45, 49],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 3,
+            "pointNumber": 4,
+            "set": 0,
+            "game": 0,
+            "number": 3,
+            "score": "40-15"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [1, 4],
+            "pointsToSet": [21, 24],
+            "pointsToMatch": [45, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 4,
+            "pointNumber": 5,
+            "set": 0,
+            "game": 0,
+            "number": 4,
+            "score": "40-30"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [1, 3],
+            "pointsToSet": [21, 23],
+            "pointsToMatch": [45, 47],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 5,
+            "pointNumber": 6,
+            "set": 0,
+            "game": 0,
+            "number": 5,
+            "score": "40-40"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 2],
+            "pointsToSet": [22, 22],
+            "pointsToMatch": [46, 46],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 6,
+            "pointNumber": 7,
+            "set": 0,
+            "game": 0,
+            "number": 6,
+            "score": "A-40"
+          }
+        ],
+        "server": {
+          "side": 0,
+          "derived": true
+        }
+      }
+    },
+    "note": "From deuce a game needs two consecutive points: at advantage there is no game yet (Rule 5)."
+  },
+  {
+    "caseId": "scoring.reduce.no-ad-deciding-point.v1",
+    "operation": "kernel.scoring.reduce@1",
+    "input": {
+      "configuration": {
+        "matchUpFormat": "SET3-S:6NOAD/TB7"
+      },
+      "timeline": [
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        }
+      ]
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "outcomes": ["recorded", "recorded", "recorded", "recorded", "recorded", "recorded", "recorded"],
+        "matchUpStatus": "IN_PROGRESS",
+        "sets": [
+          {
+            "setNumber": 1,
+            "side1Score": 0,
+            "side2Score": 1,
+            "side1GameScores": [3, 0],
+            "side2GameScores": [4, 0]
+          }
+        ],
+        "game": {
+          "score": [0, 0],
+          "pointsPlayed": 0
+        },
+        "points": [
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [24, 24],
+            "pointsToMatch": [48, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 0,
+            "pointNumber": 1,
+            "set": 0,
+            "game": 0,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [23, 24],
+            "pointsToMatch": [47, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 1,
+            "pointNumber": 2,
+            "set": 0,
+            "game": 0,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [22, 24],
+            "pointsToMatch": [46, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 2,
+            "pointNumber": 3,
+            "set": 0,
+            "game": 0,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [1, 4],
+            "pointsToSet": [21, 24],
+            "pointsToMatch": [45, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 3,
+            "pointNumber": 4,
+            "set": 0,
+            "game": 0,
+            "number": 3,
+            "score": "40-15"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [1, 3],
+            "pointsToSet": [21, 23],
+            "pointsToMatch": [45, 47],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 4,
+            "pointNumber": 5,
+            "set": 0,
+            "game": 0,
+            "number": 4,
+            "score": "40-30"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [1, 2],
+            "pointsToSet": [21, 22],
+            "pointsToMatch": [45, 46],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 5,
+            "pointNumber": 6,
+            "set": 0,
+            "game": 0,
+            "number": 5,
+            "score": "40-40"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [1, 1],
+            "pointsToSet": [21, 21],
+            "pointsToMatch": [45, 45],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": true,
+            "index": 6,
+            "pointNumber": 7,
+            "set": 0,
+            "game": 0,
+            "number": 6,
+            "score": "0-0"
+          }
+        ],
+        "server": {
+          "side": 1,
+          "derived": true
+        }
+      }
+    },
+    "note": "No-advantage scoring: at deuce the next point wins the game (Appendix VI)."
+  },
+  {
+    "caseId": "scoring.reduce.tiebreak-at-six-all.v1",
+    "operation": "kernel.scoring.reduce@1",
+    "input": {
+      "configuration": {
+        "matchUpFormat": "SET3-S:6/TB7"
+      },
+      "timeline": [
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        }
+      ]
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "outcomes": [
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded"
+        ],
+        "matchUpStatus": "IN_PROGRESS",
+        "sets": [
+          {
+            "setNumber": 1,
+            "side1Score": 7,
+            "side2Score": 6,
+            "side1GameScores": [4, 0, 4, 0, 4, 0, 4, 0, 4, 0, 4, 0, 7],
+            "side2GameScores": [0, 4, 0, 4, 0, 4, 0, 4, 0, 4, 0, 4, 0],
+            "side1TiebreakScore": 7,
+            "side2TiebreakScore": 0,
+            "winningSide": 1
+          }
+        ],
+        "points": [
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [24, 24],
+            "pointsToMatch": [48, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 0,
+            "pointNumber": 1,
+            "set": 0,
+            "game": 0,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [23, 24],
+            "pointsToMatch": [47, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 1,
+            "pointNumber": 2,
+            "set": 0,
+            "game": 0,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [22, 24],
+            "pointsToMatch": [46, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 2,
+            "pointNumber": 3,
+            "set": 0,
+            "game": 0,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [21, 25],
+            "pointsToMatch": [45, 49],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 3,
+            "pointNumber": 4,
+            "set": 0,
+            "game": 0,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [20, 24],
+            "pointsToMatch": [44, 48],
+            "gamesToSet": [5, 6],
+            "isBreakpoint": false,
+            "index": 4,
+            "pointNumber": 5,
+            "set": 0,
+            "game": 1,
+            "number": 0,
+            "score": "0-15"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [4, 3],
+            "pointsToSet": [20, 23],
+            "pointsToMatch": [44, 47],
+            "gamesToSet": [5, 6],
+            "isBreakpoint": false,
+            "index": 5,
+            "pointNumber": 6,
+            "set": 0,
+            "game": 1,
+            "number": 1,
+            "score": "0-30"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 2],
+            "pointsToSet": [20, 22],
+            "pointsToMatch": [44, 46],
+            "gamesToSet": [5, 6],
+            "isBreakpoint": false,
+            "index": 6,
+            "pointNumber": 7,
+            "set": 0,
+            "game": 1,
+            "number": 2,
+            "score": "0-40"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [5, 1],
+            "pointsToSet": [21, 21],
+            "pointsToMatch": [45, 45],
+            "gamesToSet": [5, 6],
+            "isBreakpoint": false,
+            "index": 7,
+            "pointNumber": 8,
+            "set": 0,
+            "game": 1,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [20, 20],
+            "pointsToMatch": [44, 44],
+            "gamesToSet": [5, 5],
+            "isBreakpoint": false,
+            "index": 8,
+            "pointNumber": 9,
+            "set": 0,
+            "game": 2,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [19, 20],
+            "pointsToMatch": [43, 44],
+            "gamesToSet": [5, 5],
+            "isBreakpoint": false,
+            "index": 9,
+            "pointNumber": 10,
+            "set": 0,
+            "game": 2,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [18, 20],
+            "pointsToMatch": [42, 44],
+            "gamesToSet": [5, 5],
+            "isBreakpoint": false,
+            "index": 10,
+            "pointNumber": 11,
+            "set": 0,
+            "game": 2,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [17, 21],
+            "pointsToMatch": [41, 45],
+            "gamesToSet": [5, 5],
+            "isBreakpoint": false,
+            "index": 11,
+            "pointNumber": 12,
+            "set": 0,
+            "game": 2,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [16, 20],
+            "pointsToMatch": [40, 44],
+            "gamesToSet": [4, 5],
+            "isBreakpoint": false,
+            "index": 12,
+            "pointNumber": 13,
+            "set": 0,
+            "game": 3,
+            "number": 0,
+            "score": "0-15"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [4, 3],
+            "pointsToSet": [16, 19],
+            "pointsToMatch": [40, 43],
+            "gamesToSet": [4, 5],
+            "isBreakpoint": false,
+            "index": 13,
+            "pointNumber": 14,
+            "set": 0,
+            "game": 3,
+            "number": 1,
+            "score": "0-30"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 2],
+            "pointsToSet": [16, 18],
+            "pointsToMatch": [40, 42],
+            "gamesToSet": [4, 5],
+            "isBreakpoint": false,
+            "index": 14,
+            "pointNumber": 15,
+            "set": 0,
+            "game": 3,
+            "number": 2,
+            "score": "0-40"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [5, 1],
+            "pointsToSet": [17, 17],
+            "pointsToMatch": [41, 41],
+            "gamesToSet": [4, 5],
+            "isBreakpoint": false,
+            "index": 15,
+            "pointNumber": 16,
+            "set": 0,
+            "game": 3,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [16, 16],
+            "pointsToMatch": [40, 40],
+            "gamesToSet": [4, 4],
+            "isBreakpoint": false,
+            "index": 16,
+            "pointNumber": 17,
+            "set": 0,
+            "game": 4,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [15, 16],
+            "pointsToMatch": [39, 40],
+            "gamesToSet": [4, 4],
+            "isBreakpoint": false,
+            "index": 17,
+            "pointNumber": 18,
+            "set": 0,
+            "game": 4,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [14, 16],
+            "pointsToMatch": [38, 40],
+            "gamesToSet": [4, 4],
+            "isBreakpoint": false,
+            "index": 18,
+            "pointNumber": 19,
+            "set": 0,
+            "game": 4,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [13, 17],
+            "pointsToMatch": [37, 41],
+            "gamesToSet": [4, 4],
+            "isBreakpoint": false,
+            "index": 19,
+            "pointNumber": 20,
+            "set": 0,
+            "game": 4,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [12, 16],
+            "pointsToMatch": [36, 40],
+            "gamesToSet": [3, 4],
+            "isBreakpoint": false,
+            "index": 20,
+            "pointNumber": 21,
+            "set": 0,
+            "game": 5,
+            "number": 0,
+            "score": "0-15"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [4, 3],
+            "pointsToSet": [12, 15],
+            "pointsToMatch": [36, 39],
+            "gamesToSet": [3, 4],
+            "isBreakpoint": false,
+            "index": 21,
+            "pointNumber": 22,
+            "set": 0,
+            "game": 5,
+            "number": 1,
+            "score": "0-30"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 2],
+            "pointsToSet": [12, 14],
+            "pointsToMatch": [36, 38],
+            "gamesToSet": [3, 4],
+            "isBreakpoint": false,
+            "index": 22,
+            "pointNumber": 23,
+            "set": 0,
+            "game": 5,
+            "number": 2,
+            "score": "0-40"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [5, 1],
+            "pointsToSet": [13, 13],
+            "pointsToMatch": [37, 37],
+            "gamesToSet": [3, 4],
+            "isBreakpoint": false,
+            "index": 23,
+            "pointNumber": 24,
+            "set": 0,
+            "game": 5,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [12, 12],
+            "pointsToMatch": [36, 36],
+            "gamesToSet": [3, 3],
+            "isBreakpoint": false,
+            "index": 24,
+            "pointNumber": 25,
+            "set": 0,
+            "game": 6,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [11, 12],
+            "pointsToMatch": [35, 36],
+            "gamesToSet": [3, 3],
+            "isBreakpoint": false,
+            "index": 25,
+            "pointNumber": 26,
+            "set": 0,
+            "game": 6,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [10, 12],
+            "pointsToMatch": [34, 36],
+            "gamesToSet": [3, 3],
+            "isBreakpoint": false,
+            "index": 26,
+            "pointNumber": 27,
+            "set": 0,
+            "game": 6,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [9, 13],
+            "pointsToMatch": [33, 37],
+            "gamesToSet": [3, 3],
+            "isBreakpoint": false,
+            "index": 27,
+            "pointNumber": 28,
+            "set": 0,
+            "game": 6,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [8, 12],
+            "pointsToMatch": [32, 36],
+            "gamesToSet": [2, 3],
+            "isBreakpoint": false,
+            "index": 28,
+            "pointNumber": 29,
+            "set": 0,
+            "game": 7,
+            "number": 0,
+            "score": "0-15"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [4, 3],
+            "pointsToSet": [8, 11],
+            "pointsToMatch": [32, 35],
+            "gamesToSet": [2, 3],
+            "isBreakpoint": false,
+            "index": 29,
+            "pointNumber": 30,
+            "set": 0,
+            "game": 7,
+            "number": 1,
+            "score": "0-30"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 2],
+            "pointsToSet": [8, 10],
+            "pointsToMatch": [32, 34],
+            "gamesToSet": [2, 3],
+            "isBreakpoint": false,
+            "index": 30,
+            "pointNumber": 31,
+            "set": 0,
+            "game": 7,
+            "number": 2,
+            "score": "0-40"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [5, 1],
+            "pointsToSet": [9, 9],
+            "pointsToMatch": [33, 33],
+            "gamesToSet": [2, 3],
+            "isBreakpoint": false,
+            "index": 31,
+            "pointNumber": 32,
+            "set": 0,
+            "game": 7,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [8, 8],
+            "pointsToMatch": [32, 32],
+            "gamesToSet": [2, 2],
+            "isBreakpoint": false,
+            "index": 32,
+            "pointNumber": 33,
+            "set": 0,
+            "game": 8,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [7, 8],
+            "pointsToMatch": [31, 32],
+            "gamesToSet": [2, 2],
+            "isBreakpoint": false,
+            "index": 33,
+            "pointNumber": 34,
+            "set": 0,
+            "game": 8,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [6, 8],
+            "pointsToMatch": [30, 32],
+            "gamesToSet": [2, 2],
+            "isBreakpoint": false,
+            "index": 34,
+            "pointNumber": 35,
+            "set": 0,
+            "game": 8,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [5, 9],
+            "pointsToMatch": [29, 33],
+            "gamesToSet": [2, 2],
+            "isBreakpoint": false,
+            "index": 35,
+            "pointNumber": 36,
+            "set": 0,
+            "game": 8,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [4, 12],
+            "pointsToMatch": [28, 36],
+            "gamesToSet": [1, 3],
+            "isBreakpoint": false,
+            "index": 36,
+            "pointNumber": 37,
+            "set": 0,
+            "game": 9,
+            "number": 0,
+            "score": "0-15"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [4, 3],
+            "pointsToSet": [4, 11],
+            "pointsToMatch": [28, 35],
+            "gamesToSet": [1, 3],
+            "isBreakpoint": false,
+            "index": 37,
+            "pointNumber": 38,
+            "set": 0,
+            "game": 9,
+            "number": 1,
+            "score": "0-30"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 2],
+            "pointsToSet": [4, 10],
+            "pointsToMatch": [28, 34],
+            "gamesToSet": [1, 3],
+            "isBreakpoint": false,
+            "index": 38,
+            "pointNumber": 39,
+            "set": 0,
+            "game": 9,
+            "number": 2,
+            "score": "0-40"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [5, 1],
+            "pointsToSet": [5, 9],
+            "pointsToMatch": [29, 33],
+            "gamesToSet": [1, 3],
+            "isBreakpoint": false,
+            "index": 39,
+            "pointNumber": 40,
+            "set": 0,
+            "game": 9,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [8, 8],
+            "pointsToMatch": [32, 32],
+            "gamesToSet": [2, 2],
+            "isBreakpoint": false,
+            "index": 40,
+            "pointNumber": 41,
+            "set": 0,
+            "game": 10,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [7, 8],
+            "pointsToMatch": [31, 32],
+            "gamesToSet": [2, 2],
+            "isBreakpoint": false,
+            "index": 41,
+            "pointNumber": 42,
+            "set": 0,
+            "game": 10,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [6, 8],
+            "pointsToMatch": [30, 32],
+            "gamesToSet": [2, 2],
+            "isBreakpoint": false,
+            "index": 42,
+            "pointNumber": 43,
+            "set": 0,
+            "game": 10,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [5, 9],
+            "pointsToMatch": [29, 33],
+            "gamesToSet": [2, 2],
+            "isBreakpoint": false,
+            "index": 43,
+            "pointNumber": 44,
+            "set": 0,
+            "game": 10,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [4, 8],
+            "pointsToMatch": [28, 32],
+            "gamesToSet": [1, 2],
+            "isBreakpoint": false,
+            "index": 44,
+            "pointNumber": 45,
+            "set": 0,
+            "game": 11,
+            "number": 0,
+            "score": "0-15"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [4, 3],
+            "pointsToSet": [4, 7],
+            "pointsToMatch": [28, 31],
+            "gamesToSet": [1, 2],
+            "isBreakpoint": false,
+            "index": 45,
+            "pointNumber": 46,
+            "set": 0,
+            "game": 11,
+            "number": 1,
+            "score": "0-30"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 2],
+            "pointsToSet": [4, 6],
+            "pointsToMatch": [28, 30],
+            "gamesToSet": [1, 2],
+            "isBreakpoint": false,
+            "index": 46,
+            "pointNumber": 47,
+            "set": 0,
+            "game": 11,
+            "number": 2,
+            "score": "0-40"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [5, 1],
+            "pointsToSet": [5, 5],
+            "pointsToMatch": [29, 29],
+            "gamesToSet": [1, 2],
+            "isBreakpoint": false,
+            "index": 47,
+            "pointNumber": 48,
+            "set": 0,
+            "game": 11,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [7, 7],
+            "pointsToSet": [7, 7],
+            "pointsToMatch": [31, 31],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 48,
+            "pointNumber": 49,
+            "set": 0,
+            "game": 12,
+            "number": 0,
+            "score": "1-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [6, 7],
+            "pointsToSet": [6, 7],
+            "pointsToMatch": [30, 31],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 49,
+            "pointNumber": 50,
+            "set": 0,
+            "game": 12,
+            "number": 1,
+            "score": "2-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [5, 7],
+            "pointsToSet": [5, 7],
+            "pointsToMatch": [29, 31],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 50,
+            "pointNumber": 51,
+            "set": 0,
+            "game": 12,
+            "number": 2,
+            "score": "3-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [4, 7],
+            "pointsToSet": [4, 7],
+            "pointsToMatch": [28, 31],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 51,
+            "pointNumber": 52,
+            "set": 0,
+            "game": 12,
+            "number": 3,
+            "score": "4-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [3, 7],
+            "pointsToSet": [3, 7],
+            "pointsToMatch": [27, 31],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 52,
+            "pointNumber": 53,
+            "set": 0,
+            "game": 12,
+            "number": 4,
+            "score": "5-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [2, 7],
+            "pointsToSet": [2, 7],
+            "pointsToMatch": [26, 31],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 53,
+            "pointNumber": 54,
+            "set": 0,
+            "game": 12,
+            "number": 5,
+            "score": "6-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [1, 8],
+            "pointsToSet": [1, 8],
+            "pointsToMatch": [25, 32],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": true,
+            "index": 54,
+            "pointNumber": 55,
+            "set": 0,
+            "game": 12,
+            "number": 6,
+            "score": "0-0"
+          }
+        ],
+        "server": {
+          "side": 1,
+          "derived": true
+        }
+      }
+    },
+    "note": "At six games all a tie-break, first to seven by two, decides the set 7-6 (Rule 5(b), Rule 6)."
+  },
+  {
+    "caseId": "scoring.reduce.straight-sets-and-after.v1",
+    "operation": "kernel.scoring.reduce@1",
+    "input": {
+      "configuration": {
+        "matchUpFormat": "SET3-S:6/TB7"
+      },
+      "timeline": [
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        }
+      ]
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "outcomes": [
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          {
+            "ignored": "MATCH_COMPLETED"
+          }
+        ],
+        "matchUpStatus": "COMPLETED",
+        "winningSide": 1,
+        "sets": [
+          {
+            "setNumber": 1,
+            "side1Score": 6,
+            "side2Score": 0,
+            "side1GameScores": [4, 4, 4, 4, 4, 4],
+            "side2GameScores": [0, 0, 0, 0, 0, 0],
+            "winningSide": 1
+          },
+          {
+            "setNumber": 2,
+            "side1Score": 6,
+            "side2Score": 0,
+            "side1GameScores": [4, 4, 4, 4, 4, 4],
+            "side2GameScores": [0, 0, 0, 0, 0, 0],
+            "winningSide": 1
+          }
+        ],
+        "points": [
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [24, 24],
+            "pointsToMatch": [48, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 0,
+            "pointNumber": 1,
+            "set": 0,
+            "game": 0,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [23, 24],
+            "pointsToMatch": [47, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 1,
+            "pointNumber": 2,
+            "set": 0,
+            "game": 0,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [22, 24],
+            "pointsToMatch": [46, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 2,
+            "pointNumber": 3,
+            "set": 0,
+            "game": 0,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [21, 25],
+            "pointsToMatch": [45, 49],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 3,
+            "pointNumber": 4,
+            "set": 0,
+            "game": 0,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [20, 24],
+            "pointsToMatch": [44, 48],
+            "gamesToSet": [5, 6],
+            "isBreakpoint": false,
+            "index": 4,
+            "pointNumber": 5,
+            "set": 0,
+            "game": 1,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [19, 24],
+            "pointsToMatch": [43, 48],
+            "gamesToSet": [5, 6],
+            "isBreakpoint": false,
+            "index": 5,
+            "pointNumber": 6,
+            "set": 0,
+            "game": 1,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [18, 24],
+            "pointsToMatch": [42, 48],
+            "gamesToSet": [5, 6],
+            "isBreakpoint": false,
+            "index": 6,
+            "pointNumber": 7,
+            "set": 0,
+            "game": 1,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [17, 25],
+            "pointsToMatch": [41, 49],
+            "gamesToSet": [5, 6],
+            "isBreakpoint": true,
+            "index": 7,
+            "pointNumber": 8,
+            "set": 0,
+            "game": 1,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [16, 24],
+            "pointsToMatch": [40, 48],
+            "gamesToSet": [4, 6],
+            "isBreakpoint": false,
+            "index": 8,
+            "pointNumber": 9,
+            "set": 0,
+            "game": 2,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [15, 24],
+            "pointsToMatch": [39, 48],
+            "gamesToSet": [4, 6],
+            "isBreakpoint": false,
+            "index": 9,
+            "pointNumber": 10,
+            "set": 0,
+            "game": 2,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [14, 24],
+            "pointsToMatch": [38, 48],
+            "gamesToSet": [4, 6],
+            "isBreakpoint": false,
+            "index": 10,
+            "pointNumber": 11,
+            "set": 0,
+            "game": 2,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [13, 25],
+            "pointsToMatch": [37, 49],
+            "gamesToSet": [4, 6],
+            "isBreakpoint": false,
+            "index": 11,
+            "pointNumber": 12,
+            "set": 0,
+            "game": 2,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [12, 24],
+            "pointsToMatch": [36, 48],
+            "gamesToSet": [3, 6],
+            "isBreakpoint": false,
+            "index": 12,
+            "pointNumber": 13,
+            "set": 0,
+            "game": 3,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [11, 24],
+            "pointsToMatch": [35, 48],
+            "gamesToSet": [3, 6],
+            "isBreakpoint": false,
+            "index": 13,
+            "pointNumber": 14,
+            "set": 0,
+            "game": 3,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [10, 24],
+            "pointsToMatch": [34, 48],
+            "gamesToSet": [3, 6],
+            "isBreakpoint": false,
+            "index": 14,
+            "pointNumber": 15,
+            "set": 0,
+            "game": 3,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [9, 25],
+            "pointsToMatch": [33, 49],
+            "gamesToSet": [3, 6],
+            "isBreakpoint": true,
+            "index": 15,
+            "pointNumber": 16,
+            "set": 0,
+            "game": 3,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [8, 24],
+            "pointsToMatch": [32, 48],
+            "gamesToSet": [2, 6],
+            "isBreakpoint": false,
+            "index": 16,
+            "pointNumber": 17,
+            "set": 0,
+            "game": 4,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [7, 24],
+            "pointsToMatch": [31, 48],
+            "gamesToSet": [2, 6],
+            "isBreakpoint": false,
+            "index": 17,
+            "pointNumber": 18,
+            "set": 0,
+            "game": 4,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [6, 24],
+            "pointsToMatch": [30, 48],
+            "gamesToSet": [2, 6],
+            "isBreakpoint": false,
+            "index": 18,
+            "pointNumber": 19,
+            "set": 0,
+            "game": 4,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [5, 25],
+            "pointsToMatch": [29, 49],
+            "gamesToSet": [2, 6],
+            "isBreakpoint": false,
+            "index": 19,
+            "pointNumber": 20,
+            "set": 0,
+            "game": 4,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [4, 28],
+            "pointsToMatch": [28, 52],
+            "gamesToSet": [1, 7],
+            "isBreakpoint": false,
+            "index": 20,
+            "pointNumber": 21,
+            "set": 0,
+            "game": 5,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [3, 28],
+            "pointsToMatch": [27, 52],
+            "gamesToSet": [1, 7],
+            "isBreakpoint": false,
+            "index": 21,
+            "pointNumber": 22,
+            "set": 0,
+            "game": 5,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [2, 28],
+            "pointsToMatch": [26, 52],
+            "gamesToSet": [1, 7],
+            "isBreakpoint": false,
+            "index": 22,
+            "pointNumber": 23,
+            "set": 0,
+            "game": 5,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [1, 29],
+            "pointsToMatch": [25, 53],
+            "gamesToSet": [1, 7],
+            "isBreakpoint": true,
+            "index": 23,
+            "pointNumber": 24,
+            "set": 0,
+            "game": 5,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [24, 24],
+            "pointsToMatch": [24, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 24,
+            "pointNumber": 25,
+            "set": 1,
+            "game": 0,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [23, 24],
+            "pointsToMatch": [23, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 25,
+            "pointNumber": 26,
+            "set": 1,
+            "game": 0,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [22, 24],
+            "pointsToMatch": [22, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 26,
+            "pointNumber": 27,
+            "set": 1,
+            "game": 0,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [21, 25],
+            "pointsToMatch": [21, 49],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 27,
+            "pointNumber": 28,
+            "set": 1,
+            "game": 0,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [20, 24],
+            "pointsToMatch": [20, 48],
+            "gamesToSet": [5, 6],
+            "isBreakpoint": false,
+            "index": 28,
+            "pointNumber": 29,
+            "set": 1,
+            "game": 1,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [19, 24],
+            "pointsToMatch": [19, 48],
+            "gamesToSet": [5, 6],
+            "isBreakpoint": false,
+            "index": 29,
+            "pointNumber": 30,
+            "set": 1,
+            "game": 1,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [18, 24],
+            "pointsToMatch": [18, 48],
+            "gamesToSet": [5, 6],
+            "isBreakpoint": false,
+            "index": 30,
+            "pointNumber": 31,
+            "set": 1,
+            "game": 1,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [17, 25],
+            "pointsToMatch": [17, 49],
+            "gamesToSet": [5, 6],
+            "isBreakpoint": true,
+            "index": 31,
+            "pointNumber": 32,
+            "set": 1,
+            "game": 1,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [16, 24],
+            "pointsToMatch": [16, 48],
+            "gamesToSet": [4, 6],
+            "isBreakpoint": false,
+            "index": 32,
+            "pointNumber": 33,
+            "set": 1,
+            "game": 2,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [15, 24],
+            "pointsToMatch": [15, 48],
+            "gamesToSet": [4, 6],
+            "isBreakpoint": false,
+            "index": 33,
+            "pointNumber": 34,
+            "set": 1,
+            "game": 2,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [14, 24],
+            "pointsToMatch": [14, 48],
+            "gamesToSet": [4, 6],
+            "isBreakpoint": false,
+            "index": 34,
+            "pointNumber": 35,
+            "set": 1,
+            "game": 2,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [13, 25],
+            "pointsToMatch": [13, 49],
+            "gamesToSet": [4, 6],
+            "isBreakpoint": false,
+            "index": 35,
+            "pointNumber": 36,
+            "set": 1,
+            "game": 2,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [12, 24],
+            "pointsToMatch": [12, 48],
+            "gamesToSet": [3, 6],
+            "isBreakpoint": false,
+            "index": 36,
+            "pointNumber": 37,
+            "set": 1,
+            "game": 3,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [11, 24],
+            "pointsToMatch": [11, 48],
+            "gamesToSet": [3, 6],
+            "isBreakpoint": false,
+            "index": 37,
+            "pointNumber": 38,
+            "set": 1,
+            "game": 3,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [10, 24],
+            "pointsToMatch": [10, 48],
+            "gamesToSet": [3, 6],
+            "isBreakpoint": false,
+            "index": 38,
+            "pointNumber": 39,
+            "set": 1,
+            "game": 3,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [9, 25],
+            "pointsToMatch": [9, 49],
+            "gamesToSet": [3, 6],
+            "isBreakpoint": true,
+            "index": 39,
+            "pointNumber": 40,
+            "set": 1,
+            "game": 3,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [8, 24],
+            "pointsToMatch": [8, 48],
+            "gamesToSet": [2, 6],
+            "isBreakpoint": false,
+            "index": 40,
+            "pointNumber": 41,
+            "set": 1,
+            "game": 4,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [7, 24],
+            "pointsToMatch": [7, 48],
+            "gamesToSet": [2, 6],
+            "isBreakpoint": false,
+            "index": 41,
+            "pointNumber": 42,
+            "set": 1,
+            "game": 4,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [6, 24],
+            "pointsToMatch": [6, 48],
+            "gamesToSet": [2, 6],
+            "isBreakpoint": false,
+            "index": 42,
+            "pointNumber": 43,
+            "set": 1,
+            "game": 4,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [5, 25],
+            "pointsToMatch": [5, 49],
+            "gamesToSet": [2, 6],
+            "isBreakpoint": false,
+            "index": 43,
+            "pointNumber": 44,
+            "set": 1,
+            "game": 4,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [4, 28],
+            "pointsToMatch": [4, 52],
+            "gamesToSet": [1, 7],
+            "isBreakpoint": false,
+            "index": 44,
+            "pointNumber": 45,
+            "set": 1,
+            "game": 5,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [3, 28],
+            "pointsToMatch": [3, 52],
+            "gamesToSet": [1, 7],
+            "isBreakpoint": false,
+            "index": 45,
+            "pointNumber": 46,
+            "set": 1,
+            "game": 5,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [2, 28],
+            "pointsToMatch": [2, 52],
+            "gamesToSet": [1, 7],
+            "isBreakpoint": false,
+            "index": 46,
+            "pointNumber": 47,
+            "set": 1,
+            "game": 5,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [1, 29],
+            "pointsToMatch": [1, 53],
+            "gamesToSet": [1, 7],
+            "isBreakpoint": true,
+            "index": 47,
+            "pointNumber": 48,
+            "set": 1,
+            "game": 5,
+            "number": 3,
+            "score": "0-0"
+          }
+        ],
+        "server": {
+          "side": 0,
+          "derived": false
+        }
+      }
+    },
+    "note": "Two sets of six love win a best-of-three match (Rule 7); a point after completion is ignored, not refused (§ 2.1, ignored 2)."
+  },
+  {
+    "caseId": "scoring.reduce.point-without-a-winner.v1",
+    "operation": "kernel.scoring.reduce@1",
+    "input": {
+      "configuration": {
+        "matchUpFormat": "SET3-S:6/TB7"
+      },
+      "timeline": [
+        {
+          "type": "point",
+          "data": {}
+        },
+        {
+          "type": "point",
+          "data": {
+            "winningSide": 3
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        }
+      ]
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "outcomes": [
+          {
+            "ignored": "NO_WINNER"
+          },
+          {
+            "refused": "ERR_INVALID_VALUES"
+          },
+          "recorded"
+        ],
+        "matchUpStatus": "IN_PROGRESS",
+        "sets": [
+          {
+            "setNumber": 1,
+            "side1Score": 0,
+            "side2Score": 0,
+            "side1GameScores": [1],
+            "side2GameScores": [0]
+          }
+        ],
+        "game": {
+          "score": [1, 0],
+          "pointsPlayed": 1
+        },
+        "points": [
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [24, 24],
+            "pointsToMatch": [48, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 0,
+            "pointNumber": 1,
+            "set": 0,
+            "game": 0,
+            "number": 0,
+            "score": "15-0"
+          }
+        ],
+        "server": {
+          "side": 0,
+          "derived": true
+        }
+      }
+    },
+    "note": "A point that names no winner is ignored (§ 2.1, ignored 1); one that names a side 3 is refused (§ 2.1)."
+  },
+  {
+    "caseId": "scoring.reduce.both-side-spellings.v1",
+    "operation": "kernel.scoring.reduce@1",
+    "input": {
+      "configuration": {
+        "matchUpFormat": "SET3-S:6/TB7"
+      },
+      "timeline": [
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winningSide": 2
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0,
+            "winningSide": 2
+          }
+        }
+      ]
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "outcomes": [
+          "recorded",
+          "recorded",
+          {
+            "refused": "ERR_INVALID_VALUES"
+          }
+        ],
+        "matchUpStatus": "IN_PROGRESS",
+        "sets": [
+          {
+            "setNumber": 1,
+            "side1Score": 0,
+            "side2Score": 0,
+            "side1GameScores": [0],
+            "side2GameScores": [2]
+          }
+        ],
+        "game": {
+          "score": [0, 2],
+          "pointsPlayed": 2
+        },
+        "points": [
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [24, 24],
+            "pointsToMatch": [48, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 0,
+            "pointNumber": 1,
+            "set": 0,
+            "game": 0,
+            "number": 0,
+            "score": "0-15"
+          },
+          {
+            "winningSide": 2,
+            "winner": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [4, 3],
+            "pointsToSet": [24, 23],
+            "pointsToMatch": [48, 47],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 1,
+            "pointNumber": 2,
+            "set": 0,
+            "game": 0,
+            "number": 1,
+            "score": "0-30"
+          }
+        ],
+        "server": {
+          "side": 0,
+          "derived": true
+        }
+      }
+    },
+    "note": "A side may be named 0-based (`winner`) or 1-based (`winningSide`); both name the same side (§ 1.3)."
+  },
+  {
+    "caseId": "scoring.reduce.games-build-a-set.v1",
+    "operation": "kernel.scoring.reduce@1",
+    "input": {
+      "configuration": {
+        "matchUpFormat": "SET3-S:6/TB7"
+      },
+      "timeline": [
+        {
+          "type": "game",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "game",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "game",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "game",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "game",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "game",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "game",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "game",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "game",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "game",
+          "data": {
+            "winner": 0
+          }
+        }
+      ]
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "outcomes": [
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded"
+        ],
+        "matchUpStatus": "IN_PROGRESS",
+        "sets": [
+          {
+            "setNumber": 1,
+            "side1Score": 6,
+            "side2Score": 4,
+            "winningSide": 1
+          }
+        ],
+        "points": [],
+        "server": {
+          "side": 0,
+          "derived": true
+        }
+      }
+    },
+    "note": "Whole games entered by `game` build a set as points do: six games to four wins it (§ 2.2, Rule 6)."
+  },
+  {
+    "caseId": "scoring.reduce.set-totals-decide-the-match.v1",
+    "operation": "kernel.scoring.reduce@1",
+    "input": {
+      "configuration": {
+        "matchUpFormat": "SET3-S:6/TB7"
+      },
+      "timeline": [
+        {
+          "type": "set",
+          "data": {
+            "side1Score": 6,
+            "side2Score": 3
+          }
+        },
+        {
+          "type": "set",
+          "data": {
+            "side1Score": 4,
+            "side2Score": 6
+          }
+        },
+        {
+          "type": "set",
+          "data": {
+            "side1Score": 7,
+            "side2Score": 6,
+            "side1TiebreakScore": 7,
+            "side2TiebreakScore": 5
+          }
+        }
+      ]
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "outcomes": ["recorded", "recorded", "recorded"],
+        "matchUpStatus": "COMPLETED",
+        "winningSide": 1,
+        "sets": [
+          {
+            "setNumber": 1,
+            "side1Score": 6,
+            "side2Score": 3,
+            "winningSide": 1
+          },
+          {
+            "setNumber": 2,
+            "side1Score": 4,
+            "side2Score": 6,
+            "winningSide": 2
+          },
+          {
+            "setNumber": 3,
+            "side1Score": 7,
+            "side2Score": 6,
+            "side1TiebreakScore": 7,
+            "side2TiebreakScore": 5,
+            "winningSide": 1
+          }
+        ],
+        "points": [],
+        "server": {
+          "side": 0,
+          "derived": false
+        }
+      }
+    },
+    "note": "Set totals entered by `set` close each set and decide the match (§ 2.3, § 9)."
+  },
+  {
+    "caseId": "scoring.reduce.baseline-then-play.v1",
+    "operation": "kernel.scoring.reduce@1",
+    "input": {
+      "configuration": {
+        "matchUpFormat": "SET3-S:6/TB7"
+      },
+      "timeline": [
+        {
+          "type": "setInitialScore",
+          "data": {
+            "sets": [
+              {
+                "side1Score": 5,
+                "side2Score": 4
+              }
+            ]
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        }
+      ]
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "outcomes": ["recorded", "recorded", "recorded", "recorded", "recorded"],
+        "matchUpStatus": "IN_PROGRESS",
+        "sets": [
+          {
+            "setNumber": 1,
+            "side1Score": 6,
+            "side2Score": 4,
+            "side1GameScores": [4],
+            "side2GameScores": [0],
+            "winningSide": 1
+          }
+        ],
+        "points": [
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [4, 12],
+            "pointsToMatch": [28, 36],
+            "gamesToSet": [1, 3],
+            "isBreakpoint": false,
+            "index": 0,
+            "pointNumber": 1,
+            "set": 0,
+            "game": 9,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [3, 12],
+            "pointsToMatch": [27, 36],
+            "gamesToSet": [1, 3],
+            "isBreakpoint": false,
+            "index": 1,
+            "pointNumber": 2,
+            "set": 0,
+            "game": 9,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [2, 12],
+            "pointsToMatch": [26, 36],
+            "gamesToSet": [1, 3],
+            "isBreakpoint": false,
+            "index": 2,
+            "pointNumber": 3,
+            "set": 0,
+            "game": 9,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [1, 13],
+            "pointsToMatch": [25, 37],
+            "gamesToSet": [1, 3],
+            "isBreakpoint": true,
+            "index": 3,
+            "pointNumber": 4,
+            "set": 0,
+            "game": 9,
+            "number": 3,
+            "score": "0-0"
+          }
+        ],
+        "server": {
+          "side": 0,
+          "derived": true
+        }
+      }
+    },
+    "note": "A late-start baseline sets the score before play (§ 2.5); points then play on from it: 5-4 and a love game make 6-4."
+  },
+  {
+    "caseId": "scoring.reduce.server-correction.v1",
+    "operation": "kernel.scoring.reduce@1",
+    "input": {
+      "configuration": {
+        "matchUpFormat": "SET3-S:6/TB7"
+      },
+      "timeline": [
+        {
+          "type": "setServer",
+          "data": {
+            "side": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        }
+      ]
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "outcomes": ["recorded", "recorded", "recorded", "recorded", "recorded", "recorded"],
+        "matchUpStatus": "IN_PROGRESS",
+        "sets": [
+          {
+            "setNumber": 1,
+            "side1Score": 1,
+            "side2Score": 0,
+            "side1GameScores": [4, 1],
+            "side2GameScores": [0, 0]
+          }
+        ],
+        "game": {
+          "score": [1, 0],
+          "pointsPlayed": 1
+        },
+        "points": [
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [24, 24],
+            "pointsToMatch": [48, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 0,
+            "pointNumber": 1,
+            "set": 0,
+            "game": 0,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [23, 24],
+            "pointsToMatch": [47, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 1,
+            "pointNumber": 2,
+            "set": 0,
+            "game": 0,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [22, 24],
+            "pointsToMatch": [46, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 2,
+            "pointNumber": 3,
+            "set": 0,
+            "game": 0,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [21, 25],
+            "pointsToMatch": [45, 49],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": true,
+            "index": 3,
+            "pointNumber": 4,
+            "set": 0,
+            "game": 0,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [20, 24],
+            "pointsToMatch": [44, 48],
+            "gamesToSet": [5, 6],
+            "isBreakpoint": false,
+            "index": 4,
+            "pointNumber": 5,
+            "set": 0,
+            "game": 1,
+            "number": 0,
+            "score": "15-0"
+          }
+        ],
+        "server": {
+          "side": 0,
+          "derived": true
+        }
+      }
+    },
+    "note": "A `setServer` before the first point names side 2 to serve; the receiver of each game serves the next (§ 2.6, § 10.6)."
+  },
+  {
+    "caseId": "scoring.reduce.tiebreak-only.v1",
+    "operation": "kernel.scoring.reduce@1",
+    "input": {
+      "configuration": {
+        "matchUpFormat": "SET1-S:TB10"
+      },
+      "timeline": [
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        }
+      ]
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "outcomes": [
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded"
+        ],
+        "matchUpStatus": "IN_PROGRESS",
+        "sets": [
+          {
+            "setNumber": 1,
+            "side1Score": 0,
+            "side2Score": 0,
+            "isTiebreakOnly": true,
+            "side1GameScores": [11],
+            "side2GameScores": [11]
+          }
+        ],
+        "game": {
+          "score": [11, 11],
+          "pointsPlayed": 22
+        },
+        "points": [
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "serveSide": "deuce",
+            "pointsToGame": [10, 10],
+            "pointsToSet": [10, 10],
+            "pointsToMatch": [10, 10],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 0,
+            "pointNumber": 1,
+            "set": 0,
+            "game": 0,
+            "number": 0,
+            "score": "1-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "serveSide": "ad",
+            "pointsToGame": [9, 10],
+            "pointsToSet": [9, 10],
+            "pointsToMatch": [9, 10],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 1,
+            "pointNumber": 2,
+            "set": 0,
+            "game": 0,
+            "number": 1,
+            "score": "2-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "serveSide": "deuce",
+            "pointsToGame": [8, 10],
+            "pointsToSet": [8, 10],
+            "pointsToMatch": [8, 10],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 2,
+            "pointNumber": 3,
+            "set": 0,
+            "game": 0,
+            "number": 2,
+            "score": "3-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "serveSide": "ad",
+            "pointsToGame": [7, 10],
+            "pointsToSet": [7, 10],
+            "pointsToMatch": [7, 10],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 3,
+            "pointNumber": 4,
+            "set": 0,
+            "game": 0,
+            "number": 3,
+            "score": "4-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "serveSide": "deuce",
+            "pointsToGame": [6, 10],
+            "pointsToSet": [6, 10],
+            "pointsToMatch": [6, 10],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 4,
+            "pointNumber": 5,
+            "set": 0,
+            "game": 0,
+            "number": 4,
+            "score": "5-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "serveSide": "ad",
+            "pointsToGame": [5, 10],
+            "pointsToSet": [5, 10],
+            "pointsToMatch": [5, 10],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 5,
+            "pointNumber": 6,
+            "set": 0,
+            "game": 0,
+            "number": 5,
+            "score": "6-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "serveSide": "deuce",
+            "pointsToGame": [4, 10],
+            "pointsToSet": [4, 10],
+            "pointsToMatch": [4, 10],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 6,
+            "pointNumber": 7,
+            "set": 0,
+            "game": 0,
+            "number": 6,
+            "score": "7-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "serveSide": "ad",
+            "pointsToGame": [3, 10],
+            "pointsToSet": [3, 10],
+            "pointsToMatch": [3, 10],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 7,
+            "pointNumber": 8,
+            "set": 0,
+            "game": 0,
+            "number": 7,
+            "score": "8-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "serveSide": "deuce",
+            "pointsToGame": [2, 10],
+            "pointsToSet": [2, 10],
+            "pointsToMatch": [2, 10],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 8,
+            "pointNumber": 9,
+            "set": 0,
+            "game": 0,
+            "number": 8,
+            "score": "9-0"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "serveSide": "ad",
+            "pointsToGame": [1, 11],
+            "pointsToSet": [1, 11],
+            "pointsToMatch": [1, 11],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 9,
+            "pointNumber": 10,
+            "set": 0,
+            "game": 0,
+            "number": 9,
+            "score": "9-1"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "serveSide": "deuce",
+            "pointsToGame": [1, 10],
+            "pointsToSet": [1, 10],
+            "pointsToMatch": [1, 10],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 10,
+            "pointNumber": 11,
+            "set": 0,
+            "game": 0,
+            "number": 10,
+            "score": "9-2"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "serveSide": "ad",
+            "pointsToGame": [1, 9],
+            "pointsToSet": [1, 9],
+            "pointsToMatch": [1, 9],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 11,
+            "pointNumber": 12,
+            "set": 0,
+            "game": 0,
+            "number": 11,
+            "score": "9-3"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "serveSide": "deuce",
+            "pointsToGame": [1, 8],
+            "pointsToSet": [1, 8],
+            "pointsToMatch": [1, 8],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 12,
+            "pointNumber": 13,
+            "set": 0,
+            "game": 0,
+            "number": 12,
+            "score": "9-4"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "serveSide": "ad",
+            "pointsToGame": [1, 7],
+            "pointsToSet": [1, 7],
+            "pointsToMatch": [1, 7],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 13,
+            "pointNumber": 14,
+            "set": 0,
+            "game": 0,
+            "number": 13,
+            "score": "9-5"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "serveSide": "deuce",
+            "pointsToGame": [1, 6],
+            "pointsToSet": [1, 6],
+            "pointsToMatch": [1, 6],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 14,
+            "pointNumber": 15,
+            "set": 0,
+            "game": 0,
+            "number": 14,
+            "score": "9-6"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [1, 5],
+            "pointsToMatch": [1, 5],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 15,
+            "pointNumber": 16,
+            "set": 0,
+            "game": 0,
+            "number": 15,
+            "score": "9-7"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "serveSide": "deuce",
+            "pointsToGame": [1, 4],
+            "pointsToSet": [1, 4],
+            "pointsToMatch": [1, 4],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 16,
+            "pointNumber": 17,
+            "set": 0,
+            "game": 0,
+            "number": 16,
+            "score": "9-8"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "serveSide": "ad",
+            "pointsToGame": [1, 3],
+            "pointsToSet": [1, 3],
+            "pointsToMatch": [1, 3],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 17,
+            "pointNumber": 18,
+            "set": 0,
+            "game": 0,
+            "number": 17,
+            "score": "9-9"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "serveSide": "deuce",
+            "pointsToGame": [2, 2],
+            "pointsToSet": [2, 2],
+            "pointsToMatch": [2, 2],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 18,
+            "pointNumber": 19,
+            "set": 0,
+            "game": 0,
+            "number": 18,
+            "score": "10-9"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "serveSide": "ad",
+            "pointsToGame": [1, 3],
+            "pointsToSet": [1, 3],
+            "pointsToMatch": [1, 3],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 19,
+            "pointNumber": 20,
+            "set": 0,
+            "game": 0,
+            "number": 19,
+            "score": "10-10"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "serveSide": "deuce",
+            "pointsToGame": [2, 2],
+            "pointsToSet": [2, 2],
+            "pointsToMatch": [2, 2],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 20,
+            "pointNumber": 21,
+            "set": 0,
+            "game": 0,
+            "number": 20,
+            "score": "11-10"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "serveSide": "ad",
+            "pointsToGame": [1, 3],
+            "pointsToSet": [1, 3],
+            "pointsToMatch": [1, 3],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 21,
+            "pointNumber": 22,
+            "set": 0,
+            "game": 0,
+            "number": 21,
+            "score": "11-11"
+          }
+        ],
+        "server": {
+          "side": 0,
+          "derived": false
+        }
+      }
+    },
+    "note": "A tiebreak-only set (`S:TB10`) is a race to ten points, two clear (§ 5)."
+  },
+  {
+    "caseId": "scoring.reduce.timed-segment-ends.v1",
+    "operation": "kernel.scoring.reduce@1",
+    "input": {
+      "configuration": {
+        "matchUpFormat": "SET1-S:T10P"
+      },
+      "timeline": [
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "endSegment",
+          "data": {}
+        }
+      ]
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "outcomes": ["recorded", "recorded", "recorded", "recorded", "recorded"],
+        "matchUpStatus": "COMPLETED",
+        "winningSide": 1,
+        "sets": [
+          {
+            "setNumber": 1,
+            "side1Score": 3,
+            "side2Score": 1,
+            "isTimed": true,
+            "segmentComplete": true,
+            "winningSide": 1
+          }
+        ],
+        "points": [
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "index": 0,
+            "pointNumber": 1,
+            "set": 0,
+            "game": 0,
+            "number": 0,
+            "score": "1-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "index": 1,
+            "pointNumber": 2,
+            "set": 0,
+            "game": 0,
+            "number": 1,
+            "score": "2-0"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "index": 2,
+            "pointNumber": 3,
+            "set": 0,
+            "game": 0,
+            "number": 2,
+            "score": "2-1"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "index": 3,
+            "pointNumber": 4,
+            "set": 0,
+            "game": 0,
+            "number": 3,
+            "score": "3-1"
+          }
+        ],
+        "server": {
+          "side": 0,
+          "derived": false
+        }
+      }
+    },
+    "note": "A timed segment scored in points (`S:T10P`) plays until the host ends it (§ 6.4); `endSegment` closes it with the side ahead winning it."
+  },
+  {
+    "caseId": "scoring.reduce.end-segment-refused-on-a-standard-set.v1",
+    "operation": "kernel.scoring.reduce@1",
+    "input": {
+      "configuration": {
+        "matchUpFormat": "SET3-S:6/TB7"
+      },
+      "timeline": [
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "endSegment",
+          "data": {}
+        }
+      ]
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "outcomes": [
+          "recorded",
+          "recorded",
+          {
+            "refused": "ERR_INVALID_VALUES"
+          }
+        ],
+        "matchUpStatus": "IN_PROGRESS",
+        "sets": [
+          {
+            "setNumber": 1,
+            "side1Score": 0,
+            "side2Score": 0,
+            "side1GameScores": [2],
+            "side2GameScores": [0]
+          }
+        ],
+        "game": {
+          "score": [2, 0],
+          "pointsPlayed": 2
+        },
+        "points": [
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [24, 24],
+            "pointsToMatch": [48, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 0,
+            "pointNumber": 1,
+            "set": 0,
+            "game": 0,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [23, 24],
+            "pointsToMatch": [47, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 1,
+            "pointNumber": 2,
+            "set": 0,
+            "game": 0,
+            "number": 1,
+            "score": "30-0"
+          }
+        ],
+        "server": {
+          "side": 0,
+          "derived": true
+        }
+      }
+    },
+    "note": "`endSegment` ends timed segments only: on a standard set it is refused and changes nothing (§ 2.4)."
+  },
+  {
+    "caseId": "scoring.reduce.unparseable-format.v1",
+    "operation": "kernel.scoring.reduce@1",
+    "input": {
+      "configuration": {
+        "matchUpFormat": "NOT-A-FORMAT"
+      },
+      "timeline": [
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "annotation",
+          "data": {
+            "text": "rain"
+          }
+        }
+      ]
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "outcomes": [
+          {
+            "refused": "ERR_INVALID_VALUES"
+          },
+          "recorded"
+        ],
+        "matchUpStatus": "TO_BE_PLAYED",
+        "sets": [],
+        "points": []
+      }
+    },
+    "note": "A format that does not parse refuses every action that scores or names a server, and records the rest (§ 1.1, § 2): an annotation is kept. No server is reported."
+  },
+  {
+    "caseId": "scoring.reduce.unknown-entry-type.v1",
+    "operation": "kernel.scoring.reduce@1",
+    "input": {
+      "configuration": {
+        "matchUpFormat": "SET3-S:6/TB7"
+      },
+      "timeline": [
+        {
+          "type": "videoReview",
+          "data": {
+            "outcome": "upheld"
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        }
+      ]
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "outcomes": ["recorded", "recorded"],
+        "matchUpStatus": "IN_PROGRESS",
+        "sets": [
+          {
+            "setNumber": 1,
+            "side1Score": 0,
+            "side2Score": 0,
+            "side1GameScores": [1],
+            "side2GameScores": [0]
+          }
+        ],
+        "game": {
+          "score": [1, 0],
+          "pointsPlayed": 1
+        },
+        "points": [
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [24, 24],
+            "pointsToMatch": [48, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 0,
+            "pointNumber": 1,
+            "set": 0,
+            "game": 0,
+            "number": 0,
+            "score": "15-0"
+          }
+        ],
+        "server": {
+          "side": 0,
+          "derived": true
+        }
+      }
+    },
+    "note": "An entry of a type the reducer does not know is kept in place and not replayed (§ 12.1)."
+  },
+  {
+    "caseId": "scoring.reduce.challenge.v1",
+    "operation": "kernel.scoring.reduce@1",
+    "input": {
+      "configuration": {
+        "matchUpFormat": "SET3-S:6/TB7"
+      },
+      "timeline": [
+        {
+          "type": "challenge",
+          "data": {
+            "sideNumber": 1
+          }
+        },
+        {
+          "type": "challenge",
+          "data": {
+            "sideNumber": 3
+          }
+        }
+      ]
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "outcomes": [
+          "recorded",
+          {
+            "refused": "ERR_INVALID_VALUES"
+          }
+        ],
+        "matchUpStatus": "TO_BE_PLAYED",
+        "sets": [],
+        "points": [],
+        "server": {
+          "side": 0,
+          "derived": true
+        }
+      }
+    },
+    "note": "A `challenge` names side 1 or 2 and changes no score; side 3 is refused (§ 2.8)."
+  },
+  {
+    "caseId": "scoring.reduce.consecutive-points-game.v1",
+    "operation": "kernel.scoring.reduce@1",
+    "input": {
+      "configuration": {
+        "matchUpFormat": "SET3-S:6/TB7-G:3C"
+      },
+      "timeline": [
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        }
+      ]
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "outcomes": ["recorded", "recorded", "recorded", "recorded", "recorded", "recorded", "recorded"],
+        "matchUpStatus": "IN_PROGRESS",
+        "sets": [
+          {
+            "setNumber": 1,
+            "side1Score": 0,
+            "side2Score": 1,
+            "side1GameScores": [3, 0],
+            "side2GameScores": [4, 0]
+          }
+        ],
+        "game": {
+          "score": [0, 0],
+          "pointsPlayed": 0
+        },
+        "points": [
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [3, 3],
+            "pointsToSet": [23, 23],
+            "pointsToMatch": [41, 41],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 0,
+            "pointNumber": 1,
+            "set": 0,
+            "game": 0,
+            "number": 0,
+            "score": "1-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [2, 3],
+            "pointsToSet": [22, 23],
+            "pointsToMatch": [40, 41],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 1,
+            "pointNumber": 2,
+            "set": 0,
+            "game": 0,
+            "number": 1,
+            "score": "2-0"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [1, 3],
+            "pointsToSet": [21, 23],
+            "pointsToMatch": [39, 41],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 2,
+            "pointNumber": 3,
+            "set": 0,
+            "game": 0,
+            "number": 2,
+            "score": "2-1"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [3, 2],
+            "pointsToSet": [23, 22],
+            "pointsToMatch": [41, 40],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 3,
+            "pointNumber": 4,
+            "set": 0,
+            "game": 0,
+            "number": 3,
+            "score": "3-1"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 3],
+            "pointsToSet": [22, 23],
+            "pointsToMatch": [40, 41],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 4,
+            "pointNumber": 5,
+            "set": 0,
+            "game": 0,
+            "number": 4,
+            "score": "3-2"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [3, 2],
+            "pointsToSet": [23, 22],
+            "pointsToMatch": [41, 40],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 5,
+            "pointNumber": 6,
+            "set": 0,
+            "game": 0,
+            "number": 5,
+            "score": "3-3"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [3, 1],
+            "pointsToSet": [23, 21],
+            "pointsToMatch": [41, 39],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": true,
+            "index": 6,
+            "pointNumber": 7,
+            "set": 0,
+            "game": 0,
+            "number": 6,
+            "score": "0-0"
+          }
+        ],
+        "server": {
+          "side": 1,
+          "derived": true
+        }
+      }
+    },
+    "note": "A consecutive-points game (`G:3C`) is won by the first side to win three points in a row (§ 4.1 rule 4)."
+  },
+  {
+    "caseId": "scoring.reduce.final-set-match-tiebreak.v1",
+    "operation": "kernel.scoring.reduce@1",
+    "input": {
+      "configuration": {
+        "matchUpFormat": "SET3-S:6/TB7-F:TB10"
+      },
+      "timeline": [
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        }
+      ]
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "outcomes": [
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded",
+          "recorded"
+        ],
+        "matchUpStatus": "COMPLETED",
+        "winningSide": 1,
+        "sets": [
+          {
+            "setNumber": 1,
+            "side1Score": 6,
+            "side2Score": 0,
+            "side1GameScores": [4, 4, 4, 4, 4, 4],
+            "side2GameScores": [0, 0, 0, 0, 0, 0],
+            "winningSide": 1
+          },
+          {
+            "setNumber": 2,
+            "side1Score": 0,
+            "side2Score": 6,
+            "side1GameScores": [0, 0, 0, 0, 0, 0],
+            "side2GameScores": [4, 4, 4, 4, 4, 4],
+            "winningSide": 2
+          },
+          {
+            "setNumber": 3,
+            "side1Score": 1,
+            "side2Score": 0,
+            "isTiebreakOnly": true,
+            "side1GameScores": [10],
+            "side2GameScores": [0],
+            "side1TiebreakScore": 10,
+            "side2TiebreakScore": 0,
+            "winningSide": 1
+          }
+        ],
+        "points": [
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [24, 24],
+            "pointsToMatch": [48, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 0,
+            "pointNumber": 1,
+            "set": 0,
+            "game": 0,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [23, 24],
+            "pointsToMatch": [47, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 1,
+            "pointNumber": 2,
+            "set": 0,
+            "game": 0,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [22, 24],
+            "pointsToMatch": [46, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 2,
+            "pointNumber": 3,
+            "set": 0,
+            "game": 0,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [21, 25],
+            "pointsToMatch": [45, 49],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 3,
+            "pointNumber": 4,
+            "set": 0,
+            "game": 0,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [20, 24],
+            "pointsToMatch": [44, 48],
+            "gamesToSet": [5, 6],
+            "isBreakpoint": false,
+            "index": 4,
+            "pointNumber": 5,
+            "set": 0,
+            "game": 1,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [19, 24],
+            "pointsToMatch": [43, 48],
+            "gamesToSet": [5, 6],
+            "isBreakpoint": false,
+            "index": 5,
+            "pointNumber": 6,
+            "set": 0,
+            "game": 1,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [18, 24],
+            "pointsToMatch": [42, 48],
+            "gamesToSet": [5, 6],
+            "isBreakpoint": false,
+            "index": 6,
+            "pointNumber": 7,
+            "set": 0,
+            "game": 1,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [17, 25],
+            "pointsToMatch": [41, 49],
+            "gamesToSet": [5, 6],
+            "isBreakpoint": true,
+            "index": 7,
+            "pointNumber": 8,
+            "set": 0,
+            "game": 1,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [16, 24],
+            "pointsToMatch": [40, 48],
+            "gamesToSet": [4, 6],
+            "isBreakpoint": false,
+            "index": 8,
+            "pointNumber": 9,
+            "set": 0,
+            "game": 2,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [15, 24],
+            "pointsToMatch": [39, 48],
+            "gamesToSet": [4, 6],
+            "isBreakpoint": false,
+            "index": 9,
+            "pointNumber": 10,
+            "set": 0,
+            "game": 2,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [14, 24],
+            "pointsToMatch": [38, 48],
+            "gamesToSet": [4, 6],
+            "isBreakpoint": false,
+            "index": 10,
+            "pointNumber": 11,
+            "set": 0,
+            "game": 2,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [13, 25],
+            "pointsToMatch": [37, 49],
+            "gamesToSet": [4, 6],
+            "isBreakpoint": false,
+            "index": 11,
+            "pointNumber": 12,
+            "set": 0,
+            "game": 2,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [12, 24],
+            "pointsToMatch": [36, 48],
+            "gamesToSet": [3, 6],
+            "isBreakpoint": false,
+            "index": 12,
+            "pointNumber": 13,
+            "set": 0,
+            "game": 3,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [11, 24],
+            "pointsToMatch": [35, 48],
+            "gamesToSet": [3, 6],
+            "isBreakpoint": false,
+            "index": 13,
+            "pointNumber": 14,
+            "set": 0,
+            "game": 3,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [10, 24],
+            "pointsToMatch": [34, 48],
+            "gamesToSet": [3, 6],
+            "isBreakpoint": false,
+            "index": 14,
+            "pointNumber": 15,
+            "set": 0,
+            "game": 3,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [9, 25],
+            "pointsToMatch": [33, 49],
+            "gamesToSet": [3, 6],
+            "isBreakpoint": true,
+            "index": 15,
+            "pointNumber": 16,
+            "set": 0,
+            "game": 3,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [8, 24],
+            "pointsToMatch": [32, 48],
+            "gamesToSet": [2, 6],
+            "isBreakpoint": false,
+            "index": 16,
+            "pointNumber": 17,
+            "set": 0,
+            "game": 4,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [7, 24],
+            "pointsToMatch": [31, 48],
+            "gamesToSet": [2, 6],
+            "isBreakpoint": false,
+            "index": 17,
+            "pointNumber": 18,
+            "set": 0,
+            "game": 4,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [6, 24],
+            "pointsToMatch": [30, 48],
+            "gamesToSet": [2, 6],
+            "isBreakpoint": false,
+            "index": 18,
+            "pointNumber": 19,
+            "set": 0,
+            "game": 4,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [5, 25],
+            "pointsToMatch": [29, 49],
+            "gamesToSet": [2, 6],
+            "isBreakpoint": false,
+            "index": 19,
+            "pointNumber": 20,
+            "set": 0,
+            "game": 4,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [4, 28],
+            "pointsToMatch": [28, 52],
+            "gamesToSet": [1, 7],
+            "isBreakpoint": false,
+            "index": 20,
+            "pointNumber": 21,
+            "set": 0,
+            "game": 5,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [3, 28],
+            "pointsToMatch": [27, 52],
+            "gamesToSet": [1, 7],
+            "isBreakpoint": false,
+            "index": 21,
+            "pointNumber": 22,
+            "set": 0,
+            "game": 5,
+            "number": 1,
+            "score": "30-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 4],
+            "pointsToSet": [2, 28],
+            "pointsToMatch": [26, 52],
+            "gamesToSet": [1, 7],
+            "isBreakpoint": false,
+            "index": 22,
+            "pointNumber": 23,
+            "set": 0,
+            "game": 5,
+            "number": 2,
+            "score": "40-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [1, 5],
+            "pointsToSet": [1, 29],
+            "pointsToMatch": [25, 53],
+            "gamesToSet": [1, 7],
+            "isBreakpoint": true,
+            "index": 23,
+            "pointNumber": 24,
+            "set": 0,
+            "game": 5,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [24, 24],
+            "pointsToMatch": [24, 34],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 24,
+            "pointNumber": 25,
+            "set": 1,
+            "game": 0,
+            "number": 0,
+            "score": "0-15"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [4, 3],
+            "pointsToSet": [24, 23],
+            "pointsToMatch": [24, 33],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 25,
+            "pointNumber": 26,
+            "set": 1,
+            "game": 0,
+            "number": 1,
+            "score": "0-30"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 2],
+            "pointsToSet": [24, 22],
+            "pointsToMatch": [24, 32],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 26,
+            "pointNumber": 27,
+            "set": 1,
+            "game": 0,
+            "number": 2,
+            "score": "0-40"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [5, 1],
+            "pointsToSet": [25, 21],
+            "pointsToMatch": [25, 31],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": true,
+            "index": 27,
+            "pointNumber": 28,
+            "set": 1,
+            "game": 0,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [24, 20],
+            "pointsToMatch": [24, 30],
+            "gamesToSet": [6, 5],
+            "isBreakpoint": false,
+            "index": 28,
+            "pointNumber": 29,
+            "set": 1,
+            "game": 1,
+            "number": 0,
+            "score": "0-15"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [4, 3],
+            "pointsToSet": [24, 19],
+            "pointsToMatch": [24, 29],
+            "gamesToSet": [6, 5],
+            "isBreakpoint": false,
+            "index": 29,
+            "pointNumber": 30,
+            "set": 1,
+            "game": 1,
+            "number": 1,
+            "score": "0-30"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 2],
+            "pointsToSet": [24, 18],
+            "pointsToMatch": [24, 28],
+            "gamesToSet": [6, 5],
+            "isBreakpoint": false,
+            "index": 30,
+            "pointNumber": 31,
+            "set": 1,
+            "game": 1,
+            "number": 2,
+            "score": "0-40"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [5, 1],
+            "pointsToSet": [25, 17],
+            "pointsToMatch": [25, 27],
+            "gamesToSet": [6, 5],
+            "isBreakpoint": false,
+            "index": 31,
+            "pointNumber": 32,
+            "set": 1,
+            "game": 1,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [24, 16],
+            "pointsToMatch": [24, 26],
+            "gamesToSet": [6, 4],
+            "isBreakpoint": false,
+            "index": 32,
+            "pointNumber": 33,
+            "set": 1,
+            "game": 2,
+            "number": 0,
+            "score": "0-15"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [4, 3],
+            "pointsToSet": [24, 15],
+            "pointsToMatch": [24, 25],
+            "gamesToSet": [6, 4],
+            "isBreakpoint": false,
+            "index": 33,
+            "pointNumber": 34,
+            "set": 1,
+            "game": 2,
+            "number": 1,
+            "score": "0-30"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 2],
+            "pointsToSet": [24, 14],
+            "pointsToMatch": [24, 24],
+            "gamesToSet": [6, 4],
+            "isBreakpoint": false,
+            "index": 34,
+            "pointNumber": 35,
+            "set": 1,
+            "game": 2,
+            "number": 2,
+            "score": "0-40"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [5, 1],
+            "pointsToSet": [25, 13],
+            "pointsToMatch": [25, 23],
+            "gamesToSet": [6, 4],
+            "isBreakpoint": true,
+            "index": 35,
+            "pointNumber": 36,
+            "set": 1,
+            "game": 2,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [24, 12],
+            "pointsToMatch": [24, 22],
+            "gamesToSet": [6, 3],
+            "isBreakpoint": false,
+            "index": 36,
+            "pointNumber": 37,
+            "set": 1,
+            "game": 3,
+            "number": 0,
+            "score": "0-15"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [4, 3],
+            "pointsToSet": [24, 11],
+            "pointsToMatch": [24, 21],
+            "gamesToSet": [6, 3],
+            "isBreakpoint": false,
+            "index": 37,
+            "pointNumber": 38,
+            "set": 1,
+            "game": 3,
+            "number": 1,
+            "score": "0-30"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 2],
+            "pointsToSet": [24, 10],
+            "pointsToMatch": [24, 20],
+            "gamesToSet": [6, 3],
+            "isBreakpoint": false,
+            "index": 38,
+            "pointNumber": 39,
+            "set": 1,
+            "game": 3,
+            "number": 2,
+            "score": "0-40"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [5, 1],
+            "pointsToSet": [25, 9],
+            "pointsToMatch": [25, 19],
+            "gamesToSet": [6, 3],
+            "isBreakpoint": false,
+            "index": 39,
+            "pointNumber": 40,
+            "set": 1,
+            "game": 3,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [24, 8],
+            "pointsToMatch": [24, 18],
+            "gamesToSet": [6, 2],
+            "isBreakpoint": false,
+            "index": 40,
+            "pointNumber": 41,
+            "set": 1,
+            "game": 4,
+            "number": 0,
+            "score": "0-15"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [4, 3],
+            "pointsToSet": [24, 7],
+            "pointsToMatch": [24, 17],
+            "gamesToSet": [6, 2],
+            "isBreakpoint": false,
+            "index": 41,
+            "pointNumber": 42,
+            "set": 1,
+            "game": 4,
+            "number": 1,
+            "score": "0-30"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 2],
+            "pointsToSet": [24, 6],
+            "pointsToMatch": [24, 16],
+            "gamesToSet": [6, 2],
+            "isBreakpoint": false,
+            "index": 42,
+            "pointNumber": 43,
+            "set": 1,
+            "game": 4,
+            "number": 2,
+            "score": "0-40"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [5, 1],
+            "pointsToSet": [25, 5],
+            "pointsToMatch": [25, 15],
+            "gamesToSet": [6, 2],
+            "isBreakpoint": true,
+            "index": 43,
+            "pointNumber": 44,
+            "set": 1,
+            "game": 4,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [28, 4],
+            "pointsToMatch": [28, 14],
+            "gamesToSet": [7, 1],
+            "isBreakpoint": false,
+            "index": 44,
+            "pointNumber": 45,
+            "set": 1,
+            "game": 5,
+            "number": 0,
+            "score": "0-15"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [4, 3],
+            "pointsToSet": [28, 3],
+            "pointsToMatch": [28, 13],
+            "gamesToSet": [7, 1],
+            "isBreakpoint": false,
+            "index": 45,
+            "pointNumber": 46,
+            "set": 1,
+            "game": 5,
+            "number": 1,
+            "score": "0-30"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 2],
+            "pointsToSet": [28, 2],
+            "pointsToMatch": [28, 12],
+            "gamesToSet": [7, 1],
+            "isBreakpoint": false,
+            "index": 46,
+            "pointNumber": 47,
+            "set": 1,
+            "game": 5,
+            "number": 2,
+            "score": "0-40"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [5, 1],
+            "pointsToSet": [29, 1],
+            "pointsToMatch": [29, 11],
+            "gamesToSet": [7, 1],
+            "isBreakpoint": false,
+            "index": 47,
+            "pointNumber": 48,
+            "set": 1,
+            "game": 5,
+            "number": 3,
+            "score": "0-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [10, 10],
+            "pointsToSet": [10, 10],
+            "pointsToMatch": [10, 10],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 48,
+            "pointNumber": 49,
+            "set": 2,
+            "game": 0,
+            "number": 0,
+            "score": "1-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [9, 10],
+            "pointsToSet": [9, 10],
+            "pointsToMatch": [9, 10],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 49,
+            "pointNumber": 50,
+            "set": 2,
+            "game": 0,
+            "number": 1,
+            "score": "2-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [8, 10],
+            "pointsToSet": [8, 10],
+            "pointsToMatch": [8, 10],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 50,
+            "pointNumber": 51,
+            "set": 2,
+            "game": 0,
+            "number": 2,
+            "score": "3-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [7, 10],
+            "pointsToSet": [7, 10],
+            "pointsToMatch": [7, 10],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 51,
+            "pointNumber": 52,
+            "set": 2,
+            "game": 0,
+            "number": 3,
+            "score": "4-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [6, 10],
+            "pointsToSet": [6, 10],
+            "pointsToMatch": [6, 10],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 52,
+            "pointNumber": 53,
+            "set": 2,
+            "game": 0,
+            "number": 4,
+            "score": "5-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [5, 10],
+            "pointsToSet": [5, 10],
+            "pointsToMatch": [5, 10],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 53,
+            "pointNumber": 54,
+            "set": 2,
+            "game": 0,
+            "number": 5,
+            "score": "6-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 10],
+            "pointsToSet": [4, 10],
+            "pointsToMatch": [4, 10],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 54,
+            "pointNumber": 55,
+            "set": 2,
+            "game": 0,
+            "number": 6,
+            "score": "7-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "ad",
+            "pointsToGame": [3, 10],
+            "pointsToSet": [3, 10],
+            "pointsToMatch": [3, 10],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 55,
+            "pointNumber": 56,
+            "set": 2,
+            "game": 0,
+            "number": 7,
+            "score": "8-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [2, 10],
+            "pointsToSet": [2, 10],
+            "pointsToMatch": [2, 10],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": false,
+            "index": 56,
+            "pointNumber": 57,
+            "set": 2,
+            "game": 0,
+            "number": 8,
+            "score": "9-0"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [1, 11],
+            "pointsToSet": [1, 11],
+            "pointsToMatch": [1, 11],
+            "gamesToSet": [1, 1],
+            "isBreakpoint": true,
+            "index": 57,
+            "pointNumber": 58,
+            "set": 2,
+            "game": 0,
+            "number": 9,
+            "score": "0-0"
+          }
+        ],
+        "server": {
+          "side": 1,
+          "derived": false
+        }
+      }
+    },
+    "note": "At a set all, a final match tie-break (`F:TB10`) decides the match, first to ten by two (Appendix VI)."
+  },
+  {
+    "caseId": "scoring.reduce.point-values.v1",
+    "operation": "kernel.scoring.reduce@1",
+    "input": {
+      "configuration": {
+        "matchUpFormat": "SET1-S:T10P",
+        "pointMultipliers": [
+          {
+            "condition": {
+              "results": ["Ace"]
+            },
+            "value": 2
+          }
+        ]
+      },
+      "timeline": [
+        {
+          "type": "point",
+          "data": {
+            "winner": 0,
+            "scoreValue": 3
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1,
+            "result": "Ace"
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        }
+      ]
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "outcomes": ["recorded", "recorded", "recorded"],
+        "matchUpStatus": "IN_PROGRESS",
+        "sets": [
+          {
+            "setNumber": 1,
+            "side1Score": 3,
+            "side2Score": 3,
+            "isTimed": true
+          }
+        ],
+        "game": {
+          "score": [3, 3],
+          "pointsPlayed": 3
+        },
+        "points": [
+          {
+            "winner": 0,
+            "scoreValue": 3,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "index": 0,
+            "pointNumber": 1,
+            "set": 0,
+            "game": 0,
+            "number": 0,
+            "score": "3-0"
+          },
+          {
+            "winner": 1,
+            "result": "Ace",
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "index": 1,
+            "pointNumber": 2,
+            "set": 0,
+            "game": 0,
+            "number": 1,
+            "score": "3-2",
+            "scoreValue": 2
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "index": 2,
+            "pointNumber": 3,
+            "set": 0,
+            "game": 0,
+            "number": 2,
+            "score": "3-3"
+          }
+        ],
+        "server": {
+          "side": 0,
+          "derived": true
+        }
+      }
+    },
+    "note": "Where points are units (a timed segment in points) a point carries its `scoreValue`, and a multiplier gives one to a point by its result (§ 5 rule 5)."
+  },
+  {
+    "caseId": "scoring.reduce.winner-serves.v1",
+    "operation": "kernel.scoring.reduce@1",
+    "input": {
+      "configuration": {
+        "matchUpFormat": "SET3-S:6/TB7",
+        "competitionFormat": {
+          "serverRule": "WINNER_SERVES"
+        }
+      },
+      "timeline": [
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 1
+          }
+        },
+        {
+          "type": "point",
+          "data": {
+            "winner": 0
+          }
+        }
+      ]
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "outcomes": ["recorded", "recorded", "recorded", "recorded"],
+        "matchUpStatus": "IN_PROGRESS",
+        "sets": [
+          {
+            "setNumber": 1,
+            "side1Score": 0,
+            "side2Score": 0,
+            "side1GameScores": [2],
+            "side2GameScores": [2]
+          }
+        ],
+        "game": {
+          "score": [2, 2],
+          "pointsPlayed": 4
+        },
+        "points": [
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [4, 4],
+            "pointsToSet": [24, 24],
+            "pointsToMatch": [48, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 0,
+            "pointNumber": 1,
+            "set": 0,
+            "game": 0,
+            "number": 0,
+            "score": "15-0"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 0,
+            "serverSideNumber": 1,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [3, 4],
+            "pointsToSet": [23, 24],
+            "pointsToMatch": [47, 48],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 1,
+            "pointNumber": 2,
+            "set": 0,
+            "game": 0,
+            "number": 1,
+            "score": "15-15"
+          },
+          {
+            "winner": 1,
+            "winningSide": 2,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "S",
+            "serveSide": "deuce",
+            "pointsToGame": [3, 3],
+            "pointsToSet": [23, 23],
+            "pointsToMatch": [47, 47],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 2,
+            "pointNumber": 3,
+            "set": 0,
+            "game": 0,
+            "number": 2,
+            "score": "15-30"
+          },
+          {
+            "winner": 0,
+            "winningSide": 1,
+            "server": 1,
+            "serverSideNumber": 2,
+            "code": "R",
+            "serveSide": "ad",
+            "pointsToGame": [3, 2],
+            "pointsToSet": [23, 22],
+            "pointsToMatch": [47, 46],
+            "gamesToSet": [6, 6],
+            "isBreakpoint": false,
+            "index": 3,
+            "pointNumber": 4,
+            "set": 0,
+            "game": 0,
+            "number": 3,
+            "score": "30-30"
+          }
+        ],
+        "server": {
+          "side": 0,
+          "derived": true
+        }
+      }
+    },
+    "note": "Under the competition's winner-serves rule the side that won the last point serves the next, even inside a game of a standard set, where service would otherwise stay with one side for the game (§ 10.7)."
+  }
+]

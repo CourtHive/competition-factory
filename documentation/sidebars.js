@@ -114,6 +114,7 @@ module.exports = {
           items: [
             'concepts/matchup-overview',
             'concepts/matchup-context',
+            'concepts/hydration',
             'concepts/matchup-filtering',
             'concepts/tieMatchUp',
             'concepts/lineUp',
@@ -453,7 +454,13 @@ module.exports = {
         {
           type: 'category',
           label: 'Codes',
-          items: ['codes/age-category', 'codes/matchup-format', 'codes/matchup-format-grammar', 'codes/sanctioning'],
+          items: [
+            'codes/age-category',
+            'codes/matchup-format',
+            'codes/matchup-format-grammar',
+            'codes/online-resources',
+            'codes/sanctioning',
+          ],
         },
       ],
     },

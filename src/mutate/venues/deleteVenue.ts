@@ -4,6 +4,7 @@ import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUp
 import { deletionMessage } from '@Assemblies/generators/matchUps/deletionMessage';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { addNotice } from '@Global/state/globalState';
+import { pruneVenueTransits } from './venueTransits';
 
 // constants and types
 import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
@@ -74,6 +75,8 @@ export function deleteVenue(params: DeleteVenueArgs): {
         return false;
       });
       if (deleted) {
+        // the transit pairs naming it go with it, in this record only: a linked peer's own pairs are its own
+        pruneVenueTransits({ tournamentRecord, venueId });
         addNotice({
           payload: { venueId, tournamentId: tournamentRecord.tournamentId },
           topic: DELETE_VENUE,

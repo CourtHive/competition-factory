@@ -6,6 +6,7 @@ import type {
   Event,
   MatchUpStatusCodeElement,
   MatchUpStatusUnion,
+  PositionAssignment,
   Score,
   Tournament,
 } from '@Types/tournamentTypes';
@@ -140,8 +141,18 @@ export type OutcomeView = {
     luckyPreFeed: boolean;
     sideParticipantIds: { 1?: string; 2?: string };
     sideDrawPositions: { 1?: number; 2?: number };
+    /**
+     * A FIRST_MATCHUP reservation the winner's arrival would make (S3), by the winning side: present only on a draw with
+     * such a link. `reserve` names the consolation seat and matchUp v1's `propagateConsolationBye` fills with a propagated BYE;
+     * `abstain` is a placement this plan does not make (the other seat held, an advancement) or a withdrawal.
+     */
+    reservations?: { 1: Reservation; 2: Reservation };
+    /** a winner link leaves the structure from this round (a qualifying final's winner is placed in the main draw) */
+    winnerLink?: boolean;
     /** the loser link, when there is one: its condition and the round it feeds */
     loserLink?: { linkCondition?: string; targetRoundNumber?: number };
+    /** a BYE-only target (a FIRST_MATCHUP feed beside a playoff link), where `directParticipants` places a BYE */
+    byeTarget?: boolean;
     /** the loserMatchUp's round in its own structure (an FMLC feed lands in round 2) */
     loserMatchUpRoundNumber?: number;
     /** the loserMatchUp's structure and drawPositions: where a kept-out loser's BYE lands */
@@ -149,7 +160,20 @@ export type OutcomeView = {
     /** the drawPosition the loser link feeds in the loser's structure (`positionTargets`) */
     loserTargetDrawPosition?: number;
     /** that stored assignment: free when it holds no participant, BYE or qualifier */
-    loserTargetSeat?: { free: boolean; opponentBye: boolean; structureHasBye: boolean };
+    loserTargetSeat?: {
+      free: boolean;
+      opponentBye: boolean;
+      /** the seat is a BYE already (a FIRST_MATCHUP reservation placed it): a kept-out loser's BYE needs nothing */
+      bye: boolean;
+      /** the matchUp's other seat holds somebody or a BYE: a BYE placed here would advance or meet them */
+      opponentHeld: boolean;
+    };
+    /** a loser placed opposite a BYE goes on into this matchUp, holding these drawPositions after (planned, S3) */
+    loserThroughBye?: ThroughBye;
+    /** a winner whose target holds a BYE goes on past it into this matchUp, by the winning side (planned, S3) */
+    winnerThroughBye?: { 1?: ThroughBye; 2?: ThroughBye };
+    /** the participants seeded in the source structure: a seeded loser placed across a link takes the seed with them */
+    seededParticipantIds?: string[];
     /** the loserMatchUp's status before this call: an exit already there converges with the carried one */
     loserMatchUpStatus?: MatchUpStatusUnion;
     /** the loserMatchUp has a result of its own (a score, a winner, COMPLETED or an exit): a relabel carries nothing there */
@@ -196,6 +220,18 @@ export type OutcomeView = {
     priorLosses: { 1: number; 2: number };
   };
   /** § 3: facts the routes ask */
+  /** a round robin group's tally inputs (S3: the tally planned as `setParticipantResults`); absent elsewhere */
+  group?: {
+    /** the round robin's container, or the ad hoc structure itself: the top-level structure a write stamps (F2 (i)) */
+    containerStructureId: string;
+    structureId: string;
+    matchUps: HydratedMatchUp[];
+    positionAssignments: PositionAssignment[];
+    matchUpFormat?: string;
+    policyDefinitions?: PolicyDefinitions;
+    /** an ad hoc structure: its assignments are rebuilt from its matchUps' participants before the tally is written */
+    adHoc?: boolean;
+  };
   draw: {
     isAdHoc: boolean;
     /** a dual in a round-robin container (§ 3 `team round robin`) */
@@ -206,10 +242,10 @@ export type OutcomeView = {
     timedTie: boolean;
     rotatingPartners?: boolean;
     combinedPointRoundRobin?: boolean;
+    /** a competition policy processed per matchUp: v1 updates ratings on a result (`processCompetitionMatchUp`) */
+    perMatchUpCompetition?: boolean;
     /** v1's score write updates a tally here (`updateTallyIfNeeded`): a round-robin container, ad hoc, or lucky */
     tallied: boolean;
-    /** the draw has a FIRST_MATCHUP loser link, whose unreachable seats v1 fills with a propagated BYE (S5) */
-    firstMatchFeed: boolean;
     /** the draw stores its winner and loser edges; v1 writes them first on one that does not (edge repair) */
     storesEdges: boolean;
   };
@@ -293,3 +329,19 @@ export type DirectionPlan = {
     withdrawn?: WithdrawnCarry;
   };
 };
+
+/** a winner's FIRST_MATCHUP reservation, as the view reads it (see `targets.reservations`) */
+export type Reservation =
+  | { kind: 'none' }
+  | { kind: 'abstain' }
+  | {
+      kind: 'reserve';
+      structureId: string;
+      drawPosition: number;
+      matchUpId: string;
+      /** the consolation matchUp's drawPositions: a loser this call places among them meets the BYE (a cascade) */
+      drawPositions: number[];
+    };
+
+/** the matchUp a participant placed opposite a BYE goes on into, and its drawPositions once they are there */
+export type ThroughBye = { matchUpId: string; drawPositions: number[] };

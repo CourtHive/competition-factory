@@ -1,4 +1,5 @@
 import { extractDate, extractTime, isValidDateString, sameDay, zeroPad } from '@Tools/dateTime';
+import { overnightRestWarningsFor } from '@Query/matchUps/scheduling/getOvernightRestWarnings';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue';
@@ -9,6 +10,7 @@ import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { resolveScheduleMatchUpsTiming } from './resolveScheduleMatchUpsTiming';
 import { getParticipantReachability } from './getParticipantReachability';
 import { checkDependenciesScheduled } from './checkDependenciesScheduled';
+import { hasByeSide } from '@Mutate/matchUps/schedule/byeScheduling';
 import { modifyParticipantDayMatchUps } from './participantDayLoad';
 import { updateTimeAfterRecovery } from './updateTimeAfterRecovery';
 import { calculateScheduleTimes } from './calculateScheduleTimes';
@@ -198,7 +200,8 @@ export function scheduleMatchUps(params) {
     const alreadyScheduled = dateScheduledMatchUpIds?.includes(matchUp.matchUpId);
 
     const doNotSchedule = [BYE, DEFAULTED, COMPLETED, ABANDONED, RETIRED, WALKOVER].includes(matchUp?.matchUpStatus);
-    return !alreadyScheduled && !matchUp.winningSide && !doNotSchedule;
+    // a line of a BYE dual is stored TO_BE_PLAYED but has a BYE side: it will never be played
+    return !alreadyScheduled && !matchUp.winningSide && !doNotSchedule && !hasByeSide(matchUp);
   });
 
   // for optimization, build up an object for each tournament and an array for each draw with target matchUps
@@ -401,6 +404,20 @@ export function scheduleMatchUps(params) {
   });
 
   const noTimeMatchUpIds = [...getMatchUpIds(matchUpsToSchedule), ...refusedMatchUpIds];
+  // overnight rest is warned, not held (§ 9.8); a dry run's placements are read over the records
+  const scheduleOverrides = dryRun
+    ? Object.fromEntries(
+        scheduledMatchUpIds.map((matchUpId) => [
+          matchUpId,
+          { scheduledDate: extractDate(scheduleDate), scheduledTime: matchUpScheduleTimes[matchUpId] },
+        ]),
+      )
+    : undefined;
+  const overnightRestWarnings = overnightRestWarningsFor({
+    scheduleDates: [scheduleDate],
+    tournamentRecords,
+    scheduleOverrides,
+  });
 
   return {
     ...SUCCESS,
@@ -411,6 +428,7 @@ export function scheduleMatchUps(params) {
     participantIdsAtLimit, // at the moment this is only those participants at limit BEFORE scheduling begins
     skippedScheduleTimes,
     overLimitMatchUpIds,
+    overnightRestWarnings,
     scheduledMatchUpIds,
     noTimeMatchUpIds,
 

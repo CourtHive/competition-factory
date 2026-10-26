@@ -3,6 +3,7 @@ import { getSchedulingProfile, schedulingProfileRepairRefusal } from '@Mutate/to
 import { EventBookingTimings, getEventBookingTimings } from '@Generators/scheduling/utils/generateBookings';
 import { timedMatchUpMinutes } from '@Mutate/matchUps/schedule/schedulers/processAlreadyScheduledMatchUps';
 import { DrawPlayedOrderFacts, drawPlayedOrderFacts } from '../scheduleItems/playedOrder';
+import { defaultTransitMinutes, venueTransitPairs } from '@Query/venues/getVenueTransits';
 import { getContainedStructures } from '@Query/drawDefinition/getContainedStructures';
 import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import { getPersonRequests } from '@Query/matchUps/scheduling/getPersonRequests';
@@ -10,20 +11,24 @@ import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
 import { findMatchUpFormatTiming } from '@Acquire/findMatchUpFormatTiming';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
+import { hasByeSide } from '@Mutate/matchUps/schedule/byeScheduling';
+import { timingCategoryType } from '@Query/event/timingCategoryType';
 import { extractDate, isValidDateString } from '@Tools/dateTime';
 import { isConvertableInteger, isPowerOf2 } from '@Tools/math';
+import { definedAttributes } from '@Tools/definedAttributes';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { filterMatchUps } from '@Query/filterMatchUps';
 import { addDaysToDate } from '@Tools/civilDateTime';
 import { findEvent } from '@Acquire/findEvent';
 
 // constants and types
-import { BYE, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { ErrorType, NO_VALID_DATES } from '@Constants/errorConditionConstants';
+import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { HydratedCourt, HydratedMatchUp } from '@Types/hydrated';
 import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { Tournament } from '@Types/tournamentTypes';
+import type { VenueTransit } from './transit';
 
 /**
  * vNext, stage one: the read-only VIEW a scheduling call is decided from (SCHEDULING_PIPELINE_VNEXT.md § 7; the rules
@@ -94,6 +99,8 @@ export type PlanningView = {
   timedMinutes: { [matchUpId: string]: Minutes };
   /** per draw anyone has played in, its stored matchUps as the played order reads them */
   playedOrderFacts: { [drawId: string]: DrawPlayedOrderFacts };
+  /** transit between venues (§ 3.4): the policy's default, any stated pairs, and which venues share a facility */
+  transit?: VenueTransit;
   dates: DatePlan[];
 };
 
@@ -188,7 +195,7 @@ function roundMinutes(
   const { eventType, category } = event ?? {};
   const timing = findMatchUpFormatTiming({
     categoryName: category?.categoryName ?? category?.ageCategoryCode,
-    categoryType: category?.categoryType,
+    categoryType: timingCategoryType(category),
     tournamentId: round.tournamentId,
     eventId: round.eventId,
     tournamentRecords,
@@ -238,8 +245,7 @@ export function buildSchedulingView({
   );
   // a completed matchUp is never scheduled again (CA 2026-10-23)
   const schedulable = (matchUp: HydratedMatchUp) =>
-    matchUp.matchUpStatus !== BYE &&
-    (!matchUp.matchUpStatus || !completedMatchUpStatuses.includes(matchUp.matchUpStatus));
+    !hasByeSide(matchUp) && (!matchUp.matchUpStatus || !completedMatchUpStatuses.includes(matchUp.matchUpStatus));
 
   const dates: DatePlan[] = dateProfiles.map((dateProfile) => {
     // a matchUp belongs to the first venue that profiles it on the date
@@ -297,6 +303,7 @@ export function buildSchedulingView({
     timedMinutes: timedMinutesOf(hydrated, dates, tournamentRecords),
     playedOrderFacts: playedOrderFactsOf(tournamentRecords),
     eventTimings: getEventBookingTimings(tournamentRecords),
+    transit: venueTransit(tournamentRecords),
     reachability,
     dateCourts,
     hydrated,
@@ -343,4 +350,25 @@ function playedOrderFactsOf(tournamentRecords: { [tournamentId: string]: Tournam
     }
   }
   return facts;
+}
+
+/**
+ * Transit between the records' venues (§ 3.4): the stated pairs by direction (`scheduling.venueTransits`), the venues that
+ * share a facility (none between them), and the attached scheduling policy's `defaultTimes.transitMinutes` for a pair with
+ * no stated minutes (no policy stating it, no transit). Absent when nothing applies, so a view without transit plans as
+ * before.
+ */
+function venueTransit(tournamentRecords: { [tournamentId: string]: Tournament }): VenueTransit | undefined {
+  const facilityIds: { [venueId: string]: string } = {};
+  for (const tournamentRecord of Object.values(tournamentRecords)) {
+    for (const venue of tournamentRecord.venues ?? [])
+      if (venue.facilityId) facilityIds[venue.venueId] = venue.facilityId;
+  }
+  const pairs = venueTransitPairs(tournamentRecords);
+  const transit: VenueTransit = definedAttributes({
+    facilityIds: Object.keys(facilityIds).length ? facilityIds : undefined,
+    pairs: Object.keys(pairs).length ? pairs : undefined,
+    defaultMinutes: defaultTransitMinutes(tournamentRecords),
+  });
+  return Object.keys(transit).length ? transit : undefined;
 }

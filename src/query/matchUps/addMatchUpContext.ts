@@ -48,9 +48,12 @@ import {
   DrawDefinition,
   SeedAssignment,
   PositionAssignment,
+  TieFormat,
 } from '@Types/tournamentTypes';
 
 type AddMatchUpContextArgs = {
+  /** a line's dual's tieFormat, as the dual resolved it: what a line without its own resolves through */
+  dualTieFormat?: TieFormat;
   scheduleVisibilityFilters?: ScheduleVisibilityFilters;
   additionalContext?: { [key: string]: any };
   positionAssignments: PositionAssignment[];
@@ -166,14 +169,21 @@ export function addMatchUpContext({
   context,
   matchUp,
   event,
+  dualTieFormat,
 }: AddMatchUpContextArgs) {
   additionalContext = additionalContext ?? {};
-  const tieFormat = resolveTieFormat({
-    drawDefinition,
-    structure,
-    matchUp,
-    event,
-  })?.tieFormat;
+  // a line resolves its tieFormat through its dual: its own, else the dual's (which already fell back to the structure,
+  // the draw and the event), so a tieFormat set on the dual reaches its lines (CA 2026-10-26, hydration OPEN-4)
+  const ownTieFormat = !!(matchUp.tieFormat ?? matchUp.tieFormatId);
+  const throughDual = !!matchUpTieId && !ownTieFormat && !!dualTieFormat;
+  const tieFormat = throughDual
+    ? dualTieFormat
+    : resolveTieFormat({
+        drawDefinition,
+        structure,
+        matchUp,
+        event,
+      })?.tieFormat;
 
   const { roundOffset, structureId, structureName, stage, stageSequence } = structure;
   const { drawId, drawName, drawType } = drawDefinition ?? {};
@@ -182,8 +192,12 @@ export function addMatchUpContext({
     matchUp.collectionId &&
     collectionDefinitions?.find((definition) => definition.collectionId === matchUp.collectionId);
 
+  // a line without a collection format falls back along the same chain as any matchUp: structure, draw, event
   const matchUpFormat = matchUp.collectionId
-    ? collectionDefinition?.matchUpFormat
+    ? (collectionDefinition?.matchUpFormat ??
+      structure?.matchUpFormat ??
+      drawDefinition?.matchUpFormat ??
+      event?.matchUpFormat)
     : (matchUp.matchUpFormat ?? structure?.matchUpFormat ?? drawDefinition?.matchUpFormat ?? event?.matchUpFormat);
 
   const matchUpType =
@@ -342,6 +356,9 @@ export function addMatchUpContext({
     }),
     ...sourceMatchUp,
   };
+  // a line of a BYE dual is a BYE: the dual carries the BYE, the line is stored TO_BE_PLAYED, and the stored status
+  // must not win here as every other stored attribute does (CA 2026-10-26, hydration OPEN-1)
+  if (isCollectionBye) matchUpWithContext.matchUpStatus = BYE;
 
   if (matchUpFormat && matchUp.score?.scoreStringSide1) {
     annotateScoreSets(matchUpWithContext, matchUpFormat);
@@ -733,6 +750,7 @@ function processTieMatchUps(params) {
     };
 
     return addMatchUpContext({
+      dualTieFormat: matchUpWithContext.tieFormat,
       tieDrawPositions: params.drawPositions,
       scheduleVisibilityFilters: params.scheduleVisibilityFilters,
       sourceDrawPositionRanges: params.sourceDrawPositionRanges,

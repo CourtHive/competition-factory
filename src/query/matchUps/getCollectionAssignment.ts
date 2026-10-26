@@ -100,8 +100,9 @@ export function getCollectionAssignment({
       sideLineUps
         ?.map((side) => {
           const { teamParticipant, sideNumber } = side;
+          // the team as hydration builds it carries `participantId` (CA 2026-10-26, hydration OPEN-12)
           const lineUp =
-            side.lineUp || getTeamLineUp({ participantId: teamParticipant.teamParticipantId, drawDefinition })?.lineUp;
+            side.lineUp || getTeamLineUp({ participantId: teamParticipant?.participantId, drawDefinition })?.lineUp;
 
           return getAssignment({ attribute: sideNumber, lineUp, teamParticipant });
         })

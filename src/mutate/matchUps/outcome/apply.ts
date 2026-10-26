@@ -1,7 +1,12 @@
-import { deferInContextMatchUp, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getInContextMatchUp } from '@Mutate/matchUps/score/modifyMatchUpScore';
+import { findStructure } from '@Acquire/findStructure';
 import { getTopics } from '@Global/state/globalState';
 import { applyOutcomeOps } from './ops';
+import {
+  deferInContextMatchUp,
+  modifyMatchUpNotice,
+  modifyPositionAssignmentsNotice,
+} from '@Mutate/notifications/drawNotifications';
 
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
@@ -9,6 +14,7 @@ import { UPDATE_INCONTEXT_MATCHUP } from '@Constants/topicConstants';
 import type { ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import type { BuildViewArgs } from './types';
+import type { PlanShape } from './plan';
 import type { OutcomeOp } from './ops';
 
 /**
@@ -22,11 +28,20 @@ import type { OutcomeOp } from './ops';
  * working view's copies before this ran, so an id they name is in the draw.
  *
  * THE NOTICES are v1's for the same write: a `modifyMatchUp` for each matchUp written (with the draw and the matchUp's
- * own top-level structure stamped, `modifyMatchUpNotice`), and for the call's matchUp the `updateInContextMatchUp` a
+ * own top-level structure stamped, `modifyMatchUpNotice`), a `modifyPositionAssignments` for each structure a loser is
+ * placed in (S3: the direction shape), and for the call's matchUp the `updateInContextMatchUp` a
  * subscriber receives, built when the notices are read, after the call has succeeded, and only for a subscriber
  * (CA, 2026-10-24: projection bounded to the changed node, never on an error).
  */
-export function applyOwnedPlan({ args, ops }: { args: BuildViewArgs; ops: OutcomeOp[] }): ResultType {
+export function applyOwnedPlan({
+  shape,
+  args,
+  ops,
+}: {
+  args: BuildViewArgs;
+  ops: OutcomeOp[];
+  shape: PlanShape;
+}): ResultType {
   const { drawDefinition, tournamentRecord, event } = args;
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
   const applied = applyOutcomeOps(drawDefinition, ops);
@@ -35,9 +50,21 @@ export function applyOwnedPlan({ args, ops }: { args: BuildViewArgs; ops: Outcom
   const tournamentId = tournamentRecord?.tournamentId;
   const written = [
     ...new Set(
-      ops.flatMap((op) => (op.op === 'setMatchUpResult' || op.op === 'setMatchUpDrawPositions' ? [op.matchUpId] : [])),
+      ops.flatMap((op) =>
+        op.op === 'setMatchUpResult' || op.op === 'setMatchUpDrawPositions' || op.op === 'setMatchUpBye'
+          ? [op.matchUpId]
+          : [],
+      ),
     ),
   ];
+  const resulted = new Set(ops.flatMap((op) => (op.op === 'setMatchUpResult' ? [op.matchUpId] : [])));
+  const byes = new Set(ops.flatMap((op) => (op.op === 'setMatchUpBye' ? [op.matchUpId] : [])));
+  // a position taken back out of a later round: v1's `removeSubsequentRoundsParticipant` names the position, no event
+  const removed = new Map(
+    ops.flatMap((op) =>
+      op.op === 'setMatchUpDrawPositions' && op.removedDrawPosition ? [[op.matchUpId, op.removedDrawPosition]] : [],
+    ),
+  );
   const stored = new Map(args.matchUpsMap?.drawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
   const subscribed = getTopics().topics.includes(UPDATE_INCONTEXT_MATCHUP);
   for (const matchUpId of written) {
@@ -49,14 +76,37 @@ export function applyOwnedPlan({ args, ops }: { args: BuildViewArgs; ops: Outcom
         tournamentId,
         matchUpId,
       });
+    // a removal's notice is built as v1's `removeSubsequentRoundsParticipant` builds it, whose caller passes no event
+    const removedPosition = removed.get(matchUpId);
+    const noticeEvent = removedPosition ? undefined : event;
     modifyMatchUpNotice({
-      context: 'modifyMatchUpScore',
-      eventId: event?.eventId,
+      // v1's writers name themselves: the call's result is `modifyMatchUpScore`'s, a winner's seat in the next matchUp
+      // is `assignMatchUpDrawPosition`'s (`directWinner`), a FIRST_MATCHUP reservation's matchUp `setMatchUpStatusBye`'s
+      context: removedPosition
+        ? `removeSubsequentDrawPosition-${removedPosition}`
+        : matchUpContext(matchUpId, resulted, byes),
+      eventId: noticeEvent?.eventId,
       drawDefinition,
       tournamentId,
       matchUp,
-      event,
+      event: noticeEvent,
     });
   }
-  return { ...SUCCESS };
+  // a loser placed across a link, or a reserved seat: the structure whose assignments changed, announced once (v1's
+  // `directLoser`, `assignDrawPositionBye`)
+  const placedIn = [
+    ...new Set(ops.flatMap((op) => (op.op === 'assignPosition' || op.op === 'assignBye' ? [op.structureId] : []))),
+  ];
+  for (const structureId of placedIn) {
+    const { structure } = findStructure({ drawDefinition, structureId });
+    if (structure) modifyPositionAssignmentsNotice({ drawDefinition, tournamentId, structure, event });
+  }
+  // a winner's route returns the context `directParticipants` builds, a final's included, which carries something only
+  // for an exit (S5): empty
+  return shape === 'direction' ? { ...SUCCESS, context: {} } : { ...SUCCESS };
+}
+
+function matchUpContext(matchUpId: string, resulted: Set<string>, byes: Set<string>): string {
+  if (resulted.has(matchUpId)) return 'modifyMatchUpScore';
+  return byes.has(matchUpId) ? 'setMatchUpStatusBye' : 'assignMatchUpDrawPosition';
 }

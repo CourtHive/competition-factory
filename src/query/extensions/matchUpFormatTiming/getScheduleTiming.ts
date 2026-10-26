@@ -1,11 +1,12 @@
 import { firstClassGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
+import { timingCategoryType } from '@Query/event/timingCategoryType';
 import { findExtension } from '@Acquire/findExtension';
 import { findPolicy } from '@Acquire/findPolicy';
 
 // constants and types
+import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
 import { SCHEDULE_TIMING } from '@Constants/extensionConstants';
-import { Event, Tournament } from '@Types/tournamentTypes';
 import { PolicyDefinitions } from '@Types/factoryTypes';
 
 type GetScheduleTimingArgs = {
@@ -13,27 +14,31 @@ type GetScheduleTimingArgs = {
   tournamentRecord?: Tournament;
   categoryName?: string;
   categoryType?: string;
+  drawDefinition?: DrawDefinition;
   event?: Event;
 };
 export function getScheduleTiming({
   policyDefinitions,
   tournamentRecord,
   categoryName,
+  drawDefinition,
   categoryType,
   event,
 }: GetScheduleTimingArgs) {
   categoryName = categoryName ?? event?.category?.categoryName ?? event?.category?.ageCategoryCode;
 
-  categoryType = categoryType ?? event?.category?.categoryType ?? event?.category?.subType;
+  categoryType = categoryType ?? timingCategoryType(event?.category);
 
   // A caller-supplied scheduling policy wins over whatever is attached to the
   // record, matching the `policyDefinitions ?? appliedPolicies` idiom used
   // throughout the generators. This is what lets a report answer "what would
   // this tournament look like under a *different* policy" without mutating it;
   // every existing caller omits it and resolves exactly as before.
+  // the draw's policy, else the event's, else the tournament's (CA 2026-10-26, hydration OPEN-11)
   const { policy: attachedPolicy } = findPolicy({
     policyType: POLICY_TYPE_SCHEDULING,
     tournamentRecord,
+    drawDefinition,
     event,
   });
   const policy = policyDefinitions?.[POLICY_TYPE_SCHEDULING] ?? attachedPolicy;

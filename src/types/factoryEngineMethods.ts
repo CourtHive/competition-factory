@@ -353,6 +353,7 @@ export type FactoryEngineMethod =
   | 'getMatchUpsStats'
   | 'getMatchUpsToSchedule'
   | 'getMatchUpType'
+  | 'getMatchUpUpset'
   | 'getMaxEntryPosition'
   | 'getMaxSetScore'
   | 'getModifiedMatchUpFormatTiming'
@@ -460,6 +461,7 @@ export type FactoryEngineMethod =
   | 'getVenueData'
   | 'getVenuesAndCourts'
   | 'getVenuesReport'
+  | 'getVenueTransits'
   | 'getWinner'
   | 'groupByMatch'
   | 'groupConflictsBySeverity'
@@ -627,6 +629,7 @@ export type FactoryEngineMethod =
   | 'removeTournamentExtension'
   | 'removeTournamentRecord'
   | 'removeUnlinkedTournamentRecords'
+  | 'removeVenueTransit'
   | 'renameStructures'
   | 'reorderUpcomingMatchUps'
   | 'repairMalformedLink'
@@ -709,6 +712,8 @@ export type FactoryEngineMethod =
   | 'setTournamentStartDate'
   | 'setTournamentStatus'
   | 'setTournamentTier'
+  | 'setVenueTransit'
+  | 'setVenueTransits'
   | 'shiftAdHocRounds'
   | 'shotParser'
   | 'shotSplitter'
@@ -1132,6 +1137,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getMatchUpsStats',
   'getMatchUpsToSchedule',
   'getMatchUpType',
+  'getMatchUpUpset',
   'getMaxEntryPosition',
   'getMaxSetScore',
   'getModifiedMatchUpFormatTiming',
@@ -1239,6 +1245,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getVenueData',
   'getVenuesAndCourts',
   'getVenuesReport',
+  'getVenueTransits',
   'getWinner',
   'groupByMatch',
   'groupConflictsBySeverity',
@@ -1406,6 +1413,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'removeTournamentExtension',
   'removeTournamentRecord',
   'removeUnlinkedTournamentRecords',
+  'removeVenueTransit',
   'renameStructures',
   'reorderUpcomingMatchUps',
   'repairMalformedLink',
@@ -1488,6 +1496,8 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'setTournamentStartDate',
   'setTournamentStatus',
   'setTournamentTier',
+  'setVenueTransit',
+  'setVenueTransits',
   'shiftAdHocRounds',
   'shotParser',
   'shotSplitter',

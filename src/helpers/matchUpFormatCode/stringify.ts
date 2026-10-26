@@ -123,8 +123,13 @@ function stringifySet(setObject, preserveRedundant) {
       // `noTiebreak: true` shapes and shapes that simply omit `tiebreakFormat`.
       const winByCode = winByValue && winByValue !== 2 && !setTiebreakValue ? `WB${winByValue}` : '';
       const tiebreakAtValue = getNumber(setObject.tiebreakAt);
+      // `@{at}` is when the tiebreak is played: with no tiebreak there is none to write (`6@5` is not a code)
       const tiebreakAtCode =
-        (tiebreakAtValue && (tiebreakAtValue !== setToValue || preserveRedundant) && `@${tiebreakAtValue}`) || '';
+        (setTiebreakValue &&
+          tiebreakAtValue &&
+          (tiebreakAtValue !== setToValue || preserveRedundant) &&
+          `@${tiebreakAtValue}`) ||
+        '';
       if (setTiebreakValue !== false) {
         return `${setToValue}${NoAD}${winByCode}${setTiebreakCode}${tiebreakAtCode}`;
       }

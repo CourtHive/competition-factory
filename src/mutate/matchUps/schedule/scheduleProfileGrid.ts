@@ -1,16 +1,18 @@
 import { getSchedulingProfile, schedulingProfileRepairRefusal } from '@Mutate/tournaments/schedulingProfile';
 import { proAutoSchedule } from '@Mutate/matchUps/schedule/schedulers/proScheduler/proAutoSchedule';
+import { overnightRestWarningsFor } from '@Query/matchUps/scheduling/getOvernightRestWarnings';
 import { clearScheduledMatchUps } from '@Mutate/matchUps/schedule/clearScheduledMatchUps';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getContainedStructures } from '@Query/drawDefinition/getContainedStructures';
 import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
+import { hasByeSide } from '@Mutate/matchUps/schedule/byeScheduling';
 import { extractDate, isValidDateString } from '@Tools/dateTime';
 
 // constants and types
 import { ARRAY, OF_TYPE, SCHEDULE_DATES, TOURNAMENT_RECORDS, VALIDATE } from '@Constants/attributeConstants';
-import { BYE, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
+import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { NO_VALID_DATES } from '@Constants/errorConditionConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { TournamentRecords } from '@Types/factoryTypes';
@@ -80,7 +82,7 @@ function findRoundMatchUps(
     : null;
 
   return allMatchUps.filter((m: any) => {
-    if (m.matchUpStatus === BYE) return false;
+    if (hasByeSide(m)) return false;
     // a completed matchUp is never placed (CA 2026-10-23): it needs no court, and would push new placements down
     if (completedMatchUpStatuses.includes(m.matchUpStatus)) return false;
     if (m.schedule?.courtId) return false;
@@ -287,6 +289,7 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
       courtIds: resolveTargetCourtIds(dateCourtIds, courtIdsFilter),
       matchUpDailyLimits: limits.matchUpDailyLimits,
       dailyLimitOverrides: limits.dailyLimitOverrides,
+      overnightRestWarnings: false,
       dailyLimitsWarnOnly: waived,
       minCourtGridRows,
       tournamentRecords,
@@ -312,11 +315,15 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
     }
   }
 
+  // overnight rest is warned, not held (§ 9.8): measured for a placement with a time (a court order alone has none)
+  const overnightRestWarnings = overnightRestWarningsFor({ scheduleDates: scheduledDates, tournamentRecords });
+
   return {
     ...SUCCESS,
     scheduledMatchUpIds,
     notScheduledMatchUpIds,
     dailyLimitWarningMatchUpIds,
+    overnightRestWarnings,
     overLimitMatchUpIds,
     scheduledDates,
   };

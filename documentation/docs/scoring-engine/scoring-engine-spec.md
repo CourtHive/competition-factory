@@ -1086,6 +1086,15 @@ an additive action, not a format change.
 | scoring corpus     | 72 seeded streams (8 formats × 3 biases × 3 seeds) through the pure `createMatchUp`/`addPoint`, each step's result pinned by the manifest (#5511), and one point after completion each |
 | class timeline     | undo, redo, edits, baselines, segment ends, server corrections, substitutions, save and load, as corpus scenarios, with every conformance cell (SE3, #5658)                            |
 
+**The reducer as a conformance contract.** `kernel.scoring.reduce@1` takes a configuration and a timeline (§ 12.1) and
+answers what each entry did (recorded; ignored, with its code; refused, with its code: the message is prose) and the
+score it left: the status and winner (§ 9), the sets as recorded (§ 1.2), the game in play, every materialized point
+(§ 11.1), and the side due to serve with whether it was derived (§ 10.4). How a reducer keeps its service orientation
+is its own. The authored cases (`src/tests/testHarness/kernel/cases/scoringReduce.json`) each hold one rule of this
+page by claims written from the rule; `pnpm kernel:harvest-scoring` turns every scoring corpus scenario's timeline
+into a further case, generated and never committed. A second implementation runs both through its own adapter, so
+its reducer is graded before its undo, persistence and line-ups are.
+
 ## 16. Decisions (2026-10-18)
 
 > **v1 since then** (2026-10-21): #5612(factory), #5614(factory) and #5618(factory) brought v1 to most of

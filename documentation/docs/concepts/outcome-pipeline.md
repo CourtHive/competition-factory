@@ -482,10 +482,47 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   v1's own notices for what was written) and v1 is not asked; every other call is handed to v1
   whole, which routes and writes as under `v1`. Since S2 v2 owns the **local** write: the
   matchUp's own result (an in-progress, suspended or corrected live score, a format change with
-  it, a cleared live score), with no winner before or after, no exit, nothing directed, no tally
-  and no settle work. It leaves the record, the notices and the result v1 leaves for the same call
+  it, a cleared live score, or the same result submitted again, which changes nothing but stamps),
+  with no winner before or after, no exit, nothing directed, no tally and no settle work. It leaves the record, the notices and the result v1 leaves for the same call
   (`ownedLocalWrites.test.ts`, under a fixed clock); an owned call takes no hydration, and its
-  `updateInContextMatchUp` is built only for a subscriber, after the call has succeeded.
+  `updateInContextMatchUp` is built only for a subscriber, after the call has succeeded. Since S3
+  v2 also owns the **first direction**: a result naming a winner, not an exit, whose winner goes
+  into the next matchUp of the same structure (holding no exit or result) and whose loser, if
+  a link takes them, arrives on a free seat carrying nothing, with no settle work after. A loser
+  placed opposite a BYE goes on through it at once, as v1 sends them (`advanceIntoWinnerMatchUp`):
+  their position joins the next matchUp of that structure, or occupies it there when it was advanced
+  structurally while their seat stood empty, and that matchUp is announced. Only a clean next matchUp
+  is planned (`TO_BE_PLAYED`, no BYE, exit, carry, provenance or result, no earlier advance of the
+  BYE's position to replace, and no FIRST_MATCHUP reservation it would then raise). A winner whose
+  next matchUp holds a BYE (a consolation seat a reservation filled) goes on past it the same way,
+  under the same conditions. An ad hoc matchUp's winner directs nothing, and its structure's tally is
+  planned when it holds one round (a Swiss's later rounds stay v1's). A result in a lucky draw's
+  pre-feed round (a round of odd size) directs nothing either: v1 advances no one from it, the
+  advancement being chosen afterwards (`luckyDrawAdvancement`). The first correction is owned too
+  (S4): a new played score beneath an active downstream that keeps its winner (`apply-values`), which
+  writes the matchUp's values and re-directs nothing; and a decided result cleared while its downstream
+  is untouched (`remove-directed`), where all it directed is the winner's position in a clean next
+  matchUp of the same structure: the position is taken back out, with that matchUp's score; an FMLC loser fed into the consolation's round 2 included (the seat `positionTargets`
+  reports is the one `directLoser` takes). A loser that feed keeps out (they have won before) is
+  owned too: their seat takes a propagated BYE and its matchUp becomes a BYE, as `directLoser` places
+  it, or nothing is written when a reservation made the seat a BYE already; a BYE that would meet
+  somebody in the other seat stays v1's. A seeded loser stays v1's: v1 carries the seed into the
+  structure they are placed in (`propagateLoserSeed`), which is not yet an op. It writes
+  v1's notices for it (the next matchUp's `modifyMatchUp` named `assignMatchUpDrawPosition`, a
+  `modifyPositionAssignments` for the structure the loser is placed in) and returns v1's direction
+  `context` (`ownedDirectionWrites.test.ts`). Under `v2` the mutations suite has about 10,000 calls
+  v2 writes as a direction. A **final** is owned the same way: a winner with no next matchUp and no
+  winner link out of the structure (a qualifying final places its winner in the main draw, and stays
+  v1's), whose loser, if a link takes them, arrives as a plain placement. A **`FIRST_MATCHUP`
+  reservation** the winner's arrival makes is owned with it: when the next matchUp then holds two
+  positions, no BYE and no result, and every first-round matchUp feeding it has a scored win (this
+  call's among them), its loser will have won and may not enter the consolation, so the seat the
+  link feeds is a BYE (marked `byeFromPropagation`) and its matchUp a BYE, as v1's
+  `propagateConsolationBye` writes them, with v1's notices (`modifyPositionAssignments` for the
+  consolation, its matchUp's `modifyMatchUp` named `setMatchUpStatusBye`). A seat already a BYE needs
+  nothing. A reservation that would meet somebody (the consolation matchUp's other seat held, or
+  this call's own loser placed in it), a seat holding a participant or provenance, a stale
+  reservation to withdraw, and a BYE-only target beside a playoff link stay v1's.
 - **`differential`**: v2 plans the whole call before v1 runs, then checks v1's result against it,
   and a disagreement throws `OutcomePipelineDivergence` naming the matchUp and both answers. The
   plan covers the refusal, the route, the write on the matchUp, the winner's direction, the
@@ -493,7 +530,7 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   a loser carries, the exit a double exit produces, two exits converging, the swap, a decider's
   settlement, TEAM auto-calc and the direction of a dual its lines decide, and an exit that meets a
   BYE (none may be left labelled an exit beside it). A refusal v1 raises at the apply stage, where
-  v2 does not reach (`APPLY_STAGE_CODES`: an invalid time, an active, assigned or occupied drawPosition, a
+  v2 does not reach (`APPLY_STAGE_CODES`: an invalid time or date, an active, assigned or occupied drawPosition, a
   mutation lock, `ERR_FORCED`, and the status and assignment checks a write makes), is recorded as
   deferred rather than a divergence; so is a step v2 does not yet plan, such as a relabel whose
   loser stands past a BYE, or an exit carried into a swap. `getDifferentialTally()` counts compared
@@ -549,12 +586,15 @@ v2 states a call's writes as **ops**, a closed vocabulary folded by one reducer 
 draw. The overlay, the `differential` shadow apply and, from S2, apply itself all use the same reducer, so what a plan
 says and what lands are one thing. The reducer decides nothing and refuses nothing.
 
-| op                        | what it writes                                                                                                                                                                                                                        |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `setMatchUpResult`        | the matchUp's status, winner, score (as the call gave it, or blanked), a new format, status codes, and `schedule.scoredTime` by v1's rule: captured the first time the matchUp is scored, kept on corrections, removed with the score |
-| `setMatchUpDrawPositions` | the positions placed in a matchUp, as v1 stores them: numbers, ascending (a winner's position joining the next matchUp)                                                                                                               |
-| `assignPosition`          | a participant on a structure's stored assignment for a drawPosition (a loser fed across a link)                                                                                                                                       |
-| `stampUpdatedAt`          | one `updatedAt` per touched entity per call (F2 (i)): the call's captured instant, or the previous stamp + 1 ms when that is already as late                                                                                          |
+| op                        | what it writes                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `setMatchUpResult`        | the matchUp's status, winner, score (as the call gave it, or blanked), a new format, status codes, and `schedule.scoredTime` by v1's rule: captured the first time the matchUp is scored, kept on corrections, removed with the score                                                                                                            |
+| `setMatchUpDrawPositions` | the positions placed in a matchUp, as v1 stores them: numbers, ascending (a winner's position joining the next matchUp, or taken back out of it: `removedDrawPosition`, whose result goes with the participant, as `removeSubsequentRoundsParticipant` takes it)                                                                                 |
+| `assignPosition`          | a participant on a structure's stored assignment for a drawPosition (a loser fed across a link)                                                                                                                                                                                                                                                  |
+| `assignBye`               | a BYE on a structure's stored assignment for a drawPosition, marked `byeFromPropagation` (a `FIRST_MATCHUP` reservation)                                                                                                                                                                                                                         |
+| `setMatchUpBye`           | the reserved seat's matchUp a BYE, its score and winner removed (v1's `setMatchUpStatusBYE`)                                                                                                                                                                                                                                                     |
+| `setParticipantResults`   | a round robin group's, or a one-round ad hoc structure's, tallies on its position assignments, after the call (`writeAssignmentResults`, v1's own writer); for ad hoc the assignments are first rebuilt, one per participant its matchUps hold, as `updateTallyIfNeeded` rebuilds them; the tally stamps every top-level structure, as v1's does |
+| `stampUpdatedAt`          | one `updatedAt` per touched entity per call (F2 (i)): the call's captured instant, or the previous stamp + 1 ms when that is already as late                                                                                                                                                                                                     |
 
 `planOutcome` returns a complete plan only when every write the call makes is an op; otherwise it **abstains**, naming
 the first reason, and the call is v1's whole (fail-closed). S1 holds two shapes: the **local** write (the matchUp's own
@@ -562,26 +602,26 @@ result, no winner before or after) and the **first direction** (a played result 
 only consequence is the winner's position in the next matchUp of the same structure). The reasons are the work list of
 the slices that follow:
 
-| reason         | the call                                                                                                           | taken on by                                     |
-| -------------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- |
-| `team`         | is a dual or one of its lines                                                                                      | S7                                              |
-| `schedule`     | carries a schedule                                                                                                 | a later slice (§ 3.5.8 of the executor plan)    |
-| `notes`        | carries notes                                                                                                      | a later slice                                   |
-| `status-codes` | carries the client's positional status codes, split into side codes at the write                                   | S2                                              |
-| `exit`         | has an exit status before or after                                                                                 | S5                                              |
-| `winner`       | takes away or changes a winner already stored, so what it directed is taken back                                   | S4                                              |
-| `loser`        | has a loser link, so the loser goes somewhere                                                                      | S3                                              |
-| `link`         | sends its winner into another structure                                                                            | S3                                              |
-| `cascade`      | sends its winner to a matchUp holding a BYE, an exit or a result, so the winner goes on or meets it                | S5                                              |
-| `route`        | takes a route, or reaches a status, that S1 does not plan as ops                                                   | S2                                              |
-| `provenance`   | is on a matchUp holding side-exit provenance the score write may clear or rescue                                   | S5                                              |
-| `tallied`      | is in a round-robin, ad hoc or lucky structure, whose tally the write updates                                      | S3                                              |
-| `unchanged`    | would change nothing but stamps                                                                                    | S2 (with F2 in v1)                              |
-| `no-record`    | is on a draw the tournament record's events do not hold, so there is nothing to fold the plan into                 | none: a shadow needs the record                 |
-| `edges`        | is on a draw that stores no winner and loser edges, which v1 writes first (`ensureGoesTo`)                         | S2 (`setEdges`)                                 |
-| `clock`        | is made outside an engine call, with no captured instant, so the timestamps a write takes cannot be reproduced     | none: production calls go through the engine    |
-| `settle`       | leaves a settle pass work on the working view (S2's has-work predicates, `settleWork.ts`), leftover state included | none: S2 owns only a call no pass has work for  |
-| `write-mode`   | is made in LEGACY or BRIDGE write mode, where v1 writes `scoredTime` as a timeItem, which the reducer does not     | a later slice (F6: BRIDGE in with its evidence) |
+| reason         | the call                                                                                                                      | taken on by                                     |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `team`         | is a dual or one of its lines                                                                                                 | S7                                              |
+| `schedule`     | carries a schedule                                                                                                            | a later slice (§ 3.5.8 of the executor plan)    |
+| `notes`        | carries notes                                                                                                                 | a later slice                                   |
+| `status-codes` | carries the client's positional status codes, split into side codes at the write                                              | S2                                              |
+| `exit`         | has an exit status before or after                                                                                            | S5                                              |
+| `winner`       | takes away or changes a winner already stored, so what it directed is taken back                                              | S4                                              |
+| `loser`        | has a loser link, so the loser goes somewhere                                                                                 | S3                                              |
+| `link`         | sends its winner into another structure                                                                                       | S3                                              |
+| `cascade`      | sends its winner to a matchUp holding a BYE, an exit or a result, so the winner goes on or meets it                           | S5                                              |
+| `route`        | takes a route, or reaches a status, that S1 does not plan as ops                                                              | S2                                              |
+| `provenance`   | is on a matchUp holding side-exit provenance the score write may clear or rescue                                              | S5                                              |
+| `tallied`      | is in a round-robin, ad hoc or lucky structure, whose tally the write updates                                                 | S3                                              |
+| `no-record`    | is on a draw the tournament record's events do not hold, so there is nothing to fold the plan into                            | none: a shadow needs the record                 |
+| `edges`        | is on a draw that stores no winner and loser edges, which v1 writes first (`ensureGoesTo`)                                    | S2 (`setEdges`)                                 |
+| `clock`        | is made outside an engine call, with no captured instant, so the timestamps a write takes cannot be reproduced                | none: production calls go through the engine    |
+| `settle`       | leaves a settle pass work on the working view (S2's has-work predicates, `settleWork.ts`), leftover state included            | none: S2 owns only a call no pass has work for  |
+| `write-mode`   | is made in LEGACY or BRIDGE write mode, where v1 writes `scoredTime` as a timeItem, which the reducer does not                | a later slice (F6: BRIDGE in with its evidence) |
+| `competition`  | names a winner where a per-matchUp competition policy applies: v1 updates ratings on the result (`processCompetitionMatchUp`) | a later slice                                   |
 
 **In `differential`**, a complete plan is folded into the record as it stood before v1 ran and compared with the record
 v1 wrote, every `updatedAt` by value: v1 stamps each touched entity once per call, as v2 does (F2 (i), § 5 step 6).
@@ -649,7 +689,18 @@ third, asking `hasForwardWork`: about one hydration a call fewer again (deep BYE
 forced idle, 100 tests fail on `precheck:settleForwardConsequences`. `reconcileLinkAdvancements` fourth, asking
 `getUnearnedLinkAdvancements`: deep BYE: the route 1,066 → 756 (1.9 a call). The pass acts rarely, so a v1 test pins
 it: a qualifier's main-draw seat is released when its qualifying final is cleared, and a detector forced idle leaves
-the participant seated.
+the participant seated. `reconcileStaleExitOrigins` fifth, asking `hasStaleExitOrigins` of the
+index: the pass already skipped its hydration unless stored data showed a candidate, and now skips it when the
+candidate's links show nothing stale (deep BYE: the route 756 → 616, 1.5 a call); forced idle, 32 exit-propagation
+tests fail under v1. `reconcileProvenanceSides` sixth, asking `findMisplacedProvenance` after the same
+stored-data candidate check (matrix BYE: WALKOVER propagated 870 → 668); forced idle, 4 mutation tests fail under v1.
+`reconcileCarriesPastByes` seventh, asking `findOwedCarry` once before its loop, after its cheap check for a BYE
+matchUp recording a carried exit (matrix BYE: WALKOVER propagated 668 → 466); forced idle, 29 mutation tests fail
+under v1. `reconcileMissedLinkAdvancements` eighth, asking `findMissedLinkAdvancements` (deep BYE:
+the route 582 → 534, 1.3 a call); forced idle, 4 mutation tests fail under v1. `reconcileConsolationReservations` ninth, asking
+`findReservationWork` (the fed seats whose `FIRST_MATCHUP` reservation the pass would place or withdraw); v2's has-work
+predicate asks the same detector, exact where it was scope (any result in a round such a link reads); forced idle, 20
+mutation tests fail under v1.
 
 ## 8. What the corpus pins
 

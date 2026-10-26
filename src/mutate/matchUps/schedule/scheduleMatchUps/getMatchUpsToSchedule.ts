@@ -1,5 +1,6 @@
 import { processNextMatchUps } from '@Mutate/matchUps/schedule/scheduleMatchUps/processNextMatchUps';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { hasByeSide } from '@Mutate/matchUps/schedule/byeScheduling';
 
 // constants
 import { ErrorType } from '@Constants/errorConditionConstants';
@@ -62,8 +63,8 @@ export function getMatchUpsToSchedule(params: GetMatchUpsToScheduleArgs): {
         DOUBLE_DEFAULT,
       ].includes(matchUp?.matchUpStatus);
 
-      // a completed matchUp is never scheduled again (CA 2026-10-23)
-      return !alreadyScheduled && !matchUp.winningSide && !doNotSchedule;
+      // a completed matchUp is never scheduled again (CA 2026-10-23); nor is a line of a BYE dual, which has a BYE side
+      return !alreadyScheduled && !matchUp.winningSide && !doNotSchedule && !hasByeSide(matchUp);
     });
 
   // for optimization, build up an object for each tournament and an array for each draw with target matchUps

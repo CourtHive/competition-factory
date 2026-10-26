@@ -126,6 +126,19 @@ lengthens or shortens it (the engine used the greatest average of any venue prof
 scheduled raises no not-before time from where it was timed before, which may be another date: the matchUps it feeds
 wait only for where it is placed now.
 
+**Transit between venues** (CA 2026-10-25). When a participant's consecutive matchUps on a date are at different
+venues, the later may not start before the earlier's play ends plus the **greater** of its recovery (or type-change
+recovery) and the transit from the earlier's venue to the later's: recovery counts toward transit. Either order is
+checked: a matchUp placed before another already timed at another venue must also leave the transit before it. Transit
+holds participants, never courts. The minutes from one venue to another are, in order: the minutes stated for that
+direction (a pair stated once applies both ways; a one-way value only its way); none when the two venues share a
+`facilityId` (one physical place); else the scheduling policy's `defaultTimes.transitMinutes` (the default policy
+states 30). With no policy stating it there is no transit, and a matchUp with no venue, or two matchUps at the same
+venue, take none. Minutes are whole. A record states the pairs once each in `scheduling.venueTransits`
+(`{ venueIds, minutes, oneWay?, sanctioned? }`; a sanctioned value is a floor the minutes never go below), pruned when a
+venue is deleted; where linked records state one pair differently, the greater applies. The planning view carries this
+as `transit` (`defaultMinutes`, `pairs` by direction, `facilityIds`).
+
 ### 3.5 Daily limits
 
 A participant's **day load** is every matchUp they are certain to play on the date, plus, per draw, the longest
@@ -205,10 +218,12 @@ A matchUp already timed on the date holds a court; the venue's slots (§ 4 step 
 Rules decided 2026-10-25 (debate-ruled, CA-reviewed):
 
 1. **Its own minutes.** A timed matchUp holds a court for its own average minutes, resolved as § 3.3 resolves them: the
-   record's timing, else the scheduling policy, else a timed format's own minutes. It never takes the minutes of the
-   round being placed. Recovery holds participants (§ 3.4), never the court.
+   record's timing, else the scheduling policy, else a timed format's own minutes. A timed matchUp with no format takes
+   the event's timing, else the default policy's average (90). It never takes the minutes of the round being placed.
+   Recovery holds participants (§ 3.4), never the court.
 2. **A BYE holds nothing.** A BYE is never played: whatever schedule it carries, it holds no court, adds nothing to a
-   participant's day (§ 3.5) and raises no not-before time.
+   participant's day (§ 3.5) and raises no not-before time. The lines of a TEAM dual that is a BYE are BYEs too, and no
+   scheduler places them (since 7.23.0; a placement already made is not touched).
 3. **No venue.** A timed matchUp with no venue is at the tournament's only venue with courts on the date, when there is
    exactly one; otherwise it holds no court. Its participants are held either way.
 4. **A venue but no court.** A timed matchUp at a venue with no court holds one court of that venue for its minutes:
@@ -224,7 +239,8 @@ Rules decided 2026-10-25 (debate-ruled, CA-reviewed):
 The call runs in three stages: a **view**, everything the decisions below read, resolved once from the records; a
 **plan**, made from the view alone; and the **writes**. The view is plain data (the hydrated matchUps, the dependency
 graph, reachability, the profile resolved to rounds and minutes, each date's available courts, every event's timing,
-the minutes of matchUps already timed on a planned date, and the stored facts of every draw anyone has played in), so a
+the minutes of matchUps already timed on a planned date, transit between venues, and the stored facts of every draw
+anyone has played in), so a
 plan can be reproduced from a view without the records: a view written as JSON and read back plans the same.
 
 Dates are taken in order. On each date:
@@ -402,9 +418,20 @@ the calls that decide placements; the bulk and reschedule mutations write the ti
 8. **Crossing midnight. DECIDED (CA 2026-10-25): crossed only when necessary, backwards compatible.** Built: the
    date-time arithmetic (`kernel.civil.addMinutes@1`); court bookings carried into the next date
    (`kernel.time.endOnTheDay@1`), in every scheduler that builds bookings; and a participant's recovery carried into
-   the next date by the profile planner (§ 3.8, rule 6). No corpus scenario moved. Not yet built: the policy's
-   overnight times (`overnightTimes`) on top of a carried recovery, which are not read, and a stored `endDate` after
-   midnight, which bookings do not read (they take a matchUp's average minutes). The rule:
+   the next date by the profile planner (§ 3.8, rule 6). No corpus scenario moved. The policy's overnight rest
+   (`overnightTimes`, category-dependent: 12 hours for JUNIOR in the default policy, none otherwise) is **warned, not
+   held** (CA 2026-10-25: a guideline a player may waive). No scheduler moves a placement for it
+   (`scheduling.plan.overnight-rest-is-warned-not-held.v1`); every scheduler (the profile planner, `scheduleMatchUps`,
+   the grid and the pro scheduler) returns `overnightRestWarnings`, a list per date of the participant, the matchUp
+   and its time, the previous matchUp and its end, and the rest found and required, for each date it placed and the
+   date after, a dry run included. The rest is counted from the previous day's last end of play: a recorded
+   `endTime` (an `endTime` before its start ended after midnight), else the start plus the average minutes. A matchUp
+   of the day before still undecided warns for the matchUp its winner or loser goes to, with no `participantId`:
+   whoever advances. Only a placement with a time is measured; a court order alone has none. The category is the
+   event's stated `categoryType`, else JUNIOR when its `ageCategoryCode` is an under-age code of 18 or less (`U14`,
+   `16U`): the same reading every timing lookup now makes, so a U-coded event also takes the JUNIOR recovery times.
+   Not yet built: a stored `endDate` after midnight, which bookings do not read (they take a matchUp's average
+   minutes), and either carry in the direct scheduler. The rule:
    - **A date with no time is unchanged.** `scheduledDate` alone remains a complete schedule ("on that day, time to be
      set"); with no time there is nothing to add minutes to, so no booking and no recovery follow from it.
    - **`scheduledTime` is unchanged.** It is the start, `HH:MM` on the venue's wall clock, on `scheduledDate`; a start
@@ -419,7 +446,10 @@ the calls that decide placements; the bulk and reschedule mutations write the ti
      computed as a UTC instant, or as a day count since 1970-01-01 × 1440 plus minutes past midnight. A
      daylight-saving change inside a matchUp is ignored, by definition. Zones apply only at the edges (now, an
      embargo, display), always by an explicit IANA zone on the record, never the host's.
-   - A booking or a recovery that ends past midnight carries into the next date, with the overnight times on top.
+   - A booking or a recovery that ends past midnight carries into the next date; overnight rest is counted from the end
+     of play and warned, never held.
+   - Nothing carries from a planned date whose schedule the call clears: what was stored there is gone (the court
+     bookings now read this as the recovery carry already did, 2026-10-25).
    - **The consequence:** a schedule that never crosses midnight is placed exactly as today; only the placements the
      23:59 cap and the wrapping booking end decided move.
    - **A start after midnight is on the next date** (CA 2026-10-25: _"if it starts past midnight it is technically

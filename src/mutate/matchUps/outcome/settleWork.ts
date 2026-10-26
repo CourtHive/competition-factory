@@ -1,4 +1,5 @@
 import { findMissedLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileMissedLinkAdvancements';
+import { findReservationWork } from '@Mutate/matchUps/matchUpStatus/reconcileConsolationReservations';
 import { findMisplacedProvenance } from '@Mutate/matchUps/matchUpStatus/reconcileProvenanceSides';
 import { hasHeldExitWork } from '@Mutate/drawDefinitions/positionGovernor/doubleExitAdvancement';
 import { getUnearnedLinkAdvancements } from '@Query/drawDefinition/getUnearnedLinkAdvancements';
@@ -13,7 +14,6 @@ import { isDoubleExit, isExit } from '@Validators/isExit';
 
 // constants and types
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
-import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { WorkingView } from './overlay';
 import type { OutcomeOp } from './ops';
@@ -78,13 +78,8 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
   const work: Record<SettleSite, () => boolean> = {
     // SCOPE: the double exits the call changes, and the stale origins the write leaves
     settleExitOrigins: () => resultOn((matchUp) => isDoubleExit(matchUp?.matchUpStatus)) || staleOrigins(),
-    // SCOPE: a result in a round a FIRST_MATCHUP link reads
-    reconcileConsolationReservations: () => {
-      const sources = (draw.links ?? [])
-        .filter((link) => link.linkCondition === FIRST_MATCHUP)
-        .map((link) => `${link.source?.structureId}|${link.source?.roundNumber}`);
-      return resultOn((matchUp) => sources.includes(`${matchUp?.structureId}|${matchUp?.roundNumber}`));
-    },
+    reconcileConsolationReservations: () =>
+      !!findReservationWork({ inContextDrawMatchUps: view, drawDefinition: draw, matchUpsMap: map }).length,
     reconcileStaleExitOrigins: staleOrigins,
     reconcileCarriesPastByes: () =>
       !!findOwedCarry({ inContextDrawMatchUps: view, drawDefinition: draw, matchUpsMap: map }),

@@ -563,7 +563,8 @@ function isNoAD(formatstring) {
   return formatstring?.includes(NOAD);
 }
 
+/** a number in a code is a whole number a reader can hold exactly: at most 2^53 - 1 (spec § 2 rule 4); else 0, refused */
 function getNumber(formatstring: string | undefined) {
   const num = Number(formatstring);
-  return Number.isNaN(num) ? 0 : num;
+  return Number.isSafeInteger(num) ? num : 0;
 }

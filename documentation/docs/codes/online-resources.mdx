@@ -1,0 +1,94 @@
+---
+title: Online Resources
+---
+
+An `OnlineResource` is a link from a CODES element to something that lives elsewhere: a tournament's website, a
+participant's profile, a venue's map. Tournaments, organisations, participants, persons, venues, courts and
+**matchUps** each carry an `onlineResources` array.
+
+```ts
+interface OnlineResource {
+  resourceType?: 'URL' | 'EMAIL' | 'SOCIAL_MEDIA' | 'OTHER';
+  resourceSubType?: string; // what the resource IS, see below
+  identifier?: string; // for a URL, the address
+  name?: string; // a stable key for the resource within its element
+  provider?: string; // who serves it
+  // plus createdAt, updatedAt, notes, extensions, timeItems, isMock
+}
+```
+
+`resourceType` says how to reach the resource. `resourceSubType` is a free string that says what it is. The schema
+leaves it open on purpose, so the values a consumer can rely on are set by convention.
+
+## A matchUp's media: `VIDEO`, `STREAM`, `STATS`
+
+A matchUp's `onlineResources` entry with `resourceType: 'URL'` describes something about **that matchUp**. These
+three subtypes are the CODES convention (adopted 2026-10-25):
+
+| `resourceSubType` | what the `identifier` points to                                   |
+| ----------------- | ----------------------------------------------------------------- |
+| `VIDEO`           | a recording of the matchUp, or of its highlights                  |
+| `STREAM`          | a live stream of the matchUp, while it is being played            |
+| `STATS`           | a page of statistics for the matchUp (shot charts, point summary) |
+
+```js
+matchUp.onlineResources = [
+  {
+    resourceType: 'URL',
+    resourceSubType: 'STREAM',
+    name: 'liveStream',
+    identifier: 'https://courthive.com/#live-court-3',
+  },
+  {
+    resourceType: 'URL',
+    resourceSubType: 'VIDEO',
+    name: 'matchVideo',
+    identifier: 'https://courthive.com/#recording-1',
+  },
+];
+```
+
+What the convention requires, then two recommendations:
+
+- **Only `resourceType: 'URL'` counts.** A `VIDEO` subtype under any other `resourceType` is not a link a consumer
+  can open, and is ignored.
+- **The `identifier` is an absolute `http` or `https` URL.** It is data from the record, so a consumer opens it only
+  when it is one. Anything else (a relative path, `javascript:`) must never become a link.
+- **One of each is what consumers show.** Several entries of a subtype are valid, but a display shows the first.
+  Give each a distinct `name`, because adding a resource with the same `name` or `identifier` replaces it.
+- _Recommended:_ when a live stream becomes a replay, swap the `STREAM` entry for a `VIDEO` one, so a display stops
+  showing the matchUp as live.
+- _Recommended:_ put coverage of a whole event or court on the tournament, venue or court, and keep a matchUp's
+  resources to that matchUp.
+
+No schema change is involved: these are values of the existing `resourceSubType` field, and a record that carries
+none of them is unaffected.
+
+## Writing them
+
+Attach a resource to a matchUp with [`addOnlineResource`](/docs/governors/tournament-governor#addonlineresource),
+passing the `matchUpId` and the `drawId` that contains it (tieMatchUps included). Take it off with
+[`removeOnlineResource`](/docs/governors/tournament-governor#removeonlineresource). Each emits a `modifyMatchUp`
+notice, so subscribers refresh the matchUp.
+
+```js
+engine.addOnlineResource({
+  onlineResource: {
+    resourceType: 'URL',
+    resourceSubType: 'STATS',
+    name: 'matchStats',
+    identifier: 'https://courthive.com/#stats-m1',
+  },
+  matchUpId,
+  drawId,
+});
+```
+
+## Reading them
+
+The resources travel on the matchUp: `getEventData` (published or not), `allTournamentMatchUps` and the other
+matchUp queries return `matchUp.onlineResources` as stored.
+
+[courthive-components](https://github.com/CourtHive/courthive-components) renders them in a draw structure when
+a composition sets `configuration.onlineResources`: a live dot for a `STREAM`, play for a `VIDEO`, a chart for
+`STATS`. The structure renders nothing for other subtypes.

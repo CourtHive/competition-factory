@@ -1,6 +1,6 @@
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { getParticipantIds } from '@Functions/global/extractors';
-import { timeStringMinutes } from '@Tools/dateTime';
+import { extractDate, timeStringMinutes } from '@Tools/dateTime';
 import { ensureInt } from '@Tools/ensureInt';
 import { numericSort } from '@Tools/sorting';
 import {
@@ -115,6 +115,8 @@ function addEliminationUpcomingInfo({
   const winnerTo = getUpcomingInfo({ upcomingMatchUp: winnerMatchUp });
   let loserTo = getUpcomingInfo({ upcomingMatchUp: loserMatchUp });
 
+  // the matchUp a loser actually reaches: past a BYE, the next one to be played (CA 2026-10-26, hydration OPEN-3)
+  let loserReached = loserMatchUp;
   if (inContextMatchUp.matchUpStatus !== BYE && loserMatchUp?.matchUpStatus === BYE) {
     const { matchUp: nextMatchUp } =
       getNextToBePlayedMatchUp({
@@ -123,6 +125,7 @@ function addEliminationUpcomingInfo({
         inContextDrawMatchUps,
       }) ?? {};
     loserTo = (nextMatchUp && getUpcomingInfo({ upcomingMatchUp: nextMatchUp })) || loserTo;
+    if (nextMatchUp) loserReached = nextMatchUp;
   }
 
   const timeAfterRecovery = inContextMatchUp.schedule?.timeAfterRecovery;
@@ -135,9 +138,9 @@ function addEliminationUpcomingInfo({
   if (inContextMatchUp.drawPositions?.filter(Boolean).length) {
     addPotentialParticipants({
       targetLinks: targetData.targetLinks,
+      loserMatchUp: loserReached,
       inContextMatchUp,
       winnerMatchUp,
-      loserMatchUp,
       targetIndex,
     });
   }
@@ -145,8 +148,13 @@ function addEliminationUpcomingInfo({
 
 function checkScheduleConflict({ scheduleConflictMatchUpIds, inContextMatchUp, timeAfterRecovery, upcomingTo }) {
   if (upcomingTo?.schedule?.scheduledTime) {
+    // date and time together where both dates are known: the next day's morning is not before tonight's recovery
+    // (CA 2026-10-26, hydration OPEN-8); a target with no date is compared by the clock, as it always was
+    const afterDate = inContextMatchUp.schedule?.dateAfterRecovery;
+    const targetDate = upcomingTo.schedule.scheduledDate ?? extractDate(upcomingTo.schedule.scheduledTime);
+    const earlierClock = timeStringMinutes(upcomingTo.schedule.scheduledTime) < timeStringMinutes(timeAfterRecovery);
     const scheduleConflict =
-      timeStringMinutes(upcomingTo.schedule.scheduledTime) < timeStringMinutes(timeAfterRecovery);
+      afterDate && targetDate ? targetDate < afterDate || (targetDate === afterDate && earlierClock) : earlierClock;
     if (scheduleConflict) {
       scheduleConflictMatchUpIds[upcomingTo.matchUpId] = inContextMatchUp.matchUpId;
       upcomingTo.schedule.scheduleConflict = inContextMatchUp.matchUpId;
@@ -182,9 +190,10 @@ function addPotentialParticipants({
   const winnerParticipantIds = getParticipantIds(winnerMatchUp?.sides);
   const loserParticipantIds = getParticipantIds(loserMatchUp?.sides);
   const winnerDetermined = participants.find(({ participantId }) => winnerParticipantIds.includes(participantId));
-  const winnerPotentials = !winnerDetermined ? participants : [];
+  // each target gets its own list: the FMLC marker below is the loser target's only (CA 2026-10-26, hydration OPEN-2)
+  const winnerPotentials = !winnerDetermined ? [...participants] : [];
   const loserDetermined = participants.find(({ participantId }) => loserParticipantIds.includes(participantId));
-  const loserPotentials = !loserDetermined ? participants : [];
+  const loserPotentials = !loserDetermined ? [...participants] : [];
   if (loserMatchUp && firstMatchUp && loserPotentials.length < 2) {
     loserPotentials.push({ bye: true, tbd: true }); // tbd: true indiciates that for FMLC, WO/DEF could propagate a player
   }
@@ -194,12 +203,13 @@ function addPotentialParticipants({
   // which a target is: the stored-id shortcut returns references without setting it, the full path copies with it set
   const inContextTarget = (target) => targetIndex.byMatchUpId.get(target.matchUpId) ?? target;
 
-  if (winnerPotentials.length && winnerMatchUp) {
+  // a BYE is never played: nobody is a potential participant of it (CA 2026-10-26, hydration OPEN-3)
+  if (winnerPotentials.length && winnerMatchUp && winnerMatchUp.matchUpStatus !== BYE) {
     const target = inContextTarget(winnerMatchUp);
     target.potentialParticipants ??= [];
     target.potentialParticipants.push(winnerPotentials);
   }
-  if (loserPotentials.length && loserMatchUp) {
+  if (loserPotentials.length && loserMatchUp && loserMatchUp.matchUpStatus !== BYE) {
     const target = inContextTarget(loserMatchUp);
     target.potentialParticipants ??= [];
     target.potentialParticipants.push(loserPotentials);
