@@ -10,7 +10,7 @@ import {
 import { errorConditionConstants } from '@Constants/errorConditionConstants';
 import { topicConstants } from '@Constants/topicConstants';
 import { randomSource, setRandomSource } from '@Tools/prng';
-import { afterAll, beforeEach, expect } from 'vitest';
+import { afterAll, beforeAll, beforeEach, expect } from 'vitest';
 import { canonicalHash, canonicalObject } from './corpus/hash';
 import { createBackendBridge } from './backendBridge';
 import { differingPaths } from './backendDiff';
@@ -66,21 +66,22 @@ if (mode) {
     invoke: (call) => (mode === 'external' ? external(call) : differential(call)),
   };
 
-  // the scoring engine class, per instance (scoringBackend.ts): compared only, so only under differential
-  if (mode === 'differential') {
-    const scoringMethods = listed(command, '--scoring-methods');
-    if (scoringMethods.length) {
-      const { routeScoringEngine } = await import('./scoringBackend');
-      routeScoringEngine({
-        counted: (method) => {
-          const counts = (routed[currentFile] ??= {});
-          counts[`scoring.${method}`] = (counts[`scoring.${method}`] ?? 0) + 1;
-        },
-        methods: scoringMethods,
-        bridge,
-      });
-    }
-  }
+  // the scoring engine class, per instance (scoringBackend.ts): compared only, so only under differential. Installed
+  // once the test file has loaded, never at setup: importing the engine here would cache its modules before the test
+  // file's own vi.mock calls are registered
+  const scoringMethods = mode === 'differential' ? listed(command, '--scoring-methods') : [];
+  beforeAll(async () => {
+    if (!scoringMethods.length) return;
+    const { routeScoringEngine } = await import('./scoringBackend');
+    routeScoringEngine({
+      counted: (method) => {
+        const counts = (routed[currentFile] ??= {});
+        counts[`scoring.${method}`] = (counts[`scoring.${method}`] ?? 0) + 1;
+      },
+      methods: scoringMethods,
+      bridge,
+    });
+  });
 
   beforeEach(() => {
     currentFile = expect.getState().testPath ?? '';
