@@ -11,7 +11,10 @@ import { randomSource, setRandomSource } from '@Tools/prng';
 import { afterAll, beforeEach, expect } from 'vitest';
 import { canonicalHash, canonicalObject } from './corpus/hash';
 import { createBackendBridge } from './backendBridge';
+import { BACKEND_EXCLUSIONS } from './backendExclusions';
 import { execFileSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import fs from 'node:fs';
 
 // types
@@ -28,7 +31,10 @@ import type { SeededRandom } from '@Tools/prng';
  *   or the error's code) or a different record (canonical hash, version stamps aside) fails the test, naming both.
  *
  * The executable is started once per worker (`--serve`, backendBridge.ts) and answers every routed call. Unset, this
- * file does nothing. With `FACTORY_BACKEND_REPORT`, each worker appends per test file the calls it routed,
+ * file does nothing.
+ *
+ * The executable may decline a call it does not implement with the params given (`{ declined: reason }`): this engine
+ * then runs it, and the report counts it as declined, not as routed. With `FACTORY_BACKEND_REPORT`, each worker appends per test file the calls it routed,
  * by method, so a run can show the second implementation was actually reached (a test that routed nothing tested only
  * this engine).
  */
@@ -47,6 +53,7 @@ if (mode) {
       .map((value: any) => [value.code, value]),
   );
   const bridge = createBackendBridge(command);
+  let lastRequest: unknown;
   const routed: { [file: string]: { [method: string]: number } } = {};
   let currentFile = '';
 
@@ -58,7 +65,9 @@ if (mode) {
 
   beforeEach(() => {
     currentFile = expect.getState().testPath ?? '';
-    setFactoryBackend(backend);
+    const excluded = BACKEND_EXCLUSIONS.find(({ file }) => currentFile.endsWith(file));
+    if (excluded) (routed[currentFile] ??= {})[`excluded: ${excluded.reason}`] = 1;
+    setFactoryBackend(excluded ? undefined : backend);
   });
 
   afterAll(() => {
@@ -76,15 +85,22 @@ if (mode) {
     const source = randomSource() as SeededRandom;
     const request = {
       method: methodName,
-      params: params ?? {},
+      params: callParams(params),
       records: Object.values(getTournamentRecords() ?? {}),
       activeTournamentId: getTournamentId(),
       clock: new Date(timeStamp).toISOString(),
       seed: typeof source.state === 'function' ? source.state() : undefined,
     };
+    lastRequest = request;
     const answer = bridge.call(request);
     if (answer?.failure) throw new Error(`${command}: ${answer.failure}`);
-    return answer as { result: any; records: any[]; seed?: number };
+    if (answer?.declined) {
+      // the second implementation does not answer this call with these params: this engine runs it
+      counts[methodName] -= 1;
+      const declined = (counts[`${methodName} (declined)`] ??= 0);
+      counts[`${methodName} (declined)`] = declined + 1;
+    }
+    return answer as { result: any; records: any[]; seed?: number; declined?: string };
   }
 
   function hashOf(list: any[]) {
@@ -101,6 +117,7 @@ if (mode) {
     const activeTournamentId = getTournamentId();
     const before = hashOf(Object.values(getTournamentRecords() ?? {}));
     const answer = ask(call);
+    if (answer.declined) return call.runLocal();
     // the engine stamps a record a method changed (getMutationStatus): tell it this one did
     if (JSON.stringify(hashOf(answer.records)) !== JSON.stringify(before)) restoreMutationStatus(true);
     setTournamentRecords(Object.fromEntries(answer.records.map((record) => [record.tournamentId, record])));
@@ -111,6 +128,7 @@ if (mode) {
 
   function differential(call: FactoryBackendCall) {
     const answer = ask(call);
+    if (answer.declined) return call.runLocal();
     const local = call.runLocal();
     const records: any[] = Object.values(getTournamentRecords() ?? {});
     const kind = (result: any) => (result?.error ? `error ${result.error.code ?? result.error}` : 'success');
@@ -127,8 +145,14 @@ if (mode) {
         );
       }
     }
-    if (disagreements.length)
-      throw new Error(`${call.methodName}: the second implementation disagrees\n  ${disagreements.join('\n  ')}`);
+    if (disagreements.length) {
+      // the call as sent, to replay by hand: <command> < file
+      const file = path.join(tmpdir(), `backend-call-${process.pid}-${Date.now()}.json`);
+      fs.writeFileSync(file, JSON.stringify(lastRequest));
+      throw new Error(
+        `${call.methodName}: the second implementation disagrees (the call: ${file})\n  ${disagreements.join('\n  ')}`,
+      );
+    }
     return local;
   }
 }
@@ -145,4 +169,13 @@ function differingPaths(ours: any, theirs: any, path = '', out: string[] = []): 
     out.push(`${path} (${show(ours)} vs ${show(theirs)})`);
   }
   return out;
+}
+
+/** the params as the caller gave them: without the records and the active tournament the engine adds (the call
+ * carries those itself) and without functions, which no other process can read */
+function callParams(params: { [key: string]: unknown } | undefined) {
+  const added = new Set(['activeTournamentId', 'tournamentRecord', 'tournamentRecords']);
+  return Object.fromEntries(
+    Object.entries(params ?? {}).filter(([key, value]) => !added.has(key) && typeof value !== 'function'),
+  );
 }
