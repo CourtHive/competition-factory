@@ -168,6 +168,8 @@ export type OutcomeView = {
       /** the matchUp's other seat holds somebody or a BYE: a BYE placed here would advance or meet them */
       opponentHeld: boolean;
     };
+    /** a loser placed opposite a BYE goes on into this matchUp, holding these drawPositions after (planned, S3) */
+    loserThroughBye?: { matchUpId: string; drawPositions: number[] };
     /** the participants seeded in the source structure: a seeded loser placed across a link takes the seed with them */
     seededParticipantIds?: string[];
     /** the loserMatchUp's status before this call: an exit already there converges with the carried one */
