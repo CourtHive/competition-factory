@@ -160,7 +160,14 @@ export type OutcomeView = {
     /** the drawPosition the loser link feeds in the loser's structure (`positionTargets`) */
     loserTargetDrawPosition?: number;
     /** that stored assignment: free when it holds no participant, BYE or qualifier */
-    loserTargetSeat?: { free: boolean; opponentBye: boolean };
+    loserTargetSeat?: {
+      free: boolean;
+      opponentBye: boolean;
+      /** the seat is a BYE already (a FIRST_MATCHUP reservation placed it): a kept-out loser's BYE needs nothing */
+      bye: boolean;
+      /** the matchUp's other seat holds somebody or a BYE: a BYE placed here would advance or meet them */
+      opponentHeld: boolean;
+    };
     /** the participants seeded in the source structure: a seeded loser placed across a link takes the seed with them */
     seededParticipantIds?: string[];
     /** the loserMatchUp's status before this call: an exit already there converges with the carried one */
