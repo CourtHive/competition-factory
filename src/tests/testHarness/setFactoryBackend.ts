@@ -22,8 +22,8 @@ import type { FactoryBackend, FactoryBackendCall } from '@Global/state/globalSta
 import type { SeededRandom } from '@Tools/prng';
 
 /**
- * Vitest setupFiles hook: the suite against a SECOND IMPLEMENTATION of the engine's methods (testing.md, "A second
- * backend"). `FACTORY_BACKEND_COMMAND` names an executable that answers one engine call (its methods with `--methods`,
+ * Vitest setupFiles hook: the suite against a SECOND IMPLEMENTATION of the engine's methods (documentation/docs/testing/
+ * second-backend.md). `FACTORY_BACKEND_COMMAND` names an executable that answers one engine call (its methods with `--methods`,
  * a call as JSON on stdin), and every call to a method it lists is routed to it:
  *
  * - `FACTORY_BACKEND=external`: its answer is the call's answer, and the records it returns are the engine's state;

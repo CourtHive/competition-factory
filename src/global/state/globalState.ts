@@ -277,7 +277,7 @@ export function getInvokeObserver(): InvokeObserver | undefined {
  * A second implementation of engine methods, for testing: a call to a method it implements is handed to it, with the
  * method as this engine runs it (`runLocal`) to run as well or instead. The engine's own work around the method (the
  * captured clock, rollback, the factory stamp, notices) is done either way. Unset, the engine runs every call itself. Set only by test
- * harnesses (`FACTORY_BACKEND`, testing.md); engine source never reads the environment.
+ * harnesses (`FACTORY_BACKEND`, documentation/docs/testing/second-backend.md); engine source never reads the environment.
  */
 export type FactoryBackendCall = {
   methodName: string;

@@ -441,6 +441,7 @@ module.exports = {
           ],
         },
         'testing/exit-propagation-harness',
+        'testing/second-backend',
         'testing/factory-server',
       ],
     },
