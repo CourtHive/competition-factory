@@ -139,8 +139,48 @@ function removalReason(view: OutcomeView, direction?: DirectionPlan): AbstainRea
   if (target.structureId !== targets.source.structureId) return 'link';
   if (target.hasBye || target.carriesExit || target.carriedStatuses.length || target.holdsResult) return 'cascade';
   if (target.matchUpStatus !== TO_BE_PLAYED) return 'route';
-  const position = targets.sideDrawPositions[existing.winningSide as 1 | 2];
-  if (!position || !target.drawPositions.includes(position)) return 'route';
+  if (!heldInTarget(view, existing.winningSide as 1 | 2)) return 'route';
+  return undefined;
+}
+
+/** the winning side's drawPosition already stands in the winner's target: what a stored winner directed */
+function heldInTarget(view: OutcomeView, winningSide: 1 | 2): boolean {
+  const position = view.targets.sideDrawPositions[winningSide];
+  return !!position && !!view.targets.winner?.drawPositions.includes(position);
+}
+
+/**
+ * The same winner entered again where nothing downstream is active. v1 runs its direction once more
+ * (`attemptToSetWinningSide` → `directParticipants`), and each placement finds its participant where the first entry put
+ * them. Planned only where that is all there is: the winner held in a clean next matchUp of the same structure (or a
+ * final), and the loser, if the link takes one, on the seat it feeds, in a matchUp holding no result or exit. Anything
+ * else is v1's (S4).
+ */
+function reenteredReason(
+  view: OutcomeView,
+  write?: MatchUpWrite,
+  direction?: DirectionPlan,
+): AbstainReason | undefined {
+  const { targets } = view;
+  if (!write?.winningSide || write.matchUpStatus !== COMPLETED) return 'route';
+  // a stored status that changes is refreshed on the arrivals the first entry sent on (v1's `refreshArrivals`)
+  if (view.existing.matchUpStatus !== COMPLETED) return 'route';
+  if (direction?.decider || direction?.produced || direction?.converged) return 'route';
+  if (targets.reservations) return 'cascade';
+  const loser = direction?.loser;
+  if (loser || targets.loserMatchUpId) {
+    const seat = targets.loserTargetSeat;
+    if (!loser?.arrives || loser.exit || loser.bye || loser.carriedPast || loser.withdrawn || loser.converged)
+      return 'loser';
+    if (!seat || seat.participantId !== loser.participantId || seat.opponentBye) return 'loser';
+    if (targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit) return 'cascade';
+  }
+  const target = targets.winner;
+  if (!target) return targets.winnerLink || direction?.winner ? 'link' : undefined;
+  if (target.structureId !== targets.source.structureId) return 'link';
+  if (target.hasBye || target.carriesExit || target.carriedStatuses.length || target.holdsResult) return 'cascade';
+  if (target.matchUpStatus !== TO_BE_PLAYED) return 'route';
+  if (!heldInTarget(view, write.winningSide as 1 | 2)) return 'route';
   return undefined;
 }
 
@@ -261,21 +301,39 @@ function abstainReason(args: {
   // S4: a score changed beneath an active downstream keeps its winner and re-directs nothing (`apply-values`)
   const sameWinner =
     args.route === 'apply-values' && !!write?.winningSide && write.winningSide === view.existing.winningSide;
+  // S4: the same winner entered again with nothing downstream active, re-directed where they already stand
+  const reentered = reentersWinner(view, args.route, write);
   // S4: a decided result cleared while its downstream is untouched takes back what it directed (`remove-directed`)
   const removing = args.route === REMOVE_DIRECTED && !!view.existing.winningSide && !write?.winningSide;
   if (removing) {
     const removal = removalReason(view, direction);
     if (removal) return removal;
-  } else if (view.existing.winningSide && !sameWinner) return 'winner';
+  } else if (view.existing.winningSide && !sameWinner && !reentered) return 'winner';
   const directing = !sameWinner && !!(request.winningSide || write?.winningSide || direction);
   let shape: AbstainReason | undefined;
   if (sameWinner) shape = applyValuesReason(args);
+  else if (reentered) shape = reenteredReason(view, write, direction);
   else shape = directing ? directionReason(args) : localReason(args);
   if (shape) return shape;
   if (view.existing.hasSideExitProvenance || view.existing.carriedExit) return 'provenance';
   // a round robin group's tally is planned (`setParticipantResults`, S3); an ad hoc, lucky or TEAM tally is not yet
   if (view.draw.tallied && !view.group) return 'tallied';
   return undefined;
+}
+
+/** the stored winner entered again on the winner's route (S4) */
+function reentersWinner(view: OutcomeView, route: Route | undefined, write?: MatchUpWrite): boolean {
+  return route === 'winner' && !!write?.winningSide && write.winningSide === view.existing.winningSide;
+}
+
+/** the direction whose placements are written: none for a re-entered winner, who stands where the first entry put them */
+function placedDirection(
+  view: OutcomeView,
+  route: Route | undefined,
+  write: MatchUpWrite,
+  direction?: DirectionPlan,
+): DirectionPlan | undefined {
+  return reentersWinner(view, route, write) ? undefined : direction;
 }
 
 /** a cleared result taking back a winner it stored (S4) */
@@ -364,7 +422,8 @@ export function planOutcome(args: {
     { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
   ];
   // the first direction: the winner's position joins the next matchUp's, which v1 stores ascending
-  const winner = args.direction?.winner;
+  const placing = placedDirection(view, args.route, write, args.direction);
+  const winner = placing?.winner;
   const winnerPosition = write.winningSide ? view.targets.sideDrawPositions[write.winningSide as 1 | 2] : undefined;
   if (winner && winnerPosition && view.targets.winner) {
     const drawPositions = [...new Set([...view.targets.winner.drawPositions, winnerPosition])].sort((a, b) => a - b);
@@ -377,7 +436,7 @@ export function planOutcome(args: {
   // a plain loser arrival: the loser on the seat the link feeds. The matchUp they land in is not stamped: its stored
   // object does not change (the write is on the structure's assignments), so it is not a touched entity (F2 (i), and v1).
   // The structure whose assignments change is stamped below (v1's `modifyPositionAssignmentsNotice`).
-  const loser = args.direction?.loser;
+  const loser = placing?.loser;
   const { loserStructureId, loserTargetDrawPosition, loserMatchUpId } = view.targets;
   const arrival: OutcomeOp[] =
     loser?.arrives && loserStructureId && loserTargetDrawPosition

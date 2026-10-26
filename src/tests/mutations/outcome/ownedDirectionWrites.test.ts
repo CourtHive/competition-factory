@@ -210,6 +210,37 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'SINGLE_ELIMINATION (S4): the same winner entered again, with a new score, re-directs nobody',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1), outcome: won(1) }],
+      steps: [
+        { target: R1(1), outcome: generateOutcomeFromScoreString({ scoreString: '7-5 6-4', winningSide: 1 }).outcome },
+      ],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION (S4): the same winner entered again with no score keeps the score it holds',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1), outcome: won(1) }],
+      steps: [{ target: R1(1), outcome: { winningSide: 1 } }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION (S4): the same winner entered again finds the loser in the Backdraw already',
+    {
+      drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
+      setup: [{ target: R1(1, 'Main'), outcome: won(1) }],
+      steps: [
+        {
+          target: R1(1, 'Main'),
+          outcome: generateOutcomeFromScoreString({ scoreString: '6-3 6-3', winningSide: 1 }).outcome,
+        },
+      ],
+    },
+  ],
+  [
     'DOUBLE_ELIMINATION: a Main first-round result sends the winner on and the loser into the Backdraw',
     { drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION }, steps: [{ target: R1(1, 'Main'), outcome: won(1) }] },
   ],

@@ -375,6 +375,7 @@ function loserTargetSeat(
     opponentBye: assignments.some((a) => a.bye && opponents.includes(a.drawPosition)),
     bye: !!assignment.bye,
     opponentHeld: assignments.some((a) => (a.participantId || a.bye) && opponents.includes(a.drawPosition)),
+    participantId: assignment.participantId,
   };
 }
 
