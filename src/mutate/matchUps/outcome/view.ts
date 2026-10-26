@@ -466,12 +466,37 @@ function swapMeetsActivePosition({
 }
 
 /**
- * A swap's relabel in the structures this one feeds, as v1's `swapWinnerLoser` relabels the structures downstream:
- * each seat the old winner holds takes the old loser and each the old loser holds takes the old winner, each guarded on
- * the id it writes. Planned only where the structure's links out carry no condition (no FIRST_MATCHUP feed to
- * reconcile), it is fed by no loser link (no origin structure to exchange re-entries in) and by no winner link but one
- * back from a structure it feeds, and every other structure either participant stands in is one of those links'
- * targets; otherwise undefined.
+ * The structures downstream of a matchUp, as v1's `getDownstreamStructureIds` walks them: the targets of its structure's
+ * links from its round on, then every link out of each structure reached; the source structure itself is never one. The
+ * links walked are returned too, so their conditions can be asked.
+ */
+function downstreamOf(drawDefinition: DrawDefinition, structureId: string, roundNumber: number) {
+  const links = drawDefinition.links ?? [];
+  const reached = new Set<string>();
+  const walked = links.filter(
+    (link) => link.source?.structureId === structureId && (link.source?.roundNumber ?? 0) >= roundNumber,
+  );
+  const queue = walked.map((link) => link.target?.structureId);
+  while (queue.length) {
+    const next = queue.shift();
+    if (!next || next === structureId || reached.has(next)) continue;
+    reached.add(next);
+    for (const link of links)
+      if (link.source?.structureId === next) {
+        walked.push(link);
+        queue.push(link.target?.structureId);
+      }
+  }
+  return { reached, walked };
+}
+
+/**
+ * A swap's relabel downstream, as v1's `swapWinnerLoser` makes it: in each structure downstream of the matchUp, the seat
+ * the old winner holds takes the old loser and the reverse, each guarded on the id it writes; a structure upstream (a
+ * consolation's Main) is not touched. Undefined, so the swap is v1's, where a walked link carries a condition (a
+ * FIRST_MATCHUP feed v1 reconciles after the flip) or a loser link feeds this structure FROM a downstream one (an origin,
+ * whose re-entries v1 exchanges by origin positions). A WINNER link back into this structure (DOUBLE_ELIMINATION's
+ * Backdraw champion into the Main final) re-enters on the participant's own position here, which the path exchange covers.
  */
 function swapRelabels({
   inContextMatchUp,
@@ -484,24 +509,21 @@ function swapRelabels({
   structureId: string;
   winningSide: 1 | 2;
 }): { structureId: string; drawPosition: number; participantId: string }[] | undefined {
-  const links = drawDefinition.links ?? [];
-  const out = links.filter((link) => link.source?.structureId === structureId);
-  if (out.some((link) => link.linkCondition)) return undefined;
-  const targets = new Set(out.map((link) => link.target?.structureId));
-  // fed by a LOSER link, the structure is an origin's target, whose re-entries v1 exchanges by origin positions: v1's.
-  // A WINNER link back from a structure this one feeds (DOUBLE_ELIMINATION's Backdraw champion into the Main final)
-  // re-enters on the participant's own position here, which the path exchange already covers
-  const fedBy = links.filter((link) => link.target?.structureId === structureId);
-  if (fedBy.some((link) => link.linkType === LOSER || !targets.has(link.source?.structureId))) return undefined;
+  const { reached, walked } = downstreamOf(drawDefinition, structureId, inContextMatchUp.roundNumber ?? 0);
+  if (walked.some((link) => link.linkCondition)) return undefined;
+  const origin = (drawDefinition.links ?? []).some(
+    (link) =>
+      link.linkType === LOSER && link.target?.structureId === structureId && reached.has(link.source?.structureId),
+  );
+  if (origin) return undefined;
   const winnerId = inContextMatchUp.sides?.find((side) => side.sideNumber === winningSide)?.participantId;
   const loserId = inContextMatchUp.sides?.find((side) => side.sideNumber === 3 - winningSide)?.participantId;
   const relabels: { structureId: string; drawPosition: number; participantId: string }[] = [];
   for (const structure of drawDefinition.structures ?? []) {
-    if (structure.structureId === structureId) continue;
+    if (!reached.has(structure.structureId)) continue;
     for (const assignment of positionAssignmentsOf(structure) ?? []) {
       const held = assignment.participantId;
       if (!held || (held !== winnerId && held !== loserId)) continue;
-      if (!targets.has(structure.structureId)) return undefined;
       const participantId = held === winnerId ? loserId : winnerId;
       if (participantId)
         relabels.push({ structureId: structure.structureId, drawPosition: assignment.drawPosition, participantId });

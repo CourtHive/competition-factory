@@ -12,6 +12,7 @@ import { COMPLETED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConst
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import {
   AD_HOC,
+  COMPASS,
   DOUBLE_ELIMINATION,
   FEED_IN_CHAMPIONSHIP,
   FIRST_MATCH_LOSER_CONSOLATION,
@@ -364,6 +365,30 @@ const SCENARIOS: [string, Scenario][] = [
         { target: { structureName: 'Main', roundNumber: 3, roundPosition: 1 }, outcome: won(1) },
       ],
       steps: [{ target: { structureName: 'Main', roundNumber: 3, roundPosition: 1 }, outcome: { winningSide: 1 } }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S4): a swap in the consolation relabels nothing upstream in Main',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [
+        { target: R1(1, 'Main'), outcome: won(1) },
+        { target: R1(2, 'Main'), outcome: won(1) },
+        { target: R1(1, 'Consolation'), outcome: won(1) },
+      ],
+      steps: [{ target: R1(1, 'Consolation'), outcome: won(2), params: { allowChangePropagation: true } }],
+    },
+  ],
+  [
+    'COMPASS (S4): a swap in West relabels the structures West feeds and leaves East as it is',
+    {
+      drawProfile: { drawSize: 16, drawType: COMPASS },
+      setup: [
+        { target: R1(1, 'East'), outcome: won(1) },
+        { target: R1(2, 'East'), outcome: won(1) },
+        { target: R1(1, 'West'), outcome: won(1) },
+      ],
+      steps: [{ target: R1(1, 'West'), outcome: won(2), params: { allowChangePropagation: true } }],
     },
   ],
   [
