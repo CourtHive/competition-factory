@@ -638,6 +638,9 @@ function producedReason(
   if (entry.loserMatchUpId) return 'exit';
   const awarded = entry.sides?.find((side) => side.sideNumber === produced.winningSide);
   if (awarded?.participantId || awarded?.bye) return 'exit';
+  // a seat holding a position nobody has reached (a fed seat): v1 advances that empty position, a reservation for the
+  // arrival the pending exit awaits (`doubleExitAdvancement`), not an op yet
+  if (awarded?.drawPosition) return 'exit';
   if (pairedFeeder(view)?.matchUpStatus !== TO_BE_PLAYED) return 'exit';
   return undefined;
 }
