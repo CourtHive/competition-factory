@@ -530,6 +530,27 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
     },
   ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S5): a walkover carried past a consolation BYE is recorded beside it and lands beyond (RULE 1)',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 6, drawType: FEED_IN_CHAMPIONSHIP },
+      steps: [{ target: R1(2, 'Main'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S5): a carry past a BYE on side 1 lands on side 2 beyond it (RULE 1)',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 12, drawType: FEED_IN_CHAMPIONSHIP },
+      steps: [{ target: R1(5, 'Main'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S5): a default carried past a consolation BYE (RULE 1)',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 12, drawType: FEED_IN_CHAMPIONSHIP },
+      steps: [{ target: R1(4, 'Main'), outcome: exited(DEFAULTED, 2), params: CARRIED }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
