@@ -392,6 +392,35 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'FIRST_MATCH_LOSER_CONSOLATION (S4): a round 1 swap, eligibility unchanged, relabels the consolation seat',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [
+        { target: R1(1, 'Main'), outcome: won(1) },
+        { target: R1(2, 'Main'), outcome: won(1) },
+      ],
+      steps: [{ target: R1(1, 'Main'), outcome: won(2), params: { allowChangePropagation: true } }],
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION (S4): a round 2 swap between two who have won keeps both out of the consolation',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [
+        { target: R1(1, 'Main'), outcome: won(1) },
+        { target: R1(2, 'Main'), outcome: won(1) },
+        { target: { structureName: 'Main', roundNumber: 2, roundPosition: 1 }, outcome: won(1) },
+      ],
+      steps: [
+        {
+          target: { structureName: 'Main', roundNumber: 2, roundPosition: 1 },
+          outcome: won(2),
+          params: { allowChangePropagation: true },
+        },
+      ],
+    },
+  ],
+  [
     'DOUBLE_ELIMINATION: a Main first-round result sends the winner on and the loser into the Backdraw',
     { drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION }, steps: [{ target: R1(1, 'Main'), outcome: won(1) }] },
   ],

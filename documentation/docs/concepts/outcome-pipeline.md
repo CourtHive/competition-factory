@@ -560,7 +560,10 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   link out of each structure reached, as v1's `getDownstreamStructureIds` walks them), the two
   participants' seats change identity (`relabelPosition`), every result there kept; a structure
   upstream (a consolation's Main, COMPASS's East beside West) is not touched. Owned when no link
-  walked carries a condition (no `FIRST_MATCHUP` feed to reconcile) and no loser link feeds the
+  walked carries a condition, but the source structure's own `FIRST_MATCHUP` feeds, and those only
+  where the flip leaves every feed's eligibility as it was (the new loser of the flipped matchUp may
+  enter exactly when the old one held the fed seat, and no later loss on the path changes, v1's
+  `relabelledPathFeedChanges`), so v1's `reconcileFedLoserEligibility` writes nothing; and no loser link feeds the
   structure from a downstream one (an origin, whose re-entries v1 exchanges by origin positions); a
   winner link back into it (`DOUBLE_ELIMINATION`'s Backdraw champion re-entering the Main final on
   their own position) is covered by the path.
