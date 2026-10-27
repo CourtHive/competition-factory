@@ -495,6 +495,20 @@ function landingAt(
     sideNumber,
   };
   if (!opponent?.participantId || opponent.bye || !opponent.drawPosition) return landing;
+  const onward = onwardFrom(view, entry, opponent.drawPosition);
+  return onward ? { ...landing, onward } : landing;
+}
+
+/**
+ * Where a participant awarded an exit goes on to, as v1's nested direction sends them (`directWinner`): their position
+ * joins the next matchUp of the structure. Only a clean arrival: that matchUp is to be played with no winner, score,
+ * provenance or BYE, and has a seat they do not already hold. Undefined otherwise.
+ */
+function onwardFrom(
+  view: OutcomeView,
+  entry: HydratedMatchUp,
+  drawPosition: number,
+): { matchUpId: string; drawPositions: number[] } | undefined {
   const next = indexed(view, entry.winnerMatchUpId);
   const held = (next?.drawPositions ?? []).filter((position): position is number => !!position);
   const clean =
@@ -506,10 +520,9 @@ function landingAt(
     !Object.keys(next.sideExitProvenance ?? {}).length &&
     !next.sides?.some((side) => side.bye) &&
     held.length < 2 &&
-    !held.includes(opponent.drawPosition);
-  if (!clean) return landing;
-  const drawPositions = [...held, opponent.drawPosition].sort((a, b) => a - b);
-  return { ...landing, onward: { matchUpId: next.matchUpId, drawPositions } };
+    !held.includes(drawPosition);
+  if (!next || !clean) return undefined;
+  return { matchUpId: next.matchUpId, drawPositions: [...held, drawPosition].sort((a, b) => a - b) };
 }
 
 /**
@@ -609,12 +622,15 @@ function carriedOps(
 /**
  * S5: a double exit entered on a matchUp holding no result, in a structure it links nothing out of, whose next matchUp
  * receives the exit it produces (`doubleExitAdvancement`: a DOUBLE_WALKOVER produces a WALKOVER, a DOUBLE_DEFAULT a
- * DEFAULTED, on the side the double exit feeds). Planned where that produced exit lands PENDING: the next matchUp is to
- * be played, holds no result, BYE, exit, codes or provenance, and nobody stands on the side it would be awarded to, so
- * it is written with no winner (CA, 2026-09-20) and directs nothing; and the matchUp beside this one in that round is
- * still to be played, so the produced exit's provenance records this side alone (`buildSideExitProvenance` records a
- * decided feeder's side too). Abstained: a loser link from this matchUp or from the next (the seats they feed take BYEs,
- * `propagateUnfillableLoserBye`), a convergence, and an opponent already there (the award and their onward direction).
+ * DEFAULTED, on the side the double exit feeds). Planned where the next matchUp is to be played and holds no result,
+ * BYE, exit, codes or provenance, and links no loser on, in two shapes:
+ *  - PENDING: nobody stands on the side it would be awarded to, so it is written with no winner (CA, 2026-09-20) and
+ *    directs nothing, and the matchUp beside this one is still to be played, so its provenance records this side alone;
+ *  - AWARDED: the winner of the matchUp beside this one stands there, so it is theirs at once and they go on into a clean
+ *    next matchUp (`directWinner`), and their origin is recorded beside this one's (`buildSideExitProvenance`).
+ * Abstained: a loser link from this matchUp or from the next (the seats they feed take BYEs,
+ * `propagateUnfillableLoserBye`), a convergence, a BYE on the awarded side, and an awarded winner with nowhere clean to
+ * go on to.
  */
 function producedReason(
   view: OutcomeView,
@@ -640,13 +656,23 @@ function producedReason(
   // the seat its loser link feeds will never be filled: v1 places a BYE there (`propagateUnfillableLoserBye`, CURTIS)
   if (entry.loserMatchUpId) return 'exit';
   const awarded = entry.sides?.find((side) => side.sideNumber === produced.winningSide);
-  if (awarded?.participantId || awarded?.bye) return 'exit';
-  // a seat holding a position nobody has reached (a fed seat): v1 advances that empty position, a reservation for the
-  // arrival the pending exit awaits (`doubleExitAdvancement`), not an op yet
-  if (awarded?.drawPosition) return 'exit';
-  if (pairedFeeder(view)?.matchUpStatus !== TO_BE_PLAYED) return 'exit';
+  if (awarded?.bye) return 'exit';
+  const paired = pairedFeeder(view);
+  if (!awarded?.participantId) {
+    // a seat holding a position nobody has reached (a fed seat): v1 advances that empty position, a reservation for
+    // the arrival the pending exit awaits (`doubleExitAdvancement`), not an op yet
+    if (awarded?.drawPosition) return 'exit';
+    // pending: nobody on the awarded side, and the feeder beside this one still to be played
+    return paired?.matchUpStatus === TO_BE_PLAYED ? undefined : 'exit';
+  }
+  // awarded: the feeder beside this one delivered its winner there, and the winner goes on into a clean next matchUp
+  if (!paired?.winningSide || !DELIVERED_FEEDS.has(paired.matchUpStatus)) return 'exit';
+  if (!awarded.drawPosition || !onwardFrom(view, entry, awarded.drawPosition)) return 'exit';
   return undefined;
 }
+
+/** a feeder's results whose winner standing in the seat it feeds is an origin v1 records as it is (`deliveredStatus`) */
+const DELIVERED_FEEDS = new Set<string | undefined>([COMPLETED, ...SINGLE_EXITS]);
 
 /** the matchUp beside this one in its round, which feeds the other side of the same next matchUp */
 function pairedFeeder(view: OutcomeView): HydratedMatchUp | undefined {
@@ -664,25 +690,44 @@ function pairedFeeder(view: OutcomeView): HydratedMatchUp | undefined {
  * the policy codes it keeps (`[]`), a WALKOVER's score blanked, then the side the double exit feeds given its origin
  * (`buildSideExitProvenance`, v1's own builder). Announced as the score write it is.
  */
-function producedOps(request: OutcomeRequest, write: MatchUpWrite, direction?: DirectionPlan) {
+function producedOps(view: OutcomeView, request: OutcomeRequest, write: MatchUpWrite, direction?: DirectionPlan) {
   const produced = direction?.produced;
   if (!produced) return [];
+  const entry = indexed(view, produced.matchUpId);
+  const awarded = entry?.sides?.find((side) => side.sideNumber === produced.winningSide);
+  const paired = awarded?.participantId ? pairedFeeder(view) : undefined;
+  const onward = entry && paired && awarded?.drawPosition ? onwardFrom(view, entry, awarded.drawPosition) : undefined;
   const provenance = buildSideExitProvenance({
     sourceMatchUpStatus: write.matchUpStatus as MatchUpStatusUnion,
     sourceSideNumber: 3 - produced.winningSide,
     sourceMatchUpId: request.matchUpId,
+    // the opponent standing there arrived from the feeder beside this one: its origin is recorded too
+    ...(paired ? { pairedMatchUpStatus: paired.matchUpStatus, pairedMatchUpId: paired.matchUpId } : {}),
   });
   const ops: OutcomeOp[] = [
     {
       op: 'setMatchUpResult',
       matchUpId: produced.matchUpId,
       matchUpStatus: produced.matchUpStatus,
+      ...(paired ? { winningSide: produced.winningSide } : {}),
       matchUpStatusCodes: [],
       stampsScoredTime: false,
       ...(produced.matchUpStatus === WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
     },
     ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId: produced.matchUpId, provenance }] : []),
     { op: 'stampUpdatedAt', entity: 'matchUp', id: produced.matchUpId },
+    // awarded at once to the opponent standing there, who goes on (`directWinner`)
+    ...(onward
+      ? [
+          {
+            op: 'setMatchUpDrawPositions' as const,
+            matchUpId: onward.matchUpId,
+            drawPositions: onward.drawPositions,
+            announcesContext: false as const,
+          },
+          { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: onward.matchUpId },
+        ]
+      : []),
   ];
   return ops;
 }
@@ -1018,7 +1063,7 @@ export function planOutcome(args: {
     ...carried.relay,
     ...throughBye,
     ...carried.landing,
-    ...(args.route === DOUBLE_EXIT ? producedOps(request, write, args.direction) : []),
+    ...(args.route === DOUBLE_EXIT ? producedOps(view, request, write, args.direction) : []),
     ...structureStamps([...seated, ...carried.landing], structureId),
     ...tally,
     // the top-level structure: a round robin group's container, as v1 stamps it

@@ -81,6 +81,10 @@ export function applyOwnedPlan({
         : [],
     ),
   );
+  // a placement v1 announces with no event or tournament (a produced exit's award, sent on by `doubleExitAdvancement`)
+  const unevented = new Set(
+    ops.flatMap((op) => (op.op === 'setMatchUpDrawPositions' && op.announcesContext === false ? [op.matchUpId] : [])),
+  );
   const stored = new Map(args.matchUpsMap?.drawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
   const subscribed = getTopics().topics.includes(UPDATE_INCONTEXT_MATCHUP);
   for (const matchUpId of written) {
@@ -96,7 +100,7 @@ export function applyOwnedPlan({
       });
     // a removal's notice is built as v1's `removeSubsequentRoundsParticipant` builds it, whose caller passes no event
     const removedPosition = removed.get(matchUpId);
-    const noticeEvent = removedPosition ? undefined : event;
+    const noticeEvent = removedPosition || unevented.has(matchUpId) ? undefined : event;
     modifyMatchUpNotice({
       // v1's writers name themselves: the call's result is `modifyMatchUpScore`'s, a winner's seat in the next matchUp
       // is `assignMatchUpDrawPosition`'s (`directWinner`), a FIRST_MATCHUP reservation's matchUp `setMatchUpStatusBye`'s
@@ -104,8 +108,8 @@ export function applyOwnedPlan({
         ? `removeSubsequentDrawPosition-${removedPosition}`
         : matchUpContext(matchUpId, { resulted, byes, recoded, exchanged, relayed }),
       eventId: noticeEvent?.eventId,
+      tournamentId: unevented.has(matchUpId) ? undefined : tournamentId,
       drawDefinition,
-      tournamentId,
       matchUp,
       event: noticeEvent,
     });

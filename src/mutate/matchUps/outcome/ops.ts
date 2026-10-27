@@ -67,6 +67,11 @@ export type OutcomeOp =
       removedDrawPosition?: number;
       /** the position placed in by the same write, when one is: a changed winner replacing the old one (S4) */
       placedDrawPosition?: number;
+      /**
+       * false where v1 announces the placement with no event or tournament: the winner a double exit's produced exit is
+       * awarded to, sent on by `doubleExitAdvancement` (S5). The write is the same; only the notice's ids differ
+       */
+      announcesContext?: false;
     }
   | {
       op: 'assignPosition';
