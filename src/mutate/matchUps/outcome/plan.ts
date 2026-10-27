@@ -700,6 +700,18 @@ type DoubleExitSeats = {
   };
   /** the seat the next matchUp's loser link feeds, which the pending exit there leaves nobody to fill */
   unfillable?: { structureId: string; drawPosition: number; matchUpId: string };
+  /** under `doubleExitPropagateBye: false`: the exit produced on this matchUp's loser matchUp, in place of `own` */
+  producedLoser?: ProducedLoser;
+};
+
+type ProducedLoser = {
+  matchUpId: string;
+  /** the loser matchUp's structure, which v1's score write there stamps */
+  structureId: string;
+  /** the side the loser seat is on, which the exit's origin is recorded on; the exit is awarded to the other */
+  seatSide: 1 | 2;
+  /** the empty position opposite, advanced ahead of the arrival it awaits (a reservation) */
+  onward: { matchUpId: string; drawPositions: number[] };
 };
 
 /**
@@ -714,10 +726,12 @@ type DoubleExitSeats = {
  */
 function doubleExitSeats(view: OutcomeView, entry: HydratedMatchUp): DoubleExitSeats | undefined {
   const { targets } = view;
-  // under `doubleExitPropagateBye: false` the loser seat shows the produced exit, not a BYE: v1's
-  if (!view.draw.doubleExitPropagatesBye) return undefined;
   const seats: DoubleExitSeats = {};
-  if (targets.loserLink || targets.loserMatchUpId) {
+  // under `doubleExitPropagateBye: false` the loser matchUp takes a produced exit in place of the BYE
+  if (!view.draw.doubleExitPropagatesBye && (targets.loserLink || targets.loserMatchUpId)) {
+    seats.producedLoser = producedLoser(view);
+    if (!seats.producedLoser) return undefined;
+  } else if (targets.loserLink || targets.loserMatchUpId) {
     const seat = targets.loserTargetSeat;
     const loserMatchUp = indexed(view, targets.loserMatchUpId);
     const { loserStructureId, loserTargetDrawPosition, loserMatchUpRecord } = targets;
@@ -748,8 +762,8 @@ function doubleExitSeats(view: OutcomeView, entry: HydratedMatchUp): DoubleExitS
     if (!unfillable.seat?.free || unfillable.seat.opponentBye || unfillable.seat.opponentHeld) return undefined;
     if (unfillable.matchUpStatus !== TO_BE_PLAYED || unfillable.hasResult) return undefined;
     if (unfillable.drawPositions.some((position) => position !== unfillable.drawPosition)) return undefined;
-    if (unfillable.matchUpId === seats.own?.matchUpId || unfillable.matchUpId === seats.own?.onward.matchUpId)
-      return undefined;
+    const apart = [seats.own?.matchUpId, seats.own?.onward.matchUpId, ...producedLoserMatchUpIds(seats.producedLoser)];
+    if (apart.includes(unfillable.matchUpId)) return undefined;
     const record = indexed(view, unfillable.matchUpId);
     if (!record || record.matchUpStatusCodes?.length || Object.keys(record.sideExitProvenance ?? {}).length)
       return undefined;
@@ -762,13 +776,77 @@ function doubleExitSeats(view: OutcomeView, entry: HydratedMatchUp): DoubleExitS
   return seats;
 }
 
+const producedLoserMatchUpIds = (produced?: ProducedLoser) =>
+  produced ? [produced.matchUpId, produced.onward.matchUpId] : [];
+
+/**
+ * Under `doubleExitPropagateBye: false` nobody loses the double exit, and its loser matchUp takes a produced exit
+ * (`handleLoserMatchUp` → `conditionallyAdvanceDrawPosition`): the double exit's flavour, awarded to the side opposite the
+ * seat with nobody on it, its origin recorded on the seat's side, and the empty position opposite advanced into the next
+ * matchUp ahead of the arrival it awaits (a reservation). Planned only in a first round, not fed (a fed seat takes a BYE
+ * whatever the policy), behind a link with no condition, into a matchUp that links no loser on (COMPASS, OLYMPIC: v1's):
+ * the seat free with nobody and no BYE opposite, the matchUp to be played holding no result, exit, codes or provenance,
+ * and the advance into a clean matchUp with room.
+ */
+function producedLoser(view: OutcomeView): ProducedLoser | undefined {
+  const { targets } = view;
+  const seat = targets.loserTargetSeat;
+  const loserMatchUp = indexed(view, targets.loserMatchUpId);
+  const { loserTargetDrawPosition, loserMatchUpRecord } = targets;
+  if (targets.loserLink?.linkCondition || !loserMatchUp || !loserTargetDrawPosition) return undefined;
+  if (loserMatchUp.roundNumber !== 1 || loserMatchUp.feedRound || loserMatchUp.hasFedDrawPosition) return undefined;
+  if (!seat?.free || seat.opponentBye || seat.opponentHeld) return undefined;
+  if (targets.loserMatchUpStatus !== TO_BE_PLAYED || targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit)
+    return undefined;
+  if (!loserMatchUpRecord || loserMatchUpRecord.provenance || loserMatchUpRecord.matchUpStatusCodes?.length)
+    return undefined;
+  const seatSide = sideOf(loserMatchUp, loserTargetDrawPosition);
+  const opposite = (targets.loserMatchUpDrawPositions ?? []).filter((position) => position !== loserTargetDrawPosition);
+  const onward = opposite.length === 1 ? onwardFrom(view, loserMatchUp, opposite[0]) : undefined;
+  // a loser matchUp that links its own loser on leaves that seat a BYE too, and what v1 advances beside it is not read yet
+  if (!seatSide || !onward || loserMatchUp.loserMatchUpId) return undefined;
+  return { matchUpId: loserMatchUp.matchUpId, structureId: loserMatchUp.structureId, seatSide, onward };
+}
+
+/** the exit produced on the loser matchUp, as v1 writes it there: the exit, its origin, then the advance */
+function producedLoserOps(request: OutcomeRequest, produced: ProducedLoser): OutcomeOp[] {
+  const matchUpStatus = request.matchUpStatus === DOUBLE_DEFAULT ? DEFAULTED : WALKOVER;
+  const provenance = buildSideExitProvenance({
+    sourceMatchUpStatus: request.matchUpStatus as MatchUpStatusUnion,
+    sourceMatchUpId: request.matchUpId,
+    sourceSideNumber: produced.seatSide,
+  });
+  return [
+    {
+      op: 'setMatchUpResult',
+      matchUpId: produced.matchUpId,
+      matchUpStatus,
+      winningSide: (3 - produced.seatSide) as 1 | 2,
+      matchUpStatusCodes: [],
+      stampsScoredTime: false,
+      ...(matchUpStatus === WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
+    },
+    ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId: produced.matchUpId, provenance }] : []),
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: produced.matchUpId },
+    {
+      op: 'setMatchUpDrawPositions',
+      matchUpId: produced.onward.matchUpId,
+      drawPositions: produced.onward.drawPositions,
+      announcesContext: false,
+    },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: produced.onward.matchUpId },
+    { op: 'stampUpdatedAt', entity: 'structure', id: produced.structureId },
+  ];
+}
+
 /** the double exit's BYEs and the advance through the first, in the order v1 announces them */
-function doubleExitSeatOps(view: OutcomeView, direction?: DirectionPlan): OutcomeOp[] {
+function doubleExitSeatOps(view: OutcomeView, request: OutcomeRequest, direction?: DirectionPlan): OutcomeOp[] {
   const entry = direction?.produced ? indexed(view, direction.produced.matchUpId) : undefined;
   const seats = entry ? doubleExitSeats(view, entry) : undefined;
   if (!seats) return [];
-  const { own, unfillable } = seats;
+  const { own, unfillable, producedLoser: produced } = seats;
   return [
+    ...(produced ? producedLoserOps(request, produced) : []),
     ...(own
       ? [
           ...seatBye(own),
@@ -788,6 +866,7 @@ function doubleExitSeatOps(view: OutcomeView, direction?: DirectionPlan): Outcom
             structureId: unfillable.structureId,
             drawPosition: unfillable.drawPosition,
             byeFromPropagation: true as const,
+            announcesEvent: false as const,
           },
           { op: 'setMatchUpBye' as const, matchUpId: unfillable.matchUpId, announcesEvent: false as const },
           { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: unfillable.matchUpId },
@@ -1359,7 +1438,7 @@ export function planOutcome(args: {
   // two exits meeting where the loser lands (RULE 4), and what the double exit they make produces (S5)
   const converging = loser?.converged ? convergedOps(view, request, write, loser) : [];
   // a double exit's loser seats, BYEs (S5)
-  const doubleExitSeated = args.route === DOUBLE_EXIT ? doubleExitSeatOps(view, args.direction) : [];
+  const doubleExitSeated = args.route === DOUBLE_EXIT ? doubleExitSeatOps(view, request, args.direction) : [];
   const seated = [...arrival, ...keptOutBye, ...reserved];
   const tally = view.group
     ? groupTally(view.group, { matchUpId, matchUpWrite: write, score, matchUpFormat: request.matchUpFormat })

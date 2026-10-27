@@ -12,6 +12,7 @@ import { setClock } from '@Tools/clock';
 import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
+import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import {
   COMPLETED,
   DEFAULTED,
@@ -93,6 +94,8 @@ type Scenario = {
 
 // `propagateExitStatus`: a WALKOVER or DEFAULTED follows its loser across the link (S5)
 const CARRIED = { propagateExitStatus: true };
+// a double exit's loser seat shows the exit it produced, not a BYE (USTA's policy; CA ruling (A), 2026-10-21)
+const POLICY_OFF = { [POLICY_TYPE_PROGRESSION]: { doubleExitPropagateBye: false } };
 
 const R1 = (roundPosition: number, structureName?: string): Target => ({
   roundNumber: 1,
@@ -717,6 +720,30 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
     },
   ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S5, doubleExitPropagateBye off): a double default produces a default in the consolation',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      policyDefinitions: POLICY_OFF,
+      steps: [{ target: R1(3, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION (S5, doubleExitPropagateBye off): the Backdraw matchUp takes the produced walkover',
+    {
+      drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
+      policyDefinitions: POLICY_OFF,
+      steps: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION (S5, doubleExitPropagateBye off): a double default in a 16 draw produces a Backdraw default',
+    {
+      drawProfile: { drawSize: 16, drawType: DOUBLE_ELIMINATION },
+      policyDefinitions: POLICY_OFF,
+      steps: [{ target: R1(3, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
@@ -838,6 +865,19 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     } finally {
       SETTLE_PASS_LIMITS.exitLevels = saved;
     }
+  });
+
+  it('COMPASS under doubleExitPropagateBye off: West links its loser on to South, which v2 does not read yet', () => {
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 8, drawType: COMPASS },
+      policyDefinitions: POLICY_OFF,
+      steps: [{ target: R1(1, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v2.v1Writes).toEqual(1);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
   });
 
   it('a default under a scoring policy naming incompleteAssignmentsOnDefault: v1 may write processCodes', () => {
