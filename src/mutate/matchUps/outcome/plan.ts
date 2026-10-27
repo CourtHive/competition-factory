@@ -1,9 +1,9 @@
+import { buildCarriedExitProvenance, buildSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
-import { buildCarriedExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getCapturedClock, writeLegacyEnabled } from '@Global/state/globalState';
 import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
+import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { validMatchUps } from '@Validators/validMatchUp';
-import { isAnyExit } from '@Validators/isExit';
 
 // constants and types
 import type { DrawDefinition, MatchUpStatusUnion, Score, TallyResult, Tournament } from '@Types/tournamentTypes';
@@ -64,6 +64,7 @@ export type OutcomePlan =
   | { abstain: AbstainReason; ops?: undefined; shape?: undefined };
 
 const REMOVE_DIRECTED: Route = 'remove-directed';
+const DOUBLE_EXIT: Route = 'double-exit';
 const LOCAL_ROUTES = new Set<Route>(['clear', 'clear-score', REMOVE_DIRECTED, 'only-score']);
 const LOCAL_STATUSES = new Set<string | undefined>([IN_PROGRESS, SUSPENDED, AWAITING_RESULT, INCOMPLETE, TO_BE_PLAYED]);
 const SINGLE_EXITS = new Set<string | undefined>([WALKOVER, DEFAULTED, RETIRED]);
@@ -383,6 +384,7 @@ function exitReason(args: {
   const { existing } = view;
   if (!isAnyExit(request.matchUpStatus) && !isAnyExit(existing.matchUpStatus) && !isAnyExit(write?.matchUpStatus))
     return undefined;
+  if (route === DOUBLE_EXIT) return producedReason(view, request, direction, write);
   if (route !== 'winner' || !write?.winningSide || !SINGLE_EXITS.has(write.matchUpStatus)) return 'exit';
   if (request.matchUpStatus !== write.matchUpStatus) return 'exit';
   if (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide) return 'exit';
@@ -604,6 +606,81 @@ function carriedOps(
   return { relay, landing: [...landed(landing, source.matchUpId, source.status), ...levels] };
 }
 
+/**
+ * S5: a double exit entered on a matchUp holding no result, in a structure it links nothing out of, whose next matchUp
+ * receives the exit it produces (`doubleExitAdvancement`: a DOUBLE_WALKOVER produces a WALKOVER, a DOUBLE_DEFAULT a
+ * DEFAULTED, on the side the double exit feeds). Planned where that produced exit lands PENDING: the next matchUp is to
+ * be played, holds no result, BYE, exit, codes or provenance, and nobody stands on the side it would be awarded to, so
+ * it is written with no winner (CA, 2026-09-20) and directs nothing; and the matchUp beside this one in that round is
+ * still to be played, so the produced exit's provenance records this side alone (`buildSideExitProvenance` records a
+ * decided feeder's side too). Abstained: a loser link from this matchUp or from the next (the seats they feed take BYEs,
+ * `propagateUnfillableLoserBye`), a convergence, and an opponent already there (the award and their onward direction).
+ */
+function producedReason(
+  view: OutcomeView,
+  request: OutcomeRequest,
+  direction?: DirectionPlan,
+  write?: MatchUpWrite,
+): AbstainReason | undefined {
+  const { existing, targets } = view;
+  if (!write || !isDoubleExit(write.matchUpStatus) || request.matchUpStatus !== write.matchUpStatus) return 'exit';
+  if (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide || write.matchUpStatusCodes?.length)
+    return 'exit';
+  if (targets.loserMatchUpId || targets.loserLink || targets.byeTarget) return 'exit';
+  const produced = direction?.produced;
+  const target = targets.winner;
+  if (!produced || direction?.converged || direction?.decider || !target) return 'exit';
+  if (target.matchUpStatus !== TO_BE_PLAYED || target.holdsResult || target.hasBye || target.carriesExit) return 'exit';
+  if (target.carriedStatuses.length) return 'exit';
+  const entry = indexed(view, produced.matchUpId);
+  if (!entry || entry.matchUpStatusCodes?.length || Object.keys(entry.sideExitProvenance ?? {}).length) return 'exit';
+  // the seat its loser link feeds will never be filled: v1 places a BYE there (`propagateUnfillableLoserBye`, CURTIS)
+  if (entry.loserMatchUpId) return 'exit';
+  const awarded = entry.sides?.find((side) => side.sideNumber === produced.winningSide);
+  if (awarded?.participantId || awarded?.bye) return 'exit';
+  if (pairedFeeder(view)?.matchUpStatus !== TO_BE_PLAYED) return 'exit';
+  return undefined;
+}
+
+/** the matchUp beside this one in its round, which feeds the other side of the same next matchUp */
+function pairedFeeder(view: OutcomeView): HydratedMatchUp | undefined {
+  const { structureId, roundNumber, roundPosition } = view.targets.source;
+  if (!roundPosition) return undefined;
+  const paired = roundPosition % 2 ? roundPosition + 1 : roundPosition - 1;
+  return view.inContextDrawMatchUps?.find(
+    (matchUp) =>
+      matchUp.structureId === structureId && matchUp.roundNumber === roundNumber && matchUp.roundPosition === paired,
+  );
+}
+
+/**
+ * The produced exit's write on the next matchUp, as v1's `doubleExitAdvancement` makes it there: the status, no winner,
+ * the policy codes it keeps (`[]`), a WALKOVER's score blanked, then the side the double exit feeds given its origin
+ * (`buildSideExitProvenance`, v1's own builder). Announced as the score write it is.
+ */
+function producedOps(request: OutcomeRequest, write: MatchUpWrite, direction?: DirectionPlan) {
+  const produced = direction?.produced;
+  if (!produced) return [];
+  const provenance = buildSideExitProvenance({
+    sourceMatchUpStatus: write.matchUpStatus as MatchUpStatusUnion,
+    sourceSideNumber: 3 - produced.winningSide,
+    sourceMatchUpId: request.matchUpId,
+  });
+  const ops: OutcomeOp[] = [
+    {
+      op: 'setMatchUpResult',
+      matchUpId: produced.matchUpId,
+      matchUpStatus: produced.matchUpStatus,
+      matchUpStatusCodes: [],
+      stampsScoredTime: false,
+      ...(produced.matchUpStatus === WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
+    },
+    ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId: produced.matchUpId, provenance }] : []),
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: produced.matchUpId },
+  ];
+  return ops;
+}
+
 /** the first reason this call is not S1's, or undefined when it is */
 function abstainReason(args: {
   request: OutcomeRequest;
@@ -640,18 +717,28 @@ function abstainReason(args: {
     const removal = removalReason(view, direction);
     if (removal) return removal;
   } else if (view.existing.winningSide && !sameWinner && !reentered && !changing && !swapping) return 'winner';
-  const directing = !sameWinner && !!(request.winningSide || write?.winningSide || direction);
-  let shape: AbstainReason | undefined;
-  if (sameWinner) shape = applyValuesReason(args);
-  else if (reentered) shape = reenteredReason(view, write, direction);
-  else if (changing) shape = changedWinnerReason(view, write, direction);
-  else if (swapping) shape = swapReason(view, write);
-  else shape = directing ? directionReason(args) : localReason(args);
+  const shape = shapeReason(args, { sameWinner, reentered, changing, swapping });
   if (shape) return shape;
   if (view.existing.hasSideExitProvenance || view.existing.carriedExit) return 'provenance';
   // a round robin group's tally is planned (`setParticipantResults`, S3); an ad hoc, lucky or TEAM tally is not yet
   if (view.draw.tallied && !view.group) return 'tallied';
   return undefined;
+}
+
+/** the reason the call's own shape is not planned, by the shape `abstainReason` found it to be */
+function shapeReason(
+  args: Parameters<typeof abstainReason>[0],
+  shape: { sameWinner: boolean; reentered: boolean; changing: boolean; swapping: boolean },
+): AbstainReason | undefined {
+  const { request, view, write, direction } = args;
+  if (shape.sameWinner) return applyValuesReason(args);
+  if (shape.reentered) return reenteredReason(view, write, direction);
+  if (shape.changing) return changedWinnerReason(view, write, direction);
+  if (shape.swapping) return swapReason(view, write);
+  // S5: a double exit's produced exit, vetted by `producedReason`
+  if (args.route === DOUBLE_EXIT) return undefined;
+  const directing = !!(request.winningSide || write?.winningSide || direction);
+  return directing ? directionReason(args) : localReason(args);
 }
 
 /** the stored winner entered again on the winner's route (S4) */
@@ -925,6 +1012,7 @@ export function planOutcome(args: {
     ...carried.relay,
     ...throughBye,
     ...carried.landing,
+    ...(args.route === DOUBLE_EXIT ? producedOps(request, write, args.direction) : []),
     ...structureStamps([...seated, ...carried.landing], structureId),
     ...tally,
     // the top-level structure: a round robin group's container, as v1 stamps it

@@ -9,10 +9,18 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { setClock } from '@Tools/clock';
 
 // constants
-import { COMPLETED, DEFAULTED, RETIRED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
+import {
+  COMPLETED,
+  DEFAULTED,
+  DOUBLE_DEFAULT,
+  DOUBLE_WALKOVER,
+  RETIRED,
+  TO_BE_PLAYED,
+  WALKOVER,
+} from '@Constants/matchUpStatusConstants';
 import {
   AD_HOC,
   COMPASS,
@@ -575,6 +583,20 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(2, 'East'), outcome: walkover(1), params: CARRIED }],
     },
   ],
+  [
+    'SINGLE_ELIMINATION (S5): a double walkover produces a pending walkover in round 2',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      steps: [{ target: R1(1), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION (S5): a double default produces a pending default on the side it feeds',
+    {
+      drawProfile: { drawSize: 16, drawType: SINGLE_ELIMINATION },
+      steps: [{ target: R1(4), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
@@ -673,6 +695,18 @@ describe('under v2, a FIRST_MATCHUP reservation is v2s', () => {
 });
 
 describe('under v2, an exit v2 does not plan is v1s, whole', () => {
+  it('FEED_IN_CHAMPIONSHIP: a double exit whose loser seats take BYEs in the consolation', () => {
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      steps: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v2.v1Writes).toEqual(v1.v1Writes);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+  });
+
   it('F9: a carry that would reach v1s bound is v1s, which refuses there; v2 never plans the bound', () => {
     const scenario: Scenario = {
       drawProfile: { drawSize: 8, drawType: COMPASS },

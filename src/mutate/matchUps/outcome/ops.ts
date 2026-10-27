@@ -49,6 +49,11 @@ export type OutcomeOp =
       /** a new format; absent keeps the one the matchUp stores */
       matchUpFormat?: string;
       matchUpStatusCodes?: MatchUpStatusCodeElement[];
+      /**
+       * false where v1 writes the result outside `setMatchUpState`, so its `applyScoredTime` does not run and the
+       * schedule is left as it is: a double exit's produced exit (`doubleExitAdvancement` → `modifyMatchUpScore`)
+       */
+      stampsScoredTime?: false;
     }
   | {
       op: 'setMatchUpDrawPositions';
@@ -209,6 +214,7 @@ function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMat
   else delete matchUp.winningSide;
   if (op.matchUpFormat) matchUp.matchUpFormat = op.matchUpFormat;
   if (op.matchUpStatusCodes) matchUp.matchUpStatusCodes = structuredClone(op.matchUpStatusCodes);
+  if (op.stampsScoredTime === false) return;
   // v1's `applyScoredTime`: captured the first time the matchUp is scored, kept on later corrections, removed with
   // the score so a re-score gets a fresh stamp
   if (matchUpIsScored(matchUp)) {
