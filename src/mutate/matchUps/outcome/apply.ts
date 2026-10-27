@@ -55,6 +55,7 @@ export function applyOwnedPlan({
         op.op === 'setMatchUpDrawPositions' ||
         op.op === 'setMatchUpBye' ||
         op.op === 'setMatchUpStatusCodes' ||
+        op.op === 'mergeSideExitProvenance' ||
         op.op === 'exchangeDrawPositions'
           ? [op.matchUpId]
           : [],
@@ -67,6 +68,9 @@ export function applyOwnedPlan({
   const recoded = new Set(ops.flatMap((op) => (op.op === 'setMatchUpStatusCodes' ? [op.matchUpId] : [])));
   // a swap's relabel in a later round: v1's `exchangePathPositions` announces each matchUp as `swapWinnerLoser`
   const exchanged = new Set(ops.flatMap((op) => (op.op === 'exchangeDrawPositions' ? [op.matchUpId] : [])));
+  // a carry recorded beside a BYE it passed: the BYE matchUp's state is not rewritten, so v1's `progressExitStatus`
+  // announces the entry itself (`recordCarryBesideBye`)
+  const relayed = new Set(ops.flatMap((op) => (op.op === 'mergeSideExitProvenance' ? [op.matchUpId] : [])));
   // a position taken back out of a later round: v1's `removeSubsequentRoundsParticipant` names the position, no event.
   // Not when the same write places one (a changed winner): v1 announces the placement after the removal, and the
   // notice buffer keeps the later of the two for the matchUp
@@ -98,7 +102,7 @@ export function applyOwnedPlan({
       // is `assignMatchUpDrawPosition`'s (`directWinner`), a FIRST_MATCHUP reservation's matchUp `setMatchUpStatusBye`'s
       context: removedPosition
         ? `removeSubsequentDrawPosition-${removedPosition}`
-        : matchUpContext(matchUpId, { resulted, byes, recoded, exchanged }),
+        : matchUpContext(matchUpId, { resulted, byes, recoded, exchanged, relayed }),
       eventId: noticeEvent?.eventId,
       drawDefinition,
       tournamentId,
@@ -122,10 +126,17 @@ export function applyOwnedPlan({
 
 function matchUpContext(
   matchUpId: string,
-  written: { resulted: Set<string>; byes: Set<string>; recoded: Set<string>; exchanged: Set<string> },
+  written: {
+    resulted: Set<string>;
+    byes: Set<string>;
+    recoded: Set<string>;
+    exchanged: Set<string>;
+    relayed: Set<string>;
+  },
 ): string {
-  const { resulted, byes, recoded, exchanged } = written;
+  const { resulted, byes, recoded, exchanged, relayed } = written;
   if (resulted.has(matchUpId)) return 'modifyMatchUpScore';
+  if (relayed.has(matchUpId)) return 'progressExitStatus';
   if (recoded.has(matchUpId)) return 'removeDirectedLoser';
   if (exchanged.has(matchUpId)) return 'swapWinnerLoser';
   return byes.has(matchUpId) ? 'setMatchUpStatusBye' : 'assignMatchUpDrawPosition';
