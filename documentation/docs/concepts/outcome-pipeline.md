@@ -593,8 +593,11 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   announced by itself (`progressExitStatus`), and the exit lands beyond it by RULE 2 or 3.
   It is announced as a score write, its in-context matchUp to a subscriber
   included, and the call's result carries no propagation context. A matchUp that links its loser on
-  (COMPASS) stays v1's: the carrier would carry the exit again, a loop (`propagateExitFrom`) v2 does not
-  plan. A double exit, a carry past a BYE into anything but a clean matchUp, a present opponent with nowhere clean to go on to, a convergence, a correction to or
+  (COMPASS, OLYMPIC, PLAYOFF) makes the carrier, its loser, carry the exit again (`propagateExitFrom`'s loop):
+  v2 plans the loop level by level from the draw as the call found it, each level's seat and matchUp clean as
+  the first must be (no link condition, no BYE opposite), the carrier placed and the exit written with the
+  landing they lost as its origin. The walk is bounded by v1's own `SETTLE_PASS_LIMITS.exitLevels`; a chain
+  that reaches it is v1's, which refuses there (`SETTLE_BOUND_REACHED`, F9 (i)), so v2 never plans the bound. A double exit, a carry past a BYE into anything but a clean matchUp, a present opponent with nowhere clean to go on to, a convergence, a correction to or
   from an exit, and an exit whose target holds a BYE, an exit or a result stay v1's (`exit`,
   `cascade`).
 - **`differential`**: v2 plans the whole call before v1 runs, then checks v1's result against it,

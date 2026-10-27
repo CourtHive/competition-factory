@@ -11,6 +11,7 @@ import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinn
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
+import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
 import { resolveScoringFormat } from '@Query/hierarchical/resolveScoringFormat';
 import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
@@ -51,9 +52,11 @@ import {
 import type { BuildViewArgs, OutcomeRequest, OutcomeView, Reservation, ThroughBye } from './types';
 import { FIRST_MATCHUP, LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { BYE, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import type { PositionTargetsResult } from '@Query/matchUp/positionTargets';
 import type { MatchUpsMap } from '@Types/factoryTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
+import type { CarryLevel } from './types';
 import type {
   DrawDefinition,
   DrawLink,
@@ -357,6 +360,65 @@ function throughBye(
     if (onward?.linkCondition === FIRST_MATCHUP) return undefined;
   }
   return { matchUpId: next.matchUpId, drawPositions };
+}
+
+/**
+ * THE LEVELS A CARRIED EXIT GOES ON TO (S5, `propagateExitFrom`). From the matchUp the exit lands in, the carrier is
+ * that matchUp's loser, and v1's nested write directs them across its loser link (`directLoser`), carrying the exit
+ * again. Each level is read from the draw as the call found it: the link targets of the landing (`positionTargets`),
+ * the seat it feeds and the matchUp holding it. Only for a call that may carry. The walk stops where nothing is linked
+ * on, at a BYE opposite (a relay this walk does not read), and at v1's bound (`SETTLE_PASS_LIMITS.exitLevels`), where it
+ * says so: v1 refuses there (`SETTLE_BOUND_REACHED`), and v2 abstains (F9).
+ */
+function carryLevels(
+  draw: DrawContext,
+  matchUpsMap: MatchUpsMap,
+  landingMatchUpId?: string,
+): OutcomeView['targets']['carryLevels'] {
+  const levels: CarryLevel[] = [];
+  let fromMatchUpId = landingMatchUpId;
+  for (let level = 0; fromMatchUpId; level += 1) {
+    if (level >= SETTLE_PASS_LIMITS.exitLevels) return { levels, bounded: true };
+    const { targetMatchUps, targetLinks } = positionTargets({ ...draw, matchUpId: fromMatchUpId }) ?? {};
+    const next = targetMatchUps?.loserMatchUp;
+    const drawPosition = targetMatchUps?.loserTargetDrawPosition;
+    if (!next || !drawPosition) break;
+    const seat = loserTargetSeat(draw.drawDefinition, next.structureId, drawPosition, next.drawPositions);
+    levels.push({
+      linkCondition: targetLinks?.loserTargetLink?.linkCondition,
+      record: storedSideRecord(matchUpsMap, next.matchUpId),
+      carriesExit: carriesExit(next, draw),
+      matchUpStatus: next.matchUpStatus,
+      structureId: next.structureId,
+      matchUpId: next.matchUpId,
+      hasResult: hasResult(next),
+      fromMatchUpId,
+      drawPosition,
+      seat,
+    });
+    if (!seat || seat.opponentBye) break;
+    fromMatchUpId = next.matchUpId;
+  }
+  return { levels, bounded: false };
+}
+
+/** a call that may carry an exit across a loser link (`propagateExitStatus`, an exit status, a loser matchUp) */
+function carriesOn(request: OutcomeRequest, targetData?: PositionTargetsResult): boolean {
+  return (
+    !!request.flags.propagateExitStatus && isExit(request.matchUpStatus) && !!targetData?.targetMatchUps?.loserMatchUp
+  );
+}
+
+/** where a carried exit lands: the loser's matchUp, or past a BYE opposite the seat, the matchUp beyond it */
+function carryLanding(
+  drawDefinition: DrawDefinition,
+  targetData: PositionTargetsResult | undefined,
+  draw: DrawContext,
+): string | undefined {
+  const loserMatchUp = targetData?.targetMatchUps?.loserMatchUp;
+  const drawPosition = targetData?.targetMatchUps?.loserTargetDrawPosition;
+  const seat = loserTargetSeat(drawDefinition, loserMatchUp?.structureId, drawPosition, loserMatchUp?.drawPositions);
+  return seat?.opponentBye ? throughBye(loserMatchUp, drawPosition, draw)?.matchUpId : loserMatchUp?.matchUpId;
 }
 
 /** the drawPosition a side of the matchUp holds */
@@ -1277,6 +1339,9 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         targetData?.targetMatchUps?.loserTargetDrawPosition,
         draw,
       ),
+      carryLevels: carriesOn(request, targetData)
+        ? carryLevels(draw, matchUpsMap, carryLanding(drawDefinition, targetData, draw))
+        : undefined,
       seededParticipantIds: (structure?.seedAssignments ?? []).flatMap(({ participantId }) =>
         participantId ? [participantId] : [],
       ),

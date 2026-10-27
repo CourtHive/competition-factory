@@ -177,6 +177,12 @@ export type OutcomeView = {
     };
     /** a loser placed opposite a BYE goes on into this matchUp, holding these drawPositions after (planned, S3) */
     loserThroughBye?: ThroughBye;
+    /**
+     * the levels a carried exit goes on to beyond the matchUp it lands in (S5, `propagateExitFrom`): each loser link its
+     * carrier crosses next, as v1 directs them from the landing. Read only for a call that may carry; `bounded` when the
+     * walk reached v1's `exitLevels` with a level still to go (F9: v2 abstains there)
+     */
+    carryLevels?: { levels: CarryLevel[]; bounded: boolean };
     /** a winner whose target holds a BYE goes on past it into this matchUp, by the winning side (planned, S3) */
     winnerThroughBye?: { 1?: ThroughBye; 2?: ThroughBye };
     /** the participants seeded in the source structure: a seeded loser placed across a link takes the seed with them */
@@ -386,3 +392,19 @@ export type Reservation =
 
 /** the matchUp a participant placed opposite a BYE goes on into, and its drawPositions once they are there */
 export type ThroughBye = { matchUpId: string; drawPositions: number[] };
+
+/** one further level of a carried exit: the seat the carrier is placed on across the landing's loser link */
+export type CarryLevel = {
+  /** the landing the carrier loses, whose loser link this level crosses */
+  fromMatchUpId: string;
+  /** the matchUp the carrier lands in at this level */
+  matchUpId: string;
+  structureId: string;
+  drawPosition: number;
+  linkCondition?: string;
+  seat?: { free: boolean; opponentBye: boolean; opponentHeld: boolean };
+  matchUpStatus?: MatchUpStatusUnion;
+  hasResult: boolean;
+  carriesExit: boolean;
+  record?: { matchUpStatusCodes?: unknown[]; provenance: boolean };
+};
