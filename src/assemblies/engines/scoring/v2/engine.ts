@@ -101,6 +101,13 @@ function judged(entry: ScoreEntry, after: ScoringState): ScoreEntry {
   return { ...entry, data: { ...entry.data, winningSide } };
 }
 
+/** a point keeps the value it was scored at: its multiplier's value is recorded on its entry (§ 12.2) */
+function valued(entry: ScoreEntry, after: ScoringState): ScoreEntry {
+  const scoreValue = after.points.at(-1)?.scoreValue;
+  if (entry.type !== 'point' || scoreValue === undefined || entry.data?.scoreValue !== undefined) return entry;
+  return { ...entry, data: { ...entry.data, scoreValue } };
+}
+
 function refusedWith(outcome: StepOutcome): never {
   const message = 'refused' in outcome ? outcome.refused.message : 'refused';
   throw new Error(message);
@@ -279,7 +286,9 @@ export class ScoringEngine {
     // the point's position in the record, which a non-recalculating removal has made shorter than the score counts
     const position = this.stale ? (this.record.history?.points?.length ?? 0) : before.points.length;
     const pointIndex = result.state.points.length > before.points.length ? position : undefined;
-    entries.push(pointIndex === undefined ? judged(entry, result.state) : { ...entry, pointIndex });
+    entries.push(
+      pointIndex === undefined ? judged(entry, result.state) : { ...valued(entry, result.state), pointIndex },
+    );
     if (before.matchUpStatus !== COMPLETED && result.state.matchUpStatus === COMPLETED)
       this.completedBy = entries.length - 1;
     this.state = result.state;
@@ -477,6 +486,11 @@ export class ScoringEngine {
       if (given[zero] !== undefined && given[one] === undefined) delete data[one];
       if (given[one] !== undefined && given[zero] === undefined) delete data[zero];
     }
+    // an edit to what the point was is valued afresh, unless it gives the value
+    const revalued = (['result', 'stroke'] as const).some(
+      (key) => given[key] !== undefined && given[key] !== data[key],
+    );
+    if (revalued && given.scoreValue === undefined) delete data.scoreValue;
     Object.assign(data, recordedInput(given));
     const facts = readPoint(data);
     if (facts.refused) throw new Error(facts.refused.message);
