@@ -281,10 +281,17 @@ export function scheduleMatchUps(params) {
         return false;
       }
 
+      // the window proposed is the matchUp's own minutes and recovery, so a placement before a participant's booked
+      // matchUp is checked too: the gate is the timed pipeline's, in either order (scheduling-pipeline.md § 6, § 3.4)
+      const minutes = {
+        recoveryMinutes: recoveryMinutesMap?.[matchUpId] || recoveryMinutes,
+        averageMinutes: averageMatchUpMinutes,
+      };
       const { enoughTime } = checkRecoveryTime({
+        details: { minutesMap: { [matchUpId]: minutes } },
+        reachability: participantReachability,
         individualParticipantProfiles,
         matchUpNotBeforeTimes,
-        reachability: participantReachability,
         scheduleTime,
         matchUp,
       });

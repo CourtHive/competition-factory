@@ -342,7 +342,10 @@ date, earlier times on earlier rows.
 
 `scheduleMatchUps` times the listed matchUps, in the order listed, on one `scheduleDate`, at the venues given (all when
 absent), within `startTime` and `endTime` when given. Its slots are Garman times over the venues' courts, and its gate
-is the timed pipeline's: daily limits, sources placed first, recovery and not-before, person requests. The sources it
+is the timed pipeline's: daily limits, sources placed first, recovery and not-before, person requests. Recovery is checked
+as § 3.4 states it, in either order: the window a placement proposes is the matchUp's own average and recovery minutes,
+so a placement may not run into a participant's later matchUp on the date (until 2026-10-27 the window was the slot's
+start alone, so only matchUps before it were checked, and a slot at the very end of a recovery was refused). The sources it
 waits for are the listed matchUps and those already on the date (`allDateMatchUpIds` when stated). It writes each
 placement's time with the date in it, then the venue; a placement the played-order check refuses is reported in
 `noTimeMatchUpIds` and gets no venue.
