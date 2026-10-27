@@ -610,7 +610,13 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   tournament (`announcesContext: false`). In a feed round (as many matchUps as the round before it, a position
   fed from another structure on side 1) the double exit feeds side 2, and where the fed seat holds a position nobody
   has reached yet the produced exit stands pending for whoever arrives there while v1 advances that empty position
-  into the next matchUp ahead of them (a reservation), announced the same way; a fed seat already filled stays v1's. v1 writes it through
+  into the next matchUp ahead of them (a reservation), announced the same way; a fed seat already filled stays v1's. A **convergence** (RULE 4) is owned
+  where a carried exit lands on the seat a carried exit standing there was awarded to: the matchUp becomes
+  the double exit (`collapseDoubleExitStatus`: two defaults a `DOUBLE_DEFAULT`, anything else a
+  `DOUBLE_WALKOVER`, whose score is blanked), its award taken away and the arriving side's entry merged beside
+  the standing one; then that double exit produces onward as one entered there would, pending, with the
+  reservation beside a fed seat. Planned where the landing holds that single exit and no score value, links no
+  loser on, and the produced exit lands clean. v1 writes it through
   `modifyMatchUpScore`, not `setMatchUpState`, so it takes no `scoredTime`. Stay v1's: a double exit with a loser link; a carry past a BYE into anything but a clean matchUp; a
   present opponent, for a carried or a produced exit, with nowhere clean to go on to; a convergence; a
   correction to or from an exit; and an exit whose target holds a BYE, an exit or a result (`exit`, `cascade`).

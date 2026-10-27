@@ -1,9 +1,13 @@
-import { buildCarriedExitProvenance, buildSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
 import { getCapturedClock, writeLegacyEnabled } from '@Global/state/globalState';
 import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { validMatchUps } from '@Validators/validMatchUp';
+import {
+  buildCarriedExitProvenance,
+  buildSideExitProvenance,
+  collapseDoubleExitStatus,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
 import type { DrawDefinition, MatchUpStatusUnion, Score, TallyResult, Tournament } from '@Types/tournamentTypes';
@@ -15,6 +19,8 @@ import {
   BYE,
   COMPLETED,
   DEFAULTED,
+  DOUBLE_DEFAULT,
+  DOUBLE_WALKOVER,
   INCOMPLETE,
   IN_PROGRESS,
   RETIRED,
@@ -86,7 +92,8 @@ function plainLoserReason(view: OutcomeView, direction: DirectionPlan): AbstainR
   const loser = direction.loser;
   if (!loser && !targets.loserMatchUpId) return undefined;
   if (loser?.bye && !loser.arrives) return keptOutReason(view, loser.bye);
-  // a carried exit reaches here only as `exitReason` admits it (`carriedReason`)
+  // a carried exit reaches here only as `exitReason` admits it (`carriedReason`), a convergence (`convergedReason`)
+  if (loser?.arrives && loser.converged) return undefined;
   if (!loser?.arrives || loser.converged || loser.carriedPast || loser.bye || loser.withdrawn) return 'loser';
   if (targets.byeTarget) return 'loser';
   if (!targets.loserStructureId || !targets.loserTargetDrawPosition || !targets.loserTargetSeat?.free) return 'loser';
@@ -391,7 +398,8 @@ function exitReason(args: {
   if (write.matchUpStatus === DEFAULTED && view.draw.defaultProcessCodes) return 'exit';
   const loser = direction?.loser;
   if (direction?.produced || direction?.converged || direction?.decider) return 'exit';
-  if (loser?.converged || loser?.carriedPast || loser?.withdrawn) return 'exit';
+  if (loser?.carriedPast || loser?.withdrawn) return 'exit';
+  if (loser?.converged) return convergedReason(view, request, write, loser);
   if (loser?.exit) return carriedReason(view, write);
   return undefined;
 }
@@ -749,6 +757,173 @@ function producedOps(view: OutcomeView, request: OutcomeRequest, write: MatchUpW
   return ops;
 }
 
+type ProducedTarget = {
+  entry: HydratedMatchUp;
+  /** the side the double exit feeds, and the side its produced exit is awarded to */
+  fedSide: 1 | 2;
+  awardedSide: 1 | 2;
+  matchUpStatus: MatchUpStatusUnion;
+  /** the next round is a feed round: the awarded side is the seat fed from another structure */
+  feed: boolean;
+};
+
+/**
+ * Where a double exit at `source` produces its exit, read from the index as `planProducedExit` reads the call's: the next
+ * matchUp of the same structure, in a round of half as many matchUps (roundPosition n feeds side 1 when odd and 2 when
+ * even) or a feed round of as many (it feeds side 2, beside the fed seat). A DOUBLE_DEFAULT produces a DEFAULTED, any
+ * other double exit a WALKOVER.
+ */
+function producedTarget(
+  view: OutcomeView,
+  source: HydratedMatchUp,
+  sourceStatus?: MatchUpStatusUnion,
+): ProducedTarget | undefined {
+  const index = view.inContextDrawMatchUps ?? [];
+  const entry = indexed(view, source.winnerMatchUpId);
+  const { roundNumber, roundPosition, structureId } = source;
+  if (!entry || !roundNumber || !roundPosition || entry.structureId !== structureId) return undefined;
+  if (entry.roundNumber !== roundNumber + 1) return undefined;
+  const count = (round?: number) =>
+    index.filter((m) => m.structureId === structureId && m.roundNumber === round).length;
+  const here = count(roundNumber);
+  const there = count(entry.roundNumber);
+  const feed = there === here && entry.roundPosition === roundPosition && !!entry.feedRound;
+  const plain = there * 2 === here && entry.roundPosition === Math.ceil(roundPosition / 2);
+  if (!feed && !plain) return undefined;
+  const fedSide = feed || roundPosition % 2 === 0 ? 2 : 1;
+  const matchUpStatus = sourceStatus === DOUBLE_DEFAULT ? DEFAULTED : WALKOVER;
+  return { entry, fedSide, awardedSide: (3 - fedSide) as 1 | 2, matchUpStatus, feed };
+}
+
+/**
+ * The produced exit lands pending, planned where its matchUp is to be played with no winner, score, BYE, exit, codes or
+ * provenance, and links no loser on; and, on the side it is awarded to, nobody stands: in a feed round a fed seat whose
+ * empty position goes ahead into a clean next matchUp (the reservation), otherwise no position at all, beside a feeder
+ * still to be played. Anything else (an award, a convergence there) is v1's.
+ */
+function producedTargetReason(view: OutcomeView, source: HydratedMatchUp, target: ProducedTarget): boolean {
+  const { entry } = target;
+  if (entry.matchUpStatus !== TO_BE_PLAYED || entry.winningSide || entry.score?.scoreStringSide1) return false;
+  if (entry.matchUpStatusCodes?.length || Object.keys(entry.sideExitProvenance ?? {}).length) return false;
+  if (entry.loserMatchUpId || entry.sides?.some((side) => side.bye)) return false;
+  const awarded = entry.sides?.find((side) => side.sideNumber === target.awardedSide);
+  if (awarded?.participantId) return false;
+  if (target.feed) return !!awarded?.drawPosition && !!onwardFrom(view, entry, awarded.drawPosition);
+  if (awarded?.drawPosition) return false;
+  const pairedPosition =
+    (source.roundPosition ?? 0) % 2 ? (source.roundPosition ?? 0) + 1 : (source.roundPosition ?? 0) - 1;
+  const paired = view.inContextDrawMatchUps?.find(
+    (m) =>
+      m.structureId === source.structureId &&
+      m.roundNumber === source.roundNumber &&
+      m.roundPosition === pairedPosition,
+  );
+  return paired?.matchUpStatus === TO_BE_PLAYED;
+}
+
+/** the produced exit's write, as v1's `doubleExitAdvancement` makes it (#5874), and in a feed round the reservation */
+function producedTargetOps(
+  view: OutcomeView,
+  target: ProducedTarget,
+  sourceMatchUpId: string,
+  sourceStatus: MatchUpStatusUnion,
+): OutcomeOp[] {
+  const { entry } = target;
+  const provenance = buildSideExitProvenance({
+    sourceSideNumber: target.fedSide,
+    sourceMatchUpStatus: sourceStatus,
+    sourceMatchUpId,
+  });
+  const awarded = entry.sides?.find((side) => side.sideNumber === target.awardedSide);
+  const onward = target.feed && awarded?.drawPosition ? onwardFrom(view, entry, awarded.drawPosition) : undefined;
+  return [
+    {
+      op: 'setMatchUpResult',
+      matchUpId: entry.matchUpId,
+      matchUpStatus: target.matchUpStatus,
+      matchUpStatusCodes: [],
+      stampsScoredTime: false,
+      ...(target.matchUpStatus === WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
+    },
+    ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId: entry.matchUpId, provenance }] : []),
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: entry.matchUpId },
+    ...(onward
+      ? [
+          {
+            op: 'setMatchUpDrawPositions' as const,
+            matchUpId: onward.matchUpId,
+            drawPositions: onward.drawPositions,
+            announcesContext: false as const,
+          },
+          { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: onward.matchUpId },
+        ]
+      : []),
+  ];
+}
+
+/** the exit a loser carries across the link (`progressExitStatus`): a WALKOVER or DEFAULTED as itself, else a WALKOVER */
+const carriedStatus = (status?: string): MatchUpStatusUnion => (status === DEFAULTED ? DEFAULTED : WALKOVER);
+
+/**
+ * S5: RULE 4 of v1's `progressExitStatus`. The loser carries an exit onto the seat a carried exit standing there was
+ * awarded to: the two meet and the matchUp becomes the double exit (`collapseDoubleExitStatus`), its award taken away,
+ * codes as they stood and a DOUBLE_WALKOVER's score blanked, the arriving side's entry merged beside the standing one; and that double exit then
+ * produces its exit onward, as a double exit entered there would (`producedTarget`). Planned where the landing holds a
+ * single exit awarded to the carrier's seat, carried in on the other side and on that side alone, no score value, and
+ * no loser link of its own (the first carrier, its loser, was sent nowhere), and where the produced exit lands clean.
+ */
+function convergedReason(
+  view: OutcomeView,
+  request: OutcomeRequest,
+  write: MatchUpWrite,
+  loser: NonNullable<DirectionPlan['loser']>,
+): AbstainReason | undefined {
+  const { targets } = view;
+  const seat = targets.loserTargetSeat;
+  if (write.matchUpStatusCodes?.length || !loser.arrives) return 'exit';
+  if (!seat?.free || seat.opponentBye) return 'exit';
+  if (!SINGLE_EXITS.has(targets.loserMatchUpStatus) || targets.loserMatchUpStatus === RETIRED) return 'exit';
+  const landing = indexed(view, targets.loserMatchUpId);
+  const side = sideOf(landing, targets.loserTargetDrawPosition);
+  if (!landing || !side || landing.loserMatchUpId || landing.winningSide !== side) return 'exit';
+  if (landing.score?.scoreStringSide1 || landing.score?.scoreStringSide2 || landing.score?.sets?.length) return 'exit';
+  const provenance = landing.sideExitProvenance ?? {};
+  if (provenance[side] || !provenance[3 - side]?.matchUpStatus) return 'exit';
+  const converged = collapseDoubleExitStatus([carriedStatus(request.matchUpStatus), targets.loserMatchUpStatus]);
+  if (loser.converged !== converged) return 'exit';
+  const target = producedTarget(view, landing, converged);
+  return target && producedTargetReason(view, landing, target) ? undefined : 'exit';
+}
+
+/** a convergence's writes: the landing as the double exit, the arriving side's entry, and the exit it produces */
+function convergedOps(view: OutcomeView, request: OutcomeRequest, write: MatchUpWrite, loser?: DirectionPlan['loser']) {
+  const { targets } = view;
+  const landing = indexed(view, targets.loserMatchUpId);
+  const side = sideOf(landing, targets.loserTargetDrawPosition);
+  if (!loser?.arrives || !loser.converged || !landing || !side) return [];
+  const target = producedTarget(view, landing, loser.converged);
+  if (!target) return [];
+  const provenance = buildCarriedExitProvenance({
+    previousMatchUpStatus: write.matchUpStatus as MatchUpStatusUnion,
+    matchUpStatus: carriedStatus(request.matchUpStatus),
+    sourceMatchUpId: request.matchUpId,
+    exitingSideNumber: side,
+  });
+  const ops: OutcomeOp[] = [
+    {
+      op: 'setMatchUpResult',
+      matchUpId: landing.matchUpId,
+      matchUpStatus: loser.converged,
+      // a DOUBLE_WALKOVER says nothing was played, so its score is blanked; a DOUBLE_DEFAULT keeps what stood
+      ...(loser.converged === DOUBLE_WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
+    },
+    ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId: landing.matchUpId, provenance }] : []),
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: landing.matchUpId },
+    ...producedTargetOps(view, target, landing.matchUpId, loser.converged),
+  ];
+  return ops;
+}
+
 /** the first reason this call is not S1's, or undefined when it is */
 function abstainReason(args: {
   request: OutcomeRequest;
@@ -1062,6 +1237,8 @@ export function planOutcome(args: {
   // a carried exit's write on the matchUp the loser lands in (S5)
   // (a carry past a BYE is recorded beside it before the carrier is placed on beyond, as v1 announces the two)
   const carried = loser?.arrives ? carriedOps(view, request, write, loser) : { relay: [], landing: [] };
+  // two exits meeting where the loser lands (RULE 4), and what the double exit they make produces (S5)
+  const converging = loser?.converged ? convergedOps(view, request, write, loser) : [];
   const seated = [...arrival, ...keptOutBye, ...reserved];
   const tally = view.group
     ? groupTally(view.group, { matchUpId, matchUpWrite: write, score, matchUpFormat: request.matchUpFormat })
@@ -1080,6 +1257,7 @@ export function planOutcome(args: {
     ...carried.relay,
     ...throughBye,
     ...carried.landing,
+    ...converging,
     ...(args.route === DOUBLE_EXIT ? producedOps(view, request, write, args.direction) : []),
     ...structureStamps([...seated, ...carried.landing], structureId),
     ...tally,
