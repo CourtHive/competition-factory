@@ -29,8 +29,8 @@ import type { OutcomeOp } from './ops';
  *
  * THE NOTICES are v1's for the same write: a `modifyMatchUp` for each matchUp written (with the draw and the matchUp's
  * own top-level structure stamped, `modifyMatchUpNotice`), a `modifyPositionAssignments` for each structure a loser is
- * placed in (S3: the direction shape), and for the call's matchUp the `updateInContextMatchUp` a
- * subscriber receives, built when the notices are read, after the call has succeeded, and only for a subscriber
+ * placed in (S3: the direction shape), and for each matchUp given a result (the call's, and a carried exit's landing,
+ * S5) the `updateInContextMatchUp` a subscriber receives, built when the notices are read, after the call has succeeded, and only for a subscriber
  * (CA, 2026-10-24: projection bounded to the changed node, never on an error).
  */
 export function applyOwnedPlan({
@@ -82,7 +82,9 @@ export function applyOwnedPlan({
   for (const matchUpId of written) {
     const matchUp = stored.get(matchUpId);
     if (!matchUp) continue;
-    if (subscribed && matchUpId === args.request.matchUpId)
+    // every score write announces its matchUp in context to a subscriber, as v1's `modifyMatchUpScore` does: the call's
+    // own, and a carried exit's on the matchUp it lands in (S5)
+    if (subscribed && resulted.has(matchUpId))
       deferInContextMatchUp({
         inContextMatchUp: () => getInContextMatchUp({ tournamentRecord, drawDefinition, matchUpId }),
         tournamentId,

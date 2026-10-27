@@ -116,8 +116,11 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
     reconcileScoredTimes: () =>
       map.drawMatchUps.some((matchUp) => !!matchUp.schedule?.scoredTime && !matchUpIsScored(matchUp)),
   };
-  // an exit the call propagates (`propagateExitFrom`), which no local call does: every pass is in reach
-  if (results.some((op) => propagatesExit(op.matchUpStatus, args))) return Object.keys(work) as SettleSite[];
+  // an exit the call propagates (`propagateExitFrom`), which no local call does: every pass is in reach, unless the plan
+  // holds the propagation as ops (a carried exit's entry, S5), when each pass is asked of the draw the carry leaves
+  const carryPlanned = ops.some((op) => op.op === 'mergeSideExitProvenance');
+  if (!carryPlanned && results.some((op) => propagatesExit(op.matchUpStatus, args)))
+    return Object.keys(work) as SettleSite[];
   return (Object.keys(work) as SettleSite[]).filter((site) => work[site]());
 }
 

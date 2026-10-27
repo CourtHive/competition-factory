@@ -79,6 +79,9 @@ type Scenario = {
   policyDefinitions?: Record<string, unknown>;
 };
 
+// `propagateExitStatus`: a WALKOVER or DEFAULTED follows its loser across the link (S5)
+const CARRIED = { propagateExitStatus: true };
+
 const R1 = (roundPosition: number, structureName?: string): Target => ({
   roundNumber: 1,
   roundPosition,
@@ -468,6 +471,41 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(1, 'Main'), outcome: retired(1), params: { propagateExitStatus: true } }],
     },
   ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S5): a walkover carried into the consolation is awarded to the seat nobody has reached',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S5): a carried walkover whose carrier lands on side 2 awards side 1',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      steps: [{ target: R1(2, 'Main'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S5): a carried default writes no score where it lands',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      steps: [{ target: R1(1, 'Main'), outcome: exited(DEFAULTED, 2), params: CARRIED }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S5): a retirement the policy propagates is carried as a walkover',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      steps: [{ target: R1(1, 'Main'), outcome: retired(1), params: { ...CARRIED, propagateRetirementAsExit: true } }],
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION (S5): a first-round walkover is carried into the consolation',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(2), params: CARRIED }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
@@ -536,8 +574,9 @@ describe('under v2, the first direction is v2s, and leaves exactly what v1 leave
   it.each(SCENARIOS)('%s', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
-    // CONTROL: v1 wrote through its own writer, and each step succeeded
-    expect(v1.v1Writes).toEqual(scenario.steps.length);
+    // CONTROL: v1 wrote through its own writer, and each step succeeded (a carried exit writes the matchUp it lands in
+    // through the same writer, nested, so a step can count more than once)
+    expect(v1.v1Writes).toBeGreaterThanOrEqual(scenario.steps.length);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
 
     expect(v2.v1Writes).toEqual(0);
@@ -565,6 +604,20 @@ describe('under v2, a FIRST_MATCHUP reservation is v2s', () => {
 });
 
 describe('under v2, an exit v2 does not plan is v1s, whole', () => {
+  it('COMPASS: a carried walkover whose landing matchUp links its loser on (the carrier would carry it again)', () => {
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 8, drawType: COMPASS },
+      steps: [{ target: R1(1, 'East'), outcome: walkover(1), params: CARRIED }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    // v1's three writes (the result, then the carry into West and on into South), all v1's under v2
+    expect(v1.v1Writes).toEqual(3);
+    expect(v2.v1Writes).toEqual(v1.v1Writes);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+  });
+
   it('a default under a scoring policy naming incompleteAssignmentsOnDefault: v1 may write processCodes', () => {
     const scenario: Scenario = {
       drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },

@@ -1,4 +1,5 @@
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
+import { buildCarriedExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getCapturedClock, writeLegacyEnabled } from '@Global/state/globalState';
 import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
 import { validMatchUps } from '@Validators/validMatchUp';
@@ -82,8 +83,8 @@ function plainLoserReason(view: OutcomeView, direction: DirectionPlan): AbstainR
   const loser = direction.loser;
   if (!loser && !targets.loserMatchUpId) return undefined;
   if (loser?.bye && !loser.arrives) return keptOutReason(view, loser.bye);
-  if (!loser?.arrives || loser.exit || loser.converged || loser.carriedPast || loser.bye || loser.withdrawn)
-    return 'loser';
+  // a carried exit reaches here only as `exitReason` admits it (`carriedReason`)
+  if (!loser?.arrives || loser.converged || loser.carriedPast || loser.bye || loser.withdrawn) return 'loser';
   if (targets.byeTarget) return 'loser';
   if (!targets.loserStructureId || !targets.loserTargetDrawPosition || !targets.loserTargetSeat?.free) return 'loser';
   // v1's `propagateLoserSeed` writes a seeded loser's seed into the structure they are placed in: not an op yet
@@ -386,8 +387,76 @@ function exitReason(args: {
   if (write.matchUpStatus === DEFAULTED && view.draw.defaultProcessCodes) return 'exit';
   const loser = direction?.loser;
   if (direction?.produced || direction?.converged || direction?.decider) return 'exit';
-  if (loser?.exit || loser?.converged || loser?.carriedPast || loser?.withdrawn) return 'exit';
+  if (loser?.converged || loser?.carriedPast || loser?.withdrawn) return 'exit';
+  if (loser?.exit) return carriedReason(view, write);
   return undefined;
+}
+
+/**
+ * S5: an exit carried across the loser link (`propagateExitStatus`), planned where it lands on a clean seat with nobody
+ * opposite. v1's `progressExitStatus` then takes RULE 2: the loser's matchUp is written the carried status (a retirement
+ * as a WALKOVER), awarded to the empty side, its codes derived from provenance (`[]`, no reason recorded), and the
+ * carrier's side given the carried entry. Its winner is nobody, so nothing advances (`directParticipants`'
+ * `winnerSlotEmpty`). Abstained: a BYE or anybody opposite (RULE 1, RULE 3), a matchUp holding a result, an exit, codes
+ * or provenance (RULE 4 and the convergences), client codes on the call (the reason would ride with the side), and a
+ * matchUp that links its own loser on: the carrier would carry the exit again (`propagateExitFrom`'s loop, which F9
+ * bounds; v2 plans no loop, so it plans one level and abstains where there would be another).
+ */
+function carriedReason(view: OutcomeView, write: MatchUpWrite): AbstainReason | undefined {
+  const { targets } = view;
+  const seat = targets.loserTargetSeat;
+  if (write.matchUpStatusCodes?.length) return 'exit';
+  if (!seat?.free || seat.opponentBye || seat.opponentHeld) return 'exit';
+  if (targets.loserMatchUpStatus !== TO_BE_PLAYED || targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit)
+    return 'exit';
+  const record = targets.loserMatchUpRecord;
+  if (!record || record.provenance || record.matchUpStatusCodes?.length) return 'exit';
+  const landing = carriedLanding(view);
+  if (!landing || landing.carriesOn) return 'exit';
+  return undefined;
+}
+
+/** the loser's matchUp as the index holds it: the side the carried seat is on, and whether it links its loser on */
+function carriedLanding(view: OutcomeView): { sideNumber: 1 | 2; carriesOn: boolean } | undefined {
+  const { loserMatchUpId, loserTargetDrawPosition } = view.targets;
+  const entry = view.inContextDrawMatchUps?.find((matchUp) => matchUp.matchUpId === loserMatchUpId);
+  const sideNumber = entry?.sides?.find((side) => side.drawPosition === loserTargetDrawPosition)?.sideNumber;
+  if (sideNumber !== 1 && sideNumber !== 2) return undefined;
+  return { sideNumber, carriesOn: !!entry?.loserMatchUpId };
+}
+
+/**
+ * The carried exit's write on the loser's matchUp, as v1's `progressExitStatus` makes it (RULE 2): the status, the
+ * award to the side nobody has reached, the codes it derives (`[]`), the score a WALKOVER blanks, then the carrier's
+ * entry merged into its provenance (`buildCarriedExitProvenance`, v1's own builder). Announced as the score write it is.
+ */
+function carriedOps(
+  view: OutcomeView,
+  request: OutcomeRequest,
+  write: MatchUpWrite,
+  loser?: DirectionPlan['loser'],
+): OutcomeOp[] {
+  const { loserMatchUpId } = view.targets;
+  const landing = carriedLanding(view);
+  if (!loser?.exit || !loserMatchUpId || !landing) return [];
+  const provenance = buildCarriedExitProvenance({
+    previousMatchUpStatus: write.matchUpStatus as MatchUpStatusUnion,
+    exitingSideNumber: landing.sideNumber,
+    sourceMatchUpId: request.matchUpId,
+    matchUpStatus: loser.exit,
+  });
+  return [
+    {
+      op: 'setMatchUpResult',
+      matchUpId: loserMatchUpId,
+      matchUpStatus: loser.exit,
+      winningSide: (3 - landing.sideNumber) as 1 | 2,
+      matchUpStatusCodes: [],
+      ...(loser.exit === WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
+    },
+    ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId: loserMatchUpId, provenance }] : []),
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: loserMatchUpId },
+  ];
 }
 
 /** the first reason this call is not S1's, or undefined when it is */
@@ -690,6 +759,8 @@ export function planOutcome(args: {
   // the FIRST_MATCHUP reservation the winner's arrival makes (v1's `propagateConsolationBye`)
   const reservation = write.winningSide ? view.targets.reservations?.[write.winningSide as 1 | 2] : undefined;
   const reserved = reservation?.kind === 'reserve' ? seatBye(reservation) : [];
+  // a carried exit's write on the matchUp the loser lands in (S5)
+  const carried = loser?.arrives ? carriedOps(view, request, write, loser) : [];
   const seated = [...arrival, ...keptOutBye, ...reserved];
   const tally = view.group
     ? groupTally(view.group, { matchUpId, matchUpWrite: write, score, matchUpFormat: request.matchUpFormat })
@@ -706,6 +777,7 @@ export function planOutcome(args: {
   ops.push(
     ...seated,
     ...throughBye,
+    ...carried,
     ...structureStamps(seated, structureId),
     ...tally,
     // the top-level structure: a round robin group's container, as v1 stamps it
