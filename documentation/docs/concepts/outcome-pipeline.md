@@ -608,10 +608,9 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   is theirs at once: written with their side as winner, their origin recorded beside this one's, and they go on
   into a clean next matchUp, announced, as v1's `doubleExitAdvancement` announces it, with no event or
   tournament (`announcesContext: false`). v1 writes it through
-  `modifyMatchUpScore`, not `setMatchUpState`, so it takes no `scoredTime`. A double exit with a loser link, onto
-  a present opponent with nowhere clean to go on to, or into a convergence, and a carry past a BYE into anything but a clean matchUp, a present opponent with nowhere clean to go on to, a convergence, a correction to or
-  from an exit, and an exit whose target holds a BYE, an exit or a result stay v1's (`exit`,
-  `cascade`).
+  `modifyMatchUpScore`, not `setMatchUpState`, so it takes no `scoredTime`. Stay v1's: a double exit with a loser link; a carry past a BYE into anything but a clean matchUp; a
+  present opponent, for a carried or a produced exit, with nowhere clean to go on to; a convergence; a
+  correction to or from an exit; and an exit whose target holds a BYE, an exit or a result (`exit`, `cascade`).
 - **`differential`**: v2 plans the whole call before v1 runs, then checks v1's result against it,
   and a disagreement throws `OutcomePipelineDivergence` naming the matchUp and both answers. The
   plan covers the refusal, the route, the write on the matchUp, the winner's direction, the
