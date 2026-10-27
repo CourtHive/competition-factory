@@ -598,6 +598,18 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'SINGLE_ELIMINATION (S5): a double default entered with a score object keeps it on its own matchUp alone',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      steps: [
+        {
+          target: R1(1),
+          outcome: { matchUpStatus: DOUBLE_DEFAULT, score: { sets: [], scoreStringSide1: '', scoreStringSide2: '' } },
+        },
+      ],
+    },
+  ],
+  [
     'SINGLE_ELIMINATION (S5): a double walkover awards its produced walkover to the winner already there, who goes on',
     {
       drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
