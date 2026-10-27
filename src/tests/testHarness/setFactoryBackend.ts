@@ -1,4 +1,5 @@
 import {
+  getSchemaWriteMode,
   getTournamentId,
   getTournamentRecords,
   hasTopic,
@@ -112,6 +113,8 @@ if (mode) {
       seed: typeof source.state === 'function' ? source.state() : undefined,
       // a method announces to a subscribed topic instead of writing (an audit, for one)
       topics: Object.values(topicConstants).filter((topic) => hasTopic(topic)),
+      // how the engine writes a schedule attribute: first-class, as a timeItem, or both (the schema write mode)
+      writeMode: getSchemaWriteMode(),
     };
     lastRequest = request;
     const answer = bridge.call(request);
