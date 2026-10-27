@@ -81,9 +81,13 @@ describe('kernel case files', () => {
 });
 
 describe.each(adapters)('$name adapter', (adapter) => {
-  it.each(cases)('$caseId', (c) => {
-    expect(observed(adapter.invoke(c.operation, c.input))).toEqual(observed(c.expected));
-  });
+  // one test per case, titled by its whole id: `it.each`'s `$caseId` cuts a value past 40 characters, so two ids
+  // sharing their first 40 would share a title in the report
+  for (const c of cases) {
+    it(c.caseId, () => {
+      expect(observed(adapter.invoke(c.operation, c.input))).toEqual(observed(c.expected));
+    });
+  }
 
   it('refuses an operation the registry does not list, and input that is not an object', () => {
     expect(adapter.invoke('kernel.scoring.pointsToMatch@1', {})).toEqual({
