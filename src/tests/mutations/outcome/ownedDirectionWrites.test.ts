@@ -610,6 +610,28 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'FEED_IN_CHAMPIONSHIP (S5): a consolation double exit lands pending beside a fed seat, whose position goes ahead',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [
+        { target: R1(1, 'Main'), outcome: won(1) },
+        { target: R1(2, 'Main'), outcome: won(1) },
+      ],
+      steps: [{ target: R1(1, 'Consolation'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S5): a consolation double default beside a fed seat in a 16 draw',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [
+        { target: R1(1, 'Main'), outcome: won(1) },
+        { target: R1(2, 'Main'), outcome: won(2) },
+      ],
+      steps: [{ target: R1(1, 'Consolation'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
+  [
     'SINGLE_ELIMINATION (S5): a double walkover awards its produced walkover to the winner already there, who goes on',
     {
       drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },

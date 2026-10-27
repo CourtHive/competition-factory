@@ -655,9 +655,10 @@ function producedReason(
   const awarded = entry.sides?.find((side) => side.sideNumber === produced.winningSide);
   if (awarded?.bye) return 'exit';
   const paired = pairedFeeder(view);
+  // a feed round: the awarded side is the fed seat, filled from another structure
+  if (entry.feedRound) return fedSeatReason(view, entry, awarded);
   if (!awarded?.participantId) {
-    // a seat holding a position nobody has reached (a fed seat): v1 advances that empty position, a reservation for
-    // the arrival the pending exit awaits (`doubleExitAdvancement`), not an op yet
+    // a seat holding a position nobody has reached outside a feed round: not planned
     if (awarded?.drawPosition) return 'exit';
     // pending: nobody on the awarded side, and the feeder beside this one still to be played
     return paired?.matchUpStatus === TO_BE_PLAYED ? undefined : 'exit';
@@ -670,6 +671,21 @@ function producedReason(
 
 /** a feeder's results whose winner standing in the seat it feeds is an origin v1 records as it is (`deliveredStatus`) */
 const DELIVERED_FEEDS = new Set<string | undefined>([COMPLETED, ...SINGLE_EXITS]);
+
+/**
+ * A produced exit in a FEED ROUND, beside the fed seat. Planned where that seat holds a position nobody has reached yet:
+ * the exit stands pending for whoever arrives there, and v1 advances the EMPTY position into the next matchUp ahead of
+ * them (a reservation for the arrival, `doubleExitAdvancement`), into a clean one only. A fed seat already filled (the
+ * award and its onward direction) or holding no position is v1's.
+ */
+function fedSeatReason(
+  view: OutcomeView,
+  entry: HydratedMatchUp,
+  awarded?: { participantId?: string; drawPosition?: number },
+): AbstainReason | undefined {
+  if (awarded?.participantId || !awarded?.drawPosition) return 'exit';
+  return onwardFrom(view, entry, awarded.drawPosition) ? undefined : 'exit';
+}
 
 /** the matchUp beside this one in its round, which feeds the other side of the same next matchUp */
 function pairedFeeder(view: OutcomeView): HydratedMatchUp | undefined {
@@ -692,8 +708,12 @@ function producedOps(view: OutcomeView, request: OutcomeRequest, write: MatchUpW
   if (!produced) return [];
   const entry = indexed(view, produced.matchUpId);
   const awarded = entry?.sides?.find((side) => side.sideNumber === produced.winningSide);
-  const paired = awarded?.participantId ? pairedFeeder(view) : undefined;
-  const onward = entry && paired && awarded?.drawPosition ? onwardFrom(view, entry, awarded.drawPosition) : undefined;
+  const paired = awarded?.participantId && !entry?.feedRound ? pairedFeeder(view) : undefined;
+  // awarded at once to the paired feeder's winner standing there, or in a feed round the fed seat's empty position
+  // advanced ahead of the arrival it awaits (a reservation)
+  const reserving = !!entry?.feedRound && !awarded?.participantId;
+  const onward =
+    entry && (paired || reserving) && awarded?.drawPosition ? onwardFrom(view, entry, awarded.drawPosition) : undefined;
   const provenance = buildSideExitProvenance({
     sourceMatchUpStatus: write.matchUpStatus as MatchUpStatusUnion,
     sourceSideNumber: 3 - produced.winningSide,
@@ -713,7 +733,7 @@ function producedOps(view: OutcomeView, request: OutcomeRequest, write: MatchUpW
     },
     ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId: produced.matchUpId, provenance }] : []),
     { op: 'stampUpdatedAt', entity: 'matchUp', id: produced.matchUpId },
-    // awarded at once to the opponent standing there, who goes on (`directWinner`)
+    // the awarded opponent going on (`directWinner`), or the reservation; announced as v1 announces them here
     ...(onward
       ? [
           {
