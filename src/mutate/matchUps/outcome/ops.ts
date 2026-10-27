@@ -74,7 +74,7 @@ export type OutcomeOp =
       announcesContext?: false;
       /**
        * a position advanced through a BYE a double exit placed (`doubleExitAdvancement`'s advance, S5): announced as
-       * `advanceWinner`, with no event
+       * `advanceWinner`, with no event, and the matchUp it joins written with no score
        */
       advancesThroughBye?: true;
     }
@@ -279,7 +279,9 @@ function foldMatchUpWrite(
   if (op.op === 'setMatchUpResult') setMatchUpResult(matchUp, op);
   // through the one writer, which normalises the positions and re-keys a side's facts if an occupant changes side
   else {
-    if (op.removedDrawPosition) delete matchUp.score;
+    // v1's advance through a BYE (`assignDrawPositionBye`) writes the matchUp it advances into with no score, as a
+    // removal does: a blank one a cleared result left there goes with it
+    if (op.removedDrawPosition || op.advancesThroughBye) delete matchUp.score;
     setMatchUpDrawPositions({
       structureId: structureOf.get(op.matchUpId),
       drawPositions: op.drawPositions,

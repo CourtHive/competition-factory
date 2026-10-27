@@ -693,6 +693,30 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(4), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
     },
   ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S5): a double walkover beside a played result: the winner there goes on, the loser through a BYE',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(2, 'Main'), outcome: won(1) }],
+      steps: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'CURTIS_CONSOLATION (S5): a double default awarded to the winner beside it, both rounds linking their losers on',
+    {
+      drawProfile: { drawSize: 16, drawType: CURTIS_CONSOLATION },
+      setup: [{ target: R1(3, 'Main'), outcome: won(2) }],
+      steps: [{ target: R1(4, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION (S5): a double walkover awarded to the winner beside it, its loser seat a BYE in the Backdraw',
+    {
+      drawProfile: { drawSize: 16, drawType: DOUBLE_ELIMINATION },
+      setup: [{ target: R1(1, 'Main'), outcome: won(2) }],
+      steps: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
