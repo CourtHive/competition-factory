@@ -368,7 +368,9 @@ that is not a number: `INVALID_VALUES`.
    participants (§ 3.4) from its time for the average of rule 2 and its recovery. Every matchUp it feeds may not start
    before its participants are free (its not-before time).
 5. **Daily limits first.** The matchUps are taken in order; one that would take a participant over a limit (§ 3.5,
-   the call's `matchUpDailyLimits` only, none when absent) is reported in `overLimitMatchUpIds` and
+   the limits of the matchUp's own tournament and the policy's per-participant ones, with the call's
+   `matchUpDailyLimits` as the defaults where a tournament states none; until 2026-10-27 the call's alone) is
+   reported in `overLimitMatchUpIds` and
    leaves the list; each other is counted toward its participants' daily loads. Limits are judged once, before any
    slot, on the list as a whole; a matchUp left unplaced after rule 6 is taken off the loads again.
 6. **Slot by slot.** Each slot in turn is offered to the remaining matchUps in order; the first that passes the gate is
@@ -396,8 +398,7 @@ What remains unplaced is reported in `noTimeMatchUpIds`, with what it collected 
 
 **OPEN:** rule 5 counts every listed matchUp toward its participants' loads before any is placed, and a matchUp left
 unplaced is uncounted after the pass; a matchUp placed late in the list is therefore judged against loads that include
-matchUps not yet placed. **OPEN:** rule 5 reads the call's `matchUpDailyLimits` only; unlike § 3.5, the tournament's own
-limits and the policy's per-participant ones are not applied.
+matchUps not yet placed.
 
 ## 7. What is reported
 
