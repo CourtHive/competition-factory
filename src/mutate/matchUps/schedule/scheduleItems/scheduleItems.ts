@@ -14,6 +14,7 @@ import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps'
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
+import { matchUpAssignedCourtId } from '@Query/matchUp/courtAssignment';
 import { scheduleLockConflicts } from '@Query/matchUp/isScheduleLocked';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { checkPlayedOrder, PendingPlacements } from './playedOrder';
@@ -332,9 +333,12 @@ function applyScheduleAssignments({
   return undefined;
 }
 
-// courtOrder/courtId/venueId describe a position on ONE day's schedule grid.
-// When a matchUp is re-dated they no longer apply and are cleared so the match
-// does not inherit the prior day's row on the new day.
+// courtOrder/courtId describe a position on ONE day's schedule grid. When a
+// matchUp is re-dated they no longer apply and are removed, so the match does not
+// inherit the prior day's row on the new day. The venue goes with them when it came
+// with a court (`clearVenue`); a venue placed without a court, as the timed
+// schedulers place one, is where the match is played and stays (CA 2026-10-27).
+// The court is removed, not written as '' (it was until 2026-10-27).
 //
 // `calledAt` is the fourth of those, and was the one left behind. It asserts
 // "called to court" — to THAT court, on THAT day. Once the court and the day
@@ -352,13 +356,23 @@ function unassignGridPosition({
   drawDefinition,
   clearCalledAt,
   courtDayDate,
+  clearVenue,
   matchUpId,
   event,
+}: {
+  tournamentRecords?: TournamentRecords;
+  tournamentRecord: Tournament;
+  drawDefinition: DrawDefinition;
+  clearCalledAt: boolean;
+  courtDayDate: string;
+  clearVenue: boolean;
+  matchUpId: string;
+  event?: Event;
 }) {
   const shared = { removePriorValues: true, disableNotice: true, tournamentRecord, drawDefinition, matchUpId };
   addMatchUpCourtOrder({ ...shared, courtOrder: undefined });
-  assignMatchUpCourt({ ...shared, tournamentRecords, courtDayDate, courtId: '' });
-  assignMatchUpVenue({ ...shared, tournamentRecords, venueId: undefined });
+  assignMatchUpCourt({ ...shared, tournamentRecords, courtDayDate, courtId: undefined });
+  if (clearVenue) assignMatchUpVenue({ ...shared, tournamentRecords, venueId: undefined });
   if (clearCalledAt) {
     setMatchUpCalledAt({ disableNotice: true, tournamentRecord, drawDefinition, matchUpId, calledAt: null, event });
   }
@@ -628,6 +642,9 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
     courtId === undefined &&
     venueId === undefined;
 
+  // a venue that came with a court goes with it; one placed without a court (a timed scheduler's) stays (CA 2026-10-27)
+  const hadCourt = !!matchUpAssignedCourtId({ matchUp }).courtId;
+
   // EVERY refusal above this line is pure; everything below it writes. `validateOnly` returns here
   // so a caller can learn whether a schedule would be accepted without applying any of it —
   // `setMatchUpStatus` uses it to refuse before it touches the draw, then applies once the outcome
@@ -676,6 +693,7 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
     unassignGridPosition({
       courtDayDate: nextScheduledDate,
       clearCalledAt: calledAt === undefined,
+      clearVenue: hadCourt,
       tournamentRecords,
       tournamentRecord,
       drawDefinition,
@@ -733,7 +751,9 @@ function withGridPositionCleared({ matchUp, schedule }: { matchUp?: MatchUp; sch
     !!priorScheduledDate &&
     extractDate(priorScheduledDate) !== extractDate(scheduledDate);
   if (!dateChange || courtOrder !== undefined || courtId !== undefined || venueId !== undefined) return schedule;
-  return { ...schedule, courtOrder: undefined, courtId: undefined, venueId: undefined };
+  // the venue is cleared with the court it came with, and kept when there was none (see unassignGridPosition)
+  const hadCourt = !!matchUpAssignedCourtId({ matchUp }).courtId;
+  return { ...schedule, courtOrder: undefined, courtId: undefined, ...(hadCourt ? { venueId: undefined } : {}) };
 }
 
 /**

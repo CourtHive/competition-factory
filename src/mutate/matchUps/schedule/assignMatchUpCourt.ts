@@ -15,7 +15,7 @@ type AssignMatchUpCourtArgs = {
   disableNotice?: boolean;
   courtDayDate: string;
   matchUpId: string;
-  courtId: string;
+  courtId?: string;
 };
 export function assignMatchUpCourt({
   removePriorValues,
