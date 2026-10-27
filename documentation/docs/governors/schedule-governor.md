@@ -663,8 +663,9 @@ reported in `notRescheduled` with its schedule untouched, when either change wou
 The two are judged separately and either one refuses the matchUp, so a `daysChange` past `endDate` is not
 rescued by a `minutesChange` given alongside it.
 
-A `daysChange` moves the matchUp off its old day's grid: its `courtOrder`, `courtId` and `venueId` are cleared,
-as for any [date change](#grid-position-is-cleared-on-a-date-change). A `minutesChange` alone keeps them.
+A `daysChange` moves the matchUp off its old day's grid: its `courtOrder` and `courtId` are removed, and its
+`venueId` with them when it came with a court, as for any
+[date change](#grid-position-is-cleared-on-a-date-change). A `minutesChange` alone keeps them.
 
 A matchUp whose [schedule lock](../concepts/schedule-locks.mdx) pins what the shift would change is skipped, left
 as it is, and reported in both `notRescheduled` and `lockedMatchUpIds`; a dry run reports it the same way. A shift
@@ -1693,12 +1694,19 @@ rather than treated as an error, since it cannot have come from a read.
 
 ### Grid position is cleared on a date change
 
-`courtOrder`, `courtId`, and `venueId` describe a matchUp's position on **one
-specific day's** schedule grid. When a call changes `scheduledDate` to a different
-day and does **not** supply an explicit `courtOrder`/`courtId`/`venueId` in the
-same `schedule` object, the engine clears those stale grid-position attributes so
-the matchUp does not inherit the prior day's row on its new day.
+`courtOrder` and `courtId` describe a matchUp's position on **one specific day's**
+schedule grid. When a call changes `scheduledDate` to a different day and does
+**not** supply an explicit `courtOrder`/`courtId`/`venueId` in the same `schedule`
+object, the engine removes them so the matchUp does not inherit the prior day's row
+on its new day.
 
+- **The venue goes with the court** (CA 2026-10-27). A matchUp that had a court
+  loses its `venueId` too: it came with the court. A matchUp placed at a venue
+  without a court (as `scheduleProfileRounds` and `scheduleMatchUps` place one)
+  keeps its `venueId`: it is where the match is played, and a moved matchUp keeps
+  holding a court of that venue (see
+  [court bookings](../concepts/scheduling-pipeline.md#39-court-bookings)).
+- The attributes are removed from `matchUp.schedule`, not written as empty values.
 - A date-only re-date (e.g. `schedule: { scheduledDate, scheduledTime }`) returns
   the matchUp to the unplaced pool for the new day — it keeps its date and time but
   is no longer pinned to a court or row.
