@@ -636,9 +636,9 @@ function carriedOps(
  *    directs nothing, and the matchUp beside this one is still to be played, so its provenance records this side alone;
  *  - AWARDED: the winner of the matchUp beside this one stands there, so it is theirs at once and they go on into a clean
  *    next matchUp (`directWinner`), and their origin is recorded beside this one's (`buildSideExitProvenance`).
- * Abstained: a loser link from this matchUp or from the next (the seats they feed take BYEs,
- * `propagateUnfillableLoserBye`), a convergence, a BYE on the awarded side, and an awarded winner with nowhere clean to
- * go on to.
+ * Beside a loser link from this matchUp or from the next, either shape is planned with the BYEs those seats take
+ * (`doubleExitSeats`), outside a feed round. Abstained: a convergence, a BYE on the awarded side, an awarded winner with
+ * nowhere clean to go on to, and a loser seat `doubleExitSeats` does not plan.
  */
 function producedReason(
   view: OutcomeView,
@@ -660,22 +660,31 @@ function producedReason(
   if (!entry || entry.matchUpStatusCodes?.length || Object.keys(entry.sideExitProvenance ?? {}).length) return 'exit';
   const awarded = entry.sides?.find((side) => side.sideNumber === produced.winningSide);
   if (awarded?.bye) return 'exit';
-  // loser links, from this matchUp or from the next: the seats they feed take BYEs, planned only for a pending exit
+  // loser links, from this matchUp or from the next: the seats they feed take BYEs, planned outside a feed round
   if (targets.loserLink || targets.loserMatchUpId || entry.loserMatchUpId) {
-    if (awarded?.participantId || awarded?.drawPosition || entry.feedRound) return 'exit';
-    if (pairedFeeder(view)?.matchUpStatus !== TO_BE_PLAYED) return 'exit';
-    return doubleExitSeats(view, entry) ? undefined : 'exit';
+    if (entry.feedRound || !doubleExitSeats(view, entry)) return 'exit';
+    return pendingOrAwardedReason(view, entry, awarded);
   }
-  const paired = pairedFeeder(view);
   // a feed round: the awarded side is the fed seat, filled from another structure
   if (entry.feedRound) return fedSeatReason(view, entry, awarded);
+  return pendingOrAwardedReason(view, entry, awarded);
+}
+
+/**
+ * Outside a feed round the produced exit is PENDING where nobody stands on the side it is awarded to and the feeder beside
+ * this one is still to be played, or AWARDED where that feeder delivered its winner there (a played result or a single
+ * exit), who goes on into a clean next matchUp. A seat holding a position nobody has reached is not planned.
+ */
+function pendingOrAwardedReason(
+  view: OutcomeView,
+  entry: HydratedMatchUp,
+  awarded?: { participantId?: string; drawPosition?: number },
+): AbstainReason | undefined {
+  const paired = pairedFeeder(view);
   if (!awarded?.participantId) {
-    // a seat holding a position nobody has reached outside a feed round: not planned
     if (awarded?.drawPosition) return 'exit';
-    // pending: nobody on the awarded side, and the feeder beside this one still to be played
     return paired?.matchUpStatus === TO_BE_PLAYED ? undefined : 'exit';
   }
-  // awarded: the feeder beside this one delivered its winner there, and the winner goes on into a clean next matchUp
   if (!paired?.winningSide || !DELIVERED_FEEDS.has(paired.matchUpStatus)) return 'exit';
   if (!awarded.drawPosition || !onwardFrom(view, entry, awarded.drawPosition)) return 'exit';
   return undefined;
@@ -696,9 +705,10 @@ type DoubleExitSeats = {
 /**
  * The BYEs a double exit with loser links places (`doubleExitAdvancement`, `propagateUnfillableLoserBye`), as v1 places
  * them in FEED_IN_CHAMPIONSHIP and CURTIS: nobody loses this matchUp, so the seat its link feeds takes a propagated BYE
- * and that matchUp a BYE, and the empty seat opposite is advanced through it into the next matchUp; nobody will lose
- * the next matchUp either (its produced exit is pending), so the seat ITS link feeds takes a BYE too. Planned only where
- * each is clean and alone: links with no condition, free seats with nobody and no BYE beside them, matchUps to be
+ * and that matchUp a BYE, and the position opposite is advanced through it into the next matchUp; nobody will lose
+ * the next matchUp either (its produced exit is pending, or awarded to the winner standing there), so the seat ITS link
+ * feeds takes a BYE too. Planned only where each is clean and alone: links with no condition, free seats with no BYE
+ * beside them (a participant opposite the first goes on through its BYE as an empty position does), matchUps to be
  * played holding no result, exit, codes or provenance, the advance into a clean matchUp with room, and the unfillable
  * seat's matchUp holding no other position (so nothing is advanced from it) and apart from the first's.
  */
@@ -713,7 +723,8 @@ function doubleExitSeats(view: OutcomeView, entry: HydratedMatchUp): DoubleExitS
     const { loserStructureId, loserTargetDrawPosition, loserMatchUpRecord } = targets;
     if (targets.loserLink?.linkCondition || !loserMatchUp || !loserStructureId || !loserTargetDrawPosition)
       return undefined;
-    if (!seat?.free || seat.opponentBye || seat.opponentHeld) return undefined;
+    // a participant opposite goes on through the BYE as an empty position would; a BYE opposite makes a double BYE
+    if (!seat?.free || seat.opponentBye) return undefined;
     if (targets.loserMatchUpStatus !== TO_BE_PLAYED || targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit)
       return undefined;
     if (!loserMatchUpRecord || loserMatchUpRecord.provenance || loserMatchUpRecord.matchUpStatusCodes?.length)
