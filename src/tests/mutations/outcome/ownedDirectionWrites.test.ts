@@ -1,6 +1,7 @@
 import { generateOutcomeFromScoreString } from '@Assemblies/generators/mocks/generateOutcomeFromScoreString';
 import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { POLICY_SCORING_DEFAULT } from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
+import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
@@ -11,6 +12,7 @@ import { setClock } from '@Tools/clock';
 import { COMPLETED, DEFAULTED, RETIRED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import { SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
 import {
   AD_HOC,
   COMPASS,
@@ -18,6 +20,7 @@ import {
   FEED_IN_CHAMPIONSHIP,
   FIRST_MATCH_LOSER_CONSOLATION,
   LUCKY_DRAW,
+  OLYMPIC,
   ROUND_ROBIN,
   SINGLE_ELIMINATION,
 } from '@Constants/drawDefinitionConstants';
@@ -551,6 +554,27 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(4, 'Main'), outcome: exited(DEFAULTED, 2), params: CARRIED }],
     },
   ],
+  [
+    'COMPASS (S5): a carried walkover goes on level by level, East to West to South',
+    {
+      drawProfile: { drawSize: 8, drawType: COMPASS },
+      steps: [{ target: R1(1, 'East'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'COMPASS (S5): a default carried through four structures of a 16 draw',
+    {
+      drawProfile: { drawSize: 16, drawType: COMPASS },
+      steps: [{ target: R1(3, 'East'), outcome: exited(DEFAULTED, 2), params: CARRIED }],
+    },
+  ],
+  [
+    'OLYMPIC (S5): a carried walkover goes on from East to West to the next level',
+    {
+      drawProfile: { drawSize: 16, drawType: OLYMPIC },
+      steps: [{ target: R1(2, 'East'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
@@ -649,18 +673,24 @@ describe('under v2, a FIRST_MATCHUP reservation is v2s', () => {
 });
 
 describe('under v2, an exit v2 does not plan is v1s, whole', () => {
-  it('COMPASS: a carried walkover whose landing matchUp links its loser on (the carrier would carry it again)', () => {
+  it('F9: a carry that would reach v1s bound is v1s, which refuses there; v2 never plans the bound', () => {
     const scenario: Scenario = {
       drawProfile: { drawSize: 8, drawType: COMPASS },
       steps: [{ target: R1(1, 'East'), outcome: walkover(1), params: CARRIED }],
     };
-    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
-    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
-    // v1's three writes (the result, then the carry into West and on into South), all v1's under v2
-    expect(v1.v1Writes).toEqual(3);
-    expect(v2.v1Writes).toEqual(v1.v1Writes);
-    expect(v2.results).toEqual(v1.results);
-    expect(v2.record).toEqual(v1.record);
+    const saved = SETTLE_PASS_LIMITS.exitLevels;
+    SETTLE_PASS_LIMITS.exitLevels = 1;
+    try {
+      const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+      const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+      // CONTROL: East's carry goes West then South, two levels, so a bound of one stops it
+      expect(v1.results[0].error?.code).toEqual(SETTLE_BOUND_REACHED.code);
+      expect(v2.v1Writes).toBeGreaterThan(0);
+      expect(v2.results).toEqual(v1.results);
+      expect(v2.record).toEqual(v1.record);
+    } finally {
+      SETTLE_PASS_LIMITS.exitLevels = saved;
+    }
   });
 
   it('a default under a scoring policy naming incompleteAssignmentsOnDefault: v1 may write processCodes', () => {
