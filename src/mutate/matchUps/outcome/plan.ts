@@ -782,11 +782,11 @@ const producedLoserMatchUpIds = (produced?: ProducedLoser) =>
 /**
  * Under `doubleExitPropagateBye: false` nobody loses the double exit, and its loser matchUp takes a produced exit
  * (`handleLoserMatchUp` → `conditionallyAdvanceDrawPosition`): the double exit's flavour, awarded to the side opposite the
- * seat with nobody on it, its origin recorded on the seat's side, and the empty position opposite advanced into the next
- * matchUp ahead of the arrival it awaits (a reservation). Planned only in a first round, not fed (a fed seat takes a BYE
- * whatever the policy), behind a link with no condition, into a matchUp that links no loser on (COMPASS, OLYMPIC: v1's):
- * the seat free with nobody and no BYE opposite, the matchUp to be played holding no result, exit, codes or provenance,
- * and the advance into a clean matchUp with room.
+ * seat, its origin recorded on the seat's side, and the position opposite advanced into the next matchUp: a participant
+ * standing there goes on, an empty position goes ahead of the arrival it awaits (a reservation). Planned only in a first
+ * round, not fed (a fed seat takes a BYE whatever the policy), behind a link with no condition, into a matchUp that links
+ * no loser on (COMPASS, OLYMPIC: v1's): the seat free with no BYE opposite, the matchUp to be played holding no result,
+ * exit, codes or provenance, and the advance into a clean matchUp with room.
  */
 function producedLoser(view: OutcomeView): ProducedLoser | undefined {
   const { targets } = view;
@@ -795,7 +795,8 @@ function producedLoser(view: OutcomeView): ProducedLoser | undefined {
   const { loserTargetDrawPosition, loserMatchUpRecord } = targets;
   if (targets.loserLink?.linkCondition || !loserMatchUp || !loserTargetDrawPosition) return undefined;
   if (loserMatchUp.roundNumber !== 1 || loserMatchUp.feedRound || loserMatchUp.hasFedDrawPosition) return undefined;
-  if (!seat?.free || seat.opponentBye || seat.opponentHeld) return undefined;
+  // a participant opposite is awarded the exit and goes on, as the empty position would; a BYE opposite is v1's
+  if (!seat?.free || seat.opponentBye) return undefined;
   if (targets.loserMatchUpStatus !== TO_BE_PLAYED || targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit)
     return undefined;
   if (!loserMatchUpRecord || loserMatchUpRecord.provenance || loserMatchUpRecord.matchUpStatusCodes?.length)
