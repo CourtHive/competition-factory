@@ -48,14 +48,14 @@ A call:
   "clock": "2026-10-01T12:00:00.000Z",
   "seed": 1234,
   "topics": ["audit"],
-  "writeMode": "NATIVE"
+  "writeMode": "native"
 }
 ```
 
 `params` are the caller's, without the records and active tournament the engine adds and without functions. `clock` is
 the instant the call captured; `seed` is where the random stream stands; `topics` are the notice topics the engine has
 subscribers for (a method announces to a subscribed topic instead of writing, as the scheduling audit does); `writeMode`
-is the engine's schema write mode (`NATIVE`, `BRIDGE` or `LEGACY`: whether a schedule attribute is written first-class,
+is the engine's schema write mode (`native`, `bridge` or `legacy`: whether a schedule attribute is written first-class,
 as a timeItem, or both). An answer is `{ result, records, seed? }`, or
 `{ declined: reason }` for a call it does not implement with these params, which this engine then runs itself; the
 report counts declined calls separately.
