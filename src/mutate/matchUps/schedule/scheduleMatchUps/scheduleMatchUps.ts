@@ -1,5 +1,6 @@
 import { extractDate, extractTime, isValidDateString, sameDay, zeroPad } from '@Tools/dateTime';
 import { overnightRestWarningsFor } from '@Query/matchUps/scheduling/getOvernightRestWarnings';
+import { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue';
@@ -204,6 +205,10 @@ export function scheduleMatchUps(params) {
     return !alreadyScheduled && !matchUp.winningSide && !doNotSchedule && !hasByeSide(matchUp);
   });
 
+  // the limits of each matchUp's own tournament, and the policy's per-participant ones (§ 3.5); the call's
+  // matchUpDailyLimits stand where a tournament states none
+  const { dailyLimitOverrides } = getMatchUpDailyLimits({ tournamentRecords });
+
   // for optimization, build up an object for each tournament and an array for each draw with target matchUps
   // keep track of matchUps counts per participant and don't add matchUps for participants beyond those limits
   const { matchUpMap, overLimitMatchUpIds, participantIdsAtLimit } = matchUpsToSchedule.reduce(
@@ -213,6 +218,7 @@ export function scheduleMatchUps(params) {
       const { participantIdsAtLimit } = checkDailyLimits({
         reachability: participantReachability,
         individualParticipantProfiles,
+        dailyLimitOverrides,
         matchUpDailyLimits,
         matchUp,
       });
