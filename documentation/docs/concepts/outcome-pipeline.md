@@ -603,9 +603,13 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   `WALKOVER`'s score blanked and the fed side given its origin (`buildSideExitProvenance`, v1's builder).
   Planned where that next matchUp is to be played with no result, BYE, exit, codes or provenance, links no
   loser on (a seat nobody can fill takes a BYE, `propagateUnfillableLoserBye`), nobody stands on the side it
-  would be awarded to, and the matchUp beside this one is still to be played. v1 writes it through
-  `modifyMatchUpScore`, not `setMatchUpState`, so it takes no `scoredTime`. A double exit with a loser link,
-  onto a present opponent or into a convergence, and a carry past a BYE into anything but a clean matchUp, a present opponent with nowhere clean to go on to, a convergence, a correction to or
+  would be awarded to, and the matchUp beside this one is still to be played. Where the winner of the matchUp
+  beside this one already stands there (a played result or a single exit that delivered them), the produced exit
+  is theirs at once: written with their side as winner, their origin recorded beside this one's, and they go on
+  into a clean next matchUp, announced, as v1's `doubleExitAdvancement` announces it, with no event or
+  tournament (`announcesContext: false`). v1 writes it through
+  `modifyMatchUpScore`, not `setMatchUpState`, so it takes no `scoredTime`. A double exit with a loser link, onto
+  a present opponent with nowhere clean to go on to, or into a convergence, and a carry past a BYE into anything but a clean matchUp, a present opponent with nowhere clean to go on to, a convergence, a correction to or
   from an exit, and an exit whose target holds a BYE, an exit or a result stay v1's (`exit`,
   `cascade`).
 - **`differential`**: v2 plans the whole call before v1 runs, then checks v1's result against it,
