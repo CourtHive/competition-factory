@@ -2,7 +2,6 @@ import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/
 import { fedLoserPlacementRefusal } from '@Mutate/matchUps/drawPositions/reconcileFedLoserEligibility';
 import { isValidMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
-import { relabelledPathFeedRefusal } from '@Mutate/matchUps/drawPositions/relabelledPathFeeds';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
@@ -43,6 +42,10 @@ import {
   carriedExitStatus,
   isPropagatedExit,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import {
+  relabelledPathFeedChanges,
+  relabelledPathFeedRefusal,
+} from '@Mutate/matchUps/drawPositions/relabelledPathFeeds';
 
 // constants and types
 import type { BuildViewArgs, OutcomeRequest, OutcomeView, Reservation, ThroughBye } from './types';
@@ -367,17 +370,25 @@ function sideDrawPosition(matchUp: HydratedMatchUp | undefined, sideNumber: 1 | 
  * `allowChangePropagation`).
  */
 function swapPath({
+  inContextDrawMatchUps,
   inContextMatchUp,
+  loserTargetLink,
   drawDefinition,
   matchUpsMap,
+  structure,
   matchUp,
   request,
+  event,
 }: {
+  inContextDrawMatchUps: HydratedMatchUp[];
   inContextMatchUp?: HydratedMatchUp;
+  loserTargetLink?: DrawLink;
   drawDefinition: DrawDefinition;
   matchUpsMap: MatchUpsMap;
+  structure?: Structure;
   request: OutcomeRequest;
   matchUp: MatchUp;
+  event?: Event;
 }): OutcomeView['targets']['swap'] {
   const winningSide = matchUp.winningSide;
   if (!request.flags.allowChangePropagation || !request.winningSide || !winningSide) return undefined;
@@ -393,7 +404,26 @@ function swapPath({
       (candidate.drawPositions?.includes(positionA) || (!!positionB && candidate.drawPositions?.includes(positionB))),
   );
   return {
-    relabels: swapRelabels({ drawDefinition, structureId, inContextMatchUp, winningSide: winningSide as 1 | 2 }),
+    relabels: swapRelabels({
+      settled: () =>
+        !!structure &&
+        swapFeedsSettled({
+          inContextDrawMatchUps,
+          inContextMatchUp,
+          loserTargetLink,
+          drawDefinition,
+          positionA,
+          positionB,
+          structure,
+          matchUp,
+          request,
+          event,
+        }),
+      winningSide: winningSide as 1 | 2,
+      inContextMatchUp,
+      drawDefinition,
+      structureId,
+    }),
     positionA,
     positionB,
     pathMatchUpIds: path.map(({ matchUpId }) => matchUpId),
@@ -466,6 +496,65 @@ function swapMeetsActivePosition({
 }
 
 /**
+ * Whether a swap's `FIRST_MATCHUP` reconciliations write nothing, so the relabel is v1's whole write for them: the
+ * flipped matchUp's own feed (`reconcileFedLoserEligibility`: the new loser is eligible exactly when the old one held the
+ * fed seat the relabel hands over) and every later loss on the path (`relabelledPathFeedChanges` empty). Read on the
+ * view's own base.
+ */
+function swapFeedsSettled({
+  inContextDrawMatchUps,
+  inContextMatchUp,
+  loserTargetLink,
+  drawDefinition,
+  positionA,
+  positionB,
+  structure,
+  matchUp,
+  request,
+  event,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  inContextMatchUp: HydratedMatchUp;
+  loserTargetLink?: DrawLink;
+  drawDefinition: DrawDefinition;
+  positionA: number;
+  positionB?: number;
+  structure: Structure;
+  request: OutcomeRequest;
+  matchUp: MatchUp;
+  event?: Event;
+}): boolean {
+  const flippedRoundNumber = inContextMatchUp.roundNumber ?? 0;
+  if (loserTargetLink?.linkCondition === FIRST_MATCHUP) {
+    const before = teamLevelMatchUps(
+      inContextDrawMatchUps.filter(
+        (candidate) =>
+          candidate.structureId === structure.structureId && (candidate.roundNumber ?? 0) < flippedRoundNumber,
+      ),
+    );
+    const eligibleNew = getDrawPositionWinCount({ sourceMatchUps: before, drawPosition: positionA }) === 0;
+    const oldLoserId = inContextMatchUp.sides?.find((side) => side.drawPosition === positionB)?.participantId;
+    const { structure: target } = findStructure({ drawDefinition, structureId: loserTargetLink.target?.structureId });
+    const oldLoserSeated = !!oldLoserId && !!positionAssignmentsOf(target)?.some((a) => a.participantId === oldLoserId);
+    if (eligibleNew !== oldLoserSeated) return false;
+  }
+  const changes = relabelledPathFeedChanges({
+    existingWinnerDrawPosition: positionA,
+    existingLoserDrawPosition: positionB,
+    matchUpStatus: request.matchUpStatus,
+    score: request.score as Score | undefined,
+    inContextDrawMatchUps,
+    flippedRoundNumber,
+    fromIndex: true,
+    drawDefinition,
+    structure,
+    matchUp,
+    event,
+  });
+  return !changes.length;
+}
+
+/**
  * The structures downstream of a matchUp, as v1's `getDownstreamStructureIds` walks them: the targets of its structure's
  * links from its round on, then every link out of each structure reached; the source structure itself is never one. The
  * links walked are returned too, so their conditions can be asked.
@@ -503,14 +592,21 @@ function swapRelabels({
   drawDefinition,
   structureId,
   winningSide,
+  settled,
 }: {
   inContextMatchUp: HydratedMatchUp;
   drawDefinition: DrawDefinition;
   structureId: string;
   winningSide: 1 | 2;
+  /** no FIRST_MATCHUP feed of the source structure changes eligibility (`swapFeedsSettled`), asked only when one is walked */
+  settled: () => boolean;
 }): { structureId: string; drawPosition: number; participantId: string }[] | undefined {
   const { reached, walked } = downstreamOf(drawDefinition, structureId, inContextMatchUp.roundNumber ?? 0);
-  if (walked.some((link) => link.linkCondition)) return undefined;
+  const conditioned = walked.filter((link) => link.linkCondition);
+  // v1 reconciles the source structure's own FIRST_MATCHUP feeds after the flip; a condition anywhere else is v1's
+  if (conditioned.some((link) => link.source?.structureId !== structureId || link.linkCondition !== FIRST_MATCHUP))
+    return undefined;
+  if (conditioned.length && !settled()) return undefined;
   const origin = (drawDefinition.links ?? []).some(
     (link) =>
       link.linkType === LOSER && link.target?.structureId === structureId && reached.has(link.source?.structureId),
@@ -1187,7 +1283,17 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       loserMatchUpStatus: targetData?.targetMatchUps?.loserMatchUp?.matchUpStatus,
       loserMatchUpHasResult: hasResult(targetData?.targetMatchUps?.loserMatchUp),
       loserMatchUpRecord: storedSideRecord(matchUpsMap, targetData?.targetMatchUps?.loserMatchUp?.matchUpId),
-      swap: swapPath({ request, matchUp, inContextMatchUp, matchUpsMap, drawDefinition }),
+      swap: swapPath({
+        loserTargetLink: targetData?.targetLinks?.loserTargetLink,
+        inContextDrawMatchUps,
+        inContextMatchUp,
+        drawDefinition,
+        matchUpsMap,
+        structure,
+        matchUp,
+        request,
+        event,
+      }),
       winner: winnerTarget(targetData?.targetMatchUps?.winnerMatchUp, request.matchUpId, draw),
       winnerThroughBye: {
         1: throughBye(targetData?.targetMatchUps?.winnerMatchUp, sideDrawPosition(inContextMatchUp, 1), draw),
