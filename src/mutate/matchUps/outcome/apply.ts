@@ -83,7 +83,20 @@ export function applyOwnedPlan({
   );
   // a placement v1 announces with no event or tournament (a produced exit's award, sent on by `doubleExitAdvancement`)
   const unevented = new Set(
+    ops.flatMap((op) =>
+      (op.op === 'setMatchUpDrawPositions' && (op.announcesContext === false || op.advancesThroughBye)) ||
+      (op.op === 'setMatchUpBye' && op.announcesEvent === false)
+        ? [op.matchUpId]
+        : [],
+    ),
+  );
+  // and with no tournament either (a produced exit's award, #5875)
+  const untournamented = new Set(
     ops.flatMap((op) => (op.op === 'setMatchUpDrawPositions' && op.announcesContext === false ? [op.matchUpId] : [])),
+  );
+  // a position advanced through a BYE a double exit placed: v1's `doubleExitAdvancement` announces it as `advanceWinner`
+  const advanced = new Set(
+    ops.flatMap((op) => (op.op === 'setMatchUpDrawPositions' && op.advancesThroughBye ? [op.matchUpId] : [])),
   );
   const stored = new Map(args.matchUpsMap?.drawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
   const subscribed = getTopics().topics.includes(UPDATE_INCONTEXT_MATCHUP);
@@ -106,9 +119,9 @@ export function applyOwnedPlan({
       // is `assignMatchUpDrawPosition`'s (`directWinner`), a FIRST_MATCHUP reservation's matchUp `setMatchUpStatusBye`'s
       context: removedPosition
         ? `removeSubsequentDrawPosition-${removedPosition}`
-        : matchUpContext(matchUpId, { resulted, byes, recoded, exchanged, relayed }),
+        : matchUpContext(matchUpId, { resulted, byes, recoded, exchanged, relayed, advanced }),
       eventId: noticeEvent?.eventId,
-      tournamentId: unevented.has(matchUpId) ? undefined : tournamentId,
+      tournamentId: untournamented.has(matchUpId) ? undefined : tournamentId,
       drawDefinition,
       matchUp,
       event: noticeEvent,
@@ -136,10 +149,12 @@ function matchUpContext(
     recoded: Set<string>;
     exchanged: Set<string>;
     relayed: Set<string>;
+    advanced: Set<string>;
   },
 ): string {
-  const { resulted, byes, recoded, exchanged, relayed } = written;
+  const { resulted, byes, recoded, exchanged, relayed, advanced } = written;
   if (resulted.has(matchUpId)) return 'modifyMatchUpScore';
+  if (advanced.has(matchUpId) && !byes.has(matchUpId)) return 'advanceWinner';
   if (relayed.has(matchUpId)) return 'progressExitStatus';
   if (recoded.has(matchUpId)) return 'removeDirectedLoser';
   if (exchanged.has(matchUpId)) return 'swapWinnerLoser';

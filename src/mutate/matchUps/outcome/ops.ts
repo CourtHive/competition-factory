@@ -72,6 +72,11 @@ export type OutcomeOp =
        * awarded to, sent on by `doubleExitAdvancement` (S5). The write is the same; only the notice's ids differ
        */
       announcesContext?: false;
+      /**
+       * a position advanced through a BYE a double exit placed (`doubleExitAdvancement`'s advance, S5): announced as
+       * `advanceWinner`, with no event
+       */
+      advancesThroughBye?: true;
     }
   | {
       op: 'assignPosition';
@@ -139,6 +144,8 @@ export type OutcomeOp =
       op: 'setMatchUpBye';
       /** the matchUp the reserved seat is in: BYE, its score and winner removed (v1's `setMatchUpStatusBYE`) */
       matchUpId: string;
+      /** false where v1 announces it with no event: a seat a produced exit leaves unfillable (S5) */
+      announcesEvent?: false;
     }
   | {
       op: 'setParticipantResults';
