@@ -370,9 +370,9 @@ that is not a number: `INVALID_VALUES`.
 5. **Daily limits first.** The matchUps are taken in order; one that would take a participant over a limit (§ 3.5,
    the limits of the matchUp's own tournament and the policy's per-participant ones, with the call's
    `matchUpDailyLimits` as the defaults where a tournament states none; until 2026-10-27 the call's alone) is
-   reported in `overLimitMatchUpIds` and
-   leaves the list; each other is counted toward its participants' daily loads. Limits are judged once, before any
-   slot, on the list as a whole; a matchUp left unplaced after rule 6 is taken off the loads again.
+   reported in `overLimitMatchUpIds` and leaves the list; each other is counted toward its participants' daily loads.
+   Limits are judged once, before any slot, on the list as a whole; a matchUp left unplaced after rule 6 is taken off
+   the loads again.
 6. **Slot by slot.** Each slot in turn is offered to the remaining matchUps in order; the first that passes the gate is
    placed there, and booked (§ 3.4). A slot no matchUp takes is skipped (`skippedScheduleTimes`), and is not offered
    again; the pass ends when the slots or the matchUps run out. The gate, in order:
