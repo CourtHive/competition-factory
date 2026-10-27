@@ -102,7 +102,9 @@ of the timeline, so the entry and the point cannot disagree (`publicBoundary.tes
 field passed as input is not recorded as one"). A server the engine derives, by the format (§ 10.1–10.4)
 or by the competition's rule (§ 10.7), is calculated: it is a snapshot on the materialized point and a
 rebuild derives it again (`replayLossless.test.ts`, "a calculated server is still not recorded as an
-input (R2)"; `scoringAgreement.test.ts`, "a server the rule supplied is calculated").
+input (R2)"; `scoringAgreement.test.ts`, "a server the rule supplied is calculated"). A multiplier's
+value is not on this list: the entry records it as the point's `scoreValue`, so a point keeps the value it
+was scored at when the multipliers change (§ 12.2; CA 2026-10-27).
 
 ## 2. The action set
 
@@ -914,6 +916,12 @@ over the materialized point**: a point's calculated values are a cache, and a re
 (R2, decision 4; `tiebreakServiceOrder.test.ts`, "tiebreak servers on records saved under the old
 rotation").
 
+One value is recorded: **a point keeps the value it was scored at**. Where a multiplier gives a point its
+value (§ 5 rule 5), the entry records that value as its `scoreValue`, as the point does, so a rebuild
+does not re-value it under multipliers set later. `setPointMultipliers` values the points recorded after
+it, and every rebuild, undo, redo and reload of the history scores it as it was scored (CA 2026-10-27;
+`point-multipliers.test.ts`, "a point keeps the value it was scored at").
+
 ### 12.3 Undo and redo
 
 - `undo(n)` moves the last n entries, of any type, to the redo stack (a `point` entry takes its point
@@ -936,7 +944,9 @@ rotation").
 
 - `editPoint(i, data)` refuses invalid data before anything changes (§ 2.1), writes every field given
   to the point and to its entry, and rebuilds. A winner or server edited in one spelling clears the
-  other spelling on the entry, so the replay reads the edit. With `recalculate: false` the score is left
+  other spelling on the entry, so the replay reads the edit. An edit that changes the point's `result` or
+  `stroke` and gives no `scoreValue` drops the entry's value, so the point is valued afresh under the
+  current multipliers (§ 12.2). With `recalculate: false` the score is left
   as it was until the next rebuild, which applies the edit (`aCompletedMatchTakesCorrections.test.ts`).
 - `removePoint(i)` removes the point and its entry, renumbers the later point entries, and rebuilds.
   With `recalculate: false` the score is left as it was until the next rebuild, and it still counts the

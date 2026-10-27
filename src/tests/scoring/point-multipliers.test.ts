@@ -200,5 +200,61 @@ describe('Point Multipliers', () => {
 
       expect(engine.getPointMultipliers()).toEqual(INTENNSE_MULTIPLIERS);
     });
+
+    describe('a point keeps the value it was scored at', () => {
+      const TRIPLE_ACE: PointMultiplier[] = [{ condition: { results: ['Ace'] }, value: 3 }];
+      const side1 = (engine: ScoringEngine) => engine.getScore().sets[0].side1Score;
+
+      // an Ace at 2, a point to side 2, then an Ace at 3: 5-1
+      function played() {
+        const engine = new ScoringEngine({ matchUpFormat: 'SET7XA-S:T10P', pointMultipliers: INTENNSE_MULTIPLIERS });
+        engine.addPoint({ winner: 0, result: 'Ace' });
+        engine.addPoint({ winner: 1 });
+        engine.setPointMultipliers(TRIPLE_ACE);
+        engine.addPoint({ winner: 0, result: 'Ace' });
+        return engine;
+      }
+
+      it('records the value on the entry, as on the point', () => {
+        const state: any = played().getState();
+        expect(state.history.entries.map((entry: any) => entry.data.scoreValue)).toEqual([2, undefined, 3]);
+        expect(state.history.points.map((point: any) => point.scoreValue)).toEqual([2, undefined, 3]);
+      });
+
+      it('an undo, a redo and a removal rebuild without re-valuing earlier points', () => {
+        const engine = played();
+        expect(side1(engine)).toBe(5);
+        engine.addPoint({ winner: 1 });
+        engine.undo();
+        expect(side1(engine)).toBe(5);
+        engine.undo();
+        expect(side1(engine)).toBe(2);
+        engine.redo();
+        expect(side1(engine)).toBe(5);
+        engine.removePoint(1);
+        expect(side1(engine)).toBe(5);
+      });
+
+      it('a reload scores the history as it was scored', () => {
+        const engine = played();
+        const reloaded = new ScoringEngine({ matchUpFormat: 'SET7XA-S:T10P' });
+        reloaded.setState(engine.getState());
+        reloaded.loadSupplementaryState(engine.getSupplementaryState());
+        reloaded.addPoint({ winner: 1 });
+        expect(reloaded.getScore().scoreString).toBe('5-2');
+      });
+
+      it('an edit to the result values the point afresh; one that gives a value keeps it', () => {
+        const engine = played();
+        engine.editPoint(0, { result: 'Winner' });
+        expect(side1(engine)).toBe(4); // Winner is not in the current multipliers: 1 + 3
+        engine.editPoint(0, { result: 'Ace' });
+        expect(side1(engine)).toBe(6); // valued now: 3 + 3
+        engine.editPoint(0, { result: 'Winner', scoreValue: 2 });
+        expect(side1(engine)).toBe(5);
+        engine.editPoint(0, { serverSideNumber: 1 } as any);
+        expect(side1(engine)).toBe(5); // nothing the value depends on changed
+      });
+    });
   });
 });
