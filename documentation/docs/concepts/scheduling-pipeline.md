@@ -368,7 +368,7 @@ that is not a number: `INVALID_VALUES`.
    participants (§ 3.4) from its time for the average of rule 2 and its recovery. Every matchUp it feeds may not start
    before its participants are free (its not-before time).
 5. **Daily limits first.** The matchUps are taken in order; one that would take a participant over a limit (§ 3.5,
-   with `matchUpDailyLimits` as the defaults where a tournament states none) is reported in `overLimitMatchUpIds` and
+   the call's `matchUpDailyLimits` only, none when absent) is reported in `overLimitMatchUpIds` and
    leaves the list; each other is counted toward its participants' daily loads. Limits are judged once, before any
    slot, on the list as a whole; a matchUp left unplaced after rule 6 is taken off the loads again.
 6. **Slot by slot.** Each slot in turn is offered to the remaining matchUps in order; the first that passes the gate is
@@ -378,8 +378,9 @@ that is not a number: `INVALID_VALUES`.
       call states them), is not yet placed: deferred (`dependencyDeferred`);
    2. a participant is not free in the matchUp's window, or its not-before time is later (§ 3.4, either order: the
       window is its own average and recovery minutes from the slot, so a placement may not run into a participant's
-      later matchUp on the date; a participant held by a potential booking in another draw counts; until 2026-10-27
-      the window was the slot's start alone): deferred (`recoveryTimeDeferred`);
+      later matchUp on the date; a participant held by a potential booking in another draw counts; no transit applies,
+      as no venue is known yet; until 2026-10-27 the window was the slot's start alone): deferred
+      (`recoveryTimeDeferred`);
    3. a person request blocks it (§ 3.6; potential participants checked unless `checkPotentialRequestConflicts` is
       false): not placed here (`requestConflicts`).
 7. **The write.** Each placement, tournament by tournament and draw by draw in the order its matchUps were first
@@ -395,7 +396,8 @@ What remains unplaced is reported in `noTimeMatchUpIds`, with what it collected 
 
 **OPEN:** rule 5 counts every listed matchUp toward its participants' loads before any is placed, and a matchUp left
 unplaced is uncounted after the pass; a matchUp placed late in the list is therefore judged against loads that include
-matchUps not yet placed.
+matchUps not yet placed. **OPEN:** rule 5 reads the call's `matchUpDailyLimits` only; unlike § 3.5, the tournament's own
+limits and the policy's per-participant ones are not applied.
 
 ## 7. What is reported
 
