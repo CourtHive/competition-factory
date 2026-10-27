@@ -39,8 +39,8 @@ import { findEvent } from '@Acquire/findEvent';
 import { isString } from '@Tools/objects';
 
 // constants and types
-import { INVALID_VALUES, INVALID_WINNING_SIDE, SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
 import { MatchUpsMap, PolicyDefinitions, ResultType, ResultWarning, TournamentRecords } from '@Types/factoryTypes';
+import { INVALID_VALUES, INVALID_WINNING_SIDE, SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_SCORING, POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { DRAW_DEFINITION, MATCHUP_ID } from '@Constants/attributeConstants';
@@ -565,7 +565,38 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
 
   v2.compare?.(result);
 
-  return decorateResult({ result, stack });
+  return decorateResult({ result: withoutPropagationContext(result), stack });
+}
+
+/**
+ * The keys a direction hands exit propagation in its `context` (`directParticipants`, `directLoser`,
+ * `progressExitStatus`, `swapWinnerLoser`'s queue): the loser's next matchUp hydrated, the call's live `matchUpsMap`,
+ * and the source's facts. They are plumbing, consumed by `propagateExitFrom` above.
+ */
+const PROPAGATION_CONTEXT_KEYS = [
+  'sourceMatchUpStatusCodes',
+  'sourceMatchUpStatus',
+  'queuedExitContexts',
+  'progressExitStatus',
+  'loserParticipantId',
+  'sourceWinningSide',
+  'sourceMatchUpId',
+  'loserMatchUp',
+  'matchUpsMap',
+];
+
+/**
+ * A RESULT CARRIES NO PLUMBING. A call whose exit propagated returned the propagation's context to its caller: the
+ * whole draw's live `matchUpsMap` and a hydrated matchUp in the result of a `setMatchUpStatus`, which an
+ * `executionQueue` response then serialised, and which the outcome pipeline v2 could only have matched by hydrating
+ * (executor plan § 3.1.1). Once consumed, those keys are dropped; anything else a context holds is kept.
+ */
+function withoutPropagationContext(result: ResultType): ResultType {
+  if (!result.context) return result;
+  const context = Object.fromEntries(
+    Object.entries(result.context).filter(([key]) => !PROPAGATION_CONTEXT_KEYS.includes(key)),
+  );
+  return { ...result, context };
 }
 
 /**
