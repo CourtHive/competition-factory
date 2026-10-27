@@ -506,6 +506,30 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(1, 'Main'), outcome: walkover(2), params: CARRIED }],
     },
   ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S5): a walkover carried onto a seat opposite a participant sends them on (RULE 3)',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(2, 'Main'), outcome: won(1) }],
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S5): a default carried opposite a participant in a 16 draw sends them on (RULE 3)',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(2, 'Main'), outcome: won(1) }],
+      steps: [{ target: R1(1, 'Main'), outcome: exited(DEFAULTED, 1), params: CARRIED }],
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION (S5): a carried walkover opposite a participant sends them on (RULE 3)',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [{ target: R1(2, 'Main'), outcome: won(1) }],
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
