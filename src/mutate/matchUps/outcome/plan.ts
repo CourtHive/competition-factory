@@ -626,6 +626,9 @@ function producedReason(
   if (!write || !isDoubleExit(write.matchUpStatus) || request.matchUpStatus !== write.matchUpStatus) return 'exit';
   if (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide || write.matchUpStatusCodes?.length)
     return 'exit';
+  // a score the call carries rides into the produced exit's write too: v1 spreads the call's params into it
+  // (`doubleExitAdvancement` → `modifyMatchUpScore({ ...params })`), so a DEFAULTED there takes the double exit's score
+  if (request.score) return 'exit';
   if (targets.loserMatchUpId || targets.loserLink || targets.byeTarget) return 'exit';
   const produced = direction?.produced;
   const target = targets.winner;
