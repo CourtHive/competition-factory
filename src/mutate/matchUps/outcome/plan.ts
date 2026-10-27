@@ -394,10 +394,10 @@ function exitReason(args: {
 
 /**
  * S5: an exit carried across the loser link (`propagateExitStatus`), planned where it lands on a clean seat with nobody
- * opposite. v1's `progressExitStatus` then takes RULE 2: the loser's matchUp is written the carried status (a retirement
+ * opposite, or a participant who goes on into a clean next matchUp (RULE 3). v1's `progressExitStatus` then takes RULE 2: the loser's matchUp is written the carried status (a retirement
  * as a WALKOVER), awarded to the empty side, its codes derived from provenance (`[]`, no reason recorded), and the
  * carrier's side given the carried entry. Its winner is nobody, so nothing advances (`directParticipants`'
- * `winnerSlotEmpty`). Abstained: a BYE or anybody opposite (RULE 1, RULE 3), a matchUp holding a result, an exit, codes
+ * `winnerSlotEmpty`). Abstained: a BYE opposite (RULE 1), a participant opposite with nowhere clean to go on to, a matchUp holding a result, an exit, codes
  * or provenance (RULE 4 and the convergences), client codes on the call (the reason would ride with the side), and a
  * matchUp that links its own loser on: the carrier would carry the exit again (`propagateExitFrom`'s loop, which F9
  * bounds; v2 plans no loop, so it plans one level and abstains where there would be another).
@@ -406,28 +406,62 @@ function carriedReason(view: OutcomeView, write: MatchUpWrite): AbstainReason | 
   const { targets } = view;
   const seat = targets.loserTargetSeat;
   if (write.matchUpStatusCodes?.length) return 'exit';
-  if (!seat?.free || seat.opponentBye || seat.opponentHeld) return 'exit';
+  if (!seat?.free || seat.opponentBye) return 'exit';
   if (targets.loserMatchUpStatus !== TO_BE_PLAYED || targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit)
     return 'exit';
   const record = targets.loserMatchUpRecord;
   if (!record || record.provenance || record.matchUpStatusCodes?.length) return 'exit';
   const landing = carriedLanding(view);
   if (!landing || landing.carriesOn) return 'exit';
+  // RULE 3: somebody stands opposite, wins the carried exit and goes on, planned into a clean next matchUp
+  if (seat.opponentHeld && !landing.onward) return 'exit';
   return undefined;
 }
 
-/** the loser's matchUp as the index holds it: the side the carried seat is on, and whether it links its loser on */
-function carriedLanding(view: OutcomeView): { sideNumber: 1 | 2; carriesOn: boolean } | undefined {
+type CarriedLanding = {
+  sideNumber: 1 | 2;
+  /** the matchUp links its loser on: the carrier would carry the exit again */
+  carriesOn: boolean;
+  /** RULE 3: the opponent standing there, their position joining the next matchUp, which holds these after */
+  onward?: { matchUpId: string; drawPositions: number[] };
+};
+
+/**
+ * The loser's matchUp as the index holds it: the side the carried seat is on, whether it links its loser on, and, where
+ * a participant stands opposite (RULE 3), the next matchUp they go on into. v1's nested write directs that winner
+ * (`directParticipants` → `directWinner`), so it is planned only into a matchUp of the same structure that is
+ * `TO_BE_PLAYED` with no result, BYE or provenance, and a seat to take: there the arrival records no provenance (it is
+ * outside the exit cascade) and nothing more follows.
+ */
+function carriedLanding(view: OutcomeView): CarriedLanding | undefined {
   const { loserMatchUpId, loserTargetDrawPosition } = view.targets;
-  const entry = view.inContextDrawMatchUps?.find((matchUp) => matchUp.matchUpId === loserMatchUpId);
+  const index = view.inContextDrawMatchUps;
+  const entry = index?.find((matchUp) => matchUp.matchUpId === loserMatchUpId);
   const sideNumber = entry?.sides?.find((side) => side.drawPosition === loserTargetDrawPosition)?.sideNumber;
   if (sideNumber !== 1 && sideNumber !== 2) return undefined;
-  return { sideNumber, carriesOn: !!entry?.loserMatchUpId };
+  const landing: CarriedLanding = { sideNumber, carriesOn: !!entry?.loserMatchUpId };
+  const opponent = entry?.sides?.find((side) => side.sideNumber === 3 - sideNumber);
+  if (!opponent?.participantId || opponent.bye || !opponent.drawPosition) return landing;
+  const next = index?.find((matchUp) => matchUp.matchUpId === entry?.winnerMatchUpId);
+  const held = (next?.drawPositions ?? []).filter((position): position is number => !!position);
+  const clean =
+    !!next &&
+    next.structureId === entry?.structureId &&
+    next.matchUpStatus === TO_BE_PLAYED &&
+    !next.winningSide &&
+    !next.score?.scoreStringSide1 &&
+    !Object.keys(next.sideExitProvenance ?? {}).length &&
+    !next.sides?.some((side) => side.bye) &&
+    held.length < 2 &&
+    !held.includes(opponent.drawPosition);
+  if (!clean) return landing;
+  const drawPositions = [...held, opponent.drawPosition].sort((a, b) => a - b);
+  return { ...landing, onward: { matchUpId: next.matchUpId, drawPositions } };
 }
 
 /**
- * The carried exit's write on the loser's matchUp, as v1's `progressExitStatus` makes it (RULE 2): the status, the
- * award to the side nobody has reached, the codes it derives (`[]`), the score a WALKOVER blanks, then the carrier's
+ * The carried exit's write on the loser's matchUp, as v1's `progressExitStatus` makes it (RULES 2 and 3): the status,
+ * the award to the side opposite the carrier (nobody yet, or the participant standing there, who then goes on), the codes it derives (`[]`), the score a WALKOVER blanks, then the carrier's
  * entry merged into its provenance (`buildCarriedExitProvenance`, v1's own builder). Announced as the score write it is.
  */
 function carriedOps(
@@ -456,6 +490,17 @@ function carriedOps(
     },
     ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId: loserMatchUpId, provenance }] : []),
     { op: 'stampUpdatedAt', entity: 'matchUp', id: loserMatchUpId },
+    // RULE 3: the opponent awarded the exit goes on, their position joining the next matchUp
+    ...(landing.onward
+      ? [
+          {
+            op: 'setMatchUpDrawPositions' as const,
+            matchUpId: landing.onward.matchUpId,
+            drawPositions: landing.onward.drawPositions,
+          },
+          { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: landing.onward.matchUpId },
+        ]
+      : []),
   ];
 }
 

@@ -584,10 +584,13 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   does not link its own loser on. v1's `progressExitStatus` takes RULE 2 there: the loser's matchUp is
   written the carried status, awarded to the side nobody has reached, its codes `[]` and a `WALKOVER`'s
   score blanked, and the carrier's side given the carried entry (`mergeSideExitProvenance`); nobody
-  advances from the empty side. It is announced as a score write, its in-context matchUp to a subscriber
+  advances from the empty side. Where a participant stands opposite (RULE 3) they are awarded the exit and
+  go on: their position joins the next matchUp of that structure, planned only where it is `TO_BE_PLAYED`
+  with no result, BYE or provenance and a seat to take, and announced as v1's `directWinner` announces it.
+  It is announced as a score write, its in-context matchUp to a subscriber
   included, and the call's result carries no propagation context. A matchUp that links its loser on
   (COMPASS) stays v1's: the carrier would carry the exit again, a loop (`propagateExitFrom`) v2 does not
-  plan. A double exit, a carry past a BYE or onto a present opponent, a convergence, a correction to or
+  plan. A double exit, a carry past a BYE, a present opponent with nowhere clean to go on to, a convergence, a correction to or
   from an exit, and an exit whose target holds a BYE, an exit or a result stay v1's (`exit`,
   `cascade`).
 - **`differential`**: v2 plans the whole call before v1 runs, then checks v1's result against it,
