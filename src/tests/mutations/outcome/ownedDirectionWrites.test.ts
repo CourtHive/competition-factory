@@ -632,6 +632,30 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'FEED_IN_CHAMPIONSHIP (S5): a carried walkover meets one standing there: a double walkover, which produces on',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(2, 'Main'), outcome: walkover(1), params: CARRIED }],
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S5): two carried defaults converge into a double default',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(2, 'Main'), outcome: exited(DEFAULTED, 1), params: CARRIED }],
+      steps: [{ target: R1(1, 'Main'), outcome: exited(DEFAULTED, 1), params: CARRIED }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S5): a carried walkover meeting a default makes a double walkover, its score blanked',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(2, 'Main'), outcome: exited(DEFAULTED, 1), params: CARRIED }],
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
     'SINGLE_ELIMINATION (S5): a double walkover awards its produced walkover to the winner already there, who goes on',
     {
       drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
@@ -681,8 +705,13 @@ function play(mode: OutcomePipelineMode, { drawProfile, steps, setup = [], polic
     setState: true,
   });
   if (policyDefinitions) tournamentEngine.attachPolicies({ policyDefinitions });
-  for (const { target, outcome } of setup) {
-    const result = tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId: findTarget(target), outcome });
+  for (const { target, outcome, params } of setup) {
+    const result = tournamentEngine.setMatchUpStatus({
+      drawId: 'd',
+      matchUpId: findTarget(target),
+      outcome,
+      ...params,
+    });
     if (!result.success) throw new Error(`setup step failed: ${JSON.stringify(target)}`);
   }
   deleteNotices();
