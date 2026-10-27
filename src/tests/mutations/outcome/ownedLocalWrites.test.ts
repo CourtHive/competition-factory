@@ -7,7 +7,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { setClock } from '@Tools/clock';
 
 // constants
-import { DOUBLE_WALKOVER, IN_PROGRESS, SUSPENDED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { DOUBLE_WALKOVER, IN_PROGRESS, SUSPENDED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 import { BRIDGE, NATIVE, type SchemaWriteMode } from '@Constants/schemaWriteModeConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
@@ -137,10 +137,12 @@ describe('under v2, a local write is v2s, and leaves exactly what v1 leaves', ()
 });
 
 describe('what v2 does not own goes to v1, whole', () => {
-  it('a double exit: v1 writes it (a single exit carrying nothing is v2s since S5, ownedDirectionWrites)', () => {
+  it('an exit corrected to a double exit: v1 writes the correction (the exit and a double exit are v2s, S5)', () => {
+    const walkover = { matchUpStatus: WALKOVER, winningSide: 1 };
     const doubleWalkover = { matchUpStatus: DOUBLE_WALKOVER };
-    const v2 = play(OUTCOME_PIPELINE_V2, [() => ({ outcome: doubleWalkover })]);
-    expect(v2.results[0]).toMatchObject({ success: true });
+    const v2 = play(OUTCOME_PIPELINE_V2, [() => ({ outcome: walkover }), () => ({ outcome: doubleWalkover })]);
+    expect(v2.results.every((result: any) => result.success)).toEqual(true);
+    // the walkover is v2's; the correction (`completed-to-double-exit`) is v1's
     expect(v2.v1Writes).toEqual(1);
   });
 
