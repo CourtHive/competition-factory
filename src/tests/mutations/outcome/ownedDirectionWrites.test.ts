@@ -24,6 +24,7 @@ import {
 import {
   AD_HOC,
   COMPASS,
+  CURTIS_CONSOLATION,
   DOUBLE_ELIMINATION,
   FEED_IN_CHAMPIONSHIP,
   FIRST_MATCH_LOSER_CONSOLATION,
@@ -656,6 +657,27 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'FEED_IN_CHAMPIONSHIP (S5): a double exit leaves BYEs on the seats nobody can fill, and a position goes through',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      steps: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S5): a double default in a 16 draw, its two loser seats BYEs',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      steps: [{ target: R1(3, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
+  [
+    'CURTIS_CONSOLATION (S5): a double walkover with both rounds linking their losers on',
+    {
+      drawProfile: { drawSize: 16, drawType: CURTIS_CONSOLATION },
+      steps: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
     'SINGLE_ELIMINATION (S5): a double walkover awards its produced walkover to the winner already there, who goes on',
     {
       drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
@@ -774,18 +796,6 @@ describe('under v2, a FIRST_MATCHUP reservation is v2s', () => {
 });
 
 describe('under v2, an exit v2 does not plan is v1s, whole', () => {
-  it('FEED_IN_CHAMPIONSHIP: a double exit whose loser seats take BYEs in the consolation', () => {
-    const scenario: Scenario = {
-      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
-      steps: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
-    };
-    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
-    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
-    expect(v2.v1Writes).toEqual(v1.v1Writes);
-    expect(v2.results).toEqual(v1.results);
-    expect(v2.record).toEqual(v1.record);
-  });
-
   it('F9: a carry that would reach v1s bound is v1s, which refuses there; v2 never plans the bound', () => {
     const scenario: Scenario = {
       drawProfile: { drawSize: 8, drawType: COMPASS },

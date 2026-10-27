@@ -1,5 +1,6 @@
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
 import { fedLoserPlacementRefusal } from '@Mutate/matchUps/drawPositions/reconcileFedLoserEligibility';
+import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { isValidMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
@@ -400,6 +401,30 @@ function carryLevels(
     fromMatchUpId = next.matchUpId;
   }
   return { levels, bounded: false };
+}
+
+/** the seat `matchUpId`'s loser link feeds (`positionTargets`), and the matchUp holding it, read before the call writes */
+function winnerLoserSeat(
+  draw: DrawContext,
+  request: OutcomeRequest,
+  matchUpId?: string,
+): OutcomeView['targets']['winnerLoserSeat'] {
+  // read only for a double exit's call: its produced exit is the only one that leaves the seat unfillable
+  if (!matchUpId || !isDoubleExit(request.matchUpStatus)) return undefined;
+  const { targetMatchUps, targetLinks } = positionTargets({ ...draw, matchUpId }) ?? {};
+  const matchUp = targetMatchUps?.loserMatchUp;
+  const drawPosition = targetMatchUps?.loserTargetDrawPosition;
+  if (!matchUp || !drawPosition) return undefined;
+  return {
+    seat: loserTargetSeat(draw.drawDefinition, matchUp.structureId, drawPosition, matchUp.drawPositions),
+    drawPositions: (matchUp.drawPositions ?? []).filter((position): position is number => !!position),
+    linkCondition: targetLinks?.loserTargetLink?.linkCondition,
+    matchUpStatus: matchUp.matchUpStatus,
+    structureId: matchUp.structureId,
+    matchUpId: matchUp.matchUpId,
+    hasResult: hasResult(matchUp),
+    drawPosition,
+  };
 }
 
 /** a call that may carry an exit across a loser link (`propagateExitStatus`, an exit status, a loser matchUp) */
@@ -1339,6 +1364,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         targetData?.targetMatchUps?.loserTargetDrawPosition,
         draw,
       ),
+      winnerLoserSeat: winnerLoserSeat(draw, request, targetData?.targetMatchUps?.winnerMatchUp?.matchUpId),
       carryLevels: carriesOn(request, targetData)
         ? carryLevels(draw, matchUpsMap, carryLanding(drawDefinition, targetData, draw))
         : undefined,
@@ -1413,6 +1439,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       perMatchUpCompetition:
         getCompetitionPolicy({ tournamentRecord, drawDefinition, event }).competitionPolicy?.processingGranularity ===
         'PER_MATCHUP',
+      doubleExitPropagatesBye: propagatesByeOnDoubleExit(appliedPolicies),
       defaultProcessCodes: Array.isArray(
         appliedPolicies?.[POLICY_TYPE_SCORING]?.processCodes?.incompleteAssignmentsOnDefault,
       ),

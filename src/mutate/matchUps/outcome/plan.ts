@@ -650,7 +650,7 @@ function producedReason(
   if (!write || !isDoubleExit(write.matchUpStatus) || request.matchUpStatus !== write.matchUpStatus) return 'exit';
   if (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide || write.matchUpStatusCodes?.length)
     return 'exit';
-  if (targets.loserMatchUpId || targets.loserLink || targets.byeTarget) return 'exit';
+  if (targets.byeTarget) return 'exit';
   const produced = direction?.produced;
   const target = targets.winner;
   if (!produced || direction?.converged || direction?.decider || !target) return 'exit';
@@ -658,10 +658,14 @@ function producedReason(
   if (target.carriedStatuses.length) return 'exit';
   const entry = indexed(view, produced.matchUpId);
   if (!entry || entry.matchUpStatusCodes?.length || Object.keys(entry.sideExitProvenance ?? {}).length) return 'exit';
-  // the seat its loser link feeds will never be filled: v1 places a BYE there (`propagateUnfillableLoserBye`, CURTIS)
-  if (entry.loserMatchUpId) return 'exit';
   const awarded = entry.sides?.find((side) => side.sideNumber === produced.winningSide);
   if (awarded?.bye) return 'exit';
+  // loser links, from this matchUp or from the next: the seats they feed take BYEs, planned only for a pending exit
+  if (targets.loserLink || targets.loserMatchUpId || entry.loserMatchUpId) {
+    if (awarded?.participantId || awarded?.drawPosition || entry.feedRound) return 'exit';
+    if (pairedFeeder(view)?.matchUpStatus !== TO_BE_PLAYED) return 'exit';
+    return doubleExitSeats(view, entry) ? undefined : 'exit';
+  }
   const paired = pairedFeeder(view);
   // a feed round: the awarded side is the fed seat, filled from another structure
   if (entry.feedRound) return fedSeatReason(view, entry, awarded);
@@ -675,6 +679,110 @@ function producedReason(
   if (!paired?.winningSide || !DELIVERED_FEEDS.has(paired.matchUpStatus)) return 'exit';
   if (!awarded.drawPosition || !onwardFrom(view, entry, awarded.drawPosition)) return 'exit';
   return undefined;
+}
+
+type DoubleExitSeats = {
+  /** this matchUp's loser seat across its link, the matchUp a BYE there makes a BYE, and the position it sends on */
+  own?: {
+    structureId: string;
+    drawPosition: number;
+    matchUpId: string;
+    onward: { matchUpId: string; drawPositions: number[] };
+  };
+  /** the seat the next matchUp's loser link feeds, which the pending exit there leaves nobody to fill */
+  unfillable?: { structureId: string; drawPosition: number; matchUpId: string };
+};
+
+/**
+ * The BYEs a double exit with loser links places (`doubleExitAdvancement`, `propagateUnfillableLoserBye`), as v1 places
+ * them in FEED_IN_CHAMPIONSHIP and CURTIS: nobody loses this matchUp, so the seat its link feeds takes a propagated BYE
+ * and that matchUp a BYE, and the empty seat opposite is advanced through it into the next matchUp; nobody will lose
+ * the next matchUp either (its produced exit is pending), so the seat ITS link feeds takes a BYE too. Planned only where
+ * each is clean and alone: links with no condition, free seats with nobody and no BYE beside them, matchUps to be
+ * played holding no result, exit, codes or provenance, the advance into a clean matchUp with room, and the unfillable
+ * seat's matchUp holding no other position (so nothing is advanced from it) and apart from the first's.
+ */
+function doubleExitSeats(view: OutcomeView, entry: HydratedMatchUp): DoubleExitSeats | undefined {
+  const { targets } = view;
+  // under `doubleExitPropagateBye: false` the loser seat shows the produced exit, not a BYE: v1's
+  if (!view.draw.doubleExitPropagatesBye) return undefined;
+  const seats: DoubleExitSeats = {};
+  if (targets.loserLink || targets.loserMatchUpId) {
+    const seat = targets.loserTargetSeat;
+    const loserMatchUp = indexed(view, targets.loserMatchUpId);
+    const { loserStructureId, loserTargetDrawPosition, loserMatchUpRecord } = targets;
+    if (targets.loserLink?.linkCondition || !loserMatchUp || !loserStructureId || !loserTargetDrawPosition)
+      return undefined;
+    if (!seat?.free || seat.opponentBye || seat.opponentHeld) return undefined;
+    if (targets.loserMatchUpStatus !== TO_BE_PLAYED || targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit)
+      return undefined;
+    if (!loserMatchUpRecord || loserMatchUpRecord.provenance || loserMatchUpRecord.matchUpStatusCodes?.length)
+      return undefined;
+    const opposite = (targets.loserMatchUpDrawPositions ?? []).filter(
+      (position) => position !== loserTargetDrawPosition,
+    );
+    if (opposite.length !== 1) return undefined;
+    const onward = onwardFrom(view, loserMatchUp, opposite[0]);
+    if (!onward) return undefined;
+    seats.own = {
+      structureId: loserStructureId,
+      drawPosition: loserTargetDrawPosition,
+      matchUpId: loserMatchUp.matchUpId,
+      onward,
+    };
+  }
+  if (entry.loserMatchUpId) {
+    const unfillable = targets.winnerLoserSeat;
+    if (!unfillable || unfillable.linkCondition || unfillable.matchUpId !== entry.loserMatchUpId) return undefined;
+    if (!unfillable.seat?.free || unfillable.seat.opponentBye || unfillable.seat.opponentHeld) return undefined;
+    if (unfillable.matchUpStatus !== TO_BE_PLAYED || unfillable.hasResult) return undefined;
+    if (unfillable.drawPositions.some((position) => position !== unfillable.drawPosition)) return undefined;
+    if (unfillable.matchUpId === seats.own?.matchUpId || unfillable.matchUpId === seats.own?.onward.matchUpId)
+      return undefined;
+    const record = indexed(view, unfillable.matchUpId);
+    if (!record || record.matchUpStatusCodes?.length || Object.keys(record.sideExitProvenance ?? {}).length)
+      return undefined;
+    seats.unfillable = {
+      structureId: unfillable.structureId,
+      drawPosition: unfillable.drawPosition,
+      matchUpId: unfillable.matchUpId,
+    };
+  }
+  return seats;
+}
+
+/** the double exit's BYEs and the advance through the first, in the order v1 announces them */
+function doubleExitSeatOps(view: OutcomeView, direction?: DirectionPlan): OutcomeOp[] {
+  const entry = direction?.produced ? indexed(view, direction.produced.matchUpId) : undefined;
+  const seats = entry ? doubleExitSeats(view, entry) : undefined;
+  if (!seats) return [];
+  const { own, unfillable } = seats;
+  return [
+    ...(own
+      ? [
+          ...seatBye(own),
+          {
+            op: 'setMatchUpDrawPositions' as const,
+            matchUpId: own.onward.matchUpId,
+            drawPositions: own.onward.drawPositions,
+            advancesThroughBye: true as const,
+          },
+          { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: own.onward.matchUpId },
+        ]
+      : []),
+    ...(unfillable
+      ? [
+          {
+            op: 'assignBye' as const,
+            structureId: unfillable.structureId,
+            drawPosition: unfillable.drawPosition,
+            byeFromPropagation: true as const,
+          },
+          { op: 'setMatchUpBye' as const, matchUpId: unfillable.matchUpId, announcesEvent: false as const },
+          { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: unfillable.matchUpId },
+        ]
+      : []),
+  ];
 }
 
 /** a feeder's results whose winner standing in the seat it feeds is an origin v1 records as it is (`deliveredStatus`) */
@@ -1239,6 +1347,8 @@ export function planOutcome(args: {
   const carried = loser?.arrives ? carriedOps(view, request, write, loser) : { relay: [], landing: [] };
   // two exits meeting where the loser lands (RULE 4), and what the double exit they make produces (S5)
   const converging = loser?.converged ? convergedOps(view, request, write, loser) : [];
+  // a double exit's loser seats, BYEs (S5)
+  const doubleExitSeated = args.route === DOUBLE_EXIT ? doubleExitSeatOps(view, args.direction) : [];
   const seated = [...arrival, ...keptOutBye, ...reserved];
   const tally = view.group
     ? groupTally(view.group, { matchUpId, matchUpWrite: write, score, matchUpFormat: request.matchUpFormat })
@@ -1258,8 +1368,9 @@ export function planOutcome(args: {
     ...throughBye,
     ...carried.landing,
     ...converging,
+    ...doubleExitSeated,
     ...(args.route === DOUBLE_EXIT ? producedOps(view, request, write, args.direction) : []),
-    ...structureStamps([...seated, ...carried.landing], structureId),
+    ...structureStamps([...seated, ...carried.landing, ...doubleExitSeated], structureId),
     ...tally,
     // the top-level structure: a round robin group's container, as v1 stamps it
     { op: 'stampUpdatedAt', entity: 'structure', id: view.group?.containerStructureId ?? structureId },

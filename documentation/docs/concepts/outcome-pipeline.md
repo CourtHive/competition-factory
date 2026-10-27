@@ -616,7 +616,13 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   `DOUBLE_WALKOVER`, whose score is blanked), its award taken away and the arriving side's entry merged beside
   the standing one; then that double exit produces onward as one entered there would, pending, with the
   reservation beside a fed seat. Planned where the landing holds that single exit and no score value, links no
-  loser on, and the produced exit lands clean. v1 writes it through
+  loser on, and the produced exit lands clean. A **double exit with loser links** is owned where its produced exit lands pending: nobody
+  loses the double exit, so the seat its link feeds takes a propagated BYE and that matchUp a BYE, and the empty
+  seat opposite is advanced through it into the next matchUp (`advanceWinner`, announced with no event); nobody
+  will lose the produced exit's matchUp either, so the seat ITS link feeds takes a BYE too, announced with no event
+  (`propagateUnfillableLoserBye`). Planned under `doubleExitPropagateBye` (off, the seat shows the produced exit:
+  v1's), for links with no condition, free seats with nobody and no BYE beside them, clean matchUps, and an
+  unfillable seat whose matchUp holds no other position; FIRST_MATCHUP feeds and chains stay v1's. v1 writes it through
   `modifyMatchUpScore`, not `setMatchUpState`, so it takes no `scoredTime`. Stay v1's: a double exit with a loser link; a carry past a BYE into anything but a clean matchUp; a
   present opponent, for a carried or a produced exit, with nowhere clean to go on to; a convergence; a
   correction to or from an exit; and an exit whose target holds a BYE, an exit or a result (`exit`, `cascade`).

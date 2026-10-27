@@ -183,6 +183,11 @@ export type OutcomeView = {
      * walk reached v1's `exitLevels` with a level still to go (F9: v2 abstains there)
      */
     carryLevels?: { levels: CarryLevel[]; bounded: boolean };
+    /**
+     * a double exit's call (S5): the seat the winner target's loser link feeds, which its produced exit leaves nobody to
+     * fill (v1's `propagateUnfillableLoserBye`), with the matchUp holding it
+     */
+    winnerLoserSeat?: WinnerLoserSeat;
     /** a winner whose target holds a BYE goes on past it into this matchUp, by the winning side (planned, S3) */
     winnerThroughBye?: { 1?: ThroughBye; 2?: ThroughBye };
     /** the participants seeded in the source structure: a seeded loser placed across a link takes the seed with them */
@@ -286,6 +291,11 @@ export type OutcomeView = {
      * missing a participant (`modifyMatchUpScore`'s `applyDefaultedProcessCodes`), not an op
      */
     defaultProcessCodes?: boolean;
+    /**
+     * the progression policy's `doubleExitPropagateBye` as v1 reads it (`propagatesByeOnDoubleExit`): off, a double
+     * exit's loser seat shows its produced exit instead of a BYE (CA ruling (A), 2026-10-21)
+     */
+    doubleExitPropagatesBye?: boolean;
     /** v1's score write updates a tally here (`updateTallyIfNeeded`): a round-robin container, ad hoc, or lucky */
     tallied: boolean;
     /** the draw stores its winner and loser edges; v1 writes them first on one that does not (edge repair) */
@@ -392,6 +402,19 @@ export type Reservation =
 
 /** the matchUp a participant placed opposite a BYE goes on into, and its drawPositions once they are there */
 export type ThroughBye = { matchUpId: string; drawPositions: number[] };
+
+/** the seat a matchUp's loser link feeds, as `positionTargets` gives it, and what holds it */
+export type WinnerLoserSeat = {
+  matchUpId: string;
+  structureId: string;
+  drawPosition: number;
+  linkCondition?: string;
+  seat?: { free: boolean; opponentBye: boolean; opponentHeld: boolean };
+  /** the positions the matchUp holding the seat already stands with */
+  drawPositions: number[];
+  matchUpStatus?: MatchUpStatusUnion;
+  hasResult: boolean;
+};
 
 /** one further level of a carried exit: the seat the carrier is placed on across the landing's loser link */
 export type CarryLevel = {
