@@ -134,7 +134,16 @@ export function applyOwnedPlan({
   ];
   for (const structureId of placedIn) {
     const { structure } = findStructure({ drawDefinition, structureId });
-    if (structure) modifyPositionAssignmentsNotice({ drawDefinition, tournamentId, structure, event });
+    // with its event where any placement in it is announced with one: the notice buffer keeps an earlier notice's event
+    // for the structure when a later one names none (`preserveNoticeIdentity`)
+    const evented = ops.some(
+      (op) =>
+        (op.op === 'assignPosition' || op.op === 'assignBye') &&
+        op.structureId === structureId &&
+        !(op.op === 'assignBye' && op.announcesEvent === false),
+    );
+    const noticeEvent = evented ? event : undefined;
+    if (structure) modifyPositionAssignmentsNotice({ drawDefinition, tournamentId, structure, event: noticeEvent });
   }
   // a winner's route returns the context `directParticipants` builds, a final's included, which carries something only
   // for an exit (S5): empty

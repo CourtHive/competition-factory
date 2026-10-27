@@ -139,6 +139,11 @@ export type OutcomeOp =
       drawPosition: number;
       /** the marker `assignDrawPositionBye` writes for a propagation placement, so a withdrawal can recognise it */
       byeFromPropagation: true;
+      /**
+       * false where v1 announces the structure's assignments with no event: a seat a produced exit leaves unfillable
+       * (S5). The notice keeps an event an earlier placement in the same structure announced (`preserveNoticeIdentity`)
+       */
+      announcesEvent?: false;
     }
   | {
       op: 'setMatchUpBye';
