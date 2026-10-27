@@ -11,10 +11,13 @@ import type { OutcomeOp } from './ops';
 import {
   AWAITING_RESULT,
   COMPLETED,
+  DEFAULTED,
   INCOMPLETE,
   IN_PROGRESS,
+  RETIRED,
   SUSPENDED,
   TO_BE_PLAYED,
+  WALKOVER,
 } from '@Constants/matchUpStatusConstants';
 
 /**
@@ -60,6 +63,8 @@ export type OutcomePlan =
 const REMOVE_DIRECTED: Route = 'remove-directed';
 const LOCAL_ROUTES = new Set<Route>(['clear', 'clear-score', REMOVE_DIRECTED, 'only-score']);
 const LOCAL_STATUSES = new Set<string | undefined>([IN_PROGRESS, SUSPENDED, AWAITING_RESULT, INCOMPLETE, TO_BE_PLAYED]);
+const SINGLE_EXITS = new Set<string | undefined>([WALKOVER, DEFAULTED, RETIRED]);
+const DIRECTED_STATUSES = new Set<string | undefined>([COMPLETED, ...SINGLE_EXITS]);
 
 function localReason({ route, write }: { route?: Route; write?: MatchUpWrite }): AbstainReason | undefined {
   if (!route || !write || !LOCAL_ROUTES.has(route)) return 'route';
@@ -280,7 +285,8 @@ function directionReason(args: {
 }): AbstainReason | undefined {
   const { view, route, write, direction } = args;
   const { targets } = view;
-  if (route !== 'winner' || !write || write.matchUpStatus !== COMPLETED || !write.winningSide) return 'route';
+  // a single exit reaches here only as `exitReason` admits it: directed as a played result
+  if (route !== 'winner' || !write || !DIRECTED_STATUSES.has(write.matchUpStatus) || !write.winningSide) return 'route';
   // a final: the winner has nowhere to go (no winner target or winner link, so no winner direction); only a loser
   // link may take the loser
   const final = !targets.winner && !targets.winnerLink && !!direction && !direction.winner;
@@ -354,6 +360,36 @@ function groupTally(
   ];
 }
 
+/**
+ * S5: an exit is planned only as a single WALKOVER, DEFAULTED or RETIRED entered with a winner on a matchUp that holds
+ * no result, whose loser carries nothing on: `propagateExitStatus` off, or on with nothing to carry (no loser link, or a
+ * retirement the policy does not propagate). v1 then directs it as a played result (`directParticipants`): the winner
+ * goes on, the loser crosses their link plainly, and the arrival records no provenance in a target outside the exit
+ * cascade (`assignMatchUpDrawPosition`'s `participatesInExitCascade` gate). The direction's own checks follow
+ * (`directionReason`). A DEFAULTED under a scoring policy's `incompleteAssignmentsOnDefault` writes `processCodes`
+ * (`modifyMatchUpScore`), not an op. Anything else with an exit before or after is v1's.
+ */
+function exitReason(args: {
+  request: OutcomeRequest;
+  view: OutcomeView;
+  route?: Route;
+  write?: MatchUpWrite;
+  direction?: DirectionPlan;
+}): AbstainReason | undefined {
+  const { request, view, route, write, direction } = args;
+  const { existing } = view;
+  if (!isAnyExit(request.matchUpStatus) && !isAnyExit(existing.matchUpStatus) && !isAnyExit(write?.matchUpStatus))
+    return undefined;
+  if (route !== 'winner' || !write?.winningSide || !SINGLE_EXITS.has(write.matchUpStatus)) return 'exit';
+  if (request.matchUpStatus !== write.matchUpStatus) return 'exit';
+  if (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide) return 'exit';
+  if (write.matchUpStatus === DEFAULTED && view.draw.defaultProcessCodes) return 'exit';
+  const loser = direction?.loser;
+  if (direction?.produced || direction?.converged || direction?.decider) return 'exit';
+  if (loser?.exit || loser?.converged || loser?.carriedPast || loser?.withdrawn) return 'exit';
+  return undefined;
+}
+
 /** the first reason this call is not S1's, or undefined when it is */
 function abstainReason(args: {
   request: OutcomeRequest;
@@ -370,8 +406,8 @@ function abstainReason(args: {
   if (request.carries?.notes) return 'notes';
   if (request.matchUpStatusCodes?.length) return 'status-codes';
   if (view.draw.perMatchUpCompetition && (request.winningSide || write?.winningSide)) return 'competition';
-  if (isAnyExit(request.matchUpStatus) || isAnyExit(view.existing.matchUpStatus) || isAnyExit(write?.matchUpStatus))
-    return 'exit';
+  const exit = exitReason(args);
+  if (exit) return exit;
   // S4: a score changed beneath an active downstream keeps its winner and re-directs nothing (`apply-values`)
   const sameWinner =
     args.route === 'apply-values' && !!write?.winningSide && write.winningSide === view.existing.winningSide;

@@ -1,5 +1,6 @@
 import { generateOutcomeFromScoreString } from '@Assemblies/generators/mocks/generateOutcomeFromScoreString';
 import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import { POLICY_SCORING_DEFAULT } from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
@@ -7,8 +8,8 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { setClock } from '@Tools/clock';
 
 // constants
+import { COMPLETED, DEFAULTED, RETIRED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
-import { COMPLETED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import {
   AD_HOC,
@@ -60,13 +61,23 @@ const won = (winningSide: 1 | 2) => generateOutcomeFromScoreString({ scoreString
 const cleared = { matchUpStatus: TO_BE_PLAYED, score: { scoreStringSide1: '', scoreStringSide2: '' } };
 const walkover = (winningSide: 1 | 2) =>
   generateOutcomeFromScoreString({ matchUpStatus: WALKOVER, winningSide }).outcome;
+const exited = (matchUpStatus: string, winningSide: 1 | 2) =>
+  generateOutcomeFromScoreString({ matchUpStatus, winningSide }).outcome;
+const retired = (winningSide: 1 | 2) =>
+  generateOutcomeFromScoreString({ scoreString: '6-1 2-0', matchUpStatus: RETIRED, winningSide }).outcome;
 
 // a round robin's matchUps have no roundPosition: `nth` picks the nth of the round in the structure instead
 type Target = { structureName?: string; roundNumber: number; roundPosition?: number; nth?: number };
 // `params`: further setMatchUpStatus arguments (a swap's `allowChangePropagation`)
 type Step = { target: Target; outcome: Record<string, unknown>; params?: Record<string, unknown> };
-// `setup`: steps played under v1 before the comparison starts, for a state the owned steps need but do not own
-type Scenario = { drawProfile: Record<string, unknown>; steps: Step[]; setup?: Step[] };
+// `setup`: steps played under v1 before the comparison starts, for a state the owned steps need but do not own;
+// `policyDefinitions`: attached to the tournament before the setup
+type Scenario = {
+  drawProfile: Record<string, unknown>;
+  steps: Step[];
+  setup?: Step[];
+  policyDefinitions?: Record<string, unknown>;
+};
 
 const R1 = (roundPosition: number, structureName?: string): Target => ({
   roundNumber: 1,
@@ -424,6 +435,39 @@ const SCENARIOS: [string, Scenario][] = [
     'DOUBLE_ELIMINATION: a Main first-round result sends the winner on and the loser into the Backdraw',
     { drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION }, steps: [{ target: R1(1, 'Main'), outcome: won(1) }] },
   ],
+  [
+    'SINGLE_ELIMINATION (S5): a first-round walkover sends its winner on, as a played result would',
+    { drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION }, steps: [{ target: R1(1), outcome: walkover(2) }] },
+  ],
+  [
+    'SINGLE_ELIMINATION (S5): a default into a round 2 the other winner already stands in',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(2), outcome: won(1) }],
+      steps: [{ target: R1(1), outcome: exited(DEFAULTED, 1) }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION (S5): under propagateExitStatus a walkover with no loser link carries nothing',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      steps: [{ target: R1(1), outcome: walkover(1), params: { propagateExitStatus: true } }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S5): a default with propagation off sends its loser plainly into the consolation',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      steps: [{ target: R1(1, 'Main'), outcome: exited(DEFAULTED, 2) }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S5): a retirement under propagateExitStatus, which carries no retirement, is directed as played',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      steps: [{ target: R1(1, 'Main'), outcome: retired(1), params: { propagateExitStatus: true } }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
@@ -448,7 +492,7 @@ function findTarget(target: Target): string {
 }
 
 /** the steps from a fresh record, every topic subscribed and the clock fixed */
-function play(mode: OutcomePipelineMode, { drawProfile, steps, setup = [] }: Scenario) {
+function play(mode: OutcomePipelineMode, { drawProfile, steps, setup = [], policyDefinitions }: Scenario) {
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
   setClock('2026-10-25T00:00:00.000Z');
   setSubscriptions({ subscriptions: {} });
@@ -457,6 +501,7 @@ function play(mode: OutcomePipelineMode, { drawProfile, steps, setup = [] }: Sce
     nonRandom: 1,
     setState: true,
   });
+  if (policyDefinitions) tournamentEngine.attachPolicies({ policyDefinitions });
   for (const { target, outcome } of setup) {
     const result = tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId: findTarget(target), outcome });
     if (!result.success) throw new Error(`setup step failed: ${JSON.stringify(target)}`);
@@ -516,5 +561,20 @@ describe('under v2, a FIRST_MATCHUP reservation is v2s', () => {
     expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
     expect(v2.notices).toEqual(v1.notices);
+  });
+});
+
+describe('under v2, an exit v2 does not plan is v1s, whole', () => {
+  it('a default under a scoring policy naming incompleteAssignmentsOnDefault: v1 may write processCodes', () => {
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      policyDefinitions: POLICY_SCORING_DEFAULT,
+      steps: [{ target: R1(1), outcome: exited(DEFAULTED, 1) }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v2.v1Writes).toEqual(1);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
   });
 });

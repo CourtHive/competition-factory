@@ -567,6 +567,19 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   structure from a downstream one (an origin, whose re-entries v1 exchanges by origin positions); a
   winner link back into it (`DOUBLE_ELIMINATION`'s Backdraw champion re-entering the Main final on
   their own position) is covered by the path.
+  The first **exits** are owned too (S5). A single `WALKOVER`, `DEFAULTED` or `RETIRED` entered with a
+  winner on a matchUp holding no result, whose loser carries nothing on, is directed by v1 as a played
+  result (`directParticipants`), so v2 plans it as a first direction with the exit's status, score and
+  codes on the matchUp. Nothing is carried when `propagateExitStatus` is off, or on with no loser link,
+  or for a retirement the policy does not propagate (`propagateRetirementAsExit`): `directLoser` then
+  places the loser plainly and sets nothing for `propagateExitFrom`, and an arrival records no
+  provenance in a target outside the exit cascade (`assignMatchUpDrawPosition`'s
+  `participatesInExitCascade` gate). The settle passes are asked as they are for a played result; only an
+  exit v1 propagates (a double exit, or a single exit carried across a loser link) still puts every pass
+  in reach. A `DEFAULTED` under a scoring policy naming `processCodes.incompleteAssignmentsOnDefault`
+  stays v1's: v1 may write those codes onto the matchUp (`modifyMatchUpScore`), which is not an op. A
+  carried exit, a double exit, a correction to or from an exit, and an exit whose target holds a BYE,
+  an exit or a result stay v1's (`exit`, `cascade`).
 - **`differential`**: v2 plans the whole call before v1 runs, then checks v1's result against it,
   and a disagreement throws `OutcomePipelineDivergence` naming the matchUp and both answers. The
   plan covers the refusal, the route, the write on the matchUp, the winner's direction, the
@@ -656,7 +669,7 @@ the slices that follow:
 | `schedule`     | carries a schedule                                                                                                            | a later slice (§ 3.5.8 of the executor plan)    |
 | `notes`        | carries notes                                                                                                                 | a later slice                                   |
 | `status-codes` | carries the client's positional status codes, split into side codes at the write                                              | S2                                              |
-| `exit`         | has an exit status before or after                                                                                            | S5                                              |
+| `exit`         | has an exit status before or after, other than a single exit entered with a winner on a clean matchUp that carries nothing on | S5                                              |
 | `winner`       | takes away or changes a winner already stored, so what it directed is taken back                                              | S4                                              |
 | `loser`        | has a loser link, so the loser goes somewhere                                                                                 | S3                                              |
 | `link`         | sends its winner into another structure                                                                                       | S3                                              |
