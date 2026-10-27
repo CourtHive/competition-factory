@@ -721,6 +721,27 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'COMPASS (S5): a double walkover in a 16 draw: its BYEs go on West to South to Southeast, and North to Northwest',
+    {
+      drawProfile: { drawSize: 16, drawType: COMPASS },
+      steps: [{ target: R1(1, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'OLYMPIC (S5): a double default in a 16 draw, each BYE sending the position opposite on and a BYE a level down',
+    {
+      drawProfile: { drawSize: 16, drawType: OLYMPIC },
+      steps: [{ target: R1(3, 'East'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
+  [
+    'CURTIS_CONSOLATION (S5): a double walkover in a 32 draw',
+    {
+      drawProfile: { drawSize: 32, drawType: CURTIS_CONSOLATION },
+      steps: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
     'FEED_IN_CHAMPIONSHIP (S5, doubleExitPropagateBye off): a double default produces a default in the consolation',
     {
       drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },

@@ -427,6 +427,30 @@ function winnerLoserSeat(
   };
 }
 
+/**
+ * A double exit's call (S5): the levels a BYE it places goes on to across loser links, from the loser matchUp (its own
+ * seat's, or under `doubleExitPropagateBye: false` the produced exit's there) and from the matchUp holding the seat its
+ * produced exit leaves unfillable. A BYE matchUp's loser is the BYE, so v1 places a BYE on its loser seat too
+ * (`advanceDrawPosition`), level by level, walked as a carried exit's levels are (`carryLevels`, bounded alike)
+ */
+function byeLevels(
+  draw: DrawContext,
+  matchUpsMap: MatchUpsMap,
+  request: OutcomeRequest,
+  targetData?: PositionTargetsResult,
+): OutcomeView['targets']['byeLevels'] {
+  if (!isDoubleExit(request.matchUpStatus)) return undefined;
+  const loserMatchUp = targetData?.targetMatchUps?.loserMatchUp;
+  const winnerMatchUpId = targetData?.targetMatchUps?.winnerMatchUp?.matchUpId;
+  const unfillable = winnerMatchUpId
+    ? positionTargets({ ...draw, matchUpId: winnerMatchUpId })?.targetMatchUps?.loserMatchUp
+    : undefined;
+  return {
+    own: loserMatchUp?.loserMatchUpId ? carryLevels(draw, matchUpsMap, loserMatchUp.matchUpId) : undefined,
+    unfillable: unfillable?.loserMatchUpId ? carryLevels(draw, matchUpsMap, unfillable.matchUpId) : undefined,
+  };
+}
+
 /** a call that may carry an exit across a loser link (`propagateExitStatus`, an exit status, a loser matchUp) */
 function carriesOn(request: OutcomeRequest, targetData?: PositionTargetsResult): boolean {
   return (
@@ -1365,6 +1389,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         draw,
       ),
       winnerLoserSeat: winnerLoserSeat(draw, request, targetData?.targetMatchUps?.winnerMatchUp?.matchUpId),
+      byeLevels: byeLevels(draw, matchUpsMap, request, targetData),
       carryLevels: carriesOn(request, targetData)
         ? carryLevels(draw, matchUpsMap, carryLanding(drawDefinition, targetData, draw))
         : undefined,
