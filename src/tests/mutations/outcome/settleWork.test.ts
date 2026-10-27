@@ -8,7 +8,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 
 // constants and types
-import { COMPLETED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { COMPLETED, DEFAULTED, DOUBLE_WALKOVER, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { OutcomeOp } from '@Mutate/matchUps/outcome/ops';
 
 /**
@@ -34,14 +34,23 @@ function firstRound({ plant }: { plant?: (record: any) => void } = {}) {
   const first = inContextDrawMatchUps.find((matchUp) => matchUp.roundNumber === 1 && matchUp.roundPosition === 1);
   const next = inContextDrawMatchUps.find((matchUp) => matchUp.matchUpId === first.winnerMatchUpId);
   const winnerPosition = first.sides.find((side: any) => side.sideNumber === 1).drawPosition;
-  const predict = (matchUpStatus: any) => {
+  type Flags = { propagateExitStatus?: boolean; propagateRetirementAsExit?: boolean; loserLinked?: boolean };
+  const predict = (matchUpStatus: any, flags: Flags = {}) => {
     const ops: OutcomeOp[] = [
       { op: 'setMatchUpResult', matchUpId: first.matchUpId, matchUpStatus, winningSide: 1 },
       { op: 'setMatchUpDrawPositions', matchUpId: next.matchUpId, drawPositions: [winnerPosition] },
     ];
     const working = createWorkingView({ inContextDrawMatchUps, tournamentRecord, drawDefinition, matchUpsMap, event });
     expect(working.apply(ops).error).toBeUndefined();
-    return predictSettleWork({ inContextDrawMatchUps, tournamentRecord, drawDefinition, working, event, ops });
+    return predictSettleWork({
+      inContextDrawMatchUps,
+      tournamentRecord,
+      drawDefinition,
+      working,
+      event,
+      ops,
+      ...flags,
+    });
   };
   return { predict, inContextDrawMatchUps };
 }
@@ -60,6 +69,19 @@ it('sees leftover state the write did not cause: a stale scoredTime on an unscor
   expect(predict(COMPLETED)).toEqual(['reconcileScoredTimes']);
 });
 
-it('puts every pass in reach of an exit the call writes, which is propagated', () => {
-  expect(firstRound().predict(WALKOVER).length).toEqual(12);
+it('puts every pass in reach of an exit the call propagates: a double exit, or a single exit carried across a link', () => {
+  const { predict } = firstRound();
+  expect(predict(DOUBLE_WALKOVER).length).toEqual(12);
+  expect(predict(WALKOVER, { propagateExitStatus: true, loserLinked: true }).length).toEqual(12);
+  expect(
+    predict(RETIRED, { propagateExitStatus: true, propagateRetirementAsExit: true, loserLinked: true }).length,
+  ).toEqual(12);
+});
+
+it('asks each pass of a single exit v1 directs as a played result: nothing carried, so nothing more in reach', () => {
+  const { predict } = firstRound();
+  expect(predict(WALKOVER)).toEqual([]);
+  expect(predict(DEFAULTED, { propagateExitStatus: true })).toEqual([]);
+  expect(predict(WALKOVER, { loserLinked: true })).toEqual([]);
+  expect(predict(RETIRED, { propagateExitStatus: true, loserLinked: true })).toEqual([]);
 });

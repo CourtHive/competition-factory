@@ -275,6 +275,11 @@ export type OutcomeView = {
     combinedPointRoundRobin?: boolean;
     /** a competition policy processed per matchUp: v1 updates ratings on a result (`processCompetitionMatchUp`) */
     perMatchUpCompetition?: boolean;
+    /**
+     * the scoring policy names `processCodes.incompleteAssignmentsOnDefault`: v1 writes them onto a DEFAULTED matchUp
+     * missing a participant (`modifyMatchUpScore`'s `applyDefaultedProcessCodes`), not an op
+     */
+    defaultProcessCodes?: boolean;
     /** v1's score write updates a tally here (`updateTallyIfNeeded`): a round-robin container, ad hoc, or lucky */
     tallied: boolean;
     /** the draw stores its winner and loser edges; v1 writes them first on one that does not (edge repair) */

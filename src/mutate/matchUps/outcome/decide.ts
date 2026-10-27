@@ -746,7 +746,9 @@ function workingViewAfter({
   if (applied.error) return { error: applied.error };
   // S2's has-work predicates, recorded for the census to set against v1's per-pass writes (nothing outside telemetry)
   const settle = predictSettleWork({
+    propagateRetirementAsExit: args.request.flags.propagateRetirementAsExit,
     propagateExitStatus: args.request.flags.propagateExitStatus,
+    loserLinked: !!view.targets.loserLink,
     inContextDrawMatchUps: view.inContextDrawMatchUps,
     tournamentRecord: args.tournamentRecord,
     drawDefinition: args.drawDefinition,

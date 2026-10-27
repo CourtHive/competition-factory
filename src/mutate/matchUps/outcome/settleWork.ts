@@ -13,7 +13,8 @@ import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 
 // constants and types
-import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import type { DrawDefinition, Event, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
+import { RETIRED } from '@Constants/matchUpStatusConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { WorkingView } from './overlay';
 import type { OutcomeOp } from './ops';
@@ -54,7 +55,10 @@ type SettleWorkArgs = {
   drawDefinition: DrawDefinition;
   /** the call's one hydration of that draw */
   inContextDrawMatchUps: HydratedMatchUp[];
+  propagateRetirementAsExit?: boolean;
   propagateExitStatus?: boolean;
+  /** the call's matchUp has a loser link: the only way v1 propagates a single exit (`directLoser`) */
+  loserLinked?: boolean;
   tournamentRecord?: Tournament;
   working: WorkingView;
   ops: OutcomeOp[];
@@ -112,7 +116,20 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
     reconcileScoredTimes: () =>
       map.drawMatchUps.some((matchUp) => !!matchUp.schedule?.scoredTime && !matchUpIsScored(matchUp)),
   };
-  // an exit the call writes is propagated (`propagateExitFrom`), which no local call does: every pass is in reach
-  if (results.some((op) => isExit(op.matchUpStatus))) return Object.keys(work) as SettleSite[];
+  // an exit the call propagates (`propagateExitFrom`), which no local call does: every pass is in reach
+  if (results.some((op) => propagatesExit(op.matchUpStatus, args))) return Object.keys(work) as SettleSite[];
   return (Object.keys(work) as SettleSite[]).filter((site) => work[site]());
+}
+
+/**
+ * Whether v1 propagates the exit a call writes: a double exit always produces downstream; a single exit is carried only
+ * across a loser link, and only when `propagateExitStatus` is on and the status is one that travels (`directLoser`'s
+ * `validExitToPropagate`: WALKOVER and DEFAULTED, and RETIRED under `propagateRetirementAsExit`). Any other single exit
+ * is directed as a played result and settles as one.
+ */
+function propagatesExit(matchUpStatus: MatchUpStatusUnion, args: SettleWorkArgs): boolean {
+  if (isDoubleExit(matchUpStatus)) return true;
+  if (!isExit(matchUpStatus)) return false;
+  if (!args.propagateExitStatus || !args.loserLinked) return false;
+  return matchUpStatus !== RETIRED || !!args.propagateRetirementAsExit;
 }

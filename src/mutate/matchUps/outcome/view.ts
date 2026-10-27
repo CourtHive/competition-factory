@@ -1348,6 +1348,9 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       perMatchUpCompetition:
         getCompetitionPolicy({ tournamentRecord, drawDefinition, event }).competitionPolicy?.processingGranularity ===
         'PER_MATCHUP',
+      defaultProcessCodes: Array.isArray(
+        appliedPolicies?.[POLICY_TYPE_SCORING]?.processCodes?.incompleteAssignmentsOnDefault,
+      ),
       teamRoundRobin: !!(matchUp.tieMatchUps && !matchUp.roundPosition && inContextMatchUp?.containerStructureId),
       includesBye: !!matchUp.drawPositions?.some((position) =>
         allAssignments.some((assignment) => assignment.bye && assignment.drawPosition === position),
