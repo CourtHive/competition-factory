@@ -12,6 +12,9 @@ export const MOCKS_SCENARIOS: [string, Record<string, unknown>][] = [
     'seeded, with byes, completed',
     { drawProfiles: [{ drawSize: 16, participantsCount: 13, seedsCount: 4 }], completeAllMatchUps: true },
   ],
+  // generation's own writes, before any result: seeding (scale items) and flights
+  ['seeded, with byes', { drawProfiles: [{ drawSize: 16, participantsCount: 13, seedsCount: 4 }] }],
+  ['flights, unplayed', { eventProfiles: [{ drawProfiles: [{ drawSize: 8 }, { drawSize: 8 }] }] }],
   [
     'defined outcomes',
     {
