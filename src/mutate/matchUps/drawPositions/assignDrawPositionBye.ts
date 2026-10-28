@@ -111,6 +111,8 @@ type AssignDrawPositionByeArgs = {
   drawDefinition: DrawDefinition;
   isPositionAction?: boolean;
   matchUpsMap?: MatchUpsMap;
+  /** the draw's matchUps in context, built once by a caller placing several BYEs (positionByes); else built here */
+  inContextDrawMatchUps?: HydratedMatchUp[];
   structure?: Structure;
   drawPosition: number;
   structureId?: string;
@@ -131,6 +133,7 @@ export function assignDrawPositionBye({
   structureId,
   structure,
   event,
+  ...params
 }: AssignDrawPositionByeArgs) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
   if (!structure) ({ structure } = findStructure({ drawDefinition, structureId }));
@@ -238,11 +241,13 @@ export function assignDrawPositionBye({
 
   // ########## gather reusable data for performance optimization ###########
   const inContextDrawMatchUps =
+    params.inContextDrawMatchUps ??
     getAllDrawMatchUps({
       inContext: true,
       drawDefinition,
       matchUpsMap,
-    }).matchUps ?? [];
+    }).matchUps ??
+    [];
 
   const matchUpFilters = { isCollectionMatchUp: false };
   const { matchUps } = getAllStructureMatchUps({
