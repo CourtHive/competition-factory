@@ -7,7 +7,6 @@ import { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
 import { normalizeDiscipline } from '@Helpers/coercedDiscipline';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { normalizeGender } from '@Helpers/coercedGender';
-import { getTopics } from '@Global/state/globalState';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { UUID } from '@Tools/UUID';
 
@@ -17,7 +16,6 @@ import { TOURNAMENT_RECORD, EVENT as EVENT_ATTR } from '@Constants/attributeCons
 import { SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { Event, Tournament } from '@Types/tournamentTypes';
 import { tieFormats } from '@Fixtures/scoring/tieFormats';
-import { ADD_MATCHUPS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type AddEventArgs = {
@@ -126,9 +124,10 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
   if (!suppressNotifications) {
     const tournamentId = tournamentRecord?.tournamentId;
     const eventId = newEvent.eventId;
-    const { topics } = getTopics();
-    // an event added before its draws has no matchUps to announce: no empty notice (the draws announce theirs)
-    const matchUps = topics.includes(ADD_MATCHUPS) ? (allEventMatchUps({ event: newEvent }).matchUps ?? []) : [];
+    // announced (and so stamped) whether or not anything subscribes, as addDrawDefinition announces a draw's
+    // matchUps: gated on the subscription, the stored matchUps' updatedAt depended on who was listening. An event
+    // added before its draws has none: no empty notice (the draws announce theirs)
+    const matchUps = allEventMatchUps({ event: newEvent }).matchUps ?? [];
     if (matchUps.length) addMatchUpsNotice({ tournamentId, eventId, matchUps });
 
     const { drawDefinitions, ...rest } = newEvent;

@@ -119,8 +119,8 @@ drawDefinition) is the object stored, and a write to it after the call changes t
   from the end, else minted), in order. TEAM with only a `tieFormatName`: the named format is stored as `tieFormat` and
   `tieFormatName` stays; collection ids are minted, or `"<eventId>-COL-<n>"` when the tournament or event is a mock.
 - `eventId`, when absent, is minted (after any collection ids).
-- No timestamps on the event. Unless `suppressNotifications`, the event's draws (none, for an event added before its
-  draws) are announced and stamped (§1.1).
+- No timestamps on the event. Unless `suppressNotifications`, the event's draws and their matchUps (none, for an event
+  added before its draws) are announced and stamped (§1.1), whether or not anything subscribes.
 
 **Returns** `{ success, event }` (the stored event).
 
@@ -192,7 +192,7 @@ drawDefinition) is the object stored, and a write to it after the call changes t
 6. A draw without its stored `winnerMatchUpId` / `loserMatchUpId` edges has them written (a generated draw has them).
 7. A new draw is appended to the event's `drawDefinitions` (the object passed in). Unless `suppressNotifications`, every
    matchUp in it is stamped, then the draw and its top-level structures (§1.1). A replacement takes the old draw's
-   place.
+   place, with or without `suppressNotifications`.
 
 **Returns** `{ success, modifiedEventEntryStatusCount }`.
 
@@ -204,25 +204,25 @@ drawDefinition) is the object stored, and a write to it after the call changes t
 
 ## 7. Open questions
 
-1. **OPEN (defect).** `addDrawDefinition` replacing a draw with `suppressNotifications` never stores the new draw: the
-   swap sits inside the notification guard, while the flight and `drawOrder` writes happen and the call succeeds.
-2. **OPEN (defect).** `addEvent` stamps matchUps only when something subscribes to `addMatchUps`, so the stored bytes
-   depend on subscriptions. `addDrawDefinition` stamps them regardless.
-3. **OPEN.** `suppressNotifications` changes the stored bytes: no `updatedAt` stamps, no factory stamp.
-4. **OPEN.** `addParticipants` keeps the participants appended before a refusal, and a refusal raises no notice, so
+Resolved 2026-10-30: a replacement with `suppressNotifications` now stores the new draw (it sat inside the
+notification guard); `addEvent` stamps an event's matchUps whether or not anything subscribes (it stamped them only for
+a subscriber, so the stored bytes depended on who was listening).
+
+1. **OPEN.** `suppressNotifications` changes the stored bytes: no `updatedAt` stamps, no factory stamp.
+2. **OPEN.** `addParticipants` keeps the participants appended before a refusal, and a refusal raises no notice, so
    they are not factory-stamped; the other three are all or nothing.
-5. **OPEN.** Empty `participants`, `events`, `entries` and `drawDefinitions` arrays are created even by refused or
+3. **OPEN.** Empty `participants`, `events`, `entries` and `drawDefinitions` arrays are created even by refused or
    empty calls.
-6. **OPEN.** `addEventEntries` tests `isUngrouped(entryStage)` (a stage against statuses), so the draw path always
+4. **OPEN.** `addEventEntries` tests `isUngrouped(entryStage)` (a stage against statuses), so the draw path always
    runs when a `drawId` is given.
-7. **OPEN.** `addEventEntries` with a `drawId`: a participant already entered in the draw is entered again under the
+5. **OPEN.** `addEventEntries` with a `drawId`: a participant already entered in the draw is entered again under the
    default `suppressDuplicateEntries`; the flight path does not.
-8. **OPEN.** `addEvent` mock collection ids use the caller's `eventId`, so an event without one gets
+6. **OPEN.** `addEvent` mock collection ids use the caller's `eventId`, so an event without one gets
    `undefined-COL-n`; `uuids` is not used for a `tieFormatName`.
-9. **OPEN.** `addEvent` refuses `tieFormatName`s that have templates but no fixture (`INTENNSE_2026`, `STANDARD`).
-10. **OPEN.** A new flight's `drawEntries` is the draw's `entries` array itself, so later writes to either change both.
-11. **OPEN.** A string `flightNumber` is never matched against numeric `drawOrder`s and becomes a string `drawOrder`.
-12. **OPEN.** The factory stamp goes to every loaded tournament, not only the one written.
+7. **OPEN.** `addEvent` refuses `tieFormatName`s that have templates but no fixture (`INTENNSE_2026`, `STANDARD`).
+8. **OPEN.** A new flight's `drawEntries` is the draw's `entries` array itself, so later writes to either change both.
+9. **OPEN.** A string `flightNumber` is never matched against numeric `drawOrder`s and becomes a string `drawOrder`.
+10. **OPEN.** The factory stamp goes to every loaded tournament, not only the one written.
 
 ## Related
 

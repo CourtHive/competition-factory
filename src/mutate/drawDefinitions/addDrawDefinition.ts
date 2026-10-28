@@ -291,9 +291,13 @@ function replaceExistingDraw({
     if (incomingMatchUps?.length) {
       addMatchUpsNotice({ matchUps: incomingMatchUps, tournamentId, eventId });
     }
+  }
 
-    event.drawDefinitions = event.drawDefinitions.map((d) => (d.drawId === drawId ? drawDefinition : d));
+  // the replacement itself, whatever is announced: it sat inside the notification guard, so a replacement with
+  // suppressNotifications wrote the flight and drawOrder, kept the OLD draw, and reported success
+  event.drawDefinitions = event.drawDefinitions.map((d) => (d.drawId === drawId ? drawDefinition : d));
 
+  if (!suppressNotifications) {
     const structureIds = drawDefinition.structures?.map(({ structureId }) => structureId);
     modifyDrawNotice({ drawDefinition, tournamentId, structureIds, eventId });
     // the event's flightProfile (a first-class/extension index of draws) is mutated above,
