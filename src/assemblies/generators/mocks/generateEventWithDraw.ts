@@ -416,14 +416,15 @@ function processOutcomes({
     if (result.error) return result;
 
     if (drawType === ROUND_ROBIN_WITH_PLAYOFF) {
+      // the playoff takes this pass's options: a goal's pass never completes the whole playoff
       const rrResult = completeRoundRobinPlayoff({
+        completeAllMatchUps: p.completeAllMatchUps,
         completedCount: result.completedCount,
+        completionGoal: p.completionGoal,
         matchUpStatusProfile,
-        completeAllMatchUps,
         randomWinningSide,
         tournamentRecord,
         drawDefinition,
-        completionGoal,
         matchUpFormat,
         random,
         event,
@@ -452,8 +453,9 @@ function processOutcomes({
     if (outcomesResult?.error) return outcomesResult;
   }
 
-  // NOTE: do this last => complete any matchUps which have not already been completed
-  if (completeAllMatchUps) {
+  // NOTE: do this last => complete any matchUps which have not already been completed; a completionGoal wins over
+  // completeAllMatchUps: exactly that many are completed (CA 2026-10-29), as on the eventProfiles path
+  if (completeAllMatchUps && !completionGoal) {
     const completeResult = goComplete({ completeAllMatchUps });
     if (completeResult?.error) return completeResult;
   }
@@ -501,7 +503,7 @@ function completeRoundRobinPlayoff({
   return undefined;
 }
 
-function applyDefinedOutcomes({ tournamentRecord, drawDefinition, outcomes, event }) {
+export function applyDefinedOutcomes({ tournamentRecord, drawDefinition, outcomes, event }) {
   const { matchUps } = allDrawMatchUps({
     inContext: true,
     drawDefinition,
