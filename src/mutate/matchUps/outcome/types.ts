@@ -170,6 +170,8 @@ export type OutcomeView = {
       opponentBye: boolean;
       /** the seat is a BYE already (a FIRST_MATCHUP reservation placed it): a kept-out loser's BYE needs nothing */
       bye: boolean;
+      /** that BYE was placed by a propagation (`assignDrawPositionBye`'s marker), which an unwind may take back */
+      byeFromPropagation?: boolean;
       /** the matchUp's other seat holds somebody or a BYE: a BYE placed here would advance or meet them */
       opponentHeld: boolean;
       /** the participant the seat holds: a re-entered result finds its loser already there (S4) */
@@ -188,6 +190,24 @@ export type OutcomeView = {
      * fill (v1's `propagateUnfillableLoserBye`), with the matchUp holding it
      */
     winnerLoserSeat?: WinnerLoserSeat;
+    /**
+     * a stored double exit the call leaves (S6, `removeDoubleExit`): the call's matchUp and each matchUp on its winner path
+     * in its structure, to the final, with the seat each one's loser link feeds, which v1's unwind visits
+     */
+    unwindLoserSeats?: { matchUpId: string; loserSeat?: WinnerLoserSeat }[];
+    /**
+     * a double exit's call whose next matchUp holds an exit (S5): the loser seat of the matchUp after it, which a
+     * convergence's produced exit leaves unfillable, and the levels a BYE there goes on to
+     */
+    onwardLoserSeat?: WinnerLoserSeat & { levels?: { levels: CarryLevel[]; bounded: boolean } };
+    /**
+     * a double exit's call (S5): the loser-link levels beyond the loser matchUp (`own`) and beyond the matchUp holding the
+     * seat its produced exit leaves unfillable (`unfillable`), which a BYE placed there goes on to (`byeLevels`)
+     */
+    byeLevels?: {
+      own?: { levels: CarryLevel[]; bounded: boolean };
+      unfillable?: { levels: CarryLevel[]; bounded: boolean };
+    };
     /** a winner whose target holds a BYE goes on past it into this matchUp, by the winning side (planned, S3) */
     winnerThroughBye?: { 1?: ThroughBye; 2?: ThroughBye };
     /** the participants seeded in the source structure: a seeded loser placed across a link takes the seed with them */
@@ -409,7 +429,7 @@ export type WinnerLoserSeat = {
   structureId: string;
   drawPosition: number;
   linkCondition?: string;
-  seat?: { free: boolean; opponentBye: boolean; opponentHeld: boolean };
+  seat?: { free: boolean; opponentBye: boolean; opponentHeld: boolean; bye?: boolean; byeFromPropagation?: boolean };
   /** the positions the matchUp holding the seat already stands with */
   drawPositions: number[];
   matchUpStatus?: MatchUpStatusUnion;
@@ -430,4 +450,6 @@ export type CarryLevel = {
   hasResult: boolean;
   carriesExit: boolean;
   record?: { matchUpStatusCodes?: unknown[]; provenance: boolean };
+  /** a BYE opposite the seat: the matchUp beyond it the carrier goes on into, with the positions it holds after (RULE 1) */
+  through?: ThroughBye;
 };

@@ -8,7 +8,7 @@ import { expect, it } from 'vitest';
 // constants
 import { BYE } from '@Constants/matchUpStatusConstants';
 
-it('supports pro-scheduling', () => {
+it('the profile scheduler ignores scheduled BYEs', () => {
   const startDate = '2023-11-28';
   const endDate = addDays(startDate, 3);
 
@@ -71,7 +71,7 @@ it('supports pro-scheduling', () => {
   result = tournamentEngine.setSchedulingProfile({ schedulingProfile });
   expect(result.success).toEqual(true);
 
-  result = tournamentEngine.scheduleProfileRounds({ pro: true });
+  result = tournamentEngine.scheduleProfileRounds();
   expect(result.success).toEqual(true);
 
   const overlap = intersection(result.scheduledMatchUpIds[startDate], byeMatchUpIds).length;
@@ -81,12 +81,11 @@ it('supports pro-scheduling', () => {
     .allTournamentMatchUps({ matchUpFilters: { matchUpIds: byeMatchUpIds } })
     .matchUps.map(xa('schedule'));
 
-  // byes are ignored by pro-scheduling: none carry a real scheduledTime/venue/court in either
-  // writeMode (LEGACY hydrates an empty `{ milliseconds: 0, time: '00:00:00' }`, NATIVE leaves `{}`)
+  // a BYE is never placed, and its schedule is never cleared by the scheduler: an operator's placement on a seat that
+  // became a BYE is preserved (scheduling-pipeline.md § 4 step 1)
   expect(byeMatchUpSchedules.length).toEqual(4);
   byeMatchUpSchedules.forEach((schedule) => {
-    expect(schedule?.scheduledTime).toBeUndefined();
-    expect(schedule?.venueId).toBeUndefined();
-    expect(schedule?.courtId).toBeUndefined();
+    expect(schedule?.scheduledTime).toEqual('08:00');
+    expect(schedule?.venueId).toEqual(venueId);
   });
 });

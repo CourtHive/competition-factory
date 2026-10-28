@@ -16,6 +16,7 @@ import {
 } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 
 // constants
+import { INVALID_DATE } from '@Constants/errorConditionConstants';
 import { DOUBLES } from '@Constants/eventConstants';
 import { ERROR } from '@Constants/resultConstants';
 
@@ -50,13 +51,13 @@ legacyMode('can add schedule items', () => {
     expect(timeItems.length).toEqual(1);
 
     let scheduledTime = '2020-01-02T08:00';
-    // NOTE: the date will be stripped from the time since there is already a scheduledDate
+    // a date-time naming another day than the matchUp's scheduledDate is refused, never stored against it
     result = addMatchUpScheduledTime({
       drawDefinition,
       scheduledTime,
       matchUpId,
     });
-    expect(result.success).toEqual(true);
+    expect(result.error).toEqual(INVALID_DATE);
 
     scheduledTime = '2020-01-01T08:00';
     result = addMatchUpScheduledTime({

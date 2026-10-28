@@ -8,9 +8,9 @@ import {
 import { POLICY_SCHEDULING_DEFAULT } from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import { conflictsViewOf, overTheWire } from './kernel';
 import { setRandomSource } from '@Tools/prng';
 import { setClock } from '@Tools/clock';
-import { overTheWire } from './kernel';
 
 // constants and types
 import type { KernelCase } from './kernel';
@@ -19,7 +19,8 @@ import type { KernelCase } from './kernel';
  * The authored `kernel.scheduling.conflicts@1` cases: one small court grid per conflict the grid reports
  * (pro-scheduling.md, Conflict Types), each held to CLAIMS on the first issue each matchUp receives, then pinned whole
  * (`KERNEL_SCHEDULING_CASES=write` rewrites the file). The default scheduling policy times every matchUp: a best-of-3
- * standard set averages 90 minutes and recovers 60.
+ * standard set averages 90 minutes and recovers 60. Each source also gives a `kernel.scheduling.conflictsView@1` case:
+ * the same grid's records in, the view its conflicts are judged from out.
  */
 const DAY = '2026-03-02';
 const PARTICIPANT_WARNING = 'WARNING participantConflict';
@@ -92,6 +93,44 @@ function expectEqual(actual: unknown, expected: unknown, what: string) {
 }
 
 const twoEvents = () => tournament([{ drawSize: 2 }, { drawSize: 2 }]);
+
+/** the tournament's zone: its own `localTimeZone`, or the one zone its venue's address names */
+function zone(timeZone: string, via: 'tournament' | 'venue') {
+  const { tournamentRecord } = tournamentEngine.getTournament();
+  if (via === 'tournament') tournamentRecord.localTimeZone = timeZone;
+  else tournamentRecord.venues[0].addresses = [{ timeZone }];
+  tournamentEngine.setState(tournamentRecord);
+}
+
+/** the first event's matchUp called to court at an instant */
+function call(matchUpId: string, calledAt: string) {
+  const { tournamentRecord } = tournamentEngine.getTournament();
+  const result: any = tournamentEngine.addMatchUpScheduleItems({
+    drawId: tournamentRecord.events[0].drawDefinitions[0].drawId,
+    schedule: { calledAt },
+    matchUpId,
+  });
+  if (!result.success) throw new Error(`calledAt: ${JSON.stringify(result.error)}`);
+}
+
+/**
+ * Two events whose one matchUp shares its players: the first at 10:00 on court 1, called at 10:05 and scored at 11:40
+ * (the venue's wall clock, as instants in the zone), the second at 12:35 on court 2. The scored instant is the earlier
+ * matchUp's finish only when the zone places it: it recovers at 12:40, short of the second's start.
+ */
+function scoredInAZone(ids: () => Labels, timeZone: string, via: 'tournament' | 'venue', instants: string[]) {
+  const [calledAt, scoredAt] = instants;
+  twoEvents();
+  zone(timeZone, via);
+  const labelled = ids();
+  place(
+    { 'E0.R1.1': { court: 1, order: 1, time: '10:00' }, 'E1.R1.1': { court: 2, order: 2, time: '12:35' } },
+    labelled,
+  );
+  call(labelled['E0.R1.1'], calledAt);
+  setClock(scoredAt);
+  score(labelled['E0.R1.1']);
+}
 
 /** the first event's matchUp played and won 6-1 6-1 */
 function score(matchUpId: string) {
@@ -311,6 +350,25 @@ export const conflictsCaseSources: Source[] = [
     claims: (issues, ids) => expectEqual(issues[ids['E1.R1.1']], undefined, LATER),
   },
   {
+    caseId: 'scheduling.conflicts.a-zoned-scored-time-holds-the-recovery.v1',
+    note:
+      "New York (the tournament's zone), 10:00 called at 10:05 and scored at 11:40, the same players at 12:35: the " +
+      'scored instant read in the zone recovers them at 12:40, a WARNING. Without the zone the scored instant is not ' +
+      'read, and the start (10:00, 90 minutes, 60 to recover) clears 12:30.',
+    build: (ids) =>
+      scoredInAZone(ids, 'America/New_York', 'tournament', ['2026-03-02T15:05:00.000Z', '2026-03-02T16:40:00.000Z']),
+    claims: (issues, ids) => expectEqual(issues[ids['E1.R1.1']], PARTICIPANT_WARNING, LATER),
+  },
+  {
+    caseId: 'scheduling.conflicts.a-venue-zone-places-the-scored-time.v1',
+    note:
+      "Auckland (the venue address's zone, 13 hours ahead in March), the same day as the New York case: the scored " +
+      'instant 11:40 there recovers the players at 12:40, a WARNING on the 12:35 matchUp.',
+    build: (ids) =>
+      scoredInAZone(ids, 'Pacific/Auckland', 'venue', ['2026-03-01T21:05:00.000Z', '2026-03-01T22:40:00.000Z']),
+    claims: (issues, ids) => expectEqual(issues[ids['E1.R1.1']], PARTICIPANT_WARNING, LATER),
+  },
+  {
     caseId: 'scheduling.conflicts.deep-a-gap-beyond-adjacent-rows.v1',
     note:
       'Sixteen players, a first-round matchUp on row 1 and the final on row 3, deep: three rounds apart with one row ' +
@@ -341,16 +399,20 @@ export const conflictsCaseSources: Source[] = [
  * Each source built, checked and held to its claims; the case pins the whole result. Each is also asked the
  * closed-view property: the result from the view equals the result from the view written as JSON and read back.
  */
-export function authoredConflictsCases(): KernelCase[] {
+export function authoredConflictsCases(): { conflicts: KernelCase[]; views: KernelCase[] } {
   try {
-    return conflictsCaseSources.map(authoredCase);
+    const built = conflictsCaseSources.map(authoredCase);
+    return { conflicts: built.map(({ conflicts }) => conflicts), views: built.map(({ view }) => view) };
   } finally {
     setRandomSource();
     setClock();
   }
 }
 
-function authoredCase({ caseId, note, useDeepDependencies = false, build, claims }: Source): KernelCase {
+function authoredCase({ caseId, note, useDeepDependencies = false, build, claims }: Source): {
+  conflicts: KernelCase;
+  view: KernelCase;
+} {
   setRandomSource(20260302);
   setClock('2026-03-01T08:00:00.000Z');
   build(labels);
@@ -367,11 +429,30 @@ function authoredCase({ caseId, note, useDeepDependencies = false, build, claims
   const viaJson = checkConflicts(conflictsViewFromData(overTheWire(data)));
   if (JSON.stringify(viaJson) !== JSON.stringify(result)) throw new Error(`${caseId}: the result read back differs`);
 
+  // the view built from the records alone, as the operation builds it, is the view the conflicts were judged from
+  const records = overTheWire([tournamentRecord]);
+  const fromRecords = conflictsViewOf({ [tournamentRecord.tournamentId]: records[0] }, DAY, useDeepDependencies);
+  if (JSON.stringify(fromRecords) !== JSON.stringify(data))
+    throw new Error(`${caseId}: the view from the records differs`);
+
   return {
-    caseId,
-    operation: 'kernel.scheduling.conflicts@1',
-    input: { view: data },
-    expected: { kind: 'value', value: overTheWire(result) },
-    note,
+    conflicts: {
+      caseId,
+      operation: 'kernel.scheduling.conflicts@1',
+      input: { view: data },
+      expected: { kind: 'value', value: overTheWire(result) },
+      note,
+    },
+    view: {
+      caseId: caseId.replace('scheduling.conflicts.', 'scheduling.conflicts-view.'),
+      operation: 'kernel.scheduling.conflictsView@1',
+      input: {
+        tournamentRecords: records,
+        scheduledDate: DAY,
+        ...(useDeepDependencies ? { useDeepDependencies } : {}),
+      },
+      expected: { kind: 'value', value: data },
+      note,
+    },
   };
 }

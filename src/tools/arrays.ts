@@ -22,6 +22,31 @@ export function shuffleArray(arr, random?: () => number) {
     .map((a) => a[1]);
 }
 
+/**
+ * The first `count` items of `shuffleArray` over `length` items, the item at index i being `itemAt(i)`: the same random
+ * draws in the same order, so the stream stands where a full shuffle leaves it and the items are the ones it would put
+ * first. Only the items asked for are built and ordered (a stable sort orders equal keys by index, and so does this).
+ */
+export function shuffledPrefix<T>(
+  length: number,
+  count: number,
+  itemAt: (index: number) => T,
+  random?: () => number,
+): T[] {
+  const rng = random ?? randomSource();
+  const keys = new Float64Array(length);
+  for (let index = 0; index < length; index++) keys[index] = rng();
+  const take = Math.min(count, length);
+  if (take <= 0) return [];
+  const threshold = Float64Array.from(keys).sort()[take - 1];
+  const chosen: number[] = [];
+  for (let index = 0; index < length; index++) if (keys[index] < threshold) chosen.push(index);
+  for (let index = 0; index < length && chosen.length < take; index++)
+    if (keys[index] === threshold) chosen.push(index);
+  chosen.sort((a, b) => keys[a] - keys[b] || a - b);
+  return chosen.map(itemAt);
+}
+
 export function numericSortValue(v) {
   return isConvertableInteger(v) ? v : Infinity;
 }

@@ -11,10 +11,13 @@
 import { gridViewFromData, requiredGridViewKeys } from '@Mutate/matchUps/schedule/pipeline/gridViewCodec';
 import { dayMinutesToTimeString, extractTime, tidyTime, timeStringMinutes } from '@Tools/plainTime';
 import { addMinutesWithinDay } from '@Mutate/matchUps/schedule/scheduleMatchUps/timeWithinDay';
+import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import { buildSchedulingView } from '@Mutate/matchUps/schedule/pipeline/view';
 import { planGridDate } from '@Mutate/matchUps/schedule/pipeline/gridPlan';
 import {
+  buildConflictsView,
   checkConflicts,
+  conflictsViewData,
   conflictsViewFromData,
   requiredConflictsViewKeys,
 } from '@Mutate/matchUps/schedule/pipeline/gridConflicts';
@@ -179,6 +182,37 @@ function validateConflictsInput(input: Record<string, unknown>) {
   return viewProblem(input.view, requiredConflictsViewKeys());
 }
 
+/** a conflicts view's input: the records, as the scheduling view takes them, and the date */
+function validateConflictsViewInput(input: Record<string, unknown>) {
+  const records = input.tournamentRecords;
+  const isRecord = (record: any) => !!record && typeof record === 'object' && typeof record.tournamentId === 'string';
+  if (!Array.isArray(records) || !records.every(isRecord))
+    return 'tournamentRecords must be an array of records, each with a tournamentId';
+  if (typeof input.scheduledDate !== 'string') return 'scheduledDate must be a string';
+  if (input.useDeepDependencies !== undefined && typeof input.useDeepDependencies !== 'boolean')
+    return 'useDeepDependencies must be a boolean';
+  return undefined;
+}
+
+/**
+ * The conflicts view of one date's matchUps, as plain data: the date's matchUps in context, with the matchUps they lead
+ * to, and the view built from them and the records (`buildConflictsView`).
+ */
+export function conflictsViewOf(
+  tournamentRecords: { [tournamentId: string]: any },
+  scheduledDate: string,
+  useDeepDependencies: boolean,
+): unknown {
+  const matchUps =
+    allCompetitionMatchUps({
+      matchUpFilters: { scheduledDate },
+      nextMatchUps: true,
+      tournamentRecords,
+      inContext: true,
+    }).matchUps ?? [];
+  return overTheWire(conflictsViewData(buildConflictsView({ tournamentRecords, useDeepDependencies, matchUps })));
+}
+
 /** the clock's primitives (scheduling-pipeline.md § 3.8): a string in, a time, a number or a date out */
 const isText = (input: Record<string, unknown>, key: string) =>
   typeof input[key] === 'string' ? undefined : `${key} must be a string`;
@@ -315,6 +349,20 @@ export const kernelOperations: Readonly<Record<string, KernelOperation>> = Objec
     run: (input) => ({
       kind: 'value',
       value: overTheWire(checkConflicts(conflictsViewFromData(input.view as Record<string, unknown>))),
+    }),
+  },
+  // the court grid's conflicts view (pro-scheduling.md, Conflict Types): from the records, the view the conflicts are
+  // judged from for one date's matchUps, as the schedulers build it when they report a grid's conflicts
+  'kernel.scheduling.conflictsView@1': {
+    capability: 'scheduling',
+    validate: validateConflictsViewInput,
+    run: (input) => ({
+      kind: 'value',
+      value: conflictsViewOf(
+        Object.fromEntries((input.tournamentRecords as any[]).map((record) => [record.tournamentId, record])),
+        input.scheduledDate as string,
+        input.useDeepDependencies === true,
+      ),
     }),
   },
   'kernel.format.parse@1': {

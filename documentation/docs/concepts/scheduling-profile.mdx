@@ -674,12 +674,12 @@ tournamentEngine.scheduleProfileRounds({ periodLength: 30 });
 // Garman scheduling will respect policy limits
 ```
 
-### `pro: true` (deprecated)
+### `pro: true` (removed)
 
-**Deprecated since 7.15.0; removed at the next major.** `pro: true` selects an older court-and-time scheduler that
-gives each matchUp a court and a time in one pass, without Garman time slots. It is **not** grid scheduling: to place
-matchUps on court grid positions (`courtOrder`), use [`scheduleProfileGrid`](/docs/governors/schedule-governor#scheduleprofilegrid),
-which can run after `scheduleProfileRounds` has set dates and times. Omit `pro` to use the default scheduler.
+`pro: true` selected an older court-and-time scheduler, deprecated since 7.15.0 and removed on 2026-10-28. The flag is
+accepted and ignored until the next major: every call takes the profile scheduler. To place matchUps on court grid
+positions (`courtOrder`), use [`scheduleProfileGrid`](/docs/governors/schedule-governor#scheduleprofilegrid), which can
+run after `scheduleProfileRounds` has set dates and times.
 
 ## Related Documentation
 

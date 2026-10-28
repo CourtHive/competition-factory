@@ -1,14 +1,14 @@
 import { writeAssignmentResults } from '@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults';
+import { mergeSideExitProvenance, setSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
-import { mergeSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { exchangeMatchUpPositions } from '@Mutate/matchUps/drawPositions/swapWinnerLoser';
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { getCapturedStamps } from '@Global/state/globalState';
 import { nowIso } from '@Tools/clock';
 
 // constants and types
-import { BYE } from '@Constants/matchUpStatusConstants';
+import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type {
   DrawDefinition,
   MatchUp,
@@ -54,6 +54,12 @@ export type OutcomeOp =
        * schedule is left as it is: a double exit's produced exit (`doubleExitAdvancement` → `modifyMatchUpScore`)
        */
       stampsScoredTime?: false;
+      /**
+       * false where v1 writes the result with neither the tournament nor the event (a produced exit recorded beside a BYE
+       * and carried on, `stampExitOnByeHeldLoserTarget`, `carryExitOnward`): the notice names neither, and the matchUp in
+       * context is read without the tournament
+       */
+      announcesContext?: false;
     }
   | {
       op: 'setMatchUpDrawPositions';
@@ -77,6 +83,11 @@ export type OutcomeOp =
        * `advanceWinner`, with no event, and the matchUp it joins written with no score
        */
       advancesThroughBye?: true;
+      /**
+       * the BYE whose withdrawal takes the position back out (S6, an unwind's `removeDirectedBye`): announced as v1's
+       * `clearDrawPosition` announces it, `removeDrawPosition-<that BYE's drawPosition>`, with neither event nor tournament
+       */
+      withdrawnByePosition?: number;
     }
   | {
       op: 'assignPosition';
@@ -133,6 +144,15 @@ export type OutcomeOp =
       provenance: SideExitProvenance;
     }
   | {
+      op: 'setSideExitProvenance';
+      /**
+       * a matchUp's exit provenance replaced by what an unwind leaves, through v1's `setSideExitProvenance`: absent (or
+       * empty), the field is removed (a cleared double exit's produced exit, its origin withdrawn, S6)
+       */
+      matchUpId: string;
+      provenance?: SideExitProvenance;
+    }
+  | {
       op: 'assignBye';
       /** a FIRST_MATCHUP reservation (S3): the consolation seat a loser who has won can never fill */
       structureId: string;
@@ -151,6 +171,24 @@ export type OutcomeOp =
       matchUpId: string;
       /** false where v1 announces it with no event: a seat a produced exit leaves unfillable (S5) */
       announcesEvent?: false;
+    }
+  | {
+      op: 'withdrawBye';
+      /**
+       * an unwind's `removeDirectedBye` on a seat (S6): the stored assignment's BYE and its propagation marker removed,
+       * where one stands; the structure's assignments announced with neither event nor tournament either way
+       */
+      structureId: string;
+      drawPosition: number;
+    }
+  | {
+      op: 'clearMatchUpBye';
+      /**
+       * the matchUp a withdrawn BYE stood in, to be played again (S6), announced as `removeDrawPosition-<drawPosition>`
+       * with neither event nor tournament
+       */
+      matchUpId: string;
+      drawPosition: number;
     }
   | {
       op: 'setParticipantResults';
@@ -176,8 +214,11 @@ export type OutcomeOpName =
   | 'clearPosition'
   | 'setMatchUpStatusCodes'
   | 'mergeSideExitProvenance'
+  | 'setSideExitProvenance'
   | 'assignBye'
   | 'setMatchUpBye'
+  | 'withdrawBye'
+  | 'clearMatchUpBye'
   | 'setParticipantResults'
   | 'stampUpdatedAt';
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
@@ -352,6 +393,13 @@ function foldProvenance(op: OpOf<'mergeSideExitProvenance'>, { matchUps }: DrawI
   return {};
 }
 
+function foldSetProvenance(op: OpOf<'setSideExitProvenance'>, { matchUps }: DrawIndex): Folded {
+  const matchUp = matchUps.get(op.matchUpId);
+  if (!matchUp) return { error: `setSideExitProvenance: no matchUp ${op.matchUpId}` };
+  setSideExitProvenance({ matchUp, provenance: op.provenance && structuredClone(op.provenance) });
+  return {};
+}
+
 function foldAssignBye(op: OpOf<'assignBye'>, { structures, groups }: DrawIndex): Folded {
   const positionAssignments = positionAssignmentsOf(structures.get(op.structureId) ?? groups.get(op.structureId));
   if (!positionAssignments) return { error: `assignBye: no structure ${op.structureId}` };
@@ -371,6 +419,22 @@ function foldSetMatchUpBye(op: OpOf<'setMatchUpBye'>, { matchUps }: DrawIndex): 
   const matchUp = matchUps.get(op.matchUpId);
   if (!matchUp) return { error: `setMatchUpBye: no matchUp ${op.matchUpId}` };
   Object.assign(matchUp, { matchUpStatus: BYE, score: undefined, winningSide: undefined });
+  return {};
+}
+
+function foldWithdrawBye(op: OpOf<'withdrawBye'>, { structures, groups }: DrawIndex): Folded {
+  const positionAssignments = positionAssignmentsOf(structures.get(op.structureId) ?? groups.get(op.structureId));
+  const assignment = positionAssignments?.find((candidate) => candidate.drawPosition === op.drawPosition);
+  if (!assignment) return { error: `withdrawBye: no drawPosition ${op.drawPosition} in ${op.structureId}` };
+  delete assignment.bye;
+  delete assignment.byeFromPropagation;
+  return {};
+}
+
+function foldClearMatchUpBye(op: OpOf<'clearMatchUpBye'>, { matchUps }: DrawIndex): Folded {
+  const matchUp = matchUps.get(op.matchUpId);
+  if (!matchUp) return { error: `clearMatchUpBye: no matchUp ${op.matchUpId}` };
+  matchUp.matchUpStatus = TO_BE_PLAYED;
   return {};
 }
 
@@ -433,10 +497,16 @@ function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition
       return foldStatusCodes(op, index);
     case 'mergeSideExitProvenance':
       return foldProvenance(op, index);
+    case 'setSideExitProvenance':
+      return foldSetProvenance(op, index);
     case 'assignBye':
       return foldAssignBye(op, index);
     case 'setMatchUpBye':
       return foldSetMatchUpBye(op, index);
+    case 'withdrawBye':
+      return foldWithdrawBye(op, index);
+    case 'clearMatchUpBye':
+      return foldClearMatchUpBye(op, index);
     case 'setParticipantResults':
       return foldParticipantResults(op, index);
     default:

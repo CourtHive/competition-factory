@@ -343,6 +343,30 @@ After the write, and only on success:
    2026-10-24, so a CURTIS main score stamped its Play Off. A matchUp that no top-level structure holds still stamps
    every structure.
 
+### 5.1 Settlement dependencies (S6)
+
+v2 owns a call only when no settle pass has work on the draw its ops leave (`settleWork.ts`, F5 (a)). Each row is a
+pass at its `observePass` site, in v1's order, with what v2 asks. **Exact** is the pass's own detector run on the working
+view; **scope** is true whenever the pass could have work. The last two columns are filled as S6 makes a pass plannable:
+what must hold for the pass to write nothing, and what a write of it would invalidate for the passes after it.
+
+| pass                               | v2 asks                                                                                    | writes nothing when (S6)                                                                                               | a write invalidates                                 |
+| ---------------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `settleExitOrigins`                | scope: a result on a matchUp that was a double exit, but the call's own; and stale origins | no matchUp but the call's was a double exit the ops change (`settleRederivedDoubleExits` skips the call's), none stale | every pass below: it re-derives and replays carries |
+| `reconcileConsolationReservations` | exact: `findReservationWork`                                                               |                                                                                                                        |                                                     |
+| `reconcileStaleExitOrigins`        | exact: `hasStaleExitOrigins`                                                               | a cleared double exit's produced exit is withdrawn with its origin, so nothing names it                                |                                                     |
+| `reconcileCarriesPastByes`         | exact: `findOwedCarry`                                                                     |                                                                                                                        |                                                     |
+| `settleHeldExits`                  | exact: `hasHeldExitWork`                                                                   |                                                                                                                        |                                                     |
+| `reconcileByeAdvancements`         | exact: `findOwedByeAdvance`                                                                |                                                                                                                        |                                                     |
+| `reconcileMissedLinkAdvancements`  | exact: `findMissedLinkAdvancements`                                                        |                                                                                                                        |                                                     |
+| `reconcileProvenanceSides`         | exact: `findMisplacedProvenance`                                                           |                                                                                                                        |                                                     |
+| `reconcileDeciders`                | exact for the trigger: a final's winner changes, or a decider moves                        |                                                                                                                        |                                                     |
+| `settleForwardConsequences`        | exact: `hasForwardWork`                                                                    |                                                                                                                        |                                                     |
+| `reconcileLinkAdvancements`        | exact: `getUnearnedLinkAdvancements`                                                       |                                                                                                                        |                                                     |
+| `reconcileScoredTimes`             | exact: a `scoredTime` on a matchUp holding no result                                       |                                                                                                                        |                                                     |
+
+A double exit or an exit carried across a loser link that the plan does not hold as ops puts every pass in reach.
+
 ## 6. Guarantees
 
 - **A refusal changes nothing** (`ERROR_IMPLIES_NO_MUTATION`). The checks in § 2 run above every
@@ -595,9 +619,12 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   included, and the call's result carries no propagation context. A matchUp that links its loser on
   (COMPASS, OLYMPIC, PLAYOFF) makes the carrier, its loser, carry the exit again (`propagateExitFrom`'s loop):
   v2 plans the loop level by level from the draw as the call found it, each level's seat and matchUp clean as
-  the first must be (no link condition, no BYE opposite), the carrier placed and the exit written with the
+  the first must be (no link condition; a BYE opposite passed by RULE 1 into the clean matchUp beyond it, which records
+  the carry beside its BYE as at the first level), the carrier placed and the exit written with the
   landing they lost as its origin. The walk is bounded by v1's own `SETTLE_PASS_LIMITS.exitLevels`; a chain
-  that reaches it is v1's, which refuses there (`SETTLE_BOUND_REACHED`, F9 (i)), so v2 never plans the bound. A **double exit** is owned where its produced exit lands pending: entered on a matchUp holding no
+  that reaches it is v1's, which refuses there (`SETTLE_BOUND_REACHED`, F9 (i)), so v2 never plans the bound. A **double exit** in a round robin group sends nobody on (`doubleExitAdvancement`
+  returns at once in a container): its result and the group's tally are planned, and the settle passes are asked as
+  for a played result. A **double exit** elsewhere is owned where its produced exit lands pending: entered on a matchUp holding no
   result, in a structure it links nothing out of, it produces a `WALKOVER` (or a `DEFAULTED` from a
   `DOUBLE_DEFAULT`) in the next matchUp on the side it feeds, written with no winner, its codes `[]`, a
   `WALKOVER`'s score blanked and the fed side given its origin (`buildSideExitProvenance`, v1's builder).
@@ -616,26 +643,83 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   `DOUBLE_WALKOVER`, whose score is blanked), its award taken away and the arriving side's entry merged beside
   the standing one; then that double exit produces onward as one entered there would, pending, with the
   reservation beside a fed seat. Planned where the landing holds that single exit and no score value, links no
-  loser on, and the produced exit lands clean. A **double exit with loser links** is owned where its produced exit lands pending,
+  loser on, and the produced exit lands clean. A double exit whose produced exit meets a pending one a double exit beside it
+  produced there **converges** with it: the matchUp becomes the double exit (`collapseDoubleExitStatus`), with no
+  winner, codes `[]`, a `DOUBLE_WALKOVER`'s score blanked and the arriving side's origin beside the standing one, and it
+  produces on as one entered there would (`advanceConvergedWinner`); planned with nobody there and the exit produced onward landing clean (or none, from a final). With loser links (under
+  `doubleExitPropagateBye`; off, the landing's BYE gives way to a produced exit, `serveConvergedLoserLink`: v1's), this
+  matchUp's own loser seat takes its BYE first, with all it sends on; the landing's loser seat, a BYE since the first exit
+  was produced there, is left as it is; and the onward matchUp's loser seat, which its produced exit leaves unfillable,
+  takes a BYE with its chain before that exit is written. A **double exit with loser links** is owned where its produced exit lands pending,
   or is awarded at once to the winner of the matchUp beside it, who goes on as above: nobody
   loses the double exit, so the seat its link feeds takes a propagated BYE and that matchUp a BYE, and the position
   opposite (empty, or the participant standing there) is advanced through it into the next matchUp (`advanceWinner`,
   announced with no event, the matchUp it joins written with no score); nobody
   will lose the produced exit's matchUp either, so the seat ITS link feeds takes a BYE too, announced with no event
   (`propagateUnfillableLoserBye`), its structure's assignments announced with no event unless another placement there
-  named one (the notice buffer keeps an earlier event, `preserveNoticeIdentity`). Under `doubleExitPropagateBye: false`
+  named one (the notice buffer keeps an earlier event, `preserveNoticeIdentity`). Each BYE goes on as v1's
+  `assignDrawPositionBye` sends it: the position opposite it goes on into the next matchUp where there is one, and, a
+  BYE matchUp's loser being the BYE, a matchUp that links its loser on puts a BYE on that seat too, with no event, level
+  by level (COMPASS, OLYMPIC, CURTIS), the structures' assignments announced deepest first. A BYE opposite the double exit's own seat (the paired feeder a BYE)
+  makes a double BYE: that matchUp, a BYE already, is left as it stands; the seat's position already stands a round on
+  (the BYE opposite advanced it), so the matchUp there becomes a BYE, announced with its event, and the one other position
+  it holds (a fed seat nobody has reached) goes on into a clean matchUp, as the winner standing in the produced exit's
+  matchUp, delivered by that BYE, is awarded the exit with the BYE recorded as their origin; each level a first-round seat,
+  free and alone behind no condition, in a clean matchUp, the walk bounded by `SETTLE_PASS_LIMITS.exitLevels` (F9). Under `doubleExitPropagateBye: false`
   the loser seat shows the produced exit instead: the loser matchUp is written the double exit's flavour awarded to the
   side opposite the seat, its codes `[]`, a `WALKOVER`'s score blanked and the seat's side given the
   origin (`conditionallyAdvanceDrawPosition`), with no `scoredTime`; its structure is stamped, and the position
   opposite is advanced into the next matchUp, announced with no event or tournament: a participant standing there goes
   on, an empty position goes ahead of the arrival it awaits. Planned in a first round that is not fed, no BYE opposite
-  the seat, into a matchUp that links no loser on
-  (COMPASS and OLYMPIC stay v1's). Otherwise outside a feed round, for links with no condition, free seats with no BYE beside them (a BYE there makes a
-  double BYE: v1's), clean matchUps, and an
-  unfillable seat whose matchUp holds no other position; FIRST_MATCHUP feeds and chains stay v1's. v1 writes it through
-  `modifyMatchUpScore`, not `setMatchUpState`, so it takes no `scoredTime`. Stay v1's: a double exit with a loser link beside a BYE, into a feed round, or under `doubleExitPropagateBye: false` into a loser matchUp that links on; a carry past a BYE into anything but a clean matchUp; a
+  the seat. A loser matchUp that links its own loser on (COMPASS, OLYMPIC) leaves that seat to nobody: before the exit
+  is written there, the seat takes a BYE with no event, with all it sends on, as the BYEs below go on. Where a BYE
+  stands opposite the seat (its matchUp a BYE already), v1 records the exit on the BYE matchUp, on the seat's side, its
+  score removed, and carries it on into the matchUp the seat's position already stands in, where it lands pending with
+  its origin on that side (`stampExitOnByeHeldLoserTarget`, `carryExitOnward`); both written with neither the tournament
+  nor the event (`setMatchUpResult.announcesContext: false`), planned where nobody stands on the other side there and its
+  feeder is still to be played. Otherwise outside a feed round, for links with no condition, free seats with no BYE beside them (a BYE there makes a
+  double BYE: v1's), clean matchUps, and each matchUp touched once, but where the unfillable seat's matchUp is the one the first BYE
+  advanced a position into (FIRST_MATCH_LOSER_CONSOLATION): that position goes on again through the second BYE. The
+  unfillable seat takes its BYE behind a `FIRST_MATCHUP` link too, as v1 places it (`advanceByeToLoserMatchUp` asks no
+  condition); this matchUp's own `FIRST_MATCHUP` feed stays v1's. v1 writes it through
+  `modifyMatchUpScore`, not `setMatchUpState`, so it takes no `scoredTime`. Stay v1's: a double exit with a loser link beside a BYE or into a feed round; a carry past a BYE into anything but a clean matchUp; a
   present opponent, for a carried or a produced exit, with nowhere clean to go on to; a convergence but RULE 4's clean one; a
-  correction to or from an exit; and an exit whose target holds a BYE, an exit or a result (`exit`, `cascade`).
+  correction to or from an exit (but the clean clear below); and an exit whose target holds a BYE, an exit or a result
+  (`exit`, `cascade`).
+
+  The first **unwind** is owned too (S6). A **double exit cleared** (the `clear-score` route) is v1's `removeDoubleExit`
+  and then the clear's own write. It is owned where all the double exit sent on is its produced exit, still pending, in
+  a structure whose only links out are loser links with no condition: the next matchUp holds that exit alone (no winner,
+  positions, score or codes, and this matchUp's origin, on the side it fed, as its only provenance), and every matchUp
+  beyond it on the winner's path to the final is to be played with no positions, result, codes or provenance. v1 walks
+  that whole path, not just the produced exit (`conditionallyRemoveDrawPosition` → `removeDoubleExit`, level by level),
+  and writes each matchUp back to be played: codes `[]`, its score blanked, through `modifyMatchUpScore` (no
+  `scoredTime` rule), and the produced exit's origin withdrawn (`setSideExitProvenance`). Past the produced exit's
+  matchUp v1's walk passes on neither the tournament nor the event, so those writes are announced without them
+  (`announcesContext: false`). At each level it also visits the seat the loser link feeds (`removeDirectedBye`, under
+  `doubleExitPropagateBye`). The two seats the double exit gave BYEs (its own loser seat and the one its produced exit
+  left unfillable) have them withdrawn (`withdrawBye`). Each BYE's matchUp is to be played again (`clearMatchUpBye`), and
+  a position the BYE sent on is taken back out of the next matchUp. These are announced as v1's `clearDrawPosition`
+  announces them, `removeDrawPosition-<the BYE's position>`, with neither event nor tournament. A seat further on holds
+  nothing yet, and the visit only announces and stamps its structure (CURTIS's Play Off). The order is v1's recursion:
+  deepest first, each level's seat before its matchUp, the call's own seat last, and the clear's own write after all of
+  it. Where the produced exit had been **awarded** at once to the winner of the matchUp beside this one, who went on
+  into the next matchUp and stands there alone, the unwind takes the award back: the produced exit's matchUp is to be
+  played with its winner removed and all its provenance gone (the awardee's arrival entry with this origin), and the
+  awardee's position comes back out of the next matchUp as v1's walk writes that matchUp back to be played; the awardee
+  stays where they arrived. Stay v1's: a cleared double exit in a feed round; behind a winner link or a link condition,
+  or under `doubleExitPropagateBye: false`; whose produced exit converged, or was awarded to a winner who has gone further
+  or does not stand alone; whose BYE went on across a further loser
+  link (COMPASS, OLYMPIC); whose withdrawal leaves the matchUp it advanced into with no position (v1 re-announces it as
+  `releaseAdvancedDrawPosition`); or with anything played beyond it.
+
+  A **single exit cleared** (a WALKOVER, DEFAULTED or RETIRED on the `remove-directed` route, back to be played) that
+  carried nothing on is the removal of a played result: v1 takes it back through the same `removeDirectedParticipants`,
+  with the same writes and notices (the winner's position out of the next matchUp, the loser out of the seat their link
+  fed, codes `[]`, the score blanked), so it takes the removal's shape and its checks. Stay v1's: an exit carried across
+  the loser link (provenance or a carried status in the target), a BYE gone through beside the loser, and side
+  provenance on the matchUp itself.
+
 - **`differential`**: v2 plans the whole call before v1 runs, then checks v1's result against it,
   and a disagreement throws `OutcomePipelineDivergence` naming the matchUp and both answers. The
   plan covers the refusal, the route, the write on the matchUp, the winner's direction, the
@@ -709,6 +793,9 @@ says and what lands are one thing. The reducer decides nothing and refuses nothi
 | `clearPosition`           | a structure's stored assignment for a drawPosition emptied, and the participant's seed entry there removed (a loser taken back out of the structure a link placed them in)                                                                                                                                                                                                                                                                                                                               |
 | `setMatchUpStatusCodes`   | a matchUp's status codes, re-derived from its provenance (the matchUp a loser is taken back out of)                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `mergeSideExitProvenance` | a side's exit provenance merged into what a matchUp carries, through v1's `mergeSideExitProvenance` (a carried exit's entry on the side its carrier arrived at)                                                                                                                                                                                                                                                                                                                                          |
+| `setSideExitProvenance`   | a matchUp's exit provenance replaced by what an unwind leaves, through v1's `setSideExitProvenance`: absent, the field is removed (a cleared double exit's produced exit, its origin withdrawn)                                                                                                                                                                                                                                                                                                          |
+| `withdrawBye`             | an unwind's `removeDirectedBye` at a seat: the stored assignment's BYE and its propagation marker removed, where one stands; the structure's assignments announced with neither event nor tournament either way                                                                                                                                                                                                                                                                                          |
+| `clearMatchUpBye`         | the matchUp a withdrawn BYE stood in, to be played again, announced as `removeDrawPosition-<drawPosition>` with neither event nor tournament                                                                                                                                                                                                                                                                                                                                                             |
 | `assignBye`               | a BYE on a structure's stored assignment for a drawPosition, marked `byeFromPropagation` (a `FIRST_MATCHUP` reservation; a double exit's loser seats, `announcesEvent: false` for one its produced exit leaves unfillable)                                                                                                                                                                                                                                                                               |
 | `setMatchUpBye`           | the reserved seat's matchUp a BYE, its score and winner removed (v1's `setMatchUpStatusBYE`)                                                                                                                                                                                                                                                                                                                                                                                                             |
 | `setParticipantResults`   | a round robin group's, or a one-round ad hoc structure's, tallies on its position assignments, after the call (`writeAssignmentResults`, v1's own writer); for ad hoc the assignments are first rebuilt, one per participant its matchUps hold, as `updateTallyIfNeeded` rebuilds them; the tally stamps every top-level structure, as v1's does                                                                                                                                                         |
@@ -720,26 +807,26 @@ result, no winner before or after) and the **first direction** (a played result 
 only consequence is the winner's position in the next matchUp of the same structure). The reasons are the work list of
 the slices that follow:
 
-| reason         | the call                                                                                                                                                                 | taken on by                                     |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- |
-| `team`         | is a dual or one of its lines                                                                                                                                            | S7                                              |
-| `schedule`     | carries a schedule                                                                                                                                                       | a later slice (§ 3.5.8 of the executor plan)    |
-| `notes`        | carries notes                                                                                                                                                            | a later slice                                   |
-| `status-codes` | carries the client's positional status codes, split into side codes at the write                                                                                         | S2                                              |
-| `exit`         | has an exit status before or after, other than a single exit entered with a winner on a clean matchUp that carries nothing on, or carries it one level onto a clean seat | S5                                              |
-| `winner`       | takes away or changes a winner already stored, so what it directed is taken back                                                                                         | S4                                              |
-| `loser`        | has a loser link, so the loser goes somewhere                                                                                                                            | S3                                              |
-| `link`         | sends its winner into another structure                                                                                                                                  | S3                                              |
-| `cascade`      | sends its winner to a matchUp holding a BYE, an exit or a result, so the winner goes on or meets it                                                                      | S5                                              |
-| `route`        | takes a route, or reaches a status, that S1 does not plan as ops                                                                                                         | S2                                              |
-| `provenance`   | is on a matchUp holding side-exit provenance the score write may clear or rescue                                                                                         | S5                                              |
-| `tallied`      | is in a round-robin, ad hoc or lucky structure, whose tally the write updates                                                                                            | S3                                              |
-| `no-record`    | is on a draw the tournament record's events do not hold, so there is nothing to fold the plan into                                                                       | none: a shadow needs the record                 |
-| `edges`        | is on a draw that stores no winner and loser edges, which v1 writes first (`ensureGoesTo`)                                                                               | S2 (`setEdges`)                                 |
-| `clock`        | is made outside an engine call, with no captured instant, so the timestamps a write takes cannot be reproduced                                                           | none: production calls go through the engine    |
-| `settle`       | leaves a settle pass work on the working view (S2's has-work predicates, `settleWork.ts`), leftover state included                                                       | none: S2 owns only a call no pass has work for  |
-| `write-mode`   | is made in LEGACY or BRIDGE write mode, where v1 writes `scoredTime` as a timeItem, which the reducer does not                                                           | a later slice (F6: BRIDGE in with its evidence) |
-| `competition`  | names a winner where a per-matchUp competition policy applies: v1 updates ratings on the result (`processCompetitionMatchUp`)                                            | a later slice                                   |
+| reason         | the call                                                                                                                                                                 | taken on by                                        |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------- |
+| `team`         | is a dual or one of its lines                                                                                                                                            | S7                                                 |
+| `schedule`     | carries a schedule                                                                                                                                                       | a later slice (§ 3.5.8 of the executor plan)       |
+| `notes`        | carries notes                                                                                                                                                            | a later slice                                      |
+| `status-codes` | carries the client's positional status codes, split into side codes at the write                                                                                         | S2                                                 |
+| `exit`         | has an exit status before or after, other than a single exit entered with a winner on a clean matchUp that carries nothing on, or carries it one level onto a clean seat | S5; the clean clears of a double or single exit S6 |
+| `winner`       | takes away or changes a winner already stored, so what it directed is taken back                                                                                         | S4                                                 |
+| `loser`        | has a loser link, so the loser goes somewhere                                                                                                                            | S3                                                 |
+| `link`         | sends its winner into another structure                                                                                                                                  | S3                                                 |
+| `cascade`      | sends its winner to a matchUp holding a BYE, an exit or a result, so the winner goes on or meets it                                                                      | S5                                                 |
+| `route`        | takes a route, or reaches a status, that S1 does not plan as ops                                                                                                         | S2                                                 |
+| `provenance`   | is on a matchUp holding side-exit provenance the score write may clear or rescue                                                                                         | S5                                                 |
+| `tallied`      | is in a round-robin, ad hoc or lucky structure, whose tally the write updates                                                                                            | S3                                                 |
+| `no-record`    | is on a draw the tournament record's events do not hold, so there is nothing to fold the plan into                                                                       | none: a shadow needs the record                    |
+| `edges`        | is on a draw that stores no winner and loser edges, which v1 writes first (`ensureGoesTo`)                                                                               | S2 (`setEdges`)                                    |
+| `clock`        | is made outside an engine call, with no captured instant, so the timestamps a write takes cannot be reproduced                                                           | none: production calls go through the engine       |
+| `settle`       | leaves a settle pass work on the working view (S2's has-work predicates, `settleWork.ts`), leftover state included                                                       | none: S2 owns only a call no pass has work for     |
+| `write-mode`   | is made in LEGACY or BRIDGE write mode, where v1 writes `scoredTime` as a timeItem, which the reducer does not                                                           | a later slice (F6: BRIDGE in with its evidence)    |
+| `competition`  | names a winner where a per-matchUp competition policy applies: v1 updates ratings on the result (`processCompetitionMatchUp`)                                            | a later slice                                      |
 
 **In `differential`**, a complete plan is folded into the record as it stood before v1 ran and compared with the record
 v1 wrote, every `updatedAt` by value: v1 stamps each touched entity once per call, as v2 does (F2 (i), § 5 step 6).

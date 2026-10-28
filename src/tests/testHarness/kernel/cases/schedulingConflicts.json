@@ -2119,6 +2119,284 @@
     "note": "The first played from 10:00 and ended at 10:45, the second at 12:00: by its start it would recover at 12:30, but its recorded end is plausible and recovers it at 11:45, so the later matchUp is clear."
   },
   {
+    "caseId": "scheduling.conflicts.a-zoned-scored-time-holds-the-recovery.v1",
+    "operation": "kernel.scheduling.conflicts@1",
+    "input": {
+      "view": {
+        "positionDependencies": {},
+        "matchUps": [
+          {
+            "matchUpId": "1bc6bc1d-06e9-4ee2-b378-66e2afec366d",
+            "drawId": "7ab09417-744c-4101-8a24-5f413ace6a2b",
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "COMPLETED",
+            "stage": "MAIN",
+            "stageSequence": 1,
+            "roundNumber": 1,
+            "roundPosition": 1,
+            "schedule": {
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
+              "courtOrder": 1,
+              "scheduledDate": "2026-03-02",
+              "scheduledTime": "10:00"
+            },
+            "neverPlayed": false,
+            "noCourtTime": false,
+            "finished": true,
+            "played": true,
+            "times": {
+              "endMs": null,
+              "scoredMs": 1772469600000,
+              "scoredDate": "2026-03-02",
+              "startMs": null,
+              "calledMs": 1772463900000,
+              "scheduledMs": 1772463600000
+            },
+            "timing": {
+              "averageMinutes": 90,
+              "recoveryMinutes": 60,
+              "typeChangeRecoveryMinutes": 60
+            }
+          },
+          {
+            "matchUpId": "43d6645f-c553-47ce-9463-4a6892ceb930",
+            "drawId": "332e24c0-33b9-495c-bfa7-33df46ed1417",
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "stage": "MAIN",
+            "stageSequence": 1,
+            "roundNumber": 1,
+            "roundPosition": 1,
+            "schedule": {
+              "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff",
+              "courtOrder": 2,
+              "scheduledDate": "2026-03-02",
+              "scheduledTime": "12:35"
+            },
+            "neverPlayed": false,
+            "noCourtTime": false,
+            "finished": false,
+            "played": true,
+            "times": {
+              "endMs": null,
+              "scoredMs": null,
+              "scoredDate": null,
+              "startMs": null,
+              "calledMs": null,
+              "scheduledMs": 1772472900000
+            },
+            "timing": {
+              "averageMinutes": 90,
+              "recoveryMinutes": 60,
+              "typeChangeRecoveryMinutes": 60
+            }
+          }
+        ],
+        "matchUpDependencies": {
+          "1bc6bc1d-06e9-4ee2-b378-66e2afec366d": {
+            "dependentMatchUpIds": [],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          },
+          "43d6645f-c553-47ce-9463-4a6892ceb930": {
+            "dependentMatchUpIds": [],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          }
+        },
+        "useDeepDependencies": false,
+        "reachability": {
+          "matchUps": {
+            "1bc6bc1d-06e9-4ee2-b378-66e2afec366d": {
+              "certain": ["58f2eed1-a587-4aa3-be64-18b94e5de732", "7cc1c2e5-640f-4800-95be-2330926b20df"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "43d6645f-c553-47ce-9463-4a6892ceb930": {
+              "certain": ["58f2eed1-a587-4aa3-be64-18b94e5de732", "7cc1c2e5-640f-4800-95be-2330926b20df"],
+              "potential": [],
+              "nearPotential": []
+            }
+          },
+          "upstream": {
+            "1bc6bc1d-06e9-4ee2-b378-66e2afec366d": [],
+            "43d6645f-c553-47ce-9463-4a6892ceb930": []
+          },
+          "linkedTargets": {}
+        }
+      }
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "courtIssues": {
+          "7ba8d890-c415-4ddb-8b66-60040f347884": [],
+          "a27a7677-b13f-4e11-8901-849e7dd5f8ff": [
+            {
+              "matchUpId": "43d6645f-c553-47ce-9463-4a6892ceb930",
+              "issue": "WARNING",
+              "issueType": "participantConflict",
+              "issueIds": ["1bc6bc1d-06e9-4ee2-b378-66e2afec366d"]
+            }
+          ]
+        },
+        "rowIssues": [
+          [],
+          [
+            {
+              "matchUpId": "43d6645f-c553-47ce-9463-4a6892ceb930",
+              "issueType": "participantConflict",
+              "issueIds": ["1bc6bc1d-06e9-4ee2-b378-66e2afec366d"],
+              "issue": "WARNING"
+            }
+          ]
+        ]
+      }
+    },
+    "note": "New York (the tournament's zone), 10:00 called at 10:05 and scored at 11:40, the same players at 12:35: the scored instant read in the zone recovers them at 12:40, a WARNING. Without the zone the scored instant is not read, and the start (10:00, 90 minutes, 60 to recover) clears 12:30."
+  },
+  {
+    "caseId": "scheduling.conflicts.a-venue-zone-places-the-scored-time.v1",
+    "operation": "kernel.scheduling.conflicts@1",
+    "input": {
+      "view": {
+        "positionDependencies": {},
+        "matchUps": [
+          {
+            "matchUpId": "1bc6bc1d-06e9-4ee2-b378-66e2afec366d",
+            "drawId": "7ab09417-744c-4101-8a24-5f413ace6a2b",
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "COMPLETED",
+            "stage": "MAIN",
+            "stageSequence": 1,
+            "roundNumber": 1,
+            "roundPosition": 1,
+            "schedule": {
+              "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
+              "courtOrder": 1,
+              "scheduledDate": "2026-03-02",
+              "scheduledTime": "10:00"
+            },
+            "neverPlayed": false,
+            "noCourtTime": false,
+            "finished": true,
+            "played": true,
+            "times": {
+              "endMs": null,
+              "scoredMs": 1772404800000,
+              "scoredDate": "2026-03-02",
+              "startMs": null,
+              "calledMs": 1772399100000,
+              "scheduledMs": 1772398800000
+            },
+            "timing": {
+              "averageMinutes": 90,
+              "recoveryMinutes": 60,
+              "typeChangeRecoveryMinutes": 60
+            }
+          },
+          {
+            "matchUpId": "43d6645f-c553-47ce-9463-4a6892ceb930",
+            "drawId": "332e24c0-33b9-495c-bfa7-33df46ed1417",
+            "matchUpType": "SINGLES",
+            "matchUpStatus": "TO_BE_PLAYED",
+            "stage": "MAIN",
+            "stageSequence": 1,
+            "roundNumber": 1,
+            "roundPosition": 1,
+            "schedule": {
+              "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff",
+              "courtOrder": 2,
+              "scheduledDate": "2026-03-02",
+              "scheduledTime": "12:35"
+            },
+            "neverPlayed": false,
+            "noCourtTime": false,
+            "finished": false,
+            "played": true,
+            "times": {
+              "endMs": null,
+              "scoredMs": null,
+              "scoredDate": null,
+              "startMs": null,
+              "calledMs": null,
+              "scheduledMs": 1772408100000
+            },
+            "timing": {
+              "averageMinutes": 90,
+              "recoveryMinutes": 60,
+              "typeChangeRecoveryMinutes": 60
+            }
+          }
+        ],
+        "matchUpDependencies": {
+          "1bc6bc1d-06e9-4ee2-b378-66e2afec366d": {
+            "dependentMatchUpIds": [],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          },
+          "43d6645f-c553-47ce-9463-4a6892ceb930": {
+            "dependentMatchUpIds": [],
+            "participantIds": [],
+            "matchUpIds": [],
+            "sources": [[], [], []]
+          }
+        },
+        "useDeepDependencies": false,
+        "reachability": {
+          "matchUps": {
+            "1bc6bc1d-06e9-4ee2-b378-66e2afec366d": {
+              "certain": ["58f2eed1-a587-4aa3-be64-18b94e5de732", "7cc1c2e5-640f-4800-95be-2330926b20df"],
+              "potential": [],
+              "nearPotential": []
+            },
+            "43d6645f-c553-47ce-9463-4a6892ceb930": {
+              "certain": ["58f2eed1-a587-4aa3-be64-18b94e5de732", "7cc1c2e5-640f-4800-95be-2330926b20df"],
+              "potential": [],
+              "nearPotential": []
+            }
+          },
+          "upstream": {
+            "1bc6bc1d-06e9-4ee2-b378-66e2afec366d": [],
+            "43d6645f-c553-47ce-9463-4a6892ceb930": []
+          },
+          "linkedTargets": {}
+        }
+      }
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "courtIssues": {
+          "7ba8d890-c415-4ddb-8b66-60040f347884": [],
+          "a27a7677-b13f-4e11-8901-849e7dd5f8ff": [
+            {
+              "matchUpId": "43d6645f-c553-47ce-9463-4a6892ceb930",
+              "issue": "WARNING",
+              "issueType": "participantConflict",
+              "issueIds": ["1bc6bc1d-06e9-4ee2-b378-66e2afec366d"]
+            }
+          ]
+        },
+        "rowIssues": [
+          [],
+          [
+            {
+              "matchUpId": "43d6645f-c553-47ce-9463-4a6892ceb930",
+              "issueType": "participantConflict",
+              "issueIds": ["1bc6bc1d-06e9-4ee2-b378-66e2afec366d"],
+              "issue": "WARNING"
+            }
+          ]
+        ]
+      }
+    },
+    "note": "Auckland (the venue address's zone, 13 hours ahead in March), the same day as the New York case: the scored instant 11:40 there recovers the players at 12:40, a WARNING on the 12:35 matchUp."
+  },
+  {
     "caseId": "scheduling.conflicts.deep-a-gap-beyond-adjacent-rows.v1",
     "operation": "kernel.scheduling.conflicts@1",
     "input": {

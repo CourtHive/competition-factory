@@ -1,6 +1,5 @@
 import { setMatchUpHomeParticipantId } from '@Mutate/matchUps/schedule/scheduleItems/setMatchUpHomeParticipantId';
 import { calledBeforeTournamentStart, setMatchUpCalledAt } from '@Mutate/matchUps/schedule/setMatchUpCalledAt';
-import { addMatchUpScheduledTime, addMatchUpTimeModifiers } from '@Mutate/matchUps/schedule/scheduledTime';
 import { setMatchUpFirstClassOrTimeItem } from '@Mutate/timeItems/matchUps/setMatchUpFirstClassOrTimeItem';
 import { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems/addMatchUpScheduledDate';
 import { allocateTeamMatchUpCourts } from '@Mutate/matchUps/schedule/allocateTeamMatchUpCourts';
@@ -35,6 +34,12 @@ import {
   getIsoDateString,
   validTimeValue,
 } from '@Tools/dateTime';
+import {
+  addMatchUpScheduledTime,
+  addMatchUpTimeModifiers,
+  DATE_TIME_ANOTHER_DAY,
+  datedOnAnotherDay,
+} from '@Mutate/matchUps/schedule/scheduledTime';
 
 // constants and types
 import { AddScheduleAttributeArgs, PolicyDefinitions, ResultType, TournamentRecords } from '@Types/factoryTypes';
@@ -152,12 +157,13 @@ function applyScheduleTiming({
   }
   if (scheduledTime !== undefined) {
     const result = addMatchUpScheduledTime({
+      // a date given beside a date-time is the matchUp's date: the time is written as HH:MM against it
+      scheduledTime: scheduledDate ? (canonicalTime(scheduledTime) ?? scheduledTime) : scheduledTime,
       playedOrderChecked: true,
       disableNotice: true,
       removePriorValues,
       tournamentRecord,
       drawDefinition,
-      scheduledTime,
       matchUpId,
       matchUp,
     });
@@ -802,6 +808,14 @@ function checkScheduleRefusals({
   // apply path by being the only caller of a rule.
   const valuesError = checkScheduleValues({ tournamentRecord, schedule });
   if (valuesError) return { error: decorateResult({ result: valuesError, stack }), unwritable: unwritable ?? [] };
+
+  // a date-time given with no date beside it names its day: one that is not the matchUp's own day is refused, before
+  // anything is written (§ 9.9; addMatchUpScheduledTime refuses it too)
+  const timeDay = isClearingValue(schedule?.scheduledTime) ? undefined : extractDate(schedule?.scheduledTime);
+  if (schedule?.scheduledDate === undefined && timeDay && datedOnAnotherDay(matchUp, timeDay)) {
+    const result = { error: INVALID_DATE };
+    return { error: decorateResult({ result, info: DATE_TIME_ANOTHER_DAY, stack }), unwritable: unwritable ?? [] };
+  }
 
   return { unwritable: unwritable ?? [] };
 }
