@@ -1,17 +1,15 @@
+import { publishEventRecorded, scheduleProfileRoundsRecorded, setSchedulingProfileRecorded } from './recordedWrites';
 import { checkProfileKeys, ENGINE_SUPPLIED_KEYS, MODIFY_TOURNAMENT_RECORD_KEYS } from './profileKeys';
 import { getStageParticipantsCount } from '@Query/drawDefinition/getStageParticipantsCount';
-import { scheduleProfileRounds } from '@Mutate/matchUps/schedule/scheduleProfileRounds';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getStageParticipants } from '@Query/drawDefinition/getStageParticipants';
 import { generateFlightDrawDefinitions } from './generateFlightDrawDefinitions';
-import { setSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import { addTournamentParticipants } from './addTournamentParticipants';
 import { generateEventParticipants } from './generateEventParticipants';
 import { generateEventWithFlights } from './generateEventWithFlights';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { generateEventWithDraw } from './generateEventWithDraw';
 import { attachProfilePolicies } from './attachProfilePolicies';
-import { publishEvent } from '@Mutate/publishing/publishEvent';
 import { generateVenues } from '@Mutate/venues/generateVenues';
 import { isActiveMatchUp } from '@Query/matchUp/activeMatchUp';
 import { cloneState, restoreState } from '@Tools/cloneState';
@@ -151,7 +149,7 @@ function processExistingEvent({
   }
 
   if (publish) {
-    publishEvent({ tournamentRecord, event });
+    publishEventRecorded({ tournamentRecord, event });
   }
 
   return SUCCESS;
@@ -327,7 +325,7 @@ function applySchedulingProfile({ schedulingProfile, autoSchedule, periodLength,
     const tournamentRecords = {
       [tournamentRecord.tournamentId]: tournamentRecord,
     };
-    const result = setSchedulingProfile({
+    const result = setSchedulingProfileRecorded({
       tournamentRecords,
       schedulingProfile,
     });
@@ -337,7 +335,7 @@ function applySchedulingProfile({ schedulingProfile, autoSchedule, periodLength,
       const { tournamentId } = tournamentRecord;
       const tournamentRecords = { [tournamentId]: tournamentRecord };
 
-      schedulerResult = scheduleProfileRounds({
+      schedulerResult = scheduleProfileRoundsRecorded({
         tournamentRecords,
         periodLength,
       });

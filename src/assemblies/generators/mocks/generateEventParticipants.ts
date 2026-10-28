@@ -1,8 +1,8 @@
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
-import { addParticipants } from '@Mutate/participants/addParticipants';
 import { getParticipantId } from '@Functions/global/extractors';
 import { generateParticipants } from './generateParticipants';
 import { rebuildPairsAsMixed } from './rebuildPairsAsMixed';
+import { addParticipantsRecorded } from './recordedWrites';
 import { coercedGender } from '@Helpers/coercedGender';
 import { isGendered } from '@Validators/isGendered';
 
@@ -72,7 +72,7 @@ export function generateEventParticipants(params) {
   if (isMixedDoubles) {
     rebuildPairsAsMixed(participants);
   }
-  const result = addParticipants({
+  const result = addParticipantsRecorded({
     tournamentRecord,
     participants,
   });

@@ -5,12 +5,17 @@ import { generateLineUps } from '@Assemblies/generators/participants/generateLin
 import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { generateOutcome } from '@Generators/simulation/generateOutcome';
+import { recordSetMatchUpStatus, recorded } from './scenarioRecorder';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { structureSort } from '@Functions/sorters/structureSort';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { intersection } from '@Tools/arrays';
+
+// writes logged when a scenario is recorded (see scenarioRecorder)
+const automatedPlayoffPositioningRecorded = recorded('automatedPlayoffPositioning', automatedPlayoffPositioning);
+const generateLineUpsRecorded = recorded('generateLineUps', generateLineUps);
 
 // constants and types
 import { MAIN, PLAY_OFF, QUALIFYING, WIN_RATIO } from '@Constants/drawDefinitionConstants';
@@ -43,7 +48,7 @@ import {
 function assignDrawLineUps({ event, tournamentRecord, drawDefinition }) {
   const categoryName = event?.category?.ageCategoryCode || event?.category?.categoryName;
   const scaleAccessor = categoryName ? { scaleName: categoryName, sortOrder: ASCENDING, scaleType: RANKING } : {};
-  const result = generateLineUps({
+  const result = generateLineUpsRecorded({
     exclusiveSingles: true,
     singlesOnly: true,
     tournamentRecord,
@@ -321,7 +326,7 @@ export function completeDrawMatchUps(params): {
       if (result?.error) return result;
 
       if (isRoundRobinWithPlayoff && structure.finishingPosition === WIN_RATIO && params.completeRoundRobinPlayoffs) {
-        automatedPlayoffPositioning({
+        automatedPlayoffPositioningRecorded({
           structureId: structure.structureId,
           applyPositioning: true,
           drawDefinition,
@@ -435,6 +440,7 @@ export function completeDrawMatchUp(params) {
 
   if (matchUpStatusCodes) outcome.matchUpStatusCodes = matchUpStatusCodes;
 
+  recordSetMatchUpStatus({ policyDefinitions, drawDefinition, matchUpFormat, matchUpId, outcome });
   return setMatchUpStatus({
     tournamentRecord,
     policyDefinitions,
@@ -478,6 +484,7 @@ function smartComplete(params) {
   if (generatedResult.error) return generatedResult;
   const { outcome } = generatedResult;
 
+  recordSetMatchUpStatus({ policyDefinitions, drawDefinition, matchUpFormat: resolvedFormat, matchUpId, outcome });
   return setMatchUpStatus({
     policyDefinitions,
     tournamentRecord,

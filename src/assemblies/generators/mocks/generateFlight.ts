@@ -1,6 +1,5 @@
-import { addEventEntries } from '@Mutate/entries/addEventEntries';
+import { addEventEntriesRecorded, addFlightRecorded } from './recordedWrites';
 import { getParticipantId } from '@Functions/global/extractors';
-import { addFlight } from '@Mutate/events/addFlight';
 
 // constants
 import { MAIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
@@ -22,7 +21,7 @@ export function generateFlight({ autoEntryPositions, tournamentRecord, drawParti
   const drawParticipantIds = drawParticipants.slice(0, entriesCount).map(getParticipantId);
 
   if (drawParticipantIds.length) {
-    const result = addEventEntries({
+    const result = addEventEntriesRecorded({
       participantIds: drawParticipantIds,
       autoEntryPositions,
       entryStage: stage,
@@ -38,7 +37,7 @@ export function generateFlight({ autoEntryPositions, tournamentRecord, drawParti
     participantId,
   }));
 
-  const result = addFlight({
+  const result = addFlightRecorded({
     drawName: drawName || drawType,
     qualifyingPositions,
     drawEntries,

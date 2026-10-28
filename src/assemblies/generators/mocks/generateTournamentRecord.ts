@@ -1,8 +1,7 @@
 import { checkProfileKeys, GENERATE_ENGINE_SUPPLIED_KEYS, GENERATE_TOURNAMENT_RECORD_KEYS } from './profileKeys';
+import { recordMethod, startRecording, stopRecording } from '@Mutate/simulation/scenarioRecorder';
 import { createTournamentRecord } from '@Generators/tournamentRecords/createTournamentRecord';
-import { scheduleProfileRounds } from '@Mutate/matchUps/schedule/scheduleProfileRounds';
 import { addTournamentParticipants } from './addTournamentParticipants';
-import { addParticipants } from '@Mutate/participants/addParticipants';
 import { generateEventWithFlights } from './generateEventWithFlights';
 import { generateScheduledRounds } from './generateScheduledRounds';
 import { generateEventWithDraw } from './generateEventWithDraw';
@@ -17,6 +16,11 @@ import { definedAttributes } from '@Tools/definedAttributes';
 import { addDays, extractDate } from '@Tools/plainDate';
 import { randomMember } from '@Tools/arrays';
 import { now } from '@Tools/clock';
+import {
+  addParticipantsRecorded,
+  addTournamentExtensionRecorded,
+  scheduleProfileRoundsRecorded,
+} from './recordedWrites';
 
 // constants and fixtures
 import { ErrorType, INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
@@ -54,6 +58,20 @@ const mockTournamentNames = [
 ];
 
 export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
+  if (!params?.recordMethods) return buildTournamentRecord(params);
+
+  startRecording();
+  try {
+    const result = buildTournamentRecord(params);
+    const methods = stopRecording();
+    return result.error ? result : { ...result, methods };
+  } finally {
+    // a throw or a refusal must not leave a recording open for the next, unrelated generation
+    stopRecording();
+  }
+}
+
+function buildTournamentRecord(params: GenerateTournamentRecordArgs) {
   // an option the generators do not read is refused, not ignored (phase 4c)
   const unknownOption = checkProfileKeys(params, GENERATE_TOURNAMENT_RECORD_KEYS, GENERATE_ENGINE_SUPPLIED_KEYS);
   if (unknownOption) return unknownOption;
@@ -91,6 +109,14 @@ export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
   // an invalid header (a bad localTimeZone, say) comes back as an error envelope; carrying on would
   // decorate that envelope with participants and events and report it as a generated tournament
   if (tournamentRecord.error) return tournamentRecord;
+  recordMethod('newTournamentRecord', {
+    ...params.tournamentAttributes,
+    tournamentId: tournamentRecord.tournamentId,
+    tournamentName,
+    startDate,
+    endDate,
+    isMock,
+  });
 
   const venueIds = venueProfiles?.length ? generateVenues({ tournamentRecord, venueProfiles, uuids }) : [];
   if (!Array.isArray(venueIds)) return venueIds;
@@ -99,7 +125,11 @@ export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
   if (tournamentExtensions?.length && Array.isArray(tournamentExtensions)) {
     const extensions = tournamentExtensions.filter((extension) => isValidExtension({ extension }));
 
-    if (extensions?.length) Object.assign(tournamentRecord, { extensions, isMock });
+    // through the public method, one extension at a time, as a client adds them
+    for (const extension of extensions) {
+      const result = addTournamentExtensionRecorded({ tournamentRecord, extension });
+      if (result.error) return result;
+    }
   }
 
   const policyRefusal = attachProfilePolicies({ policyDefinitions, tournamentRecord, option: 'policyDefinitions' });
@@ -114,7 +144,7 @@ export function generateTournamentRecord(params: GenerateTournamentRecordArgs) {
   const useExistingParticipants = Boolean(params?.participants?.length);
 
   if (useExistingParticipants) {
-    const result = addParticipants({ tournamentRecord, participants: params.participants });
+    const result = addParticipantsRecorded({ tournamentRecord, participants: params.participants });
     if (result.error) return result;
   } else {
     const needsParticipants =
@@ -275,7 +305,7 @@ function scheduleRounds(params): { scheduledRounds?: any; schedulerResult?: any;
     const { tournamentId } = tournamentRecord;
     const tournamentRecords = { [tournamentId]: tournamentRecord };
 
-    const schedulerResult = scheduleProfileRounds({ tournamentRecords, periodLength });
+    const schedulerResult = scheduleProfileRoundsRecorded({ tournamentRecords, periodLength });
 
     return { schedulerResult, scheduledRounds };
   }

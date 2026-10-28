@@ -354,6 +354,8 @@ export type GenerateTournamentRecordArgs = MockEngineCall &
     tournamentExtensions?: Extension[];
     hydrateCollections?: boolean;
     autoEntryPositions?: boolean;
+    /** also return `methods`: the engine calls that reproduce this record (see `scenarioRecorder`) */
+    recordMethods?: boolean;
     participants?: Participant[];
     random?: () => number;
     tournamentName?: string;

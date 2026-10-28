@@ -2,6 +2,7 @@ import { generateOutcomeFromScoreString } from '@Generators/simulation/generateO
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
+import { recordSetMatchUpStatus } from './scenarioRecorder';
 import { intersection } from '@Tools/arrays';
 
 // constants and types
@@ -148,6 +149,7 @@ function recordOutcome({ tournamentRecord, drawDefinition, event, outcomeDef, ta
   const { outcome } = generateOutcomeFromScoreString({ matchUpFormat, matchUpStatus, scoreString, winningSide });
   if (matchUpStatusCodes) outcome.matchUpStatusCodes = matchUpStatusCodes;
 
+  recordSetMatchUpStatus({ matchUpId: targetMatchUp.matchUpId, drawDefinition, matchUpFormat, outcome });
   return setMatchUpStatus({
     // optional here: `mocksEngine.generateEventWithDraw` applies a profile's outcomes to a draw that has no
     // tournament record yet, and recording a result on a draw reads none

@@ -1,5 +1,9 @@
 import { attachPolicies } from '@Mutate/extensions/policies/attachPolicies';
+import { recorded } from '@Mutate/simulation/scenarioRecorder';
 import { isObject } from '@Tools/objects';
+
+// logged when a scenario is recorded (see scenarioRecorder)
+const attachPoliciesRecorded = recorded('attachPolicies', attachPolicies);
 
 // constants and types
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
@@ -32,7 +36,7 @@ export function attachProfilePolicies({
 
   for (const [policyType, policy] of Object.entries(policyDefinitions)) {
     if (policy === undefined || policy === null) continue;
-    const result = attachPolicies({
+    const result = attachPoliciesRecorded({
       policyDefinitions: { [policyType]: policy },
       allowReplacement,
       tournamentRecord,

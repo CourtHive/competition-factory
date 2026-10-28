@@ -1,12 +1,14 @@
-import { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems/addMatchUpScheduledDate';
 import { applyScenarioState, invalidScenarioState, ScenarioConflict } from './scenarioState';
 import { checkBatchPlayedOrder } from '@Mutate/matchUps/schedule/scheduleItems/playedOrder';
-import { scheduleProfileGrid } from '@Mutate/matchUps/schedule/scheduleProfileGrid';
-import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { extractDate } from '@Tools/dateTime';
 import { now } from '@Tools/clock';
+import {
+  addMatchUpScheduledDateRecorded,
+  addMatchUpScheduledTimeRecorded,
+  scheduleProfileGridRecorded,
+} from './recordedWrites';
 
 // constants and types
 import { ErrorType, INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
@@ -215,7 +217,7 @@ function anchorSchedule({ tournamentRecord, scenarioProfile, anchorDate }: Ancho
 
     // the date first: the time write below reads the matchUp's CURRENT date to decide what to keep
     if (targetDate !== String(matchUp.schedule?.scheduledDate ?? '').split('T')[0]) {
-      const dateResult = addMatchUpScheduledDate({
+      const dateResult = addMatchUpScheduledDateRecorded({
         scheduledDate: targetDate,
         matchUpId: matchUp.matchUpId,
         playedOrderChecked: true,
@@ -227,7 +229,7 @@ function anchorSchedule({ tournamentRecord, scenarioProfile, anchorDate }: Ancho
     }
 
     // a refused write is the call's refusal: it was counted out and reported as success before
-    const result = addMatchUpScheduledTime({
+    const result = addMatchUpScheduledTimeRecorded({
       scheduledTime: isoShifted,
       matchUpId: matchUp.matchUpId,
       playedOrderChecked: true,
@@ -258,7 +260,7 @@ function anchorSchedule({ tournamentRecord, scenarioProfile, anchorDate }: Ancho
     ];
     if (scheduleDates.length) {
       // a grid that refuses is the call's refusal, not a schedule silently left without courts
-      const courtsResult = scheduleProfileGrid({ tournamentRecords, scheduleDates });
+      const courtsResult = scheduleProfileGridRecorded({ tournamentRecords, scheduleDates });
       if (courtsResult?.error)
         return decorateResult({ result: courtsResult as ResultType, stack: 'applyScenarioProfile' });
     }
