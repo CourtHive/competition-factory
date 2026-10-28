@@ -15,7 +15,6 @@ import { generateVenues } from '@Mutate/venues/generateVenues';
 import { applyScenarioProfile } from './applyScenarioProfile';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { addDays, extractDate } from '@Tools/plainDate';
-import { addEvent } from '@Mutate/events/addEvent';
 import { randomMember } from '@Tools/arrays';
 import { now } from '@Tools/clock';
 
@@ -172,26 +171,21 @@ function processDrawProfiles(params) {
   const { tournamentRecord, drawProfiles, allUniqueParticipantIds, eventIds, drawIds } = params;
   let drawIndex = 0;
   for (const drawProfile of drawProfiles) {
-    let result = generateEventWithDraw({
+    const addToRecord = drawProfile?.addEvent !== false;
+    const result = generateEventWithDraw({
       allUniqueParticipantIds,
       tournamentRecord,
       drawProfile,
       drawIndex,
       ...params,
+      // after the spread: a caller's params cannot switch the order back
+      addToRecord,
     });
     if (result.error) return result;
 
-    const { drawId, eventId, event, uniqueParticipantIds } = result;
+    const { drawId, eventId, uniqueParticipantIds } = result;
 
-    if (drawProfile?.addEvent !== false) {
-      result = addEvent({
-        suppressNotifications: false,
-        internalUse: true,
-        tournamentRecord,
-        event,
-      });
-      if (result.error) return result;
-
+    if (addToRecord) {
       if (drawId) drawIds.push(drawId);
       eventIds.push(eventId);
     }

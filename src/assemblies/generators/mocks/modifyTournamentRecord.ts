@@ -16,7 +16,6 @@ import { generateVenues } from '@Mutate/venues/generateVenues';
 import { isActiveMatchUp } from '@Query/matchUp/activeMatchUp';
 import { cloneState, restoreState } from '@Tools/cloneState';
 import { generateFlights } from './generateFlights';
-import { addEvent } from '@Mutate/events/addEvent';
 import { isObject } from '@Tools/objects';
 
 // constants and types
@@ -288,7 +287,7 @@ function processDrawProfiles({ drawProfiles, tournamentRecord, allUniqueParticip
     .reduce((a, b) => a + b, 0);
 
   for (const drawProfile of drawProfiles) {
-    let result = generateEventWithDraw({
+    const result = generateEventWithDraw({
       startDate: tournamentRecord.startDate,
       allUniqueParticipantIds,
       matchUpStatusProfile: params.matchUpStatusProfile,
@@ -299,16 +298,15 @@ function processDrawProfiles({ drawProfiles, tournamentRecord, allUniqueParticip
       randomWinningSide: params.randomWinningSide,
       ratingsParameters: params.ratingsParameters,
       tournamentRecord,
+      // the event is added (public addEvent) before its entries and draw, as a client would
+      addToRecord: true,
       drawProfile,
       drawIndex,
       uuids: params.uuids,
     });
     if (result.error) return result;
 
-    const { drawId, eventId, event, uniqueParticipantIds } = result;
-
-    result = addEvent({ tournamentRecord, event, internalUse: true });
-    if (result.error) return result;
+    const { drawId, eventId, uniqueParticipantIds } = result;
 
     if (drawId) drawIds.push(drawId);
     eventIds.push(eventId);
