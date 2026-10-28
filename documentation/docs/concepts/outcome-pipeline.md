@@ -618,7 +618,11 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   `DOUBLE_WALKOVER`, whose score is blanked), its award taken away and the arriving side's entry merged beside
   the standing one; then that double exit produces onward as one entered there would, pending, with the
   reservation beside a fed seat. Planned where the landing holds that single exit and no score value, links no
-  loser on, and the produced exit lands clean. A **double exit with loser links** is owned where its produced exit lands pending,
+  loser on, and the produced exit lands clean. A double exit whose produced exit meets a pending one a double exit beside it
+  produced there **converges** with it: the matchUp becomes the double exit (`collapseDoubleExitStatus`), with no
+  winner, codes `[]`, a `DOUBLE_WALKOVER`'s score blanked and the arriving side's origin beside the standing one, and it
+  produces on as one entered there would (`advanceConvergedWinner`); planned with no loser link from this matchUp or the
+  landing, nobody there, and the exit produced onward landing clean (or none, from a final). A **double exit with loser links** is owned where its produced exit lands pending,
   or is awarded at once to the winner of the matchUp beside it, who goes on as above: nobody
   loses the double exit, so the seat its link feeds takes a propagated BYE and that matchUp a BYE, and the position
   opposite (empty, or the participant standing there) is advanced through it into the next matchUp (`advanceWinner`,

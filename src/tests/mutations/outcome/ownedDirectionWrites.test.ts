@@ -721,6 +721,30 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'SINGLE_ELIMINATION (S5): a second double walkover converges round 2 into a double walkover, which produces on',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION (S5): two double defaults converge into a double default in a 16 draw',
+    {
+      drawProfile: { drawSize: 16, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(4), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+      steps: [{ target: R1(3), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION (S5): a double walkover meeting a produced default converges to a double walkover',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+      steps: [{ target: R1(2), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
     'ROUND_ROBIN (S5): a double walkover in a group, re-tallying it, sends nobody on',
     {
       drawProfile: { drawSize: 8, drawType: ROUND_ROBIN },
