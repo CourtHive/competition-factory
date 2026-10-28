@@ -1,6 +1,7 @@
 import { definedAttributes } from '@Tools/definedAttributes';
 import { addNotice } from '@Global/state/globalState';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
+import { indexParticipants } from './participantsIndex';
 import { addParticipant } from './addParticipant';
 import { UUID } from '@Tools/UUID';
 
@@ -28,17 +29,15 @@ export function addParticipants({
   tournamentRecord.participants ??= [];
   const tournamentParticipants = tournamentRecord.participants;
 
-  const existingParticipantIds = tournamentParticipants.map((p) => p.participantId) ?? [];
+  const existingParticipantIds = new Set(tournamentParticipants.map((p) => p.participantId));
 
   participants.forEach((participant) => {
     participant.participantId ??= UUID();
   });
 
-  const newParticipants = participants.filter(
-    (participant) => !existingParticipantIds.includes(participant.participantId),
-  );
+  const newParticipants = participants.filter((participant) => !existingParticipantIds.has(participant.participantId));
 
-  const notAdded = participants.filter((participant) => existingParticipantIds.includes(participant.participantId));
+  const notAdded = participants.filter((participant) => existingParticipantIds.has(participant.participantId));
 
   const individualParticipants = newParticipants.filter((participant) => participant.participantType === INDIVIDUAL);
 
@@ -49,9 +48,12 @@ export function addParticipants({
 
   const addedParticipants: Participant[] = [];
   if (participantsToAdd.length) {
+    // the pool is read once for the batch, not once per participant
+    const participantsIndex = indexParticipants(tournamentParticipants);
     for (const participant of participantsToAdd) {
       const result = addParticipant({
         allowDuplicateParticipantIdPairs,
+        participantsIndex,
         returnParticipant: true,
         disableNotice: true,
         tournamentRecord,

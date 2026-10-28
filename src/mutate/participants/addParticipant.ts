@@ -7,6 +7,7 @@ import { normalizeGender } from '@Helpers/coercedGender';
 import { addNotice } from '@Global/state/globalState';
 import { collapseWhitespace } from '@Tools/strings';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
+import { indexParticipant, pairKey, ParticipantsIndex } from './participantsIndex';
 import { intersection } from '@Tools/arrays';
 import { UUID } from '@Tools/UUID';
 
@@ -15,7 +16,7 @@ import { GROUP, INDIVIDUAL, PAIR, participantTypes, TEAM } from '@Constants/part
 import { ADD_PARTICIPANTS } from '@Constants/topicConstants';
 import { TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Tournament } from '@Types/tournamentTypes';
+import { Participant, Tournament } from '@Types/tournamentTypes';
 import {
   INVALID_PARTICIPANT_IDS,
   INVALID_PARTICIPANT_TYPE,
@@ -39,15 +40,19 @@ type AddParticipantType = {
   pairOverride?: boolean;
   tournamentId?: string;
   participant: any; // participantId may be missing and is added by the method
+  /** the record's participants indexed by a caller adding a batch (addParticipants); else the record is scanned */
+  participantsIndex?: ParticipantsIndex;
 };
 
-function validateBaseParticipant(participant, tournamentRecord) {
+function validateBaseParticipant(participant, tournamentRecord, participantsIndex?: ParticipantsIndex) {
   if (!participant) return { error: MISSING_PARTICIPANT };
   participant.participantId ??= UUID();
   tournamentRecord.participants ??= [];
 
   const { participantId } = participant;
-  const idExists = tournamentRecord.participants.reduce((p, c) => c.participantId === participantId || p, false);
+  const idExists = participantsIndex
+    ? participantsIndex.ids.has(participantId)
+    : tournamentRecord.participants.some((c) => c.participantId === participantId);
   if (idExists) return { error: PARTICIPANT_ID_EXISTS };
 
   const { participantType, participantRole } = participant;
@@ -68,9 +73,17 @@ function validateBaseParticipant(participant, tournamentRecord) {
 function validatePairParticipant({
   participant,
   tournamentParticipants,
+  participantsIndex,
   pairOverride,
   allowDuplicateParticipantIdPairs,
   returnParticipant,
+}: {
+  participant: AddParticipantType['participant'];
+  tournamentParticipants: Participant[];
+  participantsIndex?: ParticipantsIndex;
+  pairOverride?: boolean;
+  allowDuplicateParticipantIdPairs?: boolean;
+  returnParticipant?: boolean;
 }) {
   const stack = 'addParticipant';
 
@@ -89,9 +102,9 @@ function validatePairParticipant({
     });
   }
 
-  const individualParticipantIds = new Set(
-    tournamentParticipants.filter((p) => p.participantType === INDIVIDUAL).map((p) => p.participantId),
-  );
+  const individualParticipantIds =
+    participantsIndex?.individualIds ??
+    new Set(tournamentParticipants.filter((p) => p.participantType === INDIVIDUAL).map((p) => p.participantId));
 
   if (!Array.isArray(participant.individualParticipantIds))
     return decorateResult({
@@ -109,16 +122,7 @@ function validatePairParticipant({
       stack,
     });
 
-  const existingPairParticipants = tournamentParticipants
-    .filter((p) => p.participantType === PAIR)
-    .map((p) => ({
-      individualParticipantIds: p.individualParticipantIds,
-      participant: p,
-    }));
-
-  const existingPairParticipant = existingPairParticipants.find(
-    (existing) => intersection(existing.individualParticipantIds, participant.individualParticipantIds).length === 2,
-  );
+  const existingPairParticipant = findExistingPair({ participant, tournamentParticipants, participantsIndex });
 
   if (existingPairParticipant && !allowDuplicateParticipantIdPairs) {
     return {
@@ -130,14 +134,42 @@ function validatePairParticipant({
   }
 
   if (!participant.participantName) {
-    const individualParticipants = tournamentParticipants.filter((tp) =>
-      participant.individualParticipantIds?.includes(tp.participantId),
-    );
+    const individualParticipants = participantsIndex
+      ? pairIndividualsInRecordOrder({ participant, tournamentParticipants, participantsIndex })
+      : tournamentParticipants.filter((tp) => participant.individualParticipantIds?.includes(tp.participantId));
 
     participant.participantName = generatePairParticipantName({ individualParticipants });
   }
 
   return undefined;
+}
+
+/**
+ * The first PAIR in record order sharing two distinct individualParticipantIds with the participant. The index answers
+ * when both pairs hold exactly two distinct ids (a pair with fewer can match nothing); otherwise the record is scanned.
+ */
+function findExistingPair({ participant, tournamentParticipants, participantsIndex }) {
+  const distinct = new Set(participant.individualParticipantIds ?? []).size;
+  if (participantsIndex && !participantsIndex.irregularPairs && distinct <= 2) {
+    const key = pairKey(participant.individualParticipantIds);
+    const existing = key ? participantsIndex.pairs.get(key) : undefined;
+    return existing && { individualParticipantIds: existing.individualParticipantIds, participant: existing };
+  }
+  return tournamentParticipants
+    .filter((p) => p.participantType === PAIR)
+    .map((p) => ({ individualParticipantIds: p.individualParticipantIds, participant: p }))
+    .find(
+      (existing) => intersection(existing.individualParticipantIds, participant.individualParticipantIds).length === 2,
+    );
+}
+
+/** the record's participants a pair names, in record order (each once, as a filter of the record gives them) */
+function pairIndividualsInRecordOrder({ participant, tournamentParticipants, participantsIndex }) {
+  const positions = [...new Set<string>(participant.individualParticipantIds ?? [])]
+    .map((id) => participantsIndex.positions.get(id))
+    .filter((position) => position !== undefined)
+    .sort((a, b) => a - b);
+  return positions.map((position) => tournamentParticipants[position]);
 }
 
 function validateTeamGroupParticipant({ participant, tournamentIndividualParticipantIds }) {
@@ -158,7 +190,7 @@ function validateTeamGroupParticipant({ participant, tournamentIndividualPartici
           stack,
         });
       }
-      if (!tournamentIndividualParticipantIds.includes(individualParticipantId)) {
+      if (!tournamentIndividualParticipantIds.has(individualParticipantId)) {
         return decorateResult({
           result: {
             participantId: individualParticipantId,
@@ -173,10 +205,32 @@ function validateTeamGroupParticipant({ participant, tournamentIndividualPartici
   return undefined;
 }
 
+/** the record's individual participantIds: the batch's index when there is one, else a scan */
+function individualIdsOf(tournamentParticipants: Participant[], participantsIndex?: ParticipantsIndex): Set<string> {
+  return (
+    participantsIndex?.individualIds ??
+    new Set(tournamentParticipants.filter((tp) => tp.participantType === INDIVIDUAL).map((tp) => tp.participantId))
+  );
+}
+
+/** appends the participant to the record, and to the batch's index when there is one */
+function appendParticipant({ tournamentRecord, participant, participantsIndex }) {
+  tournamentRecord.participants?.push(participant);
+  if (participantsIndex && tournamentRecord.participants)
+    indexParticipant(participantsIndex, participant, tournamentRecord.participants.length - 1);
+}
+
 export function addParticipant(params: AddParticipantType) {
   const stack = 'addParticipant';
 
-  const { allowDuplicateParticipantIdPairs, returnParticipant, disableNotice, pairOverride, participant } = params;
+  const {
+    allowDuplicateParticipantIdPairs,
+    participantsIndex,
+    returnParticipant,
+    disableNotice,
+    pairOverride,
+    participant,
+  } = params;
 
   const tournamentRecord = params.tournamentId
     ? params.tournamentRecords?.[params.tournamentId]
@@ -184,7 +238,7 @@ export function addParticipant(params: AddParticipantType) {
 
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
 
-  const baseError = validateBaseParticipant(participant, tournamentRecord);
+  const baseError = validateBaseParticipant(participant, tournamentRecord, participantsIndex);
   if (baseError) return decorateResult({ result: baseError, stack });
 
   // A caller-supplied name gets the same whitespace guarantee as a composed one.
@@ -194,14 +248,13 @@ export function addParticipant(params: AddParticipantType) {
 
   const { participantType } = participant;
   const tournamentParticipants = tournamentRecord.participants ?? [];
-  const tournamentIndividualParticipantIds = tournamentParticipants
-    .filter((tp) => tp.participantType === INDIVIDUAL)
-    .map((tp) => tp.participantId);
+  const tournamentIndividualParticipantIds = individualIdsOf(tournamentParticipants, participantsIndex);
 
   if (participantType === PAIR) {
     const pairError: any = validatePairParticipant({
       participant,
       tournamentParticipants,
+      participantsIndex,
       pairOverride,
       allowDuplicateParticipantIdPairs,
       returnParticipant,
@@ -242,7 +295,7 @@ export function addParticipant(params: AddParticipantType) {
     return { error: INVALID_PARTICIPANT_TYPE };
   }
 
-  tournamentRecord.participants?.push(participant);
+  appendParticipant({ tournamentRecord, participant, participantsIndex });
 
   if (!disableNotice) {
     addNotice({
