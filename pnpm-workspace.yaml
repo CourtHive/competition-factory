@@ -87,3 +87,4 @@ overrides:
   nanoid: '^3.3.17'
   smol-toml: '^1.7.1'
   markdown-it@15: '^15.0.2'
+  re2js: '>=2.8.7' # GHSA-gg6h-894w-4m9c (quadratic-time lookbehind DoS), via markdownlint
