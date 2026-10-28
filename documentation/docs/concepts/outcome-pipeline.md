@@ -625,14 +625,15 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   (`propagateUnfillableLoserBye`), its structure's assignments announced with no event unless another placement there
   named one (the notice buffer keeps an earlier event, `preserveNoticeIdentity`). Under `doubleExitPropagateBye: false`
   the loser seat shows the produced exit instead: the loser matchUp is written the double exit's flavour awarded to the
-  side opposite the seat, nobody there, its codes `[]`, a `WALKOVER`'s score blanked and the seat's side given the
-  origin (`conditionallyAdvanceDrawPosition`), with no `scoredTime`; its structure is stamped, and the empty position
-  opposite is advanced into the next matchUp ahead of the arrival it awaits (announced with no event or tournament).
-  Planned in a first round that is not fed, nobody and no BYE opposite the seat, into a matchUp that links no loser on
+  side opposite the seat, its codes `[]`, a `WALKOVER`'s score blanked and the seat's side given the
+  origin (`conditionallyAdvanceDrawPosition`), with no `scoredTime`; its structure is stamped, and the position
+  opposite is advanced into the next matchUp, announced with no event or tournament: a participant standing there goes
+  on, an empty position goes ahead of the arrival it awaits. Planned in a first round that is not fed, no BYE opposite
+  the seat, into a matchUp that links no loser on
   (COMPASS and OLYMPIC stay v1's). Otherwise outside a feed round, for links with no condition, free seats with no BYE beside them (a BYE there makes a
   double BYE: v1's), clean matchUps, and an
   unfillable seat whose matchUp holds no other position; FIRST_MATCHUP feeds and chains stay v1's. v1 writes it through
-  `modifyMatchUpScore`, not `setMatchUpState`, so it takes no `scoredTime`. Stay v1's: a double exit with a loser link beside a BYE, into a feed round, or under `doubleExitPropagateBye: false` beside a participant or a loser matchUp that links on; a carry past a BYE into anything but a clean matchUp; a
+  `modifyMatchUpScore`, not `setMatchUpState`, so it takes no `scoredTime`. Stay v1's: a double exit with a loser link beside a BYE, into a feed round, or under `doubleExitPropagateBye: false` into a loser matchUp that links on; a carry past a BYE into anything but a clean matchUp; a
   present opponent, for a carried or a produced exit, with nowhere clean to go on to; a convergence but RULE 4's clean one; a
   correction to or from an exit; and an exit whose target holds a BYE, an exit or a result (`exit`, `cascade`).
 - **`differential`**: v2 plans the whole call before v1 runs, then checks v1's result against it,

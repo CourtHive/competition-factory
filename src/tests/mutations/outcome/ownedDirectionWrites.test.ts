@@ -737,6 +737,24 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'DOUBLE_ELIMINATION (S5, doubleExitPropagateBye off): the produced walkover awarded to the winner already there',
+    {
+      drawProfile: { drawSize: 16, drawType: DOUBLE_ELIMINATION },
+      policyDefinitions: POLICY_OFF,
+      setup: [{ target: R1(2, 'Main'), outcome: won(1) }],
+      steps: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S5, doubleExitPropagateBye off): the consolation default awarded to the loser standing there',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      policyDefinitions: POLICY_OFF,
+      setup: [{ target: R1(4, 'Main'), outcome: won(2) }],
+      steps: [{ target: R1(3, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
+  [
     'DOUBLE_ELIMINATION (S5, doubleExitPropagateBye off): a double default in a 16 draw produces a Backdraw default',
     {
       drawProfile: { drawSize: 16, drawType: DOUBLE_ELIMINATION },
