@@ -170,6 +170,8 @@ export type OutcomeView = {
       opponentBye: boolean;
       /** the seat is a BYE already (a FIRST_MATCHUP reservation placed it): a kept-out loser's BYE needs nothing */
       bye: boolean;
+      /** that BYE was placed by a propagation (`assignDrawPositionBye`'s marker), which an unwind may take back */
+      byeFromPropagation?: boolean;
       /** the matchUp's other seat holds somebody or a BYE: a BYE placed here would advance or meet them */
       opponentHeld: boolean;
       /** the participant the seat holds: a re-entered result finds its loser already there (S4) */
@@ -188,6 +190,11 @@ export type OutcomeView = {
      * fill (v1's `propagateUnfillableLoserBye`), with the matchUp holding it
      */
     winnerLoserSeat?: WinnerLoserSeat;
+    /**
+     * a stored double exit the call leaves (S6, `removeDoubleExit`): the call's matchUp and each matchUp on its winner path
+     * in its structure, to the final, with the seat each one's loser link feeds, which v1's unwind visits
+     */
+    unwindLoserSeats?: { matchUpId: string; loserSeat?: WinnerLoserSeat }[];
     /**
      * a double exit's call whose next matchUp holds an exit (S5): the loser seat of the matchUp after it, which a
      * convergence's produced exit leaves unfillable, and the levels a BYE there goes on to
@@ -422,7 +429,7 @@ export type WinnerLoserSeat = {
   structureId: string;
   drawPosition: number;
   linkCondition?: string;
-  seat?: { free: boolean; opponentBye: boolean; opponentHeld: boolean; bye?: boolean };
+  seat?: { free: boolean; opponentBye: boolean; opponentHeld: boolean; bye?: boolean; byeFromPropagation?: boolean };
   /** the positions the matchUp holding the seat already stands with */
   drawPositions: number[];
   matchUpStatus?: MatchUpStatusUnion;

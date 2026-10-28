@@ -57,6 +57,7 @@ export function applyOwnedPlan({
         op.op === 'setMatchUpStatusCodes' ||
         op.op === 'mergeSideExitProvenance' ||
         op.op === 'setSideExitProvenance' ||
+        op.op === 'clearMatchUpBye' ||
         op.op === 'exchangeDrawPositions'
           ? [op.matchUpId]
           : [],
@@ -104,6 +105,13 @@ export function applyOwnedPlan({
   const advanced = new Set(
     ops.flatMap((op) => (op.op === 'setMatchUpDrawPositions' && op.advancesThroughBye ? [op.matchUpId] : [])),
   );
+  // a BYE an unwind withdraws: v1's `clearDrawPosition` names its position, with neither event nor tournament (S6)
+  const unbyed = new Map<string, number>();
+  for (const op of ops) {
+    if (op.op === 'clearMatchUpBye') unbyed.set(op.matchUpId, op.drawPosition);
+    if (op.op === 'setMatchUpDrawPositions' && op.withdrawnByePosition)
+      unbyed.set(op.matchUpId, op.withdrawnByePosition);
+  }
   const stored = new Map(args.matchUpsMap?.drawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
   const subscribed = getTopics().topics.includes(UPDATE_INCONTEXT_MATCHUP);
   for (const matchUpId of written) {
@@ -122,20 +130,47 @@ export function applyOwnedPlan({
     }
     // a removal's notice is built as v1's `removeSubsequentRoundsParticipant` builds it, whose caller passes no event
     const removedPosition = removed.get(matchUpId);
-    const noticeEvent = removedPosition || unevented.has(matchUpId) ? undefined : event;
+    const unbyedPosition = resulted.has(matchUpId) ? undefined : unbyed.get(matchUpId);
+    const noticeEvent = removedPosition || unbyedPosition || unevented.has(matchUpId) ? undefined : event;
     modifyMatchUpNotice({
       // v1's writers name themselves: the call's result is `modifyMatchUpScore`'s, a winner's seat in the next matchUp
       // is `assignMatchUpDrawPosition`'s (`directWinner`), a FIRST_MATCHUP reservation's matchUp `setMatchUpStatusBye`'s
-      context: removedPosition
-        ? `removeSubsequentDrawPosition-${removedPosition}`
-        : matchUpContext(matchUpId, { resulted, byes, recoded, exchanged, relayed, advanced }),
+      context: noticeContext(matchUpId, removedPosition, unbyedPosition, {
+        resulted,
+        byes,
+        recoded,
+        exchanged,
+        relayed,
+        advanced,
+      }),
       eventId: noticeEvent?.eventId,
-      tournamentId: untournamented.has(matchUpId) ? undefined : tournamentId,
+      tournamentId: untournamented.has(matchUpId) || unbyedPosition ? undefined : tournamentId,
       drawDefinition,
       matchUp,
       event: noticeEvent,
     });
   }
+  announceAssignments({ ops, drawDefinition, tournamentId, event });
+  // a winner's route returns the context `directParticipants` builds, a final's included, which carries something only
+  // for an exit (S5): empty
+  return shape === 'direction' ? { ...SUCCESS, context: {} } : { ...SUCCESS };
+}
+
+/**
+ * The structures whose assignments the ops change: a loser placed across a link, or a reserved seat, announced once
+ * (v1's `directLoser`, `assignDrawPositionBye`); and a seat an unwind visits (S6)
+ */
+function announceAssignments({
+  drawDefinition,
+  tournamentId,
+  event,
+  ops,
+}: {
+  drawDefinition: NonNullable<BuildViewArgs['drawDefinition']>;
+  event: BuildViewArgs['event'];
+  tournamentId?: string;
+  ops: OutcomeOp[];
+}) {
   // a loser placed across a link, or a reserved seat: the structure whose assignments changed, announced once (v1's
   // `directLoser`, `assignDrawPositionBye`)
   const placedIn = [
@@ -154,9 +189,29 @@ export function applyOwnedPlan({
     const noticeEvent = evented ? event : undefined;
     if (structure) modifyPositionAssignmentsNotice({ drawDefinition, tournamentId, structure, event: noticeEvent });
   }
-  // a winner's route returns the context `directParticipants` builds, a final's included, which carries something only
-  // for an exit (S5): empty
-  return shape === 'direction' ? { ...SUCCESS, context: {} } : { ...SUCCESS };
+  // a seat an unwind's `removeDirectedBye` visits: its structure's assignments announced with neither event nor
+  // tournament, whether or not a BYE stood there (S6)
+  const unwound = [
+    ...new Set(
+      ops.flatMap((op) => (op.op === 'withdrawBye' && !placedIn.includes(op.structureId) ? [op.structureId] : [])),
+    ),
+  ];
+  for (const structureId of unwound) {
+    const { structure } = findStructure({ drawDefinition, structureId });
+    if (structure)
+      modifyPositionAssignmentsNotice({ drawDefinition, structure, tournamentId: undefined, event: undefined });
+  }
+}
+
+function noticeContext(
+  matchUpId: string,
+  removedPosition: number | undefined,
+  unbyedPosition: number | undefined,
+  written: Parameters<typeof matchUpContext>[1],
+): string {
+  if (removedPosition) return `removeSubsequentDrawPosition-${removedPosition}`;
+  if (unbyedPosition) return `removeDrawPosition-${unbyedPosition}`;
+  return matchUpContext(matchUpId, written);
 }
 
 function matchUpContext(

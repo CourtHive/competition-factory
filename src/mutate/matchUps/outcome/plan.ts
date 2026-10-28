@@ -11,7 +11,7 @@ import {
 
 // constants and types
 import type { DrawDefinition, MatchUpStatusUnion, Score, TallyResult, Tournament } from '@Types/tournamentTypes';
-import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
+import { FIRST_MATCHUP, LOSER } from '@Constants/drawDefinitionConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { OutcomeOp } from './ops';
 import type {
@@ -1550,53 +1550,116 @@ const BLANK_SCORE: Score = { scoreStringSide1: '', scoreStringSide2: '' };
 const scoreless = (matchUp: HydratedMatchUp) =>
   !matchUp.score?.scoreStringSide1 && !matchUp.score?.scoreStringSide2 && !matchUp.score?.sets?.length;
 const unplaced = (matchUp: HydratedMatchUp) => !(matchUp.drawPositions ?? []).some(Boolean);
-const undecided = (matchUp: HydratedMatchUp) =>
+const undecided = (matchUp: HydratedMatchUp, loserLinked?: boolean) =>
   !matchUp.winningSide &&
   scoreless(matchUp) &&
   unplaced(matchUp) &&
   !matchUp.matchUpStatusCodes?.length &&
-  !matchUp.loserMatchUpId &&
+  (loserLinked || !matchUp.loserMatchUpId) &&
   !matchUp.sides?.some((side) => side.bye);
+
+/** a matchUp on a cleared double exit's path, with the writes v1's unwind makes at the seat its loser link feeds */
+type UnwoundLevel = { matchUpId: string; seatOps: OutcomeOp[] };
 
 /**
  * S6: a double exit cleared (the `clear-score` route): v1's `removeDoubleExit`, then the clear's own write. Planned where
- * all the double exit sent on is its produced exit, still pending, in a structure that links nothing out: the next
- * matchUp holds that exit alone (no winner, positions, score or codes, and this matchUp's origin, on the side it fed,
- * as its only provenance), and every matchUp beyond it on the winner's path to the final is to be played with no
- * positions, result, codes or provenance. v1 walks that path to the final (`conditionallyRemoveDrawPosition` →
- * `removeDoubleExit`, level by level) and, deepest first, writes each matchUp back to be played: codes `[]`, its score
- * blanked, the produced exit's origin withdrawn. Returns the path, the produced exit's matchUp first; undefined where
- * anything else stands (a feed round, loser links, an award, a convergence, anything played beyond).
+ * all the double exit sent on is its produced exit, still pending, in a structure whose only links out are loser links
+ * with no condition: the next matchUp holds that exit alone (no winner, positions, score or codes, and this matchUp's
+ * origin, on the side it fed, as its only provenance), and every matchUp beyond it on the winner's path to the final is
+ * to be played with no positions, result, codes or provenance. v1 walks that path to the final
+ * (`conditionallyRemoveDrawPosition` → `removeDoubleExit`, level by level) and writes each matchUp back to be played:
+ * codes `[]`, its score blanked, the produced exit's origin withdrawn. At each level it also withdraws the BYE at the seat
+ * the loser link feeds (`removeDirectedBye`, under `doubleExitPropagateBye`): the seats the double exit's BYEs took
+ * (`unwoundSeatOps`). Returns the path, the call's matchUp first; undefined where anything else stands (a feed round, a
+ * winner or conditioned link, an award, a convergence, anything played beyond, a BYE that went on further).
  */
-function unwoundPath(view: OutcomeView, matchUpId?: string, drawDefinition?: DrawDefinition): string[] | undefined {
+function unwoundPath(
+  view: OutcomeView,
+  matchUpId?: string,
+  drawDefinition?: DrawDefinition,
+): UnwoundLevel[] | undefined {
   const source = indexed(view, matchUpId);
   const structureId = source?.structureId;
-  if (!source || !structureId || source.loserMatchUpId) return undefined;
-  if ((drawDefinition?.links ?? []).some((link) => link.source?.structureId === structureId)) return undefined;
+  if (!source || !structureId) return undefined;
+  const linksOut = (drawDefinition?.links ?? []).filter((link) => link.source?.structureId === structureId);
+  if (linksOut.some((link) => link.linkType !== LOSER || link.linkCondition)) return undefined;
+  if (linksOut.length && !view.draw.doubleExitPropagatesBye) return undefined;
   const target = producedTarget(view, source, source.matchUpStatus as MatchUpStatusUnion);
   if (!target || target.feed) return undefined;
   const { entry } = target;
   const provenance = entry.sideExitProvenance ?? {};
   const origins = Object.keys(provenance);
   const origin = provenance[target.fedSide];
-  if (entry.matchUpStatus !== target.matchUpStatus || !undecided(entry)) return undefined;
+  if (entry.matchUpStatus !== target.matchUpStatus || !undecided(entry, true)) return undefined;
   if (origins.length !== 1 || origin?.sourceMatchUpId !== source.matchUpId) return undefined;
-  const path = [entry.matchUpId];
+  const path = [source.matchUpId, entry.matchUpId];
   let next = indexed(view, entry.winnerMatchUpId);
   while (next) {
-    const clean = next.structureId === structureId && next.matchUpStatus === TO_BE_PLAYED && undecided(next);
+    const clean = next.structureId === structureId && next.matchUpStatus === TO_BE_PLAYED && undecided(next, true);
     if (!clean || Object.keys(next.sideExitProvenance ?? {}).length || path.includes(next.matchUpId)) return undefined;
     path.push(next.matchUpId);
     next = indexed(view, next.winnerMatchUpId);
   }
-  return path;
+  const seats = view.targets.unwindLoserSeats ?? [];
+  const levels: UnwoundLevel[] = [];
+  for (const [index, id] of path.entries()) {
+    const level = seats[index];
+    if (level?.matchUpId !== id) return undefined;
+    // the double exit's own seat and its produced exit's took the BYEs it placed; a seat further on holds nothing yet
+    const seatOps = level.loserSeat ? unwoundSeatOps(view, level.loserSeat, index < 2) : [];
+    if (!seatOps) return undefined;
+    levels.push({ matchUpId: id, seatOps });
+  }
+  return levels;
 }
 
 /**
- * The cleared double exit's unwind, as v1 writes it: deepest first, each matchUp on the path written back to be played
- * through `modifyMatchUpScore` (no `scoredTime` rule), its codes `[]` and its score blanked; the produced exit's origin
- * withdrawn. v1's walk past the produced exit's matchUp passes on neither the tournament nor the event, so those writes
- * are announced without them (`announcesContext: false`).
+ * v1's `removeDirectedBye` at a seat the unwind visits. Where the double exit placed a BYE (its own loser seat, and the
+ * seat its produced exit left unfillable), the BYE is withdrawn, its matchUp is to be played again, and a position the
+ * BYE sent on is taken back out of the next matchUp; planned where that BYE went no further (its matchUp links no loser
+ * on, and the next matchUp is to be played with no result or provenance, and keeps a position). A seat further on holds nothing yet, and the
+ * visit only announces its structure. Undefined for anything else.
+ */
+function unwoundSeatOps(view: OutcomeView, loserSeat: WinnerLoserSeat, placedBye: boolean): OutcomeOp[] | undefined {
+  const { structureId, drawPosition, matchUpId, seat } = loserSeat;
+  const withdraw: OutcomeOp = { op: 'withdrawBye', structureId, drawPosition };
+  if (!seat || loserSeat.linkCondition) return undefined;
+  if (!placedBye) return seat.free && loserSeat.matchUpStatus !== BYE ? [withdraw] : undefined;
+  const byeMatchUp = indexed(view, matchUpId);
+  if (!seat.bye || !seat.byeFromPropagation || seat.opponentBye || !byeMatchUp) return undefined;
+  if (byeMatchUp.matchUpStatus !== BYE || byeMatchUp.loserMatchUpId) return undefined;
+  const opposite = loserSeat.drawPositions.filter((position) => position !== drawPosition);
+  const ops: OutcomeOp[] = [
+    withdraw,
+    { op: 'clearMatchUpBye', matchUpId, drawPosition },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
+  ];
+  if (!opposite.length) return ops;
+  const next = indexed(view, byeMatchUp.winnerMatchUpId);
+  const held = (next?.drawPositions ?? []).filter((position): position is number => !!position);
+  // a next matchUp the withdrawal leaves with no position is v1's: its release re-announces it
+  // (`releaseAdvancedDrawPosition`)
+  if (opposite.length > 1 || !next || !held.includes(opposite[0]) || held.length < 2) return undefined;
+  if (next.matchUpStatus !== TO_BE_PLAYED || next.winningSide || !scoreless(next)) return undefined;
+  if (Object.keys(next.sideExitProvenance ?? {}).length || next.sides?.some((side) => side.bye)) return undefined;
+  return [
+    ...ops,
+    {
+      op: 'setMatchUpDrawPositions',
+      matchUpId: next.matchUpId,
+      drawPositions: held.filter((position) => position !== opposite[0]),
+      withdrawnByePosition: drawPosition,
+    },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId },
+  ];
+}
+
+/**
+ * The cleared double exit's unwind, as v1 writes it, deepest first: at each level the seat its loser link feeds, then
+ * the matchUp written back to be played through `modifyMatchUpScore` (no `scoredTime` rule), its codes `[]` and its
+ * score blanked, the produced exit's origin withdrawn; the call's own seat last, before the clear's own write. v1's walk
+ * past the produced exit's matchUp passes on neither the tournament nor the event, so those writes are announced without
+ * them (`announcesContext: false`).
  */
 function unwoundOps(
   view: OutcomeView,
@@ -1605,10 +1668,12 @@ function unwoundOps(
   drawDefinition?: DrawDefinition,
 ): OutcomeOp[] {
   if (route !== CLEAR_SCORE || !isDoubleExit(view.existing.matchUpStatus)) return [];
-  const path = unwoundPath(view, request.matchUpId, drawDefinition) ?? [];
-  return [...path].reverse().flatMap((matchUpId): OutcomeOp[] => {
-    const produced = matchUpId === path[0];
+  const levels = unwoundPath(view, request.matchUpId, drawDefinition) ?? [];
+  return [...levels].reverse().flatMap(({ matchUpId, seatOps }, depth): OutcomeOp[] => {
+    if (matchUpId === request.matchUpId) return seatOps;
+    const produced = depth === levels.length - 2;
     return [
+      ...seatOps,
       {
         op: 'setMatchUpResult',
         matchUpId,
@@ -1838,7 +1903,9 @@ function seatBye(seat: { structureId: string; drawPosition: number; matchUpId: s
 /** each structure other than the call's whose assignments the ops change, stamped once (F2 (i)) */
 function structureStamps(ops: OutcomeOp[], structureId: string): OutcomeOp[] {
   const seatedIn = ops.flatMap((op) =>
-    (op.op === 'assignPosition' || op.op === 'assignBye') && op.structureId !== structureId ? [op.structureId] : [],
+    (op.op === 'assignPosition' || op.op === 'assignBye' || op.op === 'withdrawBye') && op.structureId !== structureId
+      ? [op.structureId]
+      : [],
   );
   return [...new Set(seatedIn)].map((id) => ({ op: 'stampUpdatedAt', entity: 'structure', id }));
 }
@@ -1877,11 +1944,12 @@ export function planOutcome(args: {
   const score: Score | undefined = blanked
     ? { scoreStringSide1: '', scoreStringSide2: '' }
     : (request.score as Score | undefined);
+  // a cleared double exit's unwind, announced before the clear's own write, as v1 makes it first (S6)
+  const unwound = unwoundOps(view, request, args.route, drawDefinition);
   const ops: OutcomeOp[] = [
     ...swapOps(view, args.route),
     ...replacedLoserOps(view, args.route, write, request.matchUpStatus),
-    // a cleared double exit's unwind, announced before the clear's own write, as v1 makes it first (S6)
-    ...unwoundOps(view, request, args.route, drawDefinition),
+    ...unwound,
     {
       op: 'setMatchUpResult',
       matchUpId,
@@ -1965,7 +2033,7 @@ export function planOutcome(args: {
     ...converging,
     ...doubleExitSeated,
     ...producedExit,
-    ...structureStamps([...seated, ...carried.landing, ...doubleExitSeated, ...producedExit], structureId),
+    ...structureStamps([...unwound, ...seated, ...carried.landing, ...doubleExitSeated, ...producedExit], structureId),
     ...tally,
     // the top-level structure: a round robin group's container, as v1 stamps it
     { op: 'stampUpdatedAt', entity: 'structure', id: view.group?.containerStructureId ?? structureId },
