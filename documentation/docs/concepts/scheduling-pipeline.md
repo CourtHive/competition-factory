@@ -358,6 +358,8 @@ that is not a number: `INVALID_VALUES`.
    (a line of a BYE dual). A listed id not found is dropped. A listed matchUp dated on the date without a time is not
    already there: it is timed, one already on the court grid included, and counts toward its participants' loads when
    it is taken (CA 2026-10-28). Only a matchUp timed on the date holds a court (rule 3).
+   A listed matchUp dated on another day is scheduled on that day: the call never moves it to its own date, and reports
+   it in `noTimeMatchUpIds` (CA 2026-10-28). No matchUp changes day through `scheduleMatchUps`.
 2. **The minutes** (§ 3.3, rule 1, and Q1, CA 2026-10-22). Minutes the call states win: `averageMatchUpMinutes`
    (default 90), `recoveryMinutes` (default 0) and `recoveryMinutesMap` (a recovery per matchUpId). When the call
    states none, and the tournament or a matchUp's event states timing (an attached scheduling policy,
