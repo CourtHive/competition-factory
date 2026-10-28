@@ -12,6 +12,7 @@ import {
 // constants and types
 import type { DrawDefinition, MatchUpStatusUnion, Score, TallyResult, Tournament } from '@Types/tournamentTypes';
 import type { CarryLevel, DirectionPlan, MatchUpWrite, OutcomeRequest, OutcomeView, Route } from './types';
+import { FIRST_MATCHUP } from '@Constants/drawDefinitionConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { OutcomeOp } from './ops';
 import {
@@ -734,7 +735,13 @@ type Seat = { structureId: string; drawPosition: number; matchUpId: string };
  * structures' assignments in (each nested placement announces its own before the one that sent it); `writes` are the
  * matchUps in the order v1 writes them.
  */
-type ByeChain = { assigns: OutcomeOp[]; writes: OutcomeOp[]; matchUpIds: string[] };
+type ByeChain = {
+  assigns: OutcomeOp[];
+  writes: OutcomeOp[];
+  matchUpIds: string[];
+  /** where the first seat's matchUp sends the position opposite its BYE, and what that matchUp holds after */
+  onward?: { matchUpId: string; drawPositions: number[] };
+};
 
 /**
  * The chain from `first`, planned where every step is clean: the seat's matchUp holding at most one other position, that
@@ -750,44 +757,67 @@ function byeChain(
   chain: { levels: CarryLevel[]; bounded: boolean } | undefined,
   announced: boolean,
   doubled?: boolean,
+  heldFirst?: number[],
 ): ByeChain | undefined {
   const planned: ByeChain = { assigns: [], writes: [], matchUpIds: [] };
   let seat = first;
-  let evented = announced;
   for (let index = 0; ; index += 1) {
-    const entry = indexed(view, seat.matchUpId);
-    const opposite = (entry?.drawPositions ?? []).filter(
-      (position): position is number => !!position && position !== seat.drawPosition,
-    );
-    if (!entry || opposite.length > 1) return undefined;
-    // a BYE opposite the first seat (a double BYE): the seat's position already stands a round on, advanced by that BYE
-    const double = doubled && index === 0;
-    const onward =
-      opposite.length && entry.winnerMatchUpId && !double ? onwardFrom(view, entry, opposite[0]) : undefined;
-    if (opposite.length && entry.winnerMatchUpId && !double && !onward) return undefined;
-    const byeOnward = double ? byeAdvanced(view, entry, seat.drawPosition) : undefined;
-    if (double && !byeOnward) return undefined;
-    const quiet = evented ? {} : { announcesEvent: false as const };
-    planned.assigns.unshift({ op: 'assignBye', ...seat, byeFromPropagation: true, ...quiet });
-    planned.writes.push(
-      // a matchUp a BYE already (the double BYE's) is left as it stands: v1 neither rewrites nor announces it
-      ...(double
-        ? []
-        : [
-            { op: 'setMatchUpBye' as const, matchUpId: seat.matchUpId, ...quiet },
-            { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: seat.matchUpId },
-          ]),
-      ...(onward ? throughByeOps(onward) : []),
-      ...(byeOnward?.ops ?? []),
-    );
-    planned.matchUpIds.push(seat.matchUpId, ...(onward ? [onward.matchUpId] : []), ...(byeOnward?.matchUpIds ?? []));
-    if (!entry.loserMatchUpId) return planned;
+    // the first seat's matchUp as an earlier write of this call leaves it (a position advanced into it), else as found;
+    // deeper seats are placed with no event
+    const step = byeStep(view, seat, {
+      held: index === 0 ? heldFirst : undefined,
+      namesEvent: index === 0 && announced,
+      besideBye: index === 0 && !!doubled,
+    });
+    if (!step) return undefined;
+    planned.assigns.unshift(step.assign);
+    planned.writes.push(...step.writes);
+    planned.matchUpIds.push(...step.matchUpIds);
+    if (index === 0 && step.onward) planned.onward = step.onward;
+    if (!step.entry.loserMatchUpId) return planned;
     const level = chain?.levels[index];
-    if (!opposite.length || !chain || chain.bounded || level?.fromMatchUpId !== entry.matchUpId) return undefined;
+    if (!step.opposed || !chain || chain.bounded || level?.fromMatchUpId !== step.entry.matchUpId) return undefined;
     if (!cleanByeLevel(view, level)) return undefined;
     seat = { structureId: level.structureId, drawPosition: level.drawPosition, matchUpId: level.matchUpId };
-    evented = false;
   }
+}
+
+/**
+ * One BYE of a chain: the seat's BYE, its matchUp a BYE, and the position opposite sent on where there is a next
+ * matchUp (into a clean one only); for a double BYE (`besideBye`, a BYE opposite the seat) the matchUp is left as it stands
+ * and the BYE goes on as `byeAdvanced` plans it. Undefined where a step is not clean
+ */
+function byeStep(
+  view: OutcomeView,
+  seat: Seat,
+  { held, namesEvent, besideBye }: { held?: number[]; namesEvent: boolean; besideBye: boolean },
+) {
+  const entry = indexed(view, seat.matchUpId);
+  const opposite = (held ?? entry?.drawPositions ?? []).filter(
+    (position): position is number => !!position && position !== seat.drawPosition,
+  );
+  if (!entry || opposite.length > 1) return undefined;
+  const sends = !!opposite.length && !!entry.winnerMatchUpId && !besideBye;
+  const onward = sends ? onwardFrom(view, entry, opposite[0]) : undefined;
+  const byeOnward = besideBye ? byeAdvanced(view, entry, seat.drawPosition) : undefined;
+  if ((sends && !onward) || (besideBye && !byeOnward)) return undefined;
+  const quiet = namesEvent ? {} : { announcesEvent: false as const };
+  const assign: OutcomeOp = { op: 'assignBye', ...seat, byeFromPropagation: true, ...quiet };
+  // a matchUp a BYE already (the double BYE's) is left as it stands: v1 neither rewrites nor announces it
+  const bye: OutcomeOp[] = besideBye
+    ? []
+    : [
+        { op: 'setMatchUpBye', matchUpId: seat.matchUpId, ...quiet },
+        { op: 'stampUpdatedAt', entity: 'matchUp', id: seat.matchUpId },
+      ];
+  return {
+    entry,
+    assign,
+    onward,
+    opposed: !!opposite.length,
+    writes: [...bye, ...(onward ? throughByeOps(onward) : []), ...(byeOnward?.ops ?? [])],
+    matchUpIds: [seat.matchUpId, ...(onward ? [onward.matchUpId] : []), ...(byeOnward?.matchUpIds ?? [])],
+  };
 }
 
 /**
@@ -880,11 +910,14 @@ function doubleExitSeats(view: OutcomeView, entry: HydratedMatchUp): DoubleExitS
     if (!seats.own) return undefined;
   }
   if (entry.loserMatchUpId) {
-    seats.unfillable = unfillableByeChain(view, entry);
+    seats.unfillable = unfillableByeChain(view, entry, seats.own?.onward);
     if (!seats.unfillable) return undefined;
   }
+  // the one matchUp both may touch: the unfillable seat's, which the own seat's BYE sent a position into first
+  const shared =
+    seats.unfillable?.matchUpIds[0] === seats.own?.onward?.matchUpId ? seats.own?.onward?.matchUpId : undefined;
   const touched = [
-    ...(seats.own?.matchUpIds ?? []),
+    ...(seats.own?.matchUpIds ?? []).filter((matchUpId) => matchUpId !== shared),
     ...(seats.unfillable?.matchUpIds ?? []),
     ...producedLoserMatchUpIds(seats.producedLoser),
     entry.matchUpId,
@@ -912,16 +945,26 @@ function ownByeChain(view: OutcomeView): ByeChain | undefined {
 }
 
 /** the produced exit's matchUp's loser seat, a BYE placed with no event (`conditionallyAdvanceDrawPosition`), and its chain */
-function unfillableByeChain(view: OutcomeView, entry: HydratedMatchUp): ByeChain | undefined {
+function unfillableByeChain(
+  view: OutcomeView,
+  entry: HydratedMatchUp,
+  ownOnward?: { matchUpId: string; drawPositions: number[] },
+): ByeChain | undefined {
   const unfillable = view.targets.winnerLoserSeat;
-  if (!unfillable || unfillable.linkCondition || unfillable.matchUpId !== entry.loserMatchUpId) return undefined;
-  if (!unfillable.seat?.free || unfillable.seat.opponentBye || unfillable.seat.opponentHeld) return undefined;
+  // v1 places this BYE behind a FIRST_MATCHUP link too (`advanceByeToLoserMatchUp` asks no condition): nobody loses here
+  const conditioned = unfillable?.linkCondition && unfillable.linkCondition !== FIRST_MATCHUP;
+  if (!unfillable || conditioned || unfillable.matchUpId !== entry.loserMatchUpId) return undefined;
+  // a position the own seat's BYE sent into this matchUp first stands opposite: it goes on through this BYE too
+  const joined = ownOnward?.matchUpId === unfillable.matchUpId ? ownOnward.drawPositions : undefined;
+  if (!unfillable.seat?.free || unfillable.seat.opponentBye || (unfillable.seat.opponentHeld && !joined))
+    return undefined;
   if (unfillable.matchUpStatus !== TO_BE_PLAYED || unfillable.hasResult) return undefined;
   const record = indexed(view, unfillable.matchUpId);
   if (!record || record.matchUpStatusCodes?.length || Object.keys(record.sideExitProvenance ?? {}).length)
     return undefined;
   const { structureId, drawPosition, matchUpId } = unfillable;
-  return byeChain(view, { structureId, drawPosition, matchUpId }, view.targets.byeLevels?.unfillable, false);
+  const first = { structureId, drawPosition, matchUpId };
+  return byeChain(view, first, view.targets.byeLevels?.unfillable, false, false, joined);
 }
 
 const producedLoserMatchUpIds = (produced?: ProducedLoser) =>

@@ -646,7 +646,10 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   on, an empty position goes ahead of the arrival it awaits. Planned in a first round that is not fed, no BYE opposite
   the seat. A loser matchUp that links its own loser on (COMPASS, OLYMPIC) leaves that seat to nobody: before the exit
   is written there, the seat takes a BYE with no event, with all it sends on, as the BYEs below go on. Otherwise outside a feed round, for links with no condition, free seats with no BYE beside them (a BYE there makes a
-  double BYE: v1's), clean matchUps, and each matchUp touched once; FIRST_MATCHUP feeds stay v1's. v1 writes it through
+  double BYE: v1's), clean matchUps, and each matchUp touched once, but where the unfillable seat's matchUp is the one the first BYE
+  advanced a position into (FIRST_MATCH_LOSER_CONSOLATION): that position goes on again through the second BYE. The
+  unfillable seat takes its BYE behind a `FIRST_MATCHUP` link too, as v1 places it (`advanceByeToLoserMatchUp` asks no
+  condition); this matchUp's own `FIRST_MATCHUP` feed stays v1's. v1 writes it through
   `modifyMatchUpScore`, not `setMatchUpState`, so it takes no `scoredTime`. Stay v1's: a double exit with a loser link beside a BYE or into a feed round; a carry past a BYE into anything but a clean matchUp; a
   present opponent, for a carried or a produced exit, with nowhere clean to go on to; a convergence but RULE 4's clean one; a
   correction to or from an exit; and an exit whose target holds a BYE, an exit or a result (`exit`, `cascade`).
