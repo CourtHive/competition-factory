@@ -721,6 +721,25 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'ROUND_ROBIN (S5): a double walkover in a group, re-tallying it, sends nobody on',
+    {
+      drawProfile: { drawSize: 8, drawType: ROUND_ROBIN },
+      setup: [{ target: { structureName: 'Group 1', roundNumber: 1, nth: 1 }, outcome: won(1) }],
+      steps: [
+        { target: { structureName: 'Group 1', roundNumber: 2, nth: 0 }, outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+    },
+  ],
+  [
+    'ROUND_ROBIN (S5): a double default in a group of a 16 draw',
+    {
+      drawProfile: { drawSize: 16, drawType: ROUND_ROBIN },
+      steps: [
+        { target: { structureName: 'Group 2', roundNumber: 2, nth: 0 }, outcome: { matchUpStatus: DOUBLE_DEFAULT } },
+      ],
+    },
+  ],
+  [
     'FEED_IN_CHAMPIONSHIP (S5): a double walkover beside a BYE: the consolation BYE goes on, and the fed seat through it',
     {
       drawProfile: { drawSize: 16, participantsCount: 14, drawType: FEED_IN_CHAMPIONSHIP },
