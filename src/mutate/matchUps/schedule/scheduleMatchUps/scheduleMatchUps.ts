@@ -203,13 +203,23 @@ export function scheduleMatchUps(params) {
   });
 
   // matchUps are assumed to be in the desired order for scheduling
+  const otherDayMatchUpIds: string[] = [];
   let matchUpsToSchedule = targetMatchUps.filter((matchUp) => {
     // only a matchUp already timed on the date is left where it is (§ 6 rule 1): one dated without a time is timed
     const alreadyScheduled = dateTimedMatchUpIds?.includes(matchUp.matchUpId);
 
     const doNotSchedule = [BYE, DEFAULTED, COMPLETED, ABANDONED, RETIRED, WALKOVER].includes(matchUp?.matchUpStatus);
     // a line of a BYE dual is stored TO_BE_PLAYED but has a BYE side: it will never be played
-    return !alreadyScheduled && !matchUp.winningSide && !doNotSchedule && !hasByeSide(matchUp);
+    if (alreadyScheduled || matchUp.winningSide || doNotSchedule || hasByeSide(matchUp)) return false;
+
+    // a matchUp dated on another day is scheduled on that day: a call for this one never moves it, and reports it
+    // (§ 6 rule 1, CA 2026-10-28)
+    const datedDay = extractDate(matchUp.schedule?.scheduledDate);
+    if (datedDay && !sameDay(scheduleDate, datedDay)) {
+      otherDayMatchUpIds.push(matchUp.matchUpId);
+      return false;
+    }
+    return true;
   });
 
   // the limits of each matchUp's own tournament, and the policy's per-participant ones (§ 3.5); the call's
@@ -423,7 +433,7 @@ export function scheduleMatchUps(params) {
     }
   });
 
-  const noTimeMatchUpIds = [...getMatchUpIds(matchUpsToSchedule), ...refusedMatchUpIds];
+  const noTimeMatchUpIds = [...getMatchUpIds(matchUpsToSchedule), ...refusedMatchUpIds, ...otherDayMatchUpIds];
   // a matchUp already on the court grid without a time has just been timed: what its time contradicts there is reported
   const scheduledOnGrid = scheduledMatchUpIds.filter((matchUpId) => onTheGrid(listedMatchUps[matchUpId]?.schedule));
   const proConflicts = dryRun
