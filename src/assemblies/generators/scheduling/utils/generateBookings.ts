@@ -91,7 +91,9 @@ export function generateBookings({
     return matchUpFormatTimes({ eventType: eventType as EventTypeUnion, timingDetails });
   };
 
-  const bookings: Booking[] = (relevantMatchUps ?? []).map((matchUp) => {
+  // only a matchUp timed on the date holds a court (§ 3.9): one dated without a time has no start to hold one from
+  const timedMatchUps = (relevantMatchUps ?? []).filter((matchUp) => matchUp.schedule?.scheduledTime);
+  const bookings: Booking[] = timedMatchUps.map((matchUp) => {
     const { averageMinutes, recoveryMinutes } = timingOf(matchUp);
     const courtId = matchUp.schedule?.courtId;
     const venueId = venueOf(matchUp);

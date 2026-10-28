@@ -12,6 +12,7 @@ import { resolveScheduleMatchUpsTiming } from './resolveScheduleMatchUpsTiming';
 import { getParticipantReachability } from './getParticipantReachability';
 import { checkDependenciesScheduled } from './checkDependenciesScheduled';
 import { hasByeSide } from '@Mutate/matchUps/schedule/byeScheduling';
+import { onTheGrid, timedGridConflicts } from './timedGridConflicts';
 import { modifyParticipantDayMatchUps } from './participantDayLoad';
 import { updateTimeAfterRecovery } from './updateTimeAfterRecovery';
 import { calculateScheduleTimes } from './calculateScheduleTimes';
@@ -133,6 +134,7 @@ export function scheduleMatchUps(params) {
   const targetMatchUps = matchUpIds
     .map((matchUpId) => competitionMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId))
     .filter(Boolean);
+  const listedMatchUps = Object.fromEntries(targetMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
 
   const dateMatchUps = competitionMatchUps.filter(
     (matchUp) => matchUp.schedule?.scheduledDate && sameDay(scheduleDate, extractDate(matchUp.schedule.scheduledDate)),
@@ -147,7 +149,7 @@ export function scheduleMatchUps(params) {
 
   // determines court availability taking into account already scheduled matchUps on the scheduleDate
   // optimization to pass already retrieved competitionMatchUps to avoid refetch (requires refactor)
-  const { venueId, scheduleTimes, dateScheduledMatchUpIds } = calculateScheduleTimes({
+  const { venueId, scheduleTimes, dateScheduledMatchUpIds, dateTimedMatchUpIds } = calculateScheduleTimes({
     tournamentRecords,
     remainingScheduleTimes,
     startTime: extractTime(startTime),
@@ -170,8 +172,12 @@ export function scheduleMatchUps(params) {
 
   // first build up a map of matchUpNotBeforeTimes
   // based on already scheduled matchUps
-  const dateScheduledMatchUps = competitionMatchUps.filter(({ matchUpId }) =>
-    dateScheduledMatchUpIds?.includes(matchUpId),
+  // what is already there (§ 6 rule 4): every matchUp on the date counts toward its participants' loads (§ 3.5), but
+  // one dated without a time that is listed is to be timed here, and is counted when it is taken (rule 5)
+  const dateScheduledMatchUps = competitionMatchUps.filter(
+    ({ matchUpId }) =>
+      dateTimedMatchUpIds?.includes(matchUpId) ||
+      (dateScheduledMatchUpIds?.includes(matchUpId) && !matchUpIds.includes(matchUpId)),
   );
   dateScheduledMatchUps.forEach((matchUp) => {
     modifyParticipantDayMatchUps({
@@ -198,7 +204,8 @@ export function scheduleMatchUps(params) {
 
   // matchUps are assumed to be in the desired order for scheduling
   let matchUpsToSchedule = targetMatchUps.filter((matchUp) => {
-    const alreadyScheduled = dateScheduledMatchUpIds?.includes(matchUp.matchUpId);
+    // only a matchUp already timed on the date is left where it is (§ 6 rule 1): one dated without a time is timed
+    const alreadyScheduled = dateTimedMatchUpIds?.includes(matchUp.matchUpId);
 
     const doNotSchedule = [BYE, DEFAULTED, COMPLETED, ABANDONED, RETIRED, WALKOVER].includes(matchUp?.matchUpStatus);
     // a line of a BYE dual is stored TO_BE_PLAYED but has a BYE side: it will never be played
@@ -417,6 +424,15 @@ export function scheduleMatchUps(params) {
   });
 
   const noTimeMatchUpIds = [...getMatchUpIds(matchUpsToSchedule), ...refusedMatchUpIds];
+  // a matchUp already on the court grid without a time has just been timed: what its time contradicts there is reported
+  const scheduledOnGrid = scheduledMatchUpIds.filter((matchUpId) => onTheGrid(listedMatchUps[matchUpId]?.schedule));
+  const proConflicts = dryRun
+    ? []
+    : timedGridConflicts({
+        tournamentRecords,
+        griddedMatchUpIds: scheduledOnGrid,
+        scheduleDate: extractDate(scheduleDate),
+      });
   // overnight rest is warned, not held (§ 9.8); a dry run's placements are read over the records
   const scheduleOverrides = dryRun
     ? Object.fromEntries(
@@ -443,6 +459,7 @@ export function scheduleMatchUps(params) {
     overLimitMatchUpIds,
     overnightRestWarnings,
     scheduledMatchUpIds,
+    proConflicts,
     noTimeMatchUpIds,
 
     recoveryTimeDeferred,
