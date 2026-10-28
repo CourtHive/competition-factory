@@ -1017,6 +1017,30 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(3, 'Main'), outcome: cleared }],
     },
   ],
+  [
+    'SINGLE_ELIMINATION (S6): a cleared walkover takes its winner back out of round 2, and its codes with it',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1), outcome: { ...walkover(1), matchUpStatusCodes: ['W1'] } }],
+      steps: [{ target: R1(1), outcome: cleared }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6): a cleared default takes its loser back out of the consolation seat its link fed',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(2, 'Main'), outcome: exited(DEFAULTED, 2) }],
+      steps: [{ target: R1(2, 'Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION (S6): a cleared retirement blanks its score and takes back both directions',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [{ target: R1(3, 'Main'), outcome: retired(1) }],
+      steps: [{ target: R1(3, 'Main'), outcome: cleared }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
@@ -1159,6 +1183,21 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
       drawProfile: { drawSize: 16, drawType: FIRST_ROUND_LOSER_CONSOLATION },
       setup: [{ target: R1(5, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
       steps: [{ target: R1(5, 'Main'), outcome: cleared }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v1.results[0].success).toEqual(true);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+  });
+
+  it('S6: a cleared walkover that carried its exit across the loser link is v1s (its provenance there)', () => {
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+      steps: [{ target: R1(1, 'Main'), outcome: cleared }],
     };
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
