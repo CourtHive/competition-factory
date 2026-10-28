@@ -1436,6 +1436,11 @@ function propagateLineUp({
 
 type AssignDrawPositionArgs = {
   inContextDrawMatchUps?: HydratedMatchUp[];
+  /**
+   * each drawPosition's initial-round matchUp, found once by a caller placing several participants in one structure
+   * (initialMatchUpIdsOf): placement does not change which matchUp a drawPosition first appears in
+   */
+  initialMatchUpIds?: Map<number, string | undefined>;
   /** the participant placed is a loser carrying an exit under propagation; see `assignMatchUpDrawPosition` */
   arrivesWithExit?: boolean;
   sourceMatchUpStatus?: MatchUpStatusUnion;
@@ -1454,6 +1459,7 @@ type AssignDrawPositionArgs = {
 
 export function assignDrawPosition({
   provisionalPositioning,
+  initialMatchUpIds,
   arrivesWithExit,
   inContextDrawMatchUps,
   isQualifierPosition, // internal use
@@ -1577,6 +1583,7 @@ export function assignDrawPosition({
   } else {
     addDrawPositionToMatchUps({
       provisionalPositioning,
+      initialMatchUpIds,
       arrivesWithExit,
       inContextDrawMatchUps,
       sourceMatchUpStatus,
@@ -1694,8 +1701,75 @@ function handleContainerAssignment({
 }
 
 // used for matchUps which are NOT in a ROUND_ROBIN { structureType: CONTAINER }
+/** the structure's matchUps as placement reads them: no collection matchUps */
+function placementMatchUps({
+  provisionalPositioning,
+  drawDefinition,
+  matchUpsMap,
+  structure,
+  event,
+}: {
+  provisionalPositioning?: boolean;
+  drawDefinition: DrawDefinition;
+  matchUpsMap?: MatchUpsMap;
+  structure: Structure;
+  event?: Event;
+}): MatchUp[] {
+  const matchUpFilters = { isCollectionMatchUp: false };
+  return (
+    getAllStructureMatchUps({ provisionalPositioning, matchUpFilters, drawDefinition, matchUpsMap, structure, event })
+      .matchUps ?? []
+  );
+}
+
+/** the matchUp of a drawPosition's initial round that holds it, if any */
+function initialMatchUpId({
+  roundMatchUps,
+  drawPosition,
+  matchUps,
+}: {
+  roundMatchUps?: ReturnType<typeof getRoundMatchUps>['roundMatchUps'];
+  matchUps: MatchUp[];
+  drawPosition: number;
+}): string | undefined {
+  const { initialRoundNumber } = getInitialRoundNumber({ drawPosition, matchUps });
+  const matchUp =
+    initialRoundNumber &&
+    roundMatchUps?.[initialRoundNumber].find((matchUp) => matchUp.drawPositions?.includes(drawPosition));
+  return matchUp ? matchUp.matchUpId : undefined;
+}
+
+/**
+ * Each drawPosition's initial-round matchUp in a structure, read once for a caller placing several participants:
+ * placing one never changes the round a drawPosition first appears in, or the matchUp there that holds it.
+ */
+export function initialMatchUpIdsOf({
+  provisionalPositioning,
+  drawDefinition,
+  drawPositions,
+  matchUpsMap,
+  structureId,
+  event,
+}: {
+  provisionalPositioning?: boolean;
+  drawDefinition: DrawDefinition;
+  matchUpsMap?: MatchUpsMap;
+  drawPositions: number[];
+  structureId: string;
+  event?: Event;
+}): Map<number, string | undefined> | undefined {
+  const { structure } = findStructure({ drawDefinition, structureId });
+  if (!structure || structure.structureType === CONTAINER) return undefined;
+  const matchUps = placementMatchUps({ provisionalPositioning, drawDefinition, matchUpsMap, structure, event });
+  const { roundMatchUps } = getRoundMatchUps({ matchUps });
+  return new Map(
+    drawPositions.map((drawPosition) => [drawPosition, initialMatchUpId({ matchUps, roundMatchUps, drawPosition })]),
+  );
+}
+
 function addDrawPositionToMatchUps({
   provisionalPositioning,
+  initialMatchUpIds,
   arrivesWithExit,
   inContextDrawMatchUps,
   sourceMatchUpStatus,
@@ -1706,29 +1780,18 @@ function addDrawPositionToMatchUps({
   structure,
   event,
 }) {
-  const matchUpFilters = { isCollectionMatchUp: false };
-  const { matchUps } = getAllStructureMatchUps({
-    provisionalPositioning,
-    matchUpFilters,
-    drawDefinition,
-    matchUpsMap,
-    structure,
-    event,
-  });
+  let matchUpId: string | undefined;
+  if (initialMatchUpIds?.has(drawPosition)) {
+    matchUpId = initialMatchUpIds.get(drawPosition);
+  } else {
+    const matchUps = placementMatchUps({ provisionalPositioning, drawDefinition, matchUpsMap, structure, event });
+    const { roundMatchUps } = getRoundMatchUps({ matchUps });
+    matchUpId = initialMatchUpId({ matchUps, roundMatchUps, drawPosition });
+  }
 
-  const { roundMatchUps } = getRoundMatchUps({ matchUps });
-  const { initialRoundNumber } = getInitialRoundNumber({
-    drawPosition,
-    matchUps,
-  });
-
-  const matchUp =
-    initialRoundNumber &&
-    roundMatchUps?.[initialRoundNumber].find((matchUp) => matchUp.drawPositions?.includes(drawPosition));
-
-  if (matchUp) {
+  if (matchUpId) {
     const result = assignMatchUpDrawPosition({
-      matchUpId: matchUp.matchUpId,
+      matchUpId,
       inContextDrawMatchUps,
       sourceMatchUpStatus,
       arrivesWithExit,
