@@ -721,6 +721,20 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'FEED_IN_CHAMPIONSHIP (S5): a double walkover beside a BYE: the consolation BYE goes on, and the fed seat through it',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 14, drawType: FEED_IN_CHAMPIONSHIP },
+      steps: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION (S5): a double default beside a BYE, a double BYE in the Backdraw',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 14, drawType: DOUBLE_ELIMINATION },
+      steps: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
+  [
     'COMPASS (S5): a double walkover in a 16 draw: its BYEs go on West to South to Southeast, and North to Northwest',
     {
       drawProfile: { drawSize: 16, drawType: COMPASS },
