@@ -100,6 +100,17 @@ For a round robin, the **container's** `structureId` completes every group, and 
 `structureId` completes that group only; its siblings are left exactly as they were. A matchUp ended
 as `DOUBLE_WALKOVER` or `DOUBLE_DEFAULT` is never overwritten. An unknown id matches nothing.
 
+### Rounds to Complete
+
+Complete a number of rounds of a structure: counted per structure from its first round still to play when the
+call starts (for a round robin, that round in every group). Rounds that become playable during the call are
+completed up to that bound; a structure with nothing left to play completes nothing.
+
+```js
+// the next round of the structure on screen
+tournamentEngine.completeDrawMatchUps({ drawId, structureIds: [structureId], roundsToComplete: 1 });
+```
+
 ### Combined Filters
 
 Filters can be combined for precise targeting:
@@ -129,6 +140,7 @@ mocksEngine.completeDrawMatchUps({
 | `stageSequence`        | number            | Filter: for multi-sequence qualifying                                               |
 | `roundNumber`          | number            | Filter: only complete matchUps in this round                                        |
 | `structureIds`         | string[]          | Filter: only these structures; a round-robin group id selects that group only       |
+| `roundsToComplete`     | number            | Per structure, at most this many rounds, from its first round still to play         |
 | `randomWinningSide`    | boolean           | Randomize winning side                                                              |
 | `matchUpStatusProfile` | object            | Status distribution (see [Outcome Generation](../testing/mocks-engine-outcomes.md)) |
 
