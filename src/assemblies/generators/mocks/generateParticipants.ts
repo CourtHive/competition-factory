@@ -2,7 +2,7 @@ import { isNumeric, randomInt, skewedDistribution } from '@Tools/math';
 import { cityMocks, stateMocks, postalCodeMocks } from './address';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { pushGlobalLog } from '@Functions/global/globalLog';
-import { generateRange, shuffleArray } from '@Tools/arrays';
+import { generateRange, shuffleArray, shuffledPrefix } from '@Tools/arrays';
 import { genParticipantId } from './genParticipantId';
 import { generateAddress } from './generateAddress';
 import { generatePersons } from './generatePersons';
@@ -211,10 +211,11 @@ export function generateParticipants(params): {
     : (nationalityCodes && countryCodes.filter((isoCountry) => nationalityCodes.includes(isoCountry.iso))) ||
       countryCodes;
 
-  const countriesList = shuffleArray(
-    generateRange(0, Math.ceil(individualParticipantsCount / (isoMin || 1)))
-      .map(() => isoList)
-      .flat(Infinity),
+  // the shuffled pool repeats the list once per value instance; only an entry per individual is read
+  const countriesList = shuffledPrefix(
+    Math.ceil(individualParticipantsCount / (isoMin || 1)) * isoList.length,
+    individualParticipantsCount,
+    (index) => isoList[index % isoList.length],
     random,
   );
 
