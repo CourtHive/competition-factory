@@ -1,4 +1,4 @@
-import { generateOutcomeFromScoreString } from '@Assemblies/generators/mocks/generateOutcomeFromScoreString';
+import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
 import { getDifferentialTally, resetDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';

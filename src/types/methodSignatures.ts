@@ -77,6 +77,7 @@ import type { getCompetitionLeaderboard } from '@Query/drawDefinition/competitio
 import type { getRotatingPartnerScoringPolicy } from '@Query/drawDefinition/getRotatingPartnerScoringPolicy';
 import type { getEligibleEvents, getParticipantEligibility } from '@Query/entries/getParticipantEligibility';
 import type { getParticipantRest, getParticipantsRest } from '@Query/matchUps/scheduling/getParticipantRest';
+import type { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
 import type { replaceTieMatchUpParticipantId } from '@Mutate/matchUps/lineUps/replaceTieMatchUpParticipant';
 import type { modifyParticipantsPaymentStatus } from '@Mutate/participants/modifyParticipantsPaymentStatus';
 import type { getEntryFeeRange, isIndeterminateFee, resolveEntryFee } from '@Query/entries/resolveEntryFee';
@@ -116,7 +117,6 @@ import type { removeMatchUpSideParticipant } from '@Mutate/matchUps/sides/remove
 import type { getSchedulingProfile, setSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import type { getSchedulingProfileIssues } from '@Query/matchUps/scheduling/getSchedulingProfileIssues';
 import type { generateSeedingScaleItems } from '@Generators/drawDefinitions/generateSeedingScaleItems';
-import type { generateOutcomeFromScoreString } from '@Generators/mocks/generateOutcomeFromScoreString';
 import type { automatedPlayoffPositioning } from '@Mutate/drawDefinitions/automatedPlayoffPositioning';
 import type { resetCompetitionState } from '@Mutate/drawDefinitions/competition/resetCompetitionState';
 import type { modifySeedAssignment } from '@Mutate/drawDefinitions/entryGovernor/modifySeedAssignment';
@@ -336,6 +336,7 @@ import type { isTournamentPublished } from '@Query/publishing/isTournamentPublis
 import type { getAggregateTeamResults } from '@Query/scales/getAggregateTeamResults';
 import type { validateScheduleScenario } from '@Validators/validateScheduleScenario';
 import type { hydrateTournamentRecord } from '@Mutate/base/hydrateTournamentRecord';
+import type { completeDrawMatchUps } from '@Mutate/simulation/completeDrawMatchUps';
 import type { removeCourtGridBooking } from '@Mutate/venues/removeCourtGridBooking';
 import type { getEventInconsistencies } from '@Query/event/getEventInconsistencies';
 import type { calculateMatchUpMargin } from '@Query/matchUp/calculateMatchUpMargin';
@@ -349,7 +350,6 @@ import type { participantScaleItem } from '@Query/participant/participantScaleIt
 import type { getParticipantPaymentStatus } from '@Query/participant/paymentStatus';
 import type { getCalendarConflicts } from '@Query/sanctioning/getCalendarConflicts';
 import type { getTournamentPersons } from '@Query/tournaments/getTournamentPersons';
-import type { completeDrawMatchUps } from '@Generators/mocks/completeDrawMatchUps';
 import type { generateParticipants } from '@Generators/mocks/generateParticipants';
 import type { removeMatchUpOutcome } from '@Generators/mocks/removeMatchUpOutcome';
 import type { addDrawDefinition } from '@Mutate/drawDefinitions/addDrawDefinition';
@@ -419,6 +419,7 @@ import type { applyDerivedRankings } from '@Query/scales/applyDerivedRankings';
 import type { getParticipantPoints } from '@Query/scales/getParticipantPoints';
 import type { validatePlayoffGroups } from '@Validators/validatePlayoffGroups';
 import type { reverseScore } from '@Assemblies/generators/score/reverseScore';
+import type { generateOutcome } from '@Generators/simulation/generateOutcome';
 import type { removeOnlineResource } from '@Mutate/base/removeOnlineResource';
 import type { assignSeedPositions } from '@Mutate/events/assignSeedPositions';
 import type { attachFlightProfile } from '@Mutate/events/attachFlightProfile';
@@ -485,7 +486,6 @@ import type { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import type { getCompleteness } from '@Query/sanctioning/getCompleteness';
 import type { getTierMovement } from '@Query/tournaments/getTierMovement';
 import type { findVenue, publicFindVenue } from '@Query/venues/findVenue';
-import type { generateOutcome } from '@Generators/mocks/generateOutcome';
 import type { addNotes, removeNotes } from '@Mutate/base/addRemoveNotes';
 import type { assignOfficial } from '@Mutate/officiating/assignOfficial';
 import type { updateProposal } from '@Mutate/sanctioning/updateProposal';

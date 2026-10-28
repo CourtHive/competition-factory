@@ -4,7 +4,7 @@
  * Tests that the new preserveSideOrder parameter allows UIs to preserve
  * the exact side order that users enter, rather than normalizing to winner-first
  */
-import { generateOutcomeFromScoreString } from '@Assemblies/generators/mocks/generateOutcomeFromScoreString';
+import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
 import { describe, it, expect } from 'vitest';
 
 describe('generateOutcomeFromScoreString - preserveSideOrder parameter', () => {

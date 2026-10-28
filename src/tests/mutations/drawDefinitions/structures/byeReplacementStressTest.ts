@@ -1,4 +1,4 @@
-import { completeDrawMatchUps } from '@Assemblies/generators/mocks/completeDrawMatchUps';
+import { completeDrawMatchUps } from '@Mutate/simulation/completeDrawMatchUps';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getDrawPosition } from '@Functions/global/extractors';
 import mocksEngine from '@Assemblies/engines/mock';

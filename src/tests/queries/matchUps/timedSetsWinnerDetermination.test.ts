@@ -1,4 +1,4 @@
-import { generateOutcomeFromScoreString } from '@Assemblies/generators/mocks/generateOutcomeFromScoreString';
+import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
 import { analyzeScore } from '@Query/matchUp/analyzeScore';
 import { expect, it } from 'vitest';
 

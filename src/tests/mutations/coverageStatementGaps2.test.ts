@@ -4,9 +4,9 @@
  */
 import { getParticipantResults } from '@Query/matchUps/roundRobinTally/getParticipantResults';
 import { validateSetScore, validateMatchUpScore } from '@Validators/validateMatchUpScore';
-import { generateOutcome } from '@Assemblies/generators/mocks/generateOutcome';
 import { getParticipantStats } from '@Query/participant/getParticipantStats';
 import { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';
+import { generateOutcome } from '@Generators/simulation/generateOutcome';
 import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
 import { addPoint, formatGameScore } from '@Mutate/scoring/addPoint';
 import { parse } from '@Helpers/matchUpFormatCode/parse';

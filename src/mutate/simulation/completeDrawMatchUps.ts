@@ -1,15 +1,15 @@
-import { generateOutcomeFromScoreString } from '@Assemblies/generators/mocks/generateOutcomeFromScoreString';
+import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
 import { automatedPlayoffPositioning } from '@Mutate/drawDefinitions/automatedPlayoffPositioning';
 import { getLuckyDrawRoundStatus } from '@Query/drawDefinition/getLuckyDrawRoundStatus';
 import { generateLineUps } from '@Assemblies/generators/participants/generateLineUps';
 import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { generateOutcome } from '@Generators/simulation/generateOutcome';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { structureSort } from '@Functions/sorters/structureSort';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { getMatchUpId } from '@Functions/global/extractors';
-import { generateOutcome } from './generateOutcome';
 import { intersection } from '@Tools/arrays';
 
 // constants and types

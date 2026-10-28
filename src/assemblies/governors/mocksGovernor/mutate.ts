@@ -1,4 +1,4 @@
-import { completeDrawMatchUps as completeDraw } from '@Generators/mocks/completeDrawMatchUps';
+import { completeDrawMatchUps as completeDraw } from '@Mutate/simulation/completeDrawMatchUps';
 
 export { anonymizeTournamentRecord } from '@Generators/tournamentRecords/anonymizeTournamentRecord';
 export { removeMatchUpOutcome } from '@Generators/mocks/removeMatchUpOutcome';

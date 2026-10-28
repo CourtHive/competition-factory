@@ -5,7 +5,7 @@
  *   3. Complete qualifying matchUps
  *   4. Generate Swiss round in main — should include MAIN entries + qualifying winners
  */
-import { completeDrawMatchUps } from '@Assemblies/generators/mocks/completeDrawMatchUps';
+import { completeDrawMatchUps } from '@Mutate/simulation/completeDrawMatchUps';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';

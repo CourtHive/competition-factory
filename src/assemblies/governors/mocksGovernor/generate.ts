@@ -1,5 +1,5 @@
-import { generateOutcomeFromScoreString as outcomeFromScoreString } from '@Generators/mocks/generateOutcomeFromScoreString';
-import { generateOutcome as outcome } from '@Generators/mocks/generateOutcome';
+import { generateOutcomeFromScoreString as outcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
+import { generateOutcome as outcome } from '@Generators/simulation/generateOutcome';
 
 export { generateTournamentRecord } from '@Generators/mocks/generateTournamentRecord';
 export { generateEventWithDraw } from '@Generators/mocks/generateEventWithDraw';

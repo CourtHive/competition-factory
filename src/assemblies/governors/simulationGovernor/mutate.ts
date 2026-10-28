@@ -1,2 +1,2 @@
-export { completeDrawMatchUps } from '@Generators/mocks/completeDrawMatchUps';
+export { completeDrawMatchUps } from '@Mutate/simulation/completeDrawMatchUps';
 export { applyOutcomes } from '@Mutate/simulation/applyOutcomes';
