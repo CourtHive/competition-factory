@@ -733,11 +733,16 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   first direction: v1 takes back what the double exit sent on as its clear does (`removeDoubleExit`, the path to the
   final written back to be played), then writes the result and directs it as a played result, so the winner arrives in
   the next matchUp the unwind has just left to be played. It is owned where that unwind is the plain one: the produced
-  exit pending (not awarded), and nothing linked out of the structure, so no seat holds a BYE the double exit placed.
-  The notices follow v1's buffer: each matchUp at its last emission, so the next matchUp comes after the call's own
-  result, named for the winner's arrival (`assignMatchUpDrawPosition`), while the in-context notices keep the order of
-  the score writes that deferred them. Stay v1's: a double exit with loser links (its BYEs withdrawn and the loser placed
-  where one stood), a produced exit already awarded, and a loser the new result would carry.
+  exit pending (not awarded), and its seats as the clear's unwind takes them back. Beside loser links the unwind
+  withdraws the BYEs the double exit placed (its own loser seat and the one its produced exit left unfillable), as the
+  clear does, and the direction then places the loser on their own seat, where the BYE stood: a plain arrival, carrying
+  nothing, unseeded, behind a link with no condition. The notices follow v1's buffer: each matchUp at its last emission,
+  so the next matchUp comes after the call's own result, named for the winner's arrival (`assignMatchUpDrawPosition`),
+  while the in-context notices keep the order of the score writes that deferred them; each structure's assignments are
+  announced once, where the call first touches them (the seat the unwind visits), with the event and tournament of the
+  loser's placement there (CURTIS: the Play Off's visit first, then the consolation's). Stay v1's: a produced exit
+  already awarded, a loser the new result would carry, a BYE that had gone on further than the next matchUp (FMLC's
+  second round), and every seat shape the clear leaves to v1.
 
 - **`differential`**: v2 plans the whole call before v1 runs, then checks v1's result against it,
   and a disagreement throws `OutcomePipelineDivergence` naming the matchUp and both answers. The

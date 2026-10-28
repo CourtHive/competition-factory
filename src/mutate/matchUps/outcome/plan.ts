@@ -321,16 +321,16 @@ function directionReason(args: {
   // later (`luckyDrawAdvancement`)
   if (targets.luckyPreFeed && !direction && !targets.loserMatchUpId) return undefined;
   if (!direction?.winner && !final) return 'route';
-  const loserReason = plainLoserReason(view, direction);
+  // S6: a double exit given a winner unwinds first (`givenWinnerReason`): the next matchUp held only its produced exit,
+  // and is to be played again when the winner arrives; the loser's seat, freed of the double exit's BYE, was vetted there
+  const unwound = isDoubleExit(view.existing.matchUpStatus);
+  const loserReason = unwound ? undefined : plainLoserReason(view, direction);
   if (loserReason) return loserReason;
   if (direction.decider || direction.produced || direction.converged) return 'route';
   if (final) return undefined;
   const target = targets.winner;
   if (!target || target.structureId !== targets.source.structureId) return 'link';
   if (reservationReason(view, write.winningSide as 1 | 2)) return 'cascade';
-  // S6: a double exit given a winner unwinds first (`givenWinnerReason`): the next matchUp held only its produced exit,
-  // and is to be played again when the winner arrives
-  const unwound = isDoubleExit(view.existing.matchUpStatus);
   // a target holding a BYE sends the winner on past it: planned when where they go is clean (`winnerThroughBye`)
   const through = target.hasBye ? targets.winnerThroughBye?.[write.winningSide as 1 | 2] : undefined;
   if ((target.hasBye && !through) || target.holdsResult) return 'cascade';
@@ -433,20 +433,49 @@ function exitReason(args: {
 /**
  * S6: a double exit given a winner (the `winner` route, a single exit or a played result). v1 first unwinds the double
  * exit as a clear does (`removeDoubleExit`: the produced exit taken back and the path to the final written back to be
- * played, `unwoundPath`), then writes the result and directs it as a played result, the winner into the next matchUp
- * the unwind left to be played (`unwoundOps`, then the direction). Planned where that unwind is the plain one: the
- * produced exit pending, not awarded, and nothing linked out of the structure, so no seat holds a BYE the double exit
- * placed. The direction's own checks follow (`directionReason`, which reads the next matchUp as the unwind leaves it).
+ * played, `unwoundPath`, and the BYEs it placed on loser seats withdrawn), then writes the result and directs it as a
+ * played result, the winner into the next matchUp the unwind left to be played (`unwoundOps`, then the direction).
+ * Planned where that unwind is the plain one: the produced exit pending, not awarded, and the loser, where a link takes
+ * them, placed on the seat the unwind has just freed (`unwoundLoserReason`). The direction's own checks follow
+ * (`directionReason`, which reads the next matchUp as the unwind leaves it).
  */
 function givenWinnerReason(args: Parameters<typeof exitReason>[0]): AbstainReason | undefined {
   const { request, view, write, direction } = args;
   if (!write?.winningSide || !DIRECTED_STATUSES.has(write.matchUpStatus)) return 'exit';
   if (request.matchUpStatus && request.matchUpStatus !== write.matchUpStatus) return 'exit';
   if (write.matchUpStatus === DEFAULTED && view.draw.defaultProcessCodes) return 'exit';
-  if (direction?.produced || direction?.converged || direction?.decider || direction?.loser) return 'exit';
-  if (view.targets.loserMatchUpId || view.targets.loserLink) return 'exit';
+  if (direction?.produced || direction?.converged || direction?.decider) return 'exit';
   const levels = unwoundPath(view, request.matchUpId, args.drawDefinition);
-  if (!levels || levels.some(({ seatOps, released }) => seatOps.length || released)) return 'exit';
+  if (!levels || levels.some(({ released }) => released)) return 'exit';
+  if (!view.targets.loserMatchUpId && !view.targets.loserLink && !direction?.loser)
+    return levels.some(({ seatOps }) => seatOps.length) ? 'exit' : undefined;
+  return unwoundLoserReason(view, levels[0], direction?.loser);
+}
+
+/**
+ * The loser of a double exit given a winner, where a link takes them: v1's unwind withdraws the BYE the double exit
+ * placed on the seat that link feeds (`unwoundSeatOps`), and the direction then places the loser there, a plain
+ * arrival opposite whoever the unwind leaves (no BYE: `unwoundSeatOps` plans none beside it). Planned where the loser
+ * arrives carrying nothing, unseeded, behind a link with no condition. The seat as stored still holds the BYE, so
+ * `plainLoserReason`'s seat checks do not apply (`directionReason`).
+ */
+function unwoundLoserReason(
+  view: OutcomeView,
+  own: UnwoundLevel,
+  loser?: DirectionPlan['loser'],
+): AbstainReason | undefined {
+  const { targets } = view;
+  if (!loser?.arrives || loser.exit || loser.converged || loser.carriedPast || loser.bye || loser.withdrawn)
+    return 'exit';
+  if (targets.loserLink?.linkCondition || !targets.loserStructureId || !targets.loserTargetDrawPosition) return 'exit';
+  const freed = own.seatOps.some(
+    (op) =>
+      op.op === 'withdrawBye' &&
+      op.structureId === targets.loserStructureId &&
+      op.drawPosition === targets.loserTargetDrawPosition,
+  );
+  if (!freed || !targets.loserTargetSeat?.bye) return 'exit';
+  if (targets.seededParticipantIds?.includes(loser.participantId)) return 'loser';
   return undefined;
 }
 
