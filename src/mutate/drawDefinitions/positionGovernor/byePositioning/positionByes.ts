@@ -6,6 +6,8 @@ import { getSeedOrderByePositions } from './getSeedOrderedByePositions';
 import { getUnseededByePositions } from './getUnseededByePositions';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getByesData } from '@Query/drawDefinition/getByesData';
+import { isActiveMatchUp } from '@Query/matchUp/activeMatchUp';
+import { hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findStructure } from '@Acquire/findStructure';
 import { shuffleArray } from '@Tools/arrays';
@@ -184,8 +186,19 @@ export function positionByes({
  */
 function placeByes({ byeDrawPositions, drawDefinition, matchUpsMap, ...args }: PlaceByesArgs) {
   const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap }).matchUps ?? [];
+  // no drawPosition can be active while no matchUp is (placing a BYE makes none active), and a draw that stores its
+  // edges needs the activity check for nothing else: it is then not asked once per BYE
+  const drawPositionsInactive =
+    hasStoredGoesTo({ drawDefinition }) && !inContextDrawMatchUps.some((matchUp) => isActiveMatchUp(matchUp));
   for (const drawPosition of byeDrawPositions) {
-    const result = assignDrawPositionBye({ ...args, inContextDrawMatchUps, drawDefinition, drawPosition, matchUpsMap });
+    const result = assignDrawPositionBye({
+      ...args,
+      drawPositionsInactive,
+      inContextDrawMatchUps,
+      drawDefinition,
+      drawPosition,
+      matchUpsMap,
+    });
     if (result?.error) return result;
   }
   return undefined;
