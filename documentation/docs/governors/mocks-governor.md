@@ -370,6 +370,10 @@ mocksGovernor.modifyTournamentRecord({
   // Add venues (isPrimary designates the tournament's primary venue)
   venueProfiles: [{ courtsCount: 4, venueName: 'Court Complex B', isPrimary: true }],
 
+  // also return `methods`: the engine calls that make these modifications, replayable onto the record as passed
+  // (see "The Method List" in the tournament generation guide)
+  recordMethods: true,
+
   // Add scheduling
   schedulingProfile: [
     {

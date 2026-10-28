@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
+import { differences } from './recordDifferences';
 
 /**
  * A generated scenario's method list replays to the same record (CA 2026-10-29). `generateTournamentRecord` with
@@ -9,28 +10,6 @@ import tournamentEngine from '@Engines/syncEngine';
  * engine they must produce the same record, apart from the times each write stamps. A write scenario generation
  * makes WITHOUT logging it shows up here as the first difference.
  */
-
-// the stamps a write takes from the clock: when it happened, not what it wrote
-const TIME_KEYS = new Set(['createdAt', 'updatedAt', 'timeStamp', 'scoredTime']);
-
-function differences(a: unknown, b: unknown, path = '', found: string[] = []): string[] {
-  if (found.length >= 8) return found;
-  if (Array.isArray(a) && Array.isArray(b)) {
-    if (a.length !== b.length) found.push(`${path} length ${a.length} != ${b.length}`);
-    a.slice(0, b.length).forEach((value, index) => differences(value, b[index], `${path}[${index}]`, found));
-  } else if (a && b && typeof a === 'object' && typeof b === 'object') {
-    for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
-      // a key holding undefined is not stored: a record that is saved and read back does not have it
-      const [inA, inB] = [a[key] !== undefined, b[key] !== undefined];
-      if (TIME_KEYS.has(key) || (!inA && !inB)) continue;
-      if (!inA || !inB) found.push(`${path}/${key} only in ${inA ? 'generated' : 'replayed'}`);
-      else differences(a[key], b[key], `${path}/${key}`, found);
-    }
-  } else if (a !== b) {
-    found.push(`${path}: ${JSON.stringify(a)?.slice(0, 60)} != ${JSON.stringify(b)?.slice(0, 60)}`);
-  }
-  return found;
-}
 
 function replay(methods) {
   const [header, ...rest] = methods;
