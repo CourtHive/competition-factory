@@ -170,7 +170,10 @@ claims the four scheduling step properties (`INVARIANTS.md`), and the writer che
 step and refuses a scenario that breaks one. A scheduling call's step records its **deferral report**
 as `result.value` (`src/tests/testHarness/scheduling/schedulingReport.ts`): per date, what was
 scheduled and, per reason, which matchUps were left unscheduled. A reason for not writing has no
-patch to carry it, so the report is what pins it, and it moves the manifest's results hash.
+patch to carry it, so the report is what pins it, and it moves the manifest's results hash. When a
+timed scheduler times a matchUp already on the court grid, the report also keeps the grid's conflicts
+its times made (`proConflicts`, per date, each issue with the matchUps it names); a call that made
+none records nothing for it, so the reports of calls that never touch the grid are unchanged.
 
 A scenario with `knownFailure` pins a recorded defect: the test requires its claims to FAIL, so
 fixing the defect fails the test until the `knownFailure` is removed in the same PR.
