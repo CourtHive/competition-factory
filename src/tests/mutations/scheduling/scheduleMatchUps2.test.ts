@@ -1,7 +1,7 @@
 import { removeCourtAssignment } from '@Mutate/matchUps/schedule/removeCourtAssignment';
+import { writeModeMatrix } from '@Tests/testHarness/writeModeMatrix';
 import { getScheduleTimes } from '@Query/venues/getScheduleTimes';
 import { getMatchUpIds } from '@Functions/global/extractors';
-import { writeModeMatrix } from '@Tests/testHarness/writeModeMatrix';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -10,8 +10,8 @@ import { expect, it } from 'vitest';
 // constants
 import { ASSIGN_COURT, SCHEDULED_DATE, SCHEDULED_TIME, ASSIGN_VENUE, START_TIME } from '@Constants/timeItemConstants';
 import { PRACTICE, MAINTENANCE } from '@Constants/bookingTypeConstants';
-import { LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';
 import { DELETE_VENUE, MODIFY_VENUE } from '@Constants/topicConstants';
+import { LEGACY, NATIVE } from '@Constants/schemaWriteModeConstants';
 import { SINGLES } from '@Constants/eventConstants';
 import {
   MATCHUP_NOT_FOUND,
