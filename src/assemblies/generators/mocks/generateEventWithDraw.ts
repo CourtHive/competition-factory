@@ -651,7 +651,6 @@ function generateAndAttachDraw({
   completeAllMatchUps,
   randomWinningSide,
   tournamentRecord,
-  addToRecord,
   drawProfileCopy,
   seedingScaleName,
   drawExtensions,
@@ -702,7 +701,8 @@ function generateAndAttachDraw({
 
   if (generate) {
     // announced as a client's addDrawDefinition is, once the event is on the record; off the record nothing is
-    addDrawDefinition({ drawDefinition, event, tournamentRecord, suppressNotifications: !addToRecord });
+    const onRecord = !!tournamentRecord?.events?.includes(event);
+    addDrawDefinition({ drawDefinition, event, tournamentRecord, suppressNotifications: !onRecord });
 
     const manual = drawProfile.automated === false;
     // a tournament auto-scheduled after generation has its draws' results applied once it is scheduled, as a real
@@ -878,7 +878,9 @@ export function generateEventWithDraw(params) {
   // everything after is written to the stored event. Without a record to add it to it is built off the record
   const added = addToRecord ? addEvent({ tournamentRecord, event: mockEvent }) : undefined;
   if (added?.error) return added;
-  const event = added ? tournamentRecord.events.find((stored) => stored.eventId === eventId) : mockEvent;
+  const event = added
+    ? tournamentRecord.events.find((stored: { eventId: string }) => stored.eventId === eventId)
+    : mockEvent;
 
   const uniqueParticipantIds: string[] = [];
   // `useExistingParticipants` (set by `generateTournamentRecord` when the caller
@@ -974,7 +976,6 @@ export function generateEventWithDraw(params) {
 
   const genResult = generateAndAttachDraw({
     deferredOutcomes: params.deferredOutcomes,
-    addToRecord,
     matchUpStatusProfile,
     completeAllMatchUps,
     randomWinningSide,
