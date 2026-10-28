@@ -672,8 +672,8 @@ function producedReason(
 
 /**
  * Outside a feed round the produced exit is PENDING where nobody stands on the side it is awarded to and the feeder beside
- * this one is still to be played, or AWARDED where that feeder delivered its winner there (a played result or a single
- * exit), who goes on into a clean next matchUp. A seat holding a position nobody has reached is not planned.
+ * this one is still to be played, or AWARDED where that feeder delivered its winner there (a played result, a single
+ * exit or a BYE), who goes on into a clean next matchUp. A seat holding a position nobody has reached is not planned.
  */
 function pendingOrAwardedReason(
   view: OutcomeView,
@@ -685,7 +685,10 @@ function pendingOrAwardedReason(
     if (awarded?.drawPosition) return 'exit';
     return paired?.matchUpStatus === TO_BE_PLAYED ? undefined : 'exit';
   }
-  if (!paired?.winningSide || !DELIVERED_FEEDS.has(paired.matchUpStatus)) return 'exit';
+  // delivered by a played result or a single exit, or through a BYE (whose origin v1 records as the BYE)
+  const delivered =
+    paired?.matchUpStatus === BYE || (!!paired?.winningSide && DELIVERED_FEEDS.has(paired.matchUpStatus));
+  if (!delivered) return 'exit';
   if (!awarded.drawPosition || !onwardFrom(view, entry, awarded.drawPosition)) return 'exit';
   return undefined;
 }
@@ -714,6 +717,7 @@ function byeChain(
   first: Seat,
   chain: { levels: CarryLevel[]; bounded: boolean } | undefined,
   announced: boolean,
+  doubled?: boolean,
 ): ByeChain | undefined {
   const planned: ByeChain = { assigns: [], writes: [], matchUpIds: [] };
   let seat = first;
@@ -724,16 +728,27 @@ function byeChain(
       (position): position is number => !!position && position !== seat.drawPosition,
     );
     if (!entry || opposite.length > 1) return undefined;
-    const onward = opposite.length && entry.winnerMatchUpId ? onwardFrom(view, entry, opposite[0]) : undefined;
-    if (opposite.length && entry.winnerMatchUpId && !onward) return undefined;
+    // a BYE opposite the first seat (a double BYE): the seat's position already stands a round on, advanced by that BYE
+    const double = doubled && index === 0;
+    const onward =
+      opposite.length && entry.winnerMatchUpId && !double ? onwardFrom(view, entry, opposite[0]) : undefined;
+    if (opposite.length && entry.winnerMatchUpId && !double && !onward) return undefined;
+    const byeOnward = double ? byeAdvanced(view, entry, seat.drawPosition) : undefined;
+    if (double && !byeOnward) return undefined;
     const quiet = evented ? {} : { announcesEvent: false as const };
     planned.assigns.unshift({ op: 'assignBye', ...seat, byeFromPropagation: true, ...quiet });
     planned.writes.push(
-      { op: 'setMatchUpBye', matchUpId: seat.matchUpId, ...quiet },
-      { op: 'stampUpdatedAt', entity: 'matchUp', id: seat.matchUpId },
+      // a matchUp a BYE already (the double BYE's) is left as it stands: v1 neither rewrites nor announces it
+      ...(double
+        ? []
+        : [
+            { op: 'setMatchUpBye' as const, matchUpId: seat.matchUpId, ...quiet },
+            { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: seat.matchUpId },
+          ]),
       ...(onward ? throughByeOps(onward) : []),
+      ...(byeOnward?.ops ?? []),
     );
-    planned.matchUpIds.push(seat.matchUpId, ...(onward ? [onward.matchUpId] : []));
+    planned.matchUpIds.push(seat.matchUpId, ...(onward ? [onward.matchUpId] : []), ...(byeOnward?.matchUpIds ?? []));
     if (!entry.loserMatchUpId) return planned;
     const level = chain?.levels[index];
     if (!opposite.length || !chain || chain.bounded || level?.fromMatchUpId !== entry.matchUpId) return undefined;
@@ -741,6 +756,36 @@ function byeChain(
     seat = { structureId: level.structureId, drawPosition: level.drawPosition, matchUpId: level.matchUpId };
     evented = false;
   }
+}
+
+/**
+ * A double BYE (`assignDrawPositionBye` beside a BYE): the seat's position already stands in the next matchUp, advanced
+ * there by the BYE opposite, and is now a BYE, so that matchUp becomes a BYE and the one other position it holds goes
+ * on into the matchUp after it, which must be clean. Planned where the next matchUp is to be played holding that position
+ * and one other, no result or provenance, and links no loser on. Undefined otherwise
+ */
+function byeAdvanced(
+  view: OutcomeView,
+  entry: HydratedMatchUp,
+  seatPosition: number,
+): { ops: OutcomeOp[]; matchUpIds: string[] } | undefined {
+  const onward = indexed(view, entry.winnerMatchUpId);
+  const held = (onward?.drawPositions ?? []).filter((position): position is number => !!position);
+  const others = held.filter((position) => position !== seatPosition);
+  if (!onward || onward.structureId !== entry.structureId || onward.loserMatchUpId) return undefined;
+  if (onward.matchUpStatus !== TO_BE_PLAYED || onward.winningSide || onward.score?.scoreStringSide1) return undefined;
+  if (Object.keys(onward.sideExitProvenance ?? {}).length || onward.sides?.some((side) => side.bye)) return undefined;
+  if (!held.includes(seatPosition) || others.length !== 1) return undefined;
+  const next = onwardFrom(view, onward, others[0]);
+  if (!next) return undefined;
+  return {
+    ops: [
+      { op: 'setMatchUpBye', matchUpId: onward.matchUpId },
+      { op: 'stampUpdatedAt', entity: 'matchUp', id: onward.matchUpId },
+      ...throughByeOps(next),
+    ],
+    matchUpIds: [onward.matchUpId, next.matchUpId],
+  };
 }
 
 /** a further level a BYE goes on to: a first-round seat, free and alone, behind no condition, in a clean matchUp */
@@ -822,14 +867,16 @@ function ownByeChain(view: OutcomeView): ByeChain | undefined {
   const { loserStructureId, loserTargetDrawPosition, loserMatchUpRecord, loserMatchUpId } = targets;
   if (targets.loserLink?.linkCondition || !loserMatchUpId || !loserStructureId || !loserTargetDrawPosition)
     return undefined;
-  // a participant opposite goes on through the BYE as an empty position would; a BYE opposite makes a double BYE
-  if (!seat?.free || seat.opponentBye) return undefined;
-  if (targets.loserMatchUpStatus !== TO_BE_PLAYED || targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit)
-    return undefined;
+  // a participant opposite goes on through the BYE as an empty position would; a BYE opposite makes a double BYE, the
+  // matchUp a BYE already
+  const doubled = !!seat?.opponentBye;
+  if (!seat?.free) return undefined;
+  if (targets.loserMatchUpStatus !== (doubled ? BYE : TO_BE_PLAYED)) return undefined;
+  if (targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit) return undefined;
   if (!loserMatchUpRecord || loserMatchUpRecord.provenance || loserMatchUpRecord.matchUpStatusCodes?.length)
     return undefined;
   const first = { structureId: loserStructureId, drawPosition: loserTargetDrawPosition, matchUpId: loserMatchUpId };
-  return byeChain(view, first, targets.byeLevels?.own, true);
+  return byeChain(view, first, targets.byeLevels?.own, true, doubled);
 }
 
 /** the produced exit's matchUp's loser seat, a BYE placed with no event (`conditionallyAdvanceDrawPosition`), and its chain */

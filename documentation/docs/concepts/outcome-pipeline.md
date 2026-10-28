@@ -626,7 +626,11 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   named one (the notice buffer keeps an earlier event, `preserveNoticeIdentity`). Each BYE goes on as v1's
   `assignDrawPositionBye` sends it: the position opposite it goes on into the next matchUp where there is one, and, a
   BYE matchUp's loser being the BYE, a matchUp that links its loser on puts a BYE on that seat too, with no event, level
-  by level (COMPASS, OLYMPIC, CURTIS), the structures' assignments announced deepest first; each level a first-round seat,
+  by level (COMPASS, OLYMPIC, CURTIS), the structures' assignments announced deepest first. A BYE opposite the double exit's own seat (the paired feeder a BYE)
+  makes a double BYE: that matchUp, a BYE already, is left as it stands; the seat's position already stands a round on
+  (the BYE opposite advanced it), so the matchUp there becomes a BYE, announced with its event, and the one other position
+  it holds (a fed seat nobody has reached) goes on into a clean matchUp, as the winner standing in the produced exit's
+  matchUp, delivered by that BYE, is awarded the exit with the BYE recorded as their origin; each level a first-round seat,
   free and alone behind no condition, in a clean matchUp, the walk bounded by `SETTLE_PASS_LIMITS.exitLevels` (F9). Under `doubleExitPropagateBye: false`
   the loser seat shows the produced exit instead: the loser matchUp is written the double exit's flavour awarded to the
   side opposite the seat, its codes `[]`, a `WALKOVER`'s score blanked and the seat's side given the
