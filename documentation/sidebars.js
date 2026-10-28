@@ -401,7 +401,7 @@ module.exports = {
         {
           type: 'category',
           label: 'Mocks & Practice',
-          items: ['governors/mocks-governor', 'governors/practice-governor'],
+          items: ['governors/simulation-governor', 'governors/mocks-governor', 'governors/practice-governor'],
         },
       ],
     },

@@ -1,4 +1,8 @@
+import { completeDrawMatchUps as completeDraw } from '@Generators/mocks/completeDrawMatchUps';
+
 export { anonymizeTournamentRecord } from '@Generators/tournamentRecords/anonymizeTournamentRecord';
 export { removeMatchUpOutcome } from '@Generators/mocks/removeMatchUpOutcome';
-export { completeDrawMatchUps } from '@Generators/mocks/completeDrawMatchUps';
 export { modifyTournamentRecord } from '@Generators/mocks/modifyTournamentRecord';
+
+/** @deprecated moved to `simulationGovernor`; this name is removed at 8.0.0 */
+export const completeDrawMatchUps = completeDraw;

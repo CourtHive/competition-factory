@@ -16,6 +16,7 @@ export * as reportGovernor from './reportGovernor';
 export * as sanctioningGovernor from './sanctioningGovernor';
 export * as scheduleGovernor from './scheduleGovernor';
 export * as scoreGovernor from './scoreGovernor';
+export * as simulationGovernor from './simulationGovernor';
 export * as tieFormatGovernor from './tieFormatGovernor';
 export * as tournamentGovernor from './tournamentGovernor';
 export * as availabilityGovernor from './availabilityGovernor';
