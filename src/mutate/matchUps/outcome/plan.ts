@@ -219,9 +219,11 @@ function reenteredReason(
   direction?: DirectionPlan,
 ): AbstainReason | undefined {
   const { targets } = view;
-  if (!write?.winningSide || write.matchUpStatus !== COMPLETED) return 'route';
-  // a stored status that changes is refreshed on the arrivals the first entry sent on (v1's `refreshArrivals`)
-  if (view.existing.matchUpStatus !== COMPLETED) return 'route';
+  if (!write?.winningSide || !DIRECTED_STATUSES.has(write.matchUpStatus)) return 'route';
+  // S6: a single exit that carried nothing is re-entered as a played result is. A status that changes is refreshed on
+  // the arrivals the first entry sent on (v1's `refreshArrivals`), and an arrival records it only beside a double
+  // exit's produced exit, where the target carries an exit (`cascade` below)
+  if (!DIRECTED_STATUSES.has(view.existing.matchUpStatus)) return 'route';
   if (direction?.decider || direction?.produced || direction?.converged) return 'route';
   const loser = direction?.loser;
   if (loser || targets.loserMatchUpId) {
@@ -245,7 +247,7 @@ function reenteredReason(
  * back what the old result directed (`removeDirectedParticipants`) and directs the new one (`directParticipants`), so it
  * is planned where both halves are clean: the old direction as a removal would take it back (`removalReason`), and the
  * new winner into the same next matchUp, the new loser onto the seat the old one leaves, carrying nothing. Anything else
- * is v1's (S4).
+ * is v1's (S4). S6: either result may be a single exit that carries nothing on (`correctedSingleExit`).
  */
 function changedWinnerReason(
   view: OutcomeView,
@@ -253,7 +255,8 @@ function changedWinnerReason(
   direction?: DirectionPlan,
 ): AbstainReason | undefined {
   const { targets, existing } = view;
-  if (!write?.winningSide || write.matchUpStatus !== COMPLETED || existing.matchUpStatus !== COMPLETED) return 'route';
+  if (!write?.winningSide || !DIRECTED_STATUSES.has(write.matchUpStatus)) return 'route';
+  if (!DIRECTED_STATUSES.has(existing.matchUpStatus)) return 'route';
   if (direction?.decider || direction?.produced || direction?.converged) return 'route';
   const removal = removalReason(view);
   if (removal) return removal;
@@ -410,6 +413,7 @@ function exitReason(args: {
       ? undefined
       : 'exit';
   if (clearedSingleExit(view, route, write)) return undefined;
+  if (correctedSingleExit(args)) return undefined;
   if (route !== 'winner' || !write?.winningSide || !SINGLE_EXITS.has(write.matchUpStatus)) return 'exit';
   if (request.matchUpStatus !== write.matchUpStatus) return 'exit';
   if (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide) return 'exit';
@@ -438,6 +442,27 @@ function clearedSingleExit(view: OutcomeView, route?: Route, write?: MatchUpWrit
     write?.matchUpStatus === TO_BE_PLAYED &&
     !write.winningSide
   );
+}
+
+/**
+ * S6: a stored single exit or played result corrected on the winner's route to a single exit or a played result, one
+ * side of it an exit, where neither carries anything on: re-entered, relabelled (a WALKOVER as a DEFAULTED, an exit as
+ * a played result and the reverse) or given to the other side. v1 directs a single exit that carries nothing as it
+ * directs a played result (probed: the same writes and notices), so it takes S4's re-entered and changed-winner shapes
+ * (`reenteredReason`, `changedWinnerReason`), whose checks keep v1's what the stored exit carried: provenance or a
+ * carried status in a target, a BYE beside the loser, and this matchUp's own side provenance (`provenance`). A loser
+ * the new exit would carry across their link is v1's here; a DEFAULTED under `incompleteAssignmentsOnDefault` too.
+ */
+function correctedSingleExit(args: Parameters<typeof exitReason>[0]): boolean {
+  const { request, view, route, write, direction } = args;
+  const { existing } = view;
+  if (route !== 'winner' || !existing.winningSide || !write?.winningSide) return false;
+  if (!DIRECTED_STATUSES.has(existing.matchUpStatus) || !DIRECTED_STATUSES.has(write.matchUpStatus)) return false;
+  if (request.matchUpStatus && request.matchUpStatus !== write.matchUpStatus) return false;
+  if (write.matchUpStatus === DEFAULTED && view.draw.defaultProcessCodes) return false;
+  if (direction?.produced || direction?.converged || direction?.decider) return false;
+  const loser = direction?.loser;
+  return !(loser?.exit || loser?.carriedPast || loser?.withdrawn || loser?.converged);
 }
 
 /**

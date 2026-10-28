@@ -720,6 +720,15 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   the loser link (provenance or a carried status in the target), a BYE gone through beside the loser, and side
   provenance on the matchUp itself.
 
+  A **single exit corrected** on the `winner` route is owned the same way. A stored WALKOVER, DEFAULTED or RETIRED, or
+  a played result, may be re-entered, relabelled (a WALKOVER as a DEFAULTED, an exit as a played result, or the
+  reverse) or given to the other side, as long as neither the stored result nor the new one carries anything on. v1
+  directs such an exit as it directs a played result, so the call takes S4's re-entered and changed-winner shapes. A
+  status that changes is refreshed on the arrivals the first entry sent on (`refreshArrivals`), and an arrival records
+  that status only beside a double exit's produced exit, where the target carries an exit and the call is v1's. Stay
+  v1's: a loser the new exit carries across their link, a stored exit that carried (provenance or a carried status in a
+  target), and a DEFAULTED under `incompleteAssignmentsOnDefault`.
+
 - **`differential`**: v2 plans the whole call before v1 runs, then checks v1's result against it,
   and a disagreement throws `OutcomePipelineDivergence` naming the matchUp and both answers. The
   plan covers the refusal, the route, the write on the matchUp, the winner's direction, the
@@ -807,26 +816,26 @@ result, no winner before or after) and the **first direction** (a played result 
 only consequence is the winner's position in the next matchUp of the same structure). The reasons are the work list of
 the slices that follow:
 
-| reason         | the call                                                                                                                                                                 | taken on by                                        |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------- |
-| `team`         | is a dual or one of its lines                                                                                                                                            | S7                                                 |
-| `schedule`     | carries a schedule                                                                                                                                                       | a later slice (§ 3.5.8 of the executor plan)       |
-| `notes`        | carries notes                                                                                                                                                            | a later slice                                      |
-| `status-codes` | carries the client's positional status codes, split into side codes at the write                                                                                         | S2                                                 |
-| `exit`         | has an exit status before or after, other than a single exit entered with a winner on a clean matchUp that carries nothing on, or carries it one level onto a clean seat | S5; the clean clears of a double or single exit S6 |
-| `winner`       | takes away or changes a winner already stored, so what it directed is taken back                                                                                         | S4                                                 |
-| `loser`        | has a loser link, so the loser goes somewhere                                                                                                                            | S3                                                 |
-| `link`         | sends its winner into another structure                                                                                                                                  | S3                                                 |
-| `cascade`      | sends its winner to a matchUp holding a BYE, an exit or a result, so the winner goes on or meets it                                                                      | S5                                                 |
-| `route`        | takes a route, or reaches a status, that S1 does not plan as ops                                                                                                         | S2                                                 |
-| `provenance`   | is on a matchUp holding side-exit provenance the score write may clear or rescue                                                                                         | S5                                                 |
-| `tallied`      | is in a round-robin, ad hoc or lucky structure, whose tally the write updates                                                                                            | S3                                                 |
-| `no-record`    | is on a draw the tournament record's events do not hold, so there is nothing to fold the plan into                                                                       | none: a shadow needs the record                    |
-| `edges`        | is on a draw that stores no winner and loser edges, which v1 writes first (`ensureGoesTo`)                                                                               | S2 (`setEdges`)                                    |
-| `clock`        | is made outside an engine call, with no captured instant, so the timestamps a write takes cannot be reproduced                                                           | none: production calls go through the engine       |
-| `settle`       | leaves a settle pass work on the working view (S2's has-work predicates, `settleWork.ts`), leftover state included                                                       | none: S2 owns only a call no pass has work for     |
-| `write-mode`   | is made in LEGACY or BRIDGE write mode, where v1 writes `scoredTime` as a timeItem, which the reducer does not                                                           | a later slice (F6: BRIDGE in with its evidence)    |
-| `competition`  | names a winner where a per-matchUp competition policy applies: v1 updates ratings on the result (`processCompetitionMatchUp`)                                            | a later slice                                      |
+| reason         | the call                                                                                                                                                                 | taken on by                                                                           |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| `team`         | is a dual or one of its lines                                                                                                                                            | S7                                                                                    |
+| `schedule`     | carries a schedule                                                                                                                                                       | a later slice (§ 3.5.8 of the executor plan)                                          |
+| `notes`        | carries notes                                                                                                                                                            | a later slice                                                                         |
+| `status-codes` | carries the client's positional status codes, split into side codes at the write                                                                                         | S2                                                                                    |
+| `exit`         | has an exit status before or after, other than a single exit entered with a winner on a clean matchUp that carries nothing on, or carries it one level onto a clean seat | S5; the clean clears of a double or single exit, the clean single-exit corrections S6 |
+| `winner`       | takes away or changes a winner already stored, so what it directed is taken back                                                                                         | S4                                                                                    |
+| `loser`        | has a loser link, so the loser goes somewhere                                                                                                                            | S3                                                                                    |
+| `link`         | sends its winner into another structure                                                                                                                                  | S3                                                                                    |
+| `cascade`      | sends its winner to a matchUp holding a BYE, an exit or a result, so the winner goes on or meets it                                                                      | S5                                                                                    |
+| `route`        | takes a route, or reaches a status, that S1 does not plan as ops                                                                                                         | S2                                                                                    |
+| `provenance`   | is on a matchUp holding side-exit provenance the score write may clear or rescue                                                                                         | S5                                                                                    |
+| `tallied`      | is in a round-robin, ad hoc or lucky structure, whose tally the write updates                                                                                            | S3                                                                                    |
+| `no-record`    | is on a draw the tournament record's events do not hold, so there is nothing to fold the plan into                                                                       | none: a shadow needs the record                                                       |
+| `edges`        | is on a draw that stores no winner and loser edges, which v1 writes first (`ensureGoesTo`)                                                                               | S2 (`setEdges`)                                                                       |
+| `clock`        | is made outside an engine call, with no captured instant, so the timestamps a write takes cannot be reproduced                                                           | none: production calls go through the engine                                          |
+| `settle`       | leaves a settle pass work on the working view (S2's has-work predicates, `settleWork.ts`), leftover state included                                                       | none: S2 owns only a call no pass has work for                                        |
+| `write-mode`   | is made in LEGACY or BRIDGE write mode, where v1 writes `scoredTime` as a timeItem, which the reducer does not                                                           | a later slice (F6: BRIDGE in with its evidence)                                       |
+| `competition`  | names a winner where a per-matchUp competition policy applies: v1 updates ratings on the result (`processCompetitionMatchUp`)                                            | a later slice                                                                         |
 
 **In `differential`**, a complete plan is folded into the record as it stood before v1 ran and compared with the record
 v1 wrote, every `updatedAt` by value: v1 stamps each touched entity once per call, as v2 does (F2 (i), § 5 step 6).
