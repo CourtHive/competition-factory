@@ -651,6 +651,10 @@ function producedReason(
   if (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide || write.matchUpStatusCodes?.length)
     return 'exit';
   if (targets.byeTarget) return 'exit';
+  // a round robin group's matchUp sends nobody on (`doubleExitAdvancement` returns at once in a container): its result
+  // and the group's tally are all there is
+  if (view.group && !view.group.adHoc && !direction && !targets.winnerMatchUpId && !targets.loserMatchUpId)
+    return undefined;
   const produced = direction?.produced;
   const target = targets.winner;
   if (!produced || direction?.converged || direction?.decider || !target) return 'exit';

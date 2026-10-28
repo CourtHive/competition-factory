@@ -597,7 +597,9 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   v2 plans the loop level by level from the draw as the call found it, each level's seat and matchUp clean as
   the first must be (no link condition, no BYE opposite), the carrier placed and the exit written with the
   landing they lost as its origin. The walk is bounded by v1's own `SETTLE_PASS_LIMITS.exitLevels`; a chain
-  that reaches it is v1's, which refuses there (`SETTLE_BOUND_REACHED`, F9 (i)), so v2 never plans the bound. A **double exit** is owned where its produced exit lands pending: entered on a matchUp holding no
+  that reaches it is v1's, which refuses there (`SETTLE_BOUND_REACHED`, F9 (i)), so v2 never plans the bound. A **double exit** in a round robin group sends nobody on (`doubleExitAdvancement`
+  returns at once in a container): its result and the group's tally are planned, and the settle passes are asked as
+  for a played result. A **double exit** elsewhere is owned where its produced exit lands pending: entered on a matchUp holding no
   result, in a structure it links nothing out of, it produces a `WALKOVER` (or a `DEFAULTED` from a
   `DOUBLE_DEFAULT`) in the next matchUp on the side it feeds, written with no winner, its codes `[]`, a
   `WALKOVER`'s score blanked and the fed side given its origin (`buildSideExitProvenance`, v1's builder).
