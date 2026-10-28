@@ -85,14 +85,19 @@ export function applyOwnedPlan({
   const unevented = new Set(
     ops.flatMap((op) =>
       (op.op === 'setMatchUpDrawPositions' && (op.announcesContext === false || op.advancesThroughBye)) ||
+      (op.op === 'setMatchUpResult' && op.announcesContext === false) ||
       (op.op === 'setMatchUpBye' && op.announcesEvent === false)
         ? [op.matchUpId]
         : [],
     ),
   );
-  // and with no tournament either (a produced exit's award, #5875)
+  // and with no tournament either (a produced exit's award, #5875; an exit recorded beside a BYE and carried on)
   const untournamented = new Set(
-    ops.flatMap((op) => (op.op === 'setMatchUpDrawPositions' && op.announcesContext === false ? [op.matchUpId] : [])),
+    ops.flatMap((op) =>
+      (op.op === 'setMatchUpDrawPositions' || op.op === 'setMatchUpResult') && op.announcesContext === false
+        ? [op.matchUpId]
+        : [],
+    ),
   );
   // a position advanced through a BYE a double exit placed: v1's `doubleExitAdvancement` announces it as `advanceWinner`
   const advanced = new Set(
@@ -105,12 +110,15 @@ export function applyOwnedPlan({
     if (!matchUp) continue;
     // every score write announces its matchUp in context to a subscriber, as v1's `modifyMatchUpScore` does: the call's
     // own, and a carried exit's on the matchUp it lands in (S5)
-    if (subscribed && resulted.has(matchUpId))
+    if (subscribed && resulted.has(matchUpId)) {
+      const contextless = untournamented.has(matchUpId);
+      const record = contextless ? undefined : tournamentRecord;
       deferInContextMatchUp({
-        inContextMatchUp: () => getInContextMatchUp({ tournamentRecord, drawDefinition, matchUpId }),
-        tournamentId,
+        inContextMatchUp: () => getInContextMatchUp({ tournamentRecord: record, drawDefinition, matchUpId }),
+        tournamentId: contextless ? undefined : tournamentId,
         matchUpId,
       });
+    }
     // a removal's notice is built as v1's `removeSubsequentRoundsParticipant` builds it, whose caller passes no event
     const removedPosition = removed.get(matchUpId);
     const noticeEvent = removedPosition || unevented.has(matchUpId) ? undefined : event;

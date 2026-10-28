@@ -581,6 +581,41 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'FIRST_MATCH_LOSER_CONSOLATION (S5): a double walkover: both consolation seats BYEs, the advanced position goes on twice',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      steps: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION (S5): a double default in a 16 draw',
+    {
+      drawProfile: { drawSize: 16, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      steps: [{ target: R1(6, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
+  [
+    'COMPASS (S5): a carried walkover meets a BYE a level down, in South, and lands beyond it',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 14, drawType: COMPASS },
+      steps: [{ target: R1(3, 'East'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'COMPASS (S5): a carried default past a BYE two levels down',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 14, drawType: COMPASS },
+      steps: [{ target: R1(4, 'East'), outcome: exited(DEFAULTED, 2), params: CARRIED }],
+    },
+  ],
+  [
+    'OLYMPIC (S5): a carried walkover past a BYE in North',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 14, drawType: OLYMPIC },
+      steps: [{ target: R1(3, 'East'), outcome: walkover(2), params: CARRIED }],
+    },
+  ],
+  [
     'OLYMPIC (S5): a carried walkover goes on from East to West to the next level',
     {
       drawProfile: { drawSize: 16, drawType: OLYMPIC },
@@ -718,6 +753,148 @@ const SCENARIOS: [string, Scenario][] = [
       drawProfile: { drawSize: 16, drawType: DOUBLE_ELIMINATION },
       setup: [{ target: R1(1, 'Main'), outcome: won(2) }],
       steps: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION (S5): a second double walkover converges round 2 into a double walkover, which produces on',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S5): a second double walkover converges, its loser seat a double BYE, the next loser seat a BYE',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION (S5): two double defaults converge, each loser seat in the Backdraw a BYE',
+    {
+      drawProfile: { drawSize: 16, drawType: DOUBLE_ELIMINATION },
+      setup: [{ target: R1(4, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+      steps: [{ target: R1(3, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION (S5): two double defaults converge into a double default in a 16 draw',
+    {
+      drawProfile: { drawSize: 16, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(4), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+      steps: [{ target: R1(3), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION (S5): a double walkover meeting a produced default converges to a double walkover',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+      steps: [{ target: R1(2), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'ROUND_ROBIN (S5): a double walkover in a group, re-tallying it, sends nobody on',
+    {
+      drawProfile: { drawSize: 8, drawType: ROUND_ROBIN },
+      setup: [{ target: { structureName: 'Group 1', roundNumber: 1, nth: 1 }, outcome: won(1) }],
+      steps: [
+        { target: { structureName: 'Group 1', roundNumber: 2, nth: 0 }, outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+    },
+  ],
+  [
+    'ROUND_ROBIN (S5): a double default in a group of a 16 draw',
+    {
+      drawProfile: { drawSize: 16, drawType: ROUND_ROBIN },
+      steps: [
+        { target: { structureName: 'Group 2', roundNumber: 2, nth: 0 }, outcome: { matchUpStatus: DOUBLE_DEFAULT } },
+      ],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S5): a double walkover beside a BYE: the consolation BYE goes on, and the fed seat through it',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 14, drawType: FEED_IN_CHAMPIONSHIP },
+      steps: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION (S5): a double default beside a BYE, a double BYE in the Backdraw',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 14, drawType: DOUBLE_ELIMINATION },
+      steps: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
+  [
+    'COMPASS (S5): a double walkover in a 16 draw: its BYEs go on West to South to Southeast, and North to Northwest',
+    {
+      drawProfile: { drawSize: 16, drawType: COMPASS },
+      steps: [{ target: R1(1, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'OLYMPIC (S5): a double default in a 16 draw, each BYE sending the position opposite on and a BYE a level down',
+    {
+      drawProfile: { drawSize: 16, drawType: OLYMPIC },
+      steps: [{ target: R1(3, 'East'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
+  [
+    'CURTIS_CONSOLATION (S5): a double walkover in a 32 draw',
+    {
+      drawProfile: { drawSize: 32, drawType: CURTIS_CONSOLATION },
+      steps: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'COMPASS (S5, doubleExitPropagateBye off): West takes the walkover, and its loser seat in South a BYE',
+    {
+      drawProfile: { drawSize: 8, drawType: COMPASS },
+      policyDefinitions: POLICY_OFF,
+      steps: [{ target: R1(1, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'OLYMPIC (S5, doubleExitPropagateBye off): West takes the default in a 16 draw, the BYE beyond it going on',
+    {
+      drawProfile: { drawSize: 16, drawType: OLYMPIC },
+      policyDefinitions: POLICY_OFF,
+      steps: [{ target: R1(3, 'East'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
+  [
+    'COMPASS (S5, doubleExitPropagateBye off): a double walkover in a 32 draw',
+    {
+      drawProfile: { drawSize: 32, drawType: COMPASS },
+      policyDefinitions: POLICY_OFF,
+      steps: [{ target: R1(5, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S5, doubleExitPropagateBye off): beside a consolation BYE the walkover is recorded and carried on',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 14, drawType: FEED_IN_CHAMPIONSHIP },
+      policyDefinitions: POLICY_OFF,
+      steps: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'COMPASS (S5, doubleExitPropagateBye off): beside a BYE in West the walkover goes on into West round 2',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 14, drawType: COMPASS },
+      policyDefinitions: POLICY_OFF,
+      steps: [{ target: R1(2, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION (S5, doubleExitPropagateBye off): a double default beside a Backdraw BYE',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 14, drawType: DOUBLE_ELIMINATION },
+      policyDefinitions: POLICY_OFF,
+      steps: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
     },
   ],
   [
@@ -883,19 +1060,6 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     } finally {
       SETTLE_PASS_LIMITS.exitLevels = saved;
     }
-  });
-
-  it('COMPASS under doubleExitPropagateBye off: West links its loser on to South, which v2 does not read yet', () => {
-    const scenario: Scenario = {
-      drawProfile: { drawSize: 8, drawType: COMPASS },
-      policyDefinitions: POLICY_OFF,
-      steps: [{ target: R1(1, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
-    };
-    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
-    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
-    expect(v2.v1Writes).toEqual(1);
-    expect(v2.results).toEqual(v1.results);
-    expect(v2.record).toEqual(v1.record);
   });
 
   it('a default under a scoring policy naming incompleteAssignmentsOnDefault: v1 may write processCodes', () => {

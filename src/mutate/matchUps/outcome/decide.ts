@@ -749,6 +749,7 @@ function workingViewAfter({
     propagateRetirementAsExit: args.request.flags.propagateRetirementAsExit,
     propagateExitStatus: args.request.flags.propagateExitStatus,
     loserLinked: !!view.targets.loserLink,
+    contained: !!view.group && !view.group.adHoc,
     inContextDrawMatchUps: view.inContextDrawMatchUps,
     tournamentRecord: args.tournamentRecord,
     drawDefinition: args.drawDefinition,

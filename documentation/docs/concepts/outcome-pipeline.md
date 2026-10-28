@@ -595,9 +595,12 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   included, and the call's result carries no propagation context. A matchUp that links its loser on
   (COMPASS, OLYMPIC, PLAYOFF) makes the carrier, its loser, carry the exit again (`propagateExitFrom`'s loop):
   v2 plans the loop level by level from the draw as the call found it, each level's seat and matchUp clean as
-  the first must be (no link condition, no BYE opposite), the carrier placed and the exit written with the
+  the first must be (no link condition; a BYE opposite passed by RULE 1 into the clean matchUp beyond it, which records
+  the carry beside its BYE as at the first level), the carrier placed and the exit written with the
   landing they lost as its origin. The walk is bounded by v1's own `SETTLE_PASS_LIMITS.exitLevels`; a chain
-  that reaches it is v1's, which refuses there (`SETTLE_BOUND_REACHED`, F9 (i)), so v2 never plans the bound. A **double exit** is owned where its produced exit lands pending: entered on a matchUp holding no
+  that reaches it is v1's, which refuses there (`SETTLE_BOUND_REACHED`, F9 (i)), so v2 never plans the bound. A **double exit** in a round robin group sends nobody on (`doubleExitAdvancement`
+  returns at once in a container): its result and the group's tally are planned, and the settle passes are asked as
+  for a played result. A **double exit** elsewhere is owned where its produced exit lands pending: entered on a matchUp holding no
   result, in a structure it links nothing out of, it produces a `WALKOVER` (or a `DEFAULTED` from a
   `DOUBLE_DEFAULT`) in the next matchUp on the side it feeds, written with no winner, its codes `[]`, a
   `WALKOVER`'s score blanked and the fed side given its origin (`buildSideExitProvenance`, v1's builder).
@@ -616,24 +619,46 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   `DOUBLE_WALKOVER`, whose score is blanked), its award taken away and the arriving side's entry merged beside
   the standing one; then that double exit produces onward as one entered there would, pending, with the
   reservation beside a fed seat. Planned where the landing holds that single exit and no score value, links no
-  loser on, and the produced exit lands clean. A **double exit with loser links** is owned where its produced exit lands pending,
+  loser on, and the produced exit lands clean. A double exit whose produced exit meets a pending one a double exit beside it
+  produced there **converges** with it: the matchUp becomes the double exit (`collapseDoubleExitStatus`), with no
+  winner, codes `[]`, a `DOUBLE_WALKOVER`'s score blanked and the arriving side's origin beside the standing one, and it
+  produces on as one entered there would (`advanceConvergedWinner`); planned with nobody there and the exit produced onward landing clean (or none, from a final). With loser links (under
+  `doubleExitPropagateBye`; off, the landing's BYE gives way to a produced exit, `serveConvergedLoserLink`: v1's), this
+  matchUp's own loser seat takes its BYE first, with all it sends on; the landing's loser seat, a BYE since the first exit
+  was produced there, is left as it is; and the onward matchUp's loser seat, which its produced exit leaves unfillable,
+  takes a BYE with its chain before that exit is written. A **double exit with loser links** is owned where its produced exit lands pending,
   or is awarded at once to the winner of the matchUp beside it, who goes on as above: nobody
   loses the double exit, so the seat its link feeds takes a propagated BYE and that matchUp a BYE, and the position
   opposite (empty, or the participant standing there) is advanced through it into the next matchUp (`advanceWinner`,
   announced with no event, the matchUp it joins written with no score); nobody
   will lose the produced exit's matchUp either, so the seat ITS link feeds takes a BYE too, announced with no event
   (`propagateUnfillableLoserBye`), its structure's assignments announced with no event unless another placement there
-  named one (the notice buffer keeps an earlier event, `preserveNoticeIdentity`). Under `doubleExitPropagateBye: false`
+  named one (the notice buffer keeps an earlier event, `preserveNoticeIdentity`). Each BYE goes on as v1's
+  `assignDrawPositionBye` sends it: the position opposite it goes on into the next matchUp where there is one, and, a
+  BYE matchUp's loser being the BYE, a matchUp that links its loser on puts a BYE on that seat too, with no event, level
+  by level (COMPASS, OLYMPIC, CURTIS), the structures' assignments announced deepest first. A BYE opposite the double exit's own seat (the paired feeder a BYE)
+  makes a double BYE: that matchUp, a BYE already, is left as it stands; the seat's position already stands a round on
+  (the BYE opposite advanced it), so the matchUp there becomes a BYE, announced with its event, and the one other position
+  it holds (a fed seat nobody has reached) goes on into a clean matchUp, as the winner standing in the produced exit's
+  matchUp, delivered by that BYE, is awarded the exit with the BYE recorded as their origin; each level a first-round seat,
+  free and alone behind no condition, in a clean matchUp, the walk bounded by `SETTLE_PASS_LIMITS.exitLevels` (F9). Under `doubleExitPropagateBye: false`
   the loser seat shows the produced exit instead: the loser matchUp is written the double exit's flavour awarded to the
   side opposite the seat, its codes `[]`, a `WALKOVER`'s score blanked and the seat's side given the
   origin (`conditionallyAdvanceDrawPosition`), with no `scoredTime`; its structure is stamped, and the position
   opposite is advanced into the next matchUp, announced with no event or tournament: a participant standing there goes
   on, an empty position goes ahead of the arrival it awaits. Planned in a first round that is not fed, no BYE opposite
-  the seat, into a matchUp that links no loser on
-  (COMPASS and OLYMPIC stay v1's). Otherwise outside a feed round, for links with no condition, free seats with no BYE beside them (a BYE there makes a
-  double BYE: v1's), clean matchUps, and an
-  unfillable seat whose matchUp holds no other position; FIRST_MATCHUP feeds and chains stay v1's. v1 writes it through
-  `modifyMatchUpScore`, not `setMatchUpState`, so it takes no `scoredTime`. Stay v1's: a double exit with a loser link beside a BYE, into a feed round, or under `doubleExitPropagateBye: false` into a loser matchUp that links on; a carry past a BYE into anything but a clean matchUp; a
+  the seat. A loser matchUp that links its own loser on (COMPASS, OLYMPIC) leaves that seat to nobody: before the exit
+  is written there, the seat takes a BYE with no event, with all it sends on, as the BYEs below go on. Where a BYE
+  stands opposite the seat (its matchUp a BYE already), v1 records the exit on the BYE matchUp, on the seat's side, its
+  score removed, and carries it on into the matchUp the seat's position already stands in, where it lands pending with
+  its origin on that side (`stampExitOnByeHeldLoserTarget`, `carryExitOnward`); both written with neither the tournament
+  nor the event (`setMatchUpResult.announcesContext: false`), planned where nobody stands on the other side there and its
+  feeder is still to be played. Otherwise outside a feed round, for links with no condition, free seats with no BYE beside them (a BYE there makes a
+  double BYE: v1's), clean matchUps, and each matchUp touched once, but where the unfillable seat's matchUp is the one the first BYE
+  advanced a position into (FIRST_MATCH_LOSER_CONSOLATION): that position goes on again through the second BYE. The
+  unfillable seat takes its BYE behind a `FIRST_MATCHUP` link too, as v1 places it (`advanceByeToLoserMatchUp` asks no
+  condition); this matchUp's own `FIRST_MATCHUP` feed stays v1's. v1 writes it through
+  `modifyMatchUpScore`, not `setMatchUpState`, so it takes no `scoredTime`. Stay v1's: a double exit with a loser link beside a BYE or into a feed round; a carry past a BYE into anything but a clean matchUp; a
   present opponent, for a carried or a produced exit, with nowhere clean to go on to; a convergence but RULE 4's clean one; a
   correction to or from an exit; and an exit whose target holds a BYE, an exit or a result (`exit`, `cascade`).
 - **`differential`**: v2 plans the whole call before v1 runs, then checks v1's result against it,

@@ -59,6 +59,8 @@ type SettleWorkArgs = {
   propagateExitStatus?: boolean;
   /** the call's matchUp has a loser link: the only way v1 propagates a single exit (`directLoser`) */
   loserLinked?: boolean;
+  /** the call's matchUp is in a round robin group: a double exit there produces nothing (`doubleExitAdvancement`) */
+  contained?: boolean;
   tournamentRecord?: Tournament;
   working: WorkingView;
   ops: OutcomeOp[];
@@ -125,13 +127,14 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
 }
 
 /**
- * Whether v1 propagates the exit a call writes: a double exit always produces downstream; a single exit is carried only
+ * Whether v1 propagates the exit a call writes: a double exit produces downstream, but in a round robin group, where it
+ * produces nothing (`doubleExitAdvancement` returns at once in a container); a single exit is carried only
  * across a loser link, and only when `propagateExitStatus` is on and the status is one that travels (`directLoser`'s
  * `validExitToPropagate`: WALKOVER and DEFAULTED, and RETIRED under `propagateRetirementAsExit`). Any other single exit
  * is directed as a played result and settles as one.
  */
 function propagatesExit(matchUpStatus: MatchUpStatusUnion, args: SettleWorkArgs): boolean {
-  if (isDoubleExit(matchUpStatus)) return true;
+  if (isDoubleExit(matchUpStatus)) return !args.contained;
   if (!isExit(matchUpStatus)) return false;
   if (!args.propagateExitStatus || !args.loserLinked) return false;
   return matchUpStatus !== RETIRED || !!args.propagateRetirementAsExit;

@@ -1,13 +1,14 @@
 import { auditAutoScheduling } from '@Mutate/matchUps/schedule/schedulers/auditAutoScheduling';
 import { overnightRestWarningsFor } from '@Query/matchUps/scheduling/getOvernightRestWarnings';
 import { clearScheduledMatchUps } from '@Mutate/matchUps/schedule/clearScheduledMatchUps';
+import { onTheGrid, timedGridConflicts } from '../scheduleMatchUps/timedGridConflicts';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { disableNotifications, enableNotifications } from '@Global/state/globalState';
 import { computeRoundSchedulePcts } from './roundSchedulePcts';
 import { planPlayedOrderRefusal } from './playedOrderGate';
+import { buildSchedulingView, PlanningView } from './view';
 import { isValidDateString } from '@Tools/dateTime';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
-import { buildSchedulingView } from './view';
 import { planSchedule } from './plan';
 import { nowMs } from '@Tools/clock';
 import { writePlan } from './write';
@@ -92,6 +93,10 @@ export function scheduleProfileVNext(params: ScheduleProfileVNextArgs) {
     },
   });
 
+  // a matchUp already on a date's court grid without a time has just been timed: what its time contradicts there is
+  // reported, per date
+  const proConflicts = dryRun ? {} : profileGridConflicts({ tournamentRecords, view, scheduledMatchUpIds });
+
   // overnight rest is warned, not held (§ 9.8), read with the plan's placements (a dry run writes none)
   const overnightRestWarnings = overnightRestWarningsFor({
     scheduleDates: profileDates,
@@ -118,7 +123,27 @@ export function scheduleProfileVNext(params: ScheduleProfileVNextArgs) {
     scheduledDates: profileDates,
     overnightRestWarnings,
     noTimeMatchUpIds,
+    proConflicts,
   };
+}
+
+type ProfileGridConflictsArgs = {
+  scheduledMatchUpIds?: { [scheduleDate: string]: string[] };
+  tournamentRecords: TournamentRecords;
+  view: PlanningView;
+};
+
+function profileGridConflicts({ tournamentRecords, view, scheduledMatchUpIds }: ProfileGridConflictsArgs) {
+  const gridded = new Set(
+    view.hydrated.filter(({ schedule }) => onTheGrid(schedule)).map(({ matchUpId }) => matchUpId),
+  );
+  const conflicts: { [scheduleDate: string]: ReturnType<typeof timedGridConflicts> } = {};
+  for (const [scheduleDate, matchUpIds] of Object.entries(scheduledMatchUpIds ?? {})) {
+    const griddedMatchUpIds = matchUpIds.filter((matchUpId) => gridded.has(matchUpId));
+    const issues = timedGridConflicts({ tournamentRecords, griddedMatchUpIds, scheduleDate });
+    if (issues.length) conflicts[scheduleDate] = issues;
+  }
+  return conflicts;
 }
 
 function planScheduleOverrides(placements: ReturnType<typeof planSchedule>['placements']) {

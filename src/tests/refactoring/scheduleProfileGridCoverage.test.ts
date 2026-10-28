@@ -320,10 +320,12 @@ describe('scheduleProfileGrid multiple venues', () => {
     expect(result.notScheduledMatchUpIds[startDate].toSorted()).toEqual(roundOf(1).toSorted());
     expect(result.scheduledMatchUpIds[startDate].toSorted()).toEqual(roundOf(2).toSorted());
 
-    // and the timed scheduler likewise places nothing there
+    // and the timed scheduler likewise places nothing there. Round 2, on the grid without a time, is to be timed too
+    // (CA 2026-10-28): it waits for round 1, which is never placed, so it is reported rather than skipped in silence
     result = tournamentEngine.scheduleProfileRounds({ scheduleDates: [startDate] });
     expect(result.success).toBe(true);
-    expect(result.noTimeMatchUpIds[startDate].toSorted()).toEqual(roundOf(1).toSorted());
+    expect(result.noTimeMatchUpIds[startDate].toSorted()).toEqual([...roundOf(1), ...roundOf(2)].toSorted());
+    expect(Object.keys(result.dependencyDeferredMatchUpIds[startDate]).toSorted()).toEqual(roundOf(2).toSorted());
   });
 });
 

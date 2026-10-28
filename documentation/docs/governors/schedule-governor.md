@@ -63,7 +63,9 @@ engine.addMatchUpScheduledDate({
 
 ### addMatchUpScheduledTime
 
-Assigns a scheduled time to a matchUp.
+Assigns a scheduled time to a matchUp. A date-time (`2026-10-02T09:00`) gives a matchUp with no `scheduledDate` that
+date; one naming another day than the matchUp's `scheduledDate` is refused with `INVALID_DATE`. To move a matchUp to
+another day, write its `scheduledDate`.
 
 ```js
 engine.addMatchUpScheduledTime({
