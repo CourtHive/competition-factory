@@ -1081,6 +1081,25 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(1, 'Main'), outcome: retired(1) }],
     },
   ],
+  [
+    'SINGLE_ELIMINATION (S6): a double walkover given a winner unwinds its path, then the winner goes on',
+    {
+      drawProfile: { drawSize: 16, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(1), outcome: walkover(1) }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION (S6): a double default replaced by a played result in a 32 draw, beside a played matchUp',
+    {
+      drawProfile: { drawSize: 32, drawType: SINGLE_ELIMINATION },
+      setup: [
+        { target: R1(3), outcome: won(1) },
+        { target: R1(6), outcome: { matchUpStatus: DOUBLE_DEFAULT } },
+      ],
+      steps: [{ target: R1(6), outcome: won(2) }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
@@ -1268,6 +1287,39 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
       drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
       setup: [{ target: R1(1, 'Main'), outcome: won(1) }],
       steps: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v1.results[0].success).toEqual(true);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+  });
+
+  it('S6: a double walkover given a winner whose loser seat took a BYE (FEED_IN_CHAMPIONSHIP) is v1s', () => {
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(1) }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v1.results[0].success).toEqual(true);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+  });
+
+  it('S6: a double walkover given a winner whose produced walkover was awarded on is v1s', () => {
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 16, drawType: SINGLE_ELIMINATION },
+      setup: [
+        { target: R1(2), outcome: won(2) },
+        { target: R1(1), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+      steps: [{ target: R1(1), outcome: walkover(1) }],
     };
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
