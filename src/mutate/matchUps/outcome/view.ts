@@ -367,8 +367,9 @@ function throughBye(
  * THE LEVELS A CARRIED EXIT GOES ON TO (S5, `propagateExitFrom`). From the matchUp the exit lands in, the carrier is
  * that matchUp's loser, and v1's nested write directs them across its loser link (`directLoser`), carrying the exit
  * again. Each level is read from the draw as the call found it: the link targets of the landing (`positionTargets`),
- * the seat it feeds and the matchUp holding it. Only for a call that may carry. The walk stops where nothing is linked
- * on, at a BYE opposite (a relay this walk does not read), and at v1's bound (`SETTLE_PASS_LIMITS.exitLevels`), where it
+ * the seat it feeds and the matchUp holding it. Only for a call that may carry. Past a BYE opposite the seat (RULE 1) the
+ * walk goes on from the matchUp beyond it (`throughBye`). It stops where nothing is linked on, at a BYE it cannot pass,
+ * and at v1's bound (`SETTLE_PASS_LIMITS.exitLevels`), where it
  * says so: v1 refuses there (`SETTLE_BOUND_REACHED`), and v2 abstains (F9).
  */
 function carryLevels(
@@ -385,6 +386,8 @@ function carryLevels(
     const drawPosition = targetMatchUps?.loserTargetDrawPosition;
     if (!next || !drawPosition) break;
     const seat = loserTargetSeat(draw.drawDefinition, next.structureId, drawPosition, next.drawPositions);
+    // a BYE opposite the seat (RULE 1): the carrier goes on past it into the matchUp beyond, where the exit lands
+    const through = seat?.opponentBye ? throughBye(next, drawPosition, draw) : undefined;
     levels.push({
       linkCondition: targetLinks?.loserTargetLink?.linkCondition,
       record: storedSideRecord(matchUpsMap, next.matchUpId),
@@ -396,9 +399,10 @@ function carryLevels(
       fromMatchUpId,
       drawPosition,
       seat,
+      ...(through ? { through } : {}),
     });
-    if (!seat || seat.opponentBye) break;
-    fromMatchUpId = next.matchUpId;
+    if (!seat || (seat.opponentBye && !through)) break;
+    fromMatchUpId = through?.matchUpId ?? next.matchUpId;
   }
   return { levels, bounded: false };
 }

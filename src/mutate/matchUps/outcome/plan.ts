@@ -535,9 +535,10 @@ function onwardFrom(
 
 /**
  * The levels a carried exit goes on to past its first landing (`propagateExitFrom`'s loop): the carrier loses each
- * landing and crosses its loser link, and the exit lands again by RULE 2 or 3. Planned where every level is clean, as
- * the first must be: a free seat with no BYE opposite, behind no link condition, in a matchUp to be played holding no
- * result, exit, codes or provenance, until a landing links nothing on. Undefined otherwise, and where the walk reached
+ * landing and crosses its loser link, and the exit lands again by RULE 2 or 3, or past a BYE opposite by RULE 1 in the
+ * clean matchUp beyond it. Planned where every level is clean, as the first must be: a free seat behind no link
+ * condition, in a matchUp to be played holding no result, exit, codes or provenance (or a BYE the carrier passes), until a
+ * landing links nothing on. Undefined otherwise, and where the walk reached
  * v1's bound with a level to go (F9: v1 refuses there; v2 abstains, so it never plans the bound).
  */
 function deeperLandings(view: OutcomeView, first: CarriedLanding): DeeperLanding[] | undefined {
@@ -546,11 +547,19 @@ function deeperLandings(view: OutcomeView, first: CarriedLanding): DeeperLanding
   if (!chain || chain.bounded || chain.levels[0]?.fromMatchUpId !== first.matchUpId) return undefined;
   const deeper: DeeperLanding[] = [];
   for (const level of chain.levels) {
-    if (level.linkCondition || !level.seat?.free || level.seat.opponentBye) return undefined;
-    if (level.matchUpStatus !== TO_BE_PLAYED || level.hasResult || level.carriesExit) return undefined;
+    if (level.linkCondition || !level.seat?.free) return undefined;
+    // RULE 1 at this level: a BYE opposite, which the carrier passes into a clean matchUp beyond, where the exit lands
+    const relayed = level.seat.opponentBye;
+    if (relayed && (level.matchUpStatus !== BYE || !level.through)) return undefined;
+    if (!relayed && (level.matchUpStatus !== TO_BE_PLAYED || level.hasResult || level.carriesExit)) return undefined;
     if (!level.record || level.record.provenance || level.record.matchUpStatusCodes?.length) return undefined;
-    const landing = landingAt(view, level.matchUpId, level.drawPosition);
-    if (!landing || (landing.opponentHeld && !landing.onward)) return undefined;
+    const at = relayed ? level.through?.matchUpId : level.matchUpId;
+    const reached = landingAt(view, at, level.drawPosition, { beyondBye: relayed });
+    const relaySide = relayed ? sideOf(indexed(view, level.matchUpId), level.drawPosition) : undefined;
+    if (!reached || (reached.opponentHeld && !reached.onward) || (relayed && !relaySide)) return undefined;
+    const landing: CarriedLanding = relaySide
+      ? { ...reached, relay: { matchUpId: level.matchUpId, sideNumber: relaySide as 1 | 2 } }
+      : reached;
     deeper.push({ level, landing });
     if (!landing.carriesOn) return deeper;
   }
@@ -614,7 +623,8 @@ function carriedOps(
         ]
       : []),
   ];
-  // each further level: the carrier placed across the landing's loser link, the exit carried from the landing they lost
+  // each further level: the carrier placed across the landing's loser link, the exit carried from the landing they lost;
+  // past a BYE there the BYE matchUp records the carry beside its BYE and the carrier goes on, as at the first level
   const levels = deeper.flatMap(({ level, landing: at }): OutcomeOp[] => [
     {
       op: 'assignPosition',
@@ -622,6 +632,22 @@ function carriedOps(
       drawPosition: level.drawPosition,
       participantId: loser.participantId,
     },
+    ...(at.relay
+      ? [
+          ...provenanceOps(at.relay.matchUpId, carried(at.relay.sideNumber, level.fromMatchUpId, exit)),
+          { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: at.relay.matchUpId },
+        ]
+      : []),
+    ...(at.relay && level.through
+      ? [
+          {
+            op: 'setMatchUpDrawPositions' as const,
+            matchUpId: level.through.matchUpId,
+            drawPositions: level.through.drawPositions,
+          },
+          { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: level.through.matchUpId },
+        ]
+      : []),
     ...landed(at, level.fromMatchUpId, exit),
   ]);
   return { relay, landing: [...landed(landing, source.matchUpId, source.status), ...levels] };

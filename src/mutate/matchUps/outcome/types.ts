@@ -438,4 +438,6 @@ export type CarryLevel = {
   hasResult: boolean;
   carriesExit: boolean;
   record?: { matchUpStatusCodes?: unknown[]; provenance: boolean };
+  /** a BYE opposite the seat: the matchUp beyond it the carrier goes on into, with the positions it holds after (RULE 1) */
+  through?: ThroughBye;
 };
