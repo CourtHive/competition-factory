@@ -80,7 +80,8 @@ export type OutcomePlan =
 
 const REMOVE_DIRECTED: Route = 'remove-directed';
 const DOUBLE_EXIT: Route = 'double-exit';
-const LOCAL_ROUTES = new Set<Route>(['clear', 'clear-score', REMOVE_DIRECTED, 'only-score']);
+const CLEAR_SCORE: Route = 'clear-score';
+const LOCAL_ROUTES = new Set<Route>(['clear', CLEAR_SCORE, REMOVE_DIRECTED, 'only-score']);
 const LOCAL_STATUSES = new Set<string | undefined>([IN_PROGRESS, SUSPENDED, AWAITING_RESULT, INCOMPLETE, TO_BE_PLAYED]);
 const SINGLE_EXITS = new Set<string | undefined>([WALKOVER, DEFAULTED, RETIRED]);
 const DIRECTED_STATUSES = new Set<string | undefined>([COMPLETED, ...SINGLE_EXITS]);
@@ -390,6 +391,7 @@ function groupTally(
  * (`modifyMatchUpScore`), not an op. Anything else with an exit before or after is v1's.
  */
 function exitReason(args: {
+  drawDefinition?: DrawDefinition;
   request: OutcomeRequest;
   view: OutcomeView;
   route?: Route;
@@ -401,6 +403,12 @@ function exitReason(args: {
   if (!isAnyExit(request.matchUpStatus) && !isAnyExit(existing.matchUpStatus) && !isAnyExit(write?.matchUpStatus))
     return undefined;
   if (route === DOUBLE_EXIT) return producedReason(view, request, direction, write);
+  if (route === CLEAR_SCORE && isDoubleExit(existing.matchUpStatus))
+    return write?.matchUpStatus === TO_BE_PLAYED &&
+      !direction &&
+      unwoundPath(view, request.matchUpId, args.drawDefinition)
+      ? undefined
+      : 'exit';
   if (route !== 'winner' || !write?.winningSide || !SINGLE_EXITS.has(write.matchUpStatus)) return 'exit';
   if (request.matchUpStatus !== write.matchUpStatus) return 'exit';
   if (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide) return 'exit';
@@ -1538,7 +1546,86 @@ function convergedOps(view: OutcomeView, request: OutcomeRequest, write: MatchUp
 }
 
 /** the first reason this call is not S1's, or undefined when it is */
+const BLANK_SCORE: Score = { scoreStringSide1: '', scoreStringSide2: '' };
+const scoreless = (matchUp: HydratedMatchUp) =>
+  !matchUp.score?.scoreStringSide1 && !matchUp.score?.scoreStringSide2 && !matchUp.score?.sets?.length;
+const unplaced = (matchUp: HydratedMatchUp) => !(matchUp.drawPositions ?? []).some(Boolean);
+const undecided = (matchUp: HydratedMatchUp) =>
+  !matchUp.winningSide &&
+  scoreless(matchUp) &&
+  unplaced(matchUp) &&
+  !matchUp.matchUpStatusCodes?.length &&
+  !matchUp.loserMatchUpId &&
+  !matchUp.sides?.some((side) => side.bye);
+
+/**
+ * S6: a double exit cleared (the `clear-score` route): v1's `removeDoubleExit`, then the clear's own write. Planned where
+ * all the double exit sent on is its produced exit, still pending, in a structure that links nothing out: the next
+ * matchUp holds that exit alone (no winner, positions, score or codes, and this matchUp's origin, on the side it fed,
+ * as its only provenance), and every matchUp beyond it on the winner's path to the final is to be played with no
+ * positions, result, codes or provenance. v1 walks that path to the final (`conditionallyRemoveDrawPosition` →
+ * `removeDoubleExit`, level by level) and, deepest first, writes each matchUp back to be played: codes `[]`, its score
+ * blanked, the produced exit's origin withdrawn. Returns the path, the produced exit's matchUp first; undefined where
+ * anything else stands (a feed round, loser links, an award, a convergence, anything played beyond).
+ */
+function unwoundPath(view: OutcomeView, matchUpId?: string, drawDefinition?: DrawDefinition): string[] | undefined {
+  const source = indexed(view, matchUpId);
+  const structureId = source?.structureId;
+  if (!source || !structureId || source.loserMatchUpId) return undefined;
+  if ((drawDefinition?.links ?? []).some((link) => link.source?.structureId === structureId)) return undefined;
+  const target = producedTarget(view, source, source.matchUpStatus as MatchUpStatusUnion);
+  if (!target || target.feed) return undefined;
+  const { entry } = target;
+  const provenance = entry.sideExitProvenance ?? {};
+  const origins = Object.keys(provenance);
+  const origin = provenance[target.fedSide];
+  if (entry.matchUpStatus !== target.matchUpStatus || !undecided(entry)) return undefined;
+  if (origins.length !== 1 || origin?.sourceMatchUpId !== source.matchUpId) return undefined;
+  const path = [entry.matchUpId];
+  let next = indexed(view, entry.winnerMatchUpId);
+  while (next) {
+    const clean = next.structureId === structureId && next.matchUpStatus === TO_BE_PLAYED && undecided(next);
+    if (!clean || Object.keys(next.sideExitProvenance ?? {}).length || path.includes(next.matchUpId)) return undefined;
+    path.push(next.matchUpId);
+    next = indexed(view, next.winnerMatchUpId);
+  }
+  return path;
+}
+
+/**
+ * The cleared double exit's unwind, as v1 writes it: deepest first, each matchUp on the path written back to be played
+ * through `modifyMatchUpScore` (no `scoredTime` rule), its codes `[]` and its score blanked; the produced exit's origin
+ * withdrawn. v1's walk past the produced exit's matchUp passes on neither the tournament nor the event, so those writes
+ * are announced without them (`announcesContext: false`).
+ */
+function unwoundOps(
+  view: OutcomeView,
+  request: OutcomeRequest,
+  route: Route | undefined,
+  drawDefinition?: DrawDefinition,
+): OutcomeOp[] {
+  if (route !== CLEAR_SCORE || !isDoubleExit(view.existing.matchUpStatus)) return [];
+  const path = unwoundPath(view, request.matchUpId, drawDefinition) ?? [];
+  return [...path].reverse().flatMap((matchUpId): OutcomeOp[] => {
+    const produced = matchUpId === path[0];
+    return [
+      {
+        op: 'setMatchUpResult',
+        matchUpId,
+        matchUpStatus: TO_BE_PLAYED,
+        score: BLANK_SCORE,
+        matchUpStatusCodes: [],
+        stampsScoredTime: false,
+        ...(produced ? {} : { announcesContext: false as const }),
+      },
+      ...(produced ? [{ op: 'setSideExitProvenance' as const, matchUpId }] : []),
+      { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
+    ];
+  });
+}
+
 function abstainReason(args: {
+  drawDefinition?: DrawDefinition;
   request: OutcomeRequest;
   view: OutcomeView;
   route?: Route;
@@ -1793,6 +1880,8 @@ export function planOutcome(args: {
   const ops: OutcomeOp[] = [
     ...swapOps(view, args.route),
     ...replacedLoserOps(view, args.route, write, request.matchUpStatus),
+    // a cleared double exit's unwind, announced before the clear's own write, as v1 makes it first (S6)
+    ...unwoundOps(view, request, args.route, drawDefinition),
     {
       op: 'setMatchUpResult',
       matchUpId,

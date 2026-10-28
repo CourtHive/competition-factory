@@ -56,6 +56,7 @@ export function applyOwnedPlan({
         op.op === 'setMatchUpBye' ||
         op.op === 'setMatchUpStatusCodes' ||
         op.op === 'mergeSideExitProvenance' ||
+        op.op === 'setSideExitProvenance' ||
         op.op === 'exchangeDrawPositions'
           ? [op.matchUpId]
           : [],
