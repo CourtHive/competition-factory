@@ -1,7 +1,9 @@
 import { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDetails';
+import { bucketStructureMatchUps } from '@Query/structure/getStructureMatchUps';
 import { addUpcomingMatchUps } from '@Query/matchUp/addUpcomingMatchUps';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { buildStructuralIndex } from '@Query/matchUps/structuralIndex';
+import { getDrawStructures } from '@Acquire/findStructure';
 import { structuresOf } from '@Acquire/structureMembers';
 
 // types
@@ -93,6 +95,28 @@ function drawSchedulingMatchUps({
       sides,
     } as HydratedMatchUp;
   });
-  if (nextMatchUps) addUpcomingMatchUps({ drawDefinition, inContextDrawMatchUps: matchUps });
+  // the potential participants a target collects follow the order its sources are read in: the hydration's
+  if (nextMatchUps)
+    addUpcomingMatchUps({ drawDefinition, inContextDrawMatchUps: inHydrationOrder(drawDefinition, matchUps) });
   return matchUps;
+}
+
+/**
+ * A draw's matchUps in the order the hydration reads them (getAllDrawMatchUps): structure by structure, each
+ * structure's sorted into its buckets (abandoned, completed, upcoming, pending, BYE; participants not required, as there),
+ * then each bucket across the structures.
+ */
+function inHydrationOrder(drawDefinition: DrawDefinition, matchUps: HydratedMatchUp[]): HydratedMatchUp[] {
+  const buckets: HydratedMatchUp[][] = [[], [], [], [], []];
+  for (const structure of getDrawStructures({ drawDefinition }).structures ?? []) {
+    const held = matchUps.filter(
+      (matchUp) => (matchUp.containerStructureId ?? matchUp.structureId) === structure.structureId,
+    );
+    const { abandonedMatchUps, completedMatchUps, upcomingMatchUps, pendingMatchUps, byeMatchUps } =
+      bucketStructureMatchUps({ matchUps: held, requireParticipants: false, structure });
+    [abandonedMatchUps, completedMatchUps, upcomingMatchUps, pendingMatchUps, byeMatchUps].forEach((bucket, index) =>
+      buckets[index].push(...bucket),
+    );
+  }
+  return buckets.flat();
 }

@@ -131,14 +131,42 @@ export function getStructureMatchUps({
     event,
   });
 
-  const abandonedMatchUps: MatchUp[] = [];
-  const completedMatchUps: MatchUp[] = [];
-  const upcomingMatchUps: MatchUp[] = [];
-  const pendingMatchUps: MatchUp[] = [];
-  const byeMatchUps: MatchUp[] = [];
-
   if (result.error) return result;
-  const { matchUps } = result;
+
+  const buckets = bucketStructureMatchUps({
+    matchUps: result.matchUps,
+    structure,
+    requireParticipants,
+    matchUpFilters,
+  });
+
+  return {
+    ...buckets,
+    structure,
+  };
+}
+
+/**
+ * A structure's matchUps sorted into the buckets a draw's matchUps are read in: abandoned, completed, upcoming, pending,
+ * and BYE; each in the structure's matchUp order. Shared by the hydration and the scheduling projection, which must
+ * read a draw's matchUps in the same order (the potential participants a target collects depend on it).
+ */
+export function bucketStructureMatchUps<M extends MatchUp>({
+  requireParticipants = true,
+  matchUpFilters,
+  structure,
+  matchUps,
+}: {
+  matchUpFilters?: GetStructureMatchUpsArgs['matchUpFilters'];
+  requireParticipants?: boolean;
+  structure?: Structure;
+  matchUps: M[];
+}) {
+  const abandonedMatchUps: M[] = [];
+  const completedMatchUps: M[] = [];
+  const upcomingMatchUps: M[] = [];
+  const pendingMatchUps: M[] = [];
+  const byeMatchUps: M[] = [];
 
   const { assignedPositions } = structureAssignedDrawPositions({ structure });
   const participantAssignedDrawPositions = assignedPositions
@@ -195,6 +223,5 @@ export function getStructureMatchUps({
     upcomingMatchUps,
     pendingMatchUps,
     byeMatchUps,
-    structure,
   };
 }
