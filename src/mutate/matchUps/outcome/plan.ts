@@ -655,9 +655,11 @@ function producedReason(
   // and the group's tally are all there is
   if (view.group && !view.group.adHoc && !direction && !targets.winnerMatchUpId && !targets.loserMatchUpId)
     return undefined;
+  // the exit it produces meets one standing there: the two converge, and that double exit produces on
+  if (direction?.converged) return producedConvergedReason(view, request, write, direction) ? undefined : 'exit';
   const produced = direction?.produced;
   const target = targets.winner;
-  if (!produced || direction?.converged || direction?.decider || !target) return 'exit';
+  if (!produced || direction?.decider || !target) return 'exit';
   if (target.matchUpStatus !== TO_BE_PLAYED || target.holdsResult || target.hasBye || target.carriesExit) return 'exit';
   if (target.carriedStatuses.length) return 'exit';
   const entry = indexed(view, produced.matchUpId);
@@ -1209,6 +1211,89 @@ function convergedReason(
   return target && producedTargetReason(view, landing, target) ? undefined : 'exit';
 }
 
+type ProducedConvergence = {
+  landing: HydratedMatchUp;
+  /** the side the double exit feeds, which takes its origin beside the one standing there */
+  fedSide: 1 | 2;
+  matchUpStatus: MatchUpStatusUnion;
+  /** where the converged double exit produces in turn: none from a final */
+  onward?: ProducedTarget;
+};
+
+/**
+ * S5: a double exit whose produced exit meets an exit standing in the next matchUp (`conditionallyAdvanceDrawPosition`'s
+ * `existingExit`): the two converge there (`collapseDoubleExitStatus`: two defaults a `DOUBLE_DEFAULT`, anything else a
+ * `DOUBLE_WALKOVER`), with no winner, the arriving side's origin merged beside the standing one, and that double exit
+ * produces on as one entered there would (`advanceConvergedWinner`). Planned where the standing exit is a pending one a
+ * double exit beside this one produced (its origin alone, on the other side; nobody there; no score, codes or loser link),
+ * nothing links a loser on from this matchUp, and the exit produced onward lands clean (or the landing is a final).
+ */
+function producedConvergedReason(
+  view: OutcomeView,
+  request: OutcomeRequest,
+  write: MatchUpWrite,
+  direction?: DirectionPlan,
+): ProducedConvergence | undefined {
+  const { targets } = view;
+  const converged = direction?.converged;
+  const source = indexed(view, request.matchUpId);
+  if (!converged || !source || targets.loserLink || targets.loserMatchUpId) return undefined;
+  const target = producedTarget(view, source, write.matchUpStatus as MatchUpStatusUnion);
+  const landing = target?.entry;
+  if (!target || !landing || target.feed || landing.matchUpId !== converged.matchUpId) return undefined;
+  if (!SINGLE_EXITS.has(landing.matchUpStatus) || landing.matchUpStatus === RETIRED || landing.winningSide)
+    return undefined;
+  if (landing.loserMatchUpId || landing.matchUpStatusCodes?.length || landing.score?.scoreStringSide1) return undefined;
+  if ((landing.drawPositions ?? []).some(Boolean)) return undefined;
+  const provenance = landing.sideExitProvenance ?? {};
+  const standing = provenance[target.awardedSide];
+  if (provenance[target.fedSide] || !standing || !isDoubleExit(standing.previousMatchUpStatus)) return undefined;
+  const matchUpStatus = collapseDoubleExitStatus([write.matchUpStatus, landing.matchUpStatus]);
+  if (matchUpStatus !== converged.matchUpStatus) return undefined;
+  if (!landing.winnerMatchUpId) return { landing, fedSide: target.fedSide, matchUpStatus };
+  const onward = producedTarget(view, landing, matchUpStatus);
+  if (!onward || !producedTargetReason(view, landing, onward)) return undefined;
+  return { landing, fedSide: target.fedSide, matchUpStatus, onward };
+}
+
+/** the convergence written on the next matchUp, as v1 writes it there, and the exit it produces on */
+function producedConvergedOps(
+  view: OutcomeView,
+  request: OutcomeRequest,
+  write: MatchUpWrite,
+  direction?: DirectionPlan,
+) {
+  const planned = producedConvergedReason(view, request, write, direction);
+  if (!planned) return [];
+  const { landing, fedSide, matchUpStatus, onward } = planned;
+  const provenance = buildSideExitProvenance({
+    sourceMatchUpStatus: write.matchUpStatus as MatchUpStatusUnion,
+    sourceMatchUpId: request.matchUpId,
+    sourceSideNumber: fedSide,
+  });
+  const ops: OutcomeOp[] = [
+    {
+      op: 'setMatchUpResult',
+      matchUpId: landing.matchUpId,
+      matchUpStatus,
+      matchUpStatusCodes: [],
+      stampsScoredTime: false,
+      ...(matchUpStatus === DOUBLE_WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
+    },
+    ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId: landing.matchUpId, provenance }] : []),
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: landing.matchUpId },
+    ...(onward ? producedTargetOps(view, onward, landing.matchUpId, matchUpStatus) : []),
+  ];
+  return ops;
+}
+
+/** what a double exit produces in the next matchUp: an exit there, or a convergence with the one standing there */
+function producedExitOps(view: OutcomeView, request: OutcomeRequest, write: MatchUpWrite, direction?: DirectionPlan) {
+  return direction?.converged
+    ? producedConvergedOps(view, request, write, direction)
+    : producedOps(view, request, write, direction);
+}
+
 /** a convergence's writes: the landing as the double exit, the arriving side's entry, and the exit it produces */
 function convergedOps(view: OutcomeView, request: OutcomeRequest, write: MatchUpWrite, loser?: DirectionPlan['loser']) {
   const { targets } = view;
@@ -1575,7 +1660,7 @@ export function planOutcome(args: {
     ...carried.landing,
     ...converging,
     ...doubleExitSeated,
-    ...(args.route === DOUBLE_EXIT ? producedOps(view, request, write, args.direction) : []),
+    ...(args.route === DOUBLE_EXIT ? producedExitOps(view, request, write, args.direction) : []),
     ...structureStamps([...seated, ...carried.landing, ...doubleExitSeated], structureId),
     ...tally,
     // the top-level structure: a round robin group's container, as v1 stamps it
