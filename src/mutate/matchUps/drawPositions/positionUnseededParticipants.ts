@@ -1,5 +1,6 @@
 import { randomUnseededSeparation } from '@Mutate/drawDefinitions/positionGovernor/randomUnseededSeparation';
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
+import { initialMatchUpIdsOf } from '@Mutate/matchUps/drawPositions/drawPositionPlacement';
 import { assignDrawPosition } from '@Mutate/matchUps/drawPositions/positionAssignment';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -170,11 +171,22 @@ function randomUnseededDistribution({
   const shuffledDrawPositions =
     drawSize > 2 || randomizePositions ? shuffleArray(unfilledDrawPositions, random) : unfilledDrawPositions.reverse();
 
+  // each drawPosition's initial-round matchUp is found once for all of them, not once per participant placed
+  const initialMatchUpIds = initialMatchUpIdsOf({
+    drawPositions: shuffledDrawPositions,
+    provisionalPositioning,
+    drawDefinition,
+    matchUpsMap,
+    structureId,
+    event,
+  });
+
   for (const participantId of unseededParticipantIds) {
     const drawPosition = shuffledDrawPositions.pop();
     if (!multipleStructures || drawPosition) {
       const result = assignDrawPosition({
         provisionalPositioning,
+        initialMatchUpIds,
         inContextDrawMatchUps,
         tournamentRecord,
         drawDefinition,
