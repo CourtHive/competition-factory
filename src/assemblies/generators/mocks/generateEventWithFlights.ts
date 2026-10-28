@@ -130,9 +130,9 @@ export function generateEventWithFlights(params) {
   const newEvent = built.event;
 
   let drawIds;
+  // added before its entries and draws, as a client would: public addEvent, no bypass
   const eventResult: any = addEvent({
     suppressNotifications: false,
-    internalUse: true,
     tournamentRecord,
     event: newEvent,
   });

@@ -25,6 +25,7 @@ import { processTieFormat } from './processTieFormat';
 import { addFlight } from '@Mutate/events/addFlight';
 import { isGendered } from '@Validators/isGendered';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
+import { addEvent } from '@Mutate/events/addEvent';
 import { isFemale } from '@Validators/isFemale';
 import { findEvent } from '@Acquire/findEvent';
 import { generateRange } from '@Tools/arrays';
@@ -788,6 +789,7 @@ export function generateEventWithDraw(params) {
     tournamentRecord,
     isMock = true,
     drawProfile,
+    addToRecord,
     startDate,
     drawIndex,
     random,
@@ -858,7 +860,7 @@ export function generateEventWithDraw(params) {
       ? directCapacity
       : drawProfile.participantsCount) || 0;
 
-  const event = buildMockEvent({
+  const mockEvent = buildMockEvent({
     eventName,
     eventType,
     tieFormat,
@@ -869,6 +871,12 @@ export function generateEventWithDraw(params) {
     drawProfile,
     eventExtensions,
   });
+
+  // in a client's order: the event is added (public addEvent, no bypass) before it has entries or a draw, and
+  // everything after is written to the stored event. Without a record to add it to it is built off the record
+  const added = addToRecord ? addEvent({ tournamentRecord, event: mockEvent }) : undefined;
+  if (added?.error) return added;
+  const event = added ? tournamentRecord.events.find((stored) => stored.eventId === eventId) : mockEvent;
 
   const uniqueParticipantIds: string[] = [];
   // `useExistingParticipants` (set by `generateTournamentRecord` when the caller
