@@ -403,6 +403,52 @@ export function schedulingScenarios(): Authored[] {
     });
   }
 
+  // a matchUp on the court grid without a time is timed, and a time that contradicts its row is reported (CA
+  // 2026-10-28): the first round of an 8 draw on one court's rows, in reverse of the order the scheduler takes them
+  for (const via of ['direct', 'profile'] as const) {
+    const { tournamentRecord, round, matchUpsOf, drawId } = generate({ drawProfile: { drawSize: 8 }, courtsCount: 2 });
+    const courtId = tournamentRecord.venues[0].courts[0].courtId;
+    const firstRound = matchUpsOf(MAIN, 1).toSorted((a: any, b: any) => a.roundPosition - b.roundPosition);
+    const matchUpIds = firstRound.map((m: any) => m.matchUpId);
+    const onTheGrid: Directive[] = matchUpIds.map((matchUpId: string, index: number) => ({
+      method: 'addMatchUpScheduleItems',
+      params: {
+        schedule: { scheduledDate: DAY_1, courtId, venueId: VENUE_ID, courtOrder: matchUpIds.length - index },
+        matchUpId,
+        drawId,
+      },
+    }));
+    const run: Directive[] =
+      via === 'direct'
+        ? [{ method: 'scheduleMatchUps', params: { scheduleDate: DAY_1, matchUpIds } }]
+        : [round(DAY_1, MAIN, 1), profileRun([DAY_1])];
+    out.push({
+      scenarioId: `authored/scheduling/${via}-times-a-grid-placed-round`,
+      ref:
+        via === 'direct'
+          ? 'scheduling § direct scheduling: a listed matchUp on the court grid without a time is timed, its conflicts reported'
+          : 'scheduling § timed pipeline: a profiled matchUp on the court grid without a time is timed, its conflicts reported',
+      initialRecord: tournamentRecord,
+      directives: [...onTheGrid, ...run],
+      finalState: (record, values) => {
+        const timed = rawRound(record, MAIN, 1).filter(
+          (m) => m.schedule?.scheduledTime && m.schedule?.courtId === courtId,
+        );
+        const issues: any[] = Object.values(values.at(-1)?.proConflicts ?? {}).flat();
+        return [
+          ...claim(timed.length === 4, 'every first-round matchUp is timed and keeps its court'),
+          ...claim(issues.length > 0, 'the times that contradict the rows are reported'),
+          ...claim(
+            issues.every(
+              ({ matchUpId, issueType }) => matchUpIds.includes(matchUpId) && issueType === 'courtTimeOrderConflict',
+            ),
+            'each reported conflict is a court-time order conflict naming a matchUp just timed',
+          ),
+        ];
+      },
+    });
+  }
+
   return out;
 }
 

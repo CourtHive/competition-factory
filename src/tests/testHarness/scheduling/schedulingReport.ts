@@ -43,6 +43,29 @@ function byDate(value: unknown): Record<string, string[]> | undefined {
 }
 
 /**
+ * The court grid's conflicts a timed scheduler's times made (`proConflicts`): `scheduleMatchUps` reports a list for its
+ * one date (keyed by ''), `scheduleProfileRounds` a list per date. Each issue is kept whole, with the matchUps it names
+ * sorted, and the issues sorted by matchUp: a matchUp carries one issue, its first, so the order is the rule's and not
+ * the check's traversal.
+ */
+function proConflictsByDate(value: unknown): Record<string, any[]> | undefined {
+  const entries: [string, unknown][] = Array.isArray(value) ? [['', value]] : Object.entries(value ?? {});
+  const out: Record<string, any[]> = {};
+  for (const [date, issues] of entries) {
+    if (!Array.isArray(issues) || !issues.length) continue;
+    out[date] = issues
+      .map(({ matchUpId, issue, issueType, issueIds }) => ({
+        issueIds: sortedIds(issueIds ?? []),
+        issueType,
+        matchUpId,
+        issue,
+      }))
+      .sort((a, b) => a.matchUpId.localeCompare(b.matchUpId));
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+/**
  * Request conflicts name the matchUps a person's request blocked. jinn reports `{ date: [{ matchUpId, … }] }`;
  * `scheduleMatchUps` reports `[{ request, matchUpIds, scheduleTimes }]` for its one date (keyed by '').
  */
@@ -67,6 +90,8 @@ export function schedulingReport(methodName: string, result: any): Record<string
   }
   const conflicts = requestConflictIds(result.requestConflicts);
   if (conflicts) report.requestConflicts = conflicts;
+  const gridConflicts = proConflictsByDate(result.proConflicts);
+  if (gridConflicts) report.proConflicts = gridConflicts;
   if (Array.isArray(result.schedulingProfileIssues) && result.schedulingProfileIssues.length)
     report.schedulingProfileIssues = result.schedulingProfileIssues;
   return report;
