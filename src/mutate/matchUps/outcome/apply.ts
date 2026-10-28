@@ -179,35 +179,31 @@ function announceAssignments({
   tournamentId?: string;
   ops: OutcomeOp[];
 }) {
-  // a loser placed across a link, or a reserved seat: the structure whose assignments changed, announced once (v1's
-  // `directLoser`, `assignDrawPositionBye`)
-  const placedIn = [
-    ...new Set(ops.flatMap((op) => (op.op === 'assignPosition' || op.op === 'assignBye' ? [op.structureId] : []))),
-  ];
-  for (const structureId of placedIn) {
+  // each structure once, where the call first touches it: the notice buffer keeps a structure's first notice in place
+  // and takes a later one's payload over it (`preserveNoticeIdentity`), so an unwind's seat visit and the loser placed
+  // after it in the same structure are one notice, at the visit (S6)
+  const placement = (op: OutcomeOp): op is Extract<OutcomeOp, { op: 'assignPosition' | 'assignBye' }> =>
+    op.op === 'assignPosition' || op.op === 'assignBye';
+  const touched = [...new Set(ops.flatMap((op) => (placement(op) || op.op === 'withdrawBye' ? [op.structureId] : [])))];
+  for (const structureId of touched) {
     const { structure } = findStructure({ drawDefinition, structureId });
-    // with its event where any placement in it is announced with one: the notice buffer keeps an earlier notice's event
-    // for the structure when a later one names none (`preserveNoticeIdentity`)
+    if (!structure) continue;
+    const placedIn = ops.some((op) => placement(op) && op.structureId === structureId);
+    // a seat an unwind's `removeDirectedBye` visits, nothing placed in its structure: announced with neither event nor
+    // tournament, whether or not a BYE stood there (S6)
+    if (!placedIn) {
+      modifyPositionAssignmentsNotice({ drawDefinition, structure, tournamentId: undefined, event: undefined });
+      continue;
+    }
+    // a loser placed across a link, or a reserved seat (v1's `directLoser`, `assignDrawPositionBye`): with its event
+    // where any placement in it is announced with one, the buffer keeping an earlier notice's event when a later one
+    // names none
     const evented = ops.some(
       (op) =>
-        (op.op === 'assignPosition' || op.op === 'assignBye') &&
-        op.structureId === structureId &&
-        !(op.op === 'assignBye' && op.announcesEvent === false),
+        placement(op) && op.structureId === structureId && !(op.op === 'assignBye' && op.announcesEvent === false),
     );
     const noticeEvent = evented ? event : undefined;
-    if (structure) modifyPositionAssignmentsNotice({ drawDefinition, tournamentId, structure, event: noticeEvent });
-  }
-  // a seat an unwind's `removeDirectedBye` visits: its structure's assignments announced with neither event nor
-  // tournament, whether or not a BYE stood there (S6)
-  const unwound = [
-    ...new Set(
-      ops.flatMap((op) => (op.op === 'withdrawBye' && !placedIn.includes(op.structureId) ? [op.structureId] : [])),
-    ),
-  ];
-  for (const structureId of unwound) {
-    const { structure } = findStructure({ drawDefinition, structureId });
-    if (structure)
-      modifyPositionAssignmentsNotice({ drawDefinition, structure, tournamentId: undefined, event: undefined });
+    modifyPositionAssignmentsNotice({ drawDefinition, tournamentId, structure, event: noticeEvent });
   }
 }
 

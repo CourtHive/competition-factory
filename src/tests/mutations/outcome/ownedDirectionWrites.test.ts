@@ -1100,6 +1100,30 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(6), outcome: won(2) }],
     },
   ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6): a double walkover given a winner withdraws its BYEs, the loser placed on their seat',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(1) }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6): a double default replaced by a played result for side 2, beside loser links',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(3, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+      steps: [{ target: R1(3, 'Main'), outcome: won(2) }],
+    },
+  ],
+  [
+    'CURTIS_CONSOLATION (S6): a double walkover given a winner, the loser placed where its BYE stood',
+    {
+      drawProfile: { drawSize: 16, drawType: CURTIS_CONSOLATION },
+      setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(2) }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
@@ -1297,12 +1321,24 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     expect(v2.notices).toEqual(v1.notices);
   });
 
-  it('S6: a double walkover given a winner whose loser seat took a BYE (FEED_IN_CHAMPIONSHIP) is v1s', () => {
-    const scenario: Scenario = {
-      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
-      setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
-      steps: [{ target: R1(1, 'Main'), outcome: walkover(1) }],
-    };
+  it.each<[string, Scenario]>([
+    [
+      'S6: a double walkover given a winner whose loser carries the walkover across their link (FEED_IN_CHAMPIONSHIP) is v1s',
+      {
+        drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+        setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+        steps: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+      },
+    ],
+    [
+      'S6: a double default given a winner whose withdrawn BYE had gone on two rounds (FIRST_MATCH_LOSER_CONSOLATION) is v1s',
+      {
+        drawProfile: { drawSize: 16, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+        setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+        steps: [{ target: R1(1, 'Main'), outcome: walkover(1) }],
+      },
+    ],
+  ])('%s', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
     expect(v1.results[0].success).toEqual(true);
