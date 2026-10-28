@@ -8,7 +8,7 @@ import { getCapturedStamps } from '@Global/state/globalState';
 import { nowIso } from '@Tools/clock';
 
 // constants and types
-import { BYE } from '@Constants/matchUpStatusConstants';
+import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type {
   DrawDefinition,
   MatchUp,
@@ -83,6 +83,11 @@ export type OutcomeOp =
        * `advanceWinner`, with no event, and the matchUp it joins written with no score
        */
       advancesThroughBye?: true;
+      /**
+       * the BYE whose withdrawal takes the position back out (S6, an unwind's `removeDirectedBye`): announced as v1's
+       * `clearDrawPosition` announces it, `removeDrawPosition-<that BYE's drawPosition>`, with neither event nor tournament
+       */
+      withdrawnByePosition?: number;
     }
   | {
       op: 'assignPosition';
@@ -168,6 +173,24 @@ export type OutcomeOp =
       announcesEvent?: false;
     }
   | {
+      op: 'withdrawBye';
+      /**
+       * an unwind's `removeDirectedBye` on a seat (S6): the stored assignment's BYE and its propagation marker removed,
+       * where one stands; the structure's assignments announced with neither event nor tournament either way
+       */
+      structureId: string;
+      drawPosition: number;
+    }
+  | {
+      op: 'clearMatchUpBye';
+      /**
+       * the matchUp a withdrawn BYE stood in, to be played again (S6), announced as `removeDrawPosition-<drawPosition>`
+       * with neither event nor tournament
+       */
+      matchUpId: string;
+      drawPosition: number;
+    }
+  | {
       op: 'setParticipantResults';
       /** a round robin's group or an ad hoc structure: its assignments take the tallies (`writeAssignmentResults`) */
       structureId: string;
@@ -194,6 +217,8 @@ export type OutcomeOpName =
   | 'setSideExitProvenance'
   | 'assignBye'
   | 'setMatchUpBye'
+  | 'withdrawBye'
+  | 'clearMatchUpBye'
   | 'setParticipantResults'
   | 'stampUpdatedAt';
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
@@ -397,6 +422,22 @@ function foldSetMatchUpBye(op: OpOf<'setMatchUpBye'>, { matchUps }: DrawIndex): 
   return {};
 }
 
+function foldWithdrawBye(op: OpOf<'withdrawBye'>, { structures, groups }: DrawIndex): Folded {
+  const positionAssignments = positionAssignmentsOf(structures.get(op.structureId) ?? groups.get(op.structureId));
+  const assignment = positionAssignments?.find((candidate) => candidate.drawPosition === op.drawPosition);
+  if (!assignment) return { error: `withdrawBye: no drawPosition ${op.drawPosition} in ${op.structureId}` };
+  delete assignment.bye;
+  delete assignment.byeFromPropagation;
+  return {};
+}
+
+function foldClearMatchUpBye(op: OpOf<'clearMatchUpBye'>, { matchUps }: DrawIndex): Folded {
+  const matchUp = matchUps.get(op.matchUpId);
+  if (!matchUp) return { error: `clearMatchUpBye: no matchUp ${op.matchUpId}` };
+  matchUp.matchUpStatus = TO_BE_PLAYED;
+  return {};
+}
+
 function foldParticipantResults(op: OpOf<'setParticipantResults'>, { groups, structures }: DrawIndex): Folded {
   const structure = groups.get(op.structureId) ?? structures.get(op.structureId);
   if (structure && op.participantIds)
@@ -462,6 +503,10 @@ function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition
       return foldAssignBye(op, index);
     case 'setMatchUpBye':
       return foldSetMatchUpBye(op, index);
+    case 'withdrawBye':
+      return foldWithdrawBye(op, index);
+    case 'clearMatchUpBye':
+      return foldClearMatchUpBye(op, index);
     case 'setParticipantResults':
       return foldParticipantResults(op, index);
     default:

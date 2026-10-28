@@ -54,10 +54,10 @@ import type { BuildViewArgs, OutcomeRequest, OutcomeView, Reservation, ThroughBy
 import { FIRST_MATCHUP, LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { BYE, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { PositionTargetsResult } from '@Query/matchUp/positionTargets';
+import type { CarryLevel, WinnerLoserSeat } from './types';
 import type { MatchUpsMap } from '@Types/factoryTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
-import type { CarryLevel } from './types';
 import type {
   DrawDefinition,
   DrawLink,
@@ -415,6 +415,35 @@ function winnerLoserSeat(
 ): OutcomeView['targets']['winnerLoserSeat'] {
   // read only for a double exit's call: its produced exit is the only one that leaves the seat unfillable
   if (!matchUpId || !isDoubleExit(request.matchUpStatus)) return undefined;
+  return loserSeatOf(draw, matchUpId);
+}
+
+/**
+ * A stored double exit left by a call that is not one (S6, `removeDoubleExit`): the call's matchUp and each matchUp on
+ * its winner path, in its structure, to the final, with the seat each one's loser link feeds. v1's unwind visits each
+ * of those seats. Undefined otherwise.
+ */
+function unwindLoserSeats(
+  draw: DrawContext,
+  request: OutcomeRequest,
+  matchUp: MatchUp,
+): OutcomeView['targets']['unwindLoserSeats'] {
+  if (!isDoubleExit(matchUp.matchUpStatus) || isDoubleExit(request.matchUpStatus)) return undefined;
+  const byId = new Map(draw.inContextDrawMatchUps.map((entry) => [entry.matchUpId, entry]));
+  const levels: { matchUpId: string; loserSeat?: WinnerLoserSeat }[] = [];
+  let entry = byId.get(matchUp.matchUpId);
+  const structureId = entry?.structureId;
+  while (entry && entry.structureId === structureId && levels.length <= byId.size) {
+    levels.push({
+      matchUpId: entry.matchUpId,
+      loserSeat: entry.loserMatchUpId ? loserSeatOf(draw, entry.matchUpId) : undefined,
+    });
+    entry = entry.winnerMatchUpId ? byId.get(entry.winnerMatchUpId) : undefined;
+  }
+  return levels;
+}
+
+function loserSeatOf(draw: DrawContext, matchUpId: string): WinnerLoserSeat | undefined {
   const { targetMatchUps, targetLinks } = positionTargets({ ...draw, matchUpId }) ?? {};
   const matchUp = targetMatchUps?.loserMatchUp;
   const drawPosition = targetMatchUps?.loserTargetDrawPosition;
@@ -790,6 +819,7 @@ function loserTargetSeat(
     free: !assignment.participantId && !assignment.bye && !assignment.qualifier,
     opponentBye: assignments.some((a) => a.bye && opponents.includes(a.drawPosition)),
     bye: !!assignment.bye,
+    ...(assignment.byeFromPropagation ? { byeFromPropagation: true } : {}),
     opponentHeld: assignments.some((a) => (a.participantId || a.bye) && opponents.includes(a.drawPosition)),
     participantId: assignment.participantId,
   };
@@ -1413,6 +1443,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         draw,
       ),
       winnerLoserSeat: winnerLoserSeat(draw, request, targetData?.targetMatchUps?.winnerMatchUp?.matchUpId),
+      unwindLoserSeats: unwindLoserSeats(draw, request, matchUp),
       byeLevels: byeLevels(draw, matchUpsMap, request, targetData),
       onwardLoserSeat: onwardLoserSeat(draw, matchUpsMap, request, targetData),
       carryLevels: carriesOn(request, targetData)

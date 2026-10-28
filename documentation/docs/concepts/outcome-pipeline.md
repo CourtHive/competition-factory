@@ -689,15 +689,24 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
 
   The first **unwind** is owned too (S6). A **double exit cleared** (the `clear-score` route) is v1's `removeDoubleExit`
   and then the clear's own write. It is owned where all the double exit sent on is its produced exit, still pending, in
-  a structure that links nothing out: the next matchUp holds that exit alone (no winner, positions, score or codes, and
-  this matchUp's origin, on the side it fed, as its only provenance), and every matchUp beyond it on the winner's path to
-  the final is to be played with no positions, result, codes or provenance. v1 walks that whole path, not just the
-  produced exit (`conditionallyRemoveDrawPosition` → `removeDoubleExit`, level by level), and writes each matchUp back to
-  be played, deepest first: codes `[]`, its score blanked, through `modifyMatchUpScore` (no `scoredTime` rule), and the
-  produced exit's origin withdrawn (`setSideExitProvenance`). Past the produced exit's matchUp v1's walk passes on
-  neither the tournament nor the event, so those writes are announced without them (`announcesContext: false`). The
-  clear's own write follows, announced last. Stay v1's: a cleared double exit in a feed round, with loser links, whose
-  produced exit was awarded or converged, or with anything played beyond it.
+  a structure whose only links out are loser links with no condition: the next matchUp holds that exit alone (no winner,
+  positions, score or codes, and this matchUp's origin, on the side it fed, as its only provenance), and every matchUp
+  beyond it on the winner's path to the final is to be played with no positions, result, codes or provenance. v1 walks
+  that whole path, not just the produced exit (`conditionallyRemoveDrawPosition` → `removeDoubleExit`, level by level),
+  and writes each matchUp back to be played: codes `[]`, its score blanked, through `modifyMatchUpScore` (no
+  `scoredTime` rule), and the produced exit's origin withdrawn (`setSideExitProvenance`). Past the produced exit's
+  matchUp v1's walk passes on neither the tournament nor the event, so those writes are announced without them
+  (`announcesContext: false`). At each level it also visits the seat the loser link feeds (`removeDirectedBye`, under
+  `doubleExitPropagateBye`). The two seats the double exit gave BYEs (its own loser seat and the one its produced exit
+  left unfillable) have them withdrawn (`withdrawBye`). Each BYE's matchUp is to be played again (`clearMatchUpBye`), and
+  a position the BYE sent on is taken back out of the next matchUp. These are announced as v1's `clearDrawPosition`
+  announces them, `removeDrawPosition-<the BYE's position>`, with neither event nor tournament. A seat further on holds
+  nothing yet, and the visit only announces and stamps its structure (CURTIS's Play Off). The order is v1's recursion:
+  deepest first, each level's seat before its matchUp, the call's own seat last, and the clear's own write after all of
+  it. Stay v1's: a cleared double exit in a feed round; behind a winner link or a link condition, or under
+  `doubleExitPropagateBye: false`; whose produced exit was awarded or converged; whose BYE went on across a further loser
+  link (COMPASS, OLYMPIC); whose withdrawal leaves the matchUp it advanced into with no position (v1 re-announces it as
+  `releaseAdvancedDrawPosition`); or with anything played beyond it.
 
 - **`differential`**: v2 plans the whole call before v1 runs, then checks v1's result against it,
   and a disagreement throws `OutcomePipelineDivergence` naming the matchUp and both answers. The
@@ -773,6 +782,8 @@ says and what lands are one thing. The reducer decides nothing and refuses nothi
 | `setMatchUpStatusCodes`   | a matchUp's status codes, re-derived from its provenance (the matchUp a loser is taken back out of)                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `mergeSideExitProvenance` | a side's exit provenance merged into what a matchUp carries, through v1's `mergeSideExitProvenance` (a carried exit's entry on the side its carrier arrived at)                                                                                                                                                                                                                                                                                                                                          |
 | `setSideExitProvenance`   | a matchUp's exit provenance replaced by what an unwind leaves, through v1's `setSideExitProvenance`: absent, the field is removed (a cleared double exit's produced exit, its origin withdrawn)                                                                                                                                                                                                                                                                                                          |
+| `withdrawBye`             | an unwind's `removeDirectedBye` at a seat: the stored assignment's BYE and its propagation marker removed, where one stands; the structure's assignments announced with neither event nor tournament either way                                                                                                                                                                                                                                                                                          |
+| `clearMatchUpBye`         | the matchUp a withdrawn BYE stood in, to be played again, announced as `removeDrawPosition-<drawPosition>` with neither event nor tournament                                                                                                                                                                                                                                                                                                                                                             |
 | `assignBye`               | a BYE on a structure's stored assignment for a drawPosition, marked `byeFromPropagation` (a `FIRST_MATCHUP` reservation; a double exit's loser seats, `announcesEvent: false` for one its produced exit leaves unfillable)                                                                                                                                                                                                                                                                               |
 | `setMatchUpBye`           | the reserved seat's matchUp a BYE, its score and winner removed (v1's `setMatchUpStatusBYE`)                                                                                                                                                                                                                                                                                                                                                                                                             |
 | `setParticipantResults`   | a round robin group's, or a one-round ad hoc structure's, tallies on its position assignments, after the call (`writeAssignmentResults`, v1's own writer); for ad hoc the assignments are first rebuilt, one per participant its matchUps hold, as `updateTallyIfNeeded` rebuilds them; the tally stamps every top-level structure, as v1's does                                                                                                                                                         |

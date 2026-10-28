@@ -29,6 +29,7 @@ import {
   DOUBLE_ELIMINATION,
   FEED_IN_CHAMPIONSHIP,
   FIRST_MATCH_LOSER_CONSOLATION,
+  FIRST_ROUND_LOSER_CONSOLATION,
   LUCKY_DRAW,
   OLYMPIC,
   ROUND_ROBIN,
@@ -967,6 +968,22 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(2), outcome: cleared }],
     },
   ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6): a cleared double walkover withdraws the BYEs its loser seats took, and what they advanced',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'CURTIS_CONSOLATION (S6): a cleared double walkover, the Play Off its path reaches announced and stamped',
+    {
+      drawProfile: { drawSize: 16, drawType: CURTIS_CONSOLATION },
+      setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
@@ -1088,6 +1105,35 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     } finally {
       SETTLE_PASS_LIMITS.exitLevels = saved;
     }
+  });
+
+  it('S6: a cleared double walkover whose loser seat BYE went on across a further loser link (COMPASS) is v1s', () => {
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 16, drawType: COMPASS },
+      setup: [{ target: R1(1, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(1, 'East'), outcome: cleared }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v1.results[0].success).toEqual(true);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+  });
+
+  it('S6: a cleared double walkover whose withdrawn BYE leaves the matchUp it advanced into empty (FRLC) is v1s', () => {
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 16, drawType: FIRST_ROUND_LOSER_CONSOLATION },
+      setup: [{ target: R1(5, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(5, 'Main'), outcome: cleared }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v1.results[0].success).toEqual(true);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
   });
 
   it('a default under a scoring policy naming incompleteAssignmentsOnDefault: v1 may write processCodes', () => {
