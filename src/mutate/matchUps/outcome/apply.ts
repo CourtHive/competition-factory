@@ -60,11 +60,11 @@ export function applyOwnedPlan({
       ? [op.matchUpId]
       : [],
   );
-  // each matchUp at its FIRST write for the in-context notice a score write defers, and at its LAST for its
+  // each matchUp at its FIRST score write for the in-context notice that write defers, and at its LAST write for its
   // `modifyMatchUp`: v1's notice buffer keeps a matchUp re-announced later in the call at that later place (a double exit
   // given a winner: the next matchUp unwound first, then the winner's arrival after the result), and only a score write
   // defers an in-context notice
-  const written = [...new Set(writes)];
+  const written = [...new Set(ops.flatMap((op) => (op.op === 'setMatchUpResult' ? [op.matchUpId] : [])))];
   const announced = [...new Set(writes.toReversed())].reverse();
   // a matchUp given its result and then a position (that next matchUp): its last notice is the placement's
   const lastWrites = new Map(ops.flatMap((op) => ('matchUpId' in op ? [[op.matchUpId, op.op]] : [])));
@@ -136,8 +136,9 @@ export function applyOwnedPlan({
   for (const matchUpId of announced) {
     const matchUp = stored.get(matchUpId);
     if (!matchUp) continue;
-    // a removal's notice is built as v1's `removeSubsequentRoundsParticipant` builds it, whose caller passes no event
-    const removedPosition = removed.get(matchUpId);
+    // a removal's notice is built as v1's `removeSubsequentRoundsParticipant` builds it, whose caller passes no event;
+    // unless a score write announces the matchUp after it (a result turned into a double exit: the exit it produces)
+    const removedPosition = resulted.has(matchUpId) ? undefined : removed.get(matchUpId);
     const unbyedPosition = resulted.has(matchUpId) ? undefined : unbyed.get(matchUpId);
     const noticeEvent = removedPosition || unbyedPosition || unevented.has(matchUpId) ? undefined : event;
     modifyMatchUpNotice({
@@ -233,6 +234,8 @@ function matchUpContext(
   if (resulted.has(matchUpId)) return 'modifyMatchUpScore';
   if (advanced.has(matchUpId) && !byes.has(matchUpId)) return 'advanceWinner';
   if (relayed.has(matchUpId)) return 'progressExitStatus';
+  // a loser taken back out and their seat then given a BYE (a result turned into a double exit): the BYE is the later
+  if (recoded.has(matchUpId) && byes.has(matchUpId)) return 'setMatchUpStatusBye';
   if (recoded.has(matchUpId)) return 'removeDirectedLoser';
   if (exchanged.has(matchUpId)) return 'swapWinnerLoser';
   return byes.has(matchUpId) ? 'setMatchUpStatusBye' : 'assignMatchUpDrawPosition';

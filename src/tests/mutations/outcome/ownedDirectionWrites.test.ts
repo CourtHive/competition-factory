@@ -1159,6 +1159,38 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(1), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
     },
   ],
+  [
+    'SINGLE_ELIMINATION (S6): a played result turned into a double walkover, its winner taken back, its score blanked',
+    {
+      drawProfile: { drawSize: 16, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1), outcome: won(1) }],
+      steps: [{ target: R1(1), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION (S6): a walkover turned into a double walkover',
+    {
+      drawProfile: { drawSize: 16, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1), outcome: walkover(2) }],
+      steps: [{ target: R1(1), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION (S6): a played result turned into a double default keeps its score',
+    {
+      drawProfile: { drawSize: 16, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(3), outcome: won(2) }],
+      steps: [{ target: R1(3), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6): a played result turned into a double default, its loser taken back and BYEs placed',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(1, 'Main'), outcome: won(1) }],
+      steps: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
@@ -1371,6 +1403,33 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
         drawProfile: { drawSize: 16, drawType: FIRST_MATCH_LOSER_CONSOLATION },
         setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
         steps: [{ target: R1(1, 'Main'), outcome: walkover(1) }],
+      },
+    ],
+  ])('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v1.results[0].success).toEqual(true);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+  });
+
+  it.each<[string, Scenario]>([
+    [
+      'S6: a round robin result turned into a double walkover is v1s (the group is tallied)',
+      {
+        drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },
+        setup: [{ target: { roundNumber: 1, nth: 0 }, outcome: won(1) }],
+        steps: [{ target: { roundNumber: 1, nth: 0 }, outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      },
+    ],
+    [
+      'S6: a walkover its loser carried across their link, turned into a double walkover, is v1s (FEED_IN_CHAMPIONSHIP)',
+      {
+        drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+        setup: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+        steps: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
       },
     ],
   ])('%s', (_label, scenario) => {
