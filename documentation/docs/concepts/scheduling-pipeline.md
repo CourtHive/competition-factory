@@ -527,7 +527,9 @@ the calls that decide placements; the bulk and reschedule mutations write the ti
      `" 8:00"` are refused. The writes: a matchUp's scheduled time and date and its schedule items; court and venue
      availability, bookings and a venue's default times; person requests (one request with a date or a time that is
      not one refuses the call); tournament and event dates, which are checked against the calendar and stored as
-     sent. A scheduled time given as a date-time stores its time, and its date when the matchUp has none.
+     sent. A scheduled time given as a date-time stores its time, and its date when the matchUp has none; one naming
+     another day than the matchUp's scheduledDate is refused (`INVALID_DATE`), never stored against it (CA 2026-10-28).
+     A scheduledDate given beside it in a schedule write is the matchUp's date, and the time is written against it.
    - **At the read**, stored records keep working: the same unambiguous forms are normalised, and anything else reads
      as no time, as a value that is not a time did before. Production holds no such value (below), so the audit that
      would list them is not built.
