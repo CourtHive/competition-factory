@@ -127,10 +127,9 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
     const tournamentId = tournamentRecord?.tournamentId;
     const eventId = newEvent.eventId;
     const { topics } = getTopics();
-    if (topics.includes(ADD_MATCHUPS)) {
-      const matchUps = allEventMatchUps({ event: newEvent }).matchUps ?? [];
-      addMatchUpsNotice({ tournamentId, eventId, matchUps });
-    }
+    // an event added before its draws has no matchUps to announce: no empty notice (the draws announce theirs)
+    const matchUps = topics.includes(ADD_MATCHUPS) ? (allEventMatchUps({ event: newEvent }).matchUps ?? []) : [];
+    if (matchUps.length) addMatchUpsNotice({ tournamentId, eventId, matchUps });
 
     const { drawDefinitions, ...rest } = newEvent;
 

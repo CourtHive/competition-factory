@@ -554,13 +554,13 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "2dc9fbdd-f7e8-48f0-8b0f-0e4d7cbc70f2",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "venueId": "venue-1",
                             "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
                             "courtOrder": 2
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [3, 4],
@@ -575,13 +575,13 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "2dc9fbdd-f7e8-48f0-8b0f-0e4d7cbc70f2",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "venueId": "venue-1",
                             "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff",
                             "courtOrder": 2
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [],
@@ -595,13 +595,13 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "venueId": "venue-1",
                             "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
                             "courtOrder": 1
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -622,7 +622,7 @@
                           "participantId": "7a9789cd-319a-4d90-a994-8055fcf35aa5"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -655,7 +655,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -1512,13 +1512,13 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "2dc9fbdd-f7e8-48f0-8b0f-0e4d7cbc70f2",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "venueId": "venue-1",
                             "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
                             "courtOrder": 1
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [3, 4],
@@ -1533,13 +1533,13 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "2dc9fbdd-f7e8-48f0-8b0f-0e4d7cbc70f2",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "venueId": "venue-1",
                             "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
                             "courtOrder": 1
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [],
@@ -1552,7 +1552,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -1573,7 +1574,7 @@
                           "participantId": "7a9789cd-319a-4d90-a994-8055fcf35aa5"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -1606,7 +1607,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -2355,13 +2356,13 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "venueId": "venue-1",
                             "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
                             "courtOrder": 1
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -2374,7 +2375,7 @@
                           "participantId": "7cc1c2e5-640f-4800-95be-2330926b20df"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -2395,7 +2396,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -2530,13 +2531,13 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "venueId": "venue-1",
                             "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff",
                             "courtOrder": 1
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -2549,7 +2550,7 @@
                           "participantId": "7cc1c2e5-640f-4800-95be-2330926b20df"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -2570,7 +2571,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -3287,14 +3288,14 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
                             "venueId": "venue-1",
                             "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
                             "courtOrder": 1
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -3307,7 +3308,7 @@
                           "participantId": "7cc1c2e5-640f-4800-95be-2330926b20df"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -3328,7 +3329,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -3463,14 +3464,14 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "11:00",
                             "venueId": "venue-1",
                             "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff",
                             "courtOrder": 2
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -3483,7 +3484,7 @@
                           "participantId": "7cc1c2e5-640f-4800-95be-2330926b20df"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -3504,7 +3505,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -4223,14 +4224,14 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
                             "venueId": "venue-1",
                             "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
                             "courtOrder": 1
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -4243,7 +4244,7 @@
                           "participantId": "7cc1c2e5-640f-4800-95be-2330926b20df"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -4264,7 +4265,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -4399,14 +4400,14 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "13:00",
                             "venueId": "venue-1",
                             "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff",
                             "courtOrder": 2
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -4419,7 +4420,7 @@
                           "participantId": "7cc1c2e5-640f-4800-95be-2330926b20df"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -4440,7 +4441,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -5159,6 +5160,7 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.002Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
@@ -5167,7 +5169,6 @@
                             "courtOrder": 1,
                             "scoredTime": "2026-03-01T08:00:00.000Z"
                           },
-                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "matchUpStatusCodes": [],
                           "score": {
                             "scoreStringSide1": "",
@@ -5186,7 +5187,7 @@
                           "participantId": "7cc1c2e5-640f-4800-95be-2330926b20df"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.003Z",
+                      "updatedAt": "2026-03-01T08:00:00.002Z",
                       "seedLimit": 0
                     }
                   ],
@@ -5207,7 +5208,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.004Z",
+                  "updatedAt": "2026-03-01T08:00:00.003Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -5342,14 +5343,14 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "11:00",
                             "venueId": "venue-1",
                             "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff",
                             "courtOrder": 2
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -5362,7 +5363,7 @@
                           "participantId": "7cc1c2e5-640f-4800-95be-2330926b20df"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -5383,7 +5384,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -6159,13 +6160,13 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "2dc9fbdd-f7e8-48f0-8b0f-0e4d7cbc70f2",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "venueId": "venue-1",
                             "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
                             "courtOrder": 1
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [3, 4],
@@ -6179,7 +6180,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "2dc9fbdd-f7e8-48f0-8b0f-0e4d7cbc70f2"
+                          "winnerMatchUpId": "2dc9fbdd-f7e8-48f0-8b0f-0e4d7cbc70f2",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -6193,13 +6195,13 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "venueId": "venue-1",
                             "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff",
                             "courtOrder": 1
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -6220,7 +6222,7 @@
                           "participantId": "7a9789cd-319a-4d90-a994-8055fcf35aa5"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -6253,7 +6255,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -7183,13 +7185,13 @@
                             "winner": [1, 4]
                           },
                           "winnerMatchUpId": "e739cb28-aee4-403f-a4b5-af1ad95079b0",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "venueId": "venue-1",
                             "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
                             "courtOrder": 1
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [3, 4],
@@ -7203,7 +7205,8 @@
                             "loser": [5, 8],
                             "winner": [1, 4]
                           },
-                          "winnerMatchUpId": "e739cb28-aee4-403f-a4b5-af1ad95079b0"
+                          "winnerMatchUpId": "e739cb28-aee4-403f-a4b5-af1ad95079b0",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [5, 6],
@@ -7217,7 +7220,8 @@
                             "loser": [5, 8],
                             "winner": [1, 4]
                           },
-                          "winnerMatchUpId": "a03db62d-5067-4840-8440-06d6dff3e940"
+                          "winnerMatchUpId": "a03db62d-5067-4840-8440-06d6dff3e940",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [7, 8],
@@ -7231,7 +7235,8 @@
                             "loser": [5, 8],
                             "winner": [1, 4]
                           },
-                          "winnerMatchUpId": "a03db62d-5067-4840-8440-06d6dff3e940"
+                          "winnerMatchUpId": "a03db62d-5067-4840-8440-06d6dff3e940",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -7245,7 +7250,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "18ae6d00-676b-4813-9252-ae7932cf62d4"
+                          "winnerMatchUpId": "18ae6d00-676b-4813-9252-ae7932cf62d4",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -7259,7 +7265,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "18ae6d00-676b-4813-9252-ae7932cf62d4"
+                          "winnerMatchUpId": "18ae6d00-676b-4813-9252-ae7932cf62d4",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -7273,13 +7280,13 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "venueId": "venue-1",
                             "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff",
                             "courtOrder": 2
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -7316,7 +7323,7 @@
                           "participantId": "a6b1dca2-2d0a-4bb4-ad26-6277a76c260d"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -7373,7 +7380,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -8275,14 +8282,14 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "2dc9fbdd-f7e8-48f0-8b0f-0e4d7cbc70f2",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
                             "venueId": "venue-1",
                             "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
                             "courtOrder": 1
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [3, 4],
@@ -8296,7 +8303,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "2dc9fbdd-f7e8-48f0-8b0f-0e4d7cbc70f2"
+                          "winnerMatchUpId": "2dc9fbdd-f7e8-48f0-8b0f-0e4d7cbc70f2",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -8310,14 +8318,14 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "11:00",
                             "venueId": "venue-1",
                             "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff",
                             "courtOrder": 2
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -8338,7 +8346,7 @@
                           "participantId": "7a9789cd-319a-4d90-a994-8055fcf35aa5"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -8371,7 +8379,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -9191,14 +9199,14 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "2dc9fbdd-f7e8-48f0-8b0f-0e4d7cbc70f2",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
                             "venueId": "venue-1",
                             "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
                             "courtOrder": 1
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [3, 4],
@@ -9212,7 +9220,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "2dc9fbdd-f7e8-48f0-8b0f-0e4d7cbc70f2"
+                          "winnerMatchUpId": "2dc9fbdd-f7e8-48f0-8b0f-0e4d7cbc70f2",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -9226,14 +9235,14 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "11:00",
                             "venueId": "venue-1",
                             "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
                             "courtOrder": 2
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -9254,7 +9263,7 @@
                           "participantId": "7a9789cd-319a-4d90-a994-8055fcf35aa5"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -9287,7 +9296,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -10126,7 +10135,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "2dc9fbdd-f7e8-48f0-8b0f-0e4d7cbc70f2"
+                          "winnerMatchUpId": "2dc9fbdd-f7e8-48f0-8b0f-0e4d7cbc70f2",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [1],
@@ -10161,7 +10171,7 @@
                           "participantId": "7a9789cd-319a-4d90-a994-8055fcf35aa5"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -10188,7 +10198,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -10947,14 +10957,14 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "11:00",
                             "venueId": "venue-1",
                             "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
                             "courtOrder": 1
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -10967,7 +10977,7 @@
                           "participantId": "7cc1c2e5-640f-4800-95be-2330926b20df"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -10988,7 +10998,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -11123,14 +11133,14 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
                             "venueId": "venue-1",
                             "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
                             "courtOrder": 2
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -11143,7 +11153,7 @@
                           "participantId": "2aab593c-75ee-4cf1-ab87-ddd86036f11e"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -11164,7 +11174,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -11883,6 +11893,7 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.002Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
@@ -11891,7 +11902,6 @@
                             "courtOrder": 1,
                             "scoredTime": "2026-03-01T08:00:00.000Z"
                           },
-                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "score": {
                             "sets": [
                               {
@@ -11924,7 +11934,7 @@
                           "participantId": "7cc1c2e5-640f-4800-95be-2330926b20df"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.003Z",
+                      "updatedAt": "2026-03-01T08:00:00.002Z",
                       "seedLimit": 0
                     }
                   ],
@@ -11945,7 +11955,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.004Z",
+                  "updatedAt": "2026-03-01T08:00:00.003Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -12080,14 +12090,14 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "11:00",
                             "venueId": "venue-1",
                             "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff",
                             "courtOrder": 2
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -12100,7 +12110,7 @@
                           "participantId": "7cc1c2e5-640f-4800-95be-2330926b20df"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -12121,7 +12131,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -12840,6 +12850,7 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.003Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
@@ -12848,7 +12859,6 @@
                             "courtOrder": 1,
                             "scoredTime": "2026-03-01T08:00:00.000Z"
                           },
-                          "updatedAt": "2026-03-01T08:00:00.002Z",
                           "score": {
                             "sets": [
                               {
@@ -12888,7 +12898,7 @@
                           "participantId": "7cc1c2e5-640f-4800-95be-2330926b20df"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.004Z",
+                      "updatedAt": "2026-03-01T08:00:00.003Z",
                       "seedLimit": 0
                     }
                   ],
@@ -12909,7 +12919,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.005Z",
+                  "updatedAt": "2026-03-01T08:00:00.004Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -13044,14 +13054,14 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "12:00",
                             "venueId": "venue-1",
                             "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff",
                             "courtOrder": 2
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -13064,7 +13074,7 @@
                           "participantId": "7cc1c2e5-640f-4800-95be-2330926b20df"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -13085,7 +13095,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -13804,6 +13814,7 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-02T16:40:00.000Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
@@ -13813,7 +13824,6 @@
                             "calledAt": "2026-03-02T15:05:00.000Z",
                             "scoredTime": "2026-03-02T16:40:00.000Z"
                           },
-                          "updatedAt": "2026-03-02T16:40:00.000Z",
                           "score": {
                             "sets": [
                               {
@@ -14002,14 +14012,14 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "12:35",
                             "venueId": "venue-1",
                             "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff",
                             "courtOrder": 2
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -14022,7 +14032,7 @@
                           "participantId": "7cc1c2e5-640f-4800-95be-2330926b20df"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -14043,7 +14053,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -14768,6 +14778,7 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T22:40:00.000Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
@@ -14777,7 +14788,6 @@
                             "calledAt": "2026-03-01T21:05:00.000Z",
                             "scoredTime": "2026-03-01T22:40:00.000Z"
                           },
-                          "updatedAt": "2026-03-01T22:40:00.000Z",
                           "score": {
                             "sets": [
                               {
@@ -14966,14 +14976,14 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "12:35",
                             "venueId": "venue-1",
                             "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff",
                             "courtOrder": 2
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -14986,7 +14996,7 @@
                           "participantId": "7cc1c2e5-640f-4800-95be-2330926b20df"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -15007,7 +15017,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -16119,13 +16129,13 @@
                             "winner": [1, 8]
                           },
                           "winnerMatchUpId": "49dd101d-1ad3-4d26-b5dc-67b3f47d732b",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "venueId": "venue-1",
                             "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
                             "courtOrder": 1
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [3, 4],
@@ -16139,7 +16149,8 @@
                             "loser": [9, 16],
                             "winner": [1, 8]
                           },
-                          "winnerMatchUpId": "49dd101d-1ad3-4d26-b5dc-67b3f47d732b"
+                          "winnerMatchUpId": "49dd101d-1ad3-4d26-b5dc-67b3f47d732b",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [5, 6],
@@ -16153,7 +16164,8 @@
                             "loser": [9, 16],
                             "winner": [1, 8]
                           },
-                          "winnerMatchUpId": "de134a1a-e3c2-4743-b654-0b3e4168a90f"
+                          "winnerMatchUpId": "de134a1a-e3c2-4743-b654-0b3e4168a90f",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [7, 8],
@@ -16167,7 +16179,8 @@
                             "loser": [9, 16],
                             "winner": [1, 8]
                           },
-                          "winnerMatchUpId": "de134a1a-e3c2-4743-b654-0b3e4168a90f"
+                          "winnerMatchUpId": "de134a1a-e3c2-4743-b654-0b3e4168a90f",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [9, 10],
@@ -16181,7 +16194,8 @@
                             "loser": [9, 16],
                             "winner": [1, 8]
                           },
-                          "winnerMatchUpId": "45bc0e81-cd29-4d49-9e54-0be7627626e7"
+                          "winnerMatchUpId": "45bc0e81-cd29-4d49-9e54-0be7627626e7",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [11, 12],
@@ -16195,7 +16209,8 @@
                             "loser": [9, 16],
                             "winner": [1, 8]
                           },
-                          "winnerMatchUpId": "45bc0e81-cd29-4d49-9e54-0be7627626e7"
+                          "winnerMatchUpId": "45bc0e81-cd29-4d49-9e54-0be7627626e7",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [13, 14],
@@ -16209,7 +16224,8 @@
                             "loser": [9, 16],
                             "winner": [1, 8]
                           },
-                          "winnerMatchUpId": "2d7ae811-dda0-4697-a3d9-d3d495eedf87"
+                          "winnerMatchUpId": "2d7ae811-dda0-4697-a3d9-d3d495eedf87",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [15, 16],
@@ -16223,7 +16239,8 @@
                             "loser": [9, 16],
                             "winner": [1, 8]
                           },
-                          "winnerMatchUpId": "2d7ae811-dda0-4697-a3d9-d3d495eedf87"
+                          "winnerMatchUpId": "2d7ae811-dda0-4697-a3d9-d3d495eedf87",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -16237,7 +16254,8 @@
                             "loser": [5, 8],
                             "winner": [1, 4]
                           },
-                          "winnerMatchUpId": "d61b80e0-4f18-4829-b222-93adf532e0b8"
+                          "winnerMatchUpId": "d61b80e0-4f18-4829-b222-93adf532e0b8",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -16251,7 +16269,8 @@
                             "loser": [5, 8],
                             "winner": [1, 4]
                           },
-                          "winnerMatchUpId": "d61b80e0-4f18-4829-b222-93adf532e0b8"
+                          "winnerMatchUpId": "d61b80e0-4f18-4829-b222-93adf532e0b8",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -16265,7 +16284,8 @@
                             "loser": [5, 8],
                             "winner": [1, 4]
                           },
-                          "winnerMatchUpId": "7f231656-2f7f-4076-9700-9be9dbdcdc6a"
+                          "winnerMatchUpId": "7f231656-2f7f-4076-9700-9be9dbdcdc6a",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -16279,7 +16299,8 @@
                             "loser": [5, 8],
                             "winner": [1, 4]
                           },
-                          "winnerMatchUpId": "7f231656-2f7f-4076-9700-9be9dbdcdc6a"
+                          "winnerMatchUpId": "7f231656-2f7f-4076-9700-9be9dbdcdc6a",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -16293,7 +16314,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "4e91cb31-23e5-471d-a6cc-ab25de617d31"
+                          "winnerMatchUpId": "4e91cb31-23e5-471d-a6cc-ab25de617d31",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -16307,7 +16329,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "4e91cb31-23e5-471d-a6cc-ab25de617d31"
+                          "winnerMatchUpId": "4e91cb31-23e5-471d-a6cc-ab25de617d31",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -16321,13 +16344,13 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "venueId": "venue-1",
                             "courtId": "a27a7677-b13f-4e11-8901-849e7dd5f8ff",
                             "courtOrder": 3
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -16396,7 +16419,7 @@
                           "participantId": "0bd18bb7-4ec7-4ee8-9ddf-13af3d32e12d"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -16501,7 +16524,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -17921,7 +17944,7 @@
                           ]
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.001Z",
+                      "updatedAt": "2026-03-01T08:00:00.000Z",
                       "seedLimit": 0
                     },
                     {
@@ -17944,13 +17967,13 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "venueId": "venue-1",
                             "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884",
                             "courtOrder": 1
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -17961,7 +17984,7 @@
                           "drawPosition": 2
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z"
+                      "updatedAt": "2026-03-01T08:00:00.001Z"
                     }
                   ],
                   "entries": [
@@ -18030,7 +18053,7 @@
                   ],
                   "drawType": "ROUND_ROBIN_WITH_PLAYOFF",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",

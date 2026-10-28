@@ -651,6 +651,7 @@ function generateAndAttachDraw({
   completeAllMatchUps,
   randomWinningSide,
   tournamentRecord,
+  addToRecord,
   drawProfileCopy,
   seedingScaleName,
   drawExtensions,
@@ -700,7 +701,8 @@ function generateAndAttachDraw({
   }
 
   if (generate) {
-    addDrawDefinition({ drawDefinition, event, suppressNotifications: true });
+    // announced as a client's addDrawDefinition is, once the event is on the record; off the record nothing is
+    addDrawDefinition({ drawDefinition, event, tournamentRecord, suppressNotifications: !addToRecord });
 
     const manual = drawProfile.automated === false;
     // a tournament auto-scheduled after generation has its draws' results applied once it is scheduled, as a real
@@ -972,6 +974,7 @@ export function generateEventWithDraw(params) {
 
   const genResult = generateAndAttachDraw({
     deferredOutcomes: params.deferredOutcomes,
+    addToRecord,
     matchUpStatusProfile,
     completeAllMatchUps,
     randomWinningSide,

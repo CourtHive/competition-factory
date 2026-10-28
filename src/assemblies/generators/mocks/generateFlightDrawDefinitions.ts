@@ -198,8 +198,8 @@ function generateAndAddDraw({
       .forEach((extension) => addExtension({ element: drawDefinition, extension }));
   }
 
+  // announced as a client's addDrawDefinition is: the event is already on the record
   result = addDrawDefinition({
-    suppressNotifications: true,
     tournamentRecord,
     drawDefinition,
     event,
