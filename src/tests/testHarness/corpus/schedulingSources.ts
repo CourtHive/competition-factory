@@ -449,6 +449,46 @@ export function schedulingScenarios(): Authored[] {
     });
   }
 
+  for (const stated of ['stated', 'unstated'] as const) {
+    // the tournament's policy states 90 minutes and 60 to recover: a call that states a recovery of 0, and nothing
+    // else, schedules with its own minutes (the legacy 90 and no recovery), so the second round starts 90 minutes after
+    // the first instead of 150 (§ 6 rule 2); the unstated twin takes the policy's recovery
+    const { tournamentRecord } = generate({
+      policyDefinitions: POLICY_SCHEDULING_DEFAULT,
+      drawProfile: { drawSize: 8 },
+      courtsCount: 4,
+    });
+    const ordered = tournamentEngine
+      .allTournamentMatchUps()
+      .matchUps.toSorted((a: any, b: any) => a.roundNumber - b.roundNumber || a.roundPosition - b.roundPosition);
+    const matchUpIds = ordered.filter((m: any) => m.roundNumber <= 2).map((m: any) => m.matchUpId);
+    const expected = stated === 'stated' ? '09:30' : '10:30';
+    out.push({
+      scenarioId: `authored/scheduling/schedule-matchups-recovery-${stated === 'stated' ? 'stated-zero' : 'from-policy'}`,
+      ref:
+        stated === 'stated'
+          ? 'scheduling § direct scheduling: a stated recovery of 0 wins over the tournament timing (rule 2)'
+          : 'scheduling § direct scheduling: with no minutes stated, each matchUp recovers by its policy timing (rule 2)',
+      initialRecord: tournamentRecord,
+      directives: [
+        {
+          method: 'scheduleMatchUps',
+          params: { scheduleDate: DAY_1, matchUpIds, ...(stated === 'stated' ? { recoveryMinutes: 0 } : {}) },
+        },
+      ],
+      finalState: (record) => {
+        const earliest = (roundNumber: number) =>
+          rawRound(record, MAIN, roundNumber)
+            .map((matchUp) => matchUp.schedule?.scheduledTime ?? '')
+            .toSorted((a: string, b: string) => a.localeCompare(b))[0];
+        return [
+          ...claim(earliest(1) === '08:00', `the first round starts at 08:00 (${earliest(1)})`),
+          ...claim(earliest(2) === expected, `the second round starts at ${expected} (${earliest(2)})`),
+        ];
+      },
+    });
+  }
+
   return out;
 }
 
