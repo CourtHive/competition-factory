@@ -86,6 +86,22 @@ const LOCAL_STATUSES = new Set<string | undefined>([IN_PROGRESS, SUSPENDED, AWAI
 const SINGLE_EXITS = new Set<string | undefined>([WALKOVER, DEFAULTED, RETIRED]);
 const DIRECTED_STATUSES = new Set<string | undefined>([COMPLETED, ...SINGLE_EXITS]);
 
+/**
+ * S6: a double exit asked for again (the `noop` route: the status it already holds, no winner). v1 treats it as
+ * satisfied, not repeated (`attemptToSetMatchUpStatus`, `alreadyInRequestedDoubleExit`): it writes, stamps and announces
+ * nothing, whatever score the call carries, and returns success. Planned as that: no ops.
+ */
+function satisfiedDoubleExit(view: OutcomeView, request: OutcomeRequest, route?: Route): boolean {
+  const { existing } = view;
+  return (
+    route === 'noop' &&
+    isDoubleExit(existing.matchUpStatus) &&
+    request.matchUpStatus === existing.matchUpStatus &&
+    !existing.winningSide &&
+    !request.winningSide
+  );
+}
+
 function localReason({ route, write }: { route?: Route; write?: MatchUpWrite }): AbstainReason | undefined {
   if (!route || !write || !LOCAL_ROUTES.has(route)) return 'route';
   if (!LOCAL_STATUSES.has(write.matchUpStatus)) return 'route';
@@ -409,6 +425,7 @@ function exitReason(args: {
   if (!isAnyExit(request.matchUpStatus) && !isAnyExit(existing.matchUpStatus) && !isAnyExit(write?.matchUpStatus))
     return undefined;
   if (route === DOUBLE_EXIT) return producedReason(view, request, direction, write);
+  if (satisfiedDoubleExit(view, request, route)) return undefined;
   if (route === 'winner' && isDoubleExit(existing.matchUpStatus)) return givenWinnerReason(args);
   if (route === CLEAR_SCORE && isDoubleExit(existing.matchUpStatus))
     return write?.matchUpStatus === TO_BE_PLAYED &&
@@ -1844,6 +1861,7 @@ function abstainReason(args: {
   if (view.draw.perMatchUpCompetition && (request.winningSide || write?.winningSide)) return 'competition';
   const exit = exitReason(args);
   if (exit) return exit;
+  if (satisfiedDoubleExit(view, request, args.route)) return undefined;
   // S4: a score changed beneath an active downstream keeps its winner and re-directs nothing (`apply-values`)
   const sameWinner =
     args.route === 'apply-values' && !!write?.winningSide && write.winningSide === view.existing.winningSide;
@@ -2052,6 +2070,22 @@ function structureStamps(ops: OutcomeOp[], structureId: string): OutcomeOp[] {
  * and `planDirection` already decided; this re-states a complete one as ops and adds the stamps (F2 (i): the matchUp,
  * its structure and the draw, each once).
  */
+/** a plan is folded into the record; a draw held outside it, or a call with no captured instant, cannot be compared */
+function recordReason({
+  tournamentRecord,
+  drawDefinition,
+}: {
+  tournamentRecord?: Tournament;
+  drawDefinition?: DrawDefinition;
+}): AbstainReason | undefined {
+  const held = tournamentRecord?.events?.some((event) =>
+    event.drawDefinitions?.includes(drawDefinition as DrawDefinition),
+  );
+  if (!drawDefinition || !held) return 'no-record';
+  if (getCapturedClock() === undefined) return 'clock';
+  return undefined;
+}
+
 export function planOutcome(args: {
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
@@ -2063,13 +2097,11 @@ export function planOutcome(args: {
 }): OutcomePlan {
   const reason = abstainReason(args);
   if (reason) return { abstain: reason };
-  const { request, view, drawDefinition, tournamentRecord } = args;
-  // a plan is folded into the record; a draw held outside it, or a call with no captured instant, cannot be compared
-  const held = tournamentRecord?.events?.some((event) =>
-    event.drawDefinitions?.includes(drawDefinition as DrawDefinition),
-  );
-  if (!drawDefinition || !held) return { abstain: 'no-record' };
-  if (getCapturedClock() === undefined) return { abstain: 'clock' };
+  const { request, view, drawDefinition } = args;
+  const unrecorded = recordReason(args);
+  if (unrecorded || !drawDefinition) return { abstain: unrecorded ?? 'no-record' };
+  // a double exit asked for again: v1 writes nothing (`satisfiedDoubleExit`)
+  if (satisfiedDoubleExit(view, request, args.route)) return { ops: [], shape: 'local' };
   const write = args.write as MatchUpWrite;
   const matchUpId = request.matchUpId as string;
   const structureId = view.targets.source.structureId;
