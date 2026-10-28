@@ -858,6 +858,30 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'FEED_IN_CHAMPIONSHIP (S5, doubleExitPropagateBye off): beside a consolation BYE the walkover is recorded and carried on',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 14, drawType: FEED_IN_CHAMPIONSHIP },
+      policyDefinitions: POLICY_OFF,
+      steps: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'COMPASS (S5, doubleExitPropagateBye off): beside a BYE in West the walkover goes on into West round 2',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 14, drawType: COMPASS },
+      policyDefinitions: POLICY_OFF,
+      steps: [{ target: R1(2, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION (S5, doubleExitPropagateBye off): a double default beside a Backdraw BYE',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 14, drawType: DOUBLE_ELIMINATION },
+      policyDefinitions: POLICY_OFF,
+      steps: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
+  [
     'FEED_IN_CHAMPIONSHIP (S5, doubleExitPropagateBye off): a double default produces a default in the consolation',
     {
       drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },

@@ -54,6 +54,12 @@ export type OutcomeOp =
        * schedule is left as it is: a double exit's produced exit (`doubleExitAdvancement` → `modifyMatchUpScore`)
        */
       stampsScoredTime?: false;
+      /**
+       * false where v1 writes the result with neither the tournament nor the event (a produced exit recorded beside a BYE
+       * and carried on, `stampExitOnByeHeldLoserTarget`, `carryExitOnward`): the notice names neither, and the matchUp in
+       * context is read without the tournament
+       */
+      announcesContext?: false;
     }
   | {
       op: 'setMatchUpDrawPositions';
