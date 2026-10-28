@@ -2,13 +2,11 @@ import { rootExtensionsFingerprint, rootExtensionsNotice } from '@Mutate/tournam
 import { announceDrawChange, attributesSnapshot } from '@Mutate/drawDefinitions/announceDrawChange';
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { withEventChangeNotice } from '@Mutate/events/eventChangeNotice';
-import { getTopics } from '@Global/state/globalState';
 import { removeExtension } from './removeExtension';
 import { addExtension } from './addExtension';
 
 // constants and types
 import { DrawDefinition, Event, Extension, Participant, Tournament } from '@Types/tournamentTypes';
-import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { ResultType } from '@Types/factoryTypes';
 import {
   DRAW_DEFINITION_NOT_FOUND,
@@ -92,7 +90,9 @@ function withParticipantChange(
   if (!participant) return { error: PARTICIPANT_NOT_FOUND };
 
   const result = change(participant);
-  if (!result.error && getTopics().topics.includes(MODIFY_PARTICIPANTS)) {
+  // announced whether or not anything subscribes: gated on the subscription, the stored record depended on who
+  // was listening
+  if (!result.error) {
     modifyParticipantsNotice({ tournamentId: params.tournamentRecord?.tournamentId, participants: [participant] });
   }
   return result;

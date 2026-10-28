@@ -2,11 +2,9 @@ import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotif
 import { removeIndividualParticipantIds } from './removeIndividualParticipantIds';
 import { addIndividualParticipantIds } from './addIndividualParticipantIds';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { getTopics } from '@Global/state/globalState';
 
 // constants
 import { GROUP, INDIVIDUAL, TEAM } from '@Constants/participantConstants';
-import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import {
   INVALID_PARTICIPANT_IDS,
   INVALID_PARTICIPANT_TYPE,
@@ -86,17 +84,16 @@ export function modifyIndividualParticipantIds({ individualParticipantIds, group
   });
   if (removeResult.error) return decorateResult({ result: removeResult, stack });
 
-  const { topics } = getTopics();
-  if (topics.includes(MODIFY_PARTICIPANTS)) {
-    const updatedParticipant = tournamentParticipants.find(
-      ({ participantId }) => participantId === groupingParticipantId,
-    );
+  // announced (and so factory-stamped) whether or not anything subscribes: gated on the subscription, the stored
+  // record depended on who was listening
+  const updatedParticipant = tournamentParticipants.find(
+    ({ participantId }) => participantId === groupingParticipantId,
+  );
 
-    modifyParticipantsNotice({
-      tournamentId: tournamentRecord.tournamentId,
-      participants: [updatedParticipant],
-    });
-  }
+  modifyParticipantsNotice({
+    tournamentId: tournamentRecord.tournamentId,
+    participants: [updatedParticipant],
+  });
 
   return { ...addResult, ...removeResult };
 }

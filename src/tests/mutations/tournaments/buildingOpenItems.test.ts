@@ -6,7 +6,9 @@ import tournamentEngine from '@Engines/syncEngine';
 import { setClock } from '@Tools/clock';
 
 // constants
-import { MODIFY_PARTICIPANTS, PUBLISH_EVENT } from '@Constants/topicConstants';
+import { ADD_PARTICIPANTS, MODIFY_PARTICIPANTS, PUBLISH_EVENT } from '@Constants/topicConstants';
+import { COMPETITOR } from '@Constants/participantRoles';
+import { GROUP, PAID, SIGNED_IN } from '@Constants/participantConstants';
 import { DRAW_DEFINITION_NOT_FOUND, INVALID_VALUES, VENUE_EXISTS } from '@Constants/errorConditionConstants';
 
 const LATER = '2030-01-01T00:00:00.000Z';
@@ -22,10 +24,21 @@ function factoryStampAfter(subscribed: boolean, topic: string, write: (ids: any)
   } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 4 }] });
   tournamentEngine.reset();
   tournamentEngine.setState(tournamentRecord);
-  const participantId = tournamentRecord.participants[0].participantId;
+  const participantIds = tournamentRecord.participants.map(({ participantId }) => participantId);
+  const participantId = participantIds[0];
+  const groupingParticipantId = 'group';
+  tournamentEngine.addParticipant({
+    participant: {
+      individualParticipantIds: [participantIds[1]],
+      participantId: groupingParticipantId,
+      participantRole: COMPETITOR,
+      participantType: GROUP,
+      participantName: 'G',
+    },
+  });
   setSubscriptions({ subscriptions: subscribed ? { [topic]: () => undefined } : {} });
   setClock(LATER);
-  const result = write({ eventId, participantId });
+  const result = write({ eventId, participantId, participantIds, groupingParticipantId });
   setClock();
   setSubscriptions({ subscriptions: {} });
   expect(result.success).toEqual(true);
@@ -56,6 +69,111 @@ describe('notices independent of subscriptions (item 11)', () => {
     });
     // the second call changed nothing, and so did not restamp the record
     expect(unchanged).toEqual(stamped);
+  });
+});
+
+describe('the participant writes are announced whether or not anything subscribes', () => {
+  const extension = { name: 'note', value: 1 };
+  const writes: [string, string, (ids: any) => any][] = [
+    [
+      'modifyParticipantName',
+      MODIFY_PARTICIPANTS,
+      ({ participantId }) => tournamentEngine.modifyParticipantName({ participantId, participantName: 'Renamed' }),
+    ],
+    [
+      'modifyParticipantOtherName',
+      MODIFY_PARTICIPANTS,
+      ({ participantId }) =>
+        tournamentEngine.modifyParticipantOtherName({ participantId, participantOtherName: 'Other' }),
+    ],
+    [
+      'addParticipantOtherId',
+      MODIFY_PARTICIPANTS,
+      ({ participantId }) =>
+        tournamentEngine.addParticipantOtherId({ participantId, organisationId: 'org', otherParticipantId: 'x1' }),
+    ],
+    [
+      'addPersonOtherId',
+      MODIFY_PARTICIPANTS,
+      ({ participantId }) =>
+        tournamentEngine.addPersonOtherId({ participantId, organisationId: 'org', personId: 'p1' }),
+    ],
+    [
+      'modifyParticipantsSignInStatus',
+      MODIFY_PARTICIPANTS,
+      ({ participantId }) =>
+        tournamentEngine.modifyParticipantsSignInStatus({ participantIds: [participantId], signInState: SIGNED_IN }),
+    ],
+    [
+      'modifyParticipantsPaymentStatus',
+      MODIFY_PARTICIPANTS,
+      ({ participantId }) =>
+        tournamentEngine.modifyParticipantsPaymentStatus({ participantIds: [participantId], paymentState: PAID }),
+    ],
+    [
+      'addIndividualParticipantIds',
+      MODIFY_PARTICIPANTS,
+      ({ groupingParticipantId, participantIds }) =>
+        tournamentEngine.addIndividualParticipantIds({
+          groupingParticipantId,
+          individualParticipantIds: [participantIds[2]],
+        }),
+    ],
+    [
+      'modifyIndividualParticipantIds',
+      MODIFY_PARTICIPANTS,
+      ({ groupingParticipantId, participantIds }) =>
+        tournamentEngine.modifyIndividualParticipantIds({
+          groupingParticipantId,
+          individualParticipantIds: [participantIds[3]],
+        }),
+    ],
+    [
+      'mergeParticipants, a participant merged',
+      MODIFY_PARTICIPANTS,
+      ({ participantId }) =>
+        tournamentEngine.mergeParticipants({ participants: [{ participantId, participantOtherName: 'Merged' }] }),
+    ],
+    [
+      'mergeParticipants, a participant added',
+      ADD_PARTICIPANTS,
+      () =>
+        tournamentEngine.mergeParticipants({
+          participants: [
+            {
+              participantId: 'new',
+              participantType: GROUP,
+              participantRole: COMPETITOR,
+              participantName: 'N',
+              individualParticipantIds: [],
+            },
+          ],
+        }),
+    ],
+    [
+      'addParticipantExtension',
+      MODIFY_PARTICIPANTS,
+      ({ participantId }) => tournamentEngine.addParticipantExtension({ participantId, extension }),
+    ],
+    [
+      'setParticipantScaleItems',
+      MODIFY_PARTICIPANTS,
+      ({ participantId }) =>
+        tournamentEngine.setParticipantScaleItems({
+          scaleItemsWithParticipantIds: [
+            {
+              participantId,
+              scaleItems: [{ scaleType: 'RATING', eventType: 'SINGLES', scaleName: 'WTN', scaleValue: 9 }],
+            },
+          ],
+        }),
+    ],
+  ];
+
+  test.each(writes)('%s stamps the record with or without a subscriber', (_, topic, write) => {
+    const stamped = new Date(LATER).getTime();
+    expect(factoryStampAfter(true, topic, write)).toEqual(stamped);
+    expect(factoryStampAfter(false, topic, write)).toEqual(stamped);
   });
 });
 

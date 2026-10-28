@@ -1,12 +1,12 @@
 import { coercePersonSex, isUnrecognizedSex, UNRECOGNIZED_SEX_INFO } from '@Helpers/coercedSex';
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
-import { addNotice, getTopics } from '@Global/state/globalState';
+import { addNotice } from '@Global/state/globalState';
 import { xa } from '@Tools/extractAttributes';
 import { deepMerge } from '@Tools/deepMerge';
 
 // constants and types
 import { INVALID_VALUES, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
-import { ADD_PARTICIPANTS, MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
+import { ADD_PARTICIPANTS } from '@Constants/topicConstants';
 import { PARTICIPANT_ID } from '@Constants/attributeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Participant } from '@Types/tournamentTypes';
@@ -52,20 +52,18 @@ export function mergeParticipants({
     ({ participantId }) => !existingParticipantIds.includes(participantId),
   );
 
-  const { topics } = getTopics();
-
   if (newParticipants.length) {
     tournamentRecord.participants = tournamentRecord.participants.concat(...newParticipants);
 
-    if (topics.includes(ADD_PARTICIPANTS)) {
-      addNotice({
-        topic: ADD_PARTICIPANTS,
-        payload: { participants: newParticipants },
-      });
-    }
+    addNotice({
+      topic: ADD_PARTICIPANTS,
+      payload: { participants: newParticipants },
+    });
   }
 
-  if (modifiedParticipants.length && topics.includes(MODIFY_PARTICIPANTS)) {
+  // announced (and so factory-stamped) whether or not anything subscribes: gated on the subscription, the stored
+  // record depended on who was listening
+  if (modifiedParticipants.length) {
     modifyParticipantsNotice({
       tournamentId: tournamentRecord.tournamentId,
       participants: modifiedParticipants,

@@ -11,7 +11,7 @@ import { findEvent } from '@Acquire/findEvent';
 import { nowIso } from '@Tools/clock';
 
 // constants and types
-import { ADD_SCALE_ITEMS, AUDIT, MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
+import { ADD_SCALE_ITEMS, AUDIT } from '@Constants/topicConstants';
 import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { Participant, Tournament } from '@Types/tournamentTypes';
@@ -111,8 +111,10 @@ export function setParticipantScaleItems(params: SetParticipantScaleItemsArgs) {
   if (error) return error;
 
   const info = modificationsApplied ? undefined : NO_MODIFICATIONS_APPLIED;
+  // announced (and so factory-stamped) whether or not anything subscribes: gated on the subscription, the stored
+  // record depended on who was listening
   const { topics } = getTopics();
-  if (topics.includes(MODIFY_PARTICIPANTS) && modificationsApplied) {
+  if (modificationsApplied) {
     modifyParticipantsNotice({
       tournamentId: tournamentRecord.tournamentId,
       participants: modifiedParticipants,

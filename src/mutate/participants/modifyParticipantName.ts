@@ -1,12 +1,10 @@
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
 import { requireParams } from '@Helpers/parameters/requireParams';
-import { getTopics } from '@Global/state/globalState';
 
 // constants
 import { MISSING_VALUE, PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { TOURNAMENT_RECORD, PARTICIPANT_ID } from '@Constants/attributeConstants';
-import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 export function modifyParticipantName({ tournamentRecord, participantName, participantId }) {
@@ -23,13 +21,12 @@ export function modifyParticipantName({ tournamentRecord, participantName, parti
 
   participant.participantName = participantName;
 
-  const { topics } = getTopics();
-  if (topics.includes(MODIFY_PARTICIPANTS)) {
-    modifyParticipantsNotice({
-      tournamentId: tournamentRecord.tournamentId,
-      participants: [participant],
-    });
-  }
+  // announced (and so factory-stamped) whether or not anything subscribes: gated on the subscription, the stored
+  // record depended on who was listening
+  modifyParticipantsNotice({
+    tournamentId: tournamentRecord.tournamentId,
+    participants: [participant],
+  });
 
   return { ...SUCCESS };
 }
