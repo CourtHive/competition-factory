@@ -78,9 +78,11 @@ describe('gendered collections', () => {
     }
   });
 
-  it('a player plays at most one singles and at most one doubles in a dual', () => {
+  // Lines come from the public generateLineUps with `exclusiveSingles` (CA 2026-10-29): one player in two singles
+  // is undesirable; one player in, say, men's and mixed doubles is ordinary, so doubles are not held to it
+  it('a player plays at most one singles in a dual', () => {
     const tieMatchUps = generate(GENDERED, { [MALE]: 3, [FEMALE]: 3 });
-    for (const matchUpType of [SINGLES, DOUBLES]) {
+    for (const matchUpType of [SINGLES]) {
       for (const sideNumber of [0, 1]) {
         const ids = tieMatchUps
           .filter((tieMatchUp: any) => tieMatchUp.matchUpType === matchUpType)
