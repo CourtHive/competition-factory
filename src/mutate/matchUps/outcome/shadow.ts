@@ -87,6 +87,17 @@ export function plannedNotices({ ops, matchUpId }: { ops: OutcomeOp[]; matchUpId
   return notices;
 }
 
+/**
+ * The notices a call added to the buffer: every entry after it that is not one of the entries before it. Not the tail
+ * past the earlier length: a notice that supersedes one already buffered under its topic and key takes the old one's
+ * place at the end (`addNotice`), so the buffer does not grow, while an entry kept as it was keeps its identity. A record
+ * built through engine calls whose notices were not taken (a mocks scenario) leaves such entries behind.
+ */
+export function addedNotices<T>(before: T[] | undefined, after: T[] | undefined): T[] {
+  const kept = new Set(before ?? []);
+  return (after ?? []).filter((notice) => !kept.has(notice));
+}
+
 /** what v1 added to the notice buffer in this call, deduplicated by topic and key, on the topics someone receives */
 export function compareNotices({
   planned,

@@ -1,9 +1,9 @@
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
+import { addedNotices, compareNotices, compareShadow, plannedNotices } from './shadow';
 import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
 import { carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { PREDICTED_CALL, predictSettleWork, type SettleSite } from './settleWork';
-import { compareNotices, compareShadow, plannedNotices } from './shadow';
 import { addGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
 import { planOutcome, type OutcomePlan, type PlanShape } from './plan';
 import { convergence, isRelabel, planDirection } from './direction';
@@ -222,7 +222,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
     checkViewOracle(shadow.shadow);
     const noticed = compareNotices({
       planned: plannedNotices({ ops: outcome.ops, matchUpId: args.request.matchUpId as string }),
-      added: (getNoticeBuffer() ?? []).slice(notices?.length ?? 0),
+      added: addedNotices(notices, getNoticeBuffer()),
       topics: getTopics().topics,
     });
     if (!noticed.equal)
