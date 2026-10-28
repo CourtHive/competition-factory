@@ -37,8 +37,9 @@ import {
 
 type GenerateLineUpsArgs = {
   useDefaultEventRanking?: boolean;
-  /** a player fills one collection position per matchUpType: two singles collections get two different players */
-  oncePerMatchUpType?: boolean;
+  /** a player fills at most one SINGLES position: two singles collections get two different players. Doubles
+   * collections are left alone, where one player in (say) men's and mixed doubles is ordinary */
+  exclusiveSingles?: boolean;
   tournamentRecord: Tournament;
   drawDefinition?: DrawDefinition;
   scaleAccessor: any;
@@ -56,7 +57,7 @@ export function generateLineUps(params: GenerateLineUpsArgs): ResultType & {
   let { tieFormat } = params;
   const {
     useDefaultEventRanking,
-    oncePerMatchUpType,
+    exclusiveSingles,
     tournamentRecord,
     drawDefinition,
     scaleAccessor, // e.g. { scaleType: 'RANKINGS', scaleName: 'U18', accessor: 'wtnRating', sortOrder: 'ASC' }
@@ -136,16 +137,15 @@ export function generateLineUps(params: GenerateLineUpsArgs): ResultType & {
     );
     const singlesSort = ownPlayers.toSorted(singlesScaleSort);
     const doublesSort = singlesOnly ? singlesSort : ownPlayers.toSorted(doublesScaleSort);
-    // per matchUpType, the players already placed in an earlier collection (`oncePerMatchUpType`)
-    const usedByType: Record<string, string[]> = {};
+    // the players already placed in an earlier singles collection (`exclusiveSingles`)
+    const singlesPlaced: string[] = [];
 
     const participantAssignments: { [key: string]: CollectionAssignment[] } = {};
     for (const collectionDefinition of collectionDefinitions) {
       const { collectionId, matchUpCount, matchUpType, gender } = collectionDefinition;
-      const typeKey = String(matchUpType);
-      usedByType[typeKey] ??= [];
-      // a player is placed once per collection, and with `oncePerMatchUpType` once per matchUpType
-      const collectionParticipantIds: string[] = oncePerMatchUpType ? usedByType[typeKey] : [];
+      // a player is placed once per collection, and with `exclusiveSingles` once across the singles collections
+      const singlesType = isMatchUpEventType(SINGLES_MATCHUP)(matchUpType);
+      const collectionParticipantIds: string[] = exclusiveSingles && singlesType ? singlesPlaced : [];
       const singlesMatchUp = isMatchUpEventType(SINGLES_MATCHUP)(matchUpType);
 
       generateRange(0, matchUpCount).forEach((i) => {

@@ -210,7 +210,7 @@ describe('one player, one team, per event', () => {
     expect(result.success).toEqual(true);
   });
 
-  test('generateLineUps leaves a shared player out, and oncePerMatchUpType uses a player in one singles', () => {
+  test('generateLineUps leaves a shared player out, and exclusiveSingles uses a player in one singles', () => {
     const {
       drawIds: [drawId],
       eventId,
@@ -237,7 +237,7 @@ describe('one player, one team, per event', () => {
     // the default still lets one player fill both singles collections
     expect(Object.values(result.lineUps).some((lineUp) => inBothSingles(lineUp) > 0)).toEqual(true);
 
-    result = tournamentEngine.generateLineUps({ drawId, eventId, scaleAccessor: {}, oncePerMatchUpType: true });
+    result = tournamentEngine.generateLineUps({ drawId, eventId, scaleAccessor: {}, exclusiveSingles: true });
     expect(Object.values(result.lineUps).every((lineUp) => inBothSingles(lineUp) === 0)).toEqual(true);
   });
 });
