@@ -144,15 +144,16 @@ export function publishEvent(params: PublishEventType): ResultType & { eventData
         })?.eventData
       : undefined;
 
-  if (notify)
-    addNotice({
-      // eventId is carried on the envelope, NOT only inside eventData.eventInfo. Consumers that need
-      // just the id (cache eviction, fan-out routing) previously had to reach through the whole
-      // payload for it — which is what keeps `eventData` mandatory. See
-      // Mentat/planning/FACTORY_NOTICE_IDENTITY_AUDIT.md.
-      payload: { eventData, eventId: event?.eventId, tournamentId: tournamentRecord.tournamentId },
-      topic: PUBLISH_EVENT,
-    });
+  // announced (and so factory-stamped) whether or not anything subscribes: gated on the subscription, the stored
+  // record depended on who was listening. Only a subscriber's payload carries the event data, which is costly to build.
+  addNotice({
+    // eventId is carried on the envelope, NOT only inside eventData.eventInfo. Consumers that need
+    // just the id (cache eviction, fan-out routing) previously had to reach through the whole
+    // payload for it — which is what keeps `eventData` mandatory. See
+    // Mentat/planning/FACTORY_NOTICE_IDENTITY_AUDIT.md.
+    payload: { eventData, eventId: event?.eventId, tournamentId: tournamentRecord.tournamentId },
+    topic: PUBLISH_EVENT,
+  });
 
   return { ...SUCCESS, eventData };
 }

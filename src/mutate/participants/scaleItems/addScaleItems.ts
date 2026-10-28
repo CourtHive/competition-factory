@@ -59,8 +59,9 @@ export function setParticipantScaleItem(params: SetParticipantScaleItemArgs) {
 
       equivalentValue = !result.valueChanged;
 
-      const { topics } = getTopics();
-      if (topics.includes(MODIFY_PARTICIPANTS)) {
+      // announced (and so factory-stamped) whether or not anything subscribes, and only when the value changed:
+      // gated on the subscription, the stored record depended on who was listening
+      if (result.valueChanged) {
         modifyParticipantsNotice({
           tournamentId: tournamentRecord.tournamentId,
           participants: [participant],

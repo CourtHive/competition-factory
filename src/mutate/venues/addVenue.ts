@@ -23,16 +23,17 @@ export function addVenue(params) {
   const { disableNotice, venue, context } = params;
   if (typeof venue !== 'object') return { error: INVALID_VALUES };
   const tournamentRecords = resolveTournamentRecords(params);
-  venue.venueId ??= UUID();
+  // the id is minted onto a copy: the caller's object is not written
+  const venueId = venue.venueId ?? UUID();
 
   let addedVenue;
 
   for (const tournamentRecord of Object.values(tournamentRecords)) {
     const result = venueAdd({
       disableNotice: true,
+      venue: { ...venue, venueId },
       tournamentRecord,
       context,
-      venue,
     });
     if (result?.error) return result;
     addedVenue = result.venue;
@@ -45,7 +46,7 @@ export function addVenue(params) {
   }
 
   if (!disableNotice) {
-    addNotice({ topic: ADD_VENUE, payload: { venue } });
+    addNotice({ topic: ADD_VENUE, payload: { venue: addedVenue } });
   }
 
   return definedAttributes({ ...SUCCESS, venue: addedVenue });
@@ -69,13 +70,11 @@ function venueAdd({ tournamentRecord, disableNotice, context, venue }: AddVenueA
   if (paramsCheck.error) return paramsCheck;
   if (!venue) return { error: MISSING_VALUE, info: 'missing venue' };
 
-  tournamentRecord.venues ??= [];
-  venue.venueId ??= UUID();
+  // each record stores its own copy, so neither the caller's object nor another record's venue is written; `venues`
+  // is created only when a venue is stored (a refusal writes nothing)
+  venue = makeDeepCopy({ ...venue, venueId: venue.venueId ?? UUID() }, false, true);
 
-  const venueExists = tournamentRecord.venues.reduce((exists: boolean | undefined, existingVenue) => {
-    return exists || existingVenue.venueId === venue.venueId;
-  }, undefined);
-
+  const venueExists = (tournamentRecord.venues ?? []).some((existingVenue) => existingVenue.venueId === venue.venueId);
   if (venueExists) {
     return { error: VENUE_EXISTS };
   }
@@ -107,6 +106,7 @@ function venueAdd({ tournamentRecord, disableNotice, context, venue }: AddVenueA
 
   const clearedPrimaryVenues = venue.isPrimary ? clearPrimaryVenue({ tournamentRecord }) : [];
 
+  tournamentRecord.venues ??= [];
   tournamentRecord.venues.push(venue);
 
   if (!disableNotice) {
