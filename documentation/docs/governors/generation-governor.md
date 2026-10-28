@@ -523,9 +523,12 @@ const { lineUps, participantsToAdd } = engine.generateLineUps({
   scaleAccessor, // see above
   singlesOnly, // optional boolean - when true SINGLES rankings will be used for DOUBLES position assignment
   attach, // optional boolean - when true the lineUps will be attached to the drawDefinition specified by drawId
+  oncePerMatchUpType, // optional boolean - a player fills one position per matchUpType: two SINGLES collections get two players
   drawId,
 });
 ```
+
+Players are chosen from each team's own roster, by the collection's gender where it has one. A player who also belongs to another team of the event (on its roster, or in its lineUp in any of the event's draws) is placed in neither: one player, one team, per event. Without `oncePerMatchUpType` a player may fill a position in each of two collections of the same matchUpType.
 
 ---
 
