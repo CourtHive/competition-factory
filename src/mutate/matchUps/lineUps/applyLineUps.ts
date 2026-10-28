@@ -3,7 +3,9 @@ import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventTyp
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { getPairedParticipant } from '@Query/participant/getPairedParticipant';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { checkTeamMembership, getTeamMemberships } from './teamMembership';
 import { addParticipant } from '@Mutate/participants/addParticipant';
+import { decorateResult } from '@Functions/global/decorateResult';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { instanceCount } from '@Tools/arrays';
 
@@ -13,6 +15,7 @@ import { ARRAY, DRAW_DEFINITION, MATCHUP_ID, OF_TYPE, TOURNAMENT_RECORD } from '
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/matchUpTypes';
 import { COMPETITOR } from '@Constants/participantRoles';
+import type { ResultWarning } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 import {
@@ -70,6 +73,8 @@ export function applyLineUps(params: ApplyLineUps) {
   })?.tieFormat;
 
   const sideAssignments: { [key: string]: TeamCompetitor[] } = {};
+  const memberships = getTeamMemberships({ tournamentRecord, event });
+  const warnings: ResultWarning[] = [];
 
   for (const lineUp of lineUps) {
     if (!Array.isArray(lineUp)) return { error: INVALID_VALUES, lineUp };
@@ -92,6 +97,15 @@ export function applyLineUps(params: ApplyLineUps) {
     if (pairResult?.error) return pairResult;
 
     const sideNumber = determineSideNumber(sideNumbers);
+
+    // one player, one team, per event: another team's player is refused; a player on no team joins with a warning
+    const membership = checkTeamMembership({
+      teamParticipantId: inContextMatchUp.sides?.find((side) => side.sideNumber === sideNumber)?.participantId,
+      individualIds: lineUp.map(({ participantId }) => participantId),
+      memberships,
+    });
+    if (membership.error) return decorateResult({ result: membership, stack });
+    warnings.push(...(membership.warnings ?? []));
 
     const sideAssignmentKeys = Object.keys(sideAssignments).map((key) => Number.parseInt(key));
     if (sideNumber && !sideAssignmentKeys.includes(sideNumber)) {
@@ -128,7 +142,7 @@ export function applyLineUps(params: ApplyLineUps) {
     event,
   });
 
-  return { ...SUCCESS };
+  return { ...SUCCESS, warnings: warnings.length ? warnings : undefined };
 }
 
 type CollectionParticipantIds = { [aggregator: string]: string[] };

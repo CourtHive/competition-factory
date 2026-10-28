@@ -4,6 +4,7 @@ import { getPairedParticipant } from '@Query/participant/getPairedParticipant';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { deleteParticipants } from '@Mutate/participants/deleteParticipants';
 import { updateTeamLineUp } from '@Mutate/drawDefinitions/updateTeamLineUp';
+import { checkTeamMembership, getTeamMemberships } from './teamMembership';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { addParticipant } from '@Mutate/participants/addParticipant';
@@ -139,6 +140,14 @@ export function replaceTieMatchUpParticipantId(params: ReplaceTieMatchUpParticip
     ({ sideNumber }) => sideNumber === side.sideNumber,
   )?.participantId;
 
+  // one player, one team, per event: another team's player is refused; a player on no team joins with a warning
+  const membership = checkTeamMembership({
+    memberships: getTeamMemberships({ tournamentRecord, event }),
+    teamParticipantId,
+    individualIds: [newParticipantId],
+  });
+  if (membership.error) return decorateResult({ result: membership, stack });
+
   const teamLineUp = dualMatchUpSide.lineUp;
 
   const modifiedLineUp = buildModifiedLineUp({
@@ -210,7 +219,7 @@ export function replaceTieMatchUpParticipantId(params: ReplaceTieMatchUpParticip
     });
   }
 
-  return { ...SUCCESS, modifiedLineUp, participantRemoved, participantAdded };
+  return { ...SUCCESS, modifiedLineUp, participantRemoved, participantAdded, warnings: membership.warnings };
 }
 
 function validateParticipantsAndGender({

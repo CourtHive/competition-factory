@@ -6,6 +6,7 @@ import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { deleteParticipants } from '@Mutate/participants/deleteParticipants';
 import { updateTeamLineUp } from '@Mutate/drawDefinitions/updateTeamLineUp';
 import { modifyParticipant } from '@Mutate/participants/modifyParticipant';
+import { checkTeamMembership, getTeamMemberships } from './teamMembership';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { addParticipant } from '@Mutate/participants/addParticipant';
@@ -128,6 +129,14 @@ export function assignTieMatchUpParticipantId(
   if (!teamParticipantId) teamParticipantId = participantTeam.participantId;
   if (!teamParticipantId) return { error: PARTICIPANT_NOT_FOUND };
 
+  // one player, one team, per event: another team's player is refused; a player on no team joins with a warning
+  const membership = checkTeamMembership({
+    memberships: getTeamMemberships({ tournamentRecord, event }),
+    individualIds: relevantParticipantIds ?? [],
+    teamParticipantId,
+  });
+  if (membership.error) return decorateResult({ result: membership, stack });
+
   const sideNumber = resolveSideNumber({
     inContextTieMatchUp,
     teamParticipantId,
@@ -249,7 +258,7 @@ export function assignTieMatchUpParticipantId(
     if (error) pushGlobalLog({ method: 'assignTieMatchUpParticipant', stage: 'cleanup', error });
   }
 
-  return { ...SUCCESS, modifiedLineUp };
+  return { ...SUCCESS, modifiedLineUp, warnings: membership.warnings };
 }
 
 function checkAlreadyAssigned(inContextTieMatchUp: HydratedMatchUp | undefined, participantId: string) {

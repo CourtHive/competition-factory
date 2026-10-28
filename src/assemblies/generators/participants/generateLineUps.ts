@@ -3,6 +3,7 @@ import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExte
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { getPairedParticipant } from '@Query/participant/getPairedParticipant';
+import { getTeamMemberships } from '@Mutate/matchUps/lineUps/teamMembership';
 import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { addParticipant } from '@Mutate/participants/addParticipant';
@@ -36,6 +37,9 @@ import {
 
 type GenerateLineUpsArgs = {
   useDefaultEventRanking?: boolean;
+  /** a player fills at most one SINGLES position: two singles collections get two different players. Doubles
+   * collections are left alone, where one player in (say) men's and mixed doubles is ordinary */
+  exclusiveSingles?: boolean;
   tournamentRecord: Tournament;
   drawDefinition?: DrawDefinition;
   scaleAccessor: any;
@@ -53,6 +57,7 @@ export function generateLineUps(params: GenerateLineUpsArgs): ResultType & {
   let { tieFormat } = params;
   const {
     useDefaultEventRanking,
+    exclusiveSingles,
     tournamentRecord,
     drawDefinition,
     scaleAccessor, // e.g. { scaleType: 'RANKINGS', scaleName: 'U18', accessor: 'wtnRating', sortOrder: 'ASC' }
@@ -123,16 +128,24 @@ export function generateLineUps(params: GenerateLineUpsArgs): ResultType & {
 
   const participantIdPairs: string[][] = [];
   const collectionDefinitions = tieFormat?.collectionDefinitions ?? [];
+  // one player, one team, per event: a player who belongs to another team of the event (by roster or by a
+  // lineUp in any of its draws) is not placed, so overlapping rosters leave the shared player out of both
+  const memberships = getTeamMemberships({ tournamentRecord, event });
   for (const teamParticipant of teamParticipants) {
-    const singlesSort = teamParticipant.individualParticipants?.toSorted(singlesScaleSort) ?? [];
-    const doublesSort = singlesOnly
-      ? singlesSort
-      : (teamParticipant.individualParticipants?.toSorted(doublesScaleSort) ?? []);
+    const ownPlayers = (teamParticipant.individualParticipants ?? []).filter(({ participantId }) =>
+      [...(memberships.get(participantId) ?? [])].every((teamId) => teamId === teamParticipant.participantId),
+    );
+    const singlesSort = ownPlayers.toSorted(singlesScaleSort);
+    const doublesSort = singlesOnly ? singlesSort : ownPlayers.toSorted(doublesScaleSort);
+    // the players already placed in an earlier singles collection (`exclusiveSingles`)
+    const singlesPlaced: string[] = [];
 
     const participantAssignments: { [key: string]: CollectionAssignment[] } = {};
     for (const collectionDefinition of collectionDefinitions) {
-      const collectionParticipantIds: string[] = [];
       const { collectionId, matchUpCount, matchUpType, gender } = collectionDefinition;
+      // a player is placed once per collection, and with `exclusiveSingles` once across the singles collections
+      const singlesType = isMatchUpEventType(SINGLES_MATCHUP)(matchUpType);
+      const collectionParticipantIds: string[] = exclusiveSingles && singlesType ? singlesPlaced : [];
       const singlesMatchUp = isMatchUpEventType(SINGLES_MATCHUP)(matchUpType);
 
       generateRange(0, matchUpCount).forEach((i) => {
