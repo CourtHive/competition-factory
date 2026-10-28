@@ -188,6 +188,14 @@ export type OutcomeView = {
      * fill (v1's `propagateUnfillableLoserBye`), with the matchUp holding it
      */
     winnerLoserSeat?: WinnerLoserSeat;
+    /**
+     * a double exit's call (S5): the loser-link levels beyond the loser matchUp (`own`) and beyond the matchUp holding the
+     * seat its produced exit leaves unfillable (`unfillable`), which a BYE placed there goes on to (`byeLevels`)
+     */
+    byeLevels?: {
+      own?: { levels: CarryLevel[]; bounded: boolean };
+      unfillable?: { levels: CarryLevel[]; bounded: boolean };
+    };
     /** a winner whose target holds a BYE goes on past it into this matchUp, by the winning side (planned, S3) */
     winnerThroughBye?: { 1?: ThroughBye; 2?: ThroughBye };
     /** the participants seeded in the source structure: a seeded loser placed across a link takes the seed with them */
