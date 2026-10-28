@@ -4,7 +4,6 @@ import { checkDependenciesScheduled } from '@Mutate/matchUps/schedule/scheduleMa
 import { modifyParticipantDayMatchUps } from '@Mutate/matchUps/schedule/scheduleMatchUps/participantDayLoad';
 import { updateTimeAfterRecovery } from '@Mutate/matchUps/schedule/scheduleMatchUps/updateTimeAfterRecovery';
 import { checkDependendantTiming } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkDependentTiming';
-import { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems/addMatchUpScheduledDate';
 import { checkRequestConflicts } from '@Mutate/matchUps/schedule/scheduleMatchUps/checkRequestConflicts';
 import { generateVirtualCourts } from '@Assemblies/generators/scheduling/utils/generateVirtualCourts';
 import { processNextMatchUps } from '@Mutate/matchUps/schedule/scheduleMatchUps/processNextMatchUps';
@@ -322,13 +321,6 @@ function applyScheduleResults({
                 if (dryRun) {
                   scheduledMatchUpIds[scheduleDate].push(matchUpId);
                 } else {
-                  // the date first, as the profile writer does: a date-time's date never replaces a stored one (§ 9.9)
-                  addMatchUpScheduledDate({
-                    scheduledDate: extractDate(scheduleDate),
-                    tournamentRecord,
-                    drawDefinition,
-                    matchUpId,
-                  });
                   addMatchUpScheduledTime({
                     drawDefinition,
                     scheduledTime,
