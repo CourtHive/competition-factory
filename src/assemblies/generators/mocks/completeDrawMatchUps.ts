@@ -466,7 +466,7 @@ export function completeDrawMatchUps(params): {
         completionGoal,
         completedCount,
         roundNumber,
-        maxRoundNumber: roundBounds.bounds?.get(structureId),
+        maxRoundNumber: roundBounds.maxRoundNumbers?.get(structureId),
         leafStructureIds: getLeafStructureIds(structure),
         random,
       });
@@ -517,13 +517,13 @@ type RoundBoundsArgs = {
  * become playable during the call, in this structure or one it feeds, are completed up to that bound.
  */
 function roundBoundsOf({ sortedStructures, structureIds, roundsToComplete, getLeafStructureIds }: RoundBoundsArgs): {
-  bounds?: Map<string, number>;
+  maxRoundNumbers?: Map<string, number>;
   error?: ErrorType;
 } {
   if (roundsToComplete === undefined) return {};
   if (!Number.isInteger(roundsToComplete) || roundsToComplete < 1) return { error: INVALID_VALUES };
 
-  const bounds = new Map<string, number>();
+  const maxRoundNumbers = new Map<string, number>();
   for (const structure of sortedStructures.filter(({ structureId }) => structureIds.includes(structureId))) {
     const leafStructureIds = getLeafStructureIds(structure);
     const children = structuresOf(structure);
@@ -535,9 +535,9 @@ function roundBoundsOf({ sortedStructures, structureIds, roundsToComplete, getLe
       .filter((matchUp) => !matchUp.winningSide && !SETTLED_STATUSES.has(matchUp.matchUpStatus as string))
       .map(({ roundNumber }) => roundNumber ?? 0);
     // a structure with nothing left to play gets a bound that admits nothing
-    bounds.set(structure.structureId, openRounds.length ? Math.min(...openRounds) + roundsToComplete - 1 : -1);
+    maxRoundNumbers.set(structure.structureId, openRounds.length ? Math.min(...openRounds) + roundsToComplete - 1 : -1);
   }
-  return { bounds };
+  return { maxRoundNumbers };
 }
 
 /**
