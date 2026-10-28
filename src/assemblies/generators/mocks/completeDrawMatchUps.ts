@@ -5,6 +5,7 @@ import { generateLineUps } from '@Assemblies/generators/participants/generateLin
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { getLuckyDrawRoundStatus } from '@Query/drawDefinition/getLuckyDrawRoundStatus';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -311,6 +312,7 @@ function completeStructureMatchUps({
 }
 
 export function completeDrawMatchUps(params): {
+  awaitingLuckySelection?: LuckySelection[];
   completeRoundRobinPlayoffs?: boolean;
   completedCount?: number;
   remainingCount?: number;
@@ -478,7 +480,34 @@ export function completeDrawMatchUps(params): {
   }
 
   // the certificate: what is still to play. `success` says the calls succeeded, not that the draw is done
-  return { ...SUCCESS, completedCount: completedCount.value, remainingCount: remainingMatchUps(drawDefinition) };
+  return {
+    ...SUCCESS,
+    completedCount: completedCount.value,
+    remainingCount: remainingMatchUps(drawDefinition),
+    ...luckySelections(drawDefinition, structureIds),
+  };
+}
+
+type LuckySelection = { structureId: string; roundNumber: number };
+
+/**
+ * Where completion stopped for a lucky loser choice: `{ awaitingLuckySelection }`, or nothing.
+ *
+ * Completion never makes that choice. A round fed by a lucky loser keeps an open position until one is
+ * placed, so none of its matchUps is ready and the driver stops there by itself (measured across lucky
+ * draws of 5 to 48). This names the round, so a caller can hand the choice to whoever makes it.
+ */
+function luckySelections(
+  drawDefinition: DrawDefinition,
+  structureIds: string[],
+): { awaitingLuckySelection?: LuckySelection[] } {
+  const awaitingLuckySelection: LuckySelection[] = structureIds.flatMap((structureId) => {
+    const round = getLuckyDrawRoundStatus({ drawDefinition, structureId }).rounds?.find(
+      ({ needsLuckySelection }) => needsLuckySelection,
+    );
+    return round ? [{ structureId, roundNumber: round.roundNumber }] : [];
+  });
+  return awaitingLuckySelection.length ? { awaitingLuckySelection } : {};
 }
 
 export function completeDrawMatchUp(params) {

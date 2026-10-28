@@ -3,24 +3,23 @@ import { automatedPlayoffPositioning } from '@Mutate/drawDefinitions/automatedPl
 import { drawMatic } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/drawMatic';
 import { setParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { completeDrawMatchUps, completeDrawMatchUp } from './completeDrawMatchUps';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { addDrawDefinition } from '@Mutate/drawDefinitions/addDrawDefinition';
 import tieFormatDefaults from '@Generators/templates/tieFormatDefaults';
 import { addParticipants } from '@Mutate/participants/addParticipants';
 import { addAdHocMatchUps } from '@Mutate/structures/addAdHocMatchUps';
 import { resolveCompletionOptions } from './resolveCompletionOptions';
-import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { addEventEntries } from '@Mutate/entries/addEventEntries';
 import { addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
+import { applyOutcomes } from '@Mutate/simulation/applyOutcomes';
 import { getParticipantId } from '@Functions/global/extractors';
 import { isValidExtension } from '@Validators/isValidExtension';
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { publishEvent } from '@Mutate/publishing/publishEvent';
+import { completeDrawMatchUps } from './completeDrawMatchUps';
 import { generateParticipants } from './generateParticipants';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { rebuildPairsAsMixed } from './rebuildPairsAsMixed';
-import { generateRange, intersection } from '@Tools/arrays';
 import { coercedGender } from '@Helpers/coercedGender';
 import { processTieFormat } from './processTieFormat';
 import { addFlight } from '@Mutate/events/addFlight';
@@ -28,6 +27,7 @@ import { isGendered } from '@Validators/isGendered';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { isFemale } from '@Validators/isFemale';
 import { findEvent } from '@Acquire/findEvent';
+import { generateRange } from '@Tools/arrays';
 import { isObject } from '@Tools/objects';
 import { coerceEven } from '@Tools/math';
 import { UUID } from '@Tools/UUID';
@@ -40,7 +40,6 @@ import { ANY, FEMALE, MALE, MIXED } from '@Constants/genderConstants';
 import { SINGLES, DOUBLES, HYBRID } from '@Constants/eventConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { ALTERNATE } from '@Constants/entryStatusConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { OBJECT } from '@Constants/attributeConstants';
@@ -503,80 +502,11 @@ function completeRoundRobinPlayoff({
   return undefined;
 }
 
+// outcomes by draw coordinates are the public `applyOutcomes`; a profile's outcome that matches
+// nothing (or a BYE) is skipped as it always was
 export function applyDefinedOutcomes({ tournamentRecord, drawDefinition, outcomes, event }) {
-  const { matchUps } = allDrawMatchUps({
-    inContext: true,
-    drawDefinition,
-    event,
-  });
-
-  const orderedStructures = buildOrderedStructures(matchUps);
-
-  for (const outcomeDef of outcomes) {
-    const {
-      matchUpStatus = COMPLETED,
-      matchUpStatusCodes,
-      stageSequence = 1,
-      matchUpIndex = 0,
-      structureOrder, // like a group number; for RR = the order of the structureType: ITEM within structureType: CONTAINER
-      matchUpFormat,
-      drawPositions,
-      roundPosition,
-      stage = MAIN,
-      roundNumber,
-      winningSide,
-      scoreString,
-    } = outcomeDef;
-
-    const targetMatchUps = matchUps?.filter((matchUp) => {
-      return (
-        (!stage || matchUp.stage === stage) &&
-        (!stageSequence || matchUp.stageSequence === stageSequence) &&
-        (!roundNumber || matchUp.roundNumber === roundNumber) &&
-        (!roundPosition || matchUp.roundPosition === roundPosition) &&
-        (!structureOrder || orderedStructures[matchUp.structureId] === structureOrder) &&
-        (!drawPositions || intersection(drawPositions, matchUp.drawPositions).length === 2)
-      );
-    });
-
-    // targeting only one matchUp, specified by the index in the array of returned matchUps
-    const targetMatchUp = targetMatchUps?.[matchUpIndex];
-
-    const result = completeDrawMatchUp({
-      matchUpStatusCodes,
-      tournamentRecord,
-      drawDefinition,
-      targetMatchUp,
-      matchUpFormat,
-      matchUpStatus,
-      scoreString,
-      winningSide,
-    });
-    // will not throw errors for BYE matchUps
-    if (result?.error) return result;
-  }
-
-  return undefined;
-}
-
-function buildOrderedStructures(matchUps) {
-  const structureMatchUpIds =
-    matchUps?.reduce((sm, matchUp) => {
-      const { structureId, matchUpId } = matchUp;
-      if (sm[structureId]) {
-        sm[structureId].push(matchUpId);
-      } else {
-        sm[structureId] = [matchUpId];
-      }
-      return sm;
-    }, {}) ?? [];
-
-  return Object.assign(
-    {},
-    ...Object.keys(structureMatchUpIds).map((structureId, index) => ({
-      [structureId]: index + 1,
-    })),
-  );
+  const result = applyOutcomes({ tournamentRecord, drawDefinition, outcomes, event });
+  return result.error ? result : undefined;
 }
 
 function processIterativeAdHoc({

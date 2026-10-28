@@ -517,6 +517,7 @@ import type { validateTieFormat } from '@Validators/validateTieFormat';
 import type { stringify } from '@Helpers/matchUpFormatCode/stringify';
 import type { setEventDisplay } from '@Mutate/events/setEventDisplay';
 import type { resetScorecard } from '@Mutate/matchUps/resetScorecard';
+import type { applyOutcomes } from '@Mutate/simulation/applyOutcomes';
 import type { addVenueOtherId } from '@Mutate/venues/addVenueOtherId';
 import type { getFlightProfile } from '@Query/event/getFlightProfile';
 import type { getScaledEntries } from '@Query/event/getScaledEntries';
@@ -798,6 +799,7 @@ export interface MethodSignatures {
   applyDerivedRankings: EngineMethod<typeof applyDerivedRankings>;
   applyLadderMovement: EngineMethod<typeof applyLadderMovement>;
   applyLineUps: EngineMethod<typeof applyLineUps>;
+  applyOutcomes: EngineMethod<typeof applyOutcomes>;
   applyScheduleScenario: EngineMethod<typeof applyScheduleScenario>;
   applyTournamentRankingPoints: EngineMethod<typeof applyTournamentRankingPoints>;
   approveApplication: EngineMethod<typeof approveApplication>;
