@@ -19,6 +19,7 @@ const files = {
   view: path.join(__dirname, 'cases', 'schedulingView.json'),
   grid: path.join(__dirname, 'cases', 'schedulingGrid.json'),
   conflicts: path.join(__dirname, 'cases', 'schedulingConflicts.json'),
+  conflictsView: path.join(__dirname, 'cases', 'schedulingConflictsView.json'),
 };
 
 function expectCommitted(file: string, cases: KernelCase[]) {
@@ -51,8 +52,12 @@ describe('the authored scheduling cases', () => {
   });
 
   it('the conflicts cases meet their claims and the closed-view property, and are the committed cases', () => {
-    const conflicts = authoredConflictsCases();
+    const { conflicts, views } = authoredConflictsCases();
     expect(conflicts.length).toBeGreaterThanOrEqual(12);
+    expect(views.map(({ caseId }) => caseId.replace('.conflicts-view.', '.conflicts.'))).toEqual(
+      conflicts.map(({ caseId }) => caseId),
+    );
     expectCommitted(files.conflicts, conflicts);
+    expectCommitted(files.conflictsView, views);
   });
 });

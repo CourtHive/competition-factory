@@ -615,7 +615,9 @@ on the same court can still carry its players' back-to-back warning. See
 [proConflicts](/docs/governors/schedule-governor#proconflicts). `issueIds` names only the matchUps an issue is with.
 
 The conflicts are judged from a view of the grid (the dependency graph read from the stored draws, each matchUp's
-reachable participants, times and timing), and the check reads nothing else (`kernel.scheduling.conflicts@1`).
+reachable participants, times and timing), and the check reads nothing else (`kernel.scheduling.conflicts@1`). The
+view is built from the records and one date's matchUps (`kernel.scheduling.conflictsView@1`): times are read on the
+venue's wall clock in the tournament's zone, and the called and scored instants only when a zone is known.
 
 #### Conflict Resolution Workflow
 
