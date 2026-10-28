@@ -1,6 +1,7 @@
 import { publishEventRecorded, scheduleProfileRoundsRecorded, setSchedulingProfileRecorded } from './recordedWrites';
 import { checkProfileKeys, ENGINE_SUPPLIED_KEYS, MODIFY_TOURNAMENT_RECORD_KEYS } from './profileKeys';
 import { getStageParticipantsCount } from '@Query/drawDefinition/getStageParticipantsCount';
+import { startRecording, stopRecording } from '@Mutate/simulation/scenarioRecorder';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getStageParticipants } from '@Query/drawDefinition/getStageParticipants';
 import { generateFlightDrawDefinitions } from './generateFlightDrawDefinitions';
@@ -358,6 +359,23 @@ function applySchedulingProfile({ schedulingProfile, autoSchedule, periodLength,
  * partial build than start again.
  */
 export function modifyTournamentRecord(params) {
+  if (!params?.recordMethods) return modifyRecord(params);
+
+  // the engine calls that make these modifications to the record as it was passed, with no `newTournamentRecord`:
+  // replayed onto that record they make the same modifications (see scenarioRecorder)
+  startRecording();
+  try {
+    const result = modifyRecord(params);
+    const methods = stopRecording();
+    // a refusal wrote nothing (all or nothing), so there is nothing to replay; `keepPartial` kept what was written
+    return result?.error && !result.retained ? result : { ...result, methods };
+  } finally {
+    // a throw or a refusal must not leave a recording open for the next, unrelated generation
+    stopRecording();
+  }
+}
+
+function modifyRecord(params) {
   if (!params?.tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   // checked before anything is written: an option the generators do not read is refused, not ignored
   const unknownOption = checkProfileKeys(params, MODIFY_TOURNAMENT_RECORD_KEYS, ENGINE_SUPPLIED_KEYS);

@@ -210,6 +210,20 @@ deterministic: the draw that was generated (`addDrawDefinition` with that draw),
 (`setMatchUpStatus`), an AD_HOC round's matchUps (`addAdHocMatchUps`). Recording copies each call's params, so it is
 off unless asked for.
 
+`modifyTournamentRecord` takes `recordMethods` too. Its list has no `newTournamentRecord`: it starts from the record
+the caller passed, and replayed onto that record it makes the same modifications. A refused modification wrote nothing
+(it is all or nothing), so it returns no list; with `keepPartial` the list holds what was kept.
+
+```js
+const { methods } = mocksEngine.modifyTournamentRecord({
+  drawProfiles: [{ drawSize: 8 }],
+  recordMethods: true,
+  tournamentRecord,
+});
+tournamentEngine.setState(originalRecord);
+tournamentEngine.executionQueue(methods);
+```
+
 ### Preset Participants (Ingest Mode)
 
 When the caller already has a participant list (e.g. a federation-data ingest

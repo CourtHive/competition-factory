@@ -66,6 +66,7 @@ export const MODIFY_TOURNAMENT_RECORD_KEYS = [
   'random',
   'randomWinningSide',
   'ratingsParameters',
+  'recordMethods',
   'schedulingProfile',
   'setState',
   'tournamentRecord',

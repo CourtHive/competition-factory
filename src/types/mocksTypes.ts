@@ -381,6 +381,8 @@ export type ModifyTournamentRecordArgs = MockEngineCall &
     tournamentRecord: Tournament;
     /** keep what was written before a refusal and report it as `retained` (default: all or nothing) */
     keepPartial?: boolean;
+    /** also return `methods`: the engine calls that make these modifications (see `scenarioRecorder`) */
+    recordMethods?: boolean;
     random?: () => number;
     autoSchedule?: boolean;
     periodLength?: number;
