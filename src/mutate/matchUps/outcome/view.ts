@@ -455,6 +455,26 @@ function byeLevels(
   };
 }
 
+/**
+ * A double exit's call whose next matchUp holds an exit (S5): where they converge, the double exit there produces on into
+ * the matchUp after it, whose loser seat nobody will fill. That seat (as `winnerLoserSeat` reads one) and the levels a BYE
+ * placed there goes on to
+ */
+function onwardLoserSeat(
+  draw: DrawContext,
+  matchUpsMap: MatchUpsMap,
+  request: OutcomeRequest,
+  targetData?: PositionTargetsResult,
+): OutcomeView['targets']['onwardLoserSeat'] {
+  const winnerMatchUp = targetData?.targetMatchUps?.winnerMatchUp;
+  if (!isDoubleExit(request.matchUpStatus) || !isExit(winnerMatchUp?.matchUpStatus)) return undefined;
+  const onwardId = winnerMatchUp?.winnerMatchUpId;
+  const seat = onwardId ? winnerLoserSeat(draw, request, onwardId) : undefined;
+  if (!seat) return undefined;
+  const linked = draw.inContextDrawMatchUps.find((matchUp) => matchUp.matchUpId === seat.matchUpId)?.loserMatchUpId;
+  return { ...seat, levels: linked ? carryLevels(draw, matchUpsMap, seat.matchUpId) : undefined };
+}
+
 /** a call that may carry an exit across a loser link (`propagateExitStatus`, an exit status, a loser matchUp) */
 function carriesOn(request: OutcomeRequest, targetData?: PositionTargetsResult): boolean {
   return (
@@ -1394,6 +1414,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       ),
       winnerLoserSeat: winnerLoserSeat(draw, request, targetData?.targetMatchUps?.winnerMatchUp?.matchUpId),
       byeLevels: byeLevels(draw, matchUpsMap, request, targetData),
+      onwardLoserSeat: onwardLoserSeat(draw, matchUpsMap, request, targetData),
       carryLevels: carriesOn(request, targetData)
         ? carryLevels(draw, matchUpsMap, carryLanding(drawDefinition, targetData, draw))
         : undefined,

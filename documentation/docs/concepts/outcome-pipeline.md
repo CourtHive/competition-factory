@@ -622,8 +622,11 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   loser on, and the produced exit lands clean. A double exit whose produced exit meets a pending one a double exit beside it
   produced there **converges** with it: the matchUp becomes the double exit (`collapseDoubleExitStatus`), with no
   winner, codes `[]`, a `DOUBLE_WALKOVER`'s score blanked and the arriving side's origin beside the standing one, and it
-  produces on as one entered there would (`advanceConvergedWinner`); planned with no loser link from this matchUp or the
-  landing, nobody there, and the exit produced onward landing clean (or none, from a final). A **double exit with loser links** is owned where its produced exit lands pending,
+  produces on as one entered there would (`advanceConvergedWinner`); planned with nobody there and the exit produced onward landing clean (or none, from a final). With loser links (under
+  `doubleExitPropagateBye`; off, the landing's BYE gives way to a produced exit, `serveConvergedLoserLink`: v1's), this
+  matchUp's own loser seat takes its BYE first, with all it sends on; the landing's loser seat, a BYE since the first exit
+  was produced there, is left as it is; and the onward matchUp's loser seat, which its produced exit leaves unfillable,
+  takes a BYE with its chain before that exit is written. A **double exit with loser links** is owned where its produced exit lands pending,
   or is awarded at once to the winner of the matchUp beside it, who goes on as above: nobody
   loses the double exit, so the seat its link feeds takes a propagated BYE and that matchUp a BYE, and the position
   opposite (empty, or the participant standing there) is advanced through it into the next matchUp (`advanceWinner`,

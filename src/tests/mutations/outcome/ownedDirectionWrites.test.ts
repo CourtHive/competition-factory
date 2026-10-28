@@ -764,6 +764,22 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'FEED_IN_CHAMPIONSHIP (S5): a second double walkover converges, its loser seat a double BYE, the next loser seat a BYE',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION (S5): two double defaults converge, each loser seat in the Backdraw a BYE',
+    {
+      drawProfile: { drawSize: 16, drawType: DOUBLE_ELIMINATION },
+      setup: [{ target: R1(4, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+      steps: [{ target: R1(3, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
+  [
     'SINGLE_ELIMINATION (S5): two double defaults converge into a double default in a 16 draw',
     {
       drawProfile: { drawSize: 16, drawType: SINGLE_ELIMINATION },
