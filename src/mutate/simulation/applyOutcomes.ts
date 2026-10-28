@@ -5,8 +5,8 @@ import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { intersection } from '@Tools/arrays';
 
 // constants and types
+import type { DrawDefinition, Event, MatchUpStatusUnion, StageTypeUnion, Tournament } from '@Types/tournamentTypes';
 import { DRAW_DEFINITION, ERROR, VALIDATE } from '@Constants/attributeConstants';
-import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { BYE, COMPLETED } from '@Constants/matchUpStatusConstants';
 import { MAIN } from '@Constants/drawDefinitionConstants';
@@ -22,7 +22,7 @@ import { SUCCESS } from '@Constants/resultConstants';
  * first by default), in the order `allDrawMatchUps` returns them.
  */
 export type DrawOutcome = {
-  stage?: string;
+  stage?: StageTypeUnion;
   stageSequence?: number;
   /** the structure itself */
   structureId?: string;
@@ -37,7 +37,7 @@ export type DrawOutcome = {
 
   scoreString?: string;
   winningSide?: number;
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
   matchUpStatusCodes?: unknown[];
   matchUpFormat?: string;
 };
