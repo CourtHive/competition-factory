@@ -1,7 +1,7 @@
 import { writeAssignmentResults } from '@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults';
+import { mergeSideExitProvenance, setSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
-import { mergeSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { exchangeMatchUpPositions } from '@Mutate/matchUps/drawPositions/swapWinnerLoser';
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { getCapturedStamps } from '@Global/state/globalState';
@@ -139,6 +139,15 @@ export type OutcomeOp =
       provenance: SideExitProvenance;
     }
   | {
+      op: 'setSideExitProvenance';
+      /**
+       * a matchUp's exit provenance replaced by what an unwind leaves, through v1's `setSideExitProvenance`: absent (or
+       * empty), the field is removed (a cleared double exit's produced exit, its origin withdrawn, S6)
+       */
+      matchUpId: string;
+      provenance?: SideExitProvenance;
+    }
+  | {
       op: 'assignBye';
       /** a FIRST_MATCHUP reservation (S3): the consolation seat a loser who has won can never fill */
       structureId: string;
@@ -182,6 +191,7 @@ export type OutcomeOpName =
   | 'clearPosition'
   | 'setMatchUpStatusCodes'
   | 'mergeSideExitProvenance'
+  | 'setSideExitProvenance'
   | 'assignBye'
   | 'setMatchUpBye'
   | 'setParticipantResults'
@@ -358,6 +368,13 @@ function foldProvenance(op: OpOf<'mergeSideExitProvenance'>, { matchUps }: DrawI
   return {};
 }
 
+function foldSetProvenance(op: OpOf<'setSideExitProvenance'>, { matchUps }: DrawIndex): Folded {
+  const matchUp = matchUps.get(op.matchUpId);
+  if (!matchUp) return { error: `setSideExitProvenance: no matchUp ${op.matchUpId}` };
+  setSideExitProvenance({ matchUp, provenance: op.provenance && structuredClone(op.provenance) });
+  return {};
+}
+
 function foldAssignBye(op: OpOf<'assignBye'>, { structures, groups }: DrawIndex): Folded {
   const positionAssignments = positionAssignmentsOf(structures.get(op.structureId) ?? groups.get(op.structureId));
   if (!positionAssignments) return { error: `assignBye: no structure ${op.structureId}` };
@@ -439,6 +456,8 @@ function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition
       return foldStatusCodes(op, index);
     case 'mergeSideExitProvenance':
       return foldProvenance(op, index);
+    case 'setSideExitProvenance':
+      return foldSetProvenance(op, index);
     case 'assignBye':
       return foldAssignBye(op, index);
     case 'setMatchUpBye':

@@ -61,6 +61,8 @@ type SettleWorkArgs = {
   loserLinked?: boolean;
   /** the call's matchUp is in a round robin group: a double exit there produces nothing (`doubleExitAdvancement`) */
   contained?: boolean;
+  /** the call's own matchUp, which `settleRederivedDoubleExits` leaves to the call's own write */
+  matchUpId?: string;
   tournamentRecord?: Tournament;
   working: WorkingView;
   ops: OutcomeOp[];
@@ -82,8 +84,11 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
     (stale ??= hasStaleExitOrigins({ inContextDrawMatchUps: view, drawDefinition: draw, matchUpsMap: map }));
 
   const work: Record<SettleSite, () => boolean> = {
-    // SCOPE: the double exits the call changes, and the stale origins the write leaves
-    settleExitOrigins: () => resultOn((matchUp) => isDoubleExit(matchUp?.matchUpStatus)) || staleOrigins(),
+    // SCOPE: the double exits the call changes but its own (`settleRederivedDoubleExits` skips the call's matchUp, whose
+    // write decided it), and the stale origins the write leaves
+    settleExitOrigins: () =>
+      resultOn((matchUp) => isDoubleExit(matchUp?.matchUpStatus) && matchUp?.matchUpId !== args.matchUpId) ||
+      staleOrigins(),
     reconcileConsolationReservations: () =>
       !!findReservationWork({ inContextDrawMatchUps: view, drawDefinition: draw, matchUpsMap: map }).length,
     reconcileStaleExitOrigins: staleOrigins,

@@ -751,6 +751,7 @@ function workingViewAfter({
     loserLinked: !!view.targets.loserLink,
     contained: !!view.group && !view.group.adHoc,
     inContextDrawMatchUps: view.inContextDrawMatchUps,
+    matchUpId: args.request.matchUpId,
     tournamentRecord: args.tournamentRecord,
     drawDefinition: args.drawDefinition,
     event: args.event,
