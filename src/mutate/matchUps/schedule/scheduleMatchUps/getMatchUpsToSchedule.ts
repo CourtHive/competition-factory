@@ -48,9 +48,10 @@ export function getMatchUpsToSchedule(params: GetMatchUpsToScheduleArgs): {
     .map((matchUpId) => matchUps.find((matchUp) => matchUp.matchUpId === matchUpId))
     .filter(Boolean)
     .filter((matchUp) => {
-      const alreadyScheduled =
-        !clearDate &&
-        (dateScheduledMatchUpIds.includes(matchUp.matchUpId) || alreadyScheduledMatchUpIds.includes(matchUp.matchUpId));
+      // only a matchUp already timed is left where it is: one dated on the day without a time is to be timed
+      // (scheduling-pipeline.md § 4 step 2)
+      const timedOnDate = !!matchUp.schedule?.scheduledTime && dateScheduledMatchUpIds.includes(matchUp.matchUpId);
+      const alreadyScheduled = !clearDate && (timedOnDate || alreadyScheduledMatchUpIds.includes(matchUp.matchUpId));
 
       const doNotSchedule = [
         BYE,
