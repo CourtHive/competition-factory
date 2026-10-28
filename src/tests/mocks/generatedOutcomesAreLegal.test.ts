@@ -1,4 +1,4 @@
-import { generateOutcome } from '@Generators/mocks/generateOutcome';
+import { generateOutcome } from '@Generators/simulation/generateOutcome';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';

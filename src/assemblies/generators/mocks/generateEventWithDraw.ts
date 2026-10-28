@@ -4,6 +4,7 @@ import { drawMatic } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic
 import { setParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
+import { completeDrawMatchUps } from '@Mutate/simulation/completeDrawMatchUps';
 import { addDrawDefinition } from '@Mutate/drawDefinitions/addDrawDefinition';
 import tieFormatDefaults from '@Generators/templates/tieFormatDefaults';
 import { addParticipants } from '@Mutate/participants/addParticipants';
@@ -16,7 +17,6 @@ import { getParticipantId } from '@Functions/global/extractors';
 import { isValidExtension } from '@Validators/isValidExtension';
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { publishEvent } from '@Mutate/publishing/publishEvent';
-import { completeDrawMatchUps } from './completeDrawMatchUps';
 import { generateParticipants } from './generateParticipants';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { rebuildPairsAsMixed } from './rebuildPairsAsMixed';

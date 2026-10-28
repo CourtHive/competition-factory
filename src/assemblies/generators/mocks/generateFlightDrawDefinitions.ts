@@ -1,13 +1,13 @@
 import { generateDrawDefinition } from '@Generators/drawDefinitions/generateDrawDefinition/generateDrawDefinition';
 import { automatedPlayoffPositioning } from '@Mutate/drawDefinitions/automatedPlayoffPositioning';
 import { setParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
+import { completeDrawMatchUps } from '@Mutate/simulation/completeDrawMatchUps';
 import { addDrawDefinition } from '@Mutate/drawDefinitions/addDrawDefinition';
 import { resolveCompletionOptions } from './resolveCompletionOptions';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { isValidExtension } from '@Validators/isValidExtension';
 import { applyDefinedOutcomes } from './generateEventWithDraw';
 import { addExtension } from '@Mutate/extensions/addExtension';
-import { completeDrawMatchUps } from './completeDrawMatchUps';
 import { findEvent } from '@Acquire/findEvent';
 import { generateRange } from '@Tools/arrays';
 import { xa } from '@Tools/extractAttributes';

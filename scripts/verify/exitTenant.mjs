@@ -80,7 +80,7 @@ const ALLOWED = {
   'mutate/matchUps/matchUpStatus/attemptToSetMatchUpStatusBYE.ts': 'WRITE — blanks',
 
   // plumbing: a caller-supplied value passed through
-  'assemblies/generators/mocks/completeDrawMatchUps.ts': 'PLUMBING — mock outcome',
+  'mutate/simulation/completeDrawMatchUps.ts': 'PLUMBING — mock outcome',
   'mutate/simulation/applyOutcomes.ts': 'PLUMBING — a caller-supplied outcome passed to setMatchUpStatus',
   'types/mocksTypes.ts': 'PLUMBING — the type of the mock outcome generateEventWithDraw applies',
   'mutate/drawDefinitions/matchUpGovernor/attemptToModifyScore.ts': 'PLUMBING',

@@ -1,4 +1,4 @@
-import { generateOutcomeFromScoreString } from '@Assemblies/generators/mocks/generateOutcomeFromScoreString';
+import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
 import { setOutcomePipeline } from '@Global/state/globalState';
 import { canonicalJson } from '@Tools/canonicalJson';
 import { afterEach, expect, it, vi } from 'vitest';

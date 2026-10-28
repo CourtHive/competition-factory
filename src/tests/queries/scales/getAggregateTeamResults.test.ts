@@ -1,4 +1,4 @@
-import { completeDrawMatchUps } from '@Generators/mocks/completeDrawMatchUps';
+import { completeDrawMatchUps } from '@Mutate/simulation/completeDrawMatchUps';
 import { tournamentEngine } from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { defined } from '@Tests/helpers/defined';

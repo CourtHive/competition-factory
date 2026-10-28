@@ -1,2 +1,2 @@
-export { generateOutcomeFromScoreString } from '@Generators/mocks/generateOutcomeFromScoreString';
-export { generateOutcome } from '@Generators/mocks/generateOutcome';
+export { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
+export { generateOutcome } from '@Generators/simulation/generateOutcome';

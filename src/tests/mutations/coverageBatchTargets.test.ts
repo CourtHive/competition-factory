@@ -2,7 +2,7 @@ import { calculatePressureRatings } from '@Query/matchUps/roundRobinTally/calcul
 import { getParticipantIdFinishingPositions } from '@Query/drawDefinition/finishingPositions';
 import { getSourceDrawPositionRanges } from '@Query/matchUps/getSourceDrawPositionRanges';
 import { countSets, countGames } from '@Query/matchUps/roundRobinTally/scoreCounters';
-import { generateOutcome } from '@Assemblies/generators/mocks/generateOutcome';
+import { generateOutcome } from '@Generators/simulation/generateOutcome';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
