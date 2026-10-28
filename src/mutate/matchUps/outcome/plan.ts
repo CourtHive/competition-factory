@@ -409,6 +409,7 @@ function exitReason(args: {
       unwoundPath(view, request.matchUpId, args.drawDefinition)
       ? undefined
       : 'exit';
+  if (clearedSingleExit(view, route, write)) return undefined;
   if (route !== 'winner' || !write?.winningSide || !SINGLE_EXITS.has(write.matchUpStatus)) return 'exit';
   if (request.matchUpStatus !== write.matchUpStatus) return 'exit';
   if (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide) return 'exit';
@@ -419,6 +420,24 @@ function exitReason(args: {
   if (loser?.converged) return convergedReason(view, request, write, loser);
   if (loser?.exit) return carriedReason(view, write);
   return undefined;
+}
+
+/**
+ * S6: a single exit cleared back to be played. Where it carried nothing on, v1 takes it back as it takes back a played
+ * result (`removeDirectedParticipants`): the winner out of the next matchUp and the loser out of the seat their link
+ * fed, with the same writes and notices. So it is the removal shape (`removalReason`), whose checks keep anything the
+ * exit carried v1's: provenance or a carried status in the loser's target, a BYE gone through beside it, and this
+ * matchUp's own side provenance (`provenance`).
+ */
+function clearedSingleExit(view: OutcomeView, route?: Route, write?: MatchUpWrite): boolean {
+  const { existing } = view;
+  return (
+    route === REMOVE_DIRECTED &&
+    SINGLE_EXITS.has(existing.matchUpStatus) &&
+    !!existing.winningSide &&
+    write?.matchUpStatus === TO_BE_PLAYED &&
+    !write.winningSide
+  );
 }
 
 /**
