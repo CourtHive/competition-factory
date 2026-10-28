@@ -581,6 +581,27 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'COMPASS (S5): a carried walkover meets a BYE a level down, in South, and lands beyond it',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 14, drawType: COMPASS },
+      steps: [{ target: R1(3, 'East'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'COMPASS (S5): a carried default past a BYE two levels down',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 14, drawType: COMPASS },
+      steps: [{ target: R1(4, 'East'), outcome: exited(DEFAULTED, 2), params: CARRIED }],
+    },
+  ],
+  [
+    'OLYMPIC (S5): a carried walkover past a BYE in North',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 14, drawType: OLYMPIC },
+      steps: [{ target: R1(3, 'East'), outcome: walkover(2), params: CARRIED }],
+    },
+  ],
+  [
     'OLYMPIC (S5): a carried walkover goes on from East to West to the next level',
     {
       drawProfile: { drawSize: 16, drawType: OLYMPIC },
