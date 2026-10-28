@@ -581,6 +581,20 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'FIRST_MATCH_LOSER_CONSOLATION (S5): a double walkover: both consolation seats BYEs, the advanced position goes on twice',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      steps: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION (S5): a double default in a 16 draw',
+    {
+      drawProfile: { drawSize: 16, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      steps: [{ target: R1(6, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
+  [
     'COMPASS (S5): a carried walkover meets a BYE a level down, in South, and lands beyond it',
     {
       drawProfile: { drawSize: 16, participantsCount: 14, drawType: COMPASS },
