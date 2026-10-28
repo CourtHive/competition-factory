@@ -779,6 +779,8 @@ type ProducedLoser = {
   seatSide: 1 | 2;
   /** the empty position opposite, advanced ahead of the arrival it awaits (a reservation) */
   onward: { matchUpId: string; drawPositions: number[] };
+  /** the loser matchUp's own loser seat, which nobody will lose into: a BYE placed with no event, and its chain */
+  beyond?: ByeChain;
 };
 
 /**
@@ -844,16 +846,17 @@ function unfillableByeChain(view: OutcomeView, entry: HydratedMatchUp): ByeChain
 }
 
 const producedLoserMatchUpIds = (produced?: ProducedLoser) =>
-  produced ? [produced.matchUpId, produced.onward.matchUpId] : [];
+  produced ? [produced.matchUpId, produced.onward.matchUpId, ...(produced.beyond?.matchUpIds ?? [])] : [];
 
 /**
  * Under `doubleExitPropagateBye: false` nobody loses the double exit, and its loser matchUp takes a produced exit
  * (`handleLoserMatchUp` → `conditionallyAdvanceDrawPosition`): the double exit's flavour, awarded to the side opposite the
  * seat, its origin recorded on the seat's side, and the position opposite advanced into the next matchUp: a participant
  * standing there goes on, an empty position goes ahead of the arrival it awaits (a reservation). Planned only in a first
- * round, not fed (a fed seat takes a BYE whatever the policy), behind a link with no condition, into a matchUp that links
- * no loser on (COMPASS, OLYMPIC: v1's): the seat free with no BYE opposite, the matchUp to be played holding no result,
- * exit, codes or provenance, and the advance into a clean matchUp with room.
+ * round, not fed (a fed seat takes a BYE whatever the policy), behind a link with no condition: the seat free with no
+ * BYE opposite, the matchUp to be played holding no result, exit, codes or provenance, and the advance into a clean
+ * matchUp with room. A loser matchUp that links its own loser on (COMPASS, OLYMPIC) leaves that seat to nobody: a BYE,
+ * with all it sends on (`byeChain`).
  */
 function producedLoser(view: OutcomeView): ProducedLoser | undefined {
   const { targets } = view;
@@ -871,12 +874,28 @@ function producedLoser(view: OutcomeView): ProducedLoser | undefined {
   const seatSide = sideOf(loserMatchUp, loserTargetDrawPosition);
   const opposite = (targets.loserMatchUpDrawPositions ?? []).filter((position) => position !== loserTargetDrawPosition);
   const onward = opposite.length === 1 ? onwardFrom(view, loserMatchUp, opposite[0]) : undefined;
-  // a loser matchUp that links its own loser on leaves that seat a BYE too, and what v1 advances beside it is not read yet
-  if (!seatSide || !onward || loserMatchUp.loserMatchUpId) return undefined;
-  return { matchUpId: loserMatchUp.matchUpId, structureId: loserMatchUp.structureId, seatSide, onward };
+  if (!seatSide || !onward) return undefined;
+  const produced: ProducedLoser = {
+    matchUpId: loserMatchUp.matchUpId,
+    structureId: loserMatchUp.structureId,
+    seatSide,
+    onward,
+  };
+  if (!loserMatchUp.loserMatchUpId) return produced;
+  // a loser matchUp that links its own loser on: nobody will lose it either, so that seat takes a BYE, with its chain
+  const levels = targets.byeLevels?.own;
+  const [level, ...deeper] = levels?.levels ?? [];
+  if (!levels || !level || level.fromMatchUpId !== loserMatchUp.matchUpId || !cleanByeLevel(view, level))
+    return undefined;
+  const seatAt = { structureId: level.structureId, drawPosition: level.drawPosition, matchUpId: level.matchUpId };
+  const beyond = byeChain(view, seatAt, { levels: deeper, bounded: levels.bounded }, false);
+  return beyond ? { ...produced, beyond } : undefined;
 }
 
-/** the exit produced on the loser matchUp, as v1 writes it there: the exit, its origin, then the advance */
+/**
+ * the exit produced on the loser matchUp, as v1 writes it there: the BYE beyond it first (`conditionallyAdvanceDrawPosition`
+ * serves the loser seat before the score), then the exit, its origin, and the advance
+ */
 function producedLoserOps(request: OutcomeRequest, produced: ProducedLoser): OutcomeOp[] {
   const matchUpStatus = request.matchUpStatus === DOUBLE_DEFAULT ? DEFAULTED : WALKOVER;
   const provenance = buildSideExitProvenance({
@@ -885,6 +904,7 @@ function producedLoserOps(request: OutcomeRequest, produced: ProducedLoser): Out
     sourceSideNumber: produced.seatSide,
   });
   return [
+    ...(produced.beyond ? [...produced.beyond.assigns, ...produced.beyond.writes] : []),
     {
       op: 'setMatchUpResult',
       matchUpId: produced.matchUpId,

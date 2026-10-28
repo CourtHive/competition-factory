@@ -633,10 +633,10 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   origin (`conditionallyAdvanceDrawPosition`), with no `scoredTime`; its structure is stamped, and the position
   opposite is advanced into the next matchUp, announced with no event or tournament: a participant standing there goes
   on, an empty position goes ahead of the arrival it awaits. Planned in a first round that is not fed, no BYE opposite
-  the seat, into a matchUp that links no loser on
-  (COMPASS and OLYMPIC stay v1's). Otherwise outside a feed round, for links with no condition, free seats with no BYE beside them (a BYE there makes a
+  the seat. A loser matchUp that links its own loser on (COMPASS, OLYMPIC) leaves that seat to nobody: before the exit
+  is written there, the seat takes a BYE with no event, with all it sends on, as the BYEs below go on. Otherwise outside a feed round, for links with no condition, free seats with no BYE beside them (a BYE there makes a
   double BYE: v1's), clean matchUps, and each matchUp touched once; FIRST_MATCHUP feeds stay v1's. v1 writes it through
-  `modifyMatchUpScore`, not `setMatchUpState`, so it takes no `scoredTime`. Stay v1's: a double exit with a loser link beside a BYE, into a feed round, or under `doubleExitPropagateBye: false` into a loser matchUp that links on; a carry past a BYE into anything but a clean matchUp; a
+  `modifyMatchUpScore`, not `setMatchUpState`, so it takes no `scoredTime`. Stay v1's: a double exit with a loser link beside a BYE or into a feed round; a carry past a BYE into anything but a clean matchUp; a
   present opponent, for a carried or a produced exit, with nowhere clean to go on to; a convergence but RULE 4's clean one; a
   correction to or from an exit; and an exit whose target holds a BYE, an exit or a result (`exit`, `cascade`).
 - **`differential`**: v2 plans the whole call before v1 runs, then checks v1's result against it,

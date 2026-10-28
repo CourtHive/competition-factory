@@ -742,6 +742,30 @@ const SCENARIOS: [string, Scenario][] = [
     },
   ],
   [
+    'COMPASS (S5, doubleExitPropagateBye off): West takes the walkover, and its loser seat in South a BYE',
+    {
+      drawProfile: { drawSize: 8, drawType: COMPASS },
+      policyDefinitions: POLICY_OFF,
+      steps: [{ target: R1(1, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'OLYMPIC (S5, doubleExitPropagateBye off): West takes the default in a 16 draw, the BYE beyond it going on',
+    {
+      drawProfile: { drawSize: 16, drawType: OLYMPIC },
+      policyDefinitions: POLICY_OFF,
+      steps: [{ target: R1(3, 'East'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
+  [
+    'COMPASS (S5, doubleExitPropagateBye off): a double walkover in a 32 draw',
+    {
+      drawProfile: { drawSize: 32, drawType: COMPASS },
+      policyDefinitions: POLICY_OFF,
+      steps: [{ target: R1(5, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
     'FEED_IN_CHAMPIONSHIP (S5, doubleExitPropagateBye off): a double default produces a default in the consolation',
     {
       drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
@@ -904,19 +928,6 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     } finally {
       SETTLE_PASS_LIMITS.exitLevels = saved;
     }
-  });
-
-  it('COMPASS under doubleExitPropagateBye off: West links its loser on to South, which v2 does not read yet', () => {
-    const scenario: Scenario = {
-      drawProfile: { drawSize: 8, drawType: COMPASS },
-      policyDefinitions: POLICY_OFF,
-      steps: [{ target: R1(1, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
-    };
-    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
-    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
-    expect(v2.v1Writes).toEqual(1);
-    expect(v2.results).toEqual(v1.results);
-    expect(v2.record).toEqual(v1.record);
   });
 
   it('a default under a scoring policy naming incompleteAssignmentsOnDefault: v1 may write processCodes', () => {
