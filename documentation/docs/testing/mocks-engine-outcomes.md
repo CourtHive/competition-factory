@@ -388,7 +388,7 @@ mocksEngine.completeDrawMatchUps({
 
 **Note:** The `drawDefinition` must be a direct reference from `tournamentRecord.events[n].drawDefinitions[n]`, not a copy from engine query methods.
 
-See [completeDrawMatchUps](../governors/mocks-governor.md#completedrawmatchups) for all options.
+See [completeDrawMatchUps](../governors/simulation-governor.md#completedrawmatchups) for all options.
 
 ### Removing Outcomes
 

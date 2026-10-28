@@ -207,7 +207,12 @@ The Competition Factory includes 16 governors organized into functional areas:
 - Policy validation
 - Policy inheritance
 
-### Testing & Utilities
+### Simulation, Testing & Utilities
+
+**[Simulation Governor](./simulation-governor.md)** - Play a draw out or set one up
+
+- Complete a draw's matchUps (all, by structure, stage or round, or up to a goal)
+- Build outcome objects for `setMatchUpStatus`, at random or from a score string
 
 **[Mocks Governor](./mocks-governor.md)** - Test data generation
 
@@ -442,6 +447,7 @@ const {
   reportGovernor,
   scheduleGovernor,
   scoreGovernor,
+  simulationGovernor,
   tieFormatGovernor,
   tournamentGovernor,
   venueGovernor,
@@ -528,9 +534,10 @@ syncEngine.scheduleMatchUps({/* ... */});
 
 ### Testing
 
-| Governor                              | Purpose              | Key Methods                                                              |
-| ------------------------------------- | -------------------- | ------------------------------------------------------------------------ |
-| [Mocks Governor](./mocks-governor.md) | Test data generation | `generateTournamentRecord`, `generateOutcomes`, `modifyTournamentRecord` |
+| Governor                                        | Purpose                       | Key Methods                                                                  |
+| ----------------------------------------------- | ----------------------------- | ---------------------------------------------------------------------------- |
+| [Simulation Governor](./simulation-governor.md) | Play a draw out or set one up | `completeDrawMatchUps`, `generateOutcome`, `generateOutcomeFromScoreString`  |
+| [Mocks Governor](./mocks-governor.md)           | Test data generation          | `generateTournamentRecord`, `generateParticipants`, `modifyTournamentRecord` |
 
 ---
 
