@@ -7,7 +7,7 @@ import { simulationGovernor } from 'tods-competition-factory';
 ```
 
 The **Simulation Governor** holds the methods that play a draw out or set one up: completing a draw's matchUps,
-and building the outcome objects that `setMatchUpStatus` takes. They work on real records and write only through
+recording outcomes by draw coordinates, and building the outcome objects that `setMatchUpStatus` takes. They work on real records and write only through
 the engine's own mutations, so they are as useful to a client demonstrating a draw, or to a third party building
 scenarios, as to tests. Every method is also on `tournamentEngine` and `competitionEngine` under the same name.
 
@@ -132,7 +132,61 @@ mocksEngine.completeDrawMatchUps({
 | `randomWinningSide`    | boolean           | Randomize winning side                                                              |
 | `matchUpStatusProfile` | object            | Status distribution (see [Outcome Generation](../testing/mocks-engine-outcomes.md)) |
 
+### Lucky Draws
+
+Completion never makes a lucky loser choice. A round fed by a lucky loser keeps an open position until one is
+placed, so completion stops before it, and the result names the round whose losers the choice is made from:
+
+```js
+const { awaitingLuckySelection } = tournamentEngine.completeDrawMatchUps({ drawId, completeAllMatchUps: true });
+// [{ structureId, roundNumber: 2 }]: choose with getLuckyDrawRoundStatus, then complete again
+```
+
 **Note:** The `drawDefinition` must be a direct reference from `tournamentRecord.events[n].drawDefinitions[n]`, not a copy returned by engine query methods like `getEvent()`.
+
+---
+
+## applyOutcomes
+
+Records outcomes on a draw's matchUps located by **draw coordinates** rather than by `matchUpId`, each through
+`setMatchUpStatus`, in the order given, so a later outcome can name a matchUp an earlier one filled.
+
+```js
+const result = tournamentEngine.applyOutcomes({
+  drawId,
+  outcomes: [
+    { roundNumber: 1, roundPosition: 1, scoreString: '6-1 6-1', winningSide: 1 },
+    { roundNumber: 1, roundPosition: 2, scoreString: '6-2 3-1', winningSide: 2, matchUpStatus: 'RETIRED' },
+    { structureOrder: 3, roundNumber: 1, matchUpIndex: 1, scoreString: '6-3 6-3', winningSide: 1 }, // Group 3
+  ],
+});
+// result.appliedMatchUpIds: the matchUps written, in order
+// result.skipped: [{ index, reason: 'NOT_FOUND' | 'BYE' }] for outcomes that matched nothing, or a BYE
+```
+
+Each outcome locates one matchUp. Every coordinate given must match; those omitted match anything, except `stage`
+and `stageSequence`, which default to `MAIN` and `1`. When several matchUps match, `matchUpIndex` picks one (the
+first by default), in the order `allDrawMatchUps` returns them.
+
+| Coordinate       | Description                                                                                   |
+| ---------------- | --------------------------------------------------------------------------------------------- |
+| `stage`          | default `MAIN`                                                                                |
+| `stageSequence`  | default `1`                                                                                   |
+| `structureId`    | the structure itself                                                                          |
+| `structureName`  | e.g. `'East'`, `'Group 2'`                                                                    |
+| `structureOrder` | the n-th structure (1-based) in draw order, counting each round robin group: the group number |
+| `roundNumber`    |                                                                                               |
+| `roundPosition`  |                                                                                               |
+| `drawPositions`  | both positions, as they stand when this outcome is reached                                    |
+| `matchUpIndex`   | which of several matches, default `0`                                                         |
+
+The result of each is given by `scoreString`, `winningSide`, `matchUpStatus` (default `COMPLETED`),
+`matchUpStatusCodes` and `matchUpFormat`, as for [generateOutcomeFromScoreString](#generateoutcomefromscorestring).
+
+An outcome that matches nothing, or matches a BYE, is not an error: it is reported in `skipped` and the rest are
+applied. An outcome `setMatchUpStatus` refuses stops the call with that error; the outcomes before it stay applied.
+
+The `outcomes` of a `drawProfile` (`mocksEngine.generateTournamentRecord`) are applied by this method.
 
 ---
 

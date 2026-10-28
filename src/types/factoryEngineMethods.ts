@@ -96,6 +96,7 @@ export type FactoryEngineMethod =
   | 'applyDerivedRankings'
   | 'applyLadderMovement'
   | 'applyLineUps'
+  | 'applyOutcomes'
   | 'applyScheduleScenario'
   | 'applyTournamentRankingPoints'
   | 'approveApplication'
@@ -880,6 +881,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'applyDerivedRankings',
   'applyLadderMovement',
   'applyLineUps',
+  'applyOutcomes',
   'applyScheduleScenario',
   'applyTournamentRankingPoints',
   'approveApplication',
