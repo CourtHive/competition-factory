@@ -51,7 +51,7 @@ test.each(scenarios)('it can calculate new ratings given matchUp results', (scen
   for (const participant of participants) {
     if (asDynamic) {
       const accessor = ratingType && ratingsParameters[ratingType]?.accessor;
-      participant.timeItems.forEach((timeItem) => {
+      (participant.timeItems ?? []).forEach((timeItem) => {
         const { itemType, itemValue } = timeItem;
         expect(typeof itemValue).toEqual(accessor ? 'object' : 'number');
         expect(accessor ? itemValue[accessor] : itemValue).not.toBeUndefined();

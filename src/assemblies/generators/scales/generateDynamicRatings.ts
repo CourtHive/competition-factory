@@ -4,6 +4,7 @@ import { getParticipantScaleItem } from '@Query/participant/getParticipantScaleI
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
+import { recorded } from '@Mutate/simulation/scenarioRecorder';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { calculateNewRatings } from './calculateNewRatings';
 import { getRatingConvertedToELO } from './eloConversions';
@@ -21,6 +22,9 @@ import { SUCCESS } from '@Constants/resultConstants';
 import { ELO } from '@Constants/ratingConstants';
 import { ResultType } from '@Types/factoryTypes';
 import { HydratedSide } from '@Types/hydrated';
+
+// the ratings write, logged when a scenario is recorded (see scenarioRecorder)
+const addDynamicRatingsRecorded = recorded('addDynamicRatings', addDynamicRatings);
 
 export function generateDynamicRatings(params): ResultType & {
   modifiedScaleValues?: { [key: string]: number };
@@ -162,7 +166,7 @@ export function generateDynamicRatings(params): ResultType & {
     Object.assign(modifiedScaleValues, scaleItemMap);
 
     if (updateParticipantRatings) {
-      addDynamicRatings({ tournamentRecord, modifiedScaleValues, removePriorValues });
+      addDynamicRatingsRecorded({ tournamentRecord, modifiedScaleValues, removePriorValues });
     }
   }
 

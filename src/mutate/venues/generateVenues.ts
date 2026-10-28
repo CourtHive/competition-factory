@@ -1,7 +1,14 @@
 import { generateDateRange, formatDate } from '@Tools/dateTime';
+import { recorded } from '@Mutate/simulation/scenarioRecorder';
 import { addCourts } from './addCourt';
 import { addVenue } from './addVenue';
 import { UUID } from '@Tools/UUID';
+
+// writes logged when a scenario is recorded (see scenarioRecorder); a replay is told the courts' minted ids
+const addVenueRecorded = recorded('addVenue', addVenue);
+const addCourtsRecorded = recorded('addCourts', addCourts, undefined, (result) => ({
+  courtIds: 'courtIds' in result ? result.courtIds : undefined,
+}));
 
 // types
 import { Tournament, Venue } from '@Types/tournamentTypes';
@@ -44,7 +51,7 @@ export function generateVenues({ tournamentRecord, ignoreExistingVenues, venuePr
     if (defaultEndTime) newVenue.defaultEndTime = defaultEndTime;
     if (venueProfile.isPrimary) newVenue.isPrimary = true;
     if (venueDateAvailability) newVenue.dateAvailability = venueDateAvailability;
-    const result = addVenue({ tournamentRecord, venue: newVenue });
+    const result = addVenueRecorded({ tournamentRecord, venue: newVenue });
     if (result.error) {
       if (ignoreExistingVenues) continue;
       return result;
@@ -64,7 +71,7 @@ export function generateVenues({ tournamentRecord, ignoreExistingVenues, venuePr
       );
 
     if (courtsCount || courtNames) {
-      const addResult = addCourts({
+      const addResult = addCourtsRecorded({
         dateAvailability: dateAvailability || generatedDateAvailability,
         tournamentRecord,
         courtTimings,

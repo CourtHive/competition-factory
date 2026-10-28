@@ -1,6 +1,6 @@
-import { addSchedulingProfileRound } from '@Mutate/matchUps/schedule/addSchedulingProfileRound';
 import { getContainedStructures } from '@Query/drawDefinition/getContainedStructures';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { addSchedulingProfileRoundRecorded } from './recordedWrites';
 import { intersection, unique } from '@Tools/arrays';
 
 // constants and types
@@ -73,7 +73,7 @@ export function generateScheduledRounds({ schedulingProfile, tournamentRecord }:
             drawId,
           };
 
-          const result = addSchedulingProfileRound({
+          const result = addSchedulingProfileRoundRecorded({
             tournamentRecords: { [tournamentId]: tournamentRecord },
             round: roundToSchedule,
             scheduleDate,

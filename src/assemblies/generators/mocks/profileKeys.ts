@@ -38,6 +38,7 @@ export const GENERATE_TOURNAMENT_RECORD_KEYS = [
   'random',
   'randomWinningSide',
   'ratingsParameters',
+  'recordMethods',
   'scenarioProfile',
   'scheduleCompletedMatchUps',
   'schedulingProfile',

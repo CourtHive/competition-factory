@@ -1,3 +1,4 @@
+import { addEventEntriesRecorded, addEventRecorded, publishEventRecorded } from './recordedWrites';
 import { getStageParticipantsCount } from '@Query/drawDefinition/getStageParticipantsCount';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getStageParticipants } from '@Query/drawDefinition/getStageParticipants';
@@ -5,14 +6,11 @@ import { generateFlightDrawDefinitions } from './generateFlightDrawDefinitions';
 import { generateEventParticipants } from './generateEventParticipants';
 import tieFormatDefaults from '@Generators/templates/tieFormatDefaults';
 import { resolveCompletionOptions } from './resolveCompletionOptions';
-import { addEventEntries } from '@Mutate/entries/addEventEntries';
 import { addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { attachProfilePolicies } from './attachProfilePolicies';
 import { getParticipantId } from '@Functions/global/extractors';
 import { isValidExtension } from '@Validators/isValidExtension';
-import { publishEvent } from '@Mutate/publishing/publishEvent';
 import { generateFlights } from './generateFlights';
-import { addEvent } from '@Mutate/events/addEvent';
 import { UUID } from '@Tools/UUID';
 
 // constants
@@ -131,7 +129,7 @@ export function generateEventWithFlights(params) {
 
   let drawIds;
   // added before its entries and draws, as a client would: public addEvent, no bypass
-  const eventResult: any = addEvent({
+  const eventResult: any = addEventRecorded({
     suppressNotifications: false,
     tournamentRecord,
     event: newEvent,
@@ -185,7 +183,7 @@ export function generateEventWithFlights(params) {
     const eventParticipantIds = uniqueDrawParticipants.map(getParticipantId);
 
     if (eventParticipantIds.length) {
-      const result = addEventEntries({
+      const result = addEventEntriesRecorded({
         participantIds: eventParticipantIds,
         autoEntryPositions,
         tournamentRecord,
@@ -197,7 +195,7 @@ export function generateEventWithFlights(params) {
   }
 
   if (publish) {
-    publishEvent({ tournamentRecord, event });
+    publishEventRecorded({ tournamentRecord, event });
   }
 
   // When pulling from a preset pool, report the participants this event consumed

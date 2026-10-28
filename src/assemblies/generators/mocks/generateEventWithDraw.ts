@@ -1,37 +1,39 @@
 import { generateDrawDefinition } from '@Generators/drawDefinitions/generateDrawDefinition/generateDrawDefinition';
-import { automatedPlayoffPositioning } from '@Mutate/drawDefinitions/automatedPlayoffPositioning';
 import { drawMatic } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/drawMatic';
-import { setParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { completeDrawMatchUps } from '@Mutate/simulation/completeDrawMatchUps';
-import { addDrawDefinition } from '@Mutate/drawDefinitions/addDrawDefinition';
 import tieFormatDefaults from '@Generators/templates/tieFormatDefaults';
-import { addParticipants } from '@Mutate/participants/addParticipants';
-import { addAdHocMatchUps } from '@Mutate/structures/addAdHocMatchUps';
 import { resolveCompletionOptions } from './resolveCompletionOptions';
-import { addEventEntries } from '@Mutate/entries/addEventEntries';
 import { addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { applyOutcomes } from '@Mutate/simulation/applyOutcomes';
 import { getParticipantId } from '@Functions/global/extractors';
 import { isValidExtension } from '@Validators/isValidExtension';
 import { addExtension } from '@Mutate/extensions/addExtension';
-import { publishEvent } from '@Mutate/publishing/publishEvent';
 import { generateParticipants } from './generateParticipants';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { rebuildPairsAsMixed } from './rebuildPairsAsMixed';
 import { coercedGender } from '@Helpers/coercedGender';
 import { processTieFormat } from './processTieFormat';
-import { addFlight } from '@Mutate/events/addFlight';
 import { isGendered } from '@Validators/isGendered';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
-import { addEvent } from '@Mutate/events/addEvent';
 import { isFemale } from '@Validators/isFemale';
 import { findEvent } from '@Acquire/findEvent';
 import { generateRange } from '@Tools/arrays';
 import { isObject } from '@Tools/objects';
 import { coerceEven } from '@Tools/math';
 import { UUID } from '@Tools/UUID';
+import {
+  addAdHocMatchUpsRecorded,
+  addDrawDefinitionRecorded,
+  addEventEntriesRecorded,
+  addEventRecorded,
+  addFlightRecorded,
+  addParticipantsRecorded,
+  automatedPlayoffPositioningRecorded,
+  publishEventRecorded,
+  setParticipantScaleItemRecorded,
+} from './recordedWrites';
 
 // constants and types
 import { MAIN, QUALIFYING, ROUND_ROBIN_WITH_PLAYOFF, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
@@ -120,7 +122,6 @@ function generateEventParticipants({
   category,
   gender,
   random,
-  event,
   uuids,
 }) {
   let individualParticipantCount = drawParticipantsCount;
@@ -178,15 +179,16 @@ function generateEventParticipants({
   if (result.error) return result;
   const unique = result.participants as Participant[];
 
-  // update categoryName **after** generating participants
-  if (event.category) event.category.categoryName = categoryName;
+  // update categoryName **after** generating participants: on the profile's category, which later generation
+  // reads. The event has its own copy, named when it was built, since it is on the record by now
+  if (category) category.categoryName = categoryName;
 
   if (isMixedDoubles) {
     rebuildPairsAsMixed(unique);
   }
 
   if (tournamentRecord) {
-    const result = addParticipants({
+    const result = addParticipantsRecorded({
       participants: unique,
       tournamentRecord,
     });
@@ -304,7 +306,7 @@ function buildTeamParticipants({
       useOtherName: false,
     };
   });
-  const result = addParticipants({
+  const result = addParticipantsRecorded({
     participants: teamParticipants as Participant[],
     tournamentRecord,
   });
@@ -331,7 +333,7 @@ function buildHybridParticipants({ drawParticipantsCount, tournamentRecord, uniq
   }
 
   if (pairParticipants.length && tournamentRecord) {
-    const result = addParticipants({
+    const result = addParticipantsRecorded({
       participants: pairParticipants as Participant[],
       tournamentRecord,
     });
@@ -363,7 +365,7 @@ function addQualifyingEntries({
       const drawSize = structureProfile.drawSize || coerceEven(structureProfile.participantsCount);
       const participantsCount = drawSize - (qualifyingPositions || 0); // minus qualifyingPositions
       const participantIds = qualifyingParticipantIds.slice(qualifyingIndex, qualifyingIndex + participantsCount);
-      const result = addEventEntries({
+      const result = addEventEntriesRecorded({
         entryStage: QUALIFYING,
         entryStageSequence,
         autoEntryPositions,
@@ -478,7 +480,7 @@ function completeRoundRobinPlayoff({
   const mainStructure = drawDefinition.structures?.find((structure) => structure.stage === MAIN);
   if (!mainStructure) return { error: STRUCTURE_NOT_FOUND };
 
-  automatedPlayoffPositioning({
+  automatedPlayoffPositioningRecorded({
     structureId: mainStructure.structureId,
     tournamentRecord,
     drawDefinition,
@@ -540,7 +542,7 @@ function processIterativeAdHoc({
     if (drawMaticResult.error) return drawMaticResult;
 
     if (drawMaticResult.matchUps?.length) {
-      const addResult = addAdHocMatchUps({
+      const addResult = addAdHocMatchUpsRecorded({
         matchUps: drawMaticResult.matchUps,
         suppressNotifications: true,
         tournamentRecord,
@@ -577,7 +579,7 @@ function addMockEntries({
   stage,
 }) {
   if (isMock && participantIds?.length) {
-    const result = addEventEntries({
+    const result = addEventEntriesRecorded({
       autoEntryPositions,
       entryStage: stage,
       tournamentRecord,
@@ -615,7 +617,7 @@ function addMockEntries({
       .map((p) => p.participantId);
 
   if (isMock && alternatesParticipantIds?.length) {
-    const result = addEventEntries({
+    const result = addEventEntriesRecorded({
       participantIds: alternatesParticipantIds,
       autoEntryPositions: false,
       entryStatus: ALTERNATE,
@@ -640,7 +642,7 @@ function applySeedingScales({ tournamentRecord, participantIds, seedingScaleName
         eventType,
       };
       const participantId = participantIds[index];
-      setParticipantScaleItem({ tournamentRecord, participantId, scaleItem });
+      setParticipantScaleItemRecorded({ tournamentRecord, participantId, scaleItem });
     });
   }
 }
@@ -702,7 +704,7 @@ function generateAndAttachDraw({
   if (generate) {
     // announced as a client's addDrawDefinition is, once the event is on the record; off the record nothing is
     const onRecord = !!tournamentRecord?.events?.includes(event);
-    addDrawDefinition({ drawDefinition, event, tournamentRecord, suppressNotifications: !onRecord });
+    addDrawDefinitionRecorded({ drawDefinition, event, tournamentRecord, suppressNotifications: !onRecord });
 
     const manual = drawProfile.automated === false;
     // a tournament auto-scheduled after generation has its draws' results applied once it is scheduled, as a real
@@ -760,10 +762,10 @@ function generateAndAttachDraw({
     }
 
     if (publish) {
-      publishEvent({ tournamentRecord, event });
+      publishEventRecorded({ tournamentRecord, event });
     }
   } else {
-    const flightResult = addFlight({
+    const flightResult = addFlightRecorded({
       drawEntries: drawDefinition.entries,
       drawName: drawName || drawType,
       qualifyingPositions,
@@ -876,7 +878,7 @@ export function generateEventWithDraw(params) {
 
   // in a client's order: the event is added (public addEvent, no bypass) before it has entries or a draw, and
   // everything after is written to the stored event. Without a record to add it to it is built off the record
-  const added = addToRecord ? addEvent({ tournamentRecord, event: mockEvent }) : undefined;
+  const added = addToRecord ? addEventRecorded({ tournamentRecord, event: mockEvent }) : undefined;
   if (added?.error) return added;
   const event = added
     ? tournamentRecord.events.find((stored: { eventId: string }) => stored.eventId === eventId)
@@ -919,7 +921,6 @@ export function generateEventWithDraw(params) {
       category,
       gender,
       random,
-      event,
       uuids,
     });
     if (genResult.error) return genResult;
@@ -1037,7 +1038,11 @@ function buildMockEvent({
   drawProfile,
   eventExtensions,
 }) {
-  const event = { eventName, eventType, tieFormat, category, eventId, gender };
+  // the event's own category, named as the profile's will be once its participants are generated: the event is
+  // added before that, and a client names the category it adds
+  const categoryName = category?.categoryName || category?.ageCategoryCode || category?.ratingType;
+  const eventCategory = category && { ...category, categoryName };
+  const event = { eventName, eventType, tieFormat, category: eventCategory, eventId, gender };
 
   if (Array.isArray(timeItems)) {
     timeItems.forEach((timeItem) => addEventTimeItem({ event, timeItem }));

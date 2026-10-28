@@ -1,8 +1,5 @@
 import { generateDrawDefinition } from '@Generators/drawDefinitions/generateDrawDefinition/generateDrawDefinition';
-import { automatedPlayoffPositioning } from '@Mutate/drawDefinitions/automatedPlayoffPositioning';
-import { setParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
 import { completeDrawMatchUps } from '@Mutate/simulation/completeDrawMatchUps';
-import { addDrawDefinition } from '@Mutate/drawDefinitions/addDrawDefinition';
 import { resolveCompletionOptions } from './resolveCompletionOptions';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { isValidExtension } from '@Validators/isValidExtension';
@@ -11,6 +8,11 @@ import { addExtension } from '@Mutate/extensions/addExtension';
 import { findEvent } from '@Acquire/findEvent';
 import { generateRange } from '@Tools/arrays';
 import { xa } from '@Tools/extractAttributes';
+import {
+  addDrawDefinitionRecorded,
+  automatedPlayoffPositioningRecorded,
+  setParticipantScaleItemRecorded,
+} from './recordedWrites';
 
 // constants
 import { DRAW_DEFINITION_NOT_FOUND, ErrorType, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
@@ -153,7 +155,7 @@ function applySeeding({ drawParticipantIds, seedingScaleName, tournamentRecord, 
     };
 
     const participantId = drawParticipantIds[index];
-    setParticipantScaleItem({
+    setParticipantScaleItemRecorded({
       tournamentRecord,
       participantId,
       scaleItem,
@@ -199,7 +201,7 @@ function generateAndAddDraw({
   }
 
   // announced as a client's addDrawDefinition is: the event is already on the record
-  result = addDrawDefinition({
+  result = addDrawDefinitionRecorded({
     tournamentRecord,
     drawDefinition,
     event,
@@ -260,7 +262,7 @@ function completeFlightPass({
   const mainStructure = drawDefinition.structures?.find((structure) => structure.stage === MAIN);
   if (!mainStructure) return { error: STRUCTURE_NOT_FOUND };
 
-  const playoffResult = automatedPlayoffPositioning({
+  const playoffResult = automatedPlayoffPositioningRecorded({
     structureId: mainStructure.structureId,
     tournamentRecord,
     drawDefinition,

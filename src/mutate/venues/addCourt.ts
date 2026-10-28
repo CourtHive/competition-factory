@@ -46,9 +46,10 @@ export function addCourt({ tournamentRecord, disableNotice, venueId, courtId, co
     return { error: COURT_EXISTS };
   } else {
     // build new dateAvailability object with date/time extraction
+    // an entry without a date is the court's default availability: it gets no date, not `date: ''`
     const dateAvailability = (court?.dateAvailability ?? []).map((availabilty: any) => ({
       ...availabilty,
-      date: extractDate(availabilty.date),
+      ...(availabilty.date && { date: extractDate(availabilty.date) }),
       startTime: extractTime(availabilty.startTime),
       endTime: extractTime(availabilty.endTime),
       bookings: availabilty.bookings?.map(({ startTime, endTime, bookingType }) => ({
