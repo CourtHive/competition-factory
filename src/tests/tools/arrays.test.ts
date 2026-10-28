@@ -4,11 +4,12 @@
  * Expanded from: coverage-plan/arrays.test.stub.ts
  */
 
-import { expect, test, describe } from 'vitest';
+import { expect, test, describe, it } from 'vitest';
 import {
   lengthOrZero,
   unique,
   noNulls,
+  shuffledPrefix,
   shuffleArray,
   numericSortValue,
   instanceCount,
@@ -621,5 +622,39 @@ describe('Performance', () => {
 
     expect(duration).toBeLessThan(250);
     expect(chunks).toHaveLength(10);
+  });
+});
+
+describe('shuffledPrefix', () => {
+  // a seeded stream, so each comparison draws the same numbers
+  const seeded = (seed: number) => () => {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    return seed / 2147483648;
+  };
+
+  it.each([
+    [10, 3, 1],
+    [250, 7, 2],
+    [2500, 40, 3],
+    [8, 8, 4],
+    [8, 20, 5],
+    [0, 3, 6],
+  ])(
+    'is the first items of shuffleArray, and leaves the stream where it does (%i items, %i taken)',
+    (length, count, seed) => {
+      const items = Array.from({ length }, (_, index) => `item-${index % 7}-${index}`);
+      const full = seeded(seed);
+      const expected = shuffleArray(items, full).slice(0, count);
+      const prefix = seeded(seed);
+      expect(shuffledPrefix(length, count, (index) => items[index], prefix)).toEqual(expected);
+      expect(prefix()).toEqual(full());
+    },
+  );
+
+  it('orders equal keys by index, as a stable sort does', () => {
+    const constant = () => 0.5;
+    expect(shuffledPrefix(5, 3, (index) => index, constant)).toEqual(
+      shuffleArray([0, 1, 2, 3, 4], constant).slice(0, 3),
+    );
   });
 });
