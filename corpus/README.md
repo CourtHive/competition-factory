@@ -186,6 +186,21 @@ untouched. The sweep also asks the report properties (`SCHEDULE_ACCOUNTED`, `SCH
 of each call. Under it, `global/paramsCopiedOnlyWhenRead.test.ts` fails by construction: it asserts
 that params are copied only when nothing observes the call, and the sweep is an observer.
 
+## Generated tournaments: the method lists
+
+```bash
+pnpm corpus:mocks          # .corpus-out/mocks/mocks.jsonl
+```
+
+`src/tests/testHarness/corpus/mocksSources.ts` writes one scenario per shape in `mocksScenarios.ts` (draw types,
+event types, flights, qualifying, leagues, venues, scheduling, policies, extensions): the tournament's method list
+from `generateTournamentRecord({ recordMethods: true })`. The initial record is the tournament `newTournamentRecord`
+makes; the directives are the rest of the list, the engine calls a client makes to build that tournament
+(participants, events, entries, draws, results, venues, schedules), with random steps given as their results. So a
+consumer graded on this source is graded on building tournaments. Generation runs under the source's fixed clock, so
+a run is byte-identical to the last. The writer gives the engine a copy of each directive's params, so a write that
+keeps what it is given (`addDrawDefinition` attaches the draw) cannot change the directive the scenario stores.
+
 ## The scheduling scale source
 
 ```bash
