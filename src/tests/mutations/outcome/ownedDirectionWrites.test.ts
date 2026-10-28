@@ -1041,6 +1041,46 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(3, 'Main'), outcome: cleared }],
     },
   ],
+  [
+    'SINGLE_ELIMINATION (S6): a walkover relabelled a default for the same winner rewrites its status alone',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1), outcome: walkover(1) }],
+      steps: [{ target: R1(1), outcome: exited(DEFAULTED, 1) }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION (S6): a walkover carried nowhere (no loser link) re-entered under propagateExitStatus',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(2), outcome: walkover(2), params: CARRIED }],
+      steps: [{ target: R1(2), outcome: walkover(2), params: CARRIED }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6): a played result relabelled a walkover for the other side, both directions remade',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(1, 'Main'), outcome: won(1) }],
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(2) }],
+    },
+  ],
+  [
+    'COMPASS (S6): a default replaced by a played result for the same winner, its score written',
+    {
+      drawProfile: { drawSize: 16, drawType: COMPASS },
+      setup: [{ target: R1(1, 'East'), outcome: exited(DEFAULTED, 1) }],
+      steps: [{ target: R1(1, 'East'), outcome: won(1) }],
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION (S6): a default relabelled a retirement, its partial score written',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [{ target: R1(1, 'Main'), outcome: exited(DEFAULTED, 1) }],
+      steps: [{ target: R1(1, 'Main'), outcome: retired(1) }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
@@ -1208,10 +1248,54 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     expect(v2.notices).toEqual(v1.notices);
   });
 
+  it('S6: a walkover relabelled a default whose loser carries it across their link is v1s', () => {
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+      steps: [{ target: R1(1, 'Main'), outcome: exited(DEFAULTED, 1), params: CARRIED }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v1.results[0].success).toEqual(true);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+  });
+
+  it('S6: a played result relabelled a walkover that its loser would now carry across their link is v1s', () => {
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(1, 'Main'), outcome: won(1) }],
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v1.results[0].success).toEqual(true);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+  });
+
   it('a default under a scoring policy naming incompleteAssignmentsOnDefault: v1 may write processCodes', () => {
     const scenario: Scenario = {
       drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
       policyDefinitions: POLICY_SCORING_DEFAULT,
+      steps: [{ target: R1(1), outcome: exited(DEFAULTED, 1) }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v2.v1Writes).toEqual(1);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+  });
+
+  it('S6: a walkover relabelled a default under that policy is v1s too', () => {
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      policyDefinitions: POLICY_SCORING_DEFAULT,
+      setup: [{ target: R1(1), outcome: walkover(1) }],
       steps: [{ target: R1(1), outcome: exited(DEFAULTED, 1) }],
     };
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
