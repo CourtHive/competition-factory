@@ -48,22 +48,29 @@ export function applyOwnedPlan({
   if (applied.error) return { error: INVALID_VALUES, info: applied.error };
 
   const tournamentId = tournamentRecord?.tournamentId;
-  const written = [
-    ...new Set(
-      ops.flatMap((op) =>
-        op.op === 'setMatchUpResult' ||
-        op.op === 'setMatchUpDrawPositions' ||
-        op.op === 'setMatchUpBye' ||
-        op.op === 'setMatchUpStatusCodes' ||
-        op.op === 'mergeSideExitProvenance' ||
-        op.op === 'setSideExitProvenance' ||
-        op.op === 'clearMatchUpBye' ||
-        op.op === 'exchangeDrawPositions'
-          ? [op.matchUpId]
-          : [],
-      ),
-    ),
-  ];
+  const writes = ops.flatMap((op) =>
+    op.op === 'setMatchUpResult' ||
+    op.op === 'setMatchUpDrawPositions' ||
+    op.op === 'setMatchUpBye' ||
+    op.op === 'setMatchUpStatusCodes' ||
+    op.op === 'mergeSideExitProvenance' ||
+    op.op === 'setSideExitProvenance' ||
+    op.op === 'clearMatchUpBye' ||
+    op.op === 'exchangeDrawPositions'
+      ? [op.matchUpId]
+      : [],
+  );
+  // each matchUp at its FIRST write for the in-context notice a score write defers, and at its LAST for its
+  // `modifyMatchUp`: v1's notice buffer keeps a matchUp re-announced later in the call at that later place (a double exit
+  // given a winner: the next matchUp unwound first, then the winner's arrival after the result), and only a score write
+  // defers an in-context notice
+  const written = [...new Set(writes)];
+  const announced = [...new Set(writes.toReversed())].reverse();
+  // a matchUp given its result and then a position (that next matchUp): its last notice is the placement's
+  const lastWrites = new Map(ops.flatMap((op) => ('matchUpId' in op ? [[op.matchUpId, op.op]] : [])));
+  const placedLast = new Set(
+    [...lastWrites].flatMap(([matchUpId, op]) => (op === 'setMatchUpDrawPositions' ? [matchUpId] : [])),
+  );
   const resulted = new Set(ops.flatMap((op) => (op.op === 'setMatchUpResult' ? [op.matchUpId] : [])));
   const byes = new Set(ops.flatMap((op) => (op.op === 'setMatchUpBye' ? [op.matchUpId] : [])));
   // a loser taken back out: their matchUp's codes re-derived, announced as v1's `removeDirectedLoser` announces it
@@ -114,20 +121,21 @@ export function applyOwnedPlan({
   }
   const stored = new Map(args.matchUpsMap?.drawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
   const subscribed = getTopics().topics.includes(UPDATE_INCONTEXT_MATCHUP);
+  // every score write announces its matchUp in context to a subscriber, as v1's `modifyMatchUpScore` does: the call's
+  // own, and a carried exit's on the matchUp it lands in (S5)
   for (const matchUpId of written) {
+    if (!subscribed || !resulted.has(matchUpId) || !stored.has(matchUpId)) continue;
+    const contextless = untournamented.has(matchUpId);
+    const record = contextless ? undefined : tournamentRecord;
+    deferInContextMatchUp({
+      inContextMatchUp: () => getInContextMatchUp({ tournamentRecord: record, drawDefinition, matchUpId }),
+      tournamentId: contextless ? undefined : tournamentId,
+      matchUpId,
+    });
+  }
+  for (const matchUpId of announced) {
     const matchUp = stored.get(matchUpId);
     if (!matchUp) continue;
-    // every score write announces its matchUp in context to a subscriber, as v1's `modifyMatchUpScore` does: the call's
-    // own, and a carried exit's on the matchUp it lands in (S5)
-    if (subscribed && resulted.has(matchUpId)) {
-      const contextless = untournamented.has(matchUpId);
-      const record = contextless ? undefined : tournamentRecord;
-      deferInContextMatchUp({
-        inContextMatchUp: () => getInContextMatchUp({ tournamentRecord: record, drawDefinition, matchUpId }),
-        tournamentId: contextless ? undefined : tournamentId,
-        matchUpId,
-      });
-    }
     // a removal's notice is built as v1's `removeSubsequentRoundsParticipant` builds it, whose caller passes no event
     const removedPosition = removed.get(matchUpId);
     const unbyedPosition = resulted.has(matchUpId) ? undefined : unbyed.get(matchUpId);
@@ -136,7 +144,7 @@ export function applyOwnedPlan({
       // v1's writers name themselves: the call's result is `modifyMatchUpScore`'s, a winner's seat in the next matchUp
       // is `assignMatchUpDrawPosition`'s (`directWinner`), a FIRST_MATCHUP reservation's matchUp `setMatchUpStatusBye`'s
       context: noticeContext(matchUpId, removedPosition, unbyedPosition, {
-        resulted,
+        resulted: placedLast.has(matchUpId) ? new Set<string>() : resulted,
         byes,
         recoded,
         exchanged,

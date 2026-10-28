@@ -328,12 +328,15 @@ function directionReason(args: {
   const target = targets.winner;
   if (!target || target.structureId !== targets.source.structureId) return 'link';
   if (reservationReason(view, write.winningSide as 1 | 2)) return 'cascade';
+  // S6: a double exit given a winner unwinds first (`givenWinnerReason`): the next matchUp held only its produced exit,
+  // and is to be played again when the winner arrives
+  const unwound = isDoubleExit(view.existing.matchUpStatus);
   // a target holding a BYE sends the winner on past it: planned when where they go is clean (`winnerThroughBye`)
   const through = target.hasBye ? targets.winnerThroughBye?.[write.winningSide as 1 | 2] : undefined;
-  if ((target.hasBye && !through) || target.carriesExit || target.carriedStatuses.length || target.holdsResult)
-    return 'cascade';
+  if ((target.hasBye && !through) || target.holdsResult) return 'cascade';
+  if (!unwound && (target.carriesExit || target.carriedStatuses.length)) return 'cascade';
   // a target generated with no status (LUCKY_DRAW, adaptive) is written TO_BE_PLAYED by v1 as the winner arrives
-  if (target.matchUpStatus !== TO_BE_PLAYED && !through) return 'route';
+  if (target.matchUpStatus !== TO_BE_PLAYED && !through && !unwound) return 'route';
   if (!targets.sideDrawPositions[write.winningSide as 1 | 2]) return 'route';
   return undefined;
 }
@@ -406,6 +409,7 @@ function exitReason(args: {
   if (!isAnyExit(request.matchUpStatus) && !isAnyExit(existing.matchUpStatus) && !isAnyExit(write?.matchUpStatus))
     return undefined;
   if (route === DOUBLE_EXIT) return producedReason(view, request, direction, write);
+  if (route === 'winner' && isDoubleExit(existing.matchUpStatus)) return givenWinnerReason(args);
   if (route === CLEAR_SCORE && isDoubleExit(existing.matchUpStatus))
     return write?.matchUpStatus === TO_BE_PLAYED &&
       !direction &&
@@ -423,6 +427,26 @@ function exitReason(args: {
   if (loser?.carriedPast || loser?.withdrawn) return 'exit';
   if (loser?.converged) return convergedReason(view, request, write, loser);
   if (loser?.exit) return carriedReason(view, write);
+  return undefined;
+}
+
+/**
+ * S6: a double exit given a winner (the `winner` route, a single exit or a played result). v1 first unwinds the double
+ * exit as a clear does (`removeDoubleExit`: the produced exit taken back and the path to the final written back to be
+ * played, `unwoundPath`), then writes the result and directs it as a played result, the winner into the next matchUp
+ * the unwind left to be played (`unwoundOps`, then the direction). Planned where that unwind is the plain one: the
+ * produced exit pending, not awarded, and nothing linked out of the structure, so no seat holds a BYE the double exit
+ * placed. The direction's own checks follow (`directionReason`, which reads the next matchUp as the unwind leaves it).
+ */
+function givenWinnerReason(args: Parameters<typeof exitReason>[0]): AbstainReason | undefined {
+  const { request, view, write, direction } = args;
+  if (!write?.winningSide || !DIRECTED_STATUSES.has(write.matchUpStatus)) return 'exit';
+  if (request.matchUpStatus && request.matchUpStatus !== write.matchUpStatus) return 'exit';
+  if (write.matchUpStatus === DEFAULTED && view.draw.defaultProcessCodes) return 'exit';
+  if (direction?.produced || direction?.converged || direction?.decider || direction?.loser) return 'exit';
+  if (view.targets.loserMatchUpId || view.targets.loserLink) return 'exit';
+  const levels = unwoundPath(view, request.matchUpId, args.drawDefinition);
+  if (!levels || levels.some(({ seatOps, released }) => seatOps.length || released)) return 'exit';
   return undefined;
 }
 
@@ -1748,7 +1772,7 @@ function unwoundOps(
   route: Route | undefined,
   drawDefinition?: DrawDefinition,
 ): OutcomeOp[] {
-  if (route !== CLEAR_SCORE || !isDoubleExit(view.existing.matchUpStatus)) return [];
+  if ((route !== CLEAR_SCORE && route !== 'winner') || !isDoubleExit(view.existing.matchUpStatus)) return [];
   const levels = unwoundPath(view, request.matchUpId, drawDefinition) ?? [];
   return [...levels].reverse().flatMap(({ matchUpId, seatOps, released }, depth): OutcomeOp[] => {
     if (matchUpId === request.matchUpId) return seatOps;
