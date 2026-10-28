@@ -1,13 +1,14 @@
 import { generateOutcomeFromScoreString } from '@Assemblies/generators/mocks/generateOutcomeFromScoreString';
 import { assignTieMatchUpParticipantId } from '@Mutate/matchUps/lineUps/assignTieMatchUpParticipant';
 import { automatedPlayoffPositioning } from '@Mutate/drawDefinitions/automatedPlayoffPositioning';
+import { getLuckyDrawRoundStatus } from '@Query/drawDefinition/getLuckyDrawRoundStatus';
 import { generateLineUps } from '@Assemblies/generators/participants/generateLineUps';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import { getLuckyDrawRoundStatus } from '@Query/drawDefinition/getLuckyDrawRoundStatus';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getParticipants } from '@Query/participants/getParticipants';
+import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { structureSort } from '@Functions/sorters/structureSort';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
@@ -20,11 +21,11 @@ import { intersection } from '@Tools/arrays';
 
 // constants and types
 import { MAIN, PLAY_OFF, QUALIFYING, WIN_RATIO } from '@Constants/drawDefinitionConstants';
-import { ErrorType, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+import { ErrorType, INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { addParticipants } from '@Mutate/participants/addParticipants';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/matchUpTypes';
-import type { DrawDefinition } from '@Types/tournamentTypes';
+import type { DrawDefinition, Structure } from '@Types/tournamentTypes';
 import { FEMALE, MALE } from '@Constants/genderConstants';
 import { LINEUPS } from '@Constants/extensionConstants';
 import { ASCENDING } from '@Constants/sortingConstants';
@@ -226,6 +227,7 @@ function completeStructureMatchUps({
   completionGoal,
   completedCount,
   roundNumber: roundNumberFilter,
+  maxRoundNumber,
   leafStructureIds,
   random,
 }) {
@@ -245,6 +247,7 @@ function completeStructureMatchUps({
       ({ winningSide, roundNumber, structureId }) =>
         !winningSide &&
         (!roundNumberFilter || roundNumber === roundNumberFilter) &&
+        (!maxRoundNumber || (roundNumber ?? 0) <= maxRoundNumber) &&
         (!leafStructureIds || leafStructureIds.includes(structureId)),
     )
     .sort(matchUpSort)
@@ -322,6 +325,7 @@ export function completeDrawMatchUps(params): {
   const {
     matchUpStatusProfile,
     completeAllMatchUps,
+    roundsToComplete,
     randomWinningSide,
     tournamentRecord,
     completionGoal,
@@ -359,13 +363,7 @@ export function completeDrawMatchUps(params): {
   const scoreString = typeof completeAllMatchUps === 'string' && completeAllMatchUps;
   const matchUpStatus = scoreString && COMPLETED;
 
-  const isRoundRobinWithPlayoff =
-    sortedStructures.length === 2 &&
-    sortedStructures[0].finishingPosition === WIN_RATIO &&
-    intersection(
-      sortedStructures.map(({ stage }) => stage),
-      [MAIN, PLAY_OFF],
-    ).length === 2;
+  const isRoundRobinWithPlayoff = roundRobinWithPlayoff(sortedStructures);
 
   /**
    * `structureIds` narrows completion to named structures. Omitted, every structure is completed,
@@ -419,6 +417,10 @@ export function completeDrawMatchUps(params): {
       .filter((childId) => requestedStructureIds.includes(childId));
   };
 
+  // fixed before anything is played, so the rounds a call completes are counted from where it started
+  const roundBounds = roundBoundsOf({ sortedStructures, structureIds, roundsToComplete, getLeafStructureIds });
+  if (roundBounds.error) return roundBounds;
+
   // Multi-pass loop: after each pass, cross-structure advancement (via directParticipants)
   // may populate positions in downstream structures, making new matchUps ready to complete.
   // This is necessary for DOUBLE_ELIMINATION where the main final and decider depend on
@@ -464,6 +466,7 @@ export function completeDrawMatchUps(params): {
         completionGoal,
         completedCount,
         roundNumber,
+        maxRoundNumber: roundBounds.bounds?.get(structureId),
         leafStructureIds: getLeafStructureIds(structure),
         random,
       });
@@ -489,6 +492,53 @@ export function completeDrawMatchUps(params): {
 }
 
 type LuckySelection = { structureId: string; roundNumber: number };
+
+function roundRobinWithPlayoff(sortedStructures: Structure[]): boolean {
+  return (
+    sortedStructures.length === 2 &&
+    sortedStructures[0].finishingPosition === WIN_RATIO &&
+    intersection(
+      sortedStructures.map(({ stage }) => stage),
+      [MAIN, PLAY_OFF],
+    ).length === 2
+  );
+}
+
+type RoundBoundsArgs = {
+  getLeafStructureIds: (structure: Structure) => string[] | undefined;
+  sortedStructures: Structure[];
+  roundsToComplete?: number;
+  structureIds: string[];
+};
+
+/**
+ * `roundsToComplete`: per structure, the last round a call may complete, counted from the structure's
+ * first round with a matchUp still to play (for a round robin, across the groups in scope). Rounds that
+ * become playable during the call, in this structure or one it feeds, are completed up to that bound.
+ */
+function roundBoundsOf({ sortedStructures, structureIds, roundsToComplete, getLeafStructureIds }: RoundBoundsArgs): {
+  bounds?: Map<string, number>;
+  error?: ErrorType;
+} {
+  if (roundsToComplete === undefined) return {};
+  if (!Number.isInteger(roundsToComplete) || roundsToComplete < 1) return { error: INVALID_VALUES };
+
+  const bounds = new Map<string, number>();
+  for (const structure of sortedStructures.filter(({ structureId }) => structureIds.includes(structureId))) {
+    const leafStructureIds = getLeafStructureIds(structure);
+    const children = structuresOf(structure);
+    const scopes = children
+      ? children.filter(({ structureId }) => !leafStructureIds || leafStructureIds.includes(structureId))
+      : [structure];
+    const openRounds = scopes
+      .flatMap((scope) => matchUpsOf(scope) ?? [])
+      .filter((matchUp) => !matchUp.winningSide && !SETTLED_STATUSES.has(matchUp.matchUpStatus as string))
+      .map(({ roundNumber }) => roundNumber ?? 0);
+    // a structure with nothing left to play gets a bound that admits nothing
+    bounds.set(structure.structureId, openRounds.length ? Math.min(...openRounds) + roundsToComplete - 1 : -1);
+  }
+  return { bounds };
+}
 
 /**
  * Where completion stopped for a lucky loser choice: `{ awaitingLuckySelection }`, or nothing.
