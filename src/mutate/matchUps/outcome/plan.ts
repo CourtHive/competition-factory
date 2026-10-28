@@ -1559,7 +1559,12 @@ const undecided = (matchUp: HydratedMatchUp, loserLinked?: boolean) =>
   !matchUp.sides?.some((side) => side.bye);
 
 /** a matchUp on a cleared double exit's path, with the writes v1's unwind makes at the seat its loser link feeds */
-type UnwoundLevel = { matchUpId: string; seatOps: OutcomeOp[] };
+type UnwoundLevel = {
+  matchUpId: string;
+  seatOps: OutcomeOp[];
+  /** the drawPosition an award sent on into this matchUp, taken back out of it */
+  released?: number;
+};
 
 /**
  * S6: a double exit cleared (the `clear-score` route): v1's `removeDoubleExit`, then the clear's own write. Planned where
@@ -1587,13 +1592,20 @@ function unwoundPath(
   const target = producedTarget(view, source, source.matchUpStatus as MatchUpStatusUnion);
   if (!target || target.feed) return undefined;
   const { entry } = target;
-  const provenance = entry.sideExitProvenance ?? {};
-  const origins = Object.keys(provenance);
-  const origin = provenance[target.fedSide];
-  if (entry.matchUpStatus !== target.matchUpStatus || !undecided(entry, true)) return undefined;
-  if (origins.length !== 1 || origin?.sourceMatchUpId !== source.matchUpId) return undefined;
+  if (entry.matchUpStatus !== target.matchUpStatus) return undefined;
+  const awardee = awardedReason(view, source, target);
+  if (awardee === false) return undefined;
   const path = [source.matchUpId, entry.matchUpId];
   let next = indexed(view, entry.winnerMatchUpId);
+  // the awardee went on into the next matchUp, alone there: their position comes back out of it
+  if (awardee) {
+    const held = (next?.drawPositions ?? []).filter(Boolean);
+    if (!next || held.length !== 1 || held[0] !== awardee || next.structureId !== structureId) return undefined;
+    if (next.matchUpStatus !== TO_BE_PLAYED || next.winningSide || !scoreless(next)) return undefined;
+    if (next.matchUpStatusCodes?.length || Object.keys(next.sideExitProvenance ?? {}).length) return undefined;
+    path.push(next.matchUpId);
+    next = indexed(view, next.winnerMatchUpId);
+  }
   while (next) {
     const clean = next.structureId === structureId && next.matchUpStatus === TO_BE_PLAYED && undecided(next, true);
     if (!clean || Object.keys(next.sideExitProvenance ?? {}).length || path.includes(next.matchUpId)) return undefined;
@@ -1608,9 +1620,32 @@ function unwoundPath(
     // the double exit's own seat and its produced exit's took the BYEs it placed; a seat further on holds nothing yet
     const seatOps = level.loserSeat ? unwoundSeatOps(view, level.loserSeat, index < 2) : [];
     if (!seatOps) return undefined;
-    levels.push({ matchUpId: id, seatOps });
+    levels.push({ matchUpId: id, seatOps, ...(awardee && index === 2 ? { released: awardee } : {}) });
   }
   return levels;
+}
+
+/**
+ * The produced exit as it stands: pending (undefined), with this matchUp's origin, on the side it fed, its only
+ * provenance and nothing placed; or awarded to the winner of the matchUp beside this one, who stands there alone with
+ * their arrival recorded beside that origin (their drawPosition). False for anything else (a convergence, a score, codes).
+ */
+function awardedReason(view: OutcomeView, source: HydratedMatchUp, target: ProducedTarget): number | false | undefined {
+  const { entry, fedSide, awardedSide } = target;
+  const provenance = entry.sideExitProvenance ?? {};
+  const origins = Object.keys(provenance);
+  if (provenance[fedSide]?.sourceMatchUpId !== source.matchUpId) return false;
+  if (!entry.winningSide) return undecided(entry, true) && origins.length === 1 ? undefined : false;
+  const awarded = entry.sides?.find((side) => side.sideNumber === awardedSide);
+  const arrival = provenance[awardedSide];
+  const paired = pairedFeeder(view);
+  const held = (entry.drawPositions ?? []).filter(Boolean);
+  if (entry.winningSide !== awardedSide || !awarded?.participantId || !awarded.drawPosition) return false;
+  if (origins.length !== 2 || arrival?.matchUpStatus || !paired || arrival?.sourceMatchUpId !== paired.matchUpId)
+    return false;
+  if (held.length !== 1 || !scoreless(entry) || entry.matchUpStatusCodes?.length) return false;
+  if (entry.sides?.some((side) => side.bye)) return false;
+  return awarded.drawPosition;
 }
 
 /**
@@ -1634,9 +1669,11 @@ function unwoundSeatOps(view: OutcomeView, loserSeat: WinnerLoserSeat, placedBye
     { op: 'clearMatchUpBye', matchUpId, drawPosition },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
   ];
-  if (!opposite.length) return ops;
   const next = indexed(view, byeMatchUp.winnerMatchUpId);
   const held = (next?.drawPositions ?? []).filter((position): position is number => !!position);
+  // a BYE alone in its matchUp sent nobody on; a next matchUp holding a position is rewritten by v1's position clear
+  // all the same, and announced (census 20660398, FEED_IN_CHAMPIONSHIP_TO_SF 16): v1's
+  if (!opposite.length) return held.length ? undefined : ops;
   // a next matchUp the withdrawal leaves with no position is v1's: its release re-announces it
   // (`releaseAdvancedDrawPosition`)
   if (opposite.length > 1 || !next || !held.includes(opposite[0]) || held.length < 2) return undefined;
@@ -1669,11 +1706,14 @@ function unwoundOps(
 ): OutcomeOp[] {
   if (route !== CLEAR_SCORE || !isDoubleExit(view.existing.matchUpStatus)) return [];
   const levels = unwoundPath(view, request.matchUpId, drawDefinition) ?? [];
-  return [...levels].reverse().flatMap(({ matchUpId, seatOps }, depth): OutcomeOp[] => {
+  return [...levels].reverse().flatMap(({ matchUpId, seatOps, released }, depth): OutcomeOp[] => {
     if (matchUpId === request.matchUpId) return seatOps;
     const produced = depth === levels.length - 2;
+    const held = indexed(view, matchUpId)?.drawPositions ?? [];
+    const drawPositions = held.filter((position): position is number => !!position && position !== released);
     return [
       ...seatOps,
+      ...(released ? [{ op: 'setMatchUpDrawPositions' as const, matchUpId, drawPositions }] : []),
       {
         op: 'setMatchUpResult',
         matchUpId,

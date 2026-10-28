@@ -984,6 +984,39 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(1, 'Main'), outcome: cleared }],
     },
   ],
+  [
+    'SINGLE_ELIMINATION (S6): a cleared double walkover whose walkover was awarded takes the award and its advance back',
+    {
+      drawProfile: { drawSize: 16, drawType: SINGLE_ELIMINATION },
+      setup: [
+        { target: R1(2), outcome: won(1) },
+        { target: R1(1), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+      steps: [{ target: R1(1), outcome: cleared }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION (S6): the same, the winner beside it arriving after the double walkover',
+    {
+      drawProfile: { drawSize: 16, drawType: SINGLE_ELIMINATION },
+      setup: [
+        { target: R1(1), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+        { target: R1(2), outcome: won(2) },
+      ],
+      steps: [{ target: R1(1), outcome: cleared }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6): a cleared double default whose default was awarded, beside loser links',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [
+        { target: R1(4, 'Main'), outcome: won(1) },
+        { target: R1(3, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } },
+      ],
+      steps: [{ target: R1(3, 'Main'), outcome: cleared }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the

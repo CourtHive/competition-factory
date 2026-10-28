@@ -703,8 +703,13 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   announces them, `removeDrawPosition-<the BYE's position>`, with neither event nor tournament. A seat further on holds
   nothing yet, and the visit only announces and stamps its structure (CURTIS's Play Off). The order is v1's recursion:
   deepest first, each level's seat before its matchUp, the call's own seat last, and the clear's own write after all of
-  it. Stay v1's: a cleared double exit in a feed round; behind a winner link or a link condition, or under
-  `doubleExitPropagateBye: false`; whose produced exit was awarded or converged; whose BYE went on across a further loser
+  it. Where the produced exit had been **awarded** at once to the winner of the matchUp beside this one, who went on
+  into the next matchUp and stands there alone, the unwind takes the award back: the produced exit's matchUp is to be
+  played with its winner removed and all its provenance gone (the awardee's arrival entry with this origin), and the
+  awardee's position comes back out of the next matchUp as v1's walk writes that matchUp back to be played; the awardee
+  stays where they arrived. Stay v1's: a cleared double exit in a feed round; behind a winner link or a link condition,
+  or under `doubleExitPropagateBye: false`; whose produced exit converged, or was awarded to a winner who has gone further
+  or does not stand alone; whose BYE went on across a further loser
   link (COMPASS, OLYMPIC); whose withdrawal leaves the matchUp it advanced into with no position (v1 re-announces it as
   `releaseAdvancedDrawPosition`); or with anything played beyond it.
 
