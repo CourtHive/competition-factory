@@ -390,7 +390,7 @@ Set either flag to `false` to restore the pre-defaults legacy semantics where ev
 
 When `courtIds` is provided, the scheduler only considers those courts as available capacity. Useful when an operator wants auto-scheduling to operate against a subset of courts (e.g. when some courts are reserved for other purposes, or when scheduling is being applied per-court). Passing an empty array means "no courts are available" — the scheduler will run but place no matchUps. Omitting the parameter (the default) considers all enabled courts at the profile's venues.
 
-In the deprecated `pro: true` mode, matchUps will receive `courtId` assignments only from the filtered set. In default (Garman) mode, the filter constrains capacity but final court assignment may still be deferred to play time.
+The filter constrains capacity; `scheduleProfileRounds` assigns no court (court grid positions are placed by `scheduleProfileGrid`).
 
 **Returns**:
 
@@ -461,10 +461,9 @@ console.log('Would schedule:', result.scheduledMatchUpIds.length, 'matchUps');
 console.log('Request conflicts:', result.requestConflicts);
 ```
 
-**`pro: true` is deprecated** (since 7.15.0; removed at the next major). It selects an older scheduler that gives each
-matchUp a court and a time in one pass, without Garman time slots. It is not grid scheduling: court grid positions
-(`courtOrder`) are placed by [`scheduleProfileGrid`](#scheduleprofilegrid), which can run after `scheduleProfileRounds`.
-Omit `pro` to use the default scheduler.
+**`pro: true` is removed** (deprecated since 7.15.0, removed 2026-10-28): the flag is accepted and ignored until the
+next major, and every call takes the profile scheduler. Court grid positions (`courtOrder`) are placed by
+[`scheduleProfileGrid`](#scheduleprofilegrid), which can run after `scheduleProfileRounds`.
 
 :::note
 SINGLES and DOUBLES matchUps are scheduled automatically. TEAM matchUps require manual court allocation using `allocateTeamMatchUpCourts()`.

@@ -395,8 +395,8 @@ describe('processAlreadyScheduledMatchUps — exclusion flags', () => {
 
 describe('scheduleProfileRounds — exclusion flag threading', () => {
   // End-to-end: the new flags must thread from the public API through
-  // scheduleProfileRounds → planSchedule → getVenueSchedulingDetails →
-  // processAlreadyScheduledMatchUps without breaking the pipeline.
+  // scheduleProfileRounds → planSchedule → processAlreadyScheduledMatchUps without breaking the
+  // pipeline.
   it.each([
     { excludeNoDateCompleted: true, excludePriorDates: true, label: 'both defaults (true/true)' },
     { excludeNoDateCompleted: false, excludePriorDates: false, label: 'both opted out (false/false)' },
