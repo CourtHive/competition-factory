@@ -399,6 +399,8 @@ export type GenerateOutcomeArgs = MockEngineCall & {
 export type CompleteDrawMatchUpsArgs = MockEngineCall &
   CompletionOptions & {
     completeRoundRobinPlayoffs?: boolean;
+    /** per structure, complete at most this many rounds, counted from its first round still to play */
+    roundsToComplete?: number;
     tournamentRecord?: Tournament;
     drawDefinition?: { [key: string]: unknown };
     event?: { [key: string]: unknown };
