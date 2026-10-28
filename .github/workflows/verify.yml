@@ -21,7 +21,8 @@ name: Verify
 #                   coverage/coverage-summary.json are computed over the MERGED result
 #   slow-gates      route-differential, deep-corrections and hydrations, one job each
 #   team-arms       verify:team-arms split 5 ways (vitest --shard), one extended-arm file per job
-#   v2-arm          INFORMATIONAL: the suite under OUTCOME_PIPELINE=v2 on a dev PR touching the outcome pipeline
+#   v2-arm          INFORMATIONAL: the suite under OUTCOME_PIPELINE=v2 on a dev PR touching the outcome pipeline,
+#                   split 4 ways (vitest --shard)
 #   verify          `verify (node N)`, the check master's branch protection requires: it passes only
 #                   when every job above passed (or, on a light run, was skipped as intended)
 #
@@ -395,12 +396,22 @@ jobs:
   # The whole suite under OUTCOME_PIPELINE=v2, on a PR into dev that touches the outcome pipeline's
   # paths. It is not in `verify`'s needs and it never fails the run: a red here is read, not gated on.
   # Until then only checkpoints run `differential`, and nothing ran `v2`.
+  #
+  # SHARDED 4 ways (CA, 2026-10-28), as coverage is: as one job it ran the whole suite on one runner and
+  # was the slowest job in a dev PR run (33-34 min against 7-15 for a coverage shard, #5909 and #5910).
+  # A shard is informational like the whole was, and each repeats the cheap path check.
   v2-arm:
     needs: scope
     if: github.event_name == 'pull_request' && github.base_ref == 'dev' && needs.scope.outputs.light != 'true'
     continue-on-error: true
-    timeout-minutes: 60
+    # slowest measured as ONE job: 34 min; a shard is a quarter of that
+    timeout-minutes: 30
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    name: v2-arm ${{ matrix.shard }}/4
     steps:
       - uses: actions/checkout@v7
         with:
@@ -423,9 +434,9 @@ jobs:
         with:
           node-version: 24
 
-      - name: vitest under OUTCOME_PIPELINE=v2
+      - name: vitest under OUTCOME_PIPELINE=v2, shard ${{ matrix.shard }}/4
         if: steps.paths.outputs.run == 'true'
-        run: npx vitest run
+        run: pnpm exec vitest run --shard=${{ matrix.shard }}/4
         env:
           OUTCOME_PIPELINE: v2
           TZ: UTC
