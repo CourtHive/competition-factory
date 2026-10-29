@@ -481,7 +481,7 @@ describe('v2Scheduler: dryRun scheduling', () => {
     const round1 = matchUps.filter((m: any) => m.roundNumber === 1);
     expect(round1.length).toBe(4);
 
-    // Schedule using the engine (exercises v2Scheduler)
+    // Schedule using the engine (the profile scheduler)
     let result: any = tournamentEngine.scheduleMatchUps({
       scheduleDates: [startDate],
     });

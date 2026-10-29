@@ -19,6 +19,10 @@ export const GROUP = 'GROUP';
 export const PAIR = 'PAIR';
 export const TEAM = 'TEAM';
 
+// a lineUp warning: the individual assigned is on no team in the event, so is not on the roster of the team
+// whose lineUp it joins. Allowed; a player on ANOTHER team's roster is refused (SHARED_INDIVIDUAL_PARTICIPANT)
+export const NOT_ON_TEAM_ROSTER = 'NOT_ON_TEAM_ROSTER';
+
 export const participantTypes = {
   TEAM_PARTICIPANT,
   INDIVIDUAL,
@@ -36,6 +40,8 @@ export const participantConstants = {
   SIGN_IN_STATUS,
   SIGNED_OUT,
   SIGNED_IN,
+
+  NOT_ON_TEAM_ROSTER,
 
   PAYMENT_STATUS,
   REFUNDED,

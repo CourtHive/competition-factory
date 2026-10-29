@@ -7,11 +7,11 @@ import { decorateResult } from '@Functions/global/decorateResult';
 import { checkPlayedOrder } from './scheduleItems/playedOrder';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { mustBeAnArray } from '@Tools/mustBeAnArray';
-import { extractDate } from '@Tools/dateTime';
+import { extractDate, sameDay } from '@Tools/dateTime';
 
 // constants and types
 import { MUTUALLY_EXCLUSIVE_TIME_MODIFIERS, SCHEDULED_TIME, TIME_MODIFIERS } from '@Constants/timeItemConstants';
-import { INVALID_TIME, INVALID_VALUES, MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
+import { INVALID_DATE, INVALID_TIME, INVALID_VALUES, MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -36,6 +36,14 @@ type AddMatchUpScheduledTimeArgs = {
   matchUp?: MatchUp;
 };
 
+export const DATE_TIME_ANOTHER_DAY = "a scheduledTime's date must be the matchUp's scheduledDate";
+
+/** whether a matchUp already has a date that is not the given day */
+export function datedOnAnotherDay(matchUp: MatchUp | undefined, day: string): boolean {
+  const scheduledDate = extractDate(scheduledMatchUpDate({ matchUp }).scheduledDate);
+  return !!scheduledDate && !sameDay(scheduledDate, day);
+}
+
 export function addMatchUpScheduledTime(params: AddMatchUpScheduledTimeArgs) {
   const stack = 'addMatchUpScheduledTime';
   let matchUp = params.matchUp;
@@ -56,6 +64,10 @@ export function addMatchUpScheduledTime(params: AddMatchUpScheduledTimeArgs) {
     if (result.error) return decorateResult({ result, stack });
     matchUp = result.matchUp;
   }
+
+  // a date-time names its day: one that is not the matchUp's own day is refused, never stored against it (§ 9.9)
+  if (timeDate && datedOnAnotherDay(matchUp, timeDate))
+    return decorateResult({ result: { error: INVALID_DATE }, info: DATE_TIME_ANOTHER_DAY, stack });
 
   if (!params.playedOrderChecked) {
     const refusal = checkPlayedOrder({ drawDefinition, matchUpId, schedule: { scheduledTime: scheduledTime ?? '' } });

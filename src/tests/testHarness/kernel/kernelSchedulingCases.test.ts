@@ -1,4 +1,6 @@
 import { authoredSchedulingCases } from './schedulingCaseSources';
+import { authoredConflictsCases } from './conflictsCaseSources';
+import { authoredGridCases } from './gridCaseSources';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { canonicalJson } from '@Tools/canonicalJson';
 import { describe, expect, it } from 'vitest';
@@ -9,11 +11,15 @@ import path from 'node:path';
  * `cases/scheduling.json` is the authored `kernel.scheduling.plan@2` cases (`schedulingCaseSources.ts`), and
  * `cases/schedulingView.json` the `kernel.scheduling.view@1` cases built from the same sources: rebuilt here, each held
  * to its claims, and compared with the committed files, so a change to the view or to a plan is a reviewed change to
- * the cases. `KERNEL_SCHEDULING_CASES=write` rewrites the files instead.
+ * the cases; `cases/schedulingGrid.json` is the `kernel.scheduling.grid@1` cases (`gridCaseSources.ts`).
+ * `KERNEL_SCHEDULING_CASES=write` rewrites the files instead.
  */
 const files = {
   plan: path.join(__dirname, 'cases', 'scheduling.json'),
   view: path.join(__dirname, 'cases', 'schedulingView.json'),
+  grid: path.join(__dirname, 'cases', 'schedulingGrid.json'),
+  conflicts: path.join(__dirname, 'cases', 'schedulingConflicts.json'),
+  conflictsView: path.join(__dirname, 'cases', 'schedulingConflictsView.json'),
 };
 
 function expectCommitted(file: string, cases: KernelCase[]) {
@@ -37,5 +43,21 @@ describe('the authored scheduling cases', () => {
     expect(view.map(({ caseId }) => caseId.replace('.view.', '.plan.'))).toEqual(plan.map(({ caseId }) => caseId));
     expectCommitted(files.plan, plan);
     expectCommitted(files.view, view);
+  });
+
+  it('the grid cases meet their claims and the closed-view property, and are the committed cases', () => {
+    const grid = authoredGridCases();
+    expect(grid.length).toBeGreaterThanOrEqual(7);
+    expectCommitted(files.grid, grid);
+  });
+
+  it('the conflicts cases meet their claims and the closed-view property, and are the committed cases', () => {
+    const { conflicts, views } = authoredConflictsCases();
+    expect(conflicts.length).toBeGreaterThanOrEqual(12);
+    expect(views.map(({ caseId }) => caseId.replace('.conflicts-view.', '.conflicts.'))).toEqual(
+      conflicts.map(({ caseId }) => caseId),
+    );
+    expectCommitted(files.conflicts, conflicts);
+    expectCommitted(files.conflictsView, views);
   });
 });

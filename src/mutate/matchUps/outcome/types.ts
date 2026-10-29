@@ -123,6 +123,11 @@ export type OutcomeView = {
   feedEligibilityBlockedBy?: string;
   /** § 2 row 22: a result recorded downstream fixes whether this outcome is an exit or a played result (P52) */
   correctionKindBlockedBy?: string;
+  /**
+   * § 2 row 26: a swap over a FIRST_MATCHUP link would have to place a loser on, or take one off, a fed seat that has
+   * played on (v1's `fedLoserPlacementRefusal` and `relabelledPathFeedRefusal`, asked before the swap writes)
+   */
+  swapMeetsActivePosition?: boolean;
   /** a line of a dual: what the dual projects once this line is written */
   line?: {
     dualMatchUpId: string;
@@ -165,11 +170,44 @@ export type OutcomeView = {
       opponentBye: boolean;
       /** the seat is a BYE already (a FIRST_MATCHUP reservation placed it): a kept-out loser's BYE needs nothing */
       bye: boolean;
+      /** that BYE was placed by a propagation (`assignDrawPositionBye`'s marker), which an unwind may take back */
+      byeFromPropagation?: boolean;
       /** the matchUp's other seat holds somebody or a BYE: a BYE placed here would advance or meet them */
       opponentHeld: boolean;
+      /** the participant the seat holds: a re-entered result finds its loser already there (S4) */
+      participantId?: string;
     };
     /** a loser placed opposite a BYE goes on into this matchUp, holding these drawPositions after (planned, S3) */
     loserThroughBye?: ThroughBye;
+    /**
+     * the levels a carried exit goes on to beyond the matchUp it lands in (S5, `propagateExitFrom`): each loser link its
+     * carrier crosses next, as v1 directs them from the landing. Read only for a call that may carry; `bounded` when the
+     * walk reached v1's `exitLevels` with a level still to go (F9: v2 abstains there)
+     */
+    carryLevels?: { levels: CarryLevel[]; bounded: boolean };
+    /**
+     * a double exit's call (S5): the seat the winner target's loser link feeds, which its produced exit leaves nobody to
+     * fill (v1's `propagateUnfillableLoserBye`), with the matchUp holding it
+     */
+    winnerLoserSeat?: WinnerLoserSeat;
+    /**
+     * a stored double exit the call leaves (S6, `removeDoubleExit`): the call's matchUp and each matchUp on its winner path
+     * in its structure, to the final, with the seat each one's loser link feeds, which v1's unwind visits
+     */
+    unwindLoserSeats?: { matchUpId: string; loserSeat?: WinnerLoserSeat }[];
+    /**
+     * a double exit's call whose next matchUp holds an exit (S5): the loser seat of the matchUp after it, which a
+     * convergence's produced exit leaves unfillable, and the levels a BYE there goes on to
+     */
+    onwardLoserSeat?: WinnerLoserSeat & { levels?: { levels: CarryLevel[]; bounded: boolean } };
+    /**
+     * a double exit's call (S5): the loser-link levels beyond the loser matchUp (`own`) and beyond the matchUp holding the
+     * seat its produced exit leaves unfillable (`unfillable`), which a BYE placed there goes on to (`byeLevels`)
+     */
+    byeLevels?: {
+      own?: { levels: CarryLevel[]; bounded: boolean };
+      unfillable?: { levels: CarryLevel[]; bounded: boolean };
+    };
     /** a winner whose target holds a BYE goes on past it into this matchUp, by the winning side (planned, S3) */
     winnerThroughBye?: { 1?: ThroughBye; 2?: ThroughBye };
     /** the participants seeded in the source structure: a seeded loser placed across a link takes the seed with them */
@@ -181,6 +219,30 @@ export type OutcomeView = {
     /** a side of the loserMatchUp already carries an exit in: a second one there makes a double exit */
     loserMatchUpCarriesExit: boolean;
     loserMatchUpCarriedStatuses: string[];
+    /**
+     * the loserMatchUp's stored side record: a loser taken back out of it has its codes re-derived from what provenance
+     * still holds (v1's `removeDirectedLoser`), so a matchUp storing none is written `[]` (S4)
+     */
+    loserMatchUpRecord?: { matchUpStatusCodes?: unknown[]; provenance: boolean };
+    /**
+     * a swap's relabel in the source structure (S4, v1's `swapWinnerLoser`): the old winner's and the old loser's
+     * positions, the later-round matchUps holding either (read from the stored draw), whether any carries exit
+     * provenance or an exit status, and whether the structure has any link out of it (then the swap relabels downstream)
+     */
+    swap?: {
+      positionA: number;
+      positionB?: number;
+      pathMatchUpIds: string[];
+      pathCarriesExit: boolean;
+      linkedOut: boolean;
+      /**
+       * the relabel downstream, when it is plannable: the seats in other structures whose occupant changes identity
+       * (the old winner's becomes the old loser's and the reverse), every such structure a plain loser link's target from
+       * this one. Undefined when the structure links out otherwise, is fed by a link itself, or a participant stands
+       * anywhere else
+       */
+      relabels?: { structureId: string; drawPosition: number; participantId: string }[];
+    };
     /**
      * P51 group 2: the loserMatchUp is a single exit already decided for the seat the loser arrives in, with a result
      * recorded below it. A carried exit arriving there is carried past it, as past a BYE, rather than converging.
@@ -244,10 +306,25 @@ export type OutcomeView = {
     combinedPointRoundRobin?: boolean;
     /** a competition policy processed per matchUp: v1 updates ratings on a result (`processCompetitionMatchUp`) */
     perMatchUpCompetition?: boolean;
+    /**
+     * the scoring policy names `processCodes.incompleteAssignmentsOnDefault`: v1 writes them onto a DEFAULTED matchUp
+     * missing a participant (`modifyMatchUpScore`'s `applyDefaultedProcessCodes`), not an op
+     */
+    defaultProcessCodes?: boolean;
+    /**
+     * the progression policy's `doubleExitPropagateBye` as v1 reads it (`propagatesByeOnDoubleExit`): off, a double
+     * exit's loser seat shows its produced exit instead of a BYE (CA ruling (A), 2026-10-21)
+     */
+    doubleExitPropagatesBye?: boolean;
     /** v1's score write updates a tally here (`updateTallyIfNeeded`): a round-robin container, ad hoc, or lucky */
     tallied: boolean;
     /** the draw stores its winner and loser edges; v1 writes them first on one that does not (edge repair) */
     storesEdges: boolean;
+    /**
+     * the matchUp's structure feeds its playoffs by finishing position (WIN_RATIO): v1 answers a winner cleared or
+     * changed there with the playoff structures it reaches (`checkConnectedStructures`), a read of the whole structure
+     */
+    winRatio?: boolean;
   };
 };
 
@@ -345,3 +422,34 @@ export type Reservation =
 
 /** the matchUp a participant placed opposite a BYE goes on into, and its drawPositions once they are there */
 export type ThroughBye = { matchUpId: string; drawPositions: number[] };
+
+/** the seat a matchUp's loser link feeds, as `positionTargets` gives it, and what holds it */
+export type WinnerLoserSeat = {
+  matchUpId: string;
+  structureId: string;
+  drawPosition: number;
+  linkCondition?: string;
+  seat?: { free: boolean; opponentBye: boolean; opponentHeld: boolean; bye?: boolean; byeFromPropagation?: boolean };
+  /** the positions the matchUp holding the seat already stands with */
+  drawPositions: number[];
+  matchUpStatus?: MatchUpStatusUnion;
+  hasResult: boolean;
+};
+
+/** one further level of a carried exit: the seat the carrier is placed on across the landing's loser link */
+export type CarryLevel = {
+  /** the landing the carrier loses, whose loser link this level crosses */
+  fromMatchUpId: string;
+  /** the matchUp the carrier lands in at this level */
+  matchUpId: string;
+  structureId: string;
+  drawPosition: number;
+  linkCondition?: string;
+  seat?: { free: boolean; opponentBye: boolean; opponentHeld: boolean };
+  matchUpStatus?: MatchUpStatusUnion;
+  hasResult: boolean;
+  carriesExit: boolean;
+  record?: { matchUpStatusCodes?: unknown[]; provenance: boolean };
+  /** a BYE opposite the seat: the matchUp beyond it the carrier goes on into, with the positions it holds after (RULE 1) */
+  through?: ThroughBye;
+};

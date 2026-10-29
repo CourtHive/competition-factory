@@ -1,12 +1,12 @@
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { getDrawPositionWinCount, isUnscoredOutcome } from '@Query/matchUp/getDrawPositionWinCount';
-import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import {
+  structureMatchUpsInContext,
   departingLoserPathRefusal,
   reconcileFedLoserEligibility,
 } from '@Mutate/matchUps/drawPositions/reconcileFedLoserEligibility';
@@ -56,7 +56,7 @@ import type {
  * proceed with equivalence), and the state reconciliation AFTER the result is applied.
  */
 
-type PathFeed = {
+export type PathFeed = {
   loserMatchUpDrawPositionIndex?: number;
   inContextMatchUp: HydratedMatchUp;
   loserMatchUp?: HydratedMatchUp;
@@ -129,19 +129,13 @@ function pathFeeds({
  * The new outcome is read as the RESULTING RECORD reads, with the fallbacks `feedEligibilityChange` uses:
  * `COMPLETED` when no status is sent, and the existing score when none is.
  */
-export function relabelledPathFeedRefusal({
-  existingWinnerDrawPosition,
-  existingLoserDrawPosition,
-  inContextDrawMatchUps,
-  flippedRoundNumber,
-  drawDefinition,
-  matchUpStatus,
-  structure,
-  matchUp,
-  event,
-  score,
-}: {
+type PathFeedArgs = {
   inContextDrawMatchUps?: HydratedMatchUp[];
+  /**
+   * `inContextDrawMatchUps` is the whole draw, read in place of every hydration this makes (outcome v2's structural
+   * index). Not set, the structure's matchUps and the target's profile are hydrated, as v1 asks it
+   */
+  fromIndex?: boolean;
   existingWinnerDrawPosition?: number;
   existingLoserDrawPosition?: number;
   drawDefinition: DrawDefinition;
@@ -151,8 +145,27 @@ export function relabelledPathFeedRefusal({
   matchUp?: MatchUp;
   event?: Event;
   score?: Score;
-}): ResultType | undefined {
-  if (!flippedRoundNumber || !existingWinnerDrawPosition || !existingLoserDrawPosition) return undefined;
+};
+
+/**
+ * The later losses on the flipped path that feed `FIRST_MATCHUP` and whose fed loser's eligibility the flip changes: the
+ * feeds `reconcileRelabelledPathFeeds` writes after the flip (a placement or a revert to a BYE). Empty, the relabel is
+ * all a swap writes for them. Shared by the refusal below, asked before the flip writes, and by outcome v2's plan.
+ */
+export function relabelledPathFeedChanges({
+  existingWinnerDrawPosition,
+  existingLoserDrawPosition,
+  inContextDrawMatchUps,
+  flippedRoundNumber,
+  drawDefinition,
+  matchUpStatus,
+  structure,
+  fromIndex,
+  matchUp,
+  event,
+  score,
+}: PathFeedArgs): { feed: PathFeed; eligibleAfter: boolean }[] {
+  if (!flippedRoundNumber || !existingWinnerDrawPosition || !existingLoserDrawPosition) return [];
 
   const feeds = pathFeeds({
     inContextDrawMatchUps: inContextDrawMatchUps ?? [],
@@ -161,15 +174,10 @@ export function relabelledPathFeedRefusal({
     flippedRoundNumber,
     drawDefinition,
   }).filter((feed) => feed.loserDrawPosition === existingWinnerDrawPosition);
-  if (!feeds.length) return undefined;
+  if (!feeds.length) return [];
 
-  const { matchUps } = getAllStructureMatchUps({
-    afterRecoveryTimes: false,
-    inContext: true,
-    drawDefinition,
-    structure,
-    event,
-  });
+  const indexed = fromIndex ? inContextDrawMatchUps : undefined;
+  const matchUps = structureMatchUpsInContext({ inContextDrawMatchUps: indexed, drawDefinition, structure, event });
   const sourceMatchUps = teamLevelMatchUps(matchUps ?? []);
   const winsIn = (drawPosition: number, from: number, to: number) =>
     getDrawPositionWinCount({
@@ -183,6 +191,7 @@ export function relabelledPathFeedRefusal({
     score: score ?? matchUp?.score,
   });
 
+  const changes: { feed: PathFeed; eligibleAfter: boolean }[] = [];
   for (const feed of feeds) {
     const feedRoundNumber = feed.inContextMatchUp.roundNumber ?? 0;
     const eligibleBefore = isFedLoserEligible({
@@ -195,8 +204,40 @@ export function relabelledPathFeedRefusal({
       (flippedWinIsScored ? 1 : 0) +
       winsIn(existingWinnerDrawPosition, flippedRoundNumber, feedRoundNumber);
     const eligibleAfter = winsAfter === 0;
-    if (eligibleBefore === eligibleAfter) continue;
+    if (eligibleBefore !== eligibleAfter) changes.push({ feed, eligibleAfter });
+  }
+  return changes;
+}
 
+export function relabelledPathFeedRefusal({
+  existingWinnerDrawPosition,
+  existingLoserDrawPosition,
+  inContextDrawMatchUps,
+  flippedRoundNumber,
+  drawDefinition,
+  matchUpStatus,
+  structure,
+  fromIndex,
+  matchUp,
+  event,
+  score,
+}: PathFeedArgs): ResultType | undefined {
+  const indexed = fromIndex ? inContextDrawMatchUps : undefined;
+  const changes = relabelledPathFeedChanges({
+    existingWinnerDrawPosition,
+    existingLoserDrawPosition,
+    inContextDrawMatchUps,
+    flippedRoundNumber,
+    drawDefinition,
+    matchUpStatus,
+    structure,
+    fromIndex,
+    matchUp,
+    event,
+    score,
+  });
+
+  for (const { feed, eligibleAfter } of changes) {
     const targetStructureId = feed.loserTargetLink.target?.structureId;
     if (!targetStructureId) continue;
 
@@ -206,6 +247,7 @@ export function relabelledPathFeedRefusal({
       if (!drawPositions.length) continue;
       const fedDrawPosition = Math.min(...drawPositions);
       const { activeDrawPositions } = getStructureDrawPositionProfiles({
+        inContextDrawMatchUps: indexed,
         structureId: targetStructureId,
         drawDefinition,
       });
@@ -216,7 +258,12 @@ export function relabelledPathFeedRefusal({
       const departingLoserParticipantId = positionAssignments?.find(
         (assignment) => assignment.drawPosition === existingWinnerDrawPosition,
       )?.participantId;
-      const refusal = departingLoserPathRefusal({ departingLoserParticipantId, targetStructureId, drawDefinition });
+      const refusal = departingLoserPathRefusal({
+        inContextDrawMatchUps: indexed,
+        departingLoserParticipantId,
+        targetStructureId,
+        drawDefinition,
+      });
       if (refusal?.error) return refusal;
     }
   }

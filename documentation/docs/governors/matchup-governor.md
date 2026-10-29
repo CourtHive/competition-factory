@@ -104,7 +104,13 @@ points across every set, not the side that won more sets, and the totals are ret
 
 ## applyLineUps
 
-Applies `lineUps` to the `sides` of a _TEAM_ matchUp. Order is not important as team side is determined automatically. Does not check to ensure that participants in `lineUps` are part of teams; this is assumed. It is possible to have **_some_** participants assigned to a team side who are not part of a team.
+Applies `lineUps` to the `sides` of a _TEAM_ matchUp. Order is not important as team side is determined automatically, from the roster members in each lineUp. A lineUp may include players who are on no team; it may not include a player of another team.
+
+**One player, one team, per event.** A player who belongs to another team of the event (on its roster, or in its
+lineUp in any of the event's draws) is refused with `SHARED_INDIVIDUAL_PARTICIPANT`, and `context` names the player
+and that team. A player who belongs to no team may be placed: the result is a success with a `NOT_ON_TEAM_ROSTER`
+warning (`warnings: [{ code: 'NOT_ON_TEAM_ROSTER', info: { participantIds } }]`), and from then on the player belongs
+to that team for the rest of the event.
 
 ```js
 result = engine.applyLineUps({
@@ -139,7 +145,7 @@ Used when interactively assigning participants to `matchUps`. When individual `p
 
 ```js
 engine.assignTieMatchUpParticipantId({
-  teamParticipantId, // optional - participant team can be derived from participantId. This supports assigning "borrowed" players from other teams.
+  teamParticipantId, // optional - participant team can be derived from participantId; required for a player on no team
   participantId, // id of INDIVIDUAL or PAIR participant to be assigned to a matchUp
   tieMatchUpId, // matchUpId of a SINGLES or DOUBLES that is part of a matchUp between teams
   sideNumber, // optional - only necessary if a participant is part of both teams (edge case!)
@@ -148,6 +154,12 @@ engine.assignTieMatchUpParticipantId({
 ```
 
 Refused with `INVALID_MATCHUP` when `tieMatchUpId` names a SINGLES or DOUBLES matchUp that is not a line of a TEAM matchUp (7.8.0; before, the refusal named an unrelated cause: team not found, not found, or missing matchUp). A TEAM matchUp itself is refused the same way.
+
+**One player, one team, per event.** A player who belongs to another team of the event (on its roster, or in its
+lineUp in any of the event's draws) is refused with `SHARED_INDIVIDUAL_PARTICIPANT`, and `context` names the player
+and that team. A player who belongs to no team may be placed: the result is a success with a `NOT_ON_TEAM_ROSTER`
+warning (`warnings: [{ code: 'NOT_ON_TEAM_ROSTER', info: { participantIds } }]`), and from then on the player belongs
+to that team for the rest of the event.
 
 ---
 
@@ -815,6 +827,8 @@ engine.replaceTieMatchUpParticipantId({
   drawId,
 });
 ```
+
+The new player follows the rule of [assignTieMatchUpParticipantId](#assigntiematchupparticipantid): refused when on another team of the event, a `NOT_ON_TEAM_ROSTER` warning when on none.
 
 Refused with `INVALID_MATCHUP` when `tieMatchUpId` names a SINGLES or DOUBLES matchUp that is not a line of a TEAM matchUp (7.8.0; before, the refusal named an unrelated cause: team not found, not found, or missing matchUp). A TEAM matchUp itself is refused the same way.
 

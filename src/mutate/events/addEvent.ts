@@ -1,4 +1,4 @@
-import { addDrawNotice, addMatchUpsNotice } from '@Mutate/notifications/drawNotifications';
+import { addDrawNotice, addMatchUpsNotice, stampUnannounced } from '@Mutate/notifications/drawNotifications';
 import tieFormatDefaults from '@Assemblies/generators/templates/tieFormatDefaults';
 import { addEventNotice } from '@Mutate/notifications/eventNotifications';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
@@ -7,7 +7,6 @@ import { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
 import { normalizeDiscipline } from '@Helpers/coercedDiscipline';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { normalizeGender } from '@Helpers/coercedGender';
-import { getTopics } from '@Global/state/globalState';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { UUID } from '@Tools/UUID';
 
@@ -17,7 +16,6 @@ import { TOURNAMENT_RECORD, EVENT as EVENT_ATTR } from '@Constants/attributeCons
 import { SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { Event, Tournament } from '@Types/tournamentTypes';
 import { tieFormats } from '@Fixtures/scoring/tieFormats';
-import { ADD_MATCHUPS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type AddEventArgs = {
@@ -42,7 +40,6 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
 } {
   const paramsCheck = requireParams({ tournamentRecord, event }, [TOURNAMENT_RECORD, EVENT_ATTR]);
   if (paramsCheck.error) return paramsCheck;
-  tournamentRecord.events ??= [];
 
   // set default startDate, endDate based on tournamentRecord
   const { startDate, endDate } = tournamentRecord;
@@ -77,6 +74,9 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
   // 'beach volleyball' and 'BEACH_VOLLEYBALL' are stored identically
   if (eventRecord.discipline) eventRecord.discipline = normalizeDiscipline(eventRecord.discipline);
 
+  // minted before the tieFormat, whose mock collection ids are built from it (they were `undefined-COL-n`)
+  eventRecord.eventId ??= UUID();
+
   if (event.eventType === TEAM_EVENT) {
     if (event.tieFormat) {
       // A supplied tieFormat may carry no collectionIds — the published `fixtures.tieFormats` cannot
@@ -101,15 +101,14 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
       const tieFormat = tieFormatDefaults({
         isMock: tournamentRecord?.isMock,
         namedFormat: event.tieFormatName,
-        event,
+        event: eventRecord,
+        uuids,
       });
       eventRecord.tieFormat = tieFormat;
     }
   }
 
-  eventRecord.eventId ??= UUID();
-
-  const eventExists = tournamentRecord.events.reduce((exists: boolean | undefined, event) => {
+  const eventExists = (tournamentRecord.events ?? []).reduce((exists: boolean | undefined, event) => {
     return exists || event.eventId === eventRecord.eventId;
   }, undefined);
 
@@ -118,6 +117,8 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
   }
 
   const newEvent = eventRecord as Event;
+  // created only when an event is stored: a refused call wrote an empty array
+  tournamentRecord.events ??= [];
   tournamentRecord.events.push(newEvent);
 
   // Every notice describes the event as STORED: its minted eventId, normalised gender and discipline,
@@ -126,11 +127,11 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
   if (!suppressNotifications) {
     const tournamentId = tournamentRecord?.tournamentId;
     const eventId = newEvent.eventId;
-    const { topics } = getTopics();
-    if (topics.includes(ADD_MATCHUPS)) {
-      const matchUps = allEventMatchUps({ event: newEvent }).matchUps ?? [];
-      addMatchUpsNotice({ tournamentId, eventId, matchUps });
-    }
+    // announced (and so stamped) whether or not anything subscribes, as addDrawDefinition announces a draw's
+    // matchUps: gated on the subscription, the stored matchUps' updatedAt depended on who was listening. An event
+    // added before its draws has none: no empty notice (the draws announce theirs)
+    const matchUps = allEventMatchUps({ event: newEvent }).matchUps ?? [];
+    if (matchUps.length) addMatchUpsNotice({ tournamentId, eventId, matchUps });
 
     const { drawDefinitions, ...rest } = newEvent;
 
@@ -139,6 +140,11 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
     }
 
     addEventNotice({ tournamentId, event: rest });
+  } else {
+    // unannounced, and stamped as an announced event's draws and matchUps are, the record marked modified
+    const tournamentId = tournamentRecord?.tournamentId;
+    for (const drawDefinition of newEvent.drawDefinitions ?? []) stampUnannounced({ drawDefinition, tournamentId });
+    stampUnannounced({ tournamentId, matchUps: allEventMatchUps({ event: newEvent }).matchUps ?? [] });
   }
 
   return { ...SUCCESS, event: eventRecord };

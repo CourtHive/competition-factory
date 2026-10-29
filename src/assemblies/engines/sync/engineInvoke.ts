@@ -1,5 +1,5 @@
 import { captureOperation, restoreOperation } from '@Assemblies/engines/parts/operationState';
-import { deleteNotices, getInvokeObserver, getMethods } from '@Global/state/globalState';
+import { deleteNotices, getFactoryBackend, getInvokeObserver, getMethods } from '@Global/state/globalState';
 import { getMutationStatus } from '@Assemblies/engines/parts/getMutationStatus';
 import { logMethodNotFound } from '@Assemblies/engines/parts/logMethodNotFound';
 import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
@@ -45,8 +45,16 @@ export function engineInvoke(engine: { [key: string]: any }, args: any) {
 
     let result: ReturnType<typeof executeFunction>;
     try {
+      // the method itself, or a second implementation of it when a test harness set one (globalState
+      // setFactoryBackend); either way this shell stamps, notifies and rolls back around it
+      const runLocal = () => executeFunction(engine, method, params, methodName, 'sync');
+      const backend = getFactoryBackend();
       result =
-        withCallRandomSource(unthreadedSource, () => executeFunction(engine, method, params, methodName, 'sync')) ?? {};
+        withCallRandomSource(unthreadedSource, () =>
+          backend?.implements(methodName)
+            ? (backend.invoke({ methodName, params, timeStamp, runLocal }) as ReturnType<typeof runLocal>)
+            : runLocal(),
+        ) ?? {};
     } catch (err) {
       // thrown only under devContext (otherwise executeFunction catches): restore, then surface it
       if (captured) restoreOperation(captured);

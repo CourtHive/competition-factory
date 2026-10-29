@@ -1,5 +1,6 @@
 import { extractDate, extractTime, isValidDateString, sameDay, zeroPad } from '@Tools/dateTime';
 import { overnightRestWarningsFor } from '@Query/matchUps/scheduling/getOvernightRestWarnings';
+import { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue';
@@ -11,6 +12,7 @@ import { resolveScheduleMatchUpsTiming } from './resolveScheduleMatchUpsTiming';
 import { getParticipantReachability } from './getParticipantReachability';
 import { checkDependenciesScheduled } from './checkDependenciesScheduled';
 import { hasByeSide } from '@Mutate/matchUps/schedule/byeScheduling';
+import { onTheGrid, timedGridConflicts } from './timedGridConflicts';
 import { modifyParticipantDayMatchUps } from './participantDayLoad';
 import { updateTimeAfterRecovery } from './updateTimeAfterRecovery';
 import { calculateScheduleTimes } from './calculateScheduleTimes';
@@ -132,6 +134,7 @@ export function scheduleMatchUps(params) {
   const targetMatchUps = matchUpIds
     .map((matchUpId) => competitionMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId))
     .filter(Boolean);
+  const listedMatchUps = Object.fromEntries(targetMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
 
   const dateMatchUps = competitionMatchUps.filter(
     (matchUp) => matchUp.schedule?.scheduledDate && sameDay(scheduleDate, extractDate(matchUp.schedule.scheduledDate)),
@@ -146,7 +149,7 @@ export function scheduleMatchUps(params) {
 
   // determines court availability taking into account already scheduled matchUps on the scheduleDate
   // optimization to pass already retrieved competitionMatchUps to avoid refetch (requires refactor)
-  const { venueId, scheduleTimes, dateScheduledMatchUpIds } = calculateScheduleTimes({
+  const { venueId, scheduleTimes, dateScheduledMatchUpIds, dateTimedMatchUpIds } = calculateScheduleTimes({
     tournamentRecords,
     remainingScheduleTimes,
     startTime: extractTime(startTime),
@@ -169,8 +172,12 @@ export function scheduleMatchUps(params) {
 
   // first build up a map of matchUpNotBeforeTimes
   // based on already scheduled matchUps
-  const dateScheduledMatchUps = competitionMatchUps.filter(({ matchUpId }) =>
-    dateScheduledMatchUpIds?.includes(matchUpId),
+  // what is already there (§ 6 rule 4): every matchUp on the date counts toward its participants' loads (§ 3.5), but
+  // one dated without a time that is listed is to be timed here, and is counted when it is taken (rule 5)
+  const dateScheduledMatchUps = competitionMatchUps.filter(
+    ({ matchUpId }) =>
+      dateTimedMatchUpIds?.includes(matchUpId) ||
+      (dateScheduledMatchUpIds?.includes(matchUpId) && !matchUpIds.includes(matchUpId)),
   );
   dateScheduledMatchUps.forEach((matchUp) => {
     modifyParticipantDayMatchUps({
@@ -196,13 +203,28 @@ export function scheduleMatchUps(params) {
   });
 
   // matchUps are assumed to be in the desired order for scheduling
+  const otherDayMatchUpIds: string[] = [];
   let matchUpsToSchedule = targetMatchUps.filter((matchUp) => {
-    const alreadyScheduled = dateScheduledMatchUpIds?.includes(matchUp.matchUpId);
+    // only a matchUp already timed on the date is left where it is (§ 6 rule 1): one dated without a time is timed
+    const alreadyScheduled = dateTimedMatchUpIds?.includes(matchUp.matchUpId);
 
     const doNotSchedule = [BYE, DEFAULTED, COMPLETED, ABANDONED, RETIRED, WALKOVER].includes(matchUp?.matchUpStatus);
     // a line of a BYE dual is stored TO_BE_PLAYED but has a BYE side: it will never be played
-    return !alreadyScheduled && !matchUp.winningSide && !doNotSchedule && !hasByeSide(matchUp);
+    if (alreadyScheduled || matchUp.winningSide || doNotSchedule || hasByeSide(matchUp)) return false;
+
+    // a matchUp dated on another day is scheduled on that day: a call for this one never moves it, and reports it
+    // (§ 6 rule 1, CA 2026-10-28)
+    const datedDay = extractDate(matchUp.schedule?.scheduledDate);
+    if (datedDay && !sameDay(scheduleDate, datedDay)) {
+      otherDayMatchUpIds.push(matchUp.matchUpId);
+      return false;
+    }
+    return true;
   });
+
+  // the limits of each matchUp's own tournament, and the policy's per-participant ones (§ 3.5); the call's
+  // matchUpDailyLimits stand where a tournament states none
+  const { dailyLimitOverrides } = getMatchUpDailyLimits({ tournamentRecords });
 
   // for optimization, build up an object for each tournament and an array for each draw with target matchUps
   // keep track of matchUps counts per participant and don't add matchUps for participants beyond those limits
@@ -213,6 +235,7 @@ export function scheduleMatchUps(params) {
       const { participantIdsAtLimit } = checkDailyLimits({
         reachability: participantReachability,
         individualParticipantProfiles,
+        dailyLimitOverrides,
         matchUpDailyLimits,
         matchUp,
       });
@@ -281,10 +304,17 @@ export function scheduleMatchUps(params) {
         return false;
       }
 
+      // the window proposed is the matchUp's own minutes and recovery, so a placement before a participant's booked
+      // matchUp is checked too: the gate is the timed pipeline's, in either order (scheduling-pipeline.md § 6, § 3.4)
+      const minutes = {
+        recoveryMinutes: recoveryMinutesMap?.[matchUpId] || recoveryMinutes,
+        averageMinutes: averageMatchUpMinutes,
+      };
       const { enoughTime } = checkRecoveryTime({
+        details: { minutesMap: { [matchUpId]: minutes } },
+        reachability: participantReachability,
         individualParticipantProfiles,
         matchUpNotBeforeTimes,
-        reachability: participantReachability,
         scheduleTime,
         matchUp,
       });
@@ -403,7 +433,16 @@ export function scheduleMatchUps(params) {
     }
   });
 
-  const noTimeMatchUpIds = [...getMatchUpIds(matchUpsToSchedule), ...refusedMatchUpIds];
+  const noTimeMatchUpIds = [...getMatchUpIds(matchUpsToSchedule), ...refusedMatchUpIds, ...otherDayMatchUpIds];
+  // a matchUp already on the court grid without a time has just been timed: what its time contradicts there is reported
+  const scheduledOnGrid = scheduledMatchUpIds.filter((matchUpId) => onTheGrid(listedMatchUps[matchUpId]?.schedule));
+  const proConflicts = dryRun
+    ? []
+    : timedGridConflicts({
+        tournamentRecords,
+        griddedMatchUpIds: scheduledOnGrid,
+        scheduleDate: extractDate(scheduleDate),
+      });
   // overnight rest is warned, not held (§ 9.8); a dry run's placements are read over the records
   const scheduleOverrides = dryRun
     ? Object.fromEntries(
@@ -430,6 +469,7 @@ export function scheduleMatchUps(params) {
     overLimitMatchUpIds,
     overnightRestWarnings,
     scheduledMatchUpIds,
+    proConflicts,
     noTimeMatchUpIds,
 
     recoveryTimeDeferred,

@@ -126,7 +126,12 @@ function logAdvancement(method, details) {
   pushGlobalLog({ method, ...details });
 }
 
-export function doubleExitAdvancement(params) {
+export function doubleExitAdvancement(args) {
+  // THE CALL'S SCORE STAYS ON THE MATCHUP IT WAS ENTERED ON. Every write below spreads these params into
+  // `modifyMatchUpScore` for ANOTHER matchUp (the produced exit, a convergence, a carry), so a score the double exit's
+  // call carried, even an empty one, was written onto the produced exit too (a DEFAULTED kept it; a WALKOVER blanked
+  // it). The double exit's own score is written by `setMatchUpState` before the cascade runs.
+  const { score: _callScore, ...params } = args;
   const { tournamentRecord, appliedPolicies, drawDefinition, matchUpsMap, targetData, structure, event } = params;
   const stack = 'doubleExitAdvancement';
 

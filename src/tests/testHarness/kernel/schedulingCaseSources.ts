@@ -668,7 +668,9 @@ function authoredCases({ caseId, note, options = {}, amendView, build, claims }:
   build();
   const { tournamentRecord } = tournamentEngine.getTournament();
   const tournamentRecords = { [tournamentRecord.tournamentId]: tournamentRecord };
-  const recordsIn = overTheWire(Object.values(tournamentRecords));
+  // the engine's version stamp is when the records were built, not what the view reads: a case carrying it would change
+  // with every release (7.23.0's version bump broke the committed cases on master)
+  const recordsIn = overTheWire(Object.values(tournamentRecords)).map(({ factory: _stamp, ...record }) => record);
   const view = buildSchedulingView({ ...options, tournamentRecords });
   if ('error' in view) throw new Error(`${caseId}: ${JSON.stringify(view.error)}`);
   const viewCase: KernelCase = {

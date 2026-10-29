@@ -6,7 +6,8 @@ import { hav } from '@Tools/objects';
 import { expect, it } from 'vitest';
 
 // constants
-import { TEAM as TEAM_PARTICIPANT } from '@Constants/participantConstants';
+import { SHARED_INDIVIDUAL_PARTICIPANT } from '@Constants/errorConditionConstants';
+import { INDIVIDUAL, TEAM as TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { ASSIGN_PARTICIPANT } from '@Constants/positionActionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
@@ -109,9 +110,23 @@ it('can assign participants to SINGLES/DOUBLES matchUps in TEAM AdHoc events', (
     drawId,
   });
 
-  expect(result.validActions.find((x) => x.type === ASSIGN_PARTICIPANT).availableParticipants.length).toEqual(2);
+  const side1Available = result.validActions.find((x) => x.type === ASSIGN_PARTICIPANT).availableParticipants;
+  expect(side1Available.length).toEqual(2);
 
-  const participantId = 'ptcpt-I-0';
+  // a player on another team of the event is refused: one player, one team, per event
+  const otherTeamPlayerId = queryEngine
+    .getParticipants({ participantFilters: { participantTypes: [INDIVIDUAL] } })
+    .participants.map((p) => p.participantId)
+    .find((id) => !side1Available.some((available) => available.participantId === id));
+  result = tournamentEngine.assignTieMatchUpParticipantId({
+    participantId: otherTeamPlayerId,
+    sideNumber: 1,
+    tieMatchUpId,
+    drawId,
+  });
+  expect(result.error).toEqual(SHARED_INDIVIDUAL_PARTICIPANT);
+
+  const participantId = side1Available[0].participantId;
   result = tournamentEngine.executionQueue([
     {
       method: 'assignTieMatchUpParticipantId',
@@ -128,7 +143,9 @@ it('can assign participants to SINGLES/DOUBLES matchUps in TEAM AdHoc events', (
   result = tournamentEngine.findMatchUp({ matchUpId: tieMatchUpId }); // resolve by brute force, inContext by default
   expect(result.matchUp.sides.find(hav({ sideNumber: 1 })).participant.participantId).toEqual(participantId);
 
-  const side2participantId = 'ptcpt-I-8';
+  result = tournamentEngine.matchUpActions({ matchUpId: tieMatchUpId, sideNumber: 2, tournamentId, eventId, drawId });
+  const side2participantId = result.validActions.find((x) => x.type === ASSIGN_PARTICIPANT).availableParticipants[0]
+    .participantId;
   result = tournamentEngine.executionQueue([
     {
       method: 'assignTieMatchUpParticipantId',

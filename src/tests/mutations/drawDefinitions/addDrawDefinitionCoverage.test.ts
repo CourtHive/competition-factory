@@ -457,7 +457,7 @@ describe('addDrawDefinition coverage', () => {
     expect(event.entries[0].entryStatus).toEqual(DIRECT_ACCEPTANCE);
   });
 
-  it('replacement with suppressNotifications skips notification calls', () => {
+  it('replacement with suppressNotifications replaces the draw and stamps it, unannounced', () => {
     const drawId = 'suppress-draw';
     const drawDefinition: DrawDefinition = newDrawDefinition({ drawId });
     const existingDraw: DrawDefinition = newDrawDefinition({ drawId });
@@ -474,12 +474,13 @@ describe('addDrawDefinition coverage', () => {
       suppressNotifications: true,
     });
     expect(result.success).toBe(true);
-    // With suppressNotifications, drawDefinitions should NOT be replaced via the notification path
-    // The existing draw remains because replacement logic is inside the !suppressNotifications block
+    // the replacement is stored, and stamped, whatever is announced
     expect(event.drawDefinitions.length).toEqual(1);
+    expect(event.drawDefinitions[0]).toBe(drawDefinition);
+    expect(drawDefinition.updatedAt).toBeDefined();
   });
 
-  it('new draw with suppressNotifications skips notification calls', () => {
+  it('new draw with suppressNotifications is stamped, unannounced', () => {
     const drawDefinition = newDrawDefinition({ drawId: 'silent-new-draw' });
     const event: any = {
       eventId: 'ev1',
@@ -494,6 +495,7 @@ describe('addDrawDefinition coverage', () => {
     });
     expect(result.success).toBe(true);
     expect(event.drawDefinitions.length).toEqual(1);
+    expect(drawDefinition.updatedAt).toBeDefined();
   });
 
   it('uses flight flightNumber as drawOrder when not conflicting', () => {

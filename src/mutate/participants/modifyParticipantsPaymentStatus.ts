@@ -2,14 +2,12 @@ import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotif
 import { addParticipantTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
-import { getTopics } from '@Global/state/globalState';
 import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { PAYMENT_STATUS, paymentStatusValues, PaymentStatusUnion } from '@Constants/participantConstants';
 import { INVALID_VALUES, MISSING_PARTICIPANTS, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
-import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Participant } from '@Types/tournamentTypes';
 
@@ -68,8 +66,9 @@ export function modifyParticipantsPaymentStatus({
     }
   }
 
-  const { topics } = getTopics();
-  if (modifiedParticipants.length && topics.includes(MODIFY_PARTICIPANTS)) {
+  // announced (and so factory-stamped) whether or not anything subscribes: gated on the subscription, the stored
+  // record depended on who was listening
+  if (modifiedParticipants.length) {
     modifyParticipantsNotice({
       tournamentId: tournamentRecord.tournamentId,
       participants: modifiedParticipants,

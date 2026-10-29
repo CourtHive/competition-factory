@@ -14,6 +14,7 @@ import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { isObject, isString } from '@Tools/objects';
 import {
+  DRAW_DEFINITION_NOT_FOUND,
   EXISTING_POLICY_TYPE,
   INVALID_VALUES,
   MISSING_POLICY_DEFINITION,
@@ -34,6 +35,7 @@ type AttachPoliciesArgs = {
   tournamentRecord?: Tournament;
   allowReplacement?: boolean;
   tournamentId?: string;
+  drawId?: string;
   event?: Event;
 };
 
@@ -50,6 +52,8 @@ export function attachPolicies(params: AttachPoliciesArgs): ResultType & { appli
     },
   ]);
   if (checkParams.error) return checkParams;
+  // a drawId that resolves to no draw names no element: it fell through to every loaded record
+  if (params.drawId && !params.drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
   const tallyValidation = validateDrawTallyOptions(params.policyDefinitions?.[POLICY_TYPE_ROUND_ROBIN_TALLY]);
   if (tallyValidation.error) return tallyValidation;
 

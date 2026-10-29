@@ -62,7 +62,7 @@ it('v2Scheduler: scheduling with auto-generated profile', () => {
     policyDefinitions: POLICY_SCHEDULING_NO_DAILY_LIMITS,
   });
 
-  // Use autoSchedule which exercises v2Scheduler internally
+  // Use autoSchedule, which runs the profile scheduler
   tournamentEngine.scheduleProfileRounds({
     scheduleDates: [startDate],
   });
@@ -90,7 +90,7 @@ it('v2Scheduler: return includes expected tracking structures', () => {
     policyDefinitions: POLICY_SCHEDULING_NO_DAILY_LIMITS,
   });
 
-  // scheduleProfileRounds returns the v2Scheduler result
+  // scheduleProfileRounds returns the profile scheduler's result
   let result: any = tournamentEngine.scheduleProfileRounds({
     scheduleDates: [startDate],
   });

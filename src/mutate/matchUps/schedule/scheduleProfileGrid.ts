@@ -4,7 +4,7 @@ import { overnightRestWarningsFor } from '@Query/matchUps/scheduling/getOvernigh
 import { clearScheduledMatchUps } from '@Mutate/matchUps/schedule/clearScheduledMatchUps';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getContainedStructures } from '@Query/drawDefinition/getContainedStructures';
-import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
+import { getSchedulingMatchUps } from '@Query/matchUps/scheduling/getSchedulingMatchUps';
 import { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
 import { hasByeSide } from '@Mutate/matchUps/schedule/byeScheduling';
@@ -212,12 +212,8 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
     clearScheduledMatchUps({ tournamentRecords, scheduledDates });
   }
 
-  // Get all matchUps with context
-  const { matchUps: allMatchUps } = allCompetitionMatchUps({
-    matchUpFilters: { matchUpTypes: [SINGLES, DOUBLES] },
-    nextMatchUps: true,
-    tournamentRecords,
-  });
+  // the matchUps as the grid reads them: projected from the records, not hydrated (getSchedulingMatchUps)
+  const allMatchUps = getSchedulingMatchUps({ matchUpTypes: [SINGLES, DOUBLES], tournamentRecords });
 
   // Get courts grouped by venue
   const { courts: allCourts } = getVenuesAndCourts({
@@ -262,7 +258,7 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
       dateProfile,
       courtsByVenue,
       courtIdsFilter,
-      allMatchUps ?? [],
+      allMatchUps,
       containedStructureIds,
     );
 

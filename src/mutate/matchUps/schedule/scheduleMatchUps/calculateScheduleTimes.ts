@@ -39,6 +39,7 @@ export function calculateScheduleTimes({
   endTime,
 }: CalculateScheduleTimesArgs): {
   dateScheduledMatchUpIds?: string[];
+  dateTimedMatchUpIds?: string[];
   totalMatchUps?: number;
   scheduleTimes?: any[];
   timingProfile?: any;
@@ -140,7 +141,10 @@ export function calculateScheduleTimes({
     return matchUpFormatTimes({ eventType, timingDetails });
   };
 
-  const bookings = relevantMatchUps.map((matchUp) => {
+  // only a matchUp timed on the date holds a court (scheduling-pipeline.md § 3.9): one dated without a time has no
+  // start to hold one from
+  const timedMatchUps = relevantMatchUps.filter((matchUp) => matchUp.schedule?.scheduledTime);
+  const bookings = timedMatchUps.map((matchUp) => {
     const { averageMinutes, recoveryMinutes } = timingOf(matchUp);
     const { courtId, venueId } = matchUp.schedule;
     const startTime = extractTime(matchUp.schedule.scheduledTime);
@@ -188,6 +192,7 @@ export function calculateScheduleTimes({
   const venueId = (venueIds?.length === 1 && venueIds[0]) || (venues?.length === 1 && venues[0].venueId) || undefined;
 
   const dateScheduledMatchUpIds = relevantMatchUps.map(getMatchUpId);
+  const dateTimedMatchUpIds = timedMatchUps.map(getMatchUpId);
 
-  return { venueId, scheduleTimes, dateScheduledMatchUpIds };
+  return { venueId, scheduleTimes, dateScheduledMatchUpIds, dateTimedMatchUpIds };
 }

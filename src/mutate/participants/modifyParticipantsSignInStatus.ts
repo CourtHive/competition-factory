@@ -5,13 +5,11 @@ import { buildAttestation } from '@Mutate/presence/buildAttestation';
 import { latestPresenceState } from '@Acquire/presenceAttestations';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getParticipantId } from '@Functions/global/extractors';
-import { getTopics } from '@Global/state/globalState';
 import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { SIGNED_IN, SIGNED_OUT } from '@Constants/participantConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
-import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import type { Attribution } from '@Types/presenceTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Participant } from '@Types/tournamentTypes';
@@ -118,8 +116,9 @@ export function modifyParticipantsSignInStatus({
     modifiedParticipants.push(participant);
   }
 
-  const { topics } = getTopics();
-  if (modifiedParticipants.length && topics.includes(MODIFY_PARTICIPANTS)) {
+  // announced (and so factory-stamped) whether or not anything subscribes: gated on the subscription, the stored
+  // record depended on who was listening
+  if (modifiedParticipants.length) {
     modifyParticipantsNotice({
       tournamentId: tournamentRecord.tournamentId,
       participants: modifiedParticipants,

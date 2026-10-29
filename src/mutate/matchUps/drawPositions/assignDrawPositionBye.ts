@@ -111,6 +111,13 @@ type AssignDrawPositionByeArgs = {
   drawDefinition: DrawDefinition;
   isPositionAction?: boolean;
   matchUpsMap?: MatchUpsMap;
+  /** the draw's matchUps in context, built once by a caller placing several BYEs (positionByes); else built here */
+  inContextDrawMatchUps?: HydratedMatchUp[];
+  /**
+   * set by a caller that has established no drawPosition of the draw can be active (no active matchUp, and the draw
+   * stores its edges): the activity check, a hydration of the whole draw, is then not asked
+   */
+  drawPositionsInactive?: boolean;
   structure?: Structure;
   drawPosition: number;
   structureId?: string;
@@ -131,6 +138,7 @@ export function assignDrawPositionBye({
   structureId,
   structure,
   event,
+  ...params
 }: AssignDrawPositionByeArgs) {
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
   if (!structure) ({ structure } = findStructure({ drawDefinition, structureId }));
@@ -210,6 +218,7 @@ export function assignDrawPositionBye({
 
   const drawPositionIsActive =
     !isPropagationPlacement &&
+    !params.drawPositionsInactive &&
     getStructureDrawPositionProfiles({ drawDefinition, structureId }).activeDrawPositions?.includes(drawPosition);
   if (drawPositionIsActive) {
     return { error: DRAW_POSITION_ACTIVE };
@@ -238,11 +247,13 @@ export function assignDrawPositionBye({
 
   // ########## gather reusable data for performance optimization ###########
   const inContextDrawMatchUps =
+    params.inContextDrawMatchUps ??
     getAllDrawMatchUps({
       inContext: true,
       drawDefinition,
       matchUpsMap,
-    }).matchUps ?? [];
+    }).matchUps ??
+    [];
 
   const matchUpFilters = { isCollectionMatchUp: false };
   const { matchUps } = getAllStructureMatchUps({

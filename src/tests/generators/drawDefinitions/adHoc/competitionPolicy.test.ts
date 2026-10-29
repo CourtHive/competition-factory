@@ -1,5 +1,5 @@
 // Generators
-import { generateOutcomeFromScoreString } from '@Assemblies/generators/mocks/generateOutcomeFromScoreString';
+import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
 import { deriveCountables } from '@Generators/scales/competition/deriveCountables';
 import { computeActualOutput } from '@Generators/scales/competition/actualOutput';
 import { expectedScore } from '@Generators/scales/competition/expectedScore';

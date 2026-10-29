@@ -1,7 +1,5 @@
-import { addDrawDefinition } from '@Mutate/drawDefinitions/addDrawDefinition';
 import { generateDrawDefinition } from '@Assemblies/governors/drawsGovernor';
 import tieFormatDefaults from '@Generators/templates/tieFormatDefaults';
-import { addParticipants } from '@Mutate/participants/addParticipants';
 import { generateVenues } from '@Mutate/venues/generateVenues';
 import { generateParticipants } from './generateParticipants';
 import { genParticipantId } from './genParticipantId';
@@ -11,14 +9,21 @@ import { generateRange } from '@Tools/arrays';
 import { isObject } from '@Tools/objects';
 import { isNumeric } from '@Tools/math';
 import { UUID } from '@Tools/UUID';
+import {
+  addDrawDefinitionRecorded,
+  addEventEntriesRecorded,
+  addEventRecorded,
+  addParticipantsRecorded,
+} from './recordedWrites';
 
 // constants and types
-import { Entry, EventTypeUnion, Participant, TieFormat } from '@Types/tournamentTypes';
+import { Entry, Event, EventTypeUnion, Participant, TieFormat, Tournament } from '@Types/tournamentTypes';
 import { AD_HOC, DOUBLE_ROUND_ROBIN, MAIN } from '@Constants/drawDefinitionConstants';
 import { ANY, FEMALE, MALE, MIXED, OTHER } from '@Constants/genderConstants';
-import { MISSING_TIE_FORMAT } from '@Constants/errorConditionConstants';
+import { EVENT_NOT_FOUND, MISSING_TIE_FORMAT } from '@Constants/errorConditionConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
+import type { MockLeagueProfile } from '@Types/mocksTypes';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { TEAM } from '@Constants/participantConstants';
 
@@ -122,47 +127,22 @@ export function processLeagueProfiles(params) {
 
       homeVenueIds.forEach((venueId) => !venueIds.includes(venueId) && venueIds.push(venueId));
       allUniqueParticipantIds.push(...individualParticipantIds, teamParticipantId);
-      const result = addParticipants({
+      const result = addParticipantsRecorded({
         participants: [teamParticipant, ...participants],
         tournamentRecord,
       });
       if (result.error) return result;
     }
 
-    const eventType: EventTypeUnion = TEAM;
-    const event = { eventName, entries, eventType, tieFormat, category, eventId, gender };
-    tournamentRecord.events ??= [];
-    tournamentRecord.events.push(event);
-
-    if (entries.length) {
-      // a pairingProfile supplies the schedule itself, so roundsCount is then only an optional
-      // truncation to a partial round robin and the shape validates it
-      const { pairingProfile } = leagueProfile;
-      const roundsCount = pairingProfile
-        ? isNumeric(leagueProfile.roundsCount) && leagueProfile.roundsCount
-        : deriveLeagueRoundsCount({ roundsCount: leagueProfile.roundsCount, drawSize });
-      // a single round robin is (drawSize - 1) rounds; anything beyond that replays pairings,
-      // which drawMatic only permits when enableDoubleRobin is set
-      const enableDoubleRobin = !pairingProfile && roundsCount > drawSize - 1;
-      // generate drawDefinition for league
-      const result = generateDrawDefinition({
-        automated: leagueProfile.automated,
-        roundsCount: roundsCount || undefined,
-        enableDoubleRobin,
-        tournamentRecord,
-        pairingProfile,
-        drawType: AD_HOC,
-        drawSize,
-        event,
-      });
-      if (result.error) return result;
-      const { drawDefinition } = result;
-      if (drawDefinition) {
-        const drawId = drawDefinition?.drawId;
-        addDrawDefinition({ drawDefinition, event, suppressNotifications: true });
-        drawIds.push(drawId);
-      }
-    }
+    const leagueResult = addLeagueEvent({
+      event: { eventName, eventType: TEAM as EventTypeUnion, tieFormat, category, eventId, gender },
+      tournamentRecord,
+      leagueProfile,
+      drawSize,
+      entries,
+      drawIds,
+    });
+    if (leagueResult?.error) return leagueResult;
 
     leaguesCount++;
   }
@@ -171,4 +151,73 @@ export function processLeagueProfiles(params) {
   const venueProfiles = venueIds.map((venueId) => ({ venueId }));
   const venuesResult = generateVenues({ tournamentRecord, ignoreExistingVenues: true, venueProfiles, uuids });
   if (!Array.isArray(venuesResult)) return venuesResult;
+}
+
+// a league's event, entries and draw, in a client's order
+type AddLeagueEventArgs = {
+  entries: { participantId: string }[];
+  leagueProfile: MockLeagueProfile;
+  tournamentRecord: Tournament;
+  event: Partial<Event> & { eventId: string };
+  drawIds: string[];
+  drawSize: number;
+};
+
+function addLeagueEvent({
+  event: leagueEvent,
+  tournamentRecord,
+  leagueProfile,
+  drawSize,
+  entries,
+  drawIds,
+}: AddLeagueEventArgs) {
+  // as a client builds it: the event added, then its entries, then its draw (the event was pushed onto the record
+  // with its entries already in it)
+  const added = addEventRecorded({ tournamentRecord, event: leagueEvent });
+  if (added.error) return added;
+  const event = tournamentRecord.events?.find((stored) => stored.eventId === leagueEvent.eventId);
+  if (!event) return { error: EVENT_NOT_FOUND };
+  if (entries.length) {
+    const entered = addEventEntriesRecorded({
+      participantIds: entries.map(({ participantId }) => participantId),
+      entryStatus: DIRECT_ACCEPTANCE,
+      entryStage: MAIN,
+      tournamentRecord,
+      event,
+    });
+    if (entered.error) return entered;
+  }
+
+  if (entries.length) {
+    // a pairingProfile supplies the schedule itself, so roundsCount is then only an optional
+    // truncation to a partial round robin and the shape validates it
+    const { pairingProfile } = leagueProfile;
+    const roundsCount = Number(
+      pairingProfile
+        ? isNumeric(leagueProfile.roundsCount) && leagueProfile.roundsCount
+        : deriveLeagueRoundsCount({ roundsCount: leagueProfile.roundsCount, drawSize }),
+    );
+    // a single round robin is (drawSize - 1) rounds; anything beyond that replays pairings,
+    // which drawMatic only permits when enableDoubleRobin is set
+    const enableDoubleRobin = !pairingProfile && roundsCount > drawSize - 1;
+    // generate drawDefinition for league
+    const result = generateDrawDefinition({
+      automated: leagueProfile.automated,
+      roundsCount: roundsCount || undefined,
+      enableDoubleRobin,
+      tournamentRecord,
+      pairingProfile,
+      drawType: AD_HOC,
+      drawSize,
+      event,
+    });
+    if (result.error) return result;
+    const { drawDefinition } = result;
+    if (drawDefinition) {
+      const drawId = drawDefinition?.drawId;
+      addDrawDefinitionRecorded({ drawDefinition, event, tournamentRecord });
+      drawIds.push(drawId);
+    }
+  }
+  return undefined;
 }

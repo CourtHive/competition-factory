@@ -22,11 +22,12 @@ export function participantScaleItem({
   if (!participant) return { error: MISSING_PARTICIPANT };
   if (!isObject(scaleAttributes)) return { error: INVALID_VALUES };
 
-  participant.timeItems ??= [];
-  if (Array.isArray(participant.timeItems)) {
+  // read, never written: a query that set `timeItems: []` on every participant it looked at changed the record
+  const timeItems = participant.timeItems ?? [];
+  if (Array.isArray(timeItems)) {
     const { accessor, scaleType, eventType, scaleName } = scaleAttributes;
     const filterType = [SCALE, scaleType, eventType, scaleName].join('.');
-    const filteredTimeItems = participant.timeItems
+    const filteredTimeItems = timeItems
       .filter((timeItem) => timeItem?.itemType === filterType)
       .filter((timeItem) => !requireTimeStamp || timeItem?.itemDate)
       .sort(

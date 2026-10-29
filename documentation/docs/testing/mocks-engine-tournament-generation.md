@@ -186,6 +186,44 @@ const { tournamentRecord } = mocksEngine.generateTournamentRecord({
 });
 ```
 
+### The Method List
+
+With `recordMethods: true` the result also carries `methods`: the engine calls a client would make to build the same
+record, in the order it would make them. Replayed through any engine they rebuild the record; only the times each write
+stamps (`createdAt`, `updatedAt`, a result's `scoredTime`) differ.
+
+```js
+const { tournamentRecord, methods } = mocksEngine.generateTournamentRecord({
+  drawProfiles: [{ drawSize: 8 }],
+  completeAllMatchUps: true,
+  recordMethods: true,
+});
+
+// methods[0] is { method: 'newTournamentRecord', params }, an engine method; the rest are governor methods
+const [header, ...rest] = methods;
+tournamentEngine.newTournamentRecord(header.params);
+tournamentEngine.executionQueue(rest);
+```
+
+Params name events, draws and matchUps by id. Steps that are random are logged as their results, so a replay is
+deterministic: the draw that was generated (`addDrawDefinition` with that draw), each outcome that was set
+(`setMatchUpStatus`), an AD_HOC round's matchUps (`addAdHocMatchUps`). Recording copies each call's params, so it is
+off unless asked for.
+
+`modifyTournamentRecord` takes `recordMethods` too. Its list has no `newTournamentRecord`: it starts from the record
+the caller passed, and replayed onto that record it makes the same modifications. A refused modification wrote nothing
+(it is all or nothing), so it returns no list; with `keepPartial` the list holds what was kept.
+
+```js
+const { methods } = mocksEngine.modifyTournamentRecord({
+  drawProfiles: [{ drawSize: 8 }],
+  recordMethods: true,
+  tournamentRecord,
+});
+tournamentEngine.setState(originalRecord);
+tournamentEngine.executionQueue(methods);
+```
+
 ### Preset Participants (Ingest Mode)
 
 When the caller already has a participant list (e.g. a federation-data ingest

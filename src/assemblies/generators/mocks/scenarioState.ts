@@ -1,9 +1,11 @@
-import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { proConflicts } from '@Mutate/matchUps/schedule/schedulers/proScheduler/proConflicts';
-import { checkInParticipant } from '@Mutate/timeItems/matchUps/checkInParticipant';
 import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
-import { setMatchUpCalledAt } from '@Mutate/matchUps/schedule/setMatchUpCalledAt';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import {
+  addMatchUpScheduleItemsRecorded,
+  checkInParticipantRecorded,
+  setMatchUpCalledAtRecorded,
+} from './recordedWrites';
 
 // constants and types
 import { ErrorType, INVALID_VALUES } from '@Constants/errorConditionConstants';
@@ -84,7 +86,7 @@ export function applyScenarioState(params: ScenarioStateArgs) {
 
   const calledMatchUpIds: string[] = [];
   for (const { matchUp } of called ? dueWithin(called.withinMinutes) : []) {
-    const result = setMatchUpCalledAt({
+    const result = setMatchUpCalledAtRecorded({
       drawDefinition: drawMap[matchUp.drawId],
       calledAt: anchorDate.toISOString(),
       matchUpId: matchUp.matchUpId,
@@ -145,7 +147,7 @@ function checkInSides({
     (side) => side.participant?.individualParticipantIds ?? [side.participantId],
   );
   for (const participantId of individualIds.filter((id): id is string => !!id)) {
-    const result = checkInParticipant({
+    const result = checkInParticipantRecorded({
       occurredAt: anchorDate.toISOString(),
       matchUpId: matchUp.matchUpId,
       tournamentRecord,
@@ -220,7 +222,7 @@ function placeConflict({ type, tournamentRecord, drawMap, used }: PlaceConflictA
       !issued.has(matchUp.matchUpId),
   );
   const write = (matchUp: HydratedMatchUp, schedule: Record<string, unknown>) =>
-    addMatchUpScheduleItems({
+    addMatchUpScheduleItemsRecorded({
       drawDefinition: drawMap[matchUp.drawId],
       matchUpId: matchUp.matchUpId,
       removePriorValues: true,

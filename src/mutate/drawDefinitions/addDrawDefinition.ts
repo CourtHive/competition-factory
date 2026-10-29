@@ -9,11 +9,13 @@ import { addNotice, hasTopic } from '@Global/state/globalState';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { storeGoesTo } from '@Query/matchUps/addGoesTo';
 import { ensureInt } from '@Tools/ensureInt';
+import { isNumeric } from '@Tools/math';
 import {
   addDrawNotice,
   addMatchUpsNotice,
   deleteMatchUpsNotice,
   modifyDrawNotice,
+  stampUnannounced,
 } from '@Mutate/notifications/drawNotifications';
 
 // constants and types
@@ -152,19 +154,20 @@ export function addDrawDefinition(
     flight.drawName = drawDefinition.drawName;
     value = { ...flightProfile };
 
-    const flightNumber = flight.flightNumber;
+    // a numeric string is its number: compared as given it never matched a drawOrder and became a string drawOrder
+    const flightNumber = isNumeric(flight.flightNumber) ? ensureInt(flight.flightNumber) : undefined;
     if (flightNumber && !drawOrders.includes(flightNumber)) {
       drawOrder = flightNumber;
-    } else {
-      flight.flightNumber = drawOrder;
     }
+    flight.flightNumber = drawOrder;
   } else {
     const flights = flightProfile?.flights ?? [];
     flights.push({
       manuallyAdded: true, // this drawDefinition was not part of automated split
       flightNumber: drawOrder,
       // a draw added without entries still gets an array, as `addFlight` gives one: readers map over it
-      drawEntries: drawEntries ?? [],
+      // the flight's own copy: the draw's entries array itself was stored, so a later write to either changed both
+      drawEntries: (drawEntries ?? []).map((entry) => ({ ...entry })),
       drawName,
       drawId,
     });
@@ -291,9 +294,16 @@ function replaceExistingDraw({
     if (incomingMatchUps?.length) {
       addMatchUpsNotice({ matchUps: incomingMatchUps, tournamentId, eventId });
     }
+  } else {
+    // unannounced, and stamped as an announced replacement is
+    stampUnannounced({ drawDefinition, tournamentId, matchUps: incomingMatchUps });
+  }
 
-    event.drawDefinitions = event.drawDefinitions.map((d) => (d.drawId === drawId ? drawDefinition : d));
+  // the replacement itself, whatever is announced: it sat inside the notification guard, so a replacement with
+  // suppressNotifications wrote the flight and drawOrder, kept the OLD draw, and reported success
+  event.drawDefinitions = event.drawDefinitions.map((d) => (d.drawId === drawId ? drawDefinition : d));
 
+  if (!suppressNotifications) {
     const structureIds = drawDefinition.structures?.map(({ structureId }) => structureId);
     modifyDrawNotice({ drawDefinition, tournamentId, structureIds, eventId });
     // the event's flightProfile (a first-class/extension index of draws) is mutated above,
@@ -325,7 +335,12 @@ function dispatchDrawReplacementAudit({ existingDrawDefinition, tournamentId, ev
 function addNewDraw({ suppressNotifications, tournamentRecord, drawDefinition, tournamentId, eventId, event }) {
   event.drawDefinitions.push(drawDefinition);
 
-  if (!suppressNotifications) {
+  if (suppressNotifications) {
+    // unannounced, and stamped as an announced draw is: suppressing the notices left the draw unstamped and the record's
+    // factory stamp unmoved, though the draw was stored
+    const { matchUps } = allDrawMatchUps({ drawDefinition, event });
+    stampUnannounced({ drawDefinition, tournamentId: tournamentRecord?.tournamentId, matchUps });
+  } else {
     const { matchUps } = allDrawMatchUps({ drawDefinition, event });
     matchUps &&
       addMatchUpsNotice({

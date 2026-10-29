@@ -1,4 +1,4 @@
-import { addNotice, deleteNotice, DEFERRED_PAYLOAD, getCapturedStamps } from '@Global/state/globalState';
+import { addNotice, deleteNotice, DEFERRED_PAYLOAD, getCapturedStamps, markModified } from '@Global/state/globalState';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getDrawPositionSides } from '@Query/matchUps/getDrawPositionSides';
 import { drawOrigin, eventOrigin } from '@Query/readModel/readModelRows';
@@ -65,6 +65,25 @@ function drawUpdatedAt(drawDefinition: DrawDefinition, structureIds?: string[]) 
 /** Stamp a matchUp to mark that it has just been modified: `stampUpdatedAt`, so once per call. */
 function stampMatchUpUpdatedAt(matchUp?: MatchUp | null) {
   stampUpdatedAt(matchUp);
+}
+
+/**
+ * What the notices of a write would stamp, for a write made with `suppressNotifications`: its matchUps, then the draw and
+ * its top-level structures, and the record marked modified (so it takes the factory stamp), with nothing announced.
+ * What a write stores does not depend on whether it is announced.
+ */
+export function stampUnannounced({
+  drawDefinition,
+  tournamentId,
+  matchUps,
+}: {
+  drawDefinition?: DrawDefinition;
+  tournamentId?: string;
+  matchUps?: MatchUp[];
+}) {
+  for (const matchUp of matchUps ?? []) stampMatchUpUpdatedAt(matchUp);
+  if (drawDefinition) drawUpdatedAt(drawDefinition);
+  markModified(tournamentId);
 }
 
 type AddMatchUpsNoticeArgs = {

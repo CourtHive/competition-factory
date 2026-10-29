@@ -86,7 +86,9 @@ describe('keepPartial', () => {
     const addedParticipants = tournamentRecord.participants.length - participantsBefore;
     expect(addedParticipants).toBeGreaterThan(0);
     expect(result.retained.participantIds.length).toEqual(addedParticipants);
-    expect(result.retained.eventIds.length).toEqual(1);
+    // in a client's order the refused profile's event is added before its draw is refused, so it was written and is
+    // retained, without a draw: two events, one draw
+    expect(result.retained.eventIds.length).toEqual(2);
     expect(result.retained.drawIds.length).toEqual(1);
     expect(result.retained.venueIds).toEqual([]);
     expect(tournamentRecord.events.map(({ eventId }: any) => eventId)).toContain(result.retained.eventIds[0]);

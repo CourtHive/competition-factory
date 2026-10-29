@@ -354,6 +354,8 @@ export type GenerateTournamentRecordArgs = MockEngineCall &
     tournamentExtensions?: Extension[];
     hydrateCollections?: boolean;
     autoEntryPositions?: boolean;
+    /** also return `methods`: the engine calls that reproduce this record (see `scenarioRecorder`) */
+    recordMethods?: boolean;
     participants?: Participant[];
     random?: () => number;
     tournamentName?: string;
@@ -379,6 +381,8 @@ export type ModifyTournamentRecordArgs = MockEngineCall &
     tournamentRecord: Tournament;
     /** keep what was written before a refusal and report it as `retained` (default: all or nothing) */
     keepPartial?: boolean;
+    /** also return `methods`: the engine calls that make these modifications (see `scenarioRecorder`) */
+    recordMethods?: boolean;
     random?: () => number;
     autoSchedule?: boolean;
     periodLength?: number;
@@ -399,6 +403,8 @@ export type GenerateOutcomeArgs = MockEngineCall & {
 export type CompleteDrawMatchUpsArgs = MockEngineCall &
   CompletionOptions & {
     completeRoundRobinPlayoffs?: boolean;
+    /** per structure, complete at most this many rounds, counted from its first round still to play */
+    roundsToComplete?: number;
     tournamentRecord?: Tournament;
     drawDefinition?: { [key: string]: unknown };
     event?: { [key: string]: unknown };

@@ -102,7 +102,9 @@ of the timeline, so the entry and the point cannot disagree (`publicBoundary.tes
 field passed as input is not recorded as one"). A server the engine derives, by the format (§ 10.1–10.4)
 or by the competition's rule (§ 10.7), is calculated: it is a snapshot on the materialized point and a
 rebuild derives it again (`replayLossless.test.ts`, "a calculated server is still not recorded as an
-input (R2)"; `scoringAgreement.test.ts`, "a server the rule supplied is calculated").
+input (R2)"; `scoringAgreement.test.ts`, "a server the rule supplied is calculated"). A multiplier's
+value is not on this list: the entry records it as the point's `scoreValue`, so a point keeps the value it
+was scored at when the multipliers change (§ 12.2; CA 2026-10-27).
 
 ## 2. The action set
 
@@ -914,6 +916,12 @@ over the materialized point**: a point's calculated values are a cache, and a re
 (R2, decision 4; `tiebreakServiceOrder.test.ts`, "tiebreak servers on records saved under the old
 rotation").
 
+One value is recorded: **a point keeps the value it was scored at**. Where a multiplier gives a point its
+value (§ 5 rule 5), the entry records that value as its `scoreValue`, as the point does, so a rebuild
+does not re-value it under multipliers set later. `setPointMultipliers` values the points recorded after
+it, and every rebuild, undo, redo and reload of the history scores it as it was scored (CA 2026-10-27;
+`point-multipliers.test.ts`, "a point keeps the value it was scored at").
+
 ### 12.3 Undo and redo
 
 - `undo(n)` moves the last n entries, of any type, to the redo stack (a `point` entry takes its point
@@ -936,7 +944,9 @@ rotation").
 
 - `editPoint(i, data)` refuses invalid data before anything changes (§ 2.1), writes every field given
   to the point and to its entry, and rebuilds. A winner or server edited in one spelling clears the
-  other spelling on the entry, so the replay reads the edit. With `recalculate: false` the score is left
+  other spelling on the entry, so the replay reads the edit. An edit that changes the point's `result` or
+  `stroke` and gives no `scoreValue` drops the entry's value, so the point is valued afresh under the
+  current multipliers (§ 12.2). With `recalculate: false` the score is left
   as it was until the next rebuild, which applies the edit (`aCompletedMatchTakesCorrections.test.ts`).
 - `removePoint(i)` removes the point and its entry, renumbers the later point entries, and rebuilds.
   With `recalculate: false` the score is left as it was until the next rebuild, and it still counts the
@@ -1000,8 +1010,8 @@ and a fresh v1 must name the next server a fresh v2 names when each loads v2's r
 ### 12.7 Determinism
 
 A replay uses the recorded timestamps. An action without one is stamped by the clock, as is `endTime`
-on completion, so a reproducible stream sets the clock (the corpus does). Nothing else in scoring reads
-the clock or a random source.
+on completion, so a reproducible stream sets the clock (the corpus does). Otherwise only the creation of a
+matchUp reads them: its `createdAt`, and the pure `createMatchUp`'s minted `matchUpId` (§ 12.9).
 
 ### 12.8 Legacy shapes: refusals apply at the action boundary
 
@@ -1027,6 +1037,31 @@ change"; no version stamp): a game in a tiebreak-only set (§ 5), a game after a
 level (§ 6.4), a baseline set v1 judged by "reached setTo" (6-5 is no longer won, § 2.5), and a set total
 entered while a set is in play (§ 2.3). A stored archive holding one of them can rebuild to a different
 score.
+
+### 12.9 The pure `createMatchUp` and `addPoint`
+
+Below the engine sit two published functions on a bare scoring matchUp (the pure `addPoint` retires at 8.0.0, § 14).
+
+**`createMatchUp({ matchUpFormat, matchUpId, participants, isDoubles, matchUpType, occurredAt })`** returns
+`{ matchUpId, matchUpFormat, matchUpStatus: TO_BE_PLAYED, matchUpType, sides, score: { sets: [] }, createdAt }`:
+
+- `matchUpId` is the caller's, else minted from the random source (the mint: `concepts/building-a-tournament` § 1.2).
+- `matchUpType` is the caller's, else `DOUBLES` with `isDoubles`, else `SINGLES`.
+- `sides` is `{ sideNumber, participantId, participant }` per participant given, else
+  `[{ sideNumber: 1 }, { sideNumber: 2 }]`.
+- `createdAt` is `occurredAt`, else the clock.
+
+**`addPoint(matchUp, { winner | winningSide, server | serverSideNumber, timestamp, ... })`** applies a `point` action
+(§ 2.1) to the matchUp **in place** and returns it. An input § 2.1 refuses (a side out of range, two spellings
+that disagree) throws. It keeps `history.points` (§ 11.1) and **no timeline**: no
+`history.entries` is written, so nothing it records can be undone (§ 12.3). A point without a decidable winner, a point
+after completion (§ 9.6) and a point after the last set of an `exactly` format are ignored: the matchUp is returned
+unchanged. The score, the status, `winningSide`, the score strings and `endTime` are those the engine's point action
+writes.
+
+The corpus's scoring source (`scoring/<format>/<stream>-seed-<n>`, § 15) plays these two: after each call a step
+records the matchUp's `sets`, `scoreStringSide1`/`scoreStringSide2` and `winningSide` when present, and `complete`
+(`matchUpStatus === COMPLETED`); the last step, one point after completion, adds the whole matchUp.
 
 ## 13. What is deliberately not modelled
 

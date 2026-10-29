@@ -13,7 +13,8 @@ import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 
 // constants and types
-import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import type { DrawDefinition, Event, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
+import { RETIRED } from '@Constants/matchUpStatusConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { WorkingView } from './overlay';
 import type { OutcomeOp } from './ops';
@@ -54,7 +55,14 @@ type SettleWorkArgs = {
   drawDefinition: DrawDefinition;
   /** the call's one hydration of that draw */
   inContextDrawMatchUps: HydratedMatchUp[];
+  propagateRetirementAsExit?: boolean;
   propagateExitStatus?: boolean;
+  /** the call's matchUp has a loser link: the only way v1 propagates a single exit (`directLoser`) */
+  loserLinked?: boolean;
+  /** the call's matchUp is in a round robin group: a double exit there produces nothing (`doubleExitAdvancement`) */
+  contained?: boolean;
+  /** the call's own matchUp, which `settleRederivedDoubleExits` leaves to the call's own write */
+  matchUpId?: string;
   tournamentRecord?: Tournament;
   working: WorkingView;
   ops: OutcomeOp[];
@@ -76,8 +84,11 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
     (stale ??= hasStaleExitOrigins({ inContextDrawMatchUps: view, drawDefinition: draw, matchUpsMap: map }));
 
   const work: Record<SettleSite, () => boolean> = {
-    // SCOPE: the double exits the call changes, and the stale origins the write leaves
-    settleExitOrigins: () => resultOn((matchUp) => isDoubleExit(matchUp?.matchUpStatus)) || staleOrigins(),
+    // SCOPE: the double exits the call changes but its own (`settleRederivedDoubleExits` skips the call's matchUp, whose
+    // write decided it), and the stale origins the write leaves
+    settleExitOrigins: () =>
+      resultOn((matchUp) => isDoubleExit(matchUp?.matchUpStatus) && matchUp?.matchUpId !== args.matchUpId) ||
+      staleOrigins(),
     reconcileConsolationReservations: () =>
       !!findReservationWork({ inContextDrawMatchUps: view, drawDefinition: draw, matchUpsMap: map }).length,
     reconcileStaleExitOrigins: staleOrigins,
@@ -112,7 +123,24 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
     reconcileScoredTimes: () =>
       map.drawMatchUps.some((matchUp) => !!matchUp.schedule?.scoredTime && !matchUpIsScored(matchUp)),
   };
-  // an exit the call writes is propagated (`propagateExitFrom`), which no local call does: every pass is in reach
-  if (results.some((op) => isExit(op.matchUpStatus))) return Object.keys(work) as SettleSite[];
+  // an exit the call propagates (`propagateExitFrom`), which no local call does: every pass is in reach, unless the plan
+  // holds the propagation as ops (a carried exit's entry, S5), when each pass is asked of the draw the carry leaves
+  const carryPlanned = ops.some((op) => op.op === 'mergeSideExitProvenance');
+  if (!carryPlanned && results.some((op) => propagatesExit(op.matchUpStatus, args)))
+    return Object.keys(work) as SettleSite[];
   return (Object.keys(work) as SettleSite[]).filter((site) => work[site]());
+}
+
+/**
+ * Whether v1 propagates the exit a call writes: a double exit produces downstream, but in a round robin group, where it
+ * produces nothing (`doubleExitAdvancement` returns at once in a container); a single exit is carried only
+ * across a loser link, and only when `propagateExitStatus` is on and the status is one that travels (`directLoser`'s
+ * `validExitToPropagate`: WALKOVER and DEFAULTED, and RETIRED under `propagateRetirementAsExit`). Any other single exit
+ * is directed as a played result and settles as one.
+ */
+function propagatesExit(matchUpStatus: MatchUpStatusUnion, args: SettleWorkArgs): boolean {
+  if (isDoubleExit(matchUpStatus)) return !args.contained;
+  if (!isExit(matchUpStatus)) return false;
+  if (!args.propagateExitStatus || !args.loserLinked) return false;
+  return matchUpStatus !== RETIRED || !!args.propagateRetirementAsExit;
 }

@@ -7,7 +7,7 @@ import mocksEngine from '@Assemblies/engines/mock';
 // constants
 import { OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
-import { DRAW_POSITION_ACTIVE } from '@Constants/errorConditionConstants';
+import { MUTATION_LOCKED } from '@Constants/errorConditionConstants';
 
 /**
  * A REFUSAL AFTER THE SETTLE PASSES IS COMPARED (outcome v2 executor plan § 5, Phase C prerequisite 3).
@@ -105,8 +105,8 @@ describe.each<Site>(['settleDraw', 'forward', 'carryAfterForward'])('a refusal p
 
   it('is a deferred refusal under differential when its code is an apply-stage code', () => {
     const { enter } = scoreFirstRound(OUTCOME_PIPELINE_DIFFERENTIAL);
-    Object.assign(planted, { site, code: DRAW_POSITION_ACTIVE.code });
-    expect((enter() as any).error?.code).toEqual(DRAW_POSITION_ACTIVE.code);
+    Object.assign(planted, { site, code: MUTATION_LOCKED.code });
+    expect((enter() as any).error?.code).toEqual(MUTATION_LOCKED.code);
     expect(getDifferentialTally().refusal).toEqual({ compared: 0, deferred: 1 });
   });
 });

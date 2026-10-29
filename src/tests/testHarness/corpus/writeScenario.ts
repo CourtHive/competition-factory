@@ -6,6 +6,7 @@ import { getSchemaWriteMode } from '@Global/state/globalState';
 import { generatePatch } from '../../../forge/jsonPatch';
 import { canonicalHash, canonicalObject } from './hash';
 import tournamentEngine from '@Engines/syncEngine';
+import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { setRandomSource } from '@Tools/prng';
 import { setClock } from '@Tools/clock';
 import addFormats from 'ajv-formats';
@@ -147,7 +148,10 @@ export function writeScenario(args: WriteScenarioArgs) {
     const steps: any[] = [];
     for (const directive of directives) {
       const coordinates = coordinatesFor(directive.params?.matchUpId, state);
-      const outcome: any = tournamentEngine.executionQueue([{ method: directive.method, params: directive.params }]);
+      // the engine gets a copy: a write that keeps its params (addDrawDefinition attaches the draw it is given, then
+      // stamps it) would otherwise change the directive the scenario stores after it was sent
+      const params = makeDeepCopy(directive.params, false, true);
+      const outcome: any = tournamentEngine.executionQueue([{ method: directive.method, params }]);
       const report = schedulingReport(directive.method, outcome?.results?.[0]);
       const result = outcome?.error
         ? {

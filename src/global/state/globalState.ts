@@ -15,8 +15,15 @@ import {
 } from '@Constants/errorConditionConstants';
 
 // Re-exported so any OTHER implementation of the notice buffer — competition-factory-server supplies
-// its own provider for per-request async isolation — calls THIS merge rather than copying it.
-export { preserveNoticeIdentity, NOTICE_IDENTITY_FIELDS } from './noticeIdentity';
+// its own provider for per-request async isolation — calls THIS merge, and THIS rule for which records a notice
+// modifies, rather than copying them.
+export {
+  preserveNoticeIdentity,
+  NOTICE_IDENTITY_FIELDS,
+  modifiedTournamentId,
+  UNNAMED_TOURNAMENT,
+  noticeModifies,
+} from './noticeIdentity';
 
 export type Notice = {
   topic: string;
@@ -74,6 +81,7 @@ export type ImplemtationGlobalStateTypes = {
   tournamentId?: string;
   notices: Notice[];
   modified: boolean;
+  modifiedTournamentIds?: Set<string>; // the tournaments the call modified; see getMutationStatus
   capturedClock?: number; // epoch ms an outer engine call captured; see tools/clock.ts
   capturedCompetitionClock?: number; // likewise, when a competition provider is installed
   capturedStamps?: WeakSet<object>; // the entities an outer engine call has stamped `updatedAt` on; see tools/clock.ts
@@ -274,6 +282,39 @@ export function getInvokeObserver(): InvokeObserver | undefined {
 }
 
 /**
+ * A second implementation of engine methods, for testing: a call to a method it implements is handed to it, with the
+ * method as this engine runs it (`runLocal`) to run as well or instead. The engine's own work around the method (the
+ * captured clock, rollback, the factory stamp, notices) is done either way. Unset, the engine runs every call itself. Set only by test
+ * harnesses (`FACTORY_BACKEND`, documentation/docs/testing/second-backend.md); engine source never reads the environment.
+ */
+export type FactoryBackendCall = {
+  methodName: string;
+  params: { [key: string]: unknown };
+  /** the instant the call captured: every stamp the call writes shares it */
+  timeStamp: number;
+  /** the method as this engine runs it */
+  runLocal: () => unknown;
+};
+export type FactoryBackend = {
+  name: string;
+  implements: (methodName: string) => boolean;
+  invoke: (call: FactoryBackendCall) => unknown;
+};
+
+let factoryBackend: FactoryBackend | undefined;
+
+export function setFactoryBackend(backend?: FactoryBackend): { success?: boolean; error?: ErrorType } {
+  if (backend !== undefined && (typeof backend?.implements !== 'function' || typeof backend?.invoke !== 'function'))
+    return { error: INVALID_VALUES };
+  factoryBackend = backend;
+  return { ...SUCCESS };
+}
+
+export function getFactoryBackend(): FactoryBackend | undefined {
+  return factoryBackend;
+}
+
+/**
  * The instant an outer engine call captured (tools/clock.ts `withCapturedClock`). Optional provider
  * hooks: a provider without them captures nothing. Deliberately NOT a process-wide fallback, which
  * would hand one request's instant to every request running concurrently with it.
@@ -461,6 +502,28 @@ export function setMethods(params?: { [key: string]: any }) {
 }
 
 export function cycleMutationStatus() {
+  return _globalStateProvider.cycleMutationStatus();
+}
+
+/**
+ * The tournaments the call modified, cleared as they are read: `undefined` from a provider without the optional hook,
+ * which then stamps every loaded record, as before (UNNAMED_TOURNAMENT among them means every loaded record too).
+ */
+export function cycleModifiedTournamentIds(): Set<string> | undefined {
+  return _globalStateProvider.cycleModifiedTournamentIds?.();
+}
+
+/**
+ * Marks a write modified without announcing it: a write made with `suppressNotifications` is still stamped. A provider
+ * without the optional hook marks nothing (the write is then unstamped, as before).
+ */
+export function markModified(tournamentId?: string) {
+  _globalStateProvider.markModified?.(tournamentId);
+}
+
+/** Clears the mutation flag and the tournaments it names: a refused write is not a modification. */
+export function clearMutationStatus() {
+  cycleModifiedTournamentIds();
   return _globalStateProvider.cycleMutationStatus();
 }
 

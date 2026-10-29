@@ -8,9 +8,19 @@
  * each side needs to win the current game", which a port may compute however it likes. The adapter owns the
  * translation (positional helpers, parsed shapes, transport), never the expected result.
  */
+import { gridViewFromData, requiredGridViewKeys } from '@Mutate/matchUps/schedule/pipeline/gridViewCodec';
 import { dayMinutesToTimeString, extractTime, tidyTime, timeStringMinutes } from '@Tools/plainTime';
 import { addMinutesWithinDay } from '@Mutate/matchUps/schedule/scheduleMatchUps/timeWithinDay';
+import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import { buildSchedulingView } from '@Mutate/matchUps/schedule/pipeline/view';
+import { planGridDate } from '@Mutate/matchUps/schedule/pipeline/gridPlan';
+import {
+  buildConflictsView,
+  checkConflicts,
+  conflictsViewData,
+  conflictsViewFromData,
+  requiredConflictsViewKeys,
+} from '@Mutate/matchUps/schedule/pipeline/gridConflicts';
 import { addMinutesToDateTime, endOnTheDay } from '@Tools/civilDateTime';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { planSchedule } from '@Mutate/matchUps/schedule/pipeline/plan';
@@ -104,6 +114,13 @@ function validateReduceInput(input: Record<string, unknown>) {
   return undefined;
 }
 
+/** why a case's view is malformed: not an object, or missing a member the operation requires */
+function viewProblem(view: unknown, requiredKeys: string[]): string | undefined {
+  if (!view || typeof view !== 'object' || Array.isArray(view)) return 'view must be an object';
+  const missing = requiredKeys.filter((key) => !Object.hasOwn(view, key));
+  return missing.length ? `view is missing ${missing.join(', ')}` : undefined;
+}
+
 /** the options a profile plan takes beside its view, and the type each must have */
 const PLAN_OPTIONS: Record<string, (value: unknown) => boolean> = {
   clearScheduleDates: (value) =>
@@ -115,10 +132,8 @@ const PLAN_OPTIONS: Record<string, (value: unknown) => boolean> = {
 };
 
 function validatePlanInput(input: Record<string, unknown>) {
-  const view = input.view as Record<string, unknown> | undefined;
-  if (!view || typeof view !== 'object' || Array.isArray(view)) return 'view must be an object';
-  const missing = requiredPlanningViewKeys().filter((key) => !Object.hasOwn(view, key));
-  if (missing.length) return `view is missing ${missing.join(', ')}`;
+  const problem = viewProblem(input.view, requiredPlanningViewKeys());
+  if (problem) return problem;
   const options = (input.options ?? {}) as Record<string, unknown>;
   if (typeof options !== 'object' || Array.isArray(options)) return 'options must be an object';
   for (const [key, value] of Object.entries(options)) {
@@ -155,6 +170,47 @@ function schedulingView(input: Record<string, unknown>): KernelResult {
   const view = buildSchedulingView({ ...options, tournamentRecords });
   if ('error' in view) return { kind: 'error', code: view.error.code };
   return { kind: 'value', value: overTheWire(planningViewData(view)) };
+}
+
+/** a grid date's plan input: its view, with every member the plan requires */
+function validateGridInput(input: Record<string, unknown>) {
+  return viewProblem(input.view, requiredGridViewKeys());
+}
+
+/** a grid's conflicts input: its view, with every member the check reads */
+function validateConflictsInput(input: Record<string, unknown>) {
+  return viewProblem(input.view, requiredConflictsViewKeys());
+}
+
+/** a conflicts view's input: the records, as the scheduling view takes them, and the date */
+function validateConflictsViewInput(input: Record<string, unknown>) {
+  const records = input.tournamentRecords;
+  const isRecord = (record: any) => !!record && typeof record === 'object' && typeof record.tournamentId === 'string';
+  if (!Array.isArray(records) || !records.every(isRecord))
+    return 'tournamentRecords must be an array of records, each with a tournamentId';
+  if (typeof input.scheduledDate !== 'string') return 'scheduledDate must be a string';
+  if (input.useDeepDependencies !== undefined && typeof input.useDeepDependencies !== 'boolean')
+    return 'useDeepDependencies must be a boolean';
+  return undefined;
+}
+
+/**
+ * The conflicts view of one date's matchUps, as plain data: the date's matchUps in context, with the matchUps they lead
+ * to, and the view built from them and the records (`buildConflictsView`).
+ */
+export function conflictsViewOf(
+  tournamentRecords: { [tournamentId: string]: any },
+  scheduledDate: string,
+  useDeepDependencies: boolean,
+): unknown {
+  const matchUps =
+    allCompetitionMatchUps({
+      matchUpFilters: { scheduledDate },
+      nextMatchUps: true,
+      tournamentRecords,
+      inContext: true,
+    }).matchUps ?? [];
+  return overTheWire(conflictsViewData(buildConflictsView({ tournamentRecords, useDeepDependencies, matchUps })));
 }
 
 /** the clock's primitives (scheduling-pipeline.md § 3.8): a string in, a time, a number or a date out */
@@ -274,6 +330,40 @@ export const kernelOperations: Readonly<Record<string, KernelOperation>> = Objec
     capability: 'scheduling',
     validate: validateViewInput,
     run: schedulingView,
+  },
+  // the grid pipeline's date plan (scheduling-pipeline.md § 5): from the date's view, the placements (each matchUp and
+  // the cell it takes), what no row took, what is over a daily limit, and the placements warned
+  'kernel.scheduling.grid@1': {
+    capability: 'scheduling',
+    validate: validateGridInput,
+    run: (input) => ({
+      kind: 'value',
+      value: overTheWire(planGridDate(gridViewFromData(input.view as Record<string, unknown>))),
+    }),
+  },
+  // the court grid's conflicts (pro-scheduling.md, Conflict Types): from the grid's view, each grid matchUp's first issue
+  // by severity, per row and per court
+  'kernel.scheduling.conflicts@1': {
+    capability: 'scheduling',
+    validate: validateConflictsInput,
+    run: (input) => ({
+      kind: 'value',
+      value: overTheWire(checkConflicts(conflictsViewFromData(input.view as Record<string, unknown>))),
+    }),
+  },
+  // the court grid's conflicts view (pro-scheduling.md, Conflict Types): from the records, the view the conflicts are
+  // judged from for one date's matchUps, as the schedulers build it when they report a grid's conflicts
+  'kernel.scheduling.conflictsView@1': {
+    capability: 'scheduling',
+    validate: validateConflictsViewInput,
+    run: (input) => ({
+      kind: 'value',
+      value: conflictsViewOf(
+        Object.fromEntries((input.tournamentRecords as any[]).map((record) => [record.tournamentId, record])),
+        input.scheduledDate as string,
+        input.useDeepDependencies === true,
+      ),
+    }),
   },
   'kernel.format.parse@1': {
     capability: 'grammar',

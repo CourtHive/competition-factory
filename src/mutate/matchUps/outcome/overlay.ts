@@ -42,6 +42,18 @@ export type WorkingView = {
   work: { copiedMatchUps: number; copiedStructures: number; rederived: number; projections: number };
 };
 
+/** the matchUp and the structure an op writes, a stamp's included */
+function namedBy(op: OutcomeOp): { matchUpId?: string; structureId?: string } {
+  if (op.op === 'stampUpdatedAt') {
+    if (op.entity === 'matchUp') return { matchUpId: op.id };
+    return op.entity === 'structure' ? { structureId: op.id } : {};
+  }
+  return {
+    matchUpId: 'matchUpId' in op ? op.matchUpId : undefined,
+    structureId: 'structureId' in op ? op.structureId : undefined,
+  };
+}
+
 type CreateWorkingViewArgs = {
   inContextDrawMatchUps: HydratedMatchUp[];
   /** the base is the structural index (§ 3.1.1): what an op touches is indexed again, not hydrated */
@@ -149,25 +161,25 @@ export function createWorkingView({
     matchUpsMap: baseMap,
     work,
     apply(ops) {
+      // COPY BEFORE WRITE, for every op by what it names: an object not copied here is the STORED one, and the fold
+      // below would write into the live draw before v1 runs. Asked of the op, not of a list of op kinds, so an op added
+      // later cannot slip past it (a seat cleared with no stamp beside it did, before this read the op's own ids)
       const affected = new Set<string>();
       for (const op of ops) {
-        if (op.op === 'setMatchUpResult' || op.op === 'setMatchUpDrawPositions') {
-          ensureMatchUp(op.matchUpId);
-          affected.add(op.matchUpId);
-        } else if (op.op === 'stampUpdatedAt' && op.entity === 'matchUp') {
-          ensureMatchUp(op.id);
-          affected.add(op.id);
-        } else if (op.op === 'assignPosition' || (op.op === 'stampUpdatedAt' && op.entity === 'structure')) {
-          ensureStructure(op.op === 'assignPosition' ? op.structureId : op.id);
+        const { matchUpId, structureId } = namedBy(op);
+        if (matchUpId) {
+          ensureMatchUp(matchUpId);
+          affected.add(matchUpId);
         }
+        if (structureId) ensureStructure(structureId);
       }
 
       const applied = applyOutcomeOps(workingDraw, ops);
       if (applied.error) return applied;
 
-      // a reassigned drawPosition changes the sides of every matchUp in that structure that holds it
+      // a reassigned or emptied drawPosition changes the sides of every matchUp in that structure that holds it
       for (const op of ops) {
-        if (op.op !== 'assignPosition') continue;
+        if (op.op !== 'assignPosition' && op.op !== 'clearPosition' && op.op !== 'relabelPosition') continue;
         for (const matchUp of matchUpsOf(structureHolding(op.structureId)) ?? [])
           if (matchUp.drawPositions?.includes(op.drawPosition)) affected.add(matchUp.matchUpId);
       }

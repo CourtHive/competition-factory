@@ -911,8 +911,10 @@ Returns current lineup participant IDs (empty arrays without lineups). No histor
 setPointMultipliers(multipliers: PointMultiplier[]): void
 ```
 
-Replaces scoring configuration with a deep copy. No timeline action and no immediate rescore. Persist
-configuration with supplementary state; keep the configuration consistent when replaying history.
+Replaces scoring configuration with a deep copy. No timeline action and no immediate rescore: the new
+multipliers value the points recorded from then on. A point keeps the value it was scored at, which its
+entry records, so an undo, a redo or a reload does not re-value earlier points. Persist configuration with
+supplementary state.
 
 ### getPointMultipliers
 

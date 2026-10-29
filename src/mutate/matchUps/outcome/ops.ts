@@ -1,12 +1,14 @@
 import { writeAssignmentResults } from '@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults';
+import { mergeSideExitProvenance, setSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
+import { exchangeMatchUpPositions } from '@Mutate/matchUps/drawPositions/swapWinnerLoser';
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { getCapturedStamps } from '@Global/state/globalState';
 import { nowIso } from '@Tools/clock';
 
 // constants and types
-import { BYE } from '@Constants/matchUpStatusConstants';
+import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type {
   DrawDefinition,
   MatchUp,
@@ -14,6 +16,7 @@ import type {
   MatchUpStatusUnion,
   PositionAssignment,
   Score,
+  SideExitProvenance,
   Structure,
   TallyResult,
 } from '@Types/tournamentTypes';
@@ -46,6 +49,22 @@ export type OutcomeOp =
       /** a new format; absent keeps the one the matchUp stores */
       matchUpFormat?: string;
       matchUpStatusCodes?: MatchUpStatusCodeElement[];
+      /**
+       * false where v1 writes the result outside `setMatchUpState`, so its `applyScoredTime` does not run and the
+       * schedule is left as it is: a double exit's produced exit (`doubleExitAdvancement` → `modifyMatchUpScore`)
+       */
+      stampsScoredTime?: false;
+      /**
+       * false where v1 writes the result with neither the tournament nor the event (a produced exit recorded beside a BYE
+       * and carried on, `stampExitOnByeHeldLoserTarget`, `carryExitOnward`): the notice names neither, and the matchUp in
+       * context is read without the tournament
+       */
+      announcesContext?: false;
+      /**
+       * the writer v1's notice names where a settle pass makes the write: a carry withdrawn off the loser's matchUp by a
+       * relabel, whose last emission is `reconcileScoredTimes` taking its `scoredTime` (S6)
+       */
+      announcedAs?: 'reconcileScoredTimes';
     }
   | {
       op: 'setMatchUpDrawPositions';
@@ -57,6 +76,23 @@ export type OutcomeOp =
        * too (v1's `removeSubsequentRoundsParticipant`, S4)
        */
       removedDrawPosition?: number;
+      /** the position placed in by the same write, when one is: a changed winner replacing the old one (S4) */
+      placedDrawPosition?: number;
+      /**
+       * false where v1 announces the placement with no event or tournament: the winner a double exit's produced exit is
+       * awarded to, sent on by `doubleExitAdvancement` (S5). The write is the same; only the notice's ids differ
+       */
+      announcesContext?: false;
+      /**
+       * a position advanced through a BYE a double exit placed (`doubleExitAdvancement`'s advance, S5): announced as
+       * `advanceWinner`, with no event, and the matchUp it joins written with no score
+       */
+      advancesThroughBye?: true;
+      /**
+       * the BYE whose withdrawal takes the position back out (S6, an unwind's `removeDirectedBye`): announced as v1's
+       * `clearDrawPosition` announces it, `removeDrawPosition-<that BYE's drawPosition>`, with neither event nor tournament
+       */
+      withdrawnByePosition?: number;
     }
   | {
       op: 'assignPosition';
@@ -66,17 +102,98 @@ export type OutcomeOp =
       participantId: string;
     }
   | {
+      op: 'exchangeDrawPositions';
+      /**
+       * a swap's relabel in a later round of its structure (S4): the two positions exchanged in the matchUp and sorted,
+       * a decided matchUp's winner carried across the re-sort with its score and side facts (v1's
+       * `exchangeMatchUpPositions`, the same function)
+       */
+      matchUpId: string;
+      structureId: string;
+      /** the old winner's position */
+      positionA: number;
+      /** the old loser's position, when they held one */
+      positionB?: number;
+    }
+  | {
+      op: 'relabelPosition';
+      /**
+       * a swap's relabel downstream (S4): the seat's occupant changes identity, nothing else; v1 announces and stamps
+       * nothing for it (`swapWinnerLoser`)
+       */
+      structureId: string;
+      drawPosition: number;
+      participantId: string;
+    }
+  | {
+      op: 'clearPosition';
+      /** a loser taken back out of the structure a link placed them in (S4): their seat emptied */
+      structureId: string;
+      drawPosition: number;
+      /** whose seat it was: their seed entry in that structure goes with them (v1's `removeDirectedLoser`) */
+      participantId: string;
+    }
+  | {
+      op: 'setMatchUpStatusCodes';
+      /** a matchUp's status codes re-derived from its provenance (a loser taken back out of it, S4) */
+      matchUpId: string;
+      matchUpStatusCodes: MatchUpStatusCodeElement[];
+    }
+  | {
+      op: 'mergeSideExitProvenance';
+      /**
+       * a side's exit provenance merged into what the matchUp carries, through v1's `mergeSideExitProvenance` (which
+       * admits it): a carried exit's entry on the side its carrier arrived at (S5, `progressExitStatus`)
+       */
+      matchUpId: string;
+      provenance: SideExitProvenance;
+    }
+  | {
+      op: 'setSideExitProvenance';
+      /**
+       * a matchUp's exit provenance replaced by what an unwind leaves, through v1's `setSideExitProvenance`: absent (or
+       * empty), the field is removed (a cleared double exit's produced exit, its origin withdrawn, S6)
+       */
+      matchUpId: string;
+      provenance?: SideExitProvenance;
+    }
+  | {
       op: 'assignBye';
       /** a FIRST_MATCHUP reservation (S3): the consolation seat a loser who has won can never fill */
       structureId: string;
       drawPosition: number;
       /** the marker `assignDrawPositionBye` writes for a propagation placement, so a withdrawal can recognise it */
       byeFromPropagation: true;
+      /**
+       * false where v1 announces the structure's assignments with no event: a seat a produced exit leaves unfillable
+       * (S5). The notice keeps an event an earlier placement in the same structure announced (`preserveNoticeIdentity`)
+       */
+      announcesEvent?: false;
     }
   | {
       op: 'setMatchUpBye';
       /** the matchUp the reserved seat is in: BYE, its score and winner removed (v1's `setMatchUpStatusBYE`) */
       matchUpId: string;
+      /** false where v1 announces it with no event: a seat a produced exit leaves unfillable (S5) */
+      announcesEvent?: false;
+    }
+  | {
+      op: 'withdrawBye';
+      /**
+       * an unwind's `removeDirectedBye` on a seat (S6): the stored assignment's BYE and its propagation marker removed,
+       * where one stands; the structure's assignments announced with neither event nor tournament either way
+       */
+      structureId: string;
+      drawPosition: number;
+    }
+  | {
+      op: 'clearMatchUpBye';
+      /**
+       * the matchUp a withdrawn BYE stood in, to be played again (S6), announced as `removeDrawPosition-<drawPosition>`
+       * with neither event nor tournament
+       */
+      matchUpId: string;
+      drawPosition: number;
     }
   | {
       op: 'setParticipantResults';
@@ -96,9 +213,17 @@ export type OutcomeOp =
 export type OutcomeOpName =
   | 'setMatchUpResult'
   | 'setMatchUpDrawPositions'
+  | 'exchangeDrawPositions'
+  | 'relabelPosition'
   | 'assignPosition'
+  | 'clearPosition'
+  | 'setMatchUpStatusCodes'
+  | 'mergeSideExitProvenance'
+  | 'setSideExitProvenance'
   | 'assignBye'
   | 'setMatchUpBye'
+  | 'withdrawBye'
+  | 'clearMatchUpBye'
   | 'setParticipantResults'
   | 'stampUpdatedAt';
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
@@ -152,6 +277,7 @@ function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMat
   else delete matchUp.winningSide;
   if (op.matchUpFormat) matchUp.matchUpFormat = op.matchUpFormat;
   if (op.matchUpStatusCodes) matchUp.matchUpStatusCodes = structuredClone(op.matchUpStatusCodes);
+  if (op.stampsScoredTime === false) return;
   // v1's `applyScoredTime`: captured the first time the matchUp is scored, kept on later corrections, removed with
   // the score so a re-score gets a fresh stamp
   if (matchUpIsScored(matchUp)) {
@@ -204,7 +330,9 @@ function foldMatchUpWrite(
   if (op.op === 'setMatchUpResult') setMatchUpResult(matchUp, op);
   // through the one writer, which normalises the positions and re-keys a side's facts if an occupant changes side
   else {
-    if (op.removedDrawPosition) delete matchUp.score;
+    // v1's advance through a BYE (`assignDrawPositionBye`) writes the matchUp it advances into with no score, as a
+    // removal does: a blank one a cleared result left there goes with it
+    if (op.removedDrawPosition || op.advancesThroughBye) delete matchUp.score;
     setMatchUpDrawPositions({
       structureId: structureOf.get(op.matchUpId),
       drawPositions: op.drawPositions,
@@ -215,12 +343,65 @@ function foldMatchUpWrite(
   return {};
 }
 
-function foldAssignPosition(op: OpOf<'assignPosition'>, { structures }: DrawIndex): Folded {
+function foldAssignPosition(op: OpOf<'assignPosition'> | OpOf<'relabelPosition'>, { structures }: DrawIndex): Folded {
   const assignment = positionAssignmentsOf(structures.get(op.structureId))?.find(
     (candidate) => candidate.drawPosition === op.drawPosition,
   );
   if (!assignment) return { error: `assignPosition: no drawPosition ${op.drawPosition} in ${op.structureId}` };
   assignment.participantId = op.participantId;
+  return {};
+}
+
+function foldExchange(
+  op: OpOf<'exchangeDrawPositions'>,
+  { matchUps }: DrawIndex,
+  drawDefinition: DrawDefinition,
+): Folded {
+  const matchUp = matchUps.get(op.matchUpId);
+  if (!matchUp) return { error: `exchangeDrawPositions: no matchUp ${op.matchUpId}` };
+  exchangeMatchUpPositions({
+    structureId: op.structureId,
+    positionA: op.positionA,
+    positionB: op.positionB,
+    drawDefinition,
+    matchUp,
+  });
+  return {};
+}
+
+function foldClearPosition(op: OpOf<'clearPosition'>, { structures }: DrawIndex): Folded {
+  const structure = structures.get(op.structureId);
+  const assignment = positionAssignmentsOf(structure)?.find((candidate) => candidate.drawPosition === op.drawPosition);
+  if (!structure || !assignment)
+    return { error: `clearPosition: no drawPosition ${op.drawPosition} in ${op.structureId}` };
+  delete assignment.participantId;
+  // as v1 writes it: the structure's seeds without the participant, an absent list written empty
+  Object.assign(structure, {
+    seedAssignments: (structure.seedAssignments ?? []).filter(
+      ({ participantId }) => participantId !== op.participantId,
+    ),
+  });
+  return {};
+}
+
+function foldStatusCodes(op: OpOf<'setMatchUpStatusCodes'>, { matchUps }: DrawIndex): Folded {
+  const matchUp = matchUps.get(op.matchUpId);
+  if (!matchUp) return { error: `setMatchUpStatusCodes: no matchUp ${op.matchUpId}` };
+  matchUp.matchUpStatusCodes = structuredClone(op.matchUpStatusCodes);
+  return {};
+}
+
+function foldProvenance(op: OpOf<'mergeSideExitProvenance'>, { matchUps }: DrawIndex): Folded {
+  const matchUp = matchUps.get(op.matchUpId);
+  if (!matchUp) return { error: `mergeSideExitProvenance: no matchUp ${op.matchUpId}` };
+  mergeSideExitProvenance({ matchUp, provenance: structuredClone(op.provenance) });
+  return {};
+}
+
+function foldSetProvenance(op: OpOf<'setSideExitProvenance'>, { matchUps }: DrawIndex): Folded {
+  const matchUp = matchUps.get(op.matchUpId);
+  if (!matchUp) return { error: `setSideExitProvenance: no matchUp ${op.matchUpId}` };
+  setSideExitProvenance({ matchUp, provenance: op.provenance && structuredClone(op.provenance) });
   return {};
 }
 
@@ -243,6 +424,22 @@ function foldSetMatchUpBye(op: OpOf<'setMatchUpBye'>, { matchUps }: DrawIndex): 
   const matchUp = matchUps.get(op.matchUpId);
   if (!matchUp) return { error: `setMatchUpBye: no matchUp ${op.matchUpId}` };
   Object.assign(matchUp, { matchUpStatus: BYE, score: undefined, winningSide: undefined });
+  return {};
+}
+
+function foldWithdrawBye(op: OpOf<'withdrawBye'>, { structures, groups }: DrawIndex): Folded {
+  const positionAssignments = positionAssignmentsOf(structures.get(op.structureId) ?? groups.get(op.structureId));
+  const assignment = positionAssignments?.find((candidate) => candidate.drawPosition === op.drawPosition);
+  if (!assignment) return { error: `withdrawBye: no drawPosition ${op.drawPosition} in ${op.structureId}` };
+  delete assignment.bye;
+  delete assignment.byeFromPropagation;
+  return {};
+}
+
+function foldClearMatchUpBye(op: OpOf<'clearMatchUpBye'>, { matchUps }: DrawIndex): Folded {
+  const matchUp = matchUps.get(op.matchUpId);
+  if (!matchUp) return { error: `clearMatchUpBye: no matchUp ${op.matchUpId}` };
+  matchUp.matchUpStatus = TO_BE_PLAYED;
   return {};
 }
 
@@ -295,11 +492,26 @@ function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition
     case 'setMatchUpDrawPositions':
       return foldMatchUpWrite(op, index, drawDefinition);
     case 'assignPosition':
+    case 'relabelPosition':
       return foldAssignPosition(op, index);
+    case 'exchangeDrawPositions':
+      return foldExchange(op, index, drawDefinition);
+    case 'clearPosition':
+      return foldClearPosition(op, index);
+    case 'setMatchUpStatusCodes':
+      return foldStatusCodes(op, index);
+    case 'mergeSideExitProvenance':
+      return foldProvenance(op, index);
+    case 'setSideExitProvenance':
+      return foldSetProvenance(op, index);
     case 'assignBye':
       return foldAssignBye(op, index);
     case 'setMatchUpBye':
       return foldSetMatchUpBye(op, index);
+    case 'withdrawBye':
+      return foldWithdrawBye(op, index);
+    case 'clearMatchUpBye':
+      return foldClearMatchUpBye(op, index);
     case 'setParticipantResults':
       return foldParticipantResults(op, index);
     default:

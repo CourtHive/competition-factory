@@ -1,8 +1,8 @@
 import { createTeamsFromParticipantAttributes } from '@Mutate/participants/createTeamsFromAttributes';
-import { addParticipants } from '@Mutate/participants/addParticipants';
 import { getParticipantId } from '@Functions/global/extractors';
 import { generateParticipants } from './generateParticipants';
 import { getParticipantsCount } from './getParticipantsCount';
+import { addParticipantsRecorded } from './recordedWrites';
 import { generateRange } from '@Tools/arrays';
 
 // constants and types
@@ -56,15 +56,20 @@ export function addTournamentParticipants({
   const participants = generated.participants as Participant[];
 
   let addedCount = 0;
-  let result = addParticipants({ tournamentRecord, participants });
+  let result = addParticipantsRecorded({ tournamentRecord, participants });
   if (result.error) return result;
   addedCount += result.addedCount;
 
   if (teamKey) {
-    const result = createTeamsFromParticipantAttributes({
+    // the teams are built, then added as a client adds participants: the build writes nothing itself
+    const built = createTeamsFromParticipantAttributes({
       tournamentRecord,
       ...teamKey,
+      addParticipants: false,
     });
+    if (built.error) return built;
+    const teams = 'newParticipants' in built ? built.newParticipants : [];
+    const result = addParticipantsRecorded({ tournamentRecord, participants: teams });
     if (result.error) return result;
   }
 
@@ -95,7 +100,7 @@ export function addTournamentParticipants({
     };
   });
 
-  result = addParticipants({
+  result = addParticipantsRecorded({
     participants: teamParticipants,
     tournamentRecord,
   });

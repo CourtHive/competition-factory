@@ -10,11 +10,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -93,8 +88,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "47241964-3a23-4400-be9a-839013bfc8a8",
@@ -121,8 +115,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "8983f025-583f-487f-9429-e29a88817828",
@@ -149,8 +142,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "7130243e-2939-45dd-84c4-588e3bf77f95",
@@ -177,8 +169,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -211,7 +202,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5"
+                          "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [3, 4],
@@ -225,7 +217,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5"
+                          "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -238,7 +231,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -259,7 +253,7 @@
                           "participantId": "8983f025-583f-487f-9429-e29a88817828"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.001Z",
+                      "updatedAt": "2026-03-01T08:00:00.000Z",
                       "seedLimit": 0
                     }
                   ],
@@ -292,7 +286,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.002Z",
+                  "updatedAt": "2026-03-01T08:00:00.001Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -749,11 +743,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -810,8 +799,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "36debe34-49a8-4033-9204-1fd1338d1099",
@@ -838,8 +826,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "7a9789cd-319a-4d90-a994-8055fcf35aa5",
@@ -866,8 +853,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "c88dbfc6-4fd8-4b96-bc69-bdfe560dbaed",
@@ -894,8 +880,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -928,7 +913,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "0cfb0d77-e887-4c4e-b16b-a16f6276194f"
+                          "winnerMatchUpId": "0cfb0d77-e887-4c4e-b16b-a16f6276194f",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [3, 4],
@@ -942,7 +928,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "0cfb0d77-e887-4c4e-b16b-a16f6276194f"
+                          "winnerMatchUpId": "0cfb0d77-e887-4c4e-b16b-a16f6276194f",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -955,7 +942,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -976,7 +964,7 @@
                           "participantId": "36debe34-49a8-4033-9204-1fd1338d1099"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.001Z",
+                      "updatedAt": "2026-03-01T08:00:00.000Z",
                       "seedLimit": 0
                     }
                   ],
@@ -1009,7 +997,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.002Z",
+                  "updatedAt": "2026-03-01T08:00:00.001Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -1441,11 +1429,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -1524,8 +1507,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "47241964-3a23-4400-be9a-839013bfc8a8",
@@ -1552,8 +1534,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "8983f025-583f-487f-9429-e29a88817828",
@@ -1580,8 +1561,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "7130243e-2939-45dd-84c4-588e3bf77f95",
@@ -1608,8 +1588,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -1642,7 +1621,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5"
+                          "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [3, 4],
@@ -1656,7 +1636,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5"
+                          "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -1669,7 +1650,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -1690,7 +1672,7 @@
                           "participantId": "8983f025-583f-487f-9429-e29a88817828"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.001Z",
+                      "updatedAt": "2026-03-01T08:00:00.000Z",
                       "seedLimit": 0
                     }
                   ],
@@ -1723,7 +1705,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.002Z",
+                  "updatedAt": "2026-03-01T08:00:00.001Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -2204,11 +2186,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -2265,8 +2242,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "58f2eed1-a587-4aa3-be64-18b94e5de732",
@@ -2293,8 +2269,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -2326,7 +2301,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -2339,7 +2315,7 @@
                           "participantId": "58f2eed1-a587-4aa3-be64-18b94e5de732"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.001Z",
+                      "updatedAt": "2026-03-01T08:00:00.000Z",
                       "seedLimit": 0
                     }
                   ],
@@ -2360,7 +2336,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.002Z",
+                  "updatedAt": "2026-03-01T08:00:00.001Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -2669,11 +2645,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -2752,8 +2723,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "47241964-3a23-4400-be9a-839013bfc8a8",
@@ -2780,8 +2750,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "8983f025-583f-487f-9429-e29a88817828",
@@ -2808,8 +2777,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "7130243e-2939-45dd-84c4-588e3bf77f95",
@@ -2836,8 +2804,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -2870,7 +2837,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5"
+                          "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [3, 4],
@@ -2884,7 +2852,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5"
+                          "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -2897,7 +2866,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -2918,7 +2888,7 @@
                           "participantId": "8983f025-583f-487f-9429-e29a88817828"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.001Z",
+                      "updatedAt": "2026-03-01T08:00:00.000Z",
                       "seedLimit": 0
                     }
                   ],
@@ -2951,7 +2921,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.002Z",
+                  "updatedAt": "2026-03-01T08:00:00.001Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -3447,11 +3417,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -3511,8 +3476,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "58f2eed1-a587-4aa3-be64-18b94e5de732",
@@ -3539,8 +3503,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -3572,7 +3535,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -3585,7 +3549,7 @@
                           "participantId": "58f2eed1-a587-4aa3-be64-18b94e5de732"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.001Z",
+                      "updatedAt": "2026-03-01T08:00:00.000Z",
                       "seedLimit": 0
                     }
                   ],
@@ -3606,7 +3570,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.002Z",
+                  "updatedAt": "2026-03-01T08:00:00.001Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -3863,11 +3827,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -3946,8 +3905,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "47241964-3a23-4400-be9a-839013bfc8a8",
@@ -3974,8 +3932,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "8983f025-583f-487f-9429-e29a88817828",
@@ -4002,8 +3959,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "7130243e-2939-45dd-84c4-588e3bf77f95",
@@ -4030,8 +3986,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -4065,12 +4020,12 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+                          "updatedAt": "2026-03-01T08:00:00.002Z",
                           "schedule": {
                             "scheduledDate": "2026-03-03",
                             "scheduledTime": "10:00",
                             "scoredTime": "2026-03-01T08:00:00.000Z"
                           },
-                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "score": {
                             "sets": [
                               {
@@ -4105,12 +4060,12 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+                          "updatedAt": "2026-03-01T08:00:00.002Z",
                           "schedule": {
                             "scheduledDate": "2026-03-03",
                             "scheduledTime": "10:00",
                             "scoredTime": "2026-03-01T08:00:00.000Z"
                           },
-                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "score": {
                             "sets": [
                               {
@@ -4144,7 +4099,7 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
-                          "updatedAt": "2026-03-01T08:00:00.001Z"
+                          "updatedAt": "2026-03-01T08:00:00.002Z"
                         }
                       ],
                       "positionAssignments": [
@@ -4165,7 +4120,7 @@
                           "participantId": "8983f025-583f-487f-9429-e29a88817828"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.005Z",
+                      "updatedAt": "2026-03-01T08:00:00.004Z",
                       "seedLimit": 0
                     }
                   ],
@@ -4198,7 +4153,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.006Z",
+                  "updatedAt": "2026-03-01T08:00:00.005Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -4688,11 +4643,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -4749,8 +4699,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "9813f467-3ada-4ff6-be1e-19d5f389d12a",
@@ -4777,8 +4726,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "279aed96-e712-4e36-bca2-b692b8f1a046",
@@ -4805,8 +4753,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "d955965e-ddf6-418d-b0fe-c9b059d09320",
@@ -4833,8 +4780,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
@@ -4861,8 +4807,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
@@ -4889,8 +4834,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -4923,13 +4867,13 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
                             "venueId": "venue-1",
                             "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -4942,7 +4886,7 @@
                           "participantId": "9813f467-3ada-4ff6-be1e-19d5f389d12a"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -4963,7 +4907,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -5098,7 +5042,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810"
+                          "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [3, 4],
@@ -5112,7 +5057,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810"
+                          "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -5125,7 +5071,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -5146,7 +5093,7 @@
                           "participantId": "d955965e-ddf6-418d-b0fe-c9b059d09320"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -5179,7 +5126,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:T20/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -5672,11 +5619,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -5733,8 +5675,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "9813f467-3ada-4ff6-be1e-19d5f389d12a",
@@ -5761,8 +5702,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "279aed96-e712-4e36-bca2-b692b8f1a046",
@@ -5789,8 +5729,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "d955965e-ddf6-418d-b0fe-c9b059d09320",
@@ -5817,8 +5756,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
@@ -5845,8 +5783,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
@@ -5873,8 +5810,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -5907,13 +5843,13 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
                             "venueId": "venue-1",
                             "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -5926,7 +5862,7 @@
                           "participantId": "9813f467-3ada-4ff6-be1e-19d5f389d12a"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -5947,7 +5883,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -6082,7 +6018,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810"
+                          "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [3, 4],
@@ -6096,7 +6033,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810"
+                          "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -6109,7 +6047,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -6130,7 +6069,7 @@
                           "participantId": "d955965e-ddf6-418d-b0fe-c9b059d09320"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.001Z",
+                      "updatedAt": "2026-03-01T08:00:00.000Z",
                       "seedLimit": 0
                     }
                   ],
@@ -6163,7 +6102,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.002Z",
+                  "updatedAt": "2026-03-01T08:00:00.001Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -6656,11 +6595,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -6717,8 +6651,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "9813f467-3ada-4ff6-be1e-19d5f389d12a",
@@ -6745,8 +6678,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "279aed96-e712-4e36-bca2-b692b8f1a046",
@@ -6773,8 +6705,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "d955965e-ddf6-418d-b0fe-c9b059d09320",
@@ -6801,8 +6732,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
@@ -6829,8 +6759,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
@@ -6857,8 +6786,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -6891,12 +6819,12 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
                             "venueId": "venue-1"
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -6909,7 +6837,7 @@
                           "participantId": "9813f467-3ada-4ff6-be1e-19d5f389d12a"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -6930,7 +6858,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -7065,7 +6993,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810"
+                          "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [3, 4],
@@ -7079,7 +7008,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810"
+                          "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -7092,7 +7022,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -7113,7 +7044,7 @@
                           "participantId": "d955965e-ddf6-418d-b0fe-c9b059d09320"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.001Z",
+                      "updatedAt": "2026-03-01T08:00:00.000Z",
                       "seedLimit": 0
                     }
                   ],
@@ -7146,7 +7077,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.002Z",
+                  "updatedAt": "2026-03-01T08:00:00.001Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -7638,11 +7569,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -7727,8 +7653,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "7fb62cb8-54af-4657-b276-729dac4c2aca",
@@ -7755,8 +7680,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "3820ca5c-3ba1-4e7b-a3fe-5a1a642b104f",
@@ -7783,8 +7707,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "16783996-9c9a-4684-bb78-9f95fa6bc32b",
@@ -7811,8 +7734,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "c3ee1a11-c9d4-49b4-bcec-321508741316",
@@ -7839,8 +7761,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "aac333ee-39a4-499f-bed8-f359a1e172ee",
@@ -7867,8 +7788,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -7901,11 +7821,11 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00"
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -7918,7 +7838,7 @@
                           "participantId": "7fb62cb8-54af-4657-b276-729dac4c2aca"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -7939,7 +7859,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -8074,7 +7994,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "9125c67f-f5f2-431a-b46e-f6d6dc6b8db3"
+                          "winnerMatchUpId": "9125c67f-f5f2-431a-b46e-f6d6dc6b8db3",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [3, 4],
@@ -8088,7 +8009,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "9125c67f-f5f2-431a-b46e-f6d6dc6b8db3"
+                          "winnerMatchUpId": "9125c67f-f5f2-431a-b46e-f6d6dc6b8db3",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -8101,7 +8023,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -8122,7 +8045,7 @@
                           "participantId": "3820ca5c-3ba1-4e7b-a3fe-5a1a642b104f"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.001Z",
+                      "updatedAt": "2026-03-01T08:00:00.000Z",
                       "seedLimit": 0
                     }
                   ],
@@ -8155,7 +8078,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.002Z",
+                  "updatedAt": "2026-03-01T08:00:00.001Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -8671,11 +8594,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -8732,8 +8650,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "9813f467-3ada-4ff6-be1e-19d5f389d12a",
@@ -8760,8 +8677,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "279aed96-e712-4e36-bca2-b692b8f1a046",
@@ -8788,8 +8704,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "d955965e-ddf6-418d-b0fe-c9b059d09320",
@@ -8816,8 +8731,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
@@ -8844,8 +8758,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
@@ -8872,8 +8785,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -8906,11 +8818,11 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00"
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -8923,7 +8835,7 @@
                           "participantId": "9813f467-3ada-4ff6-be1e-19d5f389d12a"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -8944,7 +8856,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -9079,7 +8991,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810"
+                          "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [3, 4],
@@ -9093,7 +9006,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810"
+                          "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -9106,7 +9020,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -9127,7 +9042,7 @@
                           "participantId": "d955965e-ddf6-418d-b0fe-c9b059d09320"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.001Z",
+                      "updatedAt": "2026-03-01T08:00:00.000Z",
                       "seedLimit": 0
                     }
                   ],
@@ -9160,7 +9075,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.002Z",
+                  "updatedAt": "2026-03-01T08:00:00.001Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -9651,11 +9566,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -9734,8 +9644,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "47241964-3a23-4400-be9a-839013bfc8a8",
@@ -9762,8 +9671,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "8983f025-583f-487f-9429-e29a88817828",
@@ -9790,8 +9698,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "7130243e-2939-45dd-84c4-588e3bf77f95",
@@ -9872,13 +9779,13 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+                          "updatedAt": "2026-03-01T08:00:00.002Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
                             "venueId": "venue-1",
                             "scoredTime": "2026-03-01T08:00:00.000Z"
                           },
-                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "score": {
                             "sets": [
                               {
@@ -9933,7 +9840,7 @@
                           "participantId": "47241964-3a23-4400-be9a-839013bfc8a8"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.004Z",
+                      "updatedAt": "2026-03-01T08:00:00.003Z",
                       "seedLimit": 0
                     }
                   ],
@@ -9960,7 +9867,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.005Z",
+                  "updatedAt": "2026-03-01T08:00:00.004Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -10449,11 +10356,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -10554,8 +10456,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "cf8290a7-90d7-41b7-a1b1-8203f77a8a07",
@@ -10582,8 +10483,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "dc951a62-e2e6-45a7-abb9-ad9adde59aa1",
@@ -10610,8 +10510,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "aec1e051-40d8-423f-a15c-fc4c6de08081",
@@ -10638,8 +10537,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "8ebc82e0-0fe8-4180-bfd5-4fa5734f7e36",
@@ -10666,8 +10564,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "585fef86-e651-4ec5-a6ba-7374f4bb55ed",
@@ -10694,8 +10591,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -10727,7 +10623,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -10740,7 +10637,7 @@
                           "participantId": "cf8290a7-90d7-41b7-a1b1-8203f77a8a07"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.001Z",
+                      "updatedAt": "2026-03-01T08:00:00.000Z",
                       "seedLimit": 0
                     }
                   ],
@@ -10761,7 +10658,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.002Z",
+                  "updatedAt": "2026-03-01T08:00:00.001Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -10897,12 +10794,12 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "8d735325-3474-4ab1-bc55-cccaad5ad3dc",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
                             "venueId": "venue-1"
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [3, 4],
@@ -10917,12 +10814,12 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "8d735325-3474-4ab1-bc55-cccaad5ad3dc",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
                             "venueId": "venue-1"
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [],
@@ -10935,7 +10832,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -10956,7 +10854,7 @@
                           "participantId": "aec1e051-40d8-423f-a15c-fc4c6de08081"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.004Z",
+                      "updatedAt": "2026-03-01T08:00:00.003Z",
                       "seedLimit": 0
                     }
                   ],
@@ -10989,7 +10887,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET1-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.005Z",
+                  "updatedAt": "2026-03-01T08:00:00.004Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -11562,11 +11460,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -11667,8 +11560,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "cf8290a7-90d7-41b7-a1b1-8203f77a8a07",
@@ -11695,8 +11587,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "dc951a62-e2e6-45a7-abb9-ad9adde59aa1",
@@ -11723,8 +11614,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "aec1e051-40d8-423f-a15c-fc4c6de08081",
@@ -11751,8 +11641,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "8ebc82e0-0fe8-4180-bfd5-4fa5734f7e36",
@@ -11779,8 +11668,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "585fef86-e651-4ec5-a6ba-7374f4bb55ed",
@@ -11807,8 +11695,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -11840,7 +11727,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -11853,7 +11741,7 @@
                           "participantId": "cf8290a7-90d7-41b7-a1b1-8203f77a8a07"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.001Z",
+                      "updatedAt": "2026-03-01T08:00:00.000Z",
                       "seedLimit": 0
                     }
                   ],
@@ -11874,7 +11762,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.002Z",
+                  "updatedAt": "2026-03-01T08:00:00.001Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -12009,7 +11897,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "8d735325-3474-4ab1-bc55-cccaad5ad3dc"
+                          "winnerMatchUpId": "8d735325-3474-4ab1-bc55-cccaad5ad3dc",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [3, 4],
@@ -12023,7 +11912,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "8d735325-3474-4ab1-bc55-cccaad5ad3dc"
+                          "winnerMatchUpId": "8d735325-3474-4ab1-bc55-cccaad5ad3dc",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -12036,7 +11926,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -12057,7 +11948,7 @@
                           "participantId": "aec1e051-40d8-423f-a15c-fc4c6de08081"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -12090,7 +11981,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET1-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -12669,11 +12560,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -12774,8 +12660,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "cf8290a7-90d7-41b7-a1b1-8203f77a8a07",
@@ -12802,8 +12687,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "dc951a62-e2e6-45a7-abb9-ad9adde59aa1",
@@ -12830,8 +12714,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "aec1e051-40d8-423f-a15c-fc4c6de08081",
@@ -12858,8 +12741,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "8ebc82e0-0fe8-4180-bfd5-4fa5734f7e36",
@@ -12886,8 +12768,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "585fef86-e651-4ec5-a6ba-7374f4bb55ed",
@@ -12914,8 +12795,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -12947,7 +12827,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -12960,7 +12841,7 @@
                           "participantId": "cf8290a7-90d7-41b7-a1b1-8203f77a8a07"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.001Z",
+                      "updatedAt": "2026-03-01T08:00:00.000Z",
                       "seedLimit": 0
                     }
                   ],
@@ -12981,7 +12862,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.002Z",
+                  "updatedAt": "2026-03-01T08:00:00.001Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -13116,7 +12997,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "8d735325-3474-4ab1-bc55-cccaad5ad3dc"
+                          "winnerMatchUpId": "8d735325-3474-4ab1-bc55-cccaad5ad3dc",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [3, 4],
@@ -13130,7 +13012,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "8d735325-3474-4ab1-bc55-cccaad5ad3dc"
+                          "winnerMatchUpId": "8d735325-3474-4ab1-bc55-cccaad5ad3dc",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -13143,7 +13026,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -13164,7 +13048,7 @@
                           "participantId": "aec1e051-40d8-423f-a15c-fc4c6de08081"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -13197,7 +13081,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET1-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -13782,11 +13666,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -13865,8 +13744,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "47241964-3a23-4400-be9a-839013bfc8a8",
@@ -13893,8 +13771,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "8983f025-583f-487f-9429-e29a88817828",
@@ -13921,8 +13798,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "7130243e-2939-45dd-84c4-588e3bf77f95",
@@ -13949,8 +13825,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -13984,12 +13859,12 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "18:00",
                             "venueId": "venue-1"
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [3, 4],
@@ -14003,7 +13878,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5"
+                          "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -14016,7 +13892,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -14037,7 +13914,7 @@
                           "participantId": "8983f025-583f-487f-9429-e29a88817828"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -14070,7 +13947,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -14562,11 +14439,6 @@
           "endDate": "2026-03-02",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -14726,8 +14598,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "53e8a0c2-5b6d-4950-a241-f787580f00c9",
@@ -14754,8 +14625,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "51164d31-7d43-43dc-ba9d-1604a97b8abf",
@@ -14782,8 +14652,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "a12f5ff7-abad-4106-8b2f-5f99687974c2",
@@ -14810,8 +14679,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "ecc14b4b-c7fe-4cf2-b3a4-579da2fb9f57",
@@ -14838,8 +14706,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "3370b11c-6113-4054-9293-d261b0ed9c8b",
@@ -14866,8 +14733,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "0bd18bb7-4ec7-4ee8-9ddf-13af3d32e12d",
@@ -14894,8 +14760,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "799bd130-5758-48d5-bce7-3ae061f04e3a",
@@ -14922,8 +14787,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "0c3e1c1f-efa9-4ea7-b858-c27dd086fcca",
@@ -14950,8 +14814,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "5fd98efd-93da-48d7-9e8c-b11a50990d1d",
@@ -14978,8 +14841,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "e1eac1e3-bf2a-4cba-bcf3-eb5233e0d602",
@@ -15006,8 +14868,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "0613a360-eccc-42f6-8255-1d11a35b7a61",
@@ -15034,8 +14895,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "246b7aac-2990-46a3-bbcc-e2bbfd8bac39",
@@ -15062,8 +14922,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "65f8111f-41ac-41ae-a296-43ac1532d5f0",
@@ -15090,8 +14949,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "29e89191-8fd2-4378-8122-8addf50c6511",
@@ -15118,8 +14976,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "f2019987-f248-4c5d-a648-0924f8986f2d",
@@ -15146,8 +15003,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -15180,7 +15036,8 @@
                             "loser": [9, 16],
                             "winner": [1, 8]
                           },
-                          "winnerMatchUpId": "45bc0e81-cd29-4d49-9e54-0be7627626e7"
+                          "winnerMatchUpId": "45bc0e81-cd29-4d49-9e54-0be7627626e7",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [3, 4],
@@ -15194,7 +15051,8 @@
                             "loser": [9, 16],
                             "winner": [1, 8]
                           },
-                          "winnerMatchUpId": "45bc0e81-cd29-4d49-9e54-0be7627626e7"
+                          "winnerMatchUpId": "45bc0e81-cd29-4d49-9e54-0be7627626e7",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [5, 6],
@@ -15208,7 +15066,8 @@
                             "loser": [9, 16],
                             "winner": [1, 8]
                           },
-                          "winnerMatchUpId": "2d7ae811-dda0-4697-a3d9-d3d495eedf87"
+                          "winnerMatchUpId": "2d7ae811-dda0-4697-a3d9-d3d495eedf87",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [7, 8],
@@ -15222,7 +15081,8 @@
                             "loser": [9, 16],
                             "winner": [1, 8]
                           },
-                          "winnerMatchUpId": "2d7ae811-dda0-4697-a3d9-d3d495eedf87"
+                          "winnerMatchUpId": "2d7ae811-dda0-4697-a3d9-d3d495eedf87",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [9, 10],
@@ -15236,7 +15096,8 @@
                             "loser": [9, 16],
                             "winner": [1, 8]
                           },
-                          "winnerMatchUpId": "d61b80e0-4f18-4829-b222-93adf532e0b8"
+                          "winnerMatchUpId": "d61b80e0-4f18-4829-b222-93adf532e0b8",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [11, 12],
@@ -15250,7 +15111,8 @@
                             "loser": [9, 16],
                             "winner": [1, 8]
                           },
-                          "winnerMatchUpId": "d61b80e0-4f18-4829-b222-93adf532e0b8"
+                          "winnerMatchUpId": "d61b80e0-4f18-4829-b222-93adf532e0b8",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [13, 14],
@@ -15264,7 +15126,8 @@
                             "loser": [9, 16],
                             "winner": [1, 8]
                           },
-                          "winnerMatchUpId": "7f231656-2f7f-4076-9700-9be9dbdcdc6a"
+                          "winnerMatchUpId": "7f231656-2f7f-4076-9700-9be9dbdcdc6a",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [15, 16],
@@ -15278,7 +15141,8 @@
                             "loser": [9, 16],
                             "winner": [1, 8]
                           },
-                          "winnerMatchUpId": "7f231656-2f7f-4076-9700-9be9dbdcdc6a"
+                          "winnerMatchUpId": "7f231656-2f7f-4076-9700-9be9dbdcdc6a",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -15292,7 +15156,8 @@
                             "loser": [5, 8],
                             "winner": [1, 4]
                           },
-                          "winnerMatchUpId": "4e91cb31-23e5-471d-a6cc-ab25de617d31"
+                          "winnerMatchUpId": "4e91cb31-23e5-471d-a6cc-ab25de617d31",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -15306,7 +15171,8 @@
                             "loser": [5, 8],
                             "winner": [1, 4]
                           },
-                          "winnerMatchUpId": "4e91cb31-23e5-471d-a6cc-ab25de617d31"
+                          "winnerMatchUpId": "4e91cb31-23e5-471d-a6cc-ab25de617d31",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -15320,7 +15186,8 @@
                             "loser": [5, 8],
                             "winner": [1, 4]
                           },
-                          "winnerMatchUpId": "34a70537-e461-4c28-99ff-ed14a9adba0d"
+                          "winnerMatchUpId": "34a70537-e461-4c28-99ff-ed14a9adba0d",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -15334,7 +15201,8 @@
                             "loser": [5, 8],
                             "winner": [1, 4]
                           },
-                          "winnerMatchUpId": "34a70537-e461-4c28-99ff-ed14a9adba0d"
+                          "winnerMatchUpId": "34a70537-e461-4c28-99ff-ed14a9adba0d",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -15348,7 +15216,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "3b7fdd42-21fb-43ef-8a97-63f5c41a4c66"
+                          "winnerMatchUpId": "3b7fdd42-21fb-43ef-8a97-63f5c41a4c66",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -15362,7 +15231,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "3b7fdd42-21fb-43ef-8a97-63f5c41a4c66"
+                          "winnerMatchUpId": "3b7fdd42-21fb-43ef-8a97-63f5c41a4c66",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -15375,7 +15245,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -15444,7 +15315,7 @@
                           "participantId": "53e8a0c2-5b6d-4950-a241-f787580f00c9"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.001Z",
+                      "updatedAt": "2026-03-01T08:00:00.000Z",
                       "seedLimit": 0
                     }
                   ],
@@ -15549,7 +15420,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.002Z",
+                  "updatedAt": "2026-03-01T08:00:00.001Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -15852,7 +15723,8 @@
                             "loser": [9, 16],
                             "winner": [1, 8]
                           },
-                          "winnerMatchUpId": "0a8afd50-5cfb-41b5-9c10-c6e8e402a67d"
+                          "winnerMatchUpId": "0a8afd50-5cfb-41b5-9c10-c6e8e402a67d",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [3, 4],
@@ -15866,7 +15738,8 @@
                             "loser": [9, 16],
                             "winner": [1, 8]
                           },
-                          "winnerMatchUpId": "0a8afd50-5cfb-41b5-9c10-c6e8e402a67d"
+                          "winnerMatchUpId": "0a8afd50-5cfb-41b5-9c10-c6e8e402a67d",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [5, 6],
@@ -15880,7 +15753,8 @@
                             "loser": [9, 16],
                             "winner": [1, 8]
                           },
-                          "winnerMatchUpId": "db327311-0865-46e5-bd27-ca6d755ddf97"
+                          "winnerMatchUpId": "db327311-0865-46e5-bd27-ca6d755ddf97",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [7, 8],
@@ -15894,7 +15768,8 @@
                             "loser": [9, 16],
                             "winner": [1, 8]
                           },
-                          "winnerMatchUpId": "db327311-0865-46e5-bd27-ca6d755ddf97"
+                          "winnerMatchUpId": "db327311-0865-46e5-bd27-ca6d755ddf97",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [9, 10],
@@ -15908,7 +15783,8 @@
                             "loser": [9, 16],
                             "winner": [1, 8]
                           },
-                          "winnerMatchUpId": "9d5eeb10-1013-4c1d-b0f8-84dcf77f311f"
+                          "winnerMatchUpId": "9d5eeb10-1013-4c1d-b0f8-84dcf77f311f",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [11, 12],
@@ -15922,7 +15798,8 @@
                             "loser": [9, 16],
                             "winner": [1, 8]
                           },
-                          "winnerMatchUpId": "9d5eeb10-1013-4c1d-b0f8-84dcf77f311f"
+                          "winnerMatchUpId": "9d5eeb10-1013-4c1d-b0f8-84dcf77f311f",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [13, 14],
@@ -15936,7 +15813,8 @@
                             "loser": [9, 16],
                             "winner": [1, 8]
                           },
-                          "winnerMatchUpId": "581b9440-f1a1-488b-b115-08cd0b211dbb"
+                          "winnerMatchUpId": "581b9440-f1a1-488b-b115-08cd0b211dbb",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [15, 16],
@@ -15950,7 +15828,8 @@
                             "loser": [9, 16],
                             "winner": [1, 8]
                           },
-                          "winnerMatchUpId": "581b9440-f1a1-488b-b115-08cd0b211dbb"
+                          "winnerMatchUpId": "581b9440-f1a1-488b-b115-08cd0b211dbb",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -15964,7 +15843,8 @@
                             "loser": [5, 8],
                             "winner": [1, 4]
                           },
-                          "winnerMatchUpId": "7b289171-a35c-495f-bae4-ca1fe14b761b"
+                          "winnerMatchUpId": "7b289171-a35c-495f-bae4-ca1fe14b761b",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -15978,7 +15858,8 @@
                             "loser": [5, 8],
                             "winner": [1, 4]
                           },
-                          "winnerMatchUpId": "7b289171-a35c-495f-bae4-ca1fe14b761b"
+                          "winnerMatchUpId": "7b289171-a35c-495f-bae4-ca1fe14b761b",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -15992,7 +15873,8 @@
                             "loser": [5, 8],
                             "winner": [1, 4]
                           },
-                          "winnerMatchUpId": "fe495274-1fbc-4d94-b9fe-3c7b3f31c92a"
+                          "winnerMatchUpId": "fe495274-1fbc-4d94-b9fe-3c7b3f31c92a",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -16006,7 +15888,8 @@
                             "loser": [5, 8],
                             "winner": [1, 4]
                           },
-                          "winnerMatchUpId": "fe495274-1fbc-4d94-b9fe-3c7b3f31c92a"
+                          "winnerMatchUpId": "fe495274-1fbc-4d94-b9fe-3c7b3f31c92a",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -16020,7 +15903,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "93ef832e-9c24-424e-b67b-507be0ab3b37"
+                          "winnerMatchUpId": "93ef832e-9c24-424e-b67b-507be0ab3b37",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -16034,7 +15918,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "93ef832e-9c24-424e-b67b-507be0ab3b37"
+                          "winnerMatchUpId": "93ef832e-9c24-424e-b67b-507be0ab3b37",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -16047,7 +15932,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -16116,7 +16002,7 @@
                           "participantId": "5fd98efd-93da-48d7-9e8c-b11a50990d1d"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.001Z",
+                      "updatedAt": "2026-03-01T08:00:00.000Z",
                       "seedLimit": 0
                     }
                   ],
@@ -16221,7 +16107,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.002Z",
+                  "updatedAt": "2026-03-01T08:00:00.001Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -18774,11 +18660,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -18835,8 +18716,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "9813f467-3ada-4ff6-be1e-19d5f389d12a",
@@ -18863,8 +18743,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "279aed96-e712-4e36-bca2-b692b8f1a046",
@@ -18891,8 +18770,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "d955965e-ddf6-418d-b0fe-c9b059d09320",
@@ -18919,8 +18797,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "f1356f46-6f0d-49a7-ad64-c65b26e0eee2",
@@ -18947,8 +18824,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "864d6b8e-bda5-4e9e-a2b8-5bc263c5a7bb",
@@ -18975,8 +18851,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -19009,12 +18884,12 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "19:00",
                             "venueId": "venue-1"
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -19027,7 +18902,7 @@
                           "participantId": "9813f467-3ada-4ff6-be1e-19d5f389d12a"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -19048,7 +18923,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -19183,7 +19058,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810"
+                          "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [3, 4],
@@ -19197,7 +19073,8 @@
                             "loser": [3, 4],
                             "winner": [1, 2]
                           },
-                          "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810"
+                          "winnerMatchUpId": "3c8ee078-1333-47b6-84c9-14822c4b7810",
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         },
                         {
                           "drawPositions": [],
@@ -19210,7 +19087,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -19231,7 +19109,7 @@
                           "participantId": "d955965e-ddf6-418d-b0fe-c9b059d09320"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.001Z",
+                      "updatedAt": "2026-03-01T08:00:00.000Z",
                       "seedLimit": 0
                     }
                   ],
@@ -19264,7 +19142,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.002Z",
+                  "updatedAt": "2026-03-01T08:00:00.001Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -19756,11 +19634,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -19845,8 +19718,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "47241964-3a23-4400-be9a-839013bfc8a8",
@@ -19873,8 +19745,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "8983f025-583f-487f-9429-e29a88817828",
@@ -19901,8 +19772,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "7130243e-2939-45dd-84c4-588e3bf77f95",
@@ -19929,8 +19799,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -19964,12 +19833,12 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
                             "venueId": "venue-1"
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [3, 4],
@@ -19984,12 +19853,12 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
                             "venueId": "venue-1"
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [],
@@ -20002,7 +19871,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -20023,7 +19893,7 @@
                           "participantId": "8983f025-583f-487f-9429-e29a88817828"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.003Z",
+                      "updatedAt": "2026-03-01T08:00:00.002Z",
                       "seedLimit": 0
                     }
                   ],
@@ -20056,7 +19926,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET1-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.004Z",
+                  "updatedAt": "2026-03-01T08:00:00.003Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -20531,11 +20401,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -20620,8 +20485,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "47241964-3a23-4400-be9a-839013bfc8a8",
@@ -20648,8 +20512,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "8983f025-583f-487f-9429-e29a88817828",
@@ -20676,8 +20539,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "7130243e-2939-45dd-84c4-588e3bf77f95",
@@ -20704,8 +20566,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -20739,12 +20600,12 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
                             "venueId": "venue-1"
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [3, 4],
@@ -20759,12 +20620,12 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
                             "venueId": "venue-1"
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [],
@@ -20777,7 +20638,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -20798,7 +20660,7 @@
                           "participantId": "8983f025-583f-487f-9429-e29a88817828"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.003Z",
+                      "updatedAt": "2026-03-01T08:00:00.002Z",
                       "seedLimit": 0
                     }
                   ],
@@ -20831,7 +20693,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET1-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.004Z",
+                  "updatedAt": "2026-03-01T08:00:00.003Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -21306,11 +21168,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -21395,8 +21252,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "47241964-3a23-4400-be9a-839013bfc8a8",
@@ -21423,8 +21279,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "8983f025-583f-487f-9429-e29a88817828",
@@ -21451,8 +21306,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "7130243e-2939-45dd-84c4-588e3bf77f95",
@@ -21479,8 +21333,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -21514,12 +21367,12 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
                             "venueId": "venue-1"
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [3, 4],
@@ -21534,12 +21387,12 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
                             "venueId": "venue-1"
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [],
@@ -21552,7 +21405,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -21573,7 +21427,7 @@
                           "participantId": "8983f025-583f-487f-9429-e29a88817828"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.003Z",
+                      "updatedAt": "2026-03-01T08:00:00.002Z",
                       "seedLimit": 0
                     }
                   ],
@@ -21606,7 +21460,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET1-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.004Z",
+                  "updatedAt": "2026-03-01T08:00:00.003Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -22081,11 +21935,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -22170,8 +22019,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "47241964-3a23-4400-be9a-839013bfc8a8",
@@ -22198,8 +22046,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "8983f025-583f-487f-9429-e29a88817828",
@@ -22226,8 +22073,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "7130243e-2939-45dd-84c4-588e3bf77f95",
@@ -22254,8 +22100,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -22289,12 +22134,12 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
                             "venueId": "venue-1"
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [3, 4],
@@ -22309,12 +22154,12 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
                             "venueId": "venue-1"
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [],
@@ -22327,7 +22172,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -22348,7 +22194,7 @@
                           "participantId": "8983f025-583f-487f-9429-e29a88817828"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.003Z",
+                      "updatedAt": "2026-03-01T08:00:00.002Z",
                       "seedLimit": 0
                     }
                   ],
@@ -22381,7 +22227,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET1-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.004Z",
+                  "updatedAt": "2026-03-01T08:00:00.003Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -22856,11 +22702,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -22945,8 +22786,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "47241964-3a23-4400-be9a-839013bfc8a8",
@@ -22973,8 +22813,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "8983f025-583f-487f-9429-e29a88817828",
@@ -23001,8 +22840,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "7130243e-2939-45dd-84c4-588e3bf77f95",
@@ -23029,8 +22867,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -23064,12 +22901,12 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
                             "venueId": "venue-1"
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [3, 4],
@@ -23084,12 +22921,12 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
                             "venueId": "venue-1"
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [],
@@ -23102,7 +22939,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -23123,7 +22961,7 @@
                           "participantId": "8983f025-583f-487f-9429-e29a88817828"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.003Z",
+                      "updatedAt": "2026-03-01T08:00:00.002Z",
                       "seedLimit": 0
                     }
                   ],
@@ -23156,7 +22994,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET1-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.004Z",
+                  "updatedAt": "2026-03-01T08:00:00.003Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -23631,11 +23469,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -24038,8 +23871,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "47241964-3a23-4400-be9a-839013bfc8a8",
@@ -24066,8 +23898,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "8983f025-583f-487f-9429-e29a88817828",
@@ -24094,8 +23925,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "7130243e-2939-45dd-84c4-588e3bf77f95",
@@ -24122,8 +23952,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -24157,12 +23986,12 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
                             "venueId": "venue-1"
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [3, 4],
@@ -24177,12 +24006,12 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "d47031ed-7798-4443-aeb4-21a6e4082bc5",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "10:00",
                             "venueId": "venue-1"
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [],
@@ -24195,7 +24024,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -24216,7 +24046,7 @@
                           "participantId": "8983f025-583f-487f-9429-e29a88817828"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.003Z",
+                      "updatedAt": "2026-03-01T08:00:00.002Z",
                       "seedLimit": 0
                     }
                   ],
@@ -24249,7 +24079,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET1-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.004Z",
+                  "updatedAt": "2026-03-01T08:00:00.003Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -25049,11 +24879,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -25110,8 +24935,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "9813f467-3ada-4ff6-be1e-19d5f389d12a",
@@ -25138,8 +24962,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "0b72cd8f-294e-4eaf-90a4-7837f4ec5921",
@@ -25166,8 +24989,7 @@
                   }
                 ],
                 "sex": "FEMALE"
-              },
-              "timeItems": []
+              }
             },
             {
               "participantId": "8e25cb1a-2463-45a7-96e9-a4c5bc7e1884",
@@ -25194,8 +25016,7 @@
                   }
                 ],
                 "sex": "MALE"
-              },
-              "timeItems": []
+              }
             }
           ],
           "events": [
@@ -25228,13 +25049,13 @@
                             "loser": [2, 2],
                             "winner": [1, 1]
                           },
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "23:00",
                             "venueId": "venue-1",
                             "courtId": "7ba8d890-c415-4ddb-8b66-60040f347884"
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         }
                       ],
                       "positionAssignments": [
@@ -25247,7 +25068,7 @@
                           "participantId": "9813f467-3ada-4ff6-be1e-19d5f389d12a"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.002Z",
+                      "updatedAt": "2026-03-01T08:00:00.001Z",
                       "seedLimit": 0
                     }
                   ],
@@ -25268,7 +25089,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.003Z",
+                  "updatedAt": "2026-03-01T08:00:00.002Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -25402,7 +25223,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -25415,7 +25237,7 @@
                           "participantId": "8e25cb1a-2463-45a7-96e9-a4c5bc7e1884"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.001Z",
+                      "updatedAt": "2026-03-01T08:00:00.000Z",
                       "seedLimit": 0
                     }
                   ],
@@ -25436,7 +25258,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.002Z",
+                  "updatedAt": "2026-03-01T08:00:00.001Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",
@@ -25843,11 +25665,6 @@
           "endDate": "2026-03-03",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.22.0",
-            "version": "7.22.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -26365,12 +26182,12 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "ef00137f-e2e9-4396-ae64-cd125a6f280c",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "21:00",
                             "venueId": "venue-1"
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [3, 4],
@@ -26385,12 +26202,12 @@
                             "winner": [1, 2]
                           },
                           "winnerMatchUpId": "ef00137f-e2e9-4396-ae64-cd125a6f280c",
+                          "updatedAt": "2026-03-01T08:00:00.001Z",
                           "schedule": {
                             "scheduledDate": "2026-03-02",
                             "scheduledTime": "21:00",
                             "venueId": "venue-1"
-                          },
-                          "updatedAt": "2026-03-01T08:00:00.000Z"
+                          }
                         },
                         {
                           "drawPositions": [],
@@ -26403,7 +26220,8 @@
                           "finishingPositionRange": {
                             "loser": [2, 2],
                             "winner": [1, 1]
-                          }
+                          },
+                          "updatedAt": "2026-03-01T08:00:00.000Z"
                         }
                       ],
                       "positionAssignments": [
@@ -26424,7 +26242,7 @@
                           "participantId": "39a4599f-fed8-4359-a1e1-72ee585fef86"
                         }
                       ],
-                      "updatedAt": "2026-03-01T08:00:00.003Z",
+                      "updatedAt": "2026-03-01T08:00:00.002Z",
                       "seedLimit": 0
                     }
                   ],
@@ -26457,7 +26275,7 @@
                   "links": [],
                   "drawType": "SINGLE_ELIMINATION",
                   "matchUpFormat": "SET3-S:6/TB7",
-                  "updatedAt": "2026-03-01T08:00:00.004Z",
+                  "updatedAt": "2026-03-01T08:00:00.003Z",
                   "extensions": [
                     {
                       "name": "appliedPolicies",

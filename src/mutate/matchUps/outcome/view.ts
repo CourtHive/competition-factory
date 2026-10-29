@@ -1,4 +1,6 @@
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
+import { fedLoserPlacementRefusal } from '@Mutate/matchUps/drawPositions/reconcileFedLoserEligibility';
+import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { isValidMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
@@ -10,6 +12,7 @@ import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinn
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
+import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
 import { resolveScoringFormat } from '@Query/hierarchical/resolveScoringFormat';
 import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
@@ -41,20 +44,28 @@ import {
   carriedExitStatus,
   isPropagatedExit,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import {
+  relabelledPathFeedChanges,
+  relabelledPathFeedRefusal,
+} from '@Mutate/matchUps/drawPositions/relabelledPathFeeds';
 
 // constants and types
 import type { BuildViewArgs, OutcomeRequest, OutcomeView, Reservation, ThroughBye } from './types';
+import { FIRST_MATCHUP, LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { BYE, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { FIRST_MATCHUP, WIN_RATIO } from '@Constants/drawDefinitionConstants';
+import type { PositionTargetsResult } from '@Query/matchUp/positionTargets';
+import type { CarryLevel, WinnerLoserSeat } from './types';
 import type { MatchUpsMap } from '@Types/factoryTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
 import type {
   DrawDefinition,
+  DrawLink,
   Event,
   MatchUp,
   MatchUpStatusUnion,
   PositionAssignment,
+  Score,
   SideExitProvenanceEntry,
   Structure,
 } from '@Types/tournamentTypes';
@@ -352,9 +363,443 @@ function throughBye(
   return { matchUpId: next.matchUpId, drawPositions };
 }
 
+/**
+ * THE LEVELS A CARRIED EXIT GOES ON TO (S5, `propagateExitFrom`). From the matchUp the exit lands in, the carrier is
+ * that matchUp's loser, and v1's nested write directs them across its loser link (`directLoser`), carrying the exit
+ * again. Each level is read from the draw as the call found it: the link targets of the landing (`positionTargets`),
+ * the seat it feeds and the matchUp holding it. Only for a call that may carry. Past a BYE opposite the seat (RULE 1) the
+ * walk goes on from the matchUp beyond it (`throughBye`). It stops where nothing is linked on, at a BYE it cannot pass,
+ * and at v1's bound (`SETTLE_PASS_LIMITS.exitLevels`), where it
+ * says so: v1 refuses there (`SETTLE_BOUND_REACHED`), and v2 abstains (F9).
+ */
+function carryLevels(
+  draw: DrawContext,
+  matchUpsMap: MatchUpsMap,
+  landingMatchUpId?: string,
+): OutcomeView['targets']['carryLevels'] {
+  const levels: CarryLevel[] = [];
+  let fromMatchUpId = landingMatchUpId;
+  for (let level = 0; fromMatchUpId; level += 1) {
+    if (level >= SETTLE_PASS_LIMITS.exitLevels) return { levels, bounded: true };
+    const { targetMatchUps, targetLinks } = positionTargets({ ...draw, matchUpId: fromMatchUpId }) ?? {};
+    const next = targetMatchUps?.loserMatchUp;
+    const drawPosition = targetMatchUps?.loserTargetDrawPosition;
+    if (!next || !drawPosition) break;
+    const seat = loserTargetSeat(draw.drawDefinition, next.structureId, drawPosition, next.drawPositions);
+    // a BYE opposite the seat (RULE 1): the carrier goes on past it into the matchUp beyond, where the exit lands
+    const through = seat?.opponentBye ? throughBye(next, drawPosition, draw) : undefined;
+    levels.push({
+      linkCondition: targetLinks?.loserTargetLink?.linkCondition,
+      record: storedSideRecord(matchUpsMap, next.matchUpId),
+      carriesExit: carriesExit(next, draw),
+      matchUpStatus: next.matchUpStatus,
+      structureId: next.structureId,
+      matchUpId: next.matchUpId,
+      hasResult: hasResult(next),
+      fromMatchUpId,
+      drawPosition,
+      seat,
+      ...(through ? { through } : {}),
+    });
+    if (!seat || (seat.opponentBye && !through)) break;
+    fromMatchUpId = through?.matchUpId ?? next.matchUpId;
+  }
+  return { levels, bounded: false };
+}
+
+/** the seat `matchUpId`'s loser link feeds (`positionTargets`), and the matchUp holding it, read before the call writes */
+function winnerLoserSeat(
+  draw: DrawContext,
+  request: OutcomeRequest,
+  matchUpId?: string,
+): OutcomeView['targets']['winnerLoserSeat'] {
+  // read only for a double exit's call: its produced exit is the only one that leaves the seat unfillable
+  if (!matchUpId || !isDoubleExit(request.matchUpStatus)) return undefined;
+  return loserSeatOf(draw, matchUpId);
+}
+
+/**
+ * A stored double exit left by a call that is not one (S6, `removeDoubleExit`): the call's matchUp and each matchUp on
+ * its winner path, in its structure, to the final, with the seat each one's loser link feeds. v1's unwind visits each
+ * of those seats. Undefined otherwise.
+ */
+function unwindLoserSeats(
+  draw: DrawContext,
+  request: OutcomeRequest,
+  matchUp: MatchUp,
+): OutcomeView['targets']['unwindLoserSeats'] {
+  if (!isDoubleExit(matchUp.matchUpStatus) || isDoubleExit(request.matchUpStatus)) return undefined;
+  const byId = new Map(draw.inContextDrawMatchUps.map((entry) => [entry.matchUpId, entry]));
+  const levels: { matchUpId: string; loserSeat?: WinnerLoserSeat }[] = [];
+  let entry = byId.get(matchUp.matchUpId);
+  const structureId = entry?.structureId;
+  while (entry && entry.structureId === structureId && levels.length <= byId.size) {
+    levels.push({
+      matchUpId: entry.matchUpId,
+      loserSeat: entry.loserMatchUpId ? loserSeatOf(draw, entry.matchUpId) : undefined,
+    });
+    entry = entry.winnerMatchUpId ? byId.get(entry.winnerMatchUpId) : undefined;
+  }
+  return levels;
+}
+
+function loserSeatOf(draw: DrawContext, matchUpId: string): WinnerLoserSeat | undefined {
+  const { targetMatchUps, targetLinks } = positionTargets({ ...draw, matchUpId }) ?? {};
+  const matchUp = targetMatchUps?.loserMatchUp;
+  const drawPosition = targetMatchUps?.loserTargetDrawPosition;
+  if (!matchUp || !drawPosition) return undefined;
+  return {
+    seat: loserTargetSeat(draw.drawDefinition, matchUp.structureId, drawPosition, matchUp.drawPositions),
+    drawPositions: (matchUp.drawPositions ?? []).filter((position): position is number => !!position),
+    linkCondition: targetLinks?.loserTargetLink?.linkCondition,
+    matchUpStatus: matchUp.matchUpStatus,
+    structureId: matchUp.structureId,
+    matchUpId: matchUp.matchUpId,
+    hasResult: hasResult(matchUp),
+    drawPosition,
+  };
+}
+
+/**
+ * A double exit's call (S5): the levels a BYE it places goes on to across loser links, from the loser matchUp (its own
+ * seat's, or under `doubleExitPropagateBye: false` the produced exit's there) and from the matchUp holding the seat its
+ * produced exit leaves unfillable. A BYE matchUp's loser is the BYE, so v1 places a BYE on its loser seat too
+ * (`advanceDrawPosition`), level by level, walked as a carried exit's levels are (`carryLevels`, bounded alike)
+ */
+function byeLevels(
+  draw: DrawContext,
+  matchUpsMap: MatchUpsMap,
+  request: OutcomeRequest,
+  targetData?: PositionTargetsResult,
+): OutcomeView['targets']['byeLevels'] {
+  if (!isDoubleExit(request.matchUpStatus)) return undefined;
+  const loserMatchUp = targetData?.targetMatchUps?.loserMatchUp;
+  const winnerMatchUpId = targetData?.targetMatchUps?.winnerMatchUp?.matchUpId;
+  const unfillable = winnerMatchUpId
+    ? positionTargets({ ...draw, matchUpId: winnerMatchUpId })?.targetMatchUps?.loserMatchUp
+    : undefined;
+  return {
+    own: loserMatchUp?.loserMatchUpId ? carryLevels(draw, matchUpsMap, loserMatchUp.matchUpId) : undefined,
+    unfillable: unfillable?.loserMatchUpId ? carryLevels(draw, matchUpsMap, unfillable.matchUpId) : undefined,
+  };
+}
+
+/**
+ * A double exit's call whose next matchUp holds an exit (S5): where they converge, the double exit there produces on into
+ * the matchUp after it, whose loser seat nobody will fill. That seat (as `winnerLoserSeat` reads one) and the levels a BYE
+ * placed there goes on to
+ */
+function onwardLoserSeat(
+  draw: DrawContext,
+  matchUpsMap: MatchUpsMap,
+  request: OutcomeRequest,
+  targetData?: PositionTargetsResult,
+): OutcomeView['targets']['onwardLoserSeat'] {
+  const winnerMatchUp = targetData?.targetMatchUps?.winnerMatchUp;
+  if (!isDoubleExit(request.matchUpStatus) || !isExit(winnerMatchUp?.matchUpStatus)) return undefined;
+  const onwardId = winnerMatchUp?.winnerMatchUpId;
+  const seat = onwardId ? winnerLoserSeat(draw, request, onwardId) : undefined;
+  if (!seat) return undefined;
+  const linked = draw.inContextDrawMatchUps.find((matchUp) => matchUp.matchUpId === seat.matchUpId)?.loserMatchUpId;
+  return { ...seat, levels: linked ? carryLevels(draw, matchUpsMap, seat.matchUpId) : undefined };
+}
+
+/** a call that may carry an exit across a loser link (`propagateExitStatus`, an exit status, a loser matchUp) */
+function carriesOn(request: OutcomeRequest, targetData?: PositionTargetsResult): boolean {
+  return (
+    !!request.flags.propagateExitStatus && isExit(request.matchUpStatus) && !!targetData?.targetMatchUps?.loserMatchUp
+  );
+}
+
+/** where a carried exit lands: the loser's matchUp, or past a BYE opposite the seat, the matchUp beyond it */
+function carryLanding(
+  drawDefinition: DrawDefinition,
+  targetData: PositionTargetsResult | undefined,
+  draw: DrawContext,
+): string | undefined {
+  const loserMatchUp = targetData?.targetMatchUps?.loserMatchUp;
+  const drawPosition = targetData?.targetMatchUps?.loserTargetDrawPosition;
+  const seat = loserTargetSeat(drawDefinition, loserMatchUp?.structureId, drawPosition, loserMatchUp?.drawPositions);
+  return seat?.opponentBye ? throughBye(loserMatchUp, drawPosition, draw)?.matchUpId : loserMatchUp?.matchUpId;
+}
+
 /** the drawPosition a side of the matchUp holds */
 function sideDrawPosition(matchUp: HydratedMatchUp | undefined, sideNumber: 1 | 2): number | undefined {
   return matchUp?.sides?.find((side) => side.sideNumber === sideNumber)?.drawPosition;
+}
+
+/**
+ * A swap's relabel in its own structure, as v1's `swapWinnerLoser` finds it: the later-round matchUps holding the old
+ * winner's position or the old loser's, from the stored map. Only built for a call that may swap (a winner changing with
+ * `allowChangePropagation`).
+ */
+function swapPath({
+  inContextDrawMatchUps,
+  inContextMatchUp,
+  loserTargetLink,
+  drawDefinition,
+  matchUpsMap,
+  structure,
+  matchUp,
+  request,
+  event,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  inContextMatchUp?: HydratedMatchUp;
+  loserTargetLink?: DrawLink;
+  drawDefinition: DrawDefinition;
+  matchUpsMap: MatchUpsMap;
+  structure?: Structure;
+  request: OutcomeRequest;
+  matchUp: MatchUp;
+  event?: Event;
+}): OutcomeView['targets']['swap'] {
+  const winningSide = matchUp.winningSide;
+  if (!request.flags.allowChangePropagation || !request.winningSide || !winningSide) return undefined;
+  if (request.winningSide === winningSide || !inContextMatchUp?.structureId) return undefined;
+  const positionA = sideDrawPosition(inContextMatchUp, winningSide as 1 | 2);
+  const positionB = sideDrawPosition(inContextMatchUp, (3 - winningSide) as 1 | 2);
+  if (!positionA) return undefined;
+  const structureId = inContextMatchUp.structureId;
+  const roundNumber = inContextMatchUp.roundNumber ?? 0;
+  const path = (matchUpsMap.mappedMatchUps[structureId]?.matchUps ?? []).filter(
+    (candidate) =>
+      (candidate.roundNumber ?? 0) > roundNumber &&
+      (candidate.drawPositions?.includes(positionA) || (!!positionB && candidate.drawPositions?.includes(positionB))),
+  );
+  return {
+    relabels: swapRelabels({
+      settled: () =>
+        !!structure &&
+        swapFeedsSettled({
+          inContextDrawMatchUps,
+          inContextMatchUp,
+          loserTargetLink,
+          drawDefinition,
+          positionA,
+          positionB,
+          structure,
+          matchUp,
+          request,
+          event,
+        }),
+      winningSide: winningSide as 1 | 2,
+      inContextMatchUp,
+      drawDefinition,
+      structureId,
+    }),
+    positionA,
+    positionB,
+    pathMatchUpIds: path.map(({ matchUpId }) => matchUpId),
+    pathCarriesExit: path.some(
+      (candidate) =>
+        isAnyExit(candidate.matchUpStatus) || Object.values(candidate.sideExitProvenance ?? {}).some(Boolean),
+    ),
+    linkedOut: (drawDefinition.links ?? []).some((link) => link.source?.structureId === structureId),
+  };
+}
+
+/**
+ * Whether a swap the call asks for meets an active fed seat across a FIRST_MATCHUP link: v1's two refusals, asked in
+ * v1's order before `swapWinnerLoser` writes anything, read on the view's own base (no hydration). Only asked for a call
+ * that may swap; both return at once unless a FIRST_MATCHUP feed is in reach.
+ */
+function swapMeetsActivePosition({
+  inContextDrawMatchUps,
+  inContextMatchUp,
+  loserTargetLink,
+  drawDefinition,
+  loserMatchUp,
+  structure,
+  matchUp,
+  request,
+  event,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  inContextMatchUp?: HydratedMatchUp;
+  drawDefinition: DrawDefinition;
+  loserTargetLink?: DrawLink;
+  loserMatchUp?: MatchUp;
+  structure?: Structure;
+  request: OutcomeRequest;
+  matchUp: MatchUp;
+  event?: Event;
+}): boolean {
+  const winningSide = matchUp.winningSide;
+  if (!request.flags.allowChangePropagation || !request.winningSide || !winningSide || !structure) return false;
+  if (request.winningSide === winningSide || !inContextMatchUp) return false;
+  const existingWinnerDrawPosition = sideDrawPosition(inContextMatchUp, winningSide as 1 | 2);
+  const existingLoserDrawPosition = sideDrawPosition(inContextMatchUp, (3 - winningSide) as 1 | 2);
+  const flippedRoundNumber = inContextMatchUp.roundNumber;
+  const placement = fedLoserPlacementRefusal({
+    loserTargetLink,
+    loserMatchUp,
+    prospectiveLoserDrawPosition: existingWinnerDrawPosition as number,
+    departingLoserDrawPosition: existingLoserDrawPosition as number,
+    inContextDrawMatchUps,
+    flippedRoundNumber,
+    drawDefinition,
+    structure,
+    event,
+  });
+  if (placement?.error) return true;
+  const pathFeed = relabelledPathFeedRefusal({
+    matchUpStatus: request.matchUpStatus,
+    existingWinnerDrawPosition,
+    existingLoserDrawPosition,
+    inContextDrawMatchUps,
+    score: request.score as Score | undefined,
+    flippedRoundNumber,
+    fromIndex: true,
+    drawDefinition,
+    structure,
+    matchUp,
+    event,
+  });
+  return !!pathFeed?.error;
+}
+
+/**
+ * Whether a swap's `FIRST_MATCHUP` reconciliations write nothing, so the relabel is v1's whole write for them: the
+ * flipped matchUp's own feed (`reconcileFedLoserEligibility`: the new loser is eligible exactly when the old one held the
+ * fed seat the relabel hands over) and every later loss on the path (`relabelledPathFeedChanges` empty). Read on the
+ * view's own base.
+ */
+function swapFeedsSettled({
+  inContextDrawMatchUps,
+  inContextMatchUp,
+  loserTargetLink,
+  drawDefinition,
+  positionA,
+  positionB,
+  structure,
+  matchUp,
+  request,
+  event,
+}: {
+  inContextDrawMatchUps: HydratedMatchUp[];
+  inContextMatchUp: HydratedMatchUp;
+  loserTargetLink?: DrawLink;
+  drawDefinition: DrawDefinition;
+  positionA: number;
+  positionB?: number;
+  structure: Structure;
+  request: OutcomeRequest;
+  matchUp: MatchUp;
+  event?: Event;
+}): boolean {
+  const flippedRoundNumber = inContextMatchUp.roundNumber ?? 0;
+  if (loserTargetLink?.linkCondition === FIRST_MATCHUP) {
+    const before = teamLevelMatchUps(
+      inContextDrawMatchUps.filter(
+        (candidate) =>
+          candidate.structureId === structure.structureId && (candidate.roundNumber ?? 0) < flippedRoundNumber,
+      ),
+    );
+    const eligibleNew = getDrawPositionWinCount({ sourceMatchUps: before, drawPosition: positionA }) === 0;
+    const oldLoserId = inContextMatchUp.sides?.find((side) => side.drawPosition === positionB)?.participantId;
+    const { structure: target } = findStructure({ drawDefinition, structureId: loserTargetLink.target?.structureId });
+    const oldLoserSeated = !!oldLoserId && !!positionAssignmentsOf(target)?.some((a) => a.participantId === oldLoserId);
+    if (eligibleNew !== oldLoserSeated) return false;
+  }
+  const changes = relabelledPathFeedChanges({
+    existingWinnerDrawPosition: positionA,
+    existingLoserDrawPosition: positionB,
+    matchUpStatus: request.matchUpStatus,
+    score: request.score as Score | undefined,
+    inContextDrawMatchUps,
+    flippedRoundNumber,
+    fromIndex: true,
+    drawDefinition,
+    structure,
+    matchUp,
+    event,
+  });
+  return !changes.length;
+}
+
+/**
+ * The structures downstream of a matchUp, as v1's `getDownstreamStructureIds` walks them: the targets of its structure's
+ * links from its round on, then every link out of each structure reached; the source structure itself is never one. The
+ * links walked are returned too, so their conditions can be asked.
+ */
+function downstreamOf(drawDefinition: DrawDefinition, structureId: string, roundNumber: number) {
+  const links = drawDefinition.links ?? [];
+  const reached = new Set<string>();
+  const walked = links.filter(
+    (link) => link.source?.structureId === structureId && (link.source?.roundNumber ?? 0) >= roundNumber,
+  );
+  const queue = walked.map((link) => link.target?.structureId);
+  while (queue.length) {
+    const next = queue.shift();
+    if (!next || next === structureId || reached.has(next)) continue;
+    reached.add(next);
+    for (const link of links)
+      if (link.source?.structureId === next) {
+        walked.push(link);
+        queue.push(link.target?.structureId);
+      }
+  }
+  return { reached, walked };
+}
+
+/**
+ * A swap's relabel downstream, as v1's `swapWinnerLoser` makes it: in each structure downstream of the matchUp, the seat
+ * the old winner holds takes the old loser and the reverse, each guarded on the id it writes; a structure upstream (a
+ * consolation's Main) is not touched. Undefined, so the swap is v1's, where a walked link carries a condition (a
+ * FIRST_MATCHUP feed v1 reconciles after the flip) or a loser link feeds this structure FROM a downstream one (an origin,
+ * whose re-entries v1 exchanges by origin positions). A WINNER link back into this structure (DOUBLE_ELIMINATION's
+ * Backdraw champion into the Main final) re-enters on the participant's own position here, which the path exchange covers.
+ */
+function swapRelabels({
+  inContextMatchUp,
+  drawDefinition,
+  structureId,
+  winningSide,
+  settled,
+}: {
+  inContextMatchUp: HydratedMatchUp;
+  drawDefinition: DrawDefinition;
+  structureId: string;
+  winningSide: 1 | 2;
+  /** no FIRST_MATCHUP feed of the source structure changes eligibility (`swapFeedsSettled`), asked only when one is walked */
+  settled: () => boolean;
+}): { structureId: string; drawPosition: number; participantId: string }[] | undefined {
+  const { reached, walked } = downstreamOf(drawDefinition, structureId, inContextMatchUp.roundNumber ?? 0);
+  const conditioned = walked.filter((link) => link.linkCondition);
+  // v1 reconciles the source structure's own FIRST_MATCHUP feeds after the flip; a condition anywhere else is v1's
+  if (conditioned.some((link) => link.source?.structureId !== structureId || link.linkCondition !== FIRST_MATCHUP))
+    return undefined;
+  if (conditioned.length && !settled()) return undefined;
+  const origin = (drawDefinition.links ?? []).some(
+    (link) =>
+      link.linkType === LOSER && link.target?.structureId === structureId && reached.has(link.source?.structureId),
+  );
+  if (origin) return undefined;
+  const winnerId = inContextMatchUp.sides?.find((side) => side.sideNumber === winningSide)?.participantId;
+  const loserId = inContextMatchUp.sides?.find((side) => side.sideNumber === 3 - winningSide)?.participantId;
+  const relabels: { structureId: string; drawPosition: number; participantId: string }[] = [];
+  for (const structure of drawDefinition.structures ?? []) {
+    if (!reached.has(structure.structureId)) continue;
+    for (const assignment of positionAssignmentsOf(structure) ?? []) {
+      const held = assignment.participantId;
+      if (!held || (held !== winnerId && held !== loserId)) continue;
+      const participantId = held === winnerId ? loserId : winnerId;
+      if (participantId)
+        relabels.push({ structureId: structure.structureId, drawPosition: assignment.drawPosition, participantId });
+    }
+  }
+  return relabels;
+}
+
+/** a stored matchUp's status codes and whether it holds exit provenance, as the write that re-derives them reads them */
+function storedSideRecord(matchUpsMap: MatchUpsMap, matchUpId?: string): OutcomeView['targets']['loserMatchUpRecord'] {
+  const stored = matchUpId ? matchUpsMap.drawMatchUps.find((m) => m.matchUpId === matchUpId) : undefined;
+  if (!stored) return undefined;
+  return {
+    matchUpStatusCodes: stored.matchUpStatusCodes,
+    provenance: Object.values(stored.sideExitProvenance ?? {}).some(Boolean),
+  };
 }
 
 /** the stored assignment a loser link feeds: free (no participant, no BYE), or what holds it */
@@ -374,7 +819,9 @@ function loserTargetSeat(
     free: !assignment.participantId && !assignment.bye && !assignment.qualifier,
     opponentBye: assignments.some((a) => a.bye && opponents.includes(a.drawPosition)),
     bye: !!assignment.bye,
+    ...(assignment.byeFromPropagation ? { byeFromPropagation: true } : {}),
     opponentHeld: assignments.some((a) => (a.participantId || a.bye) && opponents.includes(a.drawPosition)),
+    participantId: assignment.participantId,
   };
 }
 
@@ -946,6 +1393,17 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     },
     feedEligibilityBlockedBy: feed?.sourceRoundMatchUpId,
     correctionKindBlockedBy: kind?.blockingMatchUpId,
+    swapMeetsActivePosition: swapMeetsActivePosition({
+      loserTargetLink: targetData?.targetLinks?.loserTargetLink,
+      loserMatchUp: targetData?.targetMatchUps?.loserMatchUp,
+      inContextDrawMatchUps,
+      inContextMatchUp,
+      drawDefinition,
+      structure,
+      matchUp,
+      request,
+      event,
+    }),
     line,
     dualProjection,
     targets: {
@@ -984,11 +1442,30 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         targetData?.targetMatchUps?.loserTargetDrawPosition,
         draw,
       ),
+      winnerLoserSeat: winnerLoserSeat(draw, request, targetData?.targetMatchUps?.winnerMatchUp?.matchUpId),
+      unwindLoserSeats: unwindLoserSeats(draw, request, matchUp),
+      byeLevels: byeLevels(draw, matchUpsMap, request, targetData),
+      onwardLoserSeat: onwardLoserSeat(draw, matchUpsMap, request, targetData),
+      carryLevels: carriesOn(request, targetData)
+        ? carryLevels(draw, matchUpsMap, carryLanding(drawDefinition, targetData, draw))
+        : undefined,
       seededParticipantIds: (structure?.seedAssignments ?? []).flatMap(({ participantId }) =>
         participantId ? [participantId] : [],
       ),
       loserMatchUpStatus: targetData?.targetMatchUps?.loserMatchUp?.matchUpStatus,
       loserMatchUpHasResult: hasResult(targetData?.targetMatchUps?.loserMatchUp),
+      loserMatchUpRecord: storedSideRecord(matchUpsMap, targetData?.targetMatchUps?.loserMatchUp?.matchUpId),
+      swap: swapPath({
+        loserTargetLink: targetData?.targetLinks?.loserTargetLink,
+        inContextDrawMatchUps,
+        inContextMatchUp,
+        drawDefinition,
+        matchUpsMap,
+        structure,
+        matchUp,
+        request,
+        event,
+      }),
       winner: winnerTarget(targetData?.targetMatchUps?.winnerMatchUp, request.matchUpId, draw),
       winnerThroughBye: {
         1: throughBye(targetData?.targetMatchUps?.winnerMatchUp, sideDrawPosition(inContextMatchUp, 1), draw),
@@ -1043,11 +1520,16 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       perMatchUpCompetition:
         getCompetitionPolicy({ tournamentRecord, drawDefinition, event }).competitionPolicy?.processingGranularity ===
         'PER_MATCHUP',
+      doubleExitPropagatesBye: propagatesByeOnDoubleExit(appliedPolicies),
+      defaultProcessCodes: Array.isArray(
+        appliedPolicies?.[POLICY_TYPE_SCORING]?.processCodes?.incompleteAssignmentsOnDefault,
+      ),
       teamRoundRobin: !!(matchUp.tieMatchUps && !matchUp.roundPosition && inContextMatchUp?.containerStructureId),
       includesBye: !!matchUp.drawPositions?.some((position) =>
         allAssignments.some((assignment) => assignment.bye && assignment.drawPosition === position),
       ),
       rotatingPartners: isRotatingPartnerDraw(drawDefinition, event),
+      winRatio: structure?.finishingPosition === WIN_RATIO,
       combinedPointRoundRobin:
         structure?.finishingPosition === WIN_RATIO &&
         !!parse(incomingFormat ?? storedFormat ?? '')?.setFormat?.combinedPointTotal,

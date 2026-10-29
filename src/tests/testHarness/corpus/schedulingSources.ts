@@ -403,6 +403,92 @@ export function schedulingScenarios(): Authored[] {
     });
   }
 
+  // a matchUp on the court grid without a time is timed, and a time that contradicts its row is reported (CA
+  // 2026-10-28): the first round of an 8 draw on one court's rows, in reverse of the order the scheduler takes them
+  for (const via of ['direct', 'profile'] as const) {
+    const { tournamentRecord, round, matchUpsOf, drawId } = generate({ drawProfile: { drawSize: 8 }, courtsCount: 2 });
+    const courtId = tournamentRecord.venues[0].courts[0].courtId;
+    const firstRound = matchUpsOf(MAIN, 1).toSorted((a: any, b: any) => a.roundPosition - b.roundPosition);
+    const matchUpIds = firstRound.map((m: any) => m.matchUpId);
+    const onTheGrid: Directive[] = matchUpIds.map((matchUpId: string, index: number) => ({
+      method: 'addMatchUpScheduleItems',
+      params: {
+        schedule: { scheduledDate: DAY_1, courtId, venueId: VENUE_ID, courtOrder: matchUpIds.length - index },
+        matchUpId,
+        drawId,
+      },
+    }));
+    const run: Directive[] =
+      via === 'direct'
+        ? [{ method: 'scheduleMatchUps', params: { scheduleDate: DAY_1, matchUpIds } }]
+        : [round(DAY_1, MAIN, 1), profileRun([DAY_1])];
+    out.push({
+      scenarioId: `authored/scheduling/${via}-times-a-grid-placed-round`,
+      ref:
+        via === 'direct'
+          ? 'scheduling § direct scheduling: a listed matchUp on the court grid without a time is timed, its conflicts reported'
+          : 'scheduling § timed pipeline: a profiled matchUp on the court grid without a time is timed, its conflicts reported',
+      initialRecord: tournamentRecord,
+      directives: [...onTheGrid, ...run],
+      finalState: (record, values) => {
+        const timed = rawRound(record, MAIN, 1).filter(
+          (m) => m.schedule?.scheduledTime && m.schedule?.courtId === courtId,
+        );
+        const issues: any[] = Object.values(values.at(-1)?.proConflicts ?? {}).flat();
+        return [
+          ...claim(timed.length === 4, 'every first-round matchUp is timed and keeps its court'),
+          ...claim(issues.length > 0, 'the times that contradict the rows are reported'),
+          ...claim(
+            issues.every(
+              ({ matchUpId, issueType }) => matchUpIds.includes(matchUpId) && issueType === 'courtTimeOrderConflict',
+            ),
+            'each reported conflict is a court-time order conflict naming a matchUp just timed',
+          ),
+        ];
+      },
+    });
+  }
+
+  for (const stated of ['stated', 'unstated'] as const) {
+    // the tournament's policy states 90 minutes and 60 to recover: a call that states a recovery of 0, and nothing
+    // else, schedules with its own minutes (the legacy 90 and no recovery), so the second round starts 90 minutes after
+    // the first instead of 150 (§ 6 rule 2); the unstated twin takes the policy's recovery
+    const { tournamentRecord } = generate({
+      policyDefinitions: POLICY_SCHEDULING_DEFAULT,
+      drawProfile: { drawSize: 8 },
+      courtsCount: 4,
+    });
+    const ordered = tournamentEngine
+      .allTournamentMatchUps()
+      .matchUps.toSorted((a: any, b: any) => a.roundNumber - b.roundNumber || a.roundPosition - b.roundPosition);
+    const matchUpIds = ordered.filter((m: any) => m.roundNumber <= 2).map((m: any) => m.matchUpId);
+    const expected = stated === 'stated' ? '09:30' : '10:30';
+    out.push({
+      scenarioId: `authored/scheduling/schedule-matchups-recovery-${stated === 'stated' ? 'stated-zero' : 'from-policy'}`,
+      ref:
+        stated === 'stated'
+          ? 'scheduling § direct scheduling: a stated recovery of 0 wins over the tournament timing (rule 2)'
+          : 'scheduling § direct scheduling: with no minutes stated, each matchUp recovers by its policy timing (rule 2)',
+      initialRecord: tournamentRecord,
+      directives: [
+        {
+          method: 'scheduleMatchUps',
+          params: { scheduleDate: DAY_1, matchUpIds, ...(stated === 'stated' ? { recoveryMinutes: 0 } : {}) },
+        },
+      ],
+      finalState: (record) => {
+        const earliest = (roundNumber: number) =>
+          rawRound(record, MAIN, roundNumber)
+            .map((matchUp) => matchUp.schedule?.scheduledTime ?? '')
+            .toSorted((a: string, b: string) => a.localeCompare(b))[0];
+        return [
+          ...claim(earliest(1) === '08:00', `the first round starts at 08:00 (${earliest(1)})`),
+          ...claim(earliest(2) === expected, `the second round starts at ${expected} (${earliest(2)})`),
+        ];
+      },
+    });
+  }
+
   return out;
 }
 

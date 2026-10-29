@@ -48,12 +48,14 @@ test.each([competitionEngineSync])(
     ]);
     */
 
+    // the window checked is each matchUp's own minutes and recovery, in either order (scheduling-pipeline.md § 6;
+    // 2026-10-27): a placement no longer runs into a participant's later matchUp, nor waits a slot past their recovery
     // prettier-ignore
     expect(afterRecoveryTimes.sort()).toEqual([
-      '15:30', '15:30',
-      '16:00', '16:00',
-      '17:00', '17:00',
-      '17:30', '17:30',
+      '14:00', '14:00',
+      '14:30', '14:30',
+      '18:30', '18:30',
+      '19:00', '19:00',
     ]);
 
     /*
@@ -69,9 +71,9 @@ test.each([competitionEngineSync])(
     // prettier-ignore
     expect(Object.values(result.matchUpNotBeforeTimes).sort()).toEqual([
       '09:00', '09:00',
-      '11:00', '11:00',
+      '11:30', '11:30',
       '12:30', '12:30',
-      '14:30', '14:30',
+      '16:00', '16:00',
     ]);
     expect(result.scheduledMatchUpIds.length).toEqual(12);
     expect(result.success).toEqual(true);
@@ -109,18 +111,18 @@ test.each([competitionEngineSync])('respects matchUpDailylimits', async (competi
 
   // prettier-ignore
   expect(afterRecoveryTimes.sort(stringSort)).toEqual([
+      '11:00', '11:00',
       '11:30', '11:30',
-      '12:30', '12:30',
-      '14:00', '14:00',
-      '14:30', '14:30'
+      '14:30', '14:30',
+      '15:30', '15:30'
     ]);
 
   // prettier-ignore
   expect(Object.values(result.matchUpNotBeforeTimes).sort(stringSort)).toEqual([
       '09:00', '09:00',
-      '11:00', '11:00',
+      '11:30', '11:30',
       '12:30', '12:30',
-      '14:30', '14:30'
+      '15:30', '15:30'
     ]);
 
   expect(result.scheduledMatchUpIds.length).toEqual(8);

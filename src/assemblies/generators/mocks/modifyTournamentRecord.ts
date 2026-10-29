@@ -1,22 +1,20 @@
+import { publishEventRecorded, scheduleProfileRoundsRecorded, setSchedulingProfileRecorded } from './recordedWrites';
 import { checkProfileKeys, ENGINE_SUPPLIED_KEYS, MODIFY_TOURNAMENT_RECORD_KEYS } from './profileKeys';
 import { getStageParticipantsCount } from '@Query/drawDefinition/getStageParticipantsCount';
-import { scheduleProfileRounds } from '@Mutate/matchUps/schedule/scheduleProfileRounds';
+import { startRecording, stopRecording } from '@Mutate/simulation/scenarioRecorder';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getStageParticipants } from '@Query/drawDefinition/getStageParticipants';
 import { generateFlightDrawDefinitions } from './generateFlightDrawDefinitions';
-import { setSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import { addTournamentParticipants } from './addTournamentParticipants';
 import { generateEventParticipants } from './generateEventParticipants';
 import { generateEventWithFlights } from './generateEventWithFlights';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { generateEventWithDraw } from './generateEventWithDraw';
 import { attachProfilePolicies } from './attachProfilePolicies';
-import { publishEvent } from '@Mutate/publishing/publishEvent';
 import { generateVenues } from '@Mutate/venues/generateVenues';
 import { isActiveMatchUp } from '@Query/matchUp/activeMatchUp';
 import { cloneState, restoreState } from '@Tools/cloneState';
 import { generateFlights } from './generateFlights';
-import { addEvent } from '@Mutate/events/addEvent';
 import { isObject } from '@Tools/objects';
 
 // constants and types
@@ -152,7 +150,7 @@ function processExistingEvent({
   }
 
   if (publish) {
-    publishEvent({ tournamentRecord, event });
+    publishEventRecorded({ tournamentRecord, event });
   }
 
   return SUCCESS;
@@ -288,7 +286,7 @@ function processDrawProfiles({ drawProfiles, tournamentRecord, allUniqueParticip
     .reduce((a, b) => a + b, 0);
 
   for (const drawProfile of drawProfiles) {
-    let result = generateEventWithDraw({
+    const result = generateEventWithDraw({
       startDate: tournamentRecord.startDate,
       allUniqueParticipantIds,
       matchUpStatusProfile: params.matchUpStatusProfile,
@@ -299,16 +297,15 @@ function processDrawProfiles({ drawProfiles, tournamentRecord, allUniqueParticip
       randomWinningSide: params.randomWinningSide,
       ratingsParameters: params.ratingsParameters,
       tournamentRecord,
+      // the event is added (public addEvent) before its entries and draw, as a client would
+      addToRecord: true,
       drawProfile,
       drawIndex,
       uuids: params.uuids,
     });
     if (result.error) return result;
 
-    const { drawId, eventId, event, uniqueParticipantIds } = result;
-
-    result = addEvent({ tournamentRecord, event, internalUse: true });
-    if (result.error) return result;
+    const { drawId, eventId, uniqueParticipantIds } = result;
 
     if (drawId) drawIds.push(drawId);
     eventIds.push(eventId);
@@ -329,7 +326,7 @@ function applySchedulingProfile({ schedulingProfile, autoSchedule, periodLength,
     const tournamentRecords = {
       [tournamentRecord.tournamentId]: tournamentRecord,
     };
-    const result = setSchedulingProfile({
+    const result = setSchedulingProfileRecorded({
       tournamentRecords,
       schedulingProfile,
     });
@@ -339,7 +336,7 @@ function applySchedulingProfile({ schedulingProfile, autoSchedule, periodLength,
       const { tournamentId } = tournamentRecord;
       const tournamentRecords = { [tournamentId]: tournamentRecord };
 
-      schedulerResult = scheduleProfileRounds({
+      schedulerResult = scheduleProfileRoundsRecorded({
         tournamentRecords,
         periodLength,
       });
@@ -362,6 +359,23 @@ function applySchedulingProfile({ schedulingProfile, autoSchedule, periodLength,
  * partial build than start again.
  */
 export function modifyTournamentRecord(params) {
+  if (!params?.recordMethods) return modifyRecord(params);
+
+  // the engine calls that make these modifications to the record as it was passed, with no `newTournamentRecord`:
+  // replayed onto that record they make the same modifications (see scenarioRecorder)
+  startRecording();
+  try {
+    const result = modifyRecord(params);
+    const methods = stopRecording();
+    // a refusal wrote nothing (all or nothing), so there is nothing to replay; `keepPartial` kept what was written
+    return result?.error && !result.retained ? result : { ...result, methods };
+  } finally {
+    // a throw or a refusal must not leave a recording open for the next, unrelated generation
+    stopRecording();
+  }
+}
+
+function modifyRecord(params) {
   if (!params?.tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
   // checked before anything is written: an option the generators do not read is refused, not ignored
   const unknownOption = checkProfileKeys(params, MODIFY_TOURNAMENT_RECORD_KEYS, ENGINE_SUPPLIED_KEYS);

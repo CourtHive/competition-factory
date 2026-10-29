@@ -3,6 +3,9 @@ import type { KernelAdapter, KernelCase, KernelOperation, KernelResult } from '.
 import { batchedAdapter, externalAdapter, stdioCommand } from './externalAdapter';
 import scoringReduceCases from './cases/scoringReduce.json';
 import schedulingViewCases from './cases/schedulingView.json';
+import schedulingConflictsViewCases from './cases/schedulingConflictsView.json';
+import schedulingConflictsCases from './cases/schedulingConflicts.json';
+import schedulingGridCases from './cases/schedulingGrid.json';
 import schedulingCases from './cases/scheduling.json';
 import { canonicalJson } from '@Tools/canonicalJson';
 import grammarCases from './cases/grammar.json';
@@ -26,6 +29,9 @@ const cases = [
   ...grammarCases,
   ...schedulingCases,
   ...schedulingViewCases,
+  ...schedulingGridCases,
+  ...schedulingConflictsCases,
+  ...schedulingConflictsViewCases,
   ...timeCases,
 ] as KernelCase[];
 const requests = cases.map(({ operation, input }) => ({ operation, input }));
@@ -77,9 +83,13 @@ describe('kernel case files', () => {
 });
 
 describe.each(adapters)('$name adapter', (adapter) => {
-  it.each(cases)('$caseId', (c) => {
-    expect(observed(adapter.invoke(c.operation, c.input))).toEqual(observed(c.expected));
-  });
+  // one test per case, titled by its whole id: `it.each`'s `$caseId` cuts a value past 40 characters, so two ids
+  // sharing their first 40 would share a title in the report
+  for (const c of cases) {
+    it(c.caseId, () => {
+      expect(observed(adapter.invoke(c.operation, c.input))).toEqual(observed(c.expected));
+    });
+  }
 
   it('refuses an operation the registry does not list, and input that is not an object', () => {
     expect(adapter.invoke('kernel.scoring.pointsToMatch@1', {})).toEqual({

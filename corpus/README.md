@@ -170,7 +170,10 @@ claims the four scheduling step properties (`INVARIANTS.md`), and the writer che
 step and refuses a scenario that breaks one. A scheduling call's step records its **deferral report**
 as `result.value` (`src/tests/testHarness/scheduling/schedulingReport.ts`): per date, what was
 scheduled and, per reason, which matchUps were left unscheduled. A reason for not writing has no
-patch to carry it, so the report is what pins it, and it moves the manifest's results hash.
+patch to carry it, so the report is what pins it, and it moves the manifest's results hash. When a
+timed scheduler times a matchUp already on the court grid, the report also keeps the grid's conflicts
+its times made (`proConflicts`, per date, each issue with the matchUps it names); a call that made
+none records nothing for it, so the reports of calls that never touch the grid are unchanged.
 
 A scenario with `knownFailure` pins a recorded defect: the test requires its claims to FAIL, so
 fixing the defect fails the test until the `knownFailure` is removed in the same PR.
@@ -182,6 +185,21 @@ the calls checked by method, and every violation with its test. Opt-in; the ordi
 untouched. The sweep also asks the report properties (`SCHEDULE_ACCOUNTED`, `SCHEDULE_REPORT_TRUE`)
 of each call. Under it, `global/paramsCopiedOnlyWhenRead.test.ts` fails by construction: it asserts
 that params are copied only when nothing observes the call, and the sweep is an observer.
+
+## Generated tournaments: the method lists
+
+```bash
+pnpm corpus:mocks          # .corpus-out/mocks/mocks.jsonl
+```
+
+`src/tests/testHarness/corpus/mocksSources.ts` writes one scenario per shape in `mocksScenarios.ts` (draw types,
+event types, flights, qualifying, leagues, venues, scheduling, policies, extensions): the tournament's method list
+from `generateTournamentRecord({ recordMethods: true })`. The initial record is the tournament `newTournamentRecord`
+makes; the directives are the rest of the list, the engine calls a client makes to build that tournament
+(participants, events, entries, draws, results, venues, schedules), with random steps given as their results. So a
+consumer graded on this source is graded on building tournaments. Generation runs under the source's fixed clock, so
+a run is byte-identical to the last. The writer gives the engine a copy of each directive's params, so a write that
+keeps what it is given (`addDrawDefinition` attaches the draw) cannot change the directive the scenario stores.
 
 ## The scheduling scale source
 

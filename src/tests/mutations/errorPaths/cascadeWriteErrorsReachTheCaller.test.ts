@@ -1,14 +1,15 @@
+import { getOutcomePipeline, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { deepCorrectionScenario } from '@Tests/testHarness/exitPropagation/correctionDivergence';
 import { MATRIX_CELLS, cellExitOutcome } from '@Tests/testHarness/exitPropagation/matrixCells';
 import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
 import { nextPlayable } from '@Tests/testHarness/exitPropagation/driver';
-import { setSubscriptions } from '@Global/state/globalState';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
-import { afterEach, expect, it, vi } from 'vitest';
 
 // constants
 import { COMPLETED, DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
@@ -77,7 +78,20 @@ vi.mock('@Mutate/matchUps/score/modifyMatchUpScore', async (importOriginal) => {
   };
 });
 
+/**
+ * THE SITES ARE v1's WRITERS, so the play runs under `v1` whatever the suite's mode. A call the outcome pipeline v2 owns
+ * (`OUTCOME_PIPELINE=v2`) is written by v2's apply and never reaches `modifyMatchUpScore`: since S5 a single exit is
+ * owned, so the matrix's first step no longer reaches `attemptToModifyScore` there. v2 plans its refusals before its
+ * first op (`outcome/decide.ts`), and has no cascade write to fail part-way.
+ */
+let pipeline: ReturnType<typeof getOutcomePipeline>;
+beforeEach(() => {
+  pipeline = getOutcomePipeline();
+  setOutcomePipeline(OUTCOME_PIPELINE_V1);
+});
+
 afterEach(() => {
+  setOutcomePipeline(pipeline);
   forced.context = undefined;
   forced.hits = 0;
 });

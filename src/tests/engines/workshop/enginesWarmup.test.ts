@@ -1,5 +1,5 @@
-import { completeDrawMatchUps } from '@Assemblies/generators/mocks/completeDrawMatchUps';
 import { setGlobalLog, setMethods, setStateProvider } from '@Global/state/globalState';
+import { completeDrawMatchUps } from '@Mutate/simulation/completeDrawMatchUps';
 import asyncGlobalState from '../../../examples/asyncEngine/asyncGlobalState';
 import { factoryVersion as version } from '@Functions/global/factoryVersion';
 import { deleteDrawDefinitions } from '@Mutate/events/deleteDrawDefinitions';

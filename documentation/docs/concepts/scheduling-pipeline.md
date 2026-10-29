@@ -144,7 +144,8 @@ as `transit` (`defaultMinutes`, `pairs` by direction, `facilityIds`).
 A participant's **day load** is every matchUp they are certain to play on the date, plus, per draw, the longest
 **chain** of matchUps they can only potentially play there: a run of matchUps each of which can feed the next. Two
 potential matchUps where neither feeds the other are alternatives (a winner path and a loser path) and do not add
-(CA, 2026-10-16). Draws add. A participant's load counts the date's matchUps only: a matchUp on an earlier date, or a
+(CA, 2026-10-16). Draws add. A matchUp dated on the date counts whether or not it is timed (CA 2026-10-28). A
+participant's load counts the date's matchUps only: a matchUp on an earlier date, or a
 completed matchUp with no date, does not count against today, but a participant reachable from an earlier date's
 feeder counts as a potential of today's matchUps.
 
@@ -249,7 +250,9 @@ Dates are taken in order. On each date:
    hold their participants for recovery and count toward daily loads. A BYE's schedule is never cleared here: an
    operator's placement on a seat that became a BYE is preserved.
 2. **Per venue,** the profiled rounds are taken in `sortOrder` (then profile order) and resolved to their matchUps in
-   matchUp order, skipping BYEs, completed matchUps, and matchUps already timed. A
+   matchUp order, skipping BYEs, completed matchUps, and matchUps already timed. A matchUp dated on the date without
+   a time is not already timed: it is timed like any other, one already on the court grid (a court or a court order)
+   included, and the conflicts its time makes there are reported (§ 7). It is never dropped (CA 2026-10-28). A
    matchUp belongs to the first venue that profiles it on the date. A `roundSegment` applies only when the round has a
    power-of-two count of matchUps, the segment count is a power of two smaller than it, and the round lists no
    `matchUpIds`. Each round's matchUps take the minutes of the round's **first** matchUp's format (**OPEN**, C7: a round
@@ -303,7 +306,8 @@ Dates named in `clearScheduleDates` are planned on a working copy of the records
 empty and a refusal leaves them as they were; they are cleared on the records only when the plan is written. What
 remains unplaced on a date is reported in `noTimeMatchUpIds` for that date, beside whatever reasons it collected. A dry
 run plans exactly as a run does (clearing on the copy included), so it reports what the run would write, and writes
-nothing. The call records an audit of what it did on the tournament.
+nothing. The call records an audit of what it did on the tournament. When it times a matchUp already on a date's court
+grid, the grid's conflicts that name it are reported per date in `proConflicts` (a dry run reports none).
 
 ## 5. The grid pipeline: `scheduleProfileGrid`
 
@@ -311,6 +315,12 @@ Per date, the profiled rounds of every venue are resolved to their matchUps (a r
 groups), skipping BYEs, completed matchUps and matchUps already on a court or a
 court order. The date's grid is its courts by rows; matchUps already timed are walked earliest first, so they land on
 earlier rows.
+
+**Each date is planned from its own view,** read from the records as the dates before it left them, so a placement on
+an earlier date is seen by a later one: the date's grid (its courts by rows, the cells already taken and the free cells
+on the call's courts), the matchUps to place, the dependency graph and the reachability over them and the matchUps
+already on the grid, the courts' closures, and the limits. The date's plan reads nothing else
+(`kernel.scheduling.grid@1`): each placement is a matchUp and the cell it takes (its court, venue and court order).
 
 Row by row, each remaining matchUp is placed on the row's first open court unless:
 
@@ -335,11 +345,69 @@ date, earlier times on earlier rows.
 ## 6. The direct scheduler: `scheduleMatchUps`
 
 `scheduleMatchUps` times the listed matchUps, in the order listed, on one `scheduleDate`, at the venues given (all when
-absent), within `startTime` and `endTime` when given. Its slots are Garman times over the venues' courts, and its gate
-is the timed pipeline's: daily limits, sources placed first, recovery and not-before, person requests. The sources it
-waits for are the listed matchUps and those already on the date (`allDateMatchUpIds` when stated). It writes each
-placement's time with the date in it, then the venue; a placement the played-order check refuses is reported in
-`noTimeMatchUpIds` and gets no venue.
+absent), within `startTime` and `endTime` when given. It shares the core (§ 3) and the slot arithmetic (§ 4, step 2);
+it differs from the timed pipeline in what it is given (a list, not a profile), in how its minutes are resolved, and in
+running one pass over one pool of slots rather than venue by venue.
+
+**Refusals.** No `matchUpIds` (or not a list): `MISSING_MATCHUP_IDS`; no records: `MISSING_TOURNAMENT_RECORDS`. A
+`scheduleDate` that is not a date: `INVALID_DATE`. An `averageMatchUpMinutes`, `recoveryMinutes` or `periodLength`
+that is not a number: `INVALID_VALUES`.
+
+1. **The matchUps.** The listed matchUps, in the order listed, that are not already timed on the date at the venues
+   of rule 3, have no winner, are not BYE, DEFAULTED, COMPLETED, ABANDONED, RETIRED or WALKOVER, and have no BYE side
+   (a line of a BYE dual). A listed id not found is dropped. A listed matchUp dated on the date without a time is not
+   already there: it is timed, one already on the court grid included, and counts toward its participants' loads when
+   it is taken (CA 2026-10-28). Only a matchUp timed on the date holds a court (rule 3).
+   A listed matchUp dated on another day is scheduled on that day: the call never moves it to its own date, and reports
+   it in `noTimeMatchUpIds` (CA 2026-10-28). No matchUp changes day through `scheduleMatchUps`.
+2. **The minutes** (§ 3.3, rule 1, and Q1, CA 2026-10-22). Minutes the call states win: `averageMatchUpMinutes`
+   (default 90), `recoveryMinutes` (default 0) and `recoveryMinutesMap` (a recovery per matchUpId). When the call
+   states none, and the tournament or a matchUp's event states timing (an attached scheduling policy,
+   `scheduling.timing`, or the timing extension), each such matchUp's recovery is its own format's and event's, and the
+   average is the **greatest** average among them; the matchUps already timed on the date count. When nothing states
+   timing: 90 minutes and no recovery.
+3. **The slots** (§ 4, step 2), over every court of the venues (`venueIds`, else every venue) available on the date,
+   from `startTime` and to `endTime` when given, else from the earliest opening to the latest closing of those courts,
+   with `T` the average of rule 2 and `L` the call's `periodLength`, **30 when absent**. The courts are held by every
+   matchUp of the venues timed on the date, completed or not, each for its own average (§ 3.9 rule 1), and from 00:00
+   by a matchUp of the day before whose own minutes run past midnight (§ 3.8 rule 6). The slots form one pool, in time
+   order, shared by every venue.
+4. **What is already there.** Each matchUp timed on the date counts toward its participants' daily loads, and books its
+   participants (§ 3.4) from its time for the average of rule 2 and its recovery. Every matchUp it feeds may not start
+   before its participants are free (its not-before time).
+5. **Daily limits first.** The matchUps are taken in order; one that would take a participant over a limit (§ 3.5,
+   the limits of the matchUp's own tournament and the policy's per-participant ones, with the call's
+   `matchUpDailyLimits` as the defaults where a tournament states none; until 2026-10-27 the call's alone) is
+   reported in `overLimitMatchUpIds` and leaves the list; each other is counted toward its participants' daily loads.
+   Limits are judged once, before any slot, on the list as a whole; a matchUp left unplaced after rule 6 is taken off
+   the loads again.
+6. **Slot by slot.** Each slot in turn is offered to the remaining matchUps in order; the first that passes the gate is
+   placed there, and booked (§ 3.4). A slot no matchUp takes is skipped (`skippedScheduleTimes`), and is not offered
+   again; the pass ends when the slots or the matchUps run out. The gate, in order:
+   1. a matchUp it depends on, among the listed matchUps and those timed on the date (`allDateMatchUpIds` when the
+      call states them), is not yet placed: deferred (`dependencyDeferred`);
+   2. a participant is not free in the matchUp's window, or its not-before time is later (§ 3.4, either order: the
+      window is its own average and recovery minutes from the slot, so a placement may not run into a participant's
+      later matchUp on the date; a participant held by a potential booking in another draw counts; no transit applies,
+      as no venue is known yet; until 2026-10-27 the window was the slot's start alone): deferred
+      (`recoveryTimeDeferred`);
+   3. a person request blocks it (§ 3.6; potential participants checked unless `checkPotentialRequestConflicts` is
+      false): not placed here (`requestConflicts`).
+7. **The write.** Each placement, tournament by tournament and draw by draw in the order its matchUps were first
+   listed, is judged against the played order (§ 3.7) and, unless refused, written as a time with the date in it
+   (`YYYY-MM-DDTHH:MM`, stored as its date and `HH:MM`, § 3.8), then its venue when the call names one venue or the
+   records hold only one. A refused placement is reported in `noTimeMatchUpIds` and gets no venue. A dry run writes
+   nothing and reports what it would place.
+
+What remains unplaced is reported in `noTimeMatchUpIds`, with what it collected on the way. The call also returns
+`remainingScheduleTimes` (the slots no matchUp took, for a caller that schedules in batches and passes them back as
+`remainingScheduleTimes`), the participant profiles it built, the not-before times, the overnight rest warnings
+(§ 9.8), and `proConflicts`: the court grid's conflicts (`proConflicts`) that name a matchUp it timed which was already
+on the grid, such as a time against its court order. A dry run reports none.
+
+**OPEN:** rule 5 counts every listed matchUp toward its participants' loads before any is placed, and a matchUp left
+unplaced is uncounted after the pass; a matchUp placed late in the list is therefore judged against loads that include
+matchUps not yet placed.
 
 ## 7. What is reported
 
@@ -461,7 +529,9 @@ the calls that decide placements; the bulk and reschedule mutations write the ti
      `" 8:00"` are refused. The writes: a matchUp's scheduled time and date and its schedule items; court and venue
      availability, bookings and a venue's default times; person requests (one request with a date or a time that is
      not one refuses the call); tournament and event dates, which are checked against the calendar and stored as
-     sent. A scheduled time given as a date-time stores its time, and its date when the matchUp has none.
+     sent. A scheduled time given as a date-time stores its time, and its date when the matchUp has none; one naming
+     another day than the matchUp's scheduledDate is refused (`INVALID_DATE`), never stored against it (CA 2026-10-28).
+     A scheduledDate given beside it in a schedule write is the matchUp's date, and the time is written against it.
    - **At the read**, stored records keep working: the same unambiguous forms are normalised, and anything else reads
      as no time, as a value that is not a time did before. Production holds no such value (below), so the audit that
      would list them is not built.

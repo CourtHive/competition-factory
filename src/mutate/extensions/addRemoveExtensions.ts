@@ -1,12 +1,13 @@
 import { rootExtensionsFingerprint, rootExtensionsNotice } from '@Mutate/tournaments/tournamentDetailNotice';
 import { announceDrawChange, attributesSnapshot } from '@Mutate/drawDefinitions/announceDrawChange';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { withEventChangeNotice } from '@Mutate/events/eventChangeNotice';
-import { findParticipant } from '@Acquire/findParticipant';
 import { removeExtension } from './removeExtension';
 import { addExtension } from './addExtension';
 
 // constants and types
-import { DrawDefinition, Event, Extension, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, Extension, Participant, Tournament } from '@Types/tournamentTypes';
+import { ResultType } from '@Types/factoryTypes';
 import {
   DRAW_DEFINITION_NOT_FOUND,
   EVENT_NOT_FOUND,
@@ -73,20 +74,38 @@ export function addEventExtension(params: AddExtensionArgs) {
   );
 }
 
-export function addParticipantExtension(params?) {
+// a participant's extensions are participant attributes: a change to them is announced with MODIFY_PARTICIPANTS.
+// The participant is the record's own, not `findParticipant`'s copy: a write to the copy reported success and
+// left the record unchanged whenever deep copy was enabled (the default)
+type ParticipantChangeArgs = { tournamentRecord?: Tournament; participantId?: string };
+function withParticipantChange(
+  params: ParticipantChangeArgs | undefined,
+  change: (participant: Participant) => ResultType,
+) {
   if (!params || typeof params !== 'object') return { error: MISSING_VALUE };
   if (!params.participantId) return { error: MISSING_PARTICIPANT_ID };
-  const tournamentParticipants = params.tournamentRecord?.participants ?? [];
-  const participant = findParticipant({
-    participantId: params.participantId,
-    tournamentParticipants,
-  });
+  const participant = params.tournamentRecord?.participants?.find(
+    (candidate: Participant) => candidate.participantId === params.participantId,
+  );
   if (!participant) return { error: PARTICIPANT_NOT_FOUND };
-  return addExtension({
-    creationTime: params.creationTime,
-    extension: params.extension,
-    element: participant,
-  });
+
+  const result = change(participant);
+  // announced whether or not anything subscribes: gated on the subscription, the stored record depended on who
+  // was listening
+  if (!result.error) {
+    modifyParticipantsNotice({ tournamentId: params.tournamentRecord?.tournamentId, participants: [participant] });
+  }
+  return result;
+}
+
+export function addParticipantExtension(params?) {
+  return withParticipantChange(params, (participant) =>
+    addExtension({
+      creationTime: params.creationTime,
+      extension: params.extension,
+      element: participant,
+    }),
+  );
 }
 
 export function removeTournamentExtension(params): {
@@ -124,15 +143,5 @@ export function removeEventExtension(params) {
 }
 
 export function removeParticipantExtension(params?) {
-  if (!params || typeof params !== 'object') return { error: MISSING_VALUE };
-  if (!params.participantId) return { error: MISSING_PARTICIPANT_ID };
-  const tournamentParticipants = params.tournamentRecord?.participants ?? [];
-  const participant = findParticipant({
-    participantId: params.participantId,
-    tournamentParticipants,
-  });
-
-  if (!participant) return { error: PARTICIPANT_NOT_FOUND };
-
-  return removeExtension({ element: participant, name: params.name });
+  return withParticipantChange(params, (participant) => removeExtension({ element: participant, name: params.name }));
 }

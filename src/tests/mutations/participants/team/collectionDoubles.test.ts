@@ -436,7 +436,6 @@ it('can assign PAIR participants to tieMatchUps', () => {
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
   const { positionAssignments } = drawDefinition.structures[0];
 
-  let participantIndex = 0;
   // for each first round dualMatchUp assign individualParticipants to doubles matchUps
   firstRoundDualMatchUps.forEach((dualMatchUp) => {
     const doublesMatchUps = dualMatchUp.tieMatchUps.filter(({ matchUpType }) => matchUpType === DOUBLES);
@@ -450,7 +449,8 @@ it('can assign PAIR participants to tieMatchUps', () => {
           return assignment.drawPosition === drawPosition;
         });
 
-        const pairParticipantId = pairParticipants[participantIndex].participantId;
+        // the m-th pair of the side's own team: one player, one team, per event
+        const pairParticipantId = teamPairs(teamParticipant, pairParticipants)[m].participantId;
 
         const result = tournamentEngine.assignTieMatchUpParticipantId({
           teamParticipantId: teamParticipant.participantId,
@@ -460,7 +460,6 @@ it('can assign PAIR participants to tieMatchUps', () => {
         });
         expect(result.success).toEqual(true);
         expect(result.modifiedLineUp.length).toEqual(2 * (m + 1));
-        participantIndex += 1;
       });
     });
   });
@@ -535,10 +534,8 @@ it('handles pair dependencies across draws', () => {
   assignPairParticipants({ drawId: drawIds[1] });
 
   // --------------------------------------------------------
-  // In this scenario the lineUps for each team are composed of participants from both teams
-  // ... in other words, there is no equivalence between
-  //     - teamParticipant.individualParticipantIds
-  //     - teamLineUp.map(p => participantId)
+  // Each team's lineUp is drawn from its own roster: one player, one team, per event (CA 2026-10-29).
+  // Before that rule this scenario composed each lineUp from BOTH teams' players and asserted it.
   ({
     event: { drawDefinitions },
   } = tournamentEngine.getEvent({ eventId }));
@@ -557,11 +554,10 @@ it('handles pair dependencies across draws', () => {
     })),
   );
 
-  // because there is no equivalence the intersection.length is not equal to either lineUpMap or teamMap
+  // every individual in a team's lineUp is on that team's roster
   Object.keys(lineUpMap).forEach((teamParticipantId) => {
     const shared = intersection(lineUpMap[teamParticipantId], teamsMap[teamParticipantId]);
-    expect(shared.length).not.toEqual(lineUpMap[teamParticipantId]);
-    expect(shared.length).not.toEqual(teamsMap[teamParticipantId]);
+    expect(shared.length).toEqual(lineUpMap[teamParticipantId].length);
   });
 
   // --------------------------------------------------------
@@ -585,14 +581,14 @@ it('handles pair dependencies across draws', () => {
       },
     });
 
-    let participantIndex = 0;
     // now remove both individual participants from each DOUBLES matchUp
     firstRoundDualMatchUps.forEach((dualMatchUp) => {
       const doublesMatchUps = dualMatchUp.tieMatchUps.filter(({ matchUpType }) => matchUpType === DOUBLES);
       doublesMatchUps.forEach((doublesMatchUp) => {
         const tieMatchUpId = doublesMatchUp.matchUpId;
-        doublesMatchUp.sides.forEach(() => {
-          const individualParticipantIds = pairParticipants[participantIndex].individualParticipantIds;
+        doublesMatchUp.sides.forEach((side) => {
+          // the pair on this side, as assigned
+          const individualParticipantIds = side.participant.individualParticipantIds;
 
           individualParticipantIds.forEach((participantId, i) => {
             const result = tournamentEngine.removeTieMatchUpParticipantId({
@@ -613,7 +609,6 @@ it('handles pair dependencies across draws', () => {
               expect(pairParticipants.length).toEqual(7);
             }
           });
-          participantIndex += 1;
         });
       });
     });
@@ -628,7 +623,6 @@ it('handles pair dependencies across draws', () => {
       },
     });
 
-    let participantIndex = 0;
     // for each first round dualMatchUp assign individualParticipants to doubles matchUps
     firstRoundDualMatchUps.forEach((dualMatchUp) => {
       const doublesMatchUps = dualMatchUp.tieMatchUps.filter(({ matchUpType }) => matchUpType === DOUBLES);
@@ -642,7 +636,8 @@ it('handles pair dependencies across draws', () => {
             return assignment.drawPosition === drawPosition;
           });
 
-          const pairParticipantId = pairParticipants[participantIndex].participantId;
+          // the m-th pair of the side's own team: one player, one team, per event
+          const pairParticipantId = teamPairs(teamParticipant, pairParticipants)[m].participantId;
 
           const result = tournamentEngine.assignTieMatchUpParticipantId({
             teamParticipantId: teamParticipant.participantId,
@@ -652,9 +647,15 @@ it('handles pair dependencies across draws', () => {
           });
           expect(result.success).toEqual(true);
           expect(result.modifiedLineUp.length).toEqual(2 * (m + 1));
-          participantIndex += 1;
         });
       });
     });
   }
 });
+
+// the pairs whose individuals are all on the team's roster, in record order
+function teamPairs(teamParticipant, pairParticipants) {
+  return pairParticipants.filter((pair) =>
+    pair.individualParticipantIds.every((id) => teamParticipant.individualParticipantIds.includes(id)),
+  );
+}

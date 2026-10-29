@@ -143,8 +143,8 @@ export function convergence(statuses: string[]): MatchUpStatusUnion {
  * when that side is occupied, and otherwise when someone arrives there (CA, 2026-09-20 and 09-25).
  *
  * Which side it feeds is read from the structure, planned only where that is unambiguous: the next
- * round in the same structure holds half as many matchUps (no feed round), so roundPosition n feeds
- * side 1 when odd and side 2 when even. An exit standing there converges with this one. Deferred:
+ * round in the same structure holds half as many matchUps, so roundPosition n feeds side 1 when odd
+ * and side 2 when even; or as many (a feed round), where it feeds side 2 beside the fed position. An exit standing there converges with this one. Deferred:
  * a target already a double exit (a third arrival), a decider, a dual's line.
  */
 function planProducedExit(request: OutcomeRequest, view: OutcomeView): DirectionPlan | undefined {
@@ -152,14 +152,21 @@ function planProducedExit(request: OutcomeRequest, view: OutcomeView): Direction
   if (!winner || !winnerMatchUpId || view.line || view.matchUpTieId || view.isTeam) return undefined;
   if (isDoubleExit(winner.matchUpStatus)) return undefined; // a third arrival: not modelled
   if (winnerMatchUpId === view.targets.loserMatchUpId) return undefined;
+  const nextRound =
+    winner.structureId === source.structureId && !!source.roundNumber && winner.roundNumber === source.roundNumber + 1;
   const plainNextRound =
-    winner.structureId === source.structureId &&
-    !!source.roundNumber &&
-    winner.roundNumber === source.roundNumber + 1 &&
+    nextRound &&
     source.nextRoundMatchUpCount * 2 === source.roundMatchUpCount &&
     winner.roundPosition === Math.ceil((source.roundPosition ?? 0) / 2);
-  if (!plainNextRound || !source.roundPosition) return undefined;
-  const fedSide = source.roundPosition % 2 === 1 ? 1 : 2;
+  // a FEED ROUND: as many matchUps as this round, each taking this round's winner beside a position fed from another
+  // structure, and fed positions are always side 1 (v1's `recordSourceSideProvenance`), so this one feeds side 2
+  const fedNextRound =
+    nextRound &&
+    source.nextRoundMatchUpCount === source.roundMatchUpCount &&
+    winner.roundPosition === source.roundPosition &&
+    !!view.inContextDrawMatchUps?.find((matchUp) => matchUp.matchUpId === winnerMatchUpId)?.feedRound;
+  if (!(plainNextRound || fedNextRound) || !source.roundPosition) return undefined;
+  const fedSide = fedNextRound || source.roundPosition % 2 === 0 ? 2 : 1;
   const flavour = request.matchUpStatus === DOUBLE_DEFAULT ? DEFAULTED : WALKOVER;
   // an exit already standing there, or carried in on the other side: the two converge
   const standing = winner.carriedStatuses; // exits standing there, this matchUp's own product excluded

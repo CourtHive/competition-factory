@@ -2,13 +2,11 @@ import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotif
 import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
 import { isClearRequest } from '@Mutate/participants/isClearRequest';
 import { requireParams } from '@Helpers/parameters/requireParams';
-import { getTopics } from '@Global/state/globalState';
 import { isString } from '@Tools/objects';
 
 // constants
 import { TOURNAMENT_RECORD, PARTICIPANT_ID } from '@Constants/attributeConstants';
 import { PARTICIPANT_NOT_FOUND } from '@Constants/errorConditionConstants';
-import { MODIFY_PARTICIPANTS } from '@Constants/topicConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
 export function modifyParticipantOtherName({ tournamentRecord, participantId, participantOtherName }) {
@@ -31,13 +29,12 @@ export function modifyParticipantOtherName({ tournamentRecord, participantId, pa
     participant.participantOtherName = participantOtherName;
   }
 
-  const { topics } = getTopics();
-  if (topics.includes(MODIFY_PARTICIPANTS)) {
-    modifyParticipantsNotice({
-      tournamentId: tournamentRecord.tournamentId,
-      participants: [participant],
-    });
-  }
+  // announced (and so factory-stamped) whether or not anything subscribes: gated on the subscription, the stored
+  // record depended on who was listening
+  modifyParticipantsNotice({
+    tournamentId: tournamentRecord.tournamentId,
+    participants: [participant],
+  });
 
   return { ...SUCCESS };
 }

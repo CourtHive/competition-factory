@@ -63,7 +63,9 @@ engine.addMatchUpScheduledDate({
 
 ### addMatchUpScheduledTime
 
-Assigns a scheduled time to a matchUp.
+Assigns a scheduled time to a matchUp. A date-time (`2026-10-02T09:00`) gives a matchUp with no `scheduledDate` that
+date; one naming another day than the matchUp's `scheduledDate` is refused with `INVALID_DATE`. To move a matchUp to
+another day, write its `scheduledDate`.
 
 ```js
 engine.addMatchUpScheduledTime({
@@ -388,7 +390,7 @@ Set either flag to `false` to restore the pre-defaults legacy semantics where ev
 
 When `courtIds` is provided, the scheduler only considers those courts as available capacity. Useful when an operator wants auto-scheduling to operate against a subset of courts (e.g. when some courts are reserved for other purposes, or when scheduling is being applied per-court). Passing an empty array means "no courts are available" — the scheduler will run but place no matchUps. Omitting the parameter (the default) considers all enabled courts at the profile's venues.
 
-In the deprecated `pro: true` mode, matchUps will receive `courtId` assignments only from the filtered set. In default (Garman) mode, the filter constrains capacity but final court assignment may still be deferred to play time.
+The filter constrains capacity; `scheduleProfileRounds` assigns no court (court grid positions are placed by `scheduleProfileGrid`).
 
 **Returns**:
 
@@ -459,10 +461,9 @@ console.log('Would schedule:', result.scheduledMatchUpIds.length, 'matchUps');
 console.log('Request conflicts:', result.requestConflicts);
 ```
 
-**`pro: true` is deprecated** (since 7.15.0; removed at the next major). It selects an older scheduler that gives each
-matchUp a court and a time in one pass, without Garman time slots. It is not grid scheduling: court grid positions
-(`courtOrder`) are placed by [`scheduleProfileGrid`](#scheduleprofilegrid), which can run after `scheduleProfileRounds`.
-Omit `pro` to use the default scheduler.
+**`pro: true` is removed** (deprecated since 7.15.0, removed 2026-10-28): the flag is accepted and ignored until the
+next major, and every call takes the profile scheduler. Court grid positions (`courtOrder`) are placed by
+[`scheduleProfileGrid`](#scheduleprofilegrid), which can run after `scheduleProfileRounds`.
 
 :::note
 SINGLES and DOUBLES matchUps are scheduled automatically. TEAM matchUps require manual court allocation using `allocateTeamMatchUpCourts()`.
@@ -663,8 +664,9 @@ reported in `notRescheduled` with its schedule untouched, when either change wou
 The two are judged separately and either one refuses the matchUp, so a `daysChange` past `endDate` is not
 rescued by a `minutesChange` given alongside it.
 
-A `daysChange` moves the matchUp off its old day's grid: its `courtOrder`, `courtId` and `venueId` are cleared,
-as for any [date change](#grid-position-is-cleared-on-a-date-change). A `minutesChange` alone keeps them.
+A `daysChange` moves the matchUp off its old day's grid: its `courtOrder` and `courtId` are removed, and its
+`venueId` with them when it came with a court, as for any
+[date change](#grid-position-is-cleared-on-a-date-change). A `minutesChange` alone keeps them.
 
 A matchUp whose [schedule lock](../concepts/schedule-locks.mdx) pins what the shift would change is skipped, left
 as it is, and reported in both `notRescheduled` and `lockedMatchUpIds`; a dry run reports it the same way. A shift
@@ -1693,12 +1695,19 @@ rather than treated as an error, since it cannot have come from a read.
 
 ### Grid position is cleared on a date change
 
-`courtOrder`, `courtId`, and `venueId` describe a matchUp's position on **one
-specific day's** schedule grid. When a call changes `scheduledDate` to a different
-day and does **not** supply an explicit `courtOrder`/`courtId`/`venueId` in the
-same `schedule` object, the engine clears those stale grid-position attributes so
-the matchUp does not inherit the prior day's row on its new day.
+`courtOrder` and `courtId` describe a matchUp's position on **one specific day's**
+schedule grid. When a call changes `scheduledDate` to a different day and does
+**not** supply an explicit `courtOrder`/`courtId`/`venueId` in the same `schedule`
+object, the engine removes them so the matchUp does not inherit the prior day's row
+on its new day.
 
+- **The venue goes with the court** (CA 2026-10-27). A matchUp that had a court
+  loses its `venueId` too: it came with the court. A matchUp placed at a venue
+  without a court (as `scheduleProfileRounds` and `scheduleMatchUps` place one)
+  keeps its `venueId`: it is where the match is played, and a moved matchUp keeps
+  holding a court of that venue (see
+  [court bookings](../concepts/scheduling-pipeline.md#39-court-bookings)).
+- The attributes are removed from `matchUp.schedule`, not written as empty values.
 - A date-only re-date (e.g. `schedule: { scheduledDate, scheduledTime }`) returns
   the matchUp to the unplaced pool for the new day — it keeps its date and time but
   is no longer pinned to a court or row.

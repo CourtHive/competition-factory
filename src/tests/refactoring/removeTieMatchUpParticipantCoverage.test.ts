@@ -782,10 +782,9 @@ describe('removeTieMatchUpParticipantId coverage', () => {
       },
     });
 
-    let participantIndex = 0;
     firstRoundDualMatchUps.forEach((dualMatchUp) => {
       const doublesMatchUps = dualMatchUp.tieMatchUps.filter(({ matchUpType }) => matchUpType === DOUBLES);
-      doublesMatchUps.forEach((doublesMatchUp) => {
+      doublesMatchUps.forEach((doublesMatchUp, m) => {
         const tieMatchUpId = doublesMatchUp.matchUpId;
         doublesMatchUp.sides.forEach((side) => {
           const { drawPosition } = side;
@@ -794,7 +793,10 @@ describe('removeTieMatchUpParticipantId coverage', () => {
             return assignment?.drawPosition === drawPosition;
           });
           if (teamParticipant) {
-            const pairParticipantId = pairParticipants[participantIndex]?.participantId;
+            // the m-th pair of the side's own team: one player, one team, per event
+            const pairParticipantId = pairParticipants.filter((pair) =>
+              pair.individualParticipantIds.every((id) => teamParticipant.individualParticipantIds.includes(id)),
+            )[m]?.participantId;
             if (pairParticipantId) {
               const result = tournamentEngine.assignTieMatchUpParticipantId({
                 teamParticipantId: teamParticipant.participantId,
@@ -804,7 +806,6 @@ describe('removeTieMatchUpParticipantId coverage', () => {
               });
               expect(result.success).toEqual(true);
             }
-            participantIndex += 1;
           }
         });
       });
@@ -822,10 +823,9 @@ describe('removeTieMatchUpParticipantId coverage', () => {
       },
     });
 
-    participantIndex = 0;
     secondDrawDualMatchUps.forEach((dualMatchUp) => {
       const doublesMatchUps = dualMatchUp.tieMatchUps.filter(({ matchUpType }) => matchUpType === DOUBLES);
-      doublesMatchUps.forEach((doublesMatchUp) => {
+      doublesMatchUps.forEach((doublesMatchUp, m) => {
         const tieMatchUpId = doublesMatchUp.matchUpId;
         doublesMatchUp.sides.forEach((side) => {
           const { drawPosition } = side;
@@ -834,7 +834,10 @@ describe('removeTieMatchUpParticipantId coverage', () => {
             return assignment?.drawPosition === drawPosition;
           });
           if (teamParticipant) {
-            const pairParticipantId = pairParticipants[participantIndex]?.participantId;
+            // the m-th pair of the side's own team: one player, one team, per event
+            const pairParticipantId = pairParticipants.filter((pair) =>
+              pair.individualParticipantIds.every((id) => teamParticipant.individualParticipantIds.includes(id)),
+            )[m]?.participantId;
             if (pairParticipantId) {
               const result = tournamentEngine.assignTieMatchUpParticipantId({
                 teamParticipantId: teamParticipant.participantId,
@@ -844,7 +847,6 @@ describe('removeTieMatchUpParticipantId coverage', () => {
               });
               expect(result.success).toEqual(true);
             }
-            participantIndex += 1;
           }
         });
       });
@@ -859,32 +861,22 @@ describe('removeTieMatchUpParticipantId coverage', () => {
       },
     });
 
-    let updatedPairParticipants = tournamentEngine.getParticipants({
-      participantFilters: { participantTypes: [PAIR] },
-    }).participants;
-
-    participantIndex = 0;
     draw1DualMatchUps.forEach((dualMatchUp) => {
       const doublesMatchUps = dualMatchUp.tieMatchUps.filter(({ matchUpType }) => matchUpType === DOUBLES);
       doublesMatchUps.forEach((doublesMatchUp) => {
         const tieMatchUpId = doublesMatchUp.matchUpId;
-        doublesMatchUp.sides.forEach(() => {
-          if (participantIndex < updatedPairParticipants.length) {
-            const pairIndividualIds = updatedPairParticipants[participantIndex].individualParticipantIds;
-            pairIndividualIds.forEach((individualId) => {
-              const result = tournamentEngine.removeTieMatchUpParticipantId({
-                participantId: individualId,
-                drawId: drawIds[0],
-                tieMatchUpId,
-              });
-              expect(result.success).toEqual(true);
+        doublesMatchUp.sides.forEach((side) => {
+          // the pair on this side, as assigned
+          const pairIndividualIds = side.participant?.individualParticipantIds ?? [];
+          expect(pairIndividualIds.length).toEqual(2);
+          pairIndividualIds.forEach((individualId) => {
+            const result = tournamentEngine.removeTieMatchUpParticipantId({
+              participantId: individualId,
+              drawId: drawIds[0],
+              tieMatchUpId,
             });
-            // refresh pair participants after each removal cycle
-            updatedPairParticipants = tournamentEngine.getParticipants({
-              participantFilters: { participantTypes: [PAIR] },
-            }).participants;
-          }
-          participantIndex += 1;
+            expect(result.success).toEqual(true);
+          });
         });
       });
     });

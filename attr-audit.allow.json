@@ -39,6 +39,7 @@
   "personIds",
   "point",
   "REMOVED",
+  "replay",
   "sanctioningRecords",
   "scaleItems",
   "SCHEDULED",
@@ -55,5 +56,6 @@
   "winnerMatchUpIds",
   "Winners",
   "ZONE",
-  "zone"
+  "zone",
+  "white"
 ]

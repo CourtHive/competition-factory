@@ -1,15 +1,18 @@
 import { generateDrawDefinition } from '@Generators/drawDefinitions/generateDrawDefinition/generateDrawDefinition';
-import { automatedPlayoffPositioning } from '@Mutate/drawDefinitions/automatedPlayoffPositioning';
-import { setParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
-import { addDrawDefinition } from '@Mutate/drawDefinitions/addDrawDefinition';
+import { completeDrawMatchUps } from '@Mutate/simulation/completeDrawMatchUps';
 import { resolveCompletionOptions } from './resolveCompletionOptions';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { isValidExtension } from '@Validators/isValidExtension';
+import { applyDefinedOutcomes } from './generateEventWithDraw';
 import { addExtension } from '@Mutate/extensions/addExtension';
-import { completeDrawMatchUps } from './completeDrawMatchUps';
 import { findEvent } from '@Acquire/findEvent';
 import { generateRange } from '@Tools/arrays';
 import { xa } from '@Tools/extractAttributes';
+import {
+  addDrawDefinitionRecorded,
+  automatedPlayoffPositioningRecorded,
+  setParticipantScaleItemRecorded,
+} from './recordedWrites';
 
 // constants
 import { DRAW_DEFINITION_NOT_FOUND, ErrorType, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
@@ -98,6 +101,7 @@ export function generateFlightDrawDefinitions({
 
     const manual = drawProfiles[index]?.automated === false;
     const completionGoal = drawProfiles[index]?.completionGoal;
+    const outcomes = drawProfiles[index]?.outcomes;
     // a drawProfile's own completion options take precedence over the event/top-level ones for that draw
     const completion = resolveCompletionOptions(drawProfile, {
       matchUpStatusProfile,
@@ -105,7 +109,7 @@ export function generateFlightDrawDefinitions({
       randomWinningSide,
     });
 
-    if (!manual && (completion.completeAllMatchUps || completionGoal)) {
+    if (!manual && (completion.completeAllMatchUps || completionGoal || outcomes?.length)) {
       const complete = (target: { drawDefinition: DrawDefinition; event: Event }) =>
         completeFlightMatchUps({
           matchUpFormat: drawProfiles[index]?.matchUpFormat,
@@ -117,6 +121,7 @@ export function generateFlightDrawDefinitions({
           event: target.event,
           tournamentRecord,
           completionGoal,
+          outcomes,
           random,
         });
       if (deferredOutcomes) {
@@ -150,7 +155,7 @@ function applySeeding({ drawParticipantIds, seedingScaleName, tournamentRecord, 
     };
 
     const participantId = drawParticipantIds[index];
-    setParticipantScaleItem({
+    setParticipantScaleItemRecorded({
       tournamentRecord,
       participantId,
       scaleItem,
@@ -195,8 +200,8 @@ function generateAndAddDraw({
       .forEach((extension) => addExtension({ element: drawDefinition, extension }));
   }
 
-  result = addDrawDefinition({
-    suppressNotifications: true,
+  // announced as a client's addDrawDefinition is: the event is already on the record
+  result = addDrawDefinitionRecorded({
     tournamentRecord,
     drawDefinition,
     event,
@@ -206,7 +211,28 @@ function generateAndAddDraw({
   return { drawDefinition };
 }
 
-function completeFlightMatchUps({
+/**
+ * A flight's draw is completed as a drawProfiles draw is: its completionGoal first, then its defined outcomes, then
+ * every matchUp left when completeAllMatchUps is set and no goal is (a goal wins: exactly that many are completed).
+ */
+function completeFlightMatchUps(params) {
+  const { completionGoal, completeAllMatchUps, outcomes, tournamentRecord, drawDefinition, event } = params;
+  if (completionGoal) {
+    const goalResult = completeFlightPass({ ...params, completeAllMatchUps: false });
+    if (goalResult?.error) return goalResult;
+  }
+  if (outcomes?.length) {
+    const outcomesResult = applyDefinedOutcomes({ tournamentRecord, drawDefinition, outcomes, event });
+    if (outcomesResult?.error) return outcomesResult;
+  }
+  if (completeAllMatchUps && !completionGoal) {
+    const allResult = completeFlightPass({ ...params, completionGoal: undefined });
+    if (allResult?.error) return allResult;
+  }
+  return undefined;
+}
+
+function completeFlightPass({
   matchUpStatusProfile,
   completeAllMatchUps,
   randomWinningSide,
@@ -236,7 +262,7 @@ function completeFlightMatchUps({
   const mainStructure = drawDefinition.structures?.find((structure) => structure.stage === MAIN);
   if (!mainStructure) return { error: STRUCTURE_NOT_FOUND };
 
-  const playoffResult = automatedPlayoffPositioning({
+  const playoffResult = automatedPlayoffPositioningRecorded({
     structureId: mainStructure.structureId,
     tournamentRecord,
     drawDefinition,

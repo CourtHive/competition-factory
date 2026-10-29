@@ -2,7 +2,7 @@
 title: Mocks Governor
 ---
 
-The **Mocks Governor** provides methods for anonymizing and modifying tournament records. For generating tournaments, participants, and outcomes, see the comprehensive [mocksEngine documentation](../testing/mocks-engine-overview.md).
+The **Mocks Governor** provides methods for anonymizing and modifying tournament records, and for synthesising tournaments and participants. Methods that play out or set up a real draw (`completeDrawMatchUps`, `generateOutcome`, `generateOutcomeFromScoreString`) have moved to the [Simulation Governor](./simulation-governor.md). For generating tournaments, participants, and outcomes, see the comprehensive [mocksEngine documentation](../testing/mocks-engine-overview.md).
 
 ## anonymizeTournamentRecord
 
@@ -178,44 +178,13 @@ const { event, participants, drawDefinition } = mocksGovernor.generateEventWithD
 
 ## generateOutcome
 
-Generates a complete outcome object for a matchUp. See [mocksEngine documentation](../testing/mocks-engine-outcomes.md) for comprehensive details.
-
-```js
-const outcome = mocksGovernor.generateOutcome({
-  matchUpStatus: 'COMPLETED',
-  winningSide: 1,
-  matchUpFormat: 'SET3-S:6/TB7',
-});
-```
-
-**Quick Reference:**
-
-- Creates valid outcome object with score
-- Supports all matchUp statuses (COMPLETED, DEFAULTED, RETIRED, etc.)
-- Generates realistic scores based on matchUpFormat
-- Can specify winner or generate randomly
-- See full docs for score generation options
+**Deprecated here; removed from the mocks governor at 8.0.0.** Moved to the [Simulation Governor](./simulation-governor.md#generateoutcome); the engine method name is unchanged.
 
 ---
 
 ## generateOutcomeFromScoreString
 
-Generates an outcome object from a score string. See [mocksEngine documentation](../testing/mocks-engine-outcomes.md#generateOutcomeFromScoreString) for comprehensive details.
-
-```js
-const outcome = mocksGovernor.generateOutcomeFromScoreString({
-  scoreString: '6-4 6-3',
-  matchUpStatus: 'COMPLETED',
-  winningSide: 1,
-});
-```
-
-**Quick Reference:**
-
-- Parses score strings into structured outcome objects
-- Supports various score formats
-- Validates score structure
-- See full docs for supported score formats
+**Deprecated here; removed from the mocks governor at 8.0.0.** Moved to the [Simulation Governor](./simulation-governor.md#generateoutcomefromscorestring); the engine method name is unchanged.
 
 ---
 
@@ -263,6 +232,7 @@ const { tournamentRecord } = mocksGovernor.generateTournamentRecord({
 - Assigns seeds and ratings
 - Can generate completed matchUps with outcomes
 - `completeAllMatchUps`, `randomWinningSide` and `matchUpStatusProfile` apply to every draw when passed at the top level, to the draws of one event when set on its `eventProfile`, or to one draw when set on its `drawProfile`. The innermost value wins: drawProfile, then eventProfile, then top level; see [Complete One Draw](../testing/mocks-engine-tournament-generation.md#complete-one-draw)
+- A draw is completed in this order, whether its profile is a `drawProfile` or one of an `eventProfile`'s `drawProfiles`: its `completionGoal` (the first N matchUps), then its `outcomes`, then every matchUp left when `completeAllMatchUps` is set. A `completionGoal` wins over `completeAllMatchUps`: exactly N are completed
 - An AD_HOC drawProfile with `roundsCount` above 1 and `completeAllMatchUps` is generated round by round: each round is paired, then completed, so later rounds pair on results. Every round is paired unless the drawProfile sets `automated: false`, which leaves the rounds empty
 - A `venueProfile`'s `courtIds` is a pool the call consumes, one id per court: reusing the same profile object gives the second venue generated court ids. Pass a fresh array to each call that needs the same ids
 - See full docs for extensive configuration options
@@ -399,6 +369,10 @@ mocksGovernor.modifyTournamentRecord({
 
   // Add venues (isPrimary designates the tournament's primary venue)
   venueProfiles: [{ courtsCount: 4, venueName: 'Court Complex B', isPrimary: true }],
+
+  // also return `methods`: the engine calls that make these modifications, replayable onto the record as passed
+  // (see "The Method List" in the tournament generation guide)
+  recordMethods: true,
 
   // Add scheduling
   schedulingProfile: [
@@ -542,111 +516,7 @@ mocksGovernor.modifyTournamentRecord({
 
 ## completeDrawMatchUps
 
-Complete matchUps within a draw, with optional filters for targeting specific stages and rounds.
-
-### Complete All MatchUps
-
-```js
-const {
-  drawIds: [drawId],
-  tournamentRecord,
-} = mocksEngine.generateTournamentRecord({
-  drawProfiles: [{ drawSize: 16 }],
-});
-
-const event = tournamentRecord.events[0];
-const drawDefinition = event.drawDefinitions[0];
-
-const result = mocksEngine.completeDrawMatchUps({
-  tournamentRecord,
-  drawDefinition,
-  event,
-  completeAllMatchUps: '6-3 6-4', // score string or `true` for random scores
-});
-
-console.log(result.completedCount); // 15
-console.log(result.remainingCount); // 0: nothing left to play (BYEs and double exits are settled)
-```
-
-### Stage Filter
-
-Complete only matchUps within a specific stage (`MAIN`, `CONSOLATION`, `QUALIFYING`):
-
-```js
-mocksEngine.completeDrawMatchUps({
-  tournamentRecord,
-  drawDefinition,
-  event,
-  stage: 'MAIN',
-  completeAllMatchUps: '6-1 6-1',
-});
-```
-
-### Round Filter
-
-Complete only matchUps in a specific round:
-
-```js
-mocksEngine.completeDrawMatchUps({
-  tournamentRecord,
-  drawDefinition,
-  event,
-  roundNumber: 1,
-  completeAllMatchUps: '6-3 6-4',
-});
-```
-
-### Structure Filter
-
-Complete only the matchUps of named structures. Omitted, every structure is completed.
-
-```js
-mocksEngine.completeDrawMatchUps({
-  tournamentRecord,
-  drawDefinition,
-  event,
-  structureIds: [eastStructureId],
-  completeAllMatchUps: true,
-});
-```
-
-For a round robin, the **container's** `structureId` completes every group, and a **group's** (child)
-`structureId` completes that group only; its siblings are left exactly as they were. A matchUp ended
-as `DOUBLE_WALKOVER` or `DOUBLE_DEFAULT` is never overwritten. An unknown id matches nothing.
-
-### Combined Filters
-
-Filters can be combined for precise targeting:
-
-```js
-// Complete only round 1 of the MAIN stage
-mocksEngine.completeDrawMatchUps({
-  tournamentRecord,
-  drawDefinition,
-  event,
-  stage: 'MAIN',
-  roundNumber: 1,
-  completeAllMatchUps: '6-3 6-4',
-});
-```
-
-### Complete Options
-
-| Parameter              | Type              | Description                                                                         |
-| ---------------------- | ----------------- | ----------------------------------------------------------------------------------- |
-| `tournamentRecord`     | object            | **Required** — tournament record                                                    |
-| `drawDefinition`       | object            | **Required** — draw definition (direct reference from tournamentRecord, not a copy) |
-| `event`                | object            | Event containing the draw                                                           |
-| `completeAllMatchUps`  | boolean \| string | `true` for random scores, or a score string like `'6-3 6-4'`                        |
-| `completionGoal`       | number            | Stop after completing this many matchUps                                            |
-| `stage`                | string            | Filter: only complete matchUps in this stage                                        |
-| `stageSequence`        | number            | Filter: for multi-sequence qualifying                                               |
-| `roundNumber`          | number            | Filter: only complete matchUps in this round                                        |
-| `structureIds`         | string[]          | Filter: only these structures; a round-robin group id selects that group only       |
-| `randomWinningSide`    | boolean           | Randomize winning side                                                              |
-| `matchUpStatusProfile` | object            | Status distribution (see [Outcome Generation](../testing/mocks-engine-outcomes.md)) |
-
-**Note:** The `drawDefinition` must be a direct reference from `tournamentRecord.events[n].drawDefinitions[n]`, not a copy returned by engine query methods like `getEvent()`.
+**Deprecated here; removed from the mocks governor at 8.0.0.** Moved to the [Simulation Governor](./simulation-governor.md#completedrawmatchups); the engine method name is unchanged.
 
 ---
 
