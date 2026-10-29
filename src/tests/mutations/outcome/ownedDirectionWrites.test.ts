@@ -1,8 +1,8 @@
 import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
-import { getDifferentialTally, resetDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { POLICY_SCORING_DEFAULT } from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
+import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
@@ -1451,10 +1451,12 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
       steps: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
     };
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
-    resetDifferentialTally();
+    // read as a change, not reset: the file's tally is the census's (OUTCOME_TALLY)
+    const deferred = (key: string) => getDifferentialTally()[key]?.deferred ?? 0;
+    const before = { exit: deferred('shadow:abstain:exit'), settle: deferred('shadow:abstain:settle') };
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
-    expect(getDifferentialTally()['shadow:abstain:exit']).toEqual({ compared: 0, deferred: 1 });
-    expect(getDifferentialTally()['shadow:abstain:settle']).toBeUndefined();
+    expect(deferred('shadow:abstain:exit') - before.exit).toEqual(1);
+    expect(deferred('shadow:abstain:settle') - before.settle).toEqual(0);
     expect(compared.results).toEqual(v1.results);
     expect(compared.record).toEqual(v1.record);
   });
