@@ -64,7 +64,10 @@ export function applyOwnedPlan({
   // `modifyMatchUp`: v1's notice buffer keeps a matchUp re-announced later in the call at that later place (a double exit
   // given a winner: the next matchUp unwound first, then the winner's arrival after the result), and only a score write
   // defers an in-context notice
-  const written = [...new Set(ops.flatMap((op) => (op.op === 'setMatchUpResult' ? [op.matchUpId] : [])))];
+  // (a settle pass's write defers none: v1's `reconcileScoredTimes` announces the matchUp, not its context)
+  const written = [
+    ...new Set(ops.flatMap((op) => (op.op === 'setMatchUpResult' && !op.announcedAs ? [op.matchUpId] : []))),
+  ];
   const announced = [...new Set(writes.toReversed())].reverse();
   // a matchUp given its result and then a position (that next matchUp): its last notice is the placement's
   const lastWrites = new Map(ops.flatMap((op) => ('matchUpId' in op ? [[op.matchUpId, op.op]] : [])));
@@ -133,6 +136,10 @@ export function applyOwnedPlan({
       matchUpId,
     });
   }
+  // a write v1's settle pass makes, announced under that pass's name (a withdrawn carry, `reconcileScoredTimes`)
+  const settled = new Map(
+    ops.flatMap((op) => (op.op === 'setMatchUpResult' && op.announcedAs ? [[op.matchUpId, op.announcedAs]] : [])),
+  );
   for (const matchUpId of announced) {
     const matchUp = stored.get(matchUpId);
     if (!matchUp) continue;
@@ -144,14 +151,16 @@ export function applyOwnedPlan({
     modifyMatchUpNotice({
       // v1's writers name themselves: the call's result is `modifyMatchUpScore`'s, a winner's seat in the next matchUp
       // is `assignMatchUpDrawPosition`'s (`directWinner`), a FIRST_MATCHUP reservation's matchUp `setMatchUpStatusBye`'s
-      context: noticeContext(matchUpId, removedPosition, unbyedPosition, {
-        resulted: placedLast.has(matchUpId) ? new Set<string>() : resulted,
-        byes,
-        recoded,
-        exchanged,
-        relayed,
-        advanced,
-      }),
+      context:
+        settled.get(matchUpId) ??
+        noticeContext(matchUpId, removedPosition, unbyedPosition, {
+          resulted: placedLast.has(matchUpId) ? new Set<string>() : resulted,
+          byes,
+          recoded,
+          exchanged,
+          relayed,
+          advanced,
+        }),
       eventId: noticeEvent?.eventId,
       tournamentId: untournamented.has(matchUpId) || unbyedPosition ? undefined : tournamentId,
       drawDefinition,

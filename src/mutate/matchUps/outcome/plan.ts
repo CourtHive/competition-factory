@@ -22,6 +22,7 @@ import type {
   OutcomeView,
   Route,
   WinnerLoserSeat,
+  WithdrawnCarry,
 } from './types';
 import {
   AWAITING_RESULT,
@@ -255,9 +256,12 @@ function reenteredReason(
   const loser = direction?.loser;
   if (loser || targets.loserMatchUpId) {
     const seat = targets.loserTargetSeat;
-    if (!loser?.arrives || loser.bye || loser.carriedPast || loser.withdrawn || loser.converged) return 'loser';
+    if (!loser?.arrives || loser.bye || loser.carriedPast || loser.converged) return 'loser';
     if (!seat || seat.participantId !== loser.participantId || seat.opponentBye) return 'loser';
-    if (targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit) return 'cascade';
+    if (loser.withdrawn) {
+      const withdrawn = withdrawnReason(view, loser.withdrawn);
+      if (withdrawn) return withdrawn;
+    } else if (targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit) return 'cascade';
     const carry = loser.exit && write ? relabelCarryReason(view, write) : undefined;
     if (carry) return carry;
   }
@@ -547,7 +551,14 @@ function correctedSingleExit(args: Parameters<typeof exitReason>[0]): boolean {
   // the same winner relabelled an exit its loser carries across their link: the carry lands where they stand
   // (`relabelCarryReason`)
   const relabelCarry = !!loser?.exit && write.winningSide === existing.winningSide;
-  return !((loser?.exit && !relabelCarry) || loser?.carriedPast || loser?.withdrawn || loser?.converged);
+  // ...or relabelled a played result, the carry withdrawn off the loser's matchUp (F2, `withdrawnReason`)
+  const withdrawal = !!loser?.withdrawn && !loser.withdrawn.loserWins && write.winningSide === existing.winningSide;
+  return !(
+    (loser?.exit && !relabelCarry) ||
+    (loser?.withdrawn && !withdrawal) ||
+    loser?.carriedPast ||
+    loser?.converged
+  );
 }
 
 /**
@@ -602,6 +613,43 @@ function relabelCarryReason(view: OutcomeView, write: MatchUpWrite): AbstainReas
   if (!landing || (landing.carriesOn && !deeperLandings(view, landing))) return 'exit';
   if (landing.opponentHeld && !landing.onward) return 'exit';
   return undefined;
+}
+
+/**
+ * S6 (F2): an exit its loser carried, relabelled a played result for the same winner. v1 takes the carry back off the
+ * loser's matchUp: to be played again, no winner, its carry provenance gone and its score as it was, and its
+ * `scoredTime` taken by the `reconcileScoredTimes` pass, under whose name the matchUp is announced. Planned where the
+ * carry is all that matchUp holds: this matchUp's provenance alone, nobody awarded it and gone on, and no loser link out
+ * of it (the carrier carried nothing further). A withdrawal the carry converged in (`loserWins`) is v1's.
+ */
+function withdrawnReason(view: OutcomeView, withdrawn: WithdrawnCarry): AbstainReason | undefined {
+  const { targets } = view;
+  const entry = indexed(view, targets.loserMatchUpId);
+  if (withdrawn.loserWins || withdrawn.matchUpStatus !== TO_BE_PLAYED || !entry) return 'exit';
+  if (!targets.loserMatchUpCarriesSourceExit || entry.loserMatchUpId) return 'exit';
+  const provenance = Object.values(entry.sideExitProvenance ?? {}).filter(Boolean);
+  if (provenance.length !== 1 || entry.matchUpStatusCodes?.some((code) => typeof code !== 'string')) return 'exit';
+  const awarded = entry.sides?.find((side) => side.sideNumber === entry.winningSide);
+  if (awarded?.participantId || awarded?.bye) return 'exit';
+  return undefined;
+}
+
+function withdrawnOps(view: OutcomeView): OutcomeOp[] {
+  const { loserMatchUpId, loserStructureId, source } = view.targets;
+  if (!loserMatchUpId) return [];
+  return [
+    {
+      op: 'setMatchUpResult',
+      matchUpId: loserMatchUpId,
+      matchUpStatus: TO_BE_PLAYED,
+      announcedAs: 'reconcileScoredTimes',
+    },
+    { op: 'setSideExitProvenance', matchUpId: loserMatchUpId },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: loserMatchUpId },
+    ...(loserStructureId && loserStructureId !== source.structureId
+      ? [{ op: 'stampUpdatedAt' as const, entity: 'structure' as const, id: loserStructureId }]
+      : []),
+  ];
 }
 
 type CarriedLanding = {
@@ -2176,6 +2224,7 @@ function carriedFor(
   const write = args.write as MatchUpWrite;
   if (loser?.arrives) return carriedOps(view, args.request, write, loser);
   const relabelled = reentersWinner(view, args.route, write) ? args.direction?.loser : undefined;
+  if (relabelled?.withdrawn) return { relay: [], landing: withdrawnOps(view) };
   if (!relabelled?.exit) return { relay: [], landing: [] };
   const carried = carriedOps(view, args.request, write, relabelled);
   // nobody is placed, so no op names the loser's structure (`structureStamps`): v1's notice for the matchUp the carry

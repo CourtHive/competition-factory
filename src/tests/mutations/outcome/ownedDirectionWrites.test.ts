@@ -1219,6 +1219,30 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(2, 'Main'), outcome: walkover(1), params: CARRIED }],
     },
   ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6): a carried walkover relabelled a played result, the carry withdrawn off its loser',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+      steps: [{ target: R1(1, 'Main'), outcome: won(1), params: CARRIED }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6): a carried default relabelled a played result for side 2, its scoredTime taken',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(3, 'Main'), outcome: exited(DEFAULTED, 2), params: CARRIED }],
+      steps: [{ target: R1(3, 'Main'), outcome: won(2), params: CARRIED }],
+    },
+  ],
+  [
+    'CURTIS_CONSOLATION (S6): a carried walkover relabelled a played result in Main, Consolation 1 to be played again',
+    {
+      drawProfile: { drawSize: 16, drawType: CURTIS_CONSOLATION },
+      setup: [{ target: R1(2, 'Main'), outcome: walkover(1), params: CARRIED }],
+      steps: [{ target: R1(2, 'Main'), outcome: won(1), params: CARRIED }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
