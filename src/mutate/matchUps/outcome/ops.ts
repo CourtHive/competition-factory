@@ -60,6 +60,11 @@ export type OutcomeOp =
        * context is read without the tournament
        */
       announcesContext?: false;
+      /**
+       * the writer v1's notice names where a settle pass makes the write: a carry withdrawn off the loser's matchUp by a
+       * relabel, whose last emission is `reconcileScoredTimes` taking its `scoredTime` (S6)
+       */
+      announcedAs?: 'reconcileScoredTimes';
     }
   | {
       op: 'setMatchUpDrawPositions';

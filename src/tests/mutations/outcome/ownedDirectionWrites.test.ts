@@ -2,6 +2,7 @@ import { generateOutcomeFromScoreString } from '@Generators/simulation/generateO
 import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { POLICY_SCORING_DEFAULT } from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
+import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
@@ -1219,6 +1220,30 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(2, 'Main'), outcome: walkover(1), params: CARRIED }],
     },
   ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6): a carried walkover relabelled a played result, the carry withdrawn off its loser',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+      steps: [{ target: R1(1, 'Main'), outcome: won(1), params: CARRIED }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6): a carried default relabelled a played result for side 2, its scoredTime taken',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(3, 'Main'), outcome: exited(DEFAULTED, 2), params: CARRIED }],
+      steps: [{ target: R1(3, 'Main'), outcome: won(2), params: CARRIED }],
+    },
+  ],
+  [
+    'CURTIS_CONSOLATION (S6): a carried walkover relabelled a played result in Main, Consolation 1 to be played again',
+    {
+      drawProfile: { drawSize: 16, drawType: CURTIS_CONSOLATION },
+      setup: [{ target: R1(2, 'Main'), outcome: walkover(1), params: CARRIED }],
+      steps: [{ target: R1(2, 'Main'), outcome: won(1), params: CARRIED }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
@@ -1407,6 +1432,44 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
       drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
       setup: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
       steps: [{ target: R1(1, 'Main'), outcome: exited(DEFAULTED, 1), params: CARRIED }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v1.results[0].success).toEqual(true);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+  });
+
+  // a withdrawal is a relabel to a played result: an exit entered again keeps its carry, and the planner leaves it to v1
+  // itself rather than the settle check after it
+  it('S6: a carried walkover entered again for the same winner is v1s, refused by the planner', () => {
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    // read as a change, not reset: the file's tally is the census's (OUTCOME_TALLY)
+    const deferred = (key: string) => getDifferentialTally()[key]?.deferred ?? 0;
+    const before = { exit: deferred('shadow:abstain:exit'), settle: deferred('shadow:abstain:settle') };
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(deferred('shadow:abstain:exit') - before.exit).toEqual(1);
+    expect(deferred('shadow:abstain:settle') - before.settle).toEqual(0);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+  });
+
+  // the consolation matchUp holds both feeders' carries: withdrawing one is not the plain withdrawal
+  it('S6: a carried walkover relabelled a played result beside a second carry on its loser matchUp is v1s', () => {
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [
+        { target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED },
+        { target: R1(2, 'Main'), outcome: walkover(1), params: CARRIED },
+      ],
+      steps: [{ target: R1(1, 'Main'), outcome: won(1), params: CARRIED }],
     };
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
