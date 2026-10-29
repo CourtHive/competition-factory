@@ -1459,6 +1459,25 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     expect(compared.record).toEqual(v1.record);
   });
 
+  // the consolation matchUp holds both feeders' carries: withdrawing one is not the plain withdrawal
+  it('S6: a carried walkover relabelled a played result beside a second carry on its loser matchUp is v1s', () => {
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [
+        { target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED },
+        { target: R1(2, 'Main'), outcome: walkover(1), params: CARRIED },
+      ],
+      steps: [{ target: R1(1, 'Main'), outcome: won(1), params: CARRIED }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v1.results[0].success).toEqual(true);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+  });
+
   it('S6: a played result relabelled a walkover for the other side, its new loser carrying it, is v1s', () => {
     const scenario: Scenario = {
       drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
