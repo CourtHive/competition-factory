@@ -1010,8 +1010,8 @@ and a fresh v1 must name the next server a fresh v2 names when each loads v2's r
 ### 12.7 Determinism
 
 A replay uses the recorded timestamps. An action without one is stamped by the clock, as is `endTime`
-on completion, so a reproducible stream sets the clock (the corpus does). Nothing else in scoring reads
-the clock or a random source.
+on completion, so a reproducible stream sets the clock (the corpus does). Otherwise only the creation of a
+matchUp reads them: its `createdAt`, and the pure `createMatchUp`'s minted `matchUpId` (§ 12.9).
 
 ### 12.8 Legacy shapes: refusals apply at the action boundary
 
@@ -1037,6 +1037,31 @@ change"; no version stamp): a game in a tiebreak-only set (§ 5), a game after a
 level (§ 6.4), a baseline set v1 judged by "reached setTo" (6-5 is no longer won, § 2.5), and a set total
 entered while a set is in play (§ 2.3). A stored archive holding one of them can rebuild to a different
 score.
+
+### 12.9 The pure `createMatchUp` and `addPoint`
+
+Below the engine sit two published functions on a bare scoring matchUp (the pure `addPoint` retires at 8.0.0, § 14).
+
+**`createMatchUp({ matchUpFormat, matchUpId, participants, isDoubles, matchUpType, occurredAt })`** returns
+`{ matchUpId, matchUpFormat, matchUpStatus: TO_BE_PLAYED, matchUpType, sides, score: { sets: [] }, createdAt }`:
+
+- `matchUpId` is the caller's, else minted from the random source (the mint: `concepts/building-a-tournament` § 1.2).
+- `matchUpType` is the caller's, else `DOUBLES` with `isDoubles`, else `SINGLES`.
+- `sides` is `{ sideNumber, participantId, participant }` per participant given, else
+  `[{ sideNumber: 1 }, { sideNumber: 2 }]`.
+- `createdAt` is `occurredAt`, else the clock.
+
+**`addPoint(matchUp, { winner | winningSide, server | serverSideNumber, timestamp, ... })`** applies a `point` action
+(§ 2.1) to the matchUp **in place** and returns it. An input § 2.1 refuses (a side out of range, two spellings
+that disagree) throws. It keeps `history.points` (§ 11.1) and **no timeline**: no
+`history.entries` is written, so nothing it records can be undone (§ 12.3). A point without a decidable winner, a point
+after completion (§ 9.6) and a point after the last set of an `exactly` format are ignored: the matchUp is returned
+unchanged. The score, the status, `winningSide`, the score strings and `endTime` are those the engine's point action
+writes.
+
+The corpus's scoring source (`scoring/<format>/<stream>-seed-<n>`, § 15) plays these two: after each call a step
+records the matchUp's `sets`, `scoreStringSide1`/`scoreStringSide2` and `winningSide` when present, and `complete`
+(`matchUpStatus === COMPLETED`); the last step, one point after completion, adds the whole matchUp.
 
 ## 13. What is deliberately not modelled
 
