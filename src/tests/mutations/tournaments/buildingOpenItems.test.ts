@@ -14,8 +14,9 @@ import { DRAW_DEFINITION_NOT_FOUND, INVALID_VALUES, VENUE_EXISTS } from '@Consta
 const LATER = '2030-01-01T00:00:00.000Z';
 
 /**
- * building-a-tournament.md § 8, items 11 to 14: what a write stores does not depend on who is listening, a refusal
- * writes nothing, an unresolved drawId names nothing, and the caller's objects are not written.
+ * building-a-tournament.md § 8, resolved 2026-10-30 (the smaller writes): what a write stores does not depend on
+ * who is listening, a refusal writes nothing, an unresolved drawId names nothing, and the caller's objects are not
+ * written.
  */
 function factoryStampAfter(subscribed: boolean, topic: string, write: (ids: any) => any) {
   const {
