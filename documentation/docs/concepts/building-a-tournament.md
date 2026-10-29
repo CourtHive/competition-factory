@@ -75,7 +75,7 @@ This is done for every call, before the method runs:
 
 Nested objects are **not** copied: an object passed in (a participant, a drawDefinition) is the object stored, and a
 write to it after the call changes the record. An `event` the caller passes with no `drawId` is used as given, even
-beside an `eventId` (§8).
+beside an `eventId` (§8: refused at 8.0.0).
 
 ## 2. `addParticipants`
 
@@ -294,8 +294,9 @@ Notice `MODIFY_VENUE`. **Returns** `{ success, courtIds }`.
 
 1. `extensions` is created if absent.
 2. The applied policies are a copy of the element's `appliedPolicies` extension value. For each type given: a falsy
-   policy is skipped; a policy that is not an object, holds nothing but its `policyName`, or has a `policyName` that is
-   not a string refuses (`INVALID_VALUES`); a type already held is skipped unless `allowReplacement`; otherwise the
+   policy is skipped; a policy that is not an object, holds nothing but its `policyName` (an attribute whose value is
+   `undefined` does not count: it is not stored), or has a `policyName` that is not a string refuses
+   (`INVALID_VALUES`); a type already held is skipped unless `allowReplacement`; otherwise the
    policy replaces that type whole.
 3. If any type was taken, the `appliedPolicies` extension's value is replaced, or the extension is appended:
    `{ name: 'appliedPolicies', value, createdAt: now }`.
@@ -402,13 +403,20 @@ so a record merely loaded beside a written one claimed to have been written); a 
 `suppressNotifications` is stamped as an announced one is (it left its draws and matchUps unstamped and the factory
 stamp unmoved); only the engine's internal `disableNotifications`, around working copies, stamps nothing.
 
-**Open (2026-10-29): an `event` object passed by the caller.** Rule 3 of §1.3 resolves an `eventId` only when no
+**Decided (CA 2026-10-29): an `event` object passed by the caller is refused at 8.0.0, and unchanged until then.** Rule 3 of §1.3 resolves an `eventId` only when no
 `event` is given, so a caller's own `event` object is the event the method writes to. When that object is not the
 stored event (a copy, an event read before `setState`, or an event in no loaded record), `addEventEntries` reports
 `success` and `addedEntriesCount`, writes the entries into the caller's object and leaves the record unchanged; an
 `eventId` passed beside it is ignored. Measured at 7.24.0: a stale copy, an unknown event and a copy with its
-`eventId` all return success with the stored entries unchanged. The question is whether the engine should resolve
-by id only at its boundary (ignore, or refuse, a caller's `event`), or keep accepting it.
+`eventId` all return success with the stored entries unchanged. At 8.0.0 a write given an `event` object that is not the stored
+event is refused; until then the behaviour stands. No consumer passes one to a write (measured 2026-10-29: none in the
+factory's source or in its server or client consumers); reads that pass one are unaffected.
+
+Resolved (CA 2026-10-29): a policy attribute whose value is `undefined` does not count toward a policy (§6.3). It was
+counted, so `{ policyName, roundsToSeparate: undefined }` was accepted and stored as its name alone, which the same
+check refuses.
+
+No question is open.
 
 ## Related
 

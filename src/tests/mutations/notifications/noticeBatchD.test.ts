@@ -390,7 +390,7 @@ describe('removePolicy', () => {
     } = mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 4 }], setState: true });
     expect(tournamentEngine.attachPolicies({ policyDefinitions, drawId }).success).toEqual(true);
     // then a tournament-level policy the draw inherits but does not hold
-    const inherited = { avoidance: { policyName: 'INHERITED', roundsToSeparate: undefined } };
+    const inherited = { avoidance: { policyName: 'INHERITED', policyAttributes: [] } };
     expect(tournamentEngine.attachPolicies({ policyDefinitions: inherited }).success).toEqual(true);
     return drawId;
   }
