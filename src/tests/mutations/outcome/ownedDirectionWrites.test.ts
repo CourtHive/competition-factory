@@ -1265,6 +1265,42 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(3, 'East'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
     },
   ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6): a double walkover beside a BYE, its unfillable fed seat opposite a winner who goes on',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [
+        { target: R1(2, 'Main'), outcome: won(1) },
+        { target: R1(3, 'Main'), outcome: won(1) },
+      ],
+      steps: [{ target: R1(4, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION (S6): a double walkover whose unfillable Backdraw seat stands opposite a winner',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: DOUBLE_ELIMINATION },
+      setup: [
+        { target: R1(2, 'Main'), outcome: won(1) },
+        { target: R1(3, 'Main'), outcome: won(1) },
+      ],
+      steps: [{ target: R1(4, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION (S6): a second double walkover, the position its BYE sends on passing through a Backdraw BYE',
+    {
+      drawProfile: { drawSize: 16, drawType: DOUBLE_ELIMINATION },
+      setup: [
+        { target: R1(1, 'Main'), outcome: won(1) },
+        { target: R1(2, 'Main'), outcome: won(1) },
+        { target: R1(3, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+        { target: R1(4, 'Main'), outcome: won(1) },
+        { target: R1(5, 'Main'), outcome: won(1) },
+      ],
+      steps: [{ target: R1(6, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
