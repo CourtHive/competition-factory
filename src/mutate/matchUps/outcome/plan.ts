@@ -552,7 +552,11 @@ function correctedSingleExit(args: Parameters<typeof exitReason>[0]): boolean {
   // (`relabelCarryReason`)
   const relabelCarry = !!loser?.exit && write.winningSide === existing.winningSide;
   // ...or relabelled a played result, the carry withdrawn off the loser's matchUp (F2, `withdrawnReason`)
-  const withdrawal = !!loser?.withdrawn && !loser.withdrawn.loserWins && write.winningSide === existing.winningSide;
+  const withdrawal =
+    !!loser?.withdrawn &&
+    !loser.withdrawn.loserWins &&
+    !SINGLE_EXITS.has(write.matchUpStatus) &&
+    write.winningSide === existing.winningSide;
   return !(
     (loser?.exit && !relabelCarry) ||
     (loser?.withdrawn && !withdrawal) ||

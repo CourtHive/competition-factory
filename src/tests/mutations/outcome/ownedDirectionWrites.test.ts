@@ -1,4 +1,5 @@
 import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
+import { getDifferentialTally, resetDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { POLICY_SCORING_DEFAULT } from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
@@ -1439,6 +1440,23 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
     expect(v2.notices).toEqual(v1.notices);
+  });
+
+  // a withdrawal is a relabel to a played result: an exit entered again keeps its carry, and the planner leaves it to v1
+  // itself rather than the settle check after it
+  it('S6: a carried walkover entered again for the same winner is v1s, refused by the planner', () => {
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    resetDifferentialTally();
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(getDifferentialTally()['shadow:abstain:exit']).toEqual({ compared: 0, deferred: 1 });
+    expect(getDifferentialTally()['shadow:abstain:settle']).toBeUndefined();
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
   });
 
   it('S6: a played result relabelled a walkover for the other side, its new loser carrying it, is v1s', () => {
