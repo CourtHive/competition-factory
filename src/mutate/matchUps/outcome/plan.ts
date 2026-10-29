@@ -1077,12 +1077,30 @@ function byeAdvanced(
   quiet: { announcesEvent?: false },
   heldOnward?: { matchUpId: string; drawPositions: number[] },
 ): { ops: OutcomeOp[]; matchUpIds: string[]; advanced: NonNullable<ByeChain['advanced']> } | undefined {
+  // a final: the BYE goes nowhere; v1 writes the matchUp, a BYE already, as a BYE again
+  if (!entry.winnerMatchUpId)
+    return {
+      ops: [
+        { op: 'setMatchUpBye', matchUpId: entry.matchUpId, ...quiet },
+        { op: 'stampUpdatedAt', entity: 'matchUp', id: entry.matchUpId },
+      ],
+      matchUpIds: [],
+      advanced: { matchUpId: entry.matchUpId },
+    };
   const onward = indexed(view, entry.winnerMatchUpId);
   // the next matchUp as an earlier write of this call leaves it (the other BYE's chain sent the position there)
   const positions = heldOnward?.matchUpId === onward?.matchUpId ? heldOnward?.drawPositions : onward?.drawPositions;
   const held = (positions ?? []).filter((position): position is number => !!position);
   const others = held.filter((position) => position !== seatPosition);
   if (!onward || onward.structureId !== entry.structureId || onward.loserMatchUpId) return undefined;
+  // a BYE the position passed through (no feed beside it): left as it stands, the BYE going on where the position stands
+  if (
+    onward.matchUpStatus === BYE &&
+    !onward.feedRound &&
+    !onward.hasFedDrawPosition &&
+    byeOpposite(onward, seatPosition)
+  )
+    return byeAdvanced(view, onward, seatPosition, quiet);
   if (onward.matchUpStatus !== TO_BE_PLAYED || onward.winningSide || onward.score?.scoreStringSide1) return undefined;
   if (Object.keys(onward.sideExitProvenance ?? {}).length || onward.sides?.some((side) => side.bye)) return undefined;
   if (!held.includes(seatPosition) || others.length > 1) return undefined;
@@ -1120,6 +1138,13 @@ function throughHeldBye(
   if (!beyond) return undefined;
   const into = { matchUpId: next.matchUpId, drawPositions: [...held, drawPosition].sort((a, b) => a - b) };
   return [into, beyond];
+}
+
+/** a BYE matchUp holding the position and a BYE opposite it: a double BYE the position passed through */
+function byeOpposite(matchUp: HydratedMatchUp, position: number): boolean {
+  const seated = matchUp.sides?.find((side) => side.drawPosition === position);
+  const other = matchUp.sides?.find((side) => side.drawPosition && side.drawPosition !== position);
+  return !!seated && !seated.bye && !!other?.bye;
 }
 
 /**
