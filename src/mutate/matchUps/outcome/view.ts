@@ -32,7 +32,6 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
-import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { isLucky } from '@Query/drawDefinition/isLucky';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
@@ -1306,13 +1305,8 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
 
   let line: OutcomeView['line'];
   if (matchUpTieId) {
-    const { matchUp: dualMatchUp } = findDrawMatchUp({
-      matchUpId: matchUpTieId,
-      inContext: true,
-      drawDefinition,
-      matchUpsMap,
-      event,
-    });
+    // the dual from the call's one hydration, not a second in-context read (§ 3.6; S7): the projection works on a copy
+    const dualMatchUp = inContextDrawMatchUps?.find((candidate) => candidate.matchUpId === matchUpTieId);
     if (dualMatchUp) {
       const tieFormat = resolveTieFormat({ matchUp: dualMatchUp, drawDefinition, structure, event })?.tieFormat;
       const { projectedWinningSide } = getProjectedDualWinningSide({
