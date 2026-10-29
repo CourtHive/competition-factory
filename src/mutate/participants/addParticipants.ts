@@ -26,8 +26,7 @@ export function addParticipants({
   participants = [],
 }: AddParticipantsType) {
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
-  tournamentRecord.participants ??= [];
-  const tournamentParticipants = tournamentRecord.participants;
+  const tournamentParticipants = tournamentRecord.participants ?? [];
 
   const existingParticipantIds = new Set(tournamentParticipants.map((p) => p.participantId));
 
@@ -48,6 +47,10 @@ export function addParticipants({
 
   const addedParticipants: Participant[] = [];
   if (participantsToAdd.length) {
+    // created here, and removed again if the call is refused: a refused call wrote an empty array
+    const hadParticipants = Array.isArray(tournamentRecord.participants);
+    tournamentRecord.participants = tournamentParticipants;
+    const countBefore = tournamentParticipants.length;
     // the pool is read once for the batch, not once per participant
     const participantsIndex = indexParticipants(tournamentParticipants);
     for (const participant of participantsToAdd) {
@@ -59,7 +62,13 @@ export function addParticipants({
         tournamentRecord,
         participant,
       });
-      if (result.error) return result;
+      if (result.error) {
+        // all or nothing: a participant is checked against those added before it in the call, so a refusal is known
+        // only part way through; the participants appended before it are removed (they were kept, unannounced)
+        tournamentParticipants.length = countBefore;
+        if (!hadParticipants) delete tournamentRecord.participants;
+        return result;
+      }
 
       if (result.success && !result.existingParticipant) addedParticipants.push(result.participant);
     }
@@ -86,6 +95,8 @@ export function addParticipants({
 
     return definedAttributes(result);
   } else {
+    // an accepted call leaves the record holding participants, an empty array when it added none
+    tournamentRecord.participants ??= [];
     return {
       info: 'No new participants to add',
       addedCount: 0,

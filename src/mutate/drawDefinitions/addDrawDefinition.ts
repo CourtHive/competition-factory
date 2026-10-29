@@ -9,6 +9,7 @@ import { addNotice, hasTopic } from '@Global/state/globalState';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { storeGoesTo } from '@Query/matchUps/addGoesTo';
 import { ensureInt } from '@Tools/ensureInt';
+import { isNumeric } from '@Tools/math';
 import {
   addDrawNotice,
   addMatchUpsNotice,
@@ -152,19 +153,20 @@ export function addDrawDefinition(
     flight.drawName = drawDefinition.drawName;
     value = { ...flightProfile };
 
-    const flightNumber = flight.flightNumber;
+    // a numeric string is its number: compared as given it never matched a drawOrder and became a string drawOrder
+    const flightNumber = isNumeric(flight.flightNumber) ? ensureInt(flight.flightNumber) : undefined;
     if (flightNumber && !drawOrders.includes(flightNumber)) {
       drawOrder = flightNumber;
-    } else {
-      flight.flightNumber = drawOrder;
     }
+    flight.flightNumber = drawOrder;
   } else {
     const flights = flightProfile?.flights ?? [];
     flights.push({
       manuallyAdded: true, // this drawDefinition was not part of automated split
       flightNumber: drawOrder,
       // a draw added without entries still gets an array, as `addFlight` gives one: readers map over it
-      drawEntries: drawEntries ?? [],
+      // the flight's own copy: the draw's entries array itself was stored, so a later write to either changed both
+      drawEntries: (drawEntries ?? []).map((entry) => ({ ...entry })),
       drawName,
       drawId,
     });

@@ -678,7 +678,9 @@ export function addEventEntries(params: AddEventEntriesArgs): ResultType {
     event,
   });
 
-  if (drawId && !isUngrouped(entryStage)) {
+  // every entry made with a drawId is entered in the draw, ungrouped individuals included (an AD_HOC doubles field
+  // holds them). The test here was isUngrouped(entryStage), a stage against statuses, which never held
+  if (drawId) {
     const result = addDrawEntries({
       participantIds: validParticipantIds,
       suppressDuplicateEntries,
