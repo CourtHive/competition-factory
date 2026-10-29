@@ -58,12 +58,14 @@ export function addExtension(params?: AddExtensionArgs): {
 
   const creationTime = params?.creationTime ?? true;
 
-  if (creationTime) {
-    // Honour a `createdAt` already on the caller's extension rather than
-    // stamping over it — same convention as `addTimeItem`. Inert when nothing is
-    // supplied; `creationTime: false` still means "add no createdAt at all".
-    params.extension.createdAt ??= nowIso();
-  }
+  // Honour a `createdAt` already on the caller's extension rather than
+  // stamping over it — same convention as `addTimeItem`. Inert when nothing is
+  // supplied; `creationTime: false` still means "add no createdAt at all".
+  // Stamped onto a copy: the caller's object is not written, and an extension added to several
+  // elements is not one object shared between them.
+  const extension = creationTime
+    ? { ...params.extension, createdAt: params.extension.createdAt ?? nowIso() }
+    : params.extension;
 
   // ── Invariant: AT MOST ONE extension per `name`, per element ──
   //
@@ -79,11 +81,11 @@ export function addExtension(params?: AddExtensionArgs): {
   //
   // If you are here because a policy you attached "did not take effect", the cause is more likely a
   // duplicate already on the element than anything wrong with this function.
-  const existingExtension = params.element.extensions.find(({ name }) => name === params.extension.name);
+  const existingExtension = params.element.extensions.find(({ name }) => name === extension.name);
   if (existingExtension) {
-    existingExtension.value = params.extension.value;
-  } else if (params.extension.value) {
-    params.element.extensions.push(params.extension);
+    existingExtension.value = extension.value;
+  } else if (extension.value) {
+    params.element.extensions.push(extension);
   }
 
   return { ...SUCCESS };

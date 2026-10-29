@@ -201,21 +201,23 @@ drawDefinition) is the object stored, and a write to it after the call changes t
 
 Seven calls that a generated tournament makes around the four above: venues and courts, policies and extensions on the
 record, flights, seeding (scale items) and publication. None of them stamps `updatedAt` except `attachPolicies` on a
-draw; each raises the notice named, and so the factory stamp (§1.1), except where the notice depends on a subscriber.
+draw; each raises the notice named, whether or not anything subscribes, and so takes the factory stamp (§1.1).
 
 ### 6.1 `addVenue`
 
 **Inputs.** `venue`, `context`, `disableNotice`. The venue goes to every loaded record (one, unless `tournamentId`
 names it).
 
-1. `venue` not an object: `INVALID_VALUES`. `venue.venueId` is minted if absent, **on the caller's object**.
-2. `venues` is created on the record if absent, **before** the next refusal.
-3. A venue with this `venueId` exists: `VENUE_EXISTS`.
+1. `venue` not an object: `INVALID_VALUES`. `venueId` is minted if absent, onto a copy (the caller's object is not
+   written).
+2. A venue with this `venueId` exists: `VENUE_EXISTS`. `defaultStartTime` without `defaultEndTime` (or the reverse), or
+   an end not after the start: `INVALID_VALUES`.
 
 **What is written.** A non-empty `dateAvailability` is canonicalized (times to `HH:MM`, a truthy `date` to
 `YYYY-MM-DD`), as are `defaultStartTime` and `defaultEndTime`. `context` becomes an extension
 `{ name: 'context', value, createdAt: now }`. A venue added with `isPrimary` clears `isPrimary` on the record's other
-venues. The venue object passed in is appended (courts as given). Notice `ADD_VENUE` unless `disableNotice`.
+venues. Each record stores its own copy of the venue (courts as given), `venues` created if absent; a refusal writes
+nothing. Notice `ADD_VENUE` unless `disableNotice`.
 
 **Returns** `{ success, venue }`.
 
@@ -225,10 +227,11 @@ venues. The venue object passed in is appended (courts as given). Notice `ADD_VE
 `startTime`, `endTime`, `courtNameRoot` (default `Court`), `venueAbbreviationRoot`, `idPrefix`.
 
 **Refusals.** `venueId` not a non-empty string: `MISSING_VENUE_ID`. No loaded record holds the venue:
-`VENUE_NOT_FOUND`. `courtsCount` not numeric and no `courtNames`: `MISSING_COURTS_INFO`. Fewer courts written than
-asked: `INVALID_VALUES` (`not all courts could be generated`), **after** the others were written.
+`VENUE_NOT_FOUND`. `courtsCount` not numeric and no `courtNames`: `MISSING_COURTS_INFO`. A court that cannot be added
+(an id the venue or the call already holds, an invalid availability): `INVALID_VALUES`
+(`not all courts could be generated`). Every court is built before any is stored, so a refusal writes nothing.
 
-**What is written**, for court `i` of `courtsCount` (a number, else `courtNames.length`), in every record holding
+**What is written**, for court `i` of `courtsCount` (a number or a numeric string, else `courtNames.length`), in every record holding
 the venue:
 
 1. **Availability**: `dateAvailability` (default `[]`) shared by every court, unless `courtTimings[i]` is given; then
@@ -236,8 +239,7 @@ the venue:
    when both are given.
 2. **Name**: `courtNames[i]`, else `` `${venue.venueAbbreviation} ${i + 1}` `` when `venueAbbreviationRoot` is given and
    the venue has an abbreviation, else `` `${courtNameRoot} ${i + 1}` ``.
-3. **Id**: the next of `courtIds` (taken from the front), else `` `${idPrefix}-${i + 1}` ``, else minted. An id the
-   venue already holds skips that court (`COURT_EXISTS`, counted toward the refusal above).
+3. **Id**: the next of `courtIds` (taken from the front), else `` `${idPrefix}-${i + 1}` ``, else minted.
 4. `courts` is created on the venue if absent, and the court is appended:
    `{ courtId, courtName, dateAvailability, onlineResources: [], venueId }`. Each availability entry is copied, its
    `date` (when truthy) and times converted to their stored forms, and its bookings rebuilt as
@@ -249,7 +251,8 @@ Notice `MODIFY_VENUE`. **Returns** `{ success, courtIds }`.
 
 **Inputs.** `policyDefinitions` (an object keyed by policy type), `allowReplacement`, and a draw (`drawId`), an event
 (`eventId`) or a `tournamentId`. The element is the draw, else the event, else the named record; with none of them,
-**every** loaded record. A round robin tally policy is validated first.
+**every** loaded record. A `drawId` that resolves to no draw refuses (`DRAW_DEFINITION_NOT_FOUND`), as an unresolved
+`eventId` does (`EVENT_NOT_FOUND`). A round robin tally policy is validated first.
 
 **What is written**, on each element:
 
@@ -269,9 +272,9 @@ Across every loaded record, a record that takes nothing is passed over. Nothing 
 **Inputs.** `extension` (`{ name, value }`), `creationTime`. A name that is not a string, or an extension without a
 `name` or `value` key, refuses.
 
-`extensions` is created on the record if absent. `createdAt` is set to now **on the caller's object** if absent. An
-extension of the same name has its `value` replaced; otherwise the extension is appended, **only if its value is
-truthy**. Notice `MODIFY_TOURNAMENT_DETAIL` if the extensions changed. **Returns** `{ success }`.
+`extensions` is created on the record if absent. The stored extension is a copy carrying `createdAt` (the caller's,
+else now; none with `creationTime: false`). An extension of the same name has its `value` replaced; otherwise the copy
+is appended, **only if its value is truthy**. Notice `MODIFY_TOURNAMENT_DETAIL` if the extensions changed. **Returns** `{ success }`.
 
 ### 6.5 `addFlight`
 
@@ -302,7 +305,7 @@ participant if absent. The value is **unchanged** when it equals the participant
 (compared as JSON; `undefined`, `null` and `''` are equal to each other): nothing more is written. Otherwise the time
 item `{ itemValue: scaleValue, itemDate: scaleDate, createdAt: scaleItem.createdAt ?? now, itemType }` (undefined keys
 dropped), with `itemSubTypes: [scaleId]` when `scaleId` is truthy, is appended; `removePriorValues` first removes the
-items of that type. Notice `MODIFY_PARTICIPANTS` **only when it is subscribed**.
+items of that type. Notice `MODIFY_PARTICIPANTS` when the value changed.
 
 **Returns** `{ success, newValue }`, or `{ success, info: VALUE_UNCHANGED, existingValue }`.
 
@@ -318,7 +321,8 @@ not a date: `INVALID_EMBARGO`. A structure not in its draw: `STRUCTURE_NOT_FOUND
 `{ itemType: 'PUBLISH.STATUS', createdAt: now, itemValue: { ...otherStatuses, [status]: { ...prior, drawDetails } } }`.
 A plain publication gives every draw of the event, in order, `{ [drawId]: { publishingDetail: { published: true } } }`
 (an event without draws gives `{}`). `timeItems` is created if absent; with `removePriorValues` the event's earlier
-`PUBLISH.STATUS` items are removed; the item is appended. Notice `PUBLISH_EVENT` **only when it is subscribed**.
+`PUBLISH.STATUS` items are removed; the item is appended. Notice `PUBLISH_EVENT` (its payload carries the event data
+only for a subscriber).
 
 **Returns** `{ success, eventData }`.
 
@@ -333,6 +337,12 @@ A plain publication gives every draw of the event, in order, `{ [drawId]: { publ
 Resolved 2026-10-30: a replacement with `suppressNotifications` now stores the new draw (it sat inside the
 notification guard); `addEvent` stamps an event's matchUps whether or not anything subscribes (it stamped them only for
 a subscriber, so the stored bytes depended on who was listening).
+
+Resolved 2026-10-30, the smaller writes (§6): `publishEvent`, `setParticipantScaleItem` and eleven other participant
+writes announce whether or not anything subscribes, so the factory stamp no longer depends on who is listening;
+`addCourts` counts a numeric string as its number and refuses before storing any court; `attachPolicies` refuses a
+`drawId` that resolves to no draw (it attached to every loaded record); `addVenue` and `addTournamentExtension` store
+copies and no longer write the caller's objects, and `addVenue` creates `venues` only when it stores one.
 
 1. **OPEN.** `suppressNotifications` changes the stored bytes: no `updatedAt` stamps, no factory stamp.
 2. **OPEN.** `addParticipants` keeps the participants appended before a refusal, and a refusal raises no notice, so
@@ -349,13 +359,6 @@ a subscriber, so the stored bytes depended on who was listening).
 8. **OPEN.** A new flight's `drawEntries` is the draw's `entries` array itself, so later writes to either change both.
 9. **OPEN.** A string `flightNumber` is never matched against numeric `drawOrder`s and becomes a string `drawOrder`.
 10. **OPEN.** The factory stamp goes to every loaded tournament, not only the one written.
-11. **OPEN.** `publishEvent` and `setParticipantScaleItem` raise their notice only for a subscriber, so whether the
-    record takes the factory stamp depends on who is listening (the class of the `addEvent` defect resolved above).
-12. **OPEN.** `addCourts` with a string `courtsCount` (numeric, but not a number) writes courts and then refuses; a
-    refusal for too few courts keeps the courts written before it.
-13. **OPEN.** `attachPolicies` with a `drawId` or `eventId` that resolves to nothing attaches to every loaded record.
-14. **OPEN.** `addVenue` mints a missing `venueId` and `addTournamentExtension` sets a missing `createdAt` on the
-    caller's object, and `venues` is created before `VENUE_EXISTS` refuses.
 
 ## Related
 
