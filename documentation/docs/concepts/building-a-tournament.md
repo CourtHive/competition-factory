@@ -62,9 +62,20 @@ mints an id it minted among its recent ids, throws (`DEGENERATE_RANDOM_SOURCE`).
 
 ### 1.3 Params
 
-The engine copies the params object shallowly, then resolves `drawId` to the stored draw and its event, and `eventId`
-to the stored event (a `drawId` wins). Nested objects are **not** copied: an object passed in (a participant, a
-drawDefinition) is the object stored, and a write to it after the call changes the record.
+The engine copies the params object shallowly, then resolves the record, the event and the draw the call works on.
+This is done for every call, before the method runs:
+
+1. A `tournamentId` that names no loaded record refuses the call: `MISSING_TOURNAMENT_RECORD`.
+2. A `drawId` (or a `matchUp`'s `drawId`) found in a loaded record gives the call that draw, its event and its record,
+   in place of any the caller gave. A `drawId` found nowhere resolves nothing; the method decides.
+3. Otherwise an `eventId`, when no `event` is given, gives the call the stored event and its record; an `eventId` found
+   in no loaded record refuses the call: `EVENT_NOT_FOUND`.
+4. The record the call writes is the one resolved, else the one `tournamentId` names, else the active record. An
+   `eventId` or `drawId` held by another loaded record moves the call to that record; the active record is unchanged.
+
+Nested objects are **not** copied: an object passed in (a participant, a drawDefinition) is the object stored, and a
+write to it after the call changes the record. An `event` the caller passes with no `drawId` is used as given, even
+beside an `eventId` (§8).
 
 ## 2. `addParticipants`
 
@@ -283,8 +294,9 @@ Notice `MODIFY_VENUE`. **Returns** `{ success, courtIds }`.
 
 1. `extensions` is created if absent.
 2. The applied policies are a copy of the element's `appliedPolicies` extension value. For each type given: a falsy
-   policy is skipped; a policy that is not an object refuses (`INVALID_VALUES`); a type already held is skipped unless
-   `allowReplacement`; otherwise the policy replaces that type whole.
+   policy is skipped; a policy that is not an object, holds nothing but its `policyName`, or has a `policyName` that is
+   not a string refuses (`INVALID_VALUES`); a type already held is skipped unless `allowReplacement`; otherwise the
+   policy replaces that type whole.
 3. If any type was taken, the `appliedPolicies` extension's value is replaced, or the extension is appended:
    `{ name: 'appliedPolicies', value, createdAt: now }`.
 
@@ -390,7 +402,13 @@ so a record merely loaded beside a written one claimed to have been written); a 
 `suppressNotifications` is stamped as an announced one is (it left its draws and matchUps unstamped and the factory
 stamp unmoved); only the engine's internal `disableNotifications`, around working copies, stamps nothing.
 
-No question is open.
+**Open (2026-10-29): an `event` object passed by the caller.** Rule 3 of §1.3 resolves an `eventId` only when no
+`event` is given, so a caller's own `event` object is the event the method writes to. When that object is not the
+stored event (a copy, an event read before `setState`, or an event in no loaded record), `addEventEntries` reports
+`success` and `addedEntriesCount`, writes the entries into the caller's object and leaves the record unchanged; an
+`eventId` passed beside it is ignored. Measured at 7.24.0: a stale copy, an unknown event and a copy with its
+`eventId` all return success with the stored entries unchanged. The question is whether the engine should resolve
+by id only at its boundary (ignore, or refuse, a caller's `event`), or keep accepting it.
 
 ## Related
 
