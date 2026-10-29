@@ -12,8 +12,8 @@ import type { OutcomeOp } from './ops';
 /**
  * The outcome pipeline, v2: THE WORKING VIEW (executor plan § 3.2; S2, CA 2026-10-24).
  *
- * The view is built from the structural index of the draw (§ 3.1.1), or for a draw the index does not cover yet (TEAM)
- * from the call's one hydration. As a plan's ops are folded, the working view is the draw as it will
+ * The view is built from the structural index of the draw (§ 3.1.1), a TEAM draw included since S7, or from a hydrated
+ * array its caller hands it. As a plan's ops are folded, the working view is the draw as it will
  * stand once they are written: what the settle passes' has-work predicates (S2) read, where v1 reads the draw it has
  * written. Nothing here writes the record.
  *
@@ -152,6 +152,7 @@ export function createWorkingView({
       structureIds: new Set([...affected].map((matchUpId) => topLevelOf.get(structureIdOf.get(matchUpId) ?? '') ?? '')),
       drawDefinition: workingDraw,
       tournamentRecord,
+      team: true,
       event,
     }).matchUps;
 

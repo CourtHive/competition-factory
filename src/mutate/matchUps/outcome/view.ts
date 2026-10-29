@@ -947,7 +947,7 @@ function drawToDecideOn(
 ): { inContextDrawMatchUps?: HydratedMatchUp[]; structural: boolean } {
   if (args.inContextDrawMatchUps)
     return { inContextDrawMatchUps: args.inContextDrawMatchUps, structural: !!args.structural };
-  const index = buildStructuralIndex({ tournamentRecord, drawDefinition, event });
+  const index = buildStructuralIndex({ tournamentRecord, drawDefinition, event, team: true });
   if (!index.unsupported) return { inContextDrawMatchUps: index.matchUps, structural: true };
   const hydrated = getAllDrawMatchUps({ tournamentRecord, inContext: true, drawDefinition, matchUpsMap, event });
   return { inContextDrawMatchUps: hydrated.matchUps, structural: false };

@@ -71,8 +71,9 @@ it('CONTROL: the counter counts. v1 refuses the same call, and hydrates to do it
   expect(v1.hydrations).toBeGreaterThan(0);
 });
 
-it('a TEAM draw, which the index does not cover yet, still hydrates its view: the known exception', () => {
+// S7: the index covers a TEAM draw, so the exception this pinned is gone
+it('under v2, a refusal on a TEAM draw is returned with no hydration too', () => {
   const team = refusedCall(OUTCOME_PIPELINE_V2, { drawSize: 4, eventType: TEAM_EVENT });
   expect(team.result.error).toBeDefined();
-  expect(team.hydrations).toBeGreaterThan(0);
+  expect(team.hydrations).toEqual(0);
 });

@@ -22,6 +22,7 @@ export const INDEX_FIELDS = [
   'roundNumber',
   'roundPosition',
   'collectionId',
+  'collectionPosition',
   'matchUpType',
   'matchUpFormat',
   'structureId',
@@ -79,6 +80,16 @@ export function compareIndex({
     for (const [field, a, b] of pairs)
       if (canonical(a) !== canonical(b))
         differences.push({ equal: false, field, matchUpId: matchUp.matchUpId, index: shown(a), hydrated: shown(b) });
+    // a TEAM dual's lines as it carries them (S7): the projection and the dual's tally read them there
+    if (matchUp.tieMatchUps)
+      differences.push(
+        ...compareIndex({
+          hydrated: matchUp.tieMatchUps as HydratedMatchUp[],
+          index: (entry?.tieMatchUps ?? []) as HydratedMatchUp[],
+        }).map((difference) =>
+          difference.equal ? difference : { ...difference, field: `tieMatchUps.${difference.field}` },
+        ),
+      );
   }
   return differences;
 }

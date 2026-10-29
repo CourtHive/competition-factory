@@ -19,12 +19,8 @@ import {
 
 // constants
 import { COMPLETED, DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
 import { LUCKY_DRAW, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
-import {
-  OUTCOME_PIPELINE_DIFFERENTIAL,
-  OUTCOME_PIPELINE_V1,
-  OUTCOME_PIPELINE_V2,
-} from '@Constants/outcomePipelineConstants';
 
 /**
  * WHAT ONE `setMatchUpStatus` ASKS OF THE DRAW, AND WHO ASKS — assessment gap G15.
@@ -437,7 +433,7 @@ it.skipIf(!enabled)(
  *   the lower number, and writes a rise only with `HYDRATIONS_ACCEPT_RISE=1` as well.
  * - The baseline is v1's. Under `v2` each call costs v1's count and nothing more: since S2 the view
  *   decides on the structural index (§ 3.1.1), not a hydration, and takes `setMatchUpStatus`'s map.
- *   The TEAM arm's view still hydrates (the index does not cover TEAM yet): v1 + 1 there. Under
+ *   Since S7 the index covers TEAM too, so the TEAM arm costs v1's count as well. Under
  *   `differential` (the checkpoint gate's mode) a call may cost one more: the read of the draw after
  *   v1 ran, shared by every check; the oracles' own hydrations are reported apart. A dual's view
  *   reuses its line's, so no arm needs a further exception. Each allowance is the measured cost, so
@@ -454,22 +450,16 @@ type ArmCeilings = { calls: number; hydrations: Ceiling; getMatchUpsMap: Ceiling
 
 /**
  * What each mode may add to each call, on top of v1's count: the measured cost, not a margin. Since S2 the view decides
- * on the structural index (§ 3.1.1) and takes no hydration, so `v2` adds none; a TEAM draw, which the index does not
- * cover yet, still costs its view one. `differential` adds the read of the draw after v1 ran.
+ * on the structural index (§ 3.1.1) and takes no hydration, so `v2` adds none, a TEAM draw included since S7 (the index
+ * builds a dual's lines through it). `differential` adds the read of the draw after v1 ran.
  */
-const viewHydrations = (arm: string) => (arm.startsWith('TEAM') ? 1 : 0);
 const GATED: {
   name: keyof Omit<ArmCeilings, 'calls'>;
   selector: Selector;
-  allowance: (mode: string, arm: string) => number;
+  allowance: (mode: string) => number;
 }[] = [
   {
-    allowance: (mode, arm) =>
-      ({
-        [OUTCOME_PIPELINE_V1]: 0,
-        [OUTCOME_PIPELINE_V2]: viewHydrations(arm),
-        [OUTCOME_PIPELINE_DIFFERENTIAL]: viewHydrations(arm) + 1,
-      })[mode] ?? 0,
+    allowance: (mode) => (mode === OUTCOME_PIPELINE_DIFFERENTIAL ? 1 : 0),
     name: 'hydrations',
     selector: hydration,
   },
@@ -511,7 +501,7 @@ it.skipIf(!gated)(
         const now = measured[arm];
         expect(now.calls, `${arm}: setMatchUpStatus calls`).toEqual(ceilings.calls);
         for (const { name, allowance: allowed } of GATED) {
-          const allowance = allowed(mode, arm);
+          const allowance = allowed(mode);
           const limit = {
             total: ceilings[name].total + allowance * ceilings.calls,
             worst: ceilings[name].worst + allowance,

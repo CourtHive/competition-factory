@@ -52,7 +52,8 @@ export function generateCollectionMatchUps({
   const getMatchUpId = (index) => {
     if (!isMock && !matchUp?.isMock) return uuids?.pop() ?? UUID();
     const collectionId = collectionDefinition?.collectionId;
-    return uuids?.pop() ?? `${matchUp?.matchUpId}-${collectionId}-TMU-${index + 1}`;
+    // numbered by collection position, so lines added to a collection do not reuse the ids of those already there
+    return uuids?.pop() ?? `${matchUp?.matchUpId}-${collectionId}-TMU-${collectionPositionOffset + index + 1}`;
   };
 
   return generateRange(0, numberToGenerate).map((index) => {
