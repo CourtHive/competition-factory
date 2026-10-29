@@ -15,8 +15,15 @@ import {
 } from '@Constants/errorConditionConstants';
 
 // Re-exported so any OTHER implementation of the notice buffer — competition-factory-server supplies
-// its own provider for per-request async isolation — calls THIS merge rather than copying it.
-export { preserveNoticeIdentity, NOTICE_IDENTITY_FIELDS } from './noticeIdentity';
+// its own provider for per-request async isolation — calls THIS merge, and THIS rule for which records a notice
+// modifies, rather than copying them.
+export {
+  preserveNoticeIdentity,
+  NOTICE_IDENTITY_FIELDS,
+  modifiedTournamentId,
+  UNNAMED_TOURNAMENT,
+  noticeModifies,
+} from './noticeIdentity';
 
 export type Notice = {
   topic: string;
