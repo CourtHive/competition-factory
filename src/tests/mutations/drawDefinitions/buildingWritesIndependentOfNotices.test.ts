@@ -11,7 +11,7 @@ import { ADD_MATCHUPS } from '@Constants/topicConstants';
 
 /**
  * What a write stores does not depend on whether it is announced, nor on who is listening (building-a-tournament.md
- * § 7, the two defects).
+ * § 8, the two defects).
  */
 describe('building writes do not depend on notices', () => {
   test('a draw replaced with suppressNotifications is stored', () => {
