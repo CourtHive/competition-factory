@@ -130,8 +130,10 @@ function policyAttachement(params: any, element: any): ResultType & { applied?: 
       if (!policy) continue;
       if (!isObject(policy)) return { error: INVALID_VALUES };
       const { policyName, ...values } = policy;
-      if (!values || !Object.keys(values).length || (policyName && !isString(policyName)))
-        return { error: INVALID_VALUES };
+      // an attribute whose value is undefined is not counted: it is not stored, so a policy holding only such
+      // attributes would read back as its name alone, which this check refuses
+      const defined = Object.values(values).some((value) => value !== undefined);
+      if (!defined || (policyName && !isString(policyName))) return { error: INVALID_VALUES };
       appliedPolicies[policyType] = params.policyDefinitions[policyType];
       applied.push(policyType);
     }
