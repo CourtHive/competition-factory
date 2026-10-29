@@ -681,7 +681,10 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   nor the event (`setMatchUpResult.announcesContext: false`), planned where nobody stands on the other side there and its
   feeder is still to be played. Otherwise outside a feed round, for links with no condition, free seats with no BYE beside them (a BYE there makes a
   double BYE: v1's), clean matchUps, and each matchUp touched once, but where the unfillable seat's matchUp is the one the first BYE
-  advanced a position into (FIRST_MATCH_LOSER_CONSOLATION): that position goes on again through the second BYE. The
+  advanced a position into (FIRST_MATCH_LOSER_CONSOLATION): that position goes on again through the second BYE; a
+  participant standing opposite the unfillable seat goes on through its BYE the same way (S6). A BYE's position sent on
+  into a next matchUp that is a BYE already, its other side the BYE alone, goes into it and on through it into a clean
+  matchUp beyond (S6), each announced as `advanceWinner` with no event. The
   unfillable seat takes its BYE behind a `FIRST_MATCHUP` link too, as v1 places it (`advanceByeToLoserMatchUp` asks no
   condition); this matchUp's own `FIRST_MATCHUP` feed stays v1's. v1 writes it through
   `modifyMatchUpScore`, not `setMatchUpState`, so it takes no `scoredTime`. Stay v1's: a double exit with a loser link beside a BYE or into a feed round; a carry past a BYE into anything but a clean matchUp; a
