@@ -682,7 +682,10 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   feeder is still to be played. Otherwise outside a feed round, for links with no condition, free seats with no BYE beside them (a BYE there makes a
   double BYE: v1's), clean matchUps, and each matchUp touched once, but where the unfillable seat's matchUp is the one the first BYE
   advanced a position into (FIRST_MATCH_LOSER_CONSOLATION): that position goes on again through the second BYE; a
-  participant standing opposite the unfillable seat goes on through its BYE the same way (S6). A BYE's position sent on
+  participant standing opposite the unfillable seat goes on through its BYE the same way (S6). Where the own seat's double BYE
+  has made the unfillable seat's matchUp a BYE, the position opposite gone on (FIRST_MATCH_LOSER_CONSOLATION), the
+  unfillable seat makes a double BYE there too: the matchUp stands, and the one its position went on into becomes a
+  BYE, announced with no event (S6). A BYE's position sent on
   into a next matchUp that is a BYE already, its other side the BYE alone, goes into it and on through it into a clean
   matchUp beyond (S6), each announced as `advanceWinner` with no event. The
   unfillable seat takes its BYE behind a `FIRST_MATCHUP` link too, as v1 places it (`advanceByeToLoserMatchUp` asks no
