@@ -1244,6 +1244,27 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(2, 'Main'), outcome: won(1), params: CARRIED }],
     },
   ],
+  [
+    'OLYMPIC (S6): a double walkover in a 32 draw whose BYEs meet a BYE a level down, a double BYE there too',
+    {
+      drawProfile: { drawSize: 32, participantsCount: 28, drawType: OLYMPIC },
+      steps: [{ target: R1(3, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'COMPASS (S6): a double walkover with one BYE in the draw, a double BYE a level down awaiting its other feeder',
+    {
+      drawProfile: { drawSize: 32, participantsCount: 31, drawType: COMPASS },
+      steps: [{ target: R1(5, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'OLYMPIC (S6): a double default in a 16 draw with one BYE, a double BYE a level down before its feeder plays',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 15, drawType: OLYMPIC },
+      steps: [{ target: R1(3, 'East'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
