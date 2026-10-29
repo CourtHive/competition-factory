@@ -47,7 +47,7 @@ export function addParticipants({
 
   const addedParticipants: Participant[] = [];
   if (participantsToAdd.length) {
-    // created only when something is added: an empty or refused call wrote an empty array
+    // created here, and removed again if the call is refused: a refused call wrote an empty array
     const hadParticipants = Array.isArray(tournamentRecord.participants);
     tournamentRecord.participants = tournamentParticipants;
     const countBefore = tournamentParticipants.length;
@@ -95,6 +95,8 @@ export function addParticipants({
 
     return definedAttributes(result);
   } else {
+    // an accepted call leaves the record holding participants, an empty array when it added none
+    tournamentRecord.participants ??= [];
     return {
       info: 'No new participants to add',
       addedCount: 0,

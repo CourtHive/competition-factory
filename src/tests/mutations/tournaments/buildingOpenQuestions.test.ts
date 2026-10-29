@@ -33,9 +33,8 @@ describe('a refused or empty call writes nothing', () => {
     expect(record().participants.length).toEqual(before);
   });
 
-  test('a refused or empty call creates no empty participants or events', () => {
+  test('a refused call creates no empty participants or events', () => {
     tournamentEngine.newTournamentRecord();
-    expect(tournamentEngine.addParticipants({ participants: [] }).success).toEqual(true);
     const invalid: any = { participantId: 'bad', participantType: 'NOT_A_TYPE', participantRole: COMPETITOR };
     expect(tournamentEngine.addParticipants({ participants: [individual('a'), invalid] }).error).toBeDefined();
     expect(record().participants).toBeUndefined();
@@ -43,6 +42,10 @@ describe('a refused or empty call writes nothing', () => {
     const refused: any = tournamentEngine.addEvent({ event: { eventName: 'E', entries: [{ participantId: 'a' }] } });
     expect(refused.error).toEqual(INVALID_VALUES);
     expect(record().events).toBeUndefined();
+
+    // an accepted call that adds no one leaves the record holding an empty participants array, as generators expect
+    expect(tournamentEngine.addParticipants({ participants: [] }).success).toEqual(true);
+    expect(record().participants).toEqual([]);
   });
 });
 

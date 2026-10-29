@@ -72,7 +72,8 @@ the call writes nothing:
 
 **What is written.**
 
-- `participants` is created on the record if absent, when a participant is added.
+- `participants` is created on the record if absent (an empty array when the call adds no one); a refused call
+  creates nothing.
 - A participant without a `participantId` is given one, before anything else, in input order.
 - Participants whose id was in the record when the call began are skipped (reported in `notAdded`). The rest are
   appended in this order: every INDIVIDUAL in input order, then every other participant in input order. Each is the
@@ -348,9 +349,9 @@ writes announce whether or not anything subscribes, so the factory stamp no long
 copies and no longer write the caller's objects, and `addVenue` creates `venues` only when it stores one.
 
 Resolved 2026-10-30, the four writes: `addParticipants` is all or nothing (it kept the participants appended before a
-refusal, unannounced); `addParticipants` and `addEvent` create no empty `participants` or `events` on a refused or
-empty call; `addEvent` mints the `eventId` before a named tieFormat's collection ids, which take `uuids` and, for a
-mock, the stored id (they were `undefined-COL-n`); a new flight's `drawEntries` is a copy of the draw's entries (it was
+refusal, unannounced); `addParticipants` and `addEvent` create no empty `participants` or `events` on a refused
+call; `addEvent` mints the `eventId` before a named tieFormat's collection ids, which take `uuids` and, for a mock,
+the stored id (they were `undefined-COL-n`); a new flight's `drawEntries` is a copy of the draw's entries (it was
 the same array); a numeric string `flightNumber` is read as its number (it became a string `drawOrder`).
 `addEventEntries` tested `isUngrouped(entryStage)`, a stage against statuses, which never held: the dead test is
 removed and the behaviour it never changed is stated (§4: every entry made with a `drawId` reaches the draw,
