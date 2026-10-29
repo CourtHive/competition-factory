@@ -431,6 +431,8 @@ function authoredCase({ caseId, note, useDeepDependencies = false, build, claims
 
   // the view built from the records alone, as the operation builds it, is the view the conflicts were judged from
   const records = overTheWire([tournamentRecord]);
+  // the factory stamp names the package version, so a committed case would change with every release
+  delete records[0].factory;
   const fromRecords = conflictsViewOf({ [tournamentRecord.tournamentId]: records[0] }, DAY, useDeepDependencies);
   if (JSON.stringify(fromRecords) !== JSON.stringify(data))
     throw new Error(`${caseId}: the view from the records differs`);

@@ -10,11 +10,6 @@
           "endDate": "2026-03-02",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.23.0",
-            "version": "7.23.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -964,11 +959,6 @@
           "endDate": "2026-03-02",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.23.0",
-            "version": "7.23.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -1861,11 +1851,6 @@
           "endDate": "2026-03-02",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.23.0",
-            "version": "7.23.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -2791,11 +2776,6 @@
           "endDate": "2026-03-02",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.23.0",
-            "version": "7.23.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -3725,11 +3705,6 @@
           "endDate": "2026-03-02",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.23.0",
-            "version": "7.23.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -4659,11 +4634,6 @@
           "endDate": "2026-03-02",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.23.0",
-            "version": "7.23.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -5600,11 +5570,6 @@
           "endDate": "2026-03-02",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.23.0",
-            "version": "7.23.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -6509,11 +6474,6 @@
           "endDate": "2026-03-02",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.23.0",
-            "version": "7.23.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -7710,11 +7670,6 @@
           "endDate": "2026-03-02",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.23.0",
-            "version": "7.23.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -8623,11 +8578,6 @@
           "endDate": "2026-03-02",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.23.0",
-            "version": "7.23.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -9536,11 +9486,6 @@
           "endDate": "2026-03-02",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.23.0",
-            "version": "7.23.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -10375,11 +10320,6 @@
           "endDate": "2026-03-02",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.23.0",
-            "version": "7.23.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -11363,11 +11303,6 @@
           "endDate": "2026-03-02",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.23.0",
-            "version": "7.23.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -12318,11 +12253,6 @@
           "endDate": "2026-03-02",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.23.0",
-            "version": "7.23.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -13280,11 +13210,6 @@
           "endDate": "2026-03-02",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.23.0",
-            "version": "7.23.0",
-            "timeStamp": 1772469600000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -14237,11 +14162,6 @@
           "endDate": "2026-03-02",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.23.0",
-            "version": "7.23.0",
-            "timeStamp": 1772404800000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -15198,11 +15118,6 @@
           "endDate": "2026-03-02",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.23.0",
-            "version": "7.23.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
@@ -17017,11 +16932,6 @@
           "endDate": "2026-03-02",
           "isMock": true,
           "tournamentId": "09731d85-6f11-4782-a403-0f23c348c0f8",
-          "factory": {
-            "createdVersion": "7.23.0",
-            "version": "7.23.0",
-            "timeStamp": 1772352000000
-          },
           "venues": [
             {
               "venueName": "Venue 1",
