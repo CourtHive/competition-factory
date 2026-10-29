@@ -81,6 +81,17 @@ export type OutcomePlan =
 const REMOVE_DIRECTED: Route = 'remove-directed';
 const DOUBLE_EXIT: Route = 'double-exit';
 const CLEAR_SCORE: Route = 'clear-score';
+const RESULT_TO_DOUBLE_EXIT: Route = 'completed-to-double-exit';
+
+/**
+ * The view of the draw as `ops` leave it, with the direction a route plans on it: the working view (§ 3.2) folded and
+ * read again, on the call's one hydration (the structural index re-indexed where the ops touched it). How a plan composes
+ * one step on another (S6: a result turned into a double exit plans the double exit on the draw its removal leaves).
+ */
+export type RebuildView = (
+  ops: OutcomeOp[],
+  route: Route,
+) => { view: OutcomeView; direction?: DirectionPlan } | undefined;
 const LOCAL_ROUTES = new Set<Route>(['clear', CLEAR_SCORE, REMOVE_DIRECTED, 'only-score']);
 const LOCAL_STATUSES = new Set<string | undefined>([IN_PROGRESS, SUSPENDED, AWAITING_RESULT, INCOMPLETE, TO_BE_PLAYED]);
 const SINGLE_EXITS = new Set<string | undefined>([WALKOVER, DEFAULTED, RETIRED]);
@@ -2070,6 +2081,65 @@ function structureStamps(ops: OutcomeOp[], structureId: string): OutcomeOp[] {
  * and `planDirection` already decided; this re-states a complete one as ops and adds the stamps (F2 (i): the matchUp,
  * its structure and the draw, each once).
  */
+/**
+ * S6: a decided result turned into a double exit (the `completed-to-double-exit` route). v1 takes back what the result
+ * directed (`removeDirectedParticipants`: the winner's position out of the next matchUp, the loser out of the seat their
+ * link fed), then writes the double exit and advances it as a fresh one. So the plan is S4's removal, planned on the draw
+ * as the call found it (`resultRemovalReason`), then S5's double exit, planned on the draw as the removal leaves it: the
+ * removal and the matchUp left with no result are folded into the working view, which is read again (`rebuild`), and the
+ * double exit is planned there as on a matchUp holding no result. The write is the route's own: a DOUBLE_WALKOVER blanks
+ * the score, a DOUBLE_DEFAULT keeps it (CA, 2026-10-02).
+ */
+function resultToDoubleExit(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
+  const { view, request, rebuild } = args;
+  const removing = resultRemovalReason(view);
+  if (removing) return { abstain: removing };
+  const removal = resultRemovalOps(view, request.matchUpStatus);
+  const undecided: OutcomeOp = {
+    op: 'setMatchUpResult',
+    matchUpId: request.matchUpId as string,
+    matchUpStatus: TO_BE_PLAYED,
+    stampsScoredTime: false,
+  };
+  const after = rebuild?.([...removal, undecided], DOUBLE_EXIT);
+  if (!after) return { abstain: 'exit' };
+  const produced = planOps({ ...args, view: after.view, direction: after.direction, route: DOUBLE_EXIT });
+  if (!produced.ops) return produced;
+  return { ops: [...removal, ...produced.ops], shape: produced.shape };
+}
+
+/**
+ * The result's direction taken back as S4 takes back a cleared result (`removalReason`): the winner alone in a clean
+ * next matchUp of the same structure, the loser, if a link took them, on the seat it fed in a matchUp they have not
+ * played. Not a result in a group (its tally), a WIN_RATIO structure, nor one with side provenance or a carried exit.
+ */
+function resultRemovalReason(view: OutcomeView): AbstainReason | undefined {
+  if (!view.existing.winningSide) return 'exit';
+  if (view.group || view.draw.tallied) return 'tallied';
+  if (view.draw.winRatio) return 'link';
+  if (view.existing.hasSideExitProvenance || view.existing.carriedExit) return 'provenance';
+  return removalReason(view);
+}
+
+/** S4's removal of the stored result's direction, whatever the route: the winner's position, then the loser's seat */
+function resultRemovalOps(view: OutcomeView, matchUpStatus?: MatchUpStatusUnion): OutcomeOp[] {
+  const { targets, existing } = view;
+  const position = targets.sideDrawPositions[existing.winningSide as 1 | 2];
+  const winner: OutcomeOp[] =
+    position && targets.winner && targets.winnerMatchUpId
+      ? [
+          {
+            op: 'setMatchUpDrawPositions',
+            matchUpId: targets.winnerMatchUpId,
+            drawPositions: targets.winner.drawPositions.filter((candidate) => candidate !== position),
+            removedDrawPosition: position,
+          },
+          { op: 'stampUpdatedAt', entity: 'matchUp', id: targets.winnerMatchUpId },
+        ]
+      : [];
+  return [...winner, ...removedLoserOps(view, matchUpStatus)];
+}
+
 /** a plan is folded into the record; a draw held outside it, or a call with no captured instant, cannot be compared */
 function recordReason({
   tournamentRecord,
@@ -2094,7 +2164,13 @@ export function planOutcome(args: {
   write?: MatchUpWrite;
   view: OutcomeView;
   route?: Route;
+  rebuild?: RebuildView;
 }): OutcomePlan {
+  return args.route === RESULT_TO_DOUBLE_EXIT ? resultToDoubleExit(args) : planOps(args);
+}
+
+/** the call's plan as ops, or the reason it is v1's */
+function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
   const reason = abstainReason(args);
   if (reason) return { abstain: reason };
   const { request, view, drawDefinition } = args;

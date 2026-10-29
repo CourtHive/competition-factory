@@ -1,11 +1,11 @@
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
+import { planOutcome, type OutcomePlan, type PlanShape, type RebuildView } from './plan';
 import { addedNotices, compareNotices, compareShadow, plannedNotices } from './shadow';
 import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
 import { carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { PREDICTED_CALL, predictSettleWork, type SettleSite } from './settleWork';
 import { addGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
-import { planOutcome, type OutcomePlan, type PlanShape } from './plan';
 import { convergence, isRelabel, planDirection } from './direction';
 import { compareIndex, type IndexComparison } from './indexOracle';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
@@ -67,6 +67,7 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal) {
   const allowed = planOutcome({
     tournamentRecord: args.tournamentRecord,
     drawDefinition: args.drawDefinition,
+    rebuild: rebuildView(args, view, planned),
     request: planned,
     write: plan,
     direction,
@@ -78,6 +79,34 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal) {
   const settleWork = folded && 'settle' in folded ? folded.settle : [];
   const outcome: OutcomePlan = settleWork.length ? { abstain: 'settle' } : allowed;
   return { planned, route, plan, direction, folded, outcome };
+}
+
+/**
+ * A plan's composition point (`RebuildView`): the call's view with `ops` folded into a working view (§ 3.2), read again as
+ * an outcome view, and the direction the route plans there. No hydration: the working view re-derives what the ops
+ * touched from the call's own index (or projection), and the view is built on it with the call's map.
+ */
+function rebuildView(args: BuildViewArgs, view: OutcomeView, request: OutcomeRequest): RebuildView {
+  return (ops, route) => {
+    if (!args.drawDefinition || !args.matchUpsMap || !view.inContextDrawMatchUps) return undefined;
+    const working = createWorkingView({
+      inContextDrawMatchUps: view.inContextDrawMatchUps,
+      structural: view.structural,
+      tournamentRecord: args.tournamentRecord,
+      drawDefinition: args.drawDefinition,
+      matchUpsMap: args.matchUpsMap,
+      event: args.event,
+    });
+    if (working.apply(ops).error) return undefined;
+    const rebuilt = buildOutcomeView({
+      ...args,
+      inContextDrawMatchUps: working.inContextDrawMatchUps,
+      drawDefinition: working.drawDefinition,
+      matchUpsMap: working.matchUpsMap,
+      structural: view.structural,
+    });
+    return { view: rebuilt, direction: planDirection(request, rebuilt, route) };
+  };
 }
 
 /**

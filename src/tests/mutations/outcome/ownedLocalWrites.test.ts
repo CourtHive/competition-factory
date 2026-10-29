@@ -136,16 +136,24 @@ describe('under v2, a local write is v2s, and leaves exactly what v1 leaves', ()
   });
 });
 
-describe('what v2 does not own goes to v1, whole', () => {
-  it('an exit corrected to a double exit: v1 writes the correction (the exit and a double exit are v2s, S5)', () => {
+describe('a result turned into a double exit is v2s (S6)', () => {
+  it('an exit corrected to a double exit: v2 writes the correction, and leaves what v1 leaves', () => {
     const walkover = { matchUpStatus: WALKOVER, winningSide: 1 };
     const doubleWalkover = { matchUpStatus: DOUBLE_WALKOVER };
-    const v2 = play(OUTCOME_PIPELINE_V2, [() => ({ outcome: walkover }), () => ({ outcome: doubleWalkover })]);
+    const steps = [() => ({ outcome: walkover }), () => ({ outcome: doubleWalkover })];
+    const v1 = play(OUTCOME_PIPELINE_V1, steps);
+    const v2 = play(OUTCOME_PIPELINE_V2, steps);
+    expect(v1.v1Writes).toEqual(2);
     expect(v2.results.every((result: any) => result.success)).toEqual(true);
-    // the walkover is v2's; the correction (`completed-to-double-exit`) is v1's
-    expect(v2.v1Writes).toEqual(1);
+    // the walkover is v2's (S5) and so is the correction (`completed-to-double-exit`)
+    expect(v2.v1Writes).toEqual(0);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+    expect(v2.results).toEqual(v1.results);
   });
+});
 
+describe('what v2 does not own goes to v1, whole', () => {
   it('BRIDGE: v1 writes `scoredTime` as a timeItem too, which the reducer does not, so v2 abstains', () => {
     const v1 = play(OUTCOME_PIPELINE_V1, SHAPES[0][1], BRIDGE);
     const v2 = play(OUTCOME_PIPELINE_V2, SHAPES[0][1], BRIDGE);
@@ -172,4 +180,24 @@ it('an owned write takes no hydration when no one subscribes to the in-context m
   hydrations.count = 0;
   tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId, outcome: inProgress('4-2') });
   expect(hydrations.count).toBeGreaterThan(0);
+});
+
+it('a result turned into a double exit takes no hydration: the double exit is planned on the working view (S6)', () => {
+  setOutcomePipeline(OUTCOME_PIPELINE_V1);
+  mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8, drawId: 'd' }], nonRandom: 1, setState: true });
+  setSubscriptions({ subscriptions: { [MODIFY_MATCHUP]: () => undefined } });
+  const { matchUpId } = tournamentEngine.allDrawMatchUps({ drawId: 'd', matchUpFilters: { roundNumbers: [1] } })
+    .matchUps[0];
+  tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId, outcome: { matchUpStatus: WALKOVER, winningSide: 1 } });
+  setOutcomePipeline(OUTCOME_PIPELINE_V2);
+  v1Writes.count = 0;
+  hydrations.count = 0;
+  const result: any = tournamentEngine.setMatchUpStatus({
+    outcome: { matchUpStatus: DOUBLE_WALKOVER },
+    drawId: 'd',
+    matchUpId,
+  });
+  expect(result.success).toEqual(true);
+  expect(v1Writes.count).toEqual(0);
+  expect(hydrations.count).toEqual(0);
 });
