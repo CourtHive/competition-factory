@@ -665,7 +665,10 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   (the BYE opposite advanced it), so the matchUp there becomes a BYE, announced with its event, and the one other position
   it holds (a fed seat nobody has reached) goes on into a clean matchUp, as the winner standing in the produced exit's
   matchUp, delivered by that BYE, is awarded the exit with the BYE recorded as their origin; where it holds no other
-  position (its other feeder still to be played) it becomes a BYE and nothing goes on yet. Each level is a first-round
+  position (its other feeder still to be played) it becomes a BYE and nothing goes on yet. A double BYE in a final goes
+  nowhere: v1 writes that matchUp, a BYE already, as a BYE again (announced with no event at a deeper level). Where the
+  next matchUp is a BYE the position had passed through (a BYE opposite it, outside a feed round), the double BYE goes
+  on from there as from the first (S6). Each level is a first-round
   seat, free behind no condition, in a clean matchUp: alone, or opposite a BYE, a double BYE there too, planned as the
   first one is but announced with no event (S6), the walk bounded by `SETTLE_PASS_LIMITS.exitLevels` (F9). Under `doubleExitPropagateBye: false`
   the loser seat shows the produced exit instead: the loser matchUp is written the double exit's flavour awarded to the
