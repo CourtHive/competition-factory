@@ -13,6 +13,7 @@ import fs from 'node:fs';
 
 // constants
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
+import { LAVER_CUP } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
@@ -35,7 +36,11 @@ import {
  * What one `setMatchUpStatus` costs as a draw grows, per pipeline mode: every matchUp completed `6-1 6-1`, timing
  * only that call, the method of `Mentat/reports/2026-10-18-completion-cost-profile.md` (which ran in a throwaway
  * worktree). G4's draws: SINGLE_ELIMINATION 32/64/128/256, FEED_IN_CHAMPIONSHIP 64, ROUND_ROBIN 32,
- * DOUBLE_ELIMINATION 64, COMPASS 64 and TEAM SINGLE_ELIMINATION 16 (lines scored, with lineups).
+ * DOUBLE_ELIMINATION 64, COMPASS 64 and TEAM SINGLE_ELIMINATION 16/32/64 (lines scored, with lineups), plus TEAM SE 16
+ * at a larger tieFormat (LAVER_CUP: 12 lines in 6 collections, against the default's 9 in 2).
+ * - TEAM rows (S7, plan § 6 S7) also split each mode's calls into the line results that decide their dual and those
+ *   that do not, since S7's target is every TEAM call at or below v1 per call. The split is read after each call,
+ *   outside the timed window and the hydration count.
  *
  * - Single process; the modes ALTERNATE within each repeat, after one warm-up, so drift falls on all modes alike.
  *   The first run of a session is ~10% slower (the profile), which is what the warm-up absorbs.
@@ -83,6 +88,8 @@ vi.mock('@Query/matchUps/drawMatchUps', async (importOriginal) => {
 type Config = {
   /** the progression policy's qualifier flags; none given is the default policy (all three off) */
   qualifying?: { policy?: Record<string, boolean> };
+  /** a named tieFormat for a TEAM draw; none is the mock default (STANDARD: 6 singles, 3 doubles) */
+  tieFormatName?: string;
   eventType?: string;
   drawType: string;
   drawSize: number;
@@ -95,7 +102,20 @@ const CONFIGS: Config[] = [
   { label: 'RR 32', drawType: ROUND_ROBIN, drawSize: 32 },
   { label: 'DE 64', drawType: DOUBLE_ELIMINATION, drawSize: 64 },
   { label: 'COMPASS 64', drawType: COMPASS, drawSize: 64 },
-  { label: 'TEAM SE 16', drawType: SINGLE_ELIMINATION, drawSize: 16, eventType: TEAM },
+  ...[16, 32, 64].map((drawSize) => ({
+    label: `TEAM SE ${drawSize}`,
+    drawType: SINGLE_ELIMINATION,
+    eventType: TEAM,
+    drawSize,
+  })),
+  // more lines per dual; the USTA formats are not used: default lineups leave 20-40% of their lines refused
+  {
+    label: 'TEAM SE 16, LAVER_CUP',
+    drawType: SINGLE_ELIMINATION,
+    drawSize: 16,
+    eventType: TEAM,
+    tieFormatName: LAVER_CUP,
+  },
   // its first-match loser link sends a loser on only from their first match played (not a plain LOSER link)
   { label: 'FMLC 64', drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 64 },
   // setMatchUpStatus across the qualifying link, with the policy's flags off (the default) and on
@@ -107,7 +127,9 @@ const { outcome: PLAYED } = generateOutcomeFromScoreString({ scoreString: '6-1 6
 // the score string is read from the winner's side
 const { outcome: FLIPPED } = generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 2 });
 
-type Run = { calls: number; ms: number[]; hydrations: number[]; refused: number };
+/** a TEAM line result that decided its dual, one that did not, or any other call */
+type Kind = 'decides' | 'line' | 'other';
+type Run = { calls: number; ms: number[]; hydrations: number[]; refused: number; kinds: Kind[] };
 
 /** generate the draw and complete it, timing every `setMatchUpStatus`; the harness's own reads are not counted */
 function complete(config: Config, mode: string): Run {
@@ -126,6 +148,7 @@ function complete(config: Config, mode: string): Run {
     drawProfiles: [
       {
         ...(config.eventType ? { eventType: config.eventType } : {}),
+        ...(config.tieFormatName ? { tieFormatName: config.tieFormatName } : {}),
         ...qualifying,
         drawType: config.drawType,
         drawSize: config.drawSize,
@@ -143,8 +166,11 @@ function complete(config: Config, mode: string): Run {
       true,
     );
   setOutcomePipeline(mode as any);
-  const run: Run = { calls: 0, ms: [], hydrations: [], refused: 0 };
-  const enter = (matchUpId: string, outcome: any) => {
+  const run: Run = { calls: 0, ms: [], hydrations: [], refused: 0, kinds: [] };
+  const dualDecided = (tieId?: string) =>
+    !!tieId && !!getDrawMatchUps(drawId).find((matchUp: any) => matchUp.matchUpId === tieId)?.winningSide;
+  const enter = (matchUpId: string, outcome: any, tieId?: string) => {
+    const decidedBefore = dualDecided(tieId);
     const before = hydrations.count;
     const started = performance.now();
     const result: any = tournamentEngine.setMatchUpStatus({ matchUpId, outcome, drawId });
@@ -152,6 +178,10 @@ function complete(config: Config, mode: string): Run {
     run.hydrations.push(hydrations.count - before);
     run.calls += 1;
     if (!result.success) run.refused += 1;
+    // read after the timed call, so neither the time nor the hydration count includes it
+    let kind: Kind = 'other';
+    if (tieId) kind = !decidedBefore && dualDecided(tieId) ? 'decides' : 'line';
+    run.kinds.push(kind);
     return !!result.success;
   };
   const playOut = (inScope: (matchUp: any) => boolean) => {
@@ -159,7 +189,7 @@ function complete(config: Config, mode: string): Run {
     for (let guard = 0; guard < 5000; guard++) {
       const target = firstPlayable(getDrawMatchUps(drawId).filter(inScope), skip);
       if (!target) break;
-      if (!enter(target.matchUpId, PLAYED)) skip.add(target.matchUpId);
+      if (!enter(target.matchUpId, PLAYED, target.matchUpTieId)) skip.add(target.matchUpId);
     }
   };
   if (config.qualifying) {
@@ -206,6 +236,43 @@ function copyCost(samples = 5) {
   };
 }
 
+/** each kind's calls, ms per call (all repeats) and hydrations per call (the first repeat, as the row does) */
+function splitByKind(runs: Run[]) {
+  const kinds: Kind[] = ['decides', 'line'];
+  return Object.fromEntries(
+    kinds.map((kind) => {
+      const pick = (run: Run, values: number[]) => values.filter((_, index) => run.kinds[index] === kind);
+      return [
+        kind,
+        {
+          calls: runs[0].kinds.filter((each) => each === kind).length,
+          msPerCall: mean(runs.map((run) => mean(pick(run, run.ms)))),
+          hydrationsPerCall: mean(pick(runs[0], runs[0].hydrations)),
+        },
+      ];
+    }),
+  );
+}
+
+/** S7's TEAM rows: the line results that decide their dual against those that do not, per mode */
+function teamSplitTable(rows: any[]): string[] {
+  const team = rows.filter((row) => row[OUTCOME_PIPELINE_V1].split);
+  if (!team.length) return [];
+  const cells = (row: any, kind: string) => {
+    const [v1, v2, diff] = MODES.map((mode) => row[mode].split[kind]);
+    const ratio = v1.msPerCall ? `${fixed((100 * (v2.msPerCall - v1.msPerCall)) / v1.msPerCall, 0)}%` : '-';
+    return `| ${row.config} | ${kind} | ${v1.calls} | ${fixed(v1.msPerCall)} | ${fixed(v2.msPerCall)} | ${fixed(diff.msPerCall)} | ${ratio} | ${fixed(v1.hydrationsPerCall, 1)} | ${fixed(v2.hydrationsPerCall, 1)} |`;
+  };
+  return [
+    '## TEAM: line results that decide the dual, and those that do not',
+    '',
+    '| draw | lines | calls | v1 ms/call | v2 ms/call | differential ms/call | v2 vs v1 | v1 hydrations/call | v2 |',
+    '|---|---|---:|---:|---:|---:|---:|---:|---:|',
+    ...team.flatMap((row) => [cells(row, 'decides'), cells(row, 'line')]),
+    '',
+  ];
+}
+
 const mean = (values: number[]) => (values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0);
 const fixed = (value: number, digits = 2) => value.toFixed(digits);
 
@@ -217,6 +284,18 @@ it('the control: the harness times every call and sees the hydrations', () => {
   expect(run.hydrations.every((count) => count > 0)).toEqual(true);
   const copies = copyCost(1);
   expect(copies.clone).toBeGreaterThan(0);
+});
+
+it('the control: a TEAM draw splits its calls into one deciding line per dual and the rest', () => {
+  const run = complete(
+    { label: 'TEAM SE 4', drawType: SINGLE_ELIMINATION, drawSize: 4, eventType: TEAM },
+    OUTCOME_PIPELINE_V1,
+  );
+  // three duals of nine lines, every line played: each dual decided once, by the line that reached its value goal
+  expect(run.calls).toEqual(27);
+  expect(run.refused).toEqual(0);
+  expect(run.kinds.filter((kind) => kind === 'decides')).toHaveLength(3);
+  expect(run.kinds.filter((kind) => kind === 'line')).toHaveLength(24);
 });
 
 it.skipIf(process.env.COST_CURVE !== '1')(
@@ -241,6 +320,7 @@ it.skipIf(process.env.COST_CURVE !== '1')(
           refused: runs[0].refused,
           msPerCall: mean(runs.map((run) => mean(run.ms))),
           hydrationsPerCall: mean(runs[0].hydrations),
+          ...(config.eventType === TEAM ? { split: splitByKind(runs) } : {}),
         };
       }
       rows.push(row);
@@ -258,6 +338,7 @@ it.skipIf(process.env.COST_CURVE !== '1')(
         return `| ${row.config} | ${v1.calls} | ${fixed(v1.msPerCall)} | ${fixed(v2.msPerCall)} | ${fixed(diff.msPerCall)} | ${fixed(v1.hydrationsPerCall, 1)} | ${fixed(v2.hydrationsPerCall, 1)} | ${fixed(diff.hydrationsPerCall, 1)} | ${fixed(row.copies.clone)} | ${fixed(row.copies.capture)} | ${fixed(row.copies.compare)} | ${fixed((100 * added) / v1.msPerCall, 0)}% |`;
       }),
       '',
+      ...teamSplitTable(rows),
     ].join('\n');
     process.stdout.write(lines);
     if (process.env.OUT) {
