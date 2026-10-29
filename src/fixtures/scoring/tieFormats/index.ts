@@ -7,6 +7,7 @@ import DOMINANT_DUO_MIXED from './DOMINANT_DUO_MIXED.json';
 import COLLEGE_DEFAULT from './COLLEGE_DEFAULT.json';
 import USTA_BREWER_CUP from './USTA_BREWER_CUP.json';
 import USTA_OZAKI_CUP from './USTA_OZAKI_CUP.json';
+import INTENNSE_2026 from './INTENNSE_2026.json';
 import COLLEGE_JUCO from './COLLEGE_JUCO.json';
 import DOMINANT_DUO from './DOMINANT_DUO.json';
 import USTA_COLLEGE from './USTA_COLLEGE.json';
@@ -23,6 +24,7 @@ export const tieFormats = {
   COLLEGE_JUCO,
   DOMINANT_DUO,
   DOMINANT_DUO_MIXED,
+  INTENNSE_2026,
   LAVER_CUP,
   TEAM_DOUBLES_3_AGGREGATION,
   USTA_BREWER_CUP,

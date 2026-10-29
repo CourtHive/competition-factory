@@ -95,7 +95,8 @@ describe('addDrawEntries coverage', () => {
       suppressDuplicateEntries: true,
     });
     expect(result.success).toBe(true);
-    // p1 was already added, should not be duplicated
+    // p1 was already added: it is reported in duplicateEntries and not entered again
+    expect(drawDefinition.entries?.filter(({ participantId }) => participantId === 'p1').length).toBe(1);
   });
 
   it('returns DUPLICATE_ENTRY error when suppressDuplicateEntries=false', () => {
