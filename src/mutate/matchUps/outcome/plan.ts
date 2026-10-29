@@ -1884,7 +1884,10 @@ function unwoundPath(
   const structureId = source?.structureId;
   if (!source || !structureId) return undefined;
   const linksOut = (drawDefinition?.links ?? []).filter((link) => link.source?.structureId === structureId);
-  if (linksOut.some((link) => link.linkType !== LOSER || link.linkCondition)) return undefined;
+  // a FIRST_MATCHUP loser link too: the double exit placed its BYE behind it regardless (`advanceByeToLoserMatchUp`)
+  const plain = (link: (typeof linksOut)[number]) =>
+    link.linkType === LOSER && (!link.linkCondition || link.linkCondition === FIRST_MATCHUP);
+  if (!linksOut.every(plain)) return undefined;
   if (linksOut.length && !view.draw.doubleExitPropagatesBye) return undefined;
   const target = producedTarget(view, source, source.matchUpStatus as MatchUpStatusUnion);
   if (!target || target.feed) return undefined;
@@ -1955,7 +1958,9 @@ function awardedReason(view: OutcomeView, source: HydratedMatchUp, target: Produ
 function unwoundSeatOps(view: OutcomeView, loserSeat: WinnerLoserSeat, placedBye: boolean): OutcomeOp[] | undefined {
   const { structureId, drawPosition, matchUpId, seat } = loserSeat;
   const withdraw: OutcomeOp = { op: 'withdrawBye', structureId, drawPosition };
-  if (!seat || loserSeat.linkCondition) return undefined;
+  // a BYE this double exit placed went in behind a FIRST_MATCHUP link too, and comes out the same way
+  const conditioned = loserSeat.linkCondition && !(placedBye && loserSeat.linkCondition === FIRST_MATCHUP);
+  if (!seat || conditioned) return undefined;
   if (!placedBye) return seat.free && loserSeat.matchUpStatus !== BYE ? [withdraw] : undefined;
   const byeMatchUp = indexed(view, matchUpId);
   if (!seat.bye || !seat.byeFromPropagation || seat.opponentBye || !byeMatchUp) return undefined;
