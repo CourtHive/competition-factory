@@ -78,7 +78,8 @@ export function compareShadow({
 export function plannedNotices({ ops, matchUpId }: { ops: OutcomeOp[]; matchUpId: string }): Set<string> {
   const notices = new Set<string>([`${UPDATE_INCONTEXT_MATCHUP}|${matchUpId}`]);
   for (const op of ops) {
-    if (op.op === 'assignPosition' || op.op === 'assignBye')
+    // a placement, and a seat an unwind visits (`withdrawBye`): `apply.ts` announces each structure's assignments
+    if (op.op === 'assignPosition' || op.op === 'assignBye' || op.op === 'withdrawBye')
       notices.add(`${MODIFY_POSITION_ASSIGNMENTS}|${op.structureId}`);
     if (op.op !== 'stampUpdatedAt') continue;
     if (op.entity === 'matchUp') notices.add(`${MODIFY_MATCHUP}|${op.id}`);

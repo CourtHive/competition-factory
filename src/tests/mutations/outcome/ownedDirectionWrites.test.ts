@@ -9,10 +9,14 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { setClock } from '@Tools/clock';
 
 // constants
-import { OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2 } from '@Constants/outcomePipelineConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
+import {
+  OUTCOME_PIPELINE_DIFFERENTIAL,
+  OUTCOME_PIPELINE_V1,
+  OUTCOME_PIPELINE_V2,
+} from '@Constants/outcomePipelineConstants';
 import {
   COMPLETED,
   DEFAULTED,
@@ -1191,6 +1195,30 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
     },
   ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6): a played result relabelled a walkover, the carry landing on its loser where they stand',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(1, 'Main'), outcome: won(1) }],
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6): a played result relabelled a default for the same winner, the default carried',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(3, 'Main'), outcome: won(2) }],
+      steps: [{ target: R1(3, 'Main'), outcome: exited(DEFAULTED, 2), params: CARRIED }],
+    },
+  ],
+  [
+    'CURTIS_CONSOLATION (S6): a played result relabelled a walkover, its loser carrying it in Consolation 1',
+    {
+      drawProfile: { drawSize: 16, drawType: CURTIS_CONSOLATION },
+      setup: [{ target: R1(2, 'Main'), outcome: won(1) }],
+      steps: [{ target: R1(2, 'Main'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
@@ -1215,9 +1243,13 @@ function findTarget(target: Target): string {
 }
 
 /** the steps from a fresh record, every topic subscribed and the clock fixed */
-function play(mode: OutcomePipelineMode, { drawProfile, steps, setup = [], policyDefinitions }: Scenario) {
+function play(
+  mode: OutcomePipelineMode,
+  { drawProfile, steps, setup = [], policyDefinitions }: Scenario,
+  { realClock }: { realClock?: boolean } = {},
+) {
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
-  setClock('2026-10-25T00:00:00.000Z');
+  setClock(realClock ? undefined : '2026-10-25T00:00:00.000Z');
   setSubscriptions({ subscriptions: {} });
   mocksEngine.generateTournamentRecord({
     drawProfiles: [{ ...drawProfile, drawId: 'd' }],
@@ -1238,7 +1270,9 @@ function play(mode: OutcomePipelineMode, { drawProfile, steps, setup = [], polic
   const notices: string[] = [];
   setSubscriptions({
     subscriptions: Object.fromEntries(
-      TOPICS.map((topic) => [
+      // the differential plans the stored topics, not the in-context one (a notice v2 defers to its apply), and compares
+      // what is subscribed: the real-clock arm asks only what it can compare
+      (realClock ? TOPICS.filter((topic) => topic !== UPDATE_INCONTEXT_MATCHUP) : TOPICS).map((topic) => [
         topic,
         (payloads: any[]) => payloads.forEach((p) => notices.push(`${topic} ${canonicalJson(p)}`)),
       ]),
@@ -1249,7 +1283,7 @@ function play(mode: OutcomePipelineMode, { drawProfile, steps, setup = [], polic
   setOutcomePipeline(mode);
   v1Writes.count = 0;
   const results = steps.map(({ outcome, params }, i) => {
-    setClock(`2026-10-25T00:0${i + 1}:00.000Z`);
+    if (!realClock) setClock(`2026-10-25T00:0${i + 1}:00.000Z`);
     return tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId: matchUpIds[i], outcome, ...params });
   });
   return {
@@ -1273,6 +1307,16 @@ describe('under v2, the first direction is v2s, and leaves exactly what v1 leave
     expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
     expect(v2.notices).toEqual(v1.notices);
+  });
+});
+
+// The fixed clock gives every stamp one value, so a stamp the plan's ops leave out can still read equal: v2's apply
+// announces the matchUp, and the notice stamps its structure. Under `differential` the shadow applies the ops alone,
+// against v1's record, at real instants: a missing stamp op diverges there (S6 slice 10 met one)
+describe('under differential with a real clock, every owned scenario compares whole', () => {
+  it.each(SCENARIOS)('%s', (_label, scenario) => {
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario, { realClock: true });
+    expect(compared.results.every((result: any) => result.success)).toEqual(true);
   });
 });
 
@@ -1373,11 +1417,11 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     expect(v2.notices).toEqual(v1.notices);
   });
 
-  it('S6: a played result relabelled a walkover that its loser would now carry across their link is v1s', () => {
+  it('S6: a played result relabelled a walkover for the other side, its new loser carrying it, is v1s', () => {
     const scenario: Scenario = {
       drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
       setup: [{ target: R1(1, 'Main'), outcome: won(1) }],
-      steps: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(2), params: CARRIED }],
     };
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
