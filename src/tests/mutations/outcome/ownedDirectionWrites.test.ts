@@ -1301,6 +1301,20 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(6, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
     },
   ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION (S6): a double walkover whose two Consolation BYEs meet, a double BYE in round 2',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      steps: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION (S6): the same for a double default in a 16 draw with four BYEs',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 12, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      steps: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
