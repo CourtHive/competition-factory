@@ -43,6 +43,18 @@ An id a write mints (a participant's, an event's, a TEAM collection's) is a v4-s
 source: a seeded call (`nonRandom`) draws from a stream derived from its seed, otherwise from the engine's configured
 source. A client that supplies its ids makes no draws. Every call in the corpus supplies them.
 
+**The mint.** An id takes four draws `r0..r3` from the source (`setRandomSource(seed)` installs mulberry32 seeded
+with `seed`). Each is scaled and truncated to a 32-bit word, `di = trunc(ri × 0xffffffff)`, and the id is the words'
+bytes, least significant first, as two lowercase hex digits each, in the 8-4-4-4-12 form:
+
+```text
+d0[0] d0[1] d0[2] d0[3] - d1[0] d1[1] - (d1[2] & 0x0f | 0x40) d1[3] - (d2[0] & 0x3f | 0x80) d2[1] - d2[2] d2[3] d3[0] d3[1] d3[2] d3[3]
+```
+
+where `dn[k]` is byte `k` of `dn` (`(dn >> 8k) & 0xff`): the version nibble is 4 and the variant bits are `10`. With a
+prefix, the id is `` `${prefix}_${id without hyphens}` ``. A source that returns a value outside `[0, 1)`, or that
+mints an id it minted among its recent ids, throws (`DEGENERATE_RANDOM_SOURCE`).
+
 ### 1.3 Params
 
 The engine copies the params object shallowly, then resolves `drawId` to the stored draw and its event, and `eventId`
