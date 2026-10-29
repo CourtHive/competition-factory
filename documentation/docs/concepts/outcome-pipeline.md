@@ -664,8 +664,10 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   makes a double BYE: that matchUp, a BYE already, is left as it stands; the seat's position already stands a round on
   (the BYE opposite advanced it), so the matchUp there becomes a BYE, announced with its event, and the one other position
   it holds (a fed seat nobody has reached) goes on into a clean matchUp, as the winner standing in the produced exit's
-  matchUp, delivered by that BYE, is awarded the exit with the BYE recorded as their origin; each level a first-round seat,
-  free and alone behind no condition, in a clean matchUp, the walk bounded by `SETTLE_PASS_LIMITS.exitLevels` (F9). Under `doubleExitPropagateBye: false`
+  matchUp, delivered by that BYE, is awarded the exit with the BYE recorded as their origin; where it holds no other
+  position (its other feeder still to be played) it becomes a BYE and nothing goes on yet. Each level is a first-round
+  seat, free behind no condition, in a clean matchUp: alone, or opposite a BYE, a double BYE there too, planned as the
+  first one is but announced with no event (S6), the walk bounded by `SETTLE_PASS_LIMITS.exitLevels` (F9). Under `doubleExitPropagateBye: false`
   the loser seat shows the produced exit instead: the loser matchUp is written the double exit's flavour awarded to the
   side opposite the seat, its codes `[]`, a `WALKOVER`'s score blanked and the seat's side given the
   origin (`conditionallyAdvanceDrawPosition`), with no `scoredTime`; its structure is stamped, and the position

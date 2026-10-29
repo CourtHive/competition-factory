@@ -978,13 +978,14 @@ function byeChain(
 ): ByeChain | undefined {
   const planned: ByeChain = { assigns: [], writes: [], matchUpIds: [] };
   let seat = first;
+  let beside = !!doubled;
   for (let index = 0; ; index += 1) {
     // the first seat's matchUp as an earlier write of this call leaves it (a position advanced into it), else as found;
     // deeper seats are placed with no event
     const step = byeStep(view, seat, {
       held: index === 0 ? heldFirst : undefined,
       namesEvent: index === 0 && announced,
-      besideBye: index === 0 && !!doubled,
+      besideBye: beside,
     });
     if (!step) return undefined;
     planned.assigns.unshift(step.assign);
@@ -994,7 +995,9 @@ function byeChain(
     if (!step.entry.loserMatchUpId) return planned;
     const level = chain?.levels[index];
     if (!step.opposed || !chain || chain.bounded || level?.fromMatchUpId !== step.entry.matchUpId) return undefined;
-    if (!cleanByeLevel(view, level)) return undefined;
+    const clean = cleanByeLevel(view, level);
+    if (!clean) return undefined;
+    beside = clean === 'doubled';
     seat = { structureId: level.structureId, drawPosition: level.drawPosition, matchUpId: level.matchUpId };
   }
 }
@@ -1016,9 +1019,9 @@ function byeStep(
   if (!entry || opposite.length > 1) return undefined;
   const sends = !!opposite.length && !!entry.winnerMatchUpId && !besideBye;
   const onward = sends ? onwardFrom(view, entry, opposite[0]) : undefined;
-  const byeOnward = besideBye ? byeAdvanced(view, entry, seat.drawPosition) : undefined;
-  if ((sends && !onward) || (besideBye && !byeOnward)) return undefined;
   const quiet = namesEvent ? {} : { announcesEvent: false as const };
+  const byeOnward = besideBye ? byeAdvanced(view, entry, seat.drawPosition, quiet) : undefined;
+  if ((sends && !onward) || (besideBye && !byeOnward)) return undefined;
   const assign: OutcomeOp = { op: 'assignBye', ...seat, byeFromPropagation: true, ...quiet };
   // a matchUp a BYE already (the double BYE's) is left as it stands: v1 neither rewrites nor announces it
   const bye: OutcomeOp[] = besideBye
@@ -1047,6 +1050,7 @@ function byeAdvanced(
   view: OutcomeView,
   entry: HydratedMatchUp,
   seatPosition: number,
+  quiet: { announcesEvent?: false },
 ): { ops: OutcomeOp[]; matchUpIds: string[] } | undefined {
   const onward = indexed(view, entry.winnerMatchUpId);
   const held = (onward?.drawPositions ?? []).filter((position): position is number => !!position);
@@ -1054,25 +1058,29 @@ function byeAdvanced(
   if (!onward || onward.structureId !== entry.structureId || onward.loserMatchUpId) return undefined;
   if (onward.matchUpStatus !== TO_BE_PLAYED || onward.winningSide || onward.score?.scoreStringSide1) return undefined;
   if (Object.keys(onward.sideExitProvenance ?? {}).length || onward.sides?.some((side) => side.bye)) return undefined;
-  if (!held.includes(seatPosition) || others.length !== 1) return undefined;
+  if (!held.includes(seatPosition) || others.length > 1) return undefined;
+  const bye: OutcomeOp[] = [
+    { op: 'setMatchUpBye', matchUpId: onward.matchUpId, ...quiet },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: onward.matchUpId },
+  ];
+  if (!others.length) return { ops: bye, matchUpIds: [onward.matchUpId] };
   const next = onwardFrom(view, onward, others[0]);
   if (!next) return undefined;
-  return {
-    ops: [
-      { op: 'setMatchUpBye', matchUpId: onward.matchUpId },
-      { op: 'stampUpdatedAt', entity: 'matchUp', id: onward.matchUpId },
-      ...throughByeOps(next),
-    ],
-    matchUpIds: [onward.matchUpId, next.matchUpId],
-  };
+  return { ops: [...bye, ...throughByeOps(next)], matchUpIds: [onward.matchUpId, next.matchUpId] };
 }
 
-/** a further level a BYE goes on to: a first-round seat, free and alone, behind no condition, in a clean matchUp */
-function cleanByeLevel(view: OutcomeView, level: CarryLevel): boolean {
-  if (level.linkCondition || !level.seat?.free || level.seat.opponentHeld) return false;
-  if (level.matchUpStatus !== TO_BE_PLAYED || level.hasResult || level.carriesExit) return false;
+/**
+ * A further level a BYE goes on to: a first-round seat, free, behind no condition, in a clean matchUp. Alone, its matchUp
+ * to be played (`clean`); or opposite a BYE, its matchUp a BYE already (`doubled`, a double BYE as `byeAdvanced` plans it)
+ */
+function cleanByeLevel(view: OutcomeView, level: CarryLevel): 'clean' | 'doubled' | false {
+  if (level.linkCondition || !level.seat?.free) return false;
+  const doubled = level.seat.opponentBye;
+  if (level.seat.opponentHeld && !doubled) return false;
+  if (level.matchUpStatus !== (doubled ? BYE : TO_BE_PLAYED) || level.hasResult || level.carriesExit) return false;
   if (!level.record || level.record.provenance || level.record.matchUpStatusCodes?.length) return false;
-  return indexed(view, level.matchUpId)?.roundNumber === 1;
+  if (indexed(view, level.matchUpId)?.roundNumber !== 1) return false;
+  return doubled ? 'doubled' : 'clean';
 }
 
 /** a position advanced through a BYE a double exit placed, announced as v1's `advanceWinner`, with no event */
@@ -1318,10 +1326,11 @@ function producedLoser(view: OutcomeView): ProducedLoser | undefined {
   // a loser matchUp that links its own loser on: nobody will lose it either, so that seat takes a BYE, with its chain
   const levels = targets.byeLevels?.own;
   const [level, ...deeper] = levels?.levels ?? [];
-  if (!levels || !level || level.fromMatchUpId !== loserMatchUp.matchUpId || !cleanByeLevel(view, level))
-    return undefined;
+  const clean = levels && level?.fromMatchUpId === loserMatchUp.matchUpId && cleanByeLevel(view, level);
+  if (!clean) return undefined;
   const seatAt = { structureId: level.structureId, drawPosition: level.drawPosition, matchUpId: level.matchUpId };
-  const beyond = byeChain(view, seatAt, { levels: deeper, bounded: levels.bounded }, false);
+  const doubled = clean === 'doubled';
+  const beyond = byeChain(view, seatAt, { levels: deeper, bounded: levels.bounded }, false, doubled);
   return beyond ? { ...produced, beyond } : undefined;
 }
 
