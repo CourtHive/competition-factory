@@ -265,6 +265,9 @@ export function addDrawEntries(params: AddDrawEntriesArgs) {
           topic: DATA_ISSUE,
         });
       }
+      // a duplicate is not written: suppressing its error suppresses the refusal, not the check (it was announced as
+      // a duplicate and stored anyway, as addDrawEntry and the flight path never do)
+      return notAdded.concat(participantId);
     }
 
     if (invalidLuckyLoser || invalidVoluntaryConsolation) {
