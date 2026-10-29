@@ -3,16 +3,15 @@ import {
   getTournamentId,
   getTournamentRecords,
   hasTopic,
-  restoreMutationStatus,
   setFactoryBackend,
   setTournamentId,
-  setTournamentRecords,
 } from '@Global/state/globalState';
 import { errorConditionConstants } from '@Constants/errorConditionConstants';
 import { topicConstants } from '@Constants/topicConstants';
 import { randomSource, setRandomSource } from '@Tools/prng';
 import { afterAll, beforeAll, beforeEach, expect } from 'vitest';
 import { canonicalHash, canonicalObject } from './corpus/hash';
+import { adoptBackendRecords } from './backendRecords';
 import { createBackendBridge } from './backendBridge';
 import { differingPaths } from './backendDiff';
 import { BACKEND_EXCLUSIONS } from './backendExclusions';
@@ -140,12 +139,10 @@ if (mode) {
 
   function external(call: FactoryBackendCall) {
     const activeTournamentId = getTournamentId();
-    const before = hashOf(Object.values(getTournamentRecords() ?? {}));
     const answer = ask(call);
     if (answer.declined) return call.runLocal();
-    // the engine stamps a record a method changed (getMutationStatus): tell it this one did
-    if (JSON.stringify(hashOf(answer.records)) !== JSON.stringify(before)) restoreMutationStatus(true);
-    setTournamentRecords(Object.fromEntries(answer.records.map((record) => [record.tournamentId, record])));
+    // the engine stamps the records a method changed (getMutationStatus): tell it which
+    adoptBackendRecords(answer.records);
     if (activeTournamentId) setTournamentId(activeTournamentId);
     if (answer.seed !== undefined) setRandomSource(answer.seed);
     return asEngineResult(answer.result);
