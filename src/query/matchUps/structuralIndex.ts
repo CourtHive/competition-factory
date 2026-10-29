@@ -1,18 +1,29 @@
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
+import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getWinnerLinkRoundNumbers } from '@Query/drawDefinition/linkGetter';
 import { annotateScoreSets, buildMatchUpSides } from './addMatchUpContext';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
+import { getCollectionAssignment } from './getCollectionAssignment';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { getRoundMatchUps } from './getRoundMatchUps';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
-import type { DrawDefinition, Event, MatchUp, PositionAssignment, Structure, Tournament } from '@Types/tournamentTypes';
+import { BYE } from '@Constants/matchUpStatusConstants';
 import type { RoundProfile } from '@Types/factoryTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
+import type {
+  DrawDefinition,
+  Event,
+  MatchUp,
+  Participant,
+  PositionAssignment,
+  Structure,
+  Tournament,
+} from '@Types/tournamentTypes';
 
 /**
  * THE STRUCTURAL INDEX (outcome executor plan § 3.1.1, CA 2026-10-24: v2 decides on stored data and a structural
@@ -31,8 +42,11 @@ import { TEAM } from '@Constants/matchUpTypes';
  * completing a draw it is still generating) hydrates no participant at all, and the index answers the same. Of the
  * tournament, only its participants' ids are read.
  *
- * TEAM is not indexed yet: a line's sides come from its dual's line-ups (`getCollectionAssignment`). A draw holding a
- * TEAM matchUp answers `unsupported`, and its caller hydrates as before (v2's TEAM routes abstain until S7).
+ * TEAM, on request (`team`, the outcome view; S7): a dual is indexed as any matchUp, with its lines nested
+ * (`tieMatchUps`) and listed beside it, each line as hydration builds it through its dual (`processTieMatchUps`): the
+ * dual's drawPositions, round and finishing positions, the collection's matchUpType and format, a BYE where the dual
+ * is one, and sides from the dual's line-ups (`getCollectionAssignment`). Without `team`, a draw holding a TEAM matchUp
+ * answers `unsupported` and its caller hydrates as before.
  *
  * Read-only: an entry shares nested objects (`score`, `sideExitProvenance`) with the stored matchUp.
  */
@@ -44,6 +58,8 @@ export type StructuralIndex = {
 type BuildStructuralIndexArgs = {
   /** the top-level structures to index, the rest left out: what a working view indexes again after a write (§ 3.2) */
   structureIds?: Set<string>;
+  /** index TEAM duals and their lines; without it a draw holding one answers `unsupported` */
+  team?: boolean;
   tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   event?: Event;
@@ -57,12 +73,14 @@ export function buildStructuralIndex({
   drawDefinition,
   structureIds,
   event,
+  team,
 }: BuildStructuralIndexArgs): StructuralIndex {
   const matchUps: HydratedMatchUp[] = [];
-  const participantIds = new Set((tournamentRecord?.participants ?? []).map(({ participantId }) => participantId));
+  const participants = tournamentRecord?.participants;
+  const participantIds = new Set((participants ?? []).map(({ participantId }) => participantId));
   for (const structure of drawDefinition.structures ?? []) {
     if (structureIds && !structureIds.has(structure.structureId)) continue;
-    const indexed = indexStructure({ drawDefinition, participantIds, structure, event });
+    const indexed = indexStructure({ drawDefinition, participantIds, participants, structure, event, team });
     if (indexed.unsupported) return { matchUps: [], unsupported: indexed.unsupported };
     matchUps.push(...indexed.matchUps);
   }
@@ -84,13 +102,17 @@ type Member = { matchUp: MatchUp; structureId: string; containerStructureId?: st
 function indexStructure({
   drawDefinition,
   participantIds,
+  participants,
   structure,
   event,
+  team,
 }: {
   drawDefinition: DrawDefinition;
   participantIds: Set<string>;
+  participants?: Participant[];
   structure: Structure;
   event?: Event;
+  team?: boolean;
 }): StructuralIndex {
   const items = structuresOf(structure);
   const members: Member[] = items
@@ -102,8 +124,8 @@ function indexStructure({
         })),
       )
     : (matchUpsOf(structure) ?? []).map((matchUp) => ({ matchUp, structureId: structure.structureId }));
-  if (members.some(({ matchUp }) => !!matchUp.tieMatchUps || isMatchUpEventType(TEAM)(matchUp.matchUpType)))
-    return { matchUps: [], unsupported: TEAM };
+  const isTeam = ({ matchUp }: Member) => !!matchUp.tieMatchUps || isMatchUpEventType(TEAM)(matchUp.matchUpType);
+  if (!team && members.some(isTeam)) return { matchUps: [], unsupported: TEAM };
 
   const { positionAssignments } = structureAssignedDrawPositions({ structure });
   // the first assignment of each drawPosition, as `getSide`'s scan finds it
@@ -117,21 +139,108 @@ function indexStructure({
     winnerLinkRoundNumbers,
   });
 
+  const shared = {
+    positionAssignments,
+    assignmentsByPosition,
+    participantIds,
+    roundProfile,
+    drawDefinition,
+    structure,
+  };
   return {
-    matchUps: members.map((member) =>
-      indexMatchUp({
-        ...member,
-        positionAssignments,
-        assignmentsByPosition,
-        participantIds,
-        roundProfile,
-        drawDefinition,
-        structure,
-        event,
-      }),
-    ),
+    matchUps: members.flatMap((member) => {
+      const entry = indexMatchUp({ ...member, ...shared, event });
+      if (!member.matchUp.tieMatchUps) return [entry];
+      const lines = indexLines({ dual: member, dualEntry: entry, participants, shared, event });
+      entry.tieMatchUps = lines;
+      return [entry, ...lines];
+    }),
   };
 }
+
+type Shared = Omit<Parameters<typeof indexMatchUp>[0], keyof Member | 'event' | 'line'>;
+
+/** a dual's lines, each built through its dual as hydration builds it (`processTieMatchUps`) */
+function indexLines({
+  participants,
+  dualEntry,
+  shared,
+  event,
+  dual,
+}: {
+  participants?: Participant[];
+  dualEntry: HydratedMatchUp;
+  shared: Shared;
+  event?: Event;
+  dual: Member;
+}): HydratedMatchUp[] {
+  const { drawDefinition, structure, positionAssignments } = shared;
+  const dualTieFormat = resolveTieFormat({ drawDefinition, structure, matchUp: dual.matchUp, event })?.tieFormat;
+  const drawPositions = dual.matchUp.drawPositions ?? [];
+  // the line-ups by side, as the dual's sides carry them; the team is found from the positions where none is given
+  const sideLineUps = dualEntry.sides?.map(({ drawPosition, sideNumber, lineUp }: any) => ({
+    drawPosition,
+    sideNumber,
+    lineUp,
+  }));
+  return (dual.matchUp.tieMatchUps ?? []).map((matchUp) => {
+    // a line's own tieFormat, else its dual's (which already fell back to the structure, draw and event)
+    const tieFormat =
+      matchUp.tieFormat || matchUp.tieFormatId
+        ? resolveTieFormat({ drawDefinition, structure, matchUp, event })?.tieFormat
+        : dualTieFormat;
+    const collection = tieFormat?.collectionDefinitions?.find(
+      (definition) => definition.collectionId === matchUp.collectionId,
+    );
+    const matchUpType =
+      matchUp.matchUpType ||
+      collection?.matchUpType ||
+      structure.matchUpType ||
+      drawDefinition.matchUpType ||
+      (!isMatchUpEventType(TEAM)(event?.eventType) && event?.eventType) ||
+      undefined;
+    const collectionAssignmentDetail = getCollectionAssignment({
+      collectionPosition: matchUp.collectionPosition,
+      collectionId: matchUp.collectionId as string,
+      tournamentParticipants: participants,
+      positionAssignments,
+      drawDefinition,
+      drawPositions,
+      sideLineUps,
+      matchUpType,
+    });
+    return indexMatchUp({
+      ...shared,
+      // in a round robin the line is the container's, with no container of its own, as hydration places it
+      structureId: dual.containerStructureId ?? dual.structureId,
+      matchUp,
+      event,
+      line: {
+        matchUpFormat:
+          collection?.matchUpFormat ?? structure.matchUpFormat ?? drawDefinition.matchUpFormat ?? event?.matchUpFormat,
+        finishingPositionRange: dualEntry.finishingPositionRange,
+        collectionBye: dual.matchUp.matchUpStatus === BYE,
+        roundNumber: dual.matchUp.roundNumber,
+        matchUpTieId: dual.matchUp.matchUpId,
+        collectionAssignmentDetail,
+        drawPositions,
+        matchUpType,
+      },
+    });
+  });
+}
+
+/** what a line takes from its dual and its collection, over its own stored values where hydration puts it so */
+type LineContext = {
+  collectionAssignmentDetail: ReturnType<typeof getCollectionAssignment>;
+  finishingPositionRange?: HydratedMatchUp['finishingPositionRange'];
+  matchUpType?: string;
+  matchUpFormat?: string;
+  collectionBye: boolean;
+  drawPositions: number[];
+  matchUpTieId: string;
+  roundNumber?: number;
+};
 
 function indexMatchUp({
   containerStructureId,
@@ -144,7 +253,9 @@ function indexMatchUp({
   structure,
   matchUp,
   event,
+  line,
 }: Member & {
+  line?: LineContext;
   assignmentsByPosition: Map<number, PositionAssignment>;
   positionAssignments: PositionAssignment[];
   participantIds: Set<string>;
@@ -153,21 +264,24 @@ function indexMatchUp({
   structure: Structure;
   event?: Event;
 }): HydratedMatchUp {
-  const roundNumber = matchUp.roundNumber as number;
+  const roundNumber = (matchUp.roundNumber ?? line?.roundNumber) as number;
   const round = roundNumber ? roundProfile?.[roundNumber] : undefined;
-  const drawPositions = matchUp.drawPositions ?? [];
-  const matchUpType =
-    matchUp.matchUpType ||
-    structure.matchUpType ||
-    drawDefinition.matchUpType ||
-    (!isMatchUpEventType(TEAM)(event?.eventType) && event?.eventType) ||
-    undefined;
-  const matchUpFormat =
-    matchUp.matchUpFormat ?? structure.matchUpFormat ?? drawDefinition.matchUpFormat ?? event?.matchUpFormat;
+  const drawPositions = line?.drawPositions ?? matchUp.drawPositions ?? [];
+  const matchUpType = line
+    ? line.matchUpType
+    : matchUp.matchUpType ||
+      structure.matchUpType ||
+      drawDefinition.matchUpType ||
+      (!isMatchUpEventType(TEAM)(event?.eventType) && event?.eventType) ||
+      undefined;
+  // a line's format comes from its collection; a dual has none, its tieFormat standing in its place
+  const matchUpFormat = line
+    ? line.matchUpFormat
+    : (matchUp.matchUpFormat ?? structure.matchUpFormat ?? drawDefinition.matchUpFormat ?? event?.matchUpFormat);
 
   const sides = buildMatchUpSides({
     sourceDrawPositionRoundRanges: undefined,
-    collectionAssignmentDetail: undefined,
+    collectionAssignmentDetail: line?.collectionAssignmentDetail,
     seedAssignments: undefined,
     assignmentsByPosition,
     roundPosition: matchUp.roundPosition,
@@ -183,16 +297,21 @@ function indexMatchUp({
 
   const entry = {
     ...onlyDefined({
+      finishingPositionRange: matchUp.finishingPositionRange ?? line?.finishingPositionRange,
+      matchUpFormat: matchUpType === TEAM ? undefined : matchUpFormat,
       hasFedDrawPosition: round?.hasFedDrawPosition,
+      matchUpTieId: line?.matchUpTieId,
       feedRound: round?.feedRound,
       drawId: drawDefinition.drawId,
       containerStructureId,
-      matchUpFormat,
       drawPositions,
       matchUpType,
       structureId,
+      roundNumber,
     }),
     ...onlyDefined(matchUp),
+    // a line of a BYE dual is a BYE, over the TO_BE_PLAYED it is stored as (hydration OPEN-1)
+    ...(line?.collectionBye ? { matchUpStatus: BYE } : {}),
     // nested values are filtered with the defaults, as hydration's deep filter does: an empty `sets` stays
     ...(matchUp.score ? { score: definedAttributes(matchUp.score, undefined, undefined, true) } : {}),
     sides,

@@ -906,10 +906,8 @@ stamped at each notice and every top-level structure on each.
 without writing the record: what S2's has-work predicates for the settle passes read, where v1 reads the draw it has
 written. A matchUp or structure an op writes gets a stored-shape working copy, the ops are folded into the copies by
 the same reducer as the shadow apply, and the matchUps an op wrote, with those whose sides read a reassigned
-drawPosition, are derived again from the copies: by indexing again the top-level structures that hold them (below), or,
-on a TEAM draw the index does not cover, by projection, the factory's own `getAllDrawMatchUps` filtered to their ids
-over a matchUps map assembled from the call's (CA, 2026-10-24). Each replaces its entry in v2's copy of the view's
-draw.
+drawPosition, are derived again from the copies by indexing again the top-level structures that hold them (below),
+a TEAM draw included since S7. Each replaces its entry in v2's copy of the view's draw.
 
 **The view oracle** checks it in `differential`: after every complete plan, the working view, folded before v1 wrote,
 is compared field by field (sides, status, winner, score, drawPositions, `finishingPositionRange`, `feedRound` and
@@ -918,9 +916,10 @@ Until the view moved onto the index it also compared `schedule`, `drawPositionsR
 and `readyToScore`, which nothing in v2 reads; `schedule.scoredTime` is read from the stored matchUps. A difference is a
 divergence keyed `view:<field>`. Measured 2026-10-24 over the exitPropagation and matchUps suites: 9,184 views
 compared, none different; with re-derivation removed, 103 exitPropagation files fail. The oracle's own reads (the
-shadow's hydration, a TEAM working view's projection, and the index oracle's hydration below) are test instrumentation:
-`verify:hydrations` keeps them out of `differential`'s ceiling and reports them apart (2,184 over its census). Under
-`v2`, a TEAM working view's projection is the pipeline's own work and counts.
+shadow's hydration, a hydrated working view's projection, and the index oracle's hydration below) are test
+instrumentation: `verify:hydrations` keeps them out of `differential`'s ceiling and reports them apart (2,184 over its
+census, when TEAM working views were still projected). Under `v2`, a hydrated working view's projection is the
+pipeline's own work and counts; since S7 a TEAM view is indexed, not hydrated.
 
 **The structural index** (`buildStructuralIndex`, `src/query/matchUps/structuralIndex.ts`; executor plan § 3.1.1, CA
 2026-10-24: v2 decides on stored data and a structural index, never on a hydration) is one entry per matchUp in the
@@ -931,19 +930,27 @@ predicates make found that set to be the stored matchUp, its structure and round
 index carries `{ participantId }` for a participant the tournament holds, as hydration carries the record. No participant
 record, round name, schedule detail or policy is read. The sides and the round profile come from the functions
 hydration calls (`buildMatchUpSides`, `getRoundMatchUps`), and a tiebreak-only or timed set is annotated as hydration
-annotates it, so the two derive each field once. A draw holding a TEAM matchUp is not indexed yet: a line's sides come
-from its dual's line-ups.
+annotates it, so the two derive each field once.
+
+A TEAM draw is indexed for the outcome view (S7; `buildStructuralIndex({ team: true })`, asked by the view and the
+working view only, so the other callers of the index still hydrate a TEAM draw). A dual is indexed as any matchUp, and
+its lines are nested in it (`tieMatchUps`) and listed beside it, each built through its dual as hydration builds it:
+the dual's drawPositions, round number and finishing positions; the collection's `matchUpType` and format (the line's
+own tieFormat, else the dual's resolved one); `BYE` where the dual is one, over the `TO_BE_PLAYED` a line is stored as;
+sides from the dual's line-ups (`getCollectionAssignment`); and, in a round robin, the container as the line's
+structure with no container of its own, as hydration places it. A dual carries no `matchUpFormat`.
 
 **The view decides on the index.** `buildOutcomeView` builds it, not a hydration, and the working view and the settle
-predicates read it; only a TEAM draw is still hydrated. So under `v2` a call costs v1's hydrations and nothing more
-(`verify:hydrations`; the TEAM arm v1 + 1), and a call v2 refuses takes none. An index entry shares nested objects
+predicates read it, a TEAM draw included since S7. So under `v2` a call costs v1's hydrations and nothing more
+(`verify:hydrations`, every arm, TEAM included), and a call v2 refuses takes none. An index entry shares nested objects
 (`score`, `sideExitProvenance`) with the stored matchUp, so the view is read before the call writes, never after.
 
 **The index oracle** holds it to the hydration in `differential`: before v1 writes, the view's index of the draw as the
 call found it is compared, field by field, with one hydration of the same draw taken for the purpose, after the view's
 own step on a draw stored without its edges. A difference is a divergence keyed `index:<field>`. Measured 2026-10-24 over the
-mutations suite: 66,154 calls, 1,873,656 entries compared, none different; 15,940 calls on TEAM draws are tallied as
-deferred. Measured against a full in-context hydration (median of 15): SINGLE_ELIMINATION 32 to 256 at 11–13%,
+mutations suite: 66,154 calls, 1,873,656 entries compared, none different; 15,940 calls on TEAM draws were then tallied
+as deferred. Since S7 a TEAM draw is compared too, `collectionPosition` and each dual's nested lines (`tieMatchUps.<field>`)
+included: `verify:team-arms` under `differential`, 1,528 tests, none different. Measured against a full in-context hydration (median of 15): SINGLE_ELIMINATION 32 to 256 at 11–13%,
 FEED_IN_CHAMPIONSHIP 64, ROUND_ROBIN 32, DOUBLE_ELIMINATION 64 and COMPASS 64 at 11–13%, linear in the draw.
 
 **v1's settle passes ask the index first** (`matchUpStatus/indexPrecheck.ts`; the v1 win CA agreed 2026-10-24). Most
