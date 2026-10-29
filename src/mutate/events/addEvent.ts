@@ -40,7 +40,6 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
 } {
   const paramsCheck = requireParams({ tournamentRecord, event }, [TOURNAMENT_RECORD, EVENT_ATTR]);
   if (paramsCheck.error) return paramsCheck;
-  tournamentRecord.events ??= [];
 
   // set default startDate, endDate based on tournamentRecord
   const { startDate, endDate } = tournamentRecord;
@@ -75,6 +74,9 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
   // 'beach volleyball' and 'BEACH_VOLLEYBALL' are stored identically
   if (eventRecord.discipline) eventRecord.discipline = normalizeDiscipline(eventRecord.discipline);
 
+  // minted before the tieFormat, whose mock collection ids are built from it (they were `undefined-COL-n`)
+  eventRecord.eventId ??= UUID();
+
   if (event.eventType === TEAM_EVENT) {
     if (event.tieFormat) {
       // A supplied tieFormat may carry no collectionIds — the published `fixtures.tieFormats` cannot
@@ -99,15 +101,14 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
       const tieFormat = tieFormatDefaults({
         isMock: tournamentRecord?.isMock,
         namedFormat: event.tieFormatName,
-        event,
+        event: eventRecord,
+        uuids,
       });
       eventRecord.tieFormat = tieFormat;
     }
   }
 
-  eventRecord.eventId ??= UUID();
-
-  const eventExists = tournamentRecord.events.reduce((exists: boolean | undefined, event) => {
+  const eventExists = (tournamentRecord.events ?? []).reduce((exists: boolean | undefined, event) => {
     return exists || event.eventId === eventRecord.eventId;
   }, undefined);
 
@@ -116,6 +117,8 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
   }
 
   const newEvent = eventRecord as Event;
+  // created only when an event is stored: a refused call wrote an empty array
+  tournamentRecord.events ??= [];
   tournamentRecord.events.push(newEvent);
 
   // Every notice describes the event as STORED: its minted eventId, normalised gender and discipline,

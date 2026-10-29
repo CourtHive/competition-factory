@@ -53,7 +53,9 @@ drawDefinition) is the object stored, and a write to it after the call changes t
 
 **Inputs.** `participants` (default `[]`), `allowDuplicateParticipantIdPairs`, `returnParticipants`.
 
-**Refusals**, in order, the first refusal ending the call. Participants appended before it **stay** (no rollback):
+**Refusals**, in order, the first refusal ending the call. A participant is checked against those appended before it
+in the same call, so a refusal can come part way through; the participants appended before it are then removed, and
+the call writes nothing:
 
 1. No tournament: `MISSING_TOURNAMENT_RECORD`.
 2. Then per participant, in the add order below:
@@ -70,7 +72,7 @@ drawDefinition) is the object stored, and a write to it after the call changes t
 
 **What is written.**
 
-- `participants` is created on the record (`[]`) if absent, even when nothing is then added.
+- `participants` is created on the record if absent, when a participant is added.
 - A participant without a `participantId` is given one, before anything else, in input order.
 - Participants whose id was in the record when the call began are skipped (reported in `notAdded`). The rest are
   appended in this order: every INDIVIDUAL in input order, then every other participant in input order. Each is the
@@ -99,14 +101,13 @@ drawDefinition) is the object stored, and a write to it after the call changes t
 **Refusals**, in order:
 
 1. No tournament or no `event`: `MISSING_TOURNAMENT_RECORD`, `MISSING_EVENT` (`INVALID_VALUES` when not an object).
-2. `events` is then created on the record (`[]`) if absent, whatever follows.
-3. The event has entries or draws: `INVALID_VALUES`, `info: 'entries/drawDefinitions cannot exist'` (empty arrays
+2. The event has entries or draws: `INVALID_VALUES`, `info: 'entries/drawDefinitions cannot exist'` (empty arrays
    pass).
-4. TEAM with a `tieFormat` that does not validate: `INVALID_TIE_FORMAT`. TEAM with a `tieFormatName` that is not a
+3. TEAM with a `tieFormat` that does not validate: `INVALID_TIE_FORMAT`. TEAM with a `tieFormatName` that is not a
    known format: `INVALID_VALUES`.
-5. The `eventId` (given or minted) is already an event's: `EVENT_EXISTS`.
+4. The `eventId` (given or minted) is already an event's: `EVENT_EXISTS`.
 
-**What is written.** A new object, appended to `events`:
+**What is written.** A new object, appended to `events` (created on the record if absent):
 
 ```text
 { eventType: 'SINGLES', drawDefinitions: [], entries: [], startDate: record.startDate, endDate: record.endDate, ...event }
@@ -118,8 +119,9 @@ drawDefinition) is the object stored, and a write to it after the call changes t
 - `discipline`, when a non-empty string: trimmed, upper-cased, runs of whitespace or `-` replaced by `_`.
 - TEAM with a `tieFormat`: a copy is stored, each collection without a `collectionId` given one (from `uuids`, taken
   from the end, else minted), in order. TEAM with only a `tieFormatName`: the named format is stored as `tieFormat` and
-  `tieFormatName` stays; collection ids are minted, or `"<eventId>-COL-<n>"` when the tournament or event is a mock.
-- `eventId`, when absent, is minted (after any collection ids).
+  `tieFormatName` stays; each collection id is taken from `uuids` (from the end), else minted, or
+  `"<eventId>-COL-<n>"` (the event's stored id) when the tournament or event is a mock.
+- `eventId`, when absent, is minted, before any collection ids.
 - No timestamps on the event. Unless `suppressNotifications`, the event's draws and their matchUps (none, for an event
   added before its draws) are announced and stamped (§1.1), whether or not anything subscribes.
 
@@ -157,7 +159,8 @@ drawDefinition) is the object stored, and a write to it after the call changes t
   last, stable), and numbered `entryPosition` 1..n per group.
 - DOUBLES and TEAM: individuals entered UNGROUPED or UNPAIRED who now belong to an entered PAIR or TEAM are removed from
   the event's entries (unless one holds a draw position).
-- With a `drawId`, the same participants are entered in that draw (and its flight); a refusal there is returned as
+- With a `drawId`, the same participants are entered in that draw (and its flight), ungrouped individuals included; a
+  refusal there is returned as
   `info` and the event's entries stand. The draw and its structures are stamped (§1.1).
 - No stamps on the event or its entries.
 
@@ -186,9 +189,10 @@ drawDefinition) is the object stored, and a write to it after the call changes t
 3. **`drawOrder`** = one more than the largest of the event's draws' `drawOrder`s and its flights' `flightNumber`s
    (0 when there are none).
 4. **The flight.** If the event's `flightProfile` has a flight for this `drawId`, its `drawName` is set from the draw,
-   and its `flightNumber` becomes the draw's `drawOrder` when it has one not already used (otherwise it takes
-   `drawOrder`). Otherwise a flight is appended (the profile created if absent):
-   `{ manuallyAdded: true, flightNumber: drawOrder, drawEntries: drawDefinition.entries, drawName, drawId }`.
+   and its `flightNumber` (a number, or a numeric string read as its number) becomes the draw's `drawOrder` when it is
+   not already used; the flight then takes `drawOrder` as its `flightNumber`. Otherwise a flight is appended (the
+   profile created if absent): `{ manuallyAdded: true, flightNumber: drawOrder, drawEntries, drawName, drawId }`, its
+   `drawEntries` a copy of the draw's entries.
 5. `drawOrder` is set on the draw.
 6. A draw without its stored `winnerMatchUpId` / `loserMatchUpId` edges has them written (a generated draw has them).
 7. A new draw is appended to the event's `drawDefinitions` (the object passed in). Unless `suppressNotifications`, every
@@ -328,8 +332,7 @@ only for a subscriber).
 
 ## 7. Guarantees
 
-- A refusal of `addEvent` (after the parameter check), `addEventEntries`, or `addDrawDefinition` writes nothing but
-  the empty arrays named above; `addParticipants` keeps the participants it appended before refusing.
+- A refusal of `addParticipants`, `addEvent`, `addEventEntries` or `addDrawDefinition` writes nothing.
 - Given the same record, params, clock and random source, each call stores the same bytes.
 
 ## 8. Open questions
@@ -344,21 +347,20 @@ writes announce whether or not anything subscribes, so the factory stamp no long
 `drawId` that resolves to no draw (it attached to every loaded record); `addVenue` and `addTournamentExtension` store
 copies and no longer write the caller's objects, and `addVenue` creates `venues` only when it stores one.
 
+Resolved 2026-10-30, the four writes: `addParticipants` is all or nothing (it kept the participants appended before a
+refusal, unannounced); `addParticipants` and `addEvent` create no empty `participants` or `events` on a refused or
+empty call; `addEvent` mints the `eventId` before a named tieFormat's collection ids, which take `uuids` and, for a
+mock, the stored id (they were `undefined-COL-n`); a new flight's `drawEntries` is a copy of the draw's entries (it was
+the same array); a numeric string `flightNumber` is read as its number (it became a string `drawOrder`).
+`addEventEntries` tested `isUngrouped(entryStage)`, a stage against statuses, which never held: the dead test is
+removed and the behaviour it never changed is stated (§4: every entry made with a `drawId` reaches the draw,
+ungrouped individuals included, as an AD_HOC doubles field relies on).
+
 1. **OPEN.** `suppressNotifications` changes the stored bytes: no `updatedAt` stamps, no factory stamp.
-2. **OPEN.** `addParticipants` keeps the participants appended before a refusal, and a refusal raises no notice, so
-   they are not factory-stamped; the other three are all or nothing.
-3. **OPEN.** Empty `participants`, `events`, `entries` and `drawDefinitions` arrays are created even by refused or
-   empty calls.
-4. **OPEN.** `addEventEntries` tests `isUngrouped(entryStage)` (a stage against statuses), so the draw path always
-   runs when a `drawId` is given.
-5. **OPEN.** `addEventEntries` with a `drawId`: a participant already entered in the draw is entered again under the
+2. **OPEN.** `addEventEntries` with a `drawId`: a participant already entered in the draw is entered again under the
    default `suppressDuplicateEntries`; the flight path does not.
-6. **OPEN.** `addEvent` mock collection ids use the caller's `eventId`, so an event without one gets
-   `undefined-COL-n`; `uuids` is not used for a `tieFormatName`.
-7. **OPEN.** `addEvent` refuses `tieFormatName`s that have templates but no fixture (`INTENNSE_2026`, `STANDARD`).
-8. **OPEN.** A new flight's `drawEntries` is the draw's `entries` array itself, so later writes to either change both.
-9. **OPEN.** A string `flightNumber` is never matched against numeric `drawOrder`s and becomes a string `drawOrder`.
-10. **OPEN.** The factory stamp goes to every loaded tournament, not only the one written.
+3. **OPEN.** `addEvent` refuses `tieFormatName`s that have templates but no fixture (`INTENNSE_2026`, `STANDARD`).
+4. **OPEN.** The factory stamp goes to every loaded tournament, not only the one written.
 
 ## Related
 
