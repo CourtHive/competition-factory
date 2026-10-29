@@ -152,8 +152,12 @@ describe.each(TOPOLOGIES)('$drawType ($note)', ({ drawType, drawSize }) => {
      * Bounded to the first `FLIP_SAMPLE` decided matchUps to stay CI-priced; the count actually
      * exercised is asserted, so a bound that silently dropped everything would fail rather than read
      * as clean. The exhaustive version is the Route A/B differential, which is not a CI gate.
+     *
+     * Each topology takes 3-13s on Node 24. COMPASS took 32.0s and 31.9s in a Node 22 coverage shard, past the
+     * 30s default, which failed master's Verify at the 7.23.0 and 7.24.0 checkpoints. Generous rather than
+     * tuned, like the suite's other heavy generators.
      */
-    it('a winning-side change leaves no inconsistency', () => {
+    it('a winning-side change leaves no inconsistency', { timeout: 180_000 }, () => {
       const drawId = `consistent-${drawType}-${participantsCount}`;
       const order = played(drawId);
       const candidates = order.slice(0, FLIP_SAMPLE);

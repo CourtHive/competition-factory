@@ -1018,10 +1018,14 @@ function byeStep(
   );
   if (!entry || opposite.length > 1) return undefined;
   const sends = !!opposite.length && !!entry.winnerMatchUpId && !besideBye;
-  const onward = sends ? onwardFrom(view, entry, opposite[0]) : undefined;
+  const direct = sends ? onwardFrom(view, entry, opposite[0]) : undefined;
+  // a next matchUp a BYE already: the position goes into it and through it; no `onward` is named for it, so a later
+  // chain touching either matchUp is refused as an overlap
+  const passed = sends && !direct ? throughHeldBye(view, entry, opposite[0]) : undefined;
+  const onward = direct;
   const quiet = namesEvent ? {} : { announcesEvent: false as const };
   const byeOnward = besideBye ? byeAdvanced(view, entry, seat.drawPosition, quiet) : undefined;
-  if ((sends && !onward) || (besideBye && !byeOnward)) return undefined;
+  if ((sends && !onward && !passed) || (besideBye && !byeOnward)) return undefined;
   const assign: OutcomeOp = { op: 'assignBye', ...seat, byeFromPropagation: true, ...quiet };
   // a matchUp a BYE already (the double BYE's) is left as it stands: v1 neither rewrites nor announces it
   const bye: OutcomeOp[] = besideBye
@@ -1035,8 +1039,12 @@ function byeStep(
     assign,
     onward,
     opposed: !!opposite.length,
-    writes: [...bye, ...(onward ? throughByeOps(onward) : []), ...(byeOnward?.ops ?? [])],
-    matchUpIds: [seat.matchUpId, ...(onward ? [onward.matchUpId] : []), ...(byeOnward?.matchUpIds ?? [])],
+    writes: [...bye, ...(passed ?? (onward ? [onward] : [])).flatMap(throughByeOps), ...(byeOnward?.ops ?? [])],
+    matchUpIds: [
+      seat.matchUpId,
+      ...(passed ?? (onward ? [onward] : [])).map(({ matchUpId }) => matchUpId),
+      ...(byeOnward?.matchUpIds ?? []),
+    ],
   };
 }
 
@@ -1067,6 +1075,27 @@ function byeAdvanced(
   const next = onwardFrom(view, onward, others[0]);
   if (!next) return undefined;
   return { ops: [...bye, ...throughByeOps(next)], matchUpIds: [onward.matchUpId, next.matchUpId] };
+}
+
+/**
+ * The next matchUp a BYE already, its other side the BYE alone: the position goes into it and on through it, into a
+ * clean matchUp after it. Undefined otherwise
+ */
+function throughHeldBye(
+  view: OutcomeView,
+  entry: HydratedMatchUp,
+  drawPosition: number,
+): { matchUpId: string; drawPositions: number[] }[] | undefined {
+  const next = indexed(view, entry.winnerMatchUpId);
+  const held = (next?.drawPositions ?? []).filter((position): position is number => !!position);
+  if (!next || next.structureId !== entry.structureId || next.matchUpStatus !== BYE || next.loserMatchUpId)
+    return undefined;
+  if (held.length !== 1 || held.includes(drawPosition) || !next.sides?.some((side) => side.bye)) return undefined;
+  if (Object.keys(next.sideExitProvenance ?? {}).length || next.matchUpStatusCodes?.length) return undefined;
+  const beyond = onwardFrom(view, next, drawPosition);
+  if (!beyond) return undefined;
+  const into = { matchUpId: next.matchUpId, drawPositions: [...held, drawPosition].sort((a, b) => a - b) };
+  return [into, beyond];
 }
 
 /**
@@ -1200,10 +1229,10 @@ function unfillableByeChain(
   // v1 places this BYE behind a FIRST_MATCHUP link too (`advanceByeToLoserMatchUp` asks no condition): nobody loses here
   const conditioned = unfillable?.linkCondition && unfillable.linkCondition !== FIRST_MATCHUP;
   if (!unfillable || conditioned || unfillable.matchUpId !== entry.loserMatchUpId) return undefined;
-  // a position the own seat's BYE sent into this matchUp first stands opposite: it goes on through this BYE too
+  // whoever stands opposite goes on through this BYE: a participant there, or a position the own seat's BYE sent into
+  // this matchUp first (read as this call leaves it)
   const joined = ownOnward?.matchUpId === unfillable.matchUpId ? ownOnward.drawPositions : undefined;
-  if (!unfillable.seat?.free || unfillable.seat.opponentBye || (unfillable.seat.opponentHeld && !joined))
-    return undefined;
+  if (!unfillable.seat?.free || unfillable.seat.opponentBye) return undefined;
   if (unfillable.matchUpStatus !== TO_BE_PLAYED || unfillable.hasResult) return undefined;
   const record = indexed(view, unfillable.matchUpId);
   if (!record || record.matchUpStatusCodes?.length || Object.keys(record.sideExitProvenance ?? {}).length)
