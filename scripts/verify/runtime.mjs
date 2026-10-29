@@ -82,7 +82,12 @@ console.log('CJS OK');
 `;
 
 try {
-  execSync(`node -e "${cjsScript.replace(/"/g, '\\"').replace(/\n/g, ' ')}"`, { encoding: 'utf8', cwd: FACTORY_ROOT });
+  execSync(`node -e "${cjsScript.replace(/"/g, '\\"').replace(/\n/g, ' ')}"`, {
+    encoding: 'utf8',
+    cwd: FACTORY_ROOT,
+    timeout: 120_000,
+    killSignal: 'SIGKILL',
+  });
 } catch (err) {
   fail('CJS smoke failed', err);
 }
@@ -115,6 +120,8 @@ try {
   execSync(`node --input-type=module -e "${esmScript.replace(/"/g, '\\"').replace(/\n/g, ' ')}"`, {
     encoding: 'utf8',
     cwd: FACTORY_ROOT,
+    timeout: 120_000,
+    killSignal: 'SIGKILL',
   });
 } catch (err) {
   fail('ESM smoke failed', err);
@@ -178,7 +185,12 @@ try {
     writeFileSync(bundled, built.outputFiles[0].text);
 
     try {
-      execSync(`node ${JSON.stringify(bundled)}`, { encoding: 'utf8', cwd: FACTORY_ROOT });
+      execSync(`node ${JSON.stringify(bundled)}`, {
+        encoding: 'utf8',
+        cwd: FACTORY_ROOT,
+        timeout: 120_000,
+        killSignal: 'SIGKILL',
+      });
     } catch (err) {
       fail(
         `bundled smoke failed for \`${engine}\` — its methods did not survive tree shaking.\n` +

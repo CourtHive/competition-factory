@@ -20,9 +20,9 @@
  * that no longer matches an open advisory FAILS — so the list cannot quietly
  * accumulate exceptions after the advisories behind them are resolved.
  */
-import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
+import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -50,7 +50,7 @@ function fail(msg) {
 function auditTree(cwd) {
   let json;
   try {
-    json = execSync('pnpm audit --json', { cwd, encoding: 'utf8' });
+    json = execSync('pnpm audit --json', { cwd, encoding: 'utf8', timeout: 300_000, killSignal: 'SIGKILL' });
   } catch (err) {
     // pnpm audit exits non-zero when ANY advisory is found; the JSON is still
     // on stdout for parsing.
