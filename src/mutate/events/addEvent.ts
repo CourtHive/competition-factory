@@ -1,4 +1,4 @@
-import { addDrawNotice, addMatchUpsNotice } from '@Mutate/notifications/drawNotifications';
+import { addDrawNotice, addMatchUpsNotice, stampUnannounced } from '@Mutate/notifications/drawNotifications';
 import tieFormatDefaults from '@Assemblies/generators/templates/tieFormatDefaults';
 import { addEventNotice } from '@Mutate/notifications/eventNotifications';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
@@ -140,6 +140,11 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
     }
 
     addEventNotice({ tournamentId, event: rest });
+  } else {
+    // unannounced, and stamped as an announced event's draws and matchUps are, the record marked modified
+    const tournamentId = tournamentRecord?.tournamentId;
+    for (const drawDefinition of newEvent.drawDefinitions ?? []) stampUnannounced({ drawDefinition, tournamentId });
+    stampUnannounced({ tournamentId, matchUps: allEventMatchUps({ event: newEvent }).matchUps ?? [] });
   }
 
   return { ...SUCCESS, event: eventRecord };

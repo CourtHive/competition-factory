@@ -32,10 +32,15 @@ So a draw generated in one call and added in the next, under the same instant, i
 its generation stamp, and a matchUp that had no stamp is stored at `t`.
 
 **The factory stamp** on the tournament record, `factory: { ...existing, version, timeStamp }`, is written after a
-call that raised any notice (whether or not anyone subscribes), on **every** loaded tournament record. `version` is the
-package version; `timeStamp` is the captured instant in epoch milliseconds (a number). A call that raises no notice,
-or runs with notifications suppressed, does not stamp. A refused call without rollback keeps its earlier writes and is
-stamped if any of them raised a notice; with `rollbackOnError` nothing is kept or stamped.
+call on **each record the call modified**, and only on those: a record is modified by a notice that names its
+`tournamentId` (whether or not anyone subscribes); a notice that names none modifies every loaded record; a notice that
+only reports (`dataIssue`, `audit`) modifies nothing. `version` is the package version; `timeStamp` is the captured
+instant in epoch milliseconds (a number). A write made with `suppressNotifications` is stamped as an announced one is:
+its draws, structures and matchUps take `updatedAt`, and its record the factory stamp; only the notices are dropped. A
+call that writes nothing, or writes only to a working copy (the engine's internal `disableNotifications`), does not
+stamp. A refused call without rollback keeps its earlier writes and is stamped if any of them modified a record; with
+`rollbackOnError` nothing is kept or stamped. (A state provider without the optional `cycleModifiedTournamentIds` hook
+stamps every loaded record, and one without `markModified` leaves a suppressed write unstamped.)
 
 ### 1.2 Ids and randomness
 
@@ -137,8 +142,8 @@ the call writes nothing:
   `tieFormatName` stays; each collection id is taken from `uuids` (from the end), else minted, or
   `"<eventId>-COL-<n>"` (the event's stored id) when the tournament or event is a mock.
 - `eventId`, when absent, is minted, before any collection ids.
-- No timestamps on the event. Unless `suppressNotifications`, the event's draws and their matchUps (none, for an event
-  added before its draws) are announced and stamped (§1.1), whether or not anything subscribes.
+- No timestamps on the event. The event's draws and their matchUps (none, for an event added before its draws) are
+  stamped (§1.1), and, unless `suppressNotifications`, announced, whether or not anything subscribes.
 
 **Returns** `{ success, event }` (the stored event).
 
@@ -211,9 +216,9 @@ the call writes nothing:
    `drawEntries` a copy of the draw's entries.
 5. `drawOrder` is set on the draw.
 6. A draw without its stored `winnerMatchUpId` / `loserMatchUpId` edges has them written (a generated draw has them).
-7. A new draw is appended to the event's `drawDefinitions` (the object passed in). Unless `suppressNotifications`, every
-   matchUp in it is stamped, then the draw and its top-level structures (§1.1). A replacement takes the old draw's
-   place, with or without `suppressNotifications`.
+7. A new draw is appended to the event's `drawDefinitions` (the object passed in). Every matchUp in it is stamped, then
+   the draw and its top-level structures (§1.1), and, unless `suppressNotifications`, announced. A replacement takes the
+   old draw's place, stamped the same way.
 
 **Returns** `{ success, modifiedEventEntryStatusCount }`.
 
@@ -379,11 +384,13 @@ anyway (a probe draw then refused automated positioning); it is now skipped, as 
 skip it. `INTENNSE_2026` had a constant, a template and a JSON but no `fixtures.tieFormats` entry, so `addEvent` alone
 refused it; it is now published, and `STANDARD` (the fallback, not a named format) is still refused.
 
-1. **OPEN.** `suppressNotifications` changes the stored bytes: no `updatedAt` stamps, no factory stamp.
-2. **OPEN.** The factory stamp goes to every loaded tournament, not only the one written; nothing reads it today
-   (`recordPredatesVersion` has no caller outside tests).
-3. **OPEN.** `linkTournaments` and `unlinkTournaments` write several records and raise no notice, so those records are
-   not factory-stamped.
+Resolved 2026-10-30 (CA): the factory stamp goes only to the records a call modified (it went to every loaded record,
+so a record merely loaded beside a written one claimed to have been written); a notice that only reports
+(`dataIssue`, `audit`) modifies nothing, and `addDrawEntries` announces only when the entries changed. A write made with
+`suppressNotifications` is stamped as an announced one is (it left its draws and matchUps unstamped and the factory
+stamp unmoved); only the engine's internal `disableNotifications`, around working copies, stamps nothing.
+
+No question is open.
 
 ## Related
 

@@ -1,5 +1,8 @@
 import { NoticeIdentity } from '@Forge/topicTypes';
 
+// constants
+import { AUDIT, DATA_ISSUE } from '@Constants/topicConstants';
+
 /**
  * Identity fields carried on a notice ENVELOPE — the SINGLE definition.
  *
@@ -52,4 +55,24 @@ export function preserveNoticeIdentity(payload: any, superseded: any): any {
     }
   }
   return restored ?? payload;
+}
+
+/**
+ * The record a write modified, for its factory stamp — the SINGLE definition, shared by every provider as
+ * `preserveNoticeIdentity` is.
+ *
+ * A record is stamped only when a call modified it: a notice marks modified the tournament its payload names, or, naming
+ * none, every loaded record (the fail-safe: a write is never left unstamped). A notice that reports rather than writes
+ * (a data issue, an audit trail) marks nothing; every write that raises one also raises its own notice.
+ */
+export const UNNAMED_TOURNAMENT = '*';
+const REPORTING_TOPICS = new Set([DATA_ISSUE, AUDIT]);
+
+export function noticeModifies(topic: string): boolean {
+  return !REPORTING_TOPICS.has(topic);
+}
+
+export function modifiedTournamentId(payload?: { tournamentId?: unknown }): string {
+  const tournamentId = payload?.tournamentId;
+  return typeof tournamentId === 'string' && tournamentId ? tournamentId : UNNAMED_TOURNAMENT;
 }

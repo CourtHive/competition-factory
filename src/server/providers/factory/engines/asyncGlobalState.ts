@@ -1,4 +1,9 @@
-import { preserveNoticeIdentity } from '@Global/state/noticeIdentity';
+import {
+  modifiedTournamentId,
+  noticeModifies,
+  preserveNoticeIdentity,
+  UNNAMED_TOURNAMENT,
+} from '@Global/state/noticeIdentity';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import {
   CallListenerArgs,
@@ -36,6 +41,7 @@ function newInstanceState(): ImplemtationGlobalStateTypes {
     tournamentRecords: {},
     subscriptions: {},
     modified: false,
+    modifiedTournamentIds: new Set(),
     notices: [],
     methods: {},
   };
@@ -112,6 +118,8 @@ export default {
   runWithInstanceState,
   implicitContextCreations,
   cycleMutationStatus,
+  cycleModifiedTournamentIds,
+  markModified,
   getCapturedClock,
   setCapturedClock,
   getCapturedCompetitionClock,
@@ -284,6 +292,22 @@ function cycleMutationStatus() {
   return status;
 }
 
+// optional: the tournaments the call modified, cleared as they are read (see getMutationStatus)
+function cycleModifiedTournamentIds(): Set<string> {
+  const instanceState = getInstanceState();
+  const tournamentIds = instanceState.modifiedTournamentIds ?? new Set<string>();
+  instanceState.modifiedTournamentIds = new Set();
+  return tournamentIds;
+}
+
+// optional: marks a write modified without announcing it, the tournament named, or every loaded record when none is
+function markModified(tournamentId?: string) {
+  const instanceState = getInstanceState();
+  instanceState.modified = true;
+  instanceState.modifiedTournamentIds ??= new Set();
+  instanceState.modifiedTournamentIds.add(tournamentId || UNNAMED_TOURNAMENT);
+}
+
 // optional: sets the flag back to a value `cycleMutationStatus` returned (see globalState.readMutationStatus)
 function setMutationStatus(status: boolean) {
   getInstanceState().modified = status;
@@ -292,8 +316,9 @@ function setMutationStatus(status: boolean) {
 function addNotice({ topic, payload, key }: Notice, isGlobalSubscription?: boolean) {
   if (typeof topic !== 'string' || typeof payload !== 'object') return;
   const instanceState = getInstanceState();
-  // if there is a notice then the state has been modified, regardless of whether there is a subscription
-  if (!instanceState.disableNotifications) instanceState.modified = true;
+  // if there is a notice then the state has been modified, regardless of whether there is a subscription: the
+  // tournament it names (every loaded record when it names none), unless it only reports
+  if (!instanceState.disableNotifications && noticeModifies(topic)) markModified(modifiedTournamentId(payload));
   if (instanceState.disableNotifications || (!instanceState.subscriptions[topic] && !isGlobalSubscription)) return;
 
   let outgoing = payload;

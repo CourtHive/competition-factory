@@ -6,7 +6,7 @@ import { generateEventWithFlights } from './generateEventWithFlights';
 import { generateScheduledRounds } from './generateScheduledRounds';
 import { generateEventWithDraw } from './generateEventWithDraw';
 import { processLeagueProfiles } from './processLeagueProfiles';
-import { cycleMutationStatus } from '@Global/state/globalState';
+import { clearMutationStatus } from '@Global/state/globalState';
 import { attachProfilePolicies } from './attachProfilePolicies';
 import { formatDate, isValidDateString } from '@Tools/dateTime';
 import { isValidExtension } from '@Validators/isValidExtension';
@@ -183,7 +183,7 @@ function buildTournamentRecord(params: GenerateTournamentRecordArgs) {
   const { scheduledRounds = undefined, schedulerResult = {}, scenarioResult = undefined } = scheduled;
 
   // clear globalState modified flag;
-  cycleMutationStatus();
+  clearMutationStatus();
 
   return definedAttributes({
     ...SUCCESS,

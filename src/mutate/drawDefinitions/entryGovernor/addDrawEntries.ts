@@ -238,6 +238,7 @@ export function addDrawEntries(params: AddDrawEntriesArgs) {
   const duplicateEntries: string[] = [];
   const drawId = drawDefinition.drawId;
   const eventId = event?.eventId;
+  const entriesBefore = JSON.stringify(drawDefinition.entries ?? []);
   const participantIdsNotAdded = participantIds.reduce((notAdded: string[], participantId) => {
     const invalidLuckyLoser =
       entryStatus === LUCKY_LOSER && participantInEntries({ participantId, drawDefinition, entryStatus });
@@ -315,7 +316,9 @@ export function addDrawEntries(params: AddDrawEntriesArgs) {
     });
   }
 
-  modifyDrawNotice({ drawDefinition });
+  // announced (and so stamped) only when the entries changed: a call whose every participant is already entered writes
+  // nothing
+  if (JSON.stringify(drawDefinition.entries ?? []) !== entriesBefore) modifyDrawNotice({ drawDefinition });
 
   return participantIdsNotAdded?.length || duplicateEntries?.length
     ? {

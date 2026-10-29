@@ -15,6 +15,7 @@ import {
   addMatchUpsNotice,
   deleteMatchUpsNotice,
   modifyDrawNotice,
+  stampUnannounced,
 } from '@Mutate/notifications/drawNotifications';
 
 // constants and types
@@ -293,6 +294,9 @@ function replaceExistingDraw({
     if (incomingMatchUps?.length) {
       addMatchUpsNotice({ matchUps: incomingMatchUps, tournamentId, eventId });
     }
+  } else {
+    // unannounced, and stamped as an announced replacement is
+    stampUnannounced({ drawDefinition, tournamentId, matchUps: incomingMatchUps });
   }
 
   // the replacement itself, whatever is announced: it sat inside the notification guard, so a replacement with
@@ -331,7 +335,12 @@ function dispatchDrawReplacementAudit({ existingDrawDefinition, tournamentId, ev
 function addNewDraw({ suppressNotifications, tournamentRecord, drawDefinition, tournamentId, eventId, event }) {
   event.drawDefinitions.push(drawDefinition);
 
-  if (!suppressNotifications) {
+  if (suppressNotifications) {
+    // unannounced, and stamped as an announced draw is: suppressing the notices left the draw unstamped and the record's
+    // factory stamp unmoved, though the draw was stored
+    const { matchUps } = allDrawMatchUps({ drawDefinition, event });
+    stampUnannounced({ drawDefinition, tournamentId: tournamentRecord?.tournamentId, matchUps });
+  } else {
     const { matchUps } = allDrawMatchUps({ drawDefinition, event });
     matchUps &&
       addMatchUpsNotice({

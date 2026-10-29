@@ -1,7 +1,7 @@
 import { cloneState, isPlainContainer, restoreState, StateClone } from '@Tools/cloneState';
 import { isFunction, isObject } from '@Tools/objects';
 import {
-  cycleMutationStatus,
+  clearMutationStatus,
   deepCopyEnabled,
   getNoticeBuffer,
   getProvider,
@@ -99,5 +99,5 @@ export function restoreOperation({ records, tournamentId, notices, borrowed, clo
   }
   setTournamentId(tournamentId);
   setNoticeBuffer(notices);
-  cycleMutationStatus(); // a refused write is not a modification
+  clearMutationStatus(); // a refused write is not a modification
 }
