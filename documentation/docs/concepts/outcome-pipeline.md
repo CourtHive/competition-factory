@@ -915,11 +915,17 @@ team's line-up as the draw holds it on its side of each dual it reaches (`setSid
 `updateSidLineUp`): past a BYE the dual beyond first, then the BYE matchUp. The loser's own dual is announced with no
 event (`assignTeamLineUp` hands `updateSideLineUp` none).
 
+**A dual's own double exit** (DOUBLE_WALKOVER or DOUBLE_DEFAULT, on a dual still to be played) is written and advanced
+as any double exit is (`doubleExitAdvancement`): the exit it produces in the next dual, awarded to the side opposite or
+waiting for it, and the BYEs on the seats its loser links feed. Its sides are written first, as for a winner
+(`ensuredSides`). A double exit over a dual in progress stays v1's (§ 7.1's exit rules).
+
 Stay v1's:
 
 - a dual's own call that enables or disables auto-calc (v1 writes `disableAutoCalc`, and under `enableAutoCalc` projects
   the winner from the lines), a dual's exit carried across a loser link (`propagateExitStatus`), a call on a dual not
-  to be played or in progress (decided, or a double exit), a dual's own double exit, and a dual in a round robin;
+  to be played or in progress (decided, or a double exit), a dual's own double exit once a line is played, and a dual
+  in a round robin;
 - a decided dual whose losing side held no line-up: v1 carries nothing, and the sides the loser's assignment wrote
   (`updateSideLineUp`, from the draw's line-ups) stand;
 - a line that un-decides its dual, among them the first line played on a dual decided by its own exit (WALKOVER,
