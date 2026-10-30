@@ -1,5 +1,5 @@
 import { SCHEDULING_REPORT_PROPERTIES } from '../scheduling/schedulingReportProperties';
-import { cellId, pinnedScaleCells, pinnedScaleScenario } from './schedulingScale';
+import { cellId, largeScaleCells, pinnedScaleCells, pinnedScaleScenario, scaleScenario } from './schedulingScale';
 import { CorpusWriteError, writeScenario, type Directive } from './writeScenario';
 import { SCHEDULING_STEP_PROPERTIES } from '../scheduling/schedulingProperties';
 import tournamentEngine from '@Engines/syncEngine';
@@ -490,6 +490,64 @@ export function schedulingScenarios(): Authored[] {
     });
   }
 
+  {
+    // availability by date: the venue opens late on day 1 (with a booking) and keeps its default hours on day 2; one
+    // court states its own hours by date (with bookings). A court's hours are cut to its venue's for the same date, so
+    // nothing starts on day 1 before the venue opens. (A court closed on one date is left out: `disableCourts` with
+    // dates writes `disabled: { dates }`, which tournament.schema.json refuses.)
+    const { tournamentRecord, round } = generate({
+      policyDefinitions: POLICY_SCHEDULING_DEFAULT,
+      drawProfile: { drawSize: 16 },
+      courtsCount: 4,
+    });
+    const [first] = tournamentRecord.venues[0].courts.map(({ courtId }: any) => courtId);
+    const booking = (startTime: string, endTime: string) => ({ startTime, endTime, bookingType: 'MAINTENANCE' });
+    setClock(RECORD_CLOCK);
+    tournamentEngine.modifyVenue({
+      venueId: VENUE_ID,
+      modifications: {
+        dateAvailability: [
+          { date: DAY_1, startTime: '09:00', endTime: '18:00', bookings: [booking('12:00', '13:00')] },
+          { startTime: '08:00', endTime: '20:00' },
+        ],
+      },
+    });
+    tournamentEngine.modifyCourtAvailability({
+      courtId: first,
+      dateAvailability: [
+        { date: DAY_1, startTime: '08:00', endTime: '20:00', bookings: [booking('15:00', '16:00')] },
+        { date: DAY_2, startTime: '10:00', endTime: '19:00' },
+      ],
+    });
+    const initialRecord = tournamentEngine.getTournament().tournamentRecord;
+    setClock();
+    out.push({
+      scenarioId: 'authored/scheduling/availability-by-date',
+      ref: "scheduling § courts: a court's availability on a date is cut to its venue's for that date",
+      initialRecord,
+      directives: [
+        round(DAY_1, MAIN, 1),
+        round(DAY_1, MAIN, 2),
+        round(DAY_2, MAIN, 3),
+        round(DAY_2, MAIN, 4),
+        profileRun([DAY_1, DAY_2]),
+      ],
+      finalState: (record) => {
+        const day1Times = [1, 2]
+          .flatMap((roundNumber) => rawRound(record, MAIN, roundNumber))
+          .filter((matchUp) => matchUp.schedule?.scheduledDate === DAY_1)
+          .map((matchUp) => matchUp.schedule?.scheduledTime ?? '');
+        return [
+          ...claim(day1Times.length > 0, 'something is timed on day 1'),
+          ...claim(
+            day1Times.every((time) => time >= '09:00'),
+            `nothing starts on day 1 before the venue opens (${day1Times.join(', ')})`,
+          ),
+        ];
+      },
+    });
+  }
+
   return out;
 }
 
@@ -533,10 +591,14 @@ export function recordScheduling({ outDir }: { outDir: string }) {
   // the pinned scale sample, in its own file of the same source, so the manifest holds its outcomes
   const samplePath = path.join(outDir, 'scheduling-scale-sample.jsonl');
   fs.writeFileSync(samplePath, '');
-  for (const cell of pinnedScaleCells()) {
+  const sample = [
+    ...pinnedScaleCells().map((cell) => ({ cell, build: pinnedScaleScenario })),
+    ...largeScaleCells().map((cell) => ({ cell, build: scaleScenario })),
+  ];
+  for (const { cell, build } of sample) {
     const scenarioId = cellId(cell);
     try {
-      const { initialRecord, directives } = pinnedScaleScenario(cell);
+      const { initialRecord, directives } = build(cell);
       const scenario = writeScenario({
         properties: [...SCHEDULING_STEP_PROPERTIES, ...SCHEDULING_REPORT_PROPERTIES],
         source: { kind: 'matrix', ref: `${scenarioId} seed=${cell.seed}` },
