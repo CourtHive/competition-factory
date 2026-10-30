@@ -1,13 +1,15 @@
 import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
 import { arrivedOverLoserLink } from '@Mutate/drawDefinitions/matchUpGovernor/removeDoubleExit';
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
+import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { applyWithdrawnExits, withdrawByeSeats } from './applyWithdrawnExits';
 import { directWinner } from '@Mutate/matchUps/drawPositions/directWinner';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { applyWithdrawnExits } from './applyWithdrawnExits';
+import { withdrawByeSeats } from './withdrawByeSeats';
 import {
   clearSideExitProvenance,
   getSideExitProvenance,
@@ -170,6 +172,7 @@ export function settleRederivedDoubleExit({
     if (!produced && isDoubleExit(origin.matchUpStatus) && overLoserLink && !winnerStands) {
       // a double exit no longer, it claims no BYE further on; only its own loser target's is still owed (below)
       withdrawByeSeats({
+        clearDrawPosition,
         keepAt: ownLoserTarget({ matchUpId, inContextMatchUps, drawDefinition }),
         claimantMatchUpId: matchUpId,
         tournamentRecord,
@@ -207,6 +210,7 @@ export function settleRederivedDoubleExit({
       ? ownLoserTarget({ matchUpId, inContextMatchUps, drawDefinition })
       : undefined;
     withdrawByeSeats({
+      clearDrawPosition,
       claimantMatchUpId: matchUpId,
       keepAt: ownLoserTargetId,
       tournamentRecord,
@@ -257,7 +261,14 @@ export function settleRederivedDoubleExit({
   applyWithdrawnExits({ withdrawnExits, tournamentRecord, drawDefinition, matchUpsMap, event });
 
   // 2. the BYEs it claimed
-  withdrawByeSeats({ claimantMatchUpId: matchUpId, tournamentRecord, drawDefinition, matchUpsMap, event });
+  withdrawByeSeats({
+    clearDrawPosition,
+    claimantMatchUpId: matchUpId,
+    tournamentRecord,
+    drawDefinition,
+    matchUpsMap,
+    event,
+  });
 
   // 3. as it was the moment the carrier arrived: undecided, or still a BYE where the lost origin's seat
   //    became one (census w2 9100488) — the carrier then passes through it, carrying the exit

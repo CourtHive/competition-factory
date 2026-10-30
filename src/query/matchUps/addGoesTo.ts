@@ -1,11 +1,12 @@
 import { addFinishingRounds } from '@Assemblies/generators/drawDefinitions/addFinishingRounds';
 import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { buildTargetIndex, positionTargets } from '@Query/matchUp/positionTargets';
 import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { isLinkObject } from '@Query/drawDefinition/malformedLinks';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { positionTargets } from '@Query/matchUp/positionTargets';
+import { buildTargetIndex } from '@Query/matchUp/targetIndex';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 

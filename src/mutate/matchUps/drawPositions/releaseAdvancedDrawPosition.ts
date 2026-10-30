@@ -1,13 +1,13 @@
+import { ClearDrawPosition, withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/withdrawByeSeats';
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { bringCarryHome, carryLeavingWith } from '@Mutate/matchUps/drawPositions/carryHome';
-import { withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { awardStands } from './positionClear';
+import { awardStands } from './awardStands';
 import {
   deriveExitStateFromProvenance,
   getSideExitProvenance,
@@ -24,6 +24,8 @@ import { SUCCESS } from '@Constants/resultConstants';
 const RELEASABLE_STATUSES: (string | undefined)[] = [undefined, TO_BE_PLAYED, BYE];
 
 type ReleaseAdvancedDrawPositionArgs = {
+  /** clears a BYE seat the release withdraws (`withdrawByeSeats`), handed down from the clearing that started it */
+  clearDrawPosition: ClearDrawPosition;
   /** the BYE this position passed has been taken back (`releaseHoldersByeFromTarget`): a matchUp onward decided only by
    *  the carry leaving with the position, for a seat nobody holds, is released with it */
   passedByeReleased?: boolean;
@@ -77,6 +79,7 @@ type ReleaseAdvancedDrawPositionArgs = {
  * compacting it does not move it.
  */
 export function releaseAdvancedDrawPosition({
+  clearDrawPosition,
   passedByeReleased,
   occupantLeaving,
   tournamentRecord,
@@ -289,7 +292,14 @@ export function releaseAdvancedDrawPosition({
   // (`aRederivedConvergenceKeepsTheByeClaimsOfOthers`). Withdrawn once the pass is done, so a seat it clears cannot
   // move a matchUp this pass is still reading
   for (const claimantMatchUpId of withdrawnAwards) {
-    withdrawByeSeats({ claimantMatchUpId, tournamentRecord, drawDefinition, matchUpsMap: resolvedMap, event });
+    withdrawByeSeats({
+      clearDrawPosition,
+      claimantMatchUpId,
+      tournamentRecord,
+      drawDefinition,
+      matchUpsMap: resolvedMap,
+      event,
+    });
   }
 
   return { ...SUCCESS, releasedRoundNumbers, vacatedByes };

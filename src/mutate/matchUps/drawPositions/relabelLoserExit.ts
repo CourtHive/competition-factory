@@ -1,6 +1,7 @@
 import { removeOnwardLoserPlacements } from '@Mutate/matchUps/drawPositions/removeOnwardLoserPlacements';
 import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { byeSeatsOwedTo } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
+import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
@@ -182,6 +183,7 @@ function unawardProducedExit(args: RelabelArgs, standing: HydratedMatchUp, loser
   const drawPosition = standing.sides?.find((side) => side?.participantId === loserParticipantId)?.drawPosition;
   if (!stored || !drawPosition || !standing.roundNumber) return;
   releaseAdvancedDrawPositionAcrossLinks({
+    clearDrawPosition,
     structureId: standing.structureId as string,
     fromRoundNumber: standing.roundNumber + 1,
     tournamentRecord: args.tournamentRecord,
@@ -197,6 +199,7 @@ function unawardProducedExit(args: RelabelArgs, standing: HydratedMatchUp, loser
   // pending produced walkover and crossed into the Main final; relabelled from RETIRED to DEFAULTED, his carry converged
   // the Backdraw final, and he stayed in the Main final until a later correction was refused placing its real winner).
   releaseLinkedWinnerAdvancement({
+    clearDrawPosition,
     participantId: loserParticipantId,
     tournamentRecord: args.tournamentRecord,
     structureId: standing.structureId as string,

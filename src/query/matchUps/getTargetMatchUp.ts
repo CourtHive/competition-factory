@@ -1,16 +1,16 @@
+import { indexedRound, indexedStructure, TargetIndex } from '@Query/matchUp/targetIndex';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { reduceGroupedOrder } from './reduceGroupedOrder';
 import { chunkArray, generateRange } from '@Tools/arrays';
-import { indexedRound, indexedStructure, TargetIndex } from '@Query/matchUp/positionTargets';
 
 // constants
 import { MISSING_TARGET_LINK, NOT_IMPLEMENTED } from '@Constants/errorConditionConstants';
 import { DRAW, BOTTOM_UP, RANDOM, TOP_DOWN } from '@Constants/drawDefinitionConstants';
-import { DISABLE_LINKS } from '@Constants/extensionConstants';
 import { DrawDefinition, DrawLink } from '@Types/tournamentTypes';
+import { DISABLE_LINKS } from '@Constants/extensionConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 export function getTargetMatchUp({

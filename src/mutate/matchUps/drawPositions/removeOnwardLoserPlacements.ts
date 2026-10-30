@@ -1,6 +1,7 @@
 import { carriedExitStatus, getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { releaseAdvancedDrawPositionAcrossLinks } from './releaseLinkedWinnerAdvancement';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
+import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { withdrawAwardsToEmptiedSeats } from './withdrawAwardsToEmptiedSeats';
 import { getDrawPositionSides } from '@Query/matchUps/getDrawPositionSides';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -122,6 +123,7 @@ function releaseInertPlacements({
     if (!holdingRoundNumbers.length) continue;
 
     releaseAdvancedDrawPositionAcrossLinks({
+      clearDrawPosition,
       fromRoundNumber: Math.min(...holdingRoundNumbers),
       structureId: targetStructureId,
       tournamentRecord,

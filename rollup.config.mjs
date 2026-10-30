@@ -14,6 +14,15 @@ const srcIndex = 'src/index.ts';
 const basePath = fs.realpathSync(process.cwd());
 const distPath = path.resolve(basePath, 'dist');
 
+// A circular import among the factory's own modules fails the build. Rollup only warns about one, and four such
+// warnings scrolled past every build for weeks before anyone read them (2026-10-30).
+const onwarn = (warning, warn) => {
+  if (warning.code === 'CIRCULAR_DEPENDENCY' && !warning.ids?.some((id) => id.includes('node_modules'))) {
+    throw new Error(`circular dependency: ${warning.ids.map((id) => path.relative(basePath, id)).join(' -> ')}`);
+  }
+  warn(warning);
+};
+
 const buildOutput = ({ packageName = 'tods-competition-factory', minified, folder, format }) => {
   const development = format === 'cjs' && !minified ? 'development.' : '';
   const subFolder = folder ? `/${folder}` : '';
@@ -77,6 +86,7 @@ function createExport({ input, folder, packageName, cjs, esm }) {
       json(),
     ],
 
+    onwarn,
     input,
     output,
   };
@@ -94,6 +104,7 @@ const cjsExports = [{ input: srcIndex, cjs: true }].map(createExport);
 const esmExport = [
   {
     input: srcIndex,
+    onwarn,
     plugins: [
       typescript({ tsconfig: './tsconfig.json', declaration: false, sourceMap: false, outDir: `${distPath}/esm` }),
       nodeResolve(),
@@ -115,6 +126,7 @@ const esmExport = [
 const engineTypes = [
   {
     input: srcIndex,
+    onwarn,
     plugins: [
       dts({
         compilerOptions: {
