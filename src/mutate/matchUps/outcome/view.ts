@@ -1591,8 +1591,8 @@ function dualRewrite({
   event?: Event;
 }): NonNullable<OutcomeView['line']>['dualRewrite'] {
   const stored = matchUpsMap?.drawMatchUps?.find((candidate) => candidate.matchUpId === dualMatchUp.matchUpId);
-  if (!stored) return { reported: true };
-  const reported =
+  if (!stored) return { scoreReported: true };
+  const scoreReported =
     resolveTieScoreSource({ drawDefinition, structure, matchUp: stored, event }) === TieScoreSourceEnum.REPORTED;
   const tieFormat = copyTieFormat(resolveTieFormat({ drawDefinition, structure, matchUp: stored, event })?.tieFormat);
   const sides = ensuredDualSides({
@@ -1606,6 +1606,6 @@ function dualRewrite({
   return {
     ...(same(sides, stored.sides) ? {} : { sides }),
     ...(same(tieFormat, stored.tieFormat) ? {} : { tieFormat }),
-    reported,
+    scoreReported,
   };
 }

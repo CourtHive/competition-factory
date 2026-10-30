@@ -144,7 +144,7 @@ export type OutcomeView = {
      * sides `ensureSideLineUps` ensures (`ensuredDualSides`) and the tieFormat it copies on; and whether the tieFormat's
      * score is REPORTED (which returns before any tally)
      */
-    dualRewrite: { sides?: unknown[]; tieFormat?: unknown; reported: boolean };
+    dualRewrite: { sides?: unknown[]; tieFormat?: unknown; scoreReported: boolean };
     /**
      * the dual sits in a round robin group, whose tally a line's result re-reads. Read off the dual: a line is placed
      * in the container with no `containerStructureId` of its own (hydration OPEN-14), so the view finds no group for it

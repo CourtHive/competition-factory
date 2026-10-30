@@ -2051,7 +2051,7 @@ function teamReason({
   const { line, existing } = view;
   if (!line || view.isTeam || route !== 'winner' || !write?.winningSide || !request.score) return 'team';
   if (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide) return 'team';
-  if (line.autoCalcDisabled || line.dualRewrite.reported || !line.projectedScore) return 'team';
+  if (line.autoCalcDisabled || line.dualRewrite.scoreReported || !line.projectedScore) return 'team';
   // a round robin's group tally re-read from the line's result is v1's
   if (line.dualInGroup || view.group || view.draw.tallied) return 'team';
   const dualStatuses = new Set<string | undefined>([TO_BE_PLAYED, IN_PROGRESS]);
