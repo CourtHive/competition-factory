@@ -6,7 +6,7 @@ Automated scheduling places matchUps in time and on courts. Two pipelines do it 
 pipeline (`scheduleProfileRounds`) gives each matchUp a date and a time; the **grid** pipeline (`scheduleProfileGrid`)
 gives each matchUp a court and an order on a day's court grid. A third, `scheduleMatchUps`, times an explicit list of
 matchUps on one date. All three share one core: the dependency graph, the participant reachability model, the timing
-rules, recovery, daily limits, person requests and the played-order rule. This page states the rules a second
+rules, recovery, daily limits, person requests and the order rule. This page states the rules a second
 implementation has to reproduce: the inputs, the core, each pipeline's order of decisions, what is written, what is
 reported, and the guarantees. Where the engine's behaviour is a question rather than a decision it is marked **OPEN**.
 
@@ -162,13 +162,15 @@ participants (a pair's two individuals) and, by default, its potential participa
 
 ### 3.7 Played order
 
-A matchUp is never placed at or before a **played** matchUp it depends on, and a played matchUp is never placed after a
-matchUp that depends on it (CA, 2026-10-22). **Played** is COMPLETED, RETIRED or DEFAULTED with a score; a walkover,
-a double walkover or default, a cancelled or abandoned matchUp, a dead rubber, a BYE, and a matchUp IN_PROGRESS or
-SUSPENDED impose nothing. The comparison is scheduled against scheduled: an earlier date, or the same date with both
-times set and at or before. A same-day placement with no time, or a played matchUp with no date, proves nothing. The
-profile scheduler asks it of each slot it offers (§ 4, step 4.2) and then once of its whole plan (§ 4, step 5); every
-schedule write refuses it with `ANACHRONISM` (see [schedule governor: played order](../governors/schedule-governor.md)).
+A matchUp is never placed at or before a matchUp it depends on, and never after a matchUp that depends on it. This was
+the **played** order (CA, 2026-10-22): only a COMPLETED, RETIRED or DEFAULTED matchUp with a score imposed anything. It
+now binds **plans as well as history** (CA, 2026-10-30): every matchUp but a BYE orders the matchUps linked to it,
+walkovers, defaults and double exits included, however far downstream the link runs. The comparison is scheduled against
+scheduled: an earlier date, or the same date with both times set and at or before. A same-day placement with no time, or
+a matchUp with no date, proves nothing. The profile scheduler asks it of each slot it offers (§ 4, step 4.2) and then
+once of its whole plan (§ 4, step 5); every schedule write refuses it with `ANACHRONISM`, and `plannedOrder: false` on a
+write keeps the played order only (see [schedule governor: schedule order](../governors/schedule-governor.md)). The
+facts it reads (`playedOrderFacts`) are present for any draw with a placed matchUp, played or not.
 
 ### 3.8 The clock
 

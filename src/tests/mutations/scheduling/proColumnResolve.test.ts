@@ -23,6 +23,17 @@ function participantConflictCount(rowIssues) {
     .filter((entry) => entry.issue === SCHEDULE_CONFLICT && PARTICIPANT_CONFLICT_TYPES.has(entry.issueType)).length;
 }
 
+/** store schedules on the raw record and reload it: for an order the schedule writes refuse, as an import would leave it */
+function storeRawSchedules(schedules: { [matchUpId: string]: any }) {
+  const record = tournamentEngine.getTournament().tournamentRecord;
+  for (const structure of record.events[0].drawDefinitions[0].structures) {
+    for (const matchUp of structure.matchUps ?? []) {
+      if (schedules[matchUp.matchUpId]) matchUp.schedule = { ...matchUp.schedule, ...schedules[matchUp.matchUpId] };
+    }
+  }
+  expect(tournamentEngine.setState(record).success).toEqual(true);
+}
+
 function scheduledMatchUps() {
   return tournamentEngine.allCompetitionMatchUps({
     matchUpFilters: { scheduledDate: startDate },
@@ -150,18 +161,12 @@ describe('proColumnResolve - court-preserving conflict resolution', () => {
     const { matchUps } = tournamentEngine.allCompetitionMatchUps({ nextMatchUps: true, inContext: true });
     const round1 = matchUps.find((m) => m.roundNumber === 1 && m.winnerMatchUpId);
     const round2Id = round1.winnerMatchUpId;
-    const drawId = round1.drawId;
 
-    // feeder (round 1) at a LATER clock time than the match it feeds (round 2)
-    tournamentEngine.addMatchUpScheduleItems({
-      matchUpId: round2Id,
-      drawId,
-      schedule: { courtId: 'court-1', scheduledDate: startDate, scheduledTime: '09:00', courtOrder: 1 },
-    });
-    tournamentEngine.addMatchUpScheduleItems({
-      matchUpId: round1.matchUpId,
-      drawId,
-      schedule: { courtId: 'court-2', scheduledDate: startDate, scheduledTime: '12:00', courtOrder: 2 },
+    // feeder (round 1) at a LATER clock time than the match it feeds (round 2): an order the schedule writes refuse
+    // (CA 2026-10-30), so it is stored raw, as an import or an older engine would have left it
+    storeRawSchedules({
+      [round2Id]: { courtId: 'court-1', scheduledDate: startDate, scheduledTime: '09:00', courtOrder: 1 },
+      [round1.matchUpId]: { courtId: 'court-2', scheduledDate: startDate, scheduledTime: '12:00', courtOrder: 2 },
     });
 
     const scheduled = tournamentEngine.allCompetitionMatchUps({
@@ -188,19 +193,12 @@ describe('proColumnResolve - court-preserving conflict resolution', () => {
     const { matchUps } = tournamentEngine.allCompetitionMatchUps({ nextMatchUps: true, inContext: true });
     const round1 = matchUps.find((m) => m.roundNumber === 1 && m.winnerMatchUpId);
     const round2Id = round1.winnerMatchUpId;
-    const drawId = round1.drawId;
 
     // feeder BELOW its dependent in the SAME column (round2 earlier time, round1 later) →
-    // round2's head can never satisfy its source → deadlock the sweep must break
-    tournamentEngine.addMatchUpScheduleItems({
-      matchUpId: round2Id,
-      drawId,
-      schedule: { courtId: 'court-1', scheduledDate: startDate, scheduledTime: '09:00', courtOrder: 1 },
-    });
-    tournamentEngine.addMatchUpScheduleItems({
-      matchUpId: round1.matchUpId,
-      drawId,
-      schedule: { courtId: 'court-1', scheduledDate: startDate, scheduledTime: '12:00', courtOrder: 2 },
+    // round2's head can never satisfy its source → deadlock the sweep must break. Stored raw: the writes refuse it.
+    storeRawSchedules({
+      [round2Id]: { courtId: 'court-1', scheduledDate: startDate, scheduledTime: '09:00', courtOrder: 1 },
+      [round1.matchUpId]: { courtId: 'court-1', scheduledDate: startDate, scheduledTime: '12:00', courtOrder: 2 },
     });
 
     const scheduled = tournamentEngine.allCompetitionMatchUps({

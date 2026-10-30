@@ -867,6 +867,11 @@ Both are announced as v1 announces them: each matchUp's `modifyMatchUp` and its 
 call returns the dual's write as `tieMatchUpResult`, as v1's `directParticipants` does. A line directs nothing of its
 own: its targets are its dual's.
 
+**A line played on a dual already decided** (the remaining lines of a COMPLETED dual) is written the same way: the line,
+then the dual's tally, the dual staying COMPLETED and keeping its winner. Nothing is directed or carried again, since
+the dual's winner does not change; the next dual is left as it is, played or not. A dual walked over with its lines
+already at the value goal's edge is written the same way when a line takes it there (COMPLETED, its winner kept).
+
 **A line that decides its dual** makes the dual's own call: v1's `directParticipants` writes the projected winner and
 score onto the dual (COMPLETED) and directs the dual as any winner is directed. v2 plans that call as it plans any call,
 from a view of the dual taken on the line's own index (no hydration): routed, written and directed by the same
@@ -901,7 +906,8 @@ Stay v1's:
 - a dual's own call;
 - a decided dual whose losing side held no line-up: v1 carries nothing, and the sides the loser's assignment wrote
   (`updateSideLineUp`, from the draw's line-ups) stand;
-- a line that un-decides its dual;
+- a line that un-decides its dual, among them the first line played on a dual decided by its own exit (WALKOVER,
+  DEFAULTED, RETIRED): v1 projects the dual from its lines alone;
 - a corrected or cleared line;
 - auto-calc off;
 - a REPORTED score source (v1 returns before any tally);

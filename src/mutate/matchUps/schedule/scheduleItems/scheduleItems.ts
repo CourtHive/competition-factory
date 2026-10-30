@@ -11,6 +11,7 @@ import { assignMatchUpVenue } from '@Mutate/matchUps/schedule/assignMatchUpVenue
 import { addMatchUpTimeItem } from '@Mutate/timeItems/matchUps/matchUpTimeItems';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
+import { recordedOrderRefusal } from '@Query/matchUps/scheduling/recordedOrder';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
 import { matchUpAssignedCourtId } from '@Query/matchUp/courtAssignment';
@@ -171,6 +172,8 @@ function applyScheduleTiming({
   }
   if (startTime !== undefined) {
     const result = addMatchUpStartTime({
+      // the recorded order was asked of the whole write (start and end together) by addMatchUpScheduleItems
+      recordedOrderChecked: true,
       disableNotice: true,
       removePriorValues,
       tournamentRecord,
@@ -207,6 +210,7 @@ function applyScheduleTiming({
   }
   if (endTime !== undefined) {
     const result = addMatchUpEndTime({
+      recordedOrderChecked: true,
       disableNotice: true,
       removePriorValues,
       tournamentRecord,
@@ -493,6 +497,8 @@ type AddMatchUpScheduleItemsArgs = {
   pendingPlacements?: PendingPlacements;
   /** set by a bulk caller that asked `checkPlayedOrder` of the whole batch before writing any of it */
   playedOrderChecked?: boolean;
+  /** false: only a played matchUp orders, as before CA 2026-10-30 (default true: plans order too) */
+  plannedOrder?: boolean;
   /** run every refusal WITHOUT writing anything — see `checkScheduleValues` */
   validateOnly?: boolean;
   removePriorValues?: boolean;
@@ -533,6 +539,7 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
     validateOnly = false,
     playedOrderChecked,
     pendingPlacements,
+    plannedOrder,
     overrideScheduleLock,
     removePriorValues,
     tournamentRecords,
@@ -558,6 +565,7 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
     errorOnUnknownAttributes,
     overrideScheduleLock,
     tournamentRecord,
+    drawDefinition,
     schedule,
     matchUp,
     stack,
@@ -629,6 +637,7 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
       matchUpDependencies,
       inContextMatchUps,
       pendingPlacements,
+      plannedOrder,
       drawDefinition,
       matchUpId,
     });
@@ -762,6 +771,27 @@ function withGridPositionCleared({ matchUp, schedule }: { matchUp?: MatchUp; sch
   return { ...schedule, courtOrder: undefined, courtId: undefined, ...(hadCourt ? { venueId: undefined } : {}) };
 }
 
+/** the recorded-order refusal for a write's START_TIME and END_TIME together (CA 2026-10-30); undefined when it states neither */
+function recordedTimesRefusal({
+  drawDefinition,
+  matchUpId,
+  schedule,
+}: {
+  drawDefinition: DrawDefinition;
+  schedule: MatchUpSchedule;
+  matchUpId: string;
+}): ResultType | undefined {
+  const stated = (value: unknown) => (isString(value) && value ? convertTime(value, true, true) : undefined);
+  const startTime = stated(schedule.startTime);
+  const endTime = stated(schedule.endTime);
+  if (!startTime && !endTime) return undefined;
+  return recordedOrderRefusal({
+    override: { ...(startTime ? { startTime } : {}), ...(endTime ? { endTime } : {}) },
+    drawDefinition,
+    matchUpId,
+  });
+}
+
 /**
  * The refusals that are decided BEFORE anything is written, in one place.
  *
@@ -773,6 +803,7 @@ function checkScheduleRefusals({
   errorOnUnknownAttributes,
   overrideScheduleLock,
   tournamentRecord,
+  drawDefinition,
   schedule,
   matchUp,
   stack,
@@ -816,6 +847,12 @@ function checkScheduleRefusals({
     const result = { error: INVALID_DATE };
     return { error: decorateResult({ result, info: DATE_TIME_ANOTHER_DAY, stack }), unwritable: unwritable ?? [] };
   }
+
+  // the recorded times of linked matchUps, judged once against the start and the end the whole write leaves, before
+  // anything is written: a schedule given with an outcome is validated here before the outcome lands (CA 2026-10-30)
+  const recordedRefusal = recordedTimesRefusal({ drawDefinition, matchUpId: matchUp?.matchUpId, schedule });
+  if (recordedRefusal)
+    return { error: decorateResult({ result: recordedRefusal, stack }), unwritable: unwritable ?? [] };
 
   return { unwritable: unwritable ?? [] };
 }
@@ -1085,6 +1122,7 @@ export function addMatchUpOfficial({
 }
 
 export function addMatchUpStartTime({
+  recordedOrderChecked,
   removePriorValues,
   tournamentRecord,
   drawDefinition,
@@ -1092,7 +1130,7 @@ export function addMatchUpStartTime({
   matchUpId,
   startTime,
   event,
-}: AddScheduleAttributeArgs & { startTime?: string }) {
+}: AddScheduleAttributeArgs & { startTime?: string; recordedOrderChecked?: boolean }) {
   if (!matchUpId) return { error: MISSING_MATCHUP_ID };
   if (!validTimeValue(startTime)) return { error: INVALID_TIME };
 
@@ -1110,12 +1148,18 @@ export function addMatchUpStartTime({
 
   // START_TIME must be prior to any STOP_TIMEs, RESUME_TIMEs and STOP_TIME
   if (!earliestRelevantTimeValue || timeDate(startTime, scheduledDate) < earliestRelevantTimeValue) {
+    const militaryTime = convertTime(startTime, true, true);
+    // nor may it conflict with the recorded times of a linked matchUp (CA 2026-10-30)
+    if (!recordedOrderChecked) {
+      const refusal = recordedOrderRefusal({ drawDefinition, matchUpId, override: { startTime: militaryTime } });
+      if (refusal) return refusal;
+    }
+
     // there can be only one START_TIME; if a prior START_TIME exists, remove it
     if (matchUp?.timeItems) {
       matchUp.timeItems = matchUp.timeItems.filter((timeItem) => timeItem.itemType !== START_TIME);
     }
 
-    const militaryTime = convertTime(startTime, true, true);
     const timeItem = { itemType: START_TIME, itemValue: militaryTime };
 
     return addMatchUpTimeItem({
@@ -1170,6 +1214,7 @@ function resolveEndTimePlacement({
 
 export function addMatchUpEndTime({
   validateTimeSeries = true,
+  recordedOrderChecked,
   removePriorValues,
   tournamentRecord,
   drawDefinition,
@@ -1178,6 +1223,8 @@ export function addMatchUpEndTime({
   endTime,
   event,
 }: AddScheduleAttributeArgs & {
+  /** set by a caller that has already asked `recordedOrderRefusal` of the whole write */
+  recordedOrderChecked?: boolean;
   validateTimeSeries?: boolean;
   endTime?: string;
 }) {
@@ -1196,6 +1243,16 @@ export function addMatchUpEndTime({
   const placement = resolveEndTimePlacement({ latestRelevantTimeValue, validateTimeSeries, scheduledDate, endTime });
   if (!placement.acceptable) return { error: INVALID_END_TIME };
 
+  // All times stored as military time; END_TIME stays a bare HH:MM value
+  const militaryTime = convertTime(endTime, true, true);
+
+  // nor may the end conflict with the recorded times of a linked matchUp (CA 2026-10-30)
+  if (validateTimeSeries && !recordedOrderChecked) {
+    const override = { endTime: militaryTime, endDate: placement.endDate };
+    const refusal = recordedOrderRefusal({ drawDefinition, matchUpId, override });
+    if (refusal) return refusal;
+  }
+
   // there can be only one END_TIME / END_DATE; remove any prior values before writing
   if (matchUp?.timeItems) {
     matchUp.timeItems = matchUp.timeItems.filter(
@@ -1203,8 +1260,6 @@ export function addMatchUpEndTime({
     );
   }
 
-  // All times stored as military time; END_TIME stays a bare HH:MM value
-  const militaryTime = convertTime(endTime, true, true);
   const endTimeResult = addMatchUpTimeItem({
     duplicateValues: false,
     removePriorValues,
