@@ -26,8 +26,10 @@ import { findStructure } from '@Acquire/findStructure';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { xa } from '@Tools/extractAttributes';
 
-// constants
+// constants and types
+import { INVALID_VALUES, MISSING_DRAW_DEFINITION, UNLINKED_STRUCTURES } from '@Constants/errorConditionConstants';
 import { CONSOLATION, MAIN, PLAY_OFF, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import type { DrawDataResult, DrawInfo, StructureData, StructureStub } from '@Types/viewTypes';
 import { PARTICIPANT_ID } from '@Constants/attributeConstants';
 import { DISPLAY, TALLY } from '@Constants/extensionConstants';
 import { PUBLIC_DISPLAY } from '@Constants/displayConstants';
@@ -45,12 +47,6 @@ import {
   RETIRED,
   WALKOVER,
 } from '@Constants/matchUpStatusConstants';
-import {
-  ErrorType,
-  INVALID_VALUES,
-  MISSING_DRAW_DEFINITION,
-  UNLINKED_STRUCTURES,
-} from '@Constants/errorConditionConstants';
 
 /**
  * Arguments for {@link getDrawData}.
@@ -93,26 +89,12 @@ export type GetDrawDataArgs = {
   event?: Event;
 };
 
-type DrawInfo = Pick<DrawDefinition, 'matchUpFormat' | 'updatedAt' | 'drawName' | 'drawType' | 'drawId'> & {
-  participantPlacements?: boolean;
-  drawPublished?: boolean;
-  drawGenerated?: boolean;
-  drawCompleted?: boolean;
-  drawActive?: boolean;
-  display?: unknown;
-};
-
 // NOTE: if { usePublishState: true } then { eventPublishState } or { event } must be provided
-export function getDrawData(params: GetDrawDataArgs) {
+export function getDrawData(params: GetDrawDataArgs): DrawDataResult {
   return withContextExclusion(params, getDrawDataUnredacted);
 }
 
-function getDrawDataUnredacted(params: GetDrawDataArgs): {
-  structures?: any[];
-  success?: boolean;
-  error?: ErrorType;
-  drawInfo?: any;
-} {
+function getDrawDataUnredacted(params: GetDrawDataArgs): DrawDataResult {
   const {
     tournamentParticipants = [],
     includePositionAssignments,
@@ -196,7 +178,7 @@ function getDrawDataUnredacted(params: GetDrawDataArgs): {
    * Absent by design: roundMatchUps, roundProfile, participantResults, seedAssignments,
    * positionAssignments and report — they cannot be produced without the work this profile skips.
    */
-  const buildStructureStub = (structureId) => {
+  const buildStructureStub = (structureId: string): StructureStub => {
     const { structure } = findStructure({ drawDefinition, structureId });
     const leafMatchUps = (function collect(structs) {
       return (structs ?? []).flatMap((st) => {
@@ -224,7 +206,7 @@ function getDrawDataUnredacted(params: GetDrawDataArgs): {
     };
   };
 
-  const groupedStructures = structureGroups.map((structureIds) => {
+  const groupedStructures = structureGroups.map((structureIds): StructureData[] => {
     if (structuresProfile === PayloadProfileEnum.STUBS) return structureIds.map(buildStructureStub);
 
     const completedStructures = {};
@@ -328,7 +310,7 @@ function getDrawDataUnredacted(params: GetDrawDataArgs): {
           });
         }
 
-        const structureInfo: any = structure
+        const structureInfo: Partial<StructureData> = structure
           ? {
               stageSequence: structure.stageSequence,
               structureName: structure.structureName,
@@ -365,6 +347,7 @@ function getDrawDataUnredacted(params: GetDrawDataArgs): {
 
         if (structureInfo.structureActive) drawActive = true;
 
+        // structureActive and structureCompleted were set on structureInfo above
         return {
           ...structureInfo,
           participantResults,
@@ -373,8 +356,8 @@ function getDrawDataUnredacted(params: GetDrawDataArgs): {
           roundProfile,
           structureId,
           report,
-        };
-      });
+        } as unknown as StructureData; // roundMatchUps are raw only under inContext: false
+      }) as StructureData[]; // never undefined: the cleanup below writes to every entry
 
     // cleanup attribute used for sorting
     structures.forEach((structure) => {

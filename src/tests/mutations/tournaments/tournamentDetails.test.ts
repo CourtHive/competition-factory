@@ -260,7 +260,7 @@ test('getTournamentInfo surfaces the owning provider (parentOrganisation)', () =
   const { tournamentRecord } = mocksEngine.generateTournamentRecord();
   tournamentRecord.parentOrganisation = { organisationId: 'PROVIDER-1', organisationName: 'Example Tennis Club' };
   const { tournamentInfo } = getTournamentInfo({ tournamentRecord });
-  expect(tournamentInfo.parentOrganisation).toEqual({
+  expect(tournamentInfo?.parentOrganisation).toEqual({
     organisationId: 'PROVIDER-1',
     organisationName: 'Example Tennis Club',
   });
@@ -270,5 +270,5 @@ test('getTournamentInfo omits parentOrganisation when the tournament has none', 
   const { tournamentRecord } = mocksEngine.generateTournamentRecord();
   delete tournamentRecord.parentOrganisation;
   const { tournamentInfo } = getTournamentInfo({ tournamentRecord });
-  expect(tournamentInfo.parentOrganisation).toBeUndefined();
+  expect(tournamentInfo?.parentOrganisation).toBeUndefined();
 });

@@ -133,7 +133,7 @@ export function bulkReschedule({
   if (!scheduledNotCompletedMatchUps?.length) return { ...SUCCESS };
 
   const { tournamentInfo } = getTournamentInfo({ tournamentRecord });
-  const { startDate, endDate } = tournamentInfo;
+  const { startDate, endDate } = tournamentInfo!; // tournamentRecord is required above
 
   const drawIdMap = groupByDrawId(scheduledNotCompletedMatchUps);
 
