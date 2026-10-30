@@ -4,6 +4,7 @@ import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventTyp
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
 import { addDrawEntries } from '@Mutate/drawDefinitions/addDrawEntries';
+import { entityIdMismatch } from '@Helpers/parameters/entityIdMismatch';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { refreshEntryPositions } from './refreshEntryPositions';
 import { isValidExtension } from '@Validators/isValidExtension';
@@ -446,6 +447,9 @@ function validateAddEventEntriesParams(params: AddEventEntriesArgs, stack: strin
   const participantIds = unique(params.participantIds ?? []);
 
   if (!params.event) return { error: MISSING_EVENT };
+  // called without the engine it is given its event; an eventId beside it must name that event
+  const mismatch = entityIdMismatch(params);
+  if (mismatch) return mismatch;
   if (!participantIds?.length) {
     return decorateResult({
       result: { error: MISSING_PARTICIPANT_IDS },
