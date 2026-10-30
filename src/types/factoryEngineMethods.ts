@@ -349,6 +349,7 @@ export type FactoryEngineMethod =
   | 'getMatchUpParticipantIds'
   | 'getMatchUpRatingDelta'
   | 'getMatchUpReadiness'
+  | 'getMatchUpScheduleBounds'
   | 'getMatchUpScheduleDetails'
   | 'getMatchUpsMap'
   | 'getMatchUpsStats'
@@ -1134,6 +1135,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getMatchUpParticipantIds',
   'getMatchUpRatingDelta',
   'getMatchUpReadiness',
+  'getMatchUpScheduleBounds',
   'getMatchUpScheduleDetails',
   'getMatchUpsMap',
   'getMatchUpsStats',

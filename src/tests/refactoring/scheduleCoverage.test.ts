@@ -1263,57 +1263,50 @@ describe('scheduleProfileGrid coverage', () => {
 
 // ===== addMatchUpScheduleItems error/anachronism =====
 describe('addMatchUpScheduleItems additional coverage', () => {
-  it('reports anachronism warning and error when scheduling before dependent matchUp', () => {
-    const { matchUps, drawId, startDate } = setupTournament();
+  it('refuses a matchUp timed before its source, and escalates the same-day warning with errorOnAnachronism', () => {
+    const { drawId, startDate } = setupTournament();
+    const { matchUps: allMatchUps } = tournamentEngine.allTournamentMatchUps();
+    const secondRoundMatchUp: any = allMatchUps.find((m) => m.roundNumber === 2);
+    const source: any = allMatchUps.find((m) => m.winnerMatchUpId === secondRoundMatchUp.matchUpId);
 
-    // Schedule first-round matchUp late
-    tournamentEngine.addMatchUpScheduleItems({
-      matchUpId: matchUps[0].matchUpId,
+    // the source timed late, its dependent earlier: refused whatever the chronology switches say (CA 2026-10-30)
+    let result: any = tournamentEngine.addMatchUpScheduleItems({
+      matchUpId: source.matchUpId,
       drawId,
       schedule: { scheduledDate: startDate, scheduledTime: '18:00' },
     });
+    expect(result.success).toBe(true);
+    for (const checkChronology of [true, false]) {
+      result = tournamentEngine.addMatchUpScheduleItems({
+        matchUpId: secondRoundMatchUp.matchUpId,
+        drawId,
+        schedule: { scheduledDate: startDate, scheduledTime: '09:00' },
+        errorOnAnachronism: false,
+        checkChronology,
+      });
+      expect(result.error).toEqual(ANACHRONISM);
+    }
 
-    const { matchUps: allMatchUps } = tournamentEngine.allTournamentMatchUps();
-    const secondRoundMatchUp = allMatchUps.find((m) => m.roundNumber === 2);
-    expect(secondRoundMatchUp).toBeDefined();
-
-    // Schedule second-round matchUp EARLIER - should produce warning
-    let result: any = tournamentEngine.addMatchUpScheduleItems({
-      matchUpId: secondRoundMatchUp.matchUpId,
-      drawId,
-      schedule: { scheduledDate: startDate, scheduledTime: '09:00' },
-      checkChronology: true,
+    // a same-day placement with no times is not judged by the order; the chronology check warns of it, and
+    // errorOnAnachronism makes that warning an error
+    const setup2 = setupTournament();
+    const { matchUps: allMatchUps2 } = tournamentEngine.allTournamentMatchUps();
+    const secondRound2: any = allMatchUps2.find((m) => m.roundNumber === 2);
+    const source2: any = allMatchUps2.find((m) => m.winnerMatchUpId === secondRound2.matchUpId);
+    result = tournamentEngine.addMatchUpScheduleItems({
+      matchUpId: source2.matchUpId,
+      drawId: setup2.drawId,
+      schedule: { scheduledDate: setup2.startDate },
     });
     expect(result.success).toBe(true);
-    if (result.warnings) {
-      expect(result.warnings).toContain(ANACHRONISM);
-    }
-
-    // Now test with errorOnAnachronism - need fresh state
-    const setup2 = setupTournament();
-    tournamentEngine.addMatchUpScheduleItems({
-      matchUpId: setup2.matchUps[0].matchUpId,
+    result = tournamentEngine.addMatchUpScheduleItems({
+      matchUpId: secondRound2.matchUpId,
       drawId: setup2.drawId,
-      schedule: { scheduledDate: setup2.startDate, scheduledTime: '18:00' },
+      schedule: { scheduledDate: setup2.startDate },
+      errorOnAnachronism: true,
+      checkChronology: true,
     });
-
-    const { matchUps: allMatchUps2 } = tournamentEngine.allTournamentMatchUps();
-    const secondRound2 = allMatchUps2.find((m) => m.roundNumber === 2);
-    if (secondRound2) {
-      result = tournamentEngine.addMatchUpScheduleItems({
-        matchUpId: secondRound2.matchUpId,
-        drawId: setup2.drawId,
-        schedule: { scheduledDate: setup2.startDate, scheduledTime: '09:00' },
-        errorOnAnachronism: true,
-        checkChronology: true,
-      });
-      // If dependencies resolve, we get ANACHRONISM error; otherwise it's a warning
-      if (result.error) {
-        expect(result.error).toEqual(ANACHRONISM);
-      } else {
-        expect(result.success).toBe(true);
-      }
-    }
+    expect(result.error).toEqual(ANACHRONISM);
   });
 });
 

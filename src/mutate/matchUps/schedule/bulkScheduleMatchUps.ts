@@ -23,6 +23,8 @@ type BulkScheduleMatchUpsArgs = {
   matchUpIds?: string[];
   matchUpDetails: any;
   schedule?: any;
+  /** false: only a played matchUp orders, as before CA 2026-10-30 (default true: plans order too) */
+  plannedOrder?: boolean;
 };
 export function bulkScheduleMatchUps(params: BulkScheduleMatchUpsArgs) {
   const {
@@ -35,6 +37,7 @@ export function bulkScheduleMatchUps(params: BulkScheduleMatchUpsArgs) {
     tournamentRecords,
     checkChronology,
     matchUpDetails,
+    plannedOrder,
     schedule,
   } = params;
 
@@ -95,6 +98,7 @@ export function bulkScheduleMatchUps(params: BulkScheduleMatchUpsArgs) {
     tournamentRecords,
     tournamentRecord,
     checkChronology,
+    plannedOrder,
     matchUpIds,
     schedule,
   });

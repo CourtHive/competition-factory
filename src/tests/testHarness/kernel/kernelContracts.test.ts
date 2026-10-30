@@ -224,7 +224,9 @@ describe('negative controls: the cases reject a wrong implementation', () => {
     ]);
   });
 
-  it('a planner that ignores the played order fails the played-order case, and only it', () => {
+  // since the order binds plans (CA 2026-10-30), a placed unplayed source orders too: the transit cases place a matchUp
+  // and its dependent on one day, so a planner that ignores the order records their slots differently
+  it('a planner that ignores the order fails the cases where an order applies, and only those', () => {
     const plan = kernelOperations['kernel.scheduling.plan@2'];
     const ignoresPlayedOrder: KernelOperation = {
       ...plan,
@@ -233,6 +235,12 @@ describe('negative controls: the cases reject a wrong implementation', () => {
     const wrong = directAdapter({ ...kernelOperations, 'kernel.scheduling.plan@2': ignoresPlayedOrder });
     expect(failures(wrong, scheduling).map((c) => c.caseId)).toEqual([
       'scheduling.plan.played-source-on-a-later-date.v1',
+      'scheduling.plan.transit-longer-than-recovery-holds.v1',
+      'scheduling.plan.transit-shorter-than-recovery-adds-nothing.v1',
+      'scheduling.plan.transit-default-for-an-unstated-pair.v1',
+      'scheduling.plan.transit-none-within-a-facility.v1',
+      'scheduling.plan.transit-one-way-applies-one-way.v1',
+      'scheduling.plan.transit-default-from-the-policy.v1',
     ]);
   });
 

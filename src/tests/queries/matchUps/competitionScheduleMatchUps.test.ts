@@ -368,7 +368,10 @@ test.each([tournamentEngine])(
       scheduledTime: '08:00',
       venueId,
     };
+    // every qualifying round at one time is no order the rounds can play in; this test is about the date filter, so
+    // it keeps the played order only (CA 2026-10-30 made the order bind plans)
     result = tournamentEngine.bulkScheduleMatchUps({
+      plannedOrder: false,
       matchUpContextIds,
       schedule,
     });

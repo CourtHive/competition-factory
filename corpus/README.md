@@ -227,6 +227,11 @@ venues × daily limits × days: 288 cells) through `scheduleProfileRounds` and t
 claims every scheduling property, so a refused cell is a scheduler breaking one, named by cell and property. A smoke
 slice (one cell per draw type) runs in the ordinary suite; the whole matrix is opt-in and is not in the manifest gate.
 
+The scheduling source writes a sample of it into the manifest: every seventh cell (`pinnedScaleCells`), and the
+cells larger than the matrix (`largeScaleCells`: every draw type at 64 and 128, with and without BYEs). The large
+cells are the only ones whose grid sorts 64 matchUps or more at once, where the sort merges runs instead of
+insertion-sorting one, so they pin the order a comparator leaves to the sort.
+
 ## The hash manifest (committed)
 
 ```bash
