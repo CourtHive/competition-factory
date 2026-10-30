@@ -99,7 +99,8 @@ export function applyOwnedPlan({
     ops.flatMap((op) =>
       (op.op === 'setMatchUpDrawPositions' && (op.announcesContext === false || op.advancesThroughBye)) ||
       (op.op === 'setMatchUpResult' && op.announcesContext === false) ||
-      (op.op === 'setMatchUpBye' && op.announcesEvent === false)
+      (op.op === 'setMatchUpBye' && op.announcesEvent === false) ||
+      (op.op === 'setSideLineUp' && op.announcesEvent === false)
         ? [op.matchUpId]
         : [],
     ),

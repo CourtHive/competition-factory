@@ -3,7 +3,7 @@ import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpS
 import { getCapturedClock, writeLegacyEnabled } from '@Global/state/globalState';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
-import { isAnyExit, isDoubleExit } from '@Validators/isExit';
+import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { validMatchUps } from '@Validators/validMatchUp';
 import {
   buildCarriedExitProvenance,
@@ -2067,6 +2067,7 @@ function teamReason({
 }): AbstainReason | undefined {
   if (asDual) return undefined;
   if (!view.isTeam && !view.line && !view.matchUpTieId && !view.existing.collectionId) return undefined;
+  if (view.isTeam && !view.line) return dualCallReason(request, view, route);
   const { line, existing } = view;
   // a line's result with a winner, or its double exit (written as it stands, `only-score`, its dual tallied without it)
   if (!line || view.isTeam || (route !== 'winner' && !isDoubleExit(request.matchUpStatus))) return 'team';
@@ -2083,6 +2084,23 @@ function teamReason({
   // a line that decides its dual: the dual's own call is planned with it (`decidingLineOps`, S7)
   if (line.projectedWinningSide) return dual && line.projectedStatus === COMPLETED ? undefined : 'team';
   return line.projectedStatus === IN_PROGRESS ? undefined : 'team';
+}
+
+/**
+ * S7: a dual's own call given a winner. v1 writes it as any winner (`directParticipants`: the result, `scoredTime`, the
+ * winner placed in the next dual, announced `assignMatchUpDrawPosition`), after `ensureSideLineUps` has written the
+ * dual's sides (`ensuredSides`). It carries no line-up on: that is a deciding line's (`propagateLineUp`). Stays v1's: a
+ * call that enables or disables auto-calc (v1 writes `disableAutoCalc`, and projects the winner from the lines), a dual's
+ * exit carried across a loser link, a dual holding a winner or another status, and a dual in a round robin.
+ */
+function dualCallReason(request: OutcomeRequest, view: OutcomeView, route?: Route): AbstainReason | undefined {
+  const { existing } = view;
+  if (route !== 'winner' || request.flags.enableAutoCalc || request.flags.disableAutoCalc) return 'team';
+  // an exit carried across a loser link (`propagateExitStatus`) writes the sides of the dual it reaches: v1's
+  if (isExit(request.matchUpStatus) && request.flags.propagateExitStatus && view.targets.loserLink) return 'team';
+  // a dual holding a winner holds a decided status: none is to be played or in progress
+  if (existing.matchUpStatus !== TO_BE_PLAYED && existing.matchUpStatus !== IN_PROGRESS) return 'team';
+  return view.group || view.draw.tallied ? 'team' : undefined;
 }
 
 /**
@@ -2466,12 +2484,18 @@ function writtenScore(request: OutcomeRequest, write: MatchUpWrite): Score | und
 }
 
 /** the call's own result on its matchUp, and the matchUp's stamp */
-function resultOps(request: OutcomeRequest, write: MatchUpWrite, matchUpId: string): OutcomeOp[] {
+function resultOps(
+  request: OutcomeRequest,
+  write: MatchUpWrite,
+  matchUpId: string,
+  ensuredSides?: unknown[],
+): OutcomeOp[] {
   const score = writtenScore(request, write);
   return [
     {
       op: 'setMatchUpResult',
       matchUpId,
+      ...(ensuredSides ? { ensuredSides } : {}),
       matchUpStatus: write.matchUpStatus as MatchUpStatusUnion,
       ...(score ? { score } : {}),
       ...(request.matchUpFormat ? { matchUpFormat: request.matchUpFormat } : {}),
@@ -2637,6 +2661,43 @@ function loserLineUpBeyond({ dual, drawDefinition }: { dual: DualCall; drawDefin
   };
 }
 
+/**
+ * S7: a dual's own call whose loser a link places. The loser's assignment writes the team's line-up, as the draw holds it,
+ * on its side of each dual it reaches (`assignTeamLineUp` → `updateSideLineUp`, announced `updateSidLineUp`): past a BYE
+ * the dual beyond first, then the BYE matchUp. No line-up is carried from the dual itself (that is a deciding line's
+ * `propagateLoserLineUp`). False where a dual does not side the drawPosition (v1's).
+ */
+function assignedLineUpOps(
+  view: OutcomeView,
+  drawDefinition: DrawDefinition,
+  participantId: string,
+  through?: { matchUpId: string },
+): OutcomeOp[] | false {
+  const { loserMatchUpId, loserTargetDrawPosition } = view.targets;
+  const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }) ?? {};
+  const ops: OutcomeOp[] = [];
+  for (const matchUpId of [through?.matchUpId, loserMatchUpId]) {
+    if (!matchUpId) continue;
+    const target = view.inContextDrawMatchUps?.find((matchUp) => matchUp.matchUpId === matchUpId);
+    const sideNumber = target?.sides?.find((side) => side.drawPosition === loserTargetDrawPosition)?.sideNumber;
+    if (!sideNumber) return false;
+    ops.push({
+      op: 'setSideLineUp',
+      matchUpId,
+      sideNumber,
+      lineUp: lineUps[participantId],
+      announcedAs: 'updateSidLineUp',
+      // the loser's own dual is announced with no event (`assignTeamLineUp` hands `updateSideLineUp` none); the dual
+      // beyond a BYE is announced with one
+      ...(matchUpId === loserMatchUpId ? { announcesEvent: false as const } : {}),
+    });
+  }
+  // the dual the loser lands in is otherwise untouched (the arrival is written on its structure's assignments): its
+  // notice stamps it. Past a BYE, the dual beyond is stamped with its positions
+  if (loserMatchUpId) ops.push({ op: 'stampUpdatedAt', entity: 'matchUp', id: loserMatchUpId });
+  return ops;
+}
+
 /** the call's plan as ops, or the reason it is v1's */
 function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
   const reason = abstainReason(args);
@@ -2659,7 +2720,9 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
     ...swapOps(view, args.route),
     ...replacedLoserOps(view, args.route, write, request.matchUpStatus),
     ...unwound,
-    ...resultOps(request, write, matchUpId),
+    // a dual's own call writes its sides first (S7); for the dual a line decides they are its line's (`dualTally`), by the
+    // same rule (`ensuredDualSides`)
+    ...resultOps(request, write, matchUpId, view.dualSides),
     ...dualTallyOps(view.line),
   ];
   // the first direction: the winner's position joins the next matchUp's, which v1 stores ascending
@@ -2691,6 +2754,11 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
     loser?.arrives && view.targets.loserTargetSeat?.opponentBye ? view.targets.loserThroughBye : undefined;
   const winnerThrough =
     winner && view.targets.winner?.hasBye ? view.targets.winnerThroughBye?.[write.winningSide as 1 | 2] : undefined;
+  // a dual's own call: its loser's assignment writes the team's line-up where it lands (S7)
+  const dualCall = view.isTeam && !view.line && !args.asDual;
+  const lineUps =
+    dualCall && loser?.arrives ? assignedLineUpOps(view, drawDefinition, loser.participantId, loserThrough) : [];
+  if (!lineUps) return { abstain: 'team' };
   const throughBye = [loserThrough, winnerThrough].flatMap((through): OutcomeOp[] =>
     through
       ? [
@@ -2730,6 +2798,7 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
     ...seated,
     ...carried.relay,
     ...throughBye,
+    ...lineUps,
     ...carried.landing,
     ...converging,
     ...doubleExitSeated,

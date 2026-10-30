@@ -160,6 +160,8 @@ export type OutcomeView = {
      */
     dualInGroup: boolean;
   };
+  /** a TEAM dual's own call: the sides `ensureSideLineUps` writes before its result, present where they change (S7) */
+  dualSides?: unknown[];
   /** a TEAM dual under `enableAutoCalc`: the winner its lines project */
   dualProjection?: { projectedWinningSide?: number; score?: OutcomeScore };
   /** § 5 rule 1: where direction sends a winner, and who is on each side now */
