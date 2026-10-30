@@ -38,7 +38,8 @@ import {
  * by v2 and v1's writer is not asked; the record, the notices (payloads, in order) and the results equal v1's, under the
  * fixed and the real clock.
  *
- * Still v1's, pinned below: a line in a round robin (its group's tally), a REPORTED score source, and auto-calc off.
+ * Still v1's, pinned below: a decided dual whose loser goes on through a BYE, or whose losing side holds no line-up; a
+ * line in a round robin (its group's tally); a REPORTED score source; and auto-calc off.
  */
 const v1Writes = vi.hoisted(() => ({ count: 0 }));
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
@@ -76,6 +77,8 @@ type Scenario = {
   reported?: true;
   /** after the setup, each side of the step's dual holds an assignment naming no participant */
   stray?: true;
+  /** after the setup, the step's dual's side 2 holds no line-up */
+  bare?: true;
   setup: { target: Line; winningSide: 1 | 2 }[];
   step: { target: Line; winningSide: 1 | 2 };
   /** CONTROL: the dual a loser link sends the losing team to, and whether v1 carries its line-up onto that side */
@@ -109,7 +112,10 @@ function heldLineUp({ dual, sideNumber }: NonNullable<Scenario['loserSeat']>) {
  * The scenario's record, prepared once under v1 and copied for each run: setting a line-up result can create PAIR
  * participants with fresh ids, so two separately generated records would differ before the step under test
  */
-function prepare({ drawProfile, setup, step, unsettled, autoCalcOff, reported, stray }: Scenario, realClock: boolean) {
+function prepare(
+  { drawProfile, setup, step, unsettled, autoCalcOff, reported, stray, bare }: Scenario,
+  realClock: boolean,
+) {
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
   setClock(realClock ? undefined : '2026-10-25T00:00:00.000Z');
   setSubscriptions({ subscriptions: {} });
@@ -159,6 +165,17 @@ function prepare({ drawProfile, setup, step, unsettled, autoCalcOff, reported, s
       const [{ collectionId }] = side.lineUp[0].collectionAssignments;
       side.lineUp.push({ collectionAssignments: [{ collectionId, collectionPosition: 9 }] });
     }
+  }
+  if (bare) {
+    const lineId = findLine(step.target);
+    const duals = record.events.flatMap((event: any) =>
+      event.drawDefinitions.flatMap((draw: any) => draw.structures.flatMap((structure: any) => structure.matchUps)),
+    );
+    const dual = duals.find((matchUp: any) => matchUp.tieMatchUps?.some((line: any) => line.matchUpId === lineId));
+    const side = dual.sides.find((each: any) => each.sideNumber === 2);
+    // CONTROL: side 2 held its line-up, which is taken away
+    expect(!!side.lineUp?.length).toEqual(true);
+    delete side.lineUp;
   }
   if (unsettled) {
     const lineId = findLine(step.target);
@@ -438,6 +455,23 @@ describe('under v2, a TEAM line is v2s, deciding its dual or not, and leaves exa
 });
 
 const KEPT: [string, Scenario][] = [
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION: a decided dual whose loser is seated opposite a BYE, and goes on through it',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION, participantsCount: 7 },
+      setup: [0, 1, 2, 3].map((line) => ({ target: R1(2, line), winningSide: 1 as const })),
+      step: { target: R1(2, 4), winningSide: 1 },
+    },
+  ],
+  [
+    "COMPASS: a decided dual whose losing side holds no line-up: the loser's assignment writes its seat's sides",
+    {
+      drawProfile: { drawSize: 8, drawType: COMPASS },
+      setup: [0, 1, 2, 3].map((line) => ({ target: R1(2, line, 'East'), winningSide: 1 as const })),
+      step: { target: R1(2, 4, 'East'), winningSide: 1 },
+      bare: true,
+    },
+  ],
   [
     "a line in a round robin: v1 re-reads its group's tally (a line's group is read off its dual, hydration OPEN-14)",
     {

@@ -145,7 +145,15 @@ export type OutcomeView = {
      * score is REPORTED (which returns before any tally); and the sides the dual holds once rewritten, whose line-up a
      * deciding line's winning team carries on (`propagateLineUp`)
      */
-    dualRewrite: { sides?: unknown[]; tieFormat?: unknown; scoreReported: boolean; sidesAsHeld?: unknown[] };
+    dualRewrite: {
+      sides?: unknown[];
+      tieFormat?: unknown;
+      scoreReported: boolean;
+      /** the sides once the line's write has ensured them (the winner's carry reads these) */
+      sidesAsHeld?: unknown[];
+      /** the sides in context before the line's write (the loser's carry reads these, as v1's `directLoser` does) */
+      sidesInContext?: unknown[];
+    };
     /**
      * the dual sits in a round robin group, whose tally a line's result re-reads. Read off the dual: a line is placed
      * in the container with no `containerStructureId` of its own (hydration OPEN-14), so the view finds no group for it

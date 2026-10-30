@@ -2556,8 +2556,9 @@ function lineUpCarry({
  * The losing team's line-up on its side of the dual a loser link sends it to, as v1's `propagateLoserLineUp` carries it:
  * the line-up the decided dual's losing side holds, every assignment kept (unlike the winner's, none is filtered),
  * without substitutions, on side `2 - (roundPosition % 2)` of a first-round target and side 1 of a later round. A
- * loser kept out of a first-match feed (a BYE takes the seat) carries nothing. The dual a line decides is COMPLETED, so
- * its loser carries no exit (v1 returns before the carry where a fed exit propagates).
+ * loser kept out of a first-match feed (a BYE takes the seat) carries nothing; a loser seated opposite a BYE is v1's.
+ * The dual a line decides is COMPLETED, so its loser carries no exit (v1 returns before the carry where a fed exit
+ * propagates).
  */
 function loserLineUpCarry({
   line,
@@ -2570,9 +2571,13 @@ function loserLineUpCarry({
 }) {
   const loser = dual.direction?.loser;
   if (!loser?.arrives) return undefined;
-  const sides = line.dualRewrite.sidesAsHeld as { sideNumber?: number; lineUp?: LineUp }[] | undefined;
+  // opposite a BYE the loser goes on through it, and v1 writes the sides of the dual beyond as well: v1's
+  if (dual.view.targets.loserTargetSeat?.opponentBye) return false;
+  // as the losing side held it before the line's write; holding none, v1 carries nothing, and the sides the loser's
+  // assignment wrote stand (`updateSideLineUp`, from the draw's line-ups): v1's
+  const sides = line.dualRewrite.sidesInContext as { sideNumber?: number; lineUp?: LineUp }[] | undefined;
   const held = sides?.find((side) => side.sideNumber === 3 - winningSide)?.lineUp;
-  if (!held) return undefined;
+  if (!held) return false;
   const inContext = dual.view.inContextDrawMatchUps;
   const source = inContext?.find((matchUp) => matchUp.matchUpId === line.dualMatchUpId)?.roundPosition;
   const roundNumber = inContext?.find((matchUp) => matchUp.matchUpId === loser.matchUpId)?.roundNumber;

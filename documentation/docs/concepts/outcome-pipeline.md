@@ -885,8 +885,8 @@ Where a loser link sends the losing team on (a consolation, a compass direction)
 and the losing team's line-up is carried onto its side of the dual it lands in (`setSideLineUp`, v1's
 `propagateLoserLineUp`):
 
-- the line-up the decided dual's losing side holds, every assignment kept (the winner's drops any that names no
-  participant), without substitutions;
+- the line-up the decided dual's losing side held before the line's write, every assignment kept (the winner's drops
+  any that names no participant), without substitutions;
 - on side `2 - (roundPosition % 2)` of a first-round dual, by the decided dual's roundPosition; on side 1 of a later
   round's.
 
@@ -895,6 +895,10 @@ That dual is announced by `directLoser`. A loser kept out of a first-match feed 
 Stay v1's:
 
 - a dual's own call;
+- a decided dual whose loser is seated opposite a BYE: the loser goes on through it, and v1 writes the sides of the
+  dual beyond as well;
+- a decided dual whose losing side held no line-up: v1 carries nothing, and the sides the loser's assignment wrote
+  (`updateSideLineUp`, from the draw's line-ups) stand;
 - a line that un-decides its dual;
 - a corrected or cleared line;
 - auto-calc off;
