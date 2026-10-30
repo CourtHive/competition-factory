@@ -2,6 +2,7 @@ import { canonicalHash, canonicalObject } from './hash';
 import tournamentEngine from '@Engines/syncEngine';
 import { setRandomSource } from '@Tools/prng';
 import { applyPatch } from './applyPatch';
+import { runDirective } from './writeScenario';
 import { setClock } from '@Tools/clock';
 
 export type Mismatch = { step: number; expected: string; actual: string; result?: unknown };
@@ -53,7 +54,7 @@ export function replayThroughEngine(scenario: any): Mismatch[] {
       mismatches.push({ step: -1, expected: scenario.initial.hash, actual: initialHash });
     scenario.steps.forEach((step: any, index: number) => {
       restore(step);
-      const outcome: any = tournamentEngine.executionQueue([step.directive]);
+      const outcome: any = runDirective(step.directive.method, step.directive.params);
       const result = outcome?.error ? { error: outcome.error.code ?? String(outcome.error) } : { success: true };
       const hash = canonicalHash(canonicalObject(tournamentEngine.getTournament().tournamentRecord));
       const sameResult = (result as any).error === step.result.error && (result as any).success === step.result.success;
