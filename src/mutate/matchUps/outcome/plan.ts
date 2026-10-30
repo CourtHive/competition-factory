@@ -1,6 +1,7 @@
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
 import { getCapturedClock, writeLegacyEnabled } from '@Global/state/globalState';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { validMatchUps } from '@Validators/validMatchUp';
@@ -13,6 +14,7 @@ import {
 // constants and types
 import type { DrawDefinition, MatchUpStatusUnion, Score, TallyResult, Tournament } from '@Types/tournamentTypes';
 import { FIRST_MATCHUP, LOSER } from '@Constants/drawDefinitionConstants';
+import { LINEUPS } from '@Constants/extensionConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { LineUp } from '@Types/factoryTypes';
 import type { OutcomeOp } from './ops';
@@ -2507,7 +2509,8 @@ function decidingLineOps(
   });
   const carry = lineUpCarry({ line, winningSide, dual });
   const loserCarry = loserLineUpCarry({ line, winningSide, dual });
-  if (carry === false || loserCarry === false) return { abstain: 'team' };
+  const beyond = loserLineUpBeyond({ dual, drawDefinition });
+  if (carry === false || loserCarry === false || beyond === false) return { abstain: 'team' };
   const ops = [...dualOps];
   // after the winner's placement, as v1 carries it once the position has joined the next dual
   const placement = ops.findIndex(
@@ -2516,6 +2519,8 @@ function decidingLineOps(
   if (carry) ops.splice(placement < 0 ? ops.length : placement + 1, 0, carry);
   // the dual the loser lands in, otherwise untouched (the arrival is written on its structure's assignments), is stamped
   // by the carry's notice
+  // past a BYE, the dual beyond takes the losing team's line-up first (its assignment's), as v1 announces the two
+  if (beyond) ops.push(beyond);
   if (loserCarry) ops.push(loserCarry, { op: 'stampUpdatedAt', entity: 'matchUp', id: loserCarry.matchUpId });
   return { ops: [...resultOps(request, write, request.matchUpId as string), ...ops], shape: dualPlan.shape };
 }
@@ -2556,7 +2561,8 @@ function lineUpCarry({
  * The losing team's line-up on its side of the dual a loser link sends it to, as v1's `propagateLoserLineUp` carries it:
  * the line-up the decided dual's losing side holds, every assignment kept (unlike the winner's, none is filtered),
  * without substitutions, on side `2 - (roundPosition % 2)` of a first-round target and side 1 of a later round. A
- * loser kept out of a first-match feed (a BYE takes the seat) carries nothing; a loser seated opposite a BYE is v1's.
+ * loser kept out of a first-match feed (a BYE takes the seat) carries nothing; a loser seated opposite a BYE carries it
+ * onto the BYE matchUp, and goes on (`loserLineUpBeyond`).
  * The dual a line decides is COMPLETED, so its loser carries no exit (v1 returns before the carry where a fed exit
  * propagates).
  */
@@ -2571,8 +2577,6 @@ function loserLineUpCarry({
 }) {
   const loser = dual.direction?.loser;
   if (!loser?.arrives) return undefined;
-  // opposite a BYE the loser goes on through it, and v1 writes the sides of the dual beyond as well: v1's
-  if (dual.view.targets.loserTargetSeat?.opponentBye) return false;
   // as the losing side held it before the line's write; holding none, v1 carries nothing, and the sides the loser's
   // assignment wrote stand (`updateSideLineUp`, from the draw's line-ups): v1's
   const sides = line.dualRewrite.sidesInContext as { sideNumber?: number; lineUp?: LineUp }[] | undefined;
@@ -2590,6 +2594,33 @@ function loserLineUpCarry({
     sideNumber,
     lineUp,
     announcedAs: 'directLoser' as const,
+  };
+}
+
+/**
+ * A losing team seated opposite a BYE goes on through it into the dual beyond, whose side v1 writes as the loser's
+ * assignment writes any dual's (`assignTeamLineUp` → `updateSideLineUp`): the team's line-up as the draw holds it, on the
+ * side holding the loser's drawPosition, announced `updateSidLineUp`. The dual beyond's notice comes before the BYE
+ * matchUp's carry; a team the draw holds no line-up for takes none, as v1 writes it. Abstained (v1's): a drawPosition the
+ * dual beyond does not side yet.
+ */
+function loserLineUpBeyond({ dual, drawDefinition }: { dual: DualCall; drawDefinition: DrawDefinition }) {
+  const loser = dual.direction?.loser;
+  const { loserThroughBye, loserTargetDrawPosition } = dual.view.targets;
+  // the dual's own plan goes through the BYE only into a clean matchUp beyond (`loserThroughBye`), or abstains
+  const through = loser?.arrives ? loserThroughBye : undefined;
+  if (!loser || !through) return undefined;
+  const lineUps = firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }) ?? {};
+  const lineUp = lineUps[loser.participantId];
+  const target = dual.view.inContextDrawMatchUps?.find(({ matchUpId }) => matchUpId === through.matchUpId);
+  const sideNumber = target?.sides?.find((side) => side.drawPosition === loserTargetDrawPosition)?.sideNumber;
+  if (!sideNumber) return false;
+  return {
+    op: 'setSideLineUp' as const,
+    matchUpId: through.matchUpId,
+    sideNumber,
+    lineUp,
+    announcedAs: 'updateSidLineUp' as const,
   };
 }
 

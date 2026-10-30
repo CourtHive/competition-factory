@@ -34,11 +34,12 @@ import {
  * the line, then the dual's tally (`updateTieMatchUpScore`: its sides and tieFormat where they change, its score and
  * status). A line that decides its dual: v1 also makes the dual's own call, writing its winner and directing it, and
  * carries the winning team's line-up onto its side of the next dual (`propagateLineUp`) and, where a loser link sends the
- * losing team on, the losing team's onto its side there (`propagateLoserLineUp`). Under `v2` the call is written
+ * losing team on, the losing team's onto its side there (`propagateLoserLineUp`); a loser going on through a BYE there
+ * also takes its draw line-up onto the dual beyond (`updateSideLineUp`). Under `v2` the call is written
  * by v2 and v1's writer is not asked; the record, the notices (payloads, in order) and the results equal v1's, under the
  * fixed and the real clock.
  *
- * Still v1's, pinned below: a decided dual whose loser goes on through a BYE, or whose losing side holds no line-up; a
+ * Still v1's, pinned below: a decided dual whose losing side holds no line-up; a
  * line in a round robin (its group's tally); a REPORTED score source; and auto-calc off.
  */
 const v1Writes = vi.hoisted(() => ({ count: 0 }));
@@ -83,6 +84,8 @@ type Scenario = {
   step: { target: Line; winningSide: 1 | 2 };
   /** CONTROL: the dual a loser link sends the losing team to, and whether v1 carries its line-up onto that side */
   loserSeat?: { dual: Omit<Line, 'line'>; sideNumber: 1 | 2; carried: boolean };
+  /** CONTROL: past a BYE, the dual beyond the loser's seat, which v1 writes the losing team's draw line-up onto */
+  beyondSeat?: Scenario['loserSeat'];
 };
 
 function findDual({ structureName, roundNumber, roundPosition }: Omit<Line, 'line'>): any {
@@ -427,17 +430,35 @@ const OWNED: [string, Scenario][] = [
       },
     },
   ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION: a decided dual whose loser is seated opposite a BYE: on through it, its line-up both places',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION, participantsCount: 7 },
+      setup: [0, 1, 2, 3].map((line) => ({ target: R1(2, line), winningSide: 1 as const })),
+      step: { target: R1(2, 4), winningSide: 1 },
+      loserSeat: {
+        dual: { structureName: 'Consolation', roundNumber: 1, roundPosition: 1 },
+        sideNumber: 2,
+        carried: true,
+      },
+      beyondSeat: {
+        dual: { structureName: 'Consolation', roundNumber: 2, roundPosition: 1 },
+        sideNumber: 2,
+        carried: true,
+      },
+    },
+  ],
 ];
 
 describe('under v2, a TEAM line is v2s, deciding its dual or not, and leaves exactly what v1 leaves', () => {
   it.each(OWNED)('%s', (_label, scenario) => {
     for (const realClock of [false, true]) {
       const prepared = prepare(scenario, realClock);
-      const { loserSeat } = scenario;
+      const seats = [scenario.loserSeat, scenario.beyondSeat].filter((seat) => !!seat);
       // CONTROL: the loser's seat holds no line-up before the step, and holds one after v1's exactly where v1 carries it
-      if (loserSeat) expect(heldLineUp(loserSeat)).toBeUndefined();
+      for (const seat of seats) expect(heldLineUp(seat)).toBeUndefined();
       const v1 = play(OUTCOME_PIPELINE_V1, scenario, prepared, realClock);
-      if (loserSeat) expect(!!heldLineUp(loserSeat)?.length).toEqual(loserSeat.carried);
+      for (const seat of seats) expect(!!heldLineUp(seat)?.length).toEqual(seat.carried);
       const v2 = play(OUTCOME_PIPELINE_V2, scenario, prepared, realClock);
       // the differential compares v2's plan with v1's write, notices included: a divergence would throw
       expect(play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario, prepared, realClock).result.success).toEqual(true);
@@ -455,14 +476,6 @@ describe('under v2, a TEAM line is v2s, deciding its dual or not, and leaves exa
 });
 
 const KEPT: [string, Scenario][] = [
-  [
-    'FIRST_MATCH_LOSER_CONSOLATION: a decided dual whose loser is seated opposite a BYE, and goes on through it',
-    {
-      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION, participantsCount: 7 },
-      setup: [0, 1, 2, 3].map((line) => ({ target: R1(2, line), winningSide: 1 as const })),
-      step: { target: R1(2, 4), winningSide: 1 },
-    },
-  ],
   [
     "COMPASS: a decided dual whose losing side holds no line-up: the loser's assignment writes its seat's sides",
     {
