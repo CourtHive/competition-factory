@@ -20,6 +20,35 @@ import {
 
 export type Directive = { method: string; params: Record<string, unknown> };
 
+/** A directive naming this method is a queue: its params are the queue's `methods` and `rollbackOnError`. */
+export const EXECUTION_QUEUE = 'executionQueue';
+
+/**
+ * Run one directive as a client sends it: a method as a queue of one, and an `executionQueue` directive as the queue
+ * it states, so a scenario can grade a queue's one instant, its rollback and the writes a refusal keeps.
+ */
+export function runDirective(method: string, params: any) {
+  if (method === EXECUTION_QUEUE) return tournamentEngine.executionQueue(params.methods, params.rollbackOnError);
+  return tournamentEngine.executionQueue([{ method, params }]);
+}
+
+/**
+ * A refusal as the corpus records it: its code, its context, and for a queue whether its writes were rolled back
+ * (a refusal before any directive runs states neither).
+ */
+export function recordedRefusal(method: string, outcome: any) {
+  const context = {
+    ...outcome.context,
+    ...(method === EXECUTION_QUEUE && typeof outcome.rolledBack === 'boolean'
+      ? { rolledBack: outcome.rolledBack }
+      : {}),
+  };
+  return {
+    error: outcome.error.code ?? String(outcome.error),
+    ...(Object.keys(context).length ? { context: canonicalObject(context) } : {}),
+  };
+}
+
 export type WriteScenarioArgs = {
   scenarioId: string;
   source: { kind: string; ref: string };
@@ -151,13 +180,10 @@ export function writeScenario(args: WriteScenarioArgs) {
       // the engine gets a copy: a write that keeps its params (addDrawDefinition attaches the draw it is given, then
       // stamps it) would otherwise change the directive the scenario stores after it was sent
       const params = makeDeepCopy(directive.params, false, true);
-      const outcome: any = tournamentEngine.executionQueue([{ method: directive.method, params }]);
+      const outcome: any = runDirective(directive.method, params);
       const report = schedulingReport(directive.method, outcome?.results?.[0]);
       const result = outcome?.error
-        ? {
-            error: outcome.error.code ?? String(outcome.error),
-            ...(outcome.context ? { context: canonicalObject(outcome.context) } : {}),
-          }
+        ? recordedRefusal(directive.method, outcome)
         : { success: true, ...(report ? { value: canonicalObject(report) } : {}) };
       const next = canonicalObject<any>(tournamentEngine.getTournament().tournamentRecord);
       const patch = generatePatch(state, next);
