@@ -200,7 +200,7 @@ it.each(scenarios.slice(1))('can aggregate team scores across SINGLES/DOUBLES ev
       }
     }
 
-    const { startDate, tournamentName } = tournamentEngine.getTournamentInfo().tournamentInfo;
+    const { startDate, tournamentName } = tournamentEngine.getTournamentInfo().tournamentInfo ?? {};
     const aggregate = tournamentEngine.getAggregateTeamResults({ finishingPositionRangeBounsPoints });
     const teamResults = defined('teamResults' in aggregate ? aggregate.teamResults : undefined, 'teamResults');
 

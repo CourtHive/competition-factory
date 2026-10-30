@@ -12,15 +12,13 @@ export function getCompetitionDateRange({ tournamentRecords }: { tournamentRecor
 } {
   if (!isObject(tournamentRecords)) return { error: MISSING_TOURNAMENT_RECORDS };
   const tournamentIds = Object.keys(tournamentRecords ?? {});
-  const dateRange: {
-    startDate: Date | undefined;
-    endDate: Date | undefined;
-  } = tournamentIds.reduce(
-    (dateRange, tournamentId) => {
+  // '' when a record's date does not parse: falsy, so it is replaced by the next record's date
+  type DateRange = { startDate: Date | '' | undefined; endDate: Date | '' | undefined };
+  const dateRange: DateRange = tournamentIds.reduce(
+    (dateRange: DateRange, tournamentId) => {
       const tournamentRecord = tournamentRecords[tournamentId];
-      const {
-        tournamentInfo: { startDate, endDate },
-      } = getTournamentInfo({ tournamentRecord });
+      // a record is present for every key, so tournamentInfo is too
+      const { startDate, endDate } = getTournamentInfo({ tournamentRecord }).tournamentInfo!;
 
       const extractedStart = startDate && extractDate(startDate);
       const dateOfStart = extractedStart && new Date(extractedStart);
@@ -36,7 +34,7 @@ export function getCompetitionDateRange({ tournamentRecords }: { tournamentRecor
 
       return dateRange;
     },
-    { startDate: undefined, endDate: undefined },
+    { startDate: undefined, endDate: undefined } as DateRange,
   );
 
   const startDate = dateRange.startDate && extractDate(dateRange.startDate.toISOString());

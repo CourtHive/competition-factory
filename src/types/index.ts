@@ -15,6 +15,7 @@ export * from './rankingTypes';
 export * from './factoryTypes';
 export * from './reportTypes';
 export * from './swissTypes';
+export * from './viewTypes';
 export * from './hydrated';
 
 export * from './rotatingPartnerRound';

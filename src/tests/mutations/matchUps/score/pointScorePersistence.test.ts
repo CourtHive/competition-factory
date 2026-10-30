@@ -313,9 +313,9 @@ describe('setMatchUpStatus persists IN_PROGRESS partial scores', () => {
 
     // Verify point scores survive through getEventData (the TMX render path)
     const { eventData } = tournamentEngine.getEventData({ eventId });
-    const structures = eventData?.drawsData?.[0]?.structures || [];
+    const structures = eventData?.drawsData?.[0]?.structures ?? [];
     const allMatchUps = structures.flatMap((s: any) => Object.values(s.roundMatchUps || {}).flat());
-    const matchUp = allMatchUps.find((m: any) => m.matchUpId === 'm-1-1');
+    const matchUp: any = allMatchUps.find((m: any) => m.matchUpId === 'm-1-1');
 
     expect(matchUp).toBeDefined();
     expect(matchUp.score.sets.length).toBe(1);

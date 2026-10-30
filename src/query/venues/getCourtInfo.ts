@@ -7,6 +7,7 @@ import { TOURNAMENT_RECORD, COURT_ID } from '@Constants/attributeConstants';
 import { ErrorType } from '@Constants/errorConditionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
+import type { CourtInfo } from '@Types/viewTypes';
 
 type GetCourtInfoArgs = {
   tournamentRecord: Tournament;
@@ -16,7 +17,7 @@ type GetCourtInfoArgs = {
 export function getCourtInfo({ tournamentRecord, internalUse, courtId }: GetCourtInfoArgs): {
   error?: ErrorType;
   success?: boolean;
-  courtInfo?: any;
+  courtInfo?: CourtInfo;
 } {
   const paramsCheck = requireParams({ tournamentRecord, courtId }, [TOURNAMENT_RECORD, COURT_ID]);
   if (paramsCheck.error) return paramsCheck;

@@ -6,6 +6,7 @@ import { getCourtInfo } from './getCourtInfo';
 // constants and types
 import { ErrorType, MISSING_VENUE_ID } from '@Constants/errorConditionConstants';
 import { ERROR, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
+import type { CourtInfo, VenueData } from '@Types/viewTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
 
@@ -19,7 +20,7 @@ type GetVenueDataArgs = {
 export function getVenueData(params: GetVenueDataArgs): {
   success?: boolean;
   error?: ErrorType;
-  venueData?: any;
+  venueData?: VenueData;
 } {
   const paramsCheck = checkRequiredParameters(params, [
     { [TOURNAMENT_RECORD]: true },
@@ -33,10 +34,12 @@ export function getVenueData(params: GetVenueDataArgs): {
   if (result.error) return result;
 
   const courts = result.venue?.courts ?? [];
+  // every court is read from this venue, so getCourtInfo always finds it
   const courtsInfo = courts.map((court) =>
-    (({ courtInfo }) => ({
-      ...courtInfo,
-    }))(
+    (({ courtInfo }) =>
+      ({
+        ...courtInfo,
+      }) as CourtInfo)(
       getCourtInfo({
         courtId: court.courtId,
         internalUse: true,

@@ -168,7 +168,7 @@ it('can generate FEED_IN_CHAMPIONSHIP with drawSize: 32', () => {
   expect(links[4].target.roundNumber).toEqual(8);
 
   const result = getDrawData({ drawDefinition: defined(drawDefinition, 'drawDefinition') });
-  expect(result?.structures?.[0].roundMatchUps[1][0].sides[0].displaySideNumber).not.toBeUndefined();
+  expect(result?.structures?.[0].roundMatchUps?.[1][0].sides?.[0].displaySideNumber).not.toBeUndefined();
 });
 
 it('can generate FEED_IN_CHAMPIONSHIP with drawSize: 64', () => {
