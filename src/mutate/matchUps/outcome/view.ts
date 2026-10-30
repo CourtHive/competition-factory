@@ -1606,6 +1606,7 @@ function dualRewrite({
   return {
     ...(same(sides, stored.sides) ? {} : { sides }),
     ...(same(tieFormat, stored.tieFormat) ? {} : { tieFormat }),
+    sidesAsHeld: sides ?? stored.sides,
     scoreReported,
   };
 }
