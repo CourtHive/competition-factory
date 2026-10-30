@@ -92,12 +92,12 @@
     "TEAM lines: DOUBLE_WALKOVER": {
       "calls": 228,
       "hydrations": {
-        "total": 1767,
-        "worst": 10
+        "total": 234,
+        "worst": 3
       },
       "getMatchUpsMap": {
-        "total": 2441,
-        "worst": 13
+        "total": 1871,
+        "worst": 10
       }
     }
   }

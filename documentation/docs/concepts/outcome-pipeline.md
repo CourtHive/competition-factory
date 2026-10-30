@@ -956,8 +956,9 @@ FEED_IN_CHAMPIONSHIP 64, ROUND_ROBIN 32, DOUBLE_ELIMINATION 64 and COMPASS 64 at
 **v1's settle passes ask the index first** (`matchUpStatus/indexPrecheck.ts`; the v1 win CA agreed 2026-10-24). Most
 of v1's settle passes hydrate the whole draw on every call only to run a detector that usually finds nothing, and a
 pass whose detector finds nothing writes nothing. So a pass first asks its own detector of the structural index, built
-with what the pass hydrates with (the draw alone), and returns without hydrating when it finds no work; a TEAM draw,
-which the index does not cover, hydrates as before. In `differential` the detector is asked of a hydration too, and a
+with what the pass hydrates with (the draw alone), and returns without hydrating when it finds no work; a TEAM draw
+is indexed too since S7 (`team: true`). Measured on `verify:hydrations`' TEAM arm under `v1`: 1,767 hydrations over
+228 calls before, 234 after (worst call 10 to 3). In `differential` the detector is asked of a hydration too, and a
 disagreement is a divergence keyed `precheck:<pass>`, raised when the call is compared and the call restored: the index
 oracle sees the draw as the call found it, this one each state a settle pass meets after the call's writes. Passes
 move one at a time, each with its `verify:hydrations` v1 ceiling lowered. `reconcileByeAdvancements` first: about one
