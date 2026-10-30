@@ -14,7 +14,7 @@ import {
 
 // constants and types
 import type { DrawDefinition, MatchUpStatusUnion, Score, TallyResult, Tournament } from '@Types/tournamentTypes';
-import { FIRST_MATCHUP, LOSER } from '@Constants/drawDefinitionConstants';
+import { FIRST_MATCHUP, LOSER, WINNER } from '@Constants/drawDefinitionConstants';
 import { LINEUPS } from '@Constants/extensionConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { LineUp } from '@Types/factoryTypes';
@@ -2027,31 +2027,22 @@ function unwoundPath(
   const structureId = source?.structureId;
   if (!source || !structureId) return undefined;
   const linksOut = (drawDefinition?.links ?? []).filter((link) => link.source?.structureId === structureId);
-  if (linksOut.some((link) => link.linkType !== LOSER || link.linkCondition)) return undefined;
-  if (linksOut.length && !view.draw.doubleExitPropagatesBye) return undefined;
+  // the links out that the unwind reads: loser links, plain or FIRST_MATCHUP (the double exit placed its BYE behind one
+  // regardless, `advanceByeToLoserMatchUp`); a WINNER link out (DOUBLE_ELIMINATION's Main to its Decider) matters only
+  // once the final has sent across it, which the undecided path below excludes (S6 tail)
+  const unread = (link: (typeof linksOut)[number]) =>
+    link.linkType === LOSER ? !!link.linkCondition && link.linkCondition !== FIRST_MATCHUP : link.linkType !== WINNER;
+  if (linksOut.some(unread)) return undefined;
+  const loserLinks = linksOut.filter((link) => link.linkType === LOSER);
+  if (loserLinks.length && !view.draw.doubleExitPropagatesBye) return undefined;
   const target = producedTarget(view, source, source.matchUpStatus as MatchUpStatusUnion);
   if (!target || target.feed) return undefined;
   const { entry } = target;
   if (entry.matchUpStatus !== target.matchUpStatus) return undefined;
   const awardee = awardedReason(view, source, target);
   if (awardee === false) return undefined;
-  const path = [source.matchUpId, entry.matchUpId];
-  let next = indexed(view, entry.winnerMatchUpId);
-  // the awardee went on into the next matchUp, alone there: their position comes back out of it
-  if (awardee) {
-    const held = (next?.drawPositions ?? []).filter(Boolean);
-    if (!next || held.length !== 1 || held[0] !== awardee || next.structureId !== structureId) return undefined;
-    if (next.matchUpStatus !== TO_BE_PLAYED || next.winningSide || !scoreless(next)) return undefined;
-    if (next.matchUpStatusCodes?.length || Object.keys(next.sideExitProvenance ?? {}).length) return undefined;
-    path.push(next.matchUpId);
-    next = indexed(view, next.winnerMatchUpId);
-  }
-  while (next) {
-    const clean = next.structureId === structureId && next.matchUpStatus === TO_BE_PLAYED && undecided(next, true);
-    if (!clean || Object.keys(next.sideExitProvenance ?? {}).length || path.includes(next.matchUpId)) return undefined;
-    path.push(next.matchUpId);
-    next = indexed(view, next.winnerMatchUpId);
-  }
+  const path = unwoundWinnerPath(view, structureId, [source.matchUpId, entry.matchUpId], awardee);
+  if (!path) return undefined;
   const seats = view.targets.unwindLoserSeats ?? [];
   const levels: UnwoundLevel[] = [];
   for (const [index, id] of path.entries()) {
@@ -2063,6 +2054,43 @@ function unwoundPath(
     levels.push({ matchUpId: id, seatOps, ...(awardee && index === 2 ? { released: awardee } : {}) });
   }
   return levels;
+}
+
+/**
+ * The winner path a cleared double exit's unwind writes back, from the produced exit's matchUp to the structure's final
+ * and one matchUp across the final's winner link (`unwoundPath`): each to be played with nothing placed, decided or
+ * carried; the awardee's matchUp holding their position alone. Undefined where anything else stands.
+ */
+function unwoundWinnerPath(
+  view: OutcomeView,
+  structureId: string,
+  start: string[],
+  awardee: number | undefined,
+): string[] | undefined {
+  const path = [...start];
+  let next = indexed(view, indexed(view, path[path.length - 1])?.winnerMatchUpId);
+  // the awardee went on into the next matchUp, alone there: their position comes back out of it
+  if (awardee) {
+    const held = (next?.drawPositions ?? []).filter(Boolean);
+    if (!next || held.length !== 1 || held[0] !== awardee || next.structureId !== structureId) return undefined;
+    if (next.matchUpStatus !== TO_BE_PLAYED || next.winningSide || !scoreless(next)) return undefined;
+    if (next.matchUpStatusCodes?.length || Object.keys(next.sideExitProvenance ?? {}).length) return undefined;
+    path.push(next.matchUpId);
+    next = indexed(view, next.winnerMatchUpId);
+  }
+  while (next) {
+    // the final's winner link leads into another structure (DOUBLE_ELIMINATION's Decider): v1's walk crosses it, takes
+    // back a participant the final sent across (`removeLinkedWinner`: nobody, the final being undecided, which the
+    // level before refused otherwise) and writes the matchUp back to be played as it writes the path; its structural
+    // positions stand. The view holds one level past the final (`unwindLoserSeats`), so a walk going further abstains
+    const crossed = next.structureId !== structureId;
+    const clean = next.matchUpStatus === TO_BE_PLAYED && (crossed ? scoreless(next) : undecided(next, true));
+    if (!clean || Object.keys(next.sideExitProvenance ?? {}).length || path.includes(next.matchUpId)) return undefined;
+    if (crossed && next.matchUpStatusCodes?.length) return undefined;
+    path.push(next.matchUpId);
+    next = indexed(view, next.winnerMatchUpId);
+  }
+  return path;
 }
 
 /**
