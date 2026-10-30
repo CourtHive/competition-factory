@@ -1380,6 +1380,47 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: TO_BE_PLAYED } }],
     },
   ],
+  // S6 tail, the given-winner unwind behind a FIRST_MATCHUP link, and a withdrawn BYE whose onward matchUp it leaves empty
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION (S6 tail): a double default given a walkover, its own BYE withdrawn and the matchUp it had advanced into released',
+    {
+      drawProfile: { drawSize: 16, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(1) }],
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION (S6 tail): a double walkover given a winner, the unfillable BYE behind FIRST_MATCHUP withdrawn and its double BYE unmade two rounds on',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2, 'Main'), outcome: won(1) }],
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION (S6 tail): a double walkover cleared, both BYEs withdrawn and the consolation written back',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [{ target: R1(3, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(3, 'Main'), outcome: { matchUpStatus: TO_BE_PLAYED } }],
+    },
+  ],
+  [
+    'FIRST_ROUND_LOSER_CONSOLATION (S6 tail): a double walkover cleared, the matchUp its withdrawn BYE had advanced into released',
+    {
+      drawProfile: { drawSize: 16, drawType: FIRST_ROUND_LOSER_CONSOLATION },
+      setup: [{ target: R1(5, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(5, 'Main'), outcome: { matchUpStatus: TO_BE_PLAYED } }],
+    },
+  ],
+  [
+    'FIRST_ROUND_LOSER_CONSOLATION (S6 tail): a double walkover given a winner, the matchUp its BYE had advanced into released',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_ROUND_LOSER_CONSOLATION },
+      setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(1, 'Main'), outcome: won(2) }],
+    },
+  ],
   // S6 tail, the relabels where the winner already stands: the carry follows the label where the loser stands
   [
     'FEED_IN_CHAMPIONSHIP (S6 tail): a carried walkover relabelled a default for the same winner, the carry rewritten where it stands',
@@ -1680,21 +1721,6 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     expect(v2.record).toEqual(v1.record);
   });
 
-  it('S6: a cleared double walkover whose withdrawn BYE leaves the matchUp it advanced into empty (FRLC) is v1s', () => {
-    const scenario: Scenario = {
-      drawProfile: { drawSize: 16, drawType: FIRST_ROUND_LOSER_CONSOLATION },
-      setup: [{ target: R1(5, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
-      steps: [{ target: R1(5, 'Main'), outcome: cleared }],
-    };
-    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
-    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
-    expect(v1.results[0].success).toEqual(true);
-    expect(v2.v1Writes).toBeGreaterThan(0);
-    expect(v2.results).toEqual(v1.results);
-    expect(v2.record).toEqual(v1.record);
-    expect(v2.notices).toEqual(v1.notices);
-  });
-
   it('S6: a cleared walkover that carried its exit across the loser link is v1s (its provenance there)', () => {
     const scenario: Scenario = {
       drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
@@ -1857,14 +1883,6 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
         drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
         setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
         steps: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
-      },
-    ],
-    [
-      'S6: a double default given a winner whose withdrawn BYE had gone on two rounds (FIRST_MATCH_LOSER_CONSOLATION) is v1s',
-      {
-        drawProfile: { drawSize: 16, drawType: FIRST_MATCH_LOSER_CONSOLATION },
-        setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
-        steps: [{ target: R1(1, 'Main'), outcome: walkover(1) }],
       },
     ],
   ])('%s', (_label, scenario) => {

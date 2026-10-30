@@ -15,8 +15,8 @@ import {
 // constants and types
 import type { DrawDefinition, MatchUpStatusUnion, Score, TallyResult, Tournament } from '@Types/tournamentTypes';
 import { FIRST_MATCHUP, LOSER, WINNER } from '@Constants/drawDefinitionConstants';
+import type { HydratedMatchUp, HydratedSide } from '@Types/hydrated';
 import { LINEUPS } from '@Constants/extensionConstants';
-import type { HydratedMatchUp } from '@Types/hydrated';
 import type { LineUp } from '@Types/factoryTypes';
 import type { OutcomeOp } from './ops';
 import type {
@@ -2044,12 +2044,18 @@ function unwoundPath(
   const path = unwoundWinnerPath(view, structureId, [source.matchUpId, entry.matchUpId], awardee);
   if (!path) return undefined;
   const seats = view.targets.unwindLoserSeats ?? [];
+  // the BYEs this unwind withdraws (its own seat's and its produced exit's), which a seat's onward matchUp is read without:
+  // v1 withdraws the deeper one first, so the own seat's onward matchUp has lost the unfillable seat's BYE by the time it
+  // is visited (FIRST_MATCH_LOSER_CONSOLATION: both BYEs meet in the consolation's second round)
+  const withdrawn = new Set(
+    seats.slice(0, 2).flatMap(({ loserSeat }) => (loserSeat?.seat?.byeFromPropagation ? [seatKey(loserSeat)] : [])),
+  );
   const levels: UnwoundLevel[] = [];
   for (const [index, id] of path.entries()) {
     const level = seats[index];
     if (level?.matchUpId !== id) return undefined;
     // the double exit's own seat and its produced exit's took the BYEs it placed; a seat further on holds nothing yet
-    const seatOps = level.loserSeat ? unwoundSeatOps(view, level.loserSeat, index < 2) : [];
+    const seatOps = level.loserSeat ? unwoundSeatOps(view, level.loserSeat, index < 2, withdrawn) : [];
     if (!seatOps) return undefined;
     levels.push({ matchUpId: id, seatOps, ...(awardee && index === 2 ? { released: awardee } : {}) });
   }
@@ -2123,10 +2129,22 @@ function awardedReason(view: OutcomeView, source: HydratedMatchUp, target: Produ
  * on, and the next matchUp is to be played with no result or provenance, and keeps a position). A seat further on holds nothing yet, and the
  * visit only announces its structure. Undefined for anything else.
  */
-function unwoundSeatOps(view: OutcomeView, loserSeat: WinnerLoserSeat, placedBye: boolean): OutcomeOp[] | undefined {
+const seatKey = ({ structureId, drawPosition }: { structureId?: string; drawPosition?: number }) =>
+  `${structureId}:${drawPosition}`;
+
+function unwoundSeatOps(
+  view: OutcomeView,
+  loserSeat: WinnerLoserSeat,
+  placedBye: boolean,
+  withdrawn: Set<string> = new Set(),
+): OutcomeOp[] | undefined {
   const { structureId, drawPosition, matchUpId, seat } = loserSeat;
   const withdraw: OutcomeOp = { op: 'withdrawBye', structureId, drawPosition };
-  if (!seat || loserSeat.linkCondition) return undefined;
+  // a BYE this double exit placed went in behind a FIRST_MATCHUP link too (`advanceByeToLoserMatchUp` asks no condition),
+  // and comes out the same way (S6 tail); a seat further on behind one may hold a standing reservation, not this double
+  // exit's to take back: v1's
+  const conditioned = loserSeat.linkCondition && !(placedBye && loserSeat.linkCondition === FIRST_MATCHUP);
+  if (!seat || conditioned) return undefined;
   if (!placedBye) return seat.free && loserSeat.matchUpStatus !== BYE ? [withdraw] : undefined;
   const byeMatchUp = indexed(view, matchUpId);
   if (!seat.bye || !seat.byeFromPropagation || seat.opponentBye || !byeMatchUp) return undefined;
@@ -2142,21 +2160,34 @@ function unwoundSeatOps(view: OutcomeView, loserSeat: WinnerLoserSeat, placedBye
   // a BYE alone in its matchUp sent nobody on; a next matchUp holding a position is rewritten by v1's position clear
   // all the same, and announced (census 20660398, FEED_IN_CHAMPIONSHIP_TO_SF 16): v1's
   if (!opposite.length) return held.length ? undefined : ops;
-  // a next matchUp the withdrawal leaves with no position is v1's: its release re-announces it
-  // (`releaseAdvancedDrawPosition`)
-  if (opposite.length > 1 || !next || !held.includes(opposite[0]) || held.length < 2) return undefined;
-  if (next.matchUpStatus !== TO_BE_PLAYED || next.winningSide || !scoreless(next)) return undefined;
-  if (Object.keys(next.sideExitProvenance ?? {}).length || next.sides?.some((side) => side.bye)) return undefined;
-  return [
-    ...ops,
-    {
-      op: 'setMatchUpDrawPositions',
-      matchUpId: next.matchUpId,
-      drawPositions: held.filter((position) => position !== opposite[0]),
-      withdrawnByePosition: drawPosition,
-    },
-    { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId },
-  ];
+  if (opposite.length > 1 || !next || !held.includes(opposite[0])) return undefined;
+  // a BYE beside the position there that this unwind withdraws is read as withdrawn: the matchUp is then to be played
+  const byeStands = (side: HydratedSide) =>
+    !!side.bye && !withdrawn.has(seatKey({ structureId: next.structureId, drawPosition: side.drawPosition }));
+  const standing = next.sides?.some(byeStands);
+  const toBePlayed = next.matchUpStatus === TO_BE_PLAYED || (next.matchUpStatus === BYE && !standing);
+  if (!toBePlayed || next.winningSide || !scoreless(next)) return undefined;
+  if (Object.keys(next.sideExitProvenance ?? {}).length || standing) return undefined;
+  const remaining = held.filter((position) => position !== opposite[0]);
+  // the position taken back out of the next matchUp: where another stands, as v1's position clear writes it, named for
+  // the withdrawn BYE; alone there, the matchUp is left with no position, which v1 releases instead
+  // (`releaseAdvancedDrawPosition`, with neither event nor tournament): FIRST_MATCH_LOSER_CONSOLATION's own seat beside an
+  // unfilled fed seat, the double BYE its unfillable seat makes behind FIRST_MATCHUP (S6 tail)
+  const taken: OutcomeOp = remaining.length
+    ? {
+        op: 'setMatchUpDrawPositions',
+        matchUpId: next.matchUpId,
+        drawPositions: remaining,
+        withdrawnByePosition: drawPosition,
+      }
+    : {
+        op: 'setMatchUpDrawPositions',
+        matchUpId: next.matchUpId,
+        drawPositions: remaining,
+        releasedDrawPosition: opposite[0],
+        announcesContext: false,
+      };
+  return [...ops, taken, { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId }];
 }
 
 /**
