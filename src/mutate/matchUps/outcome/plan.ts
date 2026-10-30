@@ -352,6 +352,9 @@ function directionReason(args: {
   // nor does a lucky draw's pre-feed round: v1 advances no one from it (`directParticipants`), the advancement is chosen
   // later (`luckyDrawAdvancement`)
   if (targets.luckyPreFeed && !direction && !targets.loserMatchUpId) return undefined;
+  // nor does a TEAM line: its result reaches the draw through its dual's tally, which `teamReason` vetted (S7). Its
+  // targets are its dual's (a line takes the dual's positions), and `planDirection` directs no line
+  if (view.line && !direction) return undefined;
   if (!direction?.winner && !final) return 'route';
   // S6: a double exit given a winner unwinds first (`givenWinnerReason`): the next matchUp held only its produced exit,
   // and is to be played again when the winner arrives; the loser's seat, freed of the double exit's BYE, was vetted there
@@ -2026,6 +2029,52 @@ function unwoundOps(
   });
 }
 
+/**
+ * S7: a TEAM call is v1's but for its first owned shape: a line's first result that leaves its dual undecided, on a dual
+ * already in progress whose stored sides, tieFormat and score source `updateTieMatchUpScore` leaves as they are
+ * (`line.dualSettled`). v1 then writes the line, and the dual's tally (its score; its status stays IN_PROGRESS) through
+ * `modifyMatchUpScore`, with no `scoredTime` on the dual. A dual's own call, a line that decides or un-decides its dual,
+ * a first line (whose lineUps and tieFormat v1 copies onto the dual), a corrected line, a round robin's tally, and
+ * auto-calc off stay v1's.
+ */
+function teamReason({
+  request,
+  write,
+  route,
+  view,
+}: {
+  request: OutcomeRequest;
+  write?: MatchUpWrite;
+  view: OutcomeView;
+  route?: Route;
+}): AbstainReason | undefined {
+  if (!view.isTeam && !view.line && !view.matchUpTieId && !view.existing.collectionId) return undefined;
+  const { line, existing } = view;
+  if (!line || view.isTeam || route !== 'winner' || !write?.winningSide || !request.score) return 'team';
+  if (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide) return 'team';
+  if (line.autoCalcDisabled || !line.dualSettled || !line.projectedScore) return 'team';
+  // a round robin's group tally re-read from the line's result is v1's
+  if (line.dualInGroup || view.group || view.draw.tallied) return 'team';
+  if (line.dualMatchUpStatus !== IN_PROGRESS || line.dualWinningSide || line.projectedWinningSide) return 'team';
+  return undefined;
+}
+
+/** S7: the dual's tally after its line's result, as `updateTieMatchUpScore` writes it (`modifyMatchUpScore`) */
+const dualTallyOps = (line?: OutcomeView['line']): OutcomeOp[] =>
+  line?.projectedScore
+    ? [
+        {
+          op: 'setMatchUpResult',
+          matchUpId: line.dualMatchUpId,
+          matchUpStatus: IN_PROGRESS,
+          score: line.projectedScore as Score,
+          stampsScoredTime: false,
+          dualTally: true,
+        },
+        { op: 'stampUpdatedAt', entity: 'matchUp', id: line.dualMatchUpId },
+      ]
+    : [];
+
 function abstainReason(args: {
   drawDefinition?: DrawDefinition;
   request: OutcomeRequest;
@@ -2035,7 +2084,8 @@ function abstainReason(args: {
   direction?: DirectionPlan;
 }): AbstainReason | undefined {
   const { request, view, write, direction } = args;
-  if (view.isTeam || view.line || view.matchUpTieId || view.existing.collectionId) return 'team';
+  const team = teamReason(args);
+  if (team) return team;
   if (writeLegacyEnabled()) return 'write-mode';
   if (!view.draw.storesEdges) return 'edges';
   if (request.carries?.schedule) return 'schedule';
@@ -2402,6 +2452,7 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
       ...(write.matchUpStatusCodes ? { matchUpStatusCodes: write.matchUpStatusCodes } : {}),
     },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
+    ...dualTallyOps(view.line),
   ];
   // the first direction: the winner's position joins the next matchUp's, which v1 stores ascending
   const placing = placedDirection(view, args.route, write, args.direction);

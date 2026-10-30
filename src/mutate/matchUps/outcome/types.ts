@@ -135,6 +135,19 @@ export type OutcomeView = {
     dualWinningSide?: number;
     projectedWinningSide?: number;
     autoCalcDisabled: boolean;
+    /** the dual's score as `updateTieMatchUpScore` tallies it with this line's result in place (S7) */
+    projectedScore?: OutcomeScore;
+    /**
+     * whether `updateTieMatchUpScore`'s rewrites before the tally leave the stored dual as it is (S7): the sides it
+     * ensures (`ensuredDualSides`) equal the stored ones, the tieFormat it copies equals the stored one, and the
+     * tieFormat's score is not REPORTED (which returns before any tally)
+     */
+    dualSettled: boolean;
+    /**
+     * the dual sits in a round robin group, whose tally a line's result re-reads. Read off the dual: a line is placed
+     * in the container with no `containerStructureId` of its own (hydration OPEN-14), so the view finds no group for it
+     */
+    dualInGroup: boolean;
   };
   /** a TEAM dual under `enableAutoCalc`: the winner its lines project */
   dualProjection?: { projectedWinningSide?: number; score?: OutcomeScore };

@@ -65,6 +65,11 @@ export type OutcomeOp =
        * relabel, whose last emission is `reconcileScoredTimes` taking its `scoredTime` (S6)
        */
       announcedAs?: 'reconcileScoredTimes';
+      /**
+       * a TEAM dual's tally after its line's result (S7): v1 returns it as the call's `tieMatchUpResult`, the dual's
+       * `updateTieMatchUpScore` result
+       */
+      dualTally?: true;
     }
   | {
       op: 'setMatchUpDrawPositions';
@@ -301,8 +306,11 @@ function indexDraw(drawDefinition: DrawDefinition) {
   const groups = new Map<string, Structure>();
   const visit = (structure: Structure) => {
     for (const matchUp of matchUpsOf(structure) ?? []) {
-      matchUps.set(matchUp.matchUpId, matchUp);
-      structureOf.set(matchUp.matchUpId, structure.structureId);
+      // a TEAM dual's lines are stored inside it, and written where they are (S7)
+      for (const stored of [matchUp, ...(matchUp.tieMatchUps ?? [])]) {
+        matchUps.set(stored.matchUpId, stored);
+        structureOf.set(stored.matchUpId, structure.structureId);
+      }
     }
     for (const child of structuresOf(structure) ?? []) {
       groups.set(child.structureId, child);

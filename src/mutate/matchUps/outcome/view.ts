@@ -4,6 +4,7 @@ import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propag
 import { isValidMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
+import { resolveTieScoreSource } from '@Query/hierarchical/tieFormats/resolveTieScoreSource';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -16,6 +17,8 @@ import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds'
 import { resolveScoringFormat } from '@Query/hierarchical/resolveScoringFormat';
 import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { ensuredDualSides } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
+import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { isDeciderStructure } from '@Query/drawDefinition/deciderStructures';
 import { getPolicyDefinitions } from '@Query/extensions/getAppliedPolicies';
 import { lastSetFormatIsTimed } from '@Query/matchUp/lastSetFormatisTimed';
@@ -24,6 +27,7 @@ import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
 import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { addGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { buildStructuralIndex } from '@Query/matchUps/structuralIndex';
@@ -36,6 +40,7 @@ import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { isLucky } from '@Query/drawDefinition/isLucky';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
+import { canonicalJson } from '@Tools/canonicalJson';
 import { isObject } from '@Tools/objects';
 import { overlap } from '@Tools/arrays';
 import {
@@ -53,7 +58,9 @@ import type { BuildViewArgs, OutcomeRequest, OutcomeView, Reservation, ThroughBy
 import { FIRST_MATCHUP, LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { BYE, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { PositionTargetsResult } from '@Query/matchUp/positionTargets';
+import { TieScoreSourceEnum } from '@Types/tournamentTypes';
 import type { CarryLevel, WinnerLoserSeat } from './types';
+import { LINEUPS } from '@Constants/extensionConstants';
 import type { MatchUpsMap } from '@Types/factoryTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
@@ -1309,7 +1316,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     const dualMatchUp = inContextDrawMatchUps?.find((candidate) => candidate.matchUpId === matchUpTieId);
     if (dualMatchUp) {
       const tieFormat = resolveTieFormat({ matchUp: dualMatchUp, drawDefinition, structure, event })?.tieFormat;
-      const { projectedWinningSide } = getProjectedDualWinningSide({
+      const { projectedWinningSide, projectedScore } = getProjectedDualWinningSide({
         matchUpStatus: request.matchUpStatus,
         winningSide: request.winningSide,
         score: request.score,
@@ -1326,7 +1333,10 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         dualMatchUpStatus: dualMatchUp.matchUpStatus,
         dualWinningSide: dualMatchUp.winningSide,
         projectedWinningSide,
+        projectedScore,
         autoCalcDisabled: !!(dualMatchUp.disableAutoCalc ?? dualMatchUp._disableAutoCalc),
+        dualSettled: dualSettled({ dualMatchUp, matchUpsMap, drawDefinition, structure, event }),
+        dualInGroup: !!dualMatchUp.containerStructureId,
       };
     }
   }
@@ -1530,4 +1540,39 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       timedTie: !!(inContextMatchUp?.collectionId && lastSetFormatIsTimed({ ...inContextMatchUp })),
     },
   };
+}
+
+/**
+ * Whether `updateTieMatchUpScore` rewrites nothing on the stored dual before its tally (S7): `ensureSideLineUps` gives
+ * the sides it already stores, the tieFormat it copies on (`copyTieFormat` of the resolved one) is the one it already
+ * stores, and the tieFormat's score is derived, not REPORTED (which returns before any tally). Each is read with the
+ * same function v1 calls.
+ */
+function dualSettled({
+  drawDefinition,
+  matchUpsMap,
+  dualMatchUp,
+  structure,
+  event,
+}: {
+  drawDefinition: DrawDefinition;
+  matchUpsMap?: MatchUpsMap;
+  dualMatchUp: HydratedMatchUp;
+  structure?: Structure;
+  event?: Event;
+}): boolean {
+  const stored = matchUpsMap?.drawMatchUps?.find((candidate) => candidate.matchUpId === dualMatchUp.matchUpId);
+  if (!stored) return false;
+  const reported =
+    resolveTieScoreSource({ drawDefinition, structure, matchUp: stored, event }) === TieScoreSourceEnum.REPORTED;
+  const tieFormat = resolveTieFormat({ drawDefinition, structure, matchUp: stored, event })?.tieFormat;
+  const sides = ensuredDualSides({
+    lineUps: firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }),
+    contextSides: dualMatchUp.sides,
+    rawSides: stored.sides,
+  });
+  // an absent value has no canonical form: it equals only another absent one
+  const same = (a: unknown, b: unknown) =>
+    a === undefined || b === undefined ? a === b : canonicalJson(a) === canonicalJson(b);
+  return !reported && same(copyTieFormat(tieFormat), stored.tieFormat) && same(sides, stored.sides);
 }
