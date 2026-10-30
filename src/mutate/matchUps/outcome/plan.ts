@@ -2124,10 +2124,10 @@ function abstainReason(args: {
   if (request.carries?.notes) return 'notes';
   if (request.matchUpStatusCodes?.length) return 'status-codes';
   if (view.draw.perMatchUpCompetition && (request.winningSide || write?.winningSide)) return 'competition';
-  // S7: a TEAM line `teamReason` admitted (a first result with a winner, or a double exit written as it stands) has no
-  // exit cascade, swap, removal or direction of its own: its targets are its dual's, and the dual's own call, where the
-  // line decides it, is planned and vetted as a call (`decidingLineOps`). The checks below are a call's, not a line's
-  if (view.line) return undefined;
+  // S7: a TEAM line's double exit (`only-score`), written as it stands: it directs nothing of its own, its targets being
+  // its dual's, and its dual is tallied without it. A line's single exit still meets `exitReason` (a DEFAULTED under a
+  // scoring policy's `incompleteAssignmentsOnDefault` writes `processCodes`, v1's)
+  if (view.line && isDoubleExit(request.matchUpStatus)) return undefined;
   const exit = exitReason(args);
   if (exit) return exit;
   if (satisfiedDoubleExit(view, request, args.route)) return undefined;

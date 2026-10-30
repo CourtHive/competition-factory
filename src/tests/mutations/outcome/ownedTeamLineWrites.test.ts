@@ -1,5 +1,6 @@
 import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
 import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import POLICY_SCORING_DEFAULT from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
 import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
@@ -103,6 +104,10 @@ type Scenario = {
   beyondSeat?: Scenario['loserSeat'];
   /** CONTROL: the step's dual is decided before the step, for this side, and v1 leaves it so */
   decided?: 1 | 2;
+  /** the tournament's policies (a scoring policy's `processCodes`) */
+  policyDefinitions?: Record<string, unknown>;
+  /** KEPT: the reason v2 leaves the step to v1 (`team` unless named) */
+  abstains?: string;
   /** after the setup, the step's dual is given this exit for side 1 by its own call */
   dualExit?: 'WALKOVER' | 'DEFAULTED';
 };
@@ -141,7 +146,7 @@ function dualWinner(target: Line) {
  * participants with fresh ids, so two separately generated records would differ before the step under test
  */
 function prepare(
-  { drawProfile, setup, step, unsettled, autoCalcOff, reported, stray, bare, dualExit }: Scenario,
+  { drawProfile, setup, step, unsettled, autoCalcOff, reported, stray, bare, dualExit, policyDefinitions }: Scenario,
   realClock: boolean,
 ) {
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
@@ -149,6 +154,7 @@ function prepare(
   setSubscriptions({ subscriptions: {} });
   mocksEngine.generateTournamentRecord({
     drawProfiles: [{ eventType: TEAM, ...drawProfile, drawId: 'd' }],
+    policyDefinitions,
     nonRandom: 1,
     setState: true,
   });
@@ -667,6 +673,16 @@ const KEPT: [string, Scenario][] = [
     },
   ],
   [
+    "a line DEFAULTED under a scoring policy's processCodes: v1 writes the codes on the line (exitReason)",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      policyDefinitions: POLICY_SCORING_DEFAULT,
+      setup: [{ target: R1(1, 0), winningSide: 1 }],
+      step: { target: R1(1, 1), winningSide: 2, outcome: 'DEFAULTED' },
+      abstains: 'exit',
+    },
+  ],
+  [
     "a line in a round robin: v1 re-reads its group's tally (a line's group is read off its dual, hydration OPEN-14)",
     {
       drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },
@@ -696,7 +712,7 @@ const KEPT: [string, Scenario][] = [
 
 describe('still v1s', () => {
   it.each(KEPT)('%s', (_label, scenario) => {
-    const deferred = () => getDifferentialTally()['shadow:abstain:team']?.deferred ?? 0;
+    const deferred = () => getDifferentialTally()[`shadow:abstain:${scenario.abstains ?? 'team'}`]?.deferred ?? 0;
     const prepared = prepare(scenario, false);
     const before = deferred();
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario, prepared);
