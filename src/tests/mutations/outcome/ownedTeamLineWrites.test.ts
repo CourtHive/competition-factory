@@ -1,5 +1,6 @@
 import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
 import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
+import POLICY_SCORING_DEFAULT from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
 import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
@@ -66,6 +67,7 @@ const TOPICS = [MODIFY_MATCHUP, MODIFY_DRAW_DEFINITION, MODIFY_POSITION_ASSIGNME
 const won = (winningSide: 1 | 2) => generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide }).outcome;
 function stepOutcome({ winningSide, outcome }: Scenario['step']) {
   if (outcome === 'winner') return { winningSide };
+  if (outcome === 'DOUBLE_WALKOVER' || outcome === 'DOUBLE_DEFAULT') return { matchUpStatus: outcome };
   if (outcome === 'RETIRED') {
     return generateOutcomeFromScoreString({ scoreString: '6-1 2-1', winningSide, matchUpStatus: RETIRED }).outcome;
   }
@@ -90,14 +92,22 @@ type Scenario = {
   /** after the setup, the step's dual's side 2 holds no line-up */
   bare?: true;
   setup: { target: Line; winningSide: 1 | 2 }[];
-  /** the step's outcome: scored 6-1 6-1 (default), a winner alone, or a single exit */
-  step: { target: Line; winningSide: 1 | 2; outcome?: 'winner' | 'WALKOVER' | 'DEFAULTED' | 'RETIRED' };
+  /** the step's outcome: scored 6-1 6-1 (default), a winner alone, a single exit, or a double exit (its side unused) */
+  step: {
+    target: Line;
+    winningSide: 1 | 2;
+    outcome?: 'winner' | 'WALKOVER' | 'DEFAULTED' | 'RETIRED' | 'DOUBLE_WALKOVER' | 'DOUBLE_DEFAULT';
+  };
   /** CONTROL: the dual a loser link sends the losing team to, and whether v1 carries its line-up onto that side */
   loserSeat?: { dual: Omit<Line, 'line'>; sideNumber: 1 | 2; carried: boolean };
   /** CONTROL: past a BYE, the dual beyond the loser's seat, which v1 writes the losing team's draw line-up onto */
   beyondSeat?: Scenario['loserSeat'];
   /** CONTROL: the step's dual is decided before the step, for this side, and v1 leaves it so */
   decided?: 1 | 2;
+  /** the tournament's policies (a scoring policy's `processCodes`) */
+  policyDefinitions?: Record<string, unknown>;
+  /** KEPT: the reason v2 leaves the step to v1 (`team` unless named) */
+  abstains?: string;
   /** after the setup, the step's dual is given this exit for side 1 by its own call */
   dualExit?: 'WALKOVER' | 'DEFAULTED';
 };
@@ -136,7 +146,7 @@ function dualWinner(target: Line) {
  * participants with fresh ids, so two separately generated records would differ before the step under test
  */
 function prepare(
-  { drawProfile, setup, step, unsettled, autoCalcOff, reported, stray, bare, dualExit }: Scenario,
+  { drawProfile, setup, step, unsettled, autoCalcOff, reported, stray, bare, dualExit, policyDefinitions }: Scenario,
   realClock: boolean,
 ) {
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
@@ -144,6 +154,7 @@ function prepare(
   setSubscriptions({ subscriptions: {} });
   mocksEngine.generateTournamentRecord({
     drawProfiles: [{ eventType: TEAM, ...drawProfile, drawId: 'd' }],
+    policyDefinitions,
     nonRandom: 1,
     setState: true,
   });
@@ -579,6 +590,39 @@ const OWNED: [string, Scenario][] = [
       },
     },
   ],
+  [
+    "a dual's first line a DOUBLE_WALKOVER: the dual in progress, the line counted for neither side",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [],
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'DOUBLE_WALKOVER' },
+    },
+  ],
+  [
+    'a line DOUBLE_DEFAULT on an open dual, 1-0',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1, 0), winningSide: 1 }],
+      step: { target: R1(1, 1), winningSide: 1, outcome: 'DOUBLE_DEFAULT' },
+    },
+  ],
+  [
+    'a line DOUBLE_WALKOVER played on a dual already decided: the dual keeps its winner',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [0, 1, 2, 3, 4].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
+      step: { target: R1(1, 5), winningSide: 1, outcome: 'DOUBLE_WALKOVER' },
+      decided: 1,
+    },
+  ],
+  [
+    'COMPASS: a line DOUBLE_DEFAULT in an East dual whose loser would go West: nothing produced or carried',
+    {
+      drawProfile: { drawSize: 8, drawType: COMPASS },
+      setup: [{ target: R1(2, 0, 'East'), winningSide: 2 }],
+      step: { target: R1(2, 1, 'East'), winningSide: 1, outcome: 'DOUBLE_DEFAULT' },
+    },
+  ],
 ];
 
 describe('under v2, a TEAM line is v2s, deciding its dual or not, and leaves exactly what v1 leaves', () => {
@@ -629,6 +673,16 @@ const KEPT: [string, Scenario][] = [
     },
   ],
   [
+    "a line DEFAULTED under a scoring policy's processCodes: v1 writes the codes on the line (exitReason)",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      policyDefinitions: POLICY_SCORING_DEFAULT,
+      setup: [{ target: R1(1, 0), winningSide: 1 }],
+      step: { target: R1(1, 1), winningSide: 2, outcome: 'DEFAULTED' },
+      abstains: 'exit',
+    },
+  ],
+  [
     "a line in a round robin: v1 re-reads its group's tally (a line's group is read off its dual, hydration OPEN-14)",
     {
       drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },
@@ -658,7 +712,7 @@ const KEPT: [string, Scenario][] = [
 
 describe('still v1s', () => {
   it.each(KEPT)('%s', (_label, scenario) => {
-    const deferred = () => getDifferentialTally()['shadow:abstain:team']?.deferred ?? 0;
+    const deferred = () => getDifferentialTally()[`shadow:abstain:${scenario.abstains ?? 'team'}`]?.deferred ?? 0;
     const prepared = prepare(scenario, false);
     const before = deferred();
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario, prepared);
