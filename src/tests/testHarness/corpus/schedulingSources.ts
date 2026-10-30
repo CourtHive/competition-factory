@@ -5,6 +5,7 @@ import { SCHEDULING_STEP_PROPERTIES } from '../scheduling/schedulingProperties';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { setRandomSource } from '@Tools/prng';
+import { RECORD_CLOCK } from './recordClock';
 import { setClock } from '@Tools/clock';
 import path from 'path';
 import fs from 'fs';
@@ -48,7 +49,7 @@ type Authored = {
 const claim = (ok: boolean, sentence: string) => (ok ? [] : [sentence]);
 
 function generate({ drawProfile, policyDefinitions, courtsCount = 8 }: any) {
-  setClock(CLOCK);
+  setClock(RECORD_CLOCK);
   setRandomSource(SEED);
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({
     venueProfiles: [{ startTime: '08:00', endTime: '20:00', courtsCount, venueId: VENUE_ID }],

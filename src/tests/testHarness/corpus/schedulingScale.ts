@@ -4,6 +4,7 @@ import { SCHEDULING_STEP_PROPERTIES } from '../scheduling/schedulingProperties';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { setRandomSource } from '@Tools/prng';
+import { RECORD_CLOCK } from './recordClock';
 import { setClock } from '@Tools/clock';
 import path from 'path';
 import fs from 'fs';
@@ -70,7 +71,7 @@ export const cellId = (cell: ScaleCell) =>
 
 /** the record and directives of one cell: every structure's rounds profiled, split across the days, then both runs */
 export function scaleScenario(cell: ScaleCell) {
-  setClock(CLOCK);
+  setClock(RECORD_CLOCK);
   setRandomSource(cell.seed);
   const venueProfiles = Array.from({ length: cell.venues }, (_, index) => ({
     venueId: `venue-${index + 1}`,
