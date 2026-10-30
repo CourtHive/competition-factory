@@ -2044,8 +2044,8 @@ function unwoundOps(
 }
 
 /**
- * S7: a TEAM call is v1's but for its owned shape: a line's first result (scored, a winner alone, or a single exit:
- * WALKOVER, DEFAULTED, RETIRED), whose dual's tally follows from it. v1 writes the
+ * S7: a TEAM call is v1's but for its owned shape: a line's first result (scored, a winner alone, a single exit:
+ * WALKOVER, DEFAULTED, RETIRED, or a double exit written as it stands), whose dual's tally follows from it. v1 writes the
  * line, then `updateTieMatchUpScore` writes the dual through `modifyMatchUpScore`, with no `scoredTime`: the sides it
  * ensures and the tieFormat it copies on (`line.dualRewrite`, where they change: on a dual's first line, or a record
  * that stored neither), its tally and the status it derives from it; a dual already decided keeps its winner and is
@@ -2053,13 +2053,13 @@ function unwoundOps(
  * un-decides its dual, a corrected line, a round robin's tally, a REPORTED score, and auto-calc off stay v1's.
  */
 function teamReason({
+  request,
   asDual,
-  write,
   route,
   view,
   dual,
 }: {
-  write?: MatchUpWrite;
+  request: OutcomeRequest;
   view: OutcomeView;
   dual?: DualCall;
   asDual?: true;
@@ -2068,7 +2068,8 @@ function teamReason({
   if (asDual) return undefined;
   if (!view.isTeam && !view.line && !view.matchUpTieId && !view.existing.collectionId) return undefined;
   const { line, existing } = view;
-  if (!line || view.isTeam || route !== 'winner' || !write?.winningSide) return 'team';
+  // a line's result with a winner, or its double exit (written as it stands, `only-score`, its dual tallied without it)
+  if (!line || view.isTeam || (route !== 'winner' && !isDoubleExit(request.matchUpStatus))) return 'team';
   if (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide) return 'team';
   if (line.autoCalcDisabled || line.dualRewrite.scoreReported || !line.projectedScore) return 'team';
   // a round robin's group tally re-read from the line's result is v1's
@@ -2123,6 +2124,10 @@ function abstainReason(args: {
   if (request.carries?.notes) return 'notes';
   if (request.matchUpStatusCodes?.length) return 'status-codes';
   if (view.draw.perMatchUpCompetition && (request.winningSide || write?.winningSide)) return 'competition';
+  // S7: a TEAM line `teamReason` admitted (a first result with a winner, or a double exit written as it stands) has no
+  // exit cascade, swap, removal or direction of its own: its targets are its dual's, and the dual's own call, where the
+  // line decides it, is planned and vetted as a call (`decidingLineOps`). The checks below are a call's, not a line's
+  if (view.line) return undefined;
   const exit = exitReason(args);
   if (exit) return exit;
   if (satisfiedDoubleExit(view, request, args.route)) return undefined;

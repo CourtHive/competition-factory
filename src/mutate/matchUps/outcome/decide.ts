@@ -813,7 +813,8 @@ function workingViewAfter({
     propagateRetirementAsExit: args.request.flags.propagateRetirementAsExit,
     propagateExitStatus: args.request.flags.propagateExitStatus,
     loserLinked: !!view.targets.loserLink,
-    contained: !!view.group && !view.group.adHoc,
+    // a round robin group's double exit produces nothing, nor does a TEAM line's (its targets are its dual's)
+    contained: (!!view.group && !view.group.adHoc) || !!view.line,
     inContextDrawMatchUps: view.inContextDrawMatchUps,
     matchUpId: args.request.matchUpId,
     tournamentRecord: args.tournamentRecord,
