@@ -1,9 +1,6 @@
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
-import { PARAMS } from './scoringBackend';
+import { PARAMS, VIEWS } from './scoringBackend';
 import { expect, it } from 'vitest';
-
-// the views a second implementation may answer (scoring-engine-spec.md § 11.3–11.4), each with the params it is sent
-const VIEWS = ['getScoreboard', 'getInputLevels', 'getInputMode', 'getEpisodes', 'getStatistics'];
 
 it('routes every view, sending its options as params', () => {
   const prototype = ScoringEngine.prototype as any;

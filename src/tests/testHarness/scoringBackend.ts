@@ -23,6 +23,9 @@ type Bridge = { call: (request: unknown) => any };
 
 const RESYNC = ['setState', 'loadSupplementaryState', 'reset', 'markHardBoundary'];
 
+/** the views (scoring-engine-spec.md § 11.3–11.4): read, never written */
+export const VIEWS = ['getScoreboard', 'getInputLevels', 'getInputMode', 'getEpisodes', 'getStatistics'];
+
 /**
  * each method's arguments as the second implementation reads them (the scoring corpus's directive params). The views
  * (scoring-engine-spec.md § 11.3–11.4) are routed like the writes: a view call compares what it returned.
@@ -64,6 +67,10 @@ export function routeScoringEngine({
   const sessions = new WeakMap<object, string>();
   let opened = 0;
   let depth = 0;
+  // the views the second implementation answers, compared after every routed write as well as when a test reads one,
+  // so each is graded on every state a write leaves; called through the routed wrappers, past any spy on the instance
+  const views = VIEWS.filter((view) => methods.includes(view));
+  const routed: Record<string, (...args: any[]) => unknown> = {};
 
   for (const name of RESYNC) {
     const original = prototype[name];
@@ -128,7 +135,9 @@ export function routeScoringEngine({
         );
       }
       if (refused) throw refused;
+      if (!VIEWS.includes(name)) for (const view of views) routed[view]?.call(this);
       return returned;
     };
+    routed[name] = prototype[name];
   }
 }
