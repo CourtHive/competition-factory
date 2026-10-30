@@ -198,7 +198,8 @@ from `generateTournamentRecord({ recordMethods: true })`. The initial record is 
 makes; the directives are the rest of the list, the engine calls a client makes to build that tournament
 (participants, events, entries, draws, results, venues, schedules), with random steps given as their results. So a
 consumer graded on this source is graded on building tournaments. Generation runs under the source's fixed clock, so
-a run is byte-identical to the last. The writer gives the engine a copy of each directive's params, so a write that
+a run is byte-identical to the last; the initial record is made an hour before it (see "The starting records" below).
+The writer gives the engine a copy of each directive's params, so a write that
 keeps what it is given (`addDrawDefinition` attaches the draw) cannot change the directive the scenario stores.
 
 ## The scheduling scale source
@@ -222,10 +223,17 @@ pnpm verify:corpus-manifest   # the merge gate: fails when a hash moved and the 
 
 The scenarios stay out of git; their hashes do not. `corpus/MANIFEST.txt` holds one line per
 authored, scheduling, grammar and scoring scenario: id, step count, the hash after the last step. Those four
-sources reproduce bit for bit (the authored and scheduling starting records are built on the corpus clock for
+sources reproduce bit for bit (the authored and scheduling starting records are built on a fixed clock for
 exactly this, and the grammar source reads only the fixture and edge formats unless
 `CORPUS_GRAMMAR_HARVEST` asks it to harvest the recorded corpus, which `corpus:verify` does). A behaviour change moves a hash, the gate names every scenario that moved, and the
 fix is either the engine or a deliberate regeneration committed with the change.
+
+## The starting records
+
+The authored, scheduling, scheduling scale and mocks sources build their starting records at `RECORD_CLOCK`
+(`src/tests/testHarness/corpus/recordClock.ts`), one hour before the clock their steps run at. A record built at the
+step clock already carries the factory stamp (`timeStamp`) every write would give it, so a consumer that never stamps
+the records a call modifies would replay every scenario to the same hashes. Built earlier, the first write must move it.
 
 ## Coverage, and what "100%" means (C3)
 

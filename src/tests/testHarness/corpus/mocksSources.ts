@@ -2,6 +2,7 @@ import { createTournamentRecord } from '@Generators/tournamentRecords/createTour
 import { CorpusWriteError, writeScenario } from './writeScenario';
 import mocksEngine from '@Assemblies/engines/mock';
 import { MOCKS_SCENARIOS } from './mocksScenarios';
+import { RECORD_CLOCK } from './recordClock';
 import { setClock } from '@Tools/clock';
 import path from 'path';
 import fs from 'fs';
@@ -53,13 +54,15 @@ export function recordMocks({ outDir }: { outDir: string }) {
   return { written, failed };
 }
 
-// a profile's method list and the tournament its first call makes, both under the source's fixed clock
+// a profile's method list under the source's fixed clock, and the tournament its first call makes an hour earlier
+// (recordClock.ts): the directives keep the step clock, so a draw generated and then added still lands 1 ms later
 function generateUnderClock(profile: Record<string, unknown>) {
   setClock(CLOCK);
   try {
     const generated: any = mocksEngine.generateTournamentRecord({ ...profile, nonRandom: 1, recordMethods: true });
     if (generated.error) throw new CorpusWriteError(`generation refused: ${JSON.stringify(generated.error)}`);
     const [header, ...directives] = generated.methods;
+    setClock(RECORD_CLOCK);
     return { initialRecord: createTournamentRecord(header.params), directives };
   } finally {
     setClock();
