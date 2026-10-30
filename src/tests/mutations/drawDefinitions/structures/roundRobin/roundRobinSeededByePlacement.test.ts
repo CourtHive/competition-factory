@@ -1,3 +1,4 @@
+import { getPositionAssignments } from '@Query/structure/getPositionAssignments';
 import { generateRange, unique } from '@Tools/arrays';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -51,7 +52,8 @@ it.each(scenario)('will place BYEs in RR Groups with seeds in seed order', (scen
   const assignedSeedNumbersCount = structure.seedAssignments.filter(({ participantId }) => participantId).length;
   expect(assignedSeedNumbersCount).toEqual(seedsCount);
   const structureId = structure.structureId;
-  const { positionAssignments } = tournamentEngine.getPositionAssignments({
+  const { positionAssignments = [] } = getPositionAssignments({
+    tournamentRecord: tournamentEngine.getTournament().tournamentRecord,
     drawDefinition,
     structureId,
   });
@@ -177,7 +179,8 @@ it.each([1, 2, 3, 4, 5])('can generate ROUND_ROBIN draw which ignores seeded bye
     const assignedSeedNumbersCount = structure.seedAssignments.filter(({ participantId }) => participantId).length;
     expect(assignedSeedNumbersCount).toEqual(seedsCount);
     const structureId = structure.structureId;
-    const { positionAssignments } = tournamentEngine.getPositionAssignments({
+    const { positionAssignments = [] } = getPositionAssignments({
+      tournamentRecord: tournamentEngine.getTournament().tournamentRecord,
       drawDefinition,
       structureId,
     });

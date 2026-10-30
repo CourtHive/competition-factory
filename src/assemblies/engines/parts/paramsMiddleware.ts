@@ -79,14 +79,13 @@ function resolveDrawAndEvent(tournamentRecords: TournamentRecords, params: Param
   const drawId = params.drawId || params.matchUp?.drawId;
   const found = drawId ? findEvent({ tournamentRecords, drawId }) : undefined;
   if (drawPassed && !found?.drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
-  // a drawId found nowhere, given alone, resolves nothing: the method decides
-  if (found?.drawDefinition) {
-    params.drawDefinition = found.drawDefinition;
-    if (found.tournamentId) params.tournamentId = found.tournamentId;
-    if (found.event) {
-      params.event = found.event;
-      return undefined;
-    }
+  // what a drawId finds is taken: its draw, and its event and record, which a flight can name after its draw is gone; a
+  // drawId found nowhere, given alone, resolves nothing and the method decides
+  if (found?.drawDefinition) params.drawDefinition = found.drawDefinition;
+  if (found?.tournamentId) params.tournamentId = found.tournamentId;
+  if (found?.event) {
+    params.event = found.event;
+    return undefined;
   }
 
   return payload === 'event' ? undefined : resolveEvent(tournamentRecords, params);

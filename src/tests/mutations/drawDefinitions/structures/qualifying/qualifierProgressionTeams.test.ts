@@ -1,3 +1,4 @@
+import { getRandomQualifierList } from '@Query/drawDefinition/getRandomQualifierList';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -102,7 +103,7 @@ it('can assign all available qualified participants to the main structure qualif
   expect(populatedMainStructure.matchUps.length).toEqual(15);
   expect(newQualifyingStructure.matchUps.length).toEqual(2);
 
-  const randQalifierList = tournamentEngine.getRandomQualifierList({ drawDefinition });
+  const randQalifierList = getRandomQualifierList({ drawDefinition });
 
   const addMainDrawDefinitionResult = tournamentEngine.addDrawDefinition({
     activeTournamentId: tournamentRecord.tournamentId,

@@ -1,3 +1,4 @@
+import { getTournamentPersons } from '@Query/tournaments/getTournamentPersons';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -9,9 +10,10 @@ import { COMPETITOR, OFFICIAL } from '@Constants/participantRoles';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 
 it('can retrieve and modify tournament persons', () => {
-  let tournamentPersons = tournamentEngine.getTournamentPersons({
+  // a record the engine does not hold is read without it
+  let tournamentPersons: any = getTournamentPersons({
     tournamentRecord: { tournamentId: 'tid' },
-  }).tournamentPersons;
+  } as any).tournamentPersons;
   expect(tournamentPersons.length).toEqual(0);
 
   const participantsProfile = { participantsCount: 100 };
