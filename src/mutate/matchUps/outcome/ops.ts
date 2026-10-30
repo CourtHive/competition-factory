@@ -106,6 +106,12 @@ export type OutcomeOp =
        * `clearDrawPosition` announces it, `removeDrawPosition-<that BYE's drawPosition>`, with neither event nor tournament
        */
       withdrawnByePosition?: number;
+      /**
+       * the position of a participant awarded a carried exit, taken back out of the matchUp they went on into when the
+       * carry is withdrawn by a relabel (S6 tail, v1's `relabelWithoutDirection`): announced as `releaseAdvancedDrawPosition`,
+       * with the event; the matchUp's score is left as it is (there is none: a result there keeps the carry)
+       */
+      releasedDrawPosition?: number;
     }
   | {
       op: 'assignPosition';

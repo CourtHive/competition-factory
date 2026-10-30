@@ -12,6 +12,7 @@
  */
 
 import { generatePrivacyFixture, SINGLES_DRAW_ID } from '@Tests/testHarness/privacyFixture';
+import { publicParticipantDocuments } from '@Query/readModel/publicParticipant';
 import { uncoveredDeniedPaths } from '@Tests/testHarness/privacySaturation';
 import { describe, expect, it, test } from 'vitest';
 import tournamentEngine from '@Engines/syncEngine';
@@ -95,6 +96,12 @@ function surfaces(policyDefinitions: any) {
         policyDefinitions,
         hydrateParticipants: false,
         usePublishState: true,
+      }),
+    // the read model's public participant documents (projected, then served without the engine)
+    publicParticipantDocuments: () =>
+      publicParticipantDocuments({
+        policyDefinitions,
+        tournamentRecord: tournamentEngine.getTournament().tournamentRecord,
       }),
     allTournamentMatchUps: () => tournamentEngine.allTournamentMatchUps({ policyDefinitions }),
     tournamentMatchUps: () => tournamentEngine.tournamentMatchUps({ policyDefinitions }),
