@@ -147,6 +147,22 @@ export function scaleScenario(cell: ScaleCell) {
  */
 export const pinnedScaleCells = () => scaleCells().filter((_, index) => index % 7 === 3);
 
+/**
+ * Cells larger than the matrix, every draw type at 64 and 128, with and without BYEs, over two venues and two days:
+ * the only cells whose grid sorts 64 matchUps or more at once, where a sort runs as merged runs rather than one
+ * insertion sort. The order of matchUps a comparator leaves equal is the sort's own, so these pin it. Written as the
+ * matrix writes a cell (profile, then grid), into the pinned sample.
+ */
+export function largeScaleCells(): ScaleCell[] {
+  const cells: ScaleCell[] = [];
+  let seed = 7900;
+  for (const drawType of SCALE_AXES.drawType)
+    for (const drawSize of [64, 128])
+      for (const byes of [false, true])
+        cells.push({ drawType, drawSize, byes, venues: 2, limits: false, days: 2, seed: seed++ });
+  return cells;
+}
+
 export function pinnedScaleScenario(cell: ScaleCell) {
   const { initialRecord, directives } = scaleScenario(cell);
   const profileIndex = directives.findIndex(({ method }) => method === 'scheduleProfileRounds');

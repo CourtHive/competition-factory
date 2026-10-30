@@ -1,6 +1,7 @@
 import { releaseLinkedWinnerAdvancement } from '@Mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement';
 import { getUnearnedLinkAdvancements } from '@Query/drawDefinition/getUnearnedLinkAdvancements';
 import { recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
+import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { settleUnlessIdle } from './indexPrecheck';
@@ -90,6 +91,7 @@ function releaseUnearned({
     const before = unearned.length;
     for (const { link, participantId } of unearned) {
       releaseLinkedWinnerAdvancement({
+        clearDrawPosition,
         roundNumber: link.source.roundNumber,
         structureId: link.source.structureId,
         matchUpsMap: resolvedMap,

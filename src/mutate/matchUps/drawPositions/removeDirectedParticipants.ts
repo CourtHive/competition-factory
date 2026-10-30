@@ -5,10 +5,10 @@ import { removeSubsequentRoundsParticipant } from './removeSubsequentRoundsParti
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { withdrawUndeliveredByeOrigins } from './withdrawUndeliveredByeOrigins';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
-import { withdrawUndeliveredByeOrigins } from './withdrawUndeliveredByeOrigins';
 import { withdrawAwardsToEmptiedSeats } from './withdrawAwardsToEmptiedSeats';
 import { removeOnwardLoserPlacements } from './removeOnwardLoserPlacements';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
@@ -413,6 +413,7 @@ function removeDirectedLoser({
   if (loserMatchUp?.roundNumber) {
     for (const drawPosition of clearedDrawPositions) {
       releaseAdvancedDrawPositionAcrossLinks({
+        clearDrawPosition,
         fromRoundNumber: loserMatchUp.roundNumber,
         participantId: loserParticipantId,
         occupantLeaving: true,
@@ -467,6 +468,7 @@ function removeDirectedLoser({
   const [clearedDrawPosition] = clearedDrawPositions;
   if (clearedDrawPosition && loserParticipantId) {
     releaseAcrossWinnerLinks({
+      clearDrawPosition,
       drawPosition: clearedDrawPosition,
       participantId: loserParticipantId,
       tournamentRecord,

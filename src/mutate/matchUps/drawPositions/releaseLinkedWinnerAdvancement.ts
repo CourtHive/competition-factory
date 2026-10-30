@@ -1,4 +1,5 @@
 import { modifyMatchUpNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
+import type { ClearDrawPosition } from '@Mutate/matchUps/matchUpStatus/withdrawByeSeats';
 import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
@@ -15,6 +16,8 @@ import { LOSER, WINNER } from '@Constants/drawDefinitionConstants';
 import type { MatchUpsMap } from '@Types/factoryTypes';
 
 type ReleaseLinkedWinnerAdvancementArgs = {
+  /** clears a BYE seat the release withdraws, handed down to `releaseAdvancedDrawPosition` (`withdrawByeSeats`) */
+  clearDrawPosition: ClearDrawPosition;
   /** who left, when the caller has already emptied their assignment and the source can no longer say */
   participantId?: string;
   tournamentRecord?: Tournament;
@@ -75,6 +78,7 @@ type ReleaseLinkedWinnerAdvancementArgs = {
  * A grand final is reached only across a link, so on `dev` none of these ever reached it.
  * */
 export function releaseLinkedWinnerAdvancement({
+  clearDrawPosition,
   participantId,
   tournamentRecord,
   drawDefinition,
@@ -171,6 +175,7 @@ export function releaseLinkedWinnerAdvancement({
 
   releaseAdvancedDrawPositionAcrossLinks({
     structureId: targetStructure.structureId,
+    clearDrawPosition,
     fromRoundNumber: targetRoundNumber,
     drawPosition: targetDrawPosition,
     matchUpsMap: resolvedMap,
@@ -207,6 +212,7 @@ export function releaseAdvancedDrawPositionAcrossLinks({
   }
   for (const roundNumber of result.releasedRoundNumbers) {
     releaseLinkedWinnerAdvancement({
+      clearDrawPosition: args.clearDrawPosition,
       participantId,
       tournamentRecord: args.tournamentRecord,
       drawDefinition: args.drawDefinition,
@@ -229,6 +235,7 @@ export function releaseAdvancedDrawPositionAcrossLinks({
  * what it fed (see `releaseLinkedWinnerAdvancement`), so asking a link that carried nothing is a no-op.
  */
 export function releaseAcrossWinnerLinks({
+  clearDrawPosition,
   tournamentRecord,
   drawDefinition,
   participantId,
@@ -242,6 +249,7 @@ export function releaseAcrossWinnerLinks({
       continue;
     releaseLinkedWinnerAdvancement({
       roundNumber: link.source.roundNumber,
+      clearDrawPosition,
       tournamentRecord,
       drawDefinition,
       participantId,
