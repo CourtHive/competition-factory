@@ -148,34 +148,52 @@ describe('addMatchUpScheduleItems coverage', () => {
     expect(result.success).toBe(true);
   });
 
-  it('reports anachronism warning when scheduling before dependent matchUp', () => {
+  it('refuses scheduling a matchUp before a source it depends on, played or not (CA 2026-10-30)', () => {
     const { startDate, matchUps } = setupTournament();
     const drawId = matchUps[0].drawId;
+    const { matchUps: allMatchUps } = tournamentEngine.allTournamentMatchUps();
+    const secondRoundMatchUp: any = allMatchUps.find((m) => m.roundNumber === 2);
+    const source: any = allMatchUps.find((m) => m.winnerMatchUpId === secondRoundMatchUp.matchUpId);
 
-    // Schedule first round matchUp late
-    tournamentEngine.addMatchUpScheduleItems({
-      matchUpId: matchUps[0].matchUpId,
+    // the source scheduled late
+    let result: any = tournamentEngine.addMatchUpScheduleItems({
+      matchUpId: source.matchUpId,
       drawId,
       schedule: { scheduledDate: startDate, scheduledTime: '18:00' },
     });
+    expect(result.success).toBe(true);
 
-    // Get second round matchUps
+    // its dependent earlier: refused, where it was once only warned
+    result = tournamentEngine.addMatchUpScheduleItems({
+      matchUpId: secondRoundMatchUp.matchUpId,
+      drawId,
+      schedule: { scheduledDate: startDate, scheduledTime: '09:00' },
+      checkChronology: true,
+    });
+    expect(result.error).toEqual(ANACHRONISM);
+  });
+
+  it('still warns of a same-day placement without times, which the order cannot judge', () => {
+    const { startDate } = setupTournament();
     const { matchUps: allMatchUps } = tournamentEngine.allTournamentMatchUps();
-    const secondRoundMatchUp = allMatchUps.find((m) => m.roundNumber === 2);
-    if (secondRoundMatchUp) {
-      // Schedule second round earlier than first round - should produce warning
-      const result = tournamentEngine.addMatchUpScheduleItems({
-        matchUpId: secondRoundMatchUp.matchUpId,
-        drawId,
-        schedule: { scheduledDate: startDate, scheduledTime: '09:00' },
-        checkChronology: true,
-      });
-      // Should succeed but with a warning
-      expect(result.success).toBe(true);
-      if (result.warnings) {
-        expect(result.warnings).toContain(ANACHRONISM);
-      }
-    }
+    const secondRoundMatchUp: any = allMatchUps.find((m) => m.roundNumber === 2);
+    const source: any = allMatchUps.find((m) => m.winnerMatchUpId === secondRoundMatchUp.matchUpId);
+    const { drawId } = source;
+
+    let result: any = tournamentEngine.addMatchUpScheduleItems({
+      matchUpId: source.matchUpId,
+      drawId,
+      schedule: { scheduledDate: startDate },
+    });
+    expect(result.success).toBe(true);
+    result = tournamentEngine.addMatchUpScheduleItems({
+      matchUpId: secondRoundMatchUp.matchUpId,
+      drawId,
+      schedule: { scheduledDate: startDate },
+      checkChronology: true,
+    });
+    expect(result.success).toBe(true);
+    expect(result.warnings).toContain(ANACHRONISM);
   });
 
   it('handles homeParticipantId in schedule', () => {

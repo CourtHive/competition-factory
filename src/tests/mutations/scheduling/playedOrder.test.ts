@@ -4,13 +4,14 @@ import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
 
 // constants and types
-import { IN_PROGRESS, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { BYE, IN_PROGRESS, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { ANACHRONISM } from '@Constants/errorConditionConstants';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
 
-// The played-order rule (CA 2026-10-22, SCHEDULING_PIPELINE_VNEXT.md § 5 "C2 ordering rule"): a matchUp may not be
-// placed at or before a PLAYED matchUp it depends on (COMPLETED, RETIRED or DEFAULTED, with a score), nor a played
-// matchUp after one that depends on it. Scheduled against scheduled only; asked only of a write that moves a matchUp.
+// The order rule (CA 2026-10-22, SCHEDULING_PIPELINE_VNEXT.md § 5 "C2 ordering rule"; widened CA 2026-10-30): a matchUp
+// may not be placed at or before a matchUp it depends on, nor after a matchUp that depends on it. It began as the PLAYED
+// order; it now binds plans too, and walkovers, defaults and double exits order like any other matchUp. Only a BYE
+// imposes nothing. Scheduled against scheduled only; asked only of a write that moves a matchUp.
 
 const day1 = '2026-10-01';
 const day2 = '2026-10-02';
@@ -125,14 +126,16 @@ describe('a matchUp is never placed at or before a played matchUp it depends on'
   });
 });
 
-describe('what is not played imposes nothing', () => {
-  it('a walkover source', () => {
+describe('plans order too, not only what was played (CA 2026-10-30)', () => {
+  it('a walkover source orders', () => {
     const { at, write, final } = playedSemifinal({ semifinalOutcome: { matchUpStatus: WALKOVER, winningSide: 1 } });
     expect(at(2, 1).matchUpStatus).toEqual(WALKOVER);
-    expect(write(final, { scheduledDate: day2, scheduledTime: '09:00' }).success).toEqual(true);
+    const result: any = write(final, { scheduledDate: day2, scheduledTime: '09:00' });
+    expect(result.error).toEqual(ANACHRONISM);
+    expect(result.context.blockingMatchUps.map((m: any) => m.relation)).toEqual(['source']);
   });
 
-  it('a source IN_PROGRESS with a score (CA: not played)', () => {
+  it('a source IN_PROGRESS with a score orders', () => {
     // the mocks generator does not take an IN_PROGRESS outcome, so semifinal 1 is set in progress here
     const { at, write, final } = playedSemifinal({ semifinalOutcome: null });
     const semifinal = at(2, 1);
@@ -144,8 +147,107 @@ describe('what is not played imposes nothing', () => {
     });
     expect(result.success).toEqual(true);
     expect(at(2, 1).matchUpStatus).toEqual(IN_PROGRESS);
-    expect(at(2, 1).score?.scoreStringSide1).toBeDefined();
     result = write(final, { scheduledDate: day2, scheduledTime: '09:00' });
+    expect(result.error).toEqual(ANACHRONISM);
+    expect(write(final, { scheduledDate: day2, scheduledTime: '11:00' }).success).toEqual(true);
+  });
+
+  it('an unplayed source orders, and the refusal says it was not played', () => {
+    const { at, write, final } = playedSemifinal({ semifinalOutcome: null });
+    let result: any = write(final, { scheduledDate: day2, scheduledTime: '10:00' });
+    expect(result.error).toEqual(ANACHRONISM);
+    expect(result.context.blockingMatchUps).toEqual([
+      expect.objectContaining({ matchUpId: at(2, 1).matchUpId, relation: 'source', scheduledTime: '10:00' }),
+    ]);
+    result = write(final, { scheduledDate: day1 });
+    expect(result.error).toEqual(ANACHRONISM);
+    expect(write(final, { scheduledDate: day2, scheduledTime: '12:00' }).success).toEqual(true);
+  });
+
+  it('an unplayed matchUp is not moved after a matchUp that depends on it', () => {
+    const { write, semifinal, final } = playedSemifinal({ semifinalOutcome: null });
+    expect(write(final, { scheduledDate: day2, scheduledTime: '12:00' }).success).toEqual(true);
+    const result: any = write(semifinal, { scheduledDate: day2, scheduledTime: '12:00' });
+    expect(result.error).toEqual(ANACHRONISM);
+    expect(result.context.blockingMatchUps.map((m: any) => m.relation)).toEqual(['dependent']);
+    expect(write(semifinal, { scheduledDate: day2, scheduledTime: '11:00' }).success).toEqual(true);
+  });
+
+  it('plannedOrder: false keeps the played order only, on the single and the bulk write', () => {
+    const { write, final } = playedSemifinal({ semifinalOutcome: null });
+    expect(write(final, { scheduledDate: day2, scheduledTime: '10:00' }, { plannedOrder: false }).success).toEqual(
+      true,
+    );
+
+    const result: any = tournamentEngine.bulkScheduleMatchUps({
+      schedule: { scheduledDate: day2, scheduledTime: '09:00' },
+      matchUpIds: [final.matchUpId],
+      plannedOrder: false,
+    });
+    expect(result.success).toEqual(true);
+    expect(result.scheduled).toEqual(1);
+  });
+
+  it('plannedOrder: false still refuses a placement before a played source', () => {
+    const { write, final } = playedSemifinal();
+    const result: any = write(final, { scheduledDate: day2, scheduledTime: '10:00' }, { plannedOrder: false });
+    expect(result.error).toEqual(ANACHRONISM);
+    expect(result.context.blockingMatchUps.map((m: any) => m.relation)).toEqual(['playedSource']);
+  });
+
+  it('a dependent orders however far downstream: an undated semifinal does not let a quarterfinal pass the final', () => {
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 8 }],
+      startDate: day1,
+      endDate: day2,
+      setState: true,
+    });
+    const quarterfinal = matchUpAt(1, 1);
+    const final = matchUpAt(3, 1);
+    const place = (matchUp: any, schedule: any) =>
+      tournamentEngine.addMatchUpScheduleItems({ matchUpId: matchUp.matchUpId, drawId: matchUp.drawId, schedule });
+    expect(place(final, { scheduledDate: day1, scheduledTime: '12:00' }).success).toEqual(true);
+    expect(matchUpAt(2, 1).schedule?.scheduledDate).toBeUndefined();
+
+    let result: any = place(quarterfinal, { scheduledDate: day2 });
+    expect(result.error).toEqual(ANACHRONISM);
+    expect(result.context.blockingMatchUps).toEqual([
+      expect.objectContaining({ matchUpId: final.matchUpId, relation: 'dependent' }),
+    ]);
+    result = place(quarterfinal, { scheduledDate: day1, scheduledTime: '09:00' });
+    expect(result.success).toEqual(true);
+  });
+
+  it('a same-day placement without a time still proves nothing', () => {
+    const { write, final } = playedSemifinal({ semifinalOutcome: null });
+    expect(write(final, { scheduledDate: day2 }).success).toEqual(true);
+  });
+
+  it('a BYE imposes nothing, even with a placement stored', () => {
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 8, participantsCount: 6 }],
+      startDate: day1,
+      endDate: day2,
+      setState: true,
+    });
+    const bye = tournamentEngine
+      .allTournamentMatchUps()
+      .matchUps.find((m: any) => m.roundNumber === 1 && m.matchUpStatus === BYE);
+    expect(bye).toBeDefined();
+
+    // a placement an older engine let a BYE keep: write it raw, as an import would
+    const record = tournamentEngine.getTournament().tournamentRecord;
+    const rawBye = record.events[0].drawDefinitions[0].structures[0].matchUps.find(
+      (m: any) => m.matchUpId === bye.matchUpId,
+    );
+    rawBye.schedule = { scheduledDate: day2, scheduledTime: '18:00' };
+    tournamentEngine.setState(record);
+
+    const result: any = tournamentEngine.addMatchUpScheduleItems({
+      schedule: { scheduledDate: day2, scheduledTime: '09:00' },
+      matchUpId: bye.winnerMatchUpId,
+      drawId: bye.drawId,
+    });
     expect(result.success).toEqual(true);
   });
 
@@ -173,6 +275,33 @@ describe('what is not played imposes nothing', () => {
 });
 
 describe('bulk writes are judged on the state they leave, and refused whole', () => {
+  it('a batch on a draw with nothing placed is judged against itself', () => {
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 4 }],
+      startDate: day1,
+      endDate: day2,
+      setState: true,
+    });
+    const semifinal = matchUpAt(1, 1);
+    const final = matchUpAt(2, 1);
+    const detail = (matchUp: any, scheduledTime: string) => ({
+      schedule: { scheduledDate: day1, scheduledTime },
+      matchUpId: matchUp.matchUpId,
+      drawId: matchUp.drawId,
+    });
+    let result: any = tournamentEngine.bulkScheduleMatchUps({
+      matchUpDetails: [detail(semifinal, '10:00'), detail(final, '09:00')],
+    });
+    expect(result.error).toEqual(ANACHRONISM);
+    expect(matchUpAt(1, 1).schedule?.scheduledTime).toBeUndefined();
+
+    result = tournamentEngine.bulkScheduleMatchUps({
+      matchUpDetails: [detail(semifinal, '10:00'), detail(final, '12:00')],
+    });
+    expect(result.success).toEqual(true);
+    expect(result.scheduled).toEqual(2);
+  });
+
   it('one refused placement refuses the batch, and nothing is written', () => {
     const { at, final } = playedSemifinal();
     const other = at(2, 2);

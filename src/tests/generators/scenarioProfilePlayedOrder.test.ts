@@ -127,18 +127,14 @@ describe('applyScenarioProfile reports a refused shift instead of swallowing it'
     const final = matchUps.find((matchUp: any) => matchUp.roundNumber === 2);
     const semifinal = matchUps.find((matchUp: any) => matchUp.roundNumber === 1);
 
-    // the final placed BEFORE its semifinal, then the semifinal played: stored out of played order
-    for (const [matchUp, scheduledTime] of [
-      [final, '08:00'],
-      [semifinal, '10:00'],
-    ]) {
-      const scheduled = tournamentEngine.addMatchUpScheduleItems({
-        schedule: { scheduledDate: day, scheduledTime },
-        matchUpId: matchUp.matchUpId,
-        drawId: singleDrawId,
-      });
-      expect(scheduled.success).toEqual(true);
+    // the final placed BEFORE its semifinal, then the semifinal played: stored out of order. The schedule writes refuse
+    // that order (CA 2026-10-30), so it is stored raw, as an import or an older engine would have left it
+    const raw = tournamentEngine.getTournament().tournamentRecord;
+    for (const matchUp of raw.events[0].drawDefinitions[0].structures[0].matchUps) {
+      if (matchUp.matchUpId === final.matchUpId) matchUp.schedule = { scheduledDate: day, scheduledTime: '08:00' };
+      if (matchUp.matchUpId === semifinal.matchUpId) matchUp.schedule = { scheduledDate: day, scheduledTime: '10:00' };
     }
+    expect(tournamentEngine.setState(raw).success).toEqual(true);
     const { outcome } = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 1 });
     const scored = tournamentEngine.setMatchUpStatus({
       matchUpId: semifinal.matchUpId,
