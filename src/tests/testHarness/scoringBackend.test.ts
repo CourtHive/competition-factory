@@ -1,5 +1,5 @@
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
-import { PARAMS, VIEWS } from './scoringBackend';
+import { PARAMS, VIEWS, comparable } from './scoringBackend';
 import { expect, it } from 'vitest';
 
 it('routes every view, sending its options as params', () => {
@@ -13,4 +13,20 @@ it('routes every view, sending its options as params', () => {
     setFilter: 0,
     includeRallyStats: true,
   });
+});
+
+it("compares the statistics without the points' own timestamps, and nothing else without anything", () => {
+  const point = { index: 0, winner: 0, timestamp: '2026-10-30T12:00:00.000Z' };
+  const result = {
+    success: true,
+    value: {
+      returned: {
+        counters: { players: { 0: { pointsWon: [point] } }, teams: { 0: { Forehand: [{ point, index: 0 }] } } },
+      },
+    },
+  };
+  const compared = comparable('getStatistics', result);
+  expect(compared.value.returned.counters.players[0].pointsWon).toEqual([{ index: 0, winner: 0 }]);
+  expect(compared.value.returned.counters.teams[0].Forehand).toEqual([{ point: { index: 0, winner: 0 }, index: 0 }]);
+  expect(comparable('getEpisodes', result)).toBe(result);
 });

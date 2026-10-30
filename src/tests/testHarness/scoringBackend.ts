@@ -54,6 +54,34 @@ export const PARAMS: Record<string, (args: any[]) => Record<string, unknown>> = 
   getStatistics: ([options]) => options ?? {},
 };
 
+/**
+ * A call's result as the two engines are compared on it. The statistics' counters hold the history's points whole, and
+ * a point not given a timestamp is stamped by each engine's own clock, read a few milliseconds apart: the observable
+ * never compares a point's timestamp, so neither do the counters.
+ */
+export function comparable(method: string, result: any): any {
+  const counters = result?.value?.returned?.counters;
+  if (method !== 'getStatistics' || !counters) return result;
+  const untimed = (item: any): any => {
+    if (!item || typeof item !== 'object') return item;
+    if (item.point) return { ...item, point: untimed(item.point) };
+    const { timestamp: _timestamp, ...rest } = item;
+    return rest;
+  };
+  const sides = (group: Record<string, Record<string, any[]>> = {}) =>
+    Object.fromEntries(
+      Object.entries(group).map(([side, categories]) => [
+        side,
+        Object.fromEntries(Object.entries(categories).map(([category, items]) => [category, items.map(untimed)])),
+      ]),
+    );
+  const returned = {
+    ...result.value.returned,
+    counters: { players: sides(counters.players), teams: sides(counters.teams) },
+  };
+  return { ...result, value: { ...result.value, returned } };
+}
+
 export function routeScoringEngine({
   bridge,
   methods,
@@ -120,10 +148,13 @@ export function routeScoringEngine({
       counted(name);
       const answer = bridge.call(request);
       if (answer?.failure) throw new Error(`scoring ${name}: ${answer.failure}`);
-      const ours = refused
-        ? { error: REFUSED, context: { message: String((refused as any)?.message ?? refused) } }
-        : { success: true, value: engineObservable(this, returned) };
-      const theirs = canonicalObject(answer.result);
+      const ours = comparable(
+        name,
+        refused
+          ? { error: REFUSED, context: { message: String((refused as any)?.message ?? refused) } }
+          : { success: true, value: engineObservable(this, returned) },
+      );
+      const theirs = comparable(name, canonicalObject(answer.result));
       if (canonicalJson(canonicalObject(ours)) !== canonicalJson(theirs)) {
         const file = path.join(tmpdir(), `backend-scoring-call-${process.pid}-${Date.now()}.json`);
         fs.writeFileSync(file, JSON.stringify({ ...request, create: create ?? '(opened earlier)' }));
