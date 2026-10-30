@@ -5,18 +5,18 @@ import { getDrawPositionSideNumber, getSideDrawPosition } from '@Query/matchUps/
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { bringCarryHome, carriedEntryAt } from '@Mutate/matchUps/drawPositions/carryHome';
-import { cameDownLoserLink } from '@Mutate/matchUps/drawPositions/cameDownLoserLink';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { byeSeatStands } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
+import { awardStands } from '@Mutate/matchUps/drawPositions/awardStands';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { pushGlobalLog } from '@Functions/global/globalLog';
+import { isAnyExit, isExit } from '@Validators/isExit';
 import { matchUpsOf } from '@Acquire/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
 import { ensureInt } from '@Tools/ensureInt';
@@ -44,7 +44,6 @@ import { TEAM } from '@Constants/matchUpTypes';
 import {
   MatchUpStatusUnion,
   PositionAssignment,
-  SideExitProvenance,
   DrawDefinition,
   Tournament,
   Structure,
@@ -286,6 +285,7 @@ export function drawPositionRemovals({
     for (const { roundNumber, pairedDrawPosition } of pairingDetails ?? []) {
       if (!pairedDrawPosition || roundProfile?.[roundNumber + 1]) continue;
       releaseLinkedWinnerAdvancement({
+        clearDrawPosition,
         drawPosition: pairedDrawPosition,
         tournamentRecord,
         drawDefinition,
@@ -301,6 +301,7 @@ export function drawPositionRemovals({
   // where their seat keeps its BYE advancement and the round walk above released nothing (mode D).
   if (clearedParticipantId) {
     releaseAcrossWinnerLinks({
+      clearDrawPosition,
       participantId: clearedParticipantId,
       tournamentRecord,
       drawDefinition,
@@ -489,6 +490,7 @@ function removeDrawPosition({
     // final here and left them in the Main final, where the direct entry never had them.
     // `participantId` is passed because the assignment it would be read from was emptied before this ran.
     releaseLinkedWinnerAdvancement({
+      clearDrawPosition,
       participantId: clearedParticipantId,
       roundNumber: targetMatchUp.roundNumber,
       structureId: structure.structureId,
@@ -791,6 +793,7 @@ function releaseUndecidedAdvancements({
   for (const advanced of initialDrawPositions ?? []) {
     if (!advanced || advanced === drawPosition) continue;
     releaseAdvancedDrawPositionAcrossLinks({
+      clearDrawPosition,
       structureId: structure.structureId,
       fromRoundNumber: roundNumber + 1,
       drawPosition: advanced,
@@ -970,46 +973,6 @@ function updateMatchUpStatusAfterRemoval({
   }
 
   return matchUpContainsBye;
-}
-
-/**
- * A PRODUCED exit has no winningSide until a participant arrives (CA, 2026-09-20); a CARRIED exit keeps its
- * winningSide on an empty seat (exit-propagation.md). `deriveExitStateFromProvenance` awards the other side either
- * way, so the award stands here only for a carried exit or a seat that holds a participant. Census de 9302775
- * (DE 16/11): a produced DEFAULTED retained on `Backdraw|3|2` side 1 was otherwise won by an empty dp 7.
- */
-export function awardStands({
-  rederived,
-  retained,
-  positionAssignments,
-  targetMatchUp,
-  drawDefinition,
-  structureId,
-}: {
-  rederived: { matchUpStatus: MatchUpStatusUnion; winningSide?: number };
-  positionAssignments: PositionAssignment[];
-  retained?: SideExitProvenance;
-  drawDefinition: DrawDefinition;
-  targetMatchUp: MatchUp;
-  structureId: string;
-}): boolean {
-  const { winningSide } = rederived;
-  if (!winningSide) return true;
-  const exitEntry = retained?.[3 - winningSide];
-  if (!isDoubleExit(exitEntry?.previousMatchUpStatus)) return true;
-  // an exit that came straight down its source's LOSER link keeps its award to the seat that will receive the next
-  // arrival, as direct entry writes it (`exitStatusClearing` 2.3; `removeDoubleExit`'s `producedAwardStands`). Taken
-  // back here, a BYE withdrawn from that seat left the exit pending, and the held exit beside the next BYE read its
-  // target's other feeder as delivering nobody (census run 19, COMPASS 32/32 policy-off 20834212: `Southeast|1|2`)
-  if (cameDownLoserLink({ drawDefinition, targetMatchUp, sourceMatchUpId: exitEntry?.sourceMatchUpId })) return true;
-  const drawPosition = getSideDrawPosition({
-    matchUp: { ...targetMatchUp, sides: undefined },
-    sideNumber: winningSide,
-    drawDefinition,
-    structureId,
-  });
-  const assignment = positionAssignments.find((candidate) => candidate.drawPosition === drawPosition);
-  return !!(assignment?.participantId || assignment?.qualifier);
 }
 
 /**

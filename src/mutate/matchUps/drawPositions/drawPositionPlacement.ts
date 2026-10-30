@@ -1,4 +1,5 @@
 /**
+import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
  * Placing a drawPosition, and what follows from it.
  *
  * `assignDrawPosition`, `assignMatchUpDrawPosition` and `directWinner` are ONE algorithm that was
@@ -847,6 +848,7 @@ function replaceEarlierAdvance({
   for (const position of held.filter((candidate) => candidate !== earlier)) {
     if (!positionAssignments?.some((entry) => entry.drawPosition === position && entry.participantId)) continue;
     releaseAdvancedDrawPositionAcrossLinks({
+      clearDrawPosition,
       fromRoundNumber: (stored.roundNumber ?? 0) + 1,
       drawPosition: position,
       tournamentRecord,

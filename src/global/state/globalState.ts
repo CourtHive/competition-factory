@@ -1,6 +1,5 @@
 import { isFunction, isObject } from '@Tools/objects';
 import syncGlobalState from './syncGlobalState';
-import { isNumeric } from '@Tools/math';
 
 // constants and types
 import { OUTCOME_PIPELINE_V1, OutcomePipelineMode, outcomePipelineModes } from '@Constants/outcomePipelineConstants';
@@ -755,7 +754,6 @@ export function globalLog(log: any, engine?: string) {
 
 export function setStateMethods(submittedMethods, traverse, maxDepth, global) {
   if (!isObject(submittedMethods)) return { error: INVALID_VALUES };
-  if (!isNumeric) maxDepth = 1;
 
   const collectionFilter = Array.isArray(traverse) ? traverse : [];
   const methods = {};
