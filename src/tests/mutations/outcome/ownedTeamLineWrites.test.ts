@@ -39,7 +39,8 @@ import {
  * losing team on, the losing team's onto its side there (`propagateLoserLineUp`); a loser going on through a BYE there
  * also takes its draw line-up onto the dual beyond (`updateSideLineUp`). A line played on a dual already decided writes
  * the line and the dual's tally, the dual keeping its winner. A dual's own call given a winner is written and directed as
- * any winner, and its own double exit advanced as any double exit. Under `v2` the call is written
+ * any winner, and its own double exit advanced as any double exit; its exit carried across a loser link is written on
+ * the dual it reaches with that dual's sides ensured. Under `v2` the call is written
  * by v2 and v1's writer is not asked; the record, the notices (payloads, in order) and the results equal v1's, under the
  * fixed and the real clock.
  *
@@ -772,6 +773,39 @@ const OWNED: [string, Scenario][] = [
       step: { target: R1(1, 0, 'East'), winningSide: 1, outcome: 'DOUBLE_DEFAULT', dual: true },
     },
   ],
+  [
+    "FIRST_MATCH_LOSER_CONSOLATION: a dual's own WALKOVER carried across its loser link: the dual it reaches is written",
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [],
+      step: {
+        target: R1(1, 0),
+        winningSide: 1,
+        outcome: 'WALKOVER',
+        dual: true,
+        flags: { propagateExitStatus: true },
+      },
+      loserSeat: {
+        dual: { structureName: 'Consolation', roundNumber: 1, roundPosition: 1 },
+        sideNumber: 1,
+        carried: true,
+      },
+    },
+  ],
+  [
+    "FIRST_MATCH_LOSER_CONSOLATION: a dual's own DEFAULTED carried across its loser link, the other side's",
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [],
+      step: {
+        target: R1(1, 1),
+        winningSide: 2,
+        outcome: 'DEFAULTED',
+        dual: true,
+        flags: { propagateExitStatus: true },
+      },
+    },
+  ],
 ];
 
 describe('under v2, a TEAM line is v2s, deciding its dual or not, and leaves exactly what v1 leaves', () => {
@@ -867,12 +901,26 @@ const KEPT: [string, Scenario][] = [
     },
   ],
   [
-    "FIRST_MATCH_LOSER_CONSOLATION: a dual's own WALKOVER carried across its loser link: v1 writes the dual it reaches",
+    "COMPASS: an East dual's own WALKOVER carried across its loser link and on past the West dual it reaches: v1's",
     {
-      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      drawProfile: { drawSize: 8, drawType: COMPASS },
       setup: [],
       step: {
-        target: R1(1, 0),
+        target: R1(1, 0, 'East'),
+        winningSide: 1,
+        outcome: 'WALKOVER',
+        dual: true,
+        flags: { propagateExitStatus: true },
+      },
+    },
+  ],
+  [
+    "FIRST_MATCH_LOSER_CONSOLATION: a dual's own WALKOVER carried to a seat opposite a BYE, on through it: v1's",
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION, participantsCount: 7 },
+      setup: [],
+      step: {
+        target: R1(2, 0),
         winningSide: 1,
         outcome: 'WALKOVER',
         dual: true,
