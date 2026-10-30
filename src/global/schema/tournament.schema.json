@@ -4165,6 +4165,9 @@
     "Venue": {
       "type": "object",
       "properties": {
+        "disabled": {
+          "$ref": "#/definitions/Disabled"
+        },
         "createdAt": {
           "type": ["string", "object"],
           "format": "date-time"
@@ -4268,11 +4271,32 @@
       "additionalProperties": true,
       "$comment": "OPEN, and this is a KNOWN GAP rather than a decision — closing it is blocked, not declined. Measured 2026-08-28 against the 16 TODS fixtures: 7 records carry `parentOrganisation`, which `Venue` does not declare. Closing this definition today fails 14 of 16 fixtures. Each undeclared field must first be resolved as either a real CODES concept (declare it in `types/tournamentTypes.ts` AND here) or as legacy data (correct the fixtures), after which this should become `false` to match the other 51."
     },
+    "Disabled": {
+      "description": "Closed outright (true), or closed on the dates it names ({ dates }): disableCourts writes either on a court, disableVenues writes true on a venue",
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "dates": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": ["dates"],
+          "additionalProperties": false
+        }
+      ]
+    },
     "Court": {
       "type": "object",
       "properties": {
         "disabled": {
-          "type": "boolean"
+          "$ref": "#/definitions/Disabled"
         },
         "discipline": {
           "$ref": "#/definitions/DisciplineEnum"

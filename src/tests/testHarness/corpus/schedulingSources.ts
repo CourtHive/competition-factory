@@ -492,15 +492,14 @@ export function schedulingScenarios(): Authored[] {
 
   {
     // availability by date: the venue opens late on day 1 (with a booking) and keeps its default hours on day 2; one
-    // court states its own hours by date (with bookings). A court's hours are cut to its venue's for the same date, so
-    // nothing starts on day 1 before the venue opens. (A court closed on one date is left out: `disableCourts` with
-    // dates writes `disabled: { dates }`, which tournament.schema.json refuses.)
+    // court states its own hours by date (with bookings), another is closed on day 2 (`disabled: { dates }`). A court's
+    // hours are cut to its venue's for the same date, so nothing starts on day 1 before the venue opens.
     const { tournamentRecord, round } = generate({
       policyDefinitions: POLICY_SCHEDULING_DEFAULT,
       drawProfile: { drawSize: 16 },
       courtsCount: 4,
     });
-    const [first] = tournamentRecord.venues[0].courts.map(({ courtId }: any) => courtId);
+    const [first, second] = tournamentRecord.venues[0].courts.map(({ courtId }: any) => courtId);
     const booking = (startTime: string, endTime: string) => ({ startTime, endTime, bookingType: 'MAINTENANCE' });
     setClock(RECORD_CLOCK);
     tournamentEngine.modifyVenue({
@@ -519,6 +518,7 @@ export function schedulingScenarios(): Authored[] {
         { date: DAY_2, startTime: '10:00', endTime: '19:00' },
       ],
     });
+    tournamentEngine.disableCourts({ courtIds: [second], dates: [DAY_2] });
     const initialRecord = tournamentEngine.getTournament().tournamentRecord;
     setClock();
     out.push({
