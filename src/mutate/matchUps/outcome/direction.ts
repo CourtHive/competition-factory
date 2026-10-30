@@ -200,13 +200,16 @@ function planProducedExit(request: OutcomeRequest, view: OutcomeView): Direction
  * S2c: the swap (spec § 3, `allowChangePropagation` with a different winner). The two participants
  * exchange paths downstream, so the new winner stands where direction sends a winner and the new
  * loser where the loser link sends one: the winner's and loser's plans, applied to the new result.
- * Exit carrying is left out: a swap that also changes an exit is not modelled.
+ * A convergence or a carry past a decided seat is left out; the plain carry is kept (S6 tail).
  */
 function planSwap(request: OutcomeRequest, view: OutcomeView): DirectionPlan | undefined {
   const swapped = { ...view, targets: { ...view.targets, priorWins: view.targets.priorWinsBefore } };
   const plan = planDirection(request, swapped, 'winner');
   if (!plan?.loser) return plan;
-  const { exit: _exit, converged: _converged, carriedPast: _carriedPast, ...loser } = plan.loser;
+  // S6 tail: the new loser's carry, onto the seat the old loser held (relabelled to them), is kept: it lands as a fresh
+  // carry does, or rewrites this matchUp's own carry standing there. A seat whose matchUp holds a result is refused
+  // before any direction (§ 2 row 22), and an exit standing there converges rather than carries
+  const { converged: _converged, carriedPast: _carriedPast, ...loser } = plan.loser;
   return { ...plan, loser };
 }
 

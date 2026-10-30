@@ -802,9 +802,14 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   entered again writes the matchUp alone, the carry as it was (on the `winner` route too). Planned where the loser's
   matchUp holds nothing, or this matchUp's carry alone (`loserMatchUpCarryHeld`: awarded to the side opposite the
   carrier, this matchUp's entry its only provenance, no loser link out of it, nothing played on from it) and the
-  awardee stands in a clean next matchUp or nowhere yet. Stay v1's: a carry the awardee or the carrier has played on
-  from, a carry that converged or was carried past, a loser kept out of a feed, a DEFAULTED under
-  `incompleteAssignmentsOnDefault`, and the swap over an exit (the other side winning).
+  awardee stands in a clean next matchUp or nowhere yet. **A swap over an exit** (the other side winning, with
+  `allowChangePropagation`) is the swap above with the exit's write, and the same carry rule on the seat the old loser
+  held, relabelled to the new loser: a played result swapped to an exit carries it there, one exit swapped to the
+  other rewrites the carry where it stands, the same exit swapped to the other side leaves it (the entry is the
+  seat's), and with no propagation the relabel and the write alone. Stay v1's: a carry the awardee or the carrier has
+  played on from, a carry that converged or was carried past, a loser kept out of a feed, a DEFAULTED under
+  `incompleteAssignmentsOnDefault`, a swap away from a carried exit (its withdrawal from the seat the new loser takes),
+  and a swap whose seat holds anything but this matchUp's own carry.
 
 - **`differential`**: v2 plans the whole call before v1 runs, then checks v1's result against it,
   and a disagreement throws `OutcomePipelineDivergence` naming the matchUp and both answers. The

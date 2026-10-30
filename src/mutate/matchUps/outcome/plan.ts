@@ -328,8 +328,8 @@ function changedWinnerReason(
  */
 function swapReason(view: OutcomeView, write?: MatchUpWrite): AbstainReason | undefined {
   const swap = view.targets.swap;
-  if (!write?.winningSide || write.matchUpStatus !== COMPLETED || view.existing.matchUpStatus !== COMPLETED)
-    return 'route';
+  if (!write?.winningSide || !DIRECTED_STATUSES.has(write.matchUpStatus)) return 'route';
+  if (!DIRECTED_STATUSES.has(view.existing.matchUpStatus)) return 'route';
   if (!swap) return 'route';
   if (swap.linkedOut && !swap.relabels) return 'link';
   if (swap.pathCarriesExit) return 'cascade';
@@ -475,7 +475,7 @@ function exitReason(args: {
       : 'exit';
   if (clearedSingleExit(view, route, write)) return undefined;
   if (correctedSingleExit(args)) return undefined;
-  if (route === APPLY_VALUES) return relabelledExit(args) ? undefined : 'exit';
+  if (route === APPLY_VALUES || route === 'swap') return relabelledExit(args) ? undefined : 'exit';
   if (route !== 'winner' || !write?.winningSide || !SINGLE_EXITS.has(write.matchUpStatus)) return 'exit';
   if (request.matchUpStatus !== write.matchUpStatus) return 'exit';
   if (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide) return 'exit';
@@ -604,11 +604,15 @@ function correctedSingleExit(args: Parameters<typeof exitReason>[0]): boolean {
 function relabelledExit(args: Parameters<typeof exitReason>[0]): boolean {
   const { request, view, write, direction } = args;
   const { existing } = view;
-  if (!write?.winningSide || write.winningSide !== existing.winningSide) return false;
+  if (!write?.winningSide || !existing.winningSide) return false;
+  if (args.route === 'swap' ? write.winningSide === existing.winningSide : write.winningSide !== existing.winningSide)
+    return false;
   if (!DIRECTED_STATUSES.has(existing.matchUpStatus) || !DIRECTED_STATUSES.has(write.matchUpStatus)) return false;
   if (request.matchUpStatus && request.matchUpStatus !== write.matchUpStatus) return false;
   if (write.matchUpStatus === DEFAULTED && view.draw.defaultProcessCodes) return false;
-  if (direction?.produced || direction?.converged || direction?.decider || direction?.winner) return false;
+  if (direction?.produced || direction?.converged || direction?.decider) return false;
+  // a swap's direction names the new winner, whose path the relabel exchanges (`swapOps`); a relabel places nobody
+  if (direction?.winner && args.route !== 'swap') return false;
   // a status that changes is refreshed on the arrivals the first entry sent on (v1's `refreshArrivals`): v1's
   if (arrivalsRefreshed(view, request.matchUpId, write.matchUpStatus)) return false;
   const loser = direction?.loser;
@@ -2555,7 +2559,9 @@ function carriedFor(
   const write = args.write as MatchUpWrite;
   if (loser?.arrives) return carriedOps(view, args.request, write, loser);
   const relabelled =
-    reentersWinner(view, args.route, write) || relabelsWhereWinnerStands(view, args.route, write)
+    reentersWinner(view, args.route, write) ||
+    relabelsWhereWinnerStands(view, args.route, write) ||
+    args.route === 'swap'
       ? args.direction?.loser
       : undefined;
   if (relabelled?.withdrawn) return { relay: [], landing: withdrawnOps(view) };
@@ -2944,6 +2950,9 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
     { op: 'stampUpdatedAt', entity: 'drawDefinition', id: drawDefinition.drawId },
   );
   // a relabel where the winner stands whose carry proceeds returns v1's direction context too (`relabelWithoutDirection`)
-  const carriedOn = args.route === APPLY_VALUES && !!args.direction?.loser?.exit && carried.landing.length > 0;
+  const carriedOn =
+    (args.route === APPLY_VALUES || args.route === 'swap') &&
+    !!args.direction?.loser?.exit &&
+    carried.landing.length > 0;
   return { ops, shape: args.route === 'winner' || carriedOn ? 'direction' : 'local' };
 }
