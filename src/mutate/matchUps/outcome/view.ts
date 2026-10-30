@@ -475,6 +475,14 @@ function unwindLoserSeats(
     });
     entry = entry.winnerMatchUpId ? byId.get(entry.winnerMatchUpId) : undefined;
   }
+  // the matchUp the final's winner link leads into (DOUBLE_ELIMINATION's Decider): v1's walk crosses the link and
+  // writes it back to be played as it writes the path (S6 tail); one level, its own seat read as any level's
+  if (entry) {
+    levels.push({
+      matchUpId: entry.matchUpId,
+      loserSeat: entry.loserMatchUpId ? loserSeatOf(draw, entry.matchUpId) : undefined,
+    });
+  }
   return levels;
 }
 

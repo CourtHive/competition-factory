@@ -1354,6 +1354,32 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(5, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
     },
   ],
+  // S6 tail, the given-winner unwind beside links that are not plain loser links: a WINNER link out of the structure
+  // (DOUBLE_ELIMINATION's Main to its Decider) and a FIRST_MATCHUP loser link the double exit placed its BYE behind
+  [
+    'DOUBLE_ELIMINATION (S6 tail): a double walkover given a winner, the unwind the plain one beside the WINNER link to the Decider',
+    {
+      drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
+      setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(1, 'Main'), outcome: won(1) }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION (S6 tail): a double default given a walkover for side 2, the Backdraw seats back and the loser placed',
+    {
+      drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
+      setup: [{ target: R1(3, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+      steps: [{ target: R1(3, 'Main'), outcome: walkover(2) }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION (S6 tail): a double walkover cleared beside the WINNER link to the Decider',
+    {
+      drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
+      setup: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: TO_BE_PLAYED } }],
+    },
+  ],
   // S6 tail, the relabels where the winner already stands: the carry follows the label where the loser stands
   [
     'FEED_IN_CHAMPIONSHIP (S6 tail): a carried walkover relabelled a default for the same winner, the carry rewritten where it stands',

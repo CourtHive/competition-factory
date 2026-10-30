@@ -719,11 +719,17 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   into the next matchUp and stands there alone, the unwind takes the award back: the produced exit's matchUp is to be
   played with its winner removed and all its provenance gone (the awardee's arrival entry with this origin), and the
   awardee's position comes back out of the next matchUp as v1's walk writes that matchUp back to be played; the awardee
-  stays where they arrived. Stay v1's: a cleared double exit in a feed round; behind a winner link or a link condition,
-  or under `doubleExitPropagateBye: false`; whose produced exit converged, or was awarded to a winner who has gone further
-  or does not stand alone; whose BYE went on across a further loser
-  link (COMPASS, OLYMPIC); whose withdrawal leaves the matchUp it advanced into with no position (v1 re-announces it as
-  `releaseAdvancedDrawPosition`); or with anything played beyond it.
+  stays where they arrived. A **WINNER link out of the structure** (DOUBLE_ELIMINATION's Main to its Decider) does not
+  change the unwind: v1's walk crosses it from the final, takes back a participant the final had sent across (nobody,
+  the final being undecided) and writes the matchUp there back to be played as it writes the path, its structural
+  positions standing, with neither event nor tournament; and the final's loser seat in that structure is visited (its
+  assignments announced with no event) (S6 tail). Stay v1's: a cleared double exit in a feed round; a BYE it placed
+  behind a `FIRST_MATCHUP` link (the seat its produced exit left unfillable), or behind a loser link with any other
+  condition; under `doubleExitPropagateBye: false`; whose produced exit converged, or was awarded to a winner
+  who has gone further or does not stand alone; whose BYE went on across a further loser link (COMPASS, OLYMPIC); whose
+  withdrawal leaves the matchUp it advanced into with no position (v1 re-announces it as
+  `releaseAdvancedDrawPosition`: FIRST_MATCH_LOSER_CONSOLATION's own BYE, whose opposite stands alone beside an unfilled
+  fed seat); a final that has sent its winner across its link; or with anything played beyond it.
 
   A **single exit cleared** (a WALKOVER, DEFAULTED or RETIRED on the `remove-directed` route, back to be played) that
   carried nothing on is the removal of a played result: v1 takes it back through the same `removeDirectedParticipants`,
