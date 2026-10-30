@@ -10,6 +10,8 @@ export { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPubl
 export { resolveMatchUpPublishState, isEventPublished } from './readModelPublish';
 export { applyProgressionEdges } from './progressionEdges';
 export type { MatchUpPublishState } from './readModelPublish';
+export { participantPolicyHash, publicParticipantDocuments } from './publicParticipant';
+export type { PublicParticipant, PublicParticipantDocument } from './publicParticipant';
 export { isFactoryUuid, resolvePersonLink, LINK_PROVIDER_ID, LINK_UNRESOLVED } from './personRule';
 export type { PersonLink } from './personRule';
 export {
