@@ -27,6 +27,7 @@ import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 export function planDirection(request: OutcomeRequest, view: OutcomeView, route: Route): DirectionPlan | undefined {
   if (route === 'double-exit' || route === 'completed-to-double-exit') return planProducedExit(request, view);
   if (route === 'swap') return planSwap(request, view);
+  if (route === 'apply-values') return planRelabelled(request, view);
   if (route !== 'winner') return undefined;
   if (view.line || view.matchUpTieId || view.draw.isAdHoc || view.targets.luckyPreFeed) return undefined;
   const winningSide = request.winningSide;
@@ -113,14 +114,34 @@ function carriedExit(request: OutcomeRequest, view: OutcomeView) {
   if (!propagating.includes(matchUpStatus as string)) return undefined;
   if (isDoubleExit(view.targets.loserMatchUpStatus)) return undefined; // a third arrival: not modelled
   // a RELABEL, the winner unchanged (a COMPLETED result re-entered as a WALKOVER): the exit is carried to the
-  // loser already directed, except where their next matchUp has a result of its own (CA, 2026-10-02).
-  // Past a BYE the loser's next matchUp is the holder's onward one, which the view does not read: not planned
-  if (isRelabel(request, view) && (view.targets.loserMatchUpHasResult || view.targets.loserMatchUpStatus === BYE))
+  // loser already directed, except where their next matchUp has a result of its own (CA, 2026-10-02): but the carry
+  // this matchUp made there, standing alone, which the relabel rewrites in place (`relabelsTheCarry`) or leaves as it
+  // is (S6 tail, `loserMatchUpCarryHeld`). Past a BYE the loser's next matchUp is the holder's onward one, which the view
+  // does not read: not planned
+  if (
+    isRelabel(request, view) &&
+    !view.targets.loserMatchUpCarryHeld &&
+    (view.targets.loserMatchUpHasResult || view.targets.loserMatchUpStatus === BYE)
+  )
     return undefined;
   // a final's winner and loser both go to its decider; whether the decider is played, and so what it
   // holds, is settled after the cascade (spec § 5 effect 5, `reconcileDeciders`), not by the carry
   if (view.targets.loserMatchUpId && view.targets.loserMatchUpId === view.targets.winnerMatchUpId) return undefined;
   return isExit(matchUpStatus) && matchUpStatus !== RETIRED ? matchUpStatus : WALKOVER;
+}
+
+/**
+ * S6 tail: a relabel where the winner already stands (the `apply-values` route: the same winner, downstream active). v1
+ * writes the matchUp and directs nothing again (`winningSideWithDownstreamDependencies`); under `propagateExitStatus`
+ * it settles the loser's carry where they stand (`relabelWithoutDirection`): carried for an exit, withdrawn for a played
+ * result, rewritten for the other exit. So the plan is the loser's half alone, and no placement.
+ */
+function planRelabelled(request: OutcomeRequest, view: OutcomeView): DirectionPlan | undefined {
+  if (!isRelabel(request, view) || view.line || view.matchUpTieId || view.isTeam) return undefined;
+  const winningSide = request.winningSide;
+  if (winningSide !== 1 && winningSide !== 2) return undefined;
+  const loser = planLoser(request, view, winningSide === 1 ? 2 : 1);
+  return loser ? { loser } : undefined;
 }
 
 /** the call keeps the winner the matchUp already has */
