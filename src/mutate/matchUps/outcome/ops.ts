@@ -19,6 +19,7 @@ import type {
   SideExitProvenance,
   Structure,
   TallyResult,
+  TeamCompetitor,
 } from '@Types/tournamentTypes';
 
 /**
@@ -213,6 +214,17 @@ export type OutcomeOp =
        */
       participantIds?: string[];
     }
+  | {
+      op: 'setSideLineUp';
+      /**
+       * a TEAM dual a winning team is directed into (S7): the team's line-up on its side, as v1's `propagateLineUp`
+       * writes it. The matchUp's sides are made, numbered 1 and 2, keeping what each held, and the line-up set on this
+       * one
+       */
+      matchUpId: string;
+      sideNumber: number;
+      lineUp: unknown;
+    }
   | { op: 'stampUpdatedAt'; entity: 'matchUp' | 'structure' | 'drawDefinition'; id: string };
 
 /** the op vocabulary as a literal union, which `verify:outcome-spec` holds to the spec; checked against `OutcomeOp` */
@@ -231,6 +243,7 @@ export type OutcomeOpName =
   | 'withdrawBye'
   | 'clearMatchUpBye'
   | 'setParticipantResults'
+  | 'setSideLineUp'
   | 'stampUpdatedAt';
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 const opNamesMatch: Same<OutcomeOpName, OutcomeOp['op']> = true;
@@ -396,6 +409,19 @@ function foldClearPosition(op: OpOf<'clearPosition'>, { structures }: DrawIndex)
   return {};
 }
 
+function foldSideLineUp(op: OpOf<'setSideLineUp'>, { matchUps }: DrawIndex): Folded {
+  const matchUp = matchUps.get(op.matchUpId);
+  if (!matchUp) return { error: `setSideLineUp: no matchUp ${op.matchUpId}` };
+  const lineUp = structuredClone(op.lineUp) as TeamCompetitor[];
+  matchUp.sides = [1, 2].map((sideNumber) => ({
+    ...(matchUp.sides?.find((each) => each.sideNumber === sideNumber) ?? {}),
+    sideNumber,
+  }));
+  const target = matchUp.sides.find(({ sideNumber }) => sideNumber === op.sideNumber);
+  if (target) target.lineUp = lineUp;
+  return {};
+}
+
 function foldStatusCodes(op: OpOf<'setMatchUpStatusCodes'>, { matchUps }: DrawIndex): Folded {
   const matchUp = matchUps.get(op.matchUpId);
   if (!matchUp) return { error: `setMatchUpStatusCodes: no matchUp ${op.matchUpId}` };
@@ -526,6 +552,8 @@ function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition
       return foldClearMatchUpBye(op, index);
     case 'setParticipantResults':
       return foldParticipantResults(op, index);
+    case 'setSideLineUp':
+      return foldSideLineUp(op, index);
     default:
       return foldStamp(op, index, drawDefinition, stampedBefore);
   }

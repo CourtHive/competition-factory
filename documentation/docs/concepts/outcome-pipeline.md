@@ -846,7 +846,8 @@ suite's rethrowing provider fails the test, and the exit-propagation census reco
 that diverged stay written unless the call asked for `rollbackOnError`, the same as for any refusal
 a later outcome meets (§ 8).
 
-**A TEAM line** is owned in one shape (S7): a line's first result that leaves its dual undecided. v1 writes the line (as
+**A TEAM line** is owned in two shapes (S7): a line's result that leaves its dual undecided, and one that decides it.
+v1 writes the line (as
 any result: `modifyMatchUpScore`, its `scoredTime`), then `updateTieMatchUpScore` writes the dual:
 
 1. it ensures the dual's side line-ups;
@@ -866,10 +867,25 @@ Both are announced as v1 announces them: each matchUp's `modifyMatchUp` and its 
 call returns the dual's write as `tieMatchUpResult`, as v1's `directParticipants` does. A line directs nothing of its
 own: its targets are its dual's.
 
+**A line that decides its dual** makes the dual's own call: v1's `directParticipants` writes the projected winner and
+score onto the dual (COMPLETED) and directs the dual as any winner is directed. v2 plans that call as it plans any call,
+from a view of the dual taken on the line's own index (no hydration): routed, written and directed by the same
+functions a singles result is (`decidedDualCall`). Its write is the dual's tally (no status codes, no `scoredTime`, as
+`updateTieMatchUpScore` writes it). Once the winner's position has joined the next dual, the winning team's line-up is
+carried onto its side there (`setSideLineUp`, v1's `propagateLineUp`):
+
+- the line-up the decided dual's winning side holds, without substitutions (`removeLineUpSubstitutions`, which regroups
+  each player's assignments);
+- on the side v1 reckons by roundPosition: a feed round's advancing team, or one advanced by position, is side 2.
+
+The next dual is announced by `directWinner`, and the call's `tieMatchUpResult` carries the dual's winner. A final
+carries nothing on.
+
 Stay v1's:
 
 - a dual's own call;
-- a line that decides or un-decides its dual;
+- a line that decides a dual whose loser is directed (a loser link: a consolation, a compass direction);
+- a line that un-decides its dual;
 - a corrected or cleared line;
 - auto-calc off;
 - a REPORTED score source (v1 returns before any tally);
@@ -897,6 +913,7 @@ says and what lands are one thing. The reducer decides nothing and refuses nothi
 | `clearMatchUpBye`         | the matchUp a withdrawn BYE stood in, to be played again, announced as `removeDrawPosition-<drawPosition>` with neither event nor tournament                                                                                                                                                                                                                                                                                                                                                             |
 | `assignBye`               | a BYE on a structure's stored assignment for a drawPosition, marked `byeFromPropagation` (a `FIRST_MATCHUP` reservation; a double exit's loser seats, `announcesEvent: false` for one its produced exit leaves unfillable)                                                                                                                                                                                                                                                                               |
 | `setMatchUpBye`           | the reserved seat's matchUp a BYE, its score and winner removed (v1's `setMatchUpStatusBYE`)                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `setSideLineUp`           | a winning team's line-up on its side of the dual it is directed into, as v1's `propagateLineUp` writes it: the dual's sides made, numbered 1 and 2 in order, keeping what each held, and the line-up set on this one                                                                                                                                                                                                                                                                                     |
 | `setParticipantResults`   | a round robin group's, or a one-round ad hoc structure's, tallies on its position assignments, after the call (`writeAssignmentResults`, v1's own writer); for ad hoc the assignments are first rebuilt, one per participant its matchUps hold, as `updateTallyIfNeeded` rebuilds them; the tally stamps every top-level structure, as v1's does                                                                                                                                                         |
 | `stampUpdatedAt`          | one `updatedAt` per touched entity per call (F2 (i)): the call's captured instant, or the previous stamp + 1 ms when that is already as late                                                                                                                                                                                                                                                                                                                                                             |
 

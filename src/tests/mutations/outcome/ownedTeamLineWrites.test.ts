@@ -30,14 +30,15 @@ import {
 } from '@Constants/topicConstants';
 
 /**
- * S7: V2 OWNS A TEAM LINE'S RESULT THAT LEAVES ITS DUAL UNDECIDED (outcome v2 executor plan § 6 S7). A line's first
- * result on a dual already in progress, whose stored sides, tieFormat and score source `updateTieMatchUpScore` leaves as
- * they are: v1 writes the line, then the dual's tally (its score; its status stays IN_PROGRESS). Under `v2` the call is
- * written by v2 and v1's writer is not asked; the record, the notices (payloads, in order) and the results equal v1's,
- * under the fixed and the real clock.
+ * S7: V2 OWNS A TEAM LINE'S RESULT (outcome v2 executor plan § 6 S7). A line that leaves its dual undecided: v1 writes
+ * the line, then the dual's tally (`updateTieMatchUpScore`: its sides and tieFormat where they change, its score and
+ * status). A line that decides its dual: v1 also makes the dual's own call, writing its winner and directing it, and
+ * carries the winning team's line-up onto its side of the next dual (`propagateLineUp`). Under `v2` the call is written
+ * by v2 and v1's writer is not asked; the record, the notices (payloads, in order) and the results equal v1's, under the
+ * fixed and the real clock.
  *
- * Still v1's, pinned below: a dual's first line (v1 copies its line-ups and tieFormat onto the dual), a line that
- * decides its dual, and a line in a round robin (its group's tally).
+ * Still v1's, pinned below: a line that decides a dual whose loser is directed (a loser link), a line in a round robin
+ * (its group's tally), a REPORTED score source, and auto-calc off.
  */
 const v1Writes = vi.hoisted(() => ({ count: 0 }));
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
@@ -249,9 +250,44 @@ const OWNED: [string, Scenario][] = [
       step: { target: R1(2, 5), winningSide: 2 },
     },
   ],
+  [
+    'a line that decides its dual (5-0 at a value goal of 5): the dual is directed, carrying its line-up on',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [0, 1, 2, 3].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
+      step: { target: R1(1, 4), winningSide: 1 },
+    },
+  ],
+  [
+    'a line that decides a second-position dual for side 2: the winner is side 2 of the next dual',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [0, 1, 2, 3].map((line) => ({ target: R1(2, line), winningSide: 2 as const })),
+      step: { target: R1(2, 5), winningSide: 2 },
+    },
+  ],
+  [
+    'a line that decides a dual 5-4 after the other side led',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [
+        ...[0, 1, 2, 3].map((line) => ({ target: R1(1, line), winningSide: 2 as const })),
+        ...[4, 5, 6, 7].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
+      ],
+      step: { target: R1(1, 8), winningSide: 1 },
+    },
+  ],
+  [
+    'a line that decides the final: no dual follows, nothing is carried',
+    {
+      drawProfile: { drawSize: 2, drawType: SINGLE_ELIMINATION },
+      setup: [0, 1, 2, 3].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
+      step: { target: R1(1, 4), winningSide: 1 },
+    },
+  ],
 ];
 
-describe('under v2, a TEAM line that leaves its dual undecided is v2s, and leaves exactly what v1 leaves', () => {
+describe('under v2, a TEAM line is v2s, deciding its dual or not, and leaves exactly what v1 leaves', () => {
   it.each(OWNED)('%s', (_label, scenario) => {
     for (const realClock of [false, true]) {
       const prepared = prepare(scenario, realClock);
@@ -274,9 +310,17 @@ describe('under v2, a TEAM line that leaves its dual undecided is v2s, and leave
 
 const KEPT: [string, Scenario][] = [
   [
-    'a line that decides its dual (5-0 at a value goal of 5): the dual is directed',
+    'COMPASS: a line that decides an East dual, whose loser goes West',
     {
-      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      drawProfile: { drawSize: 8, drawType: COMPASS },
+      setup: [0, 1, 2, 3].map((line) => ({ target: R1(2, line, 'East'), winningSide: 1 as const })),
+      step: { target: R1(2, 4, 'East'), winningSide: 1 },
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION: a line that decides a first-round Main dual, whose loser is fed on',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
       setup: [0, 1, 2, 3].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
       step: { target: R1(1, 4), winningSide: 1 },
     },

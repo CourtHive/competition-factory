@@ -1,4 +1,5 @@
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
+import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
 import { getCapturedClock, writeLegacyEnabled } from '@Global/state/globalState';
 import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
@@ -13,6 +14,7 @@ import {
 import type { DrawDefinition, MatchUpStatusUnion, Score, TallyResult, Tournament } from '@Types/tournamentTypes';
 import { FIRST_MATCHUP, LOSER } from '@Constants/drawDefinitionConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
+import type { LineUp } from '@Types/factoryTypes';
 import type { OutcomeOp } from './ops';
 import type {
   CarryLevel,
@@ -89,6 +91,16 @@ const RESULT_TO_DOUBLE_EXIT: Route = 'completed-to-double-exit';
  * read again, on the call's one hydration (the structural index re-indexed where the ops touched it). How a plan composes
  * one step on another (S6: a result turned into a double exit plans the double exit on the draw its removal leaves).
  */
+/** S7: the dual's own call a deciding line makes, planned on a view of the dual (`decide.ts` `decidedDualCall`) */
+export type DualCall = {
+  request: OutcomeRequest;
+  direction?: DirectionPlan;
+  rebuild?: RebuildView;
+  write?: MatchUpWrite;
+  view: OutcomeView;
+  route?: Route;
+};
+
 export type RebuildView = (
   ops: OutcomeOp[],
   route: Route,
@@ -2038,15 +2050,20 @@ function unwoundOps(
  */
 function teamReason({
   request,
+  asDual,
   write,
   route,
   view,
+  dual,
 }: {
   request: OutcomeRequest;
   write?: MatchUpWrite;
   view: OutcomeView;
+  dual?: DualCall;
+  asDual?: true;
   route?: Route;
 }): AbstainReason | undefined {
+  if (asDual) return undefined;
   if (!view.isTeam && !view.line && !view.matchUpTieId && !view.existing.collectionId) return undefined;
   const { line, existing } = view;
   if (!line || view.isTeam || route !== 'winner' || !write?.winningSide || !request.score) return 'team';
@@ -2055,9 +2072,10 @@ function teamReason({
   // a round robin's group tally re-read from the line's result is v1's
   if (line.dualInGroup || view.group || view.draw.tallied) return 'team';
   const dualStatuses = new Set<string | undefined>([TO_BE_PLAYED, IN_PROGRESS]);
-  if (!dualStatuses.has(line.dualMatchUpStatus) || line.projectedStatus !== IN_PROGRESS) return 'team';
-  if (line.dualWinningSide || line.projectedWinningSide) return 'team';
-  return undefined;
+  if (!dualStatuses.has(line.dualMatchUpStatus) || line.dualWinningSide) return 'team';
+  // a line that decides its dual: the dual's own call is planned with it (`decidingLineOps`, S7)
+  if (line.projectedWinningSide) return dual && line.projectedStatus === COMPLETED ? undefined : 'team';
+  return line.projectedStatus === IN_PROGRESS ? undefined : 'team';
 }
 
 /** S7: the dual after its line's result, as `updateTieMatchUpScore` writes it (`modifyMatchUpScore`) */
@@ -2083,6 +2101,8 @@ function abstainReason(args: {
   route?: Route;
   write?: MatchUpWrite;
   direction?: DirectionPlan;
+  dual?: DualCall;
+  asDual?: true;
 }): AbstainReason | undefined {
   const { request, view, write, direction } = args;
   const team = teamReason(args);
@@ -2413,36 +2433,27 @@ export function planOutcome(args: {
   view: OutcomeView;
   route?: Route;
   rebuild?: RebuildView;
+  /** S7: the dual's call a deciding line makes */
+  dual?: DualCall;
+  /** S7: this call is a deciding line's dual, planned as part of the line's plan: its TEAM shape is the line's to vet */
+  asDual?: true;
 }): OutcomePlan {
   return args.route === RESULT_TO_DOUBLE_EXIT ? resultToDoubleExit(args) : planOps(args);
 }
 
-/** the call's plan as ops, or the reason it is v1's */
-function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
-  const reason = abstainReason(args);
-  if (reason) return { abstain: reason };
-  const { request, view, drawDefinition } = args;
-  const unrecorded = recordReason(args);
-  if (unrecorded || !drawDefinition) return { abstain: unrecorded ?? 'no-record' };
-  // a double exit asked for again: v1 writes nothing (`satisfiedDoubleExit`)
-  if (satisfiedDoubleExit(view, request, args.route)) return { ops: [], shape: 'local' };
-  const write = args.write as MatchUpWrite;
-  const matchUpId = request.matchUpId as string;
-  const structureId = view.targets.source.structureId;
-  if (!structureId) return { abstain: 'route' };
-
-  // the score as v1's write stores it (`applyScoreAndStatus`): blanked, the blank; given, the object as given (point
-  // scores and all); neither, the matchUp's own is left where it is
+/**
+ * the score as v1's write stores it (`applyScoreAndStatus`): blanked, the blank; given, the object as given (point
+ * scores and all); neither, the matchUp's own is left where it is
+ */
+function writtenScore(request: OutcomeRequest, write: MatchUpWrite): Score | undefined {
   const blanked = write.scoreStringSide1 === '' && write.scoreStringSide2 === '' && !write.sets;
-  const score: Score | undefined = blanked
-    ? { scoreStringSide1: '', scoreStringSide2: '' }
-    : (request.score as Score | undefined);
-  // a cleared double exit's unwind, announced before the clear's own write, as v1 makes it first (S6)
-  const unwound = unwoundOps(view, request, args.route, drawDefinition);
-  const ops: OutcomeOp[] = [
-    ...swapOps(view, args.route),
-    ...replacedLoserOps(view, args.route, write, request.matchUpStatus),
-    ...unwound,
+  return blanked ? { scoreStringSide1: '', scoreStringSide2: '' } : (request.score as Score | undefined);
+}
+
+/** the call's own result on its matchUp, and the matchUp's stamp */
+function resultOps(request: OutcomeRequest, write: MatchUpWrite, matchUpId: string): OutcomeOp[] {
+  const score = writtenScore(request, write);
+  return [
     {
       op: 'setMatchUpResult',
       matchUpId,
@@ -2453,6 +2464,113 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
       ...(write.matchUpStatusCodes ? { matchUpStatusCodes: write.matchUpStatusCodes } : {}),
     },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
+  ];
+}
+
+/**
+ * S7: a line that decides its dual. v1 writes the line, then the dual (`updateTieMatchUpScore`: COMPLETED, its winner,
+ * its tally), then directs the dual as any winner is directed (`directParticipants`), writing the winning team's
+ * line-up onto its side of the next dual (`updateSideLineUp`). v2 plans the line's write, then the dual's own call as
+ * a call (`planOps`, on the dual's view): its result op takes the dual's form (`dualTally`, no `scoredTime`), and the
+ * line-up is set on the next dual's side ahead of the placement, so the placement's `directWinner` is that matchUp's
+ * last notice. A loser link out of the dual (its line-up carried onto a consolation seat) stays v1's until probed.
+ */
+function decidingLineOps(
+  args: Parameters<typeof planOutcome>[0] & { dual: DualCall; drawDefinition: DrawDefinition },
+): OutcomePlan {
+  const { dual, view, request, drawDefinition } = args;
+  const line = view.line;
+  const write = args.write;
+  const winningSide = dual.request.winningSide as 1 | 2;
+  if (!line || !write || dual.route !== 'winner' || dual.direction?.loser) return { abstain: 'team' };
+  const dualPlan = planOps({
+    tournamentRecord: args.tournamentRecord,
+    direction: dual.direction,
+    request: dual.request,
+    rebuild: dual.rebuild,
+    write: dual.write,
+    route: dual.route,
+    view: dual.view,
+    drawDefinition,
+    asDual: true,
+  });
+  if (!dualPlan.ops) return dualPlan;
+  // v1's tally (`updateTieMatchUpScore`) writes no status codes and stamps no scored time on the dual
+  const dualOps = dualPlan.ops.map((op): OutcomeOp => {
+    if (op.op !== 'setMatchUpResult' || op.matchUpId !== line.dualMatchUpId) return op;
+    const { matchUpStatusCodes: _codes, ...result } = op;
+    return {
+      ...result,
+      stampsScoredTime: false,
+      dualTally: { sides: line.dualRewrite.sides, tieFormat: line.dualRewrite.tieFormat },
+    };
+  });
+  const carry = lineUpCarry({ line, winningSide, dual });
+  if (carry === false) return { abstain: 'team' };
+  const placement = dualOps.findIndex(
+    (op) => op.op === 'setMatchUpDrawPositions' && op.matchUpId === dual.direction?.winner?.matchUpId,
+  );
+  const ops = [...dualOps];
+  // after the winner's placement, as v1 carries it once the position has joined the next dual
+  if (carry) ops.splice(placement < 0 ? ops.length : placement + 1, 0, carry);
+  return { ops: [...resultOps(request, write, request.matchUpId as string), ...ops], shape: dualPlan.shape };
+}
+
+/**
+ * The winning team's line-up on its side of the next dual, as v1's `propagateLineUp` carries it: the line-up the decided
+ * dual's winning side holds (once its line has been written and its sides ensured), without substitutions
+ * (`removeLineUpSubstitutions`, which regroups each player's assignments), on the side v1 reckons by roundPosition
+ * (draw-positions.md rule 4: a feed round's advancing team, or one advanced by position, is side 2). No next dual (a
+ * final) or no line-up held, nothing.
+ */
+function lineUpCarry({
+  line,
+  winningSide,
+  dual,
+}: {
+  line: NonNullable<OutcomeView['line']>;
+  winningSide: 1 | 2;
+  dual: DualCall;
+}) {
+  const next = dual.direction?.winner?.matchUpId;
+  if (!next) return undefined;
+  const sides = line.dualRewrite.sidesAsHeld as { sideNumber?: number; lineUp?: LineUp }[] | undefined;
+  const held = sides?.find((side) => side.sideNumber === winningSide)?.lineUp;
+  if (!held) return undefined;
+  const inContext = dual.view.inContextDrawMatchUps;
+  const source = inContext?.find((matchUp) => matchUp.matchUpId === line.dualMatchUpId)?.roundPosition;
+  const target = inContext?.find((matchUp) => matchUp.matchUpId === next);
+  if (!source || !target?.roundPosition) return false;
+  const advancedByPosition =
+    (source === target.roundPosition && source !== 1) || Math.floor(source / 2) === target.roundPosition;
+  const sideNumber = target.feedRound || advancedByPosition ? 2 : 1;
+  const lineUp = removeLineUpSubstitutions({ lineUp: held.filter((assignment) => assignment?.participantId) });
+  return { op: 'setSideLineUp' as const, matchUpId: next, sideNumber, lineUp };
+}
+
+/** the call's plan as ops, or the reason it is v1's */
+function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
+  const reason = abstainReason(args);
+  if (reason) return { abstain: reason };
+  const { request, view, drawDefinition } = args;
+  const unrecorded = recordReason(args);
+  if (unrecorded || !drawDefinition) return { abstain: unrecorded ?? 'no-record' };
+  if (args.dual) return decidingLineOps({ ...args, dual: args.dual, drawDefinition });
+  // a double exit asked for again: v1 writes nothing (`satisfiedDoubleExit`)
+  if (satisfiedDoubleExit(view, request, args.route)) return { ops: [], shape: 'local' };
+  const write = args.write as MatchUpWrite;
+  const matchUpId = request.matchUpId as string;
+  const structureId = view.targets.source.structureId;
+  if (!structureId) return { abstain: 'route' };
+
+  const score = writtenScore(request, write);
+  // a cleared double exit's unwind, announced before the clear's own write, as v1 makes it first (S6)
+  const unwound = unwoundOps(view, request, args.route, drawDefinition);
+  const ops: OutcomeOp[] = [
+    ...swapOps(view, args.route),
+    ...replacedLoserOps(view, args.route, write, request.matchUpStatus),
+    ...unwound,
+    ...resultOps(request, write, matchUpId),
     ...dualTallyOps(view.line),
   ];
   // the first direction: the winner's position joins the next matchUp's, which v1 stores ascending

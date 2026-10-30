@@ -185,6 +185,10 @@ export function createWorkingView({
           if (matchUp.drawPositions?.includes(op.drawPosition)) affected.add(matchUp.matchUpId);
       }
 
+      // a dual's lines are built through it (its drawPositions, its sides' line-ups): what changes the dual, changes them
+      for (const matchUpId of [...affected])
+        for (const line of copiedMatchUps.get(matchUpId)?.tieMatchUps ?? []) affected.add(line.matchUpId);
+
       view.matchUpsMap = overlayMap();
       if (!affected.size) return {};
       work.projections += 1;

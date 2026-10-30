@@ -86,6 +86,32 @@ describe('applyOutcomeOps', () => {
     expect(matchUp.matchUpStatusCodes).toEqual([]);
   });
 
+  it("carries a line-up onto a dual's side as `propagateLineUp` does: both sides made, in order, keeping what each held", () => {
+    const drawDefinition = draw();
+    const matchUp: any = (drawDefinition.structures as any)[0].matchUps[0];
+    const lineUp = [{ participantId: 'p', collectionAssignments: [{ collectionId: 'c', collectionPosition: 1 }] }];
+    // a dual holding no sides yet
+    expect(applyOutcomeOps(drawDefinition, [{ op: 'setSideLineUp', matchUpId: 'm', sideNumber: 2, lineUp }])).toEqual(
+      {},
+    );
+    expect(matchUp.sides).toEqual([{ sideNumber: 1 }, { sideNumber: 2, lineUp }]);
+    // the op's line-up is copied, not shared
+    expect(matchUp.sides[1].lineUp).not.toBe(lineUp);
+    // a dual whose sides are stored out of order, one holding a line-up already: put in order, what each held kept
+    matchUp.sides = [
+      { sideNumber: 2, lineUp },
+      { sideNumber: 1, held: true },
+    ];
+    applyOutcomeOps(drawDefinition, [{ op: 'setSideLineUp', matchUpId: 'm', sideNumber: 1, lineUp: [] }]);
+    expect(matchUp.sides).toEqual([
+      { sideNumber: 1, held: true, lineUp: [] },
+      { sideNumber: 2, lineUp },
+    ]);
+    expect(applyOutcomeOps(draw(), [{ op: 'setSideLineUp', matchUpId: 'x', sideNumber: 1, lineUp }]).error).toEqual(
+      'setSideLineUp: no matchUp x',
+    );
+  });
+
   it('refuses an op naming something the draw does not hold, so a shadow cannot pass by writing nothing', () => {
     const drawDefinition = draw();
     expect(
