@@ -20,21 +20,15 @@ it('can modify event timing for matchUpFormat codes', () => {
     drawProfiles: [{ drawSize: 32 }, { drawSize: 16 }],
   });
 
-  let result = tournamentEngine.removeEventMatchUpFormatTiming({
-    tournamentRecord,
-    eventId,
-  });
+  // an engine call works on the records it holds
+  tournamentEngine.setState(tournamentRecord);
+  let result = tournamentEngine.removeEventMatchUpFormatTiming({ eventId });
   expect(result.success).toEqual(true);
 
-  result = tournamentEngine.removeEventMatchUpFormatTiming({
-    tournamentRecord,
-  });
+  result = tournamentEngine.removeEventMatchUpFormatTiming({});
   expect(result.error).toEqual(EVENT_NOT_FOUND);
 
-  result = tournamentEngine.removeEventMatchUpFormatTiming({
-    tournamentRecord,
-    eventId: 'bogusEventId',
-  });
+  result = tournamentEngine.removeEventMatchUpFormatTiming({ eventId: 'bogusEventId' });
   expect(result.error).toEqual(EVENT_NOT_FOUND);
 
   // @ts-expect-error missing eventId

@@ -1,6 +1,7 @@
 import { decorateResult } from '@Functions/global/decorateResult';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { isFunction, isObject, isString } from '@Tools/objects';
+import { entityIdMismatch } from './entityIdMismatch';
 import { intersection } from '@Tools/arrays';
 
 // Constants and types
@@ -162,6 +163,9 @@ export function checkRequiredParameters(
   valid?: boolean;
 } {
   if (!params && !isObject(params)) return { error: INVALID_VALUES };
+  // an entity given both as an object and by id must be one entity, whatever else is required
+  const mismatch = entityIdMismatch(params);
+  if (mismatch) return mismatch;
   if (!requiredParams?.length || params?._bypassParamCheck) return { valid: true };
 
   if (!Array.isArray(requiredParams)) return { error: INVALID_VALUES };

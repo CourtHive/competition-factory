@@ -1,3 +1,4 @@
+import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -119,10 +120,9 @@ it('can generate QUALIFYING structures when no MAIN structure is specified', () 
   matchUps = tournamentEngine.allDrawMatchUps({ drawDefinition }).matchUps;
   expect(matchUps.length).toEqual(12);
 
-  // check that result.drawDefinition has more matchUps
-  matchUps = tournamentEngine.allDrawMatchUps({
-    drawDefinition: result.drawDefinition,
-  }).matchUps;
+  // check that result.drawDefinition has more matchUps: it is not the draw in state (it shares its drawId), so it is
+  // read directly, not through the engine
+  matchUps = allDrawMatchUps({ drawDefinition: result.drawDefinition }).matchUps;
   expect(matchUps.length).toBeGreaterThan(12);
 
   expect(drawDefinition.structures[1].matchUps.length).toEqual(0);

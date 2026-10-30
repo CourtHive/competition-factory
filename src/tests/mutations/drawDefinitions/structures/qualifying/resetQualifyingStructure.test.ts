@@ -39,7 +39,12 @@ describe('resetQualifyingStructure()', () => {
     });
     expect(result.success).toEqual(true);
 
-    const { structure } = getStructureMatchUps({ structure: qualifyingStructure });
+    // the reset is written to the draw in state, not to the copy getEvents returned
+    const stored = tournamentEngine.getEvent({ drawId: drawDefinition.drawId }).drawDefinition;
+    const storedQualifying = stored.structures.find(
+      ({ structureId }) => structureId === qualifyingStructure.structureId,
+    );
+    const { structure } = getStructureMatchUps({ structure: storedQualifying });
     expect(structure).toBeDefined();
     expect(structure?.stage).toEqual(QUALIFYING);
     expect(structure?.seedAssignments?.length).toEqual(0);
