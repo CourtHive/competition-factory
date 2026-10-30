@@ -6,6 +6,7 @@ import { matchUpHoldsScheduling, releaseByeScheduling } from '@Mutate/matchUps/s
 import { getDrawPositionSideNumber, getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
@@ -1226,6 +1227,7 @@ function releaseProducedExitReservation({
   });
   for (const drawPosition of vacant) {
     releaseAdvancedDrawPositionAcrossLinks({
+      clearDrawPosition,
       fromRoundNumber: winnerMatchUp.roundNumber + 1,
       withdrawingExit: true,
       drawDefinition,

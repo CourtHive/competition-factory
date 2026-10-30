@@ -1,14 +1,8 @@
-import {
-  deriveExitStateFromProvenance,
-  participatesInExitCascade,
-  withdrawArrivalFrom,
-  carriedExitStatus,
-  blankExitCodes,
-} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { recordSourceSideProvenance } from '@Mutate/drawDefinitions/matchUpGovernor/recordSourceSideProvenance';
 import { rekeySideFacts } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
-import { withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
+import { withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/withdrawByeSeats';
 import { releaseLinkedWinnerAdvancement } from './releaseLinkedWinnerAdvancement';
+import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
@@ -16,8 +10,20 @@ import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
+import {
+  deriveExitStateFromProvenance,
+  participatesInExitCascade,
+  withdrawArrivalFrom,
+  carriedExitStatus,
+  blankExitCodes,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
+import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { CONTAINER } from '@Constants/drawDefinitionConstants';
+import { SUCCESS } from '@Constants/resultConstants';
+import { MatchUpsMap } from '@Types/factoryTypes';
+import { HydratedMatchUp } from '@Types/hydrated';
 import {
   DrawDefinition,
   Event,
@@ -26,11 +32,6 @@ import {
   PositionAssignment,
   Tournament,
 } from '@Types/tournamentTypes';
-import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { CONTAINER } from '@Constants/drawDefinitionConstants';
-import { SUCCESS } from '@Constants/resultConstants';
-import { MatchUpsMap } from '@Types/factoryTypes';
-import { HydratedMatchUp } from '@Types/hydrated';
 
 type RemoveSubsequentDrawPositionArgs = {
   inContextDrawMatchUps?: HydratedMatchUp[];
@@ -113,6 +114,7 @@ export function removeSubsequentRoundsParticipant({
 
     // what this matchUp carried across a WINNER link comes back with it
     releaseLinkedWinnerAdvancement({
+      clearDrawPosition,
       roundNumber: matchUp.roundNumber as number,
       drawPosition: targetDrawPosition,
       tournamentRecord,
@@ -230,7 +232,14 @@ function removeDrawPosition({
   // An award taken back sends nothing over the loser link: the BYE it claimed for a loser who is nobody goes with it
   // (census A1 wave 4, COMPASS 16/14 21086952: `anUndoneAwardTakesBackItsLoserSeatBye`)
   if (wasAwarded && !matchUp.winningSide && matchUp.matchUpStatus !== BYE)
-    withdrawByeSeats({ claimantMatchUpId: matchUp.matchUpId, tournamentRecord, drawDefinition, matchUpsMap, event });
+    withdrawByeSeats({
+      clearDrawPosition,
+      claimantMatchUpId: matchUp.matchUpId,
+      tournamentRecord,
+      drawDefinition,
+      matchUpsMap,
+      event,
+    });
 
   // A LEGACY-ARRAY GATE ON A NATIVE WRITE. Kept: removing it is measured wrong — see the long note at the
   // twin site in `drawPositionPlacement`, where the pair of removals costs 58 tests across 5 files and the

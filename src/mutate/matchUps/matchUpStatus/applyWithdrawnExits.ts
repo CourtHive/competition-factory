@@ -2,11 +2,8 @@ import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides
 import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { byeSeatPositionsOwedTo, byeSeatStands } from './feederSendsNobody';
-import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
-import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
+import { withdrawByeSeats } from './withdrawByeSeats';
 import {
   releaseAdvancedDrawPositionAcrossLinks,
   releaseLinkedWinnerAdvancement,
@@ -15,7 +12,6 @@ import {
 // constants and types
 import { WithdrawnExit, withdrawProducedExits } from './sideExitProvenance';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
-import { BYE } from '@Constants/matchUpStatusConstants';
 import { MatchUpsMap } from '@Types/factoryTypes';
 
 /**
@@ -60,6 +56,7 @@ export function applyWithdrawnExits({
     // winningSide here and so releases nothing.
     if (withdrawnExit.winnerDrawPosition !== undefined && withdrawnExit.roundNumber !== undefined) {
       releaseAdvancedDrawPositionAcrossLinks({
+        clearDrawPosition,
         // `+ 1` — from the round AFTER the withdrawn matchUp, never from the matchUp itself. The
         // winner still belongs in it: they arrived there by winning an earlier round, and that has
         // not changed. Only what they won ON arrival has been taken back. Releasing from its own
@@ -79,6 +76,7 @@ export function applyWithdrawnExits({
       // final's winner went on to the grand final, and the release above, keyed on this structure's rounds,
       // never reaches it (mode C, census de 9304168 and 9304795). The link at the withdrawn round itself is asked.
       releaseLinkedWinnerAdvancement({
+        clearDrawPosition,
         drawPosition: withdrawnExit.winnerDrawPosition,
         roundNumber: withdrawnExit.roundNumber,
         structureId: withdrawnExit.structureId,
@@ -99,6 +97,7 @@ export function applyWithdrawnExits({
     // produced at `West|2|2`, and the BYE `West|2|2` had claimed in `Southwest|1|1` stood until `West|2|2` was played.
     if (matchUpsMap && !withdrawnMatchUp.winningSide && !isAnyExit(withdrawnMatchUp.matchUpStatus)) {
       withdrawByeSeats({
+        clearDrawPosition,
         claimantMatchUpId: withdrawnMatchUp.matchUpId,
         tournamentRecord,
         drawDefinition,
@@ -245,6 +244,7 @@ function releaseFromNextRound({
   for (const drawPosition of drawPositions) {
     if (!drawPosition) continue;
     releaseAdvancedDrawPositionAcrossLinks({
+      clearDrawPosition,
       fromRoundNumber: withdrawnExit.roundNumber + 1,
       structureId: withdrawnExit.structureId,
       withdrawingExit: true,
@@ -259,6 +259,7 @@ function releaseFromNextRound({
     // (census run-17 baseline, DOUBLE_ELIMINATION 8/5 seeds 20622028 and 20630577, policy off: `Backdraw|4|1`'s double
     // walkover had advanced its carrier's seat into `Main|4|1`, and re-derived it stood there).
     releaseLinkedWinnerAdvancement({
+      clearDrawPosition,
       roundNumber: withdrawnExit.roundNumber,
       structureId: withdrawnExit.structureId,
       tournamentRecord,
@@ -267,46 +268,5 @@ function releaseFromNextRound({
       matchUpsMap,
       event,
     });
-  }
-}
-
-/**
- * Withdraw a matchUp's BYE claims, clearing each propagated BYE seat no other claim still holds. A claim in `keepAt`
- * (the claimant's own loser target, where its BYE is still owed) is left standing.
- */
-export function withdrawByeSeats({
-  claimantMatchUpId,
-  tournamentRecord,
-  drawDefinition,
-  matchUpsMap,
-  keepAt,
-  event,
-}: {
-  tournamentRecord?: Tournament;
-  keepAt?: string;
-  drawDefinition: DrawDefinition;
-  matchUpsMap: MatchUpsMap;
-  claimantMatchUpId: string;
-  event?: Event;
-}) {
-  const claimant = matchUpsMap.drawMatchUps.find((candidate) => candidate.matchUpId === claimantMatchUpId);
-  const claimantIsBye = claimant?.matchUpStatus === BYE;
-  const { appliedPolicies } = getAppliedPolicies({ tournamentRecord, event, drawDefinition });
-  // the seats this matchUp is the reason for, read from the draw before anything is withdrawn
-  const inContextDrawMatchUps = getAllDrawMatchUps({ inContext: true, drawDefinition, matchUpsMap })?.matchUps ?? [];
-  const owed = byeSeatPositionsOwedTo({ inContextDrawMatchUps, drawDefinition, matchUpId: claimantMatchUpId });
-
-  if (claimantIsBye) return;
-
-  const withdrawn = new Set([claimantMatchUpId]);
-  for (const { matchUp, structureId, drawPosition } of owed) {
-    if (matchUp.matchUpId === keepAt) continue;
-    const structure = drawDefinition.structures?.find((candidate) => candidate.structureId === structureId);
-    const assignment = positionAssignmentsOf(structure)?.find((entry) => entry.drawPosition === drawPosition);
-    if (!assignment?.bye || !assignment.byeFromPropagation) continue;
-    // the BYE stays while its seat's feeder, read from the draw, still sends nobody (`byeSeatStands`); the claimant is
-    // judged as its withdrawal leaves it
-    if (byeSeatStands({ withdrawn, appliedPolicies, drawDefinition, drawPosition, matchUpsMap, structureId })) continue;
-    clearDrawPosition({ tournamentRecord, drawDefinition, structureId, drawPosition, matchUpsMap, event });
   }
 }

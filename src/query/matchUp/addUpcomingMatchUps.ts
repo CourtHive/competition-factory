@@ -1,15 +1,10 @@
+import { buildTargetIndex, indexedStructure, TargetIndex } from '@Query/matchUp/targetIndex';
+import { PositionTargetLinks, positionTargets } from '@Query/matchUp/positionTargets';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { getParticipantIds } from '@Functions/global/extractors';
 import { extractDate, timeStringMinutes } from '@Tools/dateTime';
 import { ensureInt } from '@Tools/ensureInt';
 import { numericSort } from '@Tools/sorting';
-import {
-  buildTargetIndex,
-  indexedStructure,
-  PositionTargetLinks,
-  positionTargets,
-  TargetIndex,
-} from '@Query/matchUp/positionTargets';
 
 // constants
 import { BYE, completedMatchUpStatuses, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
