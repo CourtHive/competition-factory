@@ -891,12 +891,14 @@ and the losing team's line-up is carried onto its side of the dual it lands in (
   round's.
 
 That dual is announced by `directLoser`. A loser kept out of a first-match feed (a BYE takes the seat) carries nothing.
+A loser seated opposite a BYE carries its line-up onto the BYE matchUp as above and goes on through it into the dual
+beyond, whose side takes the team's line-up as the draw holds it (`setSideLineUp`, v1's `updateSideLineUp` at the
+loser's assignment), on the side holding the loser's drawPosition, announced `updateSidLineUp` before the BYE matchUp's
+`directLoser`. A team the draw holds no line-up for takes none there, as v1 writes it.
 
 Stay v1's:
 
 - a dual's own call;
-- a decided dual whose loser is seated opposite a BYE: the loser goes on through it, and v1 writes the sides of the
-  dual beyond as well;
 - a decided dual whose losing side held no line-up: v1 carries nothing, and the sides the loser's assignment wrote
   (`updateSideLineUp`, from the draw's line-ups) stand;
 - a line that un-decides its dual;
@@ -927,7 +929,7 @@ says and what lands are one thing. The reducer decides nothing and refuses nothi
 | `clearMatchUpBye`         | the matchUp a withdrawn BYE stood in, to be played again, announced as `removeDrawPosition-<drawPosition>` with neither event nor tournament                                                                                                                                                                                                                                                                                                                                                             |
 | `assignBye`               | a BYE on a structure's stored assignment for a drawPosition, marked `byeFromPropagation` (a `FIRST_MATCHUP` reservation; a double exit's loser seats, `announcesEvent: false` for one its produced exit leaves unfillable)                                                                                                                                                                                                                                                                               |
 | `setMatchUpBye`           | the reserved seat's matchUp a BYE, its score and winner removed (v1's `setMatchUpStatusBYE`)                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `setSideLineUp`           | a team's line-up on its side of the dual it is directed into, as v1 writes it (the winning team's by `propagateLineUp`, the losing team's by `propagateLoserLineUp`, each announced by its writer): the dual's sides made, numbered 1 and 2 in order, keeping what each held, and the line-up set on this one                                                                                                                                                                                            |
+| `setSideLineUp`           | a team's line-up on its side of the dual it is directed into, as v1 writes it (the winning team's by `propagateLineUp`, the losing team's by `propagateLoserLineUp` and, past a BYE, its draw line-up on the dual beyond by `updateSideLineUp`, each announced by its writer): the dual's sides made, numbered 1 and 2 in order, keeping what each held, and the line-up set on this one                                                                                                                 |
 | `setParticipantResults`   | a round robin group's, or a one-round ad hoc structure's, tallies on its position assignments, after the call (`writeAssignmentResults`, v1's own writer); for ad hoc the assignments are first rebuilt, one per participant its matchUps hold, as `updateTallyIfNeeded` rebuilds them; the tally stamps every top-level structure, as v1's does                                                                                                                                                         |
 | `stampUpdatedAt`          | one `updatedAt` per touched entity per call (F2 (i)): the call's captured instant, or the previous stamp + 1 ms when that is already as late                                                                                                                                                                                                                                                                                                                                                             |
 
