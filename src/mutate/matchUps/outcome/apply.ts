@@ -169,9 +169,16 @@ export function applyOwnedPlan({
     });
   }
   announceAssignments({ ops, drawDefinition, tournamentId, event });
+  // a TEAM line's call returns its dual's tally as v1's `directParticipants` annotates it (`tieMatchUpResult`, S7): the
+  // undecided dual's score, no winner removed or set, no tieFormat removed
+  const tally = ops.find((op) => op.op === 'setMatchUpResult' && op.dualTally);
+  const tieMatchUpResult =
+    tally?.op === 'setMatchUpResult'
+      ? { tieMatchUpResult: { ...SUCCESS, score: tally.score, removeWinningSide: false } }
+      : {};
   // a winner's route returns the context `directParticipants` builds, a final's included, which carries something only
   // for an exit (S5): empty
-  return shape === 'direction' ? { ...SUCCESS, context: {} } : { ...SUCCESS };
+  return shape === 'direction' ? { ...SUCCESS, context: {}, ...tieMatchUpResult } : { ...SUCCESS, ...tieMatchUpResult };
 }
 
 /**
