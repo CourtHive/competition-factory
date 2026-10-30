@@ -85,16 +85,48 @@ The following actions can be controlled by this policy:
 
 ### Core MatchUp Actions
 
-| Action       | Constant   | Method/Behavior    | Description                                        |
-| ------------ | ---------- | ------------------ | -------------------------------------------------- |
-| **SCHEDULE** | `SCHEDULE` | `setMatchUpStatus` | Schedule matchUp (set date/time/court)             |
-| **STATUS**   | `STATUS`   | UI/Engine          | Change matchUp status (COMPLETED, DEFAULTED, etc.) |
-| **SCORE**    | `SCORE`    | `setMatchUpStatus` | Enter or modify score                              |
-| **EXIT**     | `EXIT`     | `setMatchUpStatus` | Walkover/default before the opponent arrives       |
-| **START**    | `START`    | Event Trigger      | Mark matchUp as started                            |
-| **END**      | `END`      | Event Trigger      | Mark matchUp as ended                              |
-| **REFEREE**  | `REFEREE`  | Assignment         | Assign referee to matchUp                          |
-| **PENALTY**  | `PENALTY`  | `addPenalty`       | Add penalty during matchUp                         |
+| Action             | Constant         | Method                          | Description                                         |
+| ------------------ | ---------------- | ------------------------------- | --------------------------------------------------- |
+| **SCHEDULE**       | `SCHEDULE`       | `addMatchUpScheduleItems`       | Schedule matchUp (set date/time/court)              |
+| **SCHEDULE_DATE**  | `SCHEDULE_DATE`  | `addMatchUpScheduleItems`       | Set the scheduled date, within `bounds`             |
+| **SCHEDULE_TIME**  | `SCHEDULE_TIME`  | `addMatchUpScheduleItems`       | Set the scheduled time, within `bounds`             |
+| **CLEAR_SCHEDULE** | `CLEAR_SCHEDULE` | `addMatchUpScheduleItems`       | Clear the date, time, venue and court               |
+| **SCHEDULE_LOCK**  | `SCHEDULE_LOCK`  | `setMatchUpScheduleLock`        | Lock the placement, or unlock it (`scheduleLocked`) |
+| **STATUS**         | `STATUS`         | UI/Engine                       | Change matchUp status (COMPLETED, DEFAULTED, etc.)  |
+| **SCORE**          | `SCORE`          | `setMatchUpStatus`              | Enter or modify score                               |
+| **EXIT**           | `EXIT`           | `setMatchUpStatus`              | Walkover/default before the opponent arrives        |
+| **START**          | `START`          | `addMatchUpScheduleItems`       | Record the start time, within `bounds`              |
+| **END**            | `END`            | `addMatchUpScheduleItems`       | Record the end time, within `bounds`                |
+| **REFEREE**        | `REFEREE`        | `addMatchUpOfficial`            | Assign an official to the matchUp                   |
+| **CHECK_IN**       | `CHECK_IN`       | `toggleParticipantCheckInState` | Check a participant in or out for the matchUp       |
+| **SCOREKEEPER**    | `SCOREKEEPER`    | `assignMatchUpScorekeeper`      | Nominate a scorekeeper                              |
+| **PENALTY**        | `PENALTY`        | `addPenalty`                    | Add penalty during matchUp                          |
+
+Before 2026-10-30 the `SCHEDULE` action named `setMatchUpStatus`, and `START`, `END` and `REFEREE` carried no method.
+`SCHEDULE_METHOD` (`setMatchUpStatus`) is deprecated as misnamed; `SCORE_METHOD` is the same value.
+
+### Scheduling and staffing actions
+
+`SCHEDULE_DATE`, `SCHEDULE_TIME`, `CLEAR_SCHEDULE`, `SCHEDULE_LOCK`, `START`, `END`, `REFEREE`, `CHECK_IN` and
+`SCOREKEEPER` follow the matchUp's state (since 2026-10-30). Each is offered only where its write would be accepted,
+and each can be switched off with `enabledActions` / `disabledActions`.
+
+| MatchUp                                                     | Offered                                                                                        |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| still to be played                                          | all of them; check-in, scorekeeper, start and end need a participant (start and end need both) |
+| COMPLETED or RETIRED                                        | `REFEREE`, `SCHEDULE_DATE`, `SCHEDULE_TIME`, `START`, `END`                                    |
+| a walkover, default, double exit, cancellation, dead rubber | `REFEREE`, `SCHEDULE_DATE`, `SCHEDULE_TIME`: no start or end                                   |
+| a carried or produced exit, a BYE                           | none of them, not even an official                                                             |
+
+- A locked placement is not offered `SCHEDULE_DATE`, `SCHEDULE_TIME` or `CLEAR_SCHEDULE`. `SCHEDULE_LOCK` is offered
+  where a lock would mean something (a placement, not yet decided); its `scheduleLocked` says which way it goes, and
+  its `payload.lock` is `null` to unlock or `{}` to lock (the caller adds `lockedAt`).
+- `CLEAR_SCHEDULE` is offered only when there is a placement to clear.
+- `SCHEDULE_DATE` and `SCHEDULE_TIME` carry `bounds` from
+  [`getMatchUpScheduleBounds`](../governors/schedule-governor.md#getmatchupschedulebounds) (`earliestDate`, `latestDate`,
+  `scheduledAfter`, `scheduledBefore`), and `START` and `END` carry `recordedAfter` and `recordedBefore`. A picker
+  limited to them offers only what the write accepts.
+- The payloads leave the value to the caller: `schedule: { scheduledDate: undefined }`, `participantId: undefined`.
 
 ### Team Event Actions
 
@@ -525,7 +557,8 @@ recorded, it is removed with `CLEAR_SCORE`.
 
 - `SCORE` - Modify score (unless restricted)
 - `PENALTY` - Add penalties
-- `SCHEDULE` - Modify scheduling
+- `REFEREE`, `SCHEDULE_DATE`, `SCHEDULE_TIME`, `START`, `END` - correct the date, time, official and recorded times
+  (no clear, lock, check-in or scorekeeper)
 
 **Restricted Actions:**
 
@@ -984,7 +1017,8 @@ matchUpActions({
 ## Related Methods
 
 - `tournamentEngine.matchUpActions()` - Query available actions
-- `tournamentEngine.setMatchUpStatus()` - Execute SCORE/SCHEDULE/STATUS actions
+- `tournamentEngine.setMatchUpStatus()` - Execute SCORE/STATUS/EXIT/CLEAR_SCORE actions
+- `tournamentEngine.addMatchUpScheduleItems()` - Execute SCHEDULE, SCHEDULE_DATE, SCHEDULE_TIME, CLEAR_SCHEDULE, START and END
 - `tournamentEngine.addPenalty()` - Execute PENALTY action
 - `tournamentEngine.substituteParticipant()` - Execute SUBSTITUTION action
 - `tournamentEngine.assignTieMatchUpParticipantId()` - Assign team position

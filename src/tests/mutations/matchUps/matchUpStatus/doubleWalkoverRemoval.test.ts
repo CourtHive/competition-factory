@@ -4,10 +4,10 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';
 
 // constants and fixtures
+import { PENALTY, REFEREE, SCHEDULE_DATE, SCHEDULE_TIME, SCORE } from '@Constants/matchUpActionConstants';
 import { COMPLETED, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { CONSOLATION, FEED_IN_CHAMPIONSHIP_TO_SF } from '@Constants/drawDefinitionConstants';
 import { INCOMPATIBLE_MATCHUP_STATUS } from '@Constants/errorConditionConstants';
-import { REFEREE, SCORE } from '@Constants/matchUpActionConstants';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { MODIFY_MATCHUP } from '@Constants/topicConstants';
 
@@ -534,8 +534,8 @@ test('DOUBLE_WALKOVER cannot be removed when active downstream matchUps', () => 
     drawId,
     matchUpId: targetMatchUp.matchUpId,
   });
-  expect(result.validActions.length).toEqual(2);
-  expect(result.validActions[0].type).toEqual(REFEREE);
+  // a double exit keeps its official and its date and time, but records no start or end (CA, 2026-10-30)
+  expect(result.validActions.map(({ type }) => type)).toEqual([REFEREE, PENALTY, SCHEDULE_DATE, SCHEDULE_TIME]);
 
   // a produced WALKOVER matchUp will not have SCORE option if { activeDownstream: true }
   targetMatchUp = getTarget({ matchUps, roundNumber: 2, roundPosition: 1 });
@@ -543,8 +543,8 @@ test('DOUBLE_WALKOVER cannot be removed when active downstream matchUps', () => 
     drawId,
     matchUpId: targetMatchUp.matchUpId,
   });
-  expect(result.validActions.length).toEqual(2);
-  expect(result.validActions[0].type).toEqual(REFEREE);
+  // nothing is played at a produced exit, so it is neither scheduled nor staffed (CA, 2026-10-30)
+  expect(result.validActions.map(({ type }) => type)).toEqual([PENALTY]);
 
   // attempting to score an active DOUBLE_WALKOVER matchUp will return an error
   targetMatchUp = getTarget({ matchUps, roundNumber: 1, roundPosition: 2 });

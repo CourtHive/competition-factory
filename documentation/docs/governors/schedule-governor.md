@@ -1638,7 +1638,8 @@ The refusal is `ANACHRONISM`, with `context.blockingMatchUps` naming each confli
 
 Where a matchUp may be scheduled, and when its recorded times may fall, without breaking the order of the matchUps
 linked to it. A client limits its date and time pickers to these; the writes refuse what falls outside them. The bounds
-read the same neighbours the writes judge, so the two agree.
+read the same neighbours the writes judge, so the two agree. `matchUpActions` attaches them to its `SCHEDULE_DATE`,
+`SCHEDULE_TIME`, `START` and `END` actions as `bounds`.
 
 ```js
 const { bounds } = engine.getMatchUpScheduleBounds({

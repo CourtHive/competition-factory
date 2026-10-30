@@ -1,5 +1,6 @@
 import { generateTeamTournament } from '@Tests/mutations/participants/team/generateTestTeamTournament';
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
+import { nonScheduleActionTypes } from '@Tests/helpers/nonScheduleActionTypes';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { validateLineUp } from '@Validators/validateTeamLineUp';
@@ -162,8 +163,8 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
     matchUpId: singlesMatchUpId,
     drawId,
   });
-  let validActions = result.validActions.map(({ type }) => type);
-  expect(validActions).toEqual([REFEREE, SCHEDULE, PENALTY, STATUS, SCORE, START, END, REMOVE_PARTICIPANT]);
+  let validActions = nonScheduleActionTypes(result.validActions);
+  expect(validActions).toEqual([REFEREE, SCHEDULE, PENALTY, STATUS, SCORE, REMOVE_PARTICIPANT, START, END]);
 
   result = tournamentEngine.matchUpActions({
     policyDefinitions: {
@@ -177,18 +178,18 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
   });
 
   // with policy substituteWithoutScore: true and sideNumber, SUBSTITUTION is possible
-  validActions = result.validActions.map(({ type }) => type);
+  validActions = nonScheduleActionTypes(result.validActions);
   expect(validActions).toEqual([
     REFEREE,
     SCHEDULE,
     PENALTY,
     STATUS,
     SCORE,
-    START,
-    END,
     REMOVE_PARTICIPANT,
     REPLACE_PARTICIPANT,
     SUBSTITUTION,
+    START,
+    END,
   ]);
 
   let outcome = {
@@ -214,17 +215,17 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
     matchUpId: singlesMatchUpId,
     drawId,
   });
-  validActions = result.validActions.map(({ type }) => type);
+  validActions = nonScheduleActionTypes(result.validActions);
 
   // since there is a score removing is not allowed
-  expect(validActions).toEqual([REFEREE, SCHEDULE, PENALTY, STATUS, SCORE, START, END, CLEAR_SCORE, SUBSTITUTION]);
+  expect(validActions).toEqual([REFEREE, SCHEDULE, PENALTY, STATUS, SCORE, CLEAR_SCORE, SUBSTITUTION, START, END]);
 
   result = tournamentEngine.matchUpActions({
     matchUpId: singlesMatchUpId,
     sideNumber: 1,
     drawId,
   });
-  validActions = result.validActions.map(({ type }) => type);
+  validActions = nonScheduleActionTypes(result.validActions);
 
   // when there are placed participants
   // actions are the same whether or not there is a sideNumber provided
@@ -234,11 +235,11 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
     PENALTY,
     STATUS,
     SCORE,
-    START,
-    END,
     CLEAR_SCORE,
     REPLACE_PARTICIPANT,
     SUBSTITUTION,
+    START,
+    END,
   ]);
 
   // test doublesMatchUps
@@ -252,8 +253,8 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
     matchUpId: doublesMatchUpId,
     drawId,
   });
-  validActions = result.validActions.map(({ type }) => type);
-  expect(validActions).toEqual([REFEREE, SCHEDULE, PENALTY, STATUS, SCORE, START, END, REMOVE_PARTICIPANT]);
+  validActions = nonScheduleActionTypes(result.validActions);
+  expect(validActions).toEqual([REFEREE, SCHEDULE, PENALTY, STATUS, SCORE, REMOVE_PARTICIPANT, START, END]);
 
   result = tournamentEngine.matchUpActions({
     policyDefinitions: {
@@ -264,17 +265,17 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
     matchUpId: doublesMatchUpId,
     drawId,
   });
-  validActions = result.validActions.map(({ type }) => type);
+  validActions = nonScheduleActionTypes(result.validActions);
   expect(validActions).toEqual([
     REFEREE,
     SCHEDULE,
     PENALTY,
     STATUS,
     SCORE,
-    START,
-    END,
     REMOVE_PARTICIPANT,
     SUBSTITUTION,
+    START,
+    END,
   ]);
 
   result = tournamentEngine.setMatchUpStatus({
@@ -288,9 +289,9 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
     matchUpId: doublesMatchUpId,
     drawId,
   });
-  validActions = result.validActions.map(({ type }) => type);
+  validActions = nonScheduleActionTypes(result.validActions);
 
-  expect(validActions).toEqual([REFEREE, SCHEDULE, PENALTY, STATUS, SCORE, START, END, CLEAR_SCORE, SUBSTITUTION]);
+  expect(validActions).toEqual([REFEREE, SCHEDULE, PENALTY, STATUS, SCORE, CLEAR_SCORE, SUBSTITUTION, START, END]);
 
   let substitutionAction = result.validActions.find(({ type }) => type === SUBSTITUTION);
 
@@ -313,7 +314,7 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
     matchUpId: doublesMatchUpId,
     drawId,
   });
-  validActions = result.validActions.map(({ type }) => type);
+  validActions = nonScheduleActionTypes(result.validActions);
 
   expect(validActions).toEqual([
     REFEREE,
@@ -321,11 +322,11 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
     PENALTY,
     STATUS,
     SCORE,
-    START,
-    END,
     CLEAR_SCORE,
     REPLACE_PARTICIPANT,
     SUBSTITUTION,
+    START,
+    END,
   ]);
 
   substitutionAction = result.validActions.find(({ type }) => type === SUBSTITUTION);
@@ -466,18 +467,18 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
     matchUpId: doublesMatchUpId,
     drawId,
   });
-  validActions = result.validActions.map(({ type }) => type);
+  validActions = nonScheduleActionTypes(result.validActions);
 
   expect(validActions).toEqual([
     REFEREE,
     PENALTY,
     SCORE,
-    START,
-    END,
     CLEAR_SCORE,
     REMOVE_PARTICIPANT,
     REPLACE_PARTICIPANT,
     REMOVE_SUBSTITUTION,
+    START,
+    END,
   ]);
 
   result = tournamentEngine.devContext(true).matchUpActions({
@@ -485,17 +486,17 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
     matchUpId: doublesMatchUpId,
     drawId,
   });
-  validActions = result.validActions.map(({ type }) => type);
+  validActions = nonScheduleActionTypes(result.validActions);
 
   expect(validActions).toEqual([
     REFEREE,
     PENALTY,
     SCORE,
-    START,
-    END,
     CLEAR_SCORE,
     // REMOVE_PARTICIPANT, // this option is not available for the side that has no substitution!
     REPLACE_PARTICIPANT,
+    START,
+    END,
   ]);
 
   // since there has been a substitution, processCodes should be present
@@ -516,19 +517,19 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
     matchUpId: doublesMatchUpId,
     drawId,
   });
-  validActions = result.validActions.map(({ type }) => type);
+  validActions = nonScheduleActionTypes(result.validActions);
 
   expect(validActions).toEqual([
     REFEREE,
     PENALTY,
     SCORE,
-    START,
-    END,
     CLEAR_SCORE,
     REMOVE_PARTICIPANT,
     REPLACE_PARTICIPANT,
     REMOVE_SUBSTITUTION,
     SUBSTITUTION,
+    START,
+    END,
   ]);
 
   // now remove the substituted participant and check for REMOVE_PARTICIPANT options
@@ -544,9 +545,9 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
     matchUpId: doublesMatchUpId,
     drawId,
   });
-  validActions = result.validActions.map(({ type }) => type);
+  validActions = nonScheduleActionTypes(result.validActions);
 
-  expect(validActions).toEqual([REFEREE, PENALTY, SCORE, START, END, CLEAR_SCORE, REPLACE_PARTICIPANT]);
+  expect(validActions).toEqual([REFEREE, PENALTY, SCORE, CLEAR_SCORE, REPLACE_PARTICIPANT, START, END]);
 
   // if there are no substitutions then processCodes should be removed
   targetMatchUp = tournamentEngine.allTournamentMatchUps({
@@ -630,7 +631,7 @@ it('can substitute a single individual participant in a TEAM tieMatchUp when onl
     drawId,
   });
 
-  let validActions = result.validActions.map(({ type }) => type);
+  let validActions = nonScheduleActionTypes(result.validActions);
   expect(validActions).toEqual([REFEREE, SCHEDULE, ASSIGN_PARTICIPANT]);
 
   assignIndividualParticipants({
@@ -657,18 +658,18 @@ it('can substitute a single individual participant in a TEAM tieMatchUp when onl
     drawId,
   });
 
-  validActions = result.validActions.map(({ type }) => type);
+  validActions = nonScheduleActionTypes(result.validActions);
   expect(validActions).toEqual([
     REFEREE,
     SCHEDULE,
     PENALTY,
     STATUS,
     SCORE,
-    START,
-    END,
     REMOVE_PARTICIPANT,
     REPLACE_PARTICIPANT,
     SUBSTITUTION,
+    START,
+    END,
   ]);
 
   result = makeSubstitution({
@@ -707,19 +708,19 @@ it('can substitute a single individual participant in a TEAM tieMatchUp when onl
     drawId,
   });
 
-  validActions = result.validActions.map(({ type }) => type);
+  validActions = nonScheduleActionTypes(result.validActions);
   expect(validActions).toEqual([
     REFEREE,
     SCHEDULE,
     PENALTY,
     STATUS,
     SCORE,
-    START,
-    END,
     REMOVE_PARTICIPANT,
     REPLACE_PARTICIPANT,
     REMOVE_SUBSTITUTION,
     SUBSTITUTION,
+    START,
+    END,
   ]);
 
   result = tournamentEngine.matchUpActions({
@@ -729,18 +730,18 @@ it('can substitute a single individual participant in a TEAM tieMatchUp when onl
   });
 
   // without policy allowing substituteWithoutScore, SUBSTITUTION is not available
-  validActions = result.validActions.map(({ type }) => type);
+  validActions = nonScheduleActionTypes(result.validActions);
   expect(validActions).toEqual([
     REFEREE,
     SCHEDULE,
     PENALTY,
     STATUS,
     SCORE,
-    START,
-    END,
     REMOVE_PARTICIPANT,
     REPLACE_PARTICIPANT,
     REMOVE_SUBSTITUTION,
+    START,
+    END,
   ]);
 });
 

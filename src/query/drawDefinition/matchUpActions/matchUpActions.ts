@@ -14,6 +14,7 @@ import { getParticipants } from '@Query/participants/getParticipants';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { scheduleMatchUpActions } from './scheduleMatchUpActions';
 import { adHocMatchUpActions } from './adHocMatchUpActions';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
@@ -52,13 +53,13 @@ import {
 } from '@Constants/errorConditionConstants';
 import {
   CLEAR_SCORE,
-  END,
   EXIT,
   REFEREE,
+  REFEREE_METHOD,
   SCHEDULE,
-  SCHEDULE_METHOD,
+  SCHEDULE_ITEMS_METHOD,
   SCORE,
-  START,
+  SCORE_METHOD,
   STATUS,
 } from '@Constants/matchUpActionConstants';
 
@@ -211,7 +212,21 @@ export function matchUpActions(params?: MatchUpActionsArgs): ResultType & {
     drawDefinition,
     side,
   });
-  if (standard?.error) return standard;
+  if (standard.error) return standard;
+
+  validActions.push(
+    ...scheduleMatchUpActions({
+      readyToScore: !!standard.readyToScore,
+      carriedExit: !!standard.carriedExit,
+      tournamentRecord,
+      inContextMatchUp,
+      drawDefinition,
+      policyActions,
+      matchUpId,
+      matchUp,
+      drawId,
+    }),
+  );
 
   return { structureIsComplete, validActions, isDoubleExit, ...SUCCESS };
 }
@@ -285,9 +300,18 @@ function addStandardActions({
   drawId,
   drawDefinition,
   side,
-}) {
-  if (isAvailableAction({ policyActions, action: REFEREE })) {
-    validActions.push({ type: REFEREE, payload: { matchUpId } });
+}): ResultType & { readyToScore?: boolean; carriedExit?: boolean } {
+  // A carried or produced exit is changed at its ORIGIN, never here (CA, 2026-10-03): neither SCORE nor
+  // CLEAR_SCORE is offered on it, as `setMatchUpState` refuses both (`rewritesCarriedExit`). Nothing is played there,
+  // so it is not staffed either: no official (CA, 2026-10-30).
+  const carriedExit = isPropagatedExit({ matchUp });
+
+  if (!carriedExit && isAvailableAction({ policyActions, action: REFEREE })) {
+    validActions.push({
+      type: REFEREE,
+      method: REFEREE_METHOD,
+      payload: { drawId, matchUpId, participantId: undefined },
+    });
   }
 
   const isInComplete = !isDirectingMatchUpStatus({ matchUpStatus: matchUp.matchUpStatus });
@@ -313,7 +337,7 @@ function addStandardActions({
   const readyToScore = (matchUpDrawPositionsAreAssigned || hasParticipants) && !(isDoubleExit && activeDownstream);
 
   if (isInComplete) {
-    validActions.push({ payload: { drawId, matchUpId, schedule: {} }, method: SCHEDULE_METHOD, type: SCHEDULE });
+    validActions.push({ payload: { drawId, matchUpId, schedule: {} }, method: SCHEDULE_ITEMS_METHOD, type: SCHEDULE });
   }
 
   if (
@@ -336,14 +360,10 @@ function addStandardActions({
 
   if (isInComplete && readyToScore) validActions.push({ type: STATUS });
 
-  // A carried or produced exit is changed at its ORIGIN, never here (CA, 2026-10-03): neither SCORE nor
-  // CLEAR_SCORE is offered on it, as `setMatchUpState` refuses both (`rewritesCarriedExit`).
-  const carriedExit = isPropagatedExit({ matchUp });
-
   if (scoringActive && readyToScore && !carriedExit) {
     validActions.push({
       info: 'set outcome and winningSide',
-      method: SCHEDULE_METHOD,
+      method: SCORE_METHOD,
       type: SCORE,
       disabledMatchUpStatuses: getDisabledMatchUpStatuses({
         drawDefinition,
@@ -358,9 +378,6 @@ function addStandardActions({
         winningSide: undefined,
       },
     });
-
-    if (isAvailableAction({ policyActions, action: START })) validActions.push({ type: START });
-    if (isAvailableAction({ policyActions, action: END })) validActions.push({ type: END });
   }
 
   // CLEAR_SCORE — the affordance for REMOVING an outcome, which SCORE cannot express.
@@ -382,7 +399,7 @@ function addStandardActions({
   if (scoringActive && hasOutcomeToRemove && !clearWouldBeRefused && !carriedExit) {
     validActions.push({
       info: 'remove the existing outcome',
-      method: SCHEDULE_METHOD,
+      method: SCORE_METHOD,
       type: CLEAR_SCORE,
       payload: {
         drawId,
@@ -411,7 +428,7 @@ function addStandardActions({
   if (loneExit) {
     validActions.push({
       info: 'record a walkover or default before the opponent arrives',
-      method: SCHEDULE_METHOD,
+      method: SCORE_METHOD,
       type: EXIT,
       payload: {
         drawId,
@@ -444,7 +461,7 @@ function addStandardActions({
       }),
     );
   }
-  return undefined;
+  return { readyToScore: scoringActive && readyToScore, carriedExit };
 }
 
 type LoneExit = {

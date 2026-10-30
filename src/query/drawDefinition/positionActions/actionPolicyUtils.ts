@@ -79,6 +79,10 @@ export type MatchUpAction = ValidActionBase & {
   swappableParticipants?: HydratedParticipant[];
   existingParticipants?: HydratedParticipant[];
   substitutedParticipantIds?: string[];
+  /** SCHEDULE_DATE, SCHEDULE_TIME, START and END: where the write accepts the value (`getMatchUpScheduleBounds`) */
+  bounds?: { [key: string]: unknown };
+  /** SCHEDULE_LOCK: whether the placement is locked now, so the action unlocks it */
+  scheduleLocked?: boolean;
   swappableParticipantIds?: string[];
   existingParticipantIds?: string[];
 };
