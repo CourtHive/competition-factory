@@ -138,10 +138,10 @@ export function applyOwnedPlan({
     });
   }
   // a write v1's settle pass makes, announced under that pass's name (a withdrawn carry, `reconcileScoredTimes`)
-  // and a decided dual's winning team carries its line-up into the next dual last, announced by `directWinner` (S7)
+  // and a decided dual's teams carry their line-ups on last, announced by `directWinner` or `directLoser` (S7)
   const settled = new Map<string, string>(
     ops.flatMap((op): [string, string][] => {
-      if (op.op === 'setSideLineUp') return [[op.matchUpId, 'directWinner']];
+      if (op.op === 'setSideLineUp') return [[op.matchUpId, op.announcedAs]];
       return op.op === 'setMatchUpResult' && op.announcedAs ? [[op.matchUpId, op.announcedAs]] : [];
     }),
   );

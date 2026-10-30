@@ -33,12 +33,12 @@ import {
  * S7: V2 OWNS A TEAM LINE'S RESULT (outcome v2 executor plan § 6 S7). A line that leaves its dual undecided: v1 writes
  * the line, then the dual's tally (`updateTieMatchUpScore`: its sides and tieFormat where they change, its score and
  * status). A line that decides its dual: v1 also makes the dual's own call, writing its winner and directing it, and
- * carries the winning team's line-up onto its side of the next dual (`propagateLineUp`). Under `v2` the call is written
+ * carries the winning team's line-up onto its side of the next dual (`propagateLineUp`) and, where a loser link sends the
+ * losing team on, the losing team's onto its side there (`propagateLoserLineUp`). Under `v2` the call is written
  * by v2 and v1's writer is not asked; the record, the notices (payloads, in order) and the results equal v1's, under the
  * fixed and the real clock.
  *
- * Still v1's, pinned below: a line that decides a dual whose loser is directed (a loser link), a line in a round robin
- * (its group's tally), a REPORTED score source, and auto-calc off.
+ * Still v1's, pinned below: a line in a round robin (its group's tally), a REPORTED score source, and auto-calc off.
  */
 const v1Writes = vi.hoisted(() => ({ count: 0 }));
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
@@ -74,12 +74,16 @@ type Scenario = {
   autoCalcOff?: true;
   /** after the setup, the step's dual's tieFormat declares its score REPORTED: the lines derive nothing */
   reported?: true;
+  /** after the setup, each side of the step's dual holds an assignment naming no participant */
+  stray?: true;
   setup: { target: Line; winningSide: 1 | 2 }[];
   step: { target: Line; winningSide: 1 | 2 };
+  /** CONTROL: the dual a loser link sends the losing team to, and whether v1 carries its line-up onto that side */
+  loserSeat?: { dual: Omit<Line, 'line'>; sideNumber: 1 | 2; carried: boolean };
 };
 
-function findLine({ structureName, roundNumber, roundPosition, line }: Line): string {
-  const dual = tournamentEngine
+function findDual({ structureName, roundNumber, roundPosition }: Omit<Line, 'line'>): any {
+  return tournamentEngine
     .allDrawMatchUps({ drawId: 'd', inContext: true })
     .matchUps.find(
       (matchUp: any) =>
@@ -88,14 +92,24 @@ function findLine({ structureName, roundNumber, roundPosition, line }: Line): st
         matchUp.roundNumber === roundNumber &&
         (!roundPosition || matchUp.roundPosition === roundPosition),
     );
-  return dual.tieMatchUps[line].matchUpId;
+}
+
+function findLine(target: Line): string {
+  return findDual(target).tieMatchUps[target.line].matchUpId;
+}
+
+/** the line-up held on a side of a dual, as stored */
+function heldLineUp({ dual, sideNumber }: NonNullable<Scenario['loserSeat']>) {
+  const { matchUpId } = findDual(dual);
+  const { matchUp } = tournamentEngine.findMatchUp({ drawId: 'd', matchUpId });
+  return matchUp.sides?.find((side: any) => side.sideNumber === sideNumber)?.lineUp;
 }
 
 /**
  * The scenario's record, prepared once under v1 and copied for each run: setting a line-up result can create PAIR
  * participants with fresh ids, so two separately generated records would differ before the step under test
  */
-function prepare({ drawProfile, setup, step, unsettled, autoCalcOff, reported }: Scenario, realClock: boolean) {
+function prepare({ drawProfile, setup, step, unsettled, autoCalcOff, reported, stray }: Scenario, realClock: boolean) {
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
   setClock(realClock ? undefined : '2026-10-25T00:00:00.000Z');
   setSubscriptions({ subscriptions: {} });
@@ -132,6 +146,19 @@ function prepare({ drawProfile, setup, step, unsettled, autoCalcOff, reported }:
     // CONTROL: the dual stores its own tieFormat (copied on at its first line), which now declares a reported score
     expect(!!dual.tieFormat).toEqual(true);
     dual.tieFormat.scoreSource = 'REPORTED';
+  }
+  if (stray) {
+    const lineId = findLine(step.target);
+    const duals = record.events.flatMap((event: any) =>
+      event.drawDefinitions.flatMap((draw: any) => draw.structures.flatMap((structure: any) => structure.matchUps)),
+    );
+    const dual = duals.find((matchUp: any) => matchUp.tieMatchUps?.some((line: any) => line.matchUpId === lineId));
+    // CONTROL: both sides of the dual hold their line-ups, to which an assignment naming no participant is added
+    expect(dual.sides.map((side: any) => !!side.lineUp?.length)).toEqual([true, true]);
+    for (const side of dual.sides) {
+      const [{ collectionId }] = side.lineUp[0].collectionAssignments;
+      side.lineUp.push({ collectionAssignments: [{ collectionId, collectionPosition: 9 }] });
+    }
   }
   if (unsettled) {
     const lineId = findLine(step.target);
@@ -285,13 +312,115 @@ const OWNED: [string, Scenario][] = [
       step: { target: R1(1, 4), winningSide: 1 },
     },
   ],
+  [
+    'COMPASS: a line that decides an East dual for side 1: its loser goes West, carrying its line-up',
+    {
+      drawProfile: { drawSize: 8, drawType: COMPASS },
+      setup: [0, 1, 2, 3].map((line) => ({ target: R1(2, line, 'East'), winningSide: 1 as const })),
+      step: { target: R1(2, 4, 'East'), winningSide: 1 },
+      loserSeat: { dual: { structureName: 'West', roundNumber: 1, roundPosition: 1 }, sideNumber: 2, carried: true },
+    },
+  ],
+  [
+    'COMPASS: a dual decided whose sides hold an assignment naming no participant: the loser carries it, the winner not',
+    {
+      drawProfile: { drawSize: 8, drawType: COMPASS },
+      setup: [0, 1, 2, 3].map((line) => ({ target: R1(2, line, 'East'), winningSide: 1 as const })),
+      step: { target: R1(2, 4, 'East'), winningSide: 1 },
+      stray: true,
+      loserSeat: { dual: { structureName: 'West', roundNumber: 1, roundPosition: 1 }, sideNumber: 2, carried: true },
+    },
+  ],
+  [
+    "COMPASS: a second-round East dual decided: its loser goes to North's first round, on side 2 by roundPosition",
+    {
+      drawProfile: { drawSize: 8, drawType: COMPASS },
+      setup: [
+        ...[3, 4].flatMap((roundPosition) =>
+          [0, 1, 2, 3, 4].map((line) => ({ target: R1(roundPosition, line, 'East'), winningSide: 1 as const })),
+        ),
+        ...[0, 1, 2, 3].map((line) => ({
+          target: { structureName: 'East', roundNumber: 2, roundPosition: 2, line },
+          winningSide: 1 as const,
+        })),
+      ],
+      step: { target: { structureName: 'East', roundNumber: 2, roundPosition: 2, line: 4 }, winningSide: 1 },
+      loserSeat: { dual: { structureName: 'North', roundNumber: 1, roundPosition: 1 }, sideNumber: 2, carried: true },
+    },
+  ],
+  [
+    'COMPASS: a line that decides a first-position East dual for side 2: its loser is side 1 in West',
+    {
+      drawProfile: { drawSize: 8, drawType: COMPASS },
+      setup: [0, 1, 2, 3].map((line) => ({ target: R1(1, line, 'East'), winningSide: 2 as const })),
+      step: { target: R1(1, 4, 'East'), winningSide: 2 },
+      loserSeat: { dual: { structureName: 'West', roundNumber: 1, roundPosition: 1 }, sideNumber: 1, carried: true },
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION: a line that decides a first-round Main dual: its loser is fed on',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [0, 1, 2, 3].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
+      step: { target: R1(1, 4), winningSide: 1 },
+      loserSeat: {
+        dual: { structureName: 'Consolation', roundNumber: 1, roundPosition: 1 },
+        sideNumber: 1,
+        carried: true,
+      },
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION: a second-round Main dual decided: a loser who had won is kept out, a BYE in its seat',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [
+        ...[1, 2].flatMap((roundPosition) =>
+          [0, 1, 2, 3, 4].map((line) => ({ target: R1(roundPosition, line), winningSide: 1 as const })),
+        ),
+        ...[0, 1, 2, 3].map((line) => ({
+          target: { structureName: 'Main', roundNumber: 2, roundPosition: 1, line },
+          winningSide: 1 as const,
+        })),
+      ],
+      step: { target: { structureName: 'Main', roundNumber: 2, roundPosition: 1, line: 4 }, winningSide: 1 },
+      loserSeat: {
+        dual: { structureName: 'Consolation', roundNumber: 2, roundPosition: 1 },
+        sideNumber: 1,
+        carried: false,
+      },
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION: a second-round Main dual decided: a loser who had a BYE is fed on, to side 1',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION, participantsCount: 6 },
+      setup: [
+        ...[0, 1, 2, 3, 4].map((line) => ({ target: R1(2, line), winningSide: 1 as const })),
+        ...[0, 1, 2, 3].map((line) => ({
+          target: { structureName: 'Main', roundNumber: 2, roundPosition: 1, line },
+          winningSide: 2 as const,
+        })),
+      ],
+      step: { target: { structureName: 'Main', roundNumber: 2, roundPosition: 1, line: 4 }, winningSide: 2 },
+      loserSeat: {
+        dual: { structureName: 'Consolation', roundNumber: 2, roundPosition: 1 },
+        sideNumber: 1,
+        carried: true,
+      },
+    },
+  ],
 ];
 
 describe('under v2, a TEAM line is v2s, deciding its dual or not, and leaves exactly what v1 leaves', () => {
   it.each(OWNED)('%s', (_label, scenario) => {
     for (const realClock of [false, true]) {
       const prepared = prepare(scenario, realClock);
+      const { loserSeat } = scenario;
+      // CONTROL: the loser's seat holds no line-up before the step, and holds one after v1's exactly where v1 carries it
+      if (loserSeat) expect(heldLineUp(loserSeat)).toBeUndefined();
       const v1 = play(OUTCOME_PIPELINE_V1, scenario, prepared, realClock);
+      if (loserSeat) expect(!!heldLineUp(loserSeat)?.length).toEqual(loserSeat.carried);
       const v2 = play(OUTCOME_PIPELINE_V2, scenario, prepared, realClock);
       // the differential compares v2's plan with v1's write, notices included: a divergence would throw
       expect(play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario, prepared, realClock).result.success).toEqual(true);
@@ -309,22 +438,6 @@ describe('under v2, a TEAM line is v2s, deciding its dual or not, and leaves exa
 });
 
 const KEPT: [string, Scenario][] = [
-  [
-    'COMPASS: a line that decides an East dual, whose loser goes West',
-    {
-      drawProfile: { drawSize: 8, drawType: COMPASS },
-      setup: [0, 1, 2, 3].map((line) => ({ target: R1(2, line, 'East'), winningSide: 1 as const })),
-      step: { target: R1(2, 4, 'East'), winningSide: 1 },
-    },
-  ],
-  [
-    'FIRST_MATCH_LOSER_CONSOLATION: a line that decides a first-round Main dual, whose loser is fed on',
-    {
-      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
-      setup: [0, 1, 2, 3].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
-      step: { target: R1(1, 4), winningSide: 1 },
-    },
-  ],
   [
     "a line in a round robin: v1 re-reads its group's tally (a line's group is read off its dual, hydration OPEN-14)",
     {

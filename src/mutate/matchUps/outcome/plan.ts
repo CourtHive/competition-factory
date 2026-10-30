@@ -2482,7 +2482,7 @@ function decidingLineOps(
   const line = view.line;
   const write = args.write;
   const winningSide = dual.request.winningSide as 1 | 2;
-  if (!line || !write || dual.route !== 'winner' || dual.direction?.loser) return { abstain: 'team' };
+  if (!line || !write || dual.route !== 'winner') return { abstain: 'team' };
   const dualPlan = planOps({
     tournamentRecord: args.tournamentRecord,
     direction: dual.direction,
@@ -2506,13 +2506,17 @@ function decidingLineOps(
     };
   });
   const carry = lineUpCarry({ line, winningSide, dual });
-  if (carry === false) return { abstain: 'team' };
-  const placement = dualOps.findIndex(
-    (op) => op.op === 'setMatchUpDrawPositions' && op.matchUpId === dual.direction?.winner?.matchUpId,
-  );
+  const loserCarry = loserLineUpCarry({ line, winningSide, dual });
+  if (carry === false || loserCarry === false) return { abstain: 'team' };
   const ops = [...dualOps];
   // after the winner's placement, as v1 carries it once the position has joined the next dual
+  const placement = ops.findIndex(
+    (op) => op.op === 'setMatchUpDrawPositions' && op.matchUpId === dual.direction?.winner?.matchUpId,
+  );
   if (carry) ops.splice(placement < 0 ? ops.length : placement + 1, 0, carry);
+  // the dual the loser lands in, otherwise untouched (the arrival is written on its structure's assignments), is stamped
+  // by the carry's notice
+  if (loserCarry) ops.push(loserCarry, { op: 'stampUpdatedAt', entity: 'matchUp', id: loserCarry.matchUpId });
   return { ops: [...resultOps(request, write, request.matchUpId as string), ...ops], shape: dualPlan.shape };
 }
 
@@ -2545,7 +2549,43 @@ function lineUpCarry({
     (source === target.roundPosition && source !== 1) || Math.floor(source / 2) === target.roundPosition;
   const sideNumber = target.feedRound || advancedByPosition ? 2 : 1;
   const lineUp = removeLineUpSubstitutions({ lineUp: held.filter((assignment) => assignment?.participantId) });
-  return { op: 'setSideLineUp' as const, matchUpId: next, sideNumber, lineUp };
+  return { op: 'setSideLineUp' as const, matchUpId: next, sideNumber, lineUp, announcedAs: 'directWinner' as const };
+}
+
+/**
+ * The losing team's line-up on its side of the dual a loser link sends it to, as v1's `propagateLoserLineUp` carries it:
+ * the line-up the decided dual's losing side holds, every assignment kept (unlike the winner's, none is filtered),
+ * without substitutions, on side `2 - (roundPosition % 2)` of a first-round target and side 1 of a later round. A
+ * loser kept out of a first-match feed (a BYE takes the seat) carries nothing. The dual a line decides is COMPLETED, so
+ * its loser carries no exit (v1 returns before the carry where a fed exit propagates).
+ */
+function loserLineUpCarry({
+  line,
+  winningSide,
+  dual,
+}: {
+  line: NonNullable<OutcomeView['line']>;
+  winningSide: 1 | 2;
+  dual: DualCall;
+}) {
+  const loser = dual.direction?.loser;
+  if (!loser?.arrives) return undefined;
+  const sides = line.dualRewrite.sidesAsHeld as { sideNumber?: number; lineUp?: LineUp }[] | undefined;
+  const held = sides?.find((side) => side.sideNumber === 3 - winningSide)?.lineUp;
+  if (!held) return undefined;
+  const inContext = dual.view.inContextDrawMatchUps;
+  const source = inContext?.find((matchUp) => matchUp.matchUpId === line.dualMatchUpId)?.roundPosition;
+  const roundNumber = inContext?.find((matchUp) => matchUp.matchUpId === loser.matchUpId)?.roundNumber;
+  if (!source || !roundNumber) return false;
+  const sideNumber = roundNumber === 1 ? 2 - (source % 2) : 1;
+  const lineUp = removeLineUpSubstitutions({ lineUp: held });
+  return {
+    op: 'setSideLineUp' as const,
+    matchUpId: loser.matchUpId,
+    sideNumber,
+    lineUp,
+    announcedAs: 'directLoser' as const,
+  };
 }
 
 /** the call's plan as ops, or the reason it is v1's */

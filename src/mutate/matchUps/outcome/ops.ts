@@ -217,13 +217,15 @@ export type OutcomeOp =
   | {
       op: 'setSideLineUp';
       /**
-       * a TEAM dual a winning team is directed into (S7): the team's line-up on its side, as v1's `propagateLineUp`
-       * writes it. The matchUp's sides are made, numbered 1 and 2, keeping what each held, and the line-up set on this
-       * one
+       * a TEAM dual a team is directed into (S7): the team's line-up on its side, as v1 writes it, the winning team's
+       * by `propagateLineUp` (`directWinner`), the losing team's by `propagateLoserLineUp` (`directLoser`). The matchUp's
+       * sides are made, numbered 1 and 2, keeping what each held, and the line-up set on this one
        */
       matchUpId: string;
       sideNumber: number;
       lineUp: unknown;
+      /** the v1 writer that announces it */
+      announcedAs: 'directWinner' | 'directLoser';
     }
   | { op: 'stampUpdatedAt'; entity: 'matchUp' | 'structure' | 'drawDefinition'; id: string };
 
