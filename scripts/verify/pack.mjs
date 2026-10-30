@@ -8,18 +8,19 @@
  * Catches `.d.ts` referencing internal paths that don't survive publish.
  * Runs in ~30s on a warm cache.
  */
-import { execSync } from 'node:child_process';
-import { cpSync, existsSync, mkdtempSync, readdirSync, renameSync, rmSync } from 'node:fs';
+import { cpSync, mkdtempSync, readdirSync, renameSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { tmpdir } from 'node:os';
+import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { tmpdir } from 'node:os';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FACTORY_ROOT = resolve(__dirname, '../..');
 const FIXTURE_SRC = join(FACTORY_ROOT, 'scripts/verify/fixtures/pack-test');
 
 function run(cmd, opts = {}) {
-  return execSync(cmd, { stdio: 'pipe', encoding: 'utf8', ...opts });
+  // a deadline on every child (punch list P62): a pack or install that hangs fails the check instead of stalling it
+  return execSync(cmd, { stdio: 'pipe', encoding: 'utf8', timeout: 1_200_000, killSignal: 'SIGKILL', ...opts });
 }
 
 function log(msg) {

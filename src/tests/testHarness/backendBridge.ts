@@ -8,6 +8,11 @@ import fs from 'node:fs';
  * pipe, so a worker thread owns the process (`<command> --serve`: one JSON call per line in, one answer per line out)
  * and this thread blocks on an Atomics wait until the worker has the answer. An answer is handed back through a shared
  * buffer, or a temporary file when it is larger than the buffer.
+ *
+ * Each request carries `seq`, its number on this bridge, and an answer that states a `seq` must state the request's: an
+ * answer read for the wrong request is a harness error, thrown, and never compared as the engine's answer. An
+ * implementation that does not echo `seq` is still read (one full differential run once compared an answer with the
+ * answer to the call before it; this makes any recurrence name itself).
  */
 const BUFFER_BYTES = 64 * 1024 * 1024;
 
@@ -58,16 +63,22 @@ export function createBackendBridge(command: string) {
   const flags = new Int32Array(control);
   const bytes = new Uint8Array(data);
   const decoder = new TextDecoder();
+  let sent = 0;
 
   return {
     /** one call, answered synchronously */
     call(request: unknown): any {
+      const seq = ++sent;
       Atomics.store(flags, 0, 0);
-      worker.postMessage(JSON.stringify(request));
+      worker.postMessage(JSON.stringify({ ...(request as object), seq }));
       Atomics.wait(flags, 0, 0);
       if (flags[2] === 2) throw new Error(`${command} --serve exited`);
       const text = flags[2] === 1 ? fs.readFileSync(overflow, 'utf8') : decoder.decode(bytes.slice(0, flags[1]));
-      return JSON.parse(text);
+      const answer = JSON.parse(text);
+      if (answer?.seq !== undefined && answer.seq !== seq) {
+        throw new Error(`${command} --serve: the answer read for call ${seq} is the answer to call ${answer.seq}`);
+      }
+      return answer;
     },
     close() {
       void worker.terminate();

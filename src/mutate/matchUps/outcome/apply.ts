@@ -56,6 +56,7 @@ export function applyOwnedPlan({
     op.op === 'mergeSideExitProvenance' ||
     op.op === 'setSideExitProvenance' ||
     op.op === 'clearMatchUpBye' ||
+    op.op === 'setSideLineUp' ||
     op.op === 'exchangeDrawPositions'
       ? [op.matchUpId]
       : [],
@@ -98,7 +99,8 @@ export function applyOwnedPlan({
     ops.flatMap((op) =>
       (op.op === 'setMatchUpDrawPositions' && (op.announcesContext === false || op.advancesThroughBye)) ||
       (op.op === 'setMatchUpResult' && op.announcesContext === false) ||
-      (op.op === 'setMatchUpBye' && op.announcesEvent === false)
+      (op.op === 'setMatchUpBye' && op.announcesEvent === false) ||
+      (op.op === 'setSideLineUp' && op.announcesEvent === false)
         ? [op.matchUpId]
         : [],
     ),
@@ -137,8 +139,12 @@ export function applyOwnedPlan({
     });
   }
   // a write v1's settle pass makes, announced under that pass's name (a withdrawn carry, `reconcileScoredTimes`)
-  const settled = new Map(
-    ops.flatMap((op) => (op.op === 'setMatchUpResult' && op.announcedAs ? [[op.matchUpId, op.announcedAs]] : [])),
+  // and a decided dual's teams carry their line-ups on last, announced by `directWinner` or `directLoser` (S7)
+  const settled = new Map<string, string>(
+    ops.flatMap((op): [string, string][] => {
+      if (op.op === 'setSideLineUp') return [[op.matchUpId, op.announcedAs]];
+      return op.op === 'setMatchUpResult' && op.announcedAs ? [[op.matchUpId, op.announcedAs]] : [];
+    }),
   );
   for (const matchUpId of announced) {
     const matchUp = stored.get(matchUpId);
@@ -169,9 +175,27 @@ export function applyOwnedPlan({
     });
   }
   announceAssignments({ ops, drawDefinition, tournamentId, event });
+  const tieMatchUpResult = dualTallyResult(ops);
   // a winner's route returns the context `directParticipants` builds, a final's included, which carries something only
   // for an exit (S5): empty
-  return shape === 'direction' ? { ...SUCCESS, context: {} } : { ...SUCCESS };
+  return shape === 'direction' ? { ...SUCCESS, context: {}, ...tieMatchUpResult } : { ...SUCCESS, ...tieMatchUpResult };
+}
+
+/**
+ * A TEAM line's call returns its dual's tally as v1's `directParticipants` annotates it (`tieMatchUpResult`, S7): the
+ * dual's score and the winner it decides, if it decides one; no winner removed, no tieFormat removed
+ */
+function dualTallyResult(ops: OutcomeOp[]) {
+  const tally = ops.find((op) => op.op === 'setMatchUpResult' && op.dualTally);
+  if (tally?.op !== 'setMatchUpResult') return {};
+  return {
+    tieMatchUpResult: {
+      ...SUCCESS,
+      score: tally.score,
+      removeWinningSide: false,
+      ...(tally.winningSide ? { winningSide: tally.winningSide } : {}),
+    },
+  };
 }
 
 /**

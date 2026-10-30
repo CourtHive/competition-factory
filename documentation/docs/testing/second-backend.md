@@ -35,7 +35,9 @@ and notices. In `differential` mode the two are compared before that stamp is wr
 
 `<command> --methods` prints the engine methods it answers, as a JSON array. `<command> --serve` reads one call per
 line and writes one answer per line; the harness keeps one such process per worker behind a synchronous bridge
-(`backendBridge.ts`: a worker thread and an `Atomics` wait), because engine calls are synchronous.
+(`backendBridge.ts`: a worker thread and an `Atomics` wait), because engine calls are synchronous. Every call carries
+`seq`, its number on that process; an answer should echo it, and one that echoes another call's number is a harness
+error rather than an answer to compare (an answer without `seq` is still read).
 
 A call:
 
@@ -66,8 +68,11 @@ report counts declined calls separately.
 `differential` only. `<command> --scoring-methods` lists the class methods it answers. The first routed call on an
 instance opens a **session** in the serving process from the instance as it stands (its options, `getState()` and
 `getSupplementaryState()`); every later call on that instance goes to the same session, so the second implementation
-keeps its own timeline and redo stack. After each call the two are compared on the scoring corpus's observable: what
-the call returned, the score, the timeline's shape, the servers, the undo and redo depths and the players on court, or
+keeps its own timeline and redo stack. The views are routed like the writes (`getScoreboard`, `getInputLevels`,
+`getInputMode`, `getEpisodes`, `getStatistics`, with their options as `params`): a view the second implementation
+lists is compared on every call a test makes to it, and again after every routed write, so it is graded on every state
+a write leaves and not only where a test happens to read it. After each call the two are compared on the scoring corpus's
+observable: what the call returned, the score, the timeline's shape, the servers, the undo and redo depths and the players on court, or
 the refusal's message. A call that replaces the instance's state (`setState`, `loadSupplementaryState`, `reset`,
 `markHardBoundary`) reopens its session at the next routed call. Only the outermost call on an instance is routed.
 

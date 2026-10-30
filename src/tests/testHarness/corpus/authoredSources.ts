@@ -8,6 +8,7 @@ import { clearOutcome } from '../exitPropagation/transitions';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { setRandomSource } from '@Tools/prng';
+import { RECORD_CLOCK } from './recordClock';
 import { setClock } from '@Tools/clock';
 import path from 'path';
 import fs from 'fs';
@@ -81,9 +82,10 @@ const win = (scoreString = '6-1 6-1', winningSide = 1) =>
   mocksEngine.generateOutcomeFromScoreString({ scoreString, winningSide }).outcome;
 
 function generate(drawProfile: any, policy?: any, otherPolicies?: any) {
-  // the starting record is built on the corpus clock, so its timestamps, and so its hash, reproduce:
-  // a committed manifest of these hashes is only a signal if a rerun cannot move them
-  setClock(CLOCK);
+  // the starting record is built on a fixed clock, so its timestamps, and so its hash, reproduce:
+  // a committed manifest of these hashes is only a signal if a rerun cannot move them. It is an hour before the
+  // steps run, so their writes must move the record's factory stamp (recordClock.ts)
+  setClock(RECORD_CLOCK);
   // and from its own seed: one shared random sequence made every scenario's ids depend on how many
   // scenarios were generated before it, so adding one moved the hashes of all that followed
   setRandomSource(SEED);

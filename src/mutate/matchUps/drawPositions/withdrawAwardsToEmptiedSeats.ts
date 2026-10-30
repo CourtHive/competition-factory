@@ -1,9 +1,10 @@
 import { getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
-import { withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
+import { withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/withdrawByeSeats';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { awardStands } from './positionClear';
+import { clearDrawPosition } from './positionClear';
+import { awardStands } from './awardStands';
 import { isExit } from '@Validators/isExit';
 
 // types
@@ -60,6 +61,7 @@ export function withdrawAwardsToEmptiedSeats({
     // nothing there (census A1 wave 4, COMPASS 32/27 21081040: `anUndoneAwardTakesBackItsLoserSeatBye`)
     if (resolvedMap)
       withdrawByeSeats({
+        clearDrawPosition,
         claimantMatchUpId: matchUp.matchUpId,
         tournamentRecord,
         drawDefinition,

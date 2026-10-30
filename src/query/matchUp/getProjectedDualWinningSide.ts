@@ -68,7 +68,12 @@ export function getProjectedDualWinningSide({
 
   tieFormat = tieFormat ?? resolveTieFormat({ matchUp, structure, drawDefinition, event })?.tieFormat;
 
-  const { winningSide: projectedWinningSide } = generateTieMatchUpScore({
+  const {
+    winningSide: projectedWinningSide,
+    scoreStringSide1,
+    scoreStringSide2,
+    set,
+  } = generateTieMatchUpScore({
     matchUp: projectedDualMatchUp,
     drawDefinition,
     matchUpsMap,
@@ -77,5 +82,7 @@ export function getProjectedDualWinningSide({
     event,
   });
 
-  return { projectedWinningSide };
+  // the dual's score as `updateTieMatchUpScore` writes it from the same tally: the outcome view plans that write (S7)
+  const projectedScore = { scoreStringSide1, scoreStringSide2, sets: set ? [set] : [] };
+  return { projectedWinningSide, projectedScore, projectedTieMatchUps: projectedDualMatchUp?.tieMatchUps };
 }

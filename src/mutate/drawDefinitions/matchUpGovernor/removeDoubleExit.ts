@@ -3,8 +3,9 @@ import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/prop
 import { getSideDrawPosition, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { firstRoundFeedersWon } from '@Mutate/matchUps/drawPositions/drawPositionPlacement';
-import { withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/applyWithdrawnExits';
 import { getPairedPreviousMatchUp } from '@Query/matchUps/getPairedPreviousMatchup';
+import { withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/withdrawByeSeats';
+import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { byeSeatStands } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
@@ -460,7 +461,7 @@ function withdrawExitFromByeChain({
    * withdrew the exit here, and the BYE stood where forward play has a seat waiting on `West|2|2`'s loser.
    */
   if (unwound.winningSide === undefined && !isAnyExit(unwound.matchUpStatus)) {
-    withdrawByeSeats({ claimantMatchUpId: fromMatchUp.matchUpId, drawDefinition, matchUpsMap });
+    withdrawByeSeats({ clearDrawPosition, claimantMatchUpId: fromMatchUp.matchUpId, drawDefinition, matchUpsMap });
   }
 
   const fromTargets = positionTargets({

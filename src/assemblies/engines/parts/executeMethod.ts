@@ -14,6 +14,7 @@ import {
 
 // types
 import { FactoryEngine } from '@Types/factoryTypes';
+import { Tournament } from '@Types/tournamentTypes';
 
 export function executeFunction(
   engine: FactoryEngine,
@@ -32,13 +33,8 @@ export function executeFunction(
   const tournamentId = getTournamentId();
   if (params) params.activeTournamentId = tournamentId;
 
-  const tournamentRecord = params?.tournamentRecord || getTournamentRecord(tournamentId);
-
-  const tournamentRecords =
-    (typeof params?.tournamentRecord === 'object' && {
-      [params?.tournamentRecord.tournamentId]: params.tournamentRecord,
-    }) ||
-    getTournamentRecords();
+  // the records in state, never a record the caller passed: the middleware resolves a passed record to its one in state
+  const tournamentRecords = getTournamentRecords();
 
   // ENSURE that logged params are not mutated by middleware. The copy is taken only when something
   // will read it: copied unconditionally it was ~90% of a query handed the tournament's hydrated
@@ -53,16 +49,18 @@ export function executeFunction(
   // write to the NEXT call.
   observer?.({ phase: 'before', methodName, engineType, params: paramsToLog });
 
-  const result = resolve({ method, params, methodName, tournamentRecords, tournamentRecord });
+  const result = resolve({ method, params, methodName, tournamentRecords, tournamentId });
   const elapsed = Date.now() - start;
   engineLogging({ result, methodName, elapsed, params: paramsToLog, engineType, dryRun: options?.dryRun });
 
   return result;
 }
 
-function resolve({ method, params, methodName, tournamentRecords, tournamentRecord }) {
-  const augmentedParams = params ? paramsMiddleware(tournamentRecords, params) : undefined;
+function resolve({ method, params, methodName, tournamentRecords, tournamentId }) {
+  const augmentedParams = params ? paramsMiddleware(tournamentRecords, params, methodName) : undefined;
   if (augmentedParams?.error) return augmentedParams;
+  const resolved = augmentedParams as { tournamentRecord?: Tournament } | undefined;
+  const tournamentRecord = resolved?.tournamentRecord ?? getTournamentRecord(tournamentId);
 
   const lockError = checkMutationLock(methodName, augmentedParams, tournamentRecord);
   if (lockError) return lockError;

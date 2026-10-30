@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { execSync } from 'node:child_process';
 import { expect, it } from 'vitest';
+import { join } from 'node:path';
 
 /**
  * `ResultType.error` is ONE `ErrorType`, never an array. Two mutations used to return
@@ -19,7 +19,9 @@ it('no mutation returns an array as its error', () => {
   const hits = (() => {
     try {
       return execSync(`grep -rnE '${pattern}' src --include='*.ts' --exclude='*.test.ts' || true`, {
+        killSignal: 'SIGKILL',
         encoding: 'utf8',
+        timeout: 60_000,
       });
     } catch (err: any) {
       return String(err.stdout ?? '');

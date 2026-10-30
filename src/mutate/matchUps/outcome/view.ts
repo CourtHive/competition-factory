@@ -4,6 +4,7 @@ import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propag
 import { isValidMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
+import { resolveTieScoreSource } from '@Query/hierarchical/tieFormats/resolveTieScoreSource';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -16,6 +17,8 @@ import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds'
 import { resolveScoringFormat } from '@Query/hierarchical/resolveScoringFormat';
 import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { ensuredDualSides } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
+import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { isDeciderStructure } from '@Query/drawDefinition/deciderStructures';
 import { getPolicyDefinitions } from '@Query/extensions/getAppliedPolicies';
 import { lastSetFormatIsTimed } from '@Query/matchUp/lastSetFormatisTimed';
@@ -24,6 +27,7 @@ import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
 import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
+import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { addGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { buildStructuralIndex } from '@Query/matchUps/structuralIndex';
@@ -32,11 +36,12 @@ import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
-import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
+import { isActiveMatchUp } from '@Query/matchUp/activeMatchUp';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { isLucky } from '@Query/drawDefinition/isLucky';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
+import { canonicalJson } from '@Tools/canonicalJson';
 import { isObject } from '@Tools/objects';
 import { overlap } from '@Tools/arrays';
 import {
@@ -50,11 +55,13 @@ import {
 } from '@Mutate/matchUps/drawPositions/relabelledPathFeeds';
 
 // constants and types
-import type { BuildViewArgs, OutcomeRequest, OutcomeView, Reservation, ThroughBye } from './types';
+import type { BuildViewArgs, OutcomeRequest, OutcomeScore, OutcomeView, Reservation, ThroughBye } from './types';
+import { BYE, COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCHUP, LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';
-import { BYE, COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { PositionTargetsResult } from '@Query/matchUp/positionTargets';
+import { TieScoreSourceEnum } from '@Types/tournamentTypes';
 import type { CarryLevel, WinnerLoserSeat } from './types';
+import { LINEUPS } from '@Constants/extensionConstants';
 import type { MatchUpsMap } from '@Types/factoryTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
@@ -948,7 +955,7 @@ function drawToDecideOn(
 ): { inContextDrawMatchUps?: HydratedMatchUp[]; structural: boolean } {
   if (args.inContextDrawMatchUps)
     return { inContextDrawMatchUps: args.inContextDrawMatchUps, structural: !!args.structural };
-  const index = buildStructuralIndex({ tournamentRecord, drawDefinition, event });
+  const index = buildStructuralIndex({ tournamentRecord, drawDefinition, event, team: true });
   if (!index.unsupported) return { inContextDrawMatchUps: index.matchUps, structural: true };
   const hydrated = getAllDrawMatchUps({ tournamentRecord, inContext: true, drawDefinition, matchUpsMap, event });
   return { inContextDrawMatchUps: hydrated.matchUps, structural: false };
@@ -1306,16 +1313,11 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
 
   let line: OutcomeView['line'];
   if (matchUpTieId) {
-    const { matchUp: dualMatchUp } = findDrawMatchUp({
-      matchUpId: matchUpTieId,
-      inContext: true,
-      drawDefinition,
-      matchUpsMap,
-      event,
-    });
+    // the dual from the call's one hydration, not a second in-context read (§ 3.6; S7): the projection works on a copy
+    const dualMatchUp = inContextDrawMatchUps?.find((candidate) => candidate.matchUpId === matchUpTieId);
     if (dualMatchUp) {
       const tieFormat = resolveTieFormat({ matchUp: dualMatchUp, drawDefinition, structure, event })?.tieFormat;
-      const { projectedWinningSide } = getProjectedDualWinningSide({
+      const { projectedWinningSide, projectedScore, projectedTieMatchUps } = getProjectedDualWinningSide({
         matchUpStatus: request.matchUpStatus,
         winningSide: request.winningSide,
         score: request.score,
@@ -1332,10 +1334,21 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         dualMatchUpStatus: dualMatchUp.matchUpStatus,
         dualWinningSide: dualMatchUp.winningSide,
         projectedWinningSide,
+        projectedScore,
+        projectedStatus: projectedDualStatus({
+          dualMatchUp,
+          projectedWinningSide,
+          projectedScore,
+          projectedTieMatchUps,
+        }),
         autoCalcDisabled: !!(dualMatchUp.disableAutoCalc ?? dualMatchUp._disableAutoCalc),
+        dualRewrite: dualRewrite({ dualMatchUp, matchUpsMap, drawDefinition, structure, event }),
+        dualInGroup: !!dualMatchUp.containerStructureId,
       };
     }
   }
+
+  const dualSides = dualCallSides({ isTeam, inContextMatchUp, matchUpsMap, drawDefinition, structure, event });
 
   let dualProjection: OutcomeView['dualProjection'];
   if (isTeam && request.flags.enableAutoCalc) {
@@ -1364,6 +1377,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     ),
     found: true,
     isTeam,
+    dualSides,
     matchUpTieId,
     isDeciderMatchUp: isDeciderStructure({ drawDefinition, structureId: structure?.structureId }),
     existing: {
@@ -1535,5 +1549,80 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         !!parse(incomingFormat ?? storedFormat ?? '')?.setFormat?.combinedPointTotal,
       timedTie: !!(inContextMatchUp?.collectionId && lastSetFormatIsTimed({ ...inContextMatchUp })),
     },
+  };
+}
+
+/** the dual's status as v1's `updateTieMatchUpScore` derives it from its tally and its lines (S7) */
+function projectedDualStatus({
+  projectedTieMatchUps,
+  projectedWinningSide,
+  projectedScore,
+  dualMatchUp,
+}: {
+  projectedTieMatchUps?: HydratedMatchUp['tieMatchUps'];
+  projectedWinningSide?: number;
+  projectedScore?: OutcomeScore;
+  dualMatchUp: HydratedMatchUp;
+}): MatchUpStatusUnion {
+  if (projectedWinningSide) return COMPLETED;
+  const active = isActiveMatchUp({
+    matchUpStatus: dualMatchUp.matchUpStatus,
+    tieMatchUps: projectedTieMatchUps,
+    winningSide: dualMatchUp.winningSide,
+    score: projectedScore,
+  });
+  return active ? IN_PROGRESS : TO_BE_PLAYED;
+}
+
+/**
+ * S7: a dual's own call: the sides v1's `ensureSideLineUps` writes before its result (`handleTeamAutoCalc`'s `apply`),
+ * where they change the stored ones
+ */
+function dualCallSides({
+  inContextMatchUp,
+  isTeam,
+  ...args
+}: Omit<Parameters<typeof dualRewrite>[0], 'dualMatchUp'> & { inContextMatchUp?: HydratedMatchUp; isTeam: boolean }) {
+  return isTeam && inContextMatchUp ? dualRewrite({ dualMatchUp: inContextMatchUp, ...args }).sides : undefined;
+}
+
+/**
+ * What `updateTieMatchUpScore` rewrites on the stored dual before its tally (S7), each only where it changes the stored
+ * value: the sides `ensureSideLineUps` writes (`ensuredDualSides`, the one rule), and the tieFormat it copies on
+ * (`copyTieFormat` of the resolved one); and whether the tieFormat's score is REPORTED, which returns before any tally.
+ * Each is read with the function v1 calls.
+ */
+function dualRewrite({
+  drawDefinition,
+  matchUpsMap,
+  dualMatchUp,
+  structure,
+  event,
+}: {
+  drawDefinition: DrawDefinition;
+  matchUpsMap?: MatchUpsMap;
+  dualMatchUp: HydratedMatchUp;
+  structure?: Structure;
+  event?: Event;
+}): NonNullable<OutcomeView['line']>['dualRewrite'] {
+  const stored = matchUpsMap?.drawMatchUps?.find((candidate) => candidate.matchUpId === dualMatchUp.matchUpId);
+  if (!stored) return { scoreReported: true };
+  const scoreReported =
+    resolveTieScoreSource({ drawDefinition, structure, matchUp: stored, event }) === TieScoreSourceEnum.REPORTED;
+  const tieFormat = copyTieFormat(resolveTieFormat({ drawDefinition, structure, matchUp: stored, event })?.tieFormat);
+  const sides = ensuredDualSides({
+    lineUps: firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }),
+    contextSides: dualMatchUp.sides,
+    rawSides: stored.sides,
+  });
+  // an absent value has no canonical form: it equals only another absent one
+  const same = (a: unknown, b: unknown) =>
+    a === undefined || b === undefined ? a === b : canonicalJson(a) === canonicalJson(b);
+  return {
+    ...(same(sides, stored.sides) ? {} : { sides }),
+    ...(same(tieFormat, stored.tieFormat) ? {} : { tieFormat }),
+    sidesAsHeld: sides ?? stored.sides,
+    sidesInContext: dualMatchUp.sides,
+    scoreReported,
   };
 }

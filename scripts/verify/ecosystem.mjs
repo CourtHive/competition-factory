@@ -15,9 +15,9 @@
  *   --skip=name,name    skip the listed repos
  */
 import { execSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { existsSync } from 'node:fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FACTORY_ROOT = resolve(__dirname, '../..');
@@ -61,7 +61,7 @@ const args = parseArgs(process.argv.slice(2));
 
 if (args.buildFactory) {
   log('rebuilding factory dist…');
-  execSync('pnpm build', { cwd: FACTORY_ROOT, stdio: 'inherit' });
+  execSync('pnpm build', { cwd: FACTORY_ROOT, stdio: 'inherit', timeout: 1_200_000, killSignal: 'SIGKILL' });
 }
 
 const results = [];
@@ -85,7 +85,14 @@ for (const c of CONSUMERS) {
     // Capture stderr too — jest writes its "Tests: X passed" summary to
     // stderr, vitest writes to stdout. Without 2>&1 we miss the count for
     // every jest-based repo (NestJS apps).
-    const out = execSync(`pnpm ${c.script} 2>&1`, { cwd: dir, encoding: 'utf8', stdio: 'pipe' });
+    // a consumer's whole suite: a deadline long enough for the slowest, so a hang fails it instead of stalling (P62)
+    const out = execSync(`pnpm ${c.script} 2>&1`, {
+      cwd: dir,
+      encoding: 'utf8',
+      stdio: 'pipe',
+      timeout: 3_600_000,
+      killSignal: 'SIGKILL',
+    });
     const elapsed = ((Date.now() - start) / 1000).toFixed(1);
     // try to extract a tests-passing count from either runner's summary
     const m = out.match(/Tests:\s+(\d+) passed/) || out.match(/Tests\s+(\d+) passed/) || out.match(/(\d+)\s+passed/);

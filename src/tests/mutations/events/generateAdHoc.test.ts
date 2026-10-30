@@ -7,7 +7,16 @@ import { expect, it } from 'vitest';
 // constants
 import { CANNOT_REMOVE_PARTICIPANTS, INVALID_STRUCTURE, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { ABANDONED, CANCELLED, DOUBLE_WALKOVER, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { PENALTY, REFEREE, SCHEDULE, SCORE } from '@Constants/matchUpActionConstants';
+import {
+  CHECK_IN,
+  PENALTY,
+  REFEREE,
+  SCHEDULE,
+  SCHEDULE_DATE,
+  SCHEDULE_TIME,
+  SCORE,
+  SCOREKEEPER,
+} from '@Constants/matchUpActionConstants';
 import { ASSIGN_PARTICIPANT } from '@Constants/positionActionConstants';
 import { AD_HOC, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 
@@ -228,7 +237,16 @@ it('can generate AD_HOC with arbitrary drawSizes and assign positions', () => {
 
   result = tournamentEngine.positionActions(firstRoundMatchUp);
   let actionTypes = result.validActions.map(({ type }) => type);
-  expect(actionTypes).toEqual([ASSIGN_PARTICIPANT, REFEREE, SCHEDULE, PENALTY]);
+  expect(actionTypes).toEqual([
+    ASSIGN_PARTICIPANT,
+    REFEREE,
+    SCHEDULE,
+    PENALTY,
+    SCHEDULE_DATE,
+    SCHEDULE_TIME,
+    CHECK_IN,
+    SCOREKEEPER,
+  ]);
 
   result = tournamentEngine.matchUpActions(firstRoundMatchUp);
   assignmentAction = result.validActions.find(({ type }) => type === ASSIGN_PARTICIPANT);

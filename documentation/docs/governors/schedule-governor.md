@@ -538,6 +538,7 @@ const {
   scheduleByeMatchUps, // optional boolean - default false: BYE matchUps are skipped
   overrideScheduleLock, // optional boolean
   removePriorValues, // optional boolean
+  plannedOrder, // optional boolean - default true; false: only a played matchUp orders (see Schedule order)
 });
 ```
 
@@ -565,6 +566,7 @@ engine.bulkScheduleTournamentMatchUps({
   checkChronology, // optional boolean - warn on scheduling errors
   errorOnAnachronism, // optional boolean - throw error on chronological errors
   removePriorValues, // optional boolean - clear existing scheduling timeItems
+  plannedOrder, // optional boolean - default true; false: only a played matchUp orders (see Schedule order)
 });
 ```
 
@@ -1571,41 +1573,94 @@ engine.addMatchUpScheduleItems({
     allocatedCourts, // optional — alias for courtIds; accepts the read-side shape
   },
   removePriorValues, // optional boolean — clear existing schedule timeItems first
-  checkChronology, // optional boolean — defaults to true; warn on time ordering (see Played order below)
+  checkChronology, // optional boolean — defaults to true; warn on time ordering (see Schedule order below)
   errorOnAnachronism, // optional boolean — return error on chronological violations
+  plannedOrder, // optional boolean — default true; false: only a played matchUp orders (see Schedule order below)
   errorOnUnknownAttributes, // optional boolean — error instead of warning on attributes that will not be written
   proConflictDetection, // optional boolean — detect pro scheduling conflicts
   disableNotice, // optional boolean — suppress modification notices
 });
 ```
 
-### Played order: a matchUp is never placed before a played matchUp it depends on
+### Schedule order: a matchUp is never placed at or before a matchUp it depends on
 
 Every write that moves a matchUp's `scheduledDate` or `scheduledTime` (this method, `addMatchUpScheduledTime`,
 `addMatchUpScheduledDate`, `bulkScheduleMatchUps`, `bulkRescheduleMatchUps` and the schedulers) is refused with
-`ANACHRONISM`, writing nothing, when it would place the matchUp **at or before a played matchUp it depends on**, or place
-a played matchUp **after a matchUp that depends on it**.
+`ANACHRONISM`, writing nothing, when it would place the matchUp **at or before a matchUp it depends on**, or **after a
+matchUp that depends on it**.
 
-- **Played**: `COMPLETED`, `RETIRED` or `DEFAULTED`, with a score. A walkover, a double walkover or default, a cancelled
-  or abandoned matchUp, a dead rubber or a BYE imposes nothing; neither does a matchUp `IN_PROGRESS` or `SUSPENDED`,
-  whatever its score.
-- **Depends on**: winner and loser links, feed-in, qualifying to main, round robin group to playoff. AD_HOC rounds and the
-  rounds of a round robin carry no links and impose no order.
+This began as the _played_ order (only a played matchUp imposed anything). Since 2026-10-30 it binds **plans as well as
+history**: an impossible order is impossible whether or not the earlier matchUp has been played.
+
+- **Imposes order**: every matchUp but a BYE. Walkovers, defaults and double exits order like any other matchUp.
+- **Depends on**: winner and loser links, feed-in, qualifying to main, round robin group to playoff, however far
+  downstream: a quarterfinal is not placed after a dated final because the semifinal between them is not yet dated.
+  AD_HOC rounds and the rounds of a round robin carry no links and impose no order.
 - **Before**: scheduled against scheduled. An earlier date; or the same date, both times set, at or before. A same-day
-  placement without a time, or a played matchUp without a date, proves nothing. Recorded start and end times are not
-  compared.
+  placement without a time, or a matchUp without a date, proves nothing. Recorded start and end times are judged
+  separately (below).
 - Only a write that **moves** the matchUp is asked: a court, a court order, an official, or writing back an unchanged
   schedule is never refused, even when the stored order is already wrong.
-- `checkChronology: false` does not waive it (that switch only turns off the `ANACHRONISM` _warning_ about unplayed
-  sources). Bulk writes are judged on the state the whole batch leaves, and refused whole, before any of it is written.
+- `checkChronology: false` does not waive it (that switch only turns off the `ANACHRONISM` _warning_ for a same-day
+  placement without times, which the order cannot judge). Bulk writes are judged on the state the whole batch leaves,
+  and refused whole, before any of it is written; a batch on a draw with nothing yet placed is judged against itself.
+- `plannedOrder: false` (on `addMatchUpScheduleItems`, `bulkScheduleMatchUps` and `bulkScheduleTournamentMatchUps`)
+  keeps the played order only: an unplayed matchUp imposes nothing, as before 2026-10-30. It exists for a caller whose own
+  placements (a drag on a schedule grid, say) are not yet held to the planned order.
 
-The refusal's `context.blockingMatchUps` names each blocking matchUp (`relation: 'playedSource'` or `'dependent'`),
-with its date, time, status and round, so a client can say which result stands in the way.
+The refusal's `context.blockingMatchUps` names each blocking matchUp (`relation: 'source'`, `'playedSource'` or
+`'dependent'`), with its date, time, status and round, so a client can say which matchUp stands in the way.
+[`getMatchUpScheduleBounds`](#getmatchupschedulebounds) answers the same question before the write: where the matchUp
+may go.
 
 ```js
 const result = engine.addMatchUpScheduleItems({ matchUpId: finalId, drawId, schedule: { scheduledTime: '09:00' } });
-// semifinal played at 10:00 → result.error === ANACHRONISM; result.context.blockingMatchUps[0].relation === 'playedSource'
+// semifinal placed at 10:00 → result.error === ANACHRONISM; result.context.blockingMatchUps[0].relation === 'source'
 ```
+
+### Recorded times of linked matchUps
+
+The recorded `startTime` and `endTime` of matchUps linked as above may not conflict: a source must have **ended by the
+time its dependent started**, and must have started first. A source may end the very minute its dependent starts. An
+end that falls after a dependent's _scheduled_ time is fine: only recorded times are compared.
+
+- A recorded time is read on the matchUp's scheduled date; an end past midnight falls on the next day, as
+  `addMatchUpEndTime` records it. A matchUp with no scheduled date proves nothing.
+- Asked of every `startTime` or `endTime` write (this method, `bulkScheduleMatchUps`, `addMatchUpStartTime`,
+  `addMatchUpEndTime`), with the start and end of one write judged together, before anything is written. A schedule
+  given to `setMatchUpStatus` with an outcome is judged before the outcome lands, so a refusal leaves the score unset.
+- Writing back a stored value is never refused, though an older engine may have stored a conflict.
+
+The refusal is `ANACHRONISM`, with `context.blockingMatchUps` naming each conflicting matchUp's `startTime` and
+`endTime`. A completed matchUp's times stay editable after the fact (`scheduleCompletedMatchUps` on the bulk writes).
+
+### getMatchUpScheduleBounds
+
+Where a matchUp may be scheduled, and when its recorded times may fall, without breaking the order of the matchUps
+linked to it. A client limits its date and time pickers to these; the writes refuse what falls outside them. The bounds
+read the same neighbours the writes judge, so the two agree. `matchUpActions` attaches them to its `SCHEDULE_DATE`,
+`SCHEDULE_TIME`, `START` and `END` actions as `bounds`.
+
+```js
+const { bounds } = engine.getMatchUpScheduleBounds({
+  matchUpId, // required
+  drawId, // required — resolved to drawDefinition by engine
+  plannedOrder, // optional boolean — default true; false bounds by played matchUps only, as the writes' option
+});
+
+const {
+  earliestDate, // the tournament's start, or the latest dated source's date
+  latestDate, // the tournament's end, or the earliest dated dependent's date
+  scheduledAfter, // { date, time, inclusive: false } — on earliestDate, a scheduledTime must come after it
+  scheduledBefore, // { date, time, inclusive: false } — on latestDate, a scheduledTime must come before it
+  recordedAfter, // { date, time, inclusive } — a recorded start or end may not come before it
+  recordedBefore, // { date, time, inclusive } — a recorded start or end may not come after it
+  orderedBy, // [{ matchUpId, relation: 'source' | 'dependent', scheduledDate, scheduledTime, startTime, endTime, roundNumber }]
+} = bounds;
+```
+
+A date between `earliestDate` and `latestDate` is accepted; on a boundary date a placement with no time proves nothing
+and is accepted too, while a time must fall strictly inside `scheduledAfter` / `scheduledBefore`.
 
 ### `calledAt`
 

@@ -50,6 +50,8 @@ describe('getParticipantsRest â€” conversions grow with matchUps, not matchUps Ã
     matchUps.forEach((matchUp, i) => {
       const result = tournamentEngine.addMatchUpScheduleItems({
         schedule: { scheduledDate: day, scheduledTime: `${String(8 + (i % 10)).padStart(2, '0')}:00` },
+        // arbitrary times, not the rounds' order: this measures conversions, so it keeps the played order only
+        plannedOrder: false,
         matchUpId: matchUp.matchUpId,
         drawId: matchUp.drawId,
       });

@@ -19,6 +19,7 @@ import type {
   SideExitProvenance,
   Structure,
   TallyResult,
+  TeamCompetitor,
 } from '@Types/tournamentTypes';
 
 /**
@@ -65,6 +66,18 @@ export type OutcomeOp =
        * relabel, whose last emission is `reconcileScoredTimes` taking its `scoredTime` (S6)
        */
       announcedAs?: 'reconcileScoredTimes';
+      /**
+       * a TEAM dual's write after its line's result (S7), `updateTieMatchUpScore`'s: the sides it ensures and the
+       * tieFormat it copies on, each present only where it changes the stored value. v1 returns the write as the
+       * call's `tieMatchUpResult`
+       */
+      dualTally?: { sides?: unknown[]; tieFormat?: unknown };
+      /**
+       * a TEAM dual's own call (S7): the sides `ensureSideLineUps` writes before the result (their line-ups from the
+       * draw's), present only where they change the stored ones. Unlike a line's `dualTally`, the call returns no
+       * `tieMatchUpResult`
+       */
+      ensuredSides?: unknown[];
     }
   | {
       op: 'setMatchUpDrawPositions';
@@ -207,6 +220,22 @@ export type OutcomeOp =
        */
       participantIds?: string[];
     }
+  | {
+      op: 'setSideLineUp';
+      /**
+       * a TEAM dual a team is directed into (S7): the team's line-up on its side, as v1 writes it, the winning team's
+       * by `propagateLineUp` (`directWinner`), the losing team's by `propagateLoserLineUp` (`directLoser`) and, past a BYE,
+       * on the dual beyond by its assignment (`updateSideLineUp`, from the draw's line-ups). The matchUp's
+       * sides are made, numbered 1 and 2, keeping what each held, and the line-up set on this one
+       */
+      matchUpId: string;
+      sideNumber: number;
+      lineUp: unknown;
+      /** the v1 writer that announces it (`updateSideLineUp`'s context is spelled so) */
+      announcedAs: 'directWinner' | 'directLoser' | 'updateSidLineUp';
+      /** false where v1's writer names no event (`assignTeamLineUp` hands `updateSideLineUp` none) */
+      announcesEvent?: false;
+    }
   | { op: 'stampUpdatedAt'; entity: 'matchUp' | 'structure' | 'drawDefinition'; id: string };
 
 /** the op vocabulary as a literal union, which `verify:outcome-spec` holds to the spec; checked against `OutcomeOp` */
@@ -225,6 +254,7 @@ export type OutcomeOpName =
   | 'withdrawBye'
   | 'clearMatchUpBye'
   | 'setParticipantResults'
+  | 'setSideLineUp'
   | 'stampUpdatedAt';
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 const opNamesMatch: Same<OutcomeOpName, OutcomeOp['op']> = true;
@@ -271,6 +301,10 @@ export function stampedInThisCall(drawDefinition?: DrawDefinition): Set<string> 
 }
 
 function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMatchUpResult' }>) {
+  // a dual's sides and tieFormat as `updateTieMatchUpScore` rewrites them before its tally (S7)
+  if (op.dualTally?.sides) matchUp.sides = structuredClone(op.dualTally.sides) as MatchUp['sides'];
+  if (op.ensuredSides) matchUp.sides = structuredClone(op.ensuredSides) as MatchUp['sides'];
+  if (op.dualTally?.tieFormat) matchUp.tieFormat = structuredClone(op.dualTally.tieFormat) as MatchUp['tieFormat'];
   matchUp.matchUpStatus = op.matchUpStatus;
   if (op.score) matchUp.score = structuredClone(op.score);
   if (op.winningSide) matchUp.winningSide = op.winningSide;
@@ -301,8 +335,11 @@ function indexDraw(drawDefinition: DrawDefinition) {
   const groups = new Map<string, Structure>();
   const visit = (structure: Structure) => {
     for (const matchUp of matchUpsOf(structure) ?? []) {
-      matchUps.set(matchUp.matchUpId, matchUp);
-      structureOf.set(matchUp.matchUpId, structure.structureId);
+      // a TEAM dual's lines are stored inside it, and written where they are (S7)
+      for (const stored of [matchUp, ...(matchUp.tieMatchUps ?? [])]) {
+        matchUps.set(stored.matchUpId, stored);
+        structureOf.set(stored.matchUpId, structure.structureId);
+      }
     }
     for (const child of structuresOf(structure) ?? []) {
       groups.set(child.structureId, child);
@@ -381,6 +418,19 @@ function foldClearPosition(op: OpOf<'clearPosition'>, { structures }: DrawIndex)
       ({ participantId }) => participantId !== op.participantId,
     ),
   });
+  return {};
+}
+
+function foldSideLineUp(op: OpOf<'setSideLineUp'>, { matchUps }: DrawIndex): Folded {
+  const matchUp = matchUps.get(op.matchUpId);
+  if (!matchUp) return { error: `setSideLineUp: no matchUp ${op.matchUpId}` };
+  const lineUp = structuredClone(op.lineUp) as TeamCompetitor[];
+  matchUp.sides = [1, 2].map((sideNumber) => ({
+    ...(matchUp.sides?.find((each) => each.sideNumber === sideNumber) ?? {}),
+    sideNumber,
+  }));
+  const target = matchUp.sides.find(({ sideNumber }) => sideNumber === op.sideNumber);
+  if (target) target.lineUp = lineUp;
   return {};
 }
 
@@ -514,6 +564,8 @@ function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition
       return foldClearMatchUpBye(op, index);
     case 'setParticipantResults':
       return foldParticipantResults(op, index);
+    case 'setSideLineUp':
+      return foldSideLineUp(op, index);
     default:
       return foldStamp(op, index, drawDefinition, stampedBefore);
   }

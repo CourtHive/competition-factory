@@ -62,9 +62,31 @@ mints an id it minted among its recent ids, throws (`DEGENERATE_RANDOM_SOURCE`).
 
 ### 1.3 Params
 
-The engine copies the params object shallowly, then resolves `drawId` to the stored draw and its event, and `eventId`
-to the stored event (a `drawId` wins). Nested objects are **not** copied: an object passed in (a participant, a
-drawDefinition) is the object stored, and a write to it after the call changes the record.
+The engine copies the params object shallowly, then resolves the record, the event and the draw the call works on.
+**An engine call works only on the records the engine holds**: whether the call names them by id or passes them as
+objects, it is given the ones in state, never the caller's own. This is done for every call, before the method runs:
+
+1. An entity given both as an object and by id must be one entity: a `tournamentRecord` whose `tournamentId`, a
+   `drawDefinition` whose `drawId` or an `event` whose `eventId` is not the id given beside it refuses the call
+   (`INVALID_VALUES`).
+2. A `tournamentRecord` passed is resolved by its `tournamentId`. A `tournamentId` (given, or the passed record's) that
+   names no loaded record refuses the call: `MISSING_TOURNAMENT_RECORD`.
+3. A `drawDefinition` passed is resolved by its `drawId`. A `drawId` (or a `matchUp`'s `drawId`) found in a loaded record
+   gives the call that draw, its event and its record; a flight can name its event after its draw is gone. A passed
+   draw found nowhere refuses the call (`DRAW_DEFINITION_NOT_FOUND`); a `drawId` found nowhere, given alone, resolves
+   nothing and the method decides.
+4. Otherwise an `event` passed is resolved by its `eventId`, and an `eventId` gives the call the stored event and its
+   record. An event with no `eventId`, or an `eventId` found in no loaded record, refuses the call: `EVENT_NOT_FOUND`.
+5. The record the call writes is the one resolved, else the one `tournamentId` names, else the active record. An
+   `eventId` or `drawId` held by another loaded record moves the call to that record; the active record is unchanged.
+
+A method's creation payload is not resolved: `addEvent`'s `event` and `addDrawDefinition`'s `drawDefinition` are the
+entities it stores. To work on a record, draw or event the engine does not hold (a record being built before it is
+loaded, a generated draw before it is added), call the governor function directly, which works on the object given.
+Called directly, a function given both an entity and its id is held to rule 1.
+
+Nested objects are **not** copied: an object passed in (a participant, a drawDefinition) is the object stored, and a
+write to it after the call changes the record.
 
 ## 2. `addParticipants`
 
@@ -283,8 +305,10 @@ Notice `MODIFY_VENUE`. **Returns** `{ success, courtIds }`.
 
 1. `extensions` is created if absent.
 2. The applied policies are a copy of the element's `appliedPolicies` extension value. For each type given: a falsy
-   policy is skipped; a policy that is not an object refuses (`INVALID_VALUES`); a type already held is skipped unless
-   `allowReplacement`; otherwise the policy replaces that type whole.
+   policy is skipped; a policy that is not an object, holds nothing but its `policyName` (an attribute whose value is
+   `undefined` does not count: it is not stored), or has a `policyName` that is not a string refuses
+   (`INVALID_VALUES`); a type already held is skipped unless `allowReplacement`; otherwise the
+   policy replaces that type whole.
 3. If any type was taken, the `appliedPolicies` extension's value is replaced, or the extension is appended:
    `{ name: 'appliedPolicies', value, createdAt: now }`.
 
@@ -389,6 +413,18 @@ so a record merely loaded beside a written one claimed to have been written); a 
 (`dataIssue`, `audit`) modifies nothing, and `addDrawEntries` announces only when the entries changed. A write made with
 `suppressNotifications` is stamped as an announced one is (it left its draws and matchUps unstamped and the factory
 stamp unmoved); only the engine's internal `disableNotifications`, around working copies, stamps nothing.
+
+**Decided (CA 2026-10-30): an engine call works only on the records it holds (§1.3).** A caller's own `event` object
+was the event the method wrote to: `addEventEntries` given a copy of the stored event (or an event in no loaded record)
+reported `success`, wrote the entries into the caller's object and left the record unchanged, even beside a correct
+`eventId`. A `tournamentRecord` and a `drawDefinition` passed through the engine behaved the same way. Now every object
+passed is resolved to the one in state, one not held refuses the call, and an object and an id that name different
+entities refuse it, with the engine or without it. A write never silently goes nowhere. (Recorded 2026-10-29 as a
+refusal at 8.0.0; CA brought it forward.)
+
+Resolved (CA 2026-10-29): a policy attribute whose value is `undefined` does not count toward a policy (§6.3). It was
+counted, so `{ policyName, roundsToSeparate: undefined }` was accepted and stored as its name alone, which the same
+check refuses.
 
 No question is open.
 

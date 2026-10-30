@@ -879,6 +879,7 @@ function withdrawStaleAdvances({
   });
   if (!orphans.length) return targetMatchUpDrawPositions;
   withdrawOwnAdvancement({
+    clearDrawPosition,
     fromRoundNumber: targetMatchUp.roundNumber as number,
     structureId: targetMatchUp.structureId,
     targetMatchUpDrawPositions,
@@ -976,6 +977,7 @@ function conditionallyAdvanceDrawPosition(params) {
      */
     if (isDoubleExit(params.matchUpStatus))
       withdrawOwnAdvancement({
+        clearDrawPosition,
         fromRoundNumber: targetMatchUp.roundNumber,
         structureId: targetMatchUp.structureId,
         targetMatchUpDrawPositions,
@@ -3298,6 +3300,7 @@ function advanceByeToLoserMatchUp(params) {
       loserTargetDrawPosition;
   if (vacated && !vacated.participantId && !vacated.bye && awardedToVacated && loserMatchUp?.roundNumber) {
     releaseAdvancedDrawPositionAcrossLinks({
+      clearDrawPosition,
       fromRoundNumber: loserMatchUp.roundNumber + 1,
       drawPosition: loserTargetDrawPosition,
       withdrawingExit: true,

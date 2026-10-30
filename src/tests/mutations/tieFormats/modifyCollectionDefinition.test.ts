@@ -444,6 +444,8 @@ it('can modify collectionDefinitions for a tieFormat on a structure', () => {
   ).toEqual(5);
 
   expect(targetMatchUp.tieMatchUps.length).toEqual(11);
+  // the two lines added to the collection take ids of their own, not those of the lines already there (mock ids)
+  expect(new Set(targetMatchUp.tieMatchUps.map(xa('matchUpId'))).size).toEqual(11);
 
   let targetTieMatchUps = targetMatchUp.tieMatchUps.filter((tieMatchUp) => tieMatchUp.collectionId === collectionId);
   expect(targetTieMatchUps.length).toEqual(5);

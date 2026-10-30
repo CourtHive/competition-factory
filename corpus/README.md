@@ -198,8 +198,22 @@ from `generateTournamentRecord({ recordMethods: true })`. The initial record is 
 makes; the directives are the rest of the list, the engine calls a client makes to build that tournament
 (participants, events, entries, draws, results, venues, schedules), with random steps given as their results. So a
 consumer graded on this source is graded on building tournaments. Generation runs under the source's fixed clock, so
-a run is byte-identical to the last. The writer gives the engine a copy of each directive's params, so a write that
+a run is byte-identical to the last; the initial record is made an hour before it (see "The starting records" below).
+The writer gives the engine a copy of each directive's params, so a write that
 keeps what it is given (`addDrawDefinition` attaches the draw) cannot change the directive the scenario stores.
+
+## The queue source
+
+```bash
+pnpm corpus:queue             # .corpus-out/queue/queue.jsonl
+```
+
+`src/tests/testHarness/corpus/queueSources.ts` writes scenarios whose steps are queues: a directive whose method is
+`executionQueue` runs as the queue its params state (`methods`, `rollbackOnError`), as a client sends calls to a
+server, where every other directive runs as a queue of one. A queue is one call: one instant, one stamp after it. A
+refusal records the queue's `rolledBack` in its `context`: with `rollbackOnError` the record is as it was (the step's
+hash is the one before it); without, the writes of the directives before the refusal are kept. A queue naming a
+method the engine does not have is refused before any directive runs.
 
 ## The scheduling scale source
 
@@ -213,19 +227,32 @@ venues × daily limits × days: 288 cells) through `scheduleProfileRounds` and t
 claims every scheduling property, so a refused cell is a scheduler breaking one, named by cell and property. A smoke
 slice (one cell per draw type) runs in the ordinary suite; the whole matrix is opt-in and is not in the manifest gate.
 
+The scheduling source writes a sample of it into the manifest: every seventh cell (`pinnedScaleCells`), and the
+cells larger than the matrix (`largeScaleCells`: every draw type at 64 and 128, with and without BYEs). The large
+cells are the only ones whose grid sorts 64 matchUps or more at once, where the sort merges runs instead of
+insertion-sorting one, so they pin the order a comparator leaves to the sort.
+
 ## The hash manifest (committed)
 
 ```bash
-pnpm corpus:manifest          # regenerate corpus/MANIFEST.txt from the three reproducible sources
+pnpm corpus:manifest          # regenerate corpus/MANIFEST.txt from the reproducible sources
 pnpm verify:corpus-manifest   # the merge gate: fails when a hash moved and the manifest did not
 ```
 
 The scenarios stay out of git; their hashes do not. `corpus/MANIFEST.txt` holds one line per
-authored, scheduling, grammar and scoring scenario: id, step count, the hash after the last step. Those four
-sources reproduce bit for bit (the authored and scheduling starting records are built on the corpus clock for
-exactly this, and the grammar source reads only the fixture and edge formats unless
-`CORPUS_GRAMMAR_HARVEST` asks it to harvest the recorded corpus, which `corpus:verify` does). A behaviour change moves a hash, the gate names every scenario that moved, and the
+authored, scheduling, grammar, scoring, mocks and queue scenario: id, step count, the hash after the last step,
+the hash of its results. Those sources reproduce bit for bit (their starting records are built on a fixed clock for
+exactly this, and the grammar source reads only the fixture and edge formats unless `CORPUS_GRAMMAR_HARVEST` asks it
+to harvest the recorded corpus, which `corpus:verify` does). A behaviour change moves a hash, the gate names every
+scenario that moved, and the
 fix is either the engine or a deliberate regeneration committed with the change.
+
+## The starting records
+
+The authored, scheduling, scheduling scale and mocks sources build their starting records at `RECORD_CLOCK`
+(`src/tests/testHarness/corpus/recordClock.ts`), one hour before the clock their steps run at. A record built at the
+step clock already carries the factory stamp (`timeStamp`) every write would give it, so a consumer that never stamps
+the records a call modifies would replay every scenario to the same hashes. Built earlier, the first write must move it.
 
 ## Coverage, and what "100%" means (C3)
 

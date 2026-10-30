@@ -171,9 +171,12 @@ engine.deleteVenues({ venueIds, force });
 ```js
 engine.disableCourts({
   courtIds,
-  dates, // optional - if not provided, courts will be disalbed for all dates
+  dates, // optional - if not provided, courts will be disabled for all dates
 });
 ```
+
+A court disabled for all dates stores `disabled: true`; one disabled on some dates stores `disabled: { dates }`. Both
+are valid against the CODES schema (`Disabled`), and `disableVenues` stores `disabled: true` on a venue.
 
 `disableCourts`, `enableCourts`, `disableVenues` and `enableVenues` send a `modifyVenue` notice for each venue
 they changed, and none for a venue already in the requested state.

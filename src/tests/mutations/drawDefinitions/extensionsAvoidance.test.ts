@@ -1,3 +1,4 @@
+import { getPositionAssignments } from '@Query/structure/getPositionAssignments';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { xa } from '@Tools/extractAttributes';
@@ -42,7 +43,11 @@ test.each([2, 4, 8, 16])('avoidance policies based on extension values', (cohort
   const generationResult = tournamentEngine.generateDrawDefinition({
     eventId,
   });
-  const positionAssignments = tournamentEngine.getPositionAssignments(generationResult).positionAssignments;
+  const positionAssignments =
+    getPositionAssignments({
+      ...generationResult,
+      tournamentRecord: tournamentEngine.getTournament().tournamentRecord,
+    }).positionAssignments ?? [];
   const participantAvoidanceValuePairs = chunkArray(
     positionAssignments
       .map(xa('participantId'))

@@ -1,5 +1,5 @@
 import { compareDecisions, compareWrites, differentialTally, OutcomePipelineDivergence } from './differential';
-import { planOutcome, type OutcomePlan, type PlanShape, type RebuildView } from './plan';
+import { planOutcome, type DualCall, type OutcomePlan, type PlanShape, type RebuildView } from './plan';
 import { addedNotices, compareNotices, compareShadow, plannedNotices } from './shadow';
 import { takePrecheckDivergences } from '@Mutate/matchUps/matchUpStatus/indexPrecheck';
 import { carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
@@ -35,7 +35,7 @@ import {
 
 // constants and types
 import type { BuildViewArgs, DirectionPlan, OutcomeRequest, OutcomeView, Refusal, WithdrawnCarry } from './types';
-import { BYE, DEAD_RUBBER, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { BYE, COMPLETED, DEAD_RUBBER, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { ResultType } from '@Types/factoryTypes';
@@ -68,6 +68,7 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal) {
     tournamentRecord: args.tournamentRecord,
     drawDefinition: args.drawDefinition,
     rebuild: rebuildView(args, view, planned),
+    dual: route === 'winner' ? decidedDualCall(args, view) : undefined,
     request: planned,
     write: plan,
     direction,
@@ -276,6 +277,40 @@ export function decideOutcomeV2(args: BuildViewArgs): {
 
 type CheckArgs = { args: BuildViewArgs; after: DrawAfter; route: string };
 type DualPlan = { matchUpId: string; winningSide: 1 | 2; direction?: DirectionPlan };
+
+/**
+ * S7: a line whose projection decides its dual makes the dual's own call, which v2 plans as it plans any call: from a
+ * view of the dual taken on the line's own index (no hydration), the dual's request is its projected winner, COMPLETED,
+ * with its projected score. Routed, written and directed by the same functions a singles result is.
+ */
+function decidedDualCall(args: BuildViewArgs, view: OutcomeView): DualCall | undefined {
+  const line = view.line;
+  const winningSide = line?.projectedWinningSide;
+  if (!line || line.autoCalcDisabled || line.dualWinningSide || (winningSide !== 1 && winningSide !== 2))
+    return undefined;
+  const request: OutcomeRequest = {
+    flags: { ...args.request.flags, enableAutoCalc: false },
+    matchUpId: line.dualMatchUpId,
+    matchUpStatus: COMPLETED,
+    score: line.projectedScore,
+    winningSide,
+  };
+  const dualView = buildOutcomeView({
+    ...args,
+    request,
+    inContextDrawMatchUps: view.inContextDrawMatchUps,
+    structural: view.structural,
+  });
+  const route = chooseRoute(request, dualView);
+  return {
+    write: route ? planWrite(request, dualView, route) : undefined,
+    direction: route ? planDirection(request, dualView, route) : undefined,
+    rebuild: rebuildView(args, dualView, request),
+    view: dualView,
+    request,
+    route,
+  };
+}
 
 /**
  * A line whose projection decides its dual: v1 writes the projected winner onto the dual and directs
@@ -778,7 +813,8 @@ function workingViewAfter({
     propagateRetirementAsExit: args.request.flags.propagateRetirementAsExit,
     propagateExitStatus: args.request.flags.propagateExitStatus,
     loserLinked: !!view.targets.loserLink,
-    contained: !!view.group && !view.group.adHoc,
+    // a round robin group's double exit produces nothing, nor does a TEAM line's (its targets are its dual's)
+    contained: (!!view.group && !view.group.adHoc) || !!view.line,
     inContextDrawMatchUps: view.inContextDrawMatchUps,
     matchUpId: args.request.matchUpId,
     tournamentRecord: args.tournamentRecord,

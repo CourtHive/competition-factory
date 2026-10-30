@@ -92,6 +92,7 @@ the old one.
 | 15  | `ERR_NO_VALID_ACTIONS`                     | downstream is active, the matchUp has propagated, the call names no winner and no directing status, and auto-calc is on                                                                                                                                                                                                                                                                                                                   | `resolveAndApplyOutcome`                                                                                               |
 | 16  | `ERR_INVALID_TIME`                         | the `schedule` carries a time that does not parse (validated before the write, applied after)                                                                                                                                                                                                                                                                                                                                             | `addMatchUpScheduleItems` with `validateOnly`                                                                          |
 | 25  | `ERR_INVALID_DATE`                         | the `schedule` carries a date, or a date-time's date, outside the tournament or off the calendar (#5774; validated before the write, so the outcome does not land)                                                                                                                                                                                                                                                                        | `addMatchUpScheduleItems` with `validateOnly`                                                                          |
+| 27  | `ANACHRONISM`                              | the `schedule` carries a recorded time out of played order with a linked matchUp (an end time given with the outcome is judged before the outcome lands, #5979; validated before the write, so the outcome does not land)                                                                                                                                                                                                                 | `addMatchUpScheduleItems` with `validateOnly`                                                                          |
 | 17  | `ERR_ACTIVE_DRAW_POSITION`                 | a direction would move a participant off a position already played on (a swap's, decided earlier: row 26)                                                                                                                                                                                                                                                                                                                                 | `reconcileFedLoserEligibility`, BYE and qualifier assignment                                                           |
 | 18  | `ERR_MUTATION_LOCKED`                      | the tournament holds a mutation lock whose scope covers the method                                                                                                                                                                                                                                                                                                                                                                        | engine, before the pipeline                                                                                            |
 | 19  | `ERR_FORCED`                               | **OPEN**: observed by the corpus from a `setMatchUpStatus` step; its origin is outside the twelve files and not yet traced                                                                                                                                                                                                                                                                                                                |                                                                                                                        |
@@ -665,7 +666,10 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   (the BYE opposite advanced it), so the matchUp there becomes a BYE, announced with its event, and the one other position
   it holds (a fed seat nobody has reached) goes on into a clean matchUp, as the winner standing in the produced exit's
   matchUp, delivered by that BYE, is awarded the exit with the BYE recorded as their origin; where it holds no other
-  position (its other feeder still to be played) it becomes a BYE and nothing goes on yet. Each level is a first-round
+  position (its other feeder still to be played) it becomes a BYE and nothing goes on yet. A double BYE in a final goes
+  nowhere: v1 writes that matchUp, a BYE already, as a BYE again (announced with no event at a deeper level). Where the
+  next matchUp is a BYE the position had passed through (a BYE opposite it, outside a feed round), the double BYE goes
+  on from there as from the first (S6). Each level is a first-round
   seat, free behind no condition, in a clean matchUp: alone, or opposite a BYE, a double BYE there too, planned as the
   first one is but announced with no event (S6), the walk bounded by `SETTLE_PASS_LIMITS.exitLevels` (F9). Under `doubleExitPropagateBye: false`
   the loser seat shows the produced exit instead: the loser matchUp is written the double exit's flavour awarded to the
@@ -682,7 +686,10 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   feeder is still to be played. Otherwise outside a feed round, for links with no condition, free seats with no BYE beside them (a BYE there makes a
   double BYE: v1's), clean matchUps, and each matchUp touched once, but where the unfillable seat's matchUp is the one the first BYE
   advanced a position into (FIRST_MATCH_LOSER_CONSOLATION): that position goes on again through the second BYE; a
-  participant standing opposite the unfillable seat goes on through its BYE the same way (S6). A BYE's position sent on
+  participant standing opposite the unfillable seat goes on through its BYE the same way (S6). Where the own seat's double BYE
+  has made the unfillable seat's matchUp a BYE, the position opposite gone on (FIRST_MATCH_LOSER_CONSOLATION), the
+  unfillable seat makes a double BYE there too: the matchUp stands, and the one its position went on into becomes a
+  BYE, announced with no event (S6). A BYE's position sent on
   into a next matchUp that is a BYE already, its other side the BYE alone, goes into it and on through it into a clean
   matchUp beyond (S6), each announced as `advanceWinner` with no event. The
   unfillable seat takes its BYE behind a `FIRST_MATCHUP` link too, as v1 places it (`advanceByeToLoserMatchUp` asks no
@@ -790,7 +797,7 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   a loser carries, the exit a double exit produces, two exits converging, the swap, a decider's
   settlement, TEAM auto-calc and the direction of a dual its lines decide, and an exit that meets a
   BYE (none may be left labelled an exit beside it). A refusal v1 raises at the apply stage, where
-  v2 does not reach (`APPLY_STAGE_CODES`: an invalid time or date, an active, assigned or occupied drawPosition, a
+  v2 does not reach (`APPLY_STAGE_CODES`: an invalid time or date, a recorded time out of played order, an active, assigned or occupied drawPosition, a
   mutation lock, `ERR_FORCED`, and the status and assignment checks a write makes), is recorded as
   deferred rather than a divergence; so is a step v2 does not yet plan, such as a relabel whose
   loser stands past a BYE, or an exit carried into a swap. `getDifferentialTally()` counts compared
@@ -840,6 +847,89 @@ suite's rethrowing provider fails the test, and the exit-propagation census reco
 that diverged stay written unless the call asked for `rollbackOnError`, the same as for any refusal
 a later outcome meets (§ 8).
 
+**A TEAM line** is owned in two shapes (S7): a line's result that leaves its dual undecided, and one that decides it.
+The line's result is any first result with a winner: scored, a winner alone (no score), or a single exit (WALKOVER,
+DEFAULTED, RETIRED with its score), each counted for its winner in the dual's tally. A line's double exit
+(DOUBLE_WALKOVER, DOUBLE_DEFAULT) is written as it stands (`only-score`): it counts for neither side, the dual is tallied
+without it, and nothing is produced or carried (a line's targets are its dual's; v1's `doubleExitAdvancement` does not
+run for it). v1 writes the line (as
+any result: `modifyMatchUpScore`, its `scoredTime`), then `updateTieMatchUpScore` writes the dual:
+
+1. it ensures the dual's side line-ups;
+2. it copies the resolved tieFormat onto the dual;
+3. it tallies the dual's score from its lines;
+4. it derives the dual's status: COMPLETED with a winner, else IN_PROGRESS where `isActiveMatchUp` reads it active, else
+   TO_BE_PLAYED.
+
+v2 plans the line's write and the dual's (`setMatchUpResult` with `dualTally`, no `scoredTime`):
+
+- the projected score and status;
+- the sides `ensuredDualSides` gives (the rule `ensureSideLineUps` writes by, one function) and the copied tieFormat, each
+  only where it changes the stored value. On a dual's first line both change, and the dual goes from TO_BE_PLAYED to
+  IN_PROGRESS; a record that stored no tieFormat of its own takes it on the same way.
+
+Both are announced as v1 announces them: each matchUp's `modifyMatchUp` and its in-context notice, the line's first. The
+call returns the dual's write as `tieMatchUpResult`, as v1's `directParticipants` does. A line directs nothing of its
+own: its targets are its dual's.
+
+**A line played on a dual already decided** (the remaining lines of a COMPLETED dual) is written the same way: the line,
+then the dual's tally, the dual staying COMPLETED and keeping its winner. Nothing is directed or carried again, since
+the dual's winner does not change; the next dual is left as it is, played or not. A dual walked over with its lines
+already at the value goal's edge is written the same way when a line takes it there (COMPLETED, its winner kept).
+
+**A line that decides its dual** makes the dual's own call: v1's `directParticipants` writes the projected winner and
+score onto the dual (COMPLETED) and directs the dual as any winner is directed. v2 plans that call as it plans any call,
+from a view of the dual taken on the line's own index (no hydration): routed, written and directed by the same
+functions a singles result is (`decidedDualCall`). Its write is the dual's tally (no status codes, no `scoredTime`, as
+`updateTieMatchUpScore` writes it). Once the winner's position has joined the next dual, the winning team's line-up is
+carried onto its side there (`setSideLineUp`, v1's `propagateLineUp`):
+
+- the line-up the decided dual's winning side holds, without substitutions (`removeLineUpSubstitutions`, which regroups
+  each player's assignments);
+- on the side v1 reckons by roundPosition: a feed round's advancing team, or one advanced by position, is side 2.
+
+The next dual is announced by `directWinner`, and the call's `tieMatchUpResult` carries the dual's winner. A final
+carries nothing on.
+
+Where a loser link sends the losing team on (a consolation, a compass direction), the loser is placed as any loser is,
+and the losing team's line-up is carried onto its side of the dual it lands in (`setSideLineUp`, v1's
+`propagateLoserLineUp`):
+
+- the line-up the decided dual's losing side held before the line's write, every assignment kept (the winner's drops
+  any that names no participant), without substitutions;
+- on side `2 - (roundPosition % 2)` of a first-round dual, by the decided dual's roundPosition; on side 1 of a later
+  round's.
+
+That dual is announced by `directLoser`. A loser kept out of a first-match feed (a BYE takes the seat) carries nothing.
+A loser seated opposite a BYE carries its line-up onto the BYE matchUp as above and goes on through it into the dual
+beyond, whose side takes the team's line-up as the draw holds it (`setSideLineUp`, v1's `updateSideLineUp` at the
+loser's assignment), on the side holding the loser's drawPosition, announced `updateSidLineUp` before the BYE matchUp's
+`directLoser`. A team the draw holds no line-up for takes none there, as v1 writes it.
+
+**A dual's own call given a winner** (scored or not, or a single exit) is written and directed as any winner is
+(`directParticipants`): the result with its status codes and `scoredTime`, the winner placed in the next dual (announced
+`assignMatchUpDrawPosition`). Before the result v1 writes the dual's sides (`ensureSideLineUps`): `setMatchUpResult`
+carries them as `ensuredSides`, where they change, and the call returns no `tieMatchUpResult`. Nothing is carried from
+the dual: its winner's next dual takes no line-up. Where a loser link places the losing team, its assignment writes the
+team's line-up as the draw holds it on its side of each dual it reaches (`setSideLineUp`, `updateSideLineUp`, announced
+`updateSidLineUp`): past a BYE the dual beyond first, then the BYE matchUp. The loser's own dual is announced with no
+event (`assignTeamLineUp` hands `updateSideLineUp` none).
+
+Stay v1's:
+
+- a dual's own call that enables or disables auto-calc (v1 writes `disableAutoCalc`, and under `enableAutoCalc` projects
+  the winner from the lines), a dual's exit carried across a loser link (`propagateExitStatus`), a call on a dual not
+  to be played or in progress (decided, or a double exit), a dual's own double exit, and a dual in a round robin;
+- a decided dual whose losing side held no line-up: v1 carries nothing, and the sides the loser's assignment wrote
+  (`updateSideLineUp`, from the draw's line-ups) stand;
+- a line that un-decides its dual, among them the first line played on a dual decided by its own exit (WALKOVER,
+  DEFAULTED, RETIRED): v1 projects the dual from its lines alone;
+- a corrected or cleared line;
+- auto-calc off;
+- a REPORTED score source (v1 returns before any tally);
+- a line in a round robin: its group's tally. A line's group is read off its dual, since a line is hydrated in the
+  container (hydration OPEN-14).
+
 ## 7.2 The plan as ops (S1)
 
 v2 states a call's writes as **ops**, a closed vocabulary folded by one reducer (`outcome/ops.ts`) into a stored-shape
@@ -848,7 +938,7 @@ says and what lands are one thing. The reducer decides nothing and refuses nothi
 
 | op                        | what it writes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `setMatchUpResult`        | the matchUp's status, winner, score (as the call gave it, or blanked), a new format, status codes, and `schedule.scoredTime` by v1's rule: captured the first time the matchUp is scored, kept on corrections, removed with the score; left as it is where v1 writes the result outside `setMatchUpState` (`stampsScoredTime: false`: a double exit's produced exit)                                                                                                                                     |
+| `setMatchUpResult`        | the matchUp's status, winner, score (as the call gave it, or blanked), a new format, status codes, and `schedule.scoredTime` by v1's rule: captured the first time the matchUp is scored, kept on corrections, removed with the score; left as it is where v1 writes the result outside `setMatchUpState` (`stampsScoredTime: false`: a double exit's produced exit); a TEAM dual's own call first writes the sides `ensureSideLineUps` gives (`ensuredSides`)                                           |
 | `setMatchUpDrawPositions` | the positions placed in a matchUp, as v1 stores them: numbers, ascending (a winner's position joining the next matchUp, or taken back out of it: `removedDrawPosition`, whose result goes with the participant, as `removeSubsequentRoundsParticipant` takes it; with `placedDrawPosition` too when one write replaces a changed winner; `advancesThroughBye` for a position a double exit's BYE sends on, announced as `advanceWinner` and written with no score, as `assignDrawPositionBye` writes it) |
 | `assignPosition`          | a participant on a structure's stored assignment for a drawPosition (a loser fed across a link)                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `exchangeDrawPositions`   | a swap's relabel in a later round of its structure: the old winner's and the old loser's positions exchanged and sorted, a decided matchUp's winner carried across the re-sort with its score and side facts (v1's `exchangeMatchUpPositions`, the same function)                                                                                                                                                                                                                                        |
@@ -861,6 +951,7 @@ says and what lands are one thing. The reducer decides nothing and refuses nothi
 | `clearMatchUpBye`         | the matchUp a withdrawn BYE stood in, to be played again, announced as `removeDrawPosition-<drawPosition>` with neither event nor tournament                                                                                                                                                                                                                                                                                                                                                             |
 | `assignBye`               | a BYE on a structure's stored assignment for a drawPosition, marked `byeFromPropagation` (a `FIRST_MATCHUP` reservation; a double exit's loser seats, `announcesEvent: false` for one its produced exit leaves unfillable)                                                                                                                                                                                                                                                                               |
 | `setMatchUpBye`           | the reserved seat's matchUp a BYE, its score and winner removed (v1's `setMatchUpStatusBYE`)                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `setSideLineUp`           | a team's line-up on its side of the dual it is directed into, as v1 writes it (the winning team's by `propagateLineUp`, the losing team's by `propagateLoserLineUp` and, its draw line-up where its assignment lands, on the loser's dual and past a BYE the dual beyond, by `updateSideLineUp`, each announced by its writer, the loser's own dual with no event where v1 names none): the dual's sides made, numbered 1 and 2 in order, keeping what each held, and the line-up set on this one        |
 | `setParticipantResults`   | a round robin group's, or a one-round ad hoc structure's, tallies on its position assignments, after the call (`writeAssignmentResults`, v1's own writer); for ad hoc the assignments are first rebuilt, one per participant its matchUps hold, as `updateTallyIfNeeded` rebuilds them; the tally stamps every top-level structure, as v1's does                                                                                                                                                         |
 | `stampUpdatedAt`          | one `updatedAt` per touched entity per call (F2 (i)): the call's captured instant, or the previous stamp + 1 ms when that is already as late                                                                                                                                                                                                                                                                                                                                                             |
 
@@ -872,7 +963,7 @@ the slices that follow:
 
 | reason         | the call                                                                                                                                                                 | taken on by                                                                                                                                                                                                                                                              |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `team`         | is a dual or one of its lines                                                                                                                                            | S7                                                                                                                                                                                                                                                                       |
+| `team`         | is a dual or one of its lines, but a line's first result leaving its dual undecided (S7)                                                                                 | S7                                                                                                                                                                                                                                                                       |
 | `schedule`     | carries a schedule                                                                                                                                                       | a later slice (§ 3.5.8 of the executor plan)                                                                                                                                                                                                                             |
 | `notes`        | carries notes                                                                                                                                                            | a later slice                                                                                                                                                                                                                                                            |
 | `status-codes` | carries the client's positional status codes, split into side codes at the write                                                                                         | S2                                                                                                                                                                                                                                                                       |
@@ -900,10 +991,8 @@ stamped at each notice and every top-level structure on each.
 without writing the record: what S2's has-work predicates for the settle passes read, where v1 reads the draw it has
 written. A matchUp or structure an op writes gets a stored-shape working copy, the ops are folded into the copies by
 the same reducer as the shadow apply, and the matchUps an op wrote, with those whose sides read a reassigned
-drawPosition, are derived again from the copies: by indexing again the top-level structures that hold them (below), or,
-on a TEAM draw the index does not cover, by projection, the factory's own `getAllDrawMatchUps` filtered to their ids
-over a matchUps map assembled from the call's (CA, 2026-10-24). Each replaces its entry in v2's copy of the view's
-draw.
+drawPosition, are derived again from the copies by indexing again the top-level structures that hold them (below),
+a TEAM draw included since S7. Each replaces its entry in v2's copy of the view's draw.
 
 **The view oracle** checks it in `differential`: after every complete plan, the working view, folded before v1 wrote,
 is compared field by field (sides, status, winner, score, drawPositions, `finishingPositionRange`, `feedRound` and
@@ -912,9 +1001,10 @@ Until the view moved onto the index it also compared `schedule`, `drawPositionsR
 and `readyToScore`, which nothing in v2 reads; `schedule.scoredTime` is read from the stored matchUps. A difference is a
 divergence keyed `view:<field>`. Measured 2026-10-24 over the exitPropagation and matchUps suites: 9,184 views
 compared, none different; with re-derivation removed, 103 exitPropagation files fail. The oracle's own reads (the
-shadow's hydration, a TEAM working view's projection, and the index oracle's hydration below) are test instrumentation:
-`verify:hydrations` keeps them out of `differential`'s ceiling and reports them apart (2,184 over its census). Under
-`v2`, a TEAM working view's projection is the pipeline's own work and counts.
+shadow's hydration, a hydrated working view's projection, and the index oracle's hydration below) are test
+instrumentation: `verify:hydrations` keeps them out of `differential`'s ceiling and reports them apart (2,184 over its
+census, when TEAM working views were still projected). Under `v2`, a hydrated working view's projection is the
+pipeline's own work and counts; since S7 a TEAM view is indexed, not hydrated.
 
 **The structural index** (`buildStructuralIndex`, `src/query/matchUps/structuralIndex.ts`; executor plan § 3.1.1, CA
 2026-10-24: v2 decides on stored data and a structural index, never on a hydration) is one entry per matchUp in the
@@ -925,26 +1015,35 @@ predicates make found that set to be the stored matchUp, its structure and round
 index carries `{ participantId }` for a participant the tournament holds, as hydration carries the record. No participant
 record, round name, schedule detail or policy is read. The sides and the round profile come from the functions
 hydration calls (`buildMatchUpSides`, `getRoundMatchUps`), and a tiebreak-only or timed set is annotated as hydration
-annotates it, so the two derive each field once. A draw holding a TEAM matchUp is not indexed yet: a line's sides come
-from its dual's line-ups.
+annotates it, so the two derive each field once.
+
+A TEAM draw is indexed for the outcome view (S7; `buildStructuralIndex({ team: true })`, asked by the view and the
+working view only, so the other callers of the index still hydrate a TEAM draw). A dual is indexed as any matchUp, and
+its lines are nested in it (`tieMatchUps`) and listed beside it, each built through its dual as hydration builds it:
+the dual's drawPositions, round number and finishing positions; the collection's `matchUpType` and format (the line's
+own tieFormat, else the dual's resolved one); `BYE` where the dual is one, over the `TO_BE_PLAYED` a line is stored as;
+sides from the dual's line-ups (`getCollectionAssignment`); and, in a round robin, the container as the line's
+structure with no container of its own, as hydration places it. A dual carries no `matchUpFormat`.
 
 **The view decides on the index.** `buildOutcomeView` builds it, not a hydration, and the working view and the settle
-predicates read it; only a TEAM draw is still hydrated. So under `v2` a call costs v1's hydrations and nothing more
-(`verify:hydrations`; the TEAM arm v1 + 1), and a call v2 refuses takes none. An index entry shares nested objects
+predicates read it, a TEAM draw included since S7. So under `v2` a call costs v1's hydrations and nothing more
+(`verify:hydrations`, every arm, TEAM included), and a call v2 refuses takes none. An index entry shares nested objects
 (`score`, `sideExitProvenance`) with the stored matchUp, so the view is read before the call writes, never after.
 
 **The index oracle** holds it to the hydration in `differential`: before v1 writes, the view's index of the draw as the
 call found it is compared, field by field, with one hydration of the same draw taken for the purpose, after the view's
 own step on a draw stored without its edges. A difference is a divergence keyed `index:<field>`. Measured 2026-10-24 over the
-mutations suite: 66,154 calls, 1,873,656 entries compared, none different; 15,940 calls on TEAM draws are tallied as
-deferred. Measured against a full in-context hydration (median of 15): SINGLE_ELIMINATION 32 to 256 at 11–13%,
+mutations suite: 66,154 calls, 1,873,656 entries compared, none different; 15,940 calls on TEAM draws were then tallied
+as deferred. Since S7 a TEAM draw is compared too, `collectionPosition` and each dual's nested lines (`tieMatchUps.<field>`)
+included: `verify:team-arms` under `differential`, 1,528 tests, none different. Measured against a full in-context hydration (median of 15): SINGLE_ELIMINATION 32 to 256 at 11–13%,
 FEED_IN_CHAMPIONSHIP 64, ROUND_ROBIN 32, DOUBLE_ELIMINATION 64 and COMPASS 64 at 11–13%, linear in the draw.
 
 **v1's settle passes ask the index first** (`matchUpStatus/indexPrecheck.ts`; the v1 win CA agreed 2026-10-24). Most
 of v1's settle passes hydrate the whole draw on every call only to run a detector that usually finds nothing, and a
 pass whose detector finds nothing writes nothing. So a pass first asks its own detector of the structural index, built
-with what the pass hydrates with (the draw alone), and returns without hydrating when it finds no work; a TEAM draw,
-which the index does not cover, hydrates as before. In `differential` the detector is asked of a hydration too, and a
+with what the pass hydrates with (the draw alone), and returns without hydrating when it finds no work; a TEAM draw
+is indexed too since S7 (`team: true`). Measured on `verify:hydrations`' TEAM arm under `v1`: 1,767 hydrations over
+228 calls before, 234 after (worst call 10 to 3). In `differential` the detector is asked of a hydration too, and a
 disagreement is a divergence keyed `precheck:<pass>`, raised when the call is compared and the call restored: the index
 oracle sees the draw as the call found it, this one each state a settle pass meets after the call's writes. Passes
 move one at a time, each with its `verify:hydrations` v1 ceiling lowered. `reconcileByeAdvancements` first: about one

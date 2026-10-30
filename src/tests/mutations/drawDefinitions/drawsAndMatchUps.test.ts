@@ -214,14 +214,14 @@ test('tournamentEngine can bulkScheduleMatchUps', () => {
     scheduledTime: '08:00',
     venueId,
   };
+  // round 2 at the same time as its round 1 sources is refused whether or not anachronism is an error: the order binds
+  // plans, not only what was played (CA 2026-10-30)
   result = tournamentEngine.bulkScheduleMatchUps({
     errorOnAnachronism: false,
     matchUpContextIds,
     schedule,
   });
-  expect(result.warnings.length).toEqual(8);
-  expect(result.warnings[0]).toEqual(ANACHRONISM);
-  expect(result.success).toEqual(true);
+  expect(result.error).toEqual(ANACHRONISM);
 
   schedule = {
     scheduledDate: startDate,

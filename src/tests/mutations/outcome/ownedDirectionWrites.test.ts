@@ -1301,6 +1301,41 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(6, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
     },
   ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION (S6): a double walkover whose two Consolation BYEs meet, a double BYE in round 2',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      steps: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION (S6): the same for a double default in a 16 draw with four BYEs',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 12, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      steps: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
+  [
+    'COMPASS (S6): a double walkover in an 8 draw whose chain ends in a double BYE in a final, stamped there',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: COMPASS },
+      steps: [{ target: R1(3, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'OLYMPIC (S6): the same for a double default in an 8 draw',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: OLYMPIC },
+      steps: [{ target: R1(3, 'East'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
+  [
+    'OLYMPIC (S6): a double walkover whose double BYE goes on through a BYE it had passed, a third BYE in a row',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 13, drawType: OLYMPIC },
+      steps: [{ target: R1(5, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the

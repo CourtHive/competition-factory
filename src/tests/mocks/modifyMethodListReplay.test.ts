@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
+import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { differences } from './recordDifferences';
@@ -92,9 +93,10 @@ describe('modifyTournamentRecord replays from its method list', () => {
     expect(result.methods.map(({ method }) => method)).toEqual(
       expect.arrayContaining(['addVenue', 'addCourts', 'setSchedulingProfile', 'scheduleProfileRounds']),
     );
-    const scheduled = tournamentEngine
-      .allTournamentMatchUps({ tournamentRecord })
-      .matchUps.filter(({ schedule }) => schedule?.scheduledTime);
+    // the record modifyTournamentRecord changed is not the engine's: it is read directly
+    const scheduled = (allTournamentMatchUps({ tournamentRecord }).matchUps ?? []).filter(
+      ({ schedule }) => schedule?.scheduledTime,
+    );
     expect(scheduled.length).toBeGreaterThan(0);
 
     expect(differences(tournamentRecord, replayOnto(original, result.methods))).toEqual([]);

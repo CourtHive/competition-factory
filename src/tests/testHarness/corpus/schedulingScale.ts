@@ -4,6 +4,7 @@ import { SCHEDULING_STEP_PROPERTIES } from '../scheduling/schedulingProperties';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { setRandomSource } from '@Tools/prng';
+import { RECORD_CLOCK } from './recordClock';
 import { setClock } from '@Tools/clock';
 import path from 'path';
 import fs from 'fs';
@@ -70,7 +71,7 @@ export const cellId = (cell: ScaleCell) =>
 
 /** the record and directives of one cell: every structure's rounds profiled, split across the days, then both runs */
 export function scaleScenario(cell: ScaleCell) {
-  setClock(CLOCK);
+  setClock(RECORD_CLOCK);
   setRandomSource(cell.seed);
   const venueProfiles = Array.from({ length: cell.venues }, (_, index) => ({
     venueId: `venue-${index + 1}`,
@@ -145,6 +146,22 @@ export function scaleScenario(cell: ScaleCell) {
  * the grid.
  */
 export const pinnedScaleCells = () => scaleCells().filter((_, index) => index % 7 === 3);
+
+/**
+ * Cells larger than the matrix, every draw type at 64 and 128, with and without BYEs, over two venues and two days:
+ * the only cells whose grid sorts 64 matchUps or more at once, where a sort runs as merged runs rather than one
+ * insertion sort. The order of matchUps a comparator leaves equal is the sort's own, so these pin it. Written as the
+ * matrix writes a cell (profile, then grid), into the pinned sample.
+ */
+export function largeScaleCells(): ScaleCell[] {
+  const cells: ScaleCell[] = [];
+  let seed = 7900;
+  for (const drawType of SCALE_AXES.drawType)
+    for (const drawSize of [64, 128])
+      for (const byes of [false, true])
+        cells.push({ drawType, drawSize, byes, venues: 2, limits: false, days: 2, seed: seed++ });
+  return cells;
+}
 
 export function pinnedScaleScenario(cell: ScaleCell) {
   const { initialRecord, directives } = scaleScenario(cell);

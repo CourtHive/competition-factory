@@ -15,8 +15,8 @@
  * history, and a naive implementation would find zero breaking commits and report success — a check
  * that cannot report dirty. Every precondition below is therefore an error, not a skip.
  */
-import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -29,7 +29,8 @@ const fail = (m) => {
   process.exit(1);
 };
 
-const git = (args) => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 64e6 });
+const git = (args) =>
+  execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 64e6, timeout: 120_000, killSignal: 'SIGKILL' });
 
 if (!existsSync(MANIFEST)) fail(`no release manifest at ${MANIFEST}`);
 const released = JSON.parse(readFileSync(MANIFEST, 'utf8'))['.'];
@@ -37,7 +38,12 @@ if (!/^\d+\.\d+\.\d+$/.test(released ?? '')) fail(`manifest '.' is not a version
 
 const hasTag = (tag) => {
   try {
-    execFileSync('git', ['rev-parse', '--verify', `${tag}^{commit}`], { cwd: ROOT, stdio: 'ignore' });
+    execFileSync('git', ['rev-parse', '--verify', `${tag}^{commit}`], {
+      cwd: ROOT,
+      stdio: 'ignore',
+      timeout: 60_000,
+      killSignal: 'SIGKILL',
+    });
     return true;
   } catch {
     return false;
@@ -77,7 +83,7 @@ const guidePath = `documentation/docs/migration-${guideMajor}.0.0.md`;
  * condition the precondition was actually defending against.
  */
 if (!hasTag(baseTag)) {
-  let previous = '';
+  let previous;
   try {
     previous = git(['describe', '--tags', '--abbrev=0', 'HEAD']).trim();
   } catch {

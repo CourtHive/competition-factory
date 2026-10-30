@@ -1,5 +1,5 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync } from 'node:fs';
 import { buildSync } from 'esbuild';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -16,22 +16,43 @@ import type { KernelAdapter, KernelResult } from './kernel';
  * The command is run through the shell, so it can be any implementation's own launcher. A command that fails, answers
  * fewer lines than it was sent, or answers a line that is not JSON gives an `exception` for every request it did not
  * answer: never a value.
+ *
+ * NO HANG (punch list P62). `spawnSync` holds the vitest worker's event loop, so no test timeout can interrupt a child
+ * that never exits; one did, for ~2.5 h, blocked reading a stdin whose end never came. So the batch is written to a
+ * file and redirected in (`< file`): the child's input ends by construction, and the protocol on its side is still
+ * stdin. And the child is killed after `KERNEL_ADAPTER_TIMEOUT_MS` (default two minutes; the suite's batch takes ~3 s),
+ * which turns any other hang into an `exception` for every request, naming the deadline.
  */
 export type Request = { operation: string; input: unknown };
 export type ExternalAdapter = KernelAdapter & { invokeAll: (requests: Request[]) => KernelResult[] };
 
 const MAX_BUFFER = 1024 * 1024 * 1024;
+const TIMEOUT = Number(process.env.KERNEL_ADAPTER_TIMEOUT_MS ?? 120_000);
 
-export function externalAdapter(command: string, name = 'external'): ExternalAdapter {
+export function externalAdapter(command: string, name = 'external', timeout = TIMEOUT): ExternalAdapter {
   const invokeAll = (requests: Request[]): KernelResult[] => {
     if (!requests.length) return [];
-    const run = spawnSync(command, {
-      input: requests.map((request) => JSON.stringify(request)).join('\n') + '\n',
-      maxBuffer: MAX_BUFFER,
-      encoding: 'utf8',
-      shell: true,
-    });
-    const failure = run.error?.message ?? (run.status === 0 ? undefined : `exit ${run.status}: ${run.stderr}`);
+    const dir = mkdtempSync(path.join(tmpdir(), 'kernel-requests-'));
+    const file = path.join(dir, 'requests.ndjson');
+    writeFileSync(file, requests.map((request) => JSON.stringify(request)).join('\n') + '\n');
+    const run = (() => {
+      try {
+        return spawnSync(`${command} < "${file}"`, {
+          stdio: ['ignore', 'pipe', 'pipe'],
+          killSignal: 'SIGKILL',
+          maxBuffer: MAX_BUFFER,
+          encoding: 'utf8',
+          timeout,
+          shell: true,
+        });
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    })();
+    const timedOut = run.signal === 'SIGKILL' && (run.error as any)?.code === 'ETIMEDOUT';
+    const failure = timedOut
+      ? `no answer within ${timeout} ms: ${command}`
+      : (run.error?.message ?? (run.status === 0 ? undefined : `exit ${run.status}: ${run.stderr}`));
     const lines = (run.stdout ?? '').split('\n').filter(Boolean);
     return requests.map((_request, index): KernelResult => {
       if (failure) return { kind: 'exception', message: failure.slice(0, 500) };

@@ -1,3 +1,4 @@
+import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -23,7 +24,7 @@ it('can hydrate roundNames when generating drawDefinitions', () => {
   });
   expect(result.success).toEqual(true);
 
-  const matchUps = tournamentEngine.getAllDrawMatchUps({ drawDefinition: result.drawDefinition }).matchUps;
+  const matchUps = getAllDrawMatchUps({ drawDefinition: result.drawDefinition }).matchUps ?? [];
   const roundNames = matchUps
     .filter((m) => m.roundNumber && m.roundName)
     .map((m) => ({ roundNumber: m.roundNumber, roundName: m.roundName, abbreviatedRoundName: m.abbreviatedRoundName }));

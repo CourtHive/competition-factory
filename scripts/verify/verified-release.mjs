@@ -42,7 +42,8 @@ const fail = (message) => {
   console.error(`[verified-release] FAIL — ${message}`);
   process.exit(1);
 };
-const git = (...gitArgs) => execFileSync('git', gitArgs, { encoding: 'utf8' }).trim();
+const git = (...gitArgs) =>
+  execFileSync('git', gitArgs, { encoding: 'utf8', timeout: 120_000, killSignal: 'SIGKILL' }).trim();
 
 async function api(path) {
   const response = await fetch(`https://api.github.com/repos/${repository}${path}`, {

@@ -18,7 +18,9 @@ import { execFileSync } from 'node:child_process';
 
 const BRANCH = 'gh-pages';
 const dry = process.argv.includes('--dry');
-const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
+// a deadline on every child (punch list P62): a fetch or push that hangs fails the script instead of stalling it
+const git = (...args) =>
+  execFileSync('git', args, { encoding: 'utf8', timeout: 300_000, killSignal: 'SIGKILL' }).trim();
 
 git('fetch', '--quiet', 'origin', BRANCH);
 const tip = git('rev-parse', `origin/${BRANCH}`);

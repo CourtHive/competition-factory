@@ -1,25 +1,24 @@
+import { errorConditionConstants } from '@Constants/errorConditionConstants';
+import { afterAll, beforeAll, beforeEach, expect } from 'vitest';
+import { canonicalHash, canonicalObject } from './corpus/hash';
+import { randomSource, setRandomSource } from '@Tools/prng';
+import { topicConstants } from '@Constants/topicConstants';
+import { BACKEND_EXCLUSIONS } from './backendExclusions';
+import { adoptBackendRecords } from './backendRecords';
+import { createBackendBridge } from './backendBridge';
+import { execFileSync } from 'node:child_process';
+import { differingPaths } from './backendDiff';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import fs from 'node:fs';
 import {
   getSchemaWriteMode,
   getTournamentId,
   getTournamentRecords,
   hasTopic,
-  restoreMutationStatus,
   setFactoryBackend,
   setTournamentId,
-  setTournamentRecords,
 } from '@Global/state/globalState';
-import { errorConditionConstants } from '@Constants/errorConditionConstants';
-import { topicConstants } from '@Constants/topicConstants';
-import { randomSource, setRandomSource } from '@Tools/prng';
-import { afterAll, beforeAll, beforeEach, expect } from 'vitest';
-import { canonicalHash, canonicalObject } from './corpus/hash';
-import { createBackendBridge } from './backendBridge';
-import { differingPaths } from './backendDiff';
-import { BACKEND_EXCLUSIONS } from './backendExclusions';
-import { execFileSync } from 'node:child_process';
-import { tmpdir } from 'node:os';
-import path from 'node:path';
-import fs from 'node:fs';
 
 // types
 import type { FactoryBackend, FactoryBackendCall } from '@Global/state/globalState';
@@ -50,7 +49,9 @@ if (mode) {
     throw new Error(`FACTORY_BACKEND=${mode} is not one of external, differential`);
   if (!command) throw new Error('FACTORY_BACKEND needs FACTORY_BACKEND_COMMAND, the executable that answers a call');
 
-  const methods = new Set<string>(JSON.parse(execFileSync(command, ['--methods'], { encoding: 'utf8' })));
+  const methods = new Set<string>(
+    JSON.parse(execFileSync(command, ['--methods'], { encoding: 'utf8', timeout: 60_000, killSignal: 'SIGKILL' })),
+  );
   const errorsByCode = new Map<string, unknown>(
     Object.values(errorConditionConstants)
       .filter((value: any) => typeof value?.code === 'string')
@@ -140,12 +141,10 @@ if (mode) {
 
   function external(call: FactoryBackendCall) {
     const activeTournamentId = getTournamentId();
-    const before = hashOf(Object.values(getTournamentRecords() ?? {}));
     const answer = ask(call);
     if (answer.declined) return call.runLocal();
-    // the engine stamps a record a method changed (getMutationStatus): tell it this one did
-    if (JSON.stringify(hashOf(answer.records)) !== JSON.stringify(before)) restoreMutationStatus(true);
-    setTournamentRecords(Object.fromEntries(answer.records.map((record) => [record.tournamentId, record])));
+    // the engine stamps the records a method changed (getMutationStatus): tell it which
+    adoptBackendRecords(answer.records);
     if (activeTournamentId) setTournamentId(activeTournamentId);
     if (answer.seed !== undefined) setRandomSource(answer.seed);
     return asEngineResult(answer.result);
@@ -185,7 +184,14 @@ if (mode) {
 /** the names an executable lists with a flag; none when it does not know the flag */
 function listed(command: string, flag: string): string[] {
   try {
-    return JSON.parse(execFileSync(command, [flag], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }));
+    return JSON.parse(
+      execFileSync(command, [flag], {
+        stdio: ['ignore', 'pipe', 'ignore'],
+        killSignal: 'SIGKILL',
+        encoding: 'utf8',
+        timeout: 60_000,
+      }),
+    );
   } catch {
     return [];
   }

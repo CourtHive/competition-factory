@@ -14,14 +14,14 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { findEvent } from '@Acquire/findEvent';
 
 // constants and types
+import type { DrawData, DrawStub, EventData, EventDataResult, EventInfo, VenueData } from '@Types/viewTypes';
 import { PayloadProfileEnum, PayloadProfileUnion, Event, Tournament } from '@Types/tournamentTypes';
 import { ParticipantsProfile, PolicyDefinitions, StructureSortConfig } from '@Types/factoryTypes';
-import { EVENT_NOT_FOUND, INVALID_VALUES, ErrorType } from '@Constants/errorConditionConstants';
+import { EVENT_NOT_FOUND, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { completedMatchUpStatuses, BYE } from '@Constants/matchUpStatusConstants';
 import { DISPLAY } from '@Constants/extensionConstants';
 import { ANY_OF } from '@Constants/attributeConstants';
 import { PUBLIC } from '@Constants/timeItemConstants';
-import { HydratedParticipant } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type GetEventDataArgs = {
@@ -45,17 +45,11 @@ type GetEventDataArgs = {
   event?: Event;
 };
 
-export function getEventData(params: GetEventDataArgs) {
+export function getEventData(params: GetEventDataArgs): EventDataResult {
   return withContextExclusion(params, getEventDataUnredacted);
 }
 
-function getEventDataUnredacted(params: GetEventDataArgs): {
-  participants?: HydratedParticipant[];
-  participantsVersion?: string;
-  error?: ErrorType;
-  success?: boolean;
-  eventData?: any;
-} {
+function getEventDataUnredacted(params: GetEventDataArgs): EventDataResult {
   const {
     includePositionAssignments,
     participantsProfile,
@@ -70,7 +64,7 @@ function getEventDataUnredacted(params: GetEventDataArgs): {
   // Unknown value is an ERROR, never a silent fall-through to FULL: a typo must not quietly return
   // the 788 KB payload a caller was explicitly trying to avoid.
   if (!Object.values(PayloadProfileEnum).includes(drawsProfile as PayloadProfileEnum)) {
-    return { error: INVALID_VALUES, context: { drawsProfile } } as any;
+    return { error: INVALID_VALUES, context: { drawsProfile } };
   }
 
   const paramsCheck = checkRequiredParameters(params, [
@@ -130,7 +124,7 @@ function getEventDataUnredacted(params: GetEventDataArgs): {
    * `participantPlacements`, `drawActive` and `structures` are deliberately absent — they are
    * drill-in concerns and cannot be derived without the work this profile exists to skip.
    */
-  const buildDrawStub = (drawDefinition) => {
+  const buildDrawStub = (drawDefinition): DrawStub => {
     const { matchUpFormat, updatedAt, drawType, drawName, drawId } = drawDefinition;
     const leafMatchUps = (function collect(structures) {
       return (structures ?? []).flatMap((structure) =>
@@ -158,7 +152,8 @@ function getEventDataUnredacted(params: GetEventDataArgs): {
   // ternary (no-nested-ternary is a hard lint gate in this repo).
   const drawsVisible = !usePublishState || eventPublished;
 
-  const buildFullDrawsData = () =>
+  // every draw getDrawData refuses (no structures) is filtered out, so each entry carries its drawInfo
+  const buildFullDrawsData = (): DrawData[] =>
     drawDefinitions
       .filter(drawFilter)
       .map((drawDefinition) =>
@@ -198,9 +193,9 @@ function getEventDataUnredacted(params: GetEventDataArgs): {
           structures: filteredStructures,
         };
       })
-      .filter((drawData) => drawData.structures?.length);
+      .filter((drawData) => drawData.structures?.length) as DrawData[];
 
-  let drawsData;
+  let drawsData: DrawData[] | undefined;
   if (!drawsVisible) {
     drawsData = undefined;
   } else if (drawsProfile === PayloadProfileEnum.STUBS) {
@@ -210,17 +205,18 @@ function getEventDataUnredacted(params: GetEventDataArgs): {
   }
 
   const venues = Array.isArray(tournamentRecord.venues) ? tournamentRecord.venues : [];
-  const venuesData = venues.map((venue) => {
+  // every venue is read from this record, so getVenueData always finds it
+  const venuesData = venues.map((venue): VenueData => {
     const { venueData } = getVenueData({
       venueId: venue.venueId,
       tournamentRecord,
     });
     return {
       ...venueData,
-    };
+    } as VenueData;
   });
 
-  const eventInfo: any = (({
+  const eventInfo: EventInfo = (({
     eventId,
     eventName,
     eventType,
@@ -267,7 +263,7 @@ function getEventDataUnredacted(params: GetEventDataArgs): {
 
   const { tournamentInfo } = getTournamentInfo({ tournamentRecord });
 
-  const eventData = {
+  const eventData: EventData = {
     tournamentInfo,
     venuesData,
     eventInfo,

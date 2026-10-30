@@ -6,6 +6,7 @@ export { getParticipantRest, getParticipantsRest } from '@Query/matchUps/schedul
 export { isScheduleLocked, matchUpScheduleLocked } from '@Query/matchUp/isScheduleLocked';
 export { getScheduleProjection } from '@Query/facilitySchedule/getScheduleProjection';
 export { mergeFacilitySchedule } from '@Query/facilitySchedule/mergeFacilitySchedule';
+export { getMatchUpScheduleBounds } from '@Query/matchUp/getMatchUpScheduleBounds';
 export { getPersonRequests } from '@Query/matchUps/scheduling/getPersonRequests';
 export { getProfileRounds } from '@Query/matchUps/scheduling/getProfileRounds';
 export { getScenarioScheduleProjection } from '@Query/matchUps/scheduling/getScenarioScheduleProjection';

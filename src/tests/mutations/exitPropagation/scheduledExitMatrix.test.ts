@@ -73,6 +73,9 @@ function scheduleEverything(drawId: string): Record<string, string> {
         courtId: court.courtId,
         venueId: court.venueId,
       },
+      // the slots are arbitrary, not in the order the rounds play: this arm is about exits keeping slots, so it keeps
+      // the played order only (CA 2026-10-30 made the order bind plans)
+      plannedOrder: false,
       matchUpId: matchUp.matchUpId,
       drawId,
     });

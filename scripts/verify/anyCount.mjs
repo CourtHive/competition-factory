@@ -72,7 +72,7 @@ export function gitIgnored(rootDir, srcDir) {
         '--directory',
         toPosix(relative(rootDir, srcDir)) || '.',
       ],
-      { cwd: rootDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
+      { cwd: rootDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 60_000, killSignal: 'SIGKILL' },
     );
     return new Set(out.split('\0').filter(Boolean));
   } catch {
@@ -189,7 +189,7 @@ function selfTest() {
     writeFileSync(join(dir, 'src', 'tests', 't.ts'), 'let skipped: any;');
     expect('outside a checkout nothing is ignored', gitIgnored(dir, join(dir, 'src')).size, 0);
     // an ignored directory is not walked; an untracked file that is NOT ignored still is
-    execFileSync('git', ['init', '-q'], { cwd: dir, stdio: 'ignore' });
+    execFileSync('git', ['init', '-q'], { cwd: dir, stdio: 'ignore', timeout: 60_000, killSignal: 'SIGKILL' });
     writeFileSync(join(dir, '.gitignore'), 'scratch\n');
     mkdirSync(join(dir, 'src', 'scratch'), { recursive: true });
     writeFileSync(join(dir, 'src', 'scratch', 's.ts'), 'let ignored: any; let alsoIgnored: any;');

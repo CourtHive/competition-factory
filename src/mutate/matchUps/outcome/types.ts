@@ -135,7 +135,33 @@ export type OutcomeView = {
     dualWinningSide?: number;
     projectedWinningSide?: number;
     autoCalcDisabled: boolean;
+    /** the dual's score as `updateTieMatchUpScore` tallies it with this line's result in place (S7) */
+    projectedScore?: OutcomeScore;
+    /** the dual's status as `updateTieMatchUpScore` derives it with this line's result in place (S7) */
+    projectedStatus?: MatchUpStatusUnion;
+    /**
+     * what `updateTieMatchUpScore` rewrites on the stored dual before its tally (S7), each only where it changes: the
+     * sides `ensureSideLineUps` ensures (`ensuredDualSides`) and the tieFormat it copies on; and whether the tieFormat's
+     * score is REPORTED (which returns before any tally); and the sides the dual holds once rewritten, whose line-up a
+     * deciding line's winning team carries on (`propagateLineUp`)
+     */
+    dualRewrite: {
+      sides?: unknown[];
+      tieFormat?: unknown;
+      scoreReported: boolean;
+      /** the sides once the line's write has ensured them (the winner's carry reads these) */
+      sidesAsHeld?: unknown[];
+      /** the sides in context before the line's write (the loser's carry reads these, as v1's `directLoser` does) */
+      sidesInContext?: unknown[];
+    };
+    /**
+     * the dual sits in a round robin group, whose tally a line's result re-reads. Read off the dual: a line is placed
+     * in the container with no `containerStructureId` of its own (hydration OPEN-14), so the view finds no group for it
+     */
+    dualInGroup: boolean;
   };
+  /** a TEAM dual's own call: the sides `ensureSideLineUps` writes before its result, present where they change (S7) */
+  dualSides?: unknown[];
   /** a TEAM dual under `enableAutoCalc`: the winner its lines project */
   dualProjection?: { projectedWinningSide?: number; score?: OutcomeScore };
   /** § 5 rule 1: where direction sends a winner, and who is on each side now */

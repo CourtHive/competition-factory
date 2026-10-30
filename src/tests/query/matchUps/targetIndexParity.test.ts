@@ -1,6 +1,7 @@
-import { buildTargetIndex, positionTargets } from '@Query/matchUp/positionTargets';
 import { addGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+import { positionTargets } from '@Query/matchUp/positionTargets';
+import { buildTargetIndex } from '@Query/matchUp/targetIndex';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import tournamentEngine from '@Engines/syncEngine';

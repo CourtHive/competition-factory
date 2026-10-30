@@ -1,5 +1,6 @@
 import { releaseAdvancedDrawPositionAcrossLinks } from '@Mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement';
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
+import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import {
@@ -82,6 +83,7 @@ export function releaseHoldersByeFromTarget({
   const released = [holdersBye, ...(stored.drawPositions ?? [])];
   for (const drawPosition of released.filter((position): position is number => !!position)) {
     releaseAdvancedDrawPositionAcrossLinks({
+      clearDrawPosition,
       fromRoundNumber: (nextWinnerMatchUp.roundNumber ?? 0) + 1,
       structureId: fromMatchUp.structureId,
       tournamentRecord: params.tournamentRecord,
