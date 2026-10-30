@@ -37,6 +37,8 @@ type BulkScheduleMachUpsArgs = {
   playedOrderChecked?: boolean;
   /** check the batch's played order and write nothing (the caller's first pass over several tournaments) */
   playedOrderOnly?: boolean;
+  /** false: only a played matchUp orders, as before CA 2026-10-30 (default true: plans order too) */
+  plannedOrder?: boolean;
 };
 
 export function bulkScheduleTournamentMatchUps({
@@ -53,6 +55,7 @@ export function bulkScheduleTournamentMatchUps({
   inContextMatchUps: givenInContextMatchUps,
   playedOrderChecked,
   playedOrderOnly,
+  plannedOrder,
   matchUpIds,
   schedule,
 }: BulkScheduleMachUpsArgs): {
@@ -119,6 +122,7 @@ export function bulkScheduleTournamentMatchUps({
   const scheduleOf = (matchUpId: string) => detailScheduleOf({ matchUpDetails, schedule, matchUpId });
 
   const gate = playedOrderGate({
+    plannedOrder,
     matchUpDependencies,
     inContextMatchUps,
     playedOrderChecked,
@@ -205,6 +209,7 @@ type PlayedOrderGateArgs = {
   playedOrderChecked?: boolean;
   tournamentRecord: Tournament;
   playedOrderOnly?: boolean;
+  plannedOrder?: boolean;
 };
 
 function playedOrderGate({
@@ -213,6 +218,7 @@ function playedOrderGate({
   playedOrderChecked,
   playedOrderOnly,
   tournamentRecord,
+  plannedOrder,
   drawIdMap,
   isRequested,
   scheduleOf,
@@ -223,7 +229,13 @@ function playedOrderGate({
         .filter(isRequested)
         .map((matchUpId) => ({ drawId, matchUpId, schedule: scheduleOf(matchUpId) })),
     );
-    const refusal = checkBatchPlayedOrder({ tournamentRecord, placements, matchUpDependencies, inContextMatchUps });
+    const refusal = checkBatchPlayedOrder({
+      matchUpDependencies,
+      inContextMatchUps,
+      tournamentRecord,
+      plannedOrder,
+      placements,
+    });
     if (refusal) return refusal;
   }
   return playedOrderOnly ? { ...SUCCESS, scheduled: 0 } : undefined;
