@@ -2044,7 +2044,8 @@ function unwoundOps(
 }
 
 /**
- * S7: a TEAM call is v1's but for its owned shape: a line's first result that leaves its dual undecided. v1 writes the
+ * S7: a TEAM call is v1's but for its owned shape: a line's first result (scored, a winner alone, or a single exit:
+ * WALKOVER, DEFAULTED, RETIRED), whose dual's tally follows from it. v1 writes the
  * line, then `updateTieMatchUpScore` writes the dual through `modifyMatchUpScore`, with no `scoredTime`: the sides it
  * ensures and the tieFormat it copies on (`line.dualRewrite`, where they change: on a dual's first line, or a record
  * that stored neither), its tally and the status it derives from it; a dual already decided keeps its winner and is
@@ -2052,14 +2053,12 @@ function unwoundOps(
  * un-decides its dual, a corrected line, a round robin's tally, a REPORTED score, and auto-calc off stay v1's.
  */
 function teamReason({
-  request,
   asDual,
   write,
   route,
   view,
   dual,
 }: {
-  request: OutcomeRequest;
   write?: MatchUpWrite;
   view: OutcomeView;
   dual?: DualCall;
@@ -2069,7 +2068,7 @@ function teamReason({
   if (asDual) return undefined;
   if (!view.isTeam && !view.line && !view.matchUpTieId && !view.existing.collectionId) return undefined;
   const { line, existing } = view;
-  if (!line || view.isTeam || route !== 'winner' || !write?.winningSide || !request.score) return 'team';
+  if (!line || view.isTeam || route !== 'winner' || !write?.winningSide) return 'team';
   if (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide) return 'team';
   if (line.autoCalcDisabled || line.dualRewrite.scoreReported || !line.projectedScore) return 'team';
   // a round robin's group tally re-read from the line's result is v1's
