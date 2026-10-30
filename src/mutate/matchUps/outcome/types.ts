@@ -276,6 +276,14 @@ export type OutcomeView = {
     loserMatchUpDecidedForArrival: boolean;
     /** a side of the loserMatchUp carries THIS matchUp's exit in: a relabel to a played result withdraws it (F2) */
     loserMatchUpCarriesSourceExit: boolean;
+    /**
+     * the loserMatchUp holds the carry THIS matchUp made there and nothing else (S6 tail): the carried exit, awarded to
+     * the side opposite the carrier (somebody, or nobody yet), this matchUp's entry its only provenance, no loser link
+     * out of it, and nothing played on from it (the next matchUp to be played with no result). A relabel to the other
+     * exit rewrites it in place and the same exit again leaves it (v1's `relabelsTheCarry`, `withdrawable`); a carry
+     * played on from stands as it was, which is a result of its own here
+     */
+    loserMatchUpCarryHeld: boolean;
     /** the winnerMatchUp, for what a double exit produces there (S2c) */
     winner?: {
       structureId?: string;
