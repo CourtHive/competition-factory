@@ -35,7 +35,9 @@ and notices. In `differential` mode the two are compared before that stamp is wr
 
 `<command> --methods` prints the engine methods it answers, as a JSON array. `<command> --serve` reads one call per
 line and writes one answer per line; the harness keeps one such process per worker behind a synchronous bridge
-(`backendBridge.ts`: a worker thread and an `Atomics` wait), because engine calls are synchronous.
+(`backendBridge.ts`: a worker thread and an `Atomics` wait), because engine calls are synchronous. Every call carries
+`seq`, its number on that process; an answer should echo it, and one that echoes another call's number is a harness
+error rather than an answer to compare (an answer without `seq` is still read).
 
 A call:
 
