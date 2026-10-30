@@ -67,13 +67,18 @@ describe('settleUnlessIdle', () => {
     }
   });
 
-  it('never idles on a draw the index does not cover (TEAM): the pass runs as before', () => {
+  // S7: the index covers a TEAM draw (a dual, its lines nested and listed), so its passes idle on it too
+  it('asks the index of a TEAM draw too: idle where the detector finds nothing, its lines among what it reads', () => {
     setOutcomePipeline(OUTCOME_PIPELINE_V1);
     const { drawDefinition } = draw({ drawSize: 4, eventType: TEAM_EVENT });
-    const detect = vi.fn(() => undefined);
+    const detect = vi.fn<(matchUps: any[]) => undefined>(() => undefined);
     const { result } = settle(drawDefinition, detect);
-    expect(result).toEqual('ran');
-    expect(detect).not.toHaveBeenCalled();
+    expect(result).toEqual('idle');
+    expect(detect).toHaveBeenCalledTimes(1);
+    const read = detect.mock.calls[0][0];
+    // CONTROL: the duals and their lines were indexed, not an empty array
+    expect(read.filter((matchUp: any) => matchUp.tieMatchUps).length).toEqual(3);
+    expect(read.filter((matchUp: any) => matchUp.collectionId).length).toBeGreaterThan(0);
   });
 
   it('differential AGREEMENT: a detector that finds work on a hydration but not on the index is recorded', () => {

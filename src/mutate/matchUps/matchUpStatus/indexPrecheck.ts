@@ -19,7 +19,8 @@ import type { HydratedMatchUp } from '@Types/hydrated';
  * `settleUnlessIdle` runs the pass unless the index says it is IDLE: the index answers and the pass's own detector
  * finds no work there. Idle, it returns `idle`, what the pass returns when its first hydration finds nothing. The index
  * is built with what the pass hydrates with: the draw alone, no tournament or event (so no participant record either,
- * as there). A draw the index does not cover (TEAM) is never idle, and the pass runs as before.
+ * as there). A TEAM draw is indexed too since S7 (`team`: a dual and its lines, built through it as hydration builds
+ * them); the precheck oracle below holds the detectors to a hydration on it as on any other draw.
  *
  * THE PRECHECK ORACLE, `differential` only, two questions, each a divergence keyed `precheck:<pass>` thrown when v2
  * compares the call (`decide.ts`), where what the call wrote is restored:
@@ -46,7 +47,7 @@ export function settleUnlessIdle<T, F>({
   site: string;
   idle: T;
 }): T {
-  const index = buildStructuralIndex({ drawDefinition });
+  const index = buildStructuralIndex({ drawDefinition, team: true });
   if (index.unsupported) return run();
   const found = detect(index.matchUps);
   const predictedIdle = !hasWork(found);
