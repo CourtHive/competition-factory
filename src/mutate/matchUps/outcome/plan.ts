@@ -635,7 +635,11 @@ function relabelledExit(args: Parameters<typeof exitReason>[0]): boolean {
 }
 
 /** an arrival entry naming this matchUp (how a side got where it is) records a status the relabel would change */
-function arrivalsRefreshed(view: OutcomeView, matchUpId: string | undefined, matchUpStatus?: string): boolean {
+function arrivalsRefreshed(
+  view: OutcomeView,
+  matchUpId: string | undefined,
+  matchUpStatus?: MatchUpStatusUnion,
+): boolean {
   if (!matchUpId) return false;
   return (view.inContextDrawMatchUps ?? []).some((matchUp) =>
     Object.values(matchUp.sideExitProvenance ?? {}).some(
