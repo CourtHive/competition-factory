@@ -1,5 +1,50 @@
 # Changelog
 
+## [7.25.0](https://github.com/CourtHive/competition-factory/compare/v7.24.0...v7.25.0) (2026-10-30)
+
+
+### Features
+
+* **matchUpActions:** scheduling and staffing actions, each switchable by policy ([#5988](https://github.com/CourtHive/competition-factory/issues/5988)) ([8b0590f](https://github.com/CourtHive/competition-factory/commit/8b0590f84668827bdba64f977180a2318a6bd979))
+* **outcome:** v2 owns a decided dual's loser going on through a bye (S7) ([#5977](https://github.com/CourtHive/competition-factory/issues/5977)) ([295584d](https://github.com/CourtHive/competition-factory/commit/295584d2e86c47f61f7680e90ae11d08e6f9ad23))
+* **outcome:** v2 owns a double bye in a final, and one going on through a bye it passed ([#5962](https://github.com/CourtHive/competition-factory/issues/5962)) ([2e8cc0d](https://github.com/CourtHive/competition-factory/commit/2e8cc0d8585dba49ad994b6457183b379c5e25f3))
+* **outcome:** v2 owns a double exit's bye beside a winner, and one passing through a bye ([#5958](https://github.com/CourtHive/competition-factory/issues/5958)) ([239eb90](https://github.com/CourtHive/competition-factory/commit/239eb9081cf424b30b1762080555fd8952db39a6))
+* **outcome:** v2 owns a dual's first line, the line-ups and tieFormat copied on ([#5974](https://github.com/CourtHive/competition-factory/issues/5974)) ([d230fde](https://github.com/CourtHive/competition-factory/commit/d230fde5b26aeec185367bcc6a4e55ce9021e8a3))
+* **outcome:** v2 owns a dual's own call given a winner (S7) ([#5991](https://github.com/CourtHive/competition-factory/issues/5991)) ([534acd3](https://github.com/CourtHive/competition-factory/commit/534acd3336fe0820c898eecf8c051de9c1a45fb5))
+* **outcome:** v2 owns a team line played on a dual already decided (S7) ([#5980](https://github.com/CourtHive/competition-factory/issues/5980)) ([0f80689](https://github.com/CourtHive/competition-factory/commit/0f8068979ca8bcc4aa22d1a932771728e3f8b751))
+* **outcome:** v2 owns a TEAM line that decides a dual whose loser is directed (S7) ([#5976](https://github.com/CourtHive/competition-factory/issues/5976)) ([5958dcb](https://github.com/CourtHive/competition-factory/commit/5958dcb530d6803faa013ad833fb1ef33ea44f0f))
+* **outcome:** v2 owns a TEAM line that decides its dual (S7) ([#5975](https://github.com/CourtHive/competition-factory/issues/5975)) ([83d81e2](https://github.com/CourtHive/competition-factory/commit/83d81e261619f24335495437ab7d93073d901865))
+* **outcome:** v2 owns a team line won with no score or by a single exit (S7) ([#5983](https://github.com/CourtHive/competition-factory/issues/5983)) ([9fe9390](https://github.com/CourtHive/competition-factory/commit/9fe93901a77b0e1228c6fec4923dc63d5d040299))
+* **outcome:** v2 owns a team line's double exit (S7) ([#5989](https://github.com/CourtHive/competition-factory/issues/5989)) ([200b258](https://github.com/CourtHive/competition-factory/commit/200b258be7f49668a1e78a237efcb5580279f886))
+* **outcome:** v2 owns a team line's result that leaves its dual undecided ([#5973](https://github.com/CourtHive/competition-factory/issues/5973)) ([9545c48](https://github.com/CourtHive/competition-factory/commit/9545c484722e61d74e1a37dc5d02412b9983a235))
+* **outcome:** v2 owns the fmlc double bye where a double exit's two consolation byes meet ([#5960](https://github.com/CourtHive/competition-factory/issues/5960)) ([8d3d5d1](https://github.com/CourtHive/competition-factory/commit/8d3d5d1871c7a42a0212553b2f009cbc458b1af4))
+* **scheduling:** the schedule order binds plans, recorded times and bounds ([#5979](https://github.com/CourtHive/competition-factory/issues/5979)) ([722a9e3](https://github.com/CourtHive/competition-factory/commit/722a9e383ccb690dcaf9b3f5b6b3190795361456))
+* **types:** named result types for getEventData and competitionScheduleMatchUps ([#5986](https://github.com/CourtHive/competition-factory/issues/5986)) ([f8f0159](https://github.com/CourtHive/competition-factory/commit/f8f015993302f855439622d6de4ea21bdb227e1e))
+
+
+### Bug Fixes
+
+* **build:** no circular imports, and a new one fails the build ([#5984](https://github.com/CourtHive/competition-factory/issues/5984)) ([d45ee4f](https://github.com/CourtHive/competition-factory/commit/d45ee4f7303150aaea4ca212ca03deac4622ef20))
+* **deps:** update tods-competition-factory to 7.24.0 ([#5956](https://github.com/CourtHive/competition-factory/issues/5956)) ([c97f155](https://github.com/CourtHive/competition-factory/commit/c97f15580a49e754ddca96647f545bd0796988a0))
+* **engine:** an engine call works only on the records it holds ([#5971](https://github.com/CourtHive/competition-factory/issues/5971)) ([c173dcd](https://github.com/CourtHive/competition-factory/commit/c173dcdb08e82a31466fe49ca3a7311c40768d52))
+* **harness:** an external backend's changed records take the factory stamp ([#5963](https://github.com/CourtHive/competition-factory/issues/5963)) ([696f071](https://github.com/CourtHive/competition-factory/commit/696f071cfea6c24c666f93490e55ea9d7e0303cf))
+* **harness:** no child process without a deadline, so a hang fails instead of stalling the run ([#5969](https://github.com/CourtHive/competition-factory/issues/5969)) ([958ecdf](https://github.com/CourtHive/competition-factory/commit/958ecdf193318fe85c5b4ed65a93cd4d80832e1d))
+* **outcome:** the differential defers a schedule's anachronism to v1, as its other schedule refusals ([#5985](https://github.com/CourtHive/competition-factory/issues/5985)) ([adb6db5](https://github.com/CourtHive/competition-factory/commit/adb6db531659d81f8ae50fe6667951b98d86bcc4))
+* **policies:** an undefined policy attribute does not count ([#5967](https://github.com/CourtHive/competition-factory/issues/5967)) ([8805f55](https://github.com/CourtHive/competition-factory/commit/8805f55765ad5d68d1882f9ddd3e2e9bfc42f2ee))
+* **schema:** a court disabled on some dates is a valid record ([#5993](https://github.com/CourtHive/competition-factory/issues/5993)) ([7fec6a2](https://github.com/CourtHive/competition-factory/commit/7fec6a21ed621e137f85b7d4f66b1dbce9b42f44))
+
+
+### Performance
+
+* **outcome:** the structural index covers team draws, so a team call hydrates as v1 does ([#5968](https://github.com/CourtHive/competition-factory/issues/5968)) ([31f1910](https://github.com/CourtHive/competition-factory/commit/31f191049fca463257a52c16127187cfd90eb488))
+* **outcome:** the view reads a line's dual from the call's one hydration ([#5966](https://github.com/CourtHive/competition-factory/issues/5966)) ([40b632e](https://github.com/CourtHive/competition-factory/commit/40b632e70fe1b78ea107163656ebef9222d68fb2))
+* **settle:** v1's settle pre-checks read the team index, so a team call hydrates about once ([#5972](https://github.com/CourtHive/competition-factory/issues/5972)) ([01c4805](https://github.com/CourtHive/competition-factory/commit/01c48053fdabd06617fa387d2d67e4c81d3c7e12))
+
+
+### Documentation
+
+* **building:** how every call resolves its record, event and draw ([#5965](https://github.com/CourtHive/competition-factory/issues/5965)) ([35d9e00](https://github.com/CourtHive/competition-factory/commit/35d9e00534dd5e58554c893684c476b8615e370c))
+
 ## [7.24.0](https://github.com/CourtHive/competition-factory/compare/v7.23.0...v7.24.0) (2026-10-29)
 
 
