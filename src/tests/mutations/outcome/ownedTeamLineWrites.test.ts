@@ -9,6 +9,7 @@ import { setClock } from '@Tools/clock';
 
 // constants
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
+import { RETIRED } from '@Constants/matchUpStatusConstants';
 import { LAVER_CUP } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
 import {
@@ -63,6 +64,13 @@ afterEach(() => {
 
 const TOPICS = [MODIFY_MATCHUP, MODIFY_DRAW_DEFINITION, MODIFY_POSITION_ASSIGNMENTS, UPDATE_INCONTEXT_MATCHUP];
 const won = (winningSide: 1 | 2) => generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide }).outcome;
+function stepOutcome({ winningSide, outcome }: Scenario['step']) {
+  if (outcome === 'winner') return { winningSide };
+  if (outcome === 'RETIRED') {
+    return generateOutcomeFromScoreString({ scoreString: '6-1 2-1', winningSide, matchUpStatus: RETIRED }).outcome;
+  }
+  return outcome ? { winningSide, matchUpStatus: outcome } : won(winningSide);
+}
 
 /**
  * a line of a dual: the dual by structure, round and position (a round robin's: the round's first, `roundPosition` 0),
@@ -82,7 +90,8 @@ type Scenario = {
   /** after the setup, the step's dual's side 2 holds no line-up */
   bare?: true;
   setup: { target: Line; winningSide: 1 | 2 }[];
-  step: { target: Line; winningSide: 1 | 2 };
+  /** the step's outcome: scored 6-1 6-1 (default), a winner alone, or a single exit */
+  step: { target: Line; winningSide: 1 | 2; outcome?: 'winner' | 'WALKOVER' | 'DEFAULTED' | 'RETIRED' };
   /** CONTROL: the dual a loser link sends the losing team to, and whether v1 carries its line-up onto that side */
   loserSeat?: { dual: Omit<Line, 'line'>; sideNumber: 1 | 2; carried: boolean };
   /** CONTROL: past a BYE, the dual beyond the loser's seat, which v1 writes the losing team's draw line-up onto */
@@ -228,7 +237,7 @@ function play(mode: OutcomePipelineMode, { step }: Scenario, prepared: any, real
   v1Writes.count = 0;
   if (!realClock) setClock('2026-10-25T00:01:00.000Z');
   const { stack: _stack, ...result } = tournamentEngine.setMatchUpStatus({
-    outcome: won(step.winningSide),
+    outcome: stepOutcome(step),
     drawId: 'd',
     matchUpId,
   }) as any;
@@ -513,6 +522,61 @@ const OWNED: [string, Scenario][] = [
       step: { target: R1(1, 4), winningSide: 1 },
       dualExit: 'WALKOVER',
       decided: 1,
+    },
+  ],
+  [
+    'a line won with no score (a winner alone) on an open dual, 1-1',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1, 0), winningSide: 1 }],
+      step: { target: R1(1, 1), winningSide: 2, outcome: 'winner' },
+    },
+  ],
+  [
+    "a dual's first line a WALKOVER: the line-ups and tieFormat copied on, the walkover counted for its winner",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [],
+      step: { target: R1(2, 0), winningSide: 2, outcome: 'WALKOVER' },
+    },
+  ],
+  [
+    'a line DEFAULTED that decides its dual: the dual directed, its line-up carried on',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [0, 1, 2, 3].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
+      step: { target: R1(1, 4), winningSide: 1, outcome: 'DEFAULTED' },
+    },
+  ],
+  [
+    'a line RETIRED, its score kept, played on a dual already decided',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [0, 1, 2, 3, 4].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
+      step: { target: R1(1, 5), winningSide: 2, outcome: 'RETIRED' },
+      decided: 1,
+    },
+  ],
+  [
+    'COMPASS: a line WALKOVER that decides an East dual: its loser goes West carrying its line-up, no exit carried',
+    {
+      drawProfile: { drawSize: 8, drawType: COMPASS },
+      setup: [0, 1, 2, 3].map((line) => ({ target: R1(2, line, 'East'), winningSide: 1 as const })),
+      step: { target: R1(2, 4, 'East'), winningSide: 1, outcome: 'WALKOVER' },
+      loserSeat: { dual: { structureName: 'West', roundNumber: 1, roundPosition: 1 }, sideNumber: 2, carried: true },
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION: a winner alone deciding a first-round Main dual: its loser is fed on',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [0, 1, 2, 3].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
+      step: { target: R1(1, 4), winningSide: 1, outcome: 'winner' },
+      loserSeat: {
+        dual: { structureName: 'Consolation', roundNumber: 1, roundPosition: 1 },
+        sideNumber: 1,
+        carried: true,
+      },
     },
   ],
 ];

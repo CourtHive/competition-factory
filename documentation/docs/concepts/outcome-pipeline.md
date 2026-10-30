@@ -848,7 +848,8 @@ that diverged stay written unless the call asked for `rollbackOnError`, the same
 a later outcome meets (§ 8).
 
 **A TEAM line** is owned in two shapes (S7): a line's result that leaves its dual undecided, and one that decides it.
-v1 writes the line (as
+The line's result is any first result with a winner: scored, a winner alone (no score), or a single exit (WALKOVER,
+DEFAULTED, RETIRED with its score), each counted for its winner in the dual's tally. v1 writes the line (as
 any result: `modifyMatchUpScore`, its `scoredTime`), then `updateTieMatchUpScore` writes the dual:
 
 1. it ensures the dual's side line-ups;
