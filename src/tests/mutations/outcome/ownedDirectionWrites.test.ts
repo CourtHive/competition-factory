@@ -1740,6 +1740,56 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     expect(compared.results).toEqual(v1.results);
   });
 
+  // S6 tail: a swap whose new loser arrives at a pending exit standing on the seat the old loser held wins it (RULE 3), as
+  // v1's `swapWinnerLoser` sends them: no carry is planned there (`planSwap`), and the call is v1's
+  // (`swapWinnerLoserResort.test.ts`: census 9100555, DOUBLE_ELIMINATION 8/6, flag ON)
+  it('S6 tail: a swap onto a seat holding a pending walkover is v1s, and the direction plans no carry', () => {
+    const steps: [string, Record<string, unknown>][] = [
+      ['Main|1|2', { winningSide: 2 }],
+      ['Main|1|3', { winningSide: 2 }],
+      ['Main|2|2', { matchUpStatus: DOUBLE_DEFAULT }],
+      ['Main|2|1', { matchUpStatus: DEFAULTED, winningSide: 1 }],
+      ['Backdraw|3|1', { winningSide: 2 }],
+      ['Main|2|1', { matchUpStatus: WALKOVER, winningSide: 2 }],
+      ['Backdraw|3|1', { matchUpStatus: DOUBLE_WALKOVER }],
+    ];
+    const run = (mode: OutcomePipelineMode) => {
+      setOutcomePipeline(OUTCOME_PIPELINE_V1);
+      setClock('2026-10-25T00:00:00.000Z');
+      setSubscriptions({ subscriptions: {} });
+      mocksEngine.generateTournamentRecord({
+        drawProfiles: [{ drawType: DOUBLE_ELIMINATION, drawSize: 8, participantsCount: 6, drawId: 'd' }],
+        nonRandom: 9100555,
+        setState: true,
+      });
+      const find = (key: string): any =>
+        tournamentEngine
+          .allDrawMatchUps({ drawId: 'd', inContext: true })
+          .matchUps.find((m: any) => `${m.structureName}|${m.roundNumber}|${m.roundPosition}` === key);
+      const submit = (key: string, outcome: Record<string, unknown>) =>
+        tournamentEngine.setMatchUpStatus({ ...SWAP_CARRIED, matchUpId: find(key).matchUpId, outcome, drawId: 'd' });
+      // every step under the mode: the sixth flips Main|2|1 from a default to a walkover for the other side, onto a
+      // Backdraw seat holding that default's carry beside a pending exit
+      setOutcomePipeline(mode);
+      v1Writes.count = 0;
+      for (const [key, outcome] of steps) expect(submit(key, outcome).success).toEqual(true);
+      const flipped = find('Main|1|2');
+      const result: any = submit('Main|1|2', { winningSide: 3 - flipped.winningSide });
+      return {
+        result,
+        v1Writes: v1Writes.count,
+        record: canonicalJson(tournamentEngine.getTournament().tournamentRecord),
+      };
+    };
+    const v1 = run(OUTCOME_PIPELINE_V1);
+    const v2 = run(OUTCOME_PIPELINE_V2);
+    expect(v1.result.success).toEqual(true);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.record).toEqual(v1.record);
+    const compared = run(OUTCOME_PIPELINE_DIFFERENTIAL);
+    expect(compared.result.success).toEqual(true);
+  });
+
   // the consolation matchUp holds both feeders' carries: withdrawing one is not the plain withdrawal
   it('S6: a carried walkover relabelled a played result beside a second carry on its loser matchUp is v1s', () => {
     const scenario: Scenario = {

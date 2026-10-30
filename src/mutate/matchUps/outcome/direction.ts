@@ -206,11 +206,18 @@ function planSwap(request: OutcomeRequest, view: OutcomeView): DirectionPlan | u
   const swapped = { ...view, targets: { ...view.targets, priorWins: view.targets.priorWinsBefore } };
   const plan = planDirection(request, swapped, 'winner');
   if (!plan?.loser) return plan;
-  // S6 tail: the new loser's carry, onto the seat the old loser held (relabelled to them), is kept: it lands as a fresh
-  // carry does, or rewrites this matchUp's own carry standing there. A seat whose matchUp holds a result is refused
-  // before any direction (§ 2 row 22), and an exit standing there converges rather than carries
-  const { converged: _converged, carriedPast: _carriedPast, ...loser } = plan.loser;
-  return { ...plan, loser };
+  const { exit, converged: _converged, carriedPast: _carriedPast, ...loser } = plan.loser;
+  // S6 tail: the new loser's carry, onto the seat the old loser held (relabelled to them), is kept where it lands as a
+  // fresh carry does (the seat's matchUp to be played, holding no exit, no BYE beside it), or rewrites this matchUp's own
+  // carry standing there (`loserMatchUpCarryHeld`). An exit standing there is not met by a carry: the new loser arrives
+  // at it and wins it (DOUBLE_ELIMINATION's Main final flipped over a pending walkover), which is v1's. A matchUp
+  // holding a result is refused before any direction (§ 2 row 22)
+  const { targets } = view;
+  const clean =
+    targets.loserMatchUpStatus === TO_BE_PLAYED &&
+    !targets.loserMatchUpCarriesExit &&
+    !targets.loserTargetSeat?.opponentBye;
+  return { ...plan, loser: exit && (clean || targets.loserMatchUpCarryHeld) ? { ...loser, exit } : loser };
 }
 
 /**
