@@ -18,11 +18,11 @@
  * Body changes (impl edits) are ignored — only NAMES + their SHAPES are
  * compared. The diff is fail-on-removal + warn-on-addition by default.
  */
-import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { tmpdir } from 'node:os';
+import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { tmpdir } from 'node:os';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FACTORY_ROOT = resolve(__dirname, '../..');
@@ -93,9 +93,11 @@ function readBaselineNpm(tag) {
   const stage = mkdtempSync(join(tmpdir(), 'verify-surface-'));
   log(`pulling tods-competition-factory@${tag} from npm…`);
   try {
-    execSync(`npm pack tods-competition-factory@${tag} --silent`, { cwd: stage });
-    const tarball = execSync('ls *.tgz', { cwd: stage, encoding: 'utf8' }).trim();
-    execSync(`tar -xzf ${tarball}`, { cwd: stage });
+    // a deadline on every child (punch list P62)
+    const kill = { killSignal: 'SIGKILL' };
+    execSync(`npm pack tods-competition-factory@${tag} --silent`, { cwd: stage, timeout: 300_000, ...kill });
+    const tarball = execSync('ls *.tgz', { cwd: stage, encoding: 'utf8', timeout: 60_000, ...kill }).trim();
+    execSync(`tar -xzf ${tarball}`, { cwd: stage, timeout: 120_000, ...kill });
     const dts = join(stage, 'package/dist/tods-competition-factory.d.ts');
     if (!existsSync(dts)) fail(`npm baseline has no dist .d.ts at ${dts}`);
     const surface = extractSurface(dts);
@@ -120,7 +122,7 @@ const args = parseArgs(process.argv.slice(2));
 
 if (!existsSync(DIST_DTS)) {
   log('dist .d.ts not found — building first…');
-  execSync('pnpm build', { cwd: FACTORY_ROOT, stdio: 'inherit' });
+  execSync('pnpm build', { cwd: FACTORY_ROOT, stdio: 'inherit', timeout: 1_200_000, killSignal: 'SIGKILL' });
 }
 
 const current = extractSurface(DIST_DTS);

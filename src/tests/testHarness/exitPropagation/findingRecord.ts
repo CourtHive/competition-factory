@@ -41,8 +41,10 @@ let harness: string | null | undefined;
 export function harnessRevision(): string | null {
   if (harness !== undefined) return harness;
   try {
-    const head = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
-    const dirty = execFileSync('git', ['status', '--porcelain', '--untracked-files=no'], { encoding: 'utf8' }).trim();
+    const git = (args: string[]) =>
+      execFileSync('git', args, { encoding: 'utf8', timeout: 60_000, killSignal: 'SIGKILL' }).trim();
+    const head = git(['rev-parse', 'HEAD']);
+    const dirty = git(['status', '--porcelain', '--untracked-files=no']);
     harness = dirty ? `${head}-dirty` : head;
   } catch {
     harness = null;

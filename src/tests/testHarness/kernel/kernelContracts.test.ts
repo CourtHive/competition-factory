@@ -1,11 +1,11 @@
 import { directAdapter, kernelOperations, serializedAdapter, validateCases } from './kernel';
 import type { KernelAdapter, KernelCase, KernelOperation, KernelResult } from './kernel';
 import { batchedAdapter, externalAdapter, stdioCommand } from './externalAdapter';
-import scoringReduceCases from './cases/scoringReduce.json';
-import schedulingViewCases from './cases/schedulingView.json';
 import schedulingConflictsViewCases from './cases/schedulingConflictsView.json';
 import schedulingConflictsCases from './cases/schedulingConflicts.json';
+import schedulingViewCases from './cases/schedulingView.json';
 import schedulingGridCases from './cases/schedulingGrid.json';
+import scoringReduceCases from './cases/scoringReduce.json';
 import schedulingCases from './cases/scheduling.json';
 import { canonicalJson } from '@Tools/canonicalJson';
 import grammarCases from './cases/grammar.json';
@@ -158,8 +158,7 @@ describe('the external protocol', () => {
         .invokeAll([request, request])
         .map(({ kind }) => kind),
     ).toEqual(['exception', 'exception']);
-    // the commands read their stdin before answering: one that exits without reading it races the write (EPIPE), which
-    // is still an exception, but not the one this case names
+    // the requests arrive as a file redirected to stdin, so a command that never reads them still ends cleanly
     expect(externalAdapter('cat > /dev/null').invoke(request.operation, request.input)).toEqual({
       kind: 'exception',
       message: 'no answer for request 0',
@@ -168,6 +167,17 @@ describe('the external protocol', () => {
       kind: 'exception',
       message: 'answer 0 is not JSON',
     });
+  });
+
+  it('a command that never answers is killed at its deadline: an exception for every request, not a stalled run (P62)', () => {
+    const [request] = requests;
+    const started = Date.now();
+    const results = externalAdapter('sleep 30', 'never', 500).invokeAll([request, request]);
+    expect(Date.now() - started).toBeLessThan(10_000);
+    expect(results).toEqual([
+      { kind: 'exception', message: 'no answer within 500 ms: sleep 30' },
+      { kind: 'exception', message: 'no answer within 500 ms: sleep 30' },
+    ]);
   });
 });
 

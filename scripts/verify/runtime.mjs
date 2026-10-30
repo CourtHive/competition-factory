@@ -21,7 +21,7 @@
  */
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { build } from 'esbuild';
@@ -82,7 +82,13 @@ console.log('CJS OK');
 `;
 
 try {
-  execSync(`node -e "${cjsScript.replace(/"/g, '\\"').replace(/\n/g, ' ')}"`, { encoding: 'utf8', cwd: FACTORY_ROOT });
+  // the script goes to node as an argument, not through a shell, so it needs no quoting or escaping
+  execFileSync(process.execPath, ['-e', cjsScript], {
+    encoding: 'utf8',
+    cwd: FACTORY_ROOT,
+    timeout: 120_000,
+    killSignal: 'SIGKILL',
+  });
 } catch (err) {
   fail('CJS smoke failed', err);
 }
@@ -112,9 +118,11 @@ console.log('ESM OK');
 `;
 
 try {
-  execSync(`node --input-type=module -e "${esmScript.replace(/"/g, '\\"').replace(/\n/g, ' ')}"`, {
+  execFileSync(process.execPath, ['--input-type=module', '-e', esmScript], {
     encoding: 'utf8',
     cwd: FACTORY_ROOT,
+    timeout: 120_000,
+    killSignal: 'SIGKILL',
   });
 } catch (err) {
   fail('ESM smoke failed', err);
@@ -178,7 +186,12 @@ try {
     writeFileSync(bundled, built.outputFiles[0].text);
 
     try {
-      execSync(`node ${JSON.stringify(bundled)}`, { encoding: 'utf8', cwd: FACTORY_ROOT });
+      execFileSync(process.execPath, [bundled], {
+        encoding: 'utf8',
+        cwd: FACTORY_ROOT,
+        timeout: 120_000,
+        killSignal: 'SIGKILL',
+      });
     } catch (err) {
       fail(
         `bundled smoke failed for \`${engine}\` — its methods did not survive tree shaking.\n` +

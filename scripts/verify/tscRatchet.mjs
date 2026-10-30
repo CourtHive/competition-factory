@@ -36,8 +36,8 @@
 import { readFileSync, writeFileSync, existsSync, mkdtempSync, cpSync, rmSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { tmpdir } from 'node:os';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 // TS7 (the native compiler), installed as the `typescript7` alias beside TS6 and called by path: with both installed,
@@ -165,7 +165,13 @@ function run(name, { update, acceptRise }) {
   const prepared = spec.prepare ? spec.prepare() : { args: spec.args, cleanup: () => {} };
   let tsc;
   try {
-    tsc = spawnSync(TSC, prepared.args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+    tsc = spawnSync(TSC, prepared.args, {
+      maxBuffer: 256 * 1024 * 1024,
+      killSignal: 'SIGKILL',
+      timeout: 1_800_000,
+      encoding: 'utf8',
+      cwd: ROOT,
+    });
   } finally {
     prepared.cleanup();
   }
