@@ -35,7 +35,8 @@ import {
  * status). A line that decides its dual: v1 also makes the dual's own call, writing its winner and directing it, and
  * carries the winning team's line-up onto its side of the next dual (`propagateLineUp`) and, where a loser link sends the
  * losing team on, the losing team's onto its side there (`propagateLoserLineUp`); a loser going on through a BYE there
- * also takes its draw line-up onto the dual beyond (`updateSideLineUp`). Under `v2` the call is written
+ * also takes its draw line-up onto the dual beyond (`updateSideLineUp`). A line played on a dual already decided writes
+ * the line and the dual's tally, the dual keeping its winner. Under `v2` the call is written
  * by v2 and v1's writer is not asked; the record, the notices (payloads, in order) and the results equal v1's, under the
  * fixed and the real clock.
  *
@@ -86,6 +87,10 @@ type Scenario = {
   loserSeat?: { dual: Omit<Line, 'line'>; sideNumber: 1 | 2; carried: boolean };
   /** CONTROL: past a BYE, the dual beyond the loser's seat, which v1 writes the losing team's draw line-up onto */
   beyondSeat?: Scenario['loserSeat'];
+  /** CONTROL: the step's dual is decided before the step, for this side, and v1 leaves it so */
+  decided?: 1 | 2;
+  /** after the setup, the step's dual is given this exit for side 1 by its own call */
+  dualExit?: 'WALKOVER' | 'DEFAULTED';
 };
 
 function findDual({ structureName, roundNumber, roundPosition }: Omit<Line, 'line'>): any {
@@ -111,12 +116,18 @@ function heldLineUp({ dual, sideNumber }: NonNullable<Scenario['loserSeat']>) {
   return matchUp.sides?.find((side: any) => side.sideNumber === sideNumber)?.lineUp;
 }
 
+/** the stored winner of a line's dual */
+function dualWinner(target: Line) {
+  const { matchUpId } = findDual(target);
+  return tournamentEngine.findMatchUp({ drawId: 'd', matchUpId }).matchUp.winningSide;
+}
+
 /**
  * The scenario's record, prepared once under v1 and copied for each run: setting a line-up result can create PAIR
  * participants with fresh ids, so two separately generated records would differ before the step under test
  */
 function prepare(
-  { drawProfile, setup, step, unsettled, autoCalcOff, reported, stray, bare }: Scenario,
+  { drawProfile, setup, step, unsettled, autoCalcOff, reported, stray, bare, dualExit }: Scenario,
   realClock: boolean,
 ) {
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
@@ -137,6 +148,11 @@ function prepare(
       outcome: won(winningSide),
     });
     if (!result.success) throw new Error(`setup step failed: ${JSON.stringify(target)}`);
+  }
+  if (dualExit) {
+    const { matchUpId } = findDual(step.target);
+    const outcome = { matchUpStatus: dualExit, winningSide: 1 };
+    expect(tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId, outcome }).success).toEqual(true);
   }
   if (autoCalcOff) {
     const lineId = findLine(step.target);
@@ -448,17 +464,71 @@ const OWNED: [string, Scenario][] = [
       },
     },
   ],
+  [
+    'a line played on a dual already decided, for the losing side: the dual keeps its winner, 5-1',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [0, 1, 2, 3, 4].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
+      step: { target: R1(1, 5), winningSide: 2 },
+      decided: 1,
+    },
+  ],
+  [
+    'a line played on a dual already decided for side 2, for side 2: 0-6, nothing directed again',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [0, 1, 2, 3, 4].map((line) => ({ target: R1(2, line), winningSide: 2 as const })),
+      step: { target: R1(2, 6), winningSide: 2 },
+      decided: 2,
+    },
+  ],
+  [
+    'COMPASS: a line played on an East dual already decided, its loser in West: nothing carried again',
+    {
+      drawProfile: { drawSize: 8, drawType: COMPASS },
+      setup: [0, 1, 2, 3, 4].map((line) => ({ target: R1(2, line, 'East'), winningSide: 1 as const })),
+      step: { target: R1(2, 8, 'East'), winningSide: 2 },
+      decided: 1,
+    },
+  ],
+  [
+    'a line played on a decided dual whose winner has played on: the next dual in progress is left as it is',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [
+        ...[1, 2].flatMap((roundPosition) =>
+          [0, 1, 2, 3, 4].map((line) => ({ target: R1(roundPosition, line), winningSide: 1 as const })),
+        ),
+        { target: { structureName: 'Main', roundNumber: 2, roundPosition: 1, line: 0 }, winningSide: 1 as const },
+      ],
+      step: { target: R1(1, 7), winningSide: 2 },
+      decided: 1,
+    },
+  ],
+  [
+    'a line that takes a dual walked over at 4-0 to 5-0: the dual, its winner kept, is written as its lines project it',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [0, 1, 2, 3].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
+      step: { target: R1(1, 4), winningSide: 1 },
+      dualExit: 'WALKOVER',
+      decided: 1,
+    },
+  ],
 ];
 
 describe('under v2, a TEAM line is v2s, deciding its dual or not, and leaves exactly what v1 leaves', () => {
   it.each(OWNED)('%s', (_label, scenario) => {
     for (const realClock of [false, true]) {
       const prepared = prepare(scenario, realClock);
+      const { decided } = scenario;
       const seats = [scenario.loserSeat, scenario.beyondSeat].filter((seat) => !!seat);
       // CONTROL: the loser's seat holds no line-up before the step, and holds one after v1's exactly where v1 carries it
       for (const seat of seats) expect(heldLineUp(seat)).toBeUndefined();
+      if (decided) expect(dualWinner(scenario.step.target)).toEqual(decided);
       const v1 = play(OUTCOME_PIPELINE_V1, scenario, prepared, realClock);
       for (const seat of seats) expect(!!heldLineUp(seat)?.length).toEqual(seat.carried);
+      if (decided) expect(dualWinner(scenario.step.target)).toEqual(decided);
       const v2 = play(OUTCOME_PIPELINE_V2, scenario, prepared, realClock);
       // the differential compares v2's plan with v1's write, notices included: a divergence would throw
       expect(play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario, prepared, realClock).result.success).toEqual(true);
@@ -483,6 +553,15 @@ const KEPT: [string, Scenario][] = [
       setup: [0, 1, 2, 3].map((line) => ({ target: R1(2, line, 'East'), winningSide: 1 as const })),
       step: { target: R1(2, 4, 'East'), winningSide: 1 },
       bare: true,
+    },
+  ],
+  [
+    'a line played on a dual decided by its own exit: v1 projects the dual from its lines, un-deciding it (line-score)',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1, 0), winningSide: 1 }],
+      step: { target: R1(1, 1), winningSide: 2 },
+      dualExit: 'DEFAULTED',
     },
   ],
   [
