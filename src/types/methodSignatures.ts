@@ -285,6 +285,7 @@ import type { checkInParticipant } from '@Mutate/timeItems/matchUps/checkInParti
 import type { getSwissStandings } from '@Query/drawDefinitions/swiss/getSwissStandings';
 import type { getMatchUpCheckInHistory } from '@Query/matchUp/getMatchUpCheckInHistory';
 import type { getMatchUpParticipantIds } from '@Query/matchUp/getMatchUpParticipantIds';
+import type { getMatchUpScheduleBounds } from '@Query/matchUp/getMatchUpScheduleBounds';
 import type { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import type { getOfficialAssignments } from '@Query/officiating/getOfficialAssignments';
 import type { getOfficialEligibility } from '@Query/officiating/getOfficialEligibility';
@@ -1023,6 +1024,7 @@ export interface MethodSignatures {
   getMatchUpParticipantIds: EngineMethod<typeof getMatchUpParticipantIds>;
   getMatchUpRatingDelta: EngineMethod<typeof getMatchUpRatingDelta>;
   getMatchUpReadiness: EngineMethod<typeof getMatchUpReadiness>;
+  getMatchUpScheduleBounds: EngineMethod<typeof getMatchUpScheduleBounds>;
   getMatchUpScheduleDetails: EngineMethod<typeof getMatchUpScheduleDetails>;
   getMatchUpsMap: EngineMethod<typeof getMatchUpsMap>;
   getMatchUpsStats: EngineMethod<typeof getMatchUpsStats>;

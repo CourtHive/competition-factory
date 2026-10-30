@@ -42,11 +42,18 @@ it('can bulkSchedule matchUps using matchUpDetails', () => {
   expect(result.success).toEqual(true);
 
   const matchUps = competitionEngine.allCompetitionMatchUps().matchUps;
-  const scheduleTimes = ['08:00', '09:00', '10:00', '11:00', '12:00'];
+
+  // each matchUp timed after every matchUp it depends on: the order binds plans as well as what was played
+  // (CA 2026-10-30), so arbitrary times across rounds would be refused whole
+  const { matchUpDependencies } = competitionEngine.getMatchUpDependencies();
+  const depths: { [matchUpId: string]: number } = {};
+  const depthOf = (matchUpId: string): number =>
+    (depths[matchUpId] ??= 1 + Math.max(0, ...(matchUpDependencies[matchUpId]?.matchUpIds ?? []).map(depthOf)));
+  const timeAt = (depth: number) => `${String(7 + depth).padStart(2, '0')}:00`;
 
   const matchUpDetails = matchUps.map(({ tournamentId, drawId, matchUpId }, i) => ({
     schedule: {
-      scheduledTime: scheduleTimes[i % 4],
+      scheduledTime: timeAt(depthOf(matchUpId)),
       courtOrder: (i % 4) + 1,
       scheduledDate,
       venueId,
