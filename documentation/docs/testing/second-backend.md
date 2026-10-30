@@ -66,8 +66,10 @@ report counts declined calls separately.
 `differential` only. `<command> --scoring-methods` lists the class methods it answers. The first routed call on an
 instance opens a **session** in the serving process from the instance as it stands (its options, `getState()` and
 `getSupplementaryState()`); every later call on that instance goes to the same session, so the second implementation
-keeps its own timeline and redo stack. After each call the two are compared on the scoring corpus's observable: what
-the call returned, the score, the timeline's shape, the servers, the undo and redo depths and the players on court, or
+keeps its own timeline and redo stack. The views are routed like the writes (`getScoreboard`, `getInputLevels`,
+`getInputMode`, `getEpisodes`, `getStatistics`, with their options as `params`), so a view the second implementation
+lists is compared on every call a test makes to it. After each call the two are compared on the scoring corpus's
+observable: what the call returned, the score, the timeline's shape, the servers, the undo and redo depths and the players on court, or
 the refusal's message. A call that replaces the instance's state (`setState`, `loadSupplementaryState`, `reset`,
 `markHardBoundary`) reopens its session at the next routed call. Only the outermost call on an instance is routed.
 

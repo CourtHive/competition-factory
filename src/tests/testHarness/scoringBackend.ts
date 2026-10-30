@@ -11,10 +11,11 @@ import fs from 'node:fs';
  * The scoring engine CLASS against a second implementation (documentation/docs/testing/second-backend.md). The class is
  * not an engine method, so its methods are routed per instance: the first call on an instance opens a session in the
  * second implementation from the instance as it stands (its options, its state and its supplementary envelope), and
- * every routed call on it runs on both. After each call the two engines' observables are compared: what the call
+ * every routed call on it runs on both, a view (getScoreboard, getInputLevels, getInputMode, getEpisodes,
+ * getStatistics) as much as a write. After each call the two engines' observables are compared: what the call
  * returned, the score, the timeline's shape, the servers, the undo and redo depths and the players on court (the
- * scoring corpus's observable), or the refusal's message. A call that replaces the instance's state re-opens its session
- * at the next routed call.
+ * scoring corpus's observable), or the refusal's message. A call that replaces the instance's state re-opens its
+ * session at the next routed call.
  *
  * Only the outermost call on an instance is routed: a method another method calls is part of that call.
  */
@@ -22,8 +23,11 @@ type Bridge = { call: (request: unknown) => any };
 
 const RESYNC = ['setState', 'loadSupplementaryState', 'reset', 'markHardBoundary'];
 
-/** each method's arguments as the second implementation reads them (the scoring corpus's directive params) */
-const PARAMS: Record<string, (args: any[]) => Record<string, unknown>> = {
+/**
+ * each method's arguments as the second implementation reads them (the scoring corpus's directive params). The views
+ * (scoring-engine-spec.md § 11.3–11.4) are routed like the writes: a view call compares what it returned.
+ */
+export const PARAMS: Record<string, (args: any[]) => Record<string, unknown>> = {
   addPoint: ([options]) => options ?? {},
   addGame: ([options]) => options ?? {},
   addSet: ([options]) => options ?? {},
@@ -40,6 +44,11 @@ const PARAMS: Record<string, (args: any[]) => Record<string, unknown>> = {
   removePoint: ([pointIndex, options]) => ({ pointIndex, ...(options ? { options } : {}) }),
   decoratePoint: ([pointIndex, metadata]) => ({ pointIndex, metadata }),
   setPointMultipliers: ([multipliers]) => ({ multipliers }),
+  getScoreboard: ([options]) => options ?? {},
+  getInputLevels: () => ({}),
+  getInputMode: () => ({}),
+  getEpisodes: () => ({}),
+  getStatistics: ([options]) => options ?? {},
 };
 
 export function routeScoringEngine({
