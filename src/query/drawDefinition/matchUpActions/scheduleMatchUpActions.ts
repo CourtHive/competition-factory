@@ -1,6 +1,6 @@
 import { isAvailableAction, MatchUpAction } from '@Query/drawDefinition/positionActions/actionPolicyUtils';
-import { matchUpScheduleLocked, SCHEDULE_LOCK_ATTRIBUTES } from '@Query/matchUp/isScheduleLocked';
 import { getMatchUpScheduleBounds, MatchUpScheduleBounds } from '@Query/matchUp/getMatchUpScheduleBounds';
+import { matchUpScheduleLocked, SCHEDULE_LOCK_ATTRIBUTES } from '@Query/matchUp/isScheduleLocked';
 
 // constants and types
 import { completedMatchUpStatuses, COMPLETED, RETIRED } from '@Constants/matchUpStatusConstants';
