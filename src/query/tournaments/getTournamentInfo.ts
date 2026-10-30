@@ -11,6 +11,7 @@ import { definedAttributes } from '@Tools/definedAttributes';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
+import type { TournamentEventInfo, TournamentInfo, TournamentInfoStructure } from '@Types/viewTypes';
 import { Contact, ParticipantRoleUnion, Structure, Tournament } from '@Types/tournamentTypes';
 import { ErrorType, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
 import { completedMatchUpStatuses, BYE } from '@Constants/matchUpStatusConstants';
@@ -112,9 +113,11 @@ export function getTournamentInfo(params?: {
   policyDefinitions?: any;
   withVenueData?: boolean;
 }): {
-  tournamentInfo?: any;
-  eventInfo?: any[];
+  tournamentInfo?: TournamentInfo;
+  /** @deprecated never returned: the events are listed on `tournamentInfo.eventInfo` */
+  eventInfo?: undefined;
   error?: ErrorType;
+  success?: boolean;
 } {
   const { tournamentRecord, withMatchUpStats, withStructureDetails, withVenueData, policyDefinitions } = params ?? {};
   if (!tournamentRecord) return { error: MISSING_TOURNAMENT_RECORD };
@@ -174,7 +177,7 @@ export function getTournamentInfo(params?: {
     updatedAt,
   });
 
-  const tournamentInfo: any = extractTournamentInfo(tournamentRecord);
+  const tournamentInfo: TournamentInfo = extractTournamentInfo(tournamentRecord);
 
   const primaryVenue = tournamentRecord.venues?.find((v) => v.isPrimary);
   if (primaryVenue?.addresses?.length) {
@@ -202,7 +205,7 @@ export function getTournamentInfo(params?: {
   const infoEventIds = info?.eventIds ? new Set<string>(info.eventIds) : undefined;
   const isListed = (eventId: string) =>
     publishedEventIds.has(eventId) || (!!info?.published && (!infoEventIds || infoEventIds.has(eventId)));
-  const eventInfo: ReturnType<typeof extractEventInfo>['eventInfo'][] = [];
+  const eventInfo: TournamentEventInfo[] = [];
 
   for (const event of tournamentRecord.events ?? []) {
     if (!params?.usePublishState || isListed(event.eventId)) {
@@ -216,7 +219,7 @@ export function getTournamentInfo(params?: {
   tournamentInfo.publishState = publishState?.tournament;
   tournamentInfo.eventInfo = eventInfo;
 
-  const structures: any[] = [];
+  const structures: TournamentInfoStructure[] = [];
   const matchUps: any[] = [];
   if (withMatchUpStats || withStructureDetails) {
     for (const event of tournamentRecord.events ?? []) {

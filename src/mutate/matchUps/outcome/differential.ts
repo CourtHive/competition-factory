@@ -8,6 +8,7 @@ import {
   MISSING_DRAW_POSITIONS,
   INVALID_TIME,
   INVALID_DATE,
+  ANACHRONISM,
   MUTATION_LOCKED,
   UNRECOGNIZED_MATCHUP_STATUS,
 } from '@Constants/errorConditionConstants';
@@ -26,6 +27,8 @@ export const APPLY_STAGE_CODES: ReadonlySet<string> = new Set([
   // (#5774), are v1's alone
   INVALID_TIME.code,
   INVALID_DATE.code,
+  // and a recorded time out of played order (#5979: an end time given with an outcome is judged before it lands)
+  ANACHRONISM.code,
   // DRAW_POSITION_ACTIVE is not one: v2 refuses a swap that meets an active FIRST_MATCHUP-fed seat (row 26, S4)
   MUTATION_LOCKED.code,
   'ERR_FORCED', // § 2 row 19: observed by the corpus, no constant declares it (spec OPEN 2)

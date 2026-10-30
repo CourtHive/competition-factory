@@ -19,7 +19,7 @@ import {
  * return a boolean whether this condition is met => allSructuresLinked
  */
 export function getStructureGroups({ drawDefinition }: { drawDefinition: DrawDefinition }): {
-  sourceStructureIds: { [key: string]: boolean };
+  sourceStructureIds: { [key: string]: string[] };
   hasDrawFeedProfile: { [key: string]: boolean }; // denotes placement is by DRAW, e.g. manually placed qualifiers
   structureProfiles: { [key: string]: StructureProfile };
   allStructuresLinked: boolean;

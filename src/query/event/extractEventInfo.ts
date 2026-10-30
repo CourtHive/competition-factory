@@ -1,6 +1,7 @@
 import { structuresOf } from '@Acquire/structureMembers';
 
 import type { DrawDefinition, Event, Structure } from '@Types/tournamentTypes';
+import type { TournamentEventInfo } from '@Types/viewTypes';
 
 /**
  * Walk a structure tree collecting declared matchUpFormat codes.
@@ -45,7 +46,7 @@ export function getEventMatchUpFormats(event?: Event): string[] {
   return [...collected];
 }
 
-export function extractEventInfo({ event }) {
+export function extractEventInfo({ event }): { eventInfo: TournamentEventInfo } {
   const {
     competitionFormat,
     surfaceCategory,

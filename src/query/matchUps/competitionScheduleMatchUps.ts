@@ -13,13 +13,13 @@ import { withContextExclusion } from './contextExclusion';
 import { isConvertableInteger } from '@Tools/math';
 
 // constants and types
-import { ErrorType, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
 import { ContextProfile, MatchUpFilters, PolicyDefinitions, TournamentRecords } from '@Types/factoryTypes';
-import { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
+import type { CompetitionScheduleMatchUpsResult, CourtData } from '@Types/viewTypes';
+import { MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';
 import { BYE, COMPLETED } from '@Constants/matchUpStatusConstants';
 import { PUBLIC } from '@Constants/timeItemConstants';
 import { SUCCESS } from '@Constants/resultConstants';
-import { Venue } from '@Types/tournamentTypes';
+import { HydratedMatchUp } from '@Types/hydrated';
 
 type CompetitionScheduleMatchUpsArgs = {
   tournamentRecords: TournamentRecords;
@@ -39,17 +39,6 @@ type CompetitionScheduleMatchUpsArgs = {
   sortCourtsData?: boolean;
   nextMatchUps?: boolean;
   status?: string;
-};
-
-type CompetitionScheduleMatchUpsResult = {
-  mappedParticipants?: { [key: string]: HydratedParticipant };
-  completedMatchUps?: HydratedMatchUp[];
-  dateMatchUps?: HydratedMatchUp[];
-  courtPrefix?: string;
-  error?: ErrorType;
-  venues?: Venue[];
-  courtsData?: any;
-  rows?: any[];
 };
 
 // the schedule is bucketed, filtered and sorted on hydrated matchUps, so `exclude` redacts only what is returned
@@ -192,7 +181,7 @@ function competitionScheduleMatchUpsUnredacted(
     ? scheduledSortedMatchUps({ matchUps: relevantMatchUps, schedulingProfile })
     : relevantMatchUps;
 
-  const courtsData = courts?.map((court) => {
+  const courtsData = courts?.map((court): CourtData => {
     const matchUps = getCourtMatchUps(court);
     return {
       surfaceCategory: court?.surfaceCategory ?? '',
@@ -201,7 +190,7 @@ function competitionScheduleMatchUpsUnredacted(
     };
   });
 
-  const result: any = {
+  const result: CompetitionScheduleMatchUpsResult = {
     completedMatchUps: alwaysReturnCompleted ? allCompletedMatchUps : completedMatchUps, // completed matchUps for the filter date
     mappedParticipants: params.hydrateParticipants ? undefined : mappedParticipants,
     dateMatchUps, // all incomplete matchUps for the filter date
