@@ -1,4 +1,5 @@
 import { generateTeamTournament } from '@Tests/mutations/participants/team/generateTestTeamTournament';
+import { nonScheduleActionTypes } from '@Tests/helpers/nonScheduleActionTypes';
 import { validateLineUp } from '@Validators/validateTeamLineUp';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -61,7 +62,7 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
     sideNumber: 1,
     drawId,
   });
-  let validActions = result.validActions.map(({ type }) => type);
+  let validActions = nonScheduleActionTypes(result.validActions);
   expect(validActions).toEqual([REFEREE, SCHEDULE, ASSIGN_PARTICIPANT]);
 
   let assignPositionAction = result.validActions.find(({ type }) => type === ASSIGN_PARTICIPANT);
@@ -89,7 +90,7 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
     sideNumber: 1,
     drawId,
   });
-  validActions = result.validActions.map(({ type }) => type);
+  validActions = nonScheduleActionTypes(result.validActions);
   expect(validActions).toEqual([REFEREE, SCHEDULE, PENALTY, REMOVE_PARTICIPANT, REPLACE_PARTICIPANT]);
 
   result = tournamentEngine.matchUpActions({
@@ -97,7 +98,7 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
     sideNumber: 2,
     drawId,
   });
-  validActions = result.validActions.map(({ type }) => type);
+  validActions = nonScheduleActionTypes(result.validActions);
   expect(validActions).toEqual([REFEREE, SCHEDULE, ASSIGN_PARTICIPANT]);
 
   assignPositionAction = result.validActions.find(({ type }) => type === ASSIGN_PARTICIPANT);
@@ -111,8 +112,8 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
     matchUpId: singlesMatchUpId,
     drawId,
   });
-  validActions = result.validActions.map(({ type }) => type);
-  expect(validActions).toEqual([REFEREE, SCHEDULE, PENALTY, STATUS, SCORE, START, END, REMOVE_PARTICIPANT]);
+  validActions = nonScheduleActionTypes(result.validActions);
+  expect(validActions).toEqual([REFEREE, SCHEDULE, PENALTY, STATUS, SCORE, REMOVE_PARTICIPANT, START, END]);
 
   // add an incomplete outcome and confirm SUBSTITUTION for SINGLES_MATCHUP
   const outcome = {
@@ -130,6 +131,6 @@ it('can substitute an individual participant in a TEAM tieMatchUp', () => {
     matchUpId: singlesMatchUpId,
     drawId,
   });
-  validActions = result.validActions.map(({ type }) => type);
-  expect(validActions).toEqual([REFEREE, SCHEDULE, PENALTY, STATUS, SCORE, START, END, CLEAR_SCORE, SUBSTITUTION]);
+  validActions = nonScheduleActionTypes(result.validActions);
+  expect(validActions).toEqual([REFEREE, SCHEDULE, PENALTY, STATUS, SCORE, CLEAR_SCORE, SUBSTITUTION, START, END]);
 });

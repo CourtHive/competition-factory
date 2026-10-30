@@ -7,10 +7,23 @@ export const SUBSTITUTION_METHOD = 'substituteParticipant';
 export const REMOVE_SUBSTITUTION = 'REMOVE_SUBSTITUTION';
 export const REPLACE_PARTICIPANT = 'REPLACE_PARTICIPANT';
 export const REMOVE_PARTICIPANT = 'REMOVE_PARTICIPANT';
+/** @deprecated the method of SCORE, CLEAR_SCORE and EXIT, misnamed: use SCORE_METHOD */
 export const SCHEDULE_METHOD = 'setMatchUpStatus';
+export const SCHEDULE_ITEMS_METHOD = 'addMatchUpScheduleItems';
+export const SCHEDULE_LOCK_METHOD = 'setMatchUpScheduleLock';
+export const CHECK_IN_METHOD = 'toggleParticipantCheckInState';
+export const SCOREKEEPER_METHOD = 'assignMatchUpScorekeeper';
+export const REFEREE_METHOD = 'addMatchUpOfficial';
+export const SCORE_METHOD = 'setMatchUpStatus';
 export const CLEAR_SCORE = 'CLEAR_SCORE';
 export const SUBSTITUTION = 'SUBSTITUTION';
 export const SCHEDULE = 'SCHEDULE';
+export const SCHEDULE_DATE = 'SCHEDULE_DATE';
+export const SCHEDULE_TIME = 'SCHEDULE_TIME';
+export const SCHEDULE_LOCK = 'SCHEDULE_LOCK';
+export const CLEAR_SCHEDULE = 'CLEAR_SCHEDULE';
+export const SCOREKEEPER = 'SCOREKEEPER';
+export const CHECK_IN = 'CHECK_IN';
 export const EXIT = 'EXIT';
 export const PENALTY = 'PENALTY';
 export const REFEREE = 'REFEREE';
@@ -27,10 +40,22 @@ export const matchUpActionConstants = {
   SUBSTITUTION_METHOD,
   REMOVE_SUBSTITUTION,
   REMOVE_PARTICIPANT,
+  SCHEDULE_ITEMS_METHOD,
+  SCHEDULE_LOCK_METHOD,
+  SCOREKEEPER_METHOD,
+  CHECK_IN_METHOD,
+  REFEREE_METHOD,
   SCHEDULE_METHOD,
+  SCORE_METHOD,
+  CLEAR_SCHEDULE,
+  SCHEDULE_DATE,
+  SCHEDULE_TIME,
+  SCHEDULE_LOCK,
   CLEAR_SCORE,
   SUBSTITUTION,
+  SCOREKEEPER,
   SCHEDULE,
+  CHECK_IN,
   EXIT,
   PENALTY,
   REFEREE,
