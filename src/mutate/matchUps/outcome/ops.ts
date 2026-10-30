@@ -72,6 +72,12 @@ export type OutcomeOp =
        * call's `tieMatchUpResult`
        */
       dualTally?: { sides?: unknown[]; tieFormat?: unknown };
+      /**
+       * a TEAM dual's own call (S7): the sides `ensureSideLineUps` writes before the result (their line-ups from the
+       * draw's), present only where they change the stored ones. Unlike a line's `dualTally`, the call returns no
+       * `tieMatchUpResult`
+       */
+      ensuredSides?: unknown[];
     }
   | {
       op: 'setMatchUpDrawPositions';
@@ -227,6 +233,8 @@ export type OutcomeOp =
       lineUp: unknown;
       /** the v1 writer that announces it (`updateSideLineUp`'s context is spelled so) */
       announcedAs: 'directWinner' | 'directLoser' | 'updateSidLineUp';
+      /** false where v1's writer names no event (`assignTeamLineUp` hands `updateSideLineUp` none) */
+      announcesEvent?: false;
     }
   | { op: 'stampUpdatedAt'; entity: 'matchUp' | 'structure' | 'drawDefinition'; id: string };
 
@@ -295,6 +303,7 @@ export function stampedInThisCall(drawDefinition?: DrawDefinition): Set<string> 
 function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMatchUpResult' }>) {
   // a dual's sides and tieFormat as `updateTieMatchUpScore` rewrites them before its tally (S7)
   if (op.dualTally?.sides) matchUp.sides = structuredClone(op.dualTally.sides) as MatchUp['sides'];
+  if (op.ensuredSides) matchUp.sides = structuredClone(op.ensuredSides) as MatchUp['sides'];
   if (op.dualTally?.tieFormat) matchUp.tieFormat = structuredClone(op.dualTally.tieFormat) as MatchUp['tieFormat'];
   matchUp.matchUpStatus = op.matchUpStatus;
   if (op.score) matchUp.score = structuredClone(op.score);

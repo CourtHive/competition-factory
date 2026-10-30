@@ -1348,6 +1348,8 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     }
   }
 
+  const dualSides = dualCallSides({ isTeam, inContextMatchUp, matchUpsMap, drawDefinition, structure, event });
+
   let dualProjection: OutcomeView['dualProjection'];
   if (isTeam && request.flags.enableAutoCalc) {
     // v1 hands the generator the raw matchUp; the same input keeps the projection identical
@@ -1375,6 +1377,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     ),
     found: true,
     isTeam,
+    dualSides,
     matchUpTieId,
     isDeciderMatchUp: isDeciderStructure({ drawDefinition, structureId: structure?.structureId }),
     existing: {
@@ -1569,6 +1572,18 @@ function projectedDualStatus({
     score: projectedScore,
   });
   return active ? IN_PROGRESS : TO_BE_PLAYED;
+}
+
+/**
+ * S7: a dual's own call: the sides v1's `ensureSideLineUps` writes before its result (`handleTeamAutoCalc`'s `apply`),
+ * where they change the stored ones
+ */
+function dualCallSides({
+  inContextMatchUp,
+  isTeam,
+  ...args
+}: Omit<Parameters<typeof dualRewrite>[0], 'dualMatchUp'> & { inContextMatchUp?: HydratedMatchUp; isTeam: boolean }) {
+  return isTeam && inContextMatchUp ? dualRewrite({ dualMatchUp: inContextMatchUp, ...args }).sides : undefined;
 }
 
 /**

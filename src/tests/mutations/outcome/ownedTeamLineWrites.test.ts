@@ -85,6 +85,8 @@ type Scenario = {
   unsettled?: true;
   /** after the setup, the step's dual has auto-calc disabled */
   autoCalcOff?: true;
+  /** lines played after auto-calc is disabled: they decide nothing */
+  setupAfter?: { target: Line; winningSide: 1 | 2 }[];
   /** after the setup, the step's dual's tieFormat declares its score REPORTED: the lines derive nothing */
   reported?: true;
   /** after the setup, each side of the step's dual holds an assignment naming no participant */
@@ -96,6 +98,10 @@ type Scenario = {
   step: {
     target: Line;
     winningSide: 1 | 2;
+    /** the call is the dual's own (the target's line is ignored) */
+    dual?: true;
+    /** the call's flags (`enableAutoCalc`, `propagateExitStatus`, ...) */
+    flags?: Record<string, boolean>;
     outcome?: 'winner' | 'WALKOVER' | 'DEFAULTED' | 'RETIRED' | 'DOUBLE_WALKOVER' | 'DOUBLE_DEFAULT';
   };
   /** CONTROL: the dual a loser link sends the losing team to, and whether v1 carries its line-up onto that side */
@@ -108,8 +114,8 @@ type Scenario = {
   policyDefinitions?: Record<string, unknown>;
   /** KEPT: the reason v2 leaves the step to v1 (`team` unless named) */
   abstains?: string;
-  /** after the setup, the step's dual is given this exit for side 1 by its own call */
-  dualExit?: 'WALKOVER' | 'DEFAULTED';
+  /** after the setup, the step's dual is given this exit (for side 1, a single one) by its own call */
+  dualExit?: 'WALKOVER' | 'DEFAULTED' | 'DOUBLE_WALKOVER';
 };
 
 function findDual({ structureName, roundNumber, roundPosition }: Omit<Line, 'line'>): any {
@@ -146,7 +152,19 @@ function dualWinner(target: Line) {
  * participants with fresh ids, so two separately generated records would differ before the step under test
  */
 function prepare(
-  { drawProfile, setup, step, unsettled, autoCalcOff, reported, stray, bare, dualExit, policyDefinitions }: Scenario,
+  {
+    drawProfile,
+    setup,
+    setupAfter,
+    step,
+    unsettled,
+    autoCalcOff,
+    reported,
+    stray,
+    bare,
+    dualExit,
+    policyDefinitions,
+  }: Scenario,
   realClock: boolean,
 ) {
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
@@ -171,7 +189,8 @@ function prepare(
   }
   if (dualExit) {
     const { matchUpId } = findDual(step.target);
-    const outcome = { matchUpStatus: dualExit, winningSide: 1 };
+    const outcome =
+      dualExit === 'DOUBLE_WALKOVER' ? { matchUpStatus: dualExit } : { matchUpStatus: dualExit, winningSide: 1 };
     expect(tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId, outcome }).success).toEqual(true);
   }
   if (autoCalcOff) {
@@ -180,6 +199,14 @@ function prepare(
       .allDrawMatchUps({ drawId: 'd', inContext: true })
       .matchUps.find((matchUp: any) => matchUp.tieMatchUps?.some((line: any) => line.matchUpId === lineId));
     expect(tournamentEngine.disableTieAutoCalc({ drawId: 'd', matchUpId: dual.matchUpId }).success).toEqual(true);
+  }
+  for (const { target, winningSide } of setupAfter ?? []) {
+    const played = tournamentEngine.setMatchUpStatus({
+      drawId: 'd',
+      matchUpId: findLine(target),
+      outcome: won(winningSide),
+    });
+    if (!played.success) throw new Error(`setup step failed: ${JSON.stringify(target)}`);
   }
   const record = structuredClone(tournamentEngine.getTournament().tournamentRecord);
   if (reported) {
@@ -243,12 +270,13 @@ function play(mode: OutcomePipelineMode, { step }: Scenario, prepared: any, real
       ]),
     ),
   });
-  const matchUpId = findLine(step.target);
+  const matchUpId = step.dual ? findDual(step.target).matchUpId : findLine(step.target);
   setOutcomePipeline(mode);
   v1Writes.count = 0;
   if (!realClock) setClock('2026-10-25T00:01:00.000Z');
   const { stack: _stack, ...result } = tournamentEngine.setMatchUpStatus({
     outcome: stepOutcome(step),
+    ...step.flags,
     drawId: 'd',
     matchUpId,
   }) as any;
@@ -623,6 +651,65 @@ const OWNED: [string, Scenario][] = [
       step: { target: R1(2, 1, 'East'), winningSide: 1, outcome: 'DOUBLE_DEFAULT' },
     },
   ],
+  [
+    "a dual's own call given a winner alone, the dual untouched: its sides' line-ups written, the winner directed",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [],
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'winner', dual: true },
+    },
+  ],
+  [
+    "a dual's own call given a winner, scored, after a line won by the other side",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(2, 0), winningSide: 1 }],
+      step: { target: R1(2, 1), winningSide: 2, dual: true },
+    },
+  ],
+  [
+    "a dual's own WALKOVER with no loser link",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [],
+      step: { target: R1(1, 0), winningSide: 2, outcome: 'WALKOVER', dual: true },
+    },
+  ],
+  [
+    "a dual's own call in the final: nothing directed",
+    {
+      drawProfile: { drawSize: 2, drawType: SINGLE_ELIMINATION },
+      setup: [],
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'winner', dual: true },
+    },
+  ],
+  [
+    "COMPASS: an East dual's own call: its loser's assignment writes the team's draw line-up on its West seat",
+    {
+      drawProfile: { drawSize: 8, drawType: COMPASS },
+      setup: [],
+      step: { target: R1(2, 0, 'East'), winningSide: 1, outcome: 'winner', dual: true },
+      loserSeat: { dual: { structureName: 'West', roundNumber: 1, roundPosition: 1 }, sideNumber: 2, carried: true },
+    },
+  ],
+  [
+    "FIRST_MATCH_LOSER_CONSOLATION: a dual's own call whose loser is seated opposite a BYE: both duals take its line-up",
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION, participantsCount: 7 },
+      setup: [],
+      step: { target: R1(2, 0), winningSide: 1, outcome: 'winner', dual: true },
+      loserSeat: {
+        dual: { structureName: 'Consolation', roundNumber: 1, roundPosition: 1 },
+        sideNumber: 2,
+        carried: true,
+      },
+      beyondSeat: {
+        dual: { structureName: 'Consolation', roundNumber: 2, roundPosition: 1 },
+        sideNumber: 2,
+        carried: true,
+      },
+    },
+  ],
 ];
 
 describe('under v2, a TEAM line is v2s, deciding its dual or not, and leaves exactly what v1 leaves', () => {
@@ -680,6 +767,71 @@ const KEPT: [string, Scenario][] = [
       setup: [{ target: R1(1, 0), winningSide: 1 }],
       step: { target: R1(1, 1), winningSide: 2, outcome: 'DEFAULTED' },
       abstains: 'exit',
+    },
+  ],
+  [
+    "a dual's own DOUBLE_WALKOVER: v1's (route double-exit)",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [],
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'DOUBLE_WALKOVER', dual: true },
+    },
+  ],
+  [
+    "a dual's own call that disables auto-calc: v1 writes disableAutoCalc",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [],
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'winner', dual: true, flags: { disableAutoCalc: true } },
+    },
+  ],
+  [
+    "a dual's own call that enables auto-calc: v1 projects the winner from the lines",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [],
+      autoCalcOff: true,
+      setupAfter: [0, 1, 2, 3, 4].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'winner', dual: true, flags: { enableAutoCalc: true } },
+    },
+  ],
+  [
+    "FIRST_MATCH_LOSER_CONSOLATION: a dual's own WALKOVER carried across its loser link: v1 writes the dual it reaches",
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [],
+      step: {
+        target: R1(1, 0),
+        winningSide: 1,
+        outcome: 'WALKOVER',
+        dual: true,
+        flags: { propagateExitStatus: true },
+      },
+    },
+  ],
+  [
+    "a dual's own call on a dual already decided: v1's",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [0, 1, 2, 3, 4].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'winner', dual: true },
+    },
+  ],
+  [
+    "a dual's own call given a winner after its own DOUBLE_WALKOVER: v1's (a double exit given a winner)",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [],
+      dualExit: 'DOUBLE_WALKOVER',
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'winner', dual: true },
+    },
+  ],
+  [
+    "a dual's own call in a round robin: its group's tally",
+    {
+      drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },
+      setup: [],
+      step: { target: R1(0, 0, 'Group 1'), winningSide: 1, outcome: 'winner', dual: true },
     },
   ],
   [
