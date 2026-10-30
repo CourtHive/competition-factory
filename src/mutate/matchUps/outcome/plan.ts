@@ -2030,12 +2030,11 @@ function unwoundOps(
 }
 
 /**
- * S7: a TEAM call is v1's but for its first owned shape: a line's first result that leaves its dual undecided, on a dual
- * already in progress whose stored sides, tieFormat and score source `updateTieMatchUpScore` leaves as they are
- * (`line.dualSettled`). v1 then writes the line, and the dual's tally (its score; its status stays IN_PROGRESS) through
- * `modifyMatchUpScore`, with no `scoredTime` on the dual. A dual's own call, a line that decides or un-decides its dual,
- * a first line (whose lineUps and tieFormat v1 copies onto the dual), a corrected line, a round robin's tally, and
- * auto-calc off stay v1's.
+ * S7: a TEAM call is v1's but for its owned shape: a line's first result that leaves its dual undecided. v1 writes the
+ * line, then `updateTieMatchUpScore` writes the dual through `modifyMatchUpScore`, with no `scoredTime`: the sides it
+ * ensures and the tieFormat it copies on (`line.dualRewrite`, where they change: on a dual's first line, or a record
+ * that stored neither), its tally and the status it derives from it. A dual's own call, a line that decides or
+ * un-decides its dual, a corrected line, a round robin's tally, a REPORTED score, and auto-calc off stay v1's.
  */
 function teamReason({
   request,
@@ -2052,24 +2051,26 @@ function teamReason({
   const { line, existing } = view;
   if (!line || view.isTeam || route !== 'winner' || !write?.winningSide || !request.score) return 'team';
   if (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide) return 'team';
-  if (line.autoCalcDisabled || !line.dualSettled || !line.projectedScore) return 'team';
+  if (line.autoCalcDisabled || line.dualRewrite.scoreReported || !line.projectedScore) return 'team';
   // a round robin's group tally re-read from the line's result is v1's
   if (line.dualInGroup || view.group || view.draw.tallied) return 'team';
-  if (line.dualMatchUpStatus !== IN_PROGRESS || line.dualWinningSide || line.projectedWinningSide) return 'team';
+  const dualStatuses = new Set<string | undefined>([TO_BE_PLAYED, IN_PROGRESS]);
+  if (!dualStatuses.has(line.dualMatchUpStatus) || line.projectedStatus !== IN_PROGRESS) return 'team';
+  if (line.dualWinningSide || line.projectedWinningSide) return 'team';
   return undefined;
 }
 
-/** S7: the dual's tally after its line's result, as `updateTieMatchUpScore` writes it (`modifyMatchUpScore`) */
+/** S7: the dual after its line's result, as `updateTieMatchUpScore` writes it (`modifyMatchUpScore`) */
 const dualTallyOps = (line?: OutcomeView['line']): OutcomeOp[] =>
-  line?.projectedScore
+  line?.projectedScore && line.projectedStatus
     ? [
         {
           op: 'setMatchUpResult',
           matchUpId: line.dualMatchUpId,
-          matchUpStatus: IN_PROGRESS,
+          matchUpStatus: line.projectedStatus,
           score: line.projectedScore as Score,
           stampsScoredTime: false,
-          dualTally: true,
+          dualTally: { sides: line.dualRewrite.sides, tieFormat: line.dualRewrite.tieFormat },
         },
         { op: 'stampUpdatedAt', entity: 'matchUp', id: line.dualMatchUpId },
       ]

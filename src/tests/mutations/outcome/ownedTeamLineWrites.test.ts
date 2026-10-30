@@ -69,6 +69,10 @@ type Scenario = {
   drawProfile: Record<string, unknown>;
   /** after the setup, the step's dual stores no tieFormat of its own (an imported record): v1 copies it on */
   unsettled?: true;
+  /** after the setup, the step's dual has auto-calc disabled */
+  autoCalcOff?: true;
+  /** after the setup, the step's dual's tieFormat declares its score REPORTED: the lines derive nothing */
+  reported?: true;
   setup: { target: Line; winningSide: 1 | 2 }[];
   step: { target: Line; winningSide: 1 | 2 };
 };
@@ -90,7 +94,7 @@ function findLine({ structureName, roundNumber, roundPosition, line }: Line): st
  * The scenario's record, prepared once under v1 and copied for each run: setting a line-up result can create PAIR
  * participants with fresh ids, so two separately generated records would differ before the step under test
  */
-function prepare({ drawProfile, setup, step, unsettled }: Scenario, realClock: boolean) {
+function prepare({ drawProfile, setup, step, unsettled, autoCalcOff, reported }: Scenario, realClock: boolean) {
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
   setClock(realClock ? undefined : '2026-10-25T00:00:00.000Z');
   setSubscriptions({ subscriptions: {} });
@@ -110,7 +114,24 @@ function prepare({ drawProfile, setup, step, unsettled }: Scenario, realClock: b
     });
     if (!result.success) throw new Error(`setup step failed: ${JSON.stringify(target)}`);
   }
+  if (autoCalcOff) {
+    const lineId = findLine(step.target);
+    const dual = tournamentEngine
+      .allDrawMatchUps({ drawId: 'd', inContext: true })
+      .matchUps.find((matchUp: any) => matchUp.tieMatchUps?.some((line: any) => line.matchUpId === lineId));
+    expect(tournamentEngine.disableTieAutoCalc({ drawId: 'd', matchUpId: dual.matchUpId }).success).toEqual(true);
+  }
   const record = structuredClone(tournamentEngine.getTournament().tournamentRecord);
+  if (reported) {
+    const lineId = findLine(step.target);
+    const duals = record.events.flatMap((event: any) =>
+      event.drawDefinitions.flatMap((draw: any) => draw.structures.flatMap((structure: any) => structure.matchUps)),
+    );
+    const dual = duals.find((matchUp: any) => matchUp.tieMatchUps?.some((line: any) => line.matchUpId === lineId));
+    // CONTROL: the dual stores its own tieFormat (copied on at its first line), which now declares a reported score
+    expect(!!dual.tieFormat).toEqual(true);
+    dual.tieFormat.scoreSource = 'REPORTED';
+  }
   if (unsettled) {
     const lineId = findLine(step.target);
     const duals = record.events.flatMap((event: any) =>
@@ -163,6 +184,31 @@ const R1 = (roundPosition: number, line: number, structureName = 'Main'): Line =
 });
 
 const OWNED: [string, Scenario][] = [
+  [
+    "SINGLE_ELIMINATION: a dual's first line: v1 copies the line-ups and tieFormat onto the dual, now in progress",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [],
+      step: { target: R1(1, 0), winningSide: 1 },
+    },
+  ],
+  [
+    "COMPASS: an East dual's first line",
+    {
+      drawProfile: { drawSize: 8, drawType: COMPASS },
+      setup: [],
+      step: { target: R1(2, 3, 'East'), winningSide: 2 },
+    },
+  ],
+  [
+    'an in-progress dual storing no tieFormat of its own (an imported record): v1 copies the tieFormat onto it',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1, 0), winningSide: 1 }],
+      step: { target: R1(1, 1), winningSide: 2 },
+      unsettled: true,
+    },
+  ],
   [
     'SINGLE_ELIMINATION: a dual 1-0 takes its second line for the other side, 1-1',
     {
@@ -228,14 +274,6 @@ describe('under v2, a TEAM line that leaves its dual undecided is v2s, and leave
 
 const KEPT: [string, Scenario][] = [
   [
-    "a dual's first line: v1 copies its line-ups and tieFormat onto the dual",
-    {
-      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
-      setup: [],
-      step: { target: R1(1, 0), winningSide: 1 },
-    },
-  ],
-  [
     'a line that decides its dual (5-0 at a value goal of 5): the dual is directed',
     {
       drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
@@ -244,20 +282,29 @@ const KEPT: [string, Scenario][] = [
     },
   ],
   [
-    'an in-progress dual storing no tieFormat of its own (an imported record): v1 copies the tieFormat onto it',
-    {
-      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
-      setup: [{ target: R1(1, 0), winningSide: 1 }],
-      step: { target: R1(1, 1), winningSide: 2 },
-      unsettled: true,
-    },
-  ],
-  [
     "a line in a round robin: v1 re-reads its group's tally (a line's group is read off its dual, hydration OPEN-14)",
     {
       drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },
       setup: [{ target: R1(0, 0, 'Group 1'), winningSide: 1 }],
       step: { target: R1(0, 1, 'Group 1'), winningSide: 2 },
+    },
+  ],
+  [
+    'a line of a dual whose tieFormat declares its score REPORTED: v1 returns before any tally',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1, 0), winningSide: 1 }],
+      step: { target: R1(1, 1), winningSide: 2 },
+      reported: true,
+    },
+  ],
+  [
+    "a line of a dual whose auto-calc is off: v1 leaves the dual's score to be entered",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1, 0), winningSide: 1 }],
+      step: { target: R1(1, 1), winningSide: 2 },
+      autoCalcOff: true,
     },
   ],
 ];

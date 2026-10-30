@@ -846,19 +846,35 @@ suite's rethrowing provider fails the test, and the exit-propagation census reco
 that diverged stay written unless the call asked for `rollbackOnError`, the same as for any refusal
 a later outcome meets (§ 8).
 
-**A TEAM line** is owned in one shape (S7): a line's first result that leaves its dual undecided, on a dual already
-in progress. v1 writes the line (as any result: `modifyMatchUpScore`, its `scoredTime`), then `updateTieMatchUpScore`
-writes the dual: it ensures the dual's side line-ups, copies the resolved tieFormat onto it, tallies its score from its
-lines, and derives its status. v2 plans the line's write and the dual's tally (`setMatchUpResult` with `dualTally`, no
-`scoredTime`: the projected score, status `IN_PROGRESS`), announced as v1 announces them: each matchUp's `modifyMatchUp`
-and its in-context notice, the line's first. The call returns the dual's tally as `tieMatchUpResult`, as v1's
-`directParticipants` does. Planned where `updateTieMatchUpScore` rewrites nothing else (`line.dualSettled`): the sides
-`ensuredDualSides` gives (the rule `ensureSideLineUps` writes by, one function) are the stored ones, the copied tieFormat
-is the stored one, and the score source is not REPORTED (which returns before any tally). A line directs nothing of its
-own: its targets are its dual's. Stay v1's: a dual's own call; a line that decides or un-decides its dual; a dual's
-first line (v1 copies its line-ups and tieFormat on); a corrected or cleared line; auto-calc off; a dual storing no
-tieFormat of its own; and a line in a round robin (its group's tally; a line's group is read off its dual, since a line
-is hydrated in the container, hydration OPEN-14).
+**A TEAM line** is owned in one shape (S7): a line's first result that leaves its dual undecided. v1 writes the line (as
+any result: `modifyMatchUpScore`, its `scoredTime`), then `updateTieMatchUpScore` writes the dual:
+
+1. it ensures the dual's side line-ups;
+2. it copies the resolved tieFormat onto the dual;
+3. it tallies the dual's score from its lines;
+4. it derives the dual's status: COMPLETED with a winner, else IN_PROGRESS where `isActiveMatchUp` reads it active, else
+   TO_BE_PLAYED.
+
+v2 plans the line's write and the dual's (`setMatchUpResult` with `dualTally`, no `scoredTime`):
+
+- the projected score and status;
+- the sides `ensuredDualSides` gives (the rule `ensureSideLineUps` writes by, one function) and the copied tieFormat, each
+  only where it changes the stored value. On a dual's first line both change, and the dual goes from TO_BE_PLAYED to
+  IN_PROGRESS; a record that stored no tieFormat of its own takes it on the same way.
+
+Both are announced as v1 announces them: each matchUp's `modifyMatchUp` and its in-context notice, the line's first. The
+call returns the dual's write as `tieMatchUpResult`, as v1's `directParticipants` does. A line directs nothing of its
+own: its targets are its dual's.
+
+Stay v1's:
+
+- a dual's own call;
+- a line that decides or un-decides its dual;
+- a corrected or cleared line;
+- auto-calc off;
+- a REPORTED score source (v1 returns before any tally);
+- a line in a round robin: its group's tally. A line's group is read off its dual, since a line is hydrated in the
+  container (hydration OPEN-14).
 
 ## 7.2 The plan as ops (S1)
 
@@ -892,7 +908,7 @@ the slices that follow:
 
 | reason         | the call                                                                                                                                                                 | taken on by                                                                                                                                                                                                                                                              |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `team`         | is a dual or one of its lines, but a line's first result leaving an in-progress dual undecided (S7)                                                                      | S7                                                                                                                                                                                                                                                                       |
+| `team`         | is a dual or one of its lines, but a line's first result leaving its dual undecided (S7)                                                                                 | S7                                                                                                                                                                                                                                                                       |
 | `schedule`     | carries a schedule                                                                                                                                                       | a later slice (§ 3.5.8 of the executor plan)                                                                                                                                                                                                                             |
 | `notes`        | carries notes                                                                                                                                                            | a later slice                                                                                                                                                                                                                                                            |
 | `status-codes` | carries the client's positional status codes, split into side codes at the write                                                                                         | S2                                                                                                                                                                                                                                                                       |
