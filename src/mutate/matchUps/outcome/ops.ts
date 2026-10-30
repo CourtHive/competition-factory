@@ -66,10 +66,11 @@ export type OutcomeOp =
        */
       announcedAs?: 'reconcileScoredTimes';
       /**
-       * a TEAM dual's tally after its line's result (S7): v1 returns it as the call's `tieMatchUpResult`, the dual's
-       * `updateTieMatchUpScore` result
+       * a TEAM dual's write after its line's result (S7), `updateTieMatchUpScore`'s: the sides it ensures and the
+       * tieFormat it copies on, each present only where it changes the stored value. v1 returns the write as the
+       * call's `tieMatchUpResult`
        */
-      dualTally?: true;
+      dualTally?: { sides?: unknown[]; tieFormat?: unknown };
     }
   | {
       op: 'setMatchUpDrawPositions';
@@ -276,6 +277,9 @@ export function stampedInThisCall(drawDefinition?: DrawDefinition): Set<string> 
 }
 
 function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMatchUpResult' }>) {
+  // a dual's sides and tieFormat as `updateTieMatchUpScore` rewrites them before its tally (S7)
+  if (op.dualTally?.sides) matchUp.sides = structuredClone(op.dualTally.sides) as MatchUp['sides'];
+  if (op.dualTally?.tieFormat) matchUp.tieFormat = structuredClone(op.dualTally.tieFormat) as MatchUp['tieFormat'];
   matchUp.matchUpStatus = op.matchUpStatus;
   if (op.score) matchUp.score = structuredClone(op.score);
   if (op.winningSide) matchUp.winningSide = op.winningSide;

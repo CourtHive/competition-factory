@@ -84,5 +84,5 @@ export function getProjectedDualWinningSide({
 
   // the dual's score as `updateTieMatchUpScore` writes it from the same tally: the outcome view plans that write (S7)
   const projectedScore = { scoreStringSide1, scoreStringSide2, sets: set ? [set] : [] };
-  return { projectedWinningSide, projectedScore };
+  return { projectedWinningSide, projectedScore, projectedTieMatchUps: projectedDualMatchUp?.tieMatchUps };
 }

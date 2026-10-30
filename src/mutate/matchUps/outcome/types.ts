@@ -137,12 +137,14 @@ export type OutcomeView = {
     autoCalcDisabled: boolean;
     /** the dual's score as `updateTieMatchUpScore` tallies it with this line's result in place (S7) */
     projectedScore?: OutcomeScore;
+    /** the dual's status as `updateTieMatchUpScore` derives it with this line's result in place (S7) */
+    projectedStatus?: MatchUpStatusUnion;
     /**
-     * whether `updateTieMatchUpScore`'s rewrites before the tally leave the stored dual as it is (S7): the sides it
-     * ensures (`ensuredDualSides`) equal the stored ones, the tieFormat it copies equals the stored one, and the
-     * tieFormat's score is not REPORTED (which returns before any tally)
+     * what `updateTieMatchUpScore` rewrites on the stored dual before its tally (S7), each only where it changes: the
+     * sides `ensureSideLineUps` ensures (`ensuredDualSides`) and the tieFormat it copies on; and whether the tieFormat's
+     * score is REPORTED (which returns before any tally)
      */
-    dualSettled: boolean;
+    dualRewrite: { sides?: unknown[]; tieFormat?: unknown; reported: boolean };
     /**
      * the dual sits in a round robin group, whose tally a line's result re-reads. Read off the dual: a line is placed
      * in the container with no `containerStructureId` of its own (hydration OPEN-14), so the view finds no group for it
