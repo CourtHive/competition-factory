@@ -8,6 +8,10 @@ import fs from 'fs';
 
 const CLOCK = '2026-10-01T12:00:00.000Z';
 const SEED = 6000;
+const QUEUE_EVENT = 'queue-event';
+// an eventId no record holds: the directive naming it is refused
+const NO_SUCH_EVENT = 'no-such-event';
+const EVENT_NOT_FOUND = 'ERR_NOT_FOUND_EVENT';
 
 type Queued = {
   scenarioId: string;
@@ -62,25 +66,25 @@ export function queueScenarios(): Queued[] {
     scenario({
       scenarioId: 'queue/builds-an-event-in-one-call',
       ref: 'executionQueue: the directives run in order, under one instant, and the record is stamped once',
-      directives: [queue([addEvent('queue-event'), addEntries('queue-event', participantIds)])],
+      directives: [queue([addEvent(QUEUE_EVENT), addEntries(QUEUE_EVENT, participantIds)])],
       expected: [true],
     }),
     scenario({
       scenarioId: 'queue/refusal-rolls-back',
       ref: 'executionQueue: with rollbackOnError a refusal restores the record, unstamped',
-      directives: [queue([addEvent('queue-event'), addEntries('no-such-event', participantIds)], true)],
-      expected: ['ERR_NOT_FOUND_EVENT'],
+      directives: [queue([addEvent(QUEUE_EVENT), addEntries(NO_SUCH_EVENT, participantIds)], true)],
+      expected: [EVENT_NOT_FOUND],
     }),
     scenario({
       scenarioId: 'queue/refusal-keeps-earlier-writes',
       ref: 'executionQueue: without rollbackOnError a refusal keeps what the directives before it wrote, stamped',
-      directives: [queue([addEvent('queue-event'), addEntries('no-such-event', participantIds)], false)],
-      expected: ['ERR_NOT_FOUND_EVENT'],
+      directives: [queue([addEvent(QUEUE_EVENT), addEntries(NO_SUCH_EVENT, participantIds)], false)],
+      expected: [EVENT_NOT_FOUND],
     }),
     scenario({
       scenarioId: 'queue/unknown-method-refused-before-any-runs',
       ref: 'executionQueue: every directive is checked before any runs, so a queue naming no method writes nothing',
-      directives: [queue([addEvent('queue-event'), { method: 'notAnEngineMethod', params: {} }])],
+      directives: [queue([addEvent(QUEUE_EVENT), { method: 'notAnEngineMethod', params: {} }])],
       expected: ['ERR_NOT_FOUND_METHOD'],
     }),
     scenario({
@@ -88,10 +92,10 @@ export function queueScenarios(): Queued[] {
       ref: 'executionQueue: a refused queue between two that succeed leaves the record as the first left it',
       directives: [
         queue([addEvent('first-event')]),
-        queue([addEvent('second-event'), addEntries('no-such-event', participantIds)], true),
+        queue([addEvent('second-event'), addEntries(NO_SUCH_EVENT, participantIds)], true),
         queue([addEntries('first-event', participantIds)]),
       ],
-      expected: [true, 'ERR_NOT_FOUND_EVENT', true],
+      expected: [true, EVENT_NOT_FOUND, true],
     }),
   ];
 }
