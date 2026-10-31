@@ -2511,9 +2511,9 @@ function unwoundOps(
   request: OutcomeRequest,
   route: Route | undefined,
   drawDefinition?: DrawDefinition,
-): { ops: OutcomeOp[]; settled: OutcomeOp[] } {
+): { ops: OutcomeOp[]; reannounced: OutcomeOp[] } {
   if ((route !== CLEAR_SCORE && route !== 'winner') || !isDoubleExit(view.existing.matchUpStatus))
-    return { ops: [], settled: [] };
+    return { ops: [], reannounced: [] };
   const levels = unwoundPath(view, request.matchUpId, drawDefinition) ?? [];
   // a seat's advance through a standing BYE is v1's `reconcileByeAdvancements`, after the call's own write
   const deferred = (op: OutcomeOp) => op.op === 'setMatchUpDrawPositions' && !!op.advancesThroughBye;
@@ -2524,7 +2524,7 @@ function unwoundOps(
     const stored = indexed(view, matchUpId);
     const drawPositions = positionsOf(stored).filter((position) => position !== released);
     // a convergence dissolved: the kept origin's exit, pending, its score the blank one v1's write leaves (a double
-    // default stored none) and its codes re-derived (none to keep). Its `modifyMatchUp` is the settle pass's (`settled`
+    // default stored none) and its codes re-derived (none to keep). Its `modifyMatchUp` is the settle pass's (`reannounced`
     // below), with the event and tournament at every depth; only the in-context notice is this write's
     if (rederived) {
       return [
@@ -2562,7 +2562,7 @@ function unwoundOps(
   });
   // v1's `settleRederivedDoubleExits` writes each dissolved convergence again as it stands, after the call's own write:
   // its `modifyMatchUp` is announced there, under the pass's name (the in-context notice stays at the unwind's write)
-  const settled: OutcomeOp[] = levels.flatMap(({ matchUpId, rederived }): OutcomeOp[] =>
+  const reannounced: OutcomeOp[] = levels.flatMap(({ matchUpId, rederived }): OutcomeOp[] =>
     rederived
       ? [
           {
@@ -2576,8 +2576,8 @@ function unwoundOps(
         ]
       : [],
   );
-  settled.push(...levels.flatMap(({ seatOps }) => seatOps.filter(deferred)));
-  return { ops, settled };
+  reannounced.push(...levels.flatMap(({ seatOps }) => seatOps.filter(deferred)));
+  return { ops, reannounced };
 }
 
 /**
@@ -3318,7 +3318,7 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
 
   const score = writtenScore(request, write);
   // a cleared double exit's unwind, announced before the clear's own write, as v1 makes it first (S6)
-  const { ops: unwound, settled } = unwoundOps(view, request, args.route, drawDefinition);
+  const { ops: unwound, reannounced } = unwoundOps(view, request, args.route, drawDefinition);
   const ops: OutcomeOp[] = [
     ...swapOps(view, args.route),
     ...replacedLoserOps(view, args.route, write, request.matchUpStatus),
@@ -3327,7 +3327,7 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
     // same rule (`ensuredDualSides`)
     ...resultOps(request, write, matchUpId, view.dualSides),
     // a convergence the unwind dissolved, re-announced by v1's settle pass after the call's own write (S6 tail)
-    ...settled,
+    ...reannounced,
     ...dualTallyOps(view.line),
   ];
   // the first direction: the winner's position joins the next matchUp's, which v1 stores ascending
