@@ -15,6 +15,7 @@ import {
   buildSideExitProvenance,
   collapseDoubleExitStatus,
   carriedExitStatus,
+  deriveStatusCodes,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
@@ -734,7 +735,8 @@ function carriedReason(view: OutcomeView, write: MatchUpWrite): AbstainReason | 
     return 'exit';
   const landing = carriedLanding(view);
   // a landing that links its loser on carries the exit again: planned level by level (`deeperLandings`)
-  if (!landing || (landing.carriesOn && !deeperLandings(view, landing))) return 'exit';
+  if (!landing || (landing.carriesOn && !deeperLandings(view, landing, carriedStatus(write.matchUpStatus))))
+    return 'exit';
   // RULE 3: somebody stands opposite, wins the carried exit and goes on, planned into a clean next matchUp
   if (landing.opponentHeld && !landing.onward) return 'exit';
   return undefined;
@@ -757,7 +759,8 @@ function relabelCarryReason(view: OutcomeView, write: MatchUpWrite): AbstainReas
   const held = targets.loserMatchUpCarryHeld;
   if (!held && (record.provenance || targets.loserMatchUpStatus !== TO_BE_PLAYED)) return 'exit';
   const landing = carriedLanding(view);
-  if (!landing || (landing.carriesOn && !deeperLandings(view, landing))) return 'exit';
+  if (!landing || (landing.carriesOn && !deeperLandings(view, landing, carriedStatus(write.matchUpStatus))))
+    return 'exit';
   if (landing.opponentHeld && !landing.onward) return 'exit';
   return undefined;
 }
@@ -864,6 +867,8 @@ type CarriedLanding = {
   ends?: boolean;
   /** how many of v1's `propagateExitFrom` iterations this landing takes: one per BYE passed, one for the write */
   passes: number;
+  /** RULE 4 at a deeper level: the exit meets one standing there, and the double exit is written instead (S6 tail) */
+  converged?: Convergence;
 };
 
 const sideOf = (matchUp: HydratedMatchUp | undefined, drawPosition?: number) => {
@@ -981,7 +986,11 @@ function onwardFrom(
  * landing links nothing on. Undefined otherwise, and where the walk reached
  * v1's bound with a level to go (F9: v1 refuses there; v2 abstains, so it never plans the bound).
  */
-function deeperLandings(view: OutcomeView, first: CarriedLanding): DeeperLanding[] | undefined {
+function deeperLandings(
+  view: OutcomeView,
+  first: CarriedLanding,
+  carried: MatchUpStatusUnion,
+): DeeperLanding[] | undefined {
   // v1's loop takes one iteration per BYE passed and one per landing written, and refuses with a level still to go at its
   // bound (F9): v2 abstains there, so it never plans the bound
   let passes = first.passes;
@@ -990,16 +999,7 @@ function deeperLandings(view: OutcomeView, first: CarriedLanding): DeeperLanding
   if (!chain || chain.bounded || chain.levels[0]?.fromMatchUpId !== first.matchUpId) return undefined;
   const deeper: DeeperLanding[] = [];
   for (const level of chain.levels) {
-    if (level.linkCondition || !level.seat?.free) return undefined;
-    // RULE 1 at this level: a BYE opposite, which the carrier passes into a clean matchUp beyond, where the exit lands, or
-    // on through the BYE-held matchUps past it (`passage`)
-    const relayed = level.seat.opponentBye;
-    if (relayed && (level.matchUpStatus !== BYE || (!level.through && !level.passage))) return undefined;
-    if (!relayed && (level.matchUpStatus !== TO_BE_PLAYED || level.hasResult || level.carriesExit)) return undefined;
-    if (!level.record || level.record.provenance || level.record.matchUpStatusCodes?.length) return undefined;
-    const landing = relayed
-      ? passedLanding(view, level.matchUpId, level.drawPosition, level.through, level.passage)
-      : landingAt(view, level.matchUpId, level.drawPosition);
+    const landing = levelLanding(view, level, carried);
     if (!landing || (landing.opponentHeld && !landing.onward)) return undefined;
     passes += landing.passes;
     deeper.push({ level, landing });
@@ -1009,6 +1009,28 @@ function deeperLandings(view: OutcomeView, first: CarriedLanding): DeeperLanding
 }
 
 type DeeperLanding = { level: CarryLevel; landing: CarriedLanding };
+
+/** where the exit lands at one further level of the walk, as the first level's landing is read; undefined where v1's */
+function levelLanding(view: OutcomeView, level: CarryLevel, carried: MatchUpStatusUnion): CarriedLanding | undefined {
+  if (level.linkCondition || !level.seat?.free) return undefined;
+  const { matchUpId, drawPosition, record } = level;
+  // RULE 1 at this level: a BYE opposite, which the carrier passes into a clean matchUp beyond, where the exit lands, or
+  // on through the BYE-held matchUps past it (`passage`)
+  if (level.seat.opponentBye) {
+    if (level.matchUpStatus !== BYE || (!level.through && !level.passage)) return undefined;
+    if (!record || record.provenance || record.matchUpStatusCodes?.length) return undefined;
+    return passedLanding(view, matchUpId, drawPosition, level.through, level.passage);
+  }
+  // RULE 4 at this level: a carried exit standing there was awarded to the carrier's seat; the two converge (S6 tail)
+  const converged = convergenceAt(view, matchUpId, drawPosition, carried);
+  if (converged) {
+    if (!record || record.matchUpStatusCodes?.length) return undefined;
+    return { ...converged, carriesOn: false, opponentHeld: false, passes: 1, converged };
+  }
+  if (level.matchUpStatus !== TO_BE_PLAYED || level.hasResult || level.carriesExit) return undefined;
+  if (!record || record.provenance || record.matchUpStatusCodes?.length) return undefined;
+  return landingAt(view, matchUpId, drawPosition);
+}
 
 /**
  * The carried exit's write on the loser's matchUp, as v1's `progressExitStatus` makes it (RULES 2 and 3): the status,
@@ -1022,7 +1044,7 @@ function carriedOps(
   loser?: DirectionPlan['loser'],
 ): { relay: OutcomeOp[]; landing: OutcomeOp[] } {
   const landing = carriedLanding(view);
-  const deeper = landing ? deeperLandings(view, landing) : undefined;
+  const deeper = landing && loser?.exit ? deeperLandings(view, landing, loser.exit) : undefined;
   if (!loser?.exit || !landing || !deeper) return { relay: [], landing: [] };
   const exit = loser.exit;
   // the entry a side carrying the exit is given: its origin the matchUp the carrier lost, and what that matchUp was
@@ -1042,32 +1064,33 @@ function carriedOps(
     at: CarriedLanding,
     sourceMatchUpId?: string,
     previousMatchUpStatus?: MatchUpStatusUnion,
-  ): OutcomeOp[] =>
-    at.ends
-      ? []
-      : [
-          {
-            op: 'setMatchUpResult',
-            matchUpId: at.matchUpId,
-            matchUpStatus: exit,
-            winningSide: (3 - at.sideNumber) as 1 | 2,
-            matchUpStatusCodes: [],
-            ...(exit === WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
-          },
-          ...provenanceOps(at.matchUpId, carried(at.sideNumber, sourceMatchUpId, previousMatchUpStatus)),
-          { op: 'stampUpdatedAt', entity: 'matchUp', id: at.matchUpId },
-          // RULE 3: the opponent awarded the exit goes on, their position joining the next matchUp
-          ...(at.onward
-            ? [
-                {
-                  op: 'setMatchUpDrawPositions' as const,
-                  matchUpId: at.onward.matchUpId,
-                  drawPositions: at.onward.drawPositions,
-                },
-                { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: at.onward.matchUpId },
-              ]
-            : []),
-        ];
+  ): OutcomeOp[] => {
+    if (at.converged) return convergenceOps(view, at.converged, exit, sourceMatchUpId, previousMatchUpStatus);
+    if (at.ends) return [];
+    return [
+      {
+        op: 'setMatchUpResult',
+        matchUpId: at.matchUpId,
+        matchUpStatus: exit,
+        winningSide: (3 - at.sideNumber) as 1 | 2,
+        matchUpStatusCodes: [],
+        ...(exit === WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
+      },
+      ...provenanceOps(at.matchUpId, carried(at.sideNumber, sourceMatchUpId, previousMatchUpStatus)),
+      { op: 'stampUpdatedAt', entity: 'matchUp', id: at.matchUpId },
+      // RULE 3: the opponent awarded the exit goes on, their position joining the next matchUp
+      ...(at.onward
+        ? [
+            {
+              op: 'setMatchUpDrawPositions' as const,
+              matchUpId: at.onward.matchUpId,
+              drawPositions: at.onward.drawPositions,
+            },
+            { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: at.onward.matchUpId },
+          ]
+        : []),
+    ];
+  };
   // each further level: the carrier placed across the landing's loser link, the exit carried from the landing they lost;
   // past a BYE there the BYE matchUp records the carry beside its BYE and the carrier goes on, as at the first level
   const levels = deeper.flatMap(({ level, landing: at }): OutcomeOp[] => [
@@ -1908,17 +1931,92 @@ function convergedReason(
   const seat = targets.loserTargetSeat;
   if (write.matchUpStatusCodes?.length || !loser.arrives) return 'exit';
   if (!seat?.free || seat.opponentBye) return 'exit';
-  if (!SINGLE_EXITS.has(targets.loserMatchUpStatus) || targets.loserMatchUpStatus === RETIRED) return 'exit';
-  const landing = indexed(view, targets.loserMatchUpId);
-  const side = sideOf(landing, targets.loserTargetDrawPosition);
-  if (!landing || !side || landing.loserMatchUpId || landing.winningSide !== side) return 'exit';
-  if (landing.score?.scoreStringSide1 || landing.score?.scoreStringSide2 || landing.score?.sets?.length) return 'exit';
+  const { loserMatchUpId, loserTargetDrawPosition } = targets;
+  const convergence = convergenceAt(
+    view,
+    loserMatchUpId,
+    loserTargetDrawPosition,
+    carriedStatus(request.matchUpStatus),
+  );
+  return convergence && loser.converged === convergence.matchUpStatus ? undefined : 'exit';
+}
+
+/** RULE 4 where a carrier lands: the matchUp, the carrier's side there, the double exit, and where it produces its exit */
+type Convergence = {
+  matchUpId: string;
+  sideNumber: 1 | 2;
+  matchUpStatus: MatchUpStatusUnion;
+  /** the codes v1 writes there: its projection of the matchUp's provenance before the arrival (`deriveStatusCodes`) */
+  matchUpStatusCodes: string[];
+  target?: ProducedTarget;
+};
+
+/**
+ * RULE 4 at the matchUp a carrier lands in (`progressExitStatus`), at the first level (S5) or a deeper one (S6 tail): the
+ * matchUp holds a single exit (not a retirement) awarded to the carrier's seat, carried in on the other side and on that
+ * side alone, with no score value and no loser link of its own. The double exit (`collapseDoubleExitStatus`) produces
+ * its exit into a clean next matchUp (`producedTarget`), or, in a structure's last round, nothing
+ * (`doubleExitAdvancement` finds no winner target, S6 tail). Undefined otherwise.
+ */
+function convergenceAt(
+  view: OutcomeView,
+  matchUpId: string | undefined,
+  drawPosition: number | undefined,
+  carried: MatchUpStatusUnion,
+): Convergence | undefined {
+  const landing = indexed(view, matchUpId);
+  const sideNumber = sideOf(landing, drawPosition);
+  if (!landing || !sideNumber || landing.loserMatchUpId || landing.winningSide !== sideNumber) return undefined;
+  if (!SINGLE_EXITS.has(landing.matchUpStatus) || landing.matchUpStatus === RETIRED) return undefined;
+  if (landing.score?.scoreStringSide1 || landing.score?.scoreStringSide2 || landing.score?.sets?.length)
+    return undefined;
   const provenance = landing.sideExitProvenance ?? {};
-  if (provenance[side] || !provenance[3 - side]?.matchUpStatus) return 'exit';
-  const converged = collapseDoubleExitStatus([carriedStatus(request.matchUpStatus), targets.loserMatchUpStatus]);
-  if (loser.converged !== converged) return 'exit';
-  const target = producedTarget(view, landing, converged);
-  return target && producedTargetReason(view, landing, target) ? undefined : 'exit';
+  if (provenance[sideNumber] || !provenance[3 - sideNumber]?.matchUpStatus) return undefined;
+  const matchUpStatus = collapseDoubleExitStatus([carried, landing.matchUpStatus]);
+  const convergence: Convergence = {
+    matchUpStatusCodes: deriveStatusCodes(landing),
+    matchUpId: landing.matchUpId,
+    matchUpStatus,
+    sideNumber,
+  };
+  if (!landing.winnerMatchUpId) return convergence;
+  const target = producedTarget(view, landing, matchUpStatus);
+  // the award's position already gone on into that matchUp: v1 takes it back out as the convergence unseats it, v1's
+  const advanced = target?.entry.drawPositions?.some(
+    (position) => !!position && landing.drawPositions?.includes(position),
+  );
+  return target && !advanced && producedTargetReason(view, landing, target) ? { ...convergence, target } : undefined;
+}
+
+/** the double exit RULE 4 writes, the arriving side's entry merged beside the standing one, and what it produces on */
+function convergenceOps(
+  view: OutcomeView,
+  convergence: Convergence,
+  carried: MatchUpStatusUnion,
+  sourceMatchUpId?: string,
+  previousMatchUpStatus?: MatchUpStatusUnion,
+): OutcomeOp[] {
+  const { matchUpId, matchUpStatus, matchUpStatusCodes, sideNumber, target } = convergence;
+  const provenance = buildCarriedExitProvenance({
+    exitingSideNumber: sideNumber,
+    matchUpStatus: carried,
+    previousMatchUpStatus,
+    sourceMatchUpId,
+  });
+  return [
+    {
+      op: 'setMatchUpResult',
+      matchUpId,
+      matchUpStatus,
+      // a side whose standing exit a double exit delivered shows its outcome code (S6 tail)
+      ...(matchUpStatusCodes.length ? { matchUpStatusCodes } : {}),
+      // a DOUBLE_WALKOVER says nothing was played, so its score is blanked; a DOUBLE_DEFAULT keeps what stood
+      ...(matchUpStatus === DOUBLE_WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
+    },
+    ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId, provenance }] : []),
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
+    ...(target ? producedTargetOps(view, target, matchUpId, matchUpStatus) : []),
+  ];
 }
 
 type ProducedConvergence = {
@@ -2043,31 +2141,14 @@ function producedExitOps(view: OutcomeView, request: OutcomeRequest, write: Matc
 
 /** a convergence's writes: the landing as the double exit, the arriving side's entry, and the exit it produces */
 function convergedOps(view: OutcomeView, request: OutcomeRequest, write: MatchUpWrite, loser?: DirectionPlan['loser']) {
-  const { targets } = view;
-  const landing = indexed(view, targets.loserMatchUpId);
-  const side = sideOf(landing, targets.loserTargetDrawPosition);
-  if (!loser?.arrives || !loser.converged || !landing || !side) return [];
-  const target = producedTarget(view, landing, loser.converged);
-  if (!target) return [];
-  const provenance = buildCarriedExitProvenance({
-    previousMatchUpStatus: write.matchUpStatus as MatchUpStatusUnion,
-    matchUpStatus: carriedStatus(request.matchUpStatus),
-    sourceMatchUpId: request.matchUpId,
-    exitingSideNumber: side,
-  });
-  const ops: OutcomeOp[] = [
-    {
-      op: 'setMatchUpResult',
-      matchUpId: landing.matchUpId,
-      matchUpStatus: loser.converged,
-      // a DOUBLE_WALKOVER says nothing was played, so its score is blanked; a DOUBLE_DEFAULT keeps what stood
-      ...(loser.converged === DOUBLE_WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
-    },
-    ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId: landing.matchUpId, provenance }] : []),
-    { op: 'stampUpdatedAt', entity: 'matchUp', id: landing.matchUpId },
-    ...producedTargetOps(view, target, landing.matchUpId, loser.converged),
-  ];
-  return ops;
+  const { loserMatchUpId, loserTargetDrawPosition } = view.targets;
+  const carried = carriedStatus(request.matchUpStatus);
+  const convergence =
+    loser?.arrives && loser.converged
+      ? convergenceAt(view, loserMatchUpId, loserTargetDrawPosition, carried)
+      : undefined;
+  if (!convergence) return [];
+  return convergenceOps(view, convergence, carried, request.matchUpId, write.matchUpStatus as MatchUpStatusUnion);
 }
 
 /** the first reason this call is not S1's, or undefined when it is */

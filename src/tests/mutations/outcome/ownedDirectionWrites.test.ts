@@ -2012,6 +2012,46 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(13, 'East'), outcome: walkover(1), params: CARRIED }],
     },
   ],
+  [
+    'COMPASS 8 (S6 tail, a deeper convergence): two carries meet in the South final, a double walkover that produces nothing',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 8, drawType: COMPASS },
+      setup: [{ target: R1(1, 'East'), outcome: walkover(1), params: CARRIED }],
+      steps: [{ target: R1(3, 'East'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'COMPASS 8 (S6 tail, a deeper convergence): the carrier arrives on side 1 of the South final',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 8, drawType: COMPASS },
+      setup: [{ target: R1(3, 'East'), outcome: walkover(1), params: CARRIED }],
+      steps: [{ target: R1(1, 'East'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'COMPASS 8 (S6 tail, a deeper convergence): a default meeting a walkover converges as a double walkover',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 8, drawType: COMPASS },
+      setup: [{ target: R1(1, 'East'), outcome: walkover(1), params: CARRIED }],
+      steps: [{ target: R1(3, 'East'), outcome: exited(DEFAULTED, 1), params: CARRIED }],
+    },
+  ],
+  [
+    'OLYMPIC 16 (S6 tail, a deeper convergence): the double walkover produces its walkover into the next round',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 16, drawType: OLYMPIC },
+      setup: [{ target: R1(1, 'East'), outcome: walkover(1), params: CARRIED }],
+      steps: [{ target: R1(3, 'East'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'OLYMPIC 16 (S6 tail, a deeper convergence): two defaults converge as a double default, which produces a default',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 16, drawType: OLYMPIC },
+      setup: [{ target: R1(3, 'East'), outcome: exited(DEFAULTED, 1), params: CARRIED }],
+      steps: [{ target: R1(1, 'East'), outcome: exited(DEFAULTED, 1), params: CARRIED }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
@@ -2170,6 +2210,23 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     } finally {
       SETTLE_PASS_LIMITS.exitLevels = saved;
     }
+  });
+
+  it('S6 tail: two carries converging in a matchUp that links its own loser on is v1s (the double exit seats a BYE there)', () => {
+    // COMPASS 8: East 1/1's and 1/2's carries meet in West 1/1, whose loser seat in South then takes a BYE and the first
+    // carrier leaves it (the BYE chain)
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 8, drawType: COMPASS },
+      setup: [{ target: R1(1, 'East'), outcome: walkover(1), params: CARRIED }],
+      steps: [{ target: R1(2, 'East'), outcome: walkover(1), params: CARRIED }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v1.results[0].success).toEqual(true);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
   });
 
   it('S6 tail: a loser who carries nothing, placed opposite a BYE with BYE-held matchUps beyond, is v1s', () => {
