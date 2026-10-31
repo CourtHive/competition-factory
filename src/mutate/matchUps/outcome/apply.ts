@@ -84,35 +84,7 @@ export function applyOwnedPlan({
   // a carry recorded beside a BYE it passed: the BYE matchUp's state is not rewritten, so v1's `progressExitStatus`
   // announces the entry itself (`recordCarryBesideBye`)
   const relayed = new Set(ops.flatMap((op) => (op.op === 'mergeSideExitProvenance' ? [op.matchUpId] : [])));
-  // a position taken back out of a later round: v1's `removeSubsequentRoundsParticipant` names the position, no event.
-  // Not when the same write places one (a changed winner): v1 announces the placement after the removal, and the
-  // notice buffer keeps the later of the two for the matchUp
-  const removed = new Map(
-    ops.flatMap((op) =>
-      op.op === 'setMatchUpDrawPositions' && op.removedDrawPosition && !op.placedDrawPosition
-        ? [[op.matchUpId, op.removedDrawPosition]]
-        : [],
-    ),
-  );
-  // a placement v1 announces with no event or tournament (a produced exit's award, sent on by `doubleExitAdvancement`)
-  const unevented = new Set(
-    ops.flatMap((op) =>
-      (op.op === 'setMatchUpDrawPositions' &&
-        (op.announcesContext === false || (op.advancesThroughBye && !op.announcesEvent))) ||
-      (op.op === 'setMatchUpResult' && op.announcesContext === false) ||
-      (op.op === 'setMatchUpBye' && op.announcesEvent === false)
-        ? [op.matchUpId]
-        : [],
-    ),
-  );
-  // and with no tournament either (a produced exit's award, #5875; an exit recorded beside a BYE and carried on)
-  const untournamented = new Set(
-    ops.flatMap((op) =>
-      (op.op === 'setMatchUpDrawPositions' || op.op === 'setMatchUpResult') && op.announcesContext === false
-        ? [op.matchUpId]
-        : [],
-    ),
-  );
+  const { removed, unevented, untournamented, unbyed, settledResults } = noticeRules(ops);
   // a position advanced through a BYE a double exit placed: v1's `doubleExitAdvancement` announces it as `advanceWinner`
   const advanced = new Set(
     ops.flatMap((op) => (op.op === 'setMatchUpDrawPositions' && op.advancesThroughBye ? [op.matchUpId] : [])),
@@ -122,7 +94,6 @@ export function applyOwnedPlan({
   const released = new Set(
     ops.flatMap((op) => (op.op === 'setMatchUpDrawPositions' && op.releasedDrawPosition ? [op.matchUpId] : [])),
   );
-  const unbyed = withdrawnByeNotices(ops);
   const stored = new Map(args.matchUpsMap?.drawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
   const subscribed = getTopics().topics.includes(UPDATE_INCONTEXT_MATCHUP);
   // every score write announces its matchUp in context to a subscriber, as v1's `modifyMatchUpScore` does: the call's
@@ -137,11 +108,7 @@ export function applyOwnedPlan({
       matchUpId,
     });
   }
-  const { settled, lineUpUnevented } = namedWriters(ops);
-  for (const matchUpId of lineUpUnevented) unevented.add(matchUpId);
-  const settledResults = new Set(
-    ops.flatMap((op) => (op.op === 'setMatchUpResult' && op.announcedAs ? [op.matchUpId] : [])),
-  );
+  const { settled } = namedWriters(ops);
   for (const matchUpId of announced) {
     const matchUp = stored.get(matchUpId);
     if (!matchUp) continue;
@@ -183,6 +150,88 @@ export function applyOwnedPlan({
 }
 
 /**
+ * Which notices v1 writes with no event, and with no tournament, read off the ops alone (S7): shared by
+ * `applyOwnedPlan`, which writes them, and the differential (`plannedNotices`), which holds v1's notices to them
+ */
+function noticeRules(ops: OutcomeOp[]) {
+  // a position taken back out of a later round: v1's `removeSubsequentRoundsParticipant` names the position, no event.
+  // Not when the same write places one (a changed winner): v1 announces the placement after the removal, and the
+  // notice buffer keeps the later of the two for the matchUp
+  const removed = new Map(
+    ops.flatMap((op) =>
+      op.op === 'setMatchUpDrawPositions' && op.removedDrawPosition && !op.placedDrawPosition
+        ? [[op.matchUpId, op.removedDrawPosition]]
+        : [],
+    ),
+  );
+  // a placement v1 announces with no event or tournament (a produced exit's award, sent on by `doubleExitAdvancement`)
+  const unevented = new Set(
+    ops.flatMap((op) =>
+      (op.op === 'setMatchUpDrawPositions' &&
+        (op.announcesContext === false || (op.advancesThroughBye && !op.announcesEvent))) ||
+      (op.op === 'setMatchUpResult' && op.announcesContext === false) ||
+      (op.op === 'setMatchUpBye' && op.announcesEvent === false)
+        ? [op.matchUpId]
+        : [],
+    ),
+  );
+  // and with no tournament either (a produced exit's award, #5875; an exit recorded beside a BYE and carried on)
+  const untournamented = new Set(
+    ops.flatMap((op) =>
+      (op.op === 'setMatchUpDrawPositions' || op.op === 'setMatchUpResult') && op.announcesContext === false
+        ? [op.matchUpId]
+        : [],
+    ),
+  );
+  // a BYE an unwind withdraws: v1's `clearDrawPosition` names its position, with neither event nor tournament (S6)
+  const unbyed = withdrawnByeNotices(ops);
+  // a team's line-up written with no event, unless a result written after it announces the matchUp (`namedWriters`)
+  for (const matchUpId of namedWriters(ops).lineUpUnevented) unevented.add(matchUpId);
+  // a settle pass's result write names the event and the tournament, whatever an earlier write of the matchUp left out
+  const settledResults = new Set(
+    ops.flatMap((op) => (op.op === 'setMatchUpResult' && op.announcedAs ? [op.matchUpId] : [])),
+  );
+  return { removed, unevented, untournamented, unbyed, settledResults };
+}
+
+/**
+ * The matchUps and structures whose notices name no event (S7): a matchUp's where its position is removed or its BYE
+ * withdrawn and no result announces it after (v1's `removeSubsequentRoundsParticipant`, `clearDrawPosition`), or
+ * where v1's writer passes none; a structure's where nothing evented is placed in it (`announceAssignments`)
+ */
+export function eventlessNotices(ops: OutcomeOp[]): { matchUps: Set<string>; structures: Set<string> } {
+  const { removed, unevented, unbyed, settledResults } = noticeRules(ops);
+  const resulted = new Set(ops.flatMap((op) => (op.op === 'setMatchUpResult' ? [op.matchUpId] : [])));
+  const matchUps = new Set(
+    ops.flatMap((op) => {
+      if (!('matchUpId' in op)) return [];
+      const { matchUpId } = op;
+      const unplaced = !resulted.has(matchUpId) && (removed.has(matchUpId) || unbyed.has(matchUpId));
+      return !settledResults.has(matchUpId) && (unplaced || unevented.has(matchUpId)) ? [matchUpId] : [];
+    }),
+  );
+  const structures = new Set(touchedStructures(ops).filter((structureId) => !eventedPlacement(ops, structureId)));
+  return { matchUps, structures };
+}
+
+const placement = (op: OutcomeOp): op is Extract<OutcomeOp, { op: 'assignPosition' | 'assignBye' }> =>
+  op.op === 'assignPosition' || op.op === 'assignBye';
+
+/** each structure a placement or an unwind's seat visit touches, in the order the call first touches it */
+const touchedStructures = (ops: OutcomeOp[]) => [
+  ...new Set(ops.flatMap((op) => (placement(op) || op.op === 'withdrawBye' ? [op.structureId] : []))),
+];
+
+/**
+ * a structure whose assignments notice names the event: a placement in it announced with one, the buffer keeping an
+ * earlier notice's event when a later one names none. A seat an unwind visits with nothing placed names none
+ */
+const eventedPlacement = (ops: OutcomeOp[], structureId: string) =>
+  ops.some(
+    (op) => placement(op) && op.structureId === structureId && !(op.op === 'assignBye' && op.announcesEvent === false),
+  );
+
+/**
  * A TEAM line's call returns its dual's tally as v1's `directParticipants` annotates it (`tieMatchUpResult`, S7): the
  * dual's score and the winner it decides, if it decides one; no winner removed, no tieFormat removed
  */
@@ -217,10 +266,7 @@ function announceAssignments({
   // each structure once, where the call first touches it: the notice buffer keeps a structure's first notice in place
   // and takes a later one's payload over it (`preserveNoticeIdentity`), so an unwind's seat visit and the loser placed
   // after it in the same structure are one notice, at the visit (S6)
-  const placement = (op: OutcomeOp): op is Extract<OutcomeOp, { op: 'assignPosition' | 'assignBye' }> =>
-    op.op === 'assignPosition' || op.op === 'assignBye';
-  const touched = [...new Set(ops.flatMap((op) => (placement(op) || op.op === 'withdrawBye' ? [op.structureId] : [])))];
-  for (const structureId of touched) {
+  for (const structureId of touchedStructures(ops)) {
     const { structure } = findStructure({ drawDefinition, structureId });
     if (!structure) continue;
     const placedIn = ops.some((op) => placement(op) && op.structureId === structureId);
@@ -230,14 +276,9 @@ function announceAssignments({
       modifyPositionAssignmentsNotice({ drawDefinition, structure, tournamentId: undefined, event: undefined });
       continue;
     }
-    // a loser placed across a link, or a reserved seat (v1's `directLoser`, `assignDrawPositionBye`): with its event
-    // where any placement in it is announced with one, the buffer keeping an earlier notice's event when a later one
-    // names none
-    const evented = ops.some(
-      (op) =>
-        placement(op) && op.structureId === structureId && !(op.op === 'assignBye' && op.announcesEvent === false),
-    );
-    const noticeEvent = evented ? event : undefined;
+    // a loser placed across a link, or a reserved seat (v1's `directLoser`, `assignDrawPositionBye`), with its event
+    // where any placement in it is announced with one (`eventedPlacement`)
+    const noticeEvent = eventedPlacement(ops, structureId) ? event : undefined;
     modifyPositionAssignmentsNotice({ drawDefinition, tournamentId, structure, event: noticeEvent });
   }
 }
