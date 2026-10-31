@@ -135,6 +135,32 @@ const AWARDEE_PLAYED_ON: Step[] = [
 ];
 
 const SCENARIOS: [string, Scenario][] = [
+  // S6 tail, family 5: a double exit cleared whose produced exit was awarded to a participant who came through the paired
+  // matchUp's BYE (the BYE-origin pair recorded opposite the exit): the awardee's position back out of the next round
+  [
+    'SINGLE_ELIMINATION 7 of 8: a double walkover beside the BYE cleared, its produced exit awarded through the BYE',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(2), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2), outcome: cleared }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP 7 of 8: a double walkover beside the BYE cleared, awarded through the BYE',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2, 'Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION 7 of 8: a double walkover beside the BYE cleared, awarded through the BYE',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: DOUBLE_ELIMINATION },
+      setup: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2, 'Main'), outcome: cleared }],
+    },
+  ],
   // S6 tail, family 4 (a): a double exit cleared whose produced exit had converged with its paired matchUp's in the next
   // matchUp; the convergence is re-derived to the kept origin's pending exit and what it produced onward is taken back
   [
@@ -2258,6 +2284,22 @@ describe('under v2, a dissolved convergence beyond the clear is v2s; given a win
         drawProfile: { drawSize: 16, drawType: FIRST_ROUND_LOSER_CONSOLATION },
         setup: PAIRED(DOUBLE_WALKOVER, DOUBLE_WALKOVER, 'Main'),
         steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+      },
+    ],
+    [
+      'FIRST_MATCH_LOSER_CONSOLATION 7 of 8: a double walkover beside the BYE cleared, awarded through the BYE',
+      {
+        drawProfile: { drawSize: 8, participantsCount: 7, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+        setup: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+        steps: [{ target: R1(2, 'Main'), outcome: cleared }],
+      },
+    ],
+    [
+      'SINGLE_ELIMINATION 7 of 8: a double walkover beside the BYE given a winner, awarded through the BYE',
+      {
+        drawProfile: { drawSize: 8, participantsCount: 7, drawType: SINGLE_ELIMINATION },
+        setup: [{ target: R1(2), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+        steps: [{ target: R1(2), outcome: won(1) }],
       },
     ],
     [
