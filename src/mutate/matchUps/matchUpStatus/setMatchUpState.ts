@@ -889,11 +889,14 @@ function resolveAndApplyOutcome({
  * line of a dual, not ad hoc, given a winner or an exit to carry. Read before anything is written, so it cannot drift
  * from what `directParticipants` reads.
  */
-function missingDrawPositionsRefusal({
+/** what `missingDrawPositionsRefusal` reads of the call: the outcome view (v2) asks it with the same values */
+export type MissingDrawPositionsParams = SetMatchUpStateArgs & { matchUp: MatchUp; structure?: Structure };
+
+export function missingDrawPositionsRefusal({
   activeDownstream,
   params,
 }: {
-  params: SetMatchUpStateArgs & { matchUp: MatchUp; structure?: Structure };
+  params: MissingDrawPositionsParams;
   activeDownstream: boolean;
 }) {
   const { matchUp, structure, matchUpStatus } = params;

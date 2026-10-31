@@ -23,6 +23,7 @@ import {
   MATCHUP_NOT_FOUND,
   MATCHUP_STATUS_OUT_OF_SCOPE,
   MISSING_DRAW_DEFINITION,
+  MISSING_DRAW_POSITIONS,
   MISSING_MATCHUP_ID,
   NO_VALID_ACTIONS,
   PROPAGATED_EXITS_DOWNSTREAM,
@@ -307,6 +308,7 @@ export function refuseOutcome(request: OutcomeRequest, view: OutcomeView): Refus
     refuseScore(request, view) ??
     refuseAgainstDraw(request, view) ??
     refuseSchedule(view) ??
+    (view.missingDrawPositions ? refuse(24, MISSING_DRAW_POSITIONS) : undefined) ??
     refuseDispatch(request, view)
   );
 }

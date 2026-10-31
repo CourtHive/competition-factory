@@ -55,6 +55,10 @@ import {
   relabelledPathFeedChanges,
   relabelledPathFeedRefusal,
 } from '@Mutate/matchUps/drawPositions/relabelledPathFeeds';
+import {
+  missingDrawPositionsRefusal,
+  type MissingDrawPositionsParams,
+} from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 
 // constants and types
 import type { BuildViewArgs, OutcomeRequest, OutcomeScore, OutcomeView, Reservation, ThroughBye } from './types';
@@ -1276,6 +1280,33 @@ function scheduleRefusal({
   };
 }
 
+/** § 2 row 24: v1's `missingDrawPositionsRefusal`, asked with the call's values as `setMatchUpState` passes them */
+function missingDrawPositions({
+  activeDownstream,
+  request,
+  ...rest
+}: {
+  inContextMatchUp?: HydratedMatchUp;
+  tournamentRecord?: BuildViewArgs['tournamentRecord'];
+  drawDefinition: DrawDefinition;
+  request: OutcomeRequest;
+  activeDownstream: boolean;
+  structure?: Structure;
+  matchUp: MatchUp;
+  event?: Event;
+}): boolean {
+  const params = {
+    ...rest,
+    propagateExitStatus: request.flags.propagateExitStatus,
+    matchUpStatus: request.matchUpStatus,
+    matchUpFormat: request.matchUpFormat,
+    winningSide: request.winningSide,
+    matchUpId: request.matchUpId as string,
+    score: request.score,
+  } as MissingDrawPositionsParams;
+  return !!missingDrawPositionsRefusal({ params, activeDownstream });
+}
+
 export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
   const { tournamentRecord, drawDefinition, event, request, policyDefinitions } = args;
   const empty: OutcomeView = {
@@ -1556,6 +1587,17 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       event,
     }),
     scheduleRefusal: scheduleRefusal({ tournamentRecord, drawDefinition, request }),
+    // § 2 row 24: v1's own rule (`missingDrawPositionsRefusal`), asked of the call as v1 asks it
+    missingDrawPositions: missingDrawPositions({
+      tournamentRecord,
+      inContextMatchUp,
+      activeDownstream,
+      drawDefinition,
+      structure,
+      matchUp,
+      request,
+      event,
+    }),
     line,
     dualProjection,
     targets: {

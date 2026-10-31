@@ -5,8 +5,6 @@ import {
   INVALID_MATCHUP_STATUS,
   INVALID_MATCHUP_STATUS_BYE,
   MISSING_ASSIGNMENTS,
-  MISSING_DRAW_POSITIONS,
-  MUTATION_LOCKED,
   UNRECOGNIZED_MATCHUP_STATUS,
 } from '@Constants/errorConditionConstants';
 
@@ -22,13 +20,14 @@ export const APPLY_STAGE_CODES: ReadonlySet<string> = new Set([
   // INVALID_TIME, INVALID_DATE and ANACHRONISM are not: v2 refuses a schedule as v1's writer refuses it, rows 16, 25
   // and 27 (`refusals.ts` `refuseSchedule`, S7)
   // DRAW_POSITION_ACTIVE is not one: v2 refuses a swap that meets an active FIRST_MATCHUP-fed seat (row 26, S4)
-  MUTATION_LOCKED.code,
+  // MUTATION_LOCKED is not: the engine asks a lock before the method runs (`executeMethod`), and nothing inside
+  // `setMatchUpStatus` asks one, so neither pipeline is reached under a lock
   'ERR_FORCED', // § 2 row 19: observed by the corpus, no constant declares it (spec OPEN 2)
   UNRECOGNIZED_MATCHUP_STATUS.code,
   INVALID_MATCHUP_STATUS.code,
   INVALID_MATCHUP_STATUS_BYE.code,
   MISSING_ASSIGNMENTS.code,
-  MISSING_DRAW_POSITIONS.code,
+  // MISSING_DRAW_POSITIONS is not: v2 refuses it as v1 does, row 24 (v1's `missingDrawPositionsRefusal`, S7)
   // a refusal raised INSIDE the exit cascade, which `setMatchUpStatus` now returns rather than drops (F3,
   // CA 2026-10-04); v2 does not yet plan the cascade writes that raise it ("an exit carried into a swap")
   DRAW_POSITION_ASSIGNED.code,
