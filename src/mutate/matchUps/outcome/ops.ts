@@ -65,9 +65,10 @@ export type OutcomeOp =
       announcesContext?: false;
       /**
        * the writer v1's notice names where a settle pass makes the write: a carry withdrawn off the loser's matchUp by a
-       * relabel, whose last emission is `reconcileScoredTimes` taking its `scoredTime` (S6)
+       * relabel, whose last emission is `reconcileScoredTimes` taking its `scoredTime` (S6); a convergence an unwind
+       * dissolved, written again as it stands by `settleRederivedDoubleExits` after the call's own write (S6 tail)
        */
-      announcedAs?: 'reconcileScoredTimes';
+      announcedAs?: 'reconcileScoredTimes' | 'settleRederivedDoubleExit';
       /**
        * a TEAM dual's write after its line's result (S7), `updateTieMatchUpScore`'s: the sides it ensures and the
        * tieFormat it copies on, each present only where it changes the stored value. v1 returns the write as the
@@ -106,6 +107,11 @@ export type OutcomeOp =
        * `advanceWinner`, with no event, and the matchUp it joins written with no score
        */
       advancesThroughBye?: true;
+      /**
+       * with `advancesThroughBye`: the advance is a settle pass's (`reconcileByeAdvancements`, a seat an unwind freed
+       * beside a standing BYE, S6 tail), which v1 announces with the event
+       */
+      announcesEvent?: true;
       /**
        * the BYE whose withdrawal takes the position back out (S6, an unwind's `removeDirectedBye`): announced as v1's
        * `clearDrawPosition` announces it, `removeDrawPosition-<that BYE's drawPosition>`, with neither event nor tournament
