@@ -1921,6 +1921,97 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(1, 'Main'), outcome: won(1) }],
     },
   ],
+  [
+    'COMPASS 8/5 (S6 tail, the BYE passage): the carrier passes the West BYE into the West final, a BYE too: the carry recorded beside both, and it stops',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 5, drawType: COMPASS },
+      steps: [{ target: R1(3, 'East'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'COMPASS 16/10 (S6 tail, the BYE passage): past two BYE-held matchUps into a clean one, where the walkover lands',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 10, drawType: COMPASS },
+      steps: [{ target: R1(2, 'East'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'COMPASS 16/10 (S6 tail, the BYE passage): a DEFAULTED carried through the passage',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 10, drawType: COMPASS },
+      steps: [{ target: R1(2, 'East'), outcome: exited(DEFAULTED, 2), params: CARRIED }],
+    },
+  ],
+  [
+    'COMPASS 16/10 (S6 tail, the BYE passage): a retirement the policy propagates, carried through the passage as a walkover',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 10, drawType: COMPASS },
+      steps: [{ target: R1(2, 'East'), outcome: retired(1), params: { ...CARRIED, propagateRetirementAsExit: true } }],
+    },
+  ],
+  [
+    'COMPASS 32/18 (S6 tail, the BYE passage): three BYE-held matchUps passed, then a clean landing',
+    {
+      drawProfile: { drawSize: 32, participantsCount: 18, drawType: COMPASS },
+      steps: [{ target: R1(13, 'East'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'COMPASS 16/9 (S6 tail, the BYE passage): three BYE-held matchUps passed to the last round of its structure',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 9, drawType: COMPASS },
+      steps: [{ target: R1(7, 'East'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'COMPASS 16/11 (S6 tail, the BYE passage): a one-round structure at a deeper level holds a BYE: recorded beside it, the carry stops',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 11, drawType: COMPASS },
+      steps: [{ target: R1(5, 'East'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'COMPASS 16/13 (S6 tail, the BYE passage): a passage at a deeper level through two BYEs to its last round',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 13, drawType: COMPASS },
+      steps: [{ target: R1(5, 'East'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'COMPASS 32/26 (S6 tail, the BYE passage): a passage at a deeper level into a clean matchUp, where the walkover lands',
+    {
+      drawProfile: { drawSize: 32, participantsCount: 26, drawType: COMPASS },
+      steps: [{ target: R1(13, 'East'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'COMPASS 32/25 (S6 tail, the BYE passage): a passage at a deeper level through three BYEs',
+    {
+      drawProfile: { drawSize: 32, participantsCount: 25, drawType: COMPASS },
+      steps: [{ target: R1(13, 'East'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'OLYMPIC 8/7 (S6 tail, the BYE passage): a one-round structure at the second level holds a BYE',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: OLYMPIC },
+      steps: [{ target: R1(3, 'East'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'OLYMPIC 16/10 (S6 tail, the BYE passage): past two BYE-held matchUps into a clean one',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 10, drawType: OLYMPIC },
+      steps: [{ target: R1(2, 'East'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'OLYMPIC 32/26 (S6 tail, the BYE passage): a passage at a deeper level into a clean matchUp',
+    {
+      drawProfile: { drawSize: 32, participantsCount: 26, drawType: OLYMPIC },
+      steps: [{ target: R1(13, 'East'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
@@ -2058,6 +2149,42 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     } finally {
       SETTLE_PASS_LIMITS.exitLevels = saved;
     }
+  });
+
+  it('F9 (S6 tail): a BYE passage costs v1 one iteration per BYE passed, so a carry within the levels can still reach the bound', () => {
+    // COMPASS 16/13: East 1/5's carry lands in West (one iteration), then passes two BYE-held matchUps in South (two more)
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 16, participantsCount: 13, drawType: COMPASS },
+      steps: [{ target: R1(5, 'East'), outcome: walkover(1), params: CARRIED }],
+    };
+    const saved = SETTLE_PASS_LIMITS.exitLevels;
+    SETTLE_PASS_LIMITS.exitLevels = 2;
+    try {
+      const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+      const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+      // CONTROL: v1 refuses at the bound
+      expect(v1.results[0].error?.code).toEqual(SETTLE_BOUND_REACHED.code);
+      expect(v2.v1Writes).toBeGreaterThan(0);
+      expect(v2.results).toEqual(v1.results);
+      expect(v2.record).toEqual(v1.record);
+    } finally {
+      SETTLE_PASS_LIMITS.exitLevels = saved;
+    }
+  });
+
+  it('S6 tail: a loser who carries nothing, placed opposite a BYE with BYE-held matchUps beyond, is v1s', () => {
+    // COMPASS 16/10: a retirement the policy does not propagate is directed as played; its loser goes on through two BYEs
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 16, participantsCount: 10, drawType: COMPASS },
+      steps: [{ target: R1(2, 'East'), outcome: retired(1), params: CARRIED }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v1.results[0].success).toEqual(true);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
   });
 
   it('S6 tail: a double walkover under policy off cleared while another double exit holds a BYE on its consolation path is v1s', () => {

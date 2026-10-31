@@ -1,6 +1,7 @@
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
 import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
+import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
 import { getCapturedClock, writeLegacyEnabled } from '@Global/state/globalState';
 import { ensuredDualSides } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
@@ -33,12 +34,14 @@ import type {
   Tournament,
 } from '@Types/tournamentTypes';
 import type {
+  ByePassage,
   CarryLevel,
   DirectionPlan,
   MatchUpWrite,
   OutcomeRequest,
   OutcomeView,
   Route,
+  ThroughBye,
   WinnerLoserSeat,
   WithdrawnCarry,
 } from './types';
@@ -167,8 +170,10 @@ function plainLoserReason(view: OutcomeView, direction: DirectionPlan): AbstainR
   // v1's `propagateLoserSeed` writes a seeded loser's seed into the structure they are placed in: not an op yet
   if (loser.participantId && targets.seededParticipantIds?.includes(loser.participantId)) return 'loser';
   if (targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit) return 'cascade';
-  // opposite a BYE the loser goes on at once: planned when the matchUp they go on into is clean (`loserThroughBye`)
-  if (targets.loserTargetSeat.opponentBye && !targets.loserThroughBye) return 'cascade';
+  // opposite a BYE the loser goes on at once: planned when the matchUp they go on into is clean (`loserThroughBye`), or a
+  // carried exit's loser goes on through the BYE-held matchUps past it (`loserByePassage`, S6 tail)
+  if (targets.loserTargetSeat.opponentBye && !targets.loserThroughBye && !(loser.exit && targets.loserByePassage))
+    return 'cascade';
   return undefined;
 }
 
@@ -717,9 +722,10 @@ function carriedReason(view: OutcomeView, write: MatchUpWrite): AbstainReason | 
   if (!seat?.free) return 'exit';
   const record = targets.loserMatchUpRecord;
   if (!record || record.provenance || record.matchUpStatusCodes?.length) return 'exit';
-  // RULE 1: a BYE opposite, which the carrier passes into a clean next matchUp (`loserThroughBye`), where the exit lands
+  // RULE 1: a BYE opposite, which the carrier passes into a clean next matchUp (`loserThroughBye`), where the exit lands,
+  // or on through the BYE-held matchUps beyond it, to a clean one or the structure's last round (`loserByePassage`)
   if (seat.opponentBye) {
-    if (targets.loserMatchUpStatus !== BYE || !targets.loserThroughBye) return 'exit';
+    if (targets.loserMatchUpStatus !== BYE || (!targets.loserThroughBye && !targets.loserByePassage)) return 'exit';
   } else if (
     targets.loserMatchUpStatus !== TO_BE_PLAYED ||
     targets.loserMatchUpHasResult ||
@@ -850,8 +856,14 @@ type CarriedLanding = {
   opponentHeld: boolean;
   /** RULE 3: the opponent standing there, their position joining the next matchUp, which holds these after */
   onward?: { matchUpId: string; drawPositions: number[] };
-  /** RULE 1: the BYE matchUp the carrier passed, which records the carry beside its BYE on the carrier's side */
-  relay?: { matchUpId: string; sideNumber: 1 | 2 };
+  /** RULE 1: the BYE matchUps the carrier passed, in order, each recording the carry beside its BYE on the carrier's side */
+  relays?: { matchUpId: string; sideNumber: 1 | 2 }[];
+  /** past the BYEs, the matchUp the carrier's position joins, with the positions it holds after */
+  beyond?: ThroughBye;
+  /** RULE 1 in the structure's last round: the carry is recorded beside the BYEs and stops; nothing is written beyond */
+  ends?: boolean;
+  /** how many of v1's `propagateExitFrom` iterations this landing takes: one per BYE passed, one for the write */
+  passes: number;
 };
 
 const sideOf = (matchUp: HydratedMatchUp | undefined, drawPosition?: number) => {
@@ -869,17 +881,39 @@ const sideOf = (matchUp: HydratedMatchUp | undefined, drawPosition?: number) => 
  * outside the exit cascade) and nothing more follows.
  */
 function carriedLanding(view: OutcomeView): CarriedLanding | undefined {
-  const { loserMatchUpId, loserTargetDrawPosition, loserTargetSeat, loserThroughBye } = view.targets;
-  const byeMatchUp = loserTargetSeat?.opponentBye ? indexed(view, loserMatchUpId) : undefined;
-  const relaySide = sideOf(byeMatchUp, loserTargetDrawPosition);
-  if (byeMatchUp && !relaySide) return undefined;
-  const landing = landingAt(view, byeMatchUp ? loserThroughBye?.matchUpId : loserMatchUpId, loserTargetDrawPosition, {
-    beyondBye: !!byeMatchUp,
-  });
-  if (!landing) return undefined;
-  return byeMatchUp && relaySide
-    ? { ...landing, relay: { matchUpId: byeMatchUp.matchUpId, sideNumber: relaySide } }
-    : landing;
+  const { loserMatchUpId, loserTargetDrawPosition, loserTargetSeat, loserThroughBye, loserByePassage } = view.targets;
+  if (!loserTargetSeat?.opponentBye) return landingAt(view, loserMatchUpId, loserTargetDrawPosition);
+  return passedLanding(view, loserMatchUpId, loserTargetDrawPosition, loserThroughBye, loserByePassage);
+}
+
+/**
+ * RULE 1: the carrier on `drawPosition` opposite a BYE in `byeMatchUpId` passes it, and any BYE-held matchUps past it
+ * (`ByePassage`), each recording the carry beside its BYE, into the clean matchUp beyond, where the exit lands; or, the
+ * passage ending in the structure's last round, the carry stops there (S6 tail)
+ */
+function passedLanding(
+  view: OutcomeView,
+  byeMatchUpId: string | undefined,
+  drawPosition: number | undefined,
+  through?: ThroughBye,
+  passage?: ByePassage,
+): CarriedLanding | undefined {
+  // a TEAM dual's passage: v1 ensures the dual's sides on the BYE matchUps it passes (the line-up carry, S7's TEAM track)
+  if (passage && view.isTeam) return undefined;
+  const relays: { matchUpId: string; sideNumber: 1 | 2 }[] = [];
+  // the carrier's position stands in each BYE matchUp passed (`byePassage` read it there)
+  for (const matchUpId of [byeMatchUpId, ...(passage?.byes ?? [])]) {
+    const sideNumber = sideOf(indexed(view, matchUpId), drawPosition);
+    if (matchUpId && sideNumber) relays.push({ matchUpId, sideNumber });
+  }
+  const beyond = through ?? passage?.through;
+  const last = relays[relays.length - 1];
+  if (!beyond)
+    return passage
+      ? { ...last, carriesOn: false, opponentHeld: false, relays, ends: true, passes: relays.length }
+      : undefined;
+  const landing = landingAt(view, beyond.matchUpId, drawPosition, { beyondBye: true });
+  return landing ? { ...landing, relays, beyond, passes: relays.length + 1 } : undefined;
 }
 
 const indexed = (view: OutcomeView, matchUpId?: string) =>
@@ -902,6 +936,7 @@ function landingAt(
     opponentHeld: !!opponent?.participantId || !!opponent?.bye,
     carriesOn: !!entry.loserMatchUpId,
     matchUpId: entry.matchUpId,
+    passes: 1,
     sideNumber,
   };
   if (!opponent?.participantId || opponent.bye || !opponent.drawPosition) return landing;
@@ -947,26 +982,28 @@ function onwardFrom(
  * v1's bound with a level to go (F9: v1 refuses there; v2 abstains, so it never plans the bound).
  */
 function deeperLandings(view: OutcomeView, first: CarriedLanding): DeeperLanding[] | undefined {
-  if (!first.carriesOn) return [];
+  // v1's loop takes one iteration per BYE passed and one per landing written, and refuses with a level still to go at its
+  // bound (F9): v2 abstains there, so it never plans the bound
+  let passes = first.passes;
+  if (!first.carriesOn) return passes > SETTLE_PASS_LIMITS.exitLevels ? undefined : [];
   const chain = view.targets.carryLevels;
   if (!chain || chain.bounded || chain.levels[0]?.fromMatchUpId !== first.matchUpId) return undefined;
   const deeper: DeeperLanding[] = [];
   for (const level of chain.levels) {
     if (level.linkCondition || !level.seat?.free) return undefined;
-    // RULE 1 at this level: a BYE opposite, which the carrier passes into a clean matchUp beyond, where the exit lands
+    // RULE 1 at this level: a BYE opposite, which the carrier passes into a clean matchUp beyond, where the exit lands, or
+    // on through the BYE-held matchUps past it (`passage`)
     const relayed = level.seat.opponentBye;
-    if (relayed && (level.matchUpStatus !== BYE || !level.through)) return undefined;
+    if (relayed && (level.matchUpStatus !== BYE || (!level.through && !level.passage))) return undefined;
     if (!relayed && (level.matchUpStatus !== TO_BE_PLAYED || level.hasResult || level.carriesExit)) return undefined;
     if (!level.record || level.record.provenance || level.record.matchUpStatusCodes?.length) return undefined;
-    const at = relayed ? level.through?.matchUpId : level.matchUpId;
-    const reached = landingAt(view, at, level.drawPosition, { beyondBye: relayed });
-    const relaySide = relayed ? sideOf(indexed(view, level.matchUpId), level.drawPosition) : undefined;
-    if (!reached || (reached.opponentHeld && !reached.onward) || (relayed && !relaySide)) return undefined;
-    const landing: CarriedLanding = relaySide
-      ? { ...reached, relay: { matchUpId: level.matchUpId, sideNumber: relaySide as 1 | 2 } }
-      : reached;
+    const landing = relayed
+      ? passedLanding(view, level.matchUpId, level.drawPosition, level.through, level.passage)
+      : landingAt(view, level.matchUpId, level.drawPosition);
+    if (!landing || (landing.opponentHeld && !landing.onward)) return undefined;
+    passes += landing.passes;
     deeper.push({ level, landing });
-    if (!landing.carriesOn) return deeper;
+    if (!landing.carriesOn) return passes > SETTLE_PASS_LIMITS.exitLevels ? undefined : deeper;
   }
   return undefined;
 }
@@ -994,40 +1031,43 @@ function carriedOps(
   const provenanceOps = (matchUpId: string, provenance?: ReturnType<typeof carried>): OutcomeOp[] =>
     provenance ? [{ op: 'mergeSideExitProvenance', matchUpId, provenance }] : [];
   const source = { matchUpId: request.matchUpId, status: write.matchUpStatus as MatchUpStatusUnion };
-  // RULE 1: the BYE matchUp stays a BYE and records the carry beside its BYE, announced by itself
-  const relay: OutcomeOp[] = landing.relay
-    ? [
-        ...provenanceOps(landing.relay.matchUpId, carried(landing.relay.sideNumber, source.matchUpId, source.status)),
-        { op: 'stampUpdatedAt', entity: 'matchUp', id: landing.relay.matchUpId },
-      ]
-    : [];
+  // RULE 1: each BYE matchUp passed stays a BYE and records the carry beside its BYE, announced by itself
+  const relayed = (at: CarriedLanding, sourceMatchUpId?: string, previousMatchUpStatus?: MatchUpStatusUnion) =>
+    (at.relays ?? []).flatMap(({ matchUpId, sideNumber }): OutcomeOp[] => [
+      ...provenanceOps(matchUpId, carried(sideNumber, sourceMatchUpId, previousMatchUpStatus)),
+      { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
+    ]);
+  const relay = relayed(landing, source.matchUpId, source.status);
   const landed = (
     at: CarriedLanding,
     sourceMatchUpId?: string,
     previousMatchUpStatus?: MatchUpStatusUnion,
-  ): OutcomeOp[] => [
-    {
-      op: 'setMatchUpResult',
-      matchUpId: at.matchUpId,
-      matchUpStatus: exit,
-      winningSide: (3 - at.sideNumber) as 1 | 2,
-      matchUpStatusCodes: [],
-      ...(exit === WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
-    },
-    ...provenanceOps(at.matchUpId, carried(at.sideNumber, sourceMatchUpId, previousMatchUpStatus)),
-    { op: 'stampUpdatedAt', entity: 'matchUp', id: at.matchUpId },
-    // RULE 3: the opponent awarded the exit goes on, their position joining the next matchUp
-    ...(at.onward
-      ? [
+  ): OutcomeOp[] =>
+    at.ends
+      ? []
+      : [
           {
-            op: 'setMatchUpDrawPositions' as const,
-            matchUpId: at.onward.matchUpId,
-            drawPositions: at.onward.drawPositions,
+            op: 'setMatchUpResult',
+            matchUpId: at.matchUpId,
+            matchUpStatus: exit,
+            winningSide: (3 - at.sideNumber) as 1 | 2,
+            matchUpStatusCodes: [],
+            ...(exit === WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
           },
-          { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: at.onward.matchUpId },
-        ]
-      : []),
-  ];
+          ...provenanceOps(at.matchUpId, carried(at.sideNumber, sourceMatchUpId, previousMatchUpStatus)),
+          { op: 'stampUpdatedAt', entity: 'matchUp', id: at.matchUpId },
+          // RULE 3: the opponent awarded the exit goes on, their position joining the next matchUp
+          ...(at.onward
+            ? [
+                {
+                  op: 'setMatchUpDrawPositions' as const,
+                  matchUpId: at.onward.matchUpId,
+                  drawPositions: at.onward.drawPositions,
+                },
+                { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: at.onward.matchUpId },
+              ]
+            : []),
+        ];
   // each further level: the carrier placed across the landing's loser link, the exit carried from the landing they lost;
   // past a BYE there the BYE matchUp records the carry beside its BYE and the carrier goes on, as at the first level
   const levels = deeper.flatMap(({ level, landing: at }): OutcomeOp[] => [
@@ -1037,20 +1077,15 @@ function carriedOps(
       drawPosition: level.drawPosition,
       participantId: loser.participantId,
     },
-    ...(at.relay
-      ? [
-          ...provenanceOps(at.relay.matchUpId, carried(at.relay.sideNumber, level.fromMatchUpId, exit)),
-          { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: at.relay.matchUpId },
-        ]
-      : []),
-    ...(at.relay && level.through
+    ...relayed(at, level.fromMatchUpId, exit),
+    ...(at.beyond
       ? [
           {
             op: 'setMatchUpDrawPositions' as const,
-            matchUpId: level.through.matchUpId,
-            drawPositions: level.through.drawPositions,
+            matchUpId: at.beyond.matchUpId,
+            drawPositions: at.beyond.drawPositions,
           },
-          { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: level.through.matchUpId },
+          { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: at.beyond.matchUpId },
         ]
       : []),
     ...landed(at, level.fromMatchUpId, exit),
@@ -3618,7 +3653,9 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
   // a participant placed opposite a BYE goes on through it, a loser fed onto the seat or a winner into a BYE-held
   // target: their position joins the next matchUp, which is stamped
   const loserThrough =
-    loser?.arrives && view.targets.loserTargetSeat?.opponentBye ? view.targets.loserThroughBye : undefined;
+    loser?.arrives && view.targets.loserTargetSeat?.opponentBye
+      ? (view.targets.loserThroughBye ?? view.targets.loserByePassage?.through)
+      : undefined;
   const winnerThrough =
     winner && view.targets.winner?.hasBye ? view.targets.winnerThroughBye?.[write.winningSide as 1 | 2] : undefined;
   // a dual's own call: its loser's assignment writes the team's line-up where it lands (S7)

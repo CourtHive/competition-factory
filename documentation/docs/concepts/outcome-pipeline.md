@@ -620,14 +620,25 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   planned only where that matchUp is clean (as a plain loser's pass through a BYE is) and holds no codes or
   provenance: the BYE matchUp stays a BYE and records the carry beside its BYE on the carrier's side,
   announced by itself (`progressExitStatus`), and the exit lands beyond it by RULE 2 or 3.
+  Where what lies beyond that BYE is no clean matchUp (S6 tail, the BYE passage), v1 re-propagates the exit onto the
+  nearest later matchUp of the structure holding the carrier (`findAdvancementMatchUp`), RULE 1 again wherever that is
+  a BYE-held matchUp: each BYE matchUp passed records the carry beside its BYE on the carrier's side, announced by
+  itself, the source and status those of the matchUp the carrier lost, until the passage reaches a clean matchUp, where
+  the exit lands by RULE 2 or 3 as above, or the structure's last round, where there is nowhere further and the carry
+  stops (nothing more is written). Planned where every BYE-held matchUp passed already holds the carrier's position
+  (advanced structurally while their seat was empty) opposite a BYE, and the passage ends in the
+  last round or in a clean matchUp; a BYE whose winner crosses a link (DOUBLE_ELIMINATION's Backdraw final) is v1's,
+  and a TEAM dual's passage is v1's (v1 ensures the dual's sides on each BYE matchUp it passes).
   It is announced as a score write, its in-context matchUp to a subscriber
   included, and the call's result carries no propagation context. A matchUp that links its loser on
   (COMPASS, OLYMPIC, PLAYOFF) makes the carrier, its loser, carry the exit again (`propagateExitFrom`'s loop):
   v2 plans the loop level by level from the draw as the call found it, each level's seat and matchUp clean as
   the first must be (no link condition; a BYE opposite passed by RULE 1 into the clean matchUp beyond it, which records
   the carry beside its BYE as at the first level), the carrier placed and the exit written with the
-  landing they lost as its origin. The walk is bounded by v1's own `SETTLE_PASS_LIMITS.exitLevels`; a chain
-  that reaches it is v1's, which refuses there (`SETTLE_BOUND_REACHED`, F9 (i)), so v2 never plans the bound. A **double exit** in a round robin group sends nobody on (`doubleExitAdvancement`
+  landing they lost as its origin, a level's BYE passage planned as the first level's. The walk is bounded by v1's own
+  `SETTLE_PASS_LIMITS.exitLevels`, counted as v1's loop counts it: one iteration for each landing written and one for
+  each BYE passed; a chain that reaches it is v1's, which refuses there (`SETTLE_BOUND_REACHED`, F9 (i)), so v2 never
+  plans the bound. A **double exit** in a round robin group sends nobody on (`doubleExitAdvancement`
   returns at once in a container): its result and the group's tally are planned, and the settle passes are asked as
   for a played result. A **double exit** elsewhere is owned where its produced exit lands pending: entered on a matchUp holding no
   result, in a structure it links nothing out of, it produces a `WALKOVER` (or a `DEFAULTED` from a
@@ -698,7 +709,7 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   matchUp beyond (S6), each announced as `advanceWinner` with no event. The
   unfillable seat takes its BYE behind a `FIRST_MATCHUP` link too, as v1 places it (`advanceByeToLoserMatchUp` asks no
   condition); this matchUp's own `FIRST_MATCHUP` feed stays v1's. v1 writes it through
-  `modifyMatchUpScore`, not `setMatchUpState`, so it takes no `scoredTime`. Stay v1's: a double exit with a loser link beside a BYE or into a feed round; a carry past a BYE into anything but a clean matchUp; a
+  `modifyMatchUpScore`, not `setMatchUpState`, so it takes no `scoredTime`. Stay v1's: a double exit with a loser link beside a BYE or into a feed round; a carry past a BYE into anything but a clean matchUp or a BYE passage (above); a
   present opponent, for a carried or a produced exit, with nowhere clean to go on to; a convergence but RULE 4's clean one; a
   correction to or from an exit (but the clean clear below); and an exit whose target holds a BYE, an exit or a result
   (`exit`, `cascade`).
