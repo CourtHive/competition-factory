@@ -461,7 +461,7 @@ const { drawDefinition, matchUpsMap } = engine.generateDrawTypeAndModifyDrawDefi
 
 Splits event entries into `flightsCount` (# of draws). The `flightProfile` lives on the event (`event.flightProfile`) and holds the attributes `generateDrawDefinition` uses for each flight's draw.
 
-By default every entry with a direct-acceptance status is split. `entriesScope: ENTRIES_SCOPE_UNFLIGHTED` splits only participants who are in no flight and no draw; every draw counts as a flight, including a draw stored without one. `participantIds` and `excludeParticipantIds` narrow the split further. `scaledEntries` orders the split; it does not narrow it.
+By default every entry with a direct-acceptance status is split. `entriesScope: ENTRIES_SCOPE_UNFLIGHTED` splits only participants who are in no flight and no draw; every draw counts as a flight, including a draw stored without one. `participantIds` and `excludeParticipantIds` narrow the split further. `scaleRange: { min, max }` splits only entries rated within the band (inclusive, on `scaleAttributes`); unrated entries are left out when a band is given. With `appendFlights` it builds flights by rating band: a top flight of everyone rated 4 or better, then the remaining participants. `scaledEntries` orders the split; it does not narrow it.
 
 `appendFlights` adds the new flights after the event's existing flights without touching them or their draws, so flights can be generated while other flights already have draws. New flights are numbered after the highest existing flight number, and default names follow those numbers. A draw stored without a flight is given a `manuallyAdded` flight in the same write. Appending is refused with `EXISTING_FLIGHT` (its `context.participantIds` lists them) if a split participant is already in a flight or a draw. See examples: [Generating Flight Profiles](../concepts/events/flights.mdx#generating-flight-profiles), [Update Existing Profile](../concepts/events/flights.mdx#update-existing-profile), [Complete Example](../concepts/events/flights.mdx#complete-example).
 
@@ -493,6 +493,7 @@ const { flightProfile, splitEntries } = engine.generateFlightProfile({
   participantIds, // optional - split only these participants' entries
   excludeParticipantIds, // optional
   appendFlights, // optional - add after the existing flights; with attachFlightProfile, writes them to the event
+  scaleRange, // optional - { min, max }: split only entries rated within the band; unrated entries are left out
 });
 
 const {
