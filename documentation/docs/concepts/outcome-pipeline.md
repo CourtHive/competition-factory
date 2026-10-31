@@ -774,6 +774,14 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   winner, the loser lands on the freed seat as plainly (S6 tail). A final whose winner link leads on into another
   structure (DOUBLE_ELIMINATION's Decider, fed by both the final's links) stays v1's.
 
+  A consolation double exit whose produced exit lands in a **feed round** (FEED_IN_CHAMPIONSHIP: the next matchUp holds
+  the fed seat's structural position, which v1 reserves on into the round beyond) is unwound as the plain one once the
+  exit stands pending beside that seat (S6 tail): the feed path is written back to be played with its structural fed
+  positions standing, the reservation taken back out of the next round, the produced exit's origin withdrawn. On any
+  path, the position the level before sent ahead (the awardee's, the reservation) comes back out of the matchUp holding
+  it, and another position standing there (a feed round's own fed seat, an opponent arrived from the other half) stays,
+  as v1 leaves it. Stay v1's: the exit awarded to the loser fed beside it, and the given winner.
+
   Under **`doubleExitPropagateBye: false`** the seat a level's loser link feeds shows no BYE: the double exit carries its
   exit there (awarded to whoever stands or arrives opposite), and a further level's seat holds nothing of this unwind's.
   v1 visits the matchUp holding the seat all the same (`conditionallyRemoveDrawPosition`, the loser branch of
