@@ -1,9 +1,10 @@
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
 import { getCapturedClock, writeLegacyEnabled } from '@Global/state/globalState';
+import { ensuredDualSides } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
 import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
-import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
+import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { validMatchUps } from '@Validators/validMatchUp';
 import {
   buildCarriedExitProvenance,
@@ -2627,16 +2628,15 @@ function teamReason({
  * the result, `scoredTime`, the winner placed in the next dual, announced `assignMatchUpDrawPosition`), and a double exit
  * as any double exit (`doubleExitAdvancement`: the exit it produces in the next dual, BYEs on the seats its loser links
  * feed), after `ensureSideLineUps` has written the dual's sides (`ensuredSides`). It carries no line-up on: that is a
- * deciding line's (`propagateLineUp`). Stays v1's: a call that enables or disables auto-calc (v1 writes
- * `disableAutoCalc`, and projects the winner from the lines), a dual's exit carried across a loser link, a dual holding
- * a winner or another status, and a dual in a round robin.
+ * deciding line's (`propagateLineUp`). An exit carried across a loser link is written on the dual it reaches by that
+ * dual's own call (`carriedDualLanding`). Stays v1's: a call that enables or disables auto-calc (v1 writes
+ * `disableAutoCalc`, and projects the winner from the lines), a dual holding a winner or another status, and a dual in a
+ * round robin.
  */
 function dualCallReason(request: OutcomeRequest, view: OutcomeView, route?: Route): AbstainReason | undefined {
   const { existing } = view;
   if ((route !== 'winner' && route !== DOUBLE_EXIT) || request.flags.enableAutoCalc || request.flags.disableAutoCalc)
     return 'team';
-  // an exit carried across a loser link (`propagateExitStatus`) writes the sides of the dual it reaches: v1's
-  if (isExit(request.matchUpStatus) && request.flags.propagateExitStatus && view.targets.loserLink) return 'team';
   // a dual holding a winner holds a decided status: none is to be played or in progress
   if (existing.matchUpStatus !== TO_BE_PLAYED && existing.matchUpStatus !== IN_PROGRESS) return 'team';
   return view.group || view.draw.tallied ? 'team' : undefined;
@@ -3250,6 +3250,57 @@ function assignedLineUpOps(
   return ops;
 }
 
+/**
+ * S7: a dual's exit carried across its loser link is written on the dual the losing team reaches by that dual's own call
+ * (`setMatchUpState`), whose `ensureSideLineUps` first writes its sides with the team arrived: the carried write takes
+ * them as `ensuredSides` (`ensuredDualSides`, the one rule). The line-up the team's assignment wrote there is the draw's,
+ * the line-up that rule falls back to, and one edited on the dual since is the one it keeps: the stored sides are read
+ * as they stand. Planned where the carry lands on that dual alone, both its sides holding their drawPositions.
+ */
+function carriedDualLanding(
+  view: OutcomeView,
+  drawDefinition: DrawDefinition,
+  landing: OutcomeOp[],
+  loser?: NonNullable<DirectionPlan['loser']>,
+): OutcomeOp[] | undefined {
+  const { loserMatchUpId, loserTargetDrawPosition } = view.targets;
+  // a carry through a BYE, or on past the dual it reaches (its own loser link), writes a matchUp beyond it: v1's
+  const written = landing.filter((op) => op.op === 'setMatchUpResult');
+  if (!written.length || !loser?.arrives) return landing;
+  const { participantId } = loser;
+  if (written.some((op) => op.matchUpId !== loserMatchUpId)) return undefined;
+  const reached = view.inContextDrawMatchUps?.find((matchUp) => matchUp.matchUpId === loserMatchUpId);
+  // planned where both the dual's sides hold their drawPositions (the loser's is one of them): a side holding none (a
+  // DOUBLE_ELIMINATION losers' round, half placed) is hydrated unnumbered, and v1 reads it numbered after the arrival
+  const seated = reached?.sides?.filter((side) => side.drawPosition) ?? [];
+  if (seated.length !== 2) return undefined;
+  const ensuredSides = ensuredDualSides({
+    contextSides: reached?.sides?.map((side) =>
+      side.drawPosition === loserTargetDrawPosition ? { ...side, participantId } : side,
+    ),
+    rawSides: view.loserDualSides as Parameters<typeof ensuredDualSides>[0]['rawSides'],
+    lineUps: firstClassOrExtension({ element: drawDefinition, attribute: 'lineUps', name: LINEUPS }),
+  });
+  return landing.map((op) =>
+    op.op === 'setMatchUpResult' && op.matchUpId === loserMatchUpId ? { ...op, ensuredSides } : op,
+  );
+}
+
+/** a plain loser arrival: the loser on the seat the link feeds */
+function arrivalOps(view: OutcomeView, loser?: DirectionPlan['loser']): OutcomeOp[] {
+  const { loserStructureId, loserTargetDrawPosition } = view.targets;
+  return loser?.arrives && loserStructureId && loserTargetDrawPosition
+    ? [
+        {
+          op: 'assignPosition',
+          structureId: loserStructureId,
+          drawPosition: loserTargetDrawPosition,
+          participantId: loser.participantId,
+        },
+      ]
+    : [];
+}
+
 /** the call's plan as ops, or the reason it is v1's */
 function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
   const reason = abstainReason(args);
@@ -3290,18 +3341,8 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
   // object does not change (the write is on the structure's assignments), so it is not a touched entity (F2 (i), and v1).
   // The structure whose assignments change is stamped below (v1's `modifyPositionAssignmentsNotice`).
   const loser = placing?.loser;
-  const { loserStructureId, loserTargetDrawPosition, loserMatchUpId } = view.targets;
-  const arrival: OutcomeOp[] =
-    loser?.arrives && loserStructureId && loserTargetDrawPosition
-      ? [
-          {
-            op: 'assignPosition',
-            structureId: loserStructureId,
-            drawPosition: loserTargetDrawPosition,
-            participantId: loser.participantId,
-          },
-        ]
-      : [];
+  const { loserMatchUpId } = view.targets;
+  const arrival = arrivalOps(view, loser);
   // a participant placed opposite a BYE goes on through it, a loser fed onto the seat or a winner into a BYE-held
   // target: their position joins the next matchUp, which is stamped
   const loserThrough =
@@ -3313,6 +3354,11 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
   const lineUps =
     dualCall && loser?.arrives ? assignedLineUpOps(view, drawDefinition, loser.participantId, loserThrough) : [];
   if (!lineUps) return { abstain: 'team' };
+  // a carried exit's write on the matchUp the loser lands in (S5)
+  // (a carry past a BYE is recorded beside it before the carrier is placed on beyond, as v1 announces the two)
+  const carried = carriedFor(view, args, loser);
+  const landing = dualCall ? carriedDualLanding(view, drawDefinition, carried.landing, loser) : carried.landing;
+  if (!landing) return { abstain: 'team' };
   const throughBye = [loserThrough, winnerThrough].flatMap((through): OutcomeOp[] =>
     through
       ? [
@@ -3327,9 +3373,6 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
   // the FIRST_MATCHUP reservation the winner's arrival makes (v1's `propagateConsolationBye`)
   const reservation = write.winningSide ? view.targets.reservations?.[write.winningSide as 1 | 2] : undefined;
   const reserved = reservation?.kind === 'reserve' ? seatBye(reservation) : [];
-  // a carried exit's write on the matchUp the loser lands in (S5)
-  // (a carry past a BYE is recorded beside it before the carrier is placed on beyond, as v1 announces the two)
-  const carried = carriedFor(view, args, loser);
   // two exits meeting where the loser lands (RULE 4), and what the double exit they make produces (S5)
   const converging = loser?.converged ? convergedOps(view, request, write, loser) : [];
   // a double exit's loser seats, BYEs (S5)
@@ -3353,7 +3396,7 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
     ...carried.relay,
     ...throughBye,
     ...lineUps,
-    ...carried.landing,
+    ...landing,
     ...converging,
     ...doubleExitSeated,
     ...producedExit,
