@@ -412,6 +412,14 @@ engine.promoteAlternates({
 
 ## refreshEventDrawOrder
 
+Renumbers the event's display order (`drawOrder`) to 1..n without gaps, for example after a draw or a flight has been
+deleted. Flights come first, each placed by its draw's `drawOrder`, else its own `drawOrder`, else its `flightNumber`;
+draws that have no flight follow, by `drawOrder`. A flight's `flightNumber` is never changed.
+
+```js
+engine.refreshEventDrawOrder({ eventId });
+```
+
 ---
 
 ## removeEventEntries
@@ -535,7 +543,12 @@ engine.setEventDisplay({
 
 ## updateDrawIdsOrder
 
-Updates the `drawOrder` attribute of all `drawDefinitions` within an event. The `drawOrder` attribute can be used for sorting or for differentiating `drawDefinitions` for the award of rankings points, when "flighting" separates participants by some `scaleValue`.
+Updates the display order of the event's draws: the `drawOrder` of each `drawDefinition`, and the `drawOrder` of each
+flight in the event's `flightProfile`, including flights whose draw has not been generated.
+
+A flight's `flightNumber` is not changed. It is the flight's level, fixed when the flight is made, and ranking points
+are awarded by it (the `flights` values of an award profile), so reordering draws for display never changes the
+points a flight earns.
 
 ```js
 engine.updateDrawIdsOrder({

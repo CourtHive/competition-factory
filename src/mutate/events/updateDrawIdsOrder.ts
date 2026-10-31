@@ -51,9 +51,10 @@ export function updateDrawIdsOrder({
     });
   }
 
+  // a flight's display order is its `drawOrder`; its `flightNumber` is its level and is never renumbered
   const { flightProfile } = getFlightProfile({ event });
   flightProfile?.flights?.forEach((flight) => {
-    flight.flightNumber = orderedDrawIdsMap[flight.drawId];
+    if (orderedDrawIdsMap[flight.drawId] !== undefined) flight.drawOrder = orderedDrawIdsMap[flight.drawId];
   });
 
   // flightProfile (flight ordering) is an event-scoped attribute → MODIFY_EVENT
