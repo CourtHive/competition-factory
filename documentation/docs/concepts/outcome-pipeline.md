@@ -761,6 +761,23 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   exit and is awarded it); and the dissolution under `doubleExitPropagateBye: false` (the consolation convergence of the
   two carries re-derived the same way).
 
+  A produced exit **awarded to a participant who came through the paired matchUp's BYE** (the double exit beside the
+  draw's BYE: the BYE matchUp's position arrives opposite the exit, wins it, and goes on; the produced exit records the
+  BYE-origin pair opposite itself, `{ matchUpStatus: BYE, previousMatchUpStatus: BYE }` naming the BYE matchUp) is
+  unwound as the awarded plain one: the awardee's position back out of the next round, the matchUp written back to be
+  played holding them alone, both entries withdrawn (S6 tail). Its own loser seat stands beside the BYE matchUp's BYE
+  loser, a double BYE whose own position the double BYE had sent on: withdrawing it, the next matchUp keeps that position
+  as the freed seat it now is and is to be played again (`removeDrawPosition-<seat>`, no event or tournament), and what it
+  had sent on as a BYE is released out of the matchUp beyond; no advance follows. The reset matchUp's unfillable BYE is
+  withdrawn as in the plain unwind, its next matchUp read without the position the own seat's release takes out of it.
+  Stay v1's: FIRST_MATCH_LOSER_CONSOLATION (the BYE matchUp's loser seat behind `FIRST_MATCHUP`), and the given winner.
+
+  A **final's** double exit (or the one matchUp of a one-round structure) produced nothing: cleared or given a winner, its
+  unwind is the own loser seat's withdrawal alone, where a link feeds one (FEED_IN_CHAMPIONSHIP's consolation final seat;
+  under `doubleExitPropagateBye: false` the carry there, taken back as the branch), and the call's own write; given a
+  winner, the loser lands on the freed seat as plainly (S6 tail). A final whose winner link leads on into another
+  structure (DOUBLE_ELIMINATION's Decider, fed by both the final's links) stays v1's.
+
   Under **`doubleExitPropagateBye: false`** the seat a level's loser link feeds shows no BYE: the double exit carries its
   exit there (awarded to whoever stands or arrives opposite), and a further level's seat holds nothing of this unwind's.
   v1 visits the matchUp holding the seat all the same (`conditionallyRemoveDrawPosition`, the loser branch of

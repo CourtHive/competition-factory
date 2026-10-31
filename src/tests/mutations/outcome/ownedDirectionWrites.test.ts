@@ -112,6 +112,14 @@ const R1 = (roundPosition: number, structureName?: string): Target => ({
   structureName,
 });
 
+/** an 8-draw played to its final, which is then a double walkover (S6 tail, family 6) */
+const FINAL_8 = (structureName?: string): Target => ({ roundNumber: 3, roundPosition: 1, structureName });
+const TO_FINAL_8 = (structureName?: string): Step[] => [
+  ...[1, 2, 3, 4].map((roundPosition) => ({ target: R1(roundPosition, structureName), outcome: won(1) })),
+  ...[1, 2].map((roundPosition) => ({ target: { roundNumber: 2, roundPosition, structureName }, outcome: won(1) })),
+  { target: FINAL_8(structureName), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+];
+
 /** round 1 positions 1 and 2 both double exits: their produced exits converge in round 2 (S6 tail, family 4) */
 const PAIRED = (first: string, second: string, structureName?: string): Step[] => [
   { target: R1(1, structureName), outcome: { matchUpStatus: first } },
@@ -135,6 +143,107 @@ const AWARDEE_PLAYED_ON: Step[] = [
 ];
 
 const SCENARIOS: [string, Scenario][] = [
+  // S6 tail, family 6: a final's double exit, which produced nothing, cleared or given a winner: the own write, and the
+  // own loser seat's BYE withdrawn where a link feeds one
+  [
+    'SINGLE_ELIMINATION: the final a double walkover, cleared',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: TO_FINAL_8(),
+      steps: [{ target: FINAL_8(), outcome: cleared }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION: the final a double walkover, given a winner',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: TO_FINAL_8(),
+      steps: [{ target: FINAL_8(), outcome: won(2) }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION 2: the one matchUp a double default, cleared',
+    {
+      drawProfile: { drawSize: 2, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+      steps: [{ target: R1(1), outcome: cleared }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP: the Main final a double walkover, cleared: its consolation seat BYE withdrawn',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: TO_FINAL_8('Main'),
+      steps: [{ target: FINAL_8('Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP: the Main final a double walkover, given a winner: the loser on the freed seat',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: TO_FINAL_8('Main'),
+      steps: [{ target: FINAL_8('Main'), outcome: won(2) }],
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION: the Main final a double walkover, cleared (no loser link from the final)',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: TO_FINAL_8('Main'),
+      steps: [{ target: FINAL_8('Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP 6 of 8: the Main final a double walkover, cleared: its consolation seat beside a BYE',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 6, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [
+        { target: R1(2, 'Main'), outcome: won(1) },
+        { target: R1(3, 'Main'), outcome: won(1) },
+        ...[1, 2].map((roundPosition) => ({
+          target: { roundNumber: 2, roundPosition, structureName: 'Main' },
+          outcome: won(1),
+        })),
+        { target: FINAL_8('Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+      steps: [{ target: FINAL_8('Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP: the Main final a double walkover, cleared under doubleExitPropagateBye false',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      policyDefinitions: POLICY_OFF,
+      setup: TO_FINAL_8('Main'),
+      steps: [{ target: FINAL_8('Main'), outcome: cleared }],
+    },
+  ],
+  // S6 tail, family 5: a double exit cleared whose produced exit was awarded to a participant who came through the paired
+  // matchUp's BYE (the BYE-origin pair recorded opposite the exit): the awardee's position back out of the next round
+  [
+    'SINGLE_ELIMINATION 7 of 8: a double walkover beside the BYE cleared, its produced exit awarded through the BYE',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(2), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2), outcome: cleared }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP 7 of 8: a double walkover beside the BYE cleared, awarded through the BYE',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2, 'Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION 7 of 8: a double walkover beside the BYE cleared, awarded through the BYE',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: DOUBLE_ELIMINATION },
+      setup: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2, 'Main'), outcome: cleared }],
+    },
+  ],
   // S6 tail, family 4 (a): a double exit cleared whose produced exit had converged with its paired matchUp's in the next
   // matchUp; the convergence is re-derived to the kept origin's pending exit and what it produced onward is taken back
   [
@@ -2258,6 +2367,30 @@ describe('under v2, a dissolved convergence beyond the clear is v2s; given a win
         drawProfile: { drawSize: 16, drawType: FIRST_ROUND_LOSER_CONSOLATION },
         setup: PAIRED(DOUBLE_WALKOVER, DOUBLE_WALKOVER, 'Main'),
         steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+      },
+    ],
+    [
+      'FIRST_MATCH_LOSER_CONSOLATION 7 of 8: a double walkover beside the BYE cleared, awarded through the BYE',
+      {
+        drawProfile: { drawSize: 8, participantsCount: 7, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+        setup: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+        steps: [{ target: R1(2, 'Main'), outcome: cleared }],
+      },
+    ],
+    [
+      'SINGLE_ELIMINATION 7 of 8: a double walkover beside the BYE given a winner, awarded through the BYE',
+      {
+        drawProfile: { drawSize: 8, participantsCount: 7, drawType: SINGLE_ELIMINATION },
+        setup: [{ target: R1(2), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+        steps: [{ target: R1(2), outcome: won(1) }],
+      },
+    ],
+    [
+      'DOUBLE_ELIMINATION: the Main final a double walkover cleared: the Decider, fed by both its links, is visited',
+      {
+        drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
+        setup: TO_FINAL_8('Main'),
+        steps: [{ target: FINAL_8('Main'), outcome: cleared }],
       },
     ],
     [
