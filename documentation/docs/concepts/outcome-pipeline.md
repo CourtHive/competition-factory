@@ -659,7 +659,15 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   `DOUBLE_WALKOVER`, whose score is blanked), its award taken away and the arriving side's entry merged beside
   the standing one; then that double exit produces onward as one entered there would, pending, with the
   reservation beside a fed seat. Planned where the landing holds that single exit and no score value, links no
-  loser on, and the produced exit lands clean. A double exit whose produced exit meets a pending one a double exit beside it
+  loser on, and the produced exit lands clean. The same rule holds at every level of the carry's walk, not only the
+  first (S6 tail): a carrier crossing a deeper loser link onto a seat a carried exit standing there was awarded to meets
+  it there, written as above with the landing they lost as the arriving entry's origin, and the walk ends (a double
+  exit has no loser to carry on). In a structure's last round the double exit produces nothing
+  (`doubleExitAdvancement` finds no winner target). Its codes are v1's projection of the landing's provenance before
+  the arrival (`deriveStatusCodes`): a side whose standing exit a double exit delivered shows its outcome code. Stays
+  v1's: a landing whose award's position has already gone on into the matchUp it would produce into (v1 takes it back
+  out as the convergence unseats it), and a landing that links its own loser on (its loser seat takes a BYE, which
+  unseats the first carrier there: the BYE chain). A double exit whose produced exit meets a pending one a double exit beside it
   produced there **converges** with it: the matchUp becomes the double exit (`collapseDoubleExitStatus`), with no
   winner, codes `[]`, a `DOUBLE_WALKOVER`'s score blanked and the arriving side's origin beside the standing one, and it
   produces on as one entered there would (`advanceConvergedWinner`); planned with nobody there and the exit produced onward landing clean (or none, from a final). With loser links (under

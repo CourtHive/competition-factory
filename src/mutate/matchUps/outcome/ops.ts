@@ -9,7 +9,7 @@ import { getCapturedStamps } from '@Global/state/globalState';
 import { nowIso } from '@Tools/clock';
 
 // constants and types
-import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { completedMatchUpStatuses, BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
 import type {
   DrawDefinition,
@@ -342,6 +342,7 @@ function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMat
     });
   if (op.dualTally?.tieFormat) matchUp.tieFormat = structuredClone(op.dualTally.tieFormat) as MatchUp['tieFormat'];
   matchUp.matchUpStatus = op.matchUpStatus;
+  clearOrderOfFinishUnlessCompleted(matchUp);
   if (op.score) matchUp.score = structuredClone(op.score);
   if (op.winningSide) matchUp.winningSide = op.winningSide;
   else delete matchUp.winningSide;
@@ -517,6 +518,7 @@ function foldSetMatchUpBye(op: OpOf<'setMatchUpBye'>, { matchUps }: DrawIndex): 
   const matchUp = matchUps.get(op.matchUpId);
   if (!matchUp) return { error: `setMatchUpBye: no matchUp ${op.matchUpId}` };
   Object.assign(matchUp, { matchUpStatus: BYE, score: undefined, winningSide: undefined });
+  clearOrderOfFinishUnlessCompleted(matchUp);
   return {};
 }
 
@@ -533,7 +535,14 @@ function foldClearMatchUpBye(op: OpOf<'clearMatchUpBye'>, { matchUps }: DrawInde
   const matchUp = matchUps.get(op.matchUpId);
   if (!matchUp) return { error: `clearMatchUpBye: no matchUp ${op.matchUpId}` };
   matchUp.matchUpStatus = TO_BE_PLAYED;
+  clearOrderOfFinishUnlessCompleted(matchUp);
   return {};
+}
+
+// a matchUp that is no longer complete has no place in its cohort's order of finish (`setOrderOfFinish`); v1 clears it
+// in modifyMatchUpScore, so the two pipelines write the same record
+function clearOrderOfFinishUnlessCompleted(matchUp: MatchUp): void {
+  if (!completedMatchUpStatuses.includes(matchUp.matchUpStatus as MatchUpStatusUnion)) delete matchUp.orderOfFinish;
 }
 
 function foldParticipantResults(op: OpOf<'setParticipantResults'>, { groups, structures }: DrawIndex): Folded {
