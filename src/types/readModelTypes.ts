@@ -1,3 +1,5 @@
+import type { HydratedParticipant } from '@Types/hydrated';
+
 /**
  * Read-model row types — the flattened, query-optimized shape a `tournamentRecord`
  * is `cast()` into for the CQRS read-side (courthive-query `query_*` tables).
@@ -138,6 +140,25 @@ export interface ReadModelParticipantPublishRow {
   tournament_id: string;
   published: boolean;
   embargo: string | null;
+}
+
+/** Every attribute optional, all the way down: a privacy template may deny any of them. */
+type Redacted<T> = T extends (infer U)[] ? Redacted<U>[] : T extends object ? { [K in keyof T]?: Redacted<T[K]> } : T;
+
+/** A participant as a public reader may see it: what `getParticipants` emits under a privacy policy. */
+export type PublicParticipant = Redacted<Omit<HydratedParticipant, 'individualParticipants'>>;
+
+/**
+ * One public participant document (`readModel.publicParticipantDocuments`). NOT emitted by `cast()`:
+ * a document depends on a privacy policy, which `cast()` does not take, so the producer builds these
+ * separately and replaces a tournament's documents as one span. Keyed by tournament and participant;
+ * `policy_hash` names the policy that produced `document`.
+ */
+export interface ReadModelPublicParticipantRow {
+  tournament_id: string;
+  participant_id: string;
+  policy_hash: string;
+  document: PublicParticipant;
 }
 
 export interface ReadModelMatchUpRow {
@@ -372,4 +393,6 @@ export interface ReadModelRows {
    * as it was while the projection wiring was deferred.
    */
   tournament_discovery?: ReadModelTournamentDiscoveryRow[];
+  /** Not emitted by `cast()` — see {@link ReadModelPublicParticipantRow}. */
+  public_participants?: ReadModelPublicParticipantRow[];
 }
