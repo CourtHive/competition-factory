@@ -112,6 +112,12 @@ const R1 = (roundPosition: number, structureName?: string): Target => ({
   structureName,
 });
 
+/** round 1 positions 1 and 2 both double exits: their produced exits converge in round 2 (S6 tail, family 4) */
+const PAIRED = (first: string, second: string, structureName?: string): Step[] => [
+  { target: R1(1, structureName), outcome: { matchUpStatus: first } },
+  { target: R1(2, structureName), outcome: { matchUpStatus: second } },
+];
+
 /** Main 1/1 given `first`, then its winner played on in round 2: Main 1/1's downstream is active (`apply-values`) */
 const PLAYED_ON = (first: Record<string, unknown>, params?: Record<string, unknown>): Step[] => [
   { target: R1(1, 'Main'), outcome: first, ...(params ? { params } : {}) },
@@ -129,6 +135,81 @@ const AWARDEE_PLAYED_ON: Step[] = [
 ];
 
 const SCENARIOS: [string, Scenario][] = [
+  // S6 tail, family 4 (a): a double exit cleared whose produced exit had converged with its paired matchUp's in the next
+  // matchUp; the convergence is re-derived to the kept origin's pending exit and what it produced onward is taken back
+  [
+    'SINGLE_ELIMINATION: a double walkover cleared, its produced exit converged with the paired double walkover',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: PAIRED(DOUBLE_WALKOVER, DOUBLE_WALKOVER),
+      steps: [{ target: R1(1), outcome: cleared }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION: a double default cleared beside a double walkover: the convergence keeps the walkover',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: PAIRED(DOUBLE_DEFAULT, DOUBLE_WALKOVER),
+      steps: [{ target: R1(1), outcome: cleared }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION: a double default cleared beside a double default (no score stored): the blank score written',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: PAIRED(DOUBLE_DEFAULT, DOUBLE_DEFAULT),
+      steps: [{ target: R1(1), outcome: cleared }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION: a double walkover cleared beside a double default: the convergence keeps the default',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: PAIRED(DOUBLE_WALKOVER, DOUBLE_DEFAULT),
+      steps: [{ target: R1(1), outcome: cleared }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION 16: four double walkovers, the first cleared: two convergences re-derived, the final reset',
+    {
+      drawProfile: { drawSize: 16, drawType: SINGLE_ELIMINATION },
+      setup: [
+        ...PAIRED(DOUBLE_WALKOVER, DOUBLE_WALKOVER),
+        { target: R1(3), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+        { target: R1(4), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+      steps: [{ target: R1(1), outcome: cleared }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP: a double walkover cleared, converged; the BYE behind the re-derived matchUp stands',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: PAIRED(DOUBLE_WALKOVER, DOUBLE_WALKOVER, 'Main'),
+      steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'FIRST_ROUND_LOSER_CONSOLATION 16: paired double walkovers cleared where the seat beyond their double BYE is taken',
+    {
+      drawProfile: { drawSize: 16, drawType: FIRST_ROUND_LOSER_CONSOLATION },
+      setup: [
+        { target: R1(3, 'Main'), outcome: won(1) },
+        { target: R1(4, 'Main'), outcome: won(1) },
+        { target: R1(2, 'Consolation'), outcome: won(1) },
+        ...PAIRED(DOUBLE_WALKOVER, DOUBLE_WALKOVER, 'Main'),
+      ],
+      steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION: a double walkover cleared, converged, the Decider beyond the final',
+    {
+      drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
+      setup: PAIRED(DOUBLE_WALKOVER, DOUBLE_WALKOVER, 'Main'),
+      steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+    },
+  ],
   [
     'SINGLE_ELIMINATION: a first-round winner goes on to round 2',
     { drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION }, steps: [{ target: R1(1), outcome: won(1) }] },
@@ -2128,5 +2209,73 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     expect(v2.v1Writes).toEqual(1);
     expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
+  });
+});
+
+// S6 tail, family 4: the dissolved convergence beyond a clear is v2's; given a winner (the winner then awarded the
+// re-derived pending exit and sent on) and under `doubleExitPropagateBye: false` (the consolation convergence of the two
+// carries re-derived too) it stays v1's, whole
+describe('under v2, a dissolved convergence beyond the clear is v2s; given a winner or under policy off it is v1s', () => {
+  const V1S: [string, Scenario][] = [
+    [
+      'SINGLE_ELIMINATION: a double walkover given a winner, its produced exit converged',
+      {
+        drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+        setup: PAIRED(DOUBLE_WALKOVER, DOUBLE_WALKOVER),
+        steps: [{ target: R1(1), outcome: won(1) }],
+      },
+    ],
+    [
+      'FIRST_MATCH_LOSER_CONSOLATION: a double walkover cleared, converged: the freed seat advances on through a BYE',
+      {
+        drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+        setup: PAIRED(DOUBLE_WALKOVER, DOUBLE_WALKOVER, 'Main'),
+        steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+      },
+    ],
+    [
+      'SINGLE_ELIMINATION 16: four double walkovers, the final awarded to the other half, the first cleared',
+      {
+        drawProfile: { drawSize: 16, drawType: SINGLE_ELIMINATION },
+        setup: [
+          ...PAIRED(DOUBLE_WALKOVER, DOUBLE_WALKOVER),
+          { target: R1(3), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+          { target: R1(4), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+          { target: R1(5), outcome: won(1) },
+          { target: R1(6), outcome: won(1) },
+          { target: R1(7), outcome: won(1) },
+          { target: R1(8), outcome: won(1) },
+          { target: { roundNumber: 2, roundPosition: 3 }, outcome: won(1) },
+          { target: { roundNumber: 2, roundPosition: 4 }, outcome: won(1) },
+          { target: { roundNumber: 3, roundPosition: 2 }, outcome: won(1) },
+        ],
+        steps: [{ target: R1(1), outcome: cleared }],
+      },
+    ],
+    [
+      'FIRST_ROUND_LOSER_CONSOLATION 16: paired double walkovers, the seat beyond their double BYE still empty',
+      {
+        drawProfile: { drawSize: 16, drawType: FIRST_ROUND_LOSER_CONSOLATION },
+        setup: PAIRED(DOUBLE_WALKOVER, DOUBLE_WALKOVER, 'Main'),
+        steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+      },
+    ],
+    [
+      'FEED_IN_CHAMPIONSHIP: a double walkover cleared, converged, under doubleExitPropagateBye false',
+      {
+        drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+        policyDefinitions: POLICY_OFF,
+        setup: PAIRED(DOUBLE_WALKOVER, DOUBLE_WALKOVER, 'Main'),
+        steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+      },
+    ],
+  ];
+  it.each(V1S)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
   });
 });
