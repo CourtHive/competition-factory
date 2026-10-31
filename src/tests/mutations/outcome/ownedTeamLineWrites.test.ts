@@ -11,7 +11,7 @@ import { setClock } from '@Tools/clock';
 // constants
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { RETIRED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { LAVER_CUP } from '@Constants/tieFormatConstants';
+import { LAVER_CUP, USTA_COLLEGE } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
 import {
   COMPASS,
@@ -75,6 +75,12 @@ function stepOutcome({ winningSide, outcome }: Scenario['step']) {
   if (outcome === 'winner') return { winningSide };
   if (outcome === 'cleared') return { matchUpStatus: TO_BE_PLAYED };
   if (outcome === 'DOUBLE_WALKOVER' || outcome === 'DOUBLE_DEFAULT') return { matchUpStatus: outcome };
+  // a match tiebreak's deciding set, which a round robin group's tally reads as hydration annotates it (1-0)
+  if (outcome === 'matchTiebreak') {
+    const matchUpFormat = 'SET3-S:6/TB7-F:TB10';
+    // the score string is the winner's: the deciding set won in the match tiebreak
+    return generateOutcomeFromScoreString({ scoreString: '6-7(7) 6-1 [10-4]', winningSide, matchUpFormat }).outcome;
+  }
   if (outcome === 'RETIRED') {
     return generateOutcomeFromScoreString({ scoreString: '6-1 2-1', winningSide, matchUpStatus: RETIRED }).outcome;
   }
@@ -109,7 +115,15 @@ type Scenario = {
     dual?: true;
     /** the call's flags (`enableAutoCalc`, `propagateExitStatus`, ...) */
     flags?: Record<string, boolean>;
-    outcome?: 'winner' | 'cleared' | 'WALKOVER' | 'DEFAULTED' | 'RETIRED' | 'DOUBLE_WALKOVER' | 'DOUBLE_DEFAULT';
+    outcome?:
+      | 'winner'
+      | 'cleared'
+      | 'matchTiebreak'
+      | 'WALKOVER'
+      | 'DEFAULTED'
+      | 'RETIRED'
+      | 'DOUBLE_WALKOVER'
+      | 'DOUBLE_DEFAULT';
   };
   /** CONTROL: the dual a loser link sends the losing team to, and whether v1 carries its line-up onto that side */
   loserSeat?: { dual: Omit<Line, 'line'>; sideNumber: 1 | 2; carried: boolean };
@@ -1018,6 +1032,39 @@ const OWNED: [string, Scenario][] = [
     },
   ],
   [
+    "ROUND_ROBIN: a dual's own call, its group's tally re-read with its result in place",
+    {
+      drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },
+      setup: [],
+      step: { target: R1(0, 0, 'Group 1'), winningSide: 1, outcome: 'winner', dual: true },
+    },
+  ],
+  [
+    "ROUND_ROBIN: a line, its group's tally re-read through its dual (the group read off the dual, OPEN-14)",
+    {
+      drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },
+      setup: [{ target: R1(0, 0, 'Group 1'), winningSide: 1 }],
+      step: { target: R1(0, 1, 'Group 1'), winningSide: 2 },
+    },
+  ],
+  [
+    'ROUND_ROBIN: a line won in a match tiebreak, the group tallied under the dual tally format as hydration reads it',
+    {
+      // USTA_COLLEGE's singles lines (3 to 8) end in a match tiebreak; the draw's own format is not the dual tally's
+      drawProfile: { drawSize: 4, drawType: ROUND_ROBIN, tieFormatName: USTA_COLLEGE, matchUpFormat: 'SET3-S:6/TB7' },
+      setup: [{ target: R1(0, 4, 'Group 1'), winningSide: 1 }],
+      step: { target: R1(0, 3, 'Group 1'), winningSide: 2, outcome: 'matchTiebreak' },
+    },
+  ],
+  [
+    'ROUND_ROBIN: a line that decides its dual, the group tallied with the deciding line among its lines',
+    {
+      drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },
+      setup: [0, 1, 2, 3].map((line) => ({ target: R1(0, line, 'Group 1'), winningSide: 1 as const })),
+      step: { target: R1(0, 4, 'Group 1'), winningSide: 1 },
+    },
+  ],
+  [
     'a line call carrying disableAutoCalc: nothing written on the line or its dual',
     {
       drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
@@ -1207,22 +1254,6 @@ const KEPT: [string, Scenario][] = [
       setup: [],
       dualExit: 'DOUBLE_WALKOVER',
       step: { target: R1(1, 0), winningSide: 1, outcome: 'winner', dual: true },
-    },
-  ],
-  [
-    "a dual's own call in a round robin: its group's tally",
-    {
-      drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },
-      setup: [],
-      step: { target: R1(0, 0, 'Group 1'), winningSide: 1, outcome: 'winner', dual: true },
-    },
-  ],
-  [
-    "a line in a round robin: v1 re-reads its group's tally (a line's group is read off its dual, hydration OPEN-14)",
-    {
-      drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },
-      setup: [{ target: R1(0, 0, 'Group 1'), winningSide: 1 }],
-      step: { target: R1(0, 1, 'Group 1'), winningSide: 2 },
     },
   ],
   [

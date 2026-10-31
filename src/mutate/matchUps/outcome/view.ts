@@ -18,6 +18,7 @@ import { resolveScoringFormat } from '@Query/hierarchical/resolveScoringFormat';
 import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { ensuredDualSides } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
+import { DUAL_TALLY_FORMAT } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { isDeciderStructure } from '@Query/drawDefinition/deciderStructures';
 import { getPolicyDefinitions } from '@Query/extensions/getAppliedPolicies';
@@ -1135,7 +1136,7 @@ function adHocGroup({
  * A round robin group's tally inputs, as v1's `updateTallyIfNeeded` reads them (`modifyMatchUpScore.ts`): the group's
  * matchUps (the index's entries; the planner substitutes the call's own result), its position assignments, the format
  * v1 resolves (the call's, the matchUp's own, the container's, the draw's, the event's) and the round robin tally policy
- * v1 reads with no call-level policy. A TEAM dual's tally (S7) and a line of one are not asked.
+ * v1 reads with no call-level policy. A TEAM dual's group tallies its duals alone (S7), and a line's is its dual's.
  */
 function roundRobinGroup({
   inContextDrawMatchUps,
@@ -1150,9 +1151,14 @@ function roundRobinGroup({
   args: BuildViewArgs;
   matchUp: MatchUp;
 }): OutcomeView['group'] {
-  const containerStructureId = inContextMatchUp?.containerStructureId;
-  const structureId = inContextMatchUp?.structureId;
-  if (!containerStructureId || !structureId || matchUp.collectionId || matchUp.tieMatchUps) return undefined;
+  // a TEAM dual's group, or a line's (S7): v1 tallies the group's duals alone, the line's through its dual, which carries
+  // the group (a line is hydrated in the container with none of its own, OPEN-14: hydration is not changed)
+  const team = !!(matchUp.collectionId || matchUp.tieMatchUps);
+  const dualId = matchUp.collectionId ? inContextMatchUp?.matchUpTieId : undefined;
+  const anchor = dualId ? inContextDrawMatchUps.find((candidate) => candidate.matchUpId === dualId) : inContextMatchUp;
+  const containerStructureId = anchor?.containerStructureId;
+  const structureId = anchor?.structureId;
+  if (!containerStructureId || !structureId) return undefined;
   const { structure: container } = findStructure({ drawDefinition, structureId: containerStructureId });
   const group = structuresOf(container)?.find((child) => child.structureId === structureId);
   if (!group) return undefined;
@@ -1166,14 +1172,17 @@ function roundRobinGroup({
   return {
     containerStructureId,
     structureId,
+    // the group's own matchUps: a TEAM group's are its duals, a line being hydrated in the container, not the group
     matchUps: inContextDrawMatchUps.filter((candidate) => candidate.structureId === structureId),
     positionAssignments: positionAssignmentsOf(group) ?? [],
-    matchUpFormat:
-      request.matchUpFormat ??
-      matchUp.matchUpFormat ??
-      container?.matchUpFormat ??
-      drawDefinition.matchUpFormat ??
-      event?.matchUpFormat,
+    // a dual's group is tallied under one fixed format whatever its lines' (`updateTallyIfNeeded`: `isDualMatchUp`)
+    matchUpFormat: team
+      ? DUAL_TALLY_FORMAT
+      : (request.matchUpFormat ??
+        matchUp.matchUpFormat ??
+        container?.matchUpFormat ??
+        drawDefinition.matchUpFormat ??
+        event?.matchUpFormat),
     policyDefinitions,
   };
 }
@@ -1372,6 +1381,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         dualWinningSide: dualMatchUp.winningSide,
         projectedWinningSide,
         projectedScore,
+        projectedTieMatchUps,
         projectedStatus: projectedDualStatus({
           dualMatchUp,
           projectedWinningSide,
@@ -1380,7 +1390,6 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         }),
         autoCalcDisabled: !!(dualMatchUp.disableAutoCalc ?? dualMatchUp._disableAutoCalc),
         dualRewrite: dualRewrite({ dualMatchUp, matchUpsMap, drawDefinition, structure, event }),
-        dualInGroup: !!dualMatchUp.containerStructureId,
       };
     }
   }
