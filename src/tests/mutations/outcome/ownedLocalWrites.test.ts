@@ -179,12 +179,12 @@ describe('a result turned into a double exit is v2s (S6)', () => {
 });
 
 describe('what v2 does not own goes to v1, whole', () => {
-  it('a schedule v1 refuses (a time that does not parse): v2 abstains, and v1 refuses it (S7)', () => {
+  it('a schedule v1 refuses (a time that does not parse): v2 refuses it as v1 does, row 16 (S7)', () => {
     const steps: Step[] = [() => ({ outcome: { winningSide: 1 }, schedule: { scheduledTime: 'not a time' } })];
     const v1 = play(OUTCOME_PIPELINE_V1, steps);
     const v2 = play(OUTCOME_PIPELINE_V2, steps);
     expect(v1.results[0].error).toBeDefined();
-    expect(v2.v1Writes).toEqual(1);
+    expect(v2.v1Writes).toEqual(0);
     expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
   });
@@ -217,7 +217,7 @@ describe('what v2 does not own goes to v1, whole', () => {
   });
 });
 
-it('a schedule out of played order with the next matchUp: v1 refuses it against the stored draw, so v2 abstains (S7)', () => {
+it('a schedule out of played order with the next matchUp: v2 refuses it as v1 does, against the stored draw (S7)', () => {
   const run = (mode: OutcomePipelineMode) => {
     setOutcomePipeline(OUTCOME_PIPELINE_V1);
     setClock('2026-10-25T00:00:00.000Z');
@@ -253,7 +253,49 @@ it('a schedule out of played order with the next matchUp: v1 refuses it against 
   const v1 = run(OUTCOME_PIPELINE_V1);
   const v2 = run(OUTCOME_PIPELINE_V2);
   expect(v1.answer.error).toBeDefined();
-  expect(v2.v1Writes).toEqual(1);
+  expect(v2.v1Writes).toEqual(0);
+  expect(v2.answer).toEqual(v1.answer);
+  expect(v2.record).toEqual(v1.record);
+});
+
+it.each([
+  ['a date outside the tournament, row 25', { scheduledDate: '1999-01-01' }],
+  ['a time that does not parse, asked before the dispatch refuses the changed winner, row 16', { scheduledTime: 'x' }],
+])('a schedule v1 refuses: %s (S7)', (_label, schedule) => {
+  const run = (mode: OutcomePipelineMode) => {
+    setOutcomePipeline(OUTCOME_PIPELINE_V1);
+    setClock('2026-10-25T00:00:00.000Z');
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 8, drawId: 'd' }],
+      nonRandom: 1,
+      setState: true,
+    });
+    const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId: 'd', inContext: true });
+    const first = matchUps.filter((matchUp: any) => matchUp.roundNumber === 1);
+    // the first matchUp decided and its winner played on in the next round: its winner cannot change (row 14)
+    const [feeder, other] = first.filter((matchUp: any) => matchUp.winnerMatchUpId === first[0].winnerMatchUpId);
+    for (const { matchUpId } of [feeder, other])
+      tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId, outcome: { winningSide: 1 } });
+    tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId: feeder.winnerMatchUpId, outcome: inProgress('3-2') });
+    setOutcomePipeline(mode);
+    v1Writes.count = 0;
+    const result: any = tournamentEngine.setMatchUpStatus({
+      matchUpId: feeder.matchUpId,
+      outcome: { winningSide: 2 },
+      drawId: 'd',
+      schedule,
+    });
+    const { stack: _stack, ...answer } = result;
+    return {
+      answer,
+      v1Writes: v1Writes.count,
+      record: canonicalJson(tournamentEngine.getTournament().tournamentRecord),
+    };
+  };
+  const v1 = run(OUTCOME_PIPELINE_V1);
+  const v2 = run(OUTCOME_PIPELINE_V2);
+  expect(v1.answer.error).toBeDefined();
+  expect(v2.v1Writes).toEqual(0);
   expect(v2.answer).toEqual(v1.answer);
   expect(v2.record).toEqual(v1.record);
 });

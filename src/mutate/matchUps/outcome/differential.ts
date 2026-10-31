@@ -6,9 +6,6 @@ import {
   INVALID_MATCHUP_STATUS_BYE,
   MISSING_ASSIGNMENTS,
   MISSING_DRAW_POSITIONS,
-  INVALID_TIME,
-  INVALID_DATE,
-  ANACHRONISM,
   MUTATION_LOCKED,
   UNRECOGNIZED_MATCHUP_STATUS,
 } from '@Constants/errorConditionConstants';
@@ -22,13 +19,8 @@ import {
  * `refused` route stays an apply-stage refusal. Every other disagreement throws, with both answers and the matchUp named.
  */
 export const APPLY_STAGE_CODES: ReadonlySet<string> = new Set([
-  // the schedule a call carries is checked by v1 before the outcome lands (`checkScheduleValues`); v2 abstains on a
-  // schedule v1's writer refuses (`plan.ts` `scheduleReason`, 'schedule'), so a malformed time, and a date or date-time
-  // outside the tournament (#5774), are v1's alone
-  INVALID_TIME.code,
-  INVALID_DATE.code,
-  // and a recorded time out of played order (#5979: an end time given with an outcome is judged before it lands)
-  ANACHRONISM.code,
+  // INVALID_TIME, INVALID_DATE and ANACHRONISM are not: v2 refuses a schedule as v1's writer refuses it, rows 16, 25
+  // and 27 (`refusals.ts` `refuseSchedule`, S7)
   // DRAW_POSITION_ACTIVE is not one: v2 refuses a swap that meets an active FIRST_MATCHUP-fed seat (row 26, S4)
   MUTATION_LOCKED.code,
   'ERR_FORCED', // § 2 row 19: observed by the corpus, no constant declares it (spec OPEN 2)

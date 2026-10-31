@@ -136,6 +136,16 @@ export type OutcomeView = {
    * played on (v1's `fedLoserPlacementRefusal` and `relabelledPathFeedRefusal`, asked before the swap writes)
    */
   swapMeetsActivePosition?: boolean;
+  /**
+   * § 2 rows 16, 25 and 27: v1's refusal of the schedule the call carries, as its writer's refusals give it
+   * (`addMatchUpScheduleItems` with `validateOnly`, asked against the stored draw, nothing written)
+   */
+  scheduleRefusal?: {
+    error: ErrorType;
+    info?: string;
+    context?: Record<string, unknown>;
+    extra?: Record<string, unknown>;
+  };
   /** a line of a dual: what the dual projects once this line is written */
   line?: {
     dualMatchUpId: string;
