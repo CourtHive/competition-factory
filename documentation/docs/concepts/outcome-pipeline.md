@@ -731,10 +731,30 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   the position taken back out leaves that matchUp with no position, v1 **releases** it (`releaseAdvancedDrawPosition`,
   with neither event nor tournament) rather than clearing it: FIRST_ROUND_LOSER_CONSOLATION, and the matchUp a double
   BYE had sent its position on into two rounds on (S6 tail). Stay v1's: a cleared double exit in a feed round; behind
-  a loser link with any other condition; under `doubleExitPropagateBye: false`; whose produced exit converged, or was
-  awarded to a winner
-  who has gone further or does not stand alone; whose BYE went on across a further loser link (COMPASS, OLYMPIC); whose
+  a loser link with any other condition; whose produced exit converged, or was awarded to a winner who has gone
+  further or does not stand alone; whose BYE went on across a further loser link (COMPASS, OLYMPIC); whose
   a final that has sent its winner across its link; or with anything played beyond it.
+
+  Under **`doubleExitPropagateBye: false`** the seat a level's loser link feeds shows no BYE: the double exit carries its
+  exit there (awarded to whoever stands or arrives opposite), and a further level's seat holds nothing of this unwind's.
+  v1 visits the matchUp holding the seat all the same (`conditionallyRemoveDrawPosition`, the loser branch of
+  `removeDoubleExit`) and walks on from it as it walks the main path, over winner and loser links alike: the position
+  its result sent on is taken back out of every later round holding it (`removeDirectedWinner`,
+  `removeSubsequentRoundsParticipant`), its winner path is followed to its final and across the final's winner link, then
+  the seat its own loser link feeds, and each matchUp reached is written back to be played, deepest first, the visited
+  matchUp last. The first level's matchUp is written with the call's event and tournament (v1 passes its arguments
+  on there), the rest without; the carried exit's origin is withdrawn with the first write. A matchUp the branch reaches
+  twice (DOUBLE_ELIMINATION: the Backdraw's final sends its winner across to the Main final, which the main path has
+  already written) is written twice, and its notices take their place from the last write, the in-context one from the
+  last score write. The structures of the matchUps written are stamped, as v1's notice for each stamps them. Owned where
+  the first level's matchUp holds the carried exit alone (its one origin, on the fed side; a winner opposite or none;
+  scoreless) and every other matchUp reached holds nothing (to be played, or a BYE this unwind withdraws, with no winner,
+  score, codes or provenance; structural positions and the position taken back stand), the position taken back going
+  no further than the matchUps written. A double exit **given a winner** under the policy is owned the same way, the
+  loser placed on their seat in the matchUp the branch wrote back. Stay v1's: a carry that met a BYE or another exit
+  there (a convergence), a participant sent across a winner link, a BYE placed behind one of the branch's own loser links
+  (the carry's award with nobody for a loser sends one on through the BYE chain beyond: COMPASS, OLYMPIC), and the
+  produced exit awarded (S6 tail).
 
   A **single exit cleared** (a WALKOVER, DEFAULTED or RETIRED on the `remove-directed` route, back to be played) that
   carried nothing on is the removal of a played result: v1 takes it back through the same `removeDirectedParticipants`,
@@ -761,7 +781,7 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   clear does, and the direction then places the loser on their own seat, where the BYE stood: a plain arrival, carrying
   nothing, unseeded, behind a link with no condition. The notices follow v1's buffer: each matchUp at its last emission,
   so the next matchUp comes after the call's own result, named for the winner's arrival (`assignMatchUpDrawPosition`),
-  while the in-context notices keep the order of the score writes that deferred them; each structure's assignments are
+  while the in-context notices keep the order of the last score write of each matchUp; each structure's assignments are
   announced once, where the call first touches them (the seat the unwind visits), with the event and tournament of the
   loser's placement there (CURTIS: the Play Off's visit first, then the consolation's). Stay v1's: a produced exit
   already awarded, a loser the new result would carry, a BYE that had gone on further than the next matchUp (FMLC's
