@@ -2222,7 +2222,7 @@ function teamReason({
 }): AbstainReason | undefined {
   if (asDual) return undefined;
   if (!view.isTeam && !view.line && !view.matchUpTieId && !view.existing.collectionId) return undefined;
-  if (view.isTeam && !view.line) return dualCallReason(request, view, route);
+  if (view.isTeam && !view.line) return dualCallReason(view, route);
   const { line, existing } = view;
   // a line's result with a winner, or its double exit (written as it stands, `only-score`, its dual tallied without it)
   if (!line || view.isTeam || (route !== 'winner' && !isDoubleExit(request.matchUpStatus))) return 'team';
@@ -2246,17 +2246,17 @@ function teamReason({
  * the result, `scoredTime`, the winner placed in the next dual, announced `assignMatchUpDrawPosition`), and a double exit
  * as any double exit (`doubleExitAdvancement`: the exit it produces in the next dual, BYEs on the seats its loser links
  * feed), after `ensureSideLineUps` has written the dual's sides (`ensuredSides`). It carries no line-up on: that is a
- * deciding line's (`propagateLineUp`), its first entry's drawPosition not yet sided in the next dual. An exit carried across a loser link is written on the dual it reaches by that
- * dual's own call (`carriedDualLanding`). A dual already decided is planned as any decided matchUp is: its winner
- * entered again writes the team's line-up on the next dual (`winnerLineUpOps`), a changed winner is re-directed.
- * Stays v1's: a call that enables or disables auto-calc (v1 writes `disableAutoCalc`, and projects the winner from the
- * lines), a dual holding no winner and neither to be played nor in progress (a double exit), and a dual in a round
- * robin.
+ * deciding line's (`propagateLineUp`), its first entry's drawPosition not yet sided in the next dual. An exit carried
+ * across a loser link is written on the dual it reaches by that dual's own call (`carriedDualLanding`). A dual already
+ * decided is planned as any decided matchUp is: its winner entered again writes the team's line-up on the next dual
+ * (`winnerLineUpOps`), a changed winner is re-directed. A call that disables auto-calc writes `disableAutoCalc`, one
+ * that enables it removes it and takes the winner its lines project (`autoCalcWrite`, `dualProjection`). Stays v1's: an
+ * enabling call whose lines project no winner (not the winner's route), a dual holding no winner and neither to be
+ * played nor in progress (a double exit), and a dual in a round robin.
  */
-function dualCallReason(request: OutcomeRequest, view: OutcomeView, route?: Route): AbstainReason | undefined {
+function dualCallReason(view: OutcomeView, route?: Route): AbstainReason | undefined {
   const { existing } = view;
-  if ((route !== 'winner' && route !== DOUBLE_EXIT) || request.flags.enableAutoCalc || request.flags.disableAutoCalc)
-    return 'team';
+  if (route !== 'winner' && route !== DOUBLE_EXIT) return 'team';
   // a dual decided is planned as any decided matchUp is (its winner entered again or changed); one holding another
   // status (a double exit, or neither to be played nor in progress) stays v1's
   const open = existing.matchUpStatus === TO_BE_PLAYED || existing.matchUpStatus === IN_PROGRESS;
@@ -2658,11 +2658,23 @@ function writtenScore(request: OutcomeRequest, write: MatchUpWrite): Score | und
 }
 
 /** the call's own result on its matchUp, and the matchUp's stamp */
+/**
+ * S7: a dual's own call that disables auto-calc writes `disableAutoCalc` on the dual, one that enables it removes it
+ * (`handleTeamAutoCalc`, through `setFirstClassOrExtension`); enabling also projects the dual's winner and score from its
+ * lines, which the route and the write read (`dualProjection`)
+ */
+function autoCalcWrite(request: OutcomeRequest, view: OutcomeView): true | null | undefined {
+  if (!view.isTeam) return undefined;
+  if (request.flags.disableAutoCalc) return true;
+  return request.flags.enableAutoCalc ? null : undefined;
+}
+
 function resultOps(
   request: OutcomeRequest,
   write: MatchUpWrite,
   matchUpId: string,
   ensuredSides?: unknown[],
+  disableAutoCalc?: true | null,
 ): OutcomeOp[] {
   const score = writtenScore(request, write);
   return [
@@ -2670,6 +2682,7 @@ function resultOps(
       op: 'setMatchUpResult',
       matchUpId,
       ...(ensuredSides ? { ensuredSides } : {}),
+      ...(disableAutoCalc === undefined ? {} : { disableAutoCalc }),
       matchUpStatus: write.matchUpStatus as MatchUpStatusUnion,
       ...(score ? { score } : {}),
       ...(request.matchUpFormat ? { matchUpFormat: request.matchUpFormat } : {}),
@@ -2993,7 +3006,7 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
     ...unwound,
     // a dual's own call writes its sides first (S7); for the dual a line decides they are its line's (`dualTally`), by the
     // same rule (`ensuredDualSides`)
-    ...resultOps(request, write, matchUpId, view.dualSides),
+    ...resultOps(request, write, matchUpId, view.dualSides, autoCalcWrite(request, view)),
     ...dualTallyOps(view.line),
   ];
   // the first direction: the winner's position joins the next matchUp's, which v1 stores ascending

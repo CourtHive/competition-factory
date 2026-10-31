@@ -3,12 +3,14 @@ import { mergeSideExitProvenance, setSideExitProvenance } from '@Mutate/matchUps
 import { setMatchUpDrawPositions } from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { exchangeMatchUpPositions } from '@Mutate/matchUps/drawPositions/swapWinnerLoser';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { getCapturedStamps } from '@Global/state/globalState';
 import { nowIso } from '@Tools/clock';
 
 // constants and types
 import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
 import type {
   DrawDefinition,
   MatchUp,
@@ -78,6 +80,8 @@ export type OutcomeOp =
        * `tieMatchUpResult`
        */
       ensuredSides?: unknown[];
+      /** a TEAM dual's own call that disables auto-calc (`true`) or enables it (`null`, removed), as v1 stores it (S7) */
+      disableAutoCalc?: true | null;
     }
   | {
       op: 'setMatchUpDrawPositions';
@@ -310,6 +314,13 @@ function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMat
   // a dual's sides and tieFormat as `updateTieMatchUpScore` rewrites them before its tally (S7)
   if (op.dualTally?.sides) matchUp.sides = structuredClone(op.dualTally.sides) as MatchUp['sides'];
   if (op.ensuredSides) matchUp.sides = structuredClone(op.ensuredSides) as MatchUp['sides'];
+  if (op.disableAutoCalc !== undefined)
+    setFirstClassOrExtension({
+      element: matchUp,
+      attribute: 'disableAutoCalc',
+      name: DISABLE_AUTO_CALC,
+      value: op.disableAutoCalc,
+    });
   if (op.dualTally?.tieFormat) matchUp.tieFormat = structuredClone(op.dualTally.tieFormat) as MatchUp['tieFormat'];
   matchUp.matchUpStatus = op.matchUpStatus;
   if (op.score) matchUp.score = structuredClone(op.score);

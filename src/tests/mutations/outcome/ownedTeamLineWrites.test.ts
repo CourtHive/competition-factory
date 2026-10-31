@@ -942,6 +942,50 @@ const OWNED: [string, Scenario][] = [
       step: { target: R1(1, 0), winningSide: 1, outcome: 'winner', dual: true },
     },
   ],
+  [
+    "a dual's own call that disables auto-calc: disableAutoCalc written on the dual",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [],
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'winner', dual: true, flags: { disableAutoCalc: true } },
+    },
+  ],
+  [
+    "a dual's own call that disables auto-calc on a dual its lines decided",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [0, 1, 2, 3, 4].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'winner', dual: true, flags: { disableAutoCalc: true } },
+    },
+  ],
+  [
+    'a line call carrying disableAutoCalc: nothing written on the line or its dual',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [],
+      step: { target: R1(1, 0), winningSide: 1, flags: { disableAutoCalc: true } },
+    },
+  ],
+  [
+    "a dual's own call that enables auto-calc: the winner projected from the lines, disableAutoCalc removed",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [],
+      autoCalcOff: true,
+      setupAfter: [0, 1, 2, 3, 4].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'winner', dual: true, flags: { enableAutoCalc: true } },
+    },
+  ],
+  [
+    "a dual's own call that enables auto-calc naming the other side: the lines' winner is written",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [],
+      autoCalcOff: true,
+      setupAfter: [0, 1, 2, 3, 4].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
+      step: { target: R1(1, 0), winningSide: 2, outcome: 'winner', dual: true, flags: { enableAutoCalc: true } },
+    },
+  ],
 ];
 
 describe('under v2, a TEAM line is v2s, deciding its dual or not, and leaves exactly what v1 leaves', () => {
@@ -1016,24 +1060,6 @@ const KEPT: [string, Scenario][] = [
       drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
       setup: [],
       step: { target: R1(1, 0), winningSide: 1, outcome: 'cleared', dual: true },
-    },
-  ],
-  [
-    "a dual's own call that disables auto-calc: v1 writes disableAutoCalc",
-    {
-      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
-      setup: [],
-      step: { target: R1(1, 0), winningSide: 1, outcome: 'winner', dual: true, flags: { disableAutoCalc: true } },
-    },
-  ],
-  [
-    "a dual's own call that enables auto-calc: v1 projects the winner from the lines",
-    {
-      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
-      setup: [],
-      autoCalcOff: true,
-      setupAfter: [0, 1, 2, 3, 4].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
-      step: { target: R1(1, 0), winningSide: 1, outcome: 'winner', dual: true, flags: { enableAutoCalc: true } },
     },
   ],
   [
@@ -1131,6 +1157,16 @@ const KEPT: [string, Scenario][] = [
       dualExit: 'WALKOVER',
       step: { target: R1(1, 0), winningSide: 2, outcome: 'winner', dual: true },
       abstains: 'settle',
+    },
+  ],
+  [
+    "a dual's own call that enables auto-calc with too few lines played to decide it: v1's (no winner projected)",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [],
+      autoCalcOff: true,
+      setupAfter: [0, 1].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'winner', dual: true, flags: { enableAutoCalc: true } },
     },
   ],
 ];
