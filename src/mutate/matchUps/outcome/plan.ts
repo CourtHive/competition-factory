@@ -1058,6 +1058,10 @@ function producedReason(
     return undefined;
   // the exit it produces meets one standing there: the two converge, and that double exit produces on
   if (direction?.converged) return producedConvergedReason(view, request, write, direction) ? undefined : 'exit';
+  // a structure's final (or the one matchUp of a one-round structure) produces nothing (`doubleExitAdvancement` finds no
+  // winner target): the own loser seat's BYE where a link feeds one, and the call's own write (S6 tail, family 8). A
+  // final whose winner link leads on (DOUBLE_ELIMINATION's Decider) has a winner target across it: the decider's, v1's
+  if (!targets.winnerMatchUpId && !direction?.decider) return doubleExitSeats(view) ? undefined : 'exit';
   const produced = direction?.produced;
   const target = targets.winner;
   if (!produced || direction?.decider || !target) return 'exit';
@@ -1371,7 +1375,7 @@ type ProducedLoser = {
  * with no BYE beside it, the matchUp to be played holding no result, exit, codes or provenance; a participant opposite
  * this matchUp's seat goes on through its BYE as an empty position does), each chain plans, and no matchUp is in two.
  */
-function doubleExitSeats(view: OutcomeView, entry: HydratedMatchUp): DoubleExitSeats | undefined {
+function doubleExitSeats(view: OutcomeView, entry?: HydratedMatchUp): DoubleExitSeats | undefined {
   const { targets } = view;
   const seats: DoubleExitSeats = {};
   // under `doubleExitPropagateBye: false` the loser matchUp takes a produced exit in place of the BYE
@@ -1385,7 +1389,7 @@ function doubleExitSeats(view: OutcomeView, entry: HydratedMatchUp): DoubleExitS
     seats.own = ownByeChain(view);
     if (!seats.own) return undefined;
   }
-  if (entry.loserMatchUpId) {
+  if (entry?.loserMatchUpId) {
     seats.unfillable = unfillableByeChain(view, entry, seats.own?.onward, seats.own?.advanced);
     if (!seats.unfillable) return undefined;
   }
@@ -1402,7 +1406,7 @@ function doubleExitSeats(view: OutcomeView, entry: HydratedMatchUp): DoubleExitS
     ...(seats.unfillable?.matchUpIds ?? []),
     ...producedLoserMatchUpIds(seats.producedLoser),
     ...(seats.heldLoser ? [seats.heldLoser.byeMatchUpId, seats.heldLoser.onwardMatchUpId] : []),
-    entry.matchUpId,
+    ...(entry ? [entry.matchUpId] : []),
   ];
   return new Set(touched).size === touched.length ? seats : undefined;
 }
@@ -1616,7 +1620,9 @@ function producedLoserOps(request: OutcomeRequest, produced: ProducedLoser): Out
 /** the double exit's BYEs and what they send on, in the order v1 announces them */
 function doubleExitSeatOps(view: OutcomeView, request: OutcomeRequest, direction?: DirectionPlan): OutcomeOp[] {
   const entry = direction?.produced ? indexed(view, direction.produced.matchUpId) : undefined;
-  const seats = entry ? doubleExitSeats(view, entry) : undefined;
+  // a final produces nothing: its own seat's BYE alone (S6 tail, family 8)
+  const final = !view.targets.winnerMatchUpId && !direction?.decider;
+  const seats = entry || final ? doubleExitSeats(view, entry) : undefined;
   if (!seats) return [];
   const { own, unfillable, producedLoser: produced, heldLoser: held } = seats;
   return [

@@ -61,8 +61,8 @@ type SettleWorkArgs = {
   /** the call's matchUp has a loser link: the only way v1 propagates a single exit (`directLoser`) */
   loserLinked?: boolean;
   /**
-   * the call's matchUp is in a round robin group, or is a TEAM line: a double exit there produces nothing
-   * (`doubleExitAdvancement`)
+   * the call's matchUp is in a round robin group, is a TEAM line, or is a final with no winner link out: a double exit
+   * there produces nothing (`doubleExitAdvancement`)
    */
   contained?: boolean;
   /** the call's own matchUp, which `settleRederivedDoubleExits` leaves to the call's own write */
