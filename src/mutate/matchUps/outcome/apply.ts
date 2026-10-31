@@ -99,8 +99,7 @@ export function applyOwnedPlan({
     ops.flatMap((op) =>
       (op.op === 'setMatchUpDrawPositions' && (op.announcesContext === false || op.advancesThroughBye)) ||
       (op.op === 'setMatchUpResult' && op.announcesContext === false) ||
-      (op.op === 'setMatchUpBye' && op.announcesEvent === false) ||
-      (op.op === 'setSideLineUp' && op.announcesEvent === false)
+      (op.op === 'setMatchUpBye' && op.announcesEvent === false)
         ? [op.matchUpId]
         : [],
     ),
@@ -143,14 +142,8 @@ export function applyOwnedPlan({
       matchUpId,
     });
   }
-  // a write v1's settle pass makes, announced under that pass's name (a withdrawn carry, `reconcileScoredTimes`)
-  // and a decided dual's teams carry their line-ups on last, announced by `directWinner` or `directLoser` (S7)
-  const settled = new Map<string, string>(
-    ops.flatMap((op): [string, string][] => {
-      if (op.op === 'setSideLineUp') return [[op.matchUpId, op.announcedAs]];
-      return op.op === 'setMatchUpResult' && op.announcedAs ? [[op.matchUpId, op.announcedAs]] : [];
-    }),
-  );
+  const { settled, lineUpUnevented } = namedWriters(ops);
+  for (const matchUpId of lineUpUnevented) unevented.add(matchUpId);
   for (const matchUpId of announced) {
     const matchUp = stored.get(matchUpId);
     if (!matchUp) continue;
@@ -280,4 +273,27 @@ function matchUpContext(
   if (recoded.has(matchUpId)) return 'removeDirectedLoser';
   if (exchanged.has(matchUpId)) return 'swapWinnerLoser';
   return byes.has(matchUpId) ? 'setMatchUpStatusBye' : 'assignMatchUpDrawPosition';
+}
+
+/**
+ * The writers v1's notices name where they are not the matchUp's result: a settle pass's write (a withdrawn carry,
+ * `reconcileScoredTimes`) and a team's line-up carried on (`directWinner`, `directLoser`) or written at its assignment
+ * (`updateSidLineUp`, with no event where `assignTeamLineUp` hands it none). A matchUp's notice is its last writer's: a
+ * result written after a line-up (a dual's exit carried onto the dual its losing team reached, whose own call writes it)
+ * announces the matchUp as the result does (S7).
+ */
+function namedWriters(ops: OutcomeOp[]) {
+  const settled = new Map<string, string>();
+  const lineUpUnevented = new Set<string>();
+  for (const op of ops) {
+    if (op.op === 'setSideLineUp') {
+      settled.set(op.matchUpId, op.announcedAs);
+      if (op.announcesEvent === false) lineUpUnevented.add(op.matchUpId);
+    } else if (op.op === 'setMatchUpResult') {
+      if (op.announcedAs) settled.set(op.matchUpId, op.announcedAs);
+      else settled.delete(op.matchUpId);
+      lineUpUnevented.delete(op.matchUpId);
+    }
+  }
+  return { settled, lineUpUnevented };
 }

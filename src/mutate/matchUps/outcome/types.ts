@@ -162,6 +162,11 @@ export type OutcomeView = {
   };
   /** a TEAM dual's own call: the sides `ensureSideLineUps` writes before its result, present where they change (S7) */
   dualSides?: unknown[];
+  /**
+   * a TEAM dual's own call: the stored sides of the dual its loser link reaches, which a carried exit's own call there
+   * ensures with the losing team arrived (S7)
+   */
+  loserDualSides?: unknown[];
   /** a TEAM dual under `enableAutoCalc`: the winner its lines project */
   dualProjection?: { projectedWinningSide?: number; score?: OutcomeScore };
   /** § 5 rule 1: where direction sends a winner, and who is on each side now */
