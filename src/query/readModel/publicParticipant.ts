@@ -47,7 +47,7 @@ type PublicParticipantDocumentsArgs = {
  * explicitly.
  *
  * Built on `getParticipants`, the engine's participant emission boundary, so a document
- * holds exactly what that boundary emits under the same policy (scale values included)
+ * holds exactly what that boundary emits under the same policy (scale values and teams included)
  * and the privacy rules are not restated here. Documents are flat: a PAIR or TEAM
  * carries `individualParticipantIds`, and each individual is its own document. Only
  * competitors are public; GROUPs and non-competitor roles are not.
@@ -66,6 +66,9 @@ export function publicParticipantDocuments({
 
   const { participants, error } = getParticipants({
     participantFilters: { participantTypes: [INDIVIDUAL, PAIR, TEAM] },
+    // `teams` and `groups` are always attached. An individual's team is public (draw displays read
+    // `teams[0].participantName`), shaped by the policy's `teams` template; `groups` is dropped unless
+    // the policy names it, which the default does not.
     withScaleValues: true,
     policyDefinitions,
     tournamentRecord,
