@@ -2016,7 +2016,7 @@ const undecided = (matchUp: HydratedMatchUp, loserLinked?: boolean) =>
 type UnwoundLevel = {
   matchUpId: string;
   seatOps: OutcomeOp[];
-  /** the drawPosition an award sent on into this matchUp, taken back out of it */
+  /** the drawPosition the level before sent on into this matchUp (an award, a fed seat's reservation), taken back out */
   released?: number;
   /** a convergence this unwind dissolves, re-derived to the kept origin's pending exit (S6 tail) */
   rederived?: Rederived;
@@ -2108,9 +2108,9 @@ function unwoundPath(
   // (DOUBLE_ELIMINATION's Decider) has a next matchUp, and is read as any path
   const produced = source.winnerMatchUpId
     ? unwoundProducedPath(view, source, structureId)
-    : { path: [source.matchUpId], rederived: new Map<string, Rederived>(), awardee: undefined };
+    : { path: [source.matchUpId], rederived: new Map<string, Rederived>(), takenBack: new Map<string, number>() };
   if (!produced) return undefined;
-  const { path, rederived, awardee } = produced;
+  const { path, rederived, takenBack } = produced;
   // the BYEs this unwind withdraws (its own seat's and its produced exit's), which a seat's onward matchUp is read without:
   // v1 withdraws the deeper one first, so the own seat's onward matchUp has lost the unfillable seat's BYE by the time it
   // is visited (FIRST_MATCH_LOSER_CONSOLATION: both BYEs meet in the consolation's second round). Past a convergence
@@ -2134,10 +2134,11 @@ function unwoundPath(
     if (!seatOps) return undefined;
     for (const op of seatOps)
       if (op.op === 'setMatchUpDrawPositions' && op.releasedDrawPosition) released.add(op.releasedDrawPosition);
+    const taken = takenBack.get(id);
     levels.push({
       matchUpId: id,
       seatOps,
-      ...(awardee && index === 2 ? { released: awardee } : {}),
+      ...(taken ? { released: taken } : {}),
       ...(kept ? { rederived: kept } : {}),
     });
   }
@@ -2153,59 +2154,64 @@ function unwoundProducedPath(
   view: OutcomeView,
   source: HydratedMatchUp,
   structureId: string,
-): { path: string[]; rederived: Map<string, Rederived>; awardee: number | undefined } | undefined {
+): { path: string[]; rederived: Map<string, Rederived>; takenBack: Map<string, number> } | undefined {
   const target = producedTarget(view, source, source.matchUpStatus as MatchUpStatusUnion);
-  if (!target || target.feed) return undefined;
+  if (!target) return undefined;
   const { entry } = target;
   // the produced exit met its paired matchUp's there: a convergence this unwind dissolves (`convergedChain`, S6 tail)
   const converged = entry.matchUpStatus === target.matchUpStatus ? undefined : convergedChain(view, source, target);
   if (entry.matchUpStatus !== target.matchUpStatus && !converged) return undefined;
   const awardee = converged ? undefined : awardedReason(view, source, target);
   if (awardee === false) return undefined;
+  // in a feed round the produced exit lands beside the fed seat (S6 tail, family 7): pending, it stands with that seat's
+  // structural position, which went ahead as the reservation (awarded to the loser fed there, its arrival names no paired
+  // matchUp and `awardedReason` refuses it; a feed matchUp has one feeder, so no convergence forms there)
   const start = [source.matchUpId, ...(converged?.map((level) => level.matchUpId) ?? [entry.matchUpId])];
-  const path = unwoundWinnerPath(view, structureId, start, awardee);
-  if (!path) return undefined;
+  const walked = unwoundWinnerPath(view, structureId, start);
+  if (!walked) return undefined;
   const rederived = new Map(
     converged?.flatMap((level): [string, Rederived][] => (level.rederived ? [[level.matchUpId, level.rederived]] : [])),
   );
-  return { path, rederived, awardee };
+  return { path: walked.path, rederived, takenBack: walked.takenBack };
 }
 
 /**
  * The winner path a cleared double exit's unwind writes back, from the produced exit's matchUp to the structure's final
- * and one matchUp across the final's winner link (`unwoundPath`): each to be played with nothing placed, decided or
- * carried; the awardee's matchUp holding their position alone. Undefined where anything else stands.
+ * and one matchUp across the final's winner link (`unwoundPath`): each to be played with nothing decided or carried. The
+ * position the level before sent ahead (the awardee's, a feed round's fed seat reserved on) comes back out of the matchUp
+ * holding it (v1's `removeDirectedWinner`, `takenBack`); any other position there stands (a feed round's own fed seat, an
+ * opponent arrived from the other half), as v1 leaves it. Undefined where anything else stands.
  */
 function unwoundWinnerPath(
   view: OutcomeView,
   structureId: string,
   start: string[],
-  awardee: number | undefined,
-): string[] | undefined {
+): { path: string[]; takenBack: Map<string, number> } | undefined {
   const path = [...start];
-  let next = indexed(view, indexed(view, path[path.length - 1])?.winnerMatchUpId);
-  // the awardee went on into the next matchUp, alone there: their position comes back out of it
-  if (awardee) {
-    const held = (next?.drawPositions ?? []).filter(Boolean);
-    if (!next || held.length !== 1 || held[0] !== awardee || next.structureId !== structureId) return undefined;
-    if (next.matchUpStatus !== TO_BE_PLAYED || next.winningSide || !scoreless(next)) return undefined;
-    if (next.matchUpStatusCodes?.length || Object.keys(next.sideExitProvenance ?? {}).length) return undefined;
-    path.push(next.matchUpId);
-    next = indexed(view, next.winnerMatchUpId);
-  }
-  while (next) {
+  const takenBack = new Map<string, number>();
+  let previous = indexed(view, path[path.length - 1]);
+  let next = indexed(view, previous?.winnerMatchUpId);
+  while (next && previous) {
+    const before: HydratedMatchUp = previous;
     // the final's winner link leads into another structure (DOUBLE_ELIMINATION's Decider): v1's walk crosses it, takes
     // back a participant the final sent across (`removeLinkedWinner`: nobody, the final being undecided, which the
     // level before refused otherwise) and writes the matchUp back to be played as it writes the path; its structural
     // positions stand. The view holds one level past the final (`unwindLoserSeats`), so a walk going further abstains
     const crossed = next.structureId !== structureId;
-    const clean = next.matchUpStatus === TO_BE_PLAYED && (crossed ? scoreless(next) : undecided(next, true));
-    if (!clean || Object.keys(next.sideExitProvenance ?? {}).length || path.includes(next.matchUpId)) return undefined;
+    if (next.matchUpStatus !== TO_BE_PLAYED || next.winningSide || !scoreless(next)) return undefined;
+    if (Object.keys(next.sideExitProvenance ?? {}).length || path.includes(next.matchUpId)) return undefined;
     if (crossed && next.matchUpStatusCodes?.length) return undefined;
+    if (!crossed) {
+      if (next.matchUpStatusCodes?.length || next.sides?.some((side) => side.bye)) return undefined;
+      // one position goes on from a matchUp; another standing here came from elsewhere and stays
+      const sent = positionsOf(next).filter((position) => positionsOf(before).includes(position));
+      if (sent.length) takenBack.set(next.matchUpId, sent[0]);
+    }
     path.push(next.matchUpId);
+    previous = next;
     next = indexed(view, next.winnerMatchUpId);
   }
-  return path;
+  return { path, takenBack };
 }
 
 /**
@@ -2218,7 +2224,13 @@ function awardedReason(view: OutcomeView, source: HydratedMatchUp, target: Produ
   const provenance = entry.sideExitProvenance ?? {};
   const origins = Object.keys(provenance);
   if (provenance[fedSide]?.sourceMatchUpId !== source.matchUpId) return false;
-  if (!entry.winningSide) return undecided(entry, true) && origins.length === 1 ? undefined : false;
+  if (!entry.winningSide) {
+    if (origins.length !== 1) return false;
+    if (!target.feed) return undecided(entry, true) ? undefined : false;
+    // a feed round: the fed seat's structural position stands beside the pending exit (anyone on it would have won the
+    // exit, the exit's own side holds no position, and a BYE there makes the matchUp a BYE, refused before this, S6 tail)
+    return scoreless(entry) && !entry.matchUpStatusCodes?.length ? undefined : false;
+  }
   const awarded = entry.sides?.find((side) => side.sideNumber === awardedSide);
   const arrival = provenance[awardedSide];
   const paired = pairedFeeder(view);
