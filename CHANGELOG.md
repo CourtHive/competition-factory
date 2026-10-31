@@ -1,5 +1,36 @@
 # Changelog
 
+## [7.26.0](https://github.com/CourtHive/competition-factory/compare/v7.25.0...v7.26.0) (2026-10-31)
+
+
+### Features
+
+* **outcome:** the differential compares a notice's event, and runs on dev PRs (S7) ([#6007](https://github.com/CourtHive/competition-factory/issues/6007)) ([4633411](https://github.com/CourtHive/competition-factory/commit/46334111b652a7617df366aa3ccfb690c28111fd))
+* **outcome:** v2 clears a consolation double exit whose produced exit lands in a feed round ([#6014](https://github.com/CourtHive/competition-factory/issues/6014)) ([6854e23](https://github.com/CourtHive/competition-factory/commit/6854e23c208dd8f45558b7e90642d6db0c79a13b))
+* **outcome:** v2 clears a double exit whose produced exit converged with its paired matchUp's ([#6008](https://github.com/CourtHive/competition-factory/issues/6008)) ([aee1b22](https://github.com/CourtHive/competition-factory/commit/aee1b22a46419e3c1472af46f0c1f2ec4d462058))
+* **outcome:** v2 clears a double exit whose produced exit was awarded through the paired BYE ([#6012](https://github.com/CourtHive/competition-factory/issues/6012)) ([9e9931c](https://github.com/CourtHive/competition-factory/commit/9e9931c56c775e18a977aae09b86c100aeb7e617))
+* **outcome:** v2 owns a single exit relabelled where its winner stands, and swapped (S6 tail) ([#5995](https://github.com/CourtHive/competition-factory/issues/5995)) ([b088c8c](https://github.com/CourtHive/competition-factory/commit/b088c8cc3ba7c0c1a46d17f4038903216f84ab12))
+* **outcome:** v2 owns a TEAM dual's call on a decided dual, auto-calc, and a line's removal or correction (S7) ([#6009](https://github.com/CourtHive/competition-factory/issues/6009)) ([eb22c13](https://github.com/CourtHive/competition-factory/commit/eb22c13e2016628f0f4dfe9e72da0384f2697d6a))
+* **outcome:** v2 owns a TEAM dual's exit carried across its loser link (S7) ([#6004](https://github.com/CourtHive/competition-factory/issues/6004)) ([c80f068](https://github.com/CourtHive/competition-factory/commit/c80f0681ee2682583a212130b6d2675d91c33d63))
+* **outcome:** v2 owns a TEAM dual's own double exit (S7) ([#5998](https://github.com/CourtHive/competition-factory/issues/5998)) ([ec459e6](https://github.com/CourtHive/competition-factory/commit/ec459e67fcab4fffcc98567ec7b4447d1954cb19))
+* **outcome:** v2 unwinds a double exit across the branch its loser link feeds under policy off ([#6005](https://github.com/CourtHive/competition-factory/issues/6005)) ([1661f36](https://github.com/CourtHive/competition-factory/commit/1661f36a4ebf88bff2f3a96ed726b3e171979e4d))
+* **outcome:** v2 unwinds a double exit beside a WINNER link out of its structure (S6 tail) ([#5999](https://github.com/CourtHive/competition-factory/issues/5999)) ([bd0faed](https://github.com/CourtHive/competition-factory/commit/bd0faed0532106531533169eb7405741114bd807))
+* **outcome:** v2 unwinds a double exit whose BYE stood behind FIRST_MATCHUP or emptied a matchUp ([#6001](https://github.com/CourtHive/competition-factory/issues/6001)) ([d3cfcb7](https://github.com/CourtHive/competition-factory/commit/d3cfcb7c16c2c09f46e9c763a31f19fcc38dc2bd))
+* **outcome:** v2 unwinds a final's double exit, which produced nothing ([#6013](https://github.com/CourtHive/competition-factory/issues/6013)) ([08cee16](https://github.com/CourtHive/competition-factory/commit/08cee1606c8beeaed5ac16342b0e5a441252f219))
+* **readModel:** public participant documents under an explicit privacy policy ([#5996](https://github.com/CourtHive/competition-factory/issues/5996)) ([37f2e4f](https://github.com/CourtHive/competition-factory/commit/37f2e4f17177765a3fa4d1927ae802a715946c29))
+* **readModel:** public_participants row in the read-model column contract ([#6010](https://github.com/CourtHive/competition-factory/issues/6010)) ([ebb0c40](https://github.com/CourtHive/competition-factory/commit/ebb0c404fd7cf1971ad88562938172be93539cf7))
+
+
+### Bug Fixes
+
+* **deps:** follow-redirects 1.16.2 and joi 17.13.9 in the documentation lockfile ([#6003](https://github.com/CourtHive/competition-factory/issues/6003)) ([f5f1566](https://github.com/CourtHive/competition-factory/commit/f5f1566cbb4ed4bb13967c3a7d3b0541ae5abc22))
+* **deps:** update tods-competition-factory to 7.25.0 ([#5997](https://github.com/CourtHive/competition-factory/issues/5997)) ([79ef5ec](https://github.com/CourtHive/competition-factory/commit/79ef5ec8841d30fd55255f3f704e5294ff3b5574))
+
+
+### Documentation
+
+* 22,000+ tests, and the swap refusal row names where it is checked ([#6011](https://github.com/CourtHive/competition-factory/issues/6011)) ([6aa2dfc](https://github.com/CourtHive/competition-factory/commit/6aa2dfc0ee03ffa09f05295eecc295bf97c285ed))
+
 ## [7.25.0](https://github.com/CourtHive/competition-factory/compare/v7.24.0...v7.25.0) (2026-10-30)
 
 
