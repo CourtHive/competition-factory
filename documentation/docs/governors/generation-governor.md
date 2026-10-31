@@ -459,7 +459,11 @@ const { drawDefinition, matchUpsMap } = engine.generateDrawTypeAndModifyDrawDefi
 
 ## generateFlightProfile
 
-Splits event entries into `flightsCount` (# of draws). `flightProfile` is an extension on an event which contains attributes to be used by `generateDrawDefinition`. See examples: [Generating Flight Profiles](../concepts/events/flights.mdx#generating-flight-profiles), [Update Existing Profile](../concepts/events/flights.mdx#update-existing-profile), [Complete Example](../concepts/events/flights.mdx#complete-example).
+Splits event entries into `flightsCount` (# of draws). The `flightProfile` lives on the event (`event.flightProfile`) and holds the attributes `generateDrawDefinition` uses for each flight's draw.
+
+By default every entry with a direct-acceptance status is split. `entriesScope: ENTRIES_SCOPE_UNFLIGHTED` splits only participants who are in no flight and no draw; every draw counts as a flight, including a draw stored without one. `participantIds` and `excludeParticipantIds` narrow the split further. `scaledEntries` orders the split; it does not narrow it.
+
+`appendFlights` adds the new flights after the event's existing flights without touching them or their draws, so flights can be generated while other flights already have draws. New flights are numbered after the highest existing flight number, and default names follow those numbers. A draw stored without a flight is given a `manuallyAdded` flight in the same write. Appending is refused with `EXISTING_FLIGHT` (its `context.participantIds` lists them) if a split participant is already in a flight or a draw. See examples: [Generating Flight Profiles](../concepts/events/flights.mdx#generating-flight-profiles), [Update Existing Profile](../concepts/events/flights.mdx#update-existing-profile), [Complete Example](../concepts/events/flights.mdx#complete-example).
 
 NOTE: The method returns `{ flightProfile, splitEntries }` for testing; `splitEntries` provides a breakdown on how `event.entries` were split across each `flight` within the `event`.
 
@@ -485,6 +489,10 @@ const { flightProfile, splitEntries } = engine.generateFlightProfile({
   splitMethod: SPLIT_WATERFALL, // optional - defaults to SPLIT_LEVEL_BASED
   drawNames: ['Green Flight', 'Blue Flight'], // optional
   drawNameRoot: 'Flight', // optional - used to generate drawNames, e.g. 'Flight 1', 'Flight 2'
+  entriesScope, // optional - ENTRIES_SCOPE_ALL (default) or ENTRIES_SCOPE_UNFLIGHTED (flightConstants)
+  participantIds, // optional - split only these participants' entries
+  excludeParticipantIds, // optional
+  appendFlights, // optional - add after the existing flights; with attachFlightProfile, writes them to the event
 });
 
 const {

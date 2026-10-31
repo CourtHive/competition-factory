@@ -379,7 +379,10 @@ export type ScaleItem = {
 export type Flight = {
   manuallyAdded?: boolean; // added with a draw (`addDrawDefinition`) rather than by an automated split
   drawEntries: Entry[]; // entries allocated to target draw
+  // the flight's level, fixed when the flight is made: award points are looked up by it, so reordering or deleting
+  // draws never renumbers it. Display order is `drawOrder`
   flightNumber: number;
+  drawOrder?: number; // display order, written by `updateDrawIdsOrder`; once the flight's draw exists, the draw's `drawOrder` governs
   // custom name for the generated draw; a draw added without a name leaves it unset (`addDrawDefinition`)
   drawName?: string;
   drawId: string; // unique identifier for generating drawDefinitions

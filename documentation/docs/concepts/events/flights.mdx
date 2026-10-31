@@ -113,7 +113,8 @@ type FlightProfile = {
 };
 
 type Flight = {
-  flightNumber: number;
+  flightNumber: number; // the flight's level, fixed when it is made; never renumbered by reordering or deletion
+  drawOrder?: number; // display order, set by updateDrawIdsOrder / refreshEventDrawOrder
   drawId: string; // the draw this flight generates (or generated)
   drawEntries: Entry[]; // always an array, possibly empty
   drawName?: string;

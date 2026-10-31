@@ -154,17 +154,12 @@ export function addDrawDefinition(
     flight.drawName = drawDefinition.drawName;
     value = { ...flightProfile };
 
-    // a numeric string is its number: compared as given it never matched a drawOrder and became a string drawOrder
-    const flightNumber = isNumeric(flight.flightNumber) ? ensureInt(flight.flightNumber) : undefined;
-    if (flightNumber && !drawOrders.includes(flightNumber)) {
-      drawOrder = flightNumber;
-    }
-    flight.flightNumber = drawOrder;
+    drawOrder = placeFlightDraw({ flight, drawOrders }) ?? drawOrder;
   } else {
     const flights = flightProfile?.flights ?? [];
     flights.push({
       manuallyAdded: true, // this drawDefinition was not part of automated split
-      flightNumber: drawOrder,
+      flightNumber: Math.max(0, ...flightNumbers) + 1,
       // a draw added without entries still gets an array, as `addFlight` gives one: readers map over it
       // the flight's own copy: the draw's entries array itself was stored, so a later write to either changed both
       drawEntries: (drawEntries ?? []).map((entry) => ({ ...entry })),
@@ -353,4 +348,14 @@ function addNewDraw({ suppressNotifications, tournamentRecord, drawDefinition, t
     // above), so the event entity changed too — cover it with MODIFY_EVENT.
     modifyEventNotice({ tournamentId, event });
   }
+}
+
+// The draw takes the flight's display order, else its number, when that order is free. The flight's number is its
+// level and is never overwritten (award points are looked up by it); a numeric string is coerced to its number,
+// since compared as given it never matched a drawOrder and became a string drawOrder
+function placeFlightDraw({ flight, drawOrders }: { flight: Flight; drawOrders: number[] }): number | undefined {
+  const flightNumber = isNumeric(flight.flightNumber) ? ensureInt(flight.flightNumber) : undefined;
+  const flightDrawOrder = isNumeric(flight.drawOrder) ? ensureInt(flight.drawOrder) : undefined;
+  if (flightNumber) flight.flightNumber = flightNumber;
+  return [flightDrawOrder, flightNumber].find((order) => order && !drawOrders.includes(order));
 }
