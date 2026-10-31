@@ -237,7 +237,7 @@ const eventedPlacement = (ops: OutcomeOp[], structureId: string) =>
  */
 function dualTallyResult(ops: OutcomeOp[]) {
   const tally = ops.find((op) => op.op === 'setMatchUpResult' && op.dualTally);
-  if (tally?.op !== 'setMatchUpResult') return {};
+  if (tally?.op !== 'setMatchUpResult' || tally.dualTally?.unreturned) return {};
   return {
     tieMatchUpResult: {
       ...SUCCESS,
