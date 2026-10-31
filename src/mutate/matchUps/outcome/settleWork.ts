@@ -87,12 +87,22 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
   const staleOrigins = () =>
     (stale ??= hasStaleExitOrigins({ inContextDrawMatchUps: view, drawDefinition: draw, matchUpsMap: map }));
 
+  // a convergence the plan dissolves and writes as the pass would, re-announced under its name (S6 tail): planned
+  const rederived = new Set(
+    ops.flatMap((op) =>
+      op.op === 'setMatchUpResult' && op.announcedAs === 'settleRederivedDoubleExit' ? [op.matchUpId] : [],
+    ),
+  );
   const work: Record<SettleSite, () => boolean> = {
     // SCOPE: the double exits the call changes but its own (`settleRederivedDoubleExits` skips the call's matchUp, whose
-    // write decided it), and the stale origins the write leaves
+    // write decided it) and but those it re-derives itself, and the stale origins the write leaves
     settleExitOrigins: () =>
-      resultOn((matchUp) => isDoubleExit(matchUp?.matchUpStatus) && matchUp?.matchUpId !== args.matchUpId) ||
-      staleOrigins(),
+      resultOn(
+        (matchUp) =>
+          isDoubleExit(matchUp?.matchUpStatus) &&
+          matchUp?.matchUpId !== args.matchUpId &&
+          !rederived.has(matchUp?.matchUpId ?? ''),
+      ) || staleOrigins(),
     reconcileConsolationReservations: () =>
       !!findReservationWork({ inContextDrawMatchUps: view, drawDefinition: draw, matchUpsMap: map }).length,
     reconcileStaleExitOrigins: staleOrigins,

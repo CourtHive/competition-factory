@@ -26,7 +26,7 @@ describe('READ_MODEL_COLUMNS', () => {
   it('lists every table the read model declares', () => {
     // `satisfies Record<keyof ReadModelRows, …>` already enforces this at compile time; asserted
     // here too so the count is visible in a test report rather than only in a green build.
-    expect(READ_MODEL_TABLES.length).toEqual(15);
+    expect(READ_MODEL_TABLES.length).toEqual(16);
     expect(new Set(READ_MODEL_TABLES).size).toEqual(READ_MODEL_TABLES.length);
   });
 

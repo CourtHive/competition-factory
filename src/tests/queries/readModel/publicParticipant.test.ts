@@ -1,5 +1,10 @@
 import { generatePrivacyFixture, GROUP_PARTICIPANT_ID, STAFF_PARTICIPANT_ID } from '@Tests/testHarness/privacyFixture';
-import { participantPolicyHash, publicParticipantDocuments } from '@Query/readModel/publicParticipant';
+import {
+  participantPolicyHash,
+  publicParticipantDocuments,
+  publicParticipantRow,
+} from '@Query/readModel/publicParticipant';
+import { READ_MODEL_COLUMNS } from '@Query/readModel/readModelColumns';
 import { POLICY_PRIVACY_DEFAULT } from '@Fixtures/policies/POLICY_PRIVACY_DEFAULT';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { readModel } from '../../../index';
@@ -48,6 +53,25 @@ describe('publicParticipantDocuments', () => {
     expect(rated.length).toBeGreaterThan(0);
   });
 
+  it("carries an individual's team, shaped by the policy, and never its groups", () => {
+    const { documents } = documentsUnder();
+    const onTeam = documents.filter((document) => document.participant.teams?.length);
+    expect(onTeam.length).toBeGreaterThan(0);
+    for (const document of onTeam) {
+      for (const team of document.participant.teams) {
+        expect(Object.keys(team).sort()).toEqual(expect.arrayContaining(['participantId', 'participantName']));
+        expect(team.individualParticipantIds).toBeUndefined();
+      }
+    }
+    // the fixture's GROUP holds three individuals; no document may carry that membership
+    expect(documents.some((document) => document.participant.groups)).toBe(false);
+
+    // the control: a policy that names `groups` does surface them, so the absence above is the policy's doing
+    const naming = structuredClone(POLICY_PRIVACY_DEFAULT) as any;
+    naming[POLICY_TYPE_PARTICIPANT].participant.groups = { participantId: true };
+    expect(documentsUnder(naming).documents.some((document) => document.participant.groups?.length)).toBe(true);
+  });
+
   it('includes competitors only: no GROUP, no official', () => {
     const ids = documentsUnder().documents.map((document) => document.participantId);
     expect(ids).not.toContain(GROUP_PARTICIPANT_ID);
@@ -68,6 +92,19 @@ describe('publicParticipantDocuments', () => {
       expect(document.policyHash).toEqual(policyHash);
       expect(document.participantId).toEqual(document.participant.participantId);
     }
+  });
+
+  it('maps a document to a public_participants row with exactly the declared columns', () => {
+    const { documents } = documentsUnder();
+    const row = publicParticipantRow({ tournamentId: tournamentRecord.tournamentId, document: documents[0] });
+    expect(Object.keys(row).sort()).toEqual([...READ_MODEL_COLUMNS.public_participants].sort());
+    expect(row).toEqual({
+      tournament_id: tournamentRecord.tournamentId,
+      participant_id: documents[0].participantId,
+      policy_hash: documents[0].policyHash,
+      document: documents[0].participant,
+    });
+    expect(readModel.publicParticipantRow).toBe(publicParticipantRow);
   });
 
   it('removes the presence attester whatever the policy allows', () => {

@@ -84,7 +84,7 @@ export function applyOwnedPlan({
   // a carry recorded beside a BYE it passed: the BYE matchUp's state is not rewritten, so v1's `progressExitStatus`
   // announces the entry itself (`recordCarryBesideBye`)
   const relayed = new Set(ops.flatMap((op) => (op.op === 'mergeSideExitProvenance' ? [op.matchUpId] : [])));
-  const { removed, unevented, untournamented, unbyed } = noticeRules(ops);
+  const { removed, unevented, untournamented, unbyed, settledResults } = noticeRules(ops);
   // a position advanced through a BYE a double exit placed: v1's `doubleExitAdvancement` announces it as `advanceWinner`
   const advanced = new Set(
     ops.flatMap((op) => (op.op === 'setMatchUpDrawPositions' && op.advancesThroughBye ? [op.matchUpId] : [])),
@@ -116,7 +116,11 @@ export function applyOwnedPlan({
     // unless a score write announces the matchUp after it (a result turned into a double exit: the exit it produces)
     const removedPosition = resulted.has(matchUpId) ? undefined : removed.get(matchUpId);
     const unbyedPosition = resulted.has(matchUpId) ? undefined : unbyed.get(matchUpId);
-    const noticeEvent = removedPosition || unbyedPosition || unevented.has(matchUpId) ? undefined : event;
+    // a settle pass's result write names the event and the tournament, whatever an earlier write of the matchUp in the
+    // same call left out (a convergence re-derived past the produced exit's matchUp: contextless on the unwind, S6 tail)
+    const settledWrite = settledResults.has(matchUpId);
+    const noticeEvent =
+      !settledWrite && (removedPosition || unbyedPosition || unevented.has(matchUpId)) ? undefined : event;
     modifyMatchUpNotice({
       // v1's writers name themselves: the call's result is `modifyMatchUpScore`'s, a winner's seat in the next matchUp
       // is `assignMatchUpDrawPosition`'s (`directWinner`), a FIRST_MATCHUP reservation's matchUp `setMatchUpStatusBye`'s
@@ -132,7 +136,7 @@ export function applyOwnedPlan({
           released,
         }),
       eventId: noticeEvent?.eventId,
-      tournamentId: untournamented.has(matchUpId) || unbyedPosition ? undefined : tournamentId,
+      tournamentId: !settledWrite && (untournamented.has(matchUpId) || unbyedPosition) ? undefined : tournamentId,
       drawDefinition,
       matchUp,
       event: noticeEvent,
@@ -163,7 +167,8 @@ function noticeRules(ops: OutcomeOp[]) {
   // a placement v1 announces with no event or tournament (a produced exit's award, sent on by `doubleExitAdvancement`)
   const unevented = new Set(
     ops.flatMap((op) =>
-      (op.op === 'setMatchUpDrawPositions' && (op.announcesContext === false || op.advancesThroughBye)) ||
+      (op.op === 'setMatchUpDrawPositions' &&
+        (op.announcesContext === false || (op.advancesThroughBye && !op.announcesEvent))) ||
       (op.op === 'setMatchUpResult' && op.announcesContext === false) ||
       (op.op === 'setMatchUpBye' && op.announcesEvent === false)
         ? [op.matchUpId]
@@ -179,15 +184,14 @@ function noticeRules(ops: OutcomeOp[]) {
     ),
   );
   // a BYE an unwind withdraws: v1's `clearDrawPosition` names its position, with neither event nor tournament (S6)
-  const unbyed = new Map<string, number>();
-  for (const op of ops) {
-    if (op.op === 'clearMatchUpBye') unbyed.set(op.matchUpId, op.drawPosition);
-    if (op.op === 'setMatchUpDrawPositions' && op.withdrawnByePosition)
-      unbyed.set(op.matchUpId, op.withdrawnByePosition);
-  }
+  const unbyed = withdrawnByeNotices(ops);
   // a team's line-up written with no event, unless a result written after it announces the matchUp (`namedWriters`)
   for (const matchUpId of namedWriters(ops).lineUpUnevented) unevented.add(matchUpId);
-  return { removed, unevented, untournamented, unbyed };
+  // a settle pass's result write names the event and the tournament, whatever an earlier write of the matchUp left out
+  const settledResults = new Set(
+    ops.flatMap((op) => (op.op === 'setMatchUpResult' && op.announcedAs ? [op.matchUpId] : [])),
+  );
+  return { removed, unevented, untournamented, unbyed, settledResults };
 }
 
 /**
@@ -196,14 +200,14 @@ function noticeRules(ops: OutcomeOp[]) {
  * where v1's writer passes none; a structure's where nothing evented is placed in it (`announceAssignments`)
  */
 export function eventlessNotices(ops: OutcomeOp[]): { matchUps: Set<string>; structures: Set<string> } {
-  const { removed, unevented, unbyed } = noticeRules(ops);
+  const { removed, unevented, unbyed, settledResults } = noticeRules(ops);
   const resulted = new Set(ops.flatMap((op) => (op.op === 'setMatchUpResult' ? [op.matchUpId] : [])));
   const matchUps = new Set(
     ops.flatMap((op) => {
       if (!('matchUpId' in op)) return [];
       const { matchUpId } = op;
       const unplaced = !resulted.has(matchUpId) && (removed.has(matchUpId) || unbyed.has(matchUpId));
-      return unplaced || unevented.has(matchUpId) ? [matchUpId] : [];
+      return !settledResults.has(matchUpId) && (unplaced || unevented.has(matchUpId)) ? [matchUpId] : [];
     }),
   );
   const structures = new Set(touchedStructures(ops).filter((structureId) => !eventedPlacement(ops, structureId)));
@@ -277,6 +281,21 @@ function announceAssignments({
     const noticeEvent = eventedPlacement(ops, structureId) ? event : undefined;
     modifyPositionAssignmentsNotice({ drawDefinition, tournamentId, structure, event: noticeEvent });
   }
+}
+
+/**
+ * A BYE an unwind withdraws: v1's `clearDrawPosition` names its position, with neither event nor tournament (S6), unless
+ * a seat is then advanced into the matchUp through a standing BYE, whose later notice v1's buffer keeps (S6 tail)
+ */
+function withdrawnByeNotices(ops: OutcomeOp[]): Map<string, number> {
+  const unbyed = new Map<string, number>();
+  for (const op of ops) {
+    if (op.op === 'clearMatchUpBye') unbyed.set(op.matchUpId, op.drawPosition);
+    if (op.op === 'setMatchUpDrawPositions' && op.withdrawnByePosition)
+      unbyed.set(op.matchUpId, op.withdrawnByePosition);
+    if (op.op === 'setMatchUpDrawPositions' && op.advancesThroughBye) unbyed.delete(op.matchUpId);
+  }
+  return unbyed;
 }
 
 function noticeContext(

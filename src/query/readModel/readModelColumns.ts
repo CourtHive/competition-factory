@@ -210,6 +210,7 @@ export const READ_MODEL_COLUMNS = {
     'rating_types',
     'cancelled_at',
   ],
+  public_participants: ['tournament_id', 'participant_id', 'policy_hash', 'document'],
 } as const satisfies Record<keyof ReadModelRows, readonly string[]>;
 
 /** The element type of a table's row array in {@link ReadModelRows}. */
@@ -265,6 +266,7 @@ export type ReadModelColumnAssertions = [
   AssertNever<Exact<'venues'>>,
   AssertNever<Exact<'tournament_venues'>>,
   AssertNever<Exact<'tournament_discovery'>>,
+  AssertNever<Exact<'public_participants'>>,
 ];
 
 /** Table names the read model projects, as runtime data. */
