@@ -41,7 +41,8 @@ import {
  * also takes its draw line-up onto the dual beyond (`updateSideLineUp`). A line played on a dual already decided writes
  * the line and the dual's tally, the dual keeping its winner. A dual's own call given a winner is written and directed as
  * any winner, and its own double exit advanced as any double exit; its exit carried across a loser link is written on
- * the dual it reaches with that dual's sides ensured. Under `v2` the call is written
+ * the dual it reaches with that dual's sides ensured. Its own call on a dual already decided enters the winner again
+ * (the draw's line-up written on its side of the next dual) or changes it. Under `v2` the call is written
  * by v2 and v1's writer is not asked; the record, the notices (payloads, in order) and the results equal v1's, under the
  * fixed and the real clock.
  *
@@ -875,6 +876,72 @@ const OWNED: [string, Scenario][] = [
       },
     },
   ],
+  [
+    "a dual's own call entering again the winner its lines decided: the draw's line-up written on the next dual",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [0, 1, 2, 3, 4].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'winner', dual: true },
+    },
+  ],
+  [
+    "a dual's own call entering again the winner its lines decided, on the next dual's other side",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [0, 1, 2, 3, 4].map((line) => ({ target: R1(2, line), winningSide: 1 as const })),
+      step: { target: R1(2, 0), winningSide: 1, outcome: 'winner', dual: true },
+    },
+  ],
+  [
+    "FIRST_MATCH_LOSER_CONSOLATION: a dual's own call entering again the winner its lines decided, its loser fed",
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [0, 1, 2, 3, 4].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'winner', dual: true },
+    },
+  ],
+  [
+    "COMPASS: an East dual's own call entering again the winner its lines decided, its loser in West",
+    {
+      drawProfile: { drawSize: 8, drawType: COMPASS },
+      setup: [0, 1, 2, 3, 4].map((line) => ({ target: R1(1, line, 'East'), winningSide: 1 as const })),
+      step: { target: R1(1, 0, 'East'), winningSide: 1, outcome: 'winner', dual: true },
+    },
+  ],
+  [
+    "a dual's own call entering again the winner of a final its lines decided: no next dual",
+    {
+      drawProfile: { drawSize: 2, drawType: SINGLE_ELIMINATION },
+      setup: [0, 1, 2, 3, 4].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'winner', dual: true },
+    },
+  ],
+  [
+    "a dual's own call entering a winner again after its own WALKOVER for that side",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [],
+      dualExit: 'WALKOVER',
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'winner', dual: true },
+    },
+  ],
+  [
+    "a dual's own call changing the winner its lines decided: the new winner directed, the old taken back",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [0, 1, 2, 3, 4].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
+      step: { target: R1(1, 0), winningSide: 2, outcome: 'winner', dual: true },
+    },
+  ],
+  [
+    "FIRST_MATCH_LOSER_CONSOLATION: a dual's own call entering a winner again after its own WALKOVER, its loser fed",
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [],
+      dualExit: 'WALKOVER',
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'winner', dual: true },
+    },
+  ],
 ];
 
 describe('under v2, a TEAM line is v2s, deciding its dual or not, and leaves exactly what v1 leaves', () => {
@@ -1014,14 +1081,6 @@ const KEPT: [string, Scenario][] = [
     },
   ],
   [
-    "a dual's own call on a dual already decided: v1's",
-    {
-      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
-      setup: [0, 1, 2, 3, 4].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
-      step: { target: R1(1, 0), winningSide: 1, outcome: 'winner', dual: true },
-    },
-  ],
-  [
     "a dual's own call given a winner after its own DOUBLE_WALKOVER: v1's (a double exit given a winner)",
     {
       drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
@@ -1062,6 +1121,16 @@ const KEPT: [string, Scenario][] = [
       setup: [{ target: R1(1, 0), winningSide: 1 }],
       step: { target: R1(1, 1), winningSide: 2 },
       autoCalcOff: true,
+    },
+  ],
+  [
+    "FIRST_MATCH_LOSER_CONSOLATION: a dual's own call changing the winner after its own WALKOVER: v1's (settle)",
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [],
+      dualExit: 'WALKOVER',
+      step: { target: R1(1, 0), winningSide: 2, outcome: 'winner', dual: true },
+      abstains: 'settle',
     },
   ],
 ];
