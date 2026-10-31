@@ -1386,6 +1386,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
   }
 
   const dualSides = dualCallSides({ isTeam, inContextMatchUp, matchUpsMap, drawDefinition, structure, event });
+  const loserDualSides = storedDualSides(isTeam, matchUpsMap, targetData?.targetMatchUps?.loserMatchUp?.matchUpId);
 
   let dualProjection: OutcomeView['dualProjection'];
   if (isTeam && request.flags.enableAutoCalc) {
@@ -1415,6 +1416,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     found: true,
     isTeam,
     dualSides,
+    loserDualSides,
     matchUpTieId,
     isDeciderMatchUp: isDeciderStructure({ drawDefinition, structureId: structure?.structureId }),
     existing: {
@@ -1627,6 +1629,12 @@ function dualCallSides({
   ...args
 }: Omit<Parameters<typeof dualRewrite>[0], 'dualMatchUp'> & { inContextMatchUp?: HydratedMatchUp; isTeam: boolean }) {
   return isTeam && inContextMatchUp ? dualRewrite({ dualMatchUp: inContextMatchUp, ...args }).sides : undefined;
+}
+
+/** a TEAM dual's stored sides, by id: the sides `ensuredDualSides` reads as raw (S7) */
+function storedDualSides(isTeam: boolean, matchUpsMap?: MatchUpsMap, matchUpId?: string): unknown[] | undefined {
+  if (!isTeam || !matchUpId) return undefined;
+  return matchUpsMap?.drawMatchUps?.find((candidate) => candidate.matchUpId === matchUpId)?.sides;
 }
 
 /**
