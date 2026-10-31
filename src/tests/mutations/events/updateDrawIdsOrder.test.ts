@@ -62,9 +62,11 @@ it('can modify the drawOrder of flightProfile.flights and drawDefniitions within
   const drawOrders = updatedEvent.drawDefinitions.map(({ drawOrder }) => drawOrder);
   expect(drawOrders).toEqual(newOrder);
 
+  // reordering changes display order only: a flight's number is its level (award points are looked up by it)
   ({ flightProfile } = tournamentEngine.getFlightProfile({ eventId }));
   const flightNumbers = flightProfile.flights.map(({ flightNumber }) => flightNumber);
-  expect(flightNumbers).toEqual(newOrder);
+  expect(flightNumbers).toEqual([1, 2, 3]);
+  expect(flightProfile.flights.map(({ drawOrder }) => drawOrder)).toEqual(newOrder);
 
   orderedDrawIdsMap = Object.assign({}, ...drawIds.map((drawId) => ({ [drawId]: 'NaN' })));
   result = tournamentEngine.updateDrawIdsOrder({ eventId, orderedDrawIdsMap });
@@ -112,7 +114,8 @@ it('can modify the drawOrder of flightProfile.flights', () => {
 
   ({ flightProfile } = tournamentEngine.getFlightProfile({ eventId }));
   let flightNumbers = flightProfile.flights.map(({ flightNumber }) => flightNumber);
-  expect(flightNumbers).toEqual(newOrder);
+  expect(flightNumbers).toEqual([1, 2, 3]);
+  expect(flightProfile.flights.map(({ drawOrder }) => drawOrder)).toEqual(newOrder);
 
   result = tournamentEngine.refreshEventDrawOrder({ eventId });
   expect(result.success).toEqual(true);

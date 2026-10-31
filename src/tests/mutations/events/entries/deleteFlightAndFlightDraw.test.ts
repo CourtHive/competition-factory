@@ -114,9 +114,13 @@ test('deleted flights will trigger refresh of drawOrder', () => {
   });
   expect(result.success).toEqual(true);
 
+  // the remaining flights keep their numbers (their levels); display order closes the gap
   ({ flightProfile } = tournamentEngine.getFlightProfile({ eventId }));
   const flightNumbers = flightProfile.flights.map(({ flightNumber }) => flightNumber);
-  expect(flightNumbers).toEqual([1, 2]);
+  expect(flightNumbers).toEqual([1, 3]);
+  expect(flightProfile.flights.map(({ drawOrder }) => drawOrder)).toEqual([1, 2]);
+  const { event } = tournamentEngine.getEvent({ eventId });
+  expect(event.drawDefinitions.map(({ drawOrder }) => drawOrder)).toEqual([1, 2]);
 });
 
 it('deleteFlightAndFlightDraw succeeds when drawId does not match any flight in flightProfile', () => {
