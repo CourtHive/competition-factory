@@ -39,12 +39,12 @@ const features = [
       </svg>
     ),
     description:
-      'Written in 100% TypeScript with a Test Driven Development process. Over 20,000 tests across 1,800+ test files cover more than 97% of the lines in the codebase.',
+      'Written in 100% TypeScript with a Test Driven Development process. Over 22,000 tests across 2,000 test files cover more than 97% of the lines in the codebase.',
   },
 ];
 
 const stats = [
-  { number: '20,000+', label: 'Tests' },
+  { number: '22,000+', label: 'Tests' },
   { number: '97%', label: 'Line Coverage' },
   { number: '100%', label: 'TypeScript' },
   { number: '0', label: 'Runtime Deps' },

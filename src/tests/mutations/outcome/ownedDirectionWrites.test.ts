@@ -2,7 +2,7 @@ import { generateOutcomeFromScoreString } from '@Generators/simulation/generateO
 import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { POLICY_SCORING_DEFAULT } from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
-import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
+import { replayFailure } from '@Tests/testHarness/exitPropagation/sweep';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
@@ -100,6 +100,9 @@ type Scenario = {
 
 // `propagateExitStatus`: a WALKOVER or DEFAULTED follows its loser across the link (S5)
 const CARRIED = { propagateExitStatus: true };
+// a swap (`allowChangePropagation`, the other side winning), and one that carries the new loser's exit (S6 tail)
+const SWAP = { allowChangePropagation: true };
+const SWAP_CARRIED = { ...SWAP, ...CARRIED };
 // a double exit's loser seat shows the exit it produced, not a BYE (USTA's policy; CA ruling (A), 2026-10-21)
 const POLICY_OFF = { [POLICY_TYPE_PROGRESSION]: { doubleExitPropagateBye: false } };
 
@@ -109,7 +112,271 @@ const R1 = (roundPosition: number, structureName?: string): Target => ({
   structureName,
 });
 
+/** an 8-draw's Main round 1 played: its losers fill the consolation's first round (S6 tail, family 7) */
+const MAIN_R1_8: Step[] = [1, 2, 3, 4].map((roundPosition) => ({ target: R1(roundPosition, 'Main'), outcome: won(1) }));
+
+/** an 8-draw played to its final, which is then a double walkover (S6 tail, family 6) */
+const FINAL_8 = (structureName?: string): Target => ({ roundNumber: 3, roundPosition: 1, structureName });
+const TO_FINAL_8 = (structureName?: string): Step[] => [
+  ...[1, 2, 3, 4].map((roundPosition) => ({ target: R1(roundPosition, structureName), outcome: won(1) })),
+  ...[1, 2].map((roundPosition) => ({ target: { roundNumber: 2, roundPosition, structureName }, outcome: won(1) })),
+  { target: FINAL_8(structureName), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+];
+
+/** round 1 positions 1 and 2 both double exits: their produced exits converge in round 2 (S6 tail, family 4) */
+const PAIRED = (first: string, second: string, structureName?: string): Step[] => [
+  { target: R1(1, structureName), outcome: { matchUpStatus: first } },
+  { target: R1(2, structureName), outcome: { matchUpStatus: second } },
+];
+
+/** Main 1/1 given `first`, then its winner played on in round 2: Main 1/1's downstream is active (`apply-values`) */
+const PLAYED_ON = (first: Record<string, unknown>, params?: Record<string, unknown>): Step[] => [
+  { target: R1(1, 'Main'), outcome: first, ...(params ? { params } : {}) },
+  { target: R1(2, 'Main'), outcome: won(2) },
+  { target: { roundNumber: 2, roundPosition: 1, structureName: 'Main' }, outcome: won(1) },
+];
+
+/** FIC 8 after `PLAYED_ON`: Main 2/2 played too, so Consolation 2/1 holds its fed seat beside the awardee of Main 1/1's
+ * carry (who won Consolation 1/1 by it), and the awardee wins it: they have played on from the carry */
+const AWARDEE_PLAYED_ON: Step[] = [
+  { target: R1(3, 'Main'), outcome: won(1) },
+  { target: R1(4, 'Main'), outcome: won(1) },
+  { target: { roundNumber: 2, roundPosition: 2, structureName: 'Main' }, outcome: won(1) },
+  { target: { roundNumber: 2, roundPosition: 1, structureName: 'Consolation' }, outcome: won(2) },
+];
+
 const SCENARIOS: [string, Scenario][] = [
+  // S6 tail, family 7: a consolation double exit whose produced exit lands in a FEED round, pending beside the fed seat's
+  // structural position (reserved on into the next round): the feed path written back, the reservation taken back
+  [
+    'FEED_IN_CHAMPIONSHIP: a consolation double walkover cleared, its produced exit pending in the feed round',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [...MAIN_R1_8, { target: R1(1, 'Consolation'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(1, 'Consolation'), outcome: cleared }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP: a consolation double default cleared, its produced exit pending in the feed round',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [...MAIN_R1_8, { target: R1(2, 'Consolation'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+      steps: [{ target: R1(2, 'Consolation'), outcome: cleared }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP: a consolation double walkover cleared after the fed loser arrived beside its pending exit',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [
+        ...MAIN_R1_8,
+        { target: R1(1, 'Consolation'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+        { target: { roundNumber: 2, roundPosition: 1, structureName: 'Main' }, outcome: won(1) },
+      ],
+      steps: [{ target: R1(1, 'Consolation'), outcome: cleared }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION: a double walkover cleared whose awardee reached the final beside the other finalist',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: [
+        { target: R1(1), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+        { target: R1(2), outcome: won(1) },
+        { target: R1(3), outcome: won(1) },
+        { target: R1(4), outcome: won(1) },
+        { target: { roundNumber: 2, roundPosition: 2 }, outcome: won(1) },
+      ],
+      steps: [{ target: R1(1), outcome: cleared }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP 16: a consolation double walkover cleared, pending in the feed round, two feed rounds beyond',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [
+        ...[1, 2, 3, 4, 5, 6, 7, 8].map((roundPosition) => ({ target: R1(roundPosition, 'Main'), outcome: won(1) })),
+        { target: R1(1, 'Consolation'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+      steps: [{ target: R1(1, 'Consolation'), outcome: cleared }],
+    },
+  ],
+  // S6 tail, family 6: a final's double exit, which produced nothing, cleared or given a winner: the own write, and the
+  // own loser seat's BYE withdrawn where a link feeds one
+  [
+    'SINGLE_ELIMINATION: the final a double walkover, cleared',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: TO_FINAL_8(),
+      steps: [{ target: FINAL_8(), outcome: cleared }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION: the final a double walkover, given a winner',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: TO_FINAL_8(),
+      steps: [{ target: FINAL_8(), outcome: won(2) }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION 2: the one matchUp a double default, cleared',
+    {
+      drawProfile: { drawSize: 2, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+      steps: [{ target: R1(1), outcome: cleared }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP: the Main final a double walkover, cleared: its consolation seat BYE withdrawn',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: TO_FINAL_8('Main'),
+      steps: [{ target: FINAL_8('Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP: the Main final a double walkover, given a winner: the loser on the freed seat',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: TO_FINAL_8('Main'),
+      steps: [{ target: FINAL_8('Main'), outcome: won(2) }],
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION: the Main final a double walkover, cleared (no loser link from the final)',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: TO_FINAL_8('Main'),
+      steps: [{ target: FINAL_8('Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP 6 of 8: the Main final a double walkover, cleared: its consolation seat beside a BYE',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 6, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [
+        { target: R1(2, 'Main'), outcome: won(1) },
+        { target: R1(3, 'Main'), outcome: won(1) },
+        ...[1, 2].map((roundPosition) => ({
+          target: { roundNumber: 2, roundPosition, structureName: 'Main' },
+          outcome: won(1),
+        })),
+        { target: FINAL_8('Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+      steps: [{ target: FINAL_8('Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP: the Main final a double walkover, cleared under doubleExitPropagateBye false',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      policyDefinitions: POLICY_OFF,
+      setup: TO_FINAL_8('Main'),
+      steps: [{ target: FINAL_8('Main'), outcome: cleared }],
+    },
+  ],
+  // S6 tail, family 5: a double exit cleared whose produced exit was awarded to a participant who came through the paired
+  // matchUp's BYE (the BYE-origin pair recorded opposite the exit): the awardee's position back out of the next round
+  [
+    'SINGLE_ELIMINATION 7 of 8: a double walkover beside the BYE cleared, its produced exit awarded through the BYE',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(2), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2), outcome: cleared }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP 7 of 8: a double walkover beside the BYE cleared, awarded through the BYE',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2, 'Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION 7 of 8: a double walkover beside the BYE cleared, awarded through the BYE',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: DOUBLE_ELIMINATION },
+      setup: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2, 'Main'), outcome: cleared }],
+    },
+  ],
+  // S6 tail, family 4 (a): a double exit cleared whose produced exit had converged with its paired matchUp's in the next
+  // matchUp; the convergence is re-derived to the kept origin's pending exit and what it produced onward is taken back
+  [
+    'SINGLE_ELIMINATION: a double walkover cleared, its produced exit converged with the paired double walkover',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: PAIRED(DOUBLE_WALKOVER, DOUBLE_WALKOVER),
+      steps: [{ target: R1(1), outcome: cleared }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION: a double default cleared beside a double walkover: the convergence keeps the walkover',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: PAIRED(DOUBLE_DEFAULT, DOUBLE_WALKOVER),
+      steps: [{ target: R1(1), outcome: cleared }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION: a double default cleared beside a double default (no score stored): the blank score written',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: PAIRED(DOUBLE_DEFAULT, DOUBLE_DEFAULT),
+      steps: [{ target: R1(1), outcome: cleared }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION: a double walkover cleared beside a double default: the convergence keeps the default',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: PAIRED(DOUBLE_WALKOVER, DOUBLE_DEFAULT),
+      steps: [{ target: R1(1), outcome: cleared }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION 16: four double walkovers, the first cleared: two convergences re-derived, the final reset',
+    {
+      drawProfile: { drawSize: 16, drawType: SINGLE_ELIMINATION },
+      setup: [
+        ...PAIRED(DOUBLE_WALKOVER, DOUBLE_WALKOVER),
+        { target: R1(3), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+        { target: R1(4), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+      steps: [{ target: R1(1), outcome: cleared }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP: a double walkover cleared, converged; the BYE behind the re-derived matchUp stands',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: PAIRED(DOUBLE_WALKOVER, DOUBLE_WALKOVER, 'Main'),
+      steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'FIRST_ROUND_LOSER_CONSOLATION 16: paired double walkovers cleared where the seat beyond their double BYE is taken',
+    {
+      drawProfile: { drawSize: 16, drawType: FIRST_ROUND_LOSER_CONSOLATION },
+      setup: [
+        { target: R1(3, 'Main'), outcome: won(1) },
+        { target: R1(4, 'Main'), outcome: won(1) },
+        { target: R1(2, 'Consolation'), outcome: won(1) },
+        ...PAIRED(DOUBLE_WALKOVER, DOUBLE_WALKOVER, 'Main'),
+      ],
+      steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION: a double walkover cleared, converged, the Decider beyond the final',
+    {
+      drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
+      setup: PAIRED(DOUBLE_WALKOVER, DOUBLE_WALKOVER, 'Main'),
+      steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+    },
+  ],
   [
     'SINGLE_ELIMINATION: a first-round winner goes on to round 2',
     { drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION }, steps: [{ target: R1(1), outcome: won(1) }] },
@@ -1336,6 +1603,291 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(5, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
     },
   ],
+  // S6 tail, the given-winner unwind beside links that are not plain loser links: a WINNER link out of the structure
+  // (DOUBLE_ELIMINATION's Main to its Decider) and a FIRST_MATCHUP loser link the double exit placed its BYE behind
+  [
+    'DOUBLE_ELIMINATION (S6 tail): a double walkover given a winner, the unwind the plain one beside the WINNER link to the Decider',
+    {
+      drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
+      setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(1, 'Main'), outcome: won(1) }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION (S6 tail): a double default given a walkover for side 2, the Backdraw seats back and the loser placed',
+    {
+      drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
+      setup: [{ target: R1(3, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+      steps: [{ target: R1(3, 'Main'), outcome: walkover(2) }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION (S6 tail): a double walkover cleared beside the WINNER link to the Decider',
+    {
+      drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
+      setup: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: TO_BE_PLAYED } }],
+    },
+  ],
+  // S6 tail, the given-winner unwind behind a FIRST_MATCHUP link, and a withdrawn BYE whose onward matchUp it leaves empty
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION (S6 tail): a double default given a walkover, its own BYE withdrawn and the matchUp it had advanced into released',
+    {
+      drawProfile: { drawSize: 16, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(1) }],
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION (S6 tail): a double walkover given a winner, the unfillable BYE behind FIRST_MATCHUP withdrawn and its double BYE unmade two rounds on',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2, 'Main'), outcome: won(1) }],
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION (S6 tail): a double walkover cleared, both BYEs withdrawn and the consolation written back',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [{ target: R1(3, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(3, 'Main'), outcome: { matchUpStatus: TO_BE_PLAYED } }],
+    },
+  ],
+  [
+    'FIRST_ROUND_LOSER_CONSOLATION (S6 tail): a double walkover cleared, the matchUp its withdrawn BYE had advanced into released',
+    {
+      drawProfile: { drawSize: 16, drawType: FIRST_ROUND_LOSER_CONSOLATION },
+      setup: [{ target: R1(5, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(5, 'Main'), outcome: { matchUpStatus: TO_BE_PLAYED } }],
+    },
+  ],
+  [
+    'FIRST_ROUND_LOSER_CONSOLATION (S6 tail): a double walkover given a winner, the matchUp its BYE had advanced into released',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_ROUND_LOSER_CONSOLATION },
+      setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(1, 'Main'), outcome: won(2) }],
+    },
+  ],
+  // S6 tail, the relabels where the winner already stands: the carry follows the label where the loser stands
+  [
+    'FEED_IN_CHAMPIONSHIP (S6 tail): a carried walkover relabelled a default for the same winner, the carry rewritten where it stands',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+      steps: [{ target: R1(1, 'Main'), outcome: exited(DEFAULTED, 1), params: CARRIED }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6 tail): a carried walkover entered again for the same winner leaves the carry as it is',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6 tail): a played result relabelled a walkover beneath an active downstream, the carry landing on its loser and the opponent sent on',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: PLAYED_ON(won(1)),
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6 tail): a played result relabelled a default beneath an active downstream, the loser alone in the consolation',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: PLAYED_ON(won(1)),
+      steps: [{ target: R1(1, 'Main'), outcome: exited(DEFAULTED, 1), params: CARRIED }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6 tail): a carried walkover relabelled a played result beneath an active downstream, the awardee released',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: PLAYED_ON(walkover(1), CARRIED),
+      steps: [{ target: R1(1, 'Main'), outcome: won(1), params: CARRIED }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6 tail): a carried default relabelled a played result beneath an active downstream, nobody awarded yet',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: PLAYED_ON(exited(DEFAULTED, 1), CARRIED),
+      steps: [{ target: R1(1, 'Main'), outcome: won(1), params: CARRIED }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6 tail): a carried walkover relabelled a default beneath an active downstream, the carry rewritten where it stands',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: PLAYED_ON(walkover(1), CARRIED),
+      steps: [{ target: R1(1, 'Main'), outcome: exited(DEFAULTED, 1), params: CARRIED }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6 tail): a carried walkover entered again beneath an active downstream writes the matchUp alone',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: PLAYED_ON(walkover(1), CARRIED),
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6 tail): a played result relabelled a walkover beneath an active downstream with no propagation, the write alone',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: PLAYED_ON(won(1)),
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(1) }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION (S6 tail): a played result relabelled a retirement beneath an active downstream, no loser link',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: PLAYED_ON(won(2)),
+      steps: [{ target: R1(1, 'Main'), outcome: exited(RETIRED, 2), params: CARRIED }],
+    },
+  ],
+  // ...and swapped to the other side: the carry follows the label onto the seat the old loser held, now the new loser's
+  [
+    'FEED_IN_CHAMPIONSHIP (S6 tail): a carried walkover swapped to the other side leaves the carry on the relabelled seat',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [
+        { target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED },
+        { target: R1(2, 'Main'), outcome: won(2) },
+      ],
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(2), params: SWAP_CARRIED }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6 tail): a carried walkover swapped to the other side beneath an active downstream, the path relabelled two rounds on',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: PLAYED_ON(walkover(1), CARRIED),
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(2), params: SWAP_CARRIED }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6 tail): a played result swapped to a walkover for the other side, the new loser carrying it',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [
+        { target: R1(1, 'Main'), outcome: won(1) },
+        { target: R1(2, 'Main'), outcome: won(2) },
+      ],
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(2), params: SWAP_CARRIED }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6 tail): a carried walkover swapped to a default for the other side, the carry rewritten where it stands',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [
+        { target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED },
+        { target: R1(2, 'Main'), outcome: won(2) },
+      ],
+      steps: [{ target: R1(1, 'Main'), outcome: exited(DEFAULTED, 2), params: SWAP_CARRIED }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6 tail): a walkover swapped to the other side with no propagation, the relabel and the write alone',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(1, 'Main'), outcome: walkover(1) }],
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(2), params: SWAP }],
+    },
+  ],
+  [
+    'CURTIS_CONSOLATION (S6 tail): a played result swapped to a default for the other side, carried into Consolation 1',
+    {
+      drawProfile: { drawSize: 16, drawType: CURTIS_CONSOLATION },
+      setup: [{ target: R1(2, 'Main'), outcome: won(1) }],
+      steps: [{ target: R1(2, 'Main'), outcome: exited(DEFAULTED, 2), params: SWAP_CARRIED }],
+    },
+  ],
+  [
+    'CURTIS_CONSOLATION (S6 tail): a played result relabelled a walkover beneath an active downstream, carried into Consolation 1',
+    {
+      drawProfile: { drawSize: 16, drawType: CURTIS_CONSOLATION },
+      setup: PLAYED_ON(won(1)),
+      steps: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+    },
+  ],
+  // S6 tail, `doubleExitPropagateBye: false`: the double exit's loser seat held its carried exit, not a BYE, so v1's
+  // unwind visits that matchUp and walks on from it over winner and loser links alike, writing each matchUp back
+  [
+    'DOUBLE_ELIMINATION (S6 tail, policy off): a double walkover cleared, the Backdraw matchUp holding its carry and the Backdraw path written back',
+    {
+      drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
+      policyDefinitions: POLICY_OFF,
+      setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION (S6 tail, policy off): a double walkover cleared once the carry was won, the awardee taken back out of Backdraw round 2',
+    {
+      drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
+      policyDefinitions: POLICY_OFF,
+      setup: [
+        { target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+        { target: R1(2, 'Main'), outcome: won(1) },
+      ],
+      steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'CURTIS_CONSOLATION (S6 tail, policy off): a double walkover cleared, the consolation path written back across its winner link',
+    {
+      drawProfile: { drawSize: 16, drawType: CURTIS_CONSOLATION },
+      policyDefinitions: POLICY_OFF,
+      setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION (S6 tail, policy off): a double walkover cleared once the carry was won, the awardee back out of two consolation rounds and the BYE behind FIRST_MATCHUP withdrawn',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      policyDefinitions: POLICY_OFF,
+      setup: [
+        { target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+        { target: R1(2, 'Main'), outcome: won(1) },
+      ],
+      steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP (S6 tail, policy off): a double walkover cleared, the consolation path written back',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      policyDefinitions: POLICY_OFF,
+      setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION (S6 tail, policy off): a double walkover given a winner, the loser placed on the seat the unwind wrote back',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      policyDefinitions: POLICY_OFF,
+      setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(1, 'Main'), outcome: won(1) }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION (S6 tail, policy off): a double walkover given a winner, the loser placed in the Backdraw matchUp the unwind wrote back',
+    {
+      drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
+      policyDefinitions: POLICY_OFF,
+      setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(1, 'Main'), outcome: won(1) }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
@@ -1475,6 +2027,97 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     }
   });
 
+  it('S6 tail: a double walkover under policy off cleared while another double exit holds a BYE on its consolation path is v1s', () => {
+    // FEED_IN_CHAMPIONSHIP 8: Main 1/3's double walkover leaves Main 2/2 nobody for a loser, so Consolation 2/1 (where
+    // Main 1/1's carry would send its awardee on) holds a propagated BYE that is not this unwind's: the branch stops there
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      policyDefinitions: POLICY_OFF,
+      setup: [
+        { target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+        { target: R1(3, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+      steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v1.results[0].success).toEqual(true);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+  });
+
+  it('S6 tail: an OLYMPIC census replay under policy off (20779675) compares whole, a cleared double default whose branch meets a result', () => {
+    // census (`aCarrierComesHomeWithOnlyTheirOwnCarry`): East 1/9's double default carries into West, where its awardee
+    // plays on (West 1/6) before the double default is cleared; the branch's walk meets that result and stops (v1's)
+    const at = (key: string, outcome: any) => {
+      const [structureName, roundNumber, roundPosition] = key.split('|');
+      return { structureName, roundNumber: Number(roundNumber), roundPosition: Number(roundPosition), outcome };
+    };
+    const config = {
+      drawType: OLYMPIC,
+      propagateExitStatus: true,
+      participantsCount: 29,
+      drawSize: 32,
+      seed: 20779675,
+    };
+    const schedule = [
+      at('East|1|10', { matchUpStatus: WALKOVER, winningSide: 1 }),
+      at('East|1|11', { winningSide: 1 }),
+      at('East|1|9', { matchUpStatus: DOUBLE_DEFAULT }),
+      at('East|1|12', { winningSide: 1 }),
+      at('East|1|14', { matchUpStatus: WALKOVER, winningSide: 1 }),
+      at('West|1|6', { winningSide: 2 }),
+      at('East|1|9', cleared),
+    ];
+    setOutcomePipeline(OUTCOME_PIPELINE_DIFFERENTIAL);
+    expect(replayFailure(config, schedule, 'olympic-policy-off-differential-2', POLICY_OFF)).toBeNull();
+  });
+
+  it('S6 tail: an OLYMPIC census replay under policy off (20609643) compares whole, the branch stopping at a standing BYE', () => {
+    // census S8 policy-off, OLYMPIC 32/30 (`aPendingExitAwaitingAnArrivalCanDeliver`): West's carries reach South,
+    // where a BYE stands behind the branch's own loser link; the branch walks that link and stops there (v1's). Dropping
+    // the stop plans a branch that writes less than v1
+    const at = (key: string, outcome: any) => {
+      const [structureName, roundNumber, roundPosition] = key.split('|');
+      return { structureName, roundNumber: Number(roundNumber), roundPosition: Number(roundPosition), outcome };
+    };
+    const config = {
+      drawType: OLYMPIC,
+      propagateExitStatus: true,
+      participantsCount: 30,
+      drawSize: 32,
+      seed: 20609643,
+    };
+    const schedule = [
+      at('East|1|11', { matchUpStatus: WALKOVER, winningSide: 1 }),
+      at('East|1|5', { matchUpStatus: WALKOVER, winningSide: 2 }),
+      at('East|1|12', { matchUpStatus: WALKOVER, winningSide: 2 }),
+      at('East|1|2', { winningSide: 2 }),
+      at('East|1|9', { matchUpStatus: DOUBLE_WALKOVER }),
+      at('East|1|7', { matchUpStatus: DEFAULTED, winningSide: 1 }),
+    ];
+    // under `differential`: the shadow of such a branch diverges from v1's record, which the replay reports as a finding
+    setOutcomePipeline(OUTCOME_PIPELINE_DIFFERENTIAL);
+    expect(replayFailure(config, schedule, 'olympic-policy-off-differential', POLICY_OFF)).toBeNull();
+  });
+
+  it('S6 tail: a cleared double walkover under policy off whose carry sent BYEs on through a BYE chain (COMPASS) is v1s', () => {
+    // the award of the carried walkover had nobody for a loser, so its seat took a BYE, and that BYE went on across the
+    // consolation's own loser link: the chain is the main path's unwind to withdraw, which v2 leaves to v1
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 16, drawType: COMPASS },
+      policyDefinitions: POLICY_OFF,
+      setup: [{ target: R1(1, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(1, 'East'), outcome: cleared }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+  });
+
   it('S6: a cleared double walkover whose loser seat BYE went on across a further loser link (COMPASS) is v1s', () => {
     const scenario: Scenario = {
       drawProfile: { drawSize: 16, drawType: COMPASS },
@@ -1487,21 +2130,6 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     expect(v2.v1Writes).toBeGreaterThan(0);
     expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
-  });
-
-  it('S6: a cleared double walkover whose withdrawn BYE leaves the matchUp it advanced into empty (FRLC) is v1s', () => {
-    const scenario: Scenario = {
-      drawProfile: { drawSize: 16, drawType: FIRST_ROUND_LOSER_CONSOLATION },
-      setup: [{ target: R1(5, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
-      steps: [{ target: R1(5, 'Main'), outcome: cleared }],
-    };
-    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
-    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
-    expect(v1.results[0].success).toEqual(true);
-    expect(v2.v1Writes).toBeGreaterThan(0);
-    expect(v2.results).toEqual(v1.results);
-    expect(v2.record).toEqual(v1.record);
-    expect(v2.notices).toEqual(v1.notices);
   });
 
   it('S6: a cleared walkover that carried its exit across the loser link is v1s (its provenance there)', () => {
@@ -1519,10 +2147,11 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     expect(v2.notices).toEqual(v1.notices);
   });
 
-  it('S6: a walkover relabelled a default whose loser carries it across their link is v1s', () => {
+  // S6 tail: a carry the awardee has played on from stands as it was (v1's `withdrawable`), whatever the relabel says
+  it('S6 tail: a carried walkover relabelled a default once the awardee has played on is v1s, the carry kept', () => {
     const scenario: Scenario = {
-      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
-      setup: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [...PLAYED_ON(walkover(1), CARRIED), ...AWARDEE_PLAYED_ON],
       steps: [{ target: R1(1, 'Main'), outcome: exited(DEFAULTED, 1), params: CARRIED }],
     };
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
@@ -1532,25 +2161,96 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
     expect(v2.notices).toEqual(v1.notices);
+    // and the direction v2 plans for it says nothing v1 does not write: the carry is not read as the exit it would be
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results[0].success).toEqual(true);
   });
 
-  // a withdrawal is a relabel to a played result: an exit entered again keeps its carry, and the planner leaves it to v1
-  // itself rather than the settle check after it
-  it('S6: a carried walkover entered again for the same winner is v1s, refused by the planner', () => {
+  // ...and a relabel to a played result once the awardee has played on is a change of kind over a recorded result: refused
+  // (§ 2 row 22), by v2 as by v1
+  it('S6 tail: a carried walkover relabelled a played result once the awardee has played on is refused, by both', () => {
     const scenario: Scenario = {
-      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
-      setup: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
-      steps: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [...PLAYED_ON(walkover(1), CARRIED), ...AWARDEE_PLAYED_ON],
+      steps: [{ target: R1(1, 'Main'), outcome: won(1), params: CARRIED }],
     };
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
-    // read as a change, not reset: the file's tally is the census's (OUTCOME_TALLY)
-    const deferred = (key: string) => getDifferentialTally()[key]?.deferred ?? 0;
-    const before = { exit: deferred('shadow:abstain:exit'), settle: deferred('shadow:abstain:settle') };
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v1.results[0].error).toBeDefined();
+    expect(v2.v1Writes).toEqual(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+  });
+
+  // S6 tail: a swap away from a carried exit withdraws the carry from the seat the new loser takes: v1's
+  it('S6 tail: a carried walkover swapped to a played result for the other side is v1s, whole', () => {
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [
+        { target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED },
+        { target: R1(2, 'Main'), outcome: won(2) },
+      ],
+      steps: [{ target: R1(1, 'Main'), outcome: won(2), params: SWAP_CARRIED }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+    if (v1.results[0].success) expect(v2.v1Writes).toBeGreaterThan(0);
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
-    expect(deferred('shadow:abstain:exit') - before.exit).toEqual(1);
-    expect(deferred('shadow:abstain:settle') - before.settle).toEqual(0);
     expect(compared.results).toEqual(v1.results);
-    expect(compared.record).toEqual(v1.record);
+  });
+
+  // S6 tail: a swap whose new loser arrives at a pending exit standing on the seat the old loser held wins it (RULE 3), as
+  // v1's `swapWinnerLoser` sends them: no carry is planned there (`planSwap`), and the call is v1's
+  // (`swapWinnerLoserResort.test.ts`: census 9100555, DOUBLE_ELIMINATION 8/6, flag ON)
+  it('S6 tail: a swap onto a seat holding a pending walkover is v1s, and the direction plans no carry', () => {
+    const steps: [string, Record<string, unknown>][] = [
+      ['Main|1|2', { winningSide: 2 }],
+      ['Main|1|3', { winningSide: 2 }],
+      ['Main|2|2', { matchUpStatus: DOUBLE_DEFAULT }],
+      ['Main|2|1', { matchUpStatus: DEFAULTED, winningSide: 1 }],
+      ['Backdraw|3|1', { winningSide: 2 }],
+      ['Main|2|1', { matchUpStatus: WALKOVER, winningSide: 2 }],
+      ['Backdraw|3|1', { matchUpStatus: DOUBLE_WALKOVER }],
+    ];
+    const run = (mode: OutcomePipelineMode) => {
+      setOutcomePipeline(OUTCOME_PIPELINE_V1);
+      setClock('2026-10-25T00:00:00.000Z');
+      setSubscriptions({ subscriptions: {} });
+      mocksEngine.generateTournamentRecord({
+        drawProfiles: [{ drawType: DOUBLE_ELIMINATION, drawSize: 8, participantsCount: 6, drawId: 'd' }],
+        nonRandom: 9100555,
+        setState: true,
+      });
+      const find = (key: string): any =>
+        tournamentEngine
+          .allDrawMatchUps({ drawId: 'd', inContext: true })
+          .matchUps.find((m: any) => `${m.structureName}|${m.roundNumber}|${m.roundPosition}` === key);
+      const submit = (key: string, outcome: Record<string, unknown>) =>
+        tournamentEngine.setMatchUpStatus({ ...SWAP_CARRIED, matchUpId: find(key).matchUpId, outcome, drawId: 'd' });
+      // every step under the mode: the sixth flips Main|2|1 from a default to a walkover for the other side, onto a
+      // Backdraw seat holding that default's carry beside a pending exit
+      setOutcomePipeline(mode);
+      v1Writes.count = 0;
+      for (const [key, outcome] of steps) expect(submit(key, outcome).success).toEqual(true);
+      const flipped = find('Main|1|2');
+      const result: any = submit('Main|1|2', { winningSide: 3 - flipped.winningSide });
+      return {
+        result,
+        v1Writes: v1Writes.count,
+        record: canonicalJson(tournamentEngine.getTournament().tournamentRecord),
+      };
+    };
+    const v1 = run(OUTCOME_PIPELINE_V1);
+    const v2 = run(OUTCOME_PIPELINE_V2);
+    expect(v1.result.success).toEqual(true);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.record).toEqual(v1.record);
+    const compared = run(OUTCOME_PIPELINE_DIFFERENTIAL);
+    expect(compared.result.success).toEqual(true);
   });
 
   // the consolation matchUp holds both feeders' carries: withdrawing one is not the plain withdrawal
@@ -1594,14 +2294,6 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
         drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
         setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
         steps: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
-      },
-    ],
-    [
-      'S6: a double default given a winner whose withdrawn BYE had gone on two rounds (FIRST_MATCH_LOSER_CONSOLATION) is v1s',
-      {
-        drawProfile: { drawSize: 16, drawType: FIRST_MATCH_LOSER_CONSOLATION },
-        setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
-        steps: [{ target: R1(1, 'Main'), outcome: walkover(1) }],
       },
     ],
   ])('%s', (_label, scenario) => {
@@ -1684,5 +2376,117 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     expect(v2.v1Writes).toEqual(1);
     expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
+  });
+});
+
+// S6 tail, family 4: the dissolved convergence beyond a clear is v2's; given a winner (the winner then awarded the
+// re-derived pending exit and sent on) and under `doubleExitPropagateBye: false` (the consolation convergence of the two
+// carries re-derived too) it stays v1's, whole
+describe('under v2, a dissolved convergence beyond the clear is v2s; given a winner or under policy off it is v1s', () => {
+  const V1S: [string, Scenario][] = [
+    [
+      'SINGLE_ELIMINATION: a double walkover given a winner, its produced exit converged',
+      {
+        drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+        setup: PAIRED(DOUBLE_WALKOVER, DOUBLE_WALKOVER),
+        steps: [{ target: R1(1), outcome: won(1) }],
+      },
+    ],
+    [
+      'FIRST_MATCH_LOSER_CONSOLATION: a double walkover cleared, converged: the freed seat advances on through a BYE',
+      {
+        drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+        setup: PAIRED(DOUBLE_WALKOVER, DOUBLE_WALKOVER, 'Main'),
+        steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+      },
+    ],
+    [
+      'SINGLE_ELIMINATION 16: four double walkovers, the final awarded to the other half, the first cleared',
+      {
+        drawProfile: { drawSize: 16, drawType: SINGLE_ELIMINATION },
+        setup: [
+          ...PAIRED(DOUBLE_WALKOVER, DOUBLE_WALKOVER),
+          { target: R1(3), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+          { target: R1(4), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+          { target: R1(5), outcome: won(1) },
+          { target: R1(6), outcome: won(1) },
+          { target: R1(7), outcome: won(1) },
+          { target: R1(8), outcome: won(1) },
+          { target: { roundNumber: 2, roundPosition: 3 }, outcome: won(1) },
+          { target: { roundNumber: 2, roundPosition: 4 }, outcome: won(1) },
+          { target: { roundNumber: 3, roundPosition: 2 }, outcome: won(1) },
+        ],
+        steps: [{ target: R1(1), outcome: cleared }],
+      },
+    ],
+    [
+      'FIRST_ROUND_LOSER_CONSOLATION 16: paired double walkovers, the seat beyond their double BYE still empty',
+      {
+        drawProfile: { drawSize: 16, drawType: FIRST_ROUND_LOSER_CONSOLATION },
+        setup: PAIRED(DOUBLE_WALKOVER, DOUBLE_WALKOVER, 'Main'),
+        steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+      },
+    ],
+    [
+      'FIRST_MATCH_LOSER_CONSOLATION 7 of 8: a double walkover beside the BYE cleared, awarded through the BYE',
+      {
+        drawProfile: { drawSize: 8, participantsCount: 7, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+        setup: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+        steps: [{ target: R1(2, 'Main'), outcome: cleared }],
+      },
+    ],
+    [
+      'SINGLE_ELIMINATION 7 of 8: a double walkover beside the BYE given a winner, awarded through the BYE',
+      {
+        drawProfile: { drawSize: 8, participantsCount: 7, drawType: SINGLE_ELIMINATION },
+        setup: [{ target: R1(2), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+        steps: [{ target: R1(2), outcome: won(1) }],
+      },
+    ],
+    [
+      'FEED_IN_CHAMPIONSHIP: a consolation double walkover given a winner, its produced exit pending in the feed round',
+      {
+        drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+        setup: [...MAIN_R1_8, { target: R1(1, 'Consolation'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+        steps: [{ target: R1(1, 'Consolation'), outcome: won(1) }],
+      },
+    ],
+    [
+      'FEED_IN_CHAMPIONSHIP: a consolation double walkover cleared once the fed loser was awarded its produced exit',
+      {
+        drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+        setup: [
+          ...MAIN_R1_8,
+          { target: R1(1, 'Consolation'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+          { target: { roundNumber: 2, roundPosition: 2, structureName: 'Main' }, outcome: won(1) },
+        ],
+        steps: [{ target: R1(1, 'Consolation'), outcome: cleared }],
+      },
+    ],
+    [
+      'DOUBLE_ELIMINATION: the Main final a double walkover cleared: the Decider, fed by both its links, is visited',
+      {
+        drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
+        setup: TO_FINAL_8('Main'),
+        steps: [{ target: FINAL_8('Main'), outcome: cleared }],
+      },
+    ],
+    [
+      'FEED_IN_CHAMPIONSHIP: a double walkover cleared, converged, under doubleExitPropagateBye false',
+      {
+        drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+        policyDefinitions: POLICY_OFF,
+        setup: PAIRED(DOUBLE_WALKOVER, DOUBLE_WALKOVER, 'Main'),
+        steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+      },
+    ],
+  ];
+  it.each(V1S)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
   });
 });

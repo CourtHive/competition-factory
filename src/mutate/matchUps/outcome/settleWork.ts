@@ -8,6 +8,7 @@ import { findOwedByeAdvance } from '@Mutate/matchUps/matchUpStatus/reconcileByeA
 import { hasForwardWork } from '@Mutate/matchUps/matchUpStatus/settleForwardConsequences';
 import { findOwedCarry } from '@Mutate/matchUps/matchUpStatus/reconcileCarriesPastByes';
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
+import { carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getDeciderSnapshot } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
 import { isDoubleExit, isExit } from '@Validators/isExit';
@@ -86,12 +87,22 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
   const staleOrigins = () =>
     (stale ??= hasStaleExitOrigins({ inContextDrawMatchUps: view, drawDefinition: draw, matchUpsMap: map }));
 
+  // a convergence the plan dissolves and writes as the pass would, re-announced under its name (S6 tail): planned
+  const rederived = new Set(
+    ops.flatMap((op) =>
+      op.op === 'setMatchUpResult' && op.announcedAs === 'settleRederivedDoubleExit' ? [op.matchUpId] : [],
+    ),
+  );
   const work: Record<SettleSite, () => boolean> = {
     // SCOPE: the double exits the call changes but its own (`settleRederivedDoubleExits` skips the call's matchUp, whose
-    // write decided it), and the stale origins the write leaves
+    // write decided it) and but those it re-derives itself, and the stale origins the write leaves
     settleExitOrigins: () =>
-      resultOn((matchUp) => isDoubleExit(matchUp?.matchUpStatus) && matchUp?.matchUpId !== args.matchUpId) ||
-      staleOrigins(),
+      resultOn(
+        (matchUp) =>
+          isDoubleExit(matchUp?.matchUpStatus) &&
+          matchUp?.matchUpId !== args.matchUpId &&
+          !rederived.has(matchUp?.matchUpId ?? ''),
+      ) || staleOrigins(),
     reconcileConsolationReservations: () =>
       !!findReservationWork({ inContextDrawMatchUps: view, drawDefinition: draw, matchUpsMap: map }).length,
     reconcileStaleExitOrigins: staleOrigins,
@@ -127,11 +138,22 @@ export function predictSettleWork(args: SettleWorkArgs): SettleSite[] {
       map.drawMatchUps.some((matchUp) => !!matchUp.schedule?.scoredTime && !matchUpIsScored(matchUp)),
   };
   // an exit the call propagates (`propagateExitFrom`), which no local call does: every pass is in reach, unless the plan
-  // holds the propagation as ops (a carried exit's entry, S5), when each pass is asked of the draw the carry leaves
-  const carryPlanned = ops.some((op) => op.op === 'mergeSideExitProvenance');
+  // holds the propagation as ops (a carried exit's entry, S5), when each pass is asked of the draw the carry leaves; or
+  // the carry already stands where the loser is, the same exit entered again, which v1 leaves as it is (S6 tail)
+  const carryPlanned = ops.some((op) => op.op === 'mergeSideExitProvenance') || carryStands(view, args.matchUpId);
   if (!carryPlanned && results.some((op) => propagatesExit(op.matchUpStatus, args)))
     return Object.keys(work) as SettleSite[];
   return (Object.keys(work) as SettleSite[]).filter((site) => work[site]());
+}
+
+/** a matchUp of the working view carries the exit the call's matchUp sent across its loser link already */
+function carryStands(view: HydratedMatchUp[], matchUpId?: string): boolean {
+  if (!matchUpId) return false;
+  return view.some((matchUp) =>
+    Object.values(matchUp.sideExitProvenance ?? {}).some(
+      (entry) => entry?.sourceMatchUpId === matchUpId && !!carriedExitStatus(entry),
+    ),
+  );
 }
 
 /**

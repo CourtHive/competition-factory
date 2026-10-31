@@ -305,6 +305,34 @@ function carriesExitFrom(matchUp?: HydratedMatchUp, sourceMatchUpId?: string): b
   );
 }
 
+/**
+ * S6 tail: the loser's matchUp holds the carry THIS matchUp made there and nothing else: the carried exit, awarded to the
+ * side opposite the carrier (somebody, or nobody yet), this matchUp's entry its only provenance, no loser link out of it
+ * (the carrier carried nothing further), and nothing played on from it (the next matchUp, where the awardee may stand,
+ * to be played with no result). v1's `relabelsTheCarry` rewrites it in place and the same exit entered again leaves it;
+ * a carry the awardee has played on from stands as it was (`withdrawable`), read as a result of its own.
+ */
+function carryHeld(
+  matchUp: HydratedMatchUp | undefined,
+  carrierDrawPosition: number | undefined,
+  sourceMatchUpId: string | undefined,
+  draw: DrawContext,
+): boolean {
+  if (!matchUp || !carrierDrawPosition || !sourceMatchUpId) return false;
+  if (!isExit(matchUp.matchUpStatus) || !matchUp.winningSide || matchUp.loserMatchUpId) return false;
+  if (carriedStatuses(matchUp, sourceMatchUpId, draw).length) return false;
+  const carrierSide = matchUp.sides?.find((side) => side.drawPosition === carrierDrawPosition)?.sideNumber;
+  if ((carrierSide !== 1 && carrierSide !== 2) || matchUp.winningSide !== 3 - carrierSide) return false;
+  const provenance = getSideExitProvenance({ matchUp }) ?? {};
+  const entries = Object.values(provenance).filter(Boolean);
+  if (entries.length !== 1 || provenance[carrierSide]?.sourceMatchUpId !== sourceMatchUpId) return false;
+  if (!carriedExitStatus(provenance[carrierSide])) return false;
+  const next = draw.inContextDrawMatchUps.find((candidate) => candidate.matchUpId === matchUp.winnerMatchUpId);
+  return (
+    !next || (next.matchUpStatus === TO_BE_PLAYED && !next.winningSide && !checkScoreHasValue({ score: next.score }))
+  );
+}
+
 function carriesExit(matchUp?: HydratedMatchUp, draw?: DrawContext): boolean {
   return carriedStatuses(matchUp, undefined, draw).length > 0;
 }
@@ -446,6 +474,14 @@ function unwindLoserSeats(
       loserSeat: entry.loserMatchUpId ? loserSeatOf(draw, entry.matchUpId) : undefined,
     });
     entry = entry.winnerMatchUpId ? byId.get(entry.winnerMatchUpId) : undefined;
+  }
+  // the matchUp the final's winner link leads into (DOUBLE_ELIMINATION's Decider): v1's walk crosses the link and
+  // writes it back to be played as it writes the path (S6 tail); one level, its own seat read as any level's
+  if (entry) {
+    levels.push({
+      matchUpId: entry.matchUpId,
+      loserSeat: entry.loserMatchUpId ? loserSeatOf(draw, entry.matchUpId) : undefined,
+    });
   }
   return levels;
 }
@@ -1180,6 +1216,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       loserMatchUpCarriesExit: false,
       loserMatchUpCarriedStatuses: [],
       loserMatchUpCarriesSourceExit: false,
+      loserMatchUpCarryHeld: false,
       loserMatchUpDecidedForArrival: false,
       source: { roundMatchUpCount: 0, nextRoundMatchUpCount: 0 },
     },
@@ -1349,6 +1386,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
   }
 
   const dualSides = dualCallSides({ isTeam, inContextMatchUp, matchUpsMap, drawDefinition, structure, event });
+  const loserDualSides = storedDualSides(isTeam, matchUpsMap, targetData?.targetMatchUps?.loserMatchUp?.matchUpId);
 
   let dualProjection: OutcomeView['dualProjection'];
   if (isTeam && request.flags.enableAutoCalc) {
@@ -1378,6 +1416,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
     found: true,
     isTeam,
     dualSides,
+    loserDualSides,
     matchUpTieId,
     isDeciderMatchUp: isDeciderStructure({ drawDefinition, structureId: structure?.structureId }),
     existing: {
@@ -1501,6 +1540,12 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       loserMatchUpCarriesExit: carriesExit(targetData?.targetMatchUps?.loserMatchUp, draw),
       loserMatchUpCarriedStatuses: standingExits(targetData?.targetMatchUps?.loserMatchUp, request.matchUpId, draw),
       loserMatchUpCarriesSourceExit: carriesExitFrom(targetData?.targetMatchUps?.loserMatchUp, request.matchUpId),
+      loserMatchUpCarryHeld: carryHeld(
+        targetData?.targetMatchUps?.loserMatchUp,
+        targetData?.targetMatchUps?.loserTargetDrawPosition,
+        request.matchUpId,
+        draw,
+      ),
       loserMatchUpDecidedForArrival: decidedForArrival({
         matchUp: targetData?.targetMatchUps?.loserMatchUp,
         inContextDrawMatchUps,
@@ -1584,6 +1629,12 @@ function dualCallSides({
   ...args
 }: Omit<Parameters<typeof dualRewrite>[0], 'dualMatchUp'> & { inContextMatchUp?: HydratedMatchUp; isTeam: boolean }) {
   return isTeam && inContextMatchUp ? dualRewrite({ dualMatchUp: inContextMatchUp, ...args }).sides : undefined;
+}
+
+/** a TEAM dual's stored sides, by id: the sides `ensuredDualSides` reads as raw (S7) */
+function storedDualSides(isTeam: boolean, matchUpsMap?: MatchUpsMap, matchUpId?: string): unknown[] | undefined {
+  if (!isTeam || !matchUpId) return undefined;
+  return matchUpsMap?.drawMatchUps?.find((candidate) => candidate.matchUpId === matchUpId)?.sides;
 }
 
 /**

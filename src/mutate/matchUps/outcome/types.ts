@@ -162,6 +162,11 @@ export type OutcomeView = {
   };
   /** a TEAM dual's own call: the sides `ensureSideLineUps` writes before its result, present where they change (S7) */
   dualSides?: unknown[];
+  /**
+   * a TEAM dual's own call: the stored sides of the dual its loser link reaches, which a carried exit's own call there
+   * ensures with the losing team arrived (S7)
+   */
+  loserDualSides?: unknown[];
   /** a TEAM dual under `enableAutoCalc`: the winner its lines project */
   dualProjection?: { projectedWinningSide?: number; score?: OutcomeScore };
   /** § 5 rule 1: where direction sends a winner, and who is on each side now */
@@ -276,6 +281,14 @@ export type OutcomeView = {
     loserMatchUpDecidedForArrival: boolean;
     /** a side of the loserMatchUp carries THIS matchUp's exit in: a relabel to a played result withdraws it (F2) */
     loserMatchUpCarriesSourceExit: boolean;
+    /**
+     * the loserMatchUp holds the carry THIS matchUp made there and nothing else (S6 tail): the carried exit, awarded to
+     * the side opposite the carrier (somebody, or nobody yet), this matchUp's entry its only provenance, no loser link
+     * out of it, and nothing played on from it (the next matchUp to be played with no result). A relabel to the other
+     * exit rewrites it in place and the same exit again leaves it (v1's `relabelsTheCarry`, `withdrawable`); a carry
+     * played on from stands as it was, which is a result of its own here
+     */
+    loserMatchUpCarryHeld: boolean;
     /** the winnerMatchUp, for what a double exit produces there (S2c) */
     winner?: {
       structureId?: string;
