@@ -116,6 +116,11 @@ export function applyOwnedPlan({
   const advanced = new Set(
     ops.flatMap((op) => (op.op === 'setMatchUpDrawPositions' && op.advancesThroughBye ? [op.matchUpId] : [])),
   );
+  // an awardee's position released when the carry they were awarded is withdrawn: v1's `releaseAdvancedDrawPosition`,
+  // with the event (S6 tail)
+  const released = new Set(
+    ops.flatMap((op) => (op.op === 'setMatchUpDrawPositions' && op.releasedDrawPosition ? [op.matchUpId] : [])),
+  );
   // a BYE an unwind withdraws: v1's `clearDrawPosition` names its position, with neither event nor tournament (S6)
   const unbyed = new Map<string, number>();
   for (const op of ops) {
@@ -159,6 +164,7 @@ export function applyOwnedPlan({
           exchanged,
           relayed,
           advanced,
+          released,
         }),
       eventId: noticeEvent?.eventId,
       tournamentId: untournamented.has(matchUpId) || unbyedPosition ? undefined : tournamentId,
@@ -254,11 +260,13 @@ function matchUpContext(
     exchanged: Set<string>;
     relayed: Set<string>;
     advanced: Set<string>;
+    released: Set<string>;
   },
 ): string {
-  const { resulted, byes, recoded, exchanged, relayed, advanced } = written;
+  const { resulted, byes, recoded, exchanged, relayed, advanced, released } = written;
   if (resulted.has(matchUpId)) return 'modifyMatchUpScore';
   if (advanced.has(matchUpId) && !byes.has(matchUpId)) return 'advanceWinner';
+  if (released.has(matchUpId)) return 'releaseAdvancedDrawPosition';
   if (relayed.has(matchUpId)) return 'progressExitStatus';
   // a loser taken back out and their seat then given a BYE (a result turned into a double exit): the BYE is the later
   if (recoded.has(matchUpId) && byes.has(matchUpId)) return 'setMatchUpStatusBye';
