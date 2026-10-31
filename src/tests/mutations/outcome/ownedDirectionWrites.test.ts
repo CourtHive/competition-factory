@@ -2540,3 +2540,52 @@ describe('under v2, a dissolved convergence beyond the clear is v2s; given a win
     expect(v2.notices).toEqual(v1.notices);
   });
 });
+
+// S6 tail: a refusal v2 returns is v1's result, field for field: row 9's `activeDownstream` beside `error` (a double
+// exit cleared or re-entered over an active downstream), and rows 13 / 14's context naming the stored matchUp (a double
+// exit given a winner once its awardee has played on)
+describe('under v2, a refused outcome returns exactly the result v1 returns', () => {
+  const AWARDEE_WON_ON: Step[] = [
+    { target: R1(1), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+    { target: R1(2), outcome: won(1) },
+    { target: R1(3), outcome: won(1) },
+    { target: R1(4), outcome: won(1) },
+    { target: { roundNumber: 2, roundPosition: 2 }, outcome: won(1) },
+    { target: { roundNumber: 3, roundPosition: 1 }, outcome: won(1) },
+  ];
+  const REFUSED: [string, Scenario][] = [
+    [
+      'SINGLE_ELIMINATION: a double walkover cleared once its awardee has played on (row 9, activeDownstream)',
+      {
+        drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+        setup: AWARDEE_WON_ON,
+        steps: [{ target: R1(1), outcome: cleared }],
+      },
+    ],
+    [
+      'SINGLE_ELIMINATION: a double walkover given a winner once its awardee has played on (row 13, the matchUp named)',
+      {
+        drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+        setup: AWARDEE_WON_ON,
+        steps: [{ target: R1(1), outcome: won(1) }],
+      },
+    ],
+    [
+      'FEED_IN_CHAMPIONSHIP: a double walkover cleared once its awardee has played on, beside a consolation (row 9)',
+      {
+        drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+        setup: AWARDEE_WON_ON.map(({ target, outcome }) => ({ target: { ...target, structureName: 'Main' }, outcome })),
+        steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+      },
+    ],
+  ];
+  it.each(REFUSED)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    // CONTROL: v1 refused
+    expect(v1.results.every((result: any) => result.error)).toEqual(true);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+  });
+});

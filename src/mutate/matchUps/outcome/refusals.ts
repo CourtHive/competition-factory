@@ -223,8 +223,9 @@ function refuseAgainstDraw(request: OutcomeRequest, view: OutcomeView): Refusal 
 
   if (!view.matchUpTieId) {
     const nonDirecting = !!matchUpStatus && isNonDirectingMatchUpStatus({ matchUpStatus });
+    // v1 (`checkDownstreamCompatibility`) returns `activeDownstream` and `winningSide` beside `error`, not in a context
     if (view.activeDownstream && !winningSide && (nonDirecting || isDoubleExit(matchUpStatus)))
-      return refuse(9, INCOMPATIBLE_MATCHUP_STATUS, { context: { activeDownstream: true, winningSide } });
+      return refuse(9, INCOMPATIBLE_MATCHUP_STATUS, { extra: { activeDownstream: true, winningSide } });
     const directing = isDirectingMatchUpStatus({ matchUpStatus });
     if (winningSide && winningSide === view.existing.winningSide && matchUpStatus && !directing)
       return refuse(9, INCOMPATIBLE_MATCHUP_STATUS, {
@@ -269,10 +270,9 @@ function refuseDispatch(request: OutcomeRequest, view: OutcomeView): Refusal | u
     const effectiveWinningSide = view.isTeam && flags.enableAutoCalc ? projected : winningSide;
     if (effectiveWinningSide === existing.winningSide || (view.matchUpTieId && !dualWinningSideChange))
       return undefined;
-    // rows 14 and 13, each written as its literal so `verify:outcome-spec` reads both
-    const extra = {
-      context: { winningSide: effectiveWinningSide },
-    };
+    // rows 14 and 13, each written as its literal so `verify:outcome-spec` reads both. v1
+    // (`winningSideWithDownstreamDependencies`) names the stored matchUp beside the winningSide (`namesMatchUp`)
+    const extra = { context: { winningSide: effectiveWinningSide }, namesMatchUp: true as const };
     return existing.winningSide
       ? refuse(14, CANNOT_CHANGE_WINNING_SIDE, extra)
       : refuse(13, CANNOT_CHANGE_OUTCOME, extra);

@@ -61,6 +61,10 @@ export type Refusal = {
   row: number;
   info?: string;
   context?: Record<string, unknown>;
+  /** fields v1's result carries beside `error`, outside `context` (row 9's `activeDownstream`): returned as v1 returns them */
+  extra?: Record<string, unknown>;
+  /** the context names the stored matchUp, as v1's `winningSideWithDownstreamDependencies` does (rows 13 and 14) */
+  namesMatchUp?: true;
 };
 
 /** what the refusal function may ask of the draw; built once per call by `buildOutcomeView` */
