@@ -4,6 +4,7 @@ import type { HydratedMatchUp } from '@Types/hydrated';
 import type {
   DrawDefinition,
   Event,
+  MatchUpSchedule,
   MatchUpStatusCodeElement,
   MatchUpStatusUnion,
   PositionAssignment,
@@ -45,8 +46,11 @@ export type OutcomeRequest = {
   score?: OutcomeScore;
   matchUpFormat?: string;
   flags: OutcomeFlags;
-  /** what else the call carries that v1 writes and v2 does not yet plan: a call carrying either abstains (S1) */
-  carries?: { schedule?: boolean; notes?: boolean };
+  /**
+   * what else the call carries: notes, which v2 does not plan (the call abstains), and a schedule, which v2 plans where
+   * v1's own writer can write it on the matchUp alone (S7, `scheduleReason`)
+   */
+  carries?: { schedule?: MatchUpSchedule; notes?: boolean };
 };
 
 /** § 2: one code, the row of the table that raised it, and what a person or a client needs to see */
