@@ -1048,7 +1048,7 @@ Stay v1's:
 
 - a dual's own call that enables auto-calc whose lines project no winner, a dual's exit carried on past the dual it
   reaches, through a BYE or onto a losers' dual half placed, a call on a dual holding no winner that is neither to be
-  played nor in progress (a double exit), a dual's own double exit once a line is played, and a dual in a round robin;
+  played nor in progress (a double exit), and a dual's own double exit once a line is played;
 - a decided dual whose losing side held no line-up: v1 carries nothing, and the sides the loser's assignment wrote
   (`updateSideLineUp`, from the draw's line-ups) stand;
 - a line that un-decides its dual, among them a removal or correction that takes its dual's winner away (v1 takes it back out of the
@@ -1057,9 +1057,14 @@ Stay v1's:
 - a removal that leaves the dual holding no line's result: `updateTieMatchUpScore` removes the dual's score, and its
   tieFormat where it equals the inherited one;
 - auto-calc off;
-- a REPORTED score source (v1 returns before any tally);
-- a line in a round robin: its group's tally. A line's group is read off its dual, since a line is hydrated in the
-  container (hydration OPEN-14).
+- a REPORTED score source (v1 returns before any tally).
+
+**A dual in a round robin, and a line of one** (S7), take their group's tally, as v1's `updateTallyIfNeeded` writes it
+from the dual's score write: the group's duals alone (`matchUpTypes: [TEAM]`), tallied under the one dual tally format
+(`DUAL_TALLY_FORMAT`), with the dual's result in place. A line runs no tally of its own: its group is its dual's, read off
+the dual, since a line is hydrated in the container with no group (hydration OPEN-14, which is not changed); the dual is
+tallied with the line's result in place among its lines, its score as hydration reads it (`annotateScoreSets`: a
+tiebreak-only set read 1-0). A line that decides its dual hands the dual's own plan the same group.
 
 ## 7.2 The plan as ops (S1)
 

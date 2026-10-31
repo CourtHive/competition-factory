@@ -347,6 +347,9 @@ function applyInProgressStatus({ matchUpStatus, matchUp }) {
   }
 }
 
+/** a TEAM dual's round robin group is tallied under this one format, whatever its lines' (the outcome view reads it, S7) */
+export const DUAL_TALLY_FORMAT = 'SET1-S:T100';
+
 function updateTallyIfNeeded({
   isDualMatchUp,
   tournamentRecord,
@@ -365,7 +368,7 @@ function updateTallyIfNeeded({
   if (!isLucky({ drawDefinition, structure }) && !isAdHocStructure && !isRoundRobin) return undefined;
 
   const resolvedFormat = isDualMatchUp
-    ? 'SET1-S:T100'
+    ? DUAL_TALLY_FORMAT
     : (matchUpFormat ??
       matchUp.matchUpFormat ??
       structure?.matchUpFormat ??

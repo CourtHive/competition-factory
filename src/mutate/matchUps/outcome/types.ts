@@ -137,6 +137,8 @@ export type OutcomeView = {
     autoCalcDisabled: boolean;
     /** the dual's score as `updateTieMatchUpScore` tallies it with this line's result in place (S7) */
     projectedScore?: OutcomeScore;
+    /** the dual's lines with this line's result in place, as its round robin group's tally reads them (S7) */
+    projectedTieMatchUps?: HydratedMatchUp['tieMatchUps'];
     /** the dual's status as `updateTieMatchUpScore` derives it with this line's result in place (S7) */
     projectedStatus?: MatchUpStatusUnion;
     /**
@@ -154,11 +156,6 @@ export type OutcomeView = {
       /** the sides in context before the line's write (the loser's carry reads these, as v1's `directLoser` does) */
       sidesInContext?: unknown[];
     };
-    /**
-     * the dual sits in a round robin group, whose tally a line's result re-reads. Read off the dual: a line is placed
-     * in the container with no `containerStructureId` of its own (hydration OPEN-14), so the view finds no group for it
-     */
-    dualInGroup: boolean;
   };
   /** a TEAM dual's own call: the sides `ensureSideLineUps` writes before its result, present where they change (S7) */
   dualSides?: unknown[];
