@@ -112,6 +112,9 @@ const R1 = (roundPosition: number, structureName?: string): Target => ({
   structureName,
 });
 
+/** an 8-draw's Main round 1 played: its losers fill the consolation's first round (S6 tail, family 7) */
+const MAIN_R1_8: Step[] = [1, 2, 3, 4].map((roundPosition) => ({ target: R1(roundPosition, 'Main'), outcome: won(1) }));
+
 /** an 8-draw played to its final, which is then a double walkover (S6 tail, family 6) */
 const FINAL_8 = (structureName?: string): Target => ({ roundNumber: 3, roundPosition: 1, structureName });
 const TO_FINAL_8 = (structureName?: string): Step[] => [
@@ -143,6 +146,61 @@ const AWARDEE_PLAYED_ON: Step[] = [
 ];
 
 const SCENARIOS: [string, Scenario][] = [
+  // S6 tail, family 7: a consolation double exit whose produced exit lands in a FEED round, pending beside the fed seat's
+  // structural position (reserved on into the next round): the feed path written back, the reservation taken back
+  [
+    'FEED_IN_CHAMPIONSHIP: a consolation double walkover cleared, its produced exit pending in the feed round',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [...MAIN_R1_8, { target: R1(1, 'Consolation'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(1, 'Consolation'), outcome: cleared }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP: a consolation double default cleared, its produced exit pending in the feed round',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [...MAIN_R1_8, { target: R1(2, 'Consolation'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+      steps: [{ target: R1(2, 'Consolation'), outcome: cleared }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP: a consolation double walkover cleared after the fed loser arrived beside its pending exit',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [
+        ...MAIN_R1_8,
+        { target: R1(1, 'Consolation'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+        { target: { roundNumber: 2, roundPosition: 1, structureName: 'Main' }, outcome: won(1) },
+      ],
+      steps: [{ target: R1(1, 'Consolation'), outcome: cleared }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION: a double walkover cleared whose awardee reached the final beside the other finalist',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: [
+        { target: R1(1), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+        { target: R1(2), outcome: won(1) },
+        { target: R1(3), outcome: won(1) },
+        { target: R1(4), outcome: won(1) },
+        { target: { roundNumber: 2, roundPosition: 2 }, outcome: won(1) },
+      ],
+      steps: [{ target: R1(1), outcome: cleared }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP 16: a consolation double walkover cleared, pending in the feed round, two feed rounds beyond',
+    {
+      drawProfile: { drawSize: 16, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [
+        ...[1, 2, 3, 4, 5, 6, 7, 8].map((roundPosition) => ({ target: R1(roundPosition, 'Main'), outcome: won(1) })),
+        { target: R1(1, 'Consolation'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+      steps: [{ target: R1(1, 'Consolation'), outcome: cleared }],
+    },
+  ],
   // S6 tail, family 6: a final's double exit, which produced nothing, cleared or given a winner: the own write, and the
   // own loser seat's BYE withdrawn where a link feeds one
   [
@@ -2383,6 +2441,26 @@ describe('under v2, a dissolved convergence beyond the clear is v2s; given a win
         drawProfile: { drawSize: 8, participantsCount: 7, drawType: SINGLE_ELIMINATION },
         setup: [{ target: R1(2), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
         steps: [{ target: R1(2), outcome: won(1) }],
+      },
+    ],
+    [
+      'FEED_IN_CHAMPIONSHIP: a consolation double walkover given a winner, its produced exit pending in the feed round',
+      {
+        drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+        setup: [...MAIN_R1_8, { target: R1(1, 'Consolation'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+        steps: [{ target: R1(1, 'Consolation'), outcome: won(1) }],
+      },
+    ],
+    [
+      'FEED_IN_CHAMPIONSHIP: a consolation double walkover cleared once the fed loser was awarded its produced exit',
+      {
+        drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+        setup: [
+          ...MAIN_R1_8,
+          { target: R1(1, 'Consolation'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+          { target: { roundNumber: 2, roundPosition: 2, structureName: 'Main' }, outcome: won(1) },
+        ],
+        steps: [{ target: R1(1, 'Consolation'), outcome: cleared }],
       },
     ],
     [
