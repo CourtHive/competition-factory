@@ -962,10 +962,10 @@ wherever that dual already sides its drawPosition (`assignTeamLineUp` → `updat
 `updateSidLineUp` with no event): so a winner entered again replaces the line-up its deciding line carried there, and a
 first entry writes none. A changed winner over a dual's own single exit stays v1's (`settle`).
 
-**A line's result removed, or a line cleared** (`remove-directed`, `clear-score`), is written as a first result is:
-the line cleared, then the dual's tally re-read from its remaining lines, where the dual's winner does not change (a dual
+**A line's result removed, or a line cleared** (`remove-directed`, `clear-score`), **or corrected** (`winner` over a
+stored winner, either side), is written as a first result is: the line rewritten, then the dual's tally re-read from its remaining lines, where the dual's winner does not change (a dual
 still undecided, or decided by its other lines) and the dual still holds a line's result. The line directs nothing, so
-nothing is taken back from the next dual. v1 clears it through `removeDirectedParticipants`, which returns no
+nothing is taken back from the next dual, and a correction is neither a re-entered nor a changed winner. v1 clears it through `removeDirectedParticipants`, which returns no
 `tieMatchUpResult`, and neither does v2 (`dualTally.unreturned`).
 
 **A dual's own call that disables or enables auto-calc** writes `disableAutoCalc` on the dual, or removes it, as v1's
@@ -979,12 +979,11 @@ Stay v1's:
   played nor in progress (a double exit), a dual's own double exit once a line is played, and a dual in a round robin;
 - a decided dual whose losing side held no line-up: v1 carries nothing, and the sides the loser's assignment wrote
   (`updateSideLineUp`, from the draw's line-ups) stand;
-- a line that un-decides its dual, among them a removal that takes its dual's winner away (v1 takes it back out of the
+- a line that un-decides its dual, among them a removal or correction that takes its dual's winner away (v1 takes it back out of the
   next dual) and the first line played on a dual decided by its own exit (WALKOVER, DEFAULTED, RETIRED): v1 projects
   the dual from its lines alone;
 - a removal that leaves the dual holding no line's result: `updateTieMatchUpScore` removes the dual's score, and its
   tieFormat where it equals the inherited one;
-- a corrected line;
 - auto-calc off;
 - a REPORTED score source (v1 returns before any tally);
 - a line in a round robin: its group's tally. A line's group is read off its dual, since a line is hydrated in the

@@ -2205,10 +2205,11 @@ function unwoundOps(
  * ensures and the tieFormat it copies on (`line.dualRewrite`, where they change: on a dual's first line, or a record
  * that stored neither), its tally and the status it derives from it; a dual already decided keeps its winner and is
  * directed no further. A line that decides its dual is planned with the dual's own call. A line's result removed, or a
- * line cleared, is planned where its dual's winner does not change and the dual still holds a line's result: the line
- * cleared, the dual's tally re-read (it directs nothing: `removalReason` is not asked). Stay v1's: a removal that
- * un-decides its dual, one that leaves the dual holding no result (`updateTieMatchUpScore` removes its score and an
- * inherited tieFormat), a corrected line, a round robin's tally, a REPORTED score, and auto-calc off.
+ * line cleared, or its result corrected, is planned where its dual's winner does not change and the dual still holds a
+ * line's result: the line rewritten, the dual's tally re-read (it directs nothing: `removalReason` is not asked, nor is
+ * it a re-entered or changed winner). Stay v1's: a removal or correction that un-decides its dual, a removal that leaves
+ * the dual holding no result (`updateTieMatchUpScore` removes its score and an inherited tieFormat), a round robin's
+ * tally, a REPORTED score, and auto-calc off.
  */
 function teamReason({
   request,
@@ -2232,15 +2233,17 @@ function teamReason({
   // a line's result removed, or a line cleared: v1 clears it and re-reads its dual's tally (`removeDirectedParticipants`)
   const removing = route === REMOVE_DIRECTED || route === CLEAR_SCORE;
   if (!removing && route !== 'winner' && !isDoubleExit(request.matchUpStatus)) return 'team';
-  if (!removing && (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide)) return 'team';
+  // a line's stored result corrected (`winner` over a winner)
+  const correcting = route === 'winner' && !!existing.winningSide;
+  if (!removing && !correcting && (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide)) return 'team';
   if (line.autoCalcDisabled || line.dualRewrite.scoreReported || !line.projectedScore) return 'team';
   // a round robin's group tally re-read from the line's result is v1's
   if (line.dualInGroup || view.group || view.draw.tallied) return 'team';
   // a line played on a dual already decided keeps its winner: only the dual's tally changes. A fresh line cannot hand it
   // to the other side, and one that un-decides it (a dual decided by its own exit, which v1 then projects from its
   // lines alone) is routed `line-score`, v1's above
-  // a removal that changes the dual's winner un-decides it: v1 takes the dual's winner back out of the next dual
-  if (removing && line.projectedWinningSide !== line.dualWinningSide) return 'team';
+  // a removal or correction that changes the dual's winner: v1 takes the dual's winner back out of the next dual
+  if ((removing || correcting) && line.projectedWinningSide !== line.dualWinningSide) return 'team';
   if (line.dualWinningSide) return undefined;
   const dualStatuses = new Set<string | undefined>([TO_BE_PLAYED, IN_PROGRESS]);
   if (!dualStatuses.has(line.dualMatchUpStatus)) return 'team';
@@ -2336,11 +2339,13 @@ function abstainReason(args: {
   // a winner cleared or changed in a WIN_RATIO structure: v1 reports the playoff structures it reaches, which v2 does not
   // read
   if ((removing || changing) && view.draw.winRatio) return 'link';
+  // a TEAM line directs nothing, its targets being its dual's: its result removed or corrected takes back and re-enters
+  // nothing (no re-entered or changed winner), its dual's tally re-read (`teamReason`, S7)
   if (removing) {
-    // a line directs nothing: its targets are its dual's (S7)
     const removal = view.line ? undefined : removalReason(view, direction);
     if (removal) return removal;
-  } else if (view.existing.winningSide && !sameWinner && !reentered && !changing && !swapping) return 'winner';
+  } else if (view.existing.winningSide && !view.line && !sameWinner && !reentered && !changing && !swapping)
+    return 'winner';
   const shape = shapeReason(args, { sameWinner, reentered, changing, swapping });
   if (shape) return shape;
   if (view.existing.hasSideExitProvenance || view.existing.carriedExit) return 'provenance';
@@ -2367,13 +2372,14 @@ function shapeReason(
 
 /** the stored winner entered again on the winner's route (S4) */
 function reentersWinner(view: OutcomeView, route: Route | undefined, write?: MatchUpWrite): boolean {
-  return route === 'winner' && !!write?.winningSide && write.winningSide === view.existing.winningSide;
+  return route === 'winner' && !view.line && !!write?.winningSide && write.winningSide === view.existing.winningSide;
 }
 
 /** a stored winner replaced by the other side on the winner's route (S4) */
 function changesWinner(view: OutcomeView, route: Route | undefined, write?: MatchUpWrite): boolean {
   return (
     route === 'winner' &&
+    !view.line &&
     !!write?.winningSide &&
     !!view.existing.winningSide &&
     write.winningSide !== view.existing.winningSide
