@@ -61,9 +61,9 @@ import type { BuildViewArgs, OutcomeRequest, OutcomeScore, OutcomeView, Reservat
 import { BYE, COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { FIRST_MATCHUP, LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import type { PositionTargetsResult } from '@Query/matchUp/positionTargets';
+import type { ByePassage, CarryLevel, WinnerLoserSeat } from './types';
 import type { ErrorType } from '@Constants/errorConditionConstants';
 import { TieScoreSourceEnum } from '@Types/tournamentTypes';
-import type { CarryLevel, WinnerLoserSeat } from './types';
 import { LINEUPS } from '@Constants/extensionConstants';
 import type { MatchUpsMap } from '@Types/factoryTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
@@ -402,6 +402,42 @@ function throughBye(
 }
 
 /**
+ * RULE 1 again (S6 tail): a carrier placed opposite a BYE whose matchUp beyond is no clean landing (`throughBye`). v1
+ * re-propagates the exit onto the nearest later matchUp of the structure holding the carrier (`findAdvancementMatchUp`):
+ * where that is a BYE-held matchUp too, the carry is recorded beside that BYE and goes on again; where the BYE matchUp
+ * is the structure's last round, there is nowhere further and the carry stops. Read where every BYE-held matchUp passed
+ * already holds the carrier's position (advanced structurally while their seat was empty) opposite a BYE, and the
+ * passage ends in the last round or in a clean matchUp (`throughBye`'s terms). A BYE matchUp whose winner crosses a link
+ * (DOUBLE_ELIMINATION's Backdraw final) is v1's.
+ */
+function byePassage(
+  byeMatchUp: HydratedMatchUp | undefined,
+  drawPosition: number | undefined,
+  draw: DrawContext,
+): ByePassage | undefined {
+  if (!byeMatchUp || !drawPosition || byeMatchUp.matchUpStatus !== BYE) return undefined;
+  const byes: string[] = [];
+  let current = byeMatchUp;
+  while (byes.length < SETTLE_PASS_LIMITS.exitLevels) {
+    const nextId = positionTargets({ ...draw, matchUpId: current.matchUpId })?.targetMatchUps?.winnerMatchUp?.matchUpId;
+    if (!nextId) return { byes };
+    const next = draw.inContextDrawMatchUps.find((matchUp) => matchUp.matchUpId === nextId);
+    // the carrier's seat is free, so their position holds nobody wherever it stands: a BYE beside it there makes that
+    // matchUp a BYE, which holds no winner. Across a winner link (the Backdraw final's) no matchUp beyond holds that
+    // position, and `throughBye` refuses the link
+    const carrierSide = next?.sides?.find((side) => side.drawPosition === drawPosition);
+    const passed = !!carrierSide && next?.sides?.some((side) => side.sideNumber !== carrierSide.sideNumber && side.bye);
+    if (!next || !passed) {
+      const through = throughBye(current, drawPosition, draw);
+      return through ? { byes, through } : undefined;
+    }
+    byes.push(next.matchUpId);
+    current = next;
+  }
+  return undefined;
+}
+
+/**
  * THE LEVELS A CARRIED EXIT GOES ON TO (S5, `propagateExitFrom`). From the matchUp the exit lands in, the carrier is
  * that matchUp's loser, and v1's nested write directs them across its loser link (`directLoser`), carrying the exit
  * again. Each level is read from the draw as the call found it: the link targets of the landing (`positionTargets`),
@@ -426,6 +462,8 @@ function carryLevels(
     const seat = loserTargetSeat(draw.drawDefinition, next.structureId, drawPosition, next.drawPositions);
     // a BYE opposite the seat (RULE 1): the carrier goes on past it into the matchUp beyond, where the exit lands
     const through = seat?.opponentBye ? throughBye(next, drawPosition, draw) : undefined;
+    // no clean matchUp beyond that BYE: RULE 1 again through the BYEs past it, or the carry stops (S6 tail)
+    const passage = seat?.opponentBye && !through ? byePassage(next, drawPosition, draw) : undefined;
     levels.push({
       linkCondition: targetLinks?.loserTargetLink?.linkCondition,
       record: storedSideRecord(matchUpsMap, next.matchUpId),
@@ -438,8 +476,10 @@ function carryLevels(
       drawPosition,
       seat,
       ...(through ? { through } : {}),
+      ...(passage ? { passage } : {}),
     });
-    if (!seat || (seat.opponentBye && !through)) break;
+    // a passage's landing links nothing on in any draw that holds one: the walk ends with it
+    if (!seat || passage || (seat.opponentBye && !through)) break;
     fromMatchUpId = through?.matchUpId ?? next.matchUpId;
   }
   return { levels, bounded: false };
@@ -566,7 +606,24 @@ function carryLanding(
   const loserMatchUp = targetData?.targetMatchUps?.loserMatchUp;
   const drawPosition = targetData?.targetMatchUps?.loserTargetDrawPosition;
   const seat = loserTargetSeat(drawDefinition, loserMatchUp?.structureId, drawPosition, loserMatchUp?.drawPositions);
-  return seat?.opponentBye ? throughBye(loserMatchUp, drawPosition, draw)?.matchUpId : loserMatchUp?.matchUpId;
+  if (!seat?.opponentBye) return loserMatchUp?.matchUpId;
+  const through = throughBye(loserMatchUp, drawPosition, draw) ?? byePassage(loserMatchUp, drawPosition, draw)?.through;
+  return through?.matchUpId;
+}
+
+/** a carried exit's loser placed opposite a BYE with no clean matchUp beyond it: the BYEs passed after it (S6 tail) */
+function loserByePassage(
+  request: OutcomeRequest,
+  drawDefinition: DrawDefinition,
+  targetData: PositionTargetsResult | undefined,
+  draw: DrawContext,
+): ByePassage | undefined {
+  if (!carriesOn(request, targetData)) return undefined;
+  const loserMatchUp = targetData?.targetMatchUps?.loserMatchUp;
+  const drawPosition = targetData?.targetMatchUps?.loserTargetDrawPosition;
+  const seat = loserTargetSeat(drawDefinition, loserMatchUp?.structureId, drawPosition, loserMatchUp?.drawPositions);
+  if (!seat?.opponentBye || throughBye(loserMatchUp, drawPosition, draw)) return undefined;
+  return byePassage(loserMatchUp, drawPosition, draw);
 }
 
 /** the drawPosition a side of the matchUp holds */
@@ -1537,6 +1594,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
         targetData?.targetMatchUps?.loserTargetDrawPosition,
         draw,
       ),
+      loserByePassage: loserByePassage(request, drawDefinition, targetData, draw),
       winnerLoserSeat: winnerLoserSeat(draw, request, targetData?.targetMatchUps?.winnerMatchUp?.matchUpId),
       unwindLoserSeats: unwindLoserSeats(draw, request, matchUp),
       byeLevels: byeLevels(draw, matchUpsMap, request, targetData),

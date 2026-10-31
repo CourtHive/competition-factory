@@ -225,6 +225,8 @@ export type OutcomeView = {
     };
     /** a loser placed opposite a BYE goes on into this matchUp, holding these drawPositions after (planned, S3) */
     loserThroughBye?: ThroughBye;
+    /** a carried exit's loser placed opposite a BYE with no clean matchUp beyond it: the BYEs it passes after (S6 tail) */
+    loserByePassage?: ByePassage;
     /**
      * the levels a carried exit goes on to beyond the matchUp it lands in (S5, `propagateExitFrom`): each loser link its
      * carrier crosses next, as v1 directs them from the landing. Read only for a call that may carry; `bounded` when the
@@ -477,6 +479,18 @@ export type Reservation =
 /** the matchUp a participant placed opposite a BYE goes on into, and its drawPositions once they are there */
 export type ThroughBye = { matchUpId: string; drawPositions: number[] };
 
+/**
+ * RULE 1 again (S6 tail): a BYE passed where what lies beyond is no clean matchUp. The carrier goes on through each
+ * BYE-held matchUp their position already stands in (`findAdvancementMatchUp`), each recording the carry beside its BYE,
+ * until a clean matchUp, where the exit lands, or the structure's last round, where the carry stops
+ */
+export type ByePassage = {
+  /** the BYE matchUps past the first, in order */
+  byes: string[];
+  /** the clean matchUp the passage ends in, with the positions it holds after; none at the structure's last round */
+  through?: ThroughBye;
+};
+
 /** the seat a matchUp's loser link feeds, as `positionTargets` gives it, and what holds it */
 export type WinnerLoserSeat = {
   matchUpId: string;
@@ -506,4 +520,6 @@ export type CarryLevel = {
   record?: { matchUpStatusCodes?: unknown[]; provenance: boolean };
   /** a BYE opposite the seat: the matchUp beyond it the carrier goes on into, with the positions it holds after (RULE 1) */
   through?: ThroughBye;
+  /** a BYE opposite the seat with no clean matchUp beyond it: the BYEs passed after it, and where they end (S6 tail) */
+  passage?: ByePassage;
 };
