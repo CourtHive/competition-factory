@@ -2,6 +2,7 @@ import { attachFlightProfile as attachProfile } from '@Mutate/events/attachFligh
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { chunkArray, chunkByNth, generateRange, shuffleArray } from '@Tools/arrays';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
+import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { getEveryDrawFlight } from '@Query/event/getEveryDrawFlight';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
@@ -29,6 +30,8 @@ type GenerateFlightProfileArgs = {
   // add the new flights after the event's existing flights, leaving them (and their draws) untouched; refused with
   // EXISTING_FLIGHT if a split participant is already in a flight or a draw
   appendFlights?: boolean;
+  // split only entries rated within the band (inclusive), on `scaleAttributes`; unrated entries are left out
+  scaleRange?: { min?: number; max?: number };
   scaleAttributes: ScaleAttributes;
   attachFlightProfile?: boolean;
   tournamentRecord: Tournament;
@@ -59,6 +62,7 @@ export function generateFlightProfile(params: GenerateFlightProfileArgs): {
     participantIds,
     appendFlights,
     entriesScope,
+    scaleRange,
     tournamentRecord,
     scaleAttributes,
     scaleSortMethod,
@@ -105,11 +109,14 @@ export function generateFlightProfile(params: GenerateFlightProfileArgs): {
       event,
       stage,
     }).scaledEntries
-  ).filter(({ participantId }: { participantId: string }) => inScope(participantId));
+  )
+    .filter(({ participantId }: { participantId: string }) => inScope(participantId))
+    .filter((entry: { scaleValue?: unknown }) => !scaleRange || inScaleRange({ entry, scaleRange, scaleAttributes }));
 
   const scaledEntryParticipantIds = new Set(scaledEntries.map(getParticipantId));
+  // a rating band leaves unrated entries out
   const unscaledEntries = shuffleArray(
-    scopedEntries
+    (scaleRange ? [] : scopedEntries)
       .filter(({ participantId }) => !scaledEntryParticipantIds.has(participantId))
       .filter(
         (entry: Entry) =>
@@ -205,4 +212,19 @@ export function generateFlightProfile(params: GenerateFlightProfileArgs): {
   } else {
     return { flightProfile: updatedFlightProfile, ...SUCCESS };
   }
+}
+
+type InScaleRangeArgs = {
+  scaleRange: { min?: number; max?: number };
+  scaleAttributes?: ScaleAttributes;
+  entry: { scaleValue?: unknown };
+};
+function inScaleRange({ entry, scaleRange, scaleAttributes }: InScaleRangeArgs): boolean {
+  const value = resolveScaleValueNumber(entry?.scaleValue, {
+    accessor: scaleAttributes?.accessor,
+    scaleName: scaleAttributes?.scaleName,
+  });
+  if (value === undefined) return false;
+  const { min, max } = scaleRange;
+  return (min === undefined || value >= min) && (max === undefined || value <= max);
 }
