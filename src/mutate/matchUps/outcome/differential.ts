@@ -22,7 +22,9 @@ export const APPLY_STAGE_CODES: ReadonlySet<string> = new Set([
   // DRAW_POSITION_ACTIVE is not one: v2 refuses a swap that meets an active FIRST_MATCHUP-fed seat (row 26, S4)
   // MUTATION_LOCKED is not: the engine asks a lock before the method runs (`executeMethod`), and nothing inside
   // `setMatchUpStatus` asks one, so neither pipeline is reached under a lock
-  'ERR_FORCED', // § 2 row 19: observed by the corpus, no constant declares it (spec OPEN 2)
+  // § 2 row 19: the failure the error-path tests force on a cascade write (no engine code raises it), standing for a
+  // write failing inside the cascade, which v2 does not plan
+  'ERR_FORCED',
   UNRECOGNIZED_MATCHUP_STATUS.code,
   INVALID_MATCHUP_STATUS.code,
   INVALID_MATCHUP_STATUS_BYE.code,
