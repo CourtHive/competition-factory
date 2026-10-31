@@ -1,5 +1,6 @@
 import { generatePatch } from '../../../forge/jsonPatch';
 import { captureRecord } from '@Tools/recordDiff';
+import { eventlessNotices } from './apply';
 import { applyOutcomeOps } from './ops';
 
 // constants and types
@@ -71,20 +72,26 @@ export function compareShadow({
 
 /**
  * THE NOTICES a complete plan implies, by topic and key (executor plan § 3.5.5): the deduplicated buffer v1 leaves,
- * which a client's sync reads. Payloads are not compared in S1. Measured 2026-10-24 with every topic subscribed: a
- * matchUp written or stamped is a `modifyMatchUp`, the call's own matchUp an `updateInContextMatchUp`, the draw a
- * `modifyDrawDefinition`, and a structure an `assignPosition` or `assignBye` writes a `modifyPositionAssignments` keyed by structureId.
+ * which a client's sync reads. Measured 2026-10-24 with every topic subscribed: a matchUp written or stamped is a
+ * `modifyMatchUp`, the call's own matchUp an `updateInContextMatchUp`, the draw a `modifyDrawDefinition`, and a structure
+ * an `assignPosition` or `assignBye` writes a `modifyPositionAssignments` keyed by structureId.
+ *
+ * Of the payloads, whether a `modifyMatchUp` or a `modifyPositionAssignments` names the event (S7): a key whose notice
+ * names none is marked `NO_EVENT`, by the rules `applyOwnedPlan` writes it with (`eventlessNotices`). A call with no
+ * event (none in the suite) would diverge here, loudly. The differential passed while a dual's notices differed in `eventId` (S7 item 13).
  */
 export function plannedNotices({ ops, matchUpId }: { ops: OutcomeOp[]; matchUpId: string }): Set<string> {
+  const eventless = eventlessNotices(ops);
+  const marked = (topic: string, key: string, unevented: boolean) => `${topic}|${key}${unevented ? NO_EVENT : ''}`;
   const notices = new Set<string>([`${UPDATE_INCONTEXT_MATCHUP}|${matchUpId}`]);
   for (const op of ops) {
     // every score write announces its matchUp in context, as `apply.ts` defers it: a TEAM line's dual too (S7)
     if (op.op === 'setMatchUpResult' && !op.announcedAs) notices.add(`${UPDATE_INCONTEXT_MATCHUP}|${op.matchUpId}`);
     // a placement, and a seat an unwind visits (`withdrawBye`): `apply.ts` announces each structure's assignments
     if (op.op === 'assignPosition' || op.op === 'assignBye' || op.op === 'withdrawBye')
-      notices.add(`${MODIFY_POSITION_ASSIGNMENTS}|${op.structureId}`);
+      notices.add(marked(MODIFY_POSITION_ASSIGNMENTS, op.structureId, eventless.structures.has(op.structureId)));
     if (op.op !== 'stampUpdatedAt') continue;
-    if (op.entity === 'matchUp') notices.add(`${MODIFY_MATCHUP}|${op.id}`);
+    if (op.entity === 'matchUp') notices.add(marked(MODIFY_MATCHUP, op.id, eventless.matchUps.has(op.id)));
     if (op.entity === 'drawDefinition') notices.add(`${MODIFY_DRAW_DEFINITION}|${op.id}`);
   }
   return notices;
@@ -101,19 +108,28 @@ export function addedNotices<T>(before: T[] | undefined, after: T[] | undefined)
   return (after ?? []).filter((notice) => !kept.has(notice));
 }
 
-/** what v1 added to the notice buffer in this call, deduplicated by topic and key, on the topics someone receives */
+/** a notice whose payload names no event, marked on its key where the event is compared (`plannedNotices`) */
+const NO_EVENT = '|no-event';
+const EVENT_COMPARED = new Set<string>([MODIFY_MATCHUP, MODIFY_POSITION_ASSIGNMENTS]);
+
+/**
+ * what v1 added to the notice buffer in this call, deduplicated by topic and key, on the topics someone receives; a
+ * `modifyMatchUp` or `modifyPositionAssignments` whose payload names no event is marked as `plannedNotices` marks it
+ */
 export function compareNotices({
   planned,
   added,
   topics,
 }: {
-  added: { topic?: string; key?: string }[];
+  added: { topic?: string; key?: string; payload?: { eventId?: string } }[];
   planned: Set<string>;
   topics: string[];
 }): { equal: true } | { equal: false; v1: string; v2: string } {
   const subscribed = new Set(topics);
   const received = (notice: string) => subscribed.has(notice.split('|')[0]);
-  const v1 = [...new Set(added.map((notice) => `${notice.topic}|${notice.key}`))].filter(received).sort();
+  const keyed = (notice: (typeof added)[number]) =>
+    `${notice.topic}|${notice.key}${EVENT_COMPARED.has(notice.topic ?? '') && !notice.payload?.eventId ? NO_EVENT : ''}`;
+  const v1 = [...new Set(added.map(keyed))].filter(received).sort();
   const v2 = [...planned].filter(received).sort();
   if (JSON.stringify(v1) === JSON.stringify(v2)) return { equal: true };
   const only = (a: string[], b: string[]) => a.filter((notice) => !b.includes(notice)).join(', ') || 'nothing more';

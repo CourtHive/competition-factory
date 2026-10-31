@@ -23,6 +23,8 @@ name: Verify
 #   team-arms       verify:team-arms split 5 ways (vitest --shard), one extended-arm file per job
 #   v2-arm          INFORMATIONAL: the suite under OUTCOME_PIPELINE=v2 on a dev PR touching the outcome pipeline,
 #                   split 4 ways (vitest --shard)
+#   differential-arm the suite under OUTCOME_PIPELINE=differential on a dev PR touching the outcome pipeline, split
+#                   4 ways: a divergence between v1 and v2 fails it (into master the coverage shards run it)
 #   verify          `verify (node N)`, the check master's branch protection requires: it passes only
 #                   when every job above passed (or, on a light run, was skipped as intended)
 #
@@ -441,6 +443,48 @@ jobs:
           OUTCOME_PIPELINE: v2
           TZ: UTC
 
+  # The differential on a dev PR: every call runs v1 and the v2 outcome pipeline, and a divergence between them (a
+  # write, a notice, a decision) fails the shard. Into master the coverage shards run the whole suite this way; into
+  # dev they do not (v2 is kept out of coverage there, vitest.config.mts), so before this arm a divergence a dev PR
+  # introduced surfaced only at the next checkpoint (outcome v2 executor plan, S7). Same paths as the v2 arm.
+  differential-arm:
+    needs: scope
+    if: github.event_name == 'pull_request' && github.base_ref == 'dev' && needs.scope.outputs.light != 'true'
+    # the differential runs both pipelines: measured as the whole suite on Lenz, about twice the default run
+    timeout-minutes: 40
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    name: differential-arm ${{ matrix.shard }}/4
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+
+      - name: touches the outcome pipeline
+        id: paths
+        run: |
+          if git diff --name-only HEAD^1 HEAD | grep -qE '^src/(mutate/(matchUps|drawDefinitions/positionGovernor|drawDefinitions/matchUpGovernor)|query/(matchUps|matchUp|drawDefinition))/'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "no outcome pipeline path changed; the differential arm does not run"
+          fi
+
+      - if: steps.paths.outputs.run == 'true'
+        uses: ./.github/actions/setup
+        with:
+          node-version: 24
+
+      - name: vitest under OUTCOME_PIPELINE=differential, shard ${{ matrix.shard }}/4
+        if: steps.paths.outputs.run == 'true'
+        run: pnpm exec vitest run --shard=${{ matrix.shard }}/4
+        env:
+          OUTCOME_PIPELINE: differential
+          TZ: UTC
+
   # verify:team-arms: the TEAM matrix over the seven extension draw types and more tieFormats, inert on
   # `pnpm test` (2026-10-05). As one job it was the slowest in the run (up to 30 min, 2026-10). vitest
   # --shard splits it by FILE, so with five files each shard runs exactly one, and the file list stays in
@@ -476,7 +520,7 @@ jobs:
   # SKIPPED (any other result, cancelled included, fails it). It runs whatever its needs did, so a red
   # job still produces a red `verify (node N)` rather than a missing one.
   verify:
-    needs: [scope, gates, coverage-shard, coverage, slow-gates, team-arms]
+    needs: [scope, gates, coverage-shard, coverage, slow-gates, team-arms, differential-arm]
     if: >
       always() && (
         github.event_name != 'push' ||
@@ -501,9 +545,14 @@ jobs:
           COVERAGE: ${{ needs.coverage.result }}
           SLOW: ${{ needs.slow-gates.result }}
           TEAM: ${{ needs.team-arms.result }}
+          DIFFERENTIAL: ${{ needs.differential-arm.result }}
+          DEV_PR: ${{ github.event_name == 'pull_request' && github.base_ref == 'dev' }}
         run: |
           heavy=success
           if [ "$LIGHT" = true ]; then heavy=skipped; fi
+          # the differential arm runs on a dev PR alone (into master the coverage shards run the differential)
+          differential=skipped
+          if [ "$DEV_PR" = true ] && [ "$LIGHT" != true ]; then differential=success; fi
           bad=0
           check() {
             if [ "$2" = "$3" ]; then echo "ok    $1: $2"; else echo "::error::$1: $2 (expected $3)"; bad=1; fi
@@ -514,4 +563,5 @@ jobs:
           check coverage "$COVERAGE" "$heavy"
           check slow-gates "$SLOW" "$heavy"
           check team-arms "$TEAM" "$heavy"
+          check differential-arm "$DIFFERENTIAL" "$differential"
           exit $bad
