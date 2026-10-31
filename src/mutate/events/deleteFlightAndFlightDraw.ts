@@ -12,6 +12,23 @@ export function deleteFlightAndFlightDraw({ autoPublish = true, tournamentRecord
   const paramsCheck = requireParams({ tournamentRecord, drawId, event }, [TOURNAMENT_RECORD, DRAW_ID, EVENT]);
   if (paramsCheck.error) return paramsCheck;
 
+  // the draw goes first: deleteDrawDefinitions can refuse (scores present without `force`), and it refuses before it
+  // writes, so the flight must not be removed until the draw deletion has succeeded
+  const drawWasGenerated = event.drawDefinitions?.find((drawDefinition) => drawDefinition.drawId === drawId);
+  if (drawWasGenerated) {
+    const result = deleteDrawDefinitions({
+      drawIds: [drawId],
+      eventId: event.eventId,
+      tournamentRecord,
+      autoPublish,
+      auditData,
+      event,
+      force,
+    });
+    if (result.error) return result;
+  }
+
+  // read after the draw deletion, which rewrites the profile
   const { flightProfile } = getFlightProfile({ event });
 
   if (flightProfile) {
@@ -29,20 +46,6 @@ export function deleteFlightAndFlightDraw({ autoPublish = true, tournamentRecord
         value: { ...flightProfile, flights },
       });
     }
-  }
-
-  const drawWasGenerated = event.drawDefinitions?.find((drawDefinition) => drawDefinition.drawId === drawId);
-  if (drawWasGenerated) {
-    const result = deleteDrawDefinitions({
-      drawIds: [drawId],
-      eventId: event.eventId,
-      tournamentRecord,
-      autoPublish,
-      auditData,
-      event,
-      force,
-    });
-    if (result.error) return result;
   }
 
   return refreshEventDrawOrder({ tournamentRecord, event });
