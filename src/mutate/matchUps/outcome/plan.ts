@@ -533,7 +533,12 @@ function unwoundLoserReason(
       op.structureId === targets.loserStructureId &&
       op.drawPosition === targets.loserTargetDrawPosition,
   );
-  if (!freed || !targets.loserTargetSeat?.bye) return 'exit';
+  // under `doubleExitPropagateBye: false` the seat held no BYE: the unwind wrote its matchUp back to be played instead
+  // (`unwoundBranch`), and the loser arrives there as plainly (S6 tail)
+  const branched =
+    !view.draw.doubleExitPropagatesBye &&
+    own.seatOps.some((op) => op.op === 'setMatchUpResult' && op.matchUpId === targets.loserMatchUpId);
+  if (!branched && (!freed || !targets.loserTargetSeat?.bye)) return 'exit';
   if (targets.seededParticipantIds?.includes(loser.participantId)) return 'loser';
   return undefined;
 }
@@ -2034,8 +2039,9 @@ function unwoundPath(
   const unread = (link: (typeof linksOut)[number]) =>
     link.linkType === LOSER ? !!link.linkCondition && link.linkCondition !== FIRST_MATCHUP : link.linkType !== WINNER;
   if (linksOut.some(unread)) return undefined;
-  const loserLinks = linksOut.filter((link) => link.linkType === LOSER);
-  if (loserLinks.length && !view.draw.doubleExitPropagatesBye) return undefined;
+  // under `doubleExitPropagateBye: false` the seats the loser links feed show no BYE: v1 visits them as matchUps and
+  // walks on from them (`unwoundBranch`, S6 tail)
+  const branched = linksOut.some((link) => link.linkType === LOSER) && !view.draw.doubleExitPropagatesBye;
   const target = producedTarget(view, source, source.matchUpStatus as MatchUpStatusUnion);
   if (!target || target.feed) return undefined;
   const { entry } = target;
@@ -2056,7 +2062,7 @@ function unwoundPath(
     const level = seats[index];
     if (level?.matchUpId !== id) return undefined;
     // the double exit's own seat and its produced exit's took the BYEs it placed; a seat further on holds nothing yet
-    const seatOps = level.loserSeat ? unwoundSeatOps(view, level.loserSeat, index < 2, withdrawn) : [];
+    const seatOps = level.loserSeat ? unwoundLevelSeatOps(view, level, index, withdrawn, branched) : [];
     if (!seatOps) return undefined;
     levels.push({ matchUpId: id, seatOps, ...(awardee && index === 2 ? { released: awardee } : {}) });
   }
@@ -2189,6 +2195,165 @@ function unwoundSeatOps(
         announcesContext: false,
       };
   return [...ops, taken, { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId }];
+}
+
+/**
+ * The writes at a level's loser seat: the BYE the double exit placed there withdrawn (`unwoundSeatOps`), or under
+ * `doubleExitPropagateBye: false` the matchUp holding the seat visited and walked on from (`unwoundBranch`), as v1's
+ * `removeDoubleExit` takes one branch or the other by what the seat holds.
+ */
+function unwoundLevelSeatOps(
+  view: OutcomeView,
+  level: { loserSeat?: WinnerLoserSeat },
+  index: number,
+  withdrawn: Set<string>,
+  branched: boolean,
+): OutcomeOp[] | undefined {
+  const { loserSeat } = level;
+  if (!loserSeat) return [];
+  const byeHeld = loserSeat.matchUpStatus === BYE;
+  if (branched && !byeHeld) return unwoundBranch(view, loserSeat, index === 0, withdrawn);
+  return unwoundSeatOps(view, loserSeat, index < 2, withdrawn);
+}
+
+const positionsOf = (matchUp: HydratedMatchUp | undefined) =>
+  (matchUp?.drawPositions ?? []).filter((position): position is number => !!position);
+
+/**
+ * A matchUp an unwind writes back to be played, holding nothing of a result: to be played (or a BYE whose BYE this unwind
+ * withdraws), no score, codes or provenance. Its positions stand: structural, or sent on by what the unwind takes back.
+ */
+function unwoundClean(matchUp: HydratedMatchUp, withdrawn: Set<string>): boolean {
+  const standing = matchUp.sides?.some(
+    (side) =>
+      !!side.bye && !withdrawn.has(seatKey({ structureId: matchUp.structureId, drawPosition: side.drawPosition })),
+  );
+  const toBePlayed = matchUp.matchUpStatus === TO_BE_PLAYED || (matchUp.matchUpStatus === BYE && !standing);
+  return (
+    toBePlayed &&
+    scoreless(matchUp) &&
+    !matchUp.matchUpStatusCodes?.length &&
+    !Object.keys(matchUp.sideExitProvenance ?? {}).length
+  );
+}
+
+/**
+ * The double exit's carried exit on the matchUp its loser link feeds, alone there (`doubleExitPropagateBye: false`): the
+ * origin on the fed side (which only this double exit's loser link feeds) carries the matchUp's status; a winner opposite
+ * or none yet; scoreless. Anything else there (a convergence, whose status is a double exit's; a BYE) is not this
+ * unwind's.
+ */
+function carriesAlone(matchUp: HydratedMatchUp, drawPosition: number): boolean {
+  const fedSide = matchUp.sides?.find((side) => side.drawPosition === drawPosition)?.sideNumber;
+  if (!fedSide) return false;
+  const status = carriedExitStatus(matchUp.sideExitProvenance?.[fedSide]);
+  if (!status || matchUp.matchUpStatus !== status) return false;
+  if (matchUp.winningSide && matchUp.winningSide !== 3 - fedSide) return false;
+  return scoreless(matchUp) && !matchUp.sides?.some((side) => side.bye);
+}
+
+/**
+ * Under `doubleExitPropagateBye: false` the seat a level's loser link feeds shows no BYE: the double exit carries its exit
+ * there, awarded to whoever stands or arrives opposite, and a further level's seat holds nothing of this unwind's. v1
+ * visits the matchUp all the same (`conditionallyRemoveDrawPosition`, the loser branch of `removeDoubleExit`) and walks on
+ * from it as it walks the main path, over winner and loser links alike: the position its result sent on taken back out
+ * of the next matchUp (`removeDirectedWinner`), its winner path to its final and across the final's winner link, the
+ * matchUp its own loser link feeds (DOUBLE_ELIMINATION's Main final into the Decider), each matchUp written back to be
+ * played, deepest first, the visited matchUp last; the first level's with the call's context, the rest without. Planned
+ * where the first level's matchUp holds the carried exit alone (`carriesAlone`) and every other matchUp reached holds
+ * nothing (`unwoundClean`). Undefined for anything else: a BYE's or a convergence's seat; a BYE standing where the walk
+ * leads (the carry's award, with nobody for a loser, sent one on through the chain beyond: COMPASS, OLYMPIC; another
+ * double exit's).
+ */
+function unwoundBranch(
+  view: OutcomeView,
+  loserSeat: WinnerLoserSeat,
+  first: boolean,
+  withdrawn: Set<string>,
+): OutcomeOp[] | undefined {
+  const start = indexed(view, loserSeat.matchUpId);
+  if (!start) return undefined;
+  if (first && !carriesAlone(start, loserSeat.drawPosition)) return undefined;
+  const all = view.inContextDrawMatchUps ?? [];
+  const taken = new Set<number>();
+  const written = new Set<string>();
+  const write = (matchUp: HydratedMatchUp, context: boolean): OutcomeOp[] => {
+    written.add(matchUp.matchUpId);
+    return [
+      {
+        op: 'setMatchUpResult',
+        matchUpId: matchUp.matchUpId,
+        matchUpStatus: TO_BE_PLAYED,
+        score: BLANK_SCORE,
+        matchUpStatusCodes: [],
+        stampsScoredTime: false,
+        ...(context ? {} : { announcesContext: false as const }),
+      },
+      ...(context ? [{ op: 'setSideExitProvenance' as const, matchUpId: matchUp.matchUpId }] : []),
+      { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUp.matchUpId },
+    ];
+  };
+  // v1's `removeSubsequentRoundsParticipant`: the position out of every later round of the structure holding it
+  // v1's `removeSubsequentRoundsParticipant`: the position out of every later round holding it. The next matchUp is
+  // the only one that can: a further advance is a result standing (the call refused) or a BYE this unwind withdraws
+  // (`unwoundSeatOps` takes the position back there)
+  const takeBack = (next: HydratedMatchUp, position: number): OutcomeOp => {
+    taken.add(position);
+    return {
+      op: 'setMatchUpDrawPositions',
+      matchUpId: next.matchUpId,
+      drawPositions: positionsOf(next).filter((held) => held !== position),
+      removedDrawPosition: position,
+    };
+  };
+  const walk = (matchUp: HydratedMatchUp, context: boolean, depth: number): OutcomeOp[] | undefined => {
+    if (depth > all.length) return undefined;
+    // every matchUp written back holds nothing of a result; the first level's holds the carry alone (`carriesAlone`)
+    if (!context && !unwoundClean(matchUp, withdrawn)) return undefined;
+    const ops: OutcomeOp[] = [];
+    const next = indexed(view, matchUp.winnerMatchUpId);
+    if (next) {
+      // across a winner link positions are another structure's (v1 follows the participant, `removeLinkedWinner`: a clean
+      // final sent nobody)
+      const crossed = next.structureId !== matchUp.structureId;
+      const sent = crossed
+        ? []
+        : positionsOf(matchUp).filter((held) => positionsOf(next).includes(held) && !taken.has(held));
+      // only the carry's award sent anyone on; v1 takes back the first position it finds
+      if (sent.length && (!matchUp.winningSide || sent.length > 1)) return undefined;
+      if (sent.length) ops.push(takeBack(next, sent[0]));
+      const deeper = walk(next, false, depth + 1);
+      if (!deeper) return undefined;
+      ops.push(...deeper);
+    }
+    // v1 walks on over the matchUp's own loser link too, the matchUp there visited as any (OLYMPIC's West into its
+    // South; DOUBLE_ELIMINATION's Main final into the Decider); where the carry's award, with nobody for a loser, has
+    // sent a BYE on through the chain beyond (COMPASS), the walk stops: v1's
+    const target = indexed(view, matchUp.loserMatchUpId);
+    if (matchUp.loserMatchUpId && !target) return undefined;
+    if (target) {
+      const side = walk(target, false, depth + 1);
+      if (!side) return undefined;
+      ops.push(...side);
+    }
+    ops.push(...write(matchUp, context));
+    return ops;
+  };
+  const ops = walk(start, first, 0);
+  if (!ops) return undefined;
+  // v1's notice for each matchUp written stamps its structure (`modifyMatchUpNotice`); the call's own is stamped once
+  // by the plan, the others here (no seat op names them, as `structureStamps` reads)
+  const source = view.targets.source.structureId;
+  const structures = new Set(
+    [...written].flatMap((id) => {
+      const structureId = indexed(view, id)?.structureId;
+      return structureId && structureId !== source ? [structureId] : [];
+    }),
+  );
+  return [
+    ...ops,
+    ...[...structures].map((id) => ({ op: 'stampUpdatedAt' as const, entity: 'structure' as const, id })),
+  ];
 }
 
 /**
