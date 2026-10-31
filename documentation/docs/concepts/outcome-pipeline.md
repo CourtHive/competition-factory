@@ -768,6 +768,12 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   withdrawn as in the plain unwind, its next matchUp read without the position the own seat's release takes out of it.
   Stay v1's: FIRST_MATCH_LOSER_CONSOLATION (the BYE matchUp's loser seat behind `FIRST_MATCHUP`), and the given winner.
 
+  A **final's** double exit (or the one matchUp of a one-round structure) produced nothing: cleared or given a winner, its
+  unwind is the own loser seat's withdrawal alone, where a link feeds one (FEED_IN_CHAMPIONSHIP's consolation final seat;
+  under `doubleExitPropagateBye: false` the carry there, taken back as the branch), and the call's own write; given a
+  winner, the loser lands on the freed seat as plainly (S6 tail). A final whose winner link leads on into another
+  structure (DOUBLE_ELIMINATION's Decider, fed by both the final's links) stays v1's.
+
   Under **`doubleExitPropagateBye: false`** the seat a level's loser link feeds shows no BYE: the double exit carries its
   exit there (awarded to whoever stands or arrives opposite), and a further level's seat holds nothing of this unwind's.
   v1 visits the matchUp holding the seat all the same (`conditionallyRemoveDrawPosition`, the loser branch of
