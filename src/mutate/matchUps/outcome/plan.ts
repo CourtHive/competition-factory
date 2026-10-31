@@ -2705,23 +2705,26 @@ function assignedLineUpOps(
  * S7: a dual's exit carried across its loser link is written on the dual the losing team reaches by that dual's own call
  * (`setMatchUpState`), whose `ensureSideLineUps` first writes its sides with the team arrived: the carried write takes
  * them as `ensuredSides` (`ensuredDualSides`, the one rule). The line-up the team's assignment wrote there is the draw's,
- * the line-up that rule falls back to, so the stored sides are read as they stand. Planned where the carry lands on
- * that dual alone.
+ * the line-up that rule falls back to, and one edited on the dual since is the one it keeps: the stored sides are read
+ * as they stand. Planned where the carry lands on that dual alone, both its sides holding their drawPositions.
  */
 function carriedDualLanding(
   view: OutcomeView,
   drawDefinition: DrawDefinition,
   landing: OutcomeOp[],
   loser?: NonNullable<DirectionPlan['loser']>,
-  through?: unknown,
 ): OutcomeOp[] | undefined {
   const { loserMatchUpId, loserTargetDrawPosition } = view.targets;
-  // a carry through a BYE, or on past the dual it reaches (its own loser link), writes each dual it reaches: v1's
+  // a carry through a BYE, or on past the dual it reaches (its own loser link), writes a matchUp beyond it: v1's
   const written = landing.filter((op) => op.op === 'setMatchUpResult');
   if (!written.length || !loser?.arrives) return landing;
   const { participantId } = loser;
-  if (through || written.some((op) => op.matchUpId !== loserMatchUpId)) return undefined;
+  if (written.some((op) => op.matchUpId !== loserMatchUpId)) return undefined;
   const reached = view.inContextDrawMatchUps?.find((matchUp) => matchUp.matchUpId === loserMatchUpId);
+  // planned where both the dual's sides hold their drawPositions (the loser's is one of them): a side holding none (a
+  // DOUBLE_ELIMINATION losers' round, half placed) is hydrated unnumbered, and v1 reads it numbered after the arrival
+  const seated = reached?.sides?.filter((side) => side.drawPosition) ?? [];
+  if (seated.length !== 2) return undefined;
   const ensuredSides = ensuredDualSides({
     contextSides: reached?.sides?.map((side) =>
       side.drawPosition === loserTargetDrawPosition ? { ...side, participantId } : side,
@@ -2798,9 +2801,7 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
   // a carried exit's write on the matchUp the loser lands in (S5)
   // (a carry past a BYE is recorded beside it before the carrier is placed on beyond, as v1 announces the two)
   const carried = carriedFor(view, args, loser);
-  const landing = dualCall
-    ? carriedDualLanding(view, drawDefinition, carried.landing, loser, loserThrough)
-    : carried.landing;
+  const landing = dualCall ? carriedDualLanding(view, drawDefinition, carried.landing, loser) : carried.landing;
   if (!landing) return { abstain: 'team' };
   const throughBye = [loserThrough, winnerThrough].flatMap((through): OutcomeOp[] =>
     through
