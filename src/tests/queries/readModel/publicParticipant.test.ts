@@ -1,5 +1,10 @@
 import { generatePrivacyFixture, GROUP_PARTICIPANT_ID, STAFF_PARTICIPANT_ID } from '@Tests/testHarness/privacyFixture';
-import { participantPolicyHash, publicParticipantDocuments } from '@Query/readModel/publicParticipant';
+import {
+  participantPolicyHash,
+  publicParticipantDocuments,
+  publicParticipantRow,
+} from '@Query/readModel/publicParticipant';
+import { READ_MODEL_COLUMNS } from '@Query/readModel/readModelColumns';
 import { POLICY_PRIVACY_DEFAULT } from '@Fixtures/policies/POLICY_PRIVACY_DEFAULT';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { readModel } from '../../../index';
@@ -68,6 +73,19 @@ describe('publicParticipantDocuments', () => {
       expect(document.policyHash).toEqual(policyHash);
       expect(document.participantId).toEqual(document.participant.participantId);
     }
+  });
+
+  it('maps a document to a public_participants row with exactly the declared columns', () => {
+    const { documents } = documentsUnder();
+    const row = publicParticipantRow({ tournamentId: tournamentRecord.tournamentId, document: documents[0] });
+    expect(Object.keys(row).sort()).toEqual([...READ_MODEL_COLUMNS.public_participants].sort());
+    expect(row).toEqual({
+      tournament_id: tournamentRecord.tournamentId,
+      participant_id: documents[0].participantId,
+      policy_hash: documents[0].policyHash,
+      document: documents[0].participant,
+    });
+    expect(readModel.publicParticipantRow).toBe(publicParticipantRow);
   });
 
   it('removes the presence attester whatever the policy allows', () => {

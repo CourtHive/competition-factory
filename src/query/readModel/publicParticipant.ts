@@ -3,16 +3,11 @@ import { getParticipants } from '@Query/participants/getParticipants';
 
 // constants and types
 import { MISSING_POLICY_DEFINITION, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import type { PublicParticipant, ReadModelPublicParticipantRow } from '@Types/readModelTypes';
 import type { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
-import type { Tournament } from '@Types/tournamentTypes';
-import type { HydratedParticipant } from '@Types/hydrated';
 import { COMPETITOR } from '@Constants/participantRoleValues';
-
-/** Every attribute optional, all the way down: a privacy template may deny any of them. */
-type Redacted<T> = T extends (infer U)[] ? Redacted<U>[] : T extends object ? { [K in keyof T]?: Redacted<T[K]> } : T;
-
-export type PublicParticipant = Redacted<Omit<HydratedParticipant, 'individualParticipants'>>;
+import type { Tournament } from '@Types/tournamentTypes';
 
 /**
  * One public participant document: keyed by `participantId` (kept outside the body, since
@@ -23,6 +18,8 @@ export type PublicParticipantDocument = {
   participantId: string;
   policyHash: string;
 };
+
+export type { PublicParticipant } from '@Types/readModelTypes';
 
 // Bumped whenever the canonical form below changes, so a stored hash from an older
 // form can never compare equal to a new one by accident.
@@ -85,6 +82,22 @@ export function publicParticipantDocuments({
     }));
 
   return { documents, policyHash };
+}
+
+/** The `public_participants` read-model row for one document. */
+export function publicParticipantRow({
+  tournamentId,
+  document,
+}: {
+  tournamentId: string;
+  document: PublicParticipantDocument;
+}): ReadModelPublicParticipantRow {
+  return {
+    tournament_id: tournamentId,
+    participant_id: document.participantId,
+    policy_hash: document.policyHash,
+    document: document.participant,
+  };
 }
 
 function canonical(value: unknown): string {
