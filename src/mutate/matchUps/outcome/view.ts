@@ -3,6 +3,7 @@ import { fedLoserPlacementRefusal } from '@Mutate/matchUps/drawPositions/reconci
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { isValidMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
+import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
 import { resolveTieScoreSource } from '@Query/hierarchical/tieFormats/resolveTieScoreSource';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
@@ -61,6 +62,7 @@ import { BYE, COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpSta
 import { FIRST_MATCHUP, LOSER, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import type { PositionTargetsResult } from '@Query/matchUp/positionTargets';
 import type { ByePassage, CarryLevel, WinnerLoserSeat } from './types';
+import type { ErrorType } from '@Constants/errorConditionConstants';
 import { TieScoreSourceEnum } from '@Types/tournamentTypes';
 import { LINEUPS } from '@Constants/extensionConstants';
 import type { MatchUpsMap } from '@Types/factoryTypes';
@@ -1244,6 +1246,36 @@ function roundRobinGroup({
   };
 }
 
+/**
+ * § 2 rows 16, 25 and 27: v1's writer's refusal of the schedule a call carries, asked as v1 asks it before the outcome
+ * lands (`addMatchUpScheduleItems` with `validateOnly`: every refusal, nothing written). Its result is kept whole, so
+ * v2's refusal returns what v1 returns
+ */
+function scheduleRefusal({
+  tournamentRecord,
+  drawDefinition,
+  request,
+}: Pick<BuildViewArgs, 'tournamentRecord' | 'drawDefinition' | 'request'>): OutcomeView['scheduleRefusal'] {
+  const schedule = request.carries?.schedule;
+  if (!schedule || !drawDefinition || !tournamentRecord || !request.matchUpId) return undefined;
+  const check: Record<string, unknown> = addMatchUpScheduleItems({
+    matchUpId: request.matchUpId,
+    disableNotice: true,
+    validateOnly: true,
+    tournamentRecord,
+    drawDefinition,
+    schedule,
+  });
+  if (!check.error) return undefined;
+  const { error, info, context, stack: _stack, ...extra } = check;
+  return {
+    error: error as ErrorType,
+    ...(info ? { info: info as string } : {}),
+    ...(context ? { context: context as Record<string, unknown> } : {}),
+    ...(Object.keys(extra).length ? { extra } : {}),
+  };
+}
+
 export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
   const { tournamentRecord, drawDefinition, event, request, policyDefinitions } = args;
   const empty: OutcomeView = {
@@ -1523,6 +1555,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       request,
       event,
     }),
+    scheduleRefusal: scheduleRefusal({ tournamentRecord, drawDefinition, request }),
     line,
     dualProjection,
     targets: {
