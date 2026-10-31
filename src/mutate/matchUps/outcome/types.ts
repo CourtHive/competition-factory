@@ -146,6 +146,8 @@ export type OutcomeView = {
     context?: Record<string, unknown>;
     extra?: Record<string, unknown>;
   };
+  /** § 2 row 24: a directing call on a matchUp holding no drawPositions, which v1 refuses before the dispatch */
+  missingDrawPositions?: boolean;
   /** a line of a dual: what the dual projects once this line is written */
   line?: {
     dualMatchUpId: string;

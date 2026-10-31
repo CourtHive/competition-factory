@@ -300,6 +300,43 @@ it.each([
   expect(v2.record).toEqual(v1.record);
 });
 
+it('a winner on a matchUp stored with no drawPositions: v2 refuses it as v1 does, row 24 (S7)', () => {
+  const run = (mode: OutcomePipelineMode) => {
+    setOutcomePipeline(OUTCOME_PIPELINE_V1);
+    setClock('2026-10-25T00:00:00.000Z');
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 8, drawId: 'd' }],
+      nonRandom: 1,
+    });
+    // a record the factory did not produce: a first-round matchUp stored without its drawPositions
+    const matchUp = tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps.find(
+      (candidate: any) => candidate.roundNumber === 1 && candidate.roundPosition === 1,
+    );
+    Reflect.deleteProperty(matchUp, 'drawPositions');
+    tournamentEngine.setState(tournamentRecord);
+    setOutcomePipeline(mode);
+    v1Writes.count = 0;
+    const result: any = tournamentEngine.setMatchUpStatus({
+      policyDefinitions: { scoring: { requireParticipantsForScoring: false } },
+      matchUpId: matchUp.matchUpId,
+      outcome: { winningSide: 1 },
+      drawId: 'd',
+    });
+    const { stack: _stack, ...answer } = result;
+    return {
+      answer,
+      v1Writes: v1Writes.count,
+      record: canonicalJson(tournamentEngine.getTournament().tournamentRecord),
+    };
+  };
+  const v1 = run(OUTCOME_PIPELINE_V1);
+  const v2 = run(OUTCOME_PIPELINE_V2);
+  expect(v1.answer.error?.code).toEqual('ERR_MISSING_DRAW_POSITIONS');
+  expect(v2.v1Writes).toEqual(0);
+  expect(v2.answer).toEqual(v1.answer);
+  expect(v2.record).toEqual(v1.record);
+});
+
 it('an owned write takes no hydration when no one subscribes to the in-context matchUp', () => {
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
   mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 8, drawId: 'd' }], nonRandom: 1, setState: true });
