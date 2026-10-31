@@ -38,8 +38,10 @@ type CheckTieFormatArgs = {
  * mismatch surfaces as a conflict instead of becoming permanent.
  */
 export function checkTieFormat({ tieFormat, uuids }: CheckTieFormatArgs): ResultType & { tieFormat?: TieFormat } {
+  // the door through which a tieFormat enters an event or draw: a save, so value rules are enforced
   const result = validateTieFormat({
     checkCollectionIds: false,
+    enforceValues: true,
     tieFormat,
   });
   if (result.error) return result;

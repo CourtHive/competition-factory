@@ -234,7 +234,7 @@ function modifyDefinition({
   if (fieldResult?.error) return fieldResult;
 
   const modifiedTieFormat = definedAttributes(tieFormat);
-  result = validateTieFormat({ tieFormat: modifiedTieFormat });
+  result = validateTieFormat({ tieFormat: modifiedTieFormat, enforceValues: true });
   if (result.error) {
     return decorateResult({ result, stack });
   }

@@ -200,7 +200,7 @@ function addDefinition({
   let targetMatchUps: any[] = [];
 
   const prunedTieFormat = definedAttributes(tieFormat);
-  result = validateTieFormat({ tieFormat: prunedTieFormat });
+  result = validateTieFormat({ tieFormat: prunedTieFormat, enforceValues: true });
   if (result?.error) {
     return decorateResult({ result: { error: result.error }, stack });
   }
