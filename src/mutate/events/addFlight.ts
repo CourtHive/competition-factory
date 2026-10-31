@@ -1,14 +1,16 @@
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
+import { getEveryDrawFlight } from '@Query/event/getEveryDrawFlight';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { getParticipantId } from '@Functions/global/extractors';
-import { intersection } from '@Tools/arrays';
+import { intersection, unique } from '@Tools/arrays';
 import { ensureInt } from '@Tools/ensureInt';
 import { UUID } from '@Tools/UUID';
 
 // constants and types
 import { EXISTING_FLIGHT, INVALID_VALUES, MISSING_EVENT, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import { PARTICIPANT_IN_OTHER_FLIGHT } from '@Constants/flightConstants';
 import { Entry, Event, Tournament } from '@Types/tournamentTypes';
 import { FLIGHT_PROFILE } from '@Constants/extensionConstants';
 
@@ -47,6 +49,14 @@ export function addFlight({
 
   const flightProfile = getFlightProfile({ event })?.flightProfile;
 
+  // every draw is a flight: a participant already in one is reported, not refused, until 8.0.0
+  const placedParticipantIds = new Set(
+    getEveryDrawFlight({ event })
+      .filter((flight) => flight.drawId !== drawId)
+      .flatMap((flight) => (flight.drawEntries ?? []).map(getParticipantId)),
+  );
+  const overlapping = unique(drawEntries.map(getParticipantId).filter((id) => placedParticipantIds.has(id)));
+
   const flightNumbers =
     flightProfile?.flights
       ?.map(({ flightNumber }) => !Number.isNaN(Number(flightNumber)) && ensureInt(flightNumber))
@@ -80,5 +90,8 @@ export function addFlight({
 
   if (!disableNotice) modifyEventNotice({ event, tournamentId: tournamentRecord?.tournamentId });
 
+  if (overlapping.length) {
+    return { ...result, warnings: [{ code: PARTICIPANT_IN_OTHER_FLIGHT, info: { participantIds: overlapping } }] };
+  }
   return result;
 }

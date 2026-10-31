@@ -64,6 +64,13 @@ When called via the public engine API (not `internalUse`), `event.entries` and `
 
 ## addFlight
 
+Adds one flight to the event's flight profile, numbered after the highest existing flight, without changing the other
+flights or their draws.
+
+A participant who is already in another flight, or in a draw (every draw counts as a flight), is still added, but the
+result carries a warning: `{ code: PARTICIPANT_IN_OTHER_FLIGHT, info: { participantIds } }` (`flightConstants`). From
+8.0.0 such a call is refused unless `force: true` is given.
+
 ```js
 engine.addFlight({
   drawEntries, // optional

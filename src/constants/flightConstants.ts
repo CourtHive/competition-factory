@@ -15,10 +15,17 @@ export const SPLIT_SHUTTLE = 'splitShuttle'; // 1,2,3,4,4,3,2,1,1,2,3,4,4,3,2,1
 export const ENTRIES_SCOPE_ALL = 'ALL'; // every entry with a direct-acceptance status
 export const ENTRIES_SCOPE_UNFLIGHTED = 'UNFLIGHTED'; // only entries in no flight and no draw
 
+/*
+ * Warning code: a flight was given a participant who is already in another flight (or draw). The flight is still added
+ * in 7.x; 8.0.0 refuses it unless `force` is given.
+ */
+export const PARTICIPANT_IN_OTHER_FLIGHT = 'PARTICIPANT_IN_OTHER_FLIGHT';
+
 export const flightConstants = {
   SPLIT_LEVEL_BASED,
   SPLIT_WATERFALL,
   SPLIT_SHUTTLE,
   ENTRIES_SCOPE_ALL,
   ENTRIES_SCOPE_UNFLIGHTED,
+  PARTICIPANT_IN_OTHER_FLIGHT,
 } as const;
