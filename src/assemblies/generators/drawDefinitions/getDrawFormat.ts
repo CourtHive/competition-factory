@@ -68,6 +68,7 @@ export function getDrawFormat(params): ResultType & { tieFormat?: TieFormat; mat
     // id check belongs after the mint, where it now runs. The same reasoning gates `checkTieFormat`.
     const result = validateTieFormat({
       checkCollectionIds: false,
+      enforceValues: true,
       gender: event?.gender,
       enforceGender,
       tieFormat,

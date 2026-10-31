@@ -206,7 +206,8 @@ describe('generateTieMatchUpScore coverage', () => {
 
   it('handles collectionGroupNumber (value groups)', () => {
     const tieFormat = {
-      winCriteria: { valueGoal: 2 },
+      // the single group is worth 1, so 1 is the only reachable goal (2 is refused on save)
+      winCriteria: { valueGoal: 1 },
       collectionDefinitions: [
         {
           collectionId: 'singles',

@@ -17,6 +17,26 @@ export function calculateWinCriteria({
   aggregateValue?: boolean;
   valueGoal?: number;
 } {
+  const { valueTotal, aggregateValueImperative } = getTieFormatValueTotal({ collectionDefinitions, collectionGroups });
+
+  if (aggregateValueImperative || !valueTotal) return { aggregateValue: true, ...SUCCESS };
+
+  const valueGoal = Math.floor(valueTotal / 2) + 1;
+
+  return { valueGoal, ...SUCCESS };
+}
+
+/**
+ * The most a side can win in a tie: every collection's value, or its group's value, summed.
+ * `aggregateValueImperative` when a collection is valued by sets or games, whose total is unpredictable.
+ */
+export function getTieFormatValueTotal({
+  collectionDefinitions = [],
+  collectionGroups = [],
+}: CalculateWinCriteriaArgs): {
+  aggregateValueImperative?: boolean;
+  valueTotal: number;
+} {
   let valueTotal = 0;
 
   const { groupValueNumbers } = getGroupValueGroups({ collectionGroups });
@@ -57,9 +77,5 @@ export function calculateWinCriteria({
     valueTotal += collectionGroup.groupValue ?? 0;
   }
 
-  if (aggregateValueImperative || !valueTotal) return { aggregateValue: true, ...SUCCESS };
-
-  const valueGoal = Math.floor(valueTotal / 2) + 1;
-
-  return { valueGoal, ...SUCCESS };
+  return { valueTotal, aggregateValueImperative };
 }
