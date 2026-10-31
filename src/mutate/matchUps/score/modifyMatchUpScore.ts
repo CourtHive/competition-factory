@@ -288,6 +288,9 @@ function applyScoreAndStatus({
   }
 
   if (matchUpStatus) matchUp.matchUpStatus = matchUpStatus;
+  // a matchUp that is no longer complete has no place in its cohort's order of finish (`setOrderOfFinish`); v2 clears
+  // it in the same writes (outcome/ops.ts)
+  if (!completedMatchUpStatuses.includes(matchUp.matchUpStatus)) delete matchUp.orderOfFinish;
   if (matchUpFormat) matchUp.matchUpFormat = matchUpFormat;
   if (matchUpStatusCodes) matchUp.matchUpStatusCodes = matchUpStatusCodes;
   /**
