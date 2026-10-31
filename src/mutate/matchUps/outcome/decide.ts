@@ -130,7 +130,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   const refusal: Refusal | undefined = refuseOutcome(args.request, view);
 
   if (mode === OUTCOME_PIPELINE_V2) {
-    if (refusal) return { refused: toResult(refusal) };
+    if (refusal) return { refused: toResult(refusal, args) };
     // S2: a call whose complete plan is a shape v2 owns is written by v2, and v1 is not asked (F1 (a), fail-closed)
     const { outcome } = planCall(args, view);
     return outcome.ops && OWNED_SHAPES.has(outcome.shape)
@@ -779,11 +779,17 @@ function autoCalculated(request: OutcomeRequest, view: OutcomeView): OutcomeRequ
   return { ...request, winningSide: view.dualProjection.projectedWinningSide, score: view.dualProjection.score };
 }
 
-function toResult(refusal: Refusal): ResultType {
+function toResult(refusal: Refusal, args: BuildViewArgs): ResultType {
+  const matchUp = refusal.namesMatchUp
+    ? args.matchUpsMap?.drawMatchUps.find((candidate) => candidate.matchUpId === args.request.matchUpId)
+    : undefined;
+  const context =
+    refusal.context || matchUp ? { ...(refusal.context ?? {}), ...(matchUp ? { matchUp } : {}) } : undefined;
   return {
     error: refusal.error,
     ...(refusal.info ? { info: refusal.info } : {}),
-    ...(refusal.context ? { context: refusal.context } : {}),
+    ...(context ? { context } : {}),
+    ...(refusal.extra ?? {}),
   };
 }
 
@@ -813,8 +819,9 @@ function workingViewAfter({
     propagateRetirementAsExit: args.request.flags.propagateRetirementAsExit,
     propagateExitStatus: args.request.flags.propagateExitStatus,
     loserLinked: !!view.targets.loserLink,
-    // a round robin group's double exit produces nothing, nor does a TEAM line's (its targets are its dual's)
-    contained: (!!view.group && !view.group.adHoc) || !!view.line,
+    // a round robin group's double exit produces nothing, nor does a TEAM line's (its targets are its dual's), nor a
+    // final's (no winner target, a winner link out included: S6 tail, family 8)
+    contained: (!!view.group && !view.group.adHoc) || !!view.line || !view.targets.winnerMatchUpId,
     inContextDrawMatchUps: view.inContextDrawMatchUps,
     matchUpId: args.request.matchUpId,
     tournamentRecord: args.tournamentRecord,

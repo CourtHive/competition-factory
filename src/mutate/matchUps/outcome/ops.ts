@@ -14,6 +14,7 @@ import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
 import type {
   DrawDefinition,
   MatchUp,
+  MatchUpSchedule,
   MatchUpStatusCodeElement,
   MatchUpStatusUnion,
   PositionAssignment,
@@ -253,6 +254,16 @@ export type OutcomeOp =
       /** false where v1's writer names no event (`assignTeamLineUp` hands `updateSideLineUp` none) */
       announcesEvent?: false;
     }
+  | {
+      op: 'setMatchUpSchedule';
+      /**
+       * the schedule a call carries, as v1's `addMatchUpScheduleItems` writes it on the matchUp (S7): the whole stored
+       * `schedule` after the write, which the plan reads by running that writer on a copy of the matchUp. Ordered before
+       * the call's result, as v1 writes the schedule before `applyScoredTime` stamps onto it
+       */
+      matchUpId: string;
+      schedule: MatchUpSchedule;
+    }
   | { op: 'stampUpdatedAt'; entity: 'matchUp' | 'structure' | 'drawDefinition'; id: string };
 
 /** the op vocabulary as a literal union, which `verify:outcome-spec` holds to the spec; checked against `OutcomeOp` */
@@ -272,6 +283,7 @@ export type OutcomeOpName =
   | 'clearMatchUpBye'
   | 'setParticipantResults'
   | 'setSideLineUp'
+  | 'setMatchUpSchedule'
   | 'stampUpdatedAt';
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 const opNamesMatch: Same<OutcomeOpName, OutcomeOp['op']> = true;
@@ -458,6 +470,13 @@ function foldSideLineUp(op: OpOf<'setSideLineUp'>, { matchUps }: DrawIndex): Fol
   return {};
 }
 
+function foldSchedule(op: OpOf<'setMatchUpSchedule'>, { matchUps }: DrawIndex): Folded {
+  const matchUp = matchUps.get(op.matchUpId);
+  if (!matchUp) return { error: `setMatchUpSchedule: no matchUp ${op.matchUpId}` };
+  matchUp.schedule = structuredClone(op.schedule);
+  return {};
+}
+
 function foldStatusCodes(op: OpOf<'setMatchUpStatusCodes'>, { matchUps }: DrawIndex): Folded {
   const matchUp = matchUps.get(op.matchUpId);
   if (!matchUp) return { error: `setMatchUpStatusCodes: no matchUp ${op.matchUpId}` };
@@ -590,6 +609,8 @@ function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition
       return foldParticipantResults(op, index);
     case 'setSideLineUp':
       return foldSideLineUp(op, index);
+    case 'setMatchUpSchedule':
+      return foldSchedule(op, index);
     default:
       return foldStamp(op, index, drawDefinition, stampedBefore);
   }

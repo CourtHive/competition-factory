@@ -146,6 +146,39 @@ const AWARDEE_PLAYED_ON: Step[] = [
 ];
 
 const SCENARIOS: [string, Scenario][] = [
+  // S6 tail, family 8: a final's double exit ENTERED produces nothing: the own write, and the own loser seat's BYE where
+  // a link feeds one
+  [
+    'SINGLE_ELIMINATION: the final entered as a double walkover',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: TO_FINAL_8().slice(0, 6),
+      steps: [{ target: FINAL_8(), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION 2: the one matchUp entered as a double default',
+    {
+      drawProfile: { drawSize: 2, drawType: SINGLE_ELIMINATION },
+      steps: [{ target: R1(1), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP: the Main final entered as a double walkover: its consolation seat takes a BYE',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: TO_FINAL_8('Main').slice(0, 6),
+      steps: [{ target: FINAL_8('Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION: the Main final entered as a double walkover (no loser link from the final)',
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: TO_FINAL_8('Main').slice(0, 6),
+      steps: [{ target: FINAL_8('Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
   // S6 tail, family 7: a consolation double exit whose produced exit lands in a FEED round, pending beside the fed seat's
   // structural position (reserved on into the next round): the feed path written back, the reservation taken back
   [
@@ -2464,6 +2497,23 @@ describe('under v2, a dissolved convergence beyond the clear is v2s; given a win
       },
     ],
     [
+      'FEED_IN_CHAMPIONSHIP: the Main final entered as a double default under doubleExitPropagateBye false',
+      {
+        drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+        policyDefinitions: POLICY_OFF,
+        setup: TO_FINAL_8('Main').slice(0, 6),
+        steps: [{ target: FINAL_8('Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+      },
+    ],
+    [
+      'DOUBLE_ELIMINATION: the Main final entered as a double walkover: the Decider is its winner target',
+      {
+        drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
+        setup: TO_FINAL_8('Main').slice(0, 6),
+        steps: [{ target: FINAL_8('Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      },
+    ],
+    [
       'DOUBLE_ELIMINATION: the Main final a double walkover cleared: the Decider, fed by both its links, is visited',
       {
         drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
@@ -2486,6 +2536,55 @@ describe('under v2, a dissolved convergence beyond the clear is v2s; given a win
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
     expect(v1.results.every((result: any) => result.success)).toEqual(true);
     expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
+  });
+});
+
+// S6 tail: a refusal v2 returns is v1's result, field for field: row 9's `activeDownstream` beside `error` (a double
+// exit cleared or re-entered over an active downstream), and rows 13 / 14's context naming the stored matchUp (a double
+// exit given a winner once its awardee has played on)
+describe('under v2, a refused outcome returns exactly the result v1 returns', () => {
+  const AWARDEE_WON_ON: Step[] = [
+    { target: R1(1), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+    { target: R1(2), outcome: won(1) },
+    { target: R1(3), outcome: won(1) },
+    { target: R1(4), outcome: won(1) },
+    { target: { roundNumber: 2, roundPosition: 2 }, outcome: won(1) },
+    { target: { roundNumber: 3, roundPosition: 1 }, outcome: won(1) },
+  ];
+  const REFUSED: [string, Scenario][] = [
+    [
+      'SINGLE_ELIMINATION: a double walkover cleared once its awardee has played on (row 9, activeDownstream)',
+      {
+        drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+        setup: AWARDEE_WON_ON,
+        steps: [{ target: R1(1), outcome: cleared }],
+      },
+    ],
+    [
+      'SINGLE_ELIMINATION: a double walkover given a winner once its awardee has played on (row 13, the matchUp named)',
+      {
+        drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+        setup: AWARDEE_WON_ON,
+        steps: [{ target: R1(1), outcome: won(1) }],
+      },
+    ],
+    [
+      'FEED_IN_CHAMPIONSHIP: a double walkover cleared once its awardee has played on, beside a consolation (row 9)',
+      {
+        drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+        setup: AWARDEE_WON_ON.map(({ target, outcome }) => ({ target: { ...target, structureName: 'Main' }, outcome })),
+        steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+      },
+    ],
+  ];
+  it.each(REFUSED)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    // CONTROL: v1 refused
+    expect(v1.results.every((result: any) => result.error)).toEqual(true);
+    expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
     expect(v2.notices).toEqual(v1.notices);
   });

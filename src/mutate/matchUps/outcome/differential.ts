@@ -23,8 +23,8 @@ import {
  */
 export const APPLY_STAGE_CODES: ReadonlySet<string> = new Set([
   // the schedule a call carries is checked by v1 before the outcome lands (`checkScheduleValues`); v2 abstains on a
-  // call that carries one (`plan.ts`, 'schedule'), so a malformed time, and a date or date-time outside the tournament
-  // (#5774), are v1's alone
+  // schedule v1's writer refuses (`plan.ts` `scheduleReason`, 'schedule'), so a malformed time, and a date or date-time
+  // outside the tournament (#5774), are v1's alone
   INVALID_TIME.code,
   INVALID_DATE.code,
   // and a recorded time out of played order (#5979: an end time given with an outcome is judged before it lands)

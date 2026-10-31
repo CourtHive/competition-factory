@@ -413,7 +413,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
       score: outcome?.score,
       matchUpFormat,
       matchUpId,
-      carries: { schedule: !!schedule, notes: !!notes },
+      carries: { schedule, notes: !!notes },
       flags: {
         allowChangePropagation,
         propagateExitStatus,

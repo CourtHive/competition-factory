@@ -4,6 +4,7 @@ import type { HydratedMatchUp } from '@Types/hydrated';
 import type {
   DrawDefinition,
   Event,
+  MatchUpSchedule,
   MatchUpStatusCodeElement,
   MatchUpStatusUnion,
   PositionAssignment,
@@ -45,8 +46,11 @@ export type OutcomeRequest = {
   score?: OutcomeScore;
   matchUpFormat?: string;
   flags: OutcomeFlags;
-  /** what else the call carries that v1 writes and v2 does not yet plan: a call carrying either abstains (S1) */
-  carries?: { schedule?: boolean; notes?: boolean };
+  /**
+   * what else the call carries: notes, which v2 does not plan (the call abstains), and a schedule, which v2 plans where
+   * v1's own writer can write it on the matchUp alone (S7, `scheduleReason`)
+   */
+  carries?: { schedule?: MatchUpSchedule; notes?: boolean };
 };
 
 /** § 2: one code, the row of the table that raised it, and what a person or a client needs to see */
@@ -57,6 +61,10 @@ export type Refusal = {
   row: number;
   info?: string;
   context?: Record<string, unknown>;
+  /** fields v1's result carries beside `error`, outside `context` (row 9's `activeDownstream`): returned as v1 returns them */
+  extra?: Record<string, unknown>;
+  /** the context names the stored matchUp, as v1's `winningSideWithDownstreamDependencies` does (rows 13 and 14) */
+  namesMatchUp?: true;
 };
 
 /** what the refusal function may ask of the draw; built once per call by `buildOutcomeView` */
