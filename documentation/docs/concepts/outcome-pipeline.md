@@ -786,6 +786,12 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   it, and another position standing there (a feed round's own fed seat, an opponent arrived from the other half) stays,
   as v1 leaves it. Stay v1's: the exit awarded to the loser fed beside it, and the given winner.
 
+  A **final's double exit entered** (or the one matchUp of a one-round structure) produces nothing (`doubleExitAdvancement`
+  finds no winner target): the call's own write, and the own loser seat's BYE with its chain where a link feeds one
+  (`doubleExitSeats` with no produced exit's matchUp), as v1's `handleLoserMatchUp` places it; the settle predicates
+  read such a call as propagating nothing, as a group's (S6 tail). Stay v1's: a final whose winner link leads on
+  (DOUBLE_ELIMINATION's Decider), and the final under `doubleExitPropagateBye: false` (the carry its loser seat takes).
+
   Under **`doubleExitPropagateBye: false`** the seat a level's loser link feeds shows no BYE: the double exit carries its
   exit there (awarded to whoever stands or arrives opposite), and a further level's seat holds nothing of this unwind's.
   v1 visits the matchUp holding the seat all the same (`conditionallyRemoveDrawPosition`, the loser branch of
