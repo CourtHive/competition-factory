@@ -10,7 +10,7 @@ import { setClock } from '@Tools/clock';
 
 // constants
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
-import { RETIRED } from '@Constants/matchUpStatusConstants';
+import { RETIRED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { LAVER_CUP } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
 import {
@@ -38,7 +38,8 @@ import {
  * carries the winning team's line-up onto its side of the next dual (`propagateLineUp`) and, where a loser link sends the
  * losing team on, the losing team's onto its side there (`propagateLoserLineUp`); a loser going on through a BYE there
  * also takes its draw line-up onto the dual beyond (`updateSideLineUp`). A line played on a dual already decided writes
- * the line and the dual's tally, the dual keeping its winner. Under `v2` the call is written
+ * the line and the dual's tally, the dual keeping its winner. A dual's own call given a winner is written and directed as
+ * any winner, and its own double exit advanced as any double exit. Under `v2` the call is written
  * by v2 and v1's writer is not asked; the record, the notices (payloads, in order) and the results equal v1's, under the
  * fixed and the real clock.
  *
@@ -67,6 +68,7 @@ const TOPICS = [MODIFY_MATCHUP, MODIFY_DRAW_DEFINITION, MODIFY_POSITION_ASSIGNME
 const won = (winningSide: 1 | 2) => generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide }).outcome;
 function stepOutcome({ winningSide, outcome }: Scenario['step']) {
   if (outcome === 'winner') return { winningSide };
+  if (outcome === 'cleared') return { matchUpStatus: TO_BE_PLAYED };
   if (outcome === 'DOUBLE_WALKOVER' || outcome === 'DOUBLE_DEFAULT') return { matchUpStatus: outcome };
   if (outcome === 'RETIRED') {
     return generateOutcomeFromScoreString({ scoreString: '6-1 2-1', winningSide, matchUpStatus: RETIRED }).outcome;
@@ -102,7 +104,7 @@ type Scenario = {
     dual?: true;
     /** the call's flags (`enableAutoCalc`, `propagateExitStatus`, ...) */
     flags?: Record<string, boolean>;
-    outcome?: 'winner' | 'WALKOVER' | 'DEFAULTED' | 'RETIRED' | 'DOUBLE_WALKOVER' | 'DOUBLE_DEFAULT';
+    outcome?: 'winner' | 'cleared' | 'WALKOVER' | 'DEFAULTED' | 'RETIRED' | 'DOUBLE_WALKOVER' | 'DOUBLE_DEFAULT';
   };
   /** CONTROL: the dual a loser link sends the losing team to, and whether v1 carries its line-up onto that side */
   loserSeat?: { dual: Omit<Line, 'line'>; sideNumber: 1 | 2; carried: boolean };
@@ -710,6 +712,66 @@ const OWNED: [string, Scenario][] = [
       },
     },
   ],
+  [
+    "a dual's own DOUBLE_WALKOVER: the WALKOVER it produces waits in the next dual",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [],
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'DOUBLE_WALKOVER', dual: true },
+    },
+  ],
+  [
+    "a dual's own DOUBLE_DEFAULT under propagateExitStatus: the DEFAULTED it produces waits in the next dual",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [],
+      step: {
+        target: R1(1, 0),
+        winningSide: 1,
+        outcome: 'DOUBLE_DEFAULT',
+        dual: true,
+        flags: { propagateExitStatus: true },
+      },
+    },
+  ],
+  [
+    "a dual's own DOUBLE_WALKOVER beside a decided dual: the WALKOVER it produces is awarded to that dual's winner",
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: [0, 1, 2, 3, 4].map((line) => ({ target: R1(2, line), winningSide: 1 as const })),
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'DOUBLE_WALKOVER', dual: true },
+    },
+  ],
+  [
+    "a dual's own DOUBLE_WALKOVER in a draw of 7: the next dual's other side goes on from a BYE",
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION, participantsCount: 7 },
+      setup: [],
+      step: { target: R1(2, 0), winningSide: 1, outcome: 'DOUBLE_WALKOVER', dual: true },
+    },
+  ],
+  [
+    "FIRST_MATCH_LOSER_CONSOLATION: a dual's own DOUBLE_WALKOVER: BYEs on the consolation seats its loser link feeds",
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [],
+      step: {
+        target: R1(1, 0),
+        winningSide: 1,
+        outcome: 'DOUBLE_WALKOVER',
+        dual: true,
+        flags: { propagateExitStatus: true },
+      },
+    },
+  ],
+  [
+    "COMPASS: an East dual's own DOUBLE_DEFAULT: BYEs on the West seats its loser link feeds",
+    {
+      drawProfile: { drawSize: 8, drawType: COMPASS },
+      setup: [],
+      step: { target: R1(1, 0, 'East'), winningSide: 1, outcome: 'DOUBLE_DEFAULT', dual: true },
+    },
+  ],
 ];
 
 describe('under v2, a TEAM line is v2s, deciding its dual or not, and leaves exactly what v1 leaves', () => {
@@ -770,11 +832,20 @@ const KEPT: [string, Scenario][] = [
     },
   ],
   [
-    "a dual's own DOUBLE_WALKOVER: v1's (route double-exit)",
+    "a dual's own DOUBLE_WALKOVER once a line is played: v1's (exitReason: a double exit over a dual in progress)",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1, 0), winningSide: 1 }],
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'DOUBLE_WALKOVER', dual: true },
+      abstains: 'exit',
+    },
+  ],
+  [
+    "a dual's own call clearing a dual still to be played: v1's (route clear-score)",
     {
       drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
       setup: [],
-      step: { target: R1(1, 0), winningSide: 1, outcome: 'DOUBLE_WALKOVER', dual: true },
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'cleared', dual: true },
     },
   ],
   [

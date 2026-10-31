@@ -165,12 +165,14 @@ export function convergence(statuses: string[]): MatchUpStatusUnion {
  *
  * Which side it feeds is read from the structure, planned only where that is unambiguous: the next
  * round in the same structure holds half as many matchUps, so roundPosition n feeds side 1 when odd
- * and side 2 when even; or as many (a feed round), where it feeds side 2 beside the fed position. An exit standing there converges with this one. Deferred:
- * a target already a double exit (a third arrival), a decider, a dual's line.
+ * and side 2 when even; or as many (a feed round), where it feeds side 2 beside the fed position.
+ * An exit standing there converges with this one. A TEAM dual's own double exit produces as any
+ * matchUp's does (S7). Deferred: a target already a double exit (a third arrival), a decider, a
+ * dual's line.
  */
 function planProducedExit(request: OutcomeRequest, view: OutcomeView): DirectionPlan | undefined {
   const { winner, source, winnerMatchUpId } = view.targets;
-  if (!winner || !winnerMatchUpId || view.line || view.matchUpTieId || view.isTeam) return undefined;
+  if (!winner || !winnerMatchUpId || view.line || view.matchUpTieId) return undefined;
   if (isDoubleExit(winner.matchUpStatus)) return undefined; // a third arrival: not modelled
   if (winnerMatchUpId === view.targets.loserMatchUpId) return undefined;
   const nextRound =

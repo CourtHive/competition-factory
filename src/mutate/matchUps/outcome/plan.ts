@@ -2241,15 +2241,18 @@ function teamReason({
 }
 
 /**
- * S7: a dual's own call given a winner. v1 writes it as any winner (`directParticipants`: the result, `scoredTime`, the
- * winner placed in the next dual, announced `assignMatchUpDrawPosition`), after `ensureSideLineUps` has written the
- * dual's sides (`ensuredSides`). It carries no line-up on: that is a deciding line's (`propagateLineUp`). Stays v1's: a
- * call that enables or disables auto-calc (v1 writes `disableAutoCalc`, and projects the winner from the lines), a dual's
- * exit carried across a loser link, a dual holding a winner or another status, and a dual in a round robin.
+ * S7: a dual's own call given a winner, or its own double exit. v1 writes a winner as any winner (`directParticipants`:
+ * the result, `scoredTime`, the winner placed in the next dual, announced `assignMatchUpDrawPosition`), and a double exit
+ * as any double exit (`doubleExitAdvancement`: the exit it produces in the next dual, BYEs on the seats its loser links
+ * feed), after `ensureSideLineUps` has written the dual's sides (`ensuredSides`). It carries no line-up on: that is a
+ * deciding line's (`propagateLineUp`). Stays v1's: a call that enables or disables auto-calc (v1 writes
+ * `disableAutoCalc`, and projects the winner from the lines), a dual's exit carried across a loser link, a dual holding
+ * a winner or another status, and a dual in a round robin.
  */
 function dualCallReason(request: OutcomeRequest, view: OutcomeView, route?: Route): AbstainReason | undefined {
   const { existing } = view;
-  if (route !== 'winner' || request.flags.enableAutoCalc || request.flags.disableAutoCalc) return 'team';
+  if ((route !== 'winner' && route !== DOUBLE_EXIT) || request.flags.enableAutoCalc || request.flags.disableAutoCalc)
+    return 'team';
   // an exit carried across a loser link (`propagateExitStatus`) writes the sides of the dual it reaches: v1's
   if (isExit(request.matchUpStatus) && request.flags.propagateExitStatus && view.targets.loserLink) return 'team';
   // a dual holding a winner holds a decided status: none is to be played or in progress
