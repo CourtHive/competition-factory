@@ -1,3 +1,4 @@
+import { getTieFormatValueTotal } from '@Query/matchUp/calculateWinCriteria';
 import { validateCollectionDefinition } from './validateCollectionDefinition';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isObject } from '@Tools/objects';
@@ -13,6 +14,12 @@ type ValidateTieFormatArgs = {
   checkCollectionIds?: boolean;
   enforceCategory?: boolean;
   enforceGender?: boolean;
+  /**
+   * The tieFormat is being SAVED (added to an event or draw, or modified): refuse negative values and a
+   * valueGoal no side can reach. Off when a stored tieFormat is read for scoring or line-ups, so a record
+   * saved before these rules still scores (CA 2026-10-31: "refuse on save, but not on calculation").
+   */
+  enforceValues?: boolean;
   gender?: GenderUnion;
   category?: Category;
   tieFormat?: any; // not using TieFormat type because incoming value is potentially invalid
@@ -43,6 +50,7 @@ export function validateTieFormat(params: ValidateTieFormatArgs): ResultType {
     const { valid, errors: collectionDefinitionErrors } = validateCollectionDefinition({
       referenceCategory: params.category,
       referenceGender: params.gender,
+      enforceValues: params.enforceValues,
       collectionDefinition,
       checkCollectionIds,
       checkCategory,
@@ -77,10 +85,21 @@ export function validateTieFormat(params: ValidateTieFormatArgs): ResultType {
     });
   }
 
+  const valueGoal = tieFormat.winCriteria?.valueGoal;
+  if (params.enforceValues && validCollections && typeof valueGoal === 'number') {
+    const { valueTotal, aggregateValueImperative: unpredictable } = getTieFormatValueTotal({
+      collectionGroups: tieFormat.collectionGroups,
+      collectionDefinitions: tieFormat.collectionDefinitions,
+    });
+    if (!unpredictable && valueGoal > valueTotal) {
+      errors.push(`valueGoal ${valueGoal} cannot be reached: the tie's matchUps are worth ${valueTotal} in total`);
+    }
+  }
+
   const collectionIds = tieFormat.collectionDefinitions.map(({ collectionId }) => collectionId);
   const uniqueCollectionIds = !checkCollectionIds || collectionIds.length === unique(collectionIds).length;
 
-  const valid = validCollections && validWinCriteria && uniqueCollectionIds;
+  const valid = validCollections && validWinCriteria && uniqueCollectionIds && !errors.length;
 
   const result = { valid, errors };
   if (!valid) {

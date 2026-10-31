@@ -141,7 +141,7 @@ describe('points per position: per-line values with collectionValueProfiles', ()
   });
 });
 
-describe('points per position: what validation refuses and what it lets through', () => {
+describe('points per position: what validation refuses', () => {
   const singlesProfiles = (collectionValueProfiles: any[]) =>
     pointsPerPosition({ winCriteria: { valueGoal: 11 }, singles: { collectionValueProfiles } });
 
@@ -207,27 +207,69 @@ describe('points per position: what validation refuses and what it lets through'
     expect(result.error).toEqual(INVALID_TIE_FORMAT);
   });
 
-  // Current behaviour, pinned so that tightening it is a deliberate, visible change.
-  it('GAP: a negative line value is accepted', () => {
-    const tieFormat = singlesProfiles([
-      { collectionPosition: 1, matchUpValue: -5 },
-      { collectionPosition: 2, matchUpValue: 4 },
-    ]);
-    let result: any = validateTieFormat({ tieFormat, checkCollectionIds: false });
-    expect(result.error).toBeUndefined();
-    expect(generate(tieFormat).success).toEqual(true);
-  });
+  // CA 2026-10-31: "refuse on save, but not on calculation". A save (event, draw, modification) enforces the
+  // value rules; scoring a tieFormat already stored in a record does not, so an older record still scores.
+  const NEGATIVE_LINE = [
+    { collectionPosition: 1, matchUpValue: -5 },
+    { collectionPosition: 2, matchUpValue: 4 },
+  ];
 
-  it('GAP: a valueGoal above the 21 available points is accepted, so the tie can never be won', () => {
-    const tieFormat = pointsPerPosition({ winCriteria: { valueGoal: 30 } });
-    let result: any = validateTieFormat({ tieFormat, checkCollectionIds: false });
-    expect(result.error).toBeUndefined();
+  it('refuses a negative line value on save', () => {
+    const tieFormat = singlesProfiles(NEGATIVE_LINE);
+    let result: any = validateTieFormat({ tieFormat, checkCollectionIds: false, enforceValues: true });
+    expect(result.error).toEqual(INVALID_TIE_FORMAT);
+    expect(result.context.errors).toContain('line 1 value cannot be negative: -5');
 
     result = generate(tieFormat);
-    expect(result.success).toEqual(true);
-    tournamentEngine.setState(result.tournamentRecord);
+    expect(result.error).toEqual(INVALID_TIE_FORMAT);
+
+    // calculation does not enforce
+    result = validateTieFormat({ tieFormat, checkCollectionIds: false });
+    expect(result.error).toBeUndefined();
+  });
+
+  it('refuses a negative matchUpValue on save', () => {
+    const tieFormat = pointsPerPosition({
+      singles: { collectionValueProfiles: undefined, matchUpValue: -1 },
+      winCriteria: { valueGoal: 5 },
+    });
+    let result: any = validateTieFormat({ tieFormat, checkCollectionIds: false, enforceValues: true });
+    expect(result.context.errors).toContain('matchUpValue cannot be negative: -1');
+  });
+
+  it('refuses a valueGoal above the 21 available points on save', () => {
+    const tieFormat = pointsPerPosition({ winCriteria: { valueGoal: 30 } });
+    let result: any = validateTieFormat({ tieFormat, checkCollectionIds: false, enforceValues: true });
+    expect(result.error).toEqual(INVALID_TIE_FORMAT);
+    expect(result.context.errors).toContain("valueGoal 30 cannot be reached: the tie's matchUps are worth 21 in total");
+
+    expect(generate(tieFormat).error).toEqual(INVALID_TIE_FORMAT);
+
+    // 21 itself is reachable, by winning every line
+    result = validateTieFormat({
+      tieFormat: pointsPerPosition({ winCriteria: { valueGoal: 21 } }),
+      checkCollectionIds: false,
+      enforceValues: true,
+    });
+    expect(result.error).toBeUndefined();
+
+    // calculation does not enforce
+    result = validateTieFormat({ tieFormat, checkCollectionIds: false });
+    expect(result.error).toBeUndefined();
+  });
+
+  it('a stored tieFormat that breaks the value rules still scores', () => {
+    let result: any = generate(pointsPerPosition({ winCriteria: { valueGoal: 11 } }));
+    const { tournamentRecord } = result;
+    // a record saved before the rules: an unreachable goal and a negative line
+    const { tieFormat } = tournamentRecord.events[0];
+    tieFormat.winCriteria.valueGoal = 30;
+    tieFormat.collectionDefinitions[1].collectionValueProfiles[2].matchUpValue = -3;
+    tournamentEngine.setState(tournamentRecord);
+
+    // every line to side 1: 5 + 4 + 5 + 4 - 3 = 15, short of 30, so the tie never completes
     const tieMatchUp = playLines({ 'S-1': 1, 'S-2': 1, 'D-1': 1, 'D-2': 1, 'D-3': 1 });
-    expect(tieMatchUp.score.scoreStringSide1).toEqual('21-0');
+    expect(tieMatchUp.score.scoreStringSide1).toEqual('15-0');
     expect(tieMatchUp.winningSide).toBeUndefined();
     expect(tieMatchUp.matchUpStatus).not.toEqual(COMPLETED);
   });
@@ -283,6 +325,38 @@ describe('points per position: modifying line values on an event', () => {
     });
     expect(result.success).toEqual(true);
     expect(tournamentEngine.getEvents().events[0].tieFormat.winCriteria).toEqual({ valueGoal: 13 });
+  });
+
+  it('refuses a negative line value when modifying a collection', () => {
+    const eventId = setup();
+    let result: any = tournamentEngine.modifyCollectionDefinition({
+      collectionValueProfiles: [
+        { collectionPosition: 1, matchUpValue: 5 },
+        { collectionPosition: 2, matchUpValue: 4 },
+        { collectionPosition: 3, matchUpValue: -3 },
+      ],
+      collectionId: 'D',
+      eventId,
+    });
+    expect(result.error).toBeDefined();
+    const { tieFormat } = tournamentEngine.getEvents().events[0];
+    expect(tieFormat.collectionDefinitions[1].collectionValueProfiles).toEqual(DOUBLES_PROFILES);
+  });
+
+  it('refuses an unreachable valueGoal when modifying the tieFormat', () => {
+    const eventId = setup();
+    const { tieFormat } = tournamentEngine.getEvents().events[0];
+    let result: any = tournamentEngine.modifyTieFormat({
+      modifiedTieFormat: { ...tieFormat, winCriteria: { valueGoal: 22 } },
+      eventId,
+    });
+    expect(result.error).toEqual(INVALID_TIE_FORMAT);
+
+    result = tournamentEngine.modifyTieFormat({
+      modifiedTieFormat: { ...tieFormat, winCriteria: { valueGoal: 21 } },
+      eventId,
+    });
+    expect(result.success).toEqual(true);
   });
 
   it('switching a collection to matchUpValue replaces its profiles and recalculates valueGoal', () => {

@@ -21,6 +21,8 @@ type ValidateCollectionDefinitionArgs = {
   checkGender?: boolean;
   /** the collection is being added, so its matchUpFormat must be valid for new use, not only readable */
   newUse?: boolean;
+  /** the tieFormat is being saved: refuse negative values (a stored tieFormat stays readable for scoring) */
+  enforceValues?: boolean;
   event?: Event;
 };
 export function validateCollectionDefinition({
@@ -30,6 +32,7 @@ export function validateCollectionDefinition({
   checkGender = true,
   referenceCategory,
   referenceGender,
+  enforceValues,
   newUse,
   event,
 }: ValidateCollectionDefinitionArgs) {
@@ -51,8 +54,6 @@ export function validateCollectionDefinition({
     matchUpFormat,
     matchUpValue,
     matchUpType,
-    scoreValue,
-    setValue,
     category,
     gender,
   } = collectionDefinition;
@@ -73,25 +74,7 @@ export function validateCollectionDefinition({
     errors.push(`matchUpType must be SINGLES, DOUBLES, or HYBRID: ${matchUpType}`);
   }
 
-  const declared = {
-    collectionValueProfiles: !!collectionValueProfiles?.length,
-    collectionValue: isConvertableInteger(collectionValue),
-    matchUpValue: isConvertableInteger(matchUpValue),
-    scoreValue: isConvertableInteger(scoreValue),
-    setValue: isConvertableInteger(setValue),
-  };
-  const valueDeclarations = Object.entries(declared)
-    .filter(([, isDeclared]) => isDeclared)
-    .map(([key]) => key);
-
-  // exactly one way of valuing the collection's matchUps; scoring would otherwise silently prefer one
-  if (!valueDeclarations.length) {
-    errors.push(
-      'Missing value definition for matchUps: one of matchUpValue, collectionValue, setValue, scoreValue, or collectionValueProfiles',
-    );
-  } else if (valueDeclarations.length > 1) {
-    errors.push(`Conflicting value definitions for matchUps, only one is allowed: ${valueDeclarations.join(', ')}`);
-  }
+  errors.push(...valueErrors({ collectionDefinition, enforceValues }));
 
   if (matchUpValue && typeof matchUpValue !== 'number') {
     errors.push(`matchUpValue is not type number: ${matchUpValue}`);
@@ -156,4 +139,52 @@ export function validateCollectionDefinition({
     });
 
   return { valid: true };
+}
+
+/**
+ * Exactly one way of valuing the collection's matchUps (scoring would otherwise silently prefer one), and,
+ * when the tieFormat is being saved, no negative values.
+ */
+function valueErrors({
+  collectionDefinition,
+  enforceValues,
+}: {
+  collectionDefinition: CollectionDefinition;
+  enforceValues?: boolean;
+}): string[] {
+  const { collectionValueProfiles, collectionValue, matchUpValue, scoreValue, setValue } = collectionDefinition;
+  const errors: string[] = [];
+
+  const declared = {
+    collectionValueProfiles: !!collectionValueProfiles?.length,
+    collectionValue: isConvertableInteger(collectionValue),
+    matchUpValue: isConvertableInteger(matchUpValue),
+    scoreValue: isConvertableInteger(scoreValue),
+    setValue: isConvertableInteger(setValue),
+  };
+  const valueDeclarations = Object.entries(declared)
+    .filter(([, isDeclared]) => isDeclared)
+    .map(([key]) => key);
+
+  if (!valueDeclarations.length) {
+    errors.push(
+      'Missing value definition for matchUps: one of matchUpValue, collectionValue, setValue, scoreValue, or collectionValueProfiles',
+    );
+  } else if (valueDeclarations.length > 1) {
+    errors.push(`Conflicting value definitions for matchUps, only one is allowed: ${valueDeclarations.join(', ')}`);
+  }
+
+  if (!enforceValues) return errors;
+
+  const negative = Object.entries({ matchUpValue, collectionValue, scoreValue, setValue }).filter(
+    ([, value]) => typeof value === 'number' && value < 0,
+  );
+  for (const [key, value] of negative) errors.push(`${key} cannot be negative: ${value}`);
+  for (const profile of collectionValueProfiles ?? []) {
+    if (typeof profile?.matchUpValue === 'number' && profile.matchUpValue < 0) {
+      errors.push(`line ${profile.collectionPosition} value cannot be negative: ${profile.matchUpValue}`);
+    }
+  }
+
+  return errors;
 }
