@@ -2102,21 +2102,15 @@ function unwoundPath(
   // under `doubleExitPropagateBye: false` the seats the loser links feed show no BYE: v1 visits them as matchUps and
   // walks on from them (`unwoundBranch`, S6 tail)
   const branched = linksOut.some((link) => link.linkType === LOSER) && !view.draw.doubleExitPropagatesBye;
-  const target = producedTarget(view, source, source.matchUpStatus as MatchUpStatusUnion);
-  if (!target || target.feed) return undefined;
-  const { entry } = target;
-  // the produced exit met its paired matchUp's there: a convergence this unwind dissolves (`convergedChain`, S6 tail)
-  const converged = entry.matchUpStatus === target.matchUpStatus ? undefined : convergedChain(view, source, target);
-  if (entry.matchUpStatus !== target.matchUpStatus && !converged) return undefined;
-  const awardee = converged ? undefined : awardedReason(view, source, target);
-  if (awardee === false) return undefined;
-  const start = [source.matchUpId, ...(converged?.map((level) => level.matchUpId) ?? [entry.matchUpId])];
-  const path = unwoundWinnerPath(view, structureId, start, awardee);
-  if (!path) return undefined;
-  const rederived = new Map(
-    converged?.flatMap((level): [string, Rederived][] => (level.rederived ? [[level.matchUpId, level.rederived]] : [])),
-  );
   const seats = view.targets.unwindLoserSeats ?? [];
+  // a structure's final (or the one matchUp of a one-round structure) produced nothing: the path is the call's matchUp
+  // alone, its own seat visited as any first level's (S6 tail, family 6). A final whose winner link leads on
+  // (DOUBLE_ELIMINATION's Decider) has a next matchUp, and is read as any path
+  const produced = source.winnerMatchUpId
+    ? unwoundProducedPath(view, source, structureId)
+    : { path: [source.matchUpId], rederived: new Map<string, Rederived>(), awardee: undefined };
+  if (!produced) return undefined;
+  const { path, rederived, awardee } = produced;
   // the BYEs this unwind withdraws (its own seat's and its produced exit's), which a seat's onward matchUp is read without:
   // v1 withdraws the deeper one first, so the own seat's onward matchUp has lost the unfillable seat's BYE by the time it
   // is visited (FIRST_MATCH_LOSER_CONSOLATION: both BYEs meet in the consolation's second round). Past a convergence
@@ -2148,6 +2142,33 @@ function unwoundPath(
     });
   }
   return levels;
+}
+
+/**
+ * What a double exit's produced exit sent on, as the unwind takes it back (`unwoundPath`): the next matchUp holding the
+ * produced exit (pending, or awarded to the paired matchUp's winner), or the convergences it made (`convergedChain`), then
+ * the winner path beyond (`unwoundWinnerPath`). Undefined where anything else stands (a feed round, an award gone further).
+ */
+function unwoundProducedPath(
+  view: OutcomeView,
+  source: HydratedMatchUp,
+  structureId: string,
+): { path: string[]; rederived: Map<string, Rederived>; awardee: number | undefined } | undefined {
+  const target = producedTarget(view, source, source.matchUpStatus as MatchUpStatusUnion);
+  if (!target || target.feed) return undefined;
+  const { entry } = target;
+  // the produced exit met its paired matchUp's there: a convergence this unwind dissolves (`convergedChain`, S6 tail)
+  const converged = entry.matchUpStatus === target.matchUpStatus ? undefined : convergedChain(view, source, target);
+  if (entry.matchUpStatus !== target.matchUpStatus && !converged) return undefined;
+  const awardee = converged ? undefined : awardedReason(view, source, target);
+  if (awardee === false) return undefined;
+  const start = [source.matchUpId, ...(converged?.map((level) => level.matchUpId) ?? [entry.matchUpId])];
+  const path = unwoundWinnerPath(view, structureId, start, awardee);
+  if (!path) return undefined;
+  const rederived = new Map(
+    converged?.flatMap((level): [string, Rederived][] => (level.rederived ? [[level.matchUpId, level.rederived]] : [])),
+  );
+  return { path, rederived, awardee };
 }
 
 /**
@@ -2241,6 +2262,9 @@ function unwoundSeatOps(
   if (!placedBye) return seat.free && loserSeat.matchUpStatus !== BYE ? [withdraw] : undefined;
   const byeMatchUp = indexed(view, matchUpId);
   if (!seat.bye || !seat.byeFromPropagation || !byeMatchUp) return undefined;
+  // an exit carried onto the BYE matchUp's other side stands once the BYE goes: v1 re-derives the matchUp to it (a
+  // final's consolation seat beside a carried walkover, S6 tail): v1's
+  if (Object.keys(byeMatchUp.sideExitProvenance ?? {}).length) return undefined;
   // the BYE beside another (two paired double exits' loser seats, S6 tail): the standing BYE then advances the freed seat
   if (seat.opponentBye) return doubleByeSeatOps(view, loserSeat, byeMatchUp, withdraw);
   if (byeMatchUp.matchUpStatus !== BYE || byeMatchUp.loserMatchUpId) return undefined;
