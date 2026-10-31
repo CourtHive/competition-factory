@@ -178,9 +178,11 @@ export function createWorkingView({
       const applied = applyOutcomeOps(workingDraw, ops);
       if (applied.error) return applied;
 
-      // a reassigned or emptied drawPosition changes the sides of every matchUp in that structure that holds it
+      // a reassigned, emptied, BYE-given or BYE-freed drawPosition changes the sides of every matchUp in that structure
+      // that holds it (a BYE withdrawn beside a standing BYE leaves its matchUp a BYE, unwritten: S6 tail)
+      const seatOps = new Set(['assignPosition', 'clearPosition', 'relabelPosition', 'assignBye', 'withdrawBye']);
       for (const op of ops) {
-        if (op.op !== 'assignPosition' && op.op !== 'clearPosition' && op.op !== 'relabelPosition') continue;
+        if (!seatOps.has(op.op) || !('drawPosition' in op) || !('structureId' in op)) continue;
         for (const matchUp of matchUpsOf(structureHolding(op.structureId)) ?? [])
           if (matchUp.drawPositions?.includes(op.drawPosition)) affected.add(matchUp.matchUpId);
       }
