@@ -55,7 +55,7 @@ jobs:
   # jobs have nothing new to test, and they cost ~55 minutes per release (CA, 2026-10-04). Decided by
   # the DIFF, not the branch name: a release-path PR that touches anything else gets the full run.
   # The `gates` job and the aggregating `verify` job always run, because master requires the
-  # `verify (node 24)` check; the cheap gates plus the build chain still run.
+  # `verify (node 26)` check; the cheap gates plus the build chain still run.
   scope:
     timeout-minutes: 10
     # Skip when the head commit is the release-please bot's release-PR
@@ -101,11 +101,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # PRs verify on Node 24 only for fast feedback; pushes to master and
-        # manual (workflow_dispatch) runs verify the full supported matrix
-        # ([24, 26]) before anything lands: 24 is the `engines: ">=24"` floor,
-        # and 26 is the next LTS line (and what the deploy hosts run).
-        node-version: ${{ github.event_name == 'pull_request' && fromJSON('[24]') || fromJSON('[24, 26]') }}
+        # Node 26 only, PRs and pushes alike: it is what the deploy hosts run. The Node 24 leg (the
+        # `engines: ">=24"` floor) was dropped 2026-10-31 for the CI time it cost (CA).
+        node-version: [26]
     name: gates (node ${{ matrix.node-version }})
 
     steps:
@@ -285,8 +283,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # the same Node matrix as `gates` (PRs: [24]; push to master and dispatch: [22, 24])
-        node-version: ${{ github.event_name == 'pull_request' && fromJSON('[24]') || fromJSON('[22, 24]') }}
+        # the same Node matrix as `gates`
+        node-version: [26]
         shard: [1, 2, 3, 4]
     name: coverage shard ${{ matrix.shard }}/4 (node ${{ matrix.node-version }})
 
@@ -320,8 +318,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # the same Node matrix as `gates` (PRs: [24]; push to master and dispatch: [22, 24])
-        node-version: ${{ github.event_name == 'pull_request' && fromJSON('[24]') || fromJSON('[22, 24]') }}
+        # the same Node matrix as `gates`
+        node-version: [26]
     name: coverage (node ${{ matrix.node-version }})
 
     steps:
@@ -377,8 +375,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # the same Node matrix as `gates` (PRs: [24]; push to master and dispatch: [22, 24])
-        node-version: ${{ github.event_name == 'pull_request' && fromJSON('[24]') || fromJSON('[22, 24]') }}
+        # the same Node matrix as `gates`
+        node-version: [26]
         gate: [route-differential, deep-corrections, hydrations]
     name: ${{ matrix.gate }} (node ${{ matrix.node-version }})
 
@@ -432,7 +430,7 @@ jobs:
       - if: steps.paths.outputs.run == 'true'
         uses: ./.github/actions/setup
         with:
-          node-version: 24
+          node-version: 26
 
       - name: vitest under OUTCOME_PIPELINE=v2, shard ${{ matrix.shard }}/4
         if: steps.paths.outputs.run == 'true'
@@ -456,8 +454,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # the same Node matrix as `gates` (PRs: [24]; push to master and dispatch: [22, 24])
-        node-version: ${{ github.event_name == 'pull_request' && fromJSON('[24]') || fromJSON('[22, 24]') }}
+        # the same Node matrix as `gates`
+        node-version: [26]
         shard: [1, 2, 3, 4, 5]
     name: team-arms ${{ matrix.shard }}/5 (node ${{ matrix.node-version }})
 
@@ -471,7 +469,7 @@ jobs:
       - name: verify:team-arms ${{ matrix.shard }}/5
         run: pnpm verify:team-arms --shard=${{ matrix.shard }}/5
 
-  # The check master's branch protection requires is `verify (node 24)`, and this job is it. It
+  # The check master's branch protection requires is `verify (node 26)`, and this job is it. It
   # passes only when every other job passed, except that on a light run the heavy jobs must have been
   # SKIPPED (any other result, cancelled included, fails it). It runs whatever its needs did, so a red
   # job still produces a red `verify (node N)` rather than a missing one.
@@ -487,8 +485,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # the same Node matrix as `gates` (PRs: [24]; push to master and dispatch: [22, 24])
-        node-version: ${{ github.event_name == 'pull_request' && fromJSON('[24]') || fromJSON('[22, 24]') }}
+        # the same Node matrix as `gates`
+        node-version: [26]
     name: verify (node ${{ matrix.node-version }})
 
     steps:
