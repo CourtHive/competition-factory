@@ -42,12 +42,14 @@ import {
  * the line and the dual's tally, the dual keeping its winner. A dual's own call given a winner is written and directed as
  * any winner, and its own double exit advanced as any double exit; its exit carried across a loser link is written on
  * the dual it reaches with that dual's sides ensured. Its own call on a dual already decided enters the winner again
- * (the draw's line-up written on its side of the next dual) or changes it. Under `v2` the call is written
+ * (the draw's line-up written on its side of the next dual) or changes it, and disables or enables auto-calc. A line's
+ * result removed, or a line cleared, clears the line and re-reads its dual's tally. Under `v2` the call is written
  * by v2 and v1's writer is not asked; the record, the notices (payloads, in order) and the results equal v1's, under the
  * fixed and the real clock.
  *
- * Still v1's, pinned below: a decided dual whose losing side holds no line-up; a
- * line in a round robin (its group's tally); a REPORTED score source; and auto-calc off.
+ * Still v1's, pinned below: a decided dual whose losing side holds no line-up; a removal that un-decides its dual, or
+ * leaves it holding no line's result; a line in a round robin (its group's tally); a REPORTED score source; and
+ * auto-calc off.
  */
 const v1Writes = vi.hoisted(() => ({ count: 0 }));
 vi.mock('@Mutate/matchUps/matchUpStatus/setMatchUpState', async (importOriginal) => {
@@ -959,6 +961,33 @@ const OWNED: [string, Scenario][] = [
     },
   ],
   [
+    "a line's result removed, its dual still undecided: the line cleared, the dual's tally re-read",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [
+        { target: R1(1, 0), winningSide: 1 },
+        { target: R1(1, 1), winningSide: 2 },
+      ],
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'cleared' },
+    },
+  ],
+  [
+    "a line's result removed, its dual still decided by the others: the dual keeps its winner",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [0, 1, 2, 3, 4, 5].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'cleared' },
+    },
+  ],
+  [
+    'a line still to be played, cleared: its dual re-read as it stands',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1, 1), winningSide: 1 }],
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'cleared' },
+    },
+  ],
+  [
     'a line call carrying disableAutoCalc: nothing written on the line or its dual',
     {
       drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
@@ -1052,6 +1081,22 @@ const KEPT: [string, Scenario][] = [
       setup: [{ target: R1(1, 0), winningSide: 1 }],
       step: { target: R1(1, 0), winningSide: 1, outcome: 'DOUBLE_WALKOVER', dual: true },
       abstains: 'exit',
+    },
+  ],
+  [
+    "a line's result removed, un-deciding its dual: v1's (the dual's winner taken back from the next dual)",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [0, 1, 2, 3, 4].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'cleared' },
+    },
+  ],
+  [
+    "a line's only result removed: v1's (a dual left holding no result stores no score, its tieFormat removed)",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1, 0), winningSide: 1 }],
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'cleared' },
     },
   ],
   [

@@ -71,9 +71,10 @@ export type OutcomeOp =
       /**
        * a TEAM dual's write after its line's result (S7), `updateTieMatchUpScore`'s: the sides it ensures and the
        * tieFormat it copies on, each present only where it changes the stored value. v1 returns the write as the
-       * call's `tieMatchUpResult`
+       * call's `tieMatchUpResult`, but for a line's result removed or a line cleared (`unreturned`: v1's
+       * `removeDirectedParticipants` returns none, nor its clear of a line still to be played)
        */
-      dualTally?: { sides?: unknown[]; tieFormat?: unknown };
+      dualTally?: { sides?: unknown[]; tieFormat?: unknown; unreturned?: true };
       /**
        * a TEAM dual's own call (S7): the sides `ensureSideLineUps` writes before the result (their line-ups from the
        * draw's), present only where they change the stored ones. Unlike a line's `dualTally`, the call returns no
