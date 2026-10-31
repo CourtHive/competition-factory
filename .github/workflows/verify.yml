@@ -474,7 +474,7 @@ jobs:
       - if: steps.paths.outputs.run == 'true'
         uses: ./.github/actions/setup
         with:
-          node-version: 24
+          node-version: 26
 
       - name: vitest under OUTCOME_PIPELINE=differential, shard ${{ matrix.shard }}/4
         if: steps.paths.outputs.run == 'true'
