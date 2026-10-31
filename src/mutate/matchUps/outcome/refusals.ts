@@ -9,12 +9,15 @@ import { isDoubleExit } from '@Validators/isExit';
 import type { OutcomeRequest, OutcomeView, Refusal } from './types';
 import type { ErrorType } from '@Constants/errorConditionConstants';
 import {
+  ANACHRONISM,
   CANNOT_CHANGE_FEED_ELIGIBILITY,
   CANNOT_CHANGE_OUTCOME,
   CANNOT_CHANGE_WINNING_SIDE,
   DRAW_POSITION_ACTIVE,
   INCOMPATIBLE_MATCHUP_STATUS,
+  INVALID_DATE,
   INVALID_MATCHUP_STATUS,
+  INVALID_TIME,
   INVALID_VALUES,
   INVALID_WINNING_SIDE,
   MATCHUP_NOT_FOUND,
@@ -236,6 +239,21 @@ function refuseAgainstDraw(request: OutcomeRequest, view: OutcomeView): Refusal 
   return undefined;
 }
 
+/**
+ * rows 16, 25 and 27: the schedule the call carries, refused by v1's writer before the outcome lands, after the draw's
+ * checks and before the dispatch, where v1 asks it (`setMatchUpState`'s `validateOnly` pass). v1's result is returned
+ * whole. Another code from that pass is not a row here: the call is v1's (`plan.ts` `scheduleReason`)
+ */
+function refuseSchedule(view: OutcomeView): Refusal | undefined {
+  const refused = view.scheduleRefusal;
+  if (!refused) return undefined;
+  const { error, ...rest } = refused;
+  if (error.code === INVALID_TIME.code) return refuse(16, INVALID_TIME, rest);
+  if (error.code === INVALID_DATE.code) return refuse(25, INVALID_DATE, rest);
+  if (error.code === ANACHRONISM.code) return refuse(27, ANACHRONISM, rest);
+  return undefined;
+}
+
 /** § 3's dispatch: rows 13 to 15, and the swap that is accepted instead of refused */
 function refuseDispatch(request: OutcomeRequest, view: OutcomeView): Refusal | undefined {
   const { winningSide, matchUpStatus, flags } = request;
@@ -288,6 +306,7 @@ export function refuseOutcome(request: OutcomeRequest, view: OutcomeView): Refus
     refuseAgainstExisting(request, view) ??
     refuseScore(request, view) ??
     refuseAgainstDraw(request, view) ??
+    refuseSchedule(view) ??
     refuseDispatch(request, view)
   );
 }

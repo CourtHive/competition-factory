@@ -1,19 +1,19 @@
 import { OutcomePipelineDivergence, compareDecisions } from '@Mutate/matchUps/outcome/differential';
-import { authoredScenarios } from '../../testHarness/corpus/authoredSources';
 import { getOutcomePipeline, setOutcomePipeline } from '@Global/state/globalState';
+import { authoredScenarios } from '../../testHarness/corpus/authoredSources';
 import { buildOutcomeView, refuseOutcome } from '@Mutate/matchUps/outcome';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { afterEach, expect, it } from 'vitest';
 
 // constants
+import { INVALID_VALUES, MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
+import { CANCELLED } from '@Constants/matchUpStatusConstants';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
   OUTCOME_PIPELINE_V2,
 } from '@Constants/outcomePipelineConstants';
-import { INVALID_VALUES, MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
-import { CANCELLED } from '@Constants/matchUpStatusConstants';
 
 /**
  * S2a: the v2 refusals against the v1 pipeline.
@@ -74,7 +74,12 @@ it('a disagreement is a thrown divergence naming the matchUp and both answers; a
   const refusalX = { code: 'ERR_X', error: { code: 'ERR_X', message: 'x' }, row: 9 };
   expect(compareDecisions(undefined, undefined)).toEqual({ agree: true, v1: 'ok', v2: 'ok' });
   expect(compareDecisions(refusalX, 'ERR_X')).toMatchObject({ agree: true });
-  expect(compareDecisions(undefined, 'ERR_INVALID_TIME')).toMatchObject({ agree: true, deferred: 'ERR_INVALID_TIME' });
+  expect(compareDecisions(undefined, 'ERR_MISSING_ASSIGNMENTS')).toMatchObject({
+    agree: true,
+    deferred: 'ERR_MISSING_ASSIGNMENTS',
+  });
+  // a schedule's refusal is v2's own since S7 (rows 16, 25, 27): no longer deferred
+  expect(compareDecisions(undefined, 'ERR_INVALID_TIME')).toMatchObject({ agree: false });
   expect(compareDecisions(refusalX, undefined)).toMatchObject({ agree: false, v1: 'ok', v2: 'ERR_X' });
   const divergence = new OutcomePipelineDivergence({ matchUpId: 'm1', v1: 'ok', v2: 'ERR_X' });
   expect(divergence.message).toContain('m1');
