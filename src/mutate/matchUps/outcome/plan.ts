@@ -2051,8 +2051,8 @@ function convergedChain(
     const previousId = previous.matchUpId;
     const withdrawnSide = sides.find((side) => provenance[side]?.sourceMatchUpId === previousId);
     if (!withdrawnSide || !carriedExitStatus(provenance[withdrawnSide])) return undefined;
-    const kept = sides.filter((side) => side !== withdrawnSide);
-    if (!kept.length) {
+    const [keptSide, ...keptMore] = sides.filter((side) => side !== withdrawnSide);
+    if (!keptSide) {
       // the chain ends at the pending exit this unwind alone produced (its one origin, nothing else), written back to be
       // played (`unwoundOps`)
       chain.push({ matchUpId: matchUp.matchUpId });
@@ -2060,10 +2060,10 @@ function convergedChain(
     }
     // two sides: one origin withdrawn leaves one kept, whose carried exit the matchUp (a double exit by convergence)
     // re-derives to
-    const keptEntry = provenance[kept[0]];
+    const keptEntry = keptMore.length ? undefined : provenance[keptSide];
     const matchUpStatus = carriedExitStatus(keptEntry);
     if (!keptEntry || !matchUpStatus) return undefined;
-    chain.push({ matchUpId: matchUp.matchUpId, rederived: { matchUpStatus, provenance: { [kept[0]]: keptEntry } } });
+    chain.push({ matchUpId: matchUp.matchUpId, rederived: { matchUpStatus, provenance: { [keptSide]: keptEntry } } });
     previous = matchUp;
     matchUp = indexed(view, matchUp.winnerMatchUpId);
   }
@@ -2292,13 +2292,14 @@ function doubleByeSeatOps(
 ): OutcomeOp[] | undefined {
   const { drawPosition } = loserSeat;
   if (byeMatchUp.matchUpStatus !== BYE || byeMatchUp.loserMatchUpId) return undefined;
-  const opposite = loserSeat.drawPositions.filter((position) => position !== drawPosition);
+  // the one other position of the BYE matchUp (a filtered list, not a side read by index)
+  const [other, ...more] = loserSeat.drawPositions.filter((position) => position !== drawPosition);
   const next = indexed(view, byeMatchUp.winnerMatchUpId);
   const held = positionsOf(next);
-  if (opposite.length !== 1 || !next || !held.includes(opposite[0]) || held.length !== 2) return undefined;
+  if (!other || more.length || !next || !held.includes(other) || held.length !== 2) return undefined;
   if (next.matchUpStatus !== BYE || next.winningSide || !scoreless(next) || next.loserMatchUpId) return undefined;
   if (Object.keys(next.sideExitProvenance ?? {}).length || next.matchUpStatusCodes?.length) return undefined;
-  const remaining = held.filter((position) => position !== opposite[0]);
+  const remaining = held.filter((position) => position !== other);
   // the next matchUp, a BYE until now, sent its one other position on: that position comes back out of the matchUp beyond,
   // to be played. Where another standing BYE keeps the next matchUp a BYE (FIRST_MATCH_LOSER_CONSOLATION: the freed seat
   // then goes on through it), what it sent on was a BYE and the matchUp beyond is a BYE too: v1's
@@ -2520,8 +2521,7 @@ function unwoundOps(
     if (matchUpId === request.matchUpId) return seatOps;
     const produced = depth === levels.length - 2;
     const stored = indexed(view, matchUpId);
-    const held = stored?.drawPositions ?? [];
-    const drawPositions = held.filter((position): position is number => !!position && position !== released);
+    const drawPositions = positionsOf(stored).filter((position) => position !== released);
     // a convergence dissolved: the kept origin's exit, pending, its score the blank one v1's write leaves (a double
     // default stored none) and its codes re-derived (none to keep). Its `modifyMatchUp` is the settle pass's (`settled`
     // below), with the event and tournament at every depth; only the in-context notice is this write's
