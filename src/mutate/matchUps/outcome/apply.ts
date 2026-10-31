@@ -61,14 +61,14 @@ export function applyOwnedPlan({
       ? [op.matchUpId]
       : [],
   );
-  // each matchUp at its FIRST score write for the in-context notice that write defers, and at its LAST write for its
-  // `modifyMatchUp`: v1's notice buffer keeps a matchUp re-announced later in the call at that later place (a double exit
-  // given a winner: the next matchUp unwound first, then the winner's arrival after the result), and only a score write
-  // defers an in-context notice
-  // (a settle pass's write defers none: v1's `reconcileScoredTimes` announces the matchUp, not its context)
-  const written = [
-    ...new Set(ops.flatMap((op) => (op.op === 'setMatchUpResult' && !op.announcedAs ? [op.matchUpId] : []))),
-  ];
+  // each matchUp at its LAST score write for the in-context notice that write defers, and at its LAST write of any kind
+  // for its `modifyMatchUp`: v1's notice buffer keeps a matchUp re-announced later in the call at that later place (a
+  // double exit given a winner: the next matchUp unwound first, then the winner's arrival after the result; an unwind
+  // under `doubleExitPropagateBye: false` writing a matchUp back twice, S6 tail), and only a score write defers an
+  // in-context notice (a settle pass's write defers none: v1's `reconcileScoredTimes` announces the matchUp, not its
+  // context)
+  const scored = ops.flatMap((op) => (op.op === 'setMatchUpResult' && !op.announcedAs ? [op.matchUpId] : []));
+  const written = [...new Set(scored.toReversed())].reverse();
   const announced = [...new Set(writes.toReversed())].reverse();
   // a matchUp given its result and then a position (that next matchUp): its last notice is the placement's
   const lastWrites = new Map(ops.flatMap((op) => ('matchUpId' in op ? [[op.matchUpId, op.op]] : [])));
