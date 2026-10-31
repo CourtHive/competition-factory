@@ -4626,6 +4626,9 @@
         "flightNumber": {
           "type": "number"
         },
+        "drawOrder": {
+          "type": "number"
+        },
         "drawName": {
           "type": "string"
         },
