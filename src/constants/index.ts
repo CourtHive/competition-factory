@@ -44,6 +44,7 @@ export { topicConstants } from './topicConstants';
 export { tournamentConstants } from './tournamentConstants';
 export { officiatingConstants } from './officiatingConstants';
 export { sanctioningConstants } from './sanctioningConstants';
+export { seasonConstants } from './seasonConstants';
 export { venueConstants } from './venueConstants';
 export { weekdayConstants } from './weekdayConstants';
 export * as reportConstants from './reportConstants';

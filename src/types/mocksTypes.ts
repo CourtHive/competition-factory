@@ -241,6 +241,19 @@ export type MockVenueProfile = {
   venueId?: string;
 };
 
+/** `mocksEngine.generateSeason`: one record per period, one TEAM event per tier, and the Season document. */
+export type MockSeasonProfile = {
+  tiers: { tierId?: string; tierValue?: string; teamsCount: number; tieFormatName?: string }[];
+  periods?: { phase?: string; includeInStandings?: boolean }[];
+  completeAllMatchUps?: boolean;
+  tieFormatName?: string;
+  tierSystem?: string;
+  seasonName?: string;
+  startDate?: string;
+  seasonId?: string;
+  seriesId?: string;
+};
+
 export type MockLeagueProfile = {
   teamProfiles?: { teamName?: string; teamId?: string; venueIds?: string[] }[];
   participantsProfile?: MockParticipantsProfile;
