@@ -1,7 +1,7 @@
 import { getParticipantResults } from '@Query/matchUps/roundRobinTally/getParticipantResults';
 import { matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
 import { orderParticipants } from '@Query/standings/orderParticipants';
-import { fromV1, V1_PRIMARY_KEYS } from '@Query/standings/fromV1';
+import { fromV1, SEASON_TALLY_MEASURES, V1_PRIMARY_KEYS } from '@Query/standings/fromV1';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { validateSeason } from '@Validators/validateSeason';
 
@@ -70,7 +70,7 @@ type Reports = Required<Omit<SeasonStandingsResult, keyof ResultType | 'standing
 
 const DEFAULT_ORDER: (keyof SeasonStandingsTally)[] = ['matchUpsWon', 'valueWon', 'setsWon', 'gamesWon'];
 /** a season's ledger carries the tie-score values too, so a policy may rank by them first */
-const SEASON_PRIMARY_KEYS = [...V1_PRIMARY_KEYS, 'valueWon', 'valueLost'];
+const SEASON_PRIMARY_KEYS = [...V1_PRIMARY_KEYS, ...SEASON_TALLY_MEASURES];
 const TALLY_FIELDS: (keyof SeasonStandingsTally)[] = [
   'matchUpsWon',
   'matchUpsLost',
@@ -93,7 +93,8 @@ const TALLY_FIELDS: (keyof SeasonStandingsTally)[] = [
 export function getSeasonStandings(params: GetSeasonStandingsArgs): SeasonStandingsResult {
   const stack = 'getSeasonStandings';
   const { season, matchUps, periodId, tierId, getSubjectId } = params;
-  const valid = validateSeason({ season });
+  // a calculation never refuses for the policy itself (spec § 5.10): it was checked when the season was saved
+  const valid = validateSeason({ season, checkPolicies: false });
   if (valid.error) return valid;
   if (!Array.isArray(matchUps)) return decorateResult({ result: { error: MISSING_MATCHUPS }, stack });
 

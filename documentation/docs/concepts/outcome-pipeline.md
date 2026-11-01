@@ -823,6 +823,27 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   withdrawn as in the plain unwind, its next matchUp read without the position the own seat's release takes out of it.
   Stay v1's: FIRST_MATCH_LOSER_CONSOLATION (the BYE matchUp's loser seat behind `FIRST_MATCHUP`), and the given winner.
 
+  Where those plain readings of a placed seat refuse, the **unwind walk** (`unwindWalk.ts`, S6 tail) runs v1's removal of
+  the two placed BYEs on a copy of the draw, as the BYE walk runs v1's placement: the seat the produced exit left
+  unfillable first, then the double exit's own, each through `clearDrawPosition`. A seat emptied, its removal tasks are
+  built over every round of the structure (`buildPairingDetails`: a BYE partner standing in the next round makes the step
+  transitive, another partner there adds a task for it, a lone position's matchUp adds one for the hole-holding pair it
+  feeds); each task finds its matchUp by the positions it holds at that moment, takes the position out of later rounds,
+  then visits the matchUp (`removeDrawPosition`): the position comes out past its first round unless an opponent's BYE
+  advanced it, the matchUp is a BYE while a BYE stays on it and to be played otherwise, and a matchUp left to be played
+  that was a BYE releases the positions it had advanced (`releaseUndecidedAdvancements`); one left with no BYE takes back
+  what it sent to its round-1 loser seat across a link (`handleLoserMatchUpRemoval`), the seat's removal run quietly (no
+  assignments notice; an empty consolation seat's tasks change nothing). A visit is announced
+  (`removeDrawPosition-<the seat's position>`, no event or tournament) unless the matchUp held the removed position at
+  that visit and its status did not change; a release is announced `releaseAdvancedDrawPosition`. Each matchUp keeps the
+  place and context of its last notice, and the structures announced in are stamped; a BYE the round-1 cascade takes back
+  quietly stamps nothing by itself. The walk abstains where v1 takes another branch: a matchUp it reaches holding a
+  result, score, codes, provenance or a line-up, a participant on a seat it clears, a winner link out of a round it
+  releases (DOUBLE_ELIMINATION's Backdraw), a release of a BYE's position or of one a BYE advanced (`vacatedByes`,
+  `advancedByBye`), a fed loser seat (`consolationCleanup`), a loser seat a feeder still sends nobody to or behind a link
+  condition (`byeSeatStands`), a write v1 makes without a notice, a BYE advance owed afterwards
+  (`reconcileByeAdvancements`), or a walk past v1's bound. A double exit given a winner reads the same unwind.
+
   A **final's** double exit (or the one matchUp of a one-round structure) produced nothing: cleared or given a winner, its
   unwind is the own loser seat's withdrawal alone, where a link feeds one (FEED_IN_CHAMPIONSHIP's consolation final seat;
   under `doubleExitPropagateBye: false` the carry there, taken back as the branch), and the call's own write; given a

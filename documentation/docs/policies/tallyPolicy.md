@@ -79,7 +79,7 @@ The algorithm relies on the values availble in the calculated `participantResult
 
 - separate participants into groups by a given attribute
 - a group with a single participant is 'resolved'
-- groups of two participants are resolved by head-to-head (if not disabled/if participants faced each other)
+- groups of two participants are resolved by their head-to-head record (if not disabled, and if the record is not level)
 - groups of three or more search for an attribute that will separate them into smaller groups
 - participantResults scoped to the members of a group and recalculated when `{ idsFilter: true }`
 

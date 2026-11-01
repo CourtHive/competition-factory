@@ -314,7 +314,8 @@ function processNoWinnerMatchUp({
 
 function tallyTieMatchUpNoWinner({ participantResults, tieMatchUp, sides }) {
   const tieWinningParticipantId = sides?.find(({ sideNumber }) => sideNumber === tieMatchUp.winningSide)?.participantId;
-  const tieLosingParticipantId = sides?.find(({ sideNumber }) => sideNumber === tieMatchUp.winningSide)?.participantId;
+  // the OTHER side (K10): v1 read the winning side twice, crediting the line winner with both a win and a loss
+  const tieLosingParticipantId = sides?.find(({ sideNumber }) => sideNumber !== tieMatchUp.winningSide)?.participantId;
   if (tieWinningParticipantId && tieLosingParticipantId) {
     checkInitializeParticipant(participantResults, tieWinningParticipantId);
     checkInitializeParticipant(participantResults, tieLosingParticipantId);

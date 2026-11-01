@@ -388,6 +388,146 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(2, 'Main'), outcome: cleared }],
     },
   ],
+  // the unwind walk (S6 tail): the unfillable seat's BYE and the own seat's meet in the consolation, removed as v1 removes
+  // them, each matchUp announced as its last visit leaves it
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION 7 of 8: a double walkover beside the BYE cleared, awarded through the BYE',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2, 'Main'), outcome: cleared }],
+    },
+  ],
+  // the unwind walk (S6 tail): a cleared double exit beside another, its BYEs removed as v1's removal recursion removes them
+  [
+    'COMPASS 8 of 8: a double walkover cleared, R1 position 3 a double walkover too: the release empties West 2/1 before the next task looks for it: no visit there',
+    {
+      drawProfile: { drawSize: 8, drawType: COMPASS },
+      setup: [
+        { target: R1(3, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+        { target: R1(1, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+      steps: [{ target: R1(1, 'East'), outcome: cleared }],
+    },
+  ],
+  [
+    'COMPASS 7 of 8: a double walkover cleared',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: COMPASS },
+      setup: [{ target: R1(2, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2, 'East'), outcome: cleared }],
+    },
+  ],
+  [
+    'COMPASS 16 of 16: a double walkover cleared, R1 position 2 a double walkover too',
+    {
+      drawProfile: { drawSize: 16, drawType: COMPASS },
+      setup: [
+        { target: R1(2, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+        { target: R1(1, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+      steps: [{ target: R1(1, 'East'), outcome: cleared }],
+    },
+  ],
+  [
+    'COMPASS 15 of 16: a double walkover cleared, R1 position 3 a double walkover too',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 15, drawType: COMPASS },
+      setup: [
+        { target: R1(3, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+        { target: R1(2, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+      steps: [{ target: R1(2, 'East'), outcome: cleared }],
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION 7 of 8: a double walkover cleared, R1 position 2 a double walkover too: the own seat visit to Consolation 2/2 announced, position 5 already gone from it',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [
+        { target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+        { target: R1(3, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+      steps: [{ target: R1(3, 'Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION 13 of 16: a double walkover cleared, R1 position 4 a double walkover too',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 13, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [
+        { target: R1(4, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+        { target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+      steps: [{ target: R1(2, 'Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP 15 of 16: a double walkover cleared, R1 position 7 a double walkover too',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 15, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [
+        { target: R1(7, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+        { target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+      steps: [{ target: R1(2, 'Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'CURTIS_CONSOLATION 8 of 8: a double walkover cleared, R1 position 3 a double walkover too',
+    {
+      drawProfile: { drawSize: 8, drawType: CURTIS_CONSOLATION },
+      setup: [
+        { target: R1(3, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+        { target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+      steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'DOUBLE_ELIMINATION 8 of 8: a double walkover cleared, R1 position 3 a double walkover too',
+    {
+      drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
+      setup: [
+        { target: R1(3, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+        { target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+      steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'OLYMPIC 8 of 8: a double walkover cleared, R1 position 2 a double walkover too',
+    {
+      drawProfile: { drawSize: 8, drawType: OLYMPIC },
+      setup: [
+        { target: R1(2, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+        { target: R1(1, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+      steps: [{ target: R1(1, 'East'), outcome: cleared }],
+    },
+  ],
+  [
+    'OLYMPIC 15 of 16: a double walkover cleared, R1 position 3 a double walkover too',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 15, drawType: OLYMPIC },
+      setup: [
+        { target: R1(3, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+        { target: R1(2, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+      steps: [{ target: R1(2, 'East'), outcome: cleared }],
+    },
+  ],
+  [
+    'MODIFIED_FEED_IN_CHAMPIONSHIP 8 of 8: a double walkover cleared, R1 position 3 a double walkover too',
+    {
+      drawProfile: { drawSize: 8, drawType: MODIFIED_FEED_IN_CHAMPIONSHIP },
+      setup: [
+        { target: R1(3, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+        { target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+      steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+    },
+  ],
   // S6 tail, family 4 (a): a double exit cleared whose produced exit had converged with its paired matchUp's in the next
   // matchUp; the convergence is re-derived to the kept origin's pending exit and what it produced onward is taken back
   [
@@ -2872,14 +3012,6 @@ describe('under v2, a dissolved convergence beyond the clear is v2s; given a win
         drawProfile: { drawSize: 16, drawType: FIRST_ROUND_LOSER_CONSOLATION },
         setup: PAIRED(DOUBLE_WALKOVER, DOUBLE_WALKOVER, 'Main'),
         steps: [{ target: R1(1, 'Main'), outcome: cleared }],
-      },
-    ],
-    [
-      'FIRST_MATCH_LOSER_CONSOLATION 7 of 8: a double walkover beside the BYE cleared, awarded through the BYE',
-      {
-        drawProfile: { drawSize: 8, participantsCount: 7, drawType: FIRST_MATCH_LOSER_CONSOLATION },
-        setup: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
-        steps: [{ target: R1(2, 'Main'), outcome: cleared }],
       },
     ],
     [

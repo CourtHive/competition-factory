@@ -1,4 +1,6 @@
 import { decorateResult } from '@Functions/global/decorateResult';
+import { SEASON_TALLY_MEASURES } from '@Query/standings/fromV1';
+import { tallyPolicyErrors } from './validateTallyPolicy';
 import { isObject } from '@Tools/objects';
 
 // constants and types
@@ -19,7 +21,14 @@ const isNonEmptyString = (value: unknown) => typeof value === 'string' && value.
  * It cannot check that a `CompetitionRef` resolves to a record that exists; the factory holds no store. Callers
  * that hold the records check that, and `getSeasonStandings` reports a reference no matchUp answered.
  */
-export function validateSeason({ season }: { season?: Season }): ResultType & { valid?: boolean; errors?: string[] } {
+export function validateSeason({
+  season,
+  checkPolicies = true,
+}: {
+  season?: Season;
+  /** a season's tally policies are checked where the season is saved; a calculation passes false (spec § 5.10) */
+  checkPolicies?: boolean;
+}): ResultType & { valid?: boolean; errors?: string[] } {
   const stack = 'validateSeason';
   if (!isObject(season)) {
     return decorateResult({
@@ -35,10 +44,24 @@ export function validateSeason({ season }: { season?: Season }): ResultType & { 
     ...periodErrors(season as Season),
     ...advancementErrors(season as Season),
     ...movementRuleErrors(season as Season),
+    ...(checkPolicies ? policyErrors(season as Season) : []),
   ];
 
   if (errors.length) return decorateResult({ result: { error: INVALID_VALUES }, context: { errors }, stack });
   return { valid: true };
+}
+
+/** the season's and each tier's tally policy; a season's ledger also carries the tie-score values */
+function policyErrors(season: Season): string[] {
+  const owners = [
+    { label: 'season', tallyPolicy: season.tallyPolicy },
+    ...(season.tiers ?? []).map((tier) => ({ label: `tier ${tier?.tierId}`, tallyPolicy: tier?.tallyPolicy })),
+  ];
+  return owners.flatMap(({ label, tallyPolicy }) =>
+    tallyPolicy === undefined
+      ? []
+      : tallyPolicyErrors(tallyPolicy, SEASON_TALLY_MEASURES).map((error) => `${label} tallyPolicy: ${error}`),
+  );
 }
 
 function identityErrors(season: Season): string[] {
