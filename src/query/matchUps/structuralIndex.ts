@@ -177,8 +177,10 @@ function indexLines({
   const { drawDefinition, structure, positionAssignments } = shared;
   const dualTieFormat = resolveTieFormat({ drawDefinition, structure, matchUp: dual.matchUp, event })?.tieFormat;
   const drawPositions = dual.matchUp.drawPositions ?? [];
-  // the line-ups by side, as the dual's sides carry them; the team is found from the positions where none is given
-  const sideLineUps = dualEntry.sides?.map(({ drawPosition, sideNumber, lineUp }: any) => ({
+  // the line-ups by side, as the dual's sides carry them; the team is found from the positions where none is given, or,
+  // in a draw with no positions (an ad hoc league), from the side's team, as hydration hands it on (`processTieMatchUps`)
+  const sideLineUps = dualEntry.sides?.map(({ drawPosition, sideNumber, lineUp, participantId }: any) => ({
+    teamParticipant: sideTeam(participants, participantId),
     drawPosition,
     sideNumber,
     lineUp,
@@ -228,6 +230,25 @@ function indexLines({
       },
     });
   });
+}
+
+/** a dual side's team participant, the values hydration hands its lines (`processTieMatchUps`) */
+function sideTeam(participants: Participant[] | undefined, participantId?: string) {
+  const team = participantId
+    ? participants?.find(
+        (participant) => participant.participantId === participantId && participant.participantType === TEAM,
+      )
+    : undefined;
+  return (
+    team &&
+    definedAttributes({
+      participantRoleResponsibilities: team.participantRoleResponsibilities,
+      participantOtherName: team.participantOtherName,
+      participantName: team.participantName,
+      participantId: team.participantId,
+      teamId: team.teamId,
+    })
+  );
 }
 
 /** what a line takes from its dual and its collection, over its own stored values where hydration puts it so */
