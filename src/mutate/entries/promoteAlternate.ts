@@ -21,18 +21,18 @@ import {
 // types
 import type { DrawDefinition, Entry, Event, StageTypeUnion, Tournament } from '@Types/tournamentTypes';
 
-type PromoteAlternatesArgs = {
+type PromotionScope = {
   drawDefinition?: DrawDefinition;
   tournamentRecord: Tournament;
   stage?: StageTypeUnion;
-  participantIds: string[];
   stageSequence?: number;
   eventId?: string;
   drawId?: string;
   event: Event;
 };
+type PromoteAlternatesArgs = PromotionScope & { participantIds: string[] };
 
-export function promoteAlternate(params: Omit<PromoteAlternatesArgs, 'participantIds'> & { participantId?: string }) {
+export function promoteAlternate(params: PromotionScope & { participantId?: string }) {
   const { participantId } = params;
   if (participantId && typeof participantId !== 'string') return { error: INVALID_VALUES, participantId };
 
