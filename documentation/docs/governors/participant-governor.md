@@ -441,6 +441,12 @@ const {
 
 **Purpose:** Primary method for retrieving participants with rich context.
 
+**A participant with no `participantRole` is a `COMPETITOR`.** CODES requires only `participantId`, so hand-built
+and older records can carry players with no role. `participantFilters.participantRoles: [COMPETITOR]` keeps them, and
+`[OFFICIAL]` (or any other role) does not. The same read-time default applies wherever the factory decides by role
+(event entry, team generation, entry status reports, tournament info counts, public participant rows); the record is
+never rewritten. `getTournamentInconsistencies` lists such participants as `PARTICIPANT_ROLE_MISSING` (info).
+
 **Filtered lookups are cheapest with `returnParticipantMap: false`.** The `participantMap` holds every participant
 whether or not the filters keep it, so returning it means building the whole pool. When it is not returned, the
 `participantFilters` are applied to the stored participants first, and only those kept are built, together with their

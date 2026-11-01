@@ -1,5 +1,6 @@
 import { getAllPositionedParticipantIds } from '@Query/drawDefinition/positionsGetter';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
+import { participantRoleOf } from '@Query/participant/participantRoleOf';
 import { latestPresenceState } from '@Acquire/presenceAttestations';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { getParticipantId } from '@Functions/global/extractors';
@@ -90,13 +91,9 @@ export function filterParticipants({
   participants = participants?.filter((participant) => {
     // Folds `participant.presence` when promoted, legacy SIGN_IN_STATUS timeItems when not.
     const participantSignInStatus = latestPresenceState(participant);
-    const {
-      participantRoleResponsibilities: responsibilities,
-      participantType,
-      participantRole,
-      participantId,
-      person,
-    } = participant;
+    const { participantRoleResponsibilities: responsibilities, participantType, participantId, person } = participant;
+    // An absent role reads as COMPETITOR, so a role-less player still answers a COMPETITOR filter.
+    const participantRole = participantRoleOf(participant);
 
     const hasGender =
       Array.isArray(genders) && genders?.length && person?.sex && genderSet?.has(coercedGender(person.sex));
@@ -114,10 +111,7 @@ export function filterParticipants({
           participantType &&
           isValidFilterArray(participantTypes) &&
           participantTypeSet?.has(participantType)) ||
-        (participantRoles &&
-          participantRole &&
-          isValidFilterArray(participantRoles) &&
-          participantRoleSet?.has(participantRole)) ||
+        (participantRoles && isValidFilterArray(participantRoles) && participantRoleSet?.has(participantRole)) ||
         (participantRoleResponsibilities &&
           isValidFilterArray(responsibilities) &&
           isValidFilterArray(participantRoleResponsibilities) &&
@@ -136,8 +130,7 @@ export function filterParticipants({
         (!signInStatus || participantSignInStatus === signInStatus) &&
         (!participantTypes ||
           (participantType && isValidFilterArray(participantTypes) && participantTypeSet?.has(participantType))) &&
-        (!participantRoles ||
-          (participantRole && isValidFilterArray(participantRoles) && participantRoleSet?.has(participantRole))) &&
+        (!participantRoles || (isValidFilterArray(participantRoles) && participantRoleSet?.has(participantRole))) &&
         (!participantRoleResponsibilities ||
           (isValidFilterArray(responsibilities) &&
             isValidFilterArray(participantRoleResponsibilities) &&

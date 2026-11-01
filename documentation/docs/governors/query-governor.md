@@ -1064,6 +1064,23 @@ const { valid, inconsistencies } = engine.getTournamentInconsistencies();
   range ignores it and uses the tournament range; this finding is how that is flagged. `setTournamentDates` never
   produces such a range, so it marks a record written before that rule or edited outside the engine. (warning)
 
+- `PARTICIPANT_ROLE_MISSING` — participants carrying no `participantRole`. CODES requires only `participantId`, so
+  the record is valid; every role filter and role decision reads the absence as `COMPETITOR` without rewriting the
+  record (see [getParticipants](./participant-governor.md#getparticipants)). One entry per tournament, so the default
+  being applied is visible rather than silent. (info — never makes `valid` false)
+
+  ```js
+  {
+    issueType: 'PARTICIPANT_ROLE_MISSING',
+    message: '172 participant(s) have no participantRole and are treated as COMPETITOR',
+    severity: 'info',
+    scope: 'TOURNAMENT',
+    participantsCount: 172,
+    participantIds: ['...'],
+    assumedRole: 'COMPETITOR',
+  }
+  ```
+
 > Scheduling collisions are deferred — they require the scheduling model and are a later sub-phase.
 
 ## getTournamentCompleteness
@@ -1655,7 +1672,7 @@ const participantFilters = {
   accessorValues: [{ accessor, value }], // optional - see Accessors in Concepts
   eventEntryStatuses, // boolean
   participantTypes: [INDIVIDUAL],
-  participantRoles, [COMPETITOR],
+  participantRoles: [COMPETITOR], // a participant with no participantRole counts as COMPETITOR
   signInStatus, // specific signIn status
   eventIds, // events in which participants appear
 };
@@ -1669,31 +1686,30 @@ const {
   mappedMatchUps, // object { [matchUpId]: matchUp }; when { withMatchUps: true }
   participants, // array of hydrated participants
   matchUps, // array of all matchUps; when { withMatchUps: true }
- } =
-  engine.getParticipants({
-    convertExtensions, // optional - BOOLEAN - convert extensions so _extensionName attributes
-    participantFilters, // optional - filters
-    policyDefinitions, // optional - can accept a privacy policy to filter participant attributes
-    usePublishState, // optional - BOOLEAN - don't add seeding information when not published
-    scheduleAnalysis: {
-      scheduledMinutesDifference // optional - scheduling conflicts determined by scheduledTime difference between matchUps
-    },
-    withDraws, // optional - defaults to true if any other context options are specified
-    withEvents, // optional - defaults to true if any other context options are specified
-    withIndividualParticipants, // optional - boolean or attributeFilter template - include hydrated individualParticiapnts for TEAM/PAIR participants
-    withIOC, // optional - will add IOC country code and countryName to participant persons
-    withISO2, // optional - will add ISO2 country code and countryName to participant persons
-    withMatchUps, // optional - include all matchUps in which the participant appears, as well as potentialMatchUps
-    withOpponents, // optional - include opponent participantIds
-    withPotentialMatchUps, // optional boolean
-    withRankingProfile, // optional boolean - include details necessary for point awards
-    withScaleValues, // optional - include { ratings, rankings } attributes extracted from timeItems
-    withSeeding, // optional - add event seeding
-    withScheduleItems, // optional boolean - include array of scheduled matchUp details
-    withSignInStatus, // optional boolean
-    withStatistics, // optional - adds events, matchUps and statistics, e.g. 'winRatio'
-    withTeamMatchUps // optional boolean
-  });
+} = engine.getParticipants({
+  convertExtensions, // optional - BOOLEAN - convert extensions so _extensionName attributes
+  participantFilters, // optional - filters
+  policyDefinitions, // optional - can accept a privacy policy to filter participant attributes
+  usePublishState, // optional - BOOLEAN - don't add seeding information when not published
+  scheduleAnalysis: {
+    scheduledMinutesDifference, // optional - scheduling conflicts determined by scheduledTime difference between matchUps
+  },
+  withDraws, // optional - defaults to true if any other context options are specified
+  withEvents, // optional - defaults to true if any other context options are specified
+  withIndividualParticipants, // optional - boolean or attributeFilter template - include hydrated individualParticiapnts for TEAM/PAIR participants
+  withIOC, // optional - will add IOC country code and countryName to participant persons
+  withISO2, // optional - will add ISO2 country code and countryName to participant persons
+  withMatchUps, // optional - include all matchUps in which the participant appears, as well as potentialMatchUps
+  withOpponents, // optional - include opponent participantIds
+  withPotentialMatchUps, // optional boolean
+  withRankingProfile, // optional boolean - include details necessary for point awards
+  withScaleValues, // optional - include { ratings, rankings } attributes extracted from timeItems
+  withSeeding, // optional - add event seeding
+  withScheduleItems, // optional boolean - include array of scheduled matchUp details
+  withSignInStatus, // optional boolean
+  withStatistics, // optional - adds events, matchUps and statistics, e.g. 'winRatio'
+  withTeamMatchUps, // optional boolean
+});
 ```
 
 ## getLinkedTournamentIds
