@@ -1,5 +1,6 @@
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getStructureMatchUps } from '@Query/structure/getStructureMatchUps';
+import { countsForFinishingOrder } from '@Query/matchUp/finishingOrder';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpId } from '@Functions/global/extractors';
@@ -40,16 +41,18 @@ export function setOrderOfFinish({ tournamentRecord, drawDefinition, finishingOr
   const matchUpIds: string[] = completedMatchUps?.map(getMatchUpId) ?? [];
   const targetMatchUpIds = finishingOrder.map(getMatchUpId);
 
-  const { matchUpTypes, roundNumbers, structureIds, matchUpTieIds } = (completedMatchUps ?? [])
+  const { matchUpTypes, roundNumbers, structureIds, matchUpTieIds, collectionIds } = (completedMatchUps ?? [])
     .filter(({ matchUpId }) => targetMatchUpIds.includes(matchUpId))
     .reduce<{
       matchUpTypes: HydratedMatchUp['matchUpType'][];
       roundNumbers: HydratedMatchUp['roundNumber'][];
       structureIds: HydratedMatchUp['structureId'][];
       matchUpTieIds: HydratedMatchUp['matchUpTieId'][];
+      collectionIds: HydratedMatchUp['collectionId'][];
     }>(
       (aggregator, matchUp) => {
-        const { matchUpTieId, matchUpType, roundNumber, structureId } = matchUp;
+        const { matchUpTieId, matchUpType, roundNumber, structureId, collectionId } = matchUp;
+        if (!aggregator.collectionIds.includes(collectionId)) aggregator.collectionIds.push(collectionId);
         if (!aggregator.matchUpTypes.includes(matchUpType)) aggregator.matchUpTypes.push(matchUpType);
         if (!aggregator.roundNumbers.includes(roundNumber)) aggregator.roundNumbers.push(roundNumber);
         if (!aggregator.structureIds.includes(structureId)) aggregator.structureIds.push(structureId);
@@ -61,13 +64,16 @@ export function setOrderOfFinish({ tournamentRecord, drawDefinition, finishingOr
         roundNumbers: [],
         structureIds: [],
         matchUpTieIds: [],
+        collectionIds: [],
       },
     );
 
-  // targeted matchUps must all be of the same matchUpType and have the same roundNumber and structureId
-  if (matchUpTypes.length > 1 || matchUpTieIds.length > 1 || roundNumbers.length > 1 || structureIds.length > 1) {
+  // targeted matchUps must all be of the same matchUpType and have the same roundNumber and structureId; a dual's lines
+  // are numbered per collection
+  const cohorts = [matchUpTypes, matchUpTieIds, roundNumbers, structureIds, collectionIds];
+  if (cohorts.some((values) => values.length > 1)) {
     return decorateResult({
-      info: 'matchUpType, structureId and roundNumber must be equivalent',
+      info: 'matchUpType, structureId, roundNumber and collection must be equivalent',
       result: { error: INVALID_VALUES },
       stack,
     });
@@ -101,6 +107,23 @@ export function setOrderOfFinish({ tournamentRecord, drawDefinition, finishingOr
     });
   }
 
+  // only a dual's line played to a result takes a finishing number (a walkover, a dead rubber, an abandoned line... does not)
+  const notPlayed = (completedMatchUps ?? []).filter(
+    (matchUp) =>
+      matchUp.matchUpTieId &&
+      valuesMap[matchUp.matchUpId] !== undefined &&
+      targetedMatchUpIds.includes(matchUp.matchUpId) &&
+      !countsForFinishingOrder(matchUp),
+  );
+  if (notPlayed.length) {
+    return decorateResult({
+      info: 'only a line played to a result takes a finishing number',
+      context: { matchUpIds: notPlayed.map(getMatchUpId) },
+      result: { error: INVALID_MATCHUP_STATUS },
+      stack,
+    });
+  }
+
   // get other matchUps in the same logical grouping
   const otherCohortMatchUps = completedMatchUps?.filter(
     (matchUp) =>
@@ -108,6 +131,9 @@ export function setOrderOfFinish({ tournamentRecord, drawDefinition, finishingOr
       matchUp.roundNumber === roundNumbers[0] &&
       matchUp.matchUpType === matchUpTypes[0] &&
       matchUp.matchUpTieId === matchUpTieIds[0] &&
+      matchUp.collectionId === collectionIds[0] &&
+      // a dual's line that was not played to a result holds no place in the order
+      (!matchUp.matchUpTieId || countsForFinishingOrder(matchUp)) &&
       !targetedMatchUpIds.includes(matchUp.matchUpId),
   );
 

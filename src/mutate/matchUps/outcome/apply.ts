@@ -57,6 +57,7 @@ export function applyOwnedPlan({
     op.op === 'setSideExitProvenance' ||
     op.op === 'clearMatchUpBye' ||
     op.op === 'setSideLineUp' ||
+    op.op === 'setOrderOfFinish' ||
     op.op === 'exchangeDrawPositions'
       ? [op.matchUpId]
       : [],
@@ -75,7 +76,10 @@ export function applyOwnedPlan({
   const placedLast = new Set(
     [...lastWrites].flatMap(([matchUpId, op]) => (op === 'setMatchUpDrawPositions' ? [matchUpId] : [])),
   );
-  const resulted = new Set(ops.flatMap((op) => (op.op === 'setMatchUpResult' ? [op.matchUpId] : [])));
+  // a line given a finishing number by another line's write is announced as v1's `modifyMatchUpScore` announces it
+  const resulted = new Set(
+    ops.flatMap((op) => (op.op === 'setMatchUpResult' || op.op === 'setOrderOfFinish' ? [op.matchUpId] : [])),
+  );
   const byes = new Set(ops.flatMap((op) => (op.op === 'setMatchUpBye' ? [op.matchUpId] : [])));
   // a loser taken back out: their matchUp's codes re-derived, announced as v1's `removeDirectedLoser` announces it
   const recoded = new Set(ops.flatMap((op) => (op.op === 'setMatchUpStatusCodes' ? [op.matchUpId] : [])));

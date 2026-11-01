@@ -29,7 +29,7 @@ function completedDual() {
 const orderOf = (drawId: string, matchUpId: string) =>
   tournamentEngine.findMatchUp({ drawId, matchUpId }).matchUp?.orderOfFinish;
 
-it('a line whose score is cleared loses its order of finish; the others keep theirs', () => {
+it('a line whose score is cleared loses its order of finish; the later lines move up', () => {
   const { drawId, singles } = completedDual();
   const [cleared, ...others] = singles;
   expect(orderOf(drawId, cleared.matchUpId)).toEqual(1);
@@ -40,7 +40,8 @@ it('a line whose score is cleared loses its order of finish; the others keep the
   const { matchUp } = tournamentEngine.findMatchUp({ drawId, matchUpId: cleared.matchUpId });
   expect(matchUp?.matchUpStatus).toEqual(TO_BE_PLAYED);
   expect(matchUp?.orderOfFinish).toBeUndefined();
-  others.forEach(({ matchUpId }, index) => expect(orderOf(drawId, matchUpId)).toEqual(index + 2));
+  // a dual's collection is compacted (CA 2026-11-01, order-of-finish D1): 2, 3 become 1, 2
+  others.forEach(({ matchUpId }, index) => expect(orderOf(drawId, matchUpId)).toEqual(index + 1));
 });
 
 it('a completed line that is re-scored keeps its order of finish', () => {

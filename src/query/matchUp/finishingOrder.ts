@@ -1,8 +1,9 @@
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 
 // constants and types
 import { completedMatchUpStatuses, COMPLETED, DEFAULTED, RETIRED } from '@Constants/matchUpStatusConstants';
-import { MatchUp } from '@Types/tournamentTypes';
+import { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
 
 type Line = Pick<MatchUp, 'matchUpId' | 'matchUpStatus' | 'score' | 'collectionId' | 'collectionPosition'> & {
   orderOfFinish?: number;
@@ -43,8 +44,24 @@ export function finishingOrderUpdates({ lines, previous }: FinishingOrderArgs): 
   const counted = countsForFinishingOrder(previous) && previous?.orderOfFinish !== undefined;
 
   if (counts && !counted) return appendLine({ line, others, collection });
-  if (!counts && line.orderOfFinish !== undefined) return removeLine({ line, others });
+  // read from before the write: the write itself may already have removed the line's number
+  if (!counts && previous?.orderOfFinish !== undefined) return removeLine({ line: previous, others });
   return [];
+}
+
+/** The lines of the dual a line belongs to (searching group structures too); none when it is not a dual's line. */
+export function getDualLines({ drawDefinition, matchUpId }: { drawDefinition?: DrawDefinition; matchUpId: string }) {
+  const structures = (drawDefinition?.structures ?? []).flatMap((structure) => [
+    structure,
+    ...(structuresOf(structure) ?? []),
+  ]);
+  for (const structure of structures) {
+    const dual = (matchUpsOf(structure) ?? []).find((matchUp) =>
+      matchUp.tieMatchUps?.some((line) => line.matchUpId === matchUpId),
+    );
+    if (dual) return { dual, lines: dual.tieMatchUps ?? [] };
+  }
+  return { dual: undefined, lines: [] };
 }
 
 type CohortArgs = { line: Line; others: Line[]; collection: Line[] };

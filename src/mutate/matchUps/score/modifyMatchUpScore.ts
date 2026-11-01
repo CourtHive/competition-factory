@@ -5,6 +5,7 @@ import { modifyMatchUpNotice, deferInContextMatchUp } from '@Mutate/notification
 import { clearResolvedSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
 import type { DerivedStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
+import { finishingOrderUpdates, getDualLines } from '@Query/matchUp/finishingOrder';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
@@ -110,6 +111,8 @@ export function modifyMatchUpScore(params: ModifyMatchUpScoreArgs) {
   }
 
   const wasDefaulted = matchUpStatus && matchUp?.matchUpStatus === DEFAULTED && matchUpStatus !== DEFAULTED;
+  // a dual's line, as it was: its finishing order in its collection follows what this write changes (v2: planner ops)
+  const previousLine = matchUp?.collectionId ? lineSnapshot(matchUp) : undefined;
 
   applyScoreAndStatus({
     // it describes ONE matchUp: a params spread that carried it into a write elsewhere does not apply it
@@ -185,6 +188,9 @@ export function modifyMatchUpScore(params: ModifyMatchUpScoreArgs) {
     matchUp,
   });
 
+  // the line's own number lands before its notice; the siblings it moved are announced after it
+  const movedSiblings = previousLine ? applyFinishingOrder({ drawDefinition, previousLine }) : [];
+
   modifyMatchUpNotice({
     eventId: event?.eventId,
     event,
@@ -194,7 +200,40 @@ export function modifyMatchUpScore(params: ModifyMatchUpScoreArgs) {
     matchUp,
   });
 
+  if (movedSiblings.length) {
+    for (const sibling of movedSiblings) {
+      modifyMatchUpNotice({
+        eventId: event?.eventId,
+        event,
+        context: stack,
+        drawDefinition,
+        tournamentId,
+        matchUp: sibling,
+      });
+    }
+  }
+
   return { ...SUCCESS };
+}
+
+function lineSnapshot(matchUp: MatchUp) {
+  const { matchUpId, matchUpStatus, score, orderOfFinish, collectionId, collectionPosition } = matchUp;
+  return { matchUpId, matchUpStatus, score, orderOfFinish, collectionId, collectionPosition };
+}
+
+// the write's finishing-order changes in the line's collection, applied to the stored lines; the siblings it changed
+type ApplyFinishingOrderArgs = { drawDefinition?: DrawDefinition; previousLine: ReturnType<typeof lineSnapshot> };
+function applyFinishingOrder({ drawDefinition, previousLine }: ApplyFinishingOrderArgs): MatchUp[] {
+  const { lines } = getDualLines({ drawDefinition, matchUpId: previousLine.matchUpId });
+  const changed: MatchUp[] = [];
+  for (const { matchUpId, orderOfFinish } of finishingOrderUpdates({ lines, previous: previousLine })) {
+    const line = lines.find((candidate) => candidate.matchUpId === matchUpId);
+    if (!line) continue;
+    if (orderOfFinish === undefined) delete line.orderOfFinish;
+    else line.orderOfFinish = orderOfFinish;
+    if (matchUpId !== previousLine.matchUpId) changed.push(line);
+  }
+  return changed;
 }
 
 function resolveAppliedPolicies({ appliedPolicies, tournamentRecord, drawDefinition, structure, event }) {
