@@ -52,6 +52,8 @@ export type CorpusCase = {
   v1OrderField?: 'groupOrder' | 'provisionalOrder';
   /** the attributes that split a set, in the order the report records them (head-to-head reads `head2Head`) */
   separators?: string[];
+  /** values from outside the results, by key and then participantId (v2 `external` directives) */
+  externalValues?: Record<string, Record<string, number>>;
   /** v1 refuses the calculation with this error code instead of ordering */
   error?: string;
   /** ledger values to pin, per participant */
@@ -119,6 +121,7 @@ export function runCase(corpusCase: CorpusCase, tally: typeof tallyParticipantRe
     policyDefinitions: corpusCase.policyDefinitions,
     subOrderMap: corpusCase.subOrderMap,
     perPlayer: corpusCase.perPlayer,
+    ...(corpusCase.externalValues && { externalValues: corpusCase.externalValues }),
     matchUpFormat: corpusCase.format ?? DEFAULT_FORMAT,
     matchUps,
   });

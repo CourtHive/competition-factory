@@ -641,6 +641,22 @@ for those purposes: `getSeasonStandings({ purpose })`, with `STANDINGS_PURPOSE_M
 `getSeasonMovement` and `STANDINGS_PURPOSE_ADVANCEMENT` by `getSeasonAdvancement`. `phase: 'FINAL'` skips the
 directive while results are outstanding (a provisional order). A directive skipped by `when` is not reported.
 
+### headToHead directives (RECORD, SWEEP)
+
+Head-to-head may also be written as a directive, `{ attribute: 'headToHead', mode }`:
+
+- `'RECORD'` (the default reading): two tied participants, the one with more wins over the other.
+- `'SWEEP'`: any number tied. A participant who beat every other one is placed first, or else one who lost to every
+  other one is placed last (the NFL's wild-card rule); everyone else goes back to the first directive. With no sweep,
+  nothing splits.
+
+### external
+
+`{ attribute: 'external', externalKey }` reads values from outside the results: a curling Draw Shot Challenge, a
+ranking, fair-play points. They are passed by the caller as `externalValues: { [externalKey]: { [participantId]: number
+} }` to `tallyParticipantResults`, or keyed by subjectId to `getSeasonStandings`; the factory never fetches them. A
+participant without a value reads 0. Use `reversed: true` where lower is better (a draw-shot distance).
+
 ### terminal
 
 What happens to a set no directive splits.

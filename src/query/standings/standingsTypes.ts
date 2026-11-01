@@ -8,9 +8,11 @@
  * How a two-participant head-to-head is read. RECORD: the participant with more wins over the other across every
  * meeting; level records do not split. FIRST_VICTORY is v1 (K1): any one victory, whichever participant is checked
  * first; it survives only so the frozen v1 behaviour stays expressible. PRESSURE: the larger sum of pressure deltas
- * against the other (`pressureVs`), the competition policy's HEAD_TO_HEAD_PRESSURE.
+ * against the other (`pressureVs`), the competition policy's HEAD_TO_HEAD_PRESSURE. SWEEP (A7): for any number tied, a
+ * participant who beat every other one is placed first, or one who lost to every other one last (NFL wild card); with
+ * no sweep, nothing splits.
  */
-export type HeadToHeadMode = 'FIRST_VICTORY' | 'RECORD' | 'PRESSURE';
+export type HeadToHeadMode = 'FIRST_VICTORY' | 'RECORD' | 'PRESSURE' | 'SWEEP';
 
 export type StandingsDirective = {
   attribute: string;
@@ -33,6 +35,8 @@ export type StandingsDirective = {
   disableHeadToHead?: boolean;
   /** for attribute 'headToHead' */
   mode?: HeadToHeadMode;
+  /** for attribute 'external': which caller-supplied value set to read (`externalValues[externalKey]`) */
+  externalKey?: string;
   /**
    * a ratio measure with nothing lost: MAX (default) ranks it first, ZERO ranks it as 0, SKIP passes the directive over
    * for any set where it happens (spec § 5.10)

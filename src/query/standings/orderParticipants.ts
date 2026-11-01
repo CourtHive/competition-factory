@@ -27,6 +27,11 @@ type OrderParticipantsArgs = {
   phase?: StandingsPhase;
   /** seeds a LOT terminal; the same seed always draws the same order */
   lotSeed?: string;
+  /**
+   * values from outside the results, by key and then participant: a curling Draw Shot Challenge, a ranking, fair-play
+   * points. Read by a directive `{ attribute: 'external', externalKey }`; the factory never fetches them.
+   */
+  externalValues?: Record<string, Record<string, number>>;
 };
 
 /** what every step of one ordering shares */
@@ -36,6 +41,7 @@ type Context = {
   purpose?: string;
   phase?: StandingsPhase;
   lotSeed?: string;
+  externalValues?: Record<string, Record<string, number>>;
 };
 
 type SubSortArgs = {
@@ -58,7 +64,7 @@ type SubSortResult = { order: FinishingPosition[]; report?: unknown[] };
  * `groupTotals`) go back to the caller, memoised here by scope.
  */
 export function orderParticipants(params: OrderParticipantsArgs) {
-  const { participantResults, policy, recalculate, subOrderMap, purpose, phase, lotSeed } = params;
+  const { participantResults, policy, recalculate, subOrderMap, purpose, phase, lotSeed, externalValues } = params;
   const report: unknown[] = [];
   const attribute = policy.primary;
 
@@ -81,7 +87,7 @@ export function orderParticipants(params: OrderParticipantsArgs) {
   // One ordering reads one set of results under one policy, so a recalculation is decided by its grouping total and
   // its participant scope alone. An elimination draw ties hundreds of participants, and its sub-sorts asked for the
   // same unscoped recalculation hundreds of times: 809 times for one 512 draw.
-  const context: Context = { policy, recalculate: memoise(recalculate), purpose, phase, lotSeed };
+  const context: Context = { policy, recalculate: memoise(recalculate), purpose, phase, lotSeed, externalValues };
   const sortedOrder = sortedTallyGroups.map((participantIds) => {
     const result = groupSubSort({ participantIds, participantResults, context });
     report.push(...(result.report ?? []));
@@ -170,8 +176,11 @@ function gate(directive: StandingsDirective, size: number, context: Context, hea
   const { when } = directive;
   if (when?.purposes && !(context.purpose && when.purposes.includes(context.purpose))) return 'SKIP';
   if (when?.phase && when.phase !== (context.phase ?? 'FINAL')) return 'SKIP';
-  // head-to-head reads a pair; it is passed over, unreported, for any other size
-  if (directive.attribute === 'headToHead') return size === 2 && !headToHeadDisabled ? 'APPLY' : 'SKIP';
+  // head-to-head reads a pair (a SWEEP reads any number); it is passed over, unreported, for any other size
+  if (directive.attribute === 'headToHead') {
+    const sized = directive.mode === 'SWEEP' ? size >= 2 : size === 2;
+    return sized && !headToHeadDisabled ? 'APPLY' : 'SKIP';
+  }
   if (isNumeric(directive.maxParticipants) && size > (directive.maxParticipants ?? 0)) return 'EXCLUDE';
   if (isNumeric(directive.minParticipants) && size < (directive.minParticipants ?? 0)) return 'EXCLUDE';
   return 'APPLY';
@@ -194,6 +203,11 @@ function groupSubSort(params: SubSortArgs): SubSortResult {
   for (let index = from; index < policy.directives.length; index++) {
     if (gates[index] !== 'APPLY') continue;
     const directive = policy.directives[index];
+    if (directive.attribute === 'headToHead' && directive.mode === 'SWEEP' && participantIds.length > 2) {
+      const swept = sweep(params);
+      if (swept) return swept;
+      continue;
+    }
     if (directive.attribute === 'headToHead') {
       const order = getHeadToHeadWinner({ participantIds, participantResults, mode: directive.mode });
       if (order) {
@@ -209,6 +223,25 @@ function groupSubSort(params: SubSortArgs): SubSortResult {
   }
 
   return terminal({ participantIds, context, report });
+}
+
+/**
+ * SWEEP (A7) over three or more: the one participant who beat every other in the set is resolved first, or else the one
+ * who lost to every other is resolved last; everyone else goes back to the first directive. No sweep, no split.
+ */
+function sweep(params: SubSortArgs): SubSortResult | undefined {
+  const { participantIds, participantResults } = params;
+  const winsOver = (a: string, b: string) => participantResults[a].victories.filter((id) => id === b).length;
+  const beatsAll = (a: string) => participantIds.every((b) => b === a || winsOver(a, b) > winsOver(b, a));
+  const losesToAll = (a: string) => participantIds.every((b) => b === a || winsOver(b, a) > winsOver(a, b));
+  const sweepers = participantIds.filter(beatsAll);
+  const swept = participantIds.filter(losesToAll);
+  const resolved = sweepers.length === 1 ? sweepers[0] : swept.length === 1 && swept[0];
+  if (!resolved) return undefined;
+  const rest = groupSubSort({ ...params, participantIds: participantIds.filter((id) => id !== resolved), from: 0 });
+  const leader = [{ resolved: true, participantId: resolved }];
+  const order = sweepers.length === 1 ? withSubGroups([leader, rest.order]) : withSubGroups([rest.order, leader]);
+  return { order, report: [{ attribute: 'headToHeadSweep', participantIds, resolved }, ...(rest.report ?? [])] };
 }
 
 /** a set no directive splits (TerminalStep) */
@@ -259,9 +292,9 @@ function processDirective(
   });
   // an absent result set must not read as an empty group: no split, no report
   if (outcome.error) return {};
-  const measured = withGraph(
-    withRatio(outcome.participantResults ?? {}, attribute, context.policy),
-    attribute,
+  const measured = withExternal(
+    withGraph(withRatio(outcome.participantResults ?? {}, attribute, context.policy), attribute, context),
+    directive,
     context,
   );
   const participantResults = withZeroDivision(measured, participantIds, directive);
@@ -344,6 +377,20 @@ function withGraph(participantResults: ParticipantResults, attribute: string, co
       sonnebornBerger: sum(beaten.map(score)) + drawCredit * sum(drawn.map(score)),
     };
     view[participantId] = { ...results, [attribute]: measures[attribute] };
+  }
+  return view;
+}
+
+/**
+ * An `external` directive's values, from the caller's `externalValues[externalKey]`, added to a view. A participant
+ * without a value reads 0, and so ranks below every participant given one in the default (higher first) direction.
+ */
+function withExternal(participantResults: ParticipantResults, directive: StandingsDirective, context: Context) {
+  if (directive.attribute !== 'external') return participantResults;
+  const values = (directive.externalKey && context.externalValues?.[directive.externalKey]) || {};
+  const view: ParticipantResults = {};
+  for (const [participantId, results] of Object.entries(participantResults)) {
+    view[participantId] = { ...results, external: Number(values[participantId] ?? 0) };
   }
   return view;
 }

@@ -30,6 +30,8 @@ type TallyParticipantResultsArgs = {
   perPlayer?: number;
   subOrderMap?: any;
   matchUps: (MatchUp & { structureId?: string })[];
+  /** values from outside the results, by key and then participantId, read by `external` tally directives */
+  externalValues?: Record<string, Record<string, number>>;
 };
 
 type TallyResultType = {
@@ -43,6 +45,7 @@ type TallyResultType = {
 
 export function tallyParticipantResults({
   policyDefinitions,
+  externalValues,
   generateReport,
   pressureRating,
   matchUpFormat,
@@ -105,6 +108,7 @@ export function tallyParticipantResults({
     matchUps: consideredMatchUps,
     participantResults,
     participantsCount,
+    externalValues,
     matchUpFormat,
     subOrderMap,
     tallyPolicy,
@@ -134,6 +138,7 @@ export function tallyParticipantResults({
       requireCompletion: false,
       participantResults,
       participantsCount,
+      externalValues,
       matchUpFormat,
       tallyPolicy,
       subOrderMap,

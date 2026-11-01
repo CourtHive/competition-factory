@@ -54,9 +54,10 @@ export function tallyPolicyErrors(tallyPolicy: RoundRobinTallyPolicy, extraMeasu
       tallyDirectives.forEach((directive, index) => {
         if (!directive || typeof directive !== 'object') errors.push(`tallyDirectives[${index}] must be an object`);
         else {
-          if (!measures.includes(directive.attribute)) {
+          if (!measures.includes(directive.attribute) && !DIRECTIVE_ONLY.includes(directive.attribute)) {
             errors.push(`tallyDirectives[${index}]: unknown attribute ${directive.attribute}`);
           }
+          errors.push(...directiveOnlyErrors(directive, index));
           errors.push(...directiveGateErrors(directive, index));
           if (GRAPH_MEASURES.includes(directive.attribute) && directive.idsFilter) {
             errors.push(
@@ -97,6 +98,23 @@ export function tallyPolicyErrors(tallyPolicy: RoundRobinTallyPolicy, extraMeasu
 }
 
 const SPLIT_MODES = ['RESTART', 'CONTINUE', 'EXTRACT_ONE'];
+/** directive attributes that are not ledger measures: head-to-head (RECORD or SWEEP) and an external value */
+const DIRECTIVE_ONLY = ['headToHead', 'external'];
+const HEAD_TO_HEAD_MODES = ['RECORD', 'SWEEP'];
+
+function directiveOnlyErrors(directive: Record<string, unknown>, index: number): string[] {
+  if (
+    directive.attribute === 'headToHead' &&
+    directive.mode !== undefined &&
+    !HEAD_TO_HEAD_MODES.includes(directive.mode as string)
+  ) {
+    return [`tallyDirectives[${index}]: headToHead mode must be one of ${HEAD_TO_HEAD_MODES.join(', ')}`];
+  }
+  if (directive.attribute === 'external' && !(typeof directive.externalKey === 'string' && directive.externalKey)) {
+    return [`tallyDirectives[${index}]: an external directive needs an externalKey`];
+  }
+  return [];
+}
 const TERMINAL_STEPS = ['ADJUDICATE', 'SHARE', 'LOT'];
 const PHASES = ['PROVISIONAL', 'FINAL'];
 const DENOMINATORS = ['PLAYED', 'EXPECTED'];
