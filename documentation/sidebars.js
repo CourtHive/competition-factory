@@ -35,7 +35,13 @@ module.exports = {
         {
           type: 'category',
           label: 'Tournament Setup',
-          items: ['concepts/registration-profile', 'concepts/tournament-tier', 'concepts/tournament-discovery'],
+          items: [
+            'concepts/registration-profile',
+            'concepts/tournament-tier',
+            'concepts/season',
+            'concepts/standings',
+            'concepts/tournament-discovery',
+          ],
         },
         {
           type: 'category',

@@ -34,12 +34,20 @@ import {
 } from '@Global/state/globalState';
 
 // constants and types
-import type { BuildViewArgs, DirectionPlan, OutcomeRequest, OutcomeView, Refusal, WithdrawnCarry } from './types';
 import { BYE, COMPLETED, DEAD_RUBBER, DEFAULTED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { ResultType } from '@Types/factoryTypes';
 import type { OutcomeOp } from './ops';
+import type {
+  BuildViewArgs,
+  DirectionPlan,
+  OutcomeRequest,
+  OutcomeView,
+  Refusal,
+  Route,
+  WithdrawnCarry,
+} from './types';
 import {
   OUTCOME_PIPELINE_DIFFERENTIAL,
   OUTCOME_PIPELINE_V1,
@@ -68,7 +76,7 @@ function planCall(args: BuildViewArgs, view: OutcomeView, refusal?: Refusal) {
     tournamentRecord: args.tournamentRecord,
     drawDefinition: args.drawDefinition,
     rebuild: rebuildView(args, view, planned),
-    dual: route === 'winner' ? decidedDualCall(args, view) : undefined,
+    dual: dualCallFor(route, args, view),
     request: planned,
     write: plan,
     direction,
@@ -130,7 +138,7 @@ export function decideOutcomeV2(args: BuildViewArgs): {
   const refusal: Refusal | undefined = refuseOutcome(args.request, view);
 
   if (mode === OUTCOME_PIPELINE_V2) {
-    if (refusal) return { refused: toResult(refusal) };
+    if (refusal) return { refused: toResult(refusal, args) };
     // S2: a call whose complete plan is a shape v2 owns is written by v2, and v1 is not asked (F1 (a), fail-closed)
     const { outcome } = planCall(args, view);
     return outcome.ops && OWNED_SHAPES.has(outcome.shape)
@@ -277,6 +285,45 @@ export function decideOutcomeV2(args: BuildViewArgs): {
 
 type CheckArgs = { args: BuildViewArgs; after: DrawAfter; route: string };
 type DualPlan = { matchUpId: string; winningSide: 1 | 2; direction?: DirectionPlan };
+
+/** S7: the dual's own call a line's result makes: deciding it (`winner`), or un-deciding it (`line-score`) */
+function dualCallFor(route: Route | undefined, args: BuildViewArgs, view: OutcomeView): DualCall | undefined {
+  if (route === 'winner') return decidedDualCall(args, view);
+  return route === 'line-score' ? undecidedDualCall(args, view) : undefined;
+}
+
+/**
+ * S7: a line whose result leaves its decided dual's lines projecting no winner un-decides the dual: v1
+ * (`scoreModification`, `removeDirectedParticipants` through the line) takes the dual's winner back out of the next
+ * dual and writes its tally. v2 plans that as the dual's own removal, from a view of the dual whose request is its
+ * projected tally with no winner (routed `remove-directed`, vetted as any removal).
+ */
+function undecidedDualCall(args: BuildViewArgs, view: OutcomeView): DualCall | undefined {
+  const line = view.line;
+  if (!line || line.autoCalcDisabled || !line.dualWinningSide || line.projectedWinningSide) return undefined;
+  const request: OutcomeRequest = {
+    flags: { ...args.request.flags, enableAutoCalc: false },
+    matchUpId: line.dualMatchUpId,
+    // no status: v1 takes the dual's direction back as a removal (`removeDirectedParticipants`), then its tally writes
+    // the status (`undecidingLineOps`)
+    score: line.projectedScore,
+  };
+  const dualView = buildOutcomeView({
+    ...args,
+    request,
+    inContextDrawMatchUps: view.inContextDrawMatchUps,
+    structural: view.structural,
+  });
+  const route = chooseRoute(request, dualView);
+  return {
+    write: route ? planWrite(request, dualView, route) : undefined,
+    direction: route ? planDirection(request, dualView, route) : undefined,
+    rebuild: rebuildView(args, dualView, request),
+    view: dualView,
+    request,
+    route,
+  };
+}
 
 /**
  * S7: a line whose projection decides its dual makes the dual's own call, which v2 plans as it plans any call: from a
@@ -779,11 +826,17 @@ function autoCalculated(request: OutcomeRequest, view: OutcomeView): OutcomeRequ
   return { ...request, winningSide: view.dualProjection.projectedWinningSide, score: view.dualProjection.score };
 }
 
-function toResult(refusal: Refusal): ResultType {
+function toResult(refusal: Refusal, args: BuildViewArgs): ResultType {
+  const matchUp = refusal.namesMatchUp
+    ? args.matchUpsMap?.drawMatchUps.find((candidate) => candidate.matchUpId === args.request.matchUpId)
+    : undefined;
+  const context =
+    refusal.context || matchUp ? { ...(refusal.context ?? {}), ...(matchUp ? { matchUp } : {}) } : undefined;
   return {
     error: refusal.error,
     ...(refusal.info ? { info: refusal.info } : {}),
-    ...(refusal.context ? { context: refusal.context } : {}),
+    ...(context ? { context } : {}),
+    ...(refusal.extra ?? {}),
   };
 }
 
@@ -813,8 +866,9 @@ function workingViewAfter({
     propagateRetirementAsExit: args.request.flags.propagateRetirementAsExit,
     propagateExitStatus: args.request.flags.propagateExitStatus,
     loserLinked: !!view.targets.loserLink,
-    // a round robin group's double exit produces nothing, nor does a TEAM line's (its targets are its dual's)
-    contained: (!!view.group && !view.group.adHoc) || !!view.line,
+    // a round robin group's double exit produces nothing, nor does a TEAM line's (its targets are its dual's), nor a
+    // final's (no winner target, a winner link out included: S6 tail, family 8)
+    contained: (!!view.group && !view.group.adHoc) || !!view.line || !view.targets.winnerMatchUpId,
     inContextDrawMatchUps: view.inContextDrawMatchUps,
     matchUpId: args.request.matchUpId,
     tournamentRecord: args.tournamentRecord,

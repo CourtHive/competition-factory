@@ -7,6 +7,7 @@ const isCount = (value: unknown) => Number.isInteger(value) && (value as number)
 const isTextList = (value: unknown) => Array.isArray(value) && value.every((item) => typeof item === 'string');
 
 export const VIEW_OPTIONS: Record<string, (value: unknown) => boolean> = {
+  allowInactiveEventDates: (value: unknown) => typeof value === 'boolean',
   scheduleDates: isTextList,
   periodLength: isCount,
   courtIds: isTextList,

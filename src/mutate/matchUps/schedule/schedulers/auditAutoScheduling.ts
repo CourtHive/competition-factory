@@ -27,6 +27,10 @@ export function auditAutoScheduling({ autoSchedulingAudit, tournamentRecords }) 
     overLimitMatchUpIdsCount: getCount(autoSchedulingAudit?.overLimitMatchUpIds),
     requestConflictsCount: getCount(autoSchedulingAudit?.requestConflicts),
     profileRoundsCount,
+    // only when a matchUp was skipped for its event's dates, so an audit without one keeps its shape
+    ...(getCount(autoSchedulingAudit?.eventDateSkippedMatchUpIds)
+      ? { eventDateSkippedMatchUpIdsCount: getCount(autoSchedulingAudit.eventDateSkippedMatchUpIds) }
+      : {}),
   };
   const timeItem = {
     itemType: AUTO_SCHEDULING_AUDIT,

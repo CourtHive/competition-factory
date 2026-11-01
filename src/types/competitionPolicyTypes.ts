@@ -105,7 +105,10 @@ export type CompetitionRoundState = {
 
 export type CompetitionLeaderboardRow = {
   participantId: string;
+  /** competition ranking: participants level on the primary ranking and every tiebreak share one */
   rank: number;
+  /** how many share this rank, when more than one */
+  ties?: number;
   baselineRating: number;
   dynamicFormRating: number;
   pressureRating: number;

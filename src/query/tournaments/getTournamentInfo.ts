@@ -209,7 +209,7 @@ export function getTournamentInfo(params?: {
 
   for (const event of tournamentRecord.events ?? []) {
     if (!params?.usePublishState || isListed(event.eventId)) {
-      const info = extractEventInfo({ event }).eventInfo;
+      const info = extractEventInfo({ event, tournamentRecord }).eventInfo;
       if (info) eventInfo.push(info);
     }
   }

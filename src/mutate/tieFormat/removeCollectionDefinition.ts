@@ -244,7 +244,7 @@ function removeDefinition({
   }
 
   const prunedTieFormat = definedAttributes(tieFormat);
-  result = validateTieFormat({ tieFormat: prunedTieFormat });
+  result = validateTieFormat({ tieFormat: prunedTieFormat, enforceValues: true });
   if (result.error) return decorateResult({ result, stack });
 
   // Target selection extracted so this function keeps ONE write and ONE error

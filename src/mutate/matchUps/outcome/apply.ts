@@ -57,6 +57,7 @@ export function applyOwnedPlan({
     op.op === 'setSideExitProvenance' ||
     op.op === 'clearMatchUpBye' ||
     op.op === 'setSideLineUp' ||
+    op.op === 'setOrderOfFinish' ||
     op.op === 'exchangeDrawPositions'
       ? [op.matchUpId]
       : [],
@@ -75,7 +76,10 @@ export function applyOwnedPlan({
   const placedLast = new Set(
     [...lastWrites].flatMap(([matchUpId, op]) => (op === 'setMatchUpDrawPositions' ? [matchUpId] : [])),
   );
-  const resulted = new Set(ops.flatMap((op) => (op.op === 'setMatchUpResult' ? [op.matchUpId] : [])));
+  // a line given a finishing number by another line's write is announced as v1's `modifyMatchUpScore` announces it
+  const resulted = new Set(
+    ops.flatMap((op) => (op.op === 'setMatchUpResult' || op.op === 'setOrderOfFinish' ? [op.matchUpId] : [])),
+  );
   const byes = new Set(ops.flatMap((op) => (op.op === 'setMatchUpBye' ? [op.matchUpId] : [])));
   // a loser taken back out: their matchUp's codes re-derived, announced as v1's `removeDirectedLoser` announces it
   const recoded = new Set(ops.flatMap((op) => (op.op === 'setMatchUpStatusCodes' ? [op.matchUpId] : [])));
@@ -94,6 +98,7 @@ export function applyOwnedPlan({
   const released = new Set(
     ops.flatMap((op) => (op.op === 'setMatchUpDrawPositions' && op.releasedDrawPosition ? [op.matchUpId] : [])),
   );
+  const { advancedLast } = byeAndAdvance(ops);
   const stored = new Map(args.matchUpsMap?.drawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
   const subscribed = getTopics().topics.includes(UPDATE_INCONTEXT_MATCHUP);
   // every score write announces its matchUp in context to a subscriber, as v1's `modifyMatchUpScore` does: the call's
@@ -133,6 +138,7 @@ export function applyOwnedPlan({
           exchanged,
           relayed,
           advanced,
+          advancedLast,
           released,
         }),
       eventId: noticeEvent?.eventId,
@@ -147,6 +153,30 @@ export function applyOwnedPlan({
   // a winner's route returns the context `directParticipants` builds, a final's included, which carries something only
   // for an exit (S5): empty
   return shape === 'direction' ? { ...SUCCESS, context: {}, ...tieMatchUpResult } : { ...SUCCESS, ...tieMatchUpResult };
+}
+
+/**
+ * A matchUp given a BYE and then another BYE or an advance through one in the same call (S6 tail): v1's notice buffer
+ * keeps the LAST write's context and an EARLIER write's event (`preserveNoticeIdentity`). Whether the advance came last,
+ * and whether an evented BYE came before a later write that names no event (an unfillable seat's BYE, an advance).
+ */
+function byeAndAdvance(ops: OutcomeOp[]): { advancedLast: Set<string>; eventKept: Set<string> } {
+  const last = new Map<string, 'bye' | 'advance'>();
+  const eventedBye = new Set<string>();
+  const eventKept = new Set<string>();
+  for (const op of ops) {
+    if (op.op === 'setMatchUpBye') {
+      last.set(op.matchUpId, 'bye');
+      // a second BYE naming no event (the seat a produced exit leaves unfillable) keeps an earlier BYE's event
+      if (op.announcesEvent === false && eventedBye.has(op.matchUpId)) eventKept.add(op.matchUpId);
+      if (op.announcesEvent !== false) eventedBye.add(op.matchUpId);
+    } else if (op.op === 'setMatchUpDrawPositions' && op.advancesThroughBye) {
+      last.set(op.matchUpId, 'advance');
+      if (!op.announcesEvent && eventedBye.has(op.matchUpId)) eventKept.add(op.matchUpId);
+    }
+  }
+  const advancedLast = new Set([...last].flatMap(([matchUpId, kind]) => (kind === 'advance' ? [matchUpId] : [])));
+  return { advancedLast, eventKept };
 }
 
 /**
@@ -185,6 +215,8 @@ function noticeRules(ops: OutcomeOp[]) {
   );
   // a BYE an unwind withdraws: v1's `clearDrawPosition` names its position, with neither event nor tournament (S6)
   const unbyed = withdrawnByeNotices(ops);
+  // an advance through a BYE names no event, but an evented BYE written before it keeps its event (`byeAndAdvance`)
+  for (const matchUpId of byeAndAdvance(ops).eventKept) unevented.delete(matchUpId);
   // a team's line-up written with no event, unless a result written after it announces the matchUp (`namedWriters`)
   for (const matchUpId of namedWriters(ops).lineUpUnevented) unevented.add(matchUpId);
   // a settle pass's result write names the event and the tournament, whatever an earlier write of the matchUp left out
@@ -217,9 +249,19 @@ export function eventlessNotices(ops: OutcomeOp[]): { matchUps: Set<string>; str
 const placement = (op: OutcomeOp): op is Extract<OutcomeOp, { op: 'assignPosition' | 'assignBye' }> =>
   op.op === 'assignPosition' || op.op === 'assignBye';
 
+/**
+ * an op whose structure's assignments v1 announces: a placement, and a seat an unwind visits but for a BYE the round-1
+ * loser cascade takes back, which v1 announces no assignments for (S6 tail). The writer and the differential's planned
+ * notices share this one rule
+ */
+export const announcesAssignments = (
+  op: OutcomeOp,
+): op is Extract<OutcomeOp, { op: 'assignPosition' | 'assignBye' | 'withdrawBye' }> =>
+  placement(op) || (op.op === 'withdrawBye' && op.announcesAssignments !== false);
+
 /** each structure a placement or an unwind's seat visit touches, in the order the call first touches it */
 const touchedStructures = (ops: OutcomeOp[]) => [
-  ...new Set(ops.flatMap((op) => (placement(op) || op.op === 'withdrawBye' ? [op.structureId] : []))),
+  ...new Set(ops.flatMap((op) => (announcesAssignments(op) ? [op.structureId] : []))),
 ];
 
 /**
@@ -294,6 +336,8 @@ function withdrawnByeNotices(ops: OutcomeOp[]): Map<string, number> {
     if (op.op === 'setMatchUpDrawPositions' && op.withdrawnByePosition)
       unbyed.set(op.matchUpId, op.withdrawnByePosition);
     if (op.op === 'setMatchUpDrawPositions' && op.advancesThroughBye) unbyed.delete(op.matchUpId);
+    // a BYE matchUp emptied by a release (`releaseAdvancedDrawPosition`'s vacated BYE): the release's notice is the last
+    if (op.op === 'setMatchUpDrawPositions' && op.releasedDrawPosition) unbyed.delete(op.matchUpId);
   }
   return unbyed;
 }
@@ -318,12 +362,14 @@ function matchUpContext(
     exchanged: Set<string>;
     relayed: Set<string>;
     advanced: Set<string>;
+    advancedLast: Set<string>;
     released: Set<string>;
   },
 ): string {
-  const { resulted, byes, recoded, exchanged, relayed, advanced, released } = written;
+  const { resulted, byes, recoded, exchanged, relayed, advanced, advancedLast, released } = written;
   if (resulted.has(matchUpId)) return 'modifyMatchUpScore';
-  if (advanced.has(matchUpId) && !byes.has(matchUpId)) return 'advanceWinner';
+  // a BYE and an advance through one: the later write's context (`byeAndAdvance`)
+  if (advanced.has(matchUpId) && (!byes.has(matchUpId) || advancedLast.has(matchUpId))) return 'advanceWinner';
   if (released.has(matchUpId)) return 'releaseAdvancedDrawPosition';
   if (relayed.has(matchUpId)) return 'progressExitStatus';
   // a loser taken back out and their seat then given a BYE (a result turned into a double exit): the BYE is the later

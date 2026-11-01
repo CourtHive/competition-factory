@@ -2,41 +2,38 @@ import type { MatchUpWrite, Refusal } from './types';
 import {
   DRAW_POSITION_ASSIGNED,
   DRAW_POSITION_OCCUPIED,
-  INVALID_MATCHUP_STATUS,
-  INVALID_MATCHUP_STATUS_BYE,
   MISSING_ASSIGNMENTS,
-  MISSING_DRAW_POSITIONS,
-  INVALID_TIME,
-  INVALID_DATE,
-  ANACHRONISM,
-  MUTATION_LOCKED,
-  UNRECOGNIZED_MATCHUP_STATUS,
 } from '@Constants/errorConditionConstants';
 
 /**
  * The `differential` mode: v2 decided, v1 ran, and the two are compared before the result leaves.
  *
- * S2a re-implements the REFUSALS (§ 2 rows 1 to 15). A refusal v1 raises from a write, or from a
- * route v2 does not yet express (§ 3's `unrecognized`, `notDirecting` and `fallthrough`), is an
- * apply-stage code: v2 accepting while v1 refuses with one of these is not a divergence while the
- * `refused` route stays an apply-stage refusal. Every other disagreement throws, with both answers and the matchUp named.
+ * S2a re-implements the REFUSALS (§ 2). A refusal v1 raises from a write v2 does not plan (the exit cascade's) is an
+ * apply-stage code: v2 accepting while v1 refuses with one of these is not a divergence. Every other disagreement
+ * throws, with both answers and the matchUp named. Since S7 the § 3 `refused` routes are v2's own refusals
+ * (`refuseRoute`: rows 28 and 6), so no status code is deferred; `MISSING_ASSIGNMENTS` stays, a manual-scoring line's.
  */
 export const APPLY_STAGE_CODES: ReadonlySet<string> = new Set([
-  // the schedule a call carries is checked by v1 before the outcome lands (`checkScheduleValues`); v2 abstains on a
-  // call that carries one (`plan.ts`, 'schedule'), so a malformed time, and a date or date-time outside the tournament
-  // (#5774), are v1's alone
-  INVALID_TIME.code,
-  INVALID_DATE.code,
-  // and a recorded time out of played order (#5979: an end time given with an outcome is judged before it lands)
-  ANACHRONISM.code,
+  // INVALID_TIME, INVALID_DATE and ANACHRONISM are not: v2 refuses a schedule as v1's writer refuses it, rows 16, 25
+  // and 27 (`refusals.ts` `refuseSchedule`, S7)
   // DRAW_POSITION_ACTIVE is not one: v2 refuses a swap that meets an active FIRST_MATCHUP-fed seat (row 26, S4)
-  MUTATION_LOCKED.code,
-  'ERR_FORCED', // § 2 row 19: observed by the corpus, no constant declares it (spec OPEN 2)
-  UNRECOGNIZED_MATCHUP_STATUS.code,
-  INVALID_MATCHUP_STATUS.code,
-  INVALID_MATCHUP_STATUS_BYE.code,
+  // MUTATION_LOCKED is not: the engine asks a lock before the method runs (`executeMethod`), and nothing inside
+  // `setMatchUpStatus` asks one, so neither pipeline is reached under a lock
+  // § 2 row 19: the failure the error-path tests force on a cascade write (no engine code raises it), standing for a
+  // write failing inside the cascade, which v2 does not plan
+  'ERR_FORCED',
+  // UNRECOGNIZED_MATCHUP_STATUS is not: § 3's `unrecognized` and `not directing` rows are not reached past row 6, every
+  // valid status being directing or non-directing (`applyStageCodesRuled.test.ts`); were one reached, v2's fallthrough
+  // row 6 against v1's code would be the divergence it is
+  // INVALID_MATCHUP_STATUS is not: v2 refuses row 6's three clauses, the § 3 fallthrough included (`refuseRoute`, S7)
+  // INVALID_MATCHUP_STATUS_BYE (`ERR_UNCHANGED_CANNOT_ASSIGN_BYE`) is not: row 28, a BYE without a seat (S7)
+  // `attemptToModifyScore`'s `validToScore`: row 6's participants clause asked again after the dispatch, which only a
+  // score with no winner skips. On a singles matchUp such a score is `removeDirectedParticipants`' (row 24's removal
+  // clause); on a line of a dual under manual scoring (auto-calc disabled) it is `attemptToModifyScore`'s, and a seat
+  // of the dual unassigned is refused here (`applyStageCodesRuled.test.ts`). v2 leaves manual scoring to v1 (item 3)
   MISSING_ASSIGNMENTS.code,
-  MISSING_DRAW_POSITIONS.code,
+  // MISSING_DRAW_POSITIONS is not: v2 refuses it as v1 does, row 24, both clauses (v1's `missingDrawPositionsRefusal`
+  // before the dispatch; `removeDirectedParticipants`' check after it, S7)
   // a refusal raised INSIDE the exit cascade, which `setMatchUpStatus` now returns rather than drops (F3,
   // CA 2026-10-04); v2 does not yet plan the cascade writes that raise it ("an exit carried into a swap")
   DRAW_POSITION_ASSIGNED.code,

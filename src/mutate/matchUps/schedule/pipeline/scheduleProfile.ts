@@ -6,7 +6,7 @@ import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParame
 import { disableNotifications, enableNotifications } from '@Global/state/globalState';
 import { computeRoundSchedulePcts } from './roundSchedulePcts';
 import { planPlayedOrderRefusal } from './playedOrderGate';
-import { buildSchedulingView, PlanningView } from './view';
+import { buildSchedulingView, PlanningView, SchedulingView } from './view';
 import { isValidDateString } from '@Tools/dateTime';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { planSchedule } from './plan';
@@ -15,6 +15,7 @@ import { writePlan } from './write';
 
 // constants and types
 import { ARRAY, OF_TYPE, SCHEDULE_DATES, TOURNAMENT_RECORDS, VALIDATE } from '@Constants/attributeConstants';
+import { EVENT_DATE_INACTIVE } from '@Constants/errorConditionConstants';
 import { TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -25,6 +26,8 @@ import { SUCCESS } from '@Constants/resultConstants';
  */
 type ScheduleProfileVNextArgs = {
   checkPotentialRequestConflicts?: boolean;
+  /** plan rounds on dates their event does not play, and warn, rather than skip them (default false) */
+  allowInactiveEventDates?: boolean;
   tournamentRecords: TournamentRecords;
   clearScheduleDates?: boolean | string[];
   excludeNoDateCompleted?: boolean;
@@ -66,9 +69,12 @@ export function scheduleProfileVNext(params: ScheduleProfileVNextArgs) {
   if (refusal) return refusal;
 
   if (clearScheduleDates && !dryRun) clearScheduledMatchUps({ tournamentRecords, scheduledDates });
-  const { scheduledMatchUpIds, noTimeMatchUpIds } = dryRun
+  const written = dryRun
     ? { scheduledMatchUpIds: plan.scheduledMatchUpIds, noTimeMatchUpIds: plan.noTimeMatchUpIds }
     : writePlan({ plan, view, tournamentRecords });
+  const { scheduledMatchUpIds } = written;
+  // a matchUp skipped for its event's dates is left without a time too: listed under its reason and in noTimeMatchUpIds
+  const noTimeMatchUpIds = withEventDateSkips(written.noTimeMatchUpIds, view.eventDateSkippedMatchUpIds);
 
   view.dateSchedulingProfiles.forEach((dateSchedulingProfile, index) =>
     computeRoundSchedulePcts({
@@ -80,6 +86,8 @@ export function scheduleProfileVNext(params: ScheduleProfileVNextArgs) {
 
   // the planned dates as calendar days, the keys every other member of the result uses (§ 3.8 rule 7)
   const profileDates = view.dates.map(({ scheduleDate }) => scheduleDate);
+  // present when any matchUp was skipped for its event's dates, keyed by the dates that skipped one
+  const eventDateSkips = skipsByDate(view.eventDateSkippedMatchUpIds);
   auditAutoScheduling({
     tournamentRecords,
     autoSchedulingAudit: {
@@ -90,8 +98,12 @@ export function scheduleProfileVNext(params: ScheduleProfileVNextArgs) {
       scheduledMatchUpIds,
       scheduledDates: profileDates,
       noTimeMatchUpIds,
+      ...eventDateSkips,
     },
   });
+
+  // with allowInactiveEventDates, a placement on a day its event does not play is made, and warned about
+  const warnings = eventDateWarnings(view.eventDateInactiveMatchUpIds, scheduledMatchUpIds);
 
   // a matchUp already on a date's court grid without a time has just been timed: what its time contradicts there is
   // reported, per date
@@ -122,9 +134,41 @@ export function scheduleProfileVNext(params: ScheduleProfileVNextArgs) {
     noFormatMatchUpIds: plan.noFormatMatchUpIds,
     scheduledDates: profileDates,
     overnightRestWarnings,
+    ...eventDateSkips,
     noTimeMatchUpIds,
     proConflicts,
+    ...(warnings.length ? { warnings } : {}),
   };
+}
+
+function withEventDateSkips(
+  noTimeMatchUpIds: { [scheduleDate: string]: string[] } | undefined,
+  skips: SchedulingView['eventDateSkippedMatchUpIds'],
+) {
+  const merged = { ...noTimeMatchUpIds };
+  for (const [scheduleDate, dateSkips] of Object.entries(skips)) {
+    if (!dateSkips.length) continue;
+    merged[scheduleDate] = [...(merged[scheduleDate] ?? []), ...dateSkips.map(({ matchUpId }) => matchUpId)];
+  }
+  return merged;
+}
+
+function skipsByDate(skips: SchedulingView['eventDateSkippedMatchUpIds']) {
+  const dated = Object.fromEntries(Object.entries(skips).filter(([, dateSkips]) => dateSkips.length));
+  return Object.keys(dated).length ? { eventDateSkippedMatchUpIds: dated } : {};
+}
+
+/** the EVENT_DATE_INACTIVE warning of each placement an opted-out call made on a day its event does not play */
+function eventDateWarnings(
+  inactive: SchedulingView['eventDateInactiveMatchUpIds'],
+  scheduledMatchUpIds?: { [scheduleDate: string]: string[] },
+) {
+  return Object.entries(inactive).flatMap(([scheduledDate, skips]) => {
+    const placed = new Set(scheduledMatchUpIds?.[scheduledDate] ?? []);
+    return skips
+      .filter(({ matchUpId }) => placed.has(matchUpId))
+      .map(({ matchUpId, eventId, reason }) => ({ ...EVENT_DATE_INACTIVE, matchUpId, eventId, scheduledDate, reason }));
+  });
 }
 
 type ProfileGridConflictsArgs = {

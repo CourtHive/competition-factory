@@ -1,6 +1,6 @@
+import { announcesAssignments, eventlessNotices } from './apply';
 import { generatePatch } from '../../../forge/jsonPatch';
 import { captureRecord } from '@Tools/recordDiff';
-import { eventlessNotices } from './apply';
 import { applyOutcomeOps } from './ops';
 
 // constants and types
@@ -88,7 +88,7 @@ export function plannedNotices({ ops, matchUpId }: { ops: OutcomeOp[]; matchUpId
     // every score write announces its matchUp in context, as `apply.ts` defers it: a TEAM line's dual too (S7)
     if (op.op === 'setMatchUpResult' && !op.announcedAs) notices.add(`${UPDATE_INCONTEXT_MATCHUP}|${op.matchUpId}`);
     // a placement, and a seat an unwind visits (`withdrawBye`): `apply.ts` announces each structure's assignments
-    if (op.op === 'assignPosition' || op.op === 'assignBye' || op.op === 'withdrawBye')
+    if (announcesAssignments(op))
       notices.add(marked(MODIFY_POSITION_ASSIGNMENTS, op.structureId, eventless.structures.has(op.structureId)));
     if (op.op !== 'stampUpdatedAt') continue;
     if (op.entity === 'matchUp') notices.add(marked(MODIFY_MATCHUP, op.id, eventless.matchUps.has(op.id)));

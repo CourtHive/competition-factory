@@ -1,3 +1,4 @@
+import { trimToTournamentRange } from '@Mutate/tournaments/tournamentDateTrims';
 import { clearScheduledMatchUps } from '@Mutate/matchUps/schedule/clearScheduledMatchUps';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { modifiedVenueNotices, venueSnapshot } from '@Mutate/venues/venueNotices';
@@ -8,9 +9,10 @@ import { isValidWeekdaysValue } from '@Validators/isValidWeekdaysValue';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { addNotice } from '@Global/state/globalState';
 import { canonicalDate } from '@Tools/canonicalClock';
-import { generateDateRange } from '@Tools/dateTime';
+import { extractDate, generateDateRange } from '@Tools/dateTime';
 
 // constants and types
+import type { ActiveDateChange, TrimmedProfileDate } from '@Mutate/tournaments/tournamentDateTrims';
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
 import { INVALID, VALIDATE } from '@Constants/attributeConstants';
@@ -51,6 +53,12 @@ export function setTournamentDates(params: SetTournamentDatesArgs): ResultType &
   completedOutOfRangeDates?: string[];
   // matchUpIds unscheduled when force: true was used to push past the rejection
   unscheduledMatchUpIds?: string[];
+  // events whose dates changed to stay inside the new range (TRACKED, CLAMPED or RESET)
+  eventDateChanges?: EventDateChange[];
+  // active dates pruned from the tournament's list (no eventId) or an event's, as outside the new ranges
+  activeDateChanges?: ActiveDateChange[];
+  // what left the scheduling profile: its dates outside the new range, in profile shape
+  trimmedSchedulingProfile?: TrimmedProfileDate[];
   datesRemoved?: string[];
   datesAdded?: string[];
 } {
@@ -80,13 +88,8 @@ export function setTournamentDates(params: SetTournamentDatesArgs): ResultType &
   if (endDate && startDate && new Date(endDate) < new Date(startDate)) return { error: INVALID_VALUES };
   if (endDate && startDate && new Date(startDate) > new Date(endDate)) return { error: INVALID_VALUES };
 
-  if (activeDates?.length) {
-    const start = startDate || tournamentRecord.startDate;
-    const end = endDate || tournamentRecord.endDate;
-    const validStart = !start || activeDates.every((d) => new Date(d) >= new Date(start));
-    const validEnd = !end || activeDates.every((d) => new Date(d) <= new Date(end));
-    if (!validStart || !validEnd) return { error: INVALID_DATE };
-  }
+  if (activeDates?.length && !activeDatesInRange({ tournamentRecord, activeDates, startDate, endDate }))
+    return { error: INVALID_DATE };
 
   let checkScheduling;
   // if start has moved closer to end or end has moved closer to start, check for scheduling issues
@@ -149,21 +152,29 @@ export function setTournamentDates(params: SetTournamentDatesArgs): ResultType &
     }
   }
 
+  // refuse a removal of active dates that carry scheduled matchUps before anything is written
+  if (activeDates) {
+    const activeDatesError = activeDatesRemovalConflict({ tournamentRecord, activeDates });
+    if (activeDatesError) return activeDatesError;
+  }
+
+  const previousStartDate = tournamentRecord.startDate;
+  const previousEndDate = tournamentRecord.endDate;
   const initialDateRange = generateDateRange(tournamentRecord.startDate, tournamentRecord.endDate);
   if (startDate) tournamentRecord.startDate = startDate;
   if (endDate) tournamentRecord.endDate = endDate;
   const resultingDateRange = generateDateRange(tournamentRecord.startDate, tournamentRecord.endDate);
   const datesRemoved = initialDateRange.filter((date) => !resultingDateRange.includes(date));
   const datesAdded = resultingDateRange.filter((date) => !initialDateRange.includes(date));
-
-  coerceEventDates({ tournamentRecord, startDate, endDate });
   normalizeTournamentDateBounds({ tournamentRecord, startDate, endDate });
 
-  if (activeDates) {
-    const activeDatesError = validateAndApplyActiveDates({ tournamentRecord, activeDates });
-    if (activeDatesError) return activeDatesError;
-  }
+  const eventDateChanges = reconcileEventDates({ tournamentRecord, previousStartDate, previousEndDate });
+
+  if (activeDates) tournamentRecord.activeDates = activeDates;
   if (weekdays) tournamentRecord.weekdays = weekdays;
+
+  // a change of range leaves no active date or scheduling-profile date outside the new ranges
+  const trims = trimToTournamentRange({ tournamentRecord, startDate, endDate });
 
   let unscheduledMatchUpIds: string[] | undefined;
   if (forcedUnscheduling) {
@@ -183,7 +194,8 @@ export function setTournamentDates(params: SetTournamentDatesArgs): ResultType &
     payload: definedAttributes({
       parentOrganisation: tournamentRecord.parentOrganisation,
       tournamentId: tournamentRecord.tournamentId,
-      activeDates,
+      // pruned: the list that remains, [] when none remained and the list is unset
+      activeDates: trims.prunedTournamentActiveDates ?? activeDates,
       startDate,
       weekdays,
       endDate,
@@ -191,23 +203,112 @@ export function setTournamentDates(params: SetTournamentDatesArgs): ResultType &
     topic: MODIFY_TOURNAMENT_DETAIL,
   });
 
-  return { ...SUCCESS, datesAdded, datesRemoved, unscheduledMatchUpIds };
+  return {
+    ...SUCCESS,
+    eventDateChanges: eventDateChanges.length ? eventDateChanges : undefined,
+    trimmedSchedulingProfile: trims.trimmedSchedulingProfile,
+    activeDateChanges: trims.activeDateChanges,
+    unscheduledMatchUpIds,
+    datesRemoved,
+    datesAdded,
+  };
 }
 
-function coerceEventDates({ tournamentRecord, startDate, endDate }: TournamentDateBounds) {
+export type EventDateChangeReason = 'TRACKED' | 'CLAMPED' | 'RESET';
+export type EventDateChange = {
+  reason: EventDateChangeReason;
+  previousStartDate?: string;
+  previousEndDate?: string;
+  startDate?: string;
+  endDate?: string;
+  eventId: string;
+};
+
+const dayOf = (date?: string) => (date ? extractDate(date) : undefined);
+
+/**
+ * Keeps every event's range consistent with the tournament's new range (CA ruling R1, 2026-11-01):
+ *
+ * - TRACKED: an event whose range equalled the previous tournament range takes the new range, so
+ *   extending, shrinking or shifting the tournament carries the events that were never narrowed.
+ * - CLAMPED: an event with its own narrower range keeps it, cut to the part inside the new range.
+ * - RESET: a narrower range that would lie entirely outside the new range has nothing left to keep;
+ *   the event takes the tournament range (both dates), as a director's "set event dates to tournament
+ *   dates" would. A collapsed one-day range on the edge would invent a playing day nobody chose.
+ *
+ * An event with no dates of its own is left alone: it already falls back to the tournament range.
+ * Every event whose dates change gets MODIFY_EVENT and an entry in the returned list.
+ */
+function reconcileEventDates({
+  tournamentRecord,
+  previousStartDate,
+  previousEndDate,
+}: {
+  tournamentRecord: Tournament;
+  previousStartDate?: string;
+  previousEndDate?: string;
+}): EventDateChange[] {
+  const tournamentStart = dayOf(tournamentRecord.startDate);
+  const tournamentEnd = dayOf(tournamentRecord.endDate);
+  const priorStart = dayOf(previousStartDate);
+  const priorEnd = dayOf(previousEndDate);
+  const changes: EventDateChange[] = [];
+
   for (const event of tournamentRecord.events ?? []) {
-    const { startDate: priorStart, endDate: priorEnd } = event;
-    if (startDate && event.startDate && new Date(event.startDate) < new Date(startDate)) event.startDate = startDate;
-    if (endDate && event.startDate && new Date(event.startDate) > new Date(endDate))
-      event.startDate = startDate ?? endDate;
-    if (endDate && event.endDate && new Date(event.endDate) > new Date(endDate)) event.endDate = endDate;
-    if (startDate && event.endDate && new Date(event.endDate) < new Date(startDate))
-      event.endDate = endDate ?? startDate;
-    // an event whose dates were coerced inward changed — cover it with MODIFY_EVENT.
-    if (event.startDate !== priorStart || event.endDate !== priorEnd) {
-      modifyEventNotice({ tournamentId: tournamentRecord.tournamentId, event });
+    const eventStart = dayOf(event.startDate);
+    const eventEnd = dayOf(event.endDate);
+    if (!eventStart && !eventEnd) continue;
+
+    let reason: EventDateChangeReason;
+    let startDate = event.startDate;
+    let endDate = event.endDate;
+
+    const tracked = !!priorStart && !!priorEnd && eventStart === priorStart && eventEnd === priorEnd;
+    const disjoint =
+      (!!eventStart && !!tournamentEnd && eventStart > tournamentEnd) ||
+      (!!eventEnd && !!tournamentStart && eventEnd < tournamentStart);
+
+    if (tracked || disjoint) {
+      reason = tracked ? 'TRACKED' : 'RESET';
+      startDate = tournamentRecord.startDate;
+      endDate = tournamentRecord.endDate;
+    } else {
+      reason = 'CLAMPED';
+      if (eventStart && tournamentStart && eventStart < tournamentStart) startDate = tournamentRecord.startDate;
+      if (eventEnd && tournamentEnd && eventEnd > tournamentEnd) endDate = tournamentRecord.endDate;
     }
+
+    if (startDate === event.startDate && endDate === event.endDate) continue;
+
+    changes.push(
+      definedAttributes({
+        previousStartDate: event.startDate,
+        previousEndDate: event.endDate,
+        eventId: event.eventId,
+        startDate,
+        endDate,
+        reason,
+      }),
+    );
+    event.startDate = startDate;
+    event.endDate = endDate;
+    modifyEventNotice({ tournamentId: tournamentRecord.tournamentId, event });
   }
+
+  return changes;
+}
+
+function activeDatesInRange({
+  tournamentRecord,
+  activeDates,
+  startDate,
+  endDate,
+}: TournamentDateBounds & { activeDates: string[] }) {
+  const start = startDate || tournamentRecord.startDate;
+  const end = endDate || tournamentRecord.endDate;
+  const validStart = !start || activeDates.every((d) => new Date(d) >= new Date(start));
+  const validEnd = !end || activeDates.every((d) => new Date(d) <= new Date(end));
+  return validStart && validEnd;
 }
 
 function normalizeTournamentDateBounds({ tournamentRecord, startDate, endDate }: TournamentDateBounds) {
@@ -219,7 +320,7 @@ function normalizeTournamentDateBounds({ tournamentRecord, startDate, endDate }:
   }
 }
 
-function validateAndApplyActiveDates({
+function activeDatesRemovalConflict({
   tournamentRecord,
   activeDates,
 }: {
@@ -248,7 +349,6 @@ function validateAndApplyActiveDates({
     }
   }
 
-  tournamentRecord.activeDates = activeDates;
   return undefined;
 }
 

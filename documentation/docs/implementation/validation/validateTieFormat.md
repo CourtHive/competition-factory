@@ -48,11 +48,19 @@ const {
   error,
 } = scoreGovernor.validateTieFormat({
   checkCollectionIds, // ensure collectionId is present on all collections
+  enforceValues, // optional - refuse negative values and an unreachable valueGoal (save-time rules)
   enforceGender,
   tieFormat,
   gender,
 });
 ```
+
+`enforceValues` applies the rules a tieFormat must meet when it is **saved**: no negative `matchUpValue`,
+`collectionValue`, `setValue`, `scoreValue` or line value in `collectionValueProfiles`, and a
+`winCriteria.valueGoal` no greater than the total the tie's matchUps are worth (skipped when a collection is
+valued by sets or games, whose total is unpredictable). Every path that saves a tieFormat enforces them:
+adding it to an event or draw, `modifyTieFormat`, and the collection and collection-group mutations. Scoring
+and line-up generation read a stored tieFormat without them, so a record saved before these rules still scores.
 
 ---
 

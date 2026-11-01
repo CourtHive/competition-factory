@@ -11,13 +11,15 @@ import { setClock } from '@Tools/clock';
 // constants
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { RETIRED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { LAVER_CUP } from '@Constants/tieFormatConstants';
+import { LAVER_CUP, USTA_COLLEGE } from '@Constants/tieFormatConstants';
 import { TEAM } from '@Constants/eventConstants';
 import {
   COMPASS,
   DOUBLE_ELIMINATION,
+  FEED_IN_CHAMPIONSHIP,
   FIRST_MATCH_LOSER_CONSOLATION,
   ROUND_ROBIN,
+  ROUND_ROBIN_WITH_PLAYOFF,
   SINGLE_ELIMINATION,
 } from '@Constants/drawDefinitionConstants';
 import {
@@ -75,6 +77,12 @@ function stepOutcome({ winningSide, outcome }: Scenario['step']) {
   if (outcome === 'winner') return { winningSide };
   if (outcome === 'cleared') return { matchUpStatus: TO_BE_PLAYED };
   if (outcome === 'DOUBLE_WALKOVER' || outcome === 'DOUBLE_DEFAULT') return { matchUpStatus: outcome };
+  // a match tiebreak's deciding set, which a round robin group's tally reads as hydration annotates it (1-0)
+  if (outcome === 'matchTiebreak') {
+    const matchUpFormat = 'SET3-S:6/TB7-F:TB10';
+    // the score string is the winner's: the deciding set won in the match tiebreak
+    return generateOutcomeFromScoreString({ scoreString: '6-7(7) 6-1 [10-4]', winningSide, matchUpFormat }).outcome;
+  }
   if (outcome === 'RETIRED') {
     return generateOutcomeFromScoreString({ scoreString: '6-1 2-1', winningSide, matchUpStatus: RETIRED }).outcome;
   }
@@ -85,7 +93,14 @@ function stepOutcome({ winningSide, outcome }: Scenario['step']) {
  * a line of a dual: the dual by structure, round and position (a round robin's: the round's first, `roundPosition` 0),
  * the line by its index among the dual's lines
  */
-type Line = { structureName: string; roundNumber: number; roundPosition: number; line: number };
+type Line = {
+  structureName: string;
+  roundNumber: number;
+  roundPosition: number;
+  line: number;
+  /** a round robin's duals carry no roundPosition: the nth dual of the round, in draw order */
+  nth?: number;
+};
 type Scenario = {
   drawProfile: Record<string, unknown>;
   /** after the setup, the step's dual stores no tieFormat of its own (an imported record): v1 copies it on */
@@ -100,6 +115,10 @@ type Scenario = {
   stray?: true;
   /** after the setup, the step's dual's side 2 holds no line-up */
   bare?: true;
+  /** after the setup and the dual's exit, the round robin's playoff is positioned (`automatedPlayoffPositioning`) */
+  playoffPositioned?: true;
+  /** ...and the first playoff dual then decided by its lines */
+  playoffPlayed?: true;
   setup: { target: Line; winningSide: 1 | 2 }[];
   /** the step's outcome: scored 6-1 6-1 (default), a winner alone, a single exit, or a double exit (its side unused) */
   step: {
@@ -109,7 +128,15 @@ type Scenario = {
     dual?: true;
     /** the call's flags (`enableAutoCalc`, `propagateExitStatus`, ...) */
     flags?: Record<string, boolean>;
-    outcome?: 'winner' | 'cleared' | 'WALKOVER' | 'DEFAULTED' | 'RETIRED' | 'DOUBLE_WALKOVER' | 'DOUBLE_DEFAULT';
+    outcome?:
+      | 'winner'
+      | 'cleared'
+      | 'matchTiebreak'
+      | 'WALKOVER'
+      | 'DEFAULTED'
+      | 'RETIRED'
+      | 'DOUBLE_WALKOVER'
+      | 'DOUBLE_DEFAULT';
   };
   /** CONTROL: the dual a loser link sends the losing team to, and whether v1 carries its line-up onto that side */
   loserSeat?: { dual: Omit<Line, 'line'>; sideNumber: 1 | 2; carried: boolean };
@@ -121,22 +148,25 @@ type Scenario = {
   policyDefinitions?: Record<string, unknown>;
   /** KEPT: the reason v2 leaves the step to v1 (`team` unless named) */
   abstains?: string;
-  /** after the setup, the step's dual is given this exit (for side 1, a single one) by its own call */
-  dualExit?: 'WALKOVER' | 'DEFAULTED' | 'DOUBLE_WALKOVER';
+  /** after the setup, the step's dual is given this exit (for side 1, a single one), or side 1 as winner, by its own call */
+  dualExit?: 'WALKOVER' | 'DEFAULTED' | 'DOUBLE_WALKOVER' | 'winner';
   /** after the setup, this side's stored line-up loses its last assignment (the draw's line-up keeps it) */
   trimmedSeat?: Scenario['loserSeat'];
 };
 
-function findDual({ structureName, roundNumber, roundPosition }: Omit<Line, 'line'>): any {
-  return tournamentEngine
+function findDual({ structureName, roundNumber, roundPosition, nth }: Omit<Line, 'line'>): any {
+  const duals = tournamentEngine
     .allDrawMatchUps({ drawId: 'd', inContext: true })
-    .matchUps.find(
+    .matchUps.filter(
       (matchUp: any) =>
         matchUp.tieMatchUps &&
         matchUp.structureName === structureName &&
         matchUp.roundNumber === roundNumber &&
         (!roundPosition || matchUp.roundPosition === roundPosition),
-    );
+    )
+    // hydration orders a round's duals as results land: by their positions, so a name holds across the setup
+    .sort((a: any, b: any) => JSON.stringify(a.drawPositions).localeCompare(JSON.stringify(b.drawPositions)));
+  return duals[nth ?? 0];
 }
 
 function findLine(target: Line): string {
@@ -160,6 +190,25 @@ function dualWinner(target: Line) {
  * The scenario's record, prepared once under v1 and copied for each run: setting a line-up result can create PAIR
  * participants with fresh ids, so two separately generated records would differ before the step under test
  */
+/** the round robin's playoff positioned once its groups are complete (`automatedPlayoffPositioning`), its dual then played */
+function positionPlayoff(played: boolean) {
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId: 'd' });
+  const container = drawDefinition.structures.find((structure: any) => structure.structureType === 'CONTAINER');
+  const positioned = tournamentEngine.automatedPlayoffPositioning({ drawId: 'd', structureId: container.structureId });
+  if (!positioned.success) throw new Error(`positioning failed: ${JSON.stringify(positioned.error)}`);
+  if (!played) return;
+  const playoff = tournamentEngine
+    .allDrawMatchUps({ drawId: 'd', inContext: true })
+    .matchUps.find(
+      (matchUp: any) => matchUp.tieMatchUps && matchUp.structureName === 'Play Off' && matchUp.roundNumber === 1,
+    );
+  if (!playoff) throw new Error('no playoff dual after positioning');
+  for (const line of playoff.tieMatchUps.slice(0, 5)) {
+    const result = tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId: line.matchUpId, outcome: won(1) });
+    if (!result.success) throw new Error(`playoff line failed: ${result.error}`);
+  }
+}
+
 function prepare(
   {
     drawProfile,
@@ -172,6 +221,8 @@ function prepare(
     stray,
     bare,
     dualExit,
+    playoffPositioned,
+    playoffPlayed,
     trimmedSeat,
     policyDefinitions,
   }: Scenario,
@@ -200,9 +251,11 @@ function prepare(
   if (dualExit) {
     const { matchUpId } = findDual(step.target);
     const outcome =
-      dualExit === 'DOUBLE_WALKOVER' ? { matchUpStatus: dualExit } : { matchUpStatus: dualExit, winningSide: 1 };
+      (dualExit === 'winner' && { winningSide: 1 }) ||
+      (dualExit === 'DOUBLE_WALKOVER' ? { matchUpStatus: dualExit } : { matchUpStatus: dualExit, winningSide: 1 });
     expect(tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId, outcome }).success).toEqual(true);
   }
+  if (playoffPositioned) positionPlayoff(!!playoffPlayed);
   if (autoCalcOff) {
     const lineId = findLine(step.target);
     const dual = tournamentEngine
@@ -741,6 +794,25 @@ const OWNED: [string, Scenario][] = [
     },
   ],
   [
+    "a dual's own DOUBLE_WALKOVER once a line is played: its tally written over, the line kept as it stands",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1, 0), winningSide: 1 }],
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'DOUBLE_WALKOVER', dual: true },
+    },
+  ],
+  [
+    "FEED_IN_CHAMPIONSHIP: a dual's own DOUBLE_DEFAULT once two lines are played",
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [
+        { target: R1(1, 0), winningSide: 1 },
+        { target: R1(1, 1), winningSide: 2 },
+      ],
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'DOUBLE_DEFAULT', dual: true },
+    },
+  ],
+  [
     "a dual's own DOUBLE_DEFAULT under propagateExitStatus: the DEFAULTED it produces waits in the next dual",
     {
       drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
@@ -1018,6 +1090,595 @@ const OWNED: [string, Scenario][] = [
     },
   ],
   [
+    "ROUND_ROBIN: a dual's own call, its group's tally re-read with its result in place",
+    {
+      drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },
+      setup: [],
+      step: { target: R1(0, 0, 'Group 1'), winningSide: 1, outcome: 'winner', dual: true },
+    },
+  ],
+  [
+    "ROUND_ROBIN: a line, its group's tally re-read through its dual (the group read off the dual, OPEN-14)",
+    {
+      drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },
+      setup: [{ target: R1(0, 0, 'Group 1'), winningSide: 1 }],
+      step: { target: R1(0, 1, 'Group 1'), winningSide: 2 },
+    },
+  ],
+  [
+    'ROUND_ROBIN: a line won in a match tiebreak, the group tallied under the dual tally format as hydration reads it',
+    {
+      // USTA_COLLEGE's singles lines (3 to 8) end in a match tiebreak; the draw's own format is not the dual tally's
+      drawProfile: { drawSize: 4, drawType: ROUND_ROBIN, tieFormatName: USTA_COLLEGE, matchUpFormat: 'SET3-S:6/TB7' },
+      setup: [{ target: R1(0, 4, 'Group 1'), winningSide: 1 }],
+      step: { target: R1(0, 3, 'Group 1'), winningSide: 2, outcome: 'matchTiebreak' },
+    },
+  ],
+  [
+    'ROUND_ROBIN: a line that decides its dual, the group tallied with the deciding line among its lines',
+    {
+      drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },
+      setup: [0, 1, 2, 3].map((line) => ({ target: R1(0, line, 'Group 1'), winningSide: 1 as const })),
+      step: { target: R1(0, 4, 'Group 1'), winningSide: 1 },
+    },
+  ],
+  // S7, the line exits (O12): a line's own single exit on a dual already decided, whose lines then project no winner
+  // (`line-score`): the line written as v1 writes a line result, the dual un-decided as its tally leaves it. In a round
+  // robin the dual's removal a line makes is not walled by WIN_RATIO (v1's `scoreModification` reports no connected
+  // structures); the group's tally is re-read
+  [
+    'ROUND_ROBIN: a line WALKOVER on a dual decided by its own call: the dual un-decided from its lines, the group re-tallied',
+    {
+      drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },
+      setup: [],
+      step: { target: R1(0, 0, 'Group 1'), winningSide: 1, outcome: 'WALKOVER' },
+      dualExit: 'winner',
+    },
+  ],
+  [
+    'ROUND_ROBIN: a line RETIRED on a dual decided by its own call, its score kept',
+    {
+      drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },
+      setup: [],
+      step: { target: R1(0, 1, 'Group 1'), winningSide: 2, outcome: 'RETIRED' },
+      dualExit: 'winner',
+    },
+  ],
+  [
+    'ROUND_ROBIN: a line DEFAULTED on a dual decided by its own call',
+    {
+      drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },
+      setup: [],
+      step: { target: R1(0, 2, 'Group 1'), winningSide: 1, outcome: 'DEFAULTED' },
+      dualExit: 'winner',
+    },
+  ],
+  [
+    'ROUND_ROBIN_WITH_PLAYOFF: a line WALKOVER on a dual decided by its own call, the group not complete',
+    {
+      drawProfile: { drawSize: 4, drawType: ROUND_ROBIN_WITH_PLAYOFF },
+      setup: [],
+      step: { target: R1(0, 0, 'Group 1'), winningSide: 1, outcome: 'WALKOVER' },
+      dualExit: 'winner',
+    },
+  ],
+  [
+    'ROUND_ROBIN: a line WALKOVER on a dual decided by its own WALKOVER: the dual un-decided from its lines',
+    {
+      drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },
+      setup: [],
+      step: { target: R1(0, 0, 'Group 1'), winningSide: 1, outcome: 'WALKOVER' },
+      dualExit: 'WALKOVER',
+    },
+  ],
+  [
+    'ROUND_ROBIN: a line DEFAULTED on a dual decided by its own DEFAULTED',
+    {
+      drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },
+      setup: [],
+      step: { target: R1(0, 3, 'Group 1'), winningSide: 2, outcome: 'DEFAULTED' },
+      dualExit: 'DEFAULTED',
+    },
+  ],
+  [
+    'a line WALKOVER on a dual decided by its own call: the dual un-decided, its winner taken back from the next dual',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [],
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'WALKOVER' },
+      dualExit: 'winner',
+    },
+  ],
+  [
+    'a line played on a dual decided by its own exit: the dual un-decided from its lines, its winner taken back',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1, 0), winningSide: 1 }],
+      step: { target: R1(1, 1), winningSide: 2 },
+      dualExit: 'DEFAULTED',
+    },
+  ],
+  [
+    'ROUND_ROBIN_WITH_PLAYOFF: a line WALKOVER un-decides a group dual once both groups are complete and the playoff positioned',
+    {
+      drawProfile: { drawSize: 8, drawType: ROUND_ROBIN_WITH_PLAYOFF },
+      setup: [
+        {
+          target: { structureName: 'Group 1', roundNumber: 1, roundPosition: 0, nth: 1, line: 0 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 1, roundPosition: 0, nth: 1, line: 1 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 1, roundPosition: 0, nth: 1, line: 2 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 1, roundPosition: 0, nth: 1, line: 3 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 1, roundPosition: 0, nth: 1, line: 4 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 2, roundPosition: 0, nth: 0, line: 0 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 2, roundPosition: 0, nth: 0, line: 1 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 2, roundPosition: 0, nth: 0, line: 2 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 2, roundPosition: 0, nth: 0, line: 3 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 2, roundPosition: 0, nth: 0, line: 4 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 2, roundPosition: 0, nth: 1, line: 0 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 2, roundPosition: 0, nth: 1, line: 1 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 2, roundPosition: 0, nth: 1, line: 2 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 2, roundPosition: 0, nth: 1, line: 3 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 2, roundPosition: 0, nth: 1, line: 4 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 3, roundPosition: 0, nth: 0, line: 0 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 3, roundPosition: 0, nth: 0, line: 1 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 3, roundPosition: 0, nth: 0, line: 2 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 3, roundPosition: 0, nth: 0, line: 3 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 3, roundPosition: 0, nth: 0, line: 4 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 3, roundPosition: 0, nth: 1, line: 0 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 3, roundPosition: 0, nth: 1, line: 1 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 3, roundPosition: 0, nth: 1, line: 2 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 3, roundPosition: 0, nth: 1, line: 3 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 3, roundPosition: 0, nth: 1, line: 4 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 1, roundPosition: 0, nth: 0, line: 0 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 1, roundPosition: 0, nth: 0, line: 1 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 1, roundPosition: 0, nth: 0, line: 2 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 1, roundPosition: 0, nth: 0, line: 3 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 1, roundPosition: 0, nth: 0, line: 4 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 1, roundPosition: 0, nth: 1, line: 0 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 1, roundPosition: 0, nth: 1, line: 1 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 1, roundPosition: 0, nth: 1, line: 2 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 1, roundPosition: 0, nth: 1, line: 3 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 1, roundPosition: 0, nth: 1, line: 4 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 2, roundPosition: 0, nth: 0, line: 0 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 2, roundPosition: 0, nth: 0, line: 1 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 2, roundPosition: 0, nth: 0, line: 2 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 2, roundPosition: 0, nth: 0, line: 3 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 2, roundPosition: 0, nth: 0, line: 4 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 2, roundPosition: 0, nth: 1, line: 0 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 2, roundPosition: 0, nth: 1, line: 1 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 2, roundPosition: 0, nth: 1, line: 2 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 2, roundPosition: 0, nth: 1, line: 3 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 2, roundPosition: 0, nth: 1, line: 4 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 3, roundPosition: 0, nth: 0, line: 0 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 3, roundPosition: 0, nth: 0, line: 1 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 3, roundPosition: 0, nth: 0, line: 2 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 3, roundPosition: 0, nth: 0, line: 3 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 3, roundPosition: 0, nth: 0, line: 4 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 3, roundPosition: 0, nth: 1, line: 0 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 3, roundPosition: 0, nth: 1, line: 1 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 3, roundPosition: 0, nth: 1, line: 2 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 3, roundPosition: 0, nth: 1, line: 3 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 3, roundPosition: 0, nth: 1, line: 4 },
+          winningSide: 1 as const,
+        },
+      ],
+      step: { target: R1(0, 0, 'Group 1'), winningSide: 1, outcome: 'WALKOVER' },
+      dualExit: 'winner',
+      playoffPositioned: true,
+    },
+  ],
+  [
+    'ROUND_ROBIN_WITH_PLAYOFF: a line WALKOVER un-decides a group dual once the playoff is positioned and its dual decided',
+    {
+      drawProfile: { drawSize: 8, drawType: ROUND_ROBIN_WITH_PLAYOFF },
+      setup: [
+        {
+          target: { structureName: 'Group 1', roundNumber: 1, roundPosition: 0, nth: 1, line: 0 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 1, roundPosition: 0, nth: 1, line: 1 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 1, roundPosition: 0, nth: 1, line: 2 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 1, roundPosition: 0, nth: 1, line: 3 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 1, roundPosition: 0, nth: 1, line: 4 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 2, roundPosition: 0, nth: 0, line: 0 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 2, roundPosition: 0, nth: 0, line: 1 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 2, roundPosition: 0, nth: 0, line: 2 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 2, roundPosition: 0, nth: 0, line: 3 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 2, roundPosition: 0, nth: 0, line: 4 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 2, roundPosition: 0, nth: 1, line: 0 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 2, roundPosition: 0, nth: 1, line: 1 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 2, roundPosition: 0, nth: 1, line: 2 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 2, roundPosition: 0, nth: 1, line: 3 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 2, roundPosition: 0, nth: 1, line: 4 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 3, roundPosition: 0, nth: 0, line: 0 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 3, roundPosition: 0, nth: 0, line: 1 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 3, roundPosition: 0, nth: 0, line: 2 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 3, roundPosition: 0, nth: 0, line: 3 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 3, roundPosition: 0, nth: 0, line: 4 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 3, roundPosition: 0, nth: 1, line: 0 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 3, roundPosition: 0, nth: 1, line: 1 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 3, roundPosition: 0, nth: 1, line: 2 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 3, roundPosition: 0, nth: 1, line: 3 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 1', roundNumber: 3, roundPosition: 0, nth: 1, line: 4 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 1, roundPosition: 0, nth: 0, line: 0 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 1, roundPosition: 0, nth: 0, line: 1 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 1, roundPosition: 0, nth: 0, line: 2 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 1, roundPosition: 0, nth: 0, line: 3 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 1, roundPosition: 0, nth: 0, line: 4 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 1, roundPosition: 0, nth: 1, line: 0 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 1, roundPosition: 0, nth: 1, line: 1 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 1, roundPosition: 0, nth: 1, line: 2 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 1, roundPosition: 0, nth: 1, line: 3 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 1, roundPosition: 0, nth: 1, line: 4 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 2, roundPosition: 0, nth: 0, line: 0 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 2, roundPosition: 0, nth: 0, line: 1 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 2, roundPosition: 0, nth: 0, line: 2 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 2, roundPosition: 0, nth: 0, line: 3 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 2, roundPosition: 0, nth: 0, line: 4 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 2, roundPosition: 0, nth: 1, line: 0 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 2, roundPosition: 0, nth: 1, line: 1 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 2, roundPosition: 0, nth: 1, line: 2 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 2, roundPosition: 0, nth: 1, line: 3 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 2, roundPosition: 0, nth: 1, line: 4 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 3, roundPosition: 0, nth: 0, line: 0 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 3, roundPosition: 0, nth: 0, line: 1 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 3, roundPosition: 0, nth: 0, line: 2 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 3, roundPosition: 0, nth: 0, line: 3 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 3, roundPosition: 0, nth: 0, line: 4 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 3, roundPosition: 0, nth: 1, line: 0 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 3, roundPosition: 0, nth: 1, line: 1 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 3, roundPosition: 0, nth: 1, line: 2 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 3, roundPosition: 0, nth: 1, line: 3 },
+          winningSide: 1 as const,
+        },
+        {
+          target: { structureName: 'Group 2', roundNumber: 3, roundPosition: 0, nth: 1, line: 4 },
+          winningSide: 1 as const,
+        },
+      ],
+      step: { target: R1(0, 0, 'Group 1'), winningSide: 1, outcome: 'WALKOVER' },
+      dualExit: 'winner',
+      playoffPositioned: true,
+      playoffPlayed: true,
+    },
+  ],
+  [
+    "a decided line corrected to a WALKOVER, its dual's winner unchanged: a line's correction (correctedSingleExit)",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [0, 1, 2, 3, 4].map((line) => ({ target: R1(1, line), winningSide: 1 as const })),
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'WALKOVER' },
+    },
+  ],
+  [
+    'a line played on a dual decided by its own winner: the dual un-decided from its lines, its winner taken back',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1, 0), winningSide: 1 }],
+      step: { target: R1(1, 1), winningSide: 2 },
+      dualExit: 'winner',
+    },
+  ],
+  [
     'a line call carrying disableAutoCalc: nothing written on the line or its dual',
     {
       drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
@@ -1086,12 +1747,14 @@ const KEPT: [string, Scenario][] = [
     },
   ],
   [
-    'a line played on a dual decided by its own exit: v1 projects the dual from its lines, un-deciding it (line-score)',
+    "a line DEFAULTED under a scoring policy's processCodes un-deciding its dual: v1's (the codes on the line, exitReason)",
     {
-      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
-      setup: [{ target: R1(1, 0), winningSide: 1 }],
-      step: { target: R1(1, 1), winningSide: 2 },
-      dualExit: 'DEFAULTED',
+      drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },
+      policyDefinitions: POLICY_SCORING_DEFAULT,
+      setup: [],
+      step: { target: R1(0, 0, 'Group 1'), winningSide: 1, outcome: 'DEFAULTED' },
+      dualExit: 'winner',
+      abstains: 'exit',
     },
   ],
   [
@@ -1101,15 +1764,6 @@ const KEPT: [string, Scenario][] = [
       policyDefinitions: POLICY_SCORING_DEFAULT,
       setup: [{ target: R1(1, 0), winningSide: 1 }],
       step: { target: R1(1, 1), winningSide: 2, outcome: 'DEFAULTED' },
-      abstains: 'exit',
-    },
-  ],
-  [
-    "a dual's own DOUBLE_WALKOVER once a line is played: v1's (exitReason: a double exit over a dual in progress)",
-    {
-      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
-      setup: [{ target: R1(1, 0), winningSide: 1 }],
-      step: { target: R1(1, 0), winningSide: 1, outcome: 'DOUBLE_WALKOVER', dual: true },
       abstains: 'exit',
     },
   ],
@@ -1207,22 +1861,6 @@ const KEPT: [string, Scenario][] = [
       setup: [],
       dualExit: 'DOUBLE_WALKOVER',
       step: { target: R1(1, 0), winningSide: 1, outcome: 'winner', dual: true },
-    },
-  ],
-  [
-    "a dual's own call in a round robin: its group's tally",
-    {
-      drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },
-      setup: [],
-      step: { target: R1(0, 0, 'Group 1'), winningSide: 1, outcome: 'winner', dual: true },
-    },
-  ],
-  [
-    "a line in a round robin: v1 re-reads its group's tally (a line's group is read off its dual, hydration OPEN-14)",
-    {
-      drawProfile: { drawSize: 4, drawType: ROUND_ROBIN },
-      setup: [{ target: R1(0, 0, 'Group 1'), winningSide: 1 }],
-      step: { target: R1(0, 1, 'Group 1'), winningSide: 2 },
     },
   ],
   [

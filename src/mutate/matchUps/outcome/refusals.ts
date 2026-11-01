@@ -4,22 +4,28 @@ import { rewritesCarriedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProv
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { validateScore } from '@Validators/validateScore';
 import { isDoubleExit } from '@Validators/isExit';
+import { chooseRoute } from './route';
 
 // constants and types
 import type { OutcomeRequest, OutcomeView, Refusal } from './types';
 import type { ErrorType } from '@Constants/errorConditionConstants';
 import {
+  ANACHRONISM,
   CANNOT_CHANGE_FEED_ELIGIBILITY,
   CANNOT_CHANGE_OUTCOME,
   CANNOT_CHANGE_WINNING_SIDE,
   DRAW_POSITION_ACTIVE,
   INCOMPATIBLE_MATCHUP_STATUS,
+  INVALID_DATE,
   INVALID_MATCHUP_STATUS,
+  INVALID_MATCHUP_STATUS_BYE,
+  INVALID_TIME,
   INVALID_VALUES,
   INVALID_WINNING_SIDE,
   MATCHUP_NOT_FOUND,
   MATCHUP_STATUS_OUT_OF_SCOPE,
   MISSING_DRAW_DEFINITION,
+  MISSING_DRAW_POSITIONS,
   MISSING_MATCHUP_ID,
   NO_VALID_ACTIONS,
   PROPAGATED_EXITS_DOWNSTREAM,
@@ -223,8 +229,9 @@ function refuseAgainstDraw(request: OutcomeRequest, view: OutcomeView): Refusal 
 
   if (!view.matchUpTieId) {
     const nonDirecting = !!matchUpStatus && isNonDirectingMatchUpStatus({ matchUpStatus });
+    // v1 (`checkDownstreamCompatibility`) returns `activeDownstream` and `winningSide` beside `error`, not in a context
     if (view.activeDownstream && !winningSide && (nonDirecting || isDoubleExit(matchUpStatus)))
-      return refuse(9, INCOMPATIBLE_MATCHUP_STATUS, { context: { activeDownstream: true, winningSide } });
+      return refuse(9, INCOMPATIBLE_MATCHUP_STATUS, { extra: { activeDownstream: true, winningSide } });
     const directing = isDirectingMatchUpStatus({ matchUpStatus });
     if (winningSide && winningSide === view.existing.winningSide && matchUpStatus && !directing)
       return refuse(9, INCOMPATIBLE_MATCHUP_STATUS, {
@@ -233,6 +240,24 @@ function refuseAgainstDraw(request: OutcomeRequest, view: OutcomeView): Refusal 
       });
   }
   return undefined;
+}
+
+/**
+ * rows 16, 25 and 27: the schedule the call carries, refused by v1's writer before the outcome lands, after the draw's
+ * checks and before the dispatch, where v1 asks it (`setMatchUpState`'s `validateOnly` pass). v1's result is returned
+ * whole. Row 29: any other code that pass raises (a stop, resume or end time out of order, a venue not found, a court
+ * order not a number, ...), which v1 returns as it stands (`if (check.error) return check`), so v2 does too (S7). It
+ * was left to `scheduleReason`'s abstention, but the decision is compared before any abstention: v1 refused, v2
+ * accepted, a divergence
+ */
+function refuseSchedule(view: OutcomeView): Refusal | undefined {
+  const refused = view.scheduleRefusal;
+  if (!refused) return undefined;
+  const { error, ...rest } = refused;
+  if (error.code === INVALID_TIME.code) return refuse(16, INVALID_TIME, rest);
+  if (error.code === INVALID_DATE.code) return refuse(25, INVALID_DATE, rest);
+  if (error.code === ANACHRONISM.code) return refuse(27, ANACHRONISM, rest);
+  return refuse(29, error, rest);
 }
 
 /** § 3's dispatch: rows 13 to 15, and the swap that is accepted instead of refused */
@@ -269,16 +294,38 @@ function refuseDispatch(request: OutcomeRequest, view: OutcomeView): Refusal | u
     const effectiveWinningSide = view.isTeam && flags.enableAutoCalc ? projected : winningSide;
     if (effectiveWinningSide === existing.winningSide || (view.matchUpTieId && !dualWinningSideChange))
       return undefined;
-    // rows 14 and 13, each written as its literal so `verify:outcome-spec` reads both
-    const extra = {
-      context: { winningSide: effectiveWinningSide },
-    };
+    // rows 14 and 13, each written as its literal so `verify:outcome-spec` reads both. v1
+    // (`winningSideWithDownstreamDependencies`) names the stored matchUp beside the winningSide (`namesMatchUp`)
+    const extra = { context: { winningSide: effectiveWinningSide }, namesMatchUp: true as const };
     return existing.winningSide
       ? refuse(14, CANNOT_CHANGE_WINNING_SIDE, extra)
       : refuse(13, CANNOT_CHANGE_OUTCOME, extra);
   }
   if (isDirectingMatchUpStatus({ matchUpStatus }) || line?.autoCalcDisabled) return undefined;
   return refuse(15, NO_VALID_ACTIONS);
+}
+
+/**
+ * The refusals v1's two writers raise after the dispatch, before their first write (S7; both were apply-stage codes,
+ * deferred, until then). `removeDirectedParticipants` refuses a score without a winner, or a winner's removal, on a
+ * matchUp (a line's dual) holding no drawPositions and not ad hoc: row 24's removal clause, which v1 asks before the
+ * dual's writes since S7 (`removesDirected`). `attemptToSetMatchUpStatus`
+ * refuses the routes § 3 names `refused`: a BYE on a matchUp none of whose drawPositions holds a bye assignment
+ * (`attemptToSetMatchUpStatusBYE`, row 28), and the fallthrough no route accepts (an exit named with no winner, row 6).
+ * § 3's `unrecognized` and `not directing` rows are not reached: every status row 6 lets through is directing or
+ * non-directing (`applyStageCodesRuled.test.ts`), so a `refused` route here that is not the BYE's is the fallthrough.
+ */
+function refuseRoute(request: OutcomeRequest, view: OutcomeView): Refusal | undefined {
+  const route = chooseRoute(request, view);
+  // a line under manual scoring (the dual's auto-calc disabled) goes to `attemptToModifyScore`, not the removal
+  if (route === 'remove-directed')
+    return view.removalMissingDrawPositions && !view.line?.autoCalcDisabled
+      ? refuse(24, MISSING_DRAW_POSITIONS)
+      : undefined;
+  if (route !== 'refused') return undefined;
+  const { matchUpStatus } = request;
+  if (matchUpStatus === BYE) return refuse(28, INVALID_MATCHUP_STATUS_BYE, { info: 'matchUp does not include BYE' });
+  return refuse(6, INVALID_MATCHUP_STATUS, { info: 'matchUpStatus: ' + matchUpStatus });
 }
 
 export function refuseOutcome(request: OutcomeRequest, view: OutcomeView): Refusal | undefined {
@@ -288,6 +335,9 @@ export function refuseOutcome(request: OutcomeRequest, view: OutcomeView): Refus
     refuseAgainstExisting(request, view) ??
     refuseScore(request, view) ??
     refuseAgainstDraw(request, view) ??
-    refuseDispatch(request, view)
+    refuseSchedule(view) ??
+    (view.missingDrawPositions ? refuse(24, MISSING_DRAW_POSITIONS) : undefined) ??
+    refuseDispatch(request, view) ??
+    refuseRoute(request, view)
   );
 }

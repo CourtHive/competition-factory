@@ -1,10 +1,10 @@
 // Query
 import { getDrawCompositionConstraints } from './getDrawCompositionConstraints';
-import { getStageDrawPositionsAvailable } from './getStageDrawPositions';
-import { getStageEntryTypeCount } from './stageGetter';
+import { getStageEntryTypeCount, getStagePlaceTakingEntriesCount } from './stageGetter';
+import { getStageDrawPositionsBreakdown } from './getStageDrawPositions';
 
 // constants
-import { ALTERNATE, DIRECT_ACCEPTANCE, WILDCARD } from '@Constants/entryStatusConstants';
+import { ALTERNATE, DIRECT_ACCEPTANCE, QUALIFIER, WILDCARD } from '@Constants/entryStatusConstants';
 import { VOLUNTARY_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
@@ -25,6 +25,14 @@ type GetStageSpaceArgs = {
   stage: string;
 };
 
+/**
+ * Whether a stage has room for another entry of `entryStatus`, and how many places are left.
+ *
+ * The places left to direct entries are the stage's draw positions less its qualifier positions; every
+ * entry with a status in PLACE_TAKING_ENTRY_STATUSES (direct entries and lucky losers) counts against
+ * them, the same list `getEventEntrySpace` counts. QUALIFIER entries count against the qualifier
+ * positions only. ALTERNATE entries are limited only by a sanctioned `maxAlternates`.
+ */
 export function getStageSpace({
   entryStatus = DIRECT_ACCEPTANCE,
   tournamentRecord,
@@ -57,15 +65,26 @@ export function getStageSpace({
     return { positionsAvailable: Infinity, ...SUCCESS };
   }
 
-  const stageDrawPositionsAvailable = getStageDrawPositionsAvailable({
+  // positionsAvailable: the stage's draw positions less those held for qualifiers
+  const { positionsAvailable: stageDrawPositionsAvailable, qualifierPositions } = getStageDrawPositionsBreakdown({
     drawDefinition,
     stageSequence,
     stage,
   });
 
+  if (entryStatus === QUALIFIER) {
+    // qualifiers fill the qualifier positions, never the places left to direct entries
+    const qualifierEntriesCount = getStageEntryTypeCount({ entryStatus: QUALIFIER, drawDefinition, stage });
+    const qualifierPositionsAvailable = qualifierPositions - qualifierEntriesCount;
+    if (stage !== VOLUNTARY_CONSOLATION && qualifierPositionsAvailable <= 0) {
+      return { error: NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS };
+    }
+    return { positionsAvailable: qualifierPositionsAvailable, ...SUCCESS };
+  }
+
+  // every entry taking a place left to direct entries: direct-entry statuses and lucky losers
   const wildcardEntriesCount = getStageEntryTypeCount({ entryStatus: WILDCARD, drawDefinition, stage });
-  const directEntriesCount = getStageEntryTypeCount({ entryStatus: DIRECT_ACCEPTANCE, drawDefinition, stage });
-  const totalEntriesCount = wildcardEntriesCount + directEntriesCount;
+  const totalEntriesCount = getStagePlaceTakingEntriesCount({ drawDefinition, stage });
   const stageFull = stageDrawPositionsAvailable > 0 && totalEntriesCount >= stageDrawPositionsAvailable;
   const positionsAvailable = stageDrawPositionsAvailable - totalEntriesCount;
 

@@ -52,7 +52,7 @@ export function resetQualifyingStructure({
 
   deleteMatchUpsNotice({
     tournamentId: tournamentRecord?.tournamentId,
-    action: 'resetVoluntaryConsolationStructure',
+    action: 'resetQualifyingStructure',
     matchUpIds: removedMatchUpIds,
     drawDefinition,
   });

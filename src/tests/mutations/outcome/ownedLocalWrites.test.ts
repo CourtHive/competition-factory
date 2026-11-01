@@ -82,7 +82,32 @@ const SHAPES: [string, Step[]][] = [
   ['a format change with a live score', [() => ({ outcome: inProgress('6-3 2-1'), matchUpFormat: 'SET5-S:6/TB7' })]],
   // the second call changes nothing but stamps: owned since S2 (F2 (i) stamps each touched entity once, as v1 does)
   ['the same score submitted twice', [() => ({ outcome: inProgress('3-2') }), () => ({ outcome: inProgress('3-2') })]],
+  // S7: a schedule carried with the outcome, written as v1's writer writes it, before `scoredTime` is stamped onto it
+  [
+    'an in-progress score with a schedule',
+    [() => ({ outcome: inProgress('3-2'), schedule: { scheduledDate: startDate(), scheduledTime: '10:00' } })],
+  ],
+  [
+    'a schedule changed with a score correction',
+    [
+      () => ({ outcome: inProgress('3-2'), schedule: { scheduledDate: startDate(), scheduledTime: '10:00' } }),
+      () => ({ outcome: inProgress('4-2'), schedule: { scheduledTime: '11:30', courtOrder: 2 } }),
+    ],
+  ],
+  ['a winner with a schedule', [() => ({ outcome: { winningSide: 1 }, schedule: { scheduledDate: startDate() } })]],
+  [
+    'a result turned into a double exit, carrying a schedule',
+    [
+      () => ({ outcome: { matchUpStatus: WALKOVER, winningSide: 1 } }),
+      () => ({ outcome: { matchUpStatus: DOUBLE_WALKOVER }, schedule: { scheduledDate: startDate() } }),
+    ],
+  ],
 ];
+
+/** the tournament's first day, which a scheduled date must fall on or after */
+function startDate() {
+  return tournamentEngine.getTournament().tournamentRecord.startDate;
+}
 
 /** the steps on a first-round matchUp, from a fresh record, every topic subscribed and the clock fixed */
 function play(mode: OutcomePipelineMode, steps: Step[], writeMode: SchemaWriteMode = NATIVE) {
@@ -154,12 +179,162 @@ describe('a result turned into a double exit is v2s (S6)', () => {
 });
 
 describe('what v2 does not own goes to v1, whole', () => {
+  it('a schedule v1 refuses (a time that does not parse): v2 refuses it as v1 does, row 16 (S7)', () => {
+    const steps: Step[] = [() => ({ outcome: { winningSide: 1 }, schedule: { scheduledTime: 'not a time' } })];
+    const v1 = play(OUTCOME_PIPELINE_V1, steps);
+    const v2 = play(OUTCOME_PIPELINE_V2, steps);
+    expect(v1.results[0].error).toBeDefined();
+    expect(v2.v1Writes).toEqual(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+  });
+
+  it('a double exit asked for again, carrying a schedule: v1 writes the schedule alone, so v2 abstains (S7)', () => {
+    const steps: Step[] = [
+      () => ({ outcome: { matchUpStatus: DOUBLE_WALKOVER } }),
+      () => ({ outcome: { matchUpStatus: DOUBLE_WALKOVER }, schedule: { scheduledDate: startDate() } }),
+    ];
+    const v1 = play(OUTCOME_PIPELINE_V1, steps);
+    const v2 = play(OUTCOME_PIPELINE_V2, steps);
+    expect(v2.v1Writes).toEqual(1);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+  });
+
+  it('a schedule carrying a start and an end time: v1 writes them as timeItems, so v2 abstains (S7)', () => {
+    const steps: Step[] = [() => ({ outcome: { winningSide: 1 }, schedule: { startTime: '10:00', endTime: '11:00' } })];
+    const v1 = play(OUTCOME_PIPELINE_V1, steps);
+    const v2 = play(OUTCOME_PIPELINE_V2, steps);
+    expect(v2.v1Writes).toEqual(1);
+    expect(v2.record).toEqual(v1.record);
+  });
+
   it('BRIDGE: v1 writes `scoredTime` as a timeItem too, which the reducer does not, so v2 abstains', () => {
     const v1 = play(OUTCOME_PIPELINE_V1, SHAPES[0][1], BRIDGE);
     const v2 = play(OUTCOME_PIPELINE_V2, SHAPES[0][1], BRIDGE);
     expect(v2.v1Writes).toEqual(1);
     expect(v2.record).toEqual(v1.record);
   });
+});
+
+it('a schedule out of played order with the next matchUp: v2 refuses it as v1 does, against the stored draw (S7)', () => {
+  const run = (mode: OutcomePipelineMode) => {
+    setOutcomePipeline(OUTCOME_PIPELINE_V1);
+    setClock('2026-10-25T00:00:00.000Z');
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 8, drawId: 'd' }],
+      nonRandom: 1,
+      setState: true,
+    });
+    const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId: 'd', inContext: true });
+    const feeder = matchUps.find((matchUp: any) => matchUp.roundNumber === 1);
+    const next = matchUps.find((matchUp: any) => matchUp.matchUpId === feeder.winnerMatchUpId);
+    const scheduledDate = startDate();
+    tournamentEngine.addMatchUpScheduleItems({
+      schedule: { scheduledDate, scheduledTime: '10:00' },
+      matchUpId: next.matchUpId,
+      drawId: 'd',
+    });
+    setOutcomePipeline(mode);
+    v1Writes.count = 0;
+    const result: any = tournamentEngine.setMatchUpStatus({
+      schedule: { scheduledDate, scheduledTime: '12:00' },
+      matchUpId: feeder.matchUpId,
+      outcome: { winningSide: 1 },
+      drawId: 'd',
+    });
+    const { stack: _stack, ...answer } = result;
+    return {
+      answer,
+      v1Writes: v1Writes.count,
+      record: canonicalJson(tournamentEngine.getTournament().tournamentRecord),
+    };
+  };
+  const v1 = run(OUTCOME_PIPELINE_V1);
+  const v2 = run(OUTCOME_PIPELINE_V2);
+  expect(v1.answer.error).toBeDefined();
+  expect(v2.v1Writes).toEqual(0);
+  expect(v2.answer).toEqual(v1.answer);
+  expect(v2.record).toEqual(v1.record);
+});
+
+it.each([
+  ['a date outside the tournament, row 25', { scheduledDate: '1999-01-01' }],
+  ['a time that does not parse, asked before the dispatch refuses the changed winner, row 16', { scheduledTime: 'x' }],
+])('a schedule v1 refuses: %s (S7)', (_label, schedule) => {
+  const run = (mode: OutcomePipelineMode) => {
+    setOutcomePipeline(OUTCOME_PIPELINE_V1);
+    setClock('2026-10-25T00:00:00.000Z');
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 8, drawId: 'd' }],
+      nonRandom: 1,
+      setState: true,
+    });
+    const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId: 'd', inContext: true });
+    const first = matchUps.filter((matchUp: any) => matchUp.roundNumber === 1);
+    // the first matchUp decided and its winner played on in the next round: its winner cannot change (row 14)
+    const [feeder, other] = first.filter((matchUp: any) => matchUp.winnerMatchUpId === first[0].winnerMatchUpId);
+    for (const { matchUpId } of [feeder, other])
+      tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId, outcome: { winningSide: 1 } });
+    tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId: feeder.winnerMatchUpId, outcome: inProgress('3-2') });
+    setOutcomePipeline(mode);
+    v1Writes.count = 0;
+    const result: any = tournamentEngine.setMatchUpStatus({
+      matchUpId: feeder.matchUpId,
+      outcome: { winningSide: 2 },
+      drawId: 'd',
+      schedule,
+    });
+    const { stack: _stack, ...answer } = result;
+    return {
+      answer,
+      v1Writes: v1Writes.count,
+      record: canonicalJson(tournamentEngine.getTournament().tournamentRecord),
+    };
+  };
+  const v1 = run(OUTCOME_PIPELINE_V1);
+  const v2 = run(OUTCOME_PIPELINE_V2);
+  expect(v1.answer.error).toBeDefined();
+  expect(v2.v1Writes).toEqual(0);
+  expect(v2.answer).toEqual(v1.answer);
+  expect(v2.record).toEqual(v1.record);
+});
+
+it('a winner on a matchUp stored with no drawPositions: v2 refuses it as v1 does, row 24 (S7)', () => {
+  const run = (mode: OutcomePipelineMode) => {
+    setOutcomePipeline(OUTCOME_PIPELINE_V1);
+    setClock('2026-10-25T00:00:00.000Z');
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 8, drawId: 'd' }],
+      nonRandom: 1,
+    });
+    // a record the factory did not produce: a first-round matchUp stored without its drawPositions
+    const matchUp = tournamentRecord.events[0].drawDefinitions[0].structures[0].matchUps.find(
+      (candidate: any) => candidate.roundNumber === 1 && candidate.roundPosition === 1,
+    );
+    Reflect.deleteProperty(matchUp, 'drawPositions');
+    tournamentEngine.setState(tournamentRecord);
+    setOutcomePipeline(mode);
+    v1Writes.count = 0;
+    const result: any = tournamentEngine.setMatchUpStatus({
+      policyDefinitions: { scoring: { requireParticipantsForScoring: false } },
+      matchUpId: matchUp.matchUpId,
+      outcome: { winningSide: 1 },
+      drawId: 'd',
+    });
+    const { stack: _stack, ...answer } = result;
+    return {
+      answer,
+      v1Writes: v1Writes.count,
+      record: canonicalJson(tournamentEngine.getTournament().tournamentRecord),
+    };
+  };
+  const v1 = run(OUTCOME_PIPELINE_V1);
+  const v2 = run(OUTCOME_PIPELINE_V2);
+  expect(v1.answer.error?.code).toEqual('ERR_MISSING_DRAW_POSITIONS');
+  expect(v2.v1Writes).toEqual(0);
+  expect(v2.answer).toEqual(v1.answer);
+  expect(v2.record).toEqual(v1.record);
 });
 
 it('an owned write takes no hydration when no one subscribes to the in-context matchUp', () => {

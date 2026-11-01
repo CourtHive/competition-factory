@@ -1,11 +1,11 @@
-import { noDownstreamDependencies } from '@Mutate/drawDefinitions/matchUpGovernor/noDownstreamDependencies';
+import { addMatchUpScheduleItems, scheduleRefusal } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { isPropagatedExit, rewritesCarriedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
+import { removalMissingDrawPositions } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { isDrawnResult, validateDrawTallyOptions } from '@Query/matchUps/roundRobinTally/drawnResults';
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { resolveRotatingPartnerOutcome } from '@Query/drawDefinition/resolveRotatingPartnerOutcome';
 import { refreshArrivals } from '@Mutate/drawDefinitions/matchUpGovernor/attemptToSetWinningSide';
-import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { correctionKindChange } from '@Mutate/matchUps/matchUpStatus/correctionKindGuard';
@@ -43,6 +43,10 @@ import { clearsABye } from '@Query/matchUp/clearsABye';
 import { findStructure } from '@Acquire/findStructure';
 import { isObject } from '@Tools/objects';
 import { nowIso } from '@Tools/clock';
+import {
+  noDownstreamDependencies,
+  removesDirected,
+} from '@Mutate/drawDefinitions/matchUpGovernor/noDownstreamDependencies';
 
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
 
@@ -758,24 +762,29 @@ function resolveAndApplyOutcome({
   // This used to apply it outright, above the dispatch that can refuse — so a rejected outcome left
   // the scheduled date, time and court order behind. Moving the apply down on its own would have
   // inverted the defect (an error over an outcome that had already landed), because the apply path
-  // interleaves validate-and-write per attribute. `validateOnly` runs every refusal and writes
-  // nothing, so both orderings are safe.
+  // interleaves validate-and-write per attribute. `scheduleRefusal` runs every refusal and writes
+  // nothing to this draw (the write's own refusals are met on a copy), so both orderings are safe.
   const { schedule } = params;
   if (schedule) {
-    const check = addMatchUpScheduleItems({
-      disableNotice: true,
-      validateOnly: true,
+    const check = scheduleRefusal({
       tournamentRecords,
       tournamentRecord,
       drawDefinition,
       matchUpId,
       schedule,
     });
-    if (check.error) return check;
+    if (check?.error) return check;
   }
 
   const unplaceable = missingDrawPositionsRefusal({ params, activeDownstream: !!activeDownstream });
   if (unplaceable) return unplaceable;
+
+  // § 2 row 24's removal clause: `removeDirectedParticipants` refuses a score with no winner on a matchUp (a line's
+  // dual) holding no drawPositions. A first entry (nothing holds a winner there) reaches it after the dual's writes
+  // below, which left `sides` on an unfed dual under the error (measured 2026-11-01, TEAM SINGLE_ELIMINATION 4, the
+  // final's bare score). Asked here, with what that function reads, so the error leaves the record unchanged (S7).
+  if (removesDirected(params) && removalMissingDrawPositions(params))
+    return decorateResult({ result: { error: MISSING_DRAW_POSITIONS }, stack });
 
   // the TEAM dual's auto-calc and lineUps, now that nothing before the outcome's own writes can refuse
   applyTeamWrites?.();
@@ -858,7 +867,7 @@ function resolveAndApplyOutcome({
   }
 
   // The schedule is applied only once the outcome has been accepted, and its refusals were already
-  // raised above by the `validateOnly` pass — so this cannot be the step that errors over a draw
+  // raised above by `scheduleRefusal` — so this cannot be the step that errors over a draw
   // this call has just changed. Ordered before `applyScoredTime` so `scoredTime` is stamped onto
   // the schedule this call wrote rather than the one it replaced.
   if (!result?.error && schedule) {
@@ -889,11 +898,14 @@ function resolveAndApplyOutcome({
  * line of a dual, not ad hoc, given a winner or an exit to carry. Read before anything is written, so it cannot drift
  * from what `directParticipants` reads.
  */
-function missingDrawPositionsRefusal({
+/** what `missingDrawPositionsRefusal` reads of the call: the outcome view (v2) asks it with the same values */
+export type MissingDrawPositionsParams = SetMatchUpStateArgs & { matchUp: MatchUp; structure?: Structure };
+
+export function missingDrawPositionsRefusal({
   activeDownstream,
   params,
 }: {
-  params: SetMatchUpStateArgs & { matchUp: MatchUp; structure?: Structure };
+  params: MissingDrawPositionsParams;
   activeDownstream: boolean;
 }) {
   const { matchUp, structure, matchUpStatus } = params;

@@ -5,6 +5,8 @@ import { TournamentRecords } from '@Types/factoryTypes';
 
 type ScheduleProfileRoundsArgs = {
   checkPotentialRequestConflicts?: boolean;
+  /** schedule rounds on dates their event does not play, and warn (EVENT_DATE_INACTIVE), rather than skip them */
+  allowInactiveEventDates?: boolean;
   tournamentRecords: TournamentRecords;
   /**
    * @deprecated ignored: completed matchUps are never scheduled (CA 2026-10-23). Removed at the next major.

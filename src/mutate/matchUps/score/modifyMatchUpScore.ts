@@ -5,6 +5,7 @@ import { modifyMatchUpNotice, deferInContextMatchUp } from '@Mutate/notification
 import { clearResolvedSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
 import type { DerivedStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
+import { finishingOrderUpdates, getDualLines } from '@Query/matchUp/finishingOrder';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
@@ -57,6 +58,8 @@ type ModifyMatchUpScoreArgs = {
   derivedStatusCodes?: DerivedStatusCodes;
   drawDefinition?: DrawDefinition;
   removeWinningSide?: boolean;
+  // a winner corrected: the result taken off before the new one is written keeps the line's finishing order
+  keepsFinishingOrder?: boolean;
   matchUpFormat?: string;
   removeScore?: boolean;
   winningSide?: number;
@@ -110,12 +113,15 @@ export function modifyMatchUpScore(params: ModifyMatchUpScoreArgs) {
   }
 
   const wasDefaulted = matchUpStatus && matchUp?.matchUpStatus === DEFAULTED && matchUpStatus !== DEFAULTED;
+  // a dual's line, as it was: its finishing order in its collection follows what this write changes (v2: planner ops)
+  const previousLine = matchUp?.collectionId && !params.keepsFinishingOrder ? lineSnapshot(matchUp) : undefined;
 
   applyScoreAndStatus({
     // it describes ONE matchUp: a params spread that carried it into a write elsewhere does not apply it
     derived: params.derivedStatusCodes?.matchUpId === matchUp.matchUpId ? params.derivedStatusCodes : undefined,
     matchUpStatusCodes,
     removeWinningSide: params.removeWinningSide,
+    keepsFinishingOrder: params.keepsFinishingOrder,
     matchUpStatus,
     matchUpFormat,
     removeScore,
@@ -185,6 +191,9 @@ export function modifyMatchUpScore(params: ModifyMatchUpScoreArgs) {
     matchUp,
   });
 
+  // the line's own number lands before its notice; the siblings it moved are announced after it
+  const movedSiblings = previousLine ? applyFinishingOrder({ drawDefinition, previousLine }) : [];
+
   modifyMatchUpNotice({
     eventId: event?.eventId,
     event,
@@ -194,7 +203,40 @@ export function modifyMatchUpScore(params: ModifyMatchUpScoreArgs) {
     matchUp,
   });
 
+  if (movedSiblings.length) {
+    for (const sibling of movedSiblings) {
+      modifyMatchUpNotice({
+        eventId: event?.eventId,
+        event,
+        context: stack,
+        drawDefinition,
+        tournamentId,
+        matchUp: sibling,
+      });
+    }
+  }
+
   return { ...SUCCESS };
+}
+
+function lineSnapshot(matchUp: MatchUp) {
+  const { matchUpId, matchUpStatus, score, orderOfFinish, collectionId, collectionPosition } = matchUp;
+  return { matchUpId, matchUpStatus, score, orderOfFinish, collectionId, collectionPosition };
+}
+
+// the write's finishing-order changes in the line's collection, applied to the stored lines; the siblings it changed
+type ApplyFinishingOrderArgs = { drawDefinition?: DrawDefinition; previousLine: ReturnType<typeof lineSnapshot> };
+function applyFinishingOrder({ drawDefinition, previousLine }: ApplyFinishingOrderArgs): MatchUp[] {
+  const { lines } = getDualLines({ drawDefinition, matchUpId: previousLine.matchUpId });
+  const changed: MatchUp[] = [];
+  for (const { matchUpId, orderOfFinish } of finishingOrderUpdates({ lines, previous: previousLine })) {
+    const line = lines.find((candidate) => candidate.matchUpId === matchUpId);
+    if (!line) continue;
+    if (orderOfFinish === undefined) delete line.orderOfFinish;
+    else line.orderOfFinish = orderOfFinish;
+    if (matchUpId !== previousLine.matchUpId) changed.push(line);
+  }
+  return changed;
 }
 
 function resolveAppliedPolicies({ appliedPolicies, tournamentRecord, drawDefinition, structure, event }) {
@@ -228,6 +270,7 @@ function resolveDualMatchUpTarget({ isDualMatchUp, drawDefinition, matchUpId, ma
 }
 
 function applyScoreAndStatus({
+  keepsFinishingOrder,
   matchUpStatusCodes,
   removeWinningSide,
   derived,
@@ -288,6 +331,9 @@ function applyScoreAndStatus({
   }
 
   if (matchUpStatus) matchUp.matchUpStatus = matchUpStatus;
+  // a matchUp that is no longer complete has no place in its cohort's order of finish (`setOrderOfFinish`); v2 clears
+  // it in the same writes (outcome/ops.ts)
+  if (!keepsFinishingOrder && !completedMatchUpStatuses.includes(matchUp.matchUpStatus)) delete matchUp.orderOfFinish;
   if (matchUpFormat) matchUp.matchUpFormat = matchUpFormat;
   if (matchUpStatusCodes) matchUp.matchUpStatusCodes = matchUpStatusCodes;
   /**
@@ -347,6 +393,9 @@ function applyInProgressStatus({ matchUpStatus, matchUp }) {
   }
 }
 
+/** a TEAM dual's round robin group is tallied under this one format, whatever its lines' (the outcome view reads it, S7) */
+export const DUAL_TALLY_FORMAT = 'SET1-S:T100';
+
 function updateTallyIfNeeded({
   isDualMatchUp,
   tournamentRecord,
@@ -365,7 +414,7 @@ function updateTallyIfNeeded({
   if (!isLucky({ drawDefinition, structure }) && !isAdHocStructure && !isRoundRobin) return undefined;
 
   const resolvedFormat = isDualMatchUp
-    ? 'SET1-S:T100'
+    ? DUAL_TALLY_FORMAT
     : (matchUpFormat ??
       matchUp.matchUpFormat ??
       structure?.matchUpFormat ??

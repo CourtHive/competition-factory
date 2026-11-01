@@ -3,7 +3,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, test } from 'vitest';
 
 // constants
-import { MISSING_DRAW_ID, MISSING_EVENT } from '@Constants/errorConditionConstants';
+import { MISSING_DRAW_ID, MISSING_EVENT, SCORES_PRESENT } from '@Constants/errorConditionConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 
 it('can delete flight and flightDrawDefinition', () => {
@@ -114,9 +114,13 @@ test('deleted flights will trigger refresh of drawOrder', () => {
   });
   expect(result.success).toEqual(true);
 
+  // the remaining flights keep their numbers (their levels); display order closes the gap
   ({ flightProfile } = tournamentEngine.getFlightProfile({ eventId }));
   const flightNumbers = flightProfile.flights.map(({ flightNumber }) => flightNumber);
-  expect(flightNumbers).toEqual([1, 2]);
+  expect(flightNumbers).toEqual([1, 3]);
+  expect(flightProfile.flights.map(({ drawOrder }) => drawOrder)).toEqual([1, 2]);
+  const { event } = tournamentEngine.getEvent({ eventId });
+  expect(event.drawDefinitions.map(({ drawOrder }) => drawOrder)).toEqual([1, 2]);
 });
 
 it('deleteFlightAndFlightDraw succeeds when drawId does not match any flight in flightProfile', () => {
@@ -193,4 +197,51 @@ it('deleteFlightAndFlightDraw handles flight profile with no generated draws', (
   const { flightProfile: updatedProfile } = tournamentEngine.getFlightProfile({ eventId });
   expect(updatedProfile.flights.length).toEqual(1);
   expect(updatedProfile.flights[0].drawId).not.toEqual(drawId);
+});
+
+// a refused draw deletion must leave the flight in place: the flight was removed first, so a draw with scores and no
+// `force` kept its draw and lost its flight
+test('a refused draw deletion leaves the flight and its draw in place', () => {
+  const {
+    eventIds: [eventId],
+  } = mocksEngine.generateTournamentRecord({
+    eventProfiles: [{ participantsProfile: { participantsCount: 16 } }],
+    setState: true,
+  });
+  const { flightProfile } = tournamentEngine.generateFlightProfile({
+    attachFlightProfile: true,
+    flightsCount: 2,
+    eventId,
+  });
+  const flight = flightProfile.flights[0];
+  const { drawId } = flight;
+  const { drawDefinition } = tournamentEngine.generateDrawDefinition({
+    drawEntries: flight.drawEntries,
+    drawName: flight.drawName,
+    eventId,
+    drawId,
+  });
+  let result: any = tournamentEngine.addDrawDefinition({ eventId, drawDefinition, flight });
+  expect(result.success).toEqual(true);
+
+  const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId, inContext: true });
+  const { matchUpId } = matchUps.find((matchUp) => matchUp.readyToScore);
+  const { outcome } = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 1 });
+  result = tournamentEngine.setMatchUpStatus({ drawId, matchUpId, outcome });
+  expect(result.success).toEqual(true);
+
+  const flightDrawIds = () =>
+    tournamentEngine.getFlightProfile({ eventId }).flightProfile?.flights.map((f) => f.drawId);
+  const eventDrawIds = () => tournamentEngine.getEvent({ eventId }).event.drawDefinitions.map((d) => d.drawId);
+
+  result = tournamentEngine.deleteFlightAndFlightDraw({ eventId, drawId });
+  expect(result.error).toEqual(SCORES_PRESENT);
+  expect(eventDrawIds()).toEqual([drawId]);
+  expect(flightDrawIds()).toContain(drawId);
+
+  result = tournamentEngine.deleteFlightAndFlightDraw({ eventId, drawId, force: true });
+  expect(result.success).toEqual(true);
+  expect(eventDrawIds()).toEqual([]);
+  expect(flightDrawIds()).not.toContain(drawId);
+  expect(flightDrawIds()).toHaveLength(1);
 });

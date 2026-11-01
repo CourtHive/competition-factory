@@ -7,6 +7,7 @@ import type {
   Extension,
   GenderUnion,
   MatchUpStatusUnion,
+  Organisation,
   Participant,
   ParticipantTypeUnion,
   SexUnion,
@@ -241,6 +242,19 @@ export type MockVenueProfile = {
   venueId?: string;
 };
 
+/** `mocksEngine.generateSeason`: one record per period, one TEAM event per tier, and the Season document. */
+export type MockSeasonProfile = {
+  tiers: { tierId?: string; tierValue?: string; teamsCount: number; tieFormatName?: string }[];
+  periods?: { phase?: string; includeInStandings?: boolean }[];
+  completeAllMatchUps?: boolean;
+  tieFormatName?: string;
+  tierSystem?: string;
+  seasonName?: string;
+  startDate?: string;
+  seasonId?: string;
+  seriesId?: string;
+};
+
 export type MockLeagueProfile = {
   teamProfiles?: { teamName?: string; teamId?: string; venueIds?: string[] }[];
   participantsProfile?: MockParticipantsProfile;
@@ -423,3 +437,22 @@ export type GenerateParticipantsArgs = MockEngineCall &
     gendersCount?: { [gender: string]: number };
     random?: () => number;
   };
+
+export type AnonymizeTournamentRecordArgs = MockEngineCall & {
+  /** rewritten IN PLACE and returned as `tournamentRecord`; pass a copy to keep the original */
+  tournamentRecord?: Tournament;
+  /** extension names kept beside the internal ones; `true` keeps every extension (default: internal only) */
+  keepExtensions?: string[] | boolean;
+  /** false keeps participant and person names (default true) */
+  anonymizeParticipantNames?: boolean;
+  /** a mock organisation to attach; without one, parentOrganisation is removed */
+  parentOrganisation?: Partial<Organisation>;
+  /** default: `Anonymized: <date>` */
+  tournamentName?: string;
+  /** used in order for the replacement persons of INDIVIDUAL participants; the rest are generated */
+  personIds?: string[];
+  /** default: a generated id */
+  tournamentId?: string;
+  /** the source for every generated id, name and address; through mocksEngine, `nonRandom: <seed>` sets it */
+  random?: () => number;
+};

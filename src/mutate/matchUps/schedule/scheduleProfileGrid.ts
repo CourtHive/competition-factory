@@ -7,6 +7,7 @@ import { getContainedStructures } from '@Query/drawDefinition/getContainedStruct
 import { getSchedulingMatchUps } from '@Query/matchUps/scheduling/getSchedulingMatchUps';
 import { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
+import { eventDateResolver, EventDateReason } from '@Query/events/eventPlaysOnDate';
 import { hasByeSide } from '@Mutate/matchUps/schedule/byeScheduling';
 import { extractDate, isValidDateString } from '@Tools/dateTime';
 
@@ -15,12 +16,14 @@ import { ARRAY, OF_TYPE, SCHEDULE_DATES, TOURNAMENT_RECORDS, VALIDATE } from '@C
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { NO_VALID_DATES } from '@Constants/errorConditionConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
-import { TournamentRecords } from '@Types/factoryTypes';
+import { ResultWarning, TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
 
 type ScheduleProfileGridArgs = {
   tournamentRecords: TournamentRecords;
+  /** place matchUps on dates their event does not play, and warn (EVENT_DATE_INACTIVE), rather than skip them */
+  allowInactiveEventDates?: boolean;
   matchUpDailyLimits?: { [key: string]: number };
   /**
    * @deprecated ignored: completed matchUps are never scheduled (CA 2026-10-23). Removed at the next major.
@@ -155,6 +158,7 @@ function gridDailyLimits(
  */
 export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
   const {
+    allowInactiveEventDates = false,
     matchUpDailyLimits,
     minCourtGridRows = 10,
     clearScheduleDates,
@@ -243,6 +247,9 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
   const notScheduledMatchUpIds: Record<string, string[]> = {};
   const overLimitMatchUpIds: Record<string, string[]> = {};
   const scheduledDates: string[] = [];
+  const eventDateSkippedMatchUpIds: Record<string, EventDateSkip[]> = {};
+  const warnings: ResultWarning[] = [];
+  const resolveEventDate = eventDateResolver(tournamentRecords);
   const reports = {
     dailyLimitWarnings: dailyLimitWarningMatchUpIds,
     notScheduled: notScheduledMatchUpIds,
@@ -254,13 +261,17 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
     const scheduledDate = extractDate(dateProfile.scheduleDate);
 
     // Collect matchUps for this date based on profile round ordering
-    const { dateMatchUps, dateCourtIds, courtlessMatchUps } = collectVenuePlan(
-      dateProfile,
-      courtsByVenue,
-      courtIdsFilter,
-      allMatchUps,
-      containedStructureIds,
-    );
+    const collected = collectVenuePlan(dateProfile, courtsByVenue, courtIdsFilter, allMatchUps, containedStructureIds);
+    const { dateCourtIds } = collected;
+
+    // a matchUp whose event does not play on the date is not offered to the grid, and is reported, per event (§ 5)
+    const { dateMatchUps, courtlessMatchUps } = eventDatePlan({
+      skippedByDate: eventDateSkippedMatchUpIds,
+      allowInactiveEventDates,
+      resolveEventDate,
+      scheduledDate,
+      collected,
+    });
 
     const courtlessIds = courtlessMatchUps.map(({ matchUpId }) => matchUpId);
     if (courtlessIds.length) notScheduledMatchUpIds[scheduledDate] = courtlessIds;
@@ -283,6 +294,7 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
     // so the scheduler is fed the pre-filtered set.
     const gridResult = proAutoSchedule({
       courtIds: resolveTargetCourtIds(dateCourtIds, courtIdsFilter),
+      allowInactiveEventDates,
       matchUpDailyLimits: limits.matchUpDailyLimits,
       dailyLimitOverrides: limits.dailyLimitOverrides,
       overnightRestWarnings: false,
@@ -298,6 +310,7 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
       continue;
     }
 
+    warnings.push(...(gridResult.warnings ?? []));
     const dateScheduledIds = (gridResult.scheduled ?? []).map((m) => m.matchUpId);
     if (dateScheduledIds.length) scheduledDates.push(scheduledDate);
     const dateResult = {
@@ -317,10 +330,58 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
   return {
     ...SUCCESS,
     scheduledMatchUpIds,
-    notScheduledMatchUpIds,
+    // a matchUp skipped for its event's dates is not scheduled either: listed under its reason and here
+    notScheduledMatchUpIds: withSkips(notScheduledMatchUpIds, eventDateSkippedMatchUpIds),
     dailyLimitWarningMatchUpIds,
     overnightRestWarnings,
     overLimitMatchUpIds,
     scheduledDates,
+    ...presentWhenAny({ eventDateSkippedMatchUpIds, warnings }),
   };
+}
+
+type EventDateSkip = { matchUpId: string; eventId: string; reason: EventDateReason };
+
+function withSkips(notScheduled: Record<string, string[]>, skips: Record<string, EventDateSkip[]>) {
+  const merged = { ...notScheduled };
+  for (const [date, dateSkips] of Object.entries(skips))
+    merged[date] = [...(merged[date] ?? []), ...dateSkips.map(({ matchUpId }) => matchUpId)];
+  return merged;
+}
+
+/** the members that hold something: a call that skipped nothing and warned of nothing keeps its result's shape */
+function presentWhenAny(members: { [key: string]: unknown[] | Record<string, unknown> }) {
+  return Object.fromEntries(
+    Object.entries(members).filter(([, value]) => (Array.isArray(value) ? value : Object.keys(value)).length),
+  );
+}
+
+type EventDatePlanArgs = {
+  collected: { dateMatchUps: HydratedMatchUp[]; courtlessMatchUps: HydratedMatchUp[] };
+  resolveEventDate: ReturnType<typeof eventDateResolver>;
+  skippedByDate: Record<string, EventDateSkip[]>;
+  allowInactiveEventDates: boolean;
+  scheduledDate: string;
+};
+
+/** a date's matchUps whose event plays on it; those skipped are recorded under the date, with why (eventPlaysOnDate) */
+function eventDatePlan({
+  allowInactiveEventDates,
+  resolveEventDate,
+  skippedByDate,
+  scheduledDate,
+  collected,
+}: EventDatePlanArgs) {
+  const skips: EventDateSkip[] = [];
+  const playsOnDate = (matchUp: HydratedMatchUp) => {
+    if (allowInactiveEventDates) return true;
+    const { matchUpId, eventId, tournamentId } = matchUp;
+    const verdict = resolveEventDate({ tournamentId, eventId, date: scheduledDate });
+    if (!verdict.plays) skips.push({ matchUpId, eventId, reason: verdict.reason });
+    return verdict.plays;
+  };
+  const courtlessMatchUps = collected.courtlessMatchUps.filter(playsOnDate);
+  const dateMatchUps = collected.dateMatchUps.filter(playsOnDate);
+  if (skips.length) skippedByDate[scheduledDate] = skips;
+  return { courtlessMatchUps, dateMatchUps };
 }

@@ -11,7 +11,10 @@
 // Functions under test (direct imports — synthetic drawDefinitions exercise
 // guard clauses and switch arms without needing a full mocksEngine flow)
 import { initializeCompetitionState } from '@Mutate/drawDefinitions/competition/initializeCompetitionState';
-import { getCompetitionLeaderboard } from '@Query/drawDefinition/competition/getCompetitionLeaderboard';
+import {
+  getCompetitionLeaderboard,
+  rankCompetitionStates,
+} from '@Query/drawDefinition/competition/getCompetitionLeaderboard';
 import { resetCompetitionState } from '@Mutate/drawDefinitions/competition/resetCompetitionState';
 
 // constants
@@ -187,12 +190,10 @@ describe('getCompetitionLeaderboard coverage', () => {
     tiebreakOrder?: string[];
     participantStates: Record<string, any>;
   }) {
-    const policy = { victoryPolicy: { primaryRanking, tiebreakOrder } };
-    const drawDefinition = makeDrawDefinition([
-      makeAppliedPoliciesExt(policy),
-      makeCompetitionStateExt(participantStates),
-    ]);
-    return getCompetitionLeaderboard({ drawDefinition });
+    // the ranking over given states: a leaderboard derives its states from the draw's results (D6), so a state with no
+    // results behind it is ranked directly
+    const competitionPolicy = { victoryPolicy: { primaryRanking, tiebreakOrder } } as any;
+    return rankCompetitionStates({ competitionPolicy, participantStates });
   }
 
   test('PRESSURE_RATING primary ranking', () => {

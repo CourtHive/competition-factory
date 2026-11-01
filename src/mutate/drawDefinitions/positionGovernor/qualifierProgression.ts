@@ -1,6 +1,7 @@
 import { getPositionAssignments, structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { getSourceStructureIdsAndRelevantLinks } from '@Query/structure/getSourceStructureIdsAndRelevantLinks';
 import { qualifierDrawPositionAssignment } from '@Mutate/matchUps/drawPositions/positionQualifier';
+import { getQualifiersData } from '@Mutate/matchUps/drawPositions/positionQualifiers';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { isCompletedStructure } from '@Query/drawDefinition/structureActions';
@@ -13,7 +14,7 @@ import { ResultType } from '@Types/factoryTypes';
 import { generateRange } from '@Tools/arrays';
 
 // constants and types
-import { DrawDefinition, Event, PositionAssignment, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, PositionAssignment, Structure, Tournament } from '@Types/tournamentTypes';
 import { DRAW_DEFINITION, EVENT, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { MAIN, POSITION, QUALIFYING, WINNER } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_POSITION_ACTIONS } from '@Constants/policyConstants';
@@ -69,10 +70,17 @@ export function qualifierProgression({
     positionAssignments: PositionAssignment[];
   } = structureAssignedDrawPositions({ structure: mainStructure });
 
-  if (!qualifierPositions.length)
+  const targetQualifierPositions = qualifierPositionsForRound({
+    structure: mainStructure,
+    qualifierPositions,
+    targetRoundNumber,
+    drawDefinition,
+  });
+
+  if (!targetQualifierPositions.length)
     return decorateResult({ result: { error: NO_DRAW_POSITIONS_AVAILABLE_FOR_QUALIFIERS } });
 
-  let qualifierPositionIndexes = generateRange(0, qualifierPositions.length);
+  let qualifierPositionIndexes = generateRange(0, targetQualifierPositions.length);
 
   if (randomList) {
     qualifierPositionIndexes = mapNumbersToIndexes(qualifierPositionIndexes, randomList);
@@ -115,7 +123,7 @@ export function qualifierProgression({
 
   qualifierPositionIndexes.forEach((positionIndex, index) => {
     const participantToAssign = qualifyingParticipantIds[index];
-    const drawPosition = qualifierPositions[positionIndex].drawPosition;
+    const drawPosition = targetQualifierPositions[positionIndex].drawPosition;
     if (participantToAssign) {
       const positionAssignmentResult: ResultType = qualifierDrawPositionAssignment({
         qualifyingParticipantId: participantToAssign,
@@ -133,6 +141,33 @@ export function qualifierProgression({
   return decorateResult({
     result: definedAttributes({ ...SUCCESS, assignedParticipants }),
   });
+}
+
+/**
+ * The qualifier positions that enter the main structure at the target round. Where qualifiers enter at more than one
+ * round (a later-round qualifier takes a position a first round BYE advances), a position belongs to the LAST target
+ * round whose drawPositions hold it: a qualifier position advances only by a BYE. Where every qualifier enters at one
+ * round, all of them do.
+ */
+function qualifierPositionsForRound({
+  qualifierPositions,
+  targetRoundNumber,
+  drawDefinition,
+  structure,
+}: {
+  qualifierPositions: { drawPosition: number; qualifier: boolean }[];
+  drawDefinition: DrawDefinition;
+  targetRoundNumber: number;
+  structure: Structure;
+}) {
+  // positions keyed by round number, not a matchUp's sides
+  const { roundDrawPositions: positionsByRound } = getQualifiersData({ drawDefinition, structure });
+  const targetRounds = Object.keys(positionsByRound ?? {}).map(Number);
+  if (targetRounds.length < 2) return qualifierPositions;
+
+  const entryRound = (drawPosition: number) =>
+    Math.max(...targetRounds.filter((roundNumber) => positionsByRound[roundNumber].includes(drawPosition)));
+  return qualifierPositions.filter(({ drawPosition }) => entryRound(drawPosition) === targetRoundNumber);
 }
 
 function collectEliminationQualifiers({

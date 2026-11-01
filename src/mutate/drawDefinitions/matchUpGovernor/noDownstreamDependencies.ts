@@ -79,14 +79,7 @@ export function noDownstreamDependencies(params) {
   // contradicted itself. A DOUBLE_DEFAULT reached here 1303 times over the 600-seed sweep window
   // against 3921 DOUBLE_WALKOVERs, and was treated as a score-without-winner where its sibling was
   // not.
-  const doubleExit = isDoubleExit(matchUpStatus);
-  // Non-directing statuses that should preserve their score (not treat as "remove winner")
-  const preserveScoreStatuses = [IN_PROGRESS, SUSPENDED, CANCELLED, ABANDONED, INCOMPLETE];
-  const scoreWithNoWinningSide =
-    checkScoreHasValue({ score }) &&
-    !doubleExit &&
-    !preserveScoreStatuses.includes(matchUpStatus) &&
-    ((params.isCollectionMatchUp && !params.projectedWinningSide) || !winningSide);
+  const scoreWithNoWinningSide = scoresWithNoWinningSide(params);
 
   const timedTieMatchUp = params?.inContextMatchUp?.collectionId && lastSetFormatIsTimed(params.inContextMatchUp);
 
@@ -153,6 +146,35 @@ export function noDownstreamDependencies(params) {
     };
 
   return decorateResult({ result, stack });
+}
+
+// Non-directing statuses that should preserve their score (not treat as "remove winner")
+const preserveScoreStatuses = [IN_PROGRESS, SUSPENDED, CANCELLED, ABANDONED, INCOMPLETE];
+
+/** a score with no winner (a line's: none projected), not a double exit and not under a status that keeps its score */
+function scoresWithNoWinningSide(params): boolean {
+  const { matchUpStatus, winningSide, score } = params;
+  return (
+    checkScoreHasValue({ score }) &&
+    !isDoubleExit(matchUpStatus) &&
+    !preserveScoreStatuses.includes(matchUpStatus) &&
+    ((params.isCollectionMatchUp && !params.projectedWinningSide) || !winningSide)
+  );
+}
+
+/**
+ * Whether the dispatch above sends the call to `removeDirectedParticipants`: its second arm, a score with no winner
+ * that `attemptToSetWinningSide` does not take first (no winner, no dual trigger, no exit to propagate) and that manual
+ * scoring (the dual's auto-calc disabled) does not send to `attemptToModifyScore`. The arm after the status route
+ * (`removeWinningSide`) needs a stored winner, which a matchUp holding no drawPositions never has. `setMatchUpState`
+ * asks this before the dual's writes, for § 2 row 24's removal clause (S7).
+ */
+export function removesDirected(params): boolean {
+  const { matchUpStatus, winningSide, dualMatchUp, disableAutoCalc } = params;
+  const manual = (dualMatchUp?.disableAutoCalc ?? dualMatchUp?._disableAutoCalc) && disableAutoCalc !== false;
+  const triggerDualWinningSide = [CANCELLED, ABANDONED].includes(matchUpStatus) && params.dualWinningSideChange;
+  const propagateExitStatus = params.propagateExitStatus && isExit(matchUpStatus);
+  return !manual && !winningSide && !triggerDualWinningSide && !propagateExitStatus && scoresWithNoWinningSide(params);
 }
 
 function scoreModification(params) {

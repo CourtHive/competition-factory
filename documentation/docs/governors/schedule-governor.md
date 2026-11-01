@@ -49,6 +49,10 @@ engine.addMatchUpScheduledDate({
 });
 ```
 
+A day the matchUp's event does not play (see [Event playing days](#event-playing-days)) is written, and the result
+carries an `EVENT_DATE_INACTIVE` warning: `{ code, message, matchUpId, eventId, scheduledDate, reason }`. It is never
+a refusal.
+
 **Example**:
 
 ```js
@@ -65,7 +69,8 @@ engine.addMatchUpScheduledDate({
 
 Assigns a scheduled time to a matchUp. A date-time (`2026-10-02T09:00`) gives a matchUp with no `scheduledDate` that
 date; one naming another day than the matchUp's `scheduledDate` is refused with `INVALID_DATE`. To move a matchUp to
-another day, write its `scheduledDate`.
+another day, write its `scheduledDate`. When the date-time gives the matchUp a day its event does not play, the
+result carries the same `EVENT_DATE_INACTIVE` warning as `addMatchUpScheduledDate`.
 
 ```js
 engine.addMatchUpScheduledTime({
@@ -93,14 +98,20 @@ engine.addMatchUpScheduledTime({
 Adds a round to an existing scheduling profile.
 
 ```js
-engine.addSchedulingProfileRound({
+const { warnings } = engine.addSchedulingProfileRound({
   scheduleDate, // required - date string
   venueId, // required
-  drawId, // required
-  structureId, // required
-  roundNumber, // required
+  round, // required - { tournamentId, eventId, drawId, structureId, roundNumber }
 });
 ```
+
+A `scheduleDate` not yet in the profile is refused with `INVALID_DATE` when it falls outside the competition's dates.
+A date already in the profile is not re-judged. Whatever `setSchedulingProfile` warns of the stored profile's other
+dates (`SCHEDULING_PROFILE_DATES_OUT_OF_RANGE`) is passed on in `warnings`.
+
+A round whose event does not play on `scheduleDate` (see [Event playing days](#event-playing-days)) is added, and the
+result carries an `EVENT_DATE_INACTIVE` warning: `{ code, message, eventId, scheduledDate, reason, roundKey }`.
+`getSchedulingProfileIssues` reports such rounds for as long as they stay profiled.
 
 ---
 
@@ -273,11 +284,18 @@ engine.scheduleMatchUps({
   // Limits and policies
   matchUpDailyLimits, // optional - SINGLES, DOUBLES, total limits
   checkPotentialRequestConflicts, // optional boolean (default: true)
+  allowInactiveEventDates, // optional boolean (default: false) - time matchUps on days their event does not play, and warn
 
   // Execution control
   dryRun, // optional boolean - preview without changes
 });
 ```
+
+**Event playing days**: a matchUp is never placed on a day its own event does not play (see
+[Event playing days](#event-playing-days)); skipping is per event, so on one day an event may be skipped while another
+is scheduled. What was skipped is reported in `eventDateSkippedMatchUpIds`, `{ [date]: [{ matchUpId, eventId, reason }] }`,
+present only when something was skipped. `allowInactiveEventDates: true` places such matchUps instead, and the result's
+`warnings` carry one `EVENT_DATE_INACTIVE` per such placement. A skipped matchUp is also listed in `noTimeMatchUpIds`.
 
 #### Timing: where the minutes come from
 
@@ -367,6 +385,7 @@ engine.scheduleProfileRounds({
   dryRun, // optional boolean - preview without changes
   pro, // DEPRECATED - see below
   checkPotentialRequestConflicts, // optional boolean (default: true)
+  allowInactiveEventDates, // optional boolean (default: false) - schedule rounds on days their event does not play, and warn
 
   // Daily-limit accounting (apply to already-scheduled matchUps that contribute
   // to per-participant per-day counters)
@@ -384,6 +403,12 @@ The Day Plan defines what is being scheduled today. When the scheduler reconcile
 - `excludeNoDateCompleted` (default `true`) drops `COMPLETED` and `BYE` matchUps that carry no `scheduledDate`. These represent finished play that was never anchored to a specific day; counting them would block legitimate scheduling for the day in question.
 - `excludePriorDates` (default `true`) drops matchUps whose `scheduledDate` is strictly before the date being scheduled. This is a defensive filter: in normal flow same-day filtering already excludes them, but the flag guarantees historical records never leak into a future day's counters.
 
+**Event playing days**: a matchUp is never placed on a day its own event does not play (see
+[Event playing days](#event-playing-days)); skipping is per event, so on one day an event may be skipped while another
+is scheduled. What was skipped is reported in `eventDateSkippedMatchUpIds`, `{ [date]: [{ matchUpId, eventId, reason }] }`,
+present only when something was skipped. `allowInactiveEventDates: true` places such matchUps instead, and the result's
+`warnings` carry one `EVENT_DATE_INACTIVE` per such placement. A skipped matchUp is also listed in `noTimeMatchUpIds`; a dry run reports the same skips.
+
 Set either flag to `false` to restore the pre-defaults legacy semantics where every matchUp in the already-scheduled set consumes its participants' daily-limit budget regardless of status or date.
 
 **Court filtering with `courtIds`**:
@@ -398,7 +423,7 @@ The filter constrains capacity; `scheduleProfileRounds` assigns no court (court 
 {
   (scheduledDates, // array - dates where matchUps were scheduled
     scheduledMatchUpIds, // array - matchUpIds that were scheduled
-    noTimeMatchUpIds, // array - matchUps that couldn't fit
+    noTimeMatchUpIds, // array - matchUps that couldn't fit, or whose date was refused (outside the tournament)
     overLimitMatchUpIds, // array - matchUps exceeding participant limits
     requestConflicts); // by date - { [date]: [{ request, scheduleTimes, matchUpIds }] }, one per request broken
 }
@@ -486,8 +511,15 @@ engine.scheduleProfileGrid({
   // omitted: the tournament's limits, enforced; {}: none enforced, over-limit placements warned
   minCourtGridRows, // optional number - rows per court (default: 10)
   courtIds, // optional array - restrict placement to only these courts
+  allowInactiveEventDates, // optional boolean (default: false) - place matchUps on days their event does not play, and warn
 });
 ```
+
+**Event playing days**: a matchUp is never placed on a day its own event does not play (see
+[Event playing days](#event-playing-days)); skipping is per event, so on one day an event may be skipped while another
+is scheduled. What was skipped is reported in `eventDateSkippedMatchUpIds`, `{ [date]: [{ matchUpId, eventId, reason }] }`,
+present only when something was skipped. `allowInactiveEventDates: true` places such matchUps instead, and the result's
+`warnings` carry one `EVENT_DATE_INACTIVE` per such placement. A skipped matchUp is also listed in `notScheduledMatchUpIds`.
 
 When `courtIds` is provided, only courts in the set are considered as placement targets at each venue. Passing an empty array places nothing. Omitting the parameter places onto all courts at the profile's venues (the default).
 
@@ -510,6 +542,8 @@ An enforced limit refuses a matchUp whose entered participants or winner-advance
   notScheduledMatchUpIds, // record<date, matchUpIds[]> - matchUps that didn't fit per date
   overLimitMatchUpIds,    // record<date, matchUpIds[]> - matchUps rejected by daily limits
   dailyLimitWarningMatchUpIds, // record<date, matchUpIds[]> - placed over a limit the call waived ({})
+  eventDateSkippedMatchUpIds, // record<date, { matchUpId, eventId, reason }[]> - present when any
+  warnings, // present when any - EVENT_DATE_INACTIVE per placement made with allowInactiveEventDates
 }
 ```
 
@@ -644,6 +678,7 @@ const {
   notRescheduled, // array of inContext matchUps that were NOT rescheduled
   allRescheduled, // boolean - true if all matchUps rescheduled
   lockedMatchUpIds, // matchUpIds skipped because a schedule lock pins them (present when any were)
+  warnings, // the warnings of each matchUp's write, each with its matchUpId (present when any), e.g. EVENT_DATE_INACTIVE
   dryRun, // boolean - indicates if this was a dry run
 } = engine.bulkRescheduleMatchUps({
   matchUpIds, // required - array of matchUpIds to reschedule
@@ -1018,10 +1053,14 @@ const { schedulingProfile, modifications, issues } = engine.getSchedulingProfile
 Validates scheduling profile and returns any issues.
 
 ```js
-const { issues } = engine.getSchedulingProfileIssues({
-  schedulingProfile, // optional - validate specific profile
+const { profileIssues, roundIndexShouldBeAfter, eventDateIssues } = engine.getSchedulingProfileIssues({
+  scheduleDates, // optional - only these profile dates
 });
 ```
+
+`eventDateIssues` lists, per profile date, the profiled rounds whose event does not play on that date (see
+[Event playing days](#event-playing-days)): `{ [scheduleDate]: [{ roundKey, eventId, reason }] }`. It covers profiles
+saved before the event's dates said so, and rounds made stale by a later date edit.
 
 ---
 
@@ -1092,10 +1131,18 @@ Professional auto-scheduling with grid-based court assignment.
 
 ```js
 engine.proAutoSchedule({
-  scheduleDate, // required
-  venueIds, // optional
+  scheduledDate, // required
+  matchUps, // required - { inContext: true, nextMatchUps: true }
+  courtIds, // optional
+  allowInactiveEventDates, // optional boolean (default: false) - place matchUps on a day their event does not play, and warn
 });
 ```
+
+**Event playing days**: a matchUp is never placed on a day its own event does not play (see
+[Event playing days](#event-playing-days)); skipping is per event, so on one day an event may be skipped while another
+is scheduled. What was skipped is reported in `eventDateSkippedMatchUpIds`, `{ [date]: [{ matchUpId, eventId, reason }] }`,
+present only when something was skipped. `allowInactiveEventDates: true` places such matchUps instead, and the result's
+`warnings` carry one `EVENT_DATE_INACTIVE` per such placement. A skipped matchUp is also listed in `notScheduled`.
 
 A completed matchUp is never placed (CA 2026-10-23): passed one, the write skips it and it is reported not scheduled.
 `scheduleCompletedMatchUps` is accepted and ignored until the next major.
@@ -1315,6 +1362,20 @@ engine.setSchedulingProfile({
   schedulingProfile, // required - profile object
 });
 ```
+
+**Dates outside the tournament.** A profile whose dates fall outside the competition's dates (every loaded tournament's
+range combined, compared as calendar days) is still saved: a profile can outlive a change of tournament dates, the
+repair of an orphaned round re-saves the whole profile, and clients save the whole profile on every edit. The result
+carries a warning naming the out-of-range dates:
+
+```js
+const result = engine.setSchedulingProfile({ schedulingProfile });
+// result.success → true
+// result.warnings → [{ code: 'SCHEDULING_PROFILE_DATES_OUT_OF_RANGE', message, scheduleDates: ['2024-06-20'] }]
+```
+
+No warning is returned when every date is in range, or when a tournament has no dates. The scheduling pipeline writes no
+time for a matchUp whose profile date is refused (see `noTimeMatchUpIds`).
 
 **Profile Structure**:
 
@@ -1581,6 +1642,15 @@ engine.addMatchUpScheduleItems({
   disableNotice, // optional boolean — suppress modification notices
 });
 ```
+
+### A day the event does not play is warned, never refused
+
+When the call sets a date (`scheduledDate`, or the date of a date-time `scheduledTime` given without one) on which the
+matchUp's event does not play (see [Event playing days](#event-playing-days)), the schedule is written and the result's
+`warnings` carry `EVENT_DATE_INACTIVE`: `{ code, message, matchUpId, eventId, scheduledDate, reason }`. A call that
+sets no date (a court, a court order, a time alone) carries none. The bulk writes (`bulkScheduleMatchUps`,
+`bulkScheduleTournamentMatchUps`, `bulkRescheduleMatchUps`) return the warning of each matchUp they write in their own
+`warnings`.
 
 ### Schedule order: a matchUp is never placed at or before a matchUp it depends on
 
@@ -2062,6 +2132,67 @@ batched against 6,048 asked one by one; the gap grows with the size of the draw.
 
 Rest counts up, so a result describes its `asOf` and nothing later: a caller repainting rest on a timer
 asks again with the new instant rather than keeping an earlier answer.
+
+## Event playing days
+
+An event plays on a calendar day when the day lies in the tournament's range and in the event's range, is one
+of the tournament's `activeDates` (else one of its `weekdays`), and is one of the event's `activeDates` (else one
+of its `weekdays`). `setEventDates` writes the event's range, `activeDates` and `weekdays`;
+`setTournamentDates` writes the tournament's.
+
+- `activeDates` win over `weekdays` at both levels when both are set.
+- An empty array means **unset**, never "no days".
+- The weekday is that of the calendar day, read in UTC, so no time zone moves it.
+- An event range that does not intersect the tournament range (a stale range, left behind when the tournament
+  moved) is **ignored**, and the tournament range applies. `getEventInconsistencies` reports such an event as
+  `EVENT_DATES_OUTSIDE_TOURNAMENT` (a warning).
+
+When a day is not a playing day, the first rule that fails is the `reason`:
+
+| reason                     | the day                                            |
+| -------------------------- | -------------------------------------------------- |
+| `INVALID_DATE`             | is not a `YYYY-MM-DD` calendar day                 |
+| `OUTSIDE_TOURNAMENT_DATES` | lies outside the tournament's `startDate..endDate` |
+| `OUTSIDE_EVENT_DATES`      | lies outside the event's `startDate..endDate`      |
+| `TOURNAMENT_INACTIVE_DATE` | is not one of the tournament's `activeDates`       |
+| `TOURNAMENT_WEEKDAY`       | falls on a weekday the tournament does not play    |
+| `EVENT_INACTIVE_DATE`      | is not one of the event's `activeDates`            |
+| `EVENT_WEEKDAY`            | falls on a weekday the event does not play         |
+
+`getRounds({ scheduleDate })` excludes the rounds of events that do not play on `scheduleDate`, and each round
+of an event whose own dates narrow the tournament's carries that event's `playingDates`.
+`tournamentInfo.eventInfo` (`getTournamentInfo`), `getEventData`'s `eventInfo` and `getAllEventData` carry
+`playingDates` under the same condition, so an unconstrained event adds nothing to a public payload.
+
+### getEventPlayingDates
+
+An event's playing days, enumerated over the tournament range. `constrained` is `true` when the event's own
+range, `activeDates` or `weekdays` narrow the days the tournament plays.
+
+```js
+const { playingDates, constrained } = tournamentEngine.getEventPlayingDates({
+  eventId, // required
+});
+// weekdays: ['SAT', 'SUN'] on a Fri 13 .. Mon 16 tournament
+// → { playingDates: ['2026-11-14', '2026-11-15'], constrained: true }
+```
+
+### getEventDateIssues
+
+The scheduled matchUps whose event does not play on their scheduled day. A matchUp's day is its
+`scheduledDate`, else the date part of its `scheduledTime`. It is derived each time it is asked, so a misplaced
+matchUp stays reported whoever placed it and whenever the event's dates changed.
+
+```js
+const { eventDateIssues } = competitionEngine.getEventDateIssues({
+  scheduledDate, // optional - only matchUps scheduled on this day
+  matchUpIds, // optional - only these matchUps
+  eventIds, // optional - only these events' matchUps
+});
+// [{ matchUpId, eventId, tournamentId, scheduledDate, reason }]
+```
+
+---
 
 ## Related Documentation
 

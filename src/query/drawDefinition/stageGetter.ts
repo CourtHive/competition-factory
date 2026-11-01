@@ -14,7 +14,7 @@ import { findStructure } from '@Acquire/findStructure';
 import { numericSort } from '@Tools/sorting';
 
 // constants
-import { ALTERNATE, FEED_IN, WILDCARD, DIRECT_ENTRY_STATUSES } from '@Constants/entryStatusConstants';
+import { ALTERNATE, FEED_IN, WILDCARD, LUCKY_LOSER, DIRECT_ENTRY_STATUSES } from '@Constants/entryStatusConstants';
 import { CONTAINER, PLAY_OFF, validStages } from '@Constants/drawDefinitionConstants';
 import { ROUND_TARGET, TALLY } from '@Constants/extensionConstants';
 
@@ -50,8 +50,15 @@ export function getStageWildcardsCount({ tournamentRecord, event }: { tournament
   // Unsanctioned: no wildcard limit
   return constraints?.maxWildcards ?? Infinity;
 }
-export function getStageEntryTypeCount({ stage, drawDefinition, entryStatus }) {
-  return drawDefinition.entries.reduce(
+type StageEntryCountArgs = {
+  // counts a list other than the draw's own, e.g. an event's entries before any draw exists
+  entries?: Entry[];
+  drawDefinition?: DrawDefinition;
+  entryStatus?: string;
+  stage?: string;
+};
+export function getStageEntryTypeCount({ stage, drawDefinition, entryStatus, entries }: StageEntryCountArgs) {
+  return (entries ?? drawDefinition?.entries ?? []).reduce(
     (p, c) => (c.entryStage === stage && c.entryStatus === entryStatus ? p + 1 : p),
     0,
   );
@@ -311,20 +318,36 @@ function collectStandardEntries({ provisionalPositioning, finishingPositions, al
   });
 }
 
-export function getStageDirectEntriesCount({ stage, drawDefinition }) {
-  return DIRECT_ENTRY_STATUSES.reduce((count, entryStatus) => {
-    const statusCount = getStageEntryTypeCount({
-      drawDefinition,
-      entryStatus,
-      stage,
-    });
-    return (statusCount || 0) + count;
-  }, 0);
+/**
+ * The entry statuses that take a stage's places open to entries not coming through qualifying: every
+ * direct-entry status (wildcards included) and LUCKY_LOSER, which takes a place vacated by a withdrawal.
+ * QUALIFIER is not among them: those entries fill the qualifier positions, which are subtracted from the
+ * stage's draw positions before these are counted against what remains.
+ *
+ * The one list both `getStageSpace` (what entry into a draw allows) and `getEventEntrySpace` (what an
+ * event or draw reports as open) count, so the two cannot drift.
+ */
+export const PLACE_TAKING_ENTRY_STATUSES: EntryStatusUnion[] = [...DIRECT_ENTRY_STATUSES, LUCKY_LOSER];
+
+export function getStagePlaceTakingEntriesCount({
+  stage,
+  drawDefinition,
+  entries,
+}: Omit<StageEntryCountArgs, 'entryStatus'>) {
+  return PLACE_TAKING_ENTRY_STATUSES.reduce(
+    (count, entryStatus) => count + getStageEntryTypeCount({ drawDefinition, entries, entryStatus, stage }),
+    0,
+  );
 }
-export function getStageWildcardEntriesCount({ stage, drawDefinition }) {
+export function getStageWildcardEntriesCount({
+  stage,
+  drawDefinition,
+  entries,
+}: Omit<StageEntryCountArgs, 'entryStatus'>) {
   return getStageEntryTypeCount({
     entryStatus: WILDCARD,
     drawDefinition,
+    entries,
     stage,
   });
 }

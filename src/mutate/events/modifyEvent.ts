@@ -3,6 +3,7 @@ import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParame
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
+import { validateEntryProfile } from '@Validators/validateEntryProfile';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { categoryCanContain } from '@Query/event/categoryCanContain';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -33,11 +34,14 @@ import {
   Category,
   Event,
   Tournament,
+  EventEntryProfile,
   EventTypeUnion,
   GenderUnion,
   TieFormat,
   UnifiedEventID,
 } from '@Types/tournamentTypes';
+
+type EntryProfileUpdate = { [K in keyof EventEntryProfile]?: EventEntryProfile[K] | null };
 
 type ModifyEventArgs = {
   tournamentRecord: Tournament;
@@ -58,6 +62,11 @@ type ModifyEventArgs = {
     // value. Hierarchical resolution lets drawDefinition/structure overrides
     // win at lower scopes. See @Types/competitionFormat.
     competitionFormat?: competitionFormat | null;
+    // How the event accepts entries, and how many. MERGED into the existing profile key by key, so a
+    // caller that edits only the sizes keeps what it does not show (selectionProcess, extensions, ...);
+    // a key set to null removes it. null for the whole profile clears it. The merged profile is
+    // validated as stored — see validateEntryProfile.
+    entryProfile?: EntryProfileUpdate | null;
   };
   eventId: string;
   event: Event;
@@ -96,6 +105,9 @@ export function modifyEvent(params: ModifyEventArgs): ResultType {
   const dateResult = dateUpdates({ ...params, stack });
   if (dateResult.error) return dateResult;
 
+  const entryProfileResult = mergeEntryProfile({ event, entryProfile: eventUpdates.entryProfile, stack });
+  if (entryProfileResult.error) return entryProfileResult;
+
   if (eventUpdates.eventType) event.eventType = eventUpdates.eventType;
   if (eventUpdates.eventName) event.eventName = eventUpdates.eventName;
   if (eventUpdates.gender) event.gender = eventUpdates.gender;
@@ -111,6 +123,9 @@ export function modifyEvent(params: ModifyEventArgs): ResultType {
     }
   }
 
+  if (entryProfileResult.entryProfile === null) delete event.entryProfile;
+  else if (entryProfileResult.entryProfile) event.entryProfile = entryProfileResult.entryProfile;
+
   if (eventUpdates.eventOtherIds !== undefined) {
     if (eventUpdates.eventOtherIds === null) {
       delete event.eventOtherIds;
@@ -123,7 +138,37 @@ export function modifyEvent(params: ModifyEventArgs): ResultType {
   // notice fired by an internal setEventDates call).
   modifyEventNotice({ event, tournamentId: params.tournamentRecord?.tournamentId });
 
-  return { ...SUCCESS };
+  // a date change that leaves scheduled matchUps on days the event does not play lands, with its warnings
+  return dateResult.warnings?.length ? { ...SUCCESS, warnings: dateResult.warnings } : { ...SUCCESS };
+}
+
+// resolves the profile modifyEvent will store, without applying it: null clears, undefined leaves it
+function mergeEntryProfile({
+  entryProfile,
+  event,
+  stack,
+}: {
+  entryProfile?: EntryProfileUpdate | null;
+  event: Event;
+  stack: string;
+}): ResultType & { entryProfile?: EventEntryProfile | null } {
+  if (entryProfile === undefined) return { ...SUCCESS };
+  if (entryProfile === null) return { ...SUCCESS, entryProfile: null };
+
+  if (typeof entryProfile !== 'object' || Array.isArray(entryProfile))
+    return decorateResult({ result: validateEntryProfile(entryProfile), stack });
+
+  const merged: Record<string, unknown> = { ...event.entryProfile };
+  for (const [key, value] of Object.entries(entryProfile)) {
+    if (value === null) delete merged[key];
+    else if (value !== undefined) merged[key] = value;
+  }
+
+  const mergedResult = validateEntryProfile(merged);
+  if (mergedResult.error) return decorateResult({ result: mergedResult, stack });
+
+  // removing every key leaves no profile, rather than an empty one
+  return { ...SUCCESS, entryProfile: Object.keys(merged).length ? (merged as EventEntryProfile) : null };
 }
 
 function checkCategoryUpdates(params) {
@@ -221,6 +266,8 @@ function dateUpdates(params) {
       event,
     });
     if (result.error) return decorateResult({ result, stack });
+    // scheduled matchUps now on days the event does not play (EVENT_DATE_INACTIVE): the dates land, the warnings travel
+    if (result.warnings?.length) return { ...SUCCESS, warnings: result.warnings };
   }
 
   return { ...SUCCESS };

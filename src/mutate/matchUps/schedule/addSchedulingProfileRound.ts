@@ -1,6 +1,7 @@
 import { firstClassGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
 import { getCompetitionDateRange } from '@Query/tournaments/getCompetitionDateRange';
 import { getProfileRoundKey } from '@Query/matchUps/scheduling/schedulingUtils';
+import { eventDateResolver } from '@Query/events/eventPlaysOnDate';
 import { setSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import { extractDate, isValidDateString, sameDay } from '@Tools/dateTime';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -8,7 +9,7 @@ import { isObject } from '@Tools/objects';
 
 // constants and types
 import type { ProfileRound, ProfileVenue } from '@Query/matchUps/scheduling/schedulingUtils';
-import { EXISTING_ROUND, INVALID_DATE } from '@Constants/errorConditionConstants';
+import { EVENT_DATE_INACTIVE, EXISTING_ROUND, INVALID_DATE } from '@Constants/errorConditionConstants';
 import { SCHEDULING_PROFILE } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -77,8 +78,30 @@ export function addSchedulingProfileRound({ tournamentRecords, scheduleDate, ven
   if (roundExists) return decorateResult({ result: { error: EXISTING_ROUND }, stack });
   venueOnDate.rounds.push(round);
 
+  // a NEW date outside the competition's dates is refused above; a date already in the profile is not re-judged,
+  // and whatever the save reports of the profile's other dates is passed on
   const result = setSchedulingProfile({ tournamentRecords, schedulingProfile });
   if (result.error) return result;
 
-  return { ...SUCCESS };
+  // a round profiled on a day its event does not play is added, and warned about (CA 2026-11-01), beside whatever
+  // setSchedulingProfile warns of the profile's other dates
+  const warnings = [...(result.warnings ?? [])];
+  const verdict =
+    round?.tournamentId &&
+    eventDateResolver(tournamentRecords)({
+      tournamentId: round.tournamentId,
+      date: extractDate(scheduleDate),
+      eventId: round.eventId,
+    });
+  if (verdict && !verdict.plays) {
+    warnings.push({
+      ...EVENT_DATE_INACTIVE,
+      scheduledDate: extractDate(scheduleDate),
+      reason: verdict.reason,
+      eventId: round.eventId,
+      roundKey,
+    });
+  }
+
+  return warnings.length ? { ...SUCCESS, warnings } : { ...SUCCESS };
 }

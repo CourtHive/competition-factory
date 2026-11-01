@@ -81,6 +81,7 @@ export const methodScopeMap: Record<string, MutationLockScope> = {
   setDrawOtherIds: 'DRAWS',
   removeStructure: 'DRAWS',
   resetQualifyingStructure: 'DRAWS',
+  resetStructure: 'DRAWS',
   swapDrawPositionAssignments: 'DRAWS',
   removeSeededParticipant: 'DRAWS',
   addQualifyingStructure: 'DRAWS',

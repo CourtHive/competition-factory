@@ -9,11 +9,12 @@ import { getCapturedStamps } from '@Global/state/globalState';
 import { nowIso } from '@Tools/clock';
 
 // constants and types
-import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { completedMatchUpStatuses, BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
 import type {
   DrawDefinition,
   MatchUp,
+  MatchUpSchedule,
   MatchUpStatusCodeElement,
   MatchUpStatusUnion,
   PositionAssignment,
@@ -84,6 +85,11 @@ export type OutcomeOp =
       ensuredSides?: unknown[];
       /** a TEAM dual's own call that disables auto-calc (`true`) or enables it (`null`, removed), as v1 stores it (S7) */
       disableAutoCalc?: true | null;
+      /**
+       * the call's notes, written onto its own matchUp with the result as v1's `addNotes` writes them inside
+       * `modifyMatchUpScore` (S7, `notesReason`: the clean routes only; a double exit's or a TEAM call's are deferred)
+       */
+      notes?: string;
     }
   | {
       op: 'setMatchUpDrawPositions';
@@ -215,6 +221,11 @@ export type OutcomeOp =
        */
       structureId: string;
       drawPosition: number;
+      /**
+       * false where v1 announces no assignments for it: a BYE its round-1 loser cascade takes back
+       * (`handleLoserMatchUpRemoval` → `drawPositionRemovals`, S6 tail, the unwind walk)
+       */
+      announcesAssignments?: false;
     }
   | {
       op: 'clearMatchUpBye';
@@ -253,6 +264,26 @@ export type OutcomeOp =
       /** false where v1's writer names no event (`assignTeamLineUp` hands `updateSideLineUp` none) */
       announcesEvent?: false;
     }
+  | {
+      op: 'setMatchUpSchedule';
+      /**
+       * the schedule a call carries, as v1's `addMatchUpScheduleItems` writes it on the matchUp (S7): the whole stored
+       * `schedule` after the write, which the plan reads by running that writer on a copy of the matchUp. Ordered before
+       * the call's result, as v1 writes the schedule before `applyScoredTime` stamps onto it
+       */
+      matchUpId: string;
+      schedule: MatchUpSchedule;
+    }
+  | {
+      op: 'setOrderOfFinish';
+      /**
+       * a TEAM dual's line's place in its collection's finishing order (`orderOfFinish`): absent, removed. Planned per
+       * line whose number a line's write changes (the line itself, and the later lines of a cleared one), after that
+       * line's result and before the dual's, as v1's `modifyMatchUpScore` writes them
+       */
+      matchUpId: string;
+      orderOfFinish?: number;
+    }
   | { op: 'stampUpdatedAt'; entity: 'matchUp' | 'structure' | 'drawDefinition'; id: string };
 
 /** the op vocabulary as a literal union, which `verify:outcome-spec` holds to the spec; checked against `OutcomeOp` */
@@ -272,6 +303,8 @@ export type OutcomeOpName =
   | 'clearMatchUpBye'
   | 'setParticipantResults'
   | 'setSideLineUp'
+  | 'setMatchUpSchedule'
+  | 'setOrderOfFinish'
   | 'stampUpdatedAt';
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 const opNamesMatch: Same<OutcomeOpName, OutcomeOp['op']> = true;
@@ -330,11 +363,13 @@ function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMat
     });
   if (op.dualTally?.tieFormat) matchUp.tieFormat = structuredClone(op.dualTally.tieFormat) as MatchUp['tieFormat'];
   matchUp.matchUpStatus = op.matchUpStatus;
+  clearOrderOfFinishUnlessCompleted(matchUp);
   if (op.score) matchUp.score = structuredClone(op.score);
   if (op.winningSide) matchUp.winningSide = op.winningSide;
   else delete matchUp.winningSide;
   if (op.matchUpFormat) matchUp.matchUpFormat = op.matchUpFormat;
   if (op.matchUpStatusCodes) matchUp.matchUpStatusCodes = structuredClone(op.matchUpStatusCodes);
+  if (op.notes) matchUp.notes = op.notes;
   if (op.stampsScoredTime === false) return;
   // v1's `applyScoredTime`: captured the first time the matchUp is scored, kept on later corrections, removed with
   // the score so a re-score gets a fresh stamp
@@ -458,6 +493,21 @@ function foldSideLineUp(op: OpOf<'setSideLineUp'>, { matchUps }: DrawIndex): Fol
   return {};
 }
 
+function foldOrderOfFinish(op: OpOf<'setOrderOfFinish'>, { matchUps }: DrawIndex): Folded {
+  const matchUp = matchUps.get(op.matchUpId);
+  if (!matchUp) return { error: `setOrderOfFinish: no matchUp ${op.matchUpId}` };
+  if (op.orderOfFinish === undefined) delete matchUp.orderOfFinish;
+  else matchUp.orderOfFinish = op.orderOfFinish;
+  return {};
+}
+
+function foldSchedule(op: OpOf<'setMatchUpSchedule'>, { matchUps }: DrawIndex): Folded {
+  const matchUp = matchUps.get(op.matchUpId);
+  if (!matchUp) return { error: `setMatchUpSchedule: no matchUp ${op.matchUpId}` };
+  matchUp.schedule = structuredClone(op.schedule);
+  return {};
+}
+
 function foldStatusCodes(op: OpOf<'setMatchUpStatusCodes'>, { matchUps }: DrawIndex): Folded {
   const matchUp = matchUps.get(op.matchUpId);
   if (!matchUp) return { error: `setMatchUpStatusCodes: no matchUp ${op.matchUpId}` };
@@ -498,6 +548,7 @@ function foldSetMatchUpBye(op: OpOf<'setMatchUpBye'>, { matchUps }: DrawIndex): 
   const matchUp = matchUps.get(op.matchUpId);
   if (!matchUp) return { error: `setMatchUpBye: no matchUp ${op.matchUpId}` };
   Object.assign(matchUp, { matchUpStatus: BYE, score: undefined, winningSide: undefined });
+  clearOrderOfFinishUnlessCompleted(matchUp);
   return {};
 }
 
@@ -514,7 +565,14 @@ function foldClearMatchUpBye(op: OpOf<'clearMatchUpBye'>, { matchUps }: DrawInde
   const matchUp = matchUps.get(op.matchUpId);
   if (!matchUp) return { error: `clearMatchUpBye: no matchUp ${op.matchUpId}` };
   matchUp.matchUpStatus = TO_BE_PLAYED;
+  clearOrderOfFinishUnlessCompleted(matchUp);
   return {};
+}
+
+// a matchUp that is no longer complete has no place in its cohort's order of finish (`setOrderOfFinish`); v1 clears it
+// in modifyMatchUpScore, so the two pipelines write the same record
+function clearOrderOfFinishUnlessCompleted(matchUp: MatchUp): void {
+  if (!completedMatchUpStatuses.includes(matchUp.matchUpStatus as MatchUpStatusUnion)) delete matchUp.orderOfFinish;
 }
 
 function foldParticipantResults(op: OpOf<'setParticipantResults'>, { groups, structures }: DrawIndex): Folded {
@@ -590,6 +648,10 @@ function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition
       return foldParticipantResults(op, index);
     case 'setSideLineUp':
       return foldSideLineUp(op, index);
+    case 'setMatchUpSchedule':
+      return foldSchedule(op, index);
+    case 'setOrderOfFinish':
+      return foldOrderOfFinish(op, index);
     default:
       return foldStamp(op, index, drawDefinition, stampedBefore);
   }

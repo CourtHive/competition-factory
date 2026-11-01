@@ -47,6 +47,7 @@ const REASONS = [
   'recoveryTimeDeferredMatchUpIds',
   'playedOrderDeferredMatchUpIds',
   'requestConflicts',
+  'eventDateSkippedMatchUpIds',
 ];
 
 type Report = { [key: string]: { [date: string]: string[] } | undefined };

@@ -64,6 +64,13 @@ When called via the public engine API (not `internalUse`), `event.entries` and `
 
 ## addFlight
 
+Adds one flight to the event's flight profile, numbered after the highest existing flight, without changing the other
+flights or their draws.
+
+A participant who is already in another flight, or in a draw (every draw counts as a flight), is still added, but the
+result carries a warning: `{ code: PARTICIPANT_IN_OTHER_FLIGHT, info: { participantIds } }` (`flightConstants`). From
+8.0.0 such a call is refused unless `force: true` is given.
+
 ```js
 engine.addFlight({
   drawEntries, // optional
@@ -343,10 +350,45 @@ event.modifyEvent({
     startDate, // optional - must fall within tournament dates
     category, // optional - must validate against current event entries, if any
     endDate, // optional - must fall within tournament dates
+    entryProfile, // optional - merged into event.entryProfile; null clears it (see below)
   },
   eventId,
 });
 ```
+
+**`entryProfile`** states how the event accepts entries, and how many — the way a director sets it when
+there is no sanctioning step to carry the sizes in. It is **merged** key by key into the existing
+profile, so an edit that names only the sizes keeps what it does not show (`selectionProcess`,
+`extensions`, ...). A key set to `null` removes it; `entryProfile: null` clears the whole profile, as
+does removing its last key. The merged profile is validated as stored, and an invalid one is refused
+with `INVALID_VALUES`, leaving the event unchanged.
+
+```js
+engine.modifyEvent({
+  eventId,
+  eventUpdates: {
+    entryProfile: {
+      entriesLimit, // optional - how many entries the event accepts
+      targetDrawSize, // optional - intended MAIN draw size before a draw exists
+      qualifyingDrawSize, // optional - the simple case: one qualifying draw of this size
+      qualifiersCount, // optional - how many qualifiers enter MAIN; must be fewer than qualifyingDrawSize
+      qualifyingProfiles, // optional - [{ roundTarget, structureProfiles: [{ stageSequence, drawSize, qualifyingPositions }] }]
+      wildcardCount, // optional - MAIN places held for wildcards
+      selectionProcess, // optional - SelectionProcessEnum value
+      selectionScaleName, // optional - which scale orders acceptance
+      waitlistEnabled, // optional boolean
+    },
+  },
+});
+```
+
+- `qualifyingProfiles` states multi-structure qualifying (pre-qualifying with `stageSequence` 1 and 2,
+  or several structures feeding different MAIN rounds) and mirrors the draw generator's input of the same
+  name. It replaces `qualifyingDrawSize` and `qualifiersCount`: a profile carrying both is refused, so
+  switching shapes takes nulling the simple keys in the same call.
+- Sizes are positive whole numbers (`qualifiersCount` and `wildcardCount` may be 0); qualifier and
+  wildcard places together may not exceed `targetDrawSize`; a structure profile's `qualifyingPositions`
+  must be fewer than its `drawSize`.
 
 ---
 
@@ -399,18 +441,29 @@ engine.modifyTieFormat({
 
 ## promoteAlternates
 
+Promotes alternates to direct acceptance in the order given, each placed after the accepted entries. See
+[entries governor: promoteAlternates](/docs/governors/entries-governor#promotealternates) for positions, draws and flights.
+
 ```js
 engine.promoteAlternates({
-  participantIds,
+  participantIds, // in order of acceptance
   // either drawId or eventId are REQUIRED
-  eventId, // optional if drawId proided
-  drawId, // optional if eventId proided
+  eventId, // optional if drawId provided
+  drawId, // optional if eventId provided
 });
 ```
 
 ---
 
 ## refreshEventDrawOrder
+
+Renumbers the event's display order (`drawOrder`) to 1..n without gaps, for example after a draw or a flight has been
+deleted. Flights come first, each placed by its draw's `drawOrder`, else its own `drawOrder`, else its `flightNumber`;
+draws that have no flight follow, by `drawOrder`. A flight's `flightNumber` is never changed.
+
+```js
+engine.refreshEventDrawOrder({ eventId });
+```
 
 ---
 
@@ -471,6 +524,19 @@ engine.setEventDates({
   eventId, // required
 });
 ```
+
+Every date is checked before anything is written: a `startDate` or `endDate` outside the tournament's dates is refused
+with `INVALID_DATE` (`context.dates` names them) and the event is left as it was.
+
+An event's range always lies inside the tournament's. A new event takes the tournament's dates, and a later
+[`setTournamentDates`](/docs/governors/tournament-governor#settournamentdates) carries it along: an event whose range
+equals the tournament's follows every tournament change, and a range narrowed with `setEventDates` is kept, cut to the
+new tournament range, or reset to it when none of it is left.
+
+The new dates land even when scheduled matchUps of the event now sit on days it does not play (see
+[Event playing days](./schedule-governor.md#event-playing-days)): the result carries one `EVENT_DATE_INACTIVE` warning
+per such matchUp, `{ code, message, matchUpId, eventId, scheduledDate, reason }`. `modifyEvent` returns the same
+warnings when its `eventUpdates` change the event's dates.
 
 ---
 
@@ -535,7 +601,12 @@ engine.setEventDisplay({
 
 ## updateDrawIdsOrder
 
-Updates the `drawOrder` attribute of all `drawDefinitions` within an event. The `drawOrder` attribute can be used for sorting or for differentiating `drawDefinitions` for the award of rankings points, when "flighting" separates participants by some `scaleValue`.
+Updates the display order of the event's draws: the `drawOrder` of each `drawDefinition`, and the `drawOrder` of each
+flight in the event's `flightProfile`, including flights whose draw has not been generated.
+
+A flight's `flightNumber` is not changed. It is the flight's level, fixed when the flight is made, and ranking points
+are awarded by it (the `flights` values of an award profile), so reordering draws for display never changes the
+points a flight earns.
 
 ```js
 engine.updateDrawIdsOrder({

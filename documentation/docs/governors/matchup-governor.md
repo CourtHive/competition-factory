@@ -453,6 +453,39 @@ const { matchUps } = engine.getCompetitionMatchUps({
 
 ---
 
+## getDualIssues
+
+What is wrong with a TEAM dual, for a scorecard to show. Reports only; changes nothing. Codes are
+`dualIssueConstants`.
+
+Per line (`matchUpId` and `collectionId` name the line):
+
+- `LINEUP_INCOMPLETE`: a side has no participant, or a doubles side has one (`sideNumber`)
+- `DUPLICATE_IN_COLLECTION`: one participant on two lines of a collection (`participantIds`, `matchUpIds`)
+- `INELIGIBLE_GENDER`: a participant does not fit the line's or collection's gender; a MIXED doubles pair must
+  be one of each (`info` is the gender required)
+- `INELIGIBLE_CATEGORY`: a participant's birth date is outside the category's ages on the considered date
+- `SCORE_INCOMPLETE`: a COMPLETED line holds a set its format cannot finish on (`info` names the set)
+- `MISSING_REASON`: a RETIRED or DEFAULTED line has no status code (`info` is the status)
+
+Per dual:
+
+- `DUAL_DECIDED`: a team has won with lines still unplayed (`matchUpIds`)
+- `MANUAL_SCORE`: automatic team scoring is off (`disableTieAutoCalc`, or a score set with `disableAutoCalc`)
+- `MANUAL_SCORE_DIVERGES`: the held score differs from what the lines produce (`info` is the lines' score)
+
+```js
+const { issues } = engine.getDualIssues({
+  matchUpId, // required unless matchUp is given: the TEAM dual
+  drawId, // optional; resolved from matchUpId when absent
+  matchUp, // optional — a hydrated dual, used as is
+  consideredDate, // optional — the date ages are measured on; default the dual's scheduled date. Without one, ages are not checked
+});
+// issues: [{ code, matchUpId?, matchUpIds?, collectionId?, participantIds?, sideNumber?, info? }]
+```
+
+---
+
 ## getEventMatchUpFormatTiming
 
 Returns format timing configuration for an event. When `categoryType` is not supplied it is resolved from the event's own category.
@@ -1254,10 +1287,19 @@ Sets the `orderOfFinish` attribute for `matchUps` specified by `matchUpId` in th
 
 ### Validation
 
-Validation is done within a _cohort_ of `matchUps` which have equivalent `structureId`, `matchUpType`, `roundNumber`, and `matchUpTieId` (if applicable).
+Validation is done within a _cohort_ of `matchUps` which have equivalent `structureId`, `matchUpType`, `roundNumber`, and `matchUpTieId` and `collectionId` (if applicable): a TEAM dual's lines are numbered per collection.
 
 - `matchUpIds` in `finishingOrder` must be part of the same _cohort_
 - `orderOfFinish` values must be unique positive integers within the _cohort_
+- a dual's line takes a number only when it was played to a result (`COMPLETED`, `RETIRED`, or `DEFAULTED` with a score); a walkover, a scoreless default, a dead rubber or an abandoned line is refused with `INVALID_MATCHUP_STATUS`
+
+### Automatic numbering of a dual's lines
+
+The factory numbers a dual's lines as they finish, on every write of a line's result, so `setOrderOfFinish` is needed only to correct the order:
+
+- a line played to a result that has no number finishes after the others in its collection. No number goes past the lines that can still count; a gap left by an older record is closed first
+- a line whose result is cleared, or becomes one that does not count, loses its number and the later lines move up
+- a score edit, or a corrected winner, keeps the number
 
 ```js
 engine.setOrderOfFinish({

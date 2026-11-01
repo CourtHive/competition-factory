@@ -30,6 +30,18 @@ engine.addDrawEntries({
 });
 ```
 
+**Stage space.** Once the stage has a structure, entries are refused with
+`NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS` when the stage is full, or with
+`PARTICIPANT_COUNT_EXCEEDS_DRAW_SIZE` when there are more `participantIds` than places left. The
+places left to direct entries are the stage's draw positions less the positions its links hold for
+qualifiers, and every entry already holding one counts against them: the direct-entry statuses
+(`DIRECT_ACCEPTANCE`, `WILDCARD`, `ORGANISER_ACCEPTANCE`, `SPECIAL_EXEMPT`, `JUNIOR_EXEMPT`,
+`CONFIRMED`, `FEED_IN`) and `LUCKY_LOSER`, which takes a place vacated by a withdrawal. `QUALIFIER`
+entries count against the qualifier positions only, so they never take a direct-acceptance place, and a
+`QUALIFIER` entry is refused once the qualifier positions are full. [`getEventEntrySpace`](#getevententryspace)
+counts the same statuses, so the `openPlaces` it reports is what this method allows. `ALTERNATE` entries
+are limited only by a sanctioned `maxAlternates`; `ignoreStageSpace: true` skips every check.
+
 ---
 
 ## addEventEntries
@@ -303,6 +315,68 @@ console.log(`${stageEntries.length} entries, ${seedsCount} seeds allowed`);
 
 **8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getEventEntryFees`](/docs/implementation/records/getEventEntryFees). Package-export status is a separate decision.
 
+## getEntryStatusOrdinals
+
+Each entry's place among the entries of its own stage and `entryStatus` (e.g. `WILDCARD` #1, #2), derived from the one
+accepted `entryPosition` list described under [modifyEntriesStatus](#modifyentriesstatus). Nothing is stored. Within
+each stage and status, entries are ordered by `entryPosition` (entries without a position follow, in array order) and
+numbered 1..n.
+
+```js
+const { statusOrdinals } = engine.getEntryStatusOrdinals({
+  entries, // array of entry objects, e.g. event.entries or a flight's drawEntries
+  entryStatus, // optional filter - e.g. WILDCARD
+  stage, // optional filter - e.g. MAIN, QUALIFYING; an entry without entryStage is MAIN
+});
+
+// statusOrdinals: [{ participantId, entryStage, entryStatus, entryPosition, statusOrdinal }]
+// e.g. accepted list DA 1, WC 2, DA 3, WC 4 -> WILDCARD statusOrdinals 1 (position 2) and 2 (position 4)
+```
+
+---
+
+## getEventEntrySpace
+
+How many MAIN places an event (or one of its draws) has for entries accepted directly — neither
+qualifiers nor wildcards — and how many of them are still open.
+
+```js
+const { basis, drawPositions, qualifierPositions, wildcardPositions, directAcceptancePlaces, openPlaces } =
+  engine.getEventEntrySpace({
+    eventId, // required
+    drawId, // optional - that draw's positions and entries; otherwise the event's
+  });
+```
+
+**Returns:**
+
+```ts
+{
+  success: true;
+  basis: 'STRUCTURE' | 'TARGET_DRAW_SIZE' | 'SANCTIONING_CONSTRAINTS' | 'NONE'; // where drawPositions came from
+  drawPositions: number; // MAIN draw positions
+  qualifierPositions: number; // MAIN positions held for qualifiers
+  qualifierPositionsBasis: 'STRUCTURE' | 'ENTRY_PROFILE' | 'NONE';
+  wildcardPositions: number; // max(entryProfile.wildcardCount, wildcardsAccepted)
+  wildcardsAccepted: number;
+  directAcceptedCount: number; // MAIN entries in DIRECT_ENTRY_STATUSES or LUCKY_LOSER, wildcards excluded
+  acceptedCount: number; // directAcceptedCount + wildcardsAccepted
+  directAcceptancePlaces?: number; // drawPositions - qualifierPositions - wildcardPositions; undefined when basis is NONE
+  openPlaces?: number; // directAcceptancePlaces - directAcceptedCount, never below 0; undefined when basis is NONE
+}
+```
+
+**Where the numbers come from.** Once a MAIN structure exists, its positions and the qualifier
+positions its links deliver decide — the same breakdown entry into a draw uses. Before that, the event's
+`entryProfile`: `targetDrawSize` for the positions (then the sanctioning constraints extension's
+`drawSize`), and `qualifiersCount`, or the final stage of each of `qualifyingProfiles`, for the qualifier
+positions. A `qualifyingDrawSize` alone holds no MAIN place: a qualifying draw's size does not say how
+many it sends on. A `LUCKY_LOSER` entry takes a place vacated by a withdrawal and counts in
+`directAcceptedCount`; a `QUALIFIER` entry fills a qualifier position and does not. Without `drawId`, positions are summed over every draw that has a MAIN structure and
+counted against the event's entries; entries with no `entryStage` count as MAIN.
+
+---
+
 ## getMaxEntryPosition
 
 Returns the highest `entryPosition` value from entries, optionally filtered by stage and/or entryStatus.
@@ -354,6 +428,33 @@ const result = engine.modifyEntriesStatus({
 });
 ```
 
+**Draw scope.** With a `drawId` that resolves a flight or draw, every participant in `participantIds` must have an
+entry in that flight's `drawEntries` or the draw's entries. Otherwise the call is refused before anything is written,
+with `PARTICIPANT_ENTRY_NOT_FOUND` and `context.participantIds` naming the participants that are not in scope; if
+only some are out of scope, the whole call is refused. A call that also updates the event's entries (`WITHDRAWN`, or
+`eventSync` with a single draw) accepts a participant that is in the event's entries but not in the draw.
+
+**entryPositions.** Positions are numbered within a group, as `refreshEntryPositions` numbers them. All accepted
+statuses (`STRUCTURE_SELECTED_STATUSES`: `DIRECT_ACCEPTANCE`, `WILDCARD`, `SPECIAL_EXEMPT`, `JUNIOR_EXEMPT`,
+`ORGANISER_ACCEPTANCE`, `CONFIRMED`, `QUALIFIER`, `LUCKY_LOSER`) form **one list per `entryStage`** (`MAIN` when
+absent); every other status (`ALTERNATE`, `WITHDRAWN`, ...) has its own list per stage. The same rule applies in the
+event's entries, the flight's `drawEntries` and the draw's entries, with or without `autoEntryPositions`.
+
+- **An entry that changes group goes to the end of its new group** (`max + 1` of the group's positions), and the entries
+  behind it in its old group close up. An `ALTERNATE` moved to `DIRECT_ACCEPTANCE` therefore follows the accepted
+  entries and never takes an accepted entry's position; an accepted entry moved to `ALTERNATE` goes after the
+  alternates, and the accepted entries close up. An alternate moved to any accepted status (`WILDCARD`,
+  `LUCKY_LOSER`, ...) takes the next position of the whole accepted list. A `WITHDRAWN` entry restored and a
+  qualifying alternate moved to the main stage follow the same rule.
+- **Several moved in one call take distinct positions in the order of `participantIds`.**
+- **An entry already in the requested group keeps its position**, including a change between accepted statuses
+  (e.g. `DIRECT_ACCEPTANCE` to `WILDCARD`).
+- **When no entry of the new group has a position**, the moved entry is left without one: a position would sort it
+  ahead of them.
+- No two accepted entries of a stage share a position: a `DIRECT_ACCEPTANCE` entry and a `WILDCARD` entry are
+  numbered in one list. Each status's own order (`WILDCARD` #1, #2) is derived, not stored: see
+  [getEntryStatusOrdinals](#getentrystatusordinals). `promoteAlternates` places entries by the same rule.
+
 ---
 
 ## modifyEventEntries
@@ -378,7 +479,7 @@ Promotes a single alternate participant to direct acceptance status.
 
 ```js
 const result = engine.promoteAlternate({
-  participantId, // required - participant to promote
+  participantId, // optional - participant to promote; defaults to the stage's next alternate
   stage, // optional - defaults to MAIN
   stageSequence, // optional - for qualifying stages
   eventId, // required
@@ -391,22 +492,24 @@ const result = engine.promoteAlternate({
 ```ts
 {
   success: boolean;
-  entryStatusModified?: boolean;
   error?: ErrorType;
+  context?: { drawPromotionError, drawId }; // the draw could not promote; the event did
 }
 ```
 
-**Purpose:** Changes participant `entryStatus` from ALTERNATE to DIRECT_ACCEPTANCE.
+**Purpose:** Changes participant `entryStatus` from ALTERNATE to DIRECT_ACCEPTANCE. Without a `participantId` the
+stage's alternate with the lowest `entryPosition` is promoted (with no positioned alternate, the first one entered).
+See `promoteAlternates` for positions, draws and flights.
 
 ---
 
 ## promoteAlternates
 
-Bulk version of `promoteAlternate`. Promotes multiple alternates to direct acceptance.
+Bulk version of `promoteAlternate`. Promotes multiple alternates to direct acceptance, in the order given.
 
 ```js
 const result = engine.promoteAlternates({
-  participantIds, // required - array of participant IDs to promote
+  participantIds, // required - participant IDs to promote, in order of acceptance
   stage, // optional - defaults to MAIN
   stageSequence, // optional - for qualifying stages
   eventId, // required
@@ -415,6 +518,19 @@ const result = engine.promoteAlternates({
 ```
 
 **Purpose:** Efficiently promote multiple alternates at once after withdrawals.
+
+- **Positions.** Each promoted entry takes the next position after the stage's accepted entries (`max + 1`), so
+  promoting several in one call gives them distinct positions in the order of `participantIds`. The alternates behind
+  each promoted entry close up. When no accepted entry in the stage has an `entryPosition`, the promoted entry is
+  left without one.
+- **Refused before any write.** Every id must be an alternate entry of the event in `stage` (and `stageSequence`,
+  when given); otherwise nothing changes. An id that is not an event entry returns `PARTICIPANT_ENTRY_NOT_FOUND`.
+- **Draws.** With `drawId`, the draw's entries are promoted too. With split draws an alternate may not be in the
+  draw's entries: given `eventId`, the event is still promoted and the draw's refusal is returned as
+  `context.drawPromotionError`; given only `drawId`, the call is refused. A generated draw's entries are promoted
+  without placing the participant in the structure.
+- **Flights.** The same alternates are promoted in the `drawEntries` of the draw's flight and of every flight whose
+  draw is not yet generated, wherever they appear there as alternates.
 
 ---
 

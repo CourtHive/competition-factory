@@ -311,6 +311,18 @@
         "targetDrawSize": {
           "type": "number"
         },
+        "qualifyingDrawSize": {
+          "type": "number"
+        },
+        "qualifiersCount": {
+          "type": "number"
+        },
+        "qualifyingProfiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EntryQualifyingProfile"
+          }
+        },
         "selectionProcess": {
           "$ref": "#/definitions/SelectionProcessEnum"
         },
@@ -328,6 +340,37 @@
           "items": {
             "$ref": "#/definitions/Extension"
           }
+        }
+      },
+      "additionalProperties": false
+    },
+    "EntryQualifyingProfile": {
+      "type": "object",
+      "properties": {
+        "roundTarget": {
+          "type": "number"
+        },
+        "structureProfiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EntryQualifyingStructureProfile"
+          }
+        }
+      },
+      "required": ["structureProfiles"],
+      "additionalProperties": false
+    },
+    "EntryQualifyingStructureProfile": {
+      "type": "object",
+      "properties": {
+        "stageSequence": {
+          "type": "number"
+        },
+        "drawSize": {
+          "type": "number"
+        },
+        "qualifyingPositions": {
+          "type": "number"
         }
       },
       "additionalProperties": false
@@ -2509,7 +2552,7 @@
     },
     "TournamentStatusEnum": {
       "type": "string",
-      "enum": ["ABANDONED", "CANCELLED"]
+      "enum": ["ACTIVE", "IN_PROGRESS", "COMPLETED", "ABANDONED", "CANCELLED"]
     },
     "EventTypeEnum": {
       "type": "string",
@@ -4624,6 +4667,9 @@
           }
         },
         "flightNumber": {
+          "type": "number"
+        },
+        "drawOrder": {
           "type": "number"
         },
         "drawName": {

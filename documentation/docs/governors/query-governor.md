@@ -947,7 +947,7 @@ checks that are only visible at its own level — relationships the lower level 
 
 ```text
 getTournamentInconsistencies   cross-event checks (identity duplication)
-  └─ getEventInconsistencies    eventType ↔ participantType coherence
+  └─ getEventInconsistencies    eventType ↔ participantType coherence, event dates
       └─ getDrawInconsistencies  cross-structure LINK integrity
           └─ getStructureInconsistencies   (leaf)
 ```
@@ -1058,8 +1058,13 @@ const { valid, inconsistencies } = engine.getTournamentInconsistencies();
   distinct `INDIVIDUAL` participant; the classic merged/imported-data defect that silently splits a
   competitor's results across two identities. (warning)
 
-> Scheduling collisions and date containment are deferred — they require the scheduling model and are
-> a later sub-phase.
+- `EVENT_DATES_OUTSIDE_TOURNAMENT` — from the event layer: an event's `startDate` or `endDate` lies outside the
+  tournament's range. Carries `startDate`, `endDate`, `tournamentStartDate`, `tournamentEndDate` (day parts) and
+  `disjoint`, true when no day of the event range is inside the tournament range. A scheduler that meets a disjoint
+  range ignores it and uses the tournament range; this finding is how that is flagged. `setTournamentDates` never
+  produces such a range, so it marks a record written before that rule or edited outside the engine. (warning)
+
+> Scheduling collisions are deferred — they require the scheduling model and are a later sub-phase.
 
 ## getTournamentCompleteness
 
@@ -1242,7 +1247,8 @@ type FlightProfile = {
 };
 
 type Flight = {
-  flightNumber: number;
+  flightNumber: number; // the flight's level, fixed when it is made; never renumbered by reordering or deletion
+  drawOrder?: number; // display order, set by updateDrawIdsOrder / refreshEventDrawOrder
   drawId: string; // the draw this flight generates (or generated)
   drawEntries: Entry[]; // always an array, possibly empty
   drawName?: string;
@@ -1727,7 +1733,7 @@ const { rounds, excludedRounds } = engine.getRounds({
   withSplitRounds, // optional boolean - read schedulingProfile and split rounds where defined
   matchUpFilters, // optional - filter competition matchUps before deriving rounds
   withRoundId, // optional boolean - return a unique id for each derived round
-  scheduleDate, // optional - filters out events which are not valid on specified date
+  scheduleDate, // optional - filters out events which do not play on specified date (see getEventPlayingDates)
   venueId, // optional - filters out events which are not valid for specified venue
   context, // optional - object to be spread into derived rounds
 });
@@ -1756,6 +1762,7 @@ Returns the following detail for each round:
     roundName,
     drawName,
     matchUps,
+    playingDates, // the event's playing days, only when its own dates narrow the tournament's
     byeCount
     eventId,
     drawId,
@@ -2475,7 +2482,11 @@ const [event] = tournamentInfo.eventInfo;
 event.matchUpFormat; // the event's OWN declared code, or undefined
 event.competitionFormat; // the event's OWN competitionFormat, or undefined
 event.matchUpFormats; // every distinct code declared anywhere in the event
+event.playingDates; // the event's playing days, only when its own dates, activeDates or weekdays narrow them
 ```
+
+`playingDates` is present only when the event's own range, `activeDates` or `weekdays` narrow the days the
+tournament plays (see [Event playing days](./schedule-governor.md#event-playing-days)).
 
 `matchUpFormats` is a **survey, not a resolution.** It collects distinct codes from the event, each of its
 drawDefinitions, and their structures (depth-first, recursing because round-robin item structures nest),

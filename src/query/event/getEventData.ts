@@ -9,13 +9,14 @@ import { getParticipants } from '@Query/participants/getParticipants';
 import { getPublishState } from '@Query/publishing/getPublishState';
 import { getDrawData } from '@Query/drawDefinition/getDrawData';
 import { getVenueData } from '@Query/venues/getVenueData';
+import { constrainedPlayingDates } from '@Query/event/extractEventInfo';
 import { findExtension } from '@Acquire/findExtension';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { findEvent } from '@Acquire/findEvent';
 
 // constants and types
+import { DrawDefinition, PayloadProfileEnum, PayloadProfileUnion, Event, Tournament } from '@Types/tournamentTypes';
 import type { DrawData, DrawStub, EventData, EventDataResult, EventInfo, VenueData } from '@Types/viewTypes';
-import { PayloadProfileEnum, PayloadProfileUnion, Event, Tournament } from '@Types/tournamentTypes';
 import { ParticipantsProfile, PolicyDefinitions, StructureSortConfig } from '@Types/factoryTypes';
 import { EVENT_NOT_FOUND, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { completedMatchUpStatuses, BYE } from '@Constants/matchUpStatusConstants';
@@ -110,7 +111,8 @@ function getEventDataUnredacted(params: GetEventDataArgs): EventDataResult {
     return true;
   };
 
-  const drawDefinitions = event.drawDefinitions ?? [];
+  // listed in display order: `drawOrder` first (set by `updateDrawIdsOrder`), then any draw without one, as stored
+  const drawDefinitions = byDrawOrder(event.drawDefinitions ?? []);
 
   /**
    * Cheap per-draw metadata — no structure assembly, no participant hydration.
@@ -256,6 +258,10 @@ function getEventDataUnredacted(params: GetEventDataArgs): EventDataResult {
     delete eventInfo.competitionFormat;
   }
 
+  // only when the event's own dates narrow the tournament's, so unconstrained events keep their payload shape
+  const playingDates = constrainedPlayingDates(tournamentRecord, event);
+  if (playingDates) eventInfo.playingDates = playingDates;
+
   eventInfo.display = findExtension({
     element: event,
     name: DISPLAY,
@@ -295,4 +301,17 @@ function getEventDataUnredacted(params: GetEventDataArgs): EventDataResult {
     // change, however invisible to JSON.stringify.
     ...(version !== undefined && { participantsVersion: version }),
   };
+}
+
+function byDrawOrder(drawDefinitions: DrawDefinition[]): DrawDefinition[] {
+  const ordered = (drawOrder?: number) => typeof drawOrder === 'number' && !Number.isNaN(drawOrder);
+  return drawDefinitions
+    .map((drawDefinition, index) => ({ drawDefinition, index }))
+    .sort((a, b) => {
+      const [aOrdered, bOrdered] = [ordered(a.drawDefinition.drawOrder), ordered(b.drawDefinition.drawOrder)];
+      if (aOrdered && bOrdered) return (a.drawDefinition.drawOrder as number) - (b.drawDefinition.drawOrder as number);
+      if (aOrdered !== bOrdered) return aOrdered ? -1 : 1;
+      return a.index - b.index;
+    })
+    .map(({ drawDefinition }) => drawDefinition);
 }

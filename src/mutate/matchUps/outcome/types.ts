@@ -4,6 +4,7 @@ import type { HydratedMatchUp } from '@Types/hydrated';
 import type {
   DrawDefinition,
   Event,
+  MatchUpSchedule,
   MatchUpStatusCodeElement,
   MatchUpStatusUnion,
   PositionAssignment,
@@ -45,8 +46,13 @@ export type OutcomeRequest = {
   score?: OutcomeScore;
   matchUpFormat?: string;
   flags: OutcomeFlags;
-  /** what else the call carries that v1 writes and v2 does not yet plan: a call carrying either abstains (S1) */
-  carries?: { schedule?: boolean; notes?: boolean };
+  /**
+   * what else the call carries: a schedule, which v2 plans where v1's own writer can write it on the matchUp alone (S7,
+   * `scheduleReason`), and notes, which v2 writes onto the call's own matchUp with its result on the clean routes (S7,
+   * `notesReason`), as v1's `addNotes` writes them inside `modifyMatchUpScore`. Notes are a string, or the test
+   * fixture `{ testing: true }` that `addNotes` also writes, which v2 does not plan (deferred, `notesReason`)
+   */
+  carries?: { schedule?: MatchUpSchedule; notes?: string | { testing?: boolean } };
 };
 
 /** § 2: one code, the row of the table that raised it, and what a person or a client needs to see */
@@ -57,6 +63,10 @@ export type Refusal = {
   row: number;
   info?: string;
   context?: Record<string, unknown>;
+  /** fields v1's result carries beside `error`, outside `context` (row 9's `activeDownstream`): returned as v1 returns them */
+  extra?: Record<string, unknown>;
+  /** the context names the stored matchUp, as v1's `winningSideWithDownstreamDependencies` does (rows 13 and 14) */
+  namesMatchUp?: true;
 };
 
 /** what the refusal function may ask of the draw; built once per call by `buildOutcomeView` */
@@ -128,6 +138,23 @@ export type OutcomeView = {
    * played on (v1's `fedLoserPlacementRefusal` and `relabelledPathFeedRefusal`, asked before the swap writes)
    */
   swapMeetsActivePosition?: boolean;
+  /**
+   * § 2 rows 16, 25 and 27: v1's refusal of the schedule the call carries, as its writer's refusals give it
+   * (`addMatchUpScheduleItems` with `validateOnly`, asked against the stored draw, nothing written)
+   */
+  scheduleRefusal?: {
+    error: ErrorType;
+    info?: string;
+    context?: Record<string, unknown>;
+    extra?: Record<string, unknown>;
+  };
+  /** § 2 row 24: a directing call on a matchUp holding no drawPositions, which v1 refuses before the dispatch */
+  missingDrawPositions?: boolean;
+  /**
+   * § 2 row 24's removal clause: the matchUp (a line's dual) holds no drawPositions and is not ad hoc, which v1's
+   * `removeDirectedParticipants` refuses before its first write; asked of the `remove-directed` route after the dispatch
+   */
+  removalMissingDrawPositions?: boolean;
   /** a line of a dual: what the dual projects once this line is written */
   line?: {
     dualMatchUpId: string;
@@ -137,6 +164,8 @@ export type OutcomeView = {
     autoCalcDisabled: boolean;
     /** the dual's score as `updateTieMatchUpScore` tallies it with this line's result in place (S7) */
     projectedScore?: OutcomeScore;
+    /** the dual's lines with this line's result in place, as its round robin group's tally reads them (S7) */
+    projectedTieMatchUps?: HydratedMatchUp['tieMatchUps'];
     /** the dual's status as `updateTieMatchUpScore` derives it with this line's result in place (S7) */
     projectedStatus?: MatchUpStatusUnion;
     /**
@@ -154,11 +183,6 @@ export type OutcomeView = {
       /** the sides in context before the line's write (the loser's carry reads these, as v1's `directLoser` does) */
       sidesInContext?: unknown[];
     };
-    /**
-     * the dual sits in a round robin group, whose tally a line's result re-reads. Read off the dual: a line is placed
-     * in the container with no `containerStructureId` of its own (hydration OPEN-14), so the view finds no group for it
-     */
-    dualInGroup: boolean;
   };
   /** a TEAM dual's own call: the sides `ensureSideLineUps` writes before its result, present where they change (S7) */
   dualSides?: unknown[];
@@ -210,6 +234,8 @@ export type OutcomeView = {
     };
     /** a loser placed opposite a BYE goes on into this matchUp, holding these drawPositions after (planned, S3) */
     loserThroughBye?: ThroughBye;
+    /** a carried exit's loser placed opposite a BYE with no clean matchUp beyond it: the BYEs it passes after (S6 tail) */
+    loserByePassage?: ByePassage;
     /**
      * the levels a carried exit goes on to beyond the matchUp it lands in (S5, `propagateExitFrom`): each loser link its
      * carrier crosses next, as v1 directs them from the landing. Read only for a call that may carry; `bounded` when the
@@ -239,6 +265,14 @@ export type OutcomeView = {
       own?: { levels: CarryLevel[]; bounded: boolean };
       unfillable?: { levels: CarryLevel[]; bounded: boolean };
     };
+    /**
+     * A double exit's call (S6 tail, the BYE chain): the BYEs its loser seats take, walked as v1's
+     * `assignDrawPositionBye` recursion sends them, the own seat's first and the unfillable seat's on the draw it leaves.
+     * Undefined where the walk meets anything outside that recursion's plain shape
+     */
+    byeWalk?: { own?: ByeWalk; unfillable?: ByeWalk };
+    /** a carry whose first landing links its loser on: that landing's seats, walked as a double exit's (S6 tail) */
+    landingWalk?: { own?: ByeWalk; unfillable?: ByeWalk };
     /** a winner whose target holds a BYE goes on past it into this matchUp, by the winning side (planned, S3) */
     winnerThroughBye?: { 1?: ThroughBye; 2?: ThroughBye };
     /** the participants seeded in the source structure: a seeded loser placed across a link takes the seed with them */
@@ -384,7 +418,7 @@ export type Route =
   | 'propagating' // propagateExitStatus: write the score
   | 'clear-score' // nothing else matched: the score is removed
   | 'apply-values' // downstream is active: write the values without re-directing
-  | 'refused'; // § 3's own refusals: unrecognized, notDirecting, fallthrough (deferred to the apply)
+  | 'refused'; // § 3's own refusals, v2's since S7 (`refuseRoute`): a BYE without a seat (row 28), the fallthrough (row 6)
 
 /** § 4: what the matchUp itself holds once the write has landed */
 export type MatchUpWrite = {
@@ -462,6 +496,36 @@ export type Reservation =
 /** the matchUp a participant placed opposite a BYE goes on into, and its drawPositions once they are there */
 export type ThroughBye = { matchUpId: string; drawPositions: number[] };
 
+/**
+ * One seat's BYE and all it sends on, as v1's `assignDrawPositionBye` recursion writes them (S6 tail, the BYE chain):
+ * the seats given a BYE, in the order v1 announces their structures' assignments (the deepest first), and the matchUps
+ * written, in v1's order: made a BYE (`setMatchUpStatusBYE`) or given an advanced position (`advanceWinner`). `named`:
+ * whether v1 names the event for that write
+ */
+export type ByeWalk = {
+  assigns: { structureId: string; drawPosition: number; matchUpId: string; named: boolean }[];
+  writes: (
+    | { kind: 'bye'; matchUpId: string; named: boolean }
+    | { kind: 'advance'; matchUpId: string; drawPositions: number[] }
+    /** a carrier the BYE displaces: their carry withdrawn from the matchUp they landed in (`withdrawDisplacedCarry`) */
+    | { kind: 'displaced'; matchUpId: string }
+  )[];
+  /** every matchUp the walk touched */
+  matchUpIds: string[];
+};
+
+/**
+ * RULE 1 again (S6 tail): a BYE passed where what lies beyond is no clean matchUp. The carrier goes on through each
+ * BYE-held matchUp their position already stands in (`findAdvancementMatchUp`), each recording the carry beside its BYE,
+ * until a clean matchUp, where the exit lands, or the structure's last round, where the carry stops
+ */
+export type ByePassage = {
+  /** the BYE matchUps past the first, in order */
+  byes: string[];
+  /** the clean matchUp the passage ends in, with the positions it holds after; none at the structure's last round */
+  through?: ThroughBye;
+};
+
 /** the seat a matchUp's loser link feeds, as `positionTargets` gives it, and what holds it */
 export type WinnerLoserSeat = {
   matchUpId: string;
@@ -473,6 +537,8 @@ export type WinnerLoserSeat = {
   drawPositions: number[];
   matchUpStatus?: MatchUpStatusUnion;
   hasResult: boolean;
+  /** the matchUp holding the seat links its own loser on: the seat that link feeds, read as the call found it (S6 tail) */
+  beyond?: WinnerLoserSeat;
 };
 
 /** one further level of a carried exit: the seat the carrier is placed on across the landing's loser link */
@@ -484,11 +550,16 @@ export type CarryLevel = {
   structureId: string;
   drawPosition: number;
   linkCondition?: string;
-  seat?: { free: boolean; opponentBye: boolean; opponentHeld: boolean };
+  /** `bye`: the seat holds a BYE already */
+  seat?: { free: boolean; opponentBye: boolean; opponentHeld: boolean; bye?: boolean };
   matchUpStatus?: MatchUpStatusUnion;
   hasResult: boolean;
   carriesExit: boolean;
   record?: { matchUpStatusCodes?: unknown[]; provenance: boolean };
   /** a BYE opposite the seat: the matchUp beyond it the carrier goes on into, with the positions it holds after (RULE 1) */
   through?: ThroughBye;
+  /** a BYE opposite the seat with no clean matchUp beyond it: the BYEs passed after it, and where they end (S6 tail) */
+  passage?: ByePassage;
+  /** a single exit standing there that links its loser on: the seats the convergence's double exit takes (S6 tail) */
+  walk?: { own?: ByeWalk; unfillable?: ByeWalk };
 };

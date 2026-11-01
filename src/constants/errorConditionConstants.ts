@@ -8,6 +8,12 @@ export const ANACHRONISM = {
   message: 'Chronological error; time violation.',
   code: 'ANACHRONISM' as const,
 } satisfies ErrorType;
+// A matchUp placed on a day its event does not play (eventPlaysOnDate). Always a WARNING, never a refusal: a director's
+// placement lands and carries it; an instance adds { matchUpId, eventId, scheduledDate, reason }.
+export const EVENT_DATE_INACTIVE = {
+  message: 'The event does not play on this date.',
+  code: 'EVENT_DATE_INACTIVE' as const,
+} satisfies ErrorType;
 // A schedule attribute that was accepted but not written. Reported rather than
 // thrown because reading a schedule and writing it back is a supported pattern;
 // `errorOnUnknownAttributes` escalates it, exactly as `errorOnAnachronism` does
@@ -239,6 +245,10 @@ export const MISSING_STRUCTURE = {
 export const MISSING_MAIN_STRUCTURE = {
   message: 'Missing MAIN structure',
   code: 'ERR_MISSING_MAIN_STRUCTURE' as const,
+} satisfies ErrorType;
+export const CANNOT_RESET_STRUCTURE = {
+  message: 'Structure cannot be reset on its own',
+  code: 'ERR_CANNOT_RESET_STRUCTURE' as const,
 } satisfies ErrorType;
 export const UNLINKED_STRUCTURES = {
   message: 'drawDefinition contains unlinked structures',
@@ -773,6 +783,14 @@ export const SCHEDULING_PROFILE_REPAIR_REQUIRED = {
   message: 'Scheduling profile needs repair',
   code: 'ERR_SCHEDULING_PROFILE_REPAIR_REQUIRED' as const,
 } satisfies ErrorType;
+// A scheduling profile saved with dates outside the tournament's (or competition's) dates.
+// Reported, not refused: a profile can legitimately outlive a change of tournament dates, the
+// repair of an orphaned round re-saves the whole profile, and clients save the whole profile on
+// every edit. A warning carries the out-of-range dates as `scheduleDates`.
+export const SCHEDULING_PROFILE_DATES_OUT_OF_RANGE = {
+  message: 'Scheduling profile dates outside the tournament dates',
+  code: 'SCHEDULING_PROFILE_DATES_OUT_OF_RANGE' as const,
+} satisfies ErrorType;
 export const SCHEDULE_SCENARIO_EXISTS = {
   message: 'Schedule scenario exists',
   code: 'ERR_EXISTING_SCHEDULE_SCENARIO' as const,
@@ -1023,6 +1041,8 @@ export const QUALIFYING_CAPACITY_EXCEEDED = {
 
 export const errorConditionConstants = {
   ANACHRONISM,
+  SCHEDULING_PROFILE_DATES_OUT_OF_RANGE,
+  EVENT_DATE_INACTIVE,
   SCHEDULING_PROFILE_REPAIR_REQUIRED,
   UNWRITABLE_SCHEDULE_ATTRIBUTES,
   BOOKING_NOT_FOUND,
@@ -1036,6 +1056,7 @@ export const errorConditionConstants = {
   TOURNAMENT_CATEGORY_IN_USE,
   CANNOT_MODIFY_PARTICIPANT_TYPE,
   CANNOT_REMOVE_MAIN_STRUCTURE,
+  CANNOT_RESET_STRUCTURE,
   CANNOT_REMOVE_PARTICIPANTS,
   CATEGORY_MISMATCH,
   COURT_EXISTS,
