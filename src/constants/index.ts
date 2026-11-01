@@ -2,6 +2,7 @@ export { auditConstants } from './auditConstants';
 export { competitionFormatConstants } from './competitionFormatConstants';
 export { disciplineConstants } from './disciplineConstants';
 export { drawDefinitionConstants } from './drawDefinitionConstants';
+export { dualIssueConstants } from './dualIssueConstants';
 export { displayConstants } from './displayConstants';
 export { entryStatusConstants } from './entryStatusConstants';
 export { errorConditionConstants } from './errorConditionConstants';
