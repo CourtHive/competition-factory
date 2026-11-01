@@ -123,7 +123,8 @@ export function modifyEvent(params: ModifyEventArgs): ResultType {
   // notice fired by an internal setEventDates call).
   modifyEventNotice({ event, tournamentId: params.tournamentRecord?.tournamentId });
 
-  return { ...SUCCESS };
+  // a date change that leaves scheduled matchUps on days the event does not play lands, with its warnings
+  return dateResult.warnings?.length ? { ...SUCCESS, warnings: dateResult.warnings } : { ...SUCCESS };
 }
 
 function checkCategoryUpdates(params) {
@@ -221,6 +222,8 @@ function dateUpdates(params) {
       event,
     });
     if (result.error) return decorateResult({ result, stack });
+    // scheduled matchUps now on days the event does not play (EVENT_DATE_INACTIVE): the dates land, the warnings travel
+    if (result.warnings?.length) return { ...SUCCESS, warnings: result.warnings };
   }
 
   return { ...SUCCESS };

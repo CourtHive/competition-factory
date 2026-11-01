@@ -493,6 +493,11 @@ engine.setEventDates({
 Every date is checked before anything is written: a `startDate` or `endDate` outside the tournament's dates is refused
 with `INVALID_DATE` (`context.dates` names them) and the event is left as it was.
 
+The new dates land even when scheduled matchUps of the event now sit on days it does not play (see
+[Event playing days](./schedule-governor.md#event-playing-days)): the result carries one `EVENT_DATE_INACTIVE` warning
+per such matchUp, `{ code, message, matchUpId, eventId, scheduledDate, reason }`. `modifyEvent` returns the same
+warnings when its `eventUpdates` change the event's dates.
+
 ---
 
 ## setEventEndDate

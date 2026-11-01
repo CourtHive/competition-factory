@@ -13,6 +13,7 @@ import { extractDate, sameDay } from '@Tools/dateTime';
 import { MUTUALLY_EXCLUSIVE_TIME_MODIFIERS, SCHEDULED_TIME, TIME_MODIFIERS } from '@Constants/timeItemConstants';
 import { INVALID_DATE, INVALID_TIME, INVALID_VALUES, MISSING_MATCHUP_ID } from '@Constants/errorConditionConstants';
 import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
+import type { ResultWarning } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
 type AddScheduleAttributeArgs = {
@@ -76,6 +77,7 @@ export function addMatchUpScheduledTime(params: AddMatchUpScheduledTimeArgs) {
 
   // a matchUp with no date takes the date-time's date as its scheduledDate, and the time is stored as HH:MM: the date is
   // never kept inside the time
+  let warnings: ResultWarning[] | undefined;
   if (timeDate && !scheduledMatchUpDate({ matchUp }).scheduledDate) {
     const result = addMatchUpScheduledDate({
       playedOrderChecked: true,
@@ -87,6 +89,8 @@ export function addMatchUpScheduledTime(params: AddMatchUpScheduledTimeArgs) {
       matchUpId,
     });
     if (result.error) return decorateResult({ result, stack });
+    // the date it took is one its event does not play: the EVENT_DATE_INACTIVE warning travels with the time
+    warnings = result.warnings;
   }
 
   const existingTimeModifiers = matchUpTimeModifiers({ matchUp }).timeModifiers ?? [];
@@ -104,7 +108,7 @@ export function addMatchUpScheduledTime(params: AddMatchUpScheduledTimeArgs) {
     if (result?.error) return decorateResult({ result, stack });
   }
 
-  return setMatchUpFirstClassOrTimeItem({
+  const result = setMatchUpFirstClassOrTimeItem({
     duplicateValues: false,
     attribute: 'scheduledTime',
     itemType: SCHEDULED_TIME,
@@ -115,6 +119,7 @@ export function addMatchUpScheduledTime(params: AddMatchUpScheduledTimeArgs) {
     disableNotice,
     matchUpId,
   });
+  return warnings?.length && !result.error ? { ...result, warnings } : result;
 }
 
 export function addMatchUpTimeModifiers({

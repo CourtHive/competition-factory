@@ -49,6 +49,10 @@ engine.addMatchUpScheduledDate({
 });
 ```
 
+A day the matchUp's event does not play (see [Event playing days](#event-playing-days)) is written, and the result
+carries an `EVENT_DATE_INACTIVE` warning: `{ code, message, matchUpId, eventId, scheduledDate, reason }`. It is never
+a refusal.
+
 **Example**:
 
 ```js
@@ -65,7 +69,8 @@ engine.addMatchUpScheduledDate({
 
 Assigns a scheduled time to a matchUp. A date-time (`2026-10-02T09:00`) gives a matchUp with no `scheduledDate` that
 date; one naming another day than the matchUp's `scheduledDate` is refused with `INVALID_DATE`. To move a matchUp to
-another day, write its `scheduledDate`.
+another day, write its `scheduledDate`. When the date-time gives the matchUp a day its event does not play, the
+result carries the same `EVENT_DATE_INACTIVE` warning as `addMatchUpScheduledDate`.
 
 ```js
 engine.addMatchUpScheduledTime({
@@ -93,14 +98,16 @@ engine.addMatchUpScheduledTime({
 Adds a round to an existing scheduling profile.
 
 ```js
-engine.addSchedulingProfileRound({
+const { warnings } = engine.addSchedulingProfileRound({
   scheduleDate, // required - date string
   venueId, // required
-  drawId, // required
-  structureId, // required
-  roundNumber, // required
+  round, // required - { tournamentId, eventId, drawId, structureId, roundNumber }
 });
 ```
+
+A round whose event does not play on `scheduleDate` (see [Event playing days](#event-playing-days)) is added, and the
+result carries an `EVENT_DATE_INACTIVE` warning: `{ code, message, eventId, scheduledDate, reason, roundKey }`.
+`getSchedulingProfileIssues` reports such rounds for as long as they stay profiled.
 
 ---
 
@@ -644,6 +651,7 @@ const {
   notRescheduled, // array of inContext matchUps that were NOT rescheduled
   allRescheduled, // boolean - true if all matchUps rescheduled
   lockedMatchUpIds, // matchUpIds skipped because a schedule lock pins them (present when any were)
+  warnings, // present when any - each write's warnings, e.g. EVENT_DATE_INACTIVE for a matchUp moved onto a day its event does not play
   dryRun, // boolean - indicates if this was a dry run
 } = engine.bulkRescheduleMatchUps({
   matchUpIds, // required - array of matchUpIds to reschedule
@@ -1018,10 +1026,14 @@ const { schedulingProfile, modifications, issues } = engine.getSchedulingProfile
 Validates scheduling profile and returns any issues.
 
 ```js
-const { issues } = engine.getSchedulingProfileIssues({
-  schedulingProfile, // optional - validate specific profile
+const { profileIssues, roundIndexShouldBeAfter, eventDateIssues } = engine.getSchedulingProfileIssues({
+  scheduleDates, // optional - only these profile dates
 });
 ```
+
+`eventDateIssues` lists, per profile date, the profiled rounds whose event does not play on that date (see
+[Event playing days](#event-playing-days)): `{ [scheduleDate]: [{ roundKey, eventId, reason }] }`. It covers profiles
+saved before the event's dates said so, and rounds made stale by a later date edit.
 
 ---
 
@@ -2117,6 +2129,7 @@ matchUp stays reported whoever placed it and whenever the event's dates changed.
 const { eventDateIssues } = competitionEngine.getEventDateIssues({
   scheduledDate, // optional - only matchUps scheduled on this day
   matchUpIds, // optional - only these matchUps
+  eventIds, // optional - only these events' matchUps
 });
 // [{ matchUpId, eventId, tournamentId, scheduledDate, reason }]
 ```

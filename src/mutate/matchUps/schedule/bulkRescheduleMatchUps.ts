@@ -16,7 +16,7 @@ import {
 
 // constants and types
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
-import { TournamentRecords, ResultType } from '@Types/factoryTypes';
+import { TournamentRecords, ResultType, ResultWarning } from '@Types/factoryTypes';
 import { DrawDefinition, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { HydratedMatchUp } from '@Types/hydrated';
@@ -40,6 +40,7 @@ export function bulkRescheduleMatchUps(params: BulkRescheduleMatchUpsArgs): Resu
   allRescheduled?: boolean;
   notRescheduled?: HydratedMatchUp[];
   rescheduled?: HydratedMatchUp[];
+  warnings?: ResultWarning[];
 } {
   const { overrideScheduleLock, scheduleChange, matchUpIds, dryRun } = params;
   if (!matchUpIds || !Array.isArray(matchUpIds)) return { error: MISSING_MATCHUP_IDS };
@@ -50,6 +51,7 @@ export function bulkRescheduleMatchUps(params: BulkRescheduleMatchUpsArgs): Resu
   const rescheduled: HydratedMatchUp[] = [];
   let notRescheduled: HydratedMatchUp[] = [];
   const lockedMatchUpIds: string[] = [];
+  const warnings: ResultWarning[] = [];
 
   for (const tournamentRecord of Object.values(tournamentRecords)) {
     const result = bulkReschedule({
@@ -59,6 +61,7 @@ export function bulkRescheduleMatchUps(params: BulkRescheduleMatchUpsArgs): Resu
       tournamentRecord,
       scheduleChange,
       matchUpIds,
+      warnings,
       dryRun,
     });
     if (result.error) return result;
@@ -84,9 +87,15 @@ export function bulkRescheduleMatchUps(params: BulkRescheduleMatchUpsArgs): Resu
 
   const allRescheduled = !!(rescheduled.length && !notRescheduled.length);
 
-  return lockedMatchUpIds.length
-    ? { ...SUCCESS, rescheduled, notRescheduled, allRescheduled, lockedMatchUpIds }
-    : { ...SUCCESS, rescheduled, notRescheduled, allRescheduled };
+  // the warnings of each write (an EVENT_DATE_INACTIVE for a matchUp moved onto a day its event does not play)
+  return {
+    ...SUCCESS,
+    rescheduled,
+    notRescheduled,
+    allRescheduled,
+    ...(lockedMatchUpIds.length ? { lockedMatchUpIds } : {}),
+    ...(warnings.length ? { warnings } : {}),
+  };
 }
 /**
  *
@@ -101,6 +110,8 @@ type BulkRescheduleArgs = {
   tournamentRecords?: TournamentRecords;
   lockedMatchUpIds?: string[];
   tournamentRecord?: Tournament;
+  /** collects the warnings of every write */
+  warnings?: ResultWarning[];
   matchUpIds: string[];
   scheduleChange: BulkRescheduleMatchUpsArgs['scheduleChange'];
   dryRun?: boolean;
@@ -112,6 +123,7 @@ type BulkRescheduleResult = ResultType & {
 };
 export function bulkReschedule({
   lockedMatchUpIds = [],
+  warnings = [],
   overrideScheduleLock,
   tournamentRecords,
   tournamentRecord,
@@ -185,6 +197,7 @@ export function bulkReschedule({
         daysChange,
         startDate,
         matchUpId,
+        warnings,
         endDate,
         dryRun,
       });
@@ -240,6 +253,7 @@ type RescheduleMatchUpArgs = {
   drawDefinition: DrawDefinition;
   tournamentRecord: Tournament;
   lockedMatchUpIds: string[];
+  warnings: ResultWarning[];
   minutesChange?: number;
   daysChange?: number;
   startDate?: string;
@@ -261,6 +275,7 @@ function rescheduleMatchUp({
   daysChange,
   startDate,
   matchUpId,
+  warnings,
   endDate,
   dryRun,
 }: RescheduleMatchUpArgs): ResultType | undefined {
@@ -304,6 +319,7 @@ function rescheduleMatchUp({
       return undefined;
     }
     if (result.error) return result;
+    if (result.warnings?.length) warnings.push(...result.warnings);
   }
   if (newScheduledTime || newScheduledDate) {
     rescheduledMatchUpIds.push(matchUpId);

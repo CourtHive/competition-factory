@@ -1,5 +1,6 @@
 import { setMatchUpFirstClassOrTimeItem } from '@Mutate/timeItems/matchUps/setMatchUpFirstClassOrTimeItem';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { eventDateWarning } from '@Query/events/eventDateWarning';
 import { canonicalDate } from '@Tools/canonicalClock';
 import { checkPlayedOrder } from './playedOrder';
 import { extractDate } from '@Tools/dateTime';
@@ -17,6 +18,7 @@ export function addMatchUpScheduledDate({
   playedOrderChecked,
   disableNotice,
   matchUpId,
+  event,
 }: AddScheduleAttributeArgs & { scheduledDate?: string; playedOrderChecked?: boolean }): ResultType {
   const stack = 'addMatchUpScheduledDate';
   if (!matchUpId) return { error: MISSING_MATCHUP_ID };
@@ -43,7 +45,7 @@ export function addMatchUpScheduledDate({
     if (refusal) return decorateResult({ result: refusal, stack });
   }
 
-  return setMatchUpFirstClassOrTimeItem({
+  const result = setMatchUpFirstClassOrTimeItem({
     duplicateValues: false,
     attribute: 'scheduledDate',
     itemType: SCHEDULED_DATE,
@@ -54,4 +56,9 @@ export function addMatchUpScheduledDate({
     disableNotice,
     matchUpId,
   });
+  if (result.error) return result;
+
+  // a day the matchUp's event does not play: written, and warned about, never refused (CA 2026-11-01)
+  const warning = eventDateWarning({ tournamentRecord, drawDefinition, scheduledDate, matchUpId, event });
+  return warning ? { ...result, warnings: [warning] } : result;
 }

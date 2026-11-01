@@ -1,4 +1,5 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { getEventDateIssues } from '@Query/matchUps/scheduling/getEventDateIssues';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { isValidWeekdaysValue } from '@Validators/isValidWeekdaysValue';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -7,7 +8,12 @@ import { canonicalDate } from '@Tools/canonicalClock';
 import { extractDate } from '@Tools/dateTime';
 
 // constants and types
-import { INVALID_DATE, INVALID_TOURNAMENT_DATES, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import {
+  EVENT_DATE_INACTIVE,
+  INVALID_DATE,
+  INVALID_TOURNAMENT_DATES,
+  INVALID_VALUES,
+} from '@Constants/errorConditionConstants';
 import { TOURNAMENT_RECORD, EVENT, INVALID, VALIDATE } from '@Constants/attributeConstants';
 import { Event, Tournament, WeekdayUnion } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -96,7 +102,7 @@ type SetEventDatesArgs = {
   event: Event;
 };
 
-export function setEventDates(params: SetEventDatesArgs) {
+export function setEventDates(params: SetEventDatesArgs): ResultType {
   const stack = 'setEventDates';
   const paramsCheck = checkRequiredParameters(params, [
     { tournamentRecord: true, event: true },
@@ -163,7 +169,22 @@ export function setEventDates(params: SetEventDatesArgs) {
 
   modifyEventNotice({ event, tournamentId: tournamentRecord?.tournamentId });
 
-  return { ...SUCCESS };
+  // the new dates still land when scheduled matchUps now sit on days the event does not play: each is warned about
+  // (CA 2026-11-01, warning only; setTournamentDates refuses the same thing for the tournament's own range)
+  const warnings = (
+    getEventDateIssues({
+      tournamentRecords: { [tournamentRecord.tournamentId]: tournamentRecord },
+      eventIds: [event.eventId],
+    }).eventDateIssues ?? []
+  ).map(({ matchUpId, eventId, scheduledDate, reason }) => ({
+    ...EVENT_DATE_INACTIVE,
+    scheduledDate,
+    matchUpId,
+    eventId,
+    reason,
+  }));
+
+  return warnings.length ? { ...SUCCESS, warnings } : { ...SUCCESS };
 }
 
 function datesOutsideTournament({
