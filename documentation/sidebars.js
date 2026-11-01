@@ -392,6 +392,11 @@ module.exports = {
         },
         {
           type: 'category',
+          label: 'Seasons & Leagues',
+          items: ['governors/season-governor'],
+        },
+        {
+          type: 'category',
           label: 'Scheduling & Venues',
           items: ['governors/schedule-governor', 'governors/venue-governor'],
         },
