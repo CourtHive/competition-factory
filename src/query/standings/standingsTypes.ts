@@ -32,6 +32,11 @@ export type StandingsDirective = {
   disableHeadToHead?: boolean;
   /** for attribute 'headToHead' */
   mode?: HeadToHeadMode;
+  /**
+   * a ratio measure with nothing lost: MAX (default) ranks it first, ZERO ranks it as 0, SKIP passes the directive over
+   * for any set where it happens (spec § 5.10)
+   */
+  zeroDivision?: 'MAX' | 'ZERO' | 'SKIP';
 };
 
 export type StandingsPhase = 'PROVISIONAL' | 'FINAL';
@@ -67,6 +72,8 @@ export type StandingsPolicy = {
   demote?: string[];
   onSplit?: SplitMode;
   terminal?: TerminalStep;
+  /** decimal places ratios are compared to (default 3), or EXACT; the same rule the ledger's percentages use */
+  precision?: number | 'EXACT';
 };
 
 /** the finishing record the core produces for one participant */

@@ -1,4 +1,5 @@
 import { getGroups } from '@Query/matchUps/roundRobinTally/getGroups';
+import { RATIO_INPUTS, RATIO_MEASURES } from './fromV1';
 import { instanceCount } from '@Tools/arrays';
 import { isNumeric } from '@Tools/math';
 
@@ -70,8 +71,9 @@ export function orderParticipants(params: OrderParticipantsArgs) {
     : [undefined];
   if (disqualified.length) report.push({ attribute: 'disqualified', participantIds: disqualified });
 
+  const primaryResults = withRatio(participantResults, attribute, policy);
   const sortedTallyGroups = sets.flatMap((participantIds) => {
-    const orderedTallyGroups = getGroups({ participantResults, participantIds, attribute });
+    const orderedTallyGroups = getGroups({ participantResults: primaryResults, participantIds, attribute });
     report.push({ attribute, groups: orderedTallyGroups });
     return sortedGroups(orderedTallyGroups, false);
   });
@@ -257,7 +259,10 @@ function processDirective(
   });
   // an absent result set must not read as an empty group: no split, no report
   if (outcome.error) return {};
-  const participantResults = outcome.participantResults ?? {};
+  const measured = withRatio(outcome.participantResults ?? {}, attribute, context.policy);
+  const participantResults = withZeroDivision(measured, participantIds, directive);
+  if (!participantResults)
+    return { order: undefined, report: [{ attribute, skipped: 'zeroDivision', participantIds }] };
 
   const groups = getGroups({ participantResults, participantIds, attribute });
   const report: unknown[] = [{ attribute, reversed, groups, idsFilter, groupTotals }];
@@ -279,6 +284,45 @@ function processDirective(
   // CONTINUE resumes after the directive that split, but re-applies a mini-league to the residue it leaves (A2)
   const resumeAt = onSplit === 'CONTINUE' ? index + (idsFilter ? 0 : 1) : 0;
   return { order: withSubGroups(parts.map((part) => subSort(part, resumeAt))), report };
+}
+
+/**
+ * A ratio measure (won over lost) added to a VIEW of the results for the one attribute that needs it; the results
+ * themselves, which a caller stores, never carry it. Nothing lost: Infinity when anything was won, else 0.
+ */
+function withRatio(participantResults: ParticipantResults, attribute: string, policy: StandingsPolicy) {
+  const inputs = RATIO_INPUTS[attribute];
+  if (!inputs) return participantResults;
+  const exact = policy.precision === 'EXACT';
+  const scale = Math.pow(10, (!exact && (policy.precision as number)) || 3);
+  const view: ParticipantResults = {};
+  for (const [participantId, results] of Object.entries(participantResults)) {
+    const won = Number(results[inputs[0]] ?? 0);
+    const lost = Number(results[inputs[1]] ?? 0);
+    let value = won ? Infinity : 0;
+    if (lost) value = exact ? won / lost : Math.round((won / lost) * scale) / scale;
+    view[participantId] = { ...results, [attribute]: value };
+  }
+  return view;
+}
+
+/**
+ * A ratio directive's zero rule (spec § 5.10). The ledger holds a ratio with nothing lost as Infinity (MAX); ZERO reads it
+ * as 0 for this directive, and SKIP passes the directive over (undefined) for a set where any participant has one.
+ */
+function withZeroDivision(
+  participantResults: ParticipantResults,
+  participantIds: string[],
+  directive: StandingsDirective,
+): ParticipantResults | undefined {
+  const { attribute, zeroDivision } = directive;
+  if (!zeroDivision || zeroDivision === 'MAX' || !RATIO_MEASURES.includes(attribute)) return participantResults;
+  const unbeaten = participantIds.filter((id) => participantResults[id]?.[attribute] === Infinity);
+  if (!unbeaten.length) return participantResults;
+  if (zeroDivision === 'SKIP') return undefined;
+  const view = { ...participantResults };
+  for (const id of unbeaten) view[id] = { ...view[id], [attribute]: 0 };
+  return view;
 }
 
 /**

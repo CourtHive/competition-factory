@@ -13,7 +13,12 @@ export function calculatePercentages({
   const bestOfGames = parsedGroupMatchUpFormat.bestOf;
   const bracketSetsToWin = (bestOfGames && Math.ceil(bestOfGames / 2)) || 1;
   const bracketGamesForSet = parsedGroupMatchUpFormat.setFormat?.setTo;
-  const precision = Math.pow(10, tallyPolicy?.precision || 3);
+  // EXACT compares unrounded: IEEE division is correctly rounded, so equal fractions give equal values (spec § 5.10)
+  const exact = tallyPolicy?.precision === 'EXACT';
+  const precision = Math.pow(10, (!exact && tallyPolicy?.precision) || 3);
+  const round = (value: number) => (exact ? value : Math.round(value * precision) / precision);
+  // one zero-denominator rule per family (spec § 5.10): a share of nothing is 0
+  const percentage = (part: number, whole: number) => (whole ? round(part / whole) : 0);
 
   Object.keys(participantResults).forEach((participantId) => {
     const setsWon = participantResults[participantId].setsWon;
@@ -22,22 +27,19 @@ export function calculatePercentages({
       tallyPolicy?.groupTotalSetsPlayed || groupingTotal === 'setsPct'
         ? totalSets
         : perPlayer * (bracketSetsToWin || 0) || setsWon + setsLost;
-    let setsPct = Math.round((setsWon / setsTotal) * precision) / precision;
-    if (setsPct === Infinity || Number.isNaN(setsPct)) setsPct = setsTotal;
+    const setsPct = percentage(setsWon, setsTotal);
 
     const tieMatchUpsWon = participantResults[participantId].tieMatchUpsWon;
     const tieMatchUpsLost = participantResults[participantId].tieMatchUpsLost;
     const tieMatchUpsTotal = tieMatchUpsWon + tieMatchUpsLost;
-    let tieMatchUpsPct = Math.round((tieMatchUpsWon / tieMatchUpsTotal) * precision) / precision;
-    if (tieMatchUpsPct === Infinity || Number.isNaN(tieMatchUpsPct)) tieMatchUpsPct = tieMatchUpsWon;
+    const tieMatchUpsPct = percentage(tieMatchUpsWon, tieMatchUpsTotal);
 
     const matchUpsWon = participantResults[participantId].matchUpsWon;
     const matchUpsLost = participantResults[participantId].matchUpsLost;
     const matchUpsDrawn = participantResults[participantId].matchUpsDrawn ?? 0;
     const matchUpsTotal = matchUpsWon + matchUpsLost + matchUpsDrawn;
     const matchUpsCredit = matchUpsWon + matchUpsDrawn * (tallyPolicy?.drawCredit ?? 0.5);
-    let matchUpsPct = Math.round((matchUpsCredit / matchUpsTotal) * precision) / precision;
-    if (matchUpsPct === Infinity || Number.isNaN(matchUpsPct)) matchUpsPct = matchUpsWon;
+    const matchUpsPct = percentage(matchUpsCredit, matchUpsTotal);
 
     const gamesWon = participantResults[participantId].gamesWon || 0;
     const gamesLost = participantResults[participantId].gamesLost || 0;
@@ -46,12 +48,10 @@ export function calculatePercentages({
       tallyPolicy?.groupTotalGamesPlayed || groupingTotal === 'gamesPct'
         ? totalGames
         : Math.max(minimumExpectedGames, gamesWon + gamesLost);
-    let gamesPct = Math.round((gamesWon / gamesTotal) * precision) / precision;
-    if (gamesPct === Infinity || Number.isNaN(gamesPct)) gamesPct = 0;
+    const gamesPct = percentage(gamesWon, gamesTotal);
 
-    const pointsTotal = participantResults[participantId].pointsWon + participantResults[participantId].pointsLost;
-    let pointsPct = Math.round((participantResults[participantId].pointsWon / pointsTotal) * precision) / precision;
-    if (pointsPct === Infinity || Number.isNaN(pointsPct)) pointsPct = 0;
+    const { pointsWon, pointsLost } = participantResults[participantId];
+    const pointsPct = percentage(pointsWon, pointsWon + pointsLost);
 
     participantResults[participantId].setsWon = setsWon;
     participantResults[participantId].setsLost = setsLost;
@@ -68,6 +68,11 @@ export function calculatePercentages({
     participantResults[participantId].gamesLost = gamesLost;
     participantResults[participantId].gamesPct = gamesPct;
     participantResults[participantId].pointsPct = pointsPct;
+    // differences (S3c), the goal-difference measures. Ratios are computed only when ordering (orderParticipants): a ratio
+    // with nothing lost is unbounded, and a stored tally must stay finite to serialise
+    participantResults[participantId].setsDiff = setsWon - setsLost;
+    participantResults[participantId].gamesDiff = gamesWon - gamesLost;
+    participantResults[participantId].pointsDiff = pointsWon - pointsLost;
     participantResults[participantId].result =
       `${participantResults[participantId].matchUpsWon}/${participantResults[participantId].matchUpsLost}`;
   });

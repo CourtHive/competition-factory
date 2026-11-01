@@ -13,6 +13,7 @@ import { INVALID_VALUES, MISSING_MATCHUPS } from '@Constants/errorConditionConst
 import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
+import type { RoundRobinTallyPolicy } from '@Types/roundRobinTallyPolicy';
 import type { MatchUp } from '@Types/tournamentTypes';
 import { TEAM } from '@Constants/matchUpTypes';
 
@@ -68,6 +69,11 @@ export function tallyParticipantResults({
 
   const bracketComplete =
     relevantMatchUps.filter((matchUp) => matchUpCompletion(matchUp)).length === relevantMatchUps.length;
+  const tallyPolicy = policyDefinitions?.[POLICY_TYPE_ROUND_ROBIN_TALLY];
+  // denominator EXPECTED (K9): the expected meetings per participant come from the group itself, not only a caller
+  if (tallyPolicy?.denominator === 'EXPECTED' && perPlayer === undefined && participantsCount) {
+    perPlayer = (2 * relevantMatchUps.length) / participantsCount;
+  }
   // if bracket is incomplete don't use expected matchUps perPlayer for calculating
   if (!bracketComplete) perPlayer = 0;
 
@@ -75,8 +81,6 @@ export function tallyParticipantResults({
     ({ matchUpType, tieMatchUps }) =>
       matchUpType === TEAM && tieMatchUps?.every((matchUp) => matchUpCompletion(matchUp)),
   );
-
-  const tallyPolicy = policyDefinitions?.[POLICY_TYPE_ROUND_ROBIN_TALLY];
 
   const consideredMatchUps = matchUps.filter(
     (matchUp) => matchUp && (matchUpCompletion(matchUp) ?? matchUp.matchUpType === TEAM),
@@ -97,6 +101,7 @@ export function tallyParticipantResults({
   let report, order;
 
   const { groupOrder, report: groupOrderReport } = getGroupOrder({
+    expectedResults: expectedResultsOf(consideredMatchUps, tallyPolicy),
     matchUps: consideredMatchUps,
     participantResults,
     participantsCount,
@@ -171,6 +176,23 @@ export function tallyParticipantResults({
   }
 
   return result;
+}
+
+/**
+ * K2: how many results each participant should have once the group is complete: one per counted meeting, so a double
+ * round robin (two meetings a pair) or a group with an excluded status completes when every meeting has a result.
+ */
+function expectedResultsOf(matchUps: MatchUp[], tallyPolicy?: RoundRobinTallyPolicy) {
+  const excluded = (tallyPolicy?.excludeMatchUpStatuses as string[] | undefined) ?? [];
+  const expected: Record<string, number> = {};
+  for (const matchUp of matchUps) {
+    // getParticipantResults counts a TEAM matchUp's lines whatever its status, and skips any other excluded status
+    if (!matchUp.tieMatchUps && excluded.includes(matchUp.matchUpStatus as string)) continue;
+    for (const side of matchUp.sides ?? []) {
+      if (side?.participantId) expected[side.participantId] = (expected[side.participantId] ?? 0) + 1;
+    }
+  }
+  return expected;
 }
 
 export function addPressureOrder({ participantResults }) {
