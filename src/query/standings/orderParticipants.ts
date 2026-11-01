@@ -5,6 +5,7 @@ import { isNumeric } from '@Tools/math';
 // types
 import type {
   FinishingPosition,
+  HeadToHeadMode,
   ParticipantResults,
   Recalculate,
   StandingsDirective,
@@ -41,10 +42,21 @@ type SubSortResult = { order: FinishingPosition[]; report?: unknown[] };
 export function orderParticipants({ participantResults, policy, recalculate, subOrderMap }: OrderParticipantsArgs) {
   const report: unknown[] = [];
   const attribute = policy.primary;
-  const orderedTallyGroups = getGroups({ participantResults, attribute });
-  report.push({ attribute, groups: orderedTallyGroups });
 
-  const sortedTallyGroups = sortedGroups(orderedTallyGroups, false);
+  // a disqualified participant (K8) is ordered below everyone who is not; each set is ordered by the policy on its own
+  const disqualified = Object.keys(participantResults).filter((participantId) =>
+    policy.demote?.some((measure) => Number(participantResults[participantId][measure] ?? 0) > 0),
+  );
+  const sets = disqualified.length
+    ? [Object.keys(participantResults).filter((participantId) => !disqualified.includes(participantId)), disqualified]
+    : [undefined];
+  if (disqualified.length) report.push({ attribute: 'disqualified', participantIds: disqualified });
+
+  const sortedTallyGroups = sets.flatMap((participantIds) => {
+    const orderedTallyGroups = getGroups({ participantResults, participantIds, attribute });
+    report.push({ attribute, groups: orderedTallyGroups });
+    return sortedGroups(orderedTallyGroups, false);
+  });
 
   // One ordering reads one set of results under one policy, so a recalculation is decided by its grouping total and
   // its participant scope alone. An elimination draw ties hundreds of participants, and its sub-sorts asked for the
@@ -152,7 +164,7 @@ function groupSubSort(params: SubSortArgs): SubSortResult {
 
   for (const directive of directives) {
     if (directive.attribute === 'headToHead') {
-      const order = getHeadToHeadWinner({ participantIds, participantResults });
+      const order = getHeadToHeadWinner({ participantIds, participantResults, mode: directive.mode });
       if (order) {
         const headToHeadWinner = order[0].participantId;
         return { order, report: [{ attribute: 'head2Head', participantIds, headToHeadWinner }] };
@@ -200,22 +212,28 @@ function processDirective(params: SubSortArgs & { directive: StandingsDirective 
 }
 
 /**
- * FIRST_VICTORY (K1): one victory decides, whichever participant is checked first, not the record between them.
- * Reverses `participantIds` IN PLACE when the second participant won, as v1 does; the same array sits in earlier report
+ * RECORD: more wins over the other across every meeting decides; level records (1-1, or no meeting) do not split.
+ * FIRST_VICTORY (K1, v1): any one victory decides, whichever participant is checked first.
+ * Reverses `participantIds` IN PLACE when the second participant wins, as v1 does; the same array sits in earlier report
  * entries' `groups`, so the report shows the winner first there too.
  */
 function getHeadToHeadWinner({
   participantIds,
   participantResults,
+  mode = 'RECORD',
 }: {
   participantIds: string[];
   participantResults: ParticipantResults;
+  mode?: HeadToHeadMode;
 }): FinishingPosition[] | undefined {
   if (!participantIds) return undefined;
-  if (participantResults[participantIds[0]].victories.includes(participantIds[1])) {
-    return participantIds.map((participantId) => ({ resolved: true, participantId }));
-  } else if (participantResults[participantIds[1]].victories.includes(participantIds[0])) {
-    return participantIds.reverse().map((participantId) => ({ resolved: true, participantId }));
-  }
+  const [first, second] = participantIds;
+  const winsOver = (a: string, b: string) => participantResults[a].victories.filter((id) => id === b).length;
+  const firstWins = winsOver(first, second);
+  const secondWins = winsOver(second, first);
+  const firstAhead = mode === 'FIRST_VICTORY' ? firstWins > 0 : firstWins > secondWins;
+  const secondAhead = mode === 'FIRST_VICTORY' ? !firstAhead && secondWins > 0 : secondWins > firstWins;
+  if (firstAhead) return participantIds.map((participantId) => ({ resolved: true, participantId }));
+  if (secondAhead) return participantIds.reverse().map((participantId) => ({ resolved: true, participantId }));
   return undefined;
 }

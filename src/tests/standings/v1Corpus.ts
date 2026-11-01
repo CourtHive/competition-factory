@@ -187,7 +187,10 @@ export const V1_CORPUS: CorpusCase[] = [
     clauses: ['V1-8', 'K9'],
     description:
       'A beat B by walkover and C 6-1 6-1: 2 sets won, none lost. Without perPlayer setsPct is 2/2 = 1; with ' +
-      'perPlayer 2 the denominator is the minimum expected 2 × 2 = 4 → .5. No engine call site passes perPlayer.',
+      'perPlayer 2 the denominator is the minimum expected 2 × 2 = 4 → .5. No engine call site passes perPlayer. ' +
+      'B conceded the walkover, so under disqualifyWalkovers B follows C (0 wins) although B beat C.',
+    ruling: 'K8 (CA 2026-11-01): implement disqualification, with a release note',
+    v1Rows: { A: { order: 1 }, B: { order: 2 }, C: { order: 3 } },
     policyDefinitions: DEFAULT,
     perPlayer: 2,
     results: [
@@ -196,7 +199,7 @@ export const V1_CORPUS: CorpusCase[] = [
       { sides: ['B', 'C'], score: '6-1 6-1', winningSide: 1 },
     ],
     orderField: 'groupOrder',
-    rows: { A: { order: 1 }, B: { order: 2 }, C: { order: 3 } },
+    rows: { A: { order: 1 }, C: { order: 2 }, B: { order: 3 } },
     totals: { A: { setsWon: 2, setsLost: 0, setsPct: 0.5 } },
   },
   {
@@ -325,11 +328,14 @@ export const V1_CORPUS: CorpusCase[] = [
     },
   },
   {
-    id: 'walkover-no-disqualification',
+    id: 'walkover-disqualification',
     clauses: ['V1-5', 'K8'],
     description:
       'D concedes a walkover to A but beats B and C: D has 2 wins, B 1, C 0. disqualifyWalkovers (true in the ' +
-      'default policy) is read by no code, so D is not pushed to the bottom; A 3 wins, D 2, B 1, C 0',
+      'default policy) now demotes D below everyone who conceded none: A, B, C, then D. v1 read the flag nowhere ' +
+      'and placed D second.',
+    ruling: 'K8 (CA 2026-11-01): implement disqualification, with a release note',
+    v1Rows: { A: { order: 1 }, D: { order: 2 }, B: { order: 3 }, C: { order: 4 } },
     policyDefinitions: DEFAULT,
     results: [
       { sides: ['A', 'B'], score: '6-1 6-1', winningSide: 1 },
@@ -340,26 +346,32 @@ export const V1_CORPUS: CorpusCase[] = [
       { sides: ['C', 'D'], score: '1-6 1-6', winningSide: 2 },
     ],
     orderField: 'groupOrder',
-    rows: { A: { order: 1 }, D: { order: 2 }, B: { order: 3 }, C: { order: 4 } },
+    rows: { A: { order: 1 }, B: { order: 2 }, C: { order: 3 }, D: { order: 4 } },
     totals: { D: { walkovers: 1, allDefaults: 1, matchUpsWon: 2 }, A: { setsWon: 4 } },
   },
   {
-    id: 'split-meetings-first-victory-wins',
+    id: 'split-meetings-head-to-head-record',
     clauses: ['K1', 'K2'],
     description:
-      'Double round robin, A and B 1-1 in meetings and level on wins and sets; B is far ahead on games. The two-way ' +
-      'shortcut finds A listed first with a victory over B and puts A first (K1). Each player has 4 results, not ' +
-      'participantsCount - 1 = 2, so the completed group only ever gets provisionalOrder (K2).',
+      'Double round robin, A and B 1-1 in meetings and level on wins and sets; B is far ahead on games. Head-to-head ' +
+      'reads the record, 1-1, which does not split, so the directives decide: gamesPct B .774, A .467. v1 found A ' +
+      'listed first with a victory over B and put A first. Each player has 4 results, not participantsCount - 1 = 2, ' +
+      'so the completed group only ever gets provisionalOrder (K2, still v1).',
+    ruling: 'K1 (D4, CA 2026-11-01): head-to-head is the record, not one victory',
+    v1Rows: { A: { order: 1 }, B: { order: 2 }, C: { order: 3 } },
     policyDefinitions: DEFAULT,
     results: SPLIT_MEETINGS,
     orderField: 'provisionalOrder',
-    rows: { A: { order: 1 }, B: { order: 2 }, C: { order: 3 } },
+    rows: { B: { order: 1 }, A: { order: 2 }, C: { order: 3 } },
+    separators: ['matchUpsWon', 'gamesPct'],
     totals: { A: { setsWon: 6, setsLost: 2, gamesWon: 42, gamesLost: 48 }, B: { setsWon: 6, setsLost: 2 } },
   },
   {
-    id: 'split-meetings-order-dependent',
+    id: 'split-meetings-order-independent',
     clauses: ['K1'],
-    description: 'The same results with B v A listed first: now B is found first and B is placed first',
+    description:
+      'The same results with B v A listed first: the order is the same (B first), as the record does not depend on ' +
+      'which meeting is listed first. v1 placed B first here too, but only because B was found first.',
     policyDefinitions: DEFAULT,
     // B's win over A (SPLIT_MEETINGS[3]) moved to the front with B as side 1; nothing else changes
     results: [{ sides: ['B', 'A'], score: '6-0 6-0', winningSide: 1 }, ...SPLIT_MEETINGS.toSpliced(3, 1)],

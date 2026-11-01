@@ -162,6 +162,7 @@ function randomCase(seed: number) {
     ? Object.fromEntries(players.map((player, i) => [player, players.length - i]))
     : undefined;
   return {
+    encounters,
     format,
     results,
     subOrderMap,
@@ -171,12 +172,33 @@ function randomCase(seed: number) {
   };
 }
 
+/**
+ * The live engine's view of a policy with the RULED changes taken out where they can be (spec § 5.8):
+ * K8 (disqualification) is the only v2 reading of `disqualify*`, so the live engine gets the policy without them and
+ * every other behaviour is still compared. Demotion itself is pinned in the corpus.
+ */
+function withoutRuledChanges(policyDefinitions?: any) {
+  const policy = policyDefinitions?.[POLICY_TYPE_ROUND_ROBIN_TALLY];
+  if (!policy) return policyDefinitions;
+  const { disqualifyWalkovers, disqualifyDefaults, ...rest } = policy;
+  return { ...policyDefinitions, [POLICY_TYPE_ROUND_ROBIN_TALLY]: rest };
+}
+
 describe('standings: live engine against the frozen v1', () => {
-  it(`is identical over ${CASES} seeded random groups`, () => {
+  it(`is identical over ${CASES} seeded random groups, except where a ruling changed the answer`, () => {
+    let compared = 0;
     for (let seed = 1; seed <= CASES; seed++) {
-      const { format, results, ...params } = randomCase(seed);
+      const { format, results, encounters, ...params } = randomCase(seed);
+      // K1 (D4): with two meetings a pair can split 1-1, where v1 read one victory and the record does not split
+      if (encounters > 1) continue;
+      compared += 1;
       const matchUps = buildMatchUps({ results, format });
-      const live = tallyParticipantResults({ ...params, matchUpFormat: format, matchUps: structuredClone(matchUps) });
+      const live = tallyParticipantResults({
+        ...params,
+        policyDefinitions: withoutRuledChanges(params.policyDefinitions),
+        matchUpFormat: format,
+        matchUps: structuredClone(matchUps),
+      });
       const reference = tallyParticipantResultsV1({
         ...params,
         matchUpFormat: format,
@@ -184,5 +206,7 @@ describe('standings: live engine against the frozen v1', () => {
       });
       expect(live, `seed ${seed}`).toEqual(reference);
     }
+    // the exclusions must not hollow the comparison out
+    expect(compared).toBeGreaterThan(CASES * 0.7);
   }, 300_000);
 });

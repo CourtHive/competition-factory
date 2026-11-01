@@ -4,8 +4,12 @@
  * here. The core reads only this shape.
  */
 
-/** how a two-participant head-to-head is read; v1 looks for one victory (K1), the record is S3 */
-export type HeadToHeadMode = 'FIRST_VICTORY';
+/**
+ * How a two-participant head-to-head is read. RECORD: the participant with more wins over the other across every
+ * meeting; level records do not split. FIRST_VICTORY is v1 (K1): any one victory, whichever participant is checked
+ * first; it survives only so the frozen v1 behaviour stays expressible.
+ */
+export type HeadToHeadMode = 'FIRST_VICTORY' | 'RECORD';
 
 export type StandingsDirective = {
   attribute: string;
@@ -33,6 +37,11 @@ export type StandingsPolicy = {
    * object at all
    */
   honourDisableHeadToHead: boolean;
+  /**
+   * measures that disqualify: a participant with any (e.g. a walkover conceded) is ordered below every participant
+   * with none, and the two sets are ordered separately (K8)
+   */
+  demote?: string[];
 };
 
 /** the finishing record the core produces for one participant */
