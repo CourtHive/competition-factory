@@ -55,6 +55,9 @@ export function getGroupOrder(params) {
     recalculate: ({ participantIds, groupingTotal }) =>
       getParticipantResults({ participantIds, groupingTotal, matchUpFormat, tallyPolicy, matchUps }),
     policy: fromV1(tallyPolicy),
+    // the first call orders a complete group; the provisional rerun passes requireCompletion: false
+    phase: requireCompletion ? 'FINAL' : 'PROVISIONAL',
+    lotSeed: matchUps?.[0]?.structureId,
     participantResults,
     subOrderMap,
   });

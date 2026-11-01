@@ -1,4 +1,4 @@
-import type { StandingsDirective, StandingsPolicy } from './standingsTypes';
+import type { SplitMode, StandingsDirective, StandingsPolicy, TerminalStep } from './standingsTypes';
 import type { RoundRobinTallyPolicy } from '@Types/roundRobinTallyPolicy';
 
 /** the measures v1 accepts as `groupOrderKey`; any other key silently becomes matchUpsWon (K3) */
@@ -93,5 +93,7 @@ export function fromV1(tallyPolicy?: RoundRobinTallyPolicy, primaryKeys: string[
       ...(tallyPolicy?.disqualifyWalkovers ? ['walkovers'] : []),
       ...(tallyPolicy?.disqualifyDefaults ? ['defaults'] : []),
     ],
+    ...(tallyPolicy?.onSplit !== undefined && { onSplit: tallyPolicy.onSplit as SplitMode }),
+    ...(tallyPolicy?.terminal !== undefined && { terminal: tallyPolicy.terminal as TerminalStep }),
   };
 }

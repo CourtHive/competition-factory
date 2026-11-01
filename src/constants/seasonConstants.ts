@@ -23,6 +23,10 @@ export const ADVANCE_TOP_N = 'TOP_N';
 // berths that scale with the tier's size: NC 1/2/3 at 0/30/45 teams, Georgia JTT's per-10 or per-4 formulas
 export const ADVANCE_BERTHS_BY_SIZE = 'BERTHS_BY_SIZE';
 
+// what a season table is computed for: a tally policy's directives may apply only for some purposes (A8)
+export const STANDINGS_PURPOSE_MOVEMENT = 'MOVEMENT';
+export const STANDINGS_PURPOSE_ADVANCEMENT = 'ADVANCEMENT';
+
 export const seasonConstants = {
   SEASON_STATUS: {
     DECLARED: SEASON_DECLARED,
@@ -33,4 +37,5 @@ export const seasonConstants = {
   SUBJECT_TYPE: { PERSON: SUBJECT_PERSON, TEAM: SUBJECT_TEAM },
   PHASE: { REGULAR: PHASE_REGULAR, PLAYOFF: PHASE_PLAYOFF, CHAMPIONSHIP: PHASE_CHAMPIONSHIP },
   ADVANCEMENT_RULE: { TOP_N: ADVANCE_TOP_N, BERTHS_BY_SIZE: ADVANCE_BERTHS_BY_SIZE },
+  STANDINGS_PURPOSE: { MOVEMENT: STANDINGS_PURPOSE_MOVEMENT, ADVANCEMENT: STANDINGS_PURPOSE_ADVANCEMENT },
 } as const;

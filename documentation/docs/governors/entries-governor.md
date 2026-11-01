@@ -354,6 +354,28 @@ const result = engine.modifyEntriesStatus({
 });
 ```
 
+**Draw scope.** With a `drawId` that resolves a flight or draw, every participant in `participantIds` must have an
+entry in that flight's `drawEntries` or the draw's entries. Otherwise the call is refused before anything is written,
+with `PARTICIPANT_ENTRY_NOT_FOUND` and `context.participantIds` naming the participants that are not in scope; if
+only some are out of scope, the whole call is refused. A call that also updates the event's entries (`WITHDRAWN`, or
+`eventSync` with a single draw) accepts a participant that is in the event's entries but not in the draw.
+
+**entryPositions.** Positions are numbered within a group: the entries that share an `entryStage` (`MAIN` when
+absent) and an `entryStatus`, as `refreshEntryPositions` numbers them. The same rule applies in the event's entries,
+the flight's `drawEntries` and the draw's entries, with or without `autoEntryPositions`.
+
+- **An entry that changes group goes to the end of its new group** (`max + 1` of the group's positions), and the entries
+  behind it in its old group close up. An `ALTERNATE` moved to `DIRECT_ACCEPTANCE` therefore follows the accepted
+  entries and never takes an accepted entry's position; an accepted entry moved to `ALTERNATE` goes after the
+  alternates, and the accepted entries close up. A `WITHDRAWN` entry restored, a qualifying alternate moved to the
+  main stage, or a move to `LUCKY_LOSER` follow the same rule.
+- **Several moved in one call take distinct positions in the order of `participantIds`.**
+- **An entry already in the requested group keeps its position.**
+- **When no entry of the new group has a position**, the moved entry is left without one: a position would sort it
+  ahead of them.
+- Positions are counted per `entryStatus`, so a `DIRECT_ACCEPTANCE` entry and a `WILDCARD` entry can both hold
+  position 1. `promoteAlternates` places entries by the same rule.
+
 ---
 
 ## modifyEventEntries

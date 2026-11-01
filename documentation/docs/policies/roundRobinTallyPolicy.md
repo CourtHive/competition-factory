@@ -587,6 +587,57 @@ tallyDirectives: [
 
 ---
 
+## Splits, gates and the final step
+
+These fields are read by the standings engine, which orders round-robin groups and season tables alike.
+
+### onSplit
+
+What happens when a directive splits a tied set.
+
+- `'RESTART'` (default): every part goes back to the first directive. A pair split off by `setsPct` is settled by
+  head-to-head next. FIBA, NBA, IIHF and FIDE work this way.
+- `'CONTINUE'`: every part continues with the next directive. A mini-league directive (`idsFilter: true`) is first
+  re-applied to the residue it leaves, so a pair it splits off is settled by their own meeting before any overall
+  measure is read.
+- `'EXTRACT_ONE'`: one participant is resolved per step, the leader of the top part, and everyone else (including the
+  rest of the top part) goes back to the first directive. This is the NFL's procedure.
+
+### minParticipants
+
+The directive is passed over when fewer than this many participants are tied, as `maxParticipants` passes it over
+when more are. For example, aggregate measures for a three-way tie, head-to-head for two.
+
+### when
+
+`{ purposes?: string[]; phase?: 'PROVISIONAL' | 'FINAL' }` on a directive. `purposes` limits it to tables computed
+for those purposes: `getSeasonStandings({ purpose })`, with `STANDINGS_PURPOSE_MOVEMENT` passed by
+`getSeasonMovement` and `STANDINGS_PURPOSE_ADVANCEMENT` by `getSeasonAdvancement`. `phase: 'FINAL'` skips the
+directive while results are outstanding (a provisional order). A directive skipped by `when` is not reported.
+
+### terminal
+
+What happens to a set no directive splits.
+
+- `'ADJUDICATE'` (default): the set shares a place, and an organiser's sub-order (`setSubOrder`) may order it.
+- `'SHARE'`: the place is shared and stays shared, whatever a sub-order says.
+- `'LOT'`: a draw seeded by the structure (a group) or the season and tier (a season table). The same seed always
+  draws the same order, and the report records the seed.
+
+```js
+{
+  onSplit: 'CONTINUE',
+  terminal: 'LOT',
+  tallyDirectives: [
+    { attribute: 'matchUpsPct', idsFilter: true },
+    { attribute: 'gamesPct', minParticipants: 3 },
+    { attribute: 'gamesWon', when: { purposes: ['MOVEMENT'], phase: 'FINAL' } },
+  ],
+}
+```
+
+---
+
 ## Percentage Calculations
 
 ### precision
