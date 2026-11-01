@@ -247,6 +247,7 @@ export type FactoryEngineMethod =
   | 'generateReport'
   | 'generateRotatingPartnerRound'
   | 'generateScoreString'
+  | 'generateSeason'
   | 'generateSeedingScaleItems'
   | 'generateStatCrew'
   | 'generateSwissRound'
@@ -300,6 +301,7 @@ export type FactoryEngineMethod =
   | 'getDrawParticipantRepresentativeIds'
   | 'getDrawStructures'
   | 'getDrawTypeCoercion'
+  | 'getDualIssues'
   | 'getEffectiveRegistrationProfile'
   | 'getEligibleEvents'
   | 'getEligibleTiers'
@@ -423,6 +425,9 @@ export type FactoryEngineMethod =
   | 'getSchemaWriteMode'
   | 'getScore'
   | 'getScoreboard'
+  | 'getSeasonAdvancement'
+  | 'getSeasonMovement'
+  | 'getSeasonStandings'
   | 'getSeedingThresholds'
   | 'getSeedsCount'
   | 'getSetComplement'
@@ -552,6 +557,7 @@ export type FactoryEngineMethod =
   | 'participantScaleItem'
   | 'participantScheduledMatchUps'
   | 'pbpValidator'
+  | 'planNextPeriod'
   | 'pointParser'
   | 'positionActions'
   | 'predictDrawCompetitiveBands'
@@ -774,6 +780,7 @@ export type FactoryEngineMethod =
   | 'validateSchedulingProfile'
   | 'validateSchedulingProfileFormat'
   | 'validateScore'
+  | 'validateSeason'
   | 'validateSegments'
   | 'validateSet'
   | 'validateSetScore'
@@ -1033,6 +1040,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'generateReport',
   'generateRotatingPartnerRound',
   'generateScoreString',
+  'generateSeason',
   'generateSeedingScaleItems',
   'generateStatCrew',
   'generateSwissRound',
@@ -1086,6 +1094,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getDrawParticipantRepresentativeIds',
   'getDrawStructures',
   'getDrawTypeCoercion',
+  'getDualIssues',
   'getEffectiveRegistrationProfile',
   'getEligibleEvents',
   'getEligibleTiers',
@@ -1209,6 +1218,9 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getSchemaWriteMode',
   'getScore',
   'getScoreboard',
+  'getSeasonAdvancement',
+  'getSeasonMovement',
+  'getSeasonStandings',
   'getSeedingThresholds',
   'getSeedsCount',
   'getSetComplement',
@@ -1338,6 +1350,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'participantScaleItem',
   'participantScheduledMatchUps',
   'pbpValidator',
+  'planNextPeriod',
   'pointParser',
   'positionActions',
   'predictDrawCompetitiveBands',
@@ -1560,6 +1573,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'validateSchedulingProfile',
   'validateSchedulingProfileFormat',
   'validateScore',
+  'validateSeason',
   'validateSegments',
   'validateSet',
   'validateSetScore',
