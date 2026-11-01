@@ -301,6 +301,7 @@ export type FactoryEngineMethod =
   | 'getDrawParticipantRepresentativeIds'
   | 'getDrawStructures'
   | 'getDrawTypeCoercion'
+  | 'getDualIssues'
   | 'getEffectiveRegistrationProfile'
   | 'getEligibleEvents'
   | 'getEligibleTiers'
@@ -425,6 +426,7 @@ export type FactoryEngineMethod =
   | 'getScore'
   | 'getScoreboard'
   | 'getSeasonAdvancement'
+  | 'getSeasonMovement'
   | 'getSeasonStandings'
   | 'getSeedingThresholds'
   | 'getSeedsCount'
@@ -555,6 +557,7 @@ export type FactoryEngineMethod =
   | 'participantScaleItem'
   | 'participantScheduledMatchUps'
   | 'pbpValidator'
+  | 'planNextPeriod'
   | 'pointParser'
   | 'positionActions'
   | 'predictDrawCompetitiveBands'
@@ -1091,6 +1094,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getDrawParticipantRepresentativeIds',
   'getDrawStructures',
   'getDrawTypeCoercion',
+  'getDualIssues',
   'getEffectiveRegistrationProfile',
   'getEligibleEvents',
   'getEligibleTiers',
@@ -1215,6 +1219,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getScore',
   'getScoreboard',
   'getSeasonAdvancement',
+  'getSeasonMovement',
   'getSeasonStandings',
   'getSeedingThresholds',
   'getSeedsCount',
@@ -1345,6 +1350,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'participantScaleItem',
   'participantScheduledMatchUps',
   'pbpValidator',
+  'planNextPeriod',
   'pointParser',
   'positionActions',
   'predictDrawCompetitiveBands',

@@ -1,4 +1,11 @@
-import type { Category, Extension, Organisation, TierClassification, TimeItem } from './tournamentTypes';
+import type {
+  Category,
+  Extension,
+  Organisation,
+  TierClassification,
+  TierMovementUnion,
+  TimeItem,
+} from './tournamentTypes';
 
 /**
  * CODES `Series` and `Season`: how competitions that recur (a box league, a ladder season, a tiered team league,
@@ -43,6 +50,8 @@ export type Season = {
   periods: SeasonPeriod[];
   /** declared before play: who advances out of a period into a later competition of THIS season */
   advancements?: SeasonAdvancement[];
+  /** declared before play (R7): how many move up and down between sibling tiers at the close of a period */
+  movementRules?: SeasonMovementRule[];
   extensions?: Extension[];
   timeItems?: TimeItem[];
 };
@@ -128,4 +137,49 @@ export type SeasonStandingRow = SeasonStandingsTally & {
   /** the record-scoped participantIds this subject played as */
   participantIds: string[];
   rank: number;
+};
+
+/**
+ * R7: promotion and relegation between SIBLING tiers (tiers sharing a `parentTierId`, or all top-level tiers),
+ * ordered by `tier.numericRank` (lower is more prestigious). A rule without `tierId` is the default for every tier;
+ * a rule naming a tier overrides it. The top tier of a ladder never promotes and the bottom tier never relegates.
+ */
+export type SeasonMovementRule = {
+  tierId?: string;
+  promote?: number;
+  relegate?: number;
+};
+
+/** One subject's proposed movement at the close of a period, labelled by `getTierMovement`. */
+export type SeasonMovementProposal = {
+  subject: SeasonSubject;
+  fromTierId: string;
+  toTierId: string;
+  movement: TierMovementUnion;
+  /** the subject's rank in its tier's standings for the period */
+  rank: number;
+};
+
+/** Subjects level on rank across a promotion or relegation cut: the season's rules decide, not the factory. */
+export type SeasonMovementTie = {
+  tierId: string;
+  cut: 'PROMOTE' | 'RELEGATE';
+  /** how many of the tied subjects the cut has room for */
+  placesAtCut: number;
+  subjects: SeasonSubject[];
+};
+
+/** An operator's decision that replaces a proposal (S9); `toTierId` absent withdraws the subject. */
+export type SeasonMovementOverride = {
+  subject: SeasonSubject;
+  toTierId?: string;
+  reason?: string;
+  by?: string;
+};
+
+/** A proposal an override changed, kept so the revision is visible. */
+export type SeasonMovementRevision = SeasonMovementOverride & {
+  fromTierId?: string;
+  proposedTierId?: string;
+  movement: TierMovementUnion;
 };

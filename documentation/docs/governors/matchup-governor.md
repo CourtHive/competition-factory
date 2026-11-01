@@ -453,6 +453,39 @@ const { matchUps } = engine.getCompetitionMatchUps({
 
 ---
 
+## getDualIssues
+
+What is wrong with a TEAM dual, for a scorecard to show. Reports only; changes nothing. Codes are
+`dualIssueConstants`.
+
+Per line (`matchUpId` and `collectionId` name the line):
+
+- `LINEUP_INCOMPLETE`: a side has no participant, or a doubles side has one (`sideNumber`)
+- `DUPLICATE_IN_COLLECTION`: one participant on two lines of a collection (`participantIds`, `matchUpIds`)
+- `INELIGIBLE_GENDER`: a participant does not fit the line's or collection's gender; a MIXED doubles pair must
+  be one of each (`info` is the gender required)
+- `INELIGIBLE_CATEGORY`: a participant's birth date is outside the category's ages on the considered date
+- `SCORE_INCOMPLETE`: a COMPLETED line holds a set its format cannot finish on (`info` names the set)
+- `MISSING_REASON`: a RETIRED or DEFAULTED line has no status code (`info` is the status)
+
+Per dual:
+
+- `DUAL_DECIDED`: a team has won with lines still unplayed (`matchUpIds`)
+- `MANUAL_SCORE`: automatic team scoring is off (`disableTieAutoCalc`, or a score set with `disableAutoCalc`)
+- `MANUAL_SCORE_DIVERGES`: the held score differs from what the lines produce (`info` is the lines' score)
+
+```js
+const { issues } = engine.getDualIssues({
+  matchUpId, // required unless matchUp is given: the TEAM dual
+  drawId, // optional; resolved from matchUpId when absent
+  matchUp, // optional — a hydrated dual, used as is
+  consideredDate, // optional — the date ages are measured on; default the dual's scheduled date. Without one, ages are not checked
+});
+// issues: [{ code, matchUpId?, matchUpIds?, collectionId?, participantIds?, sideNumber?, info? }]
+```
+
+---
+
 ## getEventMatchUpFormatTiming
 
 Returns format timing configuration for an event. When `categoryType` is not supplied it is resolved from the event's own category.
