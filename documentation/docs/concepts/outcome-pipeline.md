@@ -691,10 +691,12 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   matchUp, delivered by that BYE, is awarded the exit with the BYE recorded as their origin; where it holds no other
   position (its other feeder still to be played) it becomes a BYE and nothing goes on yet. A double BYE in a final goes
   nowhere: v1 writes that matchUp, a BYE already, as a BYE again (announced with no event at a deeper level). Where the
-  next matchUp is a BYE the position had passed through (a BYE opposite it, outside a feed round), the double BYE goes
-  on from there as from the first (S6). Each level is a first-round
+  next matchUp is a BYE the position had passed through (a BYE opposite it, a feed round's fed BYE included: S6 tail),
+  the double BYE goes on from there as from the first (S6). A matchUp the double BYE makes a BYE in its structure's last
+  round sends the position beside it nowhere (S6 tail). Each level is a first-round
   seat, free behind no condition, in a clean matchUp: alone, or opposite a BYE, a double BYE there too, planned as the
-  first one is but announced with no event (S6), the walk bounded by `SETTLE_PASS_LIMITS.exitLevels` (F9). Under `doubleExitPropagateBye: false`
+  first one is but announced with no event (S6), the walk bounded by `SETTLE_PASS_LIMITS.exitLevels` (F9). A level whose
+  seat holds a BYE already takes nothing, and the chain ends there (S6 tail). Under `doubleExitPropagateBye: false`
   the loser seat shows the produced exit instead: the loser matchUp is written the double exit's flavour awarded to the
   side opposite the seat, its codes `[]`, a `WALKOVER`'s score blanked and the seat's side given the
   origin (`conditionallyAdvanceDrawPosition`), with no `scoredTime`; its structure is stamped, and the position
@@ -707,12 +709,15 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   its origin on that side (`stampExitOnByeHeldLoserTarget`, `carryExitOnward`); both written with neither the tournament
   nor the event (`setMatchUpResult.announcesContext: false`), planned where nobody stands on the other side there and its
   feeder is still to be played. Otherwise outside a feed round, for links with no condition, free seats with no BYE beside them (a BYE there makes a
-  double BYE: v1's), clean matchUps, and each matchUp touched once, but where the unfillable seat's matchUp is the one the first BYE
+  double BYE, below), clean matchUps, and each matchUp touched once, but where the unfillable seat's matchUp is the one the first BYE
   advanced a position into (FIRST_MATCH_LOSER_CONSOLATION): that position goes on again through the second BYE; a
   participant standing opposite the unfillable seat goes on through its BYE the same way (S6). Where the own seat's double BYE
   has made the unfillable seat's matchUp a BYE, the position opposite gone on (FIRST_MATCH_LOSER_CONSOLATION), the
   unfillable seat makes a double BYE there too: the matchUp stands, and the one its position went on into becomes a
-  BYE, announced with no event (S6). A BYE's position sent on
+  BYE, announced with no event (S6). A BYE already standing opposite the unfillable seat (another double exit's, or the
+  draw's) makes a double BYE there the same way; and where the own seat's BYE sent its position on through a BYE standing
+  in the next matchUp, the unfillable seat's BYE sends its own position into the matchUp beyond as that chain leaves it,
+  the two meeting there (S6 tail, FEED_IN_CHAMPIONSHIP and its kin). A BYE's position sent on
   into a next matchUp that is a BYE already, its other side the BYE alone, goes into it and on through it into a clean
   matchUp beyond (S6), each announced as `advanceWinner` with no event. The
   unfillable seat takes its BYE behind a `FIRST_MATCHUP` link too, as v1 places it (`advanceByeToLoserMatchUp` asks no
