@@ -2229,6 +2229,38 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(3, 'East'), outcome: walkover(1), params: CARRIED }],
     },
   ],
+  [
+    'COMPASS 16 (S6 tail, the unwind cascade): a cleared double walkover whose loser seat BYE went on across a further loser link: the cascade takes it back',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 16, drawType: COMPASS },
+      setup: [{ target: R1(1, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(1, 'East'), outcome: cleared }],
+    },
+  ],
+  [
+    'COMPASS 8 (S6 tail, the unwind cascade): a cleared double walkover: the unfillable seat BYE in a one-round structure, and the loser cascade into South',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 8, drawType: COMPASS },
+      setup: [{ target: R1(1, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(1, 'East'), outcome: cleared }],
+    },
+  ],
+  [
+    'CURTIS_CONSOLATION 8 (S6 tail, the unwind cascade): a cleared double walkover whose consolation BYE takes back what it sent on',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 8, drawType: CURTIS_CONSOLATION },
+      setup: [{ target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(1, 'Main'), outcome: cleared }],
+    },
+  ],
+  [
+    'OLYMPIC 16/13 (S6 tail, the unwind cascade): a cleared double walkover whose seat makes a double BYE, its matchUp keeping the other BYE',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 13, drawType: OLYMPIC },
+      setup: [{ target: R1(2, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2, 'East'), outcome: cleared }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
@@ -2493,20 +2525,6 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     expect(v2.v1Writes).toBeGreaterThan(0);
     expect(v2.record).toEqual(v1.record);
     expect(v2.notices).toEqual(v1.notices);
-  });
-
-  it('S6: a cleared double walkover whose loser seat BYE went on across a further loser link (COMPASS) is v1s', () => {
-    const scenario: Scenario = {
-      drawProfile: { drawSize: 16, drawType: COMPASS },
-      setup: [{ target: R1(1, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
-      steps: [{ target: R1(1, 'East'), outcome: cleared }],
-    };
-    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
-    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
-    expect(v1.results[0].success).toEqual(true);
-    expect(v2.v1Writes).toBeGreaterThan(0);
-    expect(v2.results).toEqual(v1.results);
-    expect(v2.record).toEqual(v1.record);
   });
 
   it('S6: a cleared walkover that carried its exit across the loser link is v1s (its provenance there)', () => {

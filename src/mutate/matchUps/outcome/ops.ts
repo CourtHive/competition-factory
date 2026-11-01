@@ -216,6 +216,11 @@ export type OutcomeOp =
        */
       structureId: string;
       drawPosition: number;
+      /**
+       * false where v1 announces no assignments for it: a BYE its round-1 loser cascade takes back
+       * (`handleLoserMatchUpRemoval` → `drawPositionRemovals`, S6 tail, the unwind walk)
+       */
+      announcesAssignments?: false;
     }
   | {
       op: 'clearMatchUpBye';

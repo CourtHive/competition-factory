@@ -530,6 +530,8 @@ export type WinnerLoserSeat = {
   drawPositions: number[];
   matchUpStatus?: MatchUpStatusUnion;
   hasResult: boolean;
+  /** the matchUp holding the seat links its own loser on: the seat that link feeds, read as the call found it (S6 tail) */
+  beyond?: WinnerLoserSeat;
 };
 
 /** one further level of a carried exit: the seat the carrier is placed on across the landing's loser link */
