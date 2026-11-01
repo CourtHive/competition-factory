@@ -30,6 +30,18 @@ engine.addDrawEntries({
 });
 ```
 
+**Stage space.** Once the stage has a structure, entries are refused with
+`NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS` when the stage is full, or with
+`PARTICIPANT_COUNT_EXCEEDS_DRAW_SIZE` when there are more `participantIds` than places left. The
+places left to direct entries are the stage's draw positions less the positions its links hold for
+qualifiers, and every entry already holding one counts against them: the direct-entry statuses
+(`DIRECT_ACCEPTANCE`, `WILDCARD`, `ORGANISER_ACCEPTANCE`, `SPECIAL_EXEMPT`, `JUNIOR_EXEMPT`,
+`CONFIRMED`, `FEED_IN`) and `LUCKY_LOSER`, which takes a place vacated by a withdrawal. `QUALIFIER`
+entries count against the qualifier positions only, so they never take a direct-acceptance place, and a
+`QUALIFIER` entry is refused once the qualifier positions are full. [`getEventEntrySpace`](#getevententryspace)
+counts the same statuses, so the `openPlaces` it reports is what this method allows. `ALTERNATE` entries
+are limited only by a sanctioned `maxAlternates`; `ignoreStageSpace: true` skips every check.
+
 ---
 
 ## addEventEntries
@@ -347,7 +359,7 @@ const { basis, drawPositions, qualifierPositions, wildcardPositions, directAccep
   qualifierPositionsBasis: 'STRUCTURE' | 'ENTRY_PROFILE' | 'NONE';
   wildcardPositions: number; // max(entryProfile.wildcardCount, wildcardsAccepted)
   wildcardsAccepted: number;
-  directAcceptedCount: number; // MAIN entries in DIRECT_ENTRY_STATUSES, wildcards excluded
+  directAcceptedCount: number; // MAIN entries in DIRECT_ENTRY_STATUSES or LUCKY_LOSER, wildcards excluded
   acceptedCount: number; // directAcceptedCount + wildcardsAccepted
   directAcceptancePlaces?: number; // drawPositions - qualifierPositions - wildcardPositions; undefined when basis is NONE
   openPlaces?: number; // directAcceptancePlaces - directAcceptedCount, never below 0; undefined when basis is NONE
@@ -359,7 +371,8 @@ positions its links deliver decide — the same breakdown entry into a draw uses
 `entryProfile`: `targetDrawSize` for the positions (then the sanctioning constraints extension's
 `drawSize`), and `qualifiersCount`, or the final stage of each of `qualifyingProfiles`, for the qualifier
 positions. A `qualifyingDrawSize` alone holds no MAIN place: a qualifying draw's size does not say how
-many it sends on. Without `drawId`, positions are summed over every draw that has a MAIN structure and
+many it sends on. A `LUCKY_LOSER` entry takes a place vacated by a withdrawal and counts in
+`directAcceptedCount`; a `QUALIFIER` entry fills a qualifier position and does not. Without `drawId`, positions are summed over every draw that has a MAIN structure and
 counted against the event's entries; entries with no `entryStage` count as MAIN.
 
 ---

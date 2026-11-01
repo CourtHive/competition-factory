@@ -1,4 +1,4 @@
-import { getStageDirectEntriesCount, getStageWildcardEntriesCount } from '@Query/drawDefinition/stageGetter';
+import { getStagePlaceTakingEntriesCount, getStageWildcardEntriesCount } from '@Query/drawDefinition/stageGetter';
 import { getStageDrawPositionsBreakdown } from '@Query/drawDefinition/getStageDrawPositions';
 
 // constants
@@ -29,7 +29,7 @@ export type EventEntrySpace = {
   /** MAIN places held for wildcards: `entryProfile.wildcardCount`, or the wildcards accepted if more */
   wildcardPositions: number;
   wildcardsAccepted: number;
-  /** MAIN entries accepted directly, wildcards excluded (DIRECT_ENTRY_STATUSES) */
+  /** MAIN entries taking a direct-acceptance place, wildcards excluded (PLACE_TAKING_ENTRY_STATUSES: direct entries and lucky losers) */
   directAcceptedCount: number;
   /** directAcceptedCount + wildcardsAccepted */
   acceptedCount: number;
@@ -78,7 +78,7 @@ export function getEventEntrySpace({
     entry.entryStage ? entry : { ...entry, entryStage: MAIN },
   );
   const wildcardsAccepted = getStageWildcardEntriesCount({ stage: MAIN, entries });
-  const directAcceptedCount = getStageDirectEntriesCount({ stage: MAIN, entries }) - wildcardsAccepted;
+  const directAcceptedCount = getStagePlaceTakingEntriesCount({ stage: MAIN, entries }) - wildcardsAccepted;
   const acceptedCount = directAcceptedCount + wildcardsAccepted;
 
   const wildcardCount = event.entryProfile?.wildcardCount;
