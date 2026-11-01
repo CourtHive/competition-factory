@@ -178,6 +178,10 @@ engine.disableCourts({
 A court disabled for all dates stores `disabled: true`; one disabled on some dates stores `disabled: { dates }`. Both
 are valid against the CODES schema (`Disabled`), and `disableVenues` stores `disabled: true` on a venue.
 
+Read with `ignoreDisabled` (as scheduling does), a court disabled on some dates is left out on those dates. On the
+other dates it asks about, its undated availability is returned as an entry for each date, so a court that holds only
+an undated availability keeps its hours there.
+
 `disableCourts`, `enableCourts`, `disableVenues` and `enableVenues` send a `modifyVenue` notice for each venue
 they changed, and none for a venue already in the requested state.
 

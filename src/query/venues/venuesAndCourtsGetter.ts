@@ -64,6 +64,7 @@ function processVenue({
         ignoreDisabled,
         venue,
         court,
+        dates,
       });
 
       courts.push(inContextCourt);
