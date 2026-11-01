@@ -1,15 +1,14 @@
 // Query
+import { deriveCompetitionState } from '@Query/drawDefinition/competition/deriveCompetitionState';
+import { getStoredCompetitionState } from '@Query/drawDefinition/competition/getCompetitionState';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
-import { getCompetitionState } from '@Query/drawDefinition/competition/getCompetitionState';
 
 // Mutate
 import { announceDrawChange, attributesSnapshot } from '@Mutate/drawDefinitions/announceDrawChange';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
-import { processCompetitionMatchUp } from './processCompetitionMatchUp';
 
 // constants
 import { MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
-import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { COMPETITION_STATE } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -25,49 +24,32 @@ type ProcessCompetitionRoundArgs = {
   event?: Event;
 };
 
+/**
+ * Marks a round processed (PER_ROUND) and re-derives the stored competition state from the draw's results
+ * (`deriveCompetitionState`). A round already processed is left as it is.
+ */
 export function processCompetitionRound(params: ProcessCompetitionRoundArgs): ResultType {
-  const { tournamentRecord, drawDefinition, roundNumber, matchUps, event } = params;
+  const { tournamentRecord, drawDefinition, roundNumber, event } = params;
   if (!drawDefinition) return { error: MISSING_DRAW_DEFINITION };
 
   const { competitionPolicy } = getCompetitionPolicy({ tournamentRecord, drawDefinition, event });
   if (!competitionPolicy) return { ...SUCCESS };
 
-  const { competitionState } = getCompetitionState({ drawDefinition });
-  if (!competitionState) return { ...SUCCESS };
+  const stored = getStoredCompetitionState({ drawDefinition });
+  if (!stored) return { ...SUCCESS };
 
   // Check if this round was already processed
-  if (competitionState.roundStates[roundNumber]?.processed) return { ...SUCCESS };
+  if (stored.roundStates[roundNumber]?.processed) return { ...SUCCESS };
 
-  // the state is the live value, which processCompetitionMatchUp edits in place: snapshot it first
   const attributes = ['competitionState'];
   const before = attributesSnapshot(drawDefinition, attributes);
-
-  // Process all completed matchUps in this round
-  const roundMatchUps = matchUps.filter(
-    (m) =>
-      m.roundNumber === roundNumber && (m.winningSide || completedMatchUpStatuses.includes(m.matchUpStatus as any)),
-  );
-
-  for (const matchUp of roundMatchUps) {
-    processCompetitionMatchUp({ tournamentRecord, drawDefinition, matchUp, event });
-  }
-
-  // Re-read state (it was updated by processCompetitionMatchUp)
-  const { competitionState: updatedState } = getCompetitionState({ drawDefinition });
-  if (updatedState) {
-    updatedState.roundStates[roundNumber] = {
-      roundNumber,
-      processed: true,
-    };
-
-    setFirstClassOrExtension({
-      element: drawDefinition,
-      attribute: 'competitionState',
-      name: COMPETITION_STATE,
-      value: updatedState,
-    });
-  }
-
+  const marked = { ...stored, roundStates: { ...stored.roundStates, [roundNumber]: { roundNumber, processed: true } } };
+  setFirstClassOrExtension({
+    element: drawDefinition,
+    attribute: 'competitionState',
+    name: COMPETITION_STATE,
+    value: deriveCompetitionState({ competitionPolicy, competitionState: marked, drawDefinition }),
+  });
   announceDrawChange({ tournamentRecord, drawDefinition, attributes, before, event });
 
   return { ...SUCCESS };

@@ -303,6 +303,26 @@ console.log(`${stageEntries.length} entries, ${seedsCount} seeds allowed`);
 
 **8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getEventEntryFees`](/docs/implementation/records/getEventEntryFees). Package-export status is a separate decision.
 
+## getEntryStatusOrdinals
+
+Each entry's place among the entries of its own stage and `entryStatus` (e.g. `WILDCARD` #1, #2), derived from the one
+accepted `entryPosition` list described under [modifyEntriesStatus](#modifyentriesstatus). Nothing is stored. Within
+each stage and status, entries are ordered by `entryPosition` (entries without a position follow, in array order) and
+numbered 1..n.
+
+```js
+const { statusOrdinals } = engine.getEntryStatusOrdinals({
+  entries, // array of entry objects, e.g. event.entries or a flight's drawEntries
+  entryStatus, // optional filter - e.g. WILDCARD
+  stage, // optional filter - e.g. MAIN, QUALIFYING; an entry without entryStage is MAIN
+});
+
+// statusOrdinals: [{ participantId, entryStage, entryStatus, entryPosition, statusOrdinal }]
+// e.g. accepted list DA 1, WC 2, DA 3, WC 4 -> WILDCARD statusOrdinals 1 (position 2) and 2 (position 4)
+```
+
+---
+
 ## getEventEntrySpace
 
 How many MAIN places an event (or one of its draws) has for entries accepted directly — neither
@@ -401,21 +421,26 @@ with `PARTICIPANT_ENTRY_NOT_FOUND` and `context.participantIds` naming the parti
 only some are out of scope, the whole call is refused. A call that also updates the event's entries (`WITHDRAWN`, or
 `eventSync` with a single draw) accepts a participant that is in the event's entries but not in the draw.
 
-**entryPositions.** Positions are numbered within a group: the entries that share an `entryStage` (`MAIN` when
-absent) and an `entryStatus`, as `refreshEntryPositions` numbers them. The same rule applies in the event's entries,
-the flight's `drawEntries` and the draw's entries, with or without `autoEntryPositions`.
+**entryPositions.** Positions are numbered within a group, as `refreshEntryPositions` numbers them. All accepted
+statuses (`STRUCTURE_SELECTED_STATUSES`: `DIRECT_ACCEPTANCE`, `WILDCARD`, `SPECIAL_EXEMPT`, `JUNIOR_EXEMPT`,
+`ORGANISER_ACCEPTANCE`, `CONFIRMED`, `QUALIFIER`, `LUCKY_LOSER`) form **one list per `entryStage`** (`MAIN` when
+absent); every other status (`ALTERNATE`, `WITHDRAWN`, ...) has its own list per stage. The same rule applies in the
+event's entries, the flight's `drawEntries` and the draw's entries, with or without `autoEntryPositions`.
 
 - **An entry that changes group goes to the end of its new group** (`max + 1` of the group's positions), and the entries
   behind it in its old group close up. An `ALTERNATE` moved to `DIRECT_ACCEPTANCE` therefore follows the accepted
   entries and never takes an accepted entry's position; an accepted entry moved to `ALTERNATE` goes after the
-  alternates, and the accepted entries close up. A `WITHDRAWN` entry restored, a qualifying alternate moved to the
-  main stage, or a move to `LUCKY_LOSER` follow the same rule.
+  alternates, and the accepted entries close up. An alternate moved to any accepted status (`WILDCARD`,
+  `LUCKY_LOSER`, ...) takes the next position of the whole accepted list. A `WITHDRAWN` entry restored and a
+  qualifying alternate moved to the main stage follow the same rule.
 - **Several moved in one call take distinct positions in the order of `participantIds`.**
-- **An entry already in the requested group keeps its position.**
+- **An entry already in the requested group keeps its position**, including a change between accepted statuses
+  (e.g. `DIRECT_ACCEPTANCE` to `WILDCARD`).
 - **When no entry of the new group has a position**, the moved entry is left without one: a position would sort it
   ahead of them.
-- Positions are counted per `entryStatus`, so a `DIRECT_ACCEPTANCE` entry and a `WILDCARD` entry can both hold
-  position 1. `promoteAlternates` places entries by the same rule.
+- No two accepted entries of a stage share a position: a `DIRECT_ACCEPTANCE` entry and a `WILDCARD` entry are
+  numbered in one list. Each status's own order (`WILDCARD` #1, #2) is derived, not stored: see
+  [getEntryStatusOrdinals](#getentrystatusordinals). `promoteAlternates` places entries by the same rule.
 
 ---
 

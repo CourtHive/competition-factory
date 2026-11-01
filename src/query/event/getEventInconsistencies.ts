@@ -3,6 +3,7 @@ import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsisten
 import { positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { expectedParticipantType } from '@Query/event/participantTypeForEvent';
 import { getParticipants } from '@Query/participants/getParticipants';
+import { extractDate } from '@Tools/dateTime';
 
 // constants and types
 import { MatchUpsMap, ParticipantMap, ResultType } from '@Types/factoryTypes';
@@ -26,6 +27,13 @@ import { SUCCESS } from '@Constants/resultConstants';
 // checkValidEntries already covers entry-level coherence (and couples in gender-enforcement policy);
 // folding it into the integrity scan risks policy-dependent false positives and is a later sub-phase.
 export const EVENT_PARTICIPANT_TYPE_MISMATCH = 'EVENT_PARTICIPANT_TYPE_MISMATCH';
+
+// EVENT_DATES_OUTSIDE_TOURNAMENT: the event's startDate or endDate lies outside the tournament's
+// range. `disjoint` is true when no day of the event range is inside the tournament range; a
+// scheduler then ignores the event range and falls back to the tournament's, and this finding is
+// how that fallback is flagged. setTournamentDates no longer produces such a range, so it marks a
+// record written before that rule or edited outside the engine. (warning)
+export const EVENT_DATES_OUTSIDE_TOURNAMENT = 'EVENT_DATES_OUTSIDE_TOURNAMENT';
 
 type GetEventInconsistenciesArgs = {
   tournamentRecord?: Tournament;
@@ -82,6 +90,31 @@ function getParticipantTypeMismatches(params: GetEventInconsistenciesArgs, parti
   return inconsistencies;
 }
 
+function getEventDateRangeIssues(event: Event, tournamentRecord?: Tournament): any[] {
+  const day = (date?: string) => (date ? extractDate(date) : undefined);
+  const tournamentStartDate = day(tournamentRecord?.startDate);
+  const tournamentEndDate = day(tournamentRecord?.endDate);
+  const startDate = day(event.startDate);
+  const endDate = day(event.endDate);
+  const before = (date?: string) => !!date && !!tournamentStartDate && date < tournamentStartDate;
+  const after = (date?: string) => !!date && !!tournamentEndDate && date > tournamentEndDate;
+  if (!before(startDate) && !after(startDate) && !before(endDate) && !after(endDate)) return [];
+
+  const disjoint = after(startDate) || before(endDate);
+  return [
+    {
+      issueType: EVENT_DATES_OUTSIDE_TOURNAMENT,
+      message: `event dates ${startDate ?? ''}..${endDate ?? ''} ${disjoint ? 'lie entirely' : 'extend'} outside tournament dates ${tournamentStartDate ?? ''}..${tournamentEndDate ?? ''}`,
+      severity: 'warning',
+      tournamentStartDate,
+      tournamentEndDate,
+      startDate,
+      endDate,
+      disjoint,
+    },
+  ];
+}
+
 export function getEventInconsistencies(
   params: GetEventInconsistenciesArgs,
 ): ResultType & { valid?: boolean; inconsistencies?: Inconsistency[] } {
@@ -98,7 +131,9 @@ export function getEventInconsistencies(
   if (!participantMap && tournamentRecord) ({ participantMap } = getParticipants({ tournamentRecord }));
   const typeMismatches = getParticipantTypeMismatches(params, participantMap);
 
-  const combined = [...drawInconsistencies, ...typeMismatches];
+  const dateRangeIssues = getEventDateRangeIssues(event, tournamentRecord);
+
+  const combined = [...drawInconsistencies, ...typeMismatches, ...dateRangeIssues];
   const finalized = finalize(combined, { scope: 'EVENT', eventId });
   return { ...SUCCESS, valid: !hasErrorSeverity(finalized), inconsistencies: finalized };
 }

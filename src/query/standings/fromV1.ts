@@ -41,6 +41,35 @@ export const V1_DEFAULT_DIRECTIVES: StandingsDirective[] = [
  */
 export const V1_HEAD_TO_HEAD: StandingsDirective = { attribute: 'headToHead', mode: 'RECORD' };
 
+/** measures added by the standings engine (S3c): differences and ratios; any of them may be a primary measure */
+export const V2_MEASURES = [
+  'setsDiff',
+  'gamesDiff',
+  'pointsDiff',
+  'setsRatio',
+  'gamesRatio',
+  'pointsRatio',
+  // from `resultPoints` (S4b)
+  'classificationPoints',
+];
+
+/**
+ * ratio measures, won over lost: computed only when ordering, never stored (a ratio with nothing lost is unbounded),
+ * and the only measures a directive's `zeroDivision` applies to
+ */
+export const RATIO_INPUTS: Record<string, [string, string]> = {
+  setsRatio: ['setsWon', 'setsLost'],
+  gamesRatio: ['gamesWon', 'gamesLost'],
+  pointsRatio: ['pointsWon', 'pointsLost'],
+};
+export const RATIO_MEASURES = Object.keys(RATIO_INPUTS);
+
+/**
+ * Graph measures (spec § 5.2, D6-2 GRAPH): read from the whole table, each opponent scored by the policy's primary
+ * measure. Computed only when ordering; never the primary measure (circular) nor scoped to the tied (`idsFilter`).
+ */
+export const GRAPH_MEASURES = ['buchholz', 'buchholzCut1', 'buchholzMedian', 'sonnebornBerger'];
+
 /** the measures a season's ledger adds to the round-robin ledger's: the tie-score values */
 export const SEASON_TALLY_MEASURES = ['valueWon', 'valueLost'];
 
@@ -72,6 +101,8 @@ export const TALLY_MEASURES = [
   'tieDoublesWon',
   'tieDoublesLost',
   'standingsPoints',
+  ...V2_MEASURES,
+  ...GRAPH_MEASURES,
 ];
 
 /**
@@ -80,7 +111,10 @@ export const TALLY_MEASURES = [
  * out as a field, so the core needs no knowledge of v1. `primaryKeys` widens the accepted primary measures for a caller
  * whose ledger has more (a season adds the tie-score values).
  */
-export function fromV1(tallyPolicy?: RoundRobinTallyPolicy, primaryKeys: string[] = V1_PRIMARY_KEYS): StandingsPolicy {
+export function fromV1(
+  tallyPolicy?: RoundRobinTallyPolicy,
+  primaryKeys: string[] = [...V1_PRIMARY_KEYS, ...V2_MEASURES],
+): StandingsPolicy {
   const groupOrderKey = tallyPolicy?.groupOrderKey;
   const primary = groupOrderKey && primaryKeys.includes(groupOrderKey) ? groupOrderKey : 'matchUpsWon';
   const headToHeadDisabled = !!(tallyPolicy?.headToHead as { disabled?: boolean } | undefined)?.disabled;
@@ -94,6 +128,8 @@ export function fromV1(tallyPolicy?: RoundRobinTallyPolicy, primaryKeys: string[
       ...(tallyPolicy?.disqualifyDefaults ? ['defaults'] : []),
     ],
     ...(tallyPolicy?.onSplit !== undefined && { onSplit: tallyPolicy.onSplit as SplitMode }),
+    ...(tallyPolicy?.precision !== undefined && { precision: tallyPolicy.precision as number | 'EXACT' }),
+    ...(tallyPolicy?.drawCredit !== undefined && { drawCredit: tallyPolicy.drawCredit }),
     ...(tallyPolicy?.terminal !== undefined && { terminal: tallyPolicy.terminal as TerminalStep }),
   };
 }
