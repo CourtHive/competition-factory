@@ -17,7 +17,7 @@ import type {
 import { INVALID_VALUES, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 import type { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
 import type { RoundRobinTallyPolicy } from '@Types/roundRobinTallyPolicy';
-import type { ParticipantResults } from '@Query/standings/standingsTypes';
+import type { ParticipantResults, StandingsPhase } from '@Query/standings/standingsTypes';
 import type { ErrorType } from '@Constants/errorConditionConstants';
 import { SUBJECT_PERSON, SUBJECT_TEAM } from '@Constants/seasonConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
@@ -51,6 +51,8 @@ type GetSeasonStandingsArgs = {
   /** tally fields compared in order, higher first; defaults to matchUps won, then value, sets and games */
   orderBy?: (keyof SeasonStandingsTally)[];
   tallyPolicy?: RoundRobinTallyPolicy;
+  /** what the table is for: a policy's directives may apply only for some purposes (`STANDINGS_PURPOSE_*`) */
+  purpose?: string;
 };
 
 export type SeasonStandingsResult = ResultType & {
@@ -123,31 +125,54 @@ export function getSeasonStandings(params: GetSeasonStandingsArgs): SeasonStandi
 
   const standings: Record<string, SeasonStandingRow[]> = {};
   const provisional: Record<string, boolean> = {};
-  const tierIds = new Set([...Object.keys(rows), ...Object.keys(buckets)]);
-  for (const key of tierIds) {
-    const bucket = buckets[key];
-    const tallyPolicy =
-      params.tallyPolicy ?? season.tiers.find((tier) => tier.tierId === key)?.tallyPolicy ?? season.tallyPolicy;
-    const ledger = bucket ? tierLedger(bucket, tallyPolicy) : { participantResults: {} };
-    if ('error' in ledger && ledger.error) return decorateResult({ result: ledger, context: { tierId: key }, stack });
-    const participantResults = ledger.participantResults as ParticipantResults;
-    for (const [subjectKey, result] of Object.entries(participantResults)) {
-      const subject = bucket?.subjects.get(subjectKey);
-      if (!subject) continue; // an unmapped opponent: credited to the other side, never a row
-      const row = getRow(rows, key, subject);
-      row.participantIds = bucket?.participantIds.get(subjectKey) ?? [];
-      for (const field of TALLY_FIELDS) row[field] = Number(result[field] ?? 0);
-    }
-    const tierRows = [...(rows[key]?.values() ?? [])];
-    // the engine orders by policy unless the caller asks for the flat order by name
-    standings[key] =
-      tallyPolicy && !params.orderBy?.length && bucket
-        ? rankByPolicy({ tierRows, participantResults, bucket, tallyPolicy })
-        : rankRows(tierRows, params.orderBy?.length ? params.orderBy : DEFAULT_ORDER);
-    provisional[key] = !bucket || bucket.matchUps.some((matchUp) => !matchUpCompletion(matchUp));
+  for (const key of new Set([...Object.keys(rows), ...Object.keys(buckets)])) {
+    const tier = tierStandings({ params, key, bucket: buckets[key], rows });
+    if (tier.error) return decorateResult({ result: tier, context: { tierId: key }, stack });
+    standings[key] = tier.standings ?? [];
+    provisional[key] = !!tier.provisional;
   }
 
   return { standings, provisional, ...reports };
+}
+
+type TierStandingsArgs = {
+  params: GetSeasonStandingsArgs;
+  bucket?: TierBucket;
+  rows: TierRows;
+  key: string;
+};
+
+/** one tier's table: its ledger becomes its rows, ordered by the tier's policy or flat */
+function tierStandings({ params, key, bucket, rows }: TierStandingsArgs) {
+  const { season } = params;
+  const tallyPolicy =
+    params.tallyPolicy ?? season.tiers.find((tier) => tier.tierId === key)?.tallyPolicy ?? season.tallyPolicy;
+  const ledger = bucket ? tierLedger(bucket, tallyPolicy) : { participantResults: {} };
+  if ('error' in ledger && ledger.error) return { error: ledger.error, info: ledger.info };
+  const participantResults = ledger.participantResults as ParticipantResults;
+  for (const [subjectKey, result] of Object.entries(participantResults)) {
+    const subject = bucket?.subjects.get(subjectKey);
+    if (!subject) continue; // an unmapped opponent: credited to the other side, never a row
+    const row = getRow(rows, key, subject);
+    row.participantIds = bucket?.participantIds.get(subjectKey) ?? [];
+    for (const field of TALLY_FIELDS) row[field] = Number(result[field] ?? 0);
+  }
+  const tierRows = [...(rows[key]?.values() ?? [])];
+  const provisional = !bucket || bucket.matchUps.some((matchUp) => !matchUpCompletion(matchUp));
+  // the engine orders by policy unless the caller asks for the flat order by name
+  const standings =
+    tallyPolicy && !params.orderBy?.length && bucket
+      ? rankByPolicy({
+          phase: provisional ? 'PROVISIONAL' : 'FINAL',
+          lotSeed: `${season.seasonId}:${key}`,
+          purpose: params.purpose,
+          participantResults,
+          tallyPolicy,
+          tierRows,
+          bucket,
+        })
+      : rankRows(tierRows, params.orderBy?.length ? params.orderBy : DEFAULT_ORDER);
+  return { standings, provisional };
 }
 
 function referencedMatchUps(ref: CompetitionRef, matchUps: HydratedMatchUp[]) {
@@ -244,6 +269,9 @@ function tierLedger(
 
 type RankByPolicyArgs = {
   participantResults: ParticipantResults;
+  phase: StandingsPhase;
+  purpose?: string;
+  lotSeed: string;
   tallyPolicy: RoundRobinTallyPolicy;
   tierRows: SeasonStandingRow[];
   bucket: TierBucket;
@@ -253,7 +281,15 @@ type RankByPolicyArgs = {
  * The standings engine's order (spec § 5): the tier's tally policy, read through `fromV1` with the tie-score values
  * as primary measures too. A placed subject who has not played follows everyone who has, sharing that place.
  */
-function rankByPolicy({ tierRows, participantResults, bucket, tallyPolicy }: RankByPolicyArgs) {
+function rankByPolicy({
+  tierRows,
+  participantResults,
+  bucket,
+  tallyPolicy,
+  phase,
+  purpose,
+  lotSeed,
+}: RankByPolicyArgs) {
   const played = Object.fromEntries(
     Object.entries(participantResults).filter(([key]) => bucket.subjects.has(key)),
   ) as ParticipantResults;
@@ -261,6 +297,9 @@ function rankByPolicy({ tierRows, participantResults, bucket, tallyPolicy }: Ran
     recalculate: ({ participantIds, groupingTotal }) => tierLedger(bucket, tallyPolicy, participantIds, groupingTotal),
     policy: fromV1(tallyPolicy, SEASON_PRIMARY_KEYS),
     participantResults: played,
+    lotSeed,
+    purpose,
+    phase,
   });
   const byKey = new Map(tierRows.map((row) => [subjectKey(row.subject), row]));
   const ranked = groupOrder.flatMap(({ participantId, rankOrder }) => {
