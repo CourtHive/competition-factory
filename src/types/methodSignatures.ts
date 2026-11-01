@@ -287,6 +287,7 @@ import type { getMatchUpCheckInHistory } from '@Query/matchUp/getMatchUpCheckInH
 import type { getMatchUpParticipantIds } from '@Query/matchUp/getMatchUpParticipantIds';
 import type { getMatchUpScheduleBounds } from '@Query/matchUp/getMatchUpScheduleBounds';
 import type { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
+import type { getEventDateIssues } from '@Query/matchUps/scheduling/getEventDateIssues';
 import type { getOfficialAssignments } from '@Query/officiating/getOfficialAssignments';
 import type { getOfficialEligibility } from '@Query/officiating/getOfficialEligibility';
 import type { getLinkedTournamentIds } from '@Query/tournaments/getLinkedTournamentIds';
@@ -479,6 +480,7 @@ import type { validMatchUp, validMatchUps } from '@Validators/validMatchUp';
 import type { autoSeeding } from '@Generators/drawDefinitions/autoSeeding';
 import type { removeScaleValues } from '@Mutate/entries/removeScaleValues';
 import type { resolvePointValue } from '@Mutate/scoring/resolvePointValue';
+import type { getEventPlayingDates } from '@Query/events/eventPlaysOnDate';
 import type { getParticipants } from '@Query/participants/getParticipants';
 import type { getSeasonStandings } from '@Query/season/getSeasonStandings';
 import type { courtGridRows } from '@Generators/scheduling/courtGridRows';
@@ -1003,10 +1005,12 @@ export interface MethodSignatures {
   getEvent: EngineMethod<typeof getEvent>;
   getEventCompleteness: EngineMethod<typeof getEventCompleteness>;
   getEventData: EngineMethod<typeof getEventData>;
+  getEventDateIssues: EngineMethod<typeof getEventDateIssues>;
   getEventEntryFees: EngineMethod<typeof getEventEntryFees>;
   getEventEntrySpace: EngineMethod<typeof getEventEntrySpace>;
   getEventInconsistencies: EngineMethod<typeof getEventInconsistencies>;
   getEventMatchUpFormatTiming: EngineMethod<typeof getEventMatchUpFormatTiming>;
+  getEventPlayingDates: EngineMethod<typeof getEventPlayingDates>;
   getEventProperties: EngineMethod<typeof getEventProperties>;
   getEventPublishStatus: EngineMethod<typeof getEventPublishStatus>;
   getEventRankingPoints: EngineMethod<typeof getEventRankingPoints>;

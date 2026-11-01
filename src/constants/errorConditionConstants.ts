@@ -8,6 +8,12 @@ export const ANACHRONISM = {
   message: 'Chronological error; time violation.',
   code: 'ANACHRONISM' as const,
 } satisfies ErrorType;
+// A matchUp placed on a day its event does not play (eventPlaysOnDate). Always a WARNING, never a refusal: a director's
+// placement lands and carries it; an instance adds { matchUpId, eventId, scheduledDate, reason }.
+export const EVENT_DATE_INACTIVE = {
+  message: 'The event does not play on this date.',
+  code: 'EVENT_DATE_INACTIVE' as const,
+} satisfies ErrorType;
 // A schedule attribute that was accepted but not written. Reported rather than
 // thrown because reading a schedule and writing it back is a supported pattern;
 // `errorOnUnknownAttributes` escalates it, exactly as `errorOnAnachronism` does
@@ -1036,6 +1042,7 @@ export const QUALIFYING_CAPACITY_EXCEEDED = {
 export const errorConditionConstants = {
   ANACHRONISM,
   SCHEDULING_PROFILE_DATES_OUT_OF_RANGE,
+  EVENT_DATE_INACTIVE,
   SCHEDULING_PROFILE_REPAIR_REQUIRED,
   UNWRITABLE_SCHEDULE_ATTRIBUTES,
   BOOKING_NOT_FOUND,
