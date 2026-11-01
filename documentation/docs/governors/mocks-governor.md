@@ -6,151 +6,148 @@ The **Mocks Governor** provides methods for anonymizing and modifying tournament
 
 ## anonymizeTournamentRecord
 
-Replace personal information in a tournament record with generated mock data while preserving tournament structure.
+Replaces the personal and identifying data in a tournament record with generated data. The structure, results and schedule stay as they were.
+
+**The record is rewritten in place.** It is also returned as `tournamentRecord`. To keep the original, pass a copy, for example `structuredClone(tournamentRecord)`. Never run it through a stateful engine or an `executionQueue` against a live record, because it would anonymize the record that engine holds.
 
 ### Anonymization Purpose
 
-- **Privacy compliance** - Remove PII before sharing tournament data
-- **Test data creation** - Create realistic test data from production tournaments
-- **Public examples** - Share tournament structures without exposing participant identities
-- **Debugging** - Anonymize production data for support investigations
+- **Privacy compliance**: remove personal data before sharing tournament data
+- **Test data creation**: build realistic test data from production tournaments
+- **Debugging**: share a production record for a support investigation
 
 ### Anonymization Basic Usage
 
 ```js
-const anonymizedRecord = mocksGovernor.anonymizeTournamentRecord({
-  tournamentRecord, // Original tournament with real participant data
+const { tournamentRecord: anonymized } = mocksGovernor.anonymizeTournamentRecord({
+  tournamentRecord: structuredClone(original), // the copy is rewritten; `original` is untouched
 });
 ```
 
 ### Anonymization Complete Options
 
 ```js
-const anonymizedRecord = mocksGovernor.anonymizeTournamentRecord({
-  tournamentRecord, // Required - tournament to anonymize
+const result = mocksGovernor.anonymizeTournamentRecord({
+  tournamentRecord, // required: rewritten in place and returned as result.tournamentRecord
 
-  // Optional - Override tournament identification
-  tournamentId, // New UUID for tournament (default: generates new)
-  tournamentName, // New name (default: generates name)
+  tournamentId, // optional: the new tournamentId (default: generated)
+  tournamentName, // optional: the new name (default: 'Anonymized: <date>')
+  parentOrganisation, // optional: a mock organisation to attach (default: parentOrganisation is removed)
 
-  // Optional - Controlled mock person generation
-  personIds: [], // Array of UUIDs to use for replacement persons
-  // If not provided, new UUIDs are generated
+  personIds: [], // optional: used in order for the replacement persons of INDIVIDUAL participants
 
-  // Optional - Extension handling
-  keepExtensions: [], // Array of extension names to preserve
-  // Use true to keep ALL extensions
-  // Use [] or false to remove all except internal extensions
+  keepExtensions: [], // optional: extension names to keep beside the internal ones; true keeps every extension
+  anonymizeParticipantNames: true, // optional: false keeps participant and person names
 
-  // Optional - Name anonymization control
-  anonymizeParticipantNames: true, // Whether to replace participant names
-  // true = replace with mock names (default)
-  // false = preserve original names
+  random, // optional: the source for every generated id, name and address
 });
 ```
 
-### What Gets Anonymized
+Through `mocksEngine`, `nonRandom: <seed>` supplies `random`. Two runs with the same seed on the same record produce the same result, apart from `createdAt`.
 
-**Person information:**
+### What Gets Replaced
 
-- `person.personId` - New UUID generated (or from personIds array)
-- `person.standardFamilyName` - Mock last name
-- `person.standardGivenName` - Mock first name
-- `person.nationalityCode` - Randomized
+**Ids.** Every id the record defines gets a new value: the tournament, participants, persons, events, draws, structures (nested ones too), matchUps (including tieMatchUps and tournament-level `matchUps`), venues (including `subVenues`) and courts. Every reference to one of these ids is remapped as well, at any depth and in any field. That includes:
 
-**What's preserved:**
+- entries, position and seed assignments, and lineUps
+- structure links
+- matchUp schedules and timeItems (court and venue assignments)
+- scheduling and flight profiles
+- `individualParticipantIds`
+- presence logs
+- extension values, including objects keyed by an id
 
-- Tournament structure (events, draws, matchUps)
-- Match results (scores, outcomes, winners)
-- Seedings and rankings (numerical values)
-- Scheduling and venues
-- All IDs and references (updated consistently)
+`participant.personId` follows its replaced person.
 
-### Example: Anonymize Production Data
+**Names.** These are replaced with generated names:
+
+- persons and individual participant names
+- pair names, rebuilt from the members' new names
+- team and group names
+- event names (`Event <n> <category>`)
+- venue names and abbreviations (`Venue #<n>`, `V<n>`)
+- court names (`V<n>C<m>`)
+- the tournament name
+
+**Persons.** Each person is replaced by a generated person of the same sex. The new person keeps the original birth year and gets a generated address only if the original had one. Everything else on the original person is dropped: contacts, other names, external ids, `tennisId` and the rest.
+
+### What Gets Cleared
+
+- **Everywhere, at any depth**: `notes`, `contacts`, `onlineResources` and every `*OtherIds` attribute (`tournamentOtherIds`, `participantOtherIds`, `personOtherIds`, `venueOtherIds`, `eventOtherIds`, `drawOtherIds`)
+- **Tournament**: `linkedTournamentIds`, `parentOrganisationId`, `parentOrganisation` (unless one is passed), `tournamentSeriesId`, `registrationProfile`, `formalName`, `promotionalName`, `cancellationReason`, `sanction`, `sanctions`
+- **Venues**: `addresses`, `facilityId`, `parentOrganisationId`
+- **Courts**: `latitude`, `longitude`
+- **Events**: `tennisOfficialIds`, `registrationProfile`, `cancellationReason`, `sanction`
+- **Participants**: `participantOtherName`, unless `anonymizeParticipantNames: false`
+- **Presence logs**: the attester (`attributedTo`) and its `notes`
+- **Extensions**: every non-internal extension unless it is named in `keepExtensions`. The `linkedTournamentsIds` and `mutationLocks` internal extensions are always dropped, because they name real tournaments and carry live lock tokens.
+
+### What Is Retained By Design
+
+- dates: tournament, event and draw dates, schedules and timeItem dates
+- ratings and rankings stored in timeItems, and seedings
+- scores, outcomes and matchUp statuses
+- each person's birth year and sex, and each participant's `representing` country
+- the tournament's `hostCountryCode`, `localTimeZone`, level, category and surface
+- draw names and event abbreviations
+- internal extensions (scheduling profile, flight profile, lineUps, tallies and so on), with their ids remapped
+- ids that point outside the record, for example a `decidedByPersonId` naming a person who is not a participant. Only ids the record defines can be remapped.
+
+An id is remapped only where it is the whole string. An id inside a longer string, such as a URL or a composite key, stays as it was. That is why free-text and web-address attributes are cleared rather than rewritten.
+
+### Example: Anonymize a Record for Support
 
 ```js
-import { tournamentEngine, mocksGovernor } from 'tods-competition-factory';
-
-// Load production tournament
-const productionTournament = await fetchTournamentData();
 tournamentEngine.setState(productionTournament);
+const { tournamentRecord: live } = tournamentEngine.getTournament();
 
-// Anonymize for public sharing
-const anonymized = mocksGovernor.anonymizeTournamentRecord({
-  tournamentRecord: productionTournament,
-  tournamentName: 'Example Tournament 2024',
+const { tournamentRecord: anonymized } = mocksGovernor.anonymizeTournamentRecord({
+  tournamentRecord: structuredClone(live),
+  tournamentName: 'Support case 1234',
 });
 
-// Now safe to share - all personal info replaced
-console.log(anonymized.participants[0].person.standardFamilyName); // 'Smith' (mocked)
-```
-
-### Example: Create Test Fixture from Real Data
-
-```js
-// Start with real tournament that had interesting edge case
-const realTournament = loadRealTournamentWithEdgeCase();
-
-// Anonymize and save as test fixture
-const testFixture = mocksGovernor.anonymizeTournamentRecord({
-  tournamentRecord: realTournament,
-  tournamentId: 'edge-case-test-fixture',
-  tournamentName: 'Edge Case Test',
-});
-
-// Save for future tests
-fs.writeFileSync('fixtures/edge-case.codes.json', JSON.stringify(testFixture));
+console.log(anonymized.participants[0].person.standardFamilyName); // a generated name
 ```
 
 ### Example: Preserve Specific Extensions
 
 ```js
-// Tournament with custom extensions
 const { tournamentRecord } = mocksEngine.generateTournamentRecord({
   drawProfiles: [{ drawSize: 16 }],
 });
 
-// Add custom extensions to participants
 tournamentRecord.participants.forEach((participant) => {
   participant.extensions = [
     { name: 'level', value: 'advanced' },
     { name: 'club', value: 'Tennis Club A' },
-    { name: 'membershipId', value: '12345' },
   ];
 });
 
-// Anonymize but keep 'level' extension
-const anonymized = mocksGovernor.anonymizeTournamentRecord({
+mocksGovernor.anonymizeTournamentRecord({
   tournamentRecord,
-  keepExtensions: ['level'], // Only 'level' preserved, 'club' and 'membershipId' removed
+  keepExtensions: ['level'], // 'level' is kept, 'club' is removed (internal extensions are kept)
 });
-
-// Result: 'level' extensions intact, all others removed (except internal extensions)
 ```
 
-### Example: Preserve Names but Replace IDs
+### Example: Preserve Names but Replace Ids
 
 ```js
-// When you want to preserve participant names but still anonymize IDs
 const { tournamentRecord } = mocksEngine.generateTournamentRecord({
   drawProfiles: [{ drawSize: 8 }],
 });
 
-const anonymized = mocksGovernor.anonymizeTournamentRecord({
+mocksGovernor.anonymizeTournamentRecord({
   tournamentRecord,
-  anonymizeParticipantNames: false, // Keep original names
+  anonymizeParticipantNames: false, // participant names and participantOtherName are kept
 });
-
-// Result: All IDs changed, but participant names remain the same
-// Useful for testing while maintaining recognizable names
 ```
 
 ### Anonymization Notes
 
-- **Deterministic generation:** Using the same `personIds` array produces the same mock names
-- **Referential integrity:** All participantIds and personIds are updated consistently throughout the tournament
-- **CODES compliance:** Anonymized record is valid CODES schema
-- **Non-destructive:** Original tournament record is not modified
+- **In place**: the record passed in is the record returned. Copy it first to keep the original.
+- **Referential integrity**: every reference to an id the record defines resolves in the result, and the factory's integrity checks report the same findings as they did on the original.
+- **Deterministic under a seed**: pass `random`, or `nonRandom` through `mocksEngine`.
+- **Linear cost**: one pass assigns the new ids and one walk over the record remaps them.
 
 ---
 

@@ -487,6 +487,9 @@ engine.setEventDates({
 });
 ```
 
+Every date is checked before anything is written: a `startDate` or `endDate` outside the tournament's dates is refused
+with `INVALID_DATE` (`context.dates` names them) and the event is left as it was.
+
 ---
 
 ## setEventEndDate
