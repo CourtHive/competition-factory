@@ -136,6 +136,18 @@ export function setEventDates(params: SetEventDatesArgs) {
     if (!validStart || !validEnd) return decorateResult({ result: { error: INVALID_DATE }, stack });
   }
 
+  // every refusal comes before the first write: the setters below write as they go, so a start date inside the
+  // tournament followed by an end date outside it would otherwise leave the new start date applied
+  const outsideTournament = datesOutsideTournament({ tournamentRecord, dates: [startDate, endDate] });
+  if (outsideTournament.error) return decorateResult({ result: outsideTournament, stack });
+  if (outsideTournament.dates?.length)
+    return decorateResult({
+      result: { error: INVALID_DATE },
+      context: { dates: outsideTournament.dates },
+      info: 'event dates must be within tournament start and end dates',
+      stack,
+    });
+
   if (startDate) {
     const result = setEventStartDate({ tournamentRecord, event, startDate });
     if (result.error) return decorateResult({ result, stack });
@@ -152,6 +164,25 @@ export function setEventDates(params: SetEventDatesArgs) {
   modifyEventNotice({ event, tournamentId: tournamentRecord?.tournamentId });
 
   return { ...SUCCESS };
+}
+
+function datesOutsideTournament({
+  tournamentRecord,
+  dates,
+}: {
+  tournamentRecord: Tournament;
+  dates: (string | undefined)[];
+}): ResultType & { dates?: string[] } {
+  const given = dates.filter((date): date is string => !!date);
+  if (!given.length) return { dates: [] };
+  const result = getTournamentDates(tournamentRecord);
+  if (result.error) return result;
+  const { tournamentStartDate, tournamentEndDate } = result;
+  const outside = given.filter((date) => {
+    const time = new Date(extractDate(date)).getTime();
+    return !tournamentStartDate || !tournamentEndDate || time < tournamentStartDate || time > tournamentEndDate;
+  });
+  return { dates: outside };
 }
 
 function getTournamentDates(
