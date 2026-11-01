@@ -39,7 +39,7 @@ export function tallyPolicyErrors(tallyPolicy: RoundRobinTallyPolicy, extraMeasu
   const primaryKeys = [...V1_PRIMARY_KEYS, ...extraMeasures];
   const measures = [...TALLY_MEASURES, ...extraMeasures];
 
-  const { groupOrderKey, tallyDirectives, headToHead, precision } = tallyPolicy;
+  const { groupOrderKey, tallyDirectives, headToHead, precision, onSplit, terminal } = tallyPolicy;
   if (groupOrderKey !== undefined && !primaryKeys.includes(groupOrderKey)) {
     errors.push(`unknown groupOrderKey: ${groupOrderKey}`);
   }
@@ -48,8 +48,11 @@ export function tallyPolicyErrors(tallyPolicy: RoundRobinTallyPolicy, extraMeasu
     else {
       tallyDirectives.forEach((directive, index) => {
         if (!directive || typeof directive !== 'object') errors.push(`tallyDirectives[${index}] must be an object`);
-        else if (!measures.includes(directive.attribute)) {
-          errors.push(`tallyDirectives[${index}]: unknown attribute ${directive.attribute}`);
+        else {
+          if (!measures.includes(directive.attribute)) {
+            errors.push(`tallyDirectives[${index}]: unknown attribute ${directive.attribute}`);
+          }
+          errors.push(...directiveGateErrors(directive, index));
         }
       });
     }
@@ -61,7 +64,43 @@ export function tallyPolicyErrors(tallyPolicy: RoundRobinTallyPolicy, extraMeasu
     errors.push('precision must be a whole number of decimal places');
   }
 
+  if (onSplit !== undefined && !SPLIT_MODES.includes(onSplit as string)) {
+    errors.push(`onSplit must be one of ${SPLIT_MODES.join(', ')}`);
+  }
+  if (terminal !== undefined && !TERMINAL_STEPS.includes(terminal as string)) {
+    errors.push(`terminal must be one of ${TERMINAL_STEPS.join(', ')}`);
+  }
+
   const drawOptions = validateDrawTallyOptions(tallyPolicy);
   if (drawOptions.error) errors.push(drawOptions.info as string);
+  return errors;
+}
+
+const SPLIT_MODES = ['RESTART', 'CONTINUE', 'EXTRACT_ONE'];
+const TERMINAL_STEPS = ['ADJUDICATE', 'SHARE', 'LOT'];
+const PHASES = ['PROVISIONAL', 'FINAL'];
+
+/** a directive's size and `when` gates */
+function directiveGateErrors(directive: Record<string, unknown>, index: number): string[] {
+  const errors: string[] = [];
+  for (const key of ['minParticipants', 'maxParticipants']) {
+    const value = directive[key];
+    if (value !== undefined && !(Number.isInteger(value) && (value as number) >= 1)) {
+      errors.push(`tallyDirectives[${index}]: ${key} must be a whole number of at least 1`);
+    }
+  }
+  const when = directive.when as { purposes?: unknown; phase?: unknown } | undefined;
+  if (when !== undefined) {
+    if (!when || typeof when !== 'object') errors.push(`tallyDirectives[${index}]: when must be an object`);
+    else {
+      const { purposes, phase } = when;
+      if (purposes !== undefined && !(Array.isArray(purposes) && purposes.every((p) => typeof p === 'string'))) {
+        errors.push(`tallyDirectives[${index}]: when.purposes must be an array of strings`);
+      }
+      if (phase !== undefined && !PHASES.includes(phase as string)) {
+        errors.push(`tallyDirectives[${index}]: when.phase must be one of ${PHASES.join(', ')}`);
+      }
+    }
+  }
   return errors;
 }

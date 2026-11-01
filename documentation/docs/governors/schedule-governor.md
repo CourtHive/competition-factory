@@ -644,6 +644,7 @@ const {
   notRescheduled, // array of inContext matchUps that were NOT rescheduled
   allRescheduled, // boolean - true if all matchUps rescheduled
   lockedMatchUpIds, // matchUpIds skipped because a schedule lock pins them (present when any were)
+  warnings, // the warnings of each matchUp's write, each with its matchUpId (present when any)
   dryRun, // boolean - indicates if this was a dry run
 } = engine.bulkRescheduleMatchUps({
   matchUpIds, // required - array of matchUpIds to reschedule
