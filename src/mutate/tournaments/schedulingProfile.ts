@@ -1,10 +1,12 @@
 import { firstClassGroupLeafOrExtension, setGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
 import { validateSchedulingProfile } from '@Validators/validateSchedulingProfile';
+import { getCompetitionDateRange } from '@Query/tournaments/getCompetitionDateRange';
 import { getEventIdsAndDrawIds } from '@Query/tournaments/getEventIdsAndDrawIds';
 import { getCompetitionVenues } from '@Query/venues/venuesAndCourtsGetter';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { addNotice } from '@Global/state/globalState';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
+import { extractDate } from '@Tools/dateTime';
 import {
   getMultipleVenueRoundIssues,
   getUpdatedSchedulingProfile,
@@ -17,6 +19,7 @@ import { TournamentRecords } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
 import {
+  SCHEDULING_PROFILE_DATES_OUT_OF_RANGE,
   SCHEDULING_PROFILE_REPAIR_REQUIRED,
   MISSING_TOURNAMENT_RECORDS,
   ErrorType,
@@ -112,6 +115,31 @@ export function schedulingProfileRepairRefusal({
 // no notice announced. The profile is changed only by setSchedulingProfile, which announces it.
 const profileCopy = <T>(schedulingProfile: T): T => makeDeepCopy(schedulingProfile, false, true);
 
+type ProfileDatesWarning = typeof SCHEDULING_PROFILE_DATES_OUT_OF_RANGE & { scheduleDates: string[] };
+
+/**
+ * The profile's dates that fall outside the competition's dates (every record's range combined, as
+ * addSchedulingProfileRound judges a new date), compared as calendar days. Nothing when a record has no dates.
+ */
+function profileDatesWarning({
+  tournamentRecords,
+  schedulingProfile,
+}: {
+  tournamentRecords: TournamentRecords;
+  schedulingProfile?: { scheduleDate: string }[];
+}): ProfileDatesWarning | undefined {
+  if (!schedulingProfile?.length) return undefined;
+  const { startDate, endDate } = getCompetitionDateRange({ tournamentRecords });
+  if (!startDate || !endDate) return undefined;
+  const scheduleDates: string[] = schedulingProfile
+    .map(({ scheduleDate }) => scheduleDate)
+    .filter((scheduleDate) => {
+      const day = extractDate(scheduleDate);
+      return day < startDate || day > endDate;
+    });
+  return scheduleDates.length ? { ...SCHEDULING_PROFILE_DATES_OUT_OF_RANGE, scheduleDates } : undefined;
+}
+
 type SetSchedulingProfileArgs = {
   tournamentRecords: TournamentRecords;
   tournamentRecord?: Tournament;
@@ -149,7 +177,10 @@ export function setSchedulingProfile({
       key: target.tournamentId,
     });
   }
-  return { ...SUCCESS };
+
+  // saved regardless: a refusal would block legitimate saves (see SCHEDULING_PROFILE_DATES_OUT_OF_RANGE)
+  const warning = profileDatesWarning({ tournamentRecords, schedulingProfile });
+  return warning ? { ...SUCCESS, warnings: [warning] } : { ...SUCCESS };
 }
 
 export function checkAndUpdateSchedulingProfile(params) {

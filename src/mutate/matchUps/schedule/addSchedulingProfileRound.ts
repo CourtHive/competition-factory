@@ -77,8 +77,10 @@ export function addSchedulingProfileRound({ tournamentRecords, scheduleDate, ven
   if (roundExists) return decorateResult({ result: { error: EXISTING_ROUND }, stack });
   venueOnDate.rounds.push(round);
 
+  // a NEW date outside the competition's dates is refused above; a date already in the profile is not re-judged,
+  // and whatever the save reports of the profile's other dates is passed on
   const result = setSchedulingProfile({ tournamentRecords, schedulingProfile });
   if (result.error) return result;
 
-  return { ...SUCCESS };
+  return result.warnings ? { ...SUCCESS, warnings: result.warnings } : { ...SUCCESS };
 }
