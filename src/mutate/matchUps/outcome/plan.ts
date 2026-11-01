@@ -10,6 +10,7 @@ import { annotateScoreSets } from '@Query/matchUps/addMatchUpContext';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { validMatchUps } from '@Validators/validMatchUp';
+import { withFinishingOrder } from './finishingOrderOps';
 import {
   buildCarriedExitProvenance,
   buildSideExitProvenance,
@@ -3411,7 +3412,10 @@ export function planOutcome(args: {
   /** S7: this call is a deciding line's dual, planned as part of the line's plan: its TEAM shape is the line's to vet */
   asDual?: true;
 }): OutcomePlan {
-  return args.route === RESULT_TO_DOUBLE_EXIT ? resultToDoubleExit(args) : planOps(args);
+  const plan = args.route === RESULT_TO_DOUBLE_EXIT ? resultToDoubleExit(args) : planOps(args);
+  // a TEAM line's result numbers it in its collection's finishing order (a deciding line's dual is planned in its plan)
+  if (!plan.ops || args.asDual) return plan;
+  return { ...plan, ops: withFinishingOrder(plan.ops, args.drawDefinition) };
 }
 
 /**

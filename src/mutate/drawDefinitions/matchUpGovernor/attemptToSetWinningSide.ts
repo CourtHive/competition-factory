@@ -42,7 +42,8 @@ export function attemptToSetWinningSide(params) {
       connectedStructures = true;
     }
 
-    const result = removeDirectedParticipants(params);
+    // the line keeps its place in its collection's finishing order: the result written next decides it
+    const result = removeDirectedParticipants({ ...params, keepsFinishingOrder: true });
     if (result.error) return result;
   }
 
