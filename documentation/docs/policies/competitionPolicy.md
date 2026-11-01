@@ -288,7 +288,16 @@ const { POLICY_COMPETITION_SWISS } = fixtures.policies;
 
 ## Competition State
 
-Competition state is stored as an extension on the draw definition under the key `COMPETITION_STATE`. It tracks per-participant data and per-round metadata.
+Competition state tracks per-participant data and per-round metadata. It is **derived from the draw's results**:
+`getCompetitionState`, the leaderboard and the DrawMatic and Swiss pairings replay the results in order (round by round,
+in structure order within a round) from each participant's baseline rating. A corrected result counts once, as
+corrected, and a removed result does not count. Under `PER_MATCHUP` every decided result counts. Under `PER_ROUND`, the
+completed results of the rounds marked processed (`processCompetitionRound`) count.
+
+The copy stored on the draw definition (an extension under the key `COMPETITION_STATE`) is a cache: it supplies only the
+inputs (baseline ratings and the processed rounds), and `processCompetitionMatchUp` / `processCompetitionRound` rewrite it
+from the results. Before the standings engine the stored copy was the state itself: each result was added to it as it
+arrived, so re-entering a result counted it twice and removing one reversed nothing.
 
 ### Participant State
 

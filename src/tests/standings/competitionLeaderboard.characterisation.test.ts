@@ -11,9 +11,9 @@ import { AD_HOC } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 /**
- * Pins the competition leaderboard exactly as built: Mentat `planning/STANDINGS_ENGINE_SPEC.md` § 2. C1, C2, C4 and C5
- * are DEFECTS, pinned so that S5 (the leaderboard onto the derived standings core) flips each one deliberately: when
- * S5 lands, these expectations change to the correct behaviour and the case names say so.
+ * The competition leaderboard's defects (Mentat `planning/STANDINGS_ENGINE_SPEC.md` § 2), each pinned before the
+ * leaderboard moved onto the derived standings core (S5) and flipped deliberately as it did: C1 and C2 by S5a (the state
+ * derived from the results); C4 and C5 by S5b (the ordering through the standings core).
  */
 
 const MATCH_UP_FORMAT = 'SET1-S:6/TB7';
@@ -59,7 +59,9 @@ function score(drawId: string, matchUpId: string, winningSide: 1 | 2) {
 }
 
 describe('competition leaderboard characterisation (PER_MATCHUP)', () => {
-  it('C1 DEFECT: re-entering a result folds it in again, and a correction adds a third result', () => {
+  // C1 FIXED (S5, D6 option C): the state is derived from the results, so re-entering a result counts it once and a
+  // correction replaces it. v1 folded every result it was given: 1-0, then 2-0, then 2-1.
+  it('C1: re-entering a result counts it once, and a correction replaces it', () => {
     const { drawId } = setup();
     const matchUp = firstRoundMatchUp(drawId);
 
@@ -71,18 +73,19 @@ describe('competition leaderboard characterisation (PER_MATCHUP)', () => {
 
     expect(score(drawId, matchUp.matchUpId, 1).success).toBe(true);
     expect(record(drawId, matchUp)).toEqual([
-      { wins: 2, losses: 0, roundsPlayed: 2, history: 2 },
-      { wins: 0, losses: 2, roundsPlayed: 2, history: 2 },
+      { wins: 1, losses: 0, roundsPlayed: 1, history: 1 },
+      { wins: 0, losses: 1, roundsPlayed: 1, history: 1 },
     ]);
 
     expect(score(drawId, matchUp.matchUpId, 2).success).toBe(true);
     expect(record(drawId, matchUp)).toEqual([
-      { wins: 2, losses: 1, roundsPlayed: 3, history: 3 },
-      { wins: 1, losses: 2, roundsPlayed: 3, history: 3 },
+      { wins: 0, losses: 1, roundsPlayed: 1, history: 1 },
+      { wins: 1, losses: 0, roundsPlayed: 1, history: 1 },
     ]);
   });
 
-  it('C2 DEFECT: removing a result reverses nothing', () => {
+  // C2 FIXED (S5): a removed result does not count; v1 left it in (1-0)
+  it('C2: removing a result removes it from the state', () => {
     const { drawId } = setup();
     const matchUp = firstRoundMatchUp(drawId);
     score(drawId, matchUp.matchUpId, 1);
@@ -93,8 +96,8 @@ describe('competition leaderboard characterisation (PER_MATCHUP)', () => {
     });
     expect(result.success).toBe(true);
     expect(record(drawId, matchUp)).toEqual([
-      { wins: 1, losses: 0, roundsPlayed: 1, history: 1 },
-      { wins: 0, losses: 1, roundsPlayed: 1, history: 1 },
+      { wins: 0, losses: 0, roundsPlayed: 0, history: 0 },
+      { wins: 0, losses: 0, roundsPlayed: 0, history: 0 },
     ]);
   });
 

@@ -8,6 +8,7 @@ import type { ResultType } from '@Types/factoryTypes';
 import type {
   CompetitionLeaderboardRow,
   CompetitionParticipantState,
+  CompetitionPolicy,
   PrimaryRanking,
 } from '@Types/competitionPolicyTypes';
 
@@ -25,11 +26,24 @@ export function getCompetitionLeaderboard(params: GetCompetitionLeaderboardArgs)
   const { tournamentRecord, drawDefinition, event } = params;
 
   const { competitionPolicy } = getCompetitionPolicy({ tournamentRecord, drawDefinition, event });
-  const { competitionState } = getCompetitionState({ drawDefinition });
-  if (!competitionState || !competitionPolicy) return { leaderboard: [] };
+  if (!competitionPolicy) return { leaderboard: [] };
+  // the state the results decide (D6), never the stored copy as it stands
+  const { competitionState } = getCompetitionState({ drawDefinition, competitionPolicy });
+  if (!competitionState) return { leaderboard: [] };
+  return rankCompetitionStates({ competitionPolicy, participantStates: competitionState.participantStates });
+}
 
+/** the leaderboard over given participant states: the policy's primary ranking, then its tiebreak order */
+export function rankCompetitionStates({
+  competitionPolicy,
+  participantStates,
+}: {
+  competitionPolicy: Pick<CompetitionPolicy, 'victoryPolicy'>;
+  participantStates: Record<string, CompetitionParticipantState>;
+}): GetCompetitionLeaderboardResult {
   const primaryRanking = competitionPolicy.victoryPolicy.primaryRanking;
-  const participants = Object.values(competitionState.participantStates);
+  const participants = Object.values(participantStates);
+  const competitionState = { participantStates };
 
   const sorted = [...participants].sort((a, b) => {
     const diff = getRankingValue(b, primaryRanking) - getRankingValue(a, primaryRanking);
