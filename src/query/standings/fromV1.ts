@@ -55,6 +55,12 @@ export const RATIO_INPUTS: Record<string, [string, string]> = {
 };
 export const RATIO_MEASURES = Object.keys(RATIO_INPUTS);
 
+/**
+ * Graph measures (spec § 5.2, D6-2 GRAPH): read from the whole table, each opponent scored by the policy's primary
+ * measure. Computed only when ordering; never the primary measure (circular) nor scoped to the tied (`idsFilter`).
+ */
+export const GRAPH_MEASURES = ['buchholz', 'buchholzCut1', 'buchholzMedian', 'sonnebornBerger'];
+
 /** the measures a season's ledger adds to the round-robin ledger's: the tie-score values */
 export const SEASON_TALLY_MEASURES = ['valueWon', 'valueLost'];
 
@@ -87,6 +93,7 @@ export const TALLY_MEASURES = [
   'tieDoublesLost',
   'standingsPoints',
   ...V2_MEASURES,
+  ...GRAPH_MEASURES,
 ];
 
 /**
@@ -113,6 +120,7 @@ export function fromV1(
     ],
     ...(tallyPolicy?.onSplit !== undefined && { onSplit: tallyPolicy.onSplit as SplitMode }),
     ...(tallyPolicy?.precision !== undefined && { precision: tallyPolicy.precision as number | 'EXACT' }),
+    ...(tallyPolicy?.drawCredit !== undefined && { drawCredit: tallyPolicy.drawCredit }),
     ...(tallyPolicy?.terminal !== undefined && { terminal: tallyPolicy.terminal as TerminalStep }),
   };
 }

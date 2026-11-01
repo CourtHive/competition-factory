@@ -687,6 +687,21 @@ A ratio directive's `zeroDivision` decides what an unbeaten ratio means for that
 - `'ZERO'`: it reads as 0.
 - `'SKIP'`: the directive is passed over for any tied set where it happens.
 
+### Strength of schedule (graph measures)
+
+`buchholz`, `buchholzCut1`, `buchholzMedian` and `sonnebornBerger` read the whole table, scoring each opponent by the
+policy's primary measure (its `groupOrderKey`), once per meeting:
+
+- `buchholz`: the sum of the opponents' scores.
+- `buchholzCut1`: the same without the lowest.
+- `buchholzMedian`: the same without the highest and the lowest.
+- `sonnebornBerger`: the scores of the opponents beaten, plus `drawCredit` (default 0.5) of the scores of those drawn with.
+
+They are computed only when ordering and never stored. They may be directive attributes, but not the
+`groupOrderKey` (the primary measure scores the opponents), not scoped by `idsFilter`, and not a `crossGroup`
+measure. FIDE's convention for unplayed rounds (a virtual opponent) is not applied: only meetings that were played
+count.
+
 ### denominator
 
 `denominator: 'EXPECTED'` makes `setsPct` and `gamesPct` divide by the sets and games a participant was expected to

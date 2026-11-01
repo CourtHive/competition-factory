@@ -1,5 +1,5 @@
 import { validateDrawTallyOptions } from '@Query/matchUps/roundRobinTally/drawnResults';
-import { RATIO_MEASURES, TALLY_MEASURES, V1_PRIMARY_KEYS, V2_MEASURES } from '@Query/standings/fromV1';
+import { GRAPH_MEASURES, RATIO_MEASURES, TALLY_MEASURES, V1_PRIMARY_KEYS, V2_MEASURES } from '@Query/standings/fromV1';
 import { decorateResult } from '@Functions/global/decorateResult';
 
 // constants and types
@@ -43,6 +43,11 @@ export function tallyPolicyErrors(tallyPolicy: RoundRobinTallyPolicy, extraMeasu
   if (groupOrderKey !== undefined && !primaryKeys.includes(groupOrderKey)) {
     errors.push(`unknown groupOrderKey: ${groupOrderKey}`);
   }
+  if (groupOrderKey !== undefined && GRAPH_MEASURES.includes(groupOrderKey)) {
+    errors.push(
+      `groupOrderKey ${groupOrderKey}: a graph measure scores opponents by the primary measure, so it cannot be one`,
+    );
+  }
   if (tallyDirectives !== undefined) {
     if (!Array.isArray(tallyDirectives)) errors.push('tallyDirectives must be an array');
     else {
@@ -53,6 +58,11 @@ export function tallyPolicyErrors(tallyPolicy: RoundRobinTallyPolicy, extraMeasu
             errors.push(`tallyDirectives[${index}]: unknown attribute ${directive.attribute}`);
           }
           errors.push(...directiveGateErrors(directive, index));
+          if (GRAPH_MEASURES.includes(directive.attribute) && directive.idsFilter) {
+            errors.push(
+              `tallyDirectives[${index}]: ${directive.attribute} reads the whole table; idsFilter cannot scope it`,
+            );
+          }
         }
       });
     }
@@ -97,7 +107,7 @@ function crossGroupErrors(crossGroup: unknown, measures: string[]): string[] {
   if (!Array.isArray(crossGroup)) return ['crossGroup must be an array'];
   return crossGroup.flatMap((entry, index) => {
     const attribute = entry?.attribute;
-    if (!measures.includes(attribute) || RATIO_MEASURES.includes(attribute)) {
+    if (!measures.includes(attribute) || RATIO_MEASURES.includes(attribute) || GRAPH_MEASURES.includes(attribute)) {
       return [`crossGroup[${index}]: ${attribute} is not a stored measure`];
     }
     return [];

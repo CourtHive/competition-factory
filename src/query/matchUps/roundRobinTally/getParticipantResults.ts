@@ -267,6 +267,10 @@ function processNoWinnerMatchUp({
       checkInitializeParticipant(participantResults, participantId);
       const result = participantResults[participantId];
       result.matchUpsDrawn += 1;
+      // who it was drawn with, for the graph measures (Sonneborn-Berger, Buchholz); written only on a participant who
+      // drew, so a tally without draws keeps its shape
+      const opponentId = sides[1 - index]?.participantId;
+      if (opponentId) result.drawnWith = [...((result.drawnWith as string[] | undefined) ?? []), opponentId];
       result.setsWon += sets[index];
       result.setsLost += sets[1 - index];
       result.gamesWon += games[index];
