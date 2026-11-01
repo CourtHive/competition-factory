@@ -9642,7 +9642,7 @@
           "processCodes": []
         }
       ],
-      "endDate": "2023-03-24T00:00:00.000Z",
+      "endDate": "2023-03-31T00:00:00.000Z",
       "entries": [
         {
           "extensions": [
@@ -10250,7 +10250,7 @@
       "eventType": "TEAM",
       "gender": "MIXED",
       "links": [],
-      "startDate": "2023-03-23T00:00:00.000Z",
+      "startDate": "2023-03-30T00:00:00.000Z",
       "tennisOfficialIds": [],
       "processCodes": []
     },
@@ -10279,14 +10279,14 @@
         "type": "AGE"
       },
       "drawDefinitions": [],
-      "endDate": "2023-03-24T00:00:00.000Z",
+      "endDate": "2023-03-31T00:00:00.000Z",
       "entries": [],
       "eventId": "8CA6205B-926D-4509-AE44-3CA0BA29758D",
       "eventName": "Men's open team",
       "eventType": "TEAM",
       "gender": "MALE",
       "links": [],
-      "startDate": "2023-03-23T00:00:00.000Z",
+      "startDate": "2023-03-30T00:00:00.000Z",
       "tennisOfficialIds": [],
       "processCodes": []
     }

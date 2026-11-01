@@ -356,12 +356,13 @@ export const V1_CORPUS: CorpusCase[] = [
       'Double round robin, A and B 1-1 in meetings and level on wins and sets; B is far ahead on games. Head-to-head ' +
       'reads the record, 1-1, which does not split, so the directives decide: gamesPct B .774, A .467. v1 found A ' +
       'listed first with a victory over B and put A first. Each player has 4 results, not participantsCount - 1 = 2, ' +
-      'so the completed group only ever gets provisionalOrder (K2, still v1).',
-    ruling: 'K1 (D4, CA 2026-11-01): head-to-head is the record, not one victory',
+      'so v1 gave the completed group only provisionalOrder; complete now means every meeting has a result (K2).',
+    ruling: 'K1 (D4) and K2 (CA 2026-11-01): head-to-head is the record; a double round robin completes',
     v1Rows: { A: { order: 1 }, B: { order: 2 }, C: { order: 3 } },
     policyDefinitions: DEFAULT,
     results: SPLIT_MEETINGS,
-    orderField: 'provisionalOrder',
+    orderField: 'groupOrder',
+    v1OrderField: 'provisionalOrder',
     rows: { B: { order: 1 }, A: { order: 2 }, C: { order: 3 } },
     separators: ['matchUpsWon', 'gamesPct'],
     totals: { A: { setsWon: 6, setsLost: 2, gamesWon: 42, gamesLost: 48 }, B: { setsWon: 6, setsLost: 2 } },
@@ -371,11 +372,15 @@ export const V1_CORPUS: CorpusCase[] = [
     clauses: ['K1'],
     description:
       'The same results with B v A listed first: the order is the same (B first), as the record does not depend on ' +
-      'which meeting is listed first. v1 placed B first here too, but only because B was found first.',
+      'which meeting is listed first. v1 placed B first here too, but only because B was found first. The group ' +
+      'completes (K2), so the order is groupOrder.',
+    ruling: 'K2 (CA 2026-11-01): a double round robin completes',
+    v1Rows: { B: { order: 1 }, A: { order: 2 }, C: { order: 3 } },
     policyDefinitions: DEFAULT,
     // B's win over A (SPLIT_MEETINGS[3]) moved to the front with B as side 1; nothing else changes
     results: [{ sides: ['B', 'A'], score: '6-0 6-0', winningSide: 1 }, ...SPLIT_MEETINGS.toSpliced(3, 1)],
-    orderField: 'provisionalOrder',
+    orderField: 'groupOrder',
+    v1OrderField: 'provisionalOrder',
     rows: { B: { order: 1 }, A: { order: 2 }, C: { order: 3 } },
   },
 ];

@@ -56,6 +56,10 @@ const { valid, inconsistencies } = engine.getEventInconsistencies({ eventId });
   `INDIVIDUAL` and `PAIR`. Reads stored `positionAssignments` and resolves each participant's type
   via the participant map. (error)
 
+- `EVENT_DATES_OUTSIDE_TOURNAMENT` — the event's `startDate` or `endDate` lies outside the tournament's range
+  (checked only when the tournament record is available). Carries the four day-part dates and `disjoint`, true when
+  no day of the event range is inside the tournament range. (warning)
+
 > The expected participantType is derived by the shared `expectedParticipantType(eventType)` helper —
 > the same single source of truth `checkValidEntries` uses for entry validation. Entries-vs-placed
 > drift and gender/category eligibility are deferred to a later sub-phase.

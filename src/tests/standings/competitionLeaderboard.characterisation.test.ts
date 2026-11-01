@@ -1,19 +1,18 @@
-import { getCompetitionLeaderboard } from '@Query/drawDefinition/competition/getCompetitionLeaderboard';
+import { rankCompetitionStates } from '@Query/drawDefinition/competition/getCompetitionLeaderboard';
 import { POLICY_COMPETITION_PRESSURE } from '@Fixtures/policies/POLICY_COMPETITION_PRESSURE';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { POLICY_TYPE_COMPETITION } from '@Constants/policyConstants';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
 import { SINGLES_EVENT } from '@Constants/eventConstants';
 
 /**
- * Pins the competition leaderboard exactly as built: Mentat `planning/STANDINGS_ENGINE_SPEC.md` § 2. C1, C2, C4 and C5
- * are DEFECTS, pinned so that S5 (the leaderboard onto the derived standings core) flips each one deliberately: when
- * S5 lands, these expectations change to the correct behaviour and the case names say so.
+ * The competition leaderboard's defects (Mentat `planning/STANDINGS_ENGINE_SPEC.md` § 2), each pinned before the
+ * leaderboard moved onto the derived standings core (S5) and flipped deliberately as it did: C1 and C2 by S5a (the state
+ * derived from the results); C4 and C5 by S5b (the ordering through the standings core).
  */
 
 const MATCH_UP_FORMAT = 'SET1-S:6/TB7';
@@ -59,7 +58,9 @@ function score(drawId: string, matchUpId: string, winningSide: 1 | 2) {
 }
 
 describe('competition leaderboard characterisation (PER_MATCHUP)', () => {
-  it('C1 DEFECT: re-entering a result folds it in again, and a correction adds a third result', () => {
+  // C1 FIXED (S5, D6 option C): the state is derived from the results, so re-entering a result counts it once and a
+  // correction replaces it. v1 folded every result it was given: 1-0, then 2-0, then 2-1.
+  it('C1: re-entering a result counts it once, and a correction replaces it', () => {
     const { drawId } = setup();
     const matchUp = firstRoundMatchUp(drawId);
 
@@ -71,18 +72,19 @@ describe('competition leaderboard characterisation (PER_MATCHUP)', () => {
 
     expect(score(drawId, matchUp.matchUpId, 1).success).toBe(true);
     expect(record(drawId, matchUp)).toEqual([
-      { wins: 2, losses: 0, roundsPlayed: 2, history: 2 },
-      { wins: 0, losses: 2, roundsPlayed: 2, history: 2 },
+      { wins: 1, losses: 0, roundsPlayed: 1, history: 1 },
+      { wins: 0, losses: 1, roundsPlayed: 1, history: 1 },
     ]);
 
     expect(score(drawId, matchUp.matchUpId, 2).success).toBe(true);
     expect(record(drawId, matchUp)).toEqual([
-      { wins: 2, losses: 1, roundsPlayed: 3, history: 3 },
-      { wins: 1, losses: 2, roundsPlayed: 3, history: 3 },
+      { wins: 0, losses: 1, roundsPlayed: 1, history: 1 },
+      { wins: 1, losses: 0, roundsPlayed: 1, history: 1 },
     ]);
   });
 
-  it('C2 DEFECT: removing a result reverses nothing', () => {
+  // C2 FIXED (S5): a removed result does not count; v1 left it in (1-0)
+  it('C2: removing a result removes it from the state', () => {
     const { drawId } = setup();
     const matchUp = firstRoundMatchUp(drawId);
     score(drawId, matchUp.matchUpId, 1);
@@ -93,33 +95,60 @@ describe('competition leaderboard characterisation (PER_MATCHUP)', () => {
     });
     expect(result.success).toBe(true);
     expect(record(drawId, matchUp)).toEqual([
-      { wins: 1, losses: 0, roundsPlayed: 1, history: 1 },
-      { wins: 0, losses: 1, roundsPlayed: 1, history: 1 },
+      { wins: 0, losses: 0, roundsPlayed: 0, history: 0 },
+      { wins: 0, losses: 0, roundsPlayed: 0, history: 0 },
     ]);
   });
 
-  it('C5 DEFECT: ranks are always index + 1, so identical participants never share a place', () => {
+  // C5 FIXED (S5b): v1 numbered the rows 1 to 8 whatever the ties
+  it('C5: identical participants share a place', () => {
     const { drawId } = setup();
     const { leaderboard } = tournamentEngine.getCompetitionLeaderboard({ drawId });
     expect(leaderboard).toHaveLength(8);
     expect(new Set(leaderboard.map(({ wins, pressureRating }) => `${wins}:${pressureRating}`)).size).toBe(1);
-    expect(leaderboard.map(({ rank }) => rank)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(leaderboard.map(({ rank }) => rank)).toEqual([1, 1, 1, 1, 1, 1, 1, 1]);
+    expect(leaderboard[0].ties).toEqual(8);
   });
 });
 
 describe('competition leaderboard characterisation (tiebreaks)', () => {
-  it('C4 DEFECT: BUCHHOLZ is accepted but has no effect on the order', () => {
-    const competitionPolicy = POLICY_COMPETITION_PRESSURE[POLICY_TYPE_COMPETITION];
-    const { drawId } = setup({
-      [POLICY_TYPE_COMPETITION]: {
-        ...competitionPolicy,
-        victoryPolicy: { ...competitionPolicy.victoryPolicy, primaryRanking: 'WINS', tiebreakOrder: ['BUCHHOLZ'] },
-      },
+  // C3 FIXED (S5b): v1 ran HEAD_TO_HEAD as a pairwise comparator inside Array.sort, which a circle (A beat B, B beat
+  // C, C beat A) makes intransitive: the order depended on the sort's visiting order. The mini-league among the three
+  // is 1-1 each, so they share a place, however they are listed.
+  it('C3: a head-to-head circle shares a place whatever order the participants are listed in', () => {
+    const state = (participantId: string, beat: string, lostTo: string) => ({
+      participantId,
+      baselineRating: 1500,
+      dynamicFormRating: 1500,
+      pressureRating: 0,
+      roundsPlayed: 2,
+      wins: 1,
+      losses: 1,
+      draws: 0,
+      totalPointsWon: 0,
+      totalPointsLost: 0,
+      ratingHistory: [
+        { opponentParticipantId: beat, actualOutput: 1 },
+        { opponentParticipantId: lostTo, actualOutput: 0 },
+      ] as any,
     });
-    const drawDefinition = structuredClone(tournamentEngine.getEvent({ drawId }).drawDefinition);
+    const states: Record<string, any> = { A: state('A', 'B', 'C'), B: state('B', 'C', 'A'), C: state('C', 'A', 'B') };
+    const competitionPolicy = { victoryPolicy: { primaryRanking: 'WINS', tiebreakOrder: ['HEAD_TO_HEAD'] } } as any;
+    for (const listed of [
+      ['A', 'B', 'C'],
+      ['C', 'B', 'A'],
+      ['B', 'A', 'C'],
+    ]) {
+      const participantStates = Object.fromEntries(listed.map((id) => [id, states[id]]));
+      let result: any = rankCompetitionStates({ competitionPolicy, participantStates });
+      expect(result.leaderboard.map(({ rank }) => rank)).toEqual([1, 1, 1]);
+    }
+  });
 
-    // P2 and P1 each have one win; P1 beat P3 (1 win), P2 beat P4 (0 wins): Buchholz P1 1, P2 0, so a working
-    // BUCHHOLZ puts P1 first. P2 is inserted first; the leaderboard keeps insertion order.
+  // C4 FIXED (S5b): v1 accepted BUCHHOLZ and returned 0 for it, keeping insertion order (P2, P1, P3)
+  it('C4: BUCHHOLZ orders participants level on wins by the scores of their opponents', () => {
+    // P2, P1, P3 one win each. Opponents: P1 met P3 (1 win); P3 met P1 (1) and P5 (none); P2 met P4 (0 wins).
+    // Buchholz P1 1, P3 1, P2 0: P1 and P3 share first, P2 third. P2 is listed first and does not stay there.
     const state = (participantId: string, wins: number, opponents: string[]) => ({
       participantId,
       baselineRating: 1500,
@@ -131,20 +160,22 @@ describe('competition leaderboard characterisation (tiebreaks)', () => {
       draws: 0,
       totalPointsWon: 0,
       totalPointsLost: 0,
-      ratingHistory: opponents.map((opponentParticipantId) => ({ opponentParticipantId, actualOutput: 0.5 })),
+      ratingHistory: opponents.map((opponentParticipantId) => ({ opponentParticipantId, actualOutput: 0.5 })) as any,
     });
-    drawDefinition.competitionState = {
-      ...drawDefinition.competitionState,
+    let result: any = rankCompetitionStates({
+      competitionPolicy: { victoryPolicy: { primaryRanking: 'WINS', tiebreakOrder: ['BUCHHOLZ'] } } as any,
       participantStates: {
         P2: state('P2', 1, ['P4']),
         P1: state('P1', 1, ['P3']),
         P3: state('P3', 1, ['P1', 'P5']),
         P4: state('P4', 0, ['P2']),
       },
-    };
-    drawDefinition.extensions = drawDefinition.extensions?.filter(({ name }) => name !== 'competitionState');
-
-    let result: any = getCompetitionLeaderboard({ drawDefinition });
-    expect(result.leaderboard.slice(0, 3).map(({ participantId }) => participantId)).toEqual(['P2', 'P1', 'P3']);
+    });
+    expect(result.leaderboard.map(({ participantId, rank }) => [participantId, rank])).toEqual([
+      ['P1', 1],
+      ['P3', 1],
+      ['P2', 3],
+      ['P4', 4],
+    ]);
   });
 });
