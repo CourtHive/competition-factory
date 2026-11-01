@@ -36,6 +36,21 @@ import { SUCCESS } from '@Constants/resultConstants';
 import { MatchUpsMap } from '@Types/factoryTypes';
 import { HydratedMatchUp } from '@Types/hydrated';
 
+/**
+ * The refusal below as a question: a matchUp (a line's dual: `targetData.matchUp`) holding no drawPositions, not ad
+ * hoc. `setMatchUpState` asks it before the dual's writes, so the error leaves the record unchanged, and the outcome
+ * view asks it of a call (outcome-pipeline.md § 2 row 24's removal clause; S7).
+ */
+export function removalMissingDrawPositions({
+  structure,
+  targetData,
+}: {
+  structure?: Parameters<typeof isAdHoc>[0]['structure'];
+  targetData?: { matchUp?: { drawPositions?: (number | undefined)[] } };
+}): boolean {
+  return !isAdHoc({ structure }) && !targetData?.matchUp?.drawPositions;
+}
+
 export function removeDirectedParticipants(params): {
   tieMatchUpResult?: any;
   error?: ErrorType;
@@ -59,8 +74,8 @@ export function removeDirectedParticipants(params): {
   const isAdHocMatchUp = isAdHoc({ structure });
 
   // targetData will have team matchUp when params.matchUp is a collectionMatchUp
-  const { drawPositions, winningSide } = targetData.matchUp ?? {};
-  if (!isAdHocMatchUp && !drawPositions) {
+  const { winningSide } = targetData.matchUp ?? {};
+  if (removalMissingDrawPositions({ structure, targetData })) {
     return { error: MISSING_DRAW_POSITIONS };
   }
 

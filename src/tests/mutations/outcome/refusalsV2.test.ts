@@ -78,6 +78,13 @@ it('a disagreement is a thrown divergence naming the matchUp and both answers; a
     agree: true,
     deferred: 'ERR_MISSING_ASSIGNMENTS',
   });
+  // the status codes are v2's own rows since S7 (rows 6 and 28): no longer deferred
+  for (const code of [
+    'ERR_UNRECOGNIZED_MATCHUP_STATUS',
+    'ERR_INVALID_MATCHUP_STATUS',
+    'ERR_UNCHANGED_CANNOT_ASSIGN_BYE',
+  ])
+    expect(compareDecisions(undefined, code)).toMatchObject({ agree: false });
   // a schedule's refusal is v2's own since S7 (rows 16, 25, 27): no longer deferred
   expect(compareDecisions(undefined, 'ERR_INVALID_TIME')).toMatchObject({ agree: false });
   expect(compareDecisions(refusalX, undefined)).toMatchObject({ agree: false, v1: 'ok', v2: 'ERR_X' });

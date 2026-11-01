@@ -148,6 +148,11 @@ export type OutcomeView = {
   };
   /** § 2 row 24: a directing call on a matchUp holding no drawPositions, which v1 refuses before the dispatch */
   missingDrawPositions?: boolean;
+  /**
+   * § 2 row 24's removal clause: the matchUp (a line's dual) holds no drawPositions and is not ad hoc, which v1's
+   * `removeDirectedParticipants` refuses before its first write; asked of the `remove-directed` route after the dispatch
+   */
+  removalMissingDrawPositions?: boolean;
   /** a line of a dual: what the dual projects once this line is written */
   line?: {
     dualMatchUpId: string;
@@ -411,7 +416,7 @@ export type Route =
   | 'propagating' // propagateExitStatus: write the score
   | 'clear-score' // nothing else matched: the score is removed
   | 'apply-values' // downstream is active: write the values without re-directing
-  | 'refused'; // § 3's own refusals: unrecognized, notDirecting, fallthrough (deferred to the apply)
+  | 'refused'; // § 3's own refusals, v2's since S7 (`refuseRoute`): a BYE without a seat (row 28), the fallthrough (row 6)
 
 /** § 4: what the matchUp itself holds once the write has landed */
 export type MatchUpWrite = {
