@@ -947,7 +947,7 @@ checks that are only visible at its own level — relationships the lower level 
 
 ```text
 getTournamentInconsistencies   cross-event checks (identity duplication)
-  └─ getEventInconsistencies    eventType ↔ participantType coherence
+  └─ getEventInconsistencies    eventType ↔ participantType coherence, event dates
       └─ getDrawInconsistencies  cross-structure LINK integrity
           └─ getStructureInconsistencies   (leaf)
 ```
@@ -1058,8 +1058,13 @@ const { valid, inconsistencies } = engine.getTournamentInconsistencies();
   distinct `INDIVIDUAL` participant; the classic merged/imported-data defect that silently splits a
   competitor's results across two identities. (warning)
 
-> Scheduling collisions and date containment are deferred — they require the scheduling model and are
-> a later sub-phase.
+- `EVENT_DATES_OUTSIDE_TOURNAMENT` — from the event layer: an event's `startDate` or `endDate` lies outside the
+  tournament's range. Carries `startDate`, `endDate`, `tournamentStartDate`, `tournamentEndDate` (day parts) and
+  `disjoint`, true when no day of the event range is inside the tournament range. A scheduler that meets a disjoint
+  range ignores it and uses the tournament range; this finding is how that is flagged. `setTournamentDates` never
+  produces such a range, so it marks a record written before that rule or edited outside the engine. (warning)
+
+> Scheduling collisions are deferred — they require the scheduling model and are a later sub-phase.
 
 ## getTournamentCompleteness
 
