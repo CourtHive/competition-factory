@@ -374,6 +374,12 @@ const result = engine.modifyEntriesStatus({
 });
 ```
 
+**Draw scope.** With a `drawId` that resolves a flight or draw, every participant in `participantIds` must have an
+entry in that flight's `drawEntries` or the draw's entries. Otherwise the call is refused before anything is written,
+with `PARTICIPANT_ENTRY_NOT_FOUND` and `context.participantIds` naming the participants that are not in scope; if
+only some are out of scope, the whole call is refused. A call that also updates the event's entries (`WITHDRAWN`, or
+`eventSync` with a single draw) accepts a participant that is in the event's entries but not in the draw.
+
 **entryPositions.** Positions are numbered within a group, as `refreshEntryPositions` numbers them. All accepted
 statuses (`STRUCTURE_SELECTED_STATUSES`: `DIRECT_ACCEPTANCE`, `WILDCARD`, `SPECIAL_EXEMPT`, `JUNIOR_EXEMPT`,
 `ORGANISER_ACCEPTANCE`, `CONFIRMED`, `QUALIFIER`, `LUCKY_LOSER`) form **one list per `entryStage`** (`MAIN` when
