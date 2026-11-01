@@ -43,7 +43,7 @@ export function modifyTieFormat({
 }: ModifyTieFormatArgs) {
   const stack = 'modifyTieFormat';
 
-  if (!validateTieFormat({ tieFormat: modifiedTieFormat }).valid) {
+  if (!validateTieFormat({ tieFormat: modifiedTieFormat, enforceValues: true }).valid) {
     return decorateResult({
       result: { error: INVALID_TIE_FORMAT },
       info: 'falied validation',

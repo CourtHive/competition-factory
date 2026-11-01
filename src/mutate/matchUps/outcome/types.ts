@@ -515,7 +515,8 @@ export type CarryLevel = {
   structureId: string;
   drawPosition: number;
   linkCondition?: string;
-  seat?: { free: boolean; opponentBye: boolean; opponentHeld: boolean };
+  /** `bye`: the seat holds a BYE already */
+  seat?: { free: boolean; opponentBye: boolean; opponentHeld: boolean; bye?: boolean };
   matchUpStatus?: MatchUpStatusUnion;
   hasResult: boolean;
   carriesExit: boolean;
