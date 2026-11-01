@@ -85,6 +85,14 @@ xml.forEach((game, index) => fs.writeFileSync(`statcrew-game-${index + 1}.xml`, 
 - Each game reports ONE team matchUp: a team's `score`, its singles/doubles totals and its players' won/lost
   records count only that matchUp's tieMatchUps, so a team that won none scores 0
 - Includes participant and matchUp mappings
+- Home and visitor come from `resolveHomeParticipantId` for each team matchUp, with one extra rung for existing
+  exports: a TEAM with `participantRoleResponsibilities: ['Home']`. Order: the explicit `homeParticipantId`, then
+  the `'Home'` responsibility (a stated home ranks above an inferred one, but it belongs to the team, not the
+  matchUp, so a per-matchUp explicit home overrides it), then the home venue, then the host organisation. Each
+  rung counts only when exactly one team matches
+- With no home team the game is neutral: `neutralgame="Y"`. StatCrew still fills both the home and visitor slots;
+  at a neutral site they are positional (the second team takes the home slot) and do not claim either team is home.
+  With a home team, `neutralgame="N"` and the team and score rows carry `vh` `H`/`V`
 - XML format matches StatCrew import specifications
 
 ---

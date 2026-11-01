@@ -663,6 +663,7 @@ export type FactoryEngineMethod =
   | 'resolveCourtId'
   | 'resolveDraftPositions'
   | 'resolveEntryFee'
+  | 'resolveHomeParticipantId'
   | 'resolvePointValue'
   | 'resolveStatus'
   | 'resolveVenueId'
@@ -1461,6 +1462,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'resolveCourtId',
   'resolveDraftPositions',
   'resolveEntryFee',
+  'resolveHomeParticipantId',
   'resolvePointValue',
   'resolveStatus',
   'resolveVenueId',
