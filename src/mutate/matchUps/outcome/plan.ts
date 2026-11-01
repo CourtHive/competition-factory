@@ -11,6 +11,7 @@ import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { validMatchUps } from '@Validators/validMatchUp';
 import { withFinishingOrder } from './finishingOrderOps';
+import { unwindWalk } from './unwindWalk';
 import {
   buildCarriedExitProvenance,
   buildSideExitProvenance,
@@ -2389,6 +2390,33 @@ function unwoundPath(
   const withdrawn = new Set(
     seats.slice(0, 2).flatMap(({ loserSeat }) => (loserSeat?.seat?.byeFromPropagation ? [seatKey(loserSeat)] : [])),
   );
+  const context = { path, seats, rederived, takenBack, reset, withdrawn, branched };
+  const plain = unwoundLevels(view, context);
+  if (plain) return plain;
+  // where the plain reading of a placed seat refuses, v1's removal is walked for both placed seats together
+  const walk = walkedSeatOps(view, path, seats, { reset, rederived, branched, drawDefinition });
+  return walk ? unwoundLevels(view, context, walk) : undefined;
+}
+
+type UnwoundContext = {
+  path: string[];
+  seats: NonNullable<OutcomeView['targets']['unwindLoserSeats']>;
+  rederived: Map<string, Rederived>;
+  takenBack: Map<string, number>;
+  reset: number;
+  withdrawn: Set<string>;
+  branched: boolean;
+};
+
+/**
+ * The levels of an unwind (`unwoundPath`): each matchUp on the path with the writes at the seat its loser link feeds, the
+ * placed seats read plainly (`unwoundLevelSeatOps`) or, given a walk, as the walk removes them (`walkedSeatOps`)
+ */
+function unwoundLevels(
+  view: OutcomeView,
+  { path, seats, rederived, takenBack, reset, withdrawn, branched }: UnwoundContext,
+  walk?: Map<number, OutcomeOp[]>,
+): UnwoundLevel[] | undefined {
   const levels: UnwoundLevel[] = [];
   // a position the own seat's withdrawal releases out of a matchUp a deeper seat's BYE also sends to (a double BYE's next
   // matchUp, a BYE until then, had sent it on): that matchUp is read without it, and written once, by the release
@@ -2399,7 +2427,8 @@ function unwoundPath(
     const kept = rederived.get(id);
     // the double exit's own seat and its produced exit's took the BYEs it placed; a seat further on holds nothing yet
     const at = { first: index === 0, placed: index === 0 || index === reset, kept: !!kept };
-    const seatOps = level.loserSeat ? unwoundLevelSeatOps(view, level, at, withdrawn, branched, released) : [];
+    const plain = () => (level.loserSeat ? unwoundLevelSeatOps(view, level, at, withdrawn, branched, released) : []);
+    const seatOps = walk?.get(index) ?? plain();
     if (!seatOps) return undefined;
     for (const op of seatOps)
       if (op.op === 'setMatchUpDrawPositions' && op.releasedDrawPosition) released.add(op.releasedDrawPosition);
@@ -2412,6 +2441,52 @@ function unwoundPath(
     });
   }
   return levels;
+}
+
+/**
+ * The placed seats of an unwind (the double exit's own loser seat, and the seat its produced exit left unfillable) as v1
+ * removes their BYEs (`unwindWalk`): the deeper seat first, on the draw that removal leaves, then the own seat. Keyed by
+ * the level each seat belongs to. Undefined where either seat holds no propagated BYE, under `doubleExitPropagateBye:
+ * false`, or where the walk abstains.
+ */
+function walkedSeatOps(
+  view: OutcomeView,
+  path: string[],
+  seats: NonNullable<OutcomeView['targets']['unwindLoserSeats']>,
+  {
+    reset,
+    rederived,
+    branched,
+    drawDefinition,
+  }: {
+    reset: number;
+    rederived: Map<string, Rederived>;
+    branched: boolean;
+    drawDefinition?: DrawDefinition;
+  },
+): Map<number, OutcomeOp[]> | undefined {
+  if (branched || !drawDefinition || !view.inContextDrawMatchUps) return undefined;
+  const placed = [reset, 0].filter(
+    (index, i, all) => all.indexOf(index) === i && index < path.length && !rederived.has(path[index]),
+  );
+  const walkedSeats: { index: number; structureId: string; drawPosition: number }[] = [];
+  for (const index of placed) {
+    const loserSeat = seats[index]?.loserSeat;
+    if (!loserSeat) continue;
+    if (!loserSeat.seat?.bye || !loserSeat.seat.byeFromPropagation || !loserSeat.structureId) return undefined;
+    walkedSeats.push({ index, structureId: loserSeat.structureId, drawPosition: loserSeat.drawPosition });
+  }
+  if (!walkedSeats.length) return undefined;
+  const segments = unwindWalk({
+    inContextDrawMatchUps: view.inContextDrawMatchUps,
+    propagatesBye: !!view.draw.doubleExitPropagatesBye,
+    seats: walkedSeats,
+    drawDefinition,
+  });
+  // the walk writes nothing the unwind's own path writes (`unwoundOps` writes those back to be played)
+  const touched = segments?.flat().flatMap((op) => ('matchUpId' in op ? [op.matchUpId] : []));
+  if (!segments || touched?.some((matchUpId) => path.includes(matchUpId))) return undefined;
+  return new Map(walkedSeats.map(({ index }, i) => [index, segments[i]]));
 }
 
 /**
@@ -2613,7 +2688,11 @@ function cascadedSeatOps(
 ): OutcomeOp[] | undefined {
   if (!beyond?.seat?.bye || !beyond.seat.byeFromPropagation || beyond.linkCondition) return undefined;
   if (indexed(view, beyond.matchUpId)?.roundNumber !== 1) return undefined;
-  return unwoundSeatOps(view, beyond, true, withdrawn, released, true);
+  const ops = unwoundSeatOps(view, beyond, true, withdrawn, released, true);
+  // the cascade announces the matchUps it writes there, which stamps their structure (`structureStamps` reads no quiet seat)
+  return ops && beyond.structureId
+    ? [...ops, { op: 'stampUpdatedAt', entity: 'structure', id: beyond.structureId }]
+    : ops;
 }
 
 /**
@@ -3275,10 +3354,17 @@ function seatBye(seat: { structureId: string; drawPosition: number; matchUpId: s
   ];
 }
 
-/** each structure other than the call's whose assignments the ops change, stamped once (F2 (i)) */
+/**
+ * each structure other than the call's whose assignments the ops change and announce, stamped once (F2 (i)): v1 stamps a
+ * structure as it announces in it, so a BYE the round-1 loser cascade takes back quietly stamps nothing by itself (its
+ * walk stamps the structures it announces matchUps in, `unwindWalk`, `cascadedSeatOps`)
+ */
 function structureStamps(ops: OutcomeOp[], structureId: string): OutcomeOp[] {
   const seatedIn = ops.flatMap((op) =>
-    (op.op === 'assignPosition' || op.op === 'assignBye' || op.op === 'withdrawBye') && op.structureId !== structureId
+    (op.op === 'assignPosition' ||
+      op.op === 'assignBye' ||
+      (op.op === 'withdrawBye' && op.announcesAssignments !== false)) &&
+    op.structureId !== structureId
       ? [op.structureId]
       : [],
   );
