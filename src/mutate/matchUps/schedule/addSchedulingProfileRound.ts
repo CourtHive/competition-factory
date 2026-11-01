@@ -78,10 +78,14 @@ export function addSchedulingProfileRound({ tournamentRecords, scheduleDate, ven
   if (roundExists) return decorateResult({ result: { error: EXISTING_ROUND }, stack });
   venueOnDate.rounds.push(round);
 
+  // a NEW date outside the competition's dates is refused above; a date already in the profile is not re-judged,
+  // and whatever the save reports of the profile's other dates is passed on
   const result = setSchedulingProfile({ tournamentRecords, schedulingProfile });
   if (result.error) return result;
 
-  // a round profiled on a day its event does not play is added, and warned about (CA 2026-11-01)
+  // a round profiled on a day its event does not play is added, and warned about (CA 2026-11-01), beside whatever
+  // setSchedulingProfile warns of the profile's other dates
+  const warnings = [...(result.warnings ?? [])];
   const verdict =
     round?.tournamentId &&
     eventDateResolver(tournamentRecords)({
@@ -90,15 +94,14 @@ export function addSchedulingProfileRound({ tournamentRecords, scheduleDate, ven
       eventId: round.eventId,
     });
   if (verdict && !verdict.plays) {
-    const warning = {
+    warnings.push({
       ...EVENT_DATE_INACTIVE,
       scheduledDate: extractDate(scheduleDate),
       reason: verdict.reason,
       eventId: round.eventId,
       roundKey,
-    };
-    return { ...SUCCESS, warnings: [warning] };
+    });
   }
 
-  return { ...SUCCESS };
+  return warnings.length ? { ...SUCCESS, warnings } : { ...SUCCESS };
 }

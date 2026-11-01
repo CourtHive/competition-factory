@@ -466,6 +466,7 @@ import type { addAdHocMatchUps } from '@Mutate/structures/addAdHocMatchUps';
 import type { deleteCourt, deleteCourts } from '@Mutate/venues/deleteCourt';
 import type { deleteVenue, deleteVenues } from '@Mutate/venues/deleteVenue';
 import type { isValidSeedPosition } from '@Query/drawDefinition/seedGetter';
+import type { getEventEntrySpace } from '@Query/entries/getEventEntrySpace';
 import type { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import type { checkSetIsComplete } from '@Query/matchUp/checkSetIsComplete';
 import type { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
@@ -1006,6 +1007,7 @@ export interface MethodSignatures {
   getEventData: EngineMethod<typeof getEventData>;
   getEventDateIssues: EngineMethod<typeof getEventDateIssues>;
   getEventEntryFees: EngineMethod<typeof getEventEntryFees>;
+  getEventEntrySpace: EngineMethod<typeof getEventEntrySpace>;
   getEventInconsistencies: EngineMethod<typeof getEventInconsistencies>;
   getEventMatchUpFormatTiming: EngineMethod<typeof getEventMatchUpFormatTiming>;
   getEventPlayingDates: EngineMethod<typeof getEventPlayingDates>;
