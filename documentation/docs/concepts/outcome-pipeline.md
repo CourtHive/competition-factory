@@ -717,7 +717,20 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   BYE, announced with no event (S6). A BYE already standing opposite the unfillable seat (another double exit's, or the
   draw's) makes a double BYE there the same way; and where the own seat's BYE sent its position on through a BYE standing
   in the next matchUp, the unfillable seat's BYE sends its own position into the matchUp beyond as that chain leaves it,
-  the two meeting there (S6 tail, FEED_IN_CHAMPIONSHIP and its kin). A BYE's position sent on
+  the two meeting there (S6 tail, FEED_IN_CHAMPIONSHIP and its kin).
+  Where those shapes do not plan, the seats are placed by **the BYE walk** (S6 tail): v1's `assignDrawPositionBye`
+  recursion, run on a copy of the draw as the call found it. A seat given a BYE makes the furthest matchUp of its
+  structure holding its position a BYE (`setMatchUpStatusBYE`); the position beside it there goes on into the next
+  matchUp of the structure (`advanceDrawPosition` → `advanceWinner`), and beside a BYE there it goes on again; a BYE
+  matchUp whose other side is a BYE sends a BYE to the seat its loser link feeds in another structure's first round;
+  and a BYE matchUp past its position's first round holding no other position sends its BYE to its loser seat
+  (`assignByeToLoserTarget`). The own seat is walked first, with the event named; the seat the produced exit leaves
+  unfillable is walked on the draw the first walk leaves, with no event; a placement reached through an advance names no
+  event (v1's recursion drops it there), one reached through a loser target names its caller's. The structures'
+  assignments are announced deepest first, the matchUps in the order written. The walk is planned where every matchUp it
+  writes holds no result, score, codes or provenance, no participant is displaced, no seat it reaches is fed or behind a
+  link condition (the unfillable seat behind `FIRST_MATCHUP` excepted), no winner link is crossed, and no advance turns a
+  matchUp to be played into a BYE. It serves the convergence's own seat the same way. A BYE's position sent on
   into a next matchUp that is a BYE already, its other side the BYE alone, goes into it and on through it into a clean
   matchUp beyond (S6), each announced as `advanceWinner` with no event. The
   unfillable seat takes its BYE behind a `FIRST_MATCHUP` link too, as v1 places it (`advanceByeToLoserMatchUp` asks no

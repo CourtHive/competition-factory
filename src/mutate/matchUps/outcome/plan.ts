@@ -36,6 +36,7 @@ import type {
 } from '@Types/tournamentTypes';
 import type {
   ByePassage,
+  ByeWalk,
   CarryLevel,
   DirectionPlan,
   MatchUpWrite,
@@ -1473,6 +1474,49 @@ type ProducedLoser = {
  * this matchUp's seat goes on through its BYE as an empty position does), each chain plans, and no matchUp is in two.
  */
 function doubleExitSeats(view: OutcomeView, entry?: HydratedMatchUp): DoubleExitSeats | undefined {
+  const seats = chainedSeats(view, entry);
+  if (seats || !view.draw.doubleExitPropagatesBye) return seats;
+  // the chain's shapes refused: the seats as v1's `assignDrawPositionBye` recursion walks them (S6 tail, the BYE chain)
+  return walkedSeats(view, entry);
+}
+
+/** the seats' BYEs as the view's walk of v1's recursion places them, each written as the chain's own ops are */
+function walkedSeats(view: OutcomeView, entry?: HydratedMatchUp): DoubleExitSeats | undefined {
+  const { targets } = view;
+  const walk = targets.byeWalk;
+  const ownSeat = !!targets.loserLink || !!targets.loserMatchUpId;
+  if (!walk || (ownSeat && !walk.own) || (entry?.loserMatchUpId && !walk.unfillable)) return undefined;
+  return {
+    ...(ownSeat && walk.own ? { own: walkChain(walk.own) } : {}),
+    ...(entry?.loserMatchUpId && walk.unfillable ? { unfillable: walkChain(walk.unfillable) } : {}),
+  };
+}
+
+function walkChain(walk: ByeWalk): ByeChain {
+  const quiet = (named: boolean) => (named ? {} : { announcesEvent: false as const });
+  return {
+    assigns: walk.assigns.map(({ structureId, drawPosition, matchUpId, named }) => ({
+      op: 'assignBye' as const,
+      byeFromPropagation: true as const,
+      structureId,
+      drawPosition,
+      matchUpId,
+      ...quiet(named),
+    })),
+    writes: walk.writes.flatMap((write): OutcomeOp[] =>
+      write.kind === 'bye'
+        ? [
+            { op: 'setMatchUpBye', matchUpId: write.matchUpId, ...quiet(write.named) },
+            { op: 'stampUpdatedAt', entity: 'matchUp', id: write.matchUpId },
+          ]
+        : throughByeOps(write),
+    ),
+    matchUpIds: walk.matchUpIds,
+  };
+}
+
+/** the seats as the chain's shapes plan them (S5, S6) */
+function chainedSeats(view: OutcomeView, entry?: HydratedMatchUp): DoubleExitSeats | undefined {
   const { targets } = view;
   const seats: DoubleExitSeats = {};
   // under `doubleExitPropagateBye: false` the loser matchUp takes a produced exit in place of the BYE
@@ -2078,7 +2122,9 @@ function producedConvergedReason(
   const linked = !!targets.loserLink || !!targets.loserMatchUpId;
   // with loser links, the BYEs they take (`doubleExitPropagateBye`; off, the seats show exits: v1's)
   if (!converged || !source || (linked && !view.draw.doubleExitPropagatesBye)) return undefined;
-  const own = linked ? ownByeChain(view) : undefined;
+  // the own seat as the chain's shapes plan it, or as the view's walk of v1's recursion places it (S6 tail)
+  const walkedOwn = view.targets.byeWalk?.own;
+  const own = linked ? (ownByeChain(view) ?? (walkedOwn ? walkChain(walkedOwn) : undefined)) : undefined;
   if (linked && !own) return undefined;
   const target = producedTarget(view, source, write.matchUpStatus as MatchUpStatusUnion);
   const landing = target?.entry;
