@@ -3,3 +3,4 @@ export { resolveEntryFee, getEntryFeeRange, isIndeterminateFee } from '@Query/en
 export { getEntryStatusOrdinals } from '@Query/entries/getEntryStatusOrdinals';
 export { getEntriesAndSeedsCount } from '@Query/entries/getEntriesAndSeedsCount';
 export { getMaxEntryPosition } from '@Query/entries/getMaxEntryPosition';
+export { getEventEntrySpace } from '@Query/entries/getEventEntrySpace';
