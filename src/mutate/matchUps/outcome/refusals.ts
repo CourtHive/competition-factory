@@ -4,6 +4,7 @@ import { rewritesCarriedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProv
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { validateScore } from '@Validators/validateScore';
 import { isDoubleExit } from '@Validators/isExit';
+import { chooseRoute } from './route';
 
 // constants and types
 import type { OutcomeRequest, OutcomeView, Refusal } from './types';
@@ -17,6 +18,7 @@ import {
   INCOMPATIBLE_MATCHUP_STATUS,
   INVALID_DATE,
   INVALID_MATCHUP_STATUS,
+  INVALID_MATCHUP_STATUS_BYE,
   INVALID_TIME,
   INVALID_VALUES,
   INVALID_WINNING_SIDE,
@@ -300,6 +302,29 @@ function refuseDispatch(request: OutcomeRequest, view: OutcomeView): Refusal | u
   return refuse(15, NO_VALID_ACTIONS);
 }
 
+/**
+ * The refusals v1's two writers raise after the dispatch, before their first write (S7; both were apply-stage codes,
+ * deferred, until then). `removeDirectedParticipants` refuses a score without a winner, or a winner's removal, on a
+ * matchUp (a line's dual) holding no drawPositions and not ad hoc: row 24's removal clause, which v1 asks before the
+ * dual's writes since S7 (`removesDirected`). `attemptToSetMatchUpStatus`
+ * refuses the routes § 3 names `refused`: a BYE on a matchUp none of whose drawPositions holds a bye assignment
+ * (`attemptToSetMatchUpStatusBYE`, row 28), and the fallthrough no route accepts (an exit named with no winner, row 6).
+ * § 3's `unrecognized` and `not directing` rows are not reached: every status row 6 lets through is directing or
+ * non-directing (`applyStageCodesRuled.test.ts`), so a `refused` route here that is not the BYE's is the fallthrough.
+ */
+function refuseRoute(request: OutcomeRequest, view: OutcomeView): Refusal | undefined {
+  const route = chooseRoute(request, view);
+  // a line under manual scoring (the dual's auto-calc disabled) goes to `attemptToModifyScore`, not the removal
+  if (route === 'remove-directed')
+    return view.removalMissingDrawPositions && !view.line?.autoCalcDisabled
+      ? refuse(24, MISSING_DRAW_POSITIONS)
+      : undefined;
+  if (route !== 'refused') return undefined;
+  const { matchUpStatus } = request;
+  if (matchUpStatus === BYE) return refuse(28, INVALID_MATCHUP_STATUS_BYE, { info: 'matchUp does not include BYE' });
+  return refuse(6, INVALID_MATCHUP_STATUS, { info: 'matchUpStatus: ' + matchUpStatus });
+}
+
 export function refuseOutcome(request: OutcomeRequest, view: OutcomeView): Refusal | undefined {
   return (
     refuseCall(request, view) ??
@@ -309,6 +334,7 @@ export function refuseOutcome(request: OutcomeRequest, view: OutcomeView): Refus
     refuseAgainstDraw(request, view) ??
     refuseSchedule(view) ??
     (view.missingDrawPositions ? refuse(24, MISSING_DRAW_POSITIONS) : undefined) ??
-    refuseDispatch(request, view)
+    refuseDispatch(request, view) ??
+    refuseRoute(request, view)
   );
 }

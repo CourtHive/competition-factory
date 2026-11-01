@@ -1,4 +1,5 @@
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
+import { removalMissingDrawPositions } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { fedLoserPlacementRefusal } from '@Mutate/matchUps/drawPositions/reconcileFedLoserEligibility';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { isValidMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
@@ -1843,6 +1844,9 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       request,
       event,
     }),
+    // § 2 row 24's removal clause, read where `removeDirectedParticipants` reads it: the targets' copy of the matchUp
+    // (the dual's for a line), whose `drawPositions` are undefined until a feeder decides
+    removalMissingDrawPositions: removalMissingDrawPositions({ structure, targetData }),
     line,
     dualProjection,
     targets: {

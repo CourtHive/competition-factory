@@ -1,6 +1,6 @@
-import { noDownstreamDependencies } from '@Mutate/drawDefinitions/matchUpGovernor/noDownstreamDependencies';
 import { isPropagatedExit, rewritesCarriedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
+import { removalMissingDrawPositions } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { isDrawnResult, validateDrawTallyOptions } from '@Query/matchUps/roundRobinTally/drawnResults';
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { resolveRotatingPartnerOutcome } from '@Query/drawDefinition/resolveRotatingPartnerOutcome';
@@ -43,6 +43,10 @@ import { clearsABye } from '@Query/matchUp/clearsABye';
 import { findStructure } from '@Acquire/findStructure';
 import { isObject } from '@Tools/objects';
 import { nowIso } from '@Tools/clock';
+import {
+  noDownstreamDependencies,
+  removesDirected,
+} from '@Mutate/drawDefinitions/matchUpGovernor/noDownstreamDependencies';
 
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
 
@@ -776,6 +780,13 @@ function resolveAndApplyOutcome({
 
   const unplaceable = missingDrawPositionsRefusal({ params, activeDownstream: !!activeDownstream });
   if (unplaceable) return unplaceable;
+
+  // § 2 row 24's removal clause: `removeDirectedParticipants` refuses a score with no winner on a matchUp (a line's
+  // dual) holding no drawPositions. A first entry (nothing holds a winner there) reaches it after the dual's writes
+  // below, which left `sides` on an unfed dual under the error (measured 2026-11-01, TEAM SINGLE_ELIMINATION 4, the
+  // final's bare score). Asked here, with what that function reads, so the error leaves the record unchanged (S7).
+  if (removesDirected(params) && removalMissingDrawPositions(params))
+    return decorateResult({ result: { error: MISSING_DRAW_POSITIONS }, stack });
 
   // the TEAM dual's auto-calc and lineUps, now that nothing before the outcome's own writes can refuse
   applyTeamWrites?.();
