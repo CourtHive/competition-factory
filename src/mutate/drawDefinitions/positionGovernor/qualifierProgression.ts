@@ -160,12 +160,13 @@ function qualifierPositionsForRound({
   targetRoundNumber: number;
   structure: Structure;
 }) {
-  const { roundDrawPositions } = getQualifiersData({ drawDefinition, structure });
-  const targetRounds = Object.keys(roundDrawPositions ?? {}).map(Number);
+  // positions keyed by round number, not a matchUp's sides
+  const { roundDrawPositions: positionsByRound } = getQualifiersData({ drawDefinition, structure });
+  const targetRounds = Object.keys(positionsByRound ?? {}).map(Number);
   if (targetRounds.length < 2) return qualifierPositions;
 
   const entryRound = (drawPosition: number) =>
-    Math.max(...targetRounds.filter((roundNumber) => roundDrawPositions[roundNumber].includes(drawPosition)));
+    Math.max(...targetRounds.filter((roundNumber) => positionsByRound[roundNumber].includes(drawPosition)));
   return qualifierPositions.filter(({ drawPosition }) => entryRound(drawPosition) === targetRoundNumber);
 }
 
