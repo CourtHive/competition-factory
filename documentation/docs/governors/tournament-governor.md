@@ -552,11 +552,12 @@ Announced as `MODIFY_TOURNAMENT_DETAIL` with `tournamentStatus`; setting the sta
 
 ## setTournamentDates
 
-Sets the start date, end date, active dates, and/or weekdays for a tournament. Validates that dates are proper `'YYYY-MM-DD'` strings and that `activeDates` fall within the start/end range. Event dates are coerced to fit within the new tournament dates.
+Sets the start date, end date, active dates, and/or weekdays for a tournament. Validates that dates are proper `'YYYY-MM-DD'` strings and that `activeDates` fall within the start/end range. Every refusal comes before the first write.
 
 ```js
 const {
   unscheduledMatchUpIds, // matchUpIds unscheduled by a force: true date change
+  eventDateChanges, // events whose dates changed: { eventId, reason, previousStartDate, previousEndDate, startDate, endDate }[]
   datesRemoved, // dates no longer in the tournament range
   datesAdded, // dates newly in the tournament range
 } = engine.setTournamentDates({
@@ -576,6 +577,27 @@ When the range shrinks so that scheduled matchUps fall outside the new start/end
 - **Completed matchUps** — rejected with `MATCHUPS_COMPLETED_OUTSIDE_DATES` and this block **cannot** be overridden by `force`. A match played on a given date forces that date into the tournament range; unscheduling it would erase the record of when it was played. The rejection carries `completedOutOfRangeMatchUpIds` and `completedOutOfRangeDates`. To proceed, either widen the range to include those dates or reschedule/clear the completed matchUps' results first.
 
 When both kinds are present, the completed block takes precedence (there is no partial date change).
+
+### Event dates follow the tournament
+
+No event range is left outside the new tournament range. Each event with dates of its own is reconciled, and
+`setTournamentStartDate` / `setTournamentEndDate` behave the same way (they call `setTournamentDates`):
+
+| Event range before the change                                        | Result                                                                                            | `reason`  |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | --------- |
+| equal to the previous tournament range (the default from `addEvent`) | takes the new tournament range: extending, shrinking or shifting the tournament carries the event | `TRACKED` |
+| narrower, and overlapping the new range                              | keeps its own range, cut to the part inside the new range (unchanged when it is already inside)   | `CLAMPED` |
+| narrower, and entirely outside the new range                         | reset to the new tournament range, both dates                                                     | `RESET`   |
+
+An event with no `startDate` or `endDate` is left alone; it already uses the tournament range. Every event whose dates
+change is announced with `MODIFY_EVENT` and listed in `eventDateChanges` (absent when no event changed). The reset
+rule means a director who shifts a tournament past an event's own days gets an event that plays on every tournament
+day, and `eventDateChanges` says so; the alternative, collapsing the range to one edge day, would invent a
+playing day nobody chose. An event `activeDates` list is not rewritten.
+
+A record whose event range already lies outside the tournament range (written before this rule, or edited outside the
+engine) is reported by `getTournamentInconsistencies` as `EVENT_DATES_OUTSIDE_TOURNAMENT` and is reconciled by the
+next `setTournamentDates`.
 
 ---
 
