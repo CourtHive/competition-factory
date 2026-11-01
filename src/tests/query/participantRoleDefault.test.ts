@@ -1,4 +1,4 @@
-import { PARTICIPANT_ROLE_MISSING } from '@Query/tournaments/getTournamentInconsistencies';
+import { PARTICIPANT_ROLE_INVALID, PARTICIPANT_ROLE_MISSING } from '@Query/tournaments/getTournamentInconsistencies';
 import { participantRoleOf } from '@Query/participant/participantRoleOf';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -132,5 +132,68 @@ describe('PARTICIPANT_ROLE_MISSING', () => {
     mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 4 }], setState: true });
     const result: any = tournamentEngine.getTournamentInconsistencies();
     expect(result.inconsistencies.filter((i) => i.issueType === PARTICIPANT_ROLE_MISSING)).toEqual([]);
+  });
+});
+
+describe('PARTICIPANT_ROLE_INVALID', () => {
+  // A real CODES export sets participantRole "PLAYER" on every INDIVIDUAL and PAIR. That is not a
+  // ParticipantRoleEnum value, and an unknown value is NOT defaulted: a misspelt staff role would
+  // otherwise be counted as a player.
+  function loadInvalidRoleRecord() {
+    const { tournamentRecord } = mocksEngine.generateTournamentRecord({
+      participantsProfile: { participantsCount: 4 },
+    });
+    const playerIds: string[] = [];
+    for (const participant of tournamentRecord.participants) {
+      participant.participantRole = 'PLAYER';
+      playerIds.push(participant.participantId);
+    }
+    tournamentRecord.participants.push({
+      participantId: 'misspelt-official',
+      participantType: INDIVIDUAL,
+      participantRole: 'OFFICAL',
+      person: { personId: 'misspelt-person', standardFamilyName: 'Referee', standardGivenName: 'Rae' },
+    });
+    tournamentEngine.setState(tournamentRecord);
+    return { playerIds };
+  }
+
+  it('a PLAYER-role participant is not read as COMPETITOR', () => {
+    const { playerIds } = loadInvalidRoleRecord();
+    expect(participantRoleOf({ participantRole: 'PLAYER' as any })).toEqual('PLAYER');
+    const result: any = tournamentEngine.getParticipants({ participantFilters: { participantRoles: [COMPETITOR] } });
+    expect(result.participants).toEqual([]);
+    expect(playerIds.length).toBeGreaterThan(0);
+  });
+
+  it('is a warning naming each offending value, its count, ids and the fix, and leaves the record valid', () => {
+    const { playerIds } = loadInvalidRoleRecord();
+    const result: any = tournamentEngine.getTournamentInconsistencies();
+    expect(result.valid).toEqual(true);
+    expect(result.inconsistencies.filter((i) => i.issueType === PARTICIPANT_ROLE_MISSING)).toEqual([]);
+
+    const entries = result.inconsistencies.filter((i) => i.issueType === PARTICIPANT_ROLE_INVALID);
+    expect(entries.length).toEqual(1);
+    const [entry] = entries;
+    expect(entry.severity).toEqual('warning');
+    expect(entry.scope).toEqual('TOURNAMENT');
+    expect(entry.participantsCount).toEqual(playerIds.length + 1);
+    expect(entry.message).toContain('PLAYER is not a participant role');
+    expect(entry.message).toContain('use COMPETITOR');
+
+    const player = entry.invalidRoles.find((row) => row.participantRole === 'PLAYER');
+    expect(player).toEqual({
+      participantRole: 'PLAYER',
+      participantsCount: playerIds.length,
+      participantIds: playerIds,
+      suggestedRole: COMPETITOR,
+    });
+    // a misspelling gets no guessed fix
+    const misspelt = entry.invalidRoles.find((row) => row.participantRole === 'OFFICAL');
+    expect(misspelt).toEqual({
+      participantRole: 'OFFICAL',
+      participantsCount: 1,
+      participantIds: ['misspelt-official'],
+    });
   });
 });

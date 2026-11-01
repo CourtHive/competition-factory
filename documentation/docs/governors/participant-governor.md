@@ -445,7 +445,9 @@ const {
 and older records can carry players with no role. `participantFilters.participantRoles: [COMPETITOR]` keeps them, and
 `[OFFICIAL]` (or any other role) does not. The same read-time default applies wherever the factory decides by role
 (event entry, team generation, entry status reports, tournament info counts, public participant rows); the record is
-never rewritten. `getTournamentInconsistencies` lists such participants as `PARTICIPANT_ROLE_MISSING` (info).
+never rewritten. `getTournamentInconsistencies` lists such participants as `PARTICIPANT_ROLE_MISSING` (info). Only a
+**missing** role is defaulted: a value that is not a participant role (e.g. `"PLAYER"`) matches no role filter and is
+reported as `PARTICIPANT_ROLE_INVALID` (warning).
 
 **Filtered lookups are cheapest with `returnParticipantMap: false`.** The `participantMap` holds every participant
 whether or not the filters keep it, so returning it means building the whole pool. When it is not returned, the

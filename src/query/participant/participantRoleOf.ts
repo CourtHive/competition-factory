@@ -14,6 +14,10 @@ import { COMPETITOR } from '@Constants/participantRoleValues';
  * This is a READ-time default: the record is never rewritten. `getTournamentInconsistencies` reports
  * the participants it applies to (`PARTICIPANT_ROLE_MISSING`, info).
  *
+ * Only a MISSING role is defaulted. A value that is not a ParticipantRoleEnum member (e.g. "PLAYER")
+ * is returned as-is, so it matches no role filter: defaulting it would count a misspelt staff role as
+ * a player. Those are reported as `PARTICIPANT_ROLE_INVALID` (warning).
+ *
  * Route every `participantRole` comparison through this so the default cannot drift between sites.
  * Code that must distinguish "explicitly set" from "absent" (write-time validation, an explicitly
  * authored GROUP relationship) reads `participant.participantRole` directly, on purpose.

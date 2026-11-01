@@ -1081,6 +1081,24 @@ const { valid, inconsistencies } = engine.getTournamentInconsistencies();
   }
   ```
 
+- `PARTICIPANT_ROLE_INVALID` — participants whose `participantRole` is not a `ParticipantRoleEnum` value (e.g.
+  `"PLAYER"`). These are **not** defaulted to `COMPETITOR` (a misspelt staff role would then count as a player), so a
+  role filter excludes them; this finding says what to fix. One entry per tournament, with a row per offending value
+  and a `suggestedRole` only where the intent is evident (a case variant of a real role, or `PLAYER`/`ATHLETE`/
+  `ENTRANT`/`CONTESTANT` → `COMPETITOR`). (warning — never makes `valid` false)
+
+  ```js
+  {
+    issueType: 'PARTICIPANT_ROLE_INVALID',
+    message: 'PLAYER is not a participant role (172 participant(s)); use COMPETITOR',
+    severity: 'warning',
+    scope: 'TOURNAMENT',
+    participantsCount: 172,
+    participantIds: ['...'],
+    invalidRoles: [{ participantRole: 'PLAYER', participantsCount: 172, participantIds: ['...'], suggestedRole: 'COMPETITOR' }],
+  }
+  ```
+
 > Scheduling collisions are deferred — they require the scheduling model and are a later sub-phase.
 
 ## getTournamentCompleteness
