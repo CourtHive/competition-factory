@@ -481,6 +481,10 @@ function carryLevels(
       seat,
       ...(through ? { through } : {}),
       ...(passage ? { passage } : {}),
+      // a single exit standing there that links its loser on: where the carry converges, that double exit's seats (S6 tail)
+      ...(next.loserMatchUpId && isExit(next.matchUpStatus)
+        ? { walk: walkSeats(draw, positionTargets({ ...draw, matchUpId: next.matchUpId })) }
+        : {}),
     });
     // a passage's landing links nothing on in any draw that holds one: the walk ends with it
     if (!seat || passage || (seat.opponentBye && !through)) break;
@@ -619,7 +623,6 @@ function placeWalkBye(
   if (context.steps > SETTLE_PASS_LIMITS.exitLevels * 8) return false;
   const key = seatKey(structureId, drawPosition);
   if (context.byes.has(key)) return true;
-  if (context.held.has(key)) return false;
   const holding = context.draw.inContextDrawMatchUps.filter(
     (matchUp) =>
       matchUp.structureId === structureId && context.positions.get(matchUp.matchUpId)?.includes(drawPosition),
@@ -627,9 +630,14 @@ function placeWalkBye(
   if (!holding.length) return false;
   const furthest = holding.reduce((a, b) => ((b.roundNumber ?? 0) > (a.roundNumber ?? 0) ? b : a));
   const initial = holding.reduce((a, b) => ((b.roundNumber ?? 0) < (a.roundNumber ?? 0) ? b : a));
-  if (!walkable(context, furthest)) return false;
+  // a participant here is displaced only as a carrier whose carry the BYE withdraws (`withdrawDisplacedCarry`)
+  const displaced = context.held.has(key) ? displacedCarry(furthest, drawPosition) : undefined;
+  if (context.held.has(key) && !displaced) return false;
+  if (!displaced && !walkable(context, furthest)) return false;
   context.byes.add(key);
+  context.held.delete(key);
   context.statuses.set(furthest.matchUpId, BYE);
+  if (displaced) walk.writes.push(displaced);
   walk.writes.push({ kind: 'bye', matchUpId: furthest.matchUpId, named });
   walk.matchUpIds.push(furthest.matchUpId);
   const other = context.positions.get(furthest.matchUpId)?.find((position) => position !== drawPosition);
@@ -640,6 +648,37 @@ function placeWalkBye(
   // v1 announces a structure's assignments as each placement returns: the deepest first
   walk.assigns.push({ structureId, drawPosition, matchUpId: initial.matchUpId, named });
   return placed;
+}
+
+/**
+ * A carrier on the seat a propagated BYE takes (S6 tail): their landing holds the exit they carried in (a single exit
+ * awarded to the side opposite, nobody there, no score or codes, linking nothing on), which the BYE withdraws with them:
+ * the seat's carried entry goes, and a BYE origin opposite it (`withdrawDisplacedCarry`), and the matchUp becomes a BYE,
+ * its `scoredTime` taken by `reconcileScoredTimes`. Undefined for any other occupant
+ */
+function displacedCarry(
+  landing: HydratedMatchUp,
+  drawPosition: number,
+): Extract<ByeWalk['writes'][number], { kind: 'displaced' }> | undefined {
+  const side = landing.sides?.find((candidate) => candidate.drawPosition === drawPosition);
+  const sideNumber = side?.sideNumber;
+  if (sideNumber !== 1 && sideNumber !== 2) return undefined;
+  const opposite = landing.sides?.find((candidate) => candidate.sideNumber === 3 - sideNumber);
+  if (!isExit(landing.matchUpStatus) || landing.winningSide !== 3 - sideNumber || opposite?.participantId)
+    return undefined;
+  // a landing that links its loser on: the BYE it becomes sends a BYE there too, displacing the carry they took on (the walk)
+  if (
+    checkScoreHasValue({ score: landing.score }) ||
+    landing.matchUpStatusCodes?.some((code) => typeof code !== 'string')
+  )
+    return undefined;
+  const provenance = { ...(landing.sideExitProvenance ?? {}) } as Record<string, any>;
+  if (!carriedExitStatus(provenance[sideNumber])) return undefined;
+  delete provenance[sideNumber];
+  const other = provenance[3 - sideNumber];
+  if (other?.matchUpStatus === BYE && other.previousMatchUpStatus === BYE) delete provenance[3 - sideNumber];
+  if (Object.keys(provenance).length) return undefined;
+  return { kind: 'displaced', matchUpId: landing.matchUpId };
 }
 
 /**
@@ -709,7 +748,29 @@ function byeWalk(
   request: OutcomeRequest,
   targetData?: PositionTargetsResult,
 ): OutcomeView['targets']['byeWalk'] {
-  if (!isDoubleExit(request.matchUpStatus)) return undefined;
+  return isDoubleExit(request.matchUpStatus) ? walkSeats(draw, targetData) : undefined;
+}
+
+/**
+ * A carry whose first landing holds a single carried exit and links its loser on (S6 tail, the BYE walk): where the
+ * arriving exit converges there, the double exit places its BYEs as an entered one does. The walk from the landing's own
+ * loser seat (a carrier there displaced, `withdrawDisplacedCarry`) and from the seat its produced exit leaves unfillable
+ */
+function landingWalk(
+  draw: DrawContext,
+  request: OutcomeRequest,
+  targetData?: PositionTargetsResult,
+): OutcomeView['targets']['landingWalk'] {
+  if (!carriesOn(request, targetData)) return undefined;
+  const landing = targetData?.targetMatchUps?.loserMatchUp;
+  if (!landing?.loserMatchUpId || !isExit(landing.matchUpStatus)) return undefined;
+  return walkSeats(draw, positionTargets({ ...draw, matchUpId: landing.matchUpId }));
+}
+
+function walkSeats(
+  draw: DrawContext,
+  targetData?: PositionTargetsResult,
+): { own?: ByeWalk; unfillable?: ByeWalk } | undefined {
   const loserMatchUp = targetData?.targetMatchUps?.loserMatchUp;
   const ownPosition = targetData?.targetMatchUps?.loserTargetDrawPosition;
   const winnerMatchUpId = targetData?.targetMatchUps?.winnerMatchUp?.matchUpId;
@@ -1819,6 +1880,7 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       unwindLoserSeats: unwindLoserSeats(draw, request, matchUp),
       byeLevels: byeLevels(draw, matchUpsMap, request, targetData),
       byeWalk: byeWalk(draw, request, targetData),
+      landingWalk: landingWalk(draw, request, targetData),
       onwardLoserSeat: onwardLoserSeat(draw, matchUpsMap, request, targetData),
       carryLevels: carriesOn(request, targetData)
         ? carryLevels(draw, matchUpsMap, carryLanding(drawDefinition, targetData, draw))

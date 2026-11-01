@@ -1031,7 +1031,7 @@ function levelLanding(view: OutcomeView, level: CarryLevel, carried: MatchUpStat
     return passedLanding(view, matchUpId, drawPosition, level.through, level.passage);
   }
   // RULE 4 at this level: a carried exit standing there was awarded to the carrier's seat; the two converge (S6 tail)
-  const converged = convergenceAt(view, matchUpId, drawPosition, carried);
+  const converged = convergenceAt(view, matchUpId, drawPosition, carried, level.walk);
   if (converged) {
     if (!record || record.matchUpStatusCodes?.length) return undefined;
     return { ...converged, carriesOn: false, opponentHeld: false, passes: 1, converged };
@@ -1505,14 +1505,30 @@ function walkChain(walk: ByeWalk): ByeChain {
       matchUpId,
       ...quiet(named),
     })),
-    writes: walk.writes.flatMap((write): OutcomeOp[] =>
-      write.kind === 'bye'
-        ? [
-            { op: 'setMatchUpBye', matchUpId: write.matchUpId, ...quiet(write.named) },
-            { op: 'stampUpdatedAt', entity: 'matchUp', id: write.matchUpId },
-          ]
-        : throughByeOps(write),
-    ),
+    writes: walk.writes.flatMap((write, index): OutcomeOp[] => {
+      if (write.kind === 'advance') return throughByeOps(write);
+      // a displaced carrier's landing: the carry withdrawn, the matchUp a BYE, its `scoredTime` taken by the pass that
+      // announces it (`withdrawDisplacedCarry`, `setMatchUpStatusBYE`, `reconcileScoredTimes`)
+      if (write.kind === 'displaced') {
+        const bye = walk.writes[index + 1];
+        return [
+          { op: 'setSideExitProvenance', matchUpId: write.matchUpId },
+          { op: 'setMatchUpBye', matchUpId: write.matchUpId, ...(bye?.kind === 'bye' ? quiet(bye.named) : {}) },
+          {
+            op: 'setMatchUpResult',
+            matchUpId: write.matchUpId,
+            matchUpStatus: BYE,
+            announcedAs: 'reconcileScoredTimes',
+          },
+          { op: 'stampUpdatedAt', entity: 'matchUp', id: write.matchUpId },
+        ];
+      }
+      if (walk.writes[index - 1]?.kind === 'displaced') return [];
+      return [
+        { op: 'setMatchUpBye', matchUpId: write.matchUpId, ...quiet(write.named) },
+        { op: 'stampUpdatedAt', entity: 'matchUp', id: write.matchUpId },
+      ];
+    }),
     matchUpIds: walk.matchUpIds,
   };
 }
@@ -2009,6 +2025,7 @@ function convergedReason(
     loserMatchUpId,
     loserTargetDrawPosition,
     carriedStatus(request.matchUpStatus),
+    targets.landingWalk,
   );
   return convergence && loser.converged === convergence.matchUpStatus ? undefined : 'exit';
 }
@@ -2021,6 +2038,8 @@ type Convergence = {
   /** the codes v1 writes there: its projection of the matchUp's provenance before the arrival (`deriveStatusCodes`) */
   matchUpStatusCodes: string[];
   target?: ProducedTarget;
+  /** a landing that links its loser on: the BYEs the double exit places, walked as v1's recursion places them (S6 tail) */
+  seats?: OutcomeOp[];
 };
 
 /**
@@ -2035,21 +2054,27 @@ function convergenceAt(
   matchUpId: string | undefined,
   drawPosition: number | undefined,
   carried: MatchUpStatusUnion,
+  walk?: { own?: ByeWalk; unfillable?: ByeWalk },
 ): Convergence | undefined {
   const landing = indexed(view, matchUpId);
   const sideNumber = sideOf(landing, drawPosition);
-  if (!landing || !sideNumber || landing.loserMatchUpId || landing.winningSide !== sideNumber) return undefined;
+  if (!landing || !sideNumber || landing.winningSide !== sideNumber) return undefined;
+  // a landing that links its loser on: its own seat takes the double exit's BYE (the first carrier displaced), planned
+  // where the walk of v1's recursion plans it, under `doubleExitPropagateBye` (S6 tail)
+  if (landing.loserMatchUpId && (!walk?.own || !view.draw.doubleExitPropagatesBye)) return undefined;
   if (!SINGLE_EXITS.has(landing.matchUpStatus) || landing.matchUpStatus === RETIRED) return undefined;
   if (landing.score?.scoreStringSide1 || landing.score?.scoreStringSide2 || landing.score?.sets?.length)
     return undefined;
   const provenance = landing.sideExitProvenance ?? {};
   if (provenance[sideNumber] || !provenance[3 - sideNumber]?.matchUpStatus) return undefined;
   const matchUpStatus = collapseDoubleExitStatus([carried, landing.matchUpStatus]);
+  const ownSeat = landing.loserMatchUpId && walk?.own ? walkChain(walk.own) : undefined;
   const convergence: Convergence = {
     matchUpStatusCodes: deriveStatusCodes(landing),
     matchUpId: landing.matchUpId,
     matchUpStatus,
     sideNumber,
+    ...(ownSeat ? { seats: [...ownSeat.assigns, ...ownSeat.writes] } : {}),
   };
   if (!landing.winnerMatchUpId) return convergence;
   const target = producedTarget(view, landing, matchUpStatus);
@@ -2057,7 +2082,13 @@ function convergenceAt(
   const advanced = target?.entry.drawPositions?.some(
     (position) => !!position && landing.drawPositions?.includes(position),
   );
-  return target && !advanced && producedTargetReason(view, landing, target) ? { ...convergence, target } : undefined;
+  // the produced exit's matchUp linking its loser on: that seat, which nobody will fill, takes a BYE too
+  const targetLinked = !!target?.entry.loserMatchUpId;
+  if (targetLinked && (!ownSeat || !walk?.unfillable)) return undefined;
+  const unfillable = targetLinked && walk?.unfillable ? walkChain(walk.unfillable) : undefined;
+  if (!target || advanced || !producedTargetReason(view, landing, target, targetLinked)) return undefined;
+  const seats = [...(convergence.seats ?? []), ...(unfillable ? [...unfillable.assigns, ...unfillable.writes] : [])];
+  return { ...convergence, target, ...(seats.length ? { seats } : {}) };
 }
 
 /** the double exit RULE 4 writes, the arriving side's entry merged beside the standing one, and what it produces on */
@@ -2087,9 +2118,19 @@ function convergenceOps(
     },
     ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId, provenance }] : []),
     { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
+    // the BYEs before the exit produced onward, as v1's `doubleExitAdvancement` places them; a displaced carrier's landing
+    // is announced last, by the `reconcileScoredTimes` pass that takes its `scoredTime`
+    ...unreconciled(convergence.seats ?? []),
     ...(target ? producedTargetOps(view, target, matchUpId, matchUpStatus) : []),
+    ...reconciled(convergence.seats ?? []),
   ];
 }
+
+/** a walk's ops but the writes v1's `reconcileScoredTimes` pass makes, which it announces after everything else */
+const unreconciled = (ops: OutcomeOp[]) =>
+  ops.filter((op) => !(op.op === 'setMatchUpResult' && op.announcedAs === 'reconcileScoredTimes'));
+const reconciled = (ops: OutcomeOp[]) =>
+  ops.filter((op) => op.op === 'setMatchUpResult' && op.announcedAs === 'reconcileScoredTimes');
 
 type ProducedConvergence = {
   /** this matchUp's own loser seat: a BYE and its chain, placed first (`handleLoserMatchUp`) */
@@ -2219,7 +2260,7 @@ function convergedOps(view: OutcomeView, request: OutcomeRequest, write: MatchUp
   const carried = carriedStatus(request.matchUpStatus);
   const convergence =
     loser?.arrives && loser.converged
-      ? convergenceAt(view, loserMatchUpId, loserTargetDrawPosition, carried)
+      ? convergenceAt(view, loserMatchUpId, loserTargetDrawPosition, carried, view.targets.landingWalk)
       : undefined;
   if (!convergence) return [];
   return convergenceOps(view, convergence, carried, request.matchUpId, write.matchUpStatus as MatchUpStatusUnion);
@@ -3939,7 +3980,10 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
     ...converging,
     ...doubleExitSeated,
     ...producedExit,
-    ...structureStamps([...unwound, ...seated, ...carried.landing, ...doubleExitSeated, ...producedExit], structureId),
+    ...structureStamps(
+      [...unwound, ...seated, ...carried.landing, ...converging, ...doubleExitSeated, ...producedExit],
+      structureId,
+    ),
     ...tally,
     // the top-level structure: a round robin group's container, as v1 stamps it
     { op: 'stampUpdatedAt', entity: 'structure', id: view.group?.containerStructureId ?? structureId },
