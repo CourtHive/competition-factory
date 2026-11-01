@@ -662,6 +662,43 @@ What happens to a set no directive splits.
 
 ---
 
+### precision: 'EXACT'
+
+`precision: 'EXACT'` compares and stores percentages unrounded, so two percentages tie only when their fractions are
+equal. With a number (default 3), values equal after rounding to that many decimal places tie. Many rulebooks state
+this explicitly ("win percentage to three decimal places"), so it is a ranking rule, not only a display setting.
+
+### Zero denominators
+
+A percentage with nothing played is 0. For example, `setsPct` for a participant whose only result is a walkover. A
+ratio with nothing lost is unbounded: it ranks first when anything was won, and is 0 when nothing was won either. A
+directive can change that with `zeroDivision` (below).
+
+### Differences and ratios
+
+`setsDiff`, `gamesDiff` and `pointsDiff` (won minus lost) are stored with the other measures. `setsRatio`,
+`gamesRatio` and `pointsRatio` (won over lost) are computed only when ordering, never stored, because a ratio with
+nothing lost is unbounded and a stored tally must stay serialisable. Any of them may be the `groupOrderKey` or a
+directive `attribute`.
+
+A ratio directive's `zeroDivision` decides what an unbeaten ratio means for that directive:
+
+- `'MAX'` (default): it ranks first (FIVB's convention).
+- `'ZERO'`: it reads as 0.
+- `'SKIP'`: the directive is passed over for any tied set where it happens.
+
+### denominator
+
+`denominator: 'EXPECTED'` makes `setsPct` and `gamesPct` divide by the sets and games a participant was expected to
+play. For example, a walkover win counts as sets the winner was due to play. The engine works the expected meetings
+out from the group itself (any number of meetings per pair). `'PLAYED'` (default) divides by what was actually played.
+
+### Completion
+
+A group is complete when every meeting has a result, so a double round robin and a group with an excluded status
+(`excludeMatchUpStatuses`) complete, and their order is written as `groupOrder`. Before the standings engine, they
+only ever received `provisionalOrder`.
+
 ### groupTotalGamesPlayed / groupTotalSetsPlayed
 
 **Purpose:** Use total group games/sets as denominator for percentage calculations.

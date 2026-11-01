@@ -83,12 +83,16 @@ export function getGroupOrder(params) {
   }
 }
 
-function isComplete({ participantResults, participantsCount }) {
+/**
+ * Every participant has a result for every meeting they are expected to have (K2: `expectedResults`, one per counted
+ * meeting). Without it, v1's rule: participantsCount - 1 results each, which a double round robin never meets.
+ */
+function isComplete({ participantResults, participantsCount, expectedResults }) {
   const resultsArray = getResultsArray({ participantResults });
-  const participantsFinished = resultsArray.filter(
-    (r) =>
-      participantsCount - 1 ===
-      r.results.matchUpsWon + r.results.matchUpsLost + (r.results.matchUpsDrawn ?? 0) + r.results.matchUpsCancelled,
-  );
-  return participantsCount === participantsFinished.length;
+  const participantsFinished = resultsArray.filter((r) => {
+    const results =
+      r.results.matchUpsWon + r.results.matchUpsLost + (r.results.matchUpsDrawn ?? 0) + r.results.matchUpsCancelled;
+    return results === (expectedResults ? expectedResults[r.participantId] : participantsCount - 1);
+  });
+  return (expectedResults ? resultsArray.length : participantsCount) === participantsFinished.length;
 }

@@ -1,5 +1,5 @@
 import { validateDrawTallyOptions } from '@Query/matchUps/roundRobinTally/drawnResults';
-import { TALLY_MEASURES, V1_PRIMARY_KEYS } from '@Query/standings/fromV1';
+import { TALLY_MEASURES, V1_PRIMARY_KEYS, V2_MEASURES } from '@Query/standings/fromV1';
 import { decorateResult } from '@Functions/global/decorateResult';
 
 // constants and types
@@ -36,7 +36,7 @@ export function validateTallyPolicy({ tallyPolicy, extraMeasures = [] }: Validat
 export function tallyPolicyErrors(tallyPolicy: RoundRobinTallyPolicy, extraMeasures: string[] = []): string[] {
   if (!tallyPolicy || typeof tallyPolicy !== 'object') return ['tallyPolicy must be an object'];
   const errors: string[] = [];
-  const primaryKeys = [...V1_PRIMARY_KEYS, ...extraMeasures];
+  const primaryKeys = [...V1_PRIMARY_KEYS, ...V2_MEASURES, ...extraMeasures];
   const measures = [...TALLY_MEASURES, ...extraMeasures];
 
   const { groupOrderKey, tallyDirectives, headToHead, precision, onSplit, terminal } = tallyPolicy;
@@ -60,8 +60,16 @@ export function tallyPolicyErrors(tallyPolicy: RoundRobinTallyPolicy, extraMeasu
   if (headToHead !== undefined && (headToHead === null || typeof headToHead !== 'object')) {
     errors.push('headToHead must be an object');
   }
-  if (precision !== undefined && !(Number.isInteger(precision) && (precision as number) >= 0)) {
-    errors.push('precision must be a whole number of decimal places');
+  if (
+    precision !== undefined &&
+    precision !== 'EXACT' &&
+    !(Number.isInteger(precision) && (precision as number) >= 0)
+  ) {
+    errors.push("precision must be a whole number of decimal places, or 'EXACT'");
+  }
+  const { denominator } = tallyPolicy;
+  if (denominator !== undefined && !DENOMINATORS.includes(denominator as string)) {
+    errors.push(`denominator must be one of ${DENOMINATORS.join(', ')}`);
   }
 
   if (onSplit !== undefined && !SPLIT_MODES.includes(onSplit as string)) {
@@ -79,6 +87,8 @@ export function tallyPolicyErrors(tallyPolicy: RoundRobinTallyPolicy, extraMeasu
 const SPLIT_MODES = ['RESTART', 'CONTINUE', 'EXTRACT_ONE'];
 const TERMINAL_STEPS = ['ADJUDICATE', 'SHARE', 'LOT'];
 const PHASES = ['PROVISIONAL', 'FINAL'];
+const DENOMINATORS = ['PLAYED', 'EXPECTED'];
+const ZERO_DIVISIONS = ['MAX', 'ZERO', 'SKIP'];
 
 /** a directive's size and `when` gates */
 function directiveGateErrors(directive: Record<string, unknown>, index: number): string[] {
@@ -88,6 +98,10 @@ function directiveGateErrors(directive: Record<string, unknown>, index: number):
     if (value !== undefined && !(Number.isInteger(value) && (value as number) >= 1)) {
       errors.push(`tallyDirectives[${index}]: ${key} must be a whole number of at least 1`);
     }
+  }
+  const { zeroDivision } = directive;
+  if (zeroDivision !== undefined && !ZERO_DIVISIONS.includes(zeroDivision as string)) {
+    errors.push(`tallyDirectives[${index}]: zeroDivision must be one of ${ZERO_DIVISIONS.join(', ')}`);
   }
   const when = directive.when as { purposes?: unknown; phase?: unknown } | undefined;
   if (when !== undefined) {

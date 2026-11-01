@@ -1,6 +1,7 @@
 import { tallyParticipantResults as tallyParticipantResultsV1 } from './v1Reference/tallyParticipantResults';
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
 import { buildMatchUps, type CorpusResult } from './standingsFixtures';
+import { V2_MEASURES } from '@Query/standings/fromV1';
 import { describe, expect, it } from 'vitest';
 
 // constants and fixtures
@@ -184,9 +185,46 @@ function withoutRuledChanges(policyDefinitions?: any) {
   return { ...policyDefinitions, [POLICY_TYPE_ROUND_ROBIN_TALLY]: rest };
 }
 
+/** the measures S3c added (differences, ratios) are new keys on every participant: v1 has none to compare */
+function withoutV2Measures(result: any) {
+  if (!result.participantResults) return result;
+  const participantResults = Object.fromEntries(
+    Object.entries<any>(result.participantResults ?? {}).map(([participantId, results]) => {
+      const kept = { ...results };
+      for (const measure of V2_MEASURES) delete kept[measure];
+      return [participantId, kept];
+    }),
+  );
+  return { ...result, participantResults };
+}
+
+/**
+ * K2 (CA 2026-11-01): a complete group whose participants do not each have participantsCount - 1 results (a double
+ * round robin, an excluded status) now completes. v1 wrote the SAME positions as provisionalOrder; the live engine
+ * writes groupOrder and rankOrder. Read back into v1's shape, so every other field is still compared, and counted.
+ */
+function asV1Completion(live: any, reference: any) {
+  const referenceResults = Object.values<any>(reference.participantResults ?? {});
+  const liveResults = Object.values<any>(live.participantResults ?? {});
+  const k2 =
+    live.bracketComplete &&
+    referenceResults.some((results) => results.provisionalOrder !== undefined) &&
+    referenceResults.every((results) => results.groupOrder === undefined) &&
+    liveResults.some((results) => results.groupOrder !== undefined);
+  if (!k2) return { result: live, k2: false };
+  const participantResults = Object.fromEntries(
+    Object.entries<any>(live.participantResults).map(([participantId, results]) => {
+      const { groupOrder, rankOrder, ...rest } = results;
+      return [participantId, { ...rest, provisionalOrder: groupOrder }];
+    }),
+  );
+  return { result: { ...live, participantResults }, k2: true };
+}
+
 describe('standings: live engine against the frozen v1', () => {
   it(`is identical over ${CASES} seeded random groups, except where a ruling changed the answer`, () => {
     let compared = 0;
+    let completed = 0;
     for (let seed = 1; seed <= CASES; seed++) {
       const { format, results, encounters, ...params } = randomCase(seed);
       // K1 (D4): with two meetings a pair can split 1-1, where v1 read one victory and the record does not split
@@ -204,9 +242,13 @@ describe('standings: live engine against the frozen v1', () => {
         matchUpFormat: format,
         matchUps: structuredClone(matchUps),
       });
-      expect(live, `seed ${seed}`).toEqual(reference);
+      const { result, k2 } = asV1Completion(withoutV2Measures(live), reference);
+      if (k2) completed += 1;
+      expect(result, `seed ${seed}`).toEqual(reference);
     }
     // the exclusions must not hollow the comparison out
     expect(compared).toBeGreaterThan(CASES * 0.7);
+    // K2 is a narrow change: the excluded-status groups only
+    expect(completed).toBeLessThan(compared * 0.2);
   }, 300_000);
 });

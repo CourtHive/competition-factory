@@ -1,7 +1,7 @@
 import { getParticipantResults } from '@Query/matchUps/roundRobinTally/getParticipantResults';
 import { matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
 import { orderParticipants } from '@Query/standings/orderParticipants';
-import { fromV1, SEASON_TALLY_MEASURES, V1_PRIMARY_KEYS } from '@Query/standings/fromV1';
+import { fromV1, SEASON_TALLY_MEASURES, V1_PRIMARY_KEYS, V2_MEASURES } from '@Query/standings/fromV1';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { validateSeason } from '@Validators/validateSeason';
 
@@ -72,7 +72,7 @@ type Reports = Required<Omit<SeasonStandingsResult, keyof ResultType | 'standing
 
 const DEFAULT_ORDER: (keyof SeasonStandingsTally)[] = ['matchUpsWon', 'valueWon', 'setsWon', 'gamesWon'];
 /** a season's ledger carries the tie-score values too, so a policy may rank by them first */
-const SEASON_PRIMARY_KEYS = [...V1_PRIMARY_KEYS, ...SEASON_TALLY_MEASURES];
+const SEASON_PRIMARY_KEYS = [...V1_PRIMARY_KEYS, ...V2_MEASURES, ...SEASON_TALLY_MEASURES];
 const TALLY_FIELDS: (keyof SeasonStandingsTally)[] = [
   'matchUpsWon',
   'matchUpsLost',
