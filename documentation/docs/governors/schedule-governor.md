@@ -402,7 +402,7 @@ The filter constrains capacity; `scheduleProfileRounds` assigns no court (court 
 {
   (scheduledDates, // array - dates where matchUps were scheduled
     scheduledMatchUpIds, // array - matchUpIds that were scheduled
-    noTimeMatchUpIds, // array - matchUps that couldn't fit
+    noTimeMatchUpIds, // array - matchUps that couldn't fit, or whose date was refused (outside the tournament)
     overLimitMatchUpIds, // array - matchUps exceeding participant limits
     requestConflicts); // by date - { [date]: [{ request, scheduleTimes, matchUpIds }] }, one per request broken
 }
