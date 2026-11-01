@@ -3123,6 +3123,23 @@ const dualTallyOps = (line?: OutcomeView['line'], route?: Route): OutcomeOp[] =>
       ]
     : [];
 
+/**
+ * S7: the call's notes. v1 writes them inside `modifyMatchUpScore` (`addNotes`), on every matchUp a writer reaches with
+ * the call's params: the call's own on the winner, score-only, removal and clear routes (`attemptToModifyScore`,
+ * `removeDirectedParticipants`), which v2 plans (`resultOps`). Deferred: a TEAM call (the dual's tally write), a double
+ * exit before or after (`doubleExitAdvancement` and `removeDoubleExit` forward the params to the exits they write), and
+ * every other route
+ */
+const NOTED_ROUTES = new Set<Route | undefined>(['winner', 'only-score', REMOVE_DIRECTED, CLEAR_SCORE]);
+function notesReason(request: OutcomeRequest, view: OutcomeView, route?: Route): boolean {
+  if (!request.carries?.notes) return false;
+  // the test fixture `{ testing: true }`, written by `addNotes` as given: not planned (deferred)
+  if (typeof request.carries.notes !== 'string') return true;
+  if (view.isTeam || view.line || view.matchUpTieId) return true;
+  if (isDoubleExit(request.matchUpStatus) || isDoubleExit(view.existing.matchUpStatus)) return true;
+  return !NOTED_ROUTES.has(route);
+}
+
 function abstainReason(args: {
   tournamentRecord?: Tournament;
   drawDefinition?: DrawDefinition;
@@ -3140,7 +3157,7 @@ function abstainReason(args: {
   if (writeLegacyEnabled()) return 'write-mode';
   if (!view.draw.storesEdges) return 'edges';
   if (scheduleReason(args)) return 'schedule';
-  if (request.carries?.notes) return 'notes';
+  if (notesReason(request, view, args.route)) return 'notes';
   if (request.matchUpStatusCodes?.length) return 'status-codes';
   if (view.draw.perMatchUpCompetition && (request.winningSide || write?.winningSide)) return 'competition';
   // S7: a TEAM line's double exit (`only-score`), written as it stands: it directs nothing of its own, its targets being
@@ -3613,6 +3630,10 @@ function resultOps(
       ...(request.matchUpFormat ? { matchUpFormat: request.matchUpFormat } : {}),
       ...(write.winningSide ? { winningSide: write.winningSide as 1 | 2 } : {}),
       ...(write.matchUpStatusCodes ? { matchUpStatusCodes: write.matchUpStatusCodes } : {}),
+      // the call's notes land on its own matchUp (a deciding line's dual, planned through here too, takes none)
+      ...(typeof request.carries?.notes === 'string' && matchUpId === request.matchUpId
+        ? { notes: request.carries.notes }
+        : {}),
     },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
   ];
