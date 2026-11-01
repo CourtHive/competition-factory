@@ -925,6 +925,26 @@ participantResults: {
 
 ---
 
+## Best finishers across groups
+
+### crossGroup
+
+When a playoff takes the best finishers of a position across several groups (the best third-placed participants),
+the candidates are compared by `crossGroup`: an ordered list of stored measures, higher first, a `reversed` one lower
+first. The first measure that differs decides. Head-to-head cannot apply across groups.
+
+```js
+{
+  crossGroup: [{ attribute: 'matchUpsPct' }, { attribute: 'gamesDiff' }, { attribute: 'gamesLost', reversed: true }],
+}
+```
+
+The values are written to each participant's tally as `crossGroupValues` when the group is tallied. Without a
+`crossGroup`, candidates are compared by `GEMscore`, as before. A ratio cannot be a `crossGroup` measure, because ratios
+are computed only when ordering and are never stored.
+
+---
+
 ## Usage Examples
 
 ### Example 1: Standard Tournament

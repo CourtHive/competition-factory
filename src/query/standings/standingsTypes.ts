@@ -87,6 +87,8 @@ export type FinishingPosition = {
   subOrder?: number;
   ties?: number;
   GEMscore?: number;
+  /** a policy's `crossGroup` values for this participant, compared in order across groups (best finishers) */
+  crossGroupValues?: number[];
   /** a SHARE terminal: the place stays shared, whatever an organiser's sub-order says */
   shared?: boolean;
 };

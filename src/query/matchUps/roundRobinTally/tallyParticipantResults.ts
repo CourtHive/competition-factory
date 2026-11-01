@@ -118,7 +118,7 @@ export function tallyParticipantResults({
     order = groupOrder;
 
     groupOrder.forEach((finishingPosition) => {
-      const { participantId, groupOrder, rankOrder, subOrder, ties, GEMscore } = finishingPosition;
+      const { participantId, groupOrder, rankOrder, subOrder, ties, GEMscore, crossGroupValues } = finishingPosition;
       const participantResult = participantResults[participantId];
       Object.assign(participantResult, {
         groupOrder,
@@ -126,6 +126,7 @@ export function tallyParticipantResults({
         GEMscore,
         subOrder,
         ties,
+        ...(crossGroupValues && { crossGroupValues }),
       });
     });
   } else {
@@ -144,13 +145,14 @@ export function tallyParticipantResults({
 
     if (provisionalOrder) {
       provisionalOrder.forEach((finishingPosition) => {
-        const { participantId, groupOrder, subOrder, ties, GEMscore } = finishingPosition;
+        const { participantId, groupOrder, subOrder, ties, GEMscore, crossGroupValues } = finishingPosition;
         const participantResult = participantResults[participantId];
         Object.assign(participantResult, {
           provisionalOrder: groupOrder,
           GEMscore,
           subOrder,
           ties,
+          ...(crossGroupValues && { crossGroupValues }),
         });
       });
     }
