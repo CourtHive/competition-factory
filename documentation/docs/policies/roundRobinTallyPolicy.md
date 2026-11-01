@@ -371,6 +371,32 @@ const { POLICY_ROUND_ROBIN_TALLY_TOC } = fixtures.policies;
 
 ---
 
+### USTA League Championship Policy
+
+`POLICY_ROUND_ROBIN_TALLY_USTA_LEAGUE`: the USTA League championship tie procedure as copied into section regulations
+(USTA/Midwest Section 2026, Combo section M):
+
+- the most individual matches (lines) won (`tieMatchUpsWon`);
+- then the winner of the head-to-head match;
+- then the fewest sets lost, then the fewest games lost;
+- then the Midwest committee method: the fewest sets lost in the head-to-head match, then the fewest games lost in it,
+  then a coin toss (`terminal: 'LOT'`).
+
+An individual default counts 6-0, 6-0 for the receiver, and a match tie-break counts as one set and one game. A section
+that varies the order needs its own policy.
+
+### FIBA Policy
+
+`POLICY_ROUND_ROBIN_TALLY_FIBA`: FIBA Official Basketball Rules 2026, Appendix D:
+
+- `resultPoints`: 2 for a win, 1 for a loss including by default, 0 for a loss by forfeit (a forfeit mapped to `WALKOVER`,
+  a default to `DEFAULTED`);
+- level teams are separated by the games between them, then points difference and points scored in those games, then the
+  same over all group games, then a draw (`terminal: 'LOT'`);
+- `onSplit: 'RESTART'` (D.1.4).
+
+The FIBA ranking step (national-team competitions) is an external value and is not applied.
+
 ## Key Attributes
 
 ### groupOrderKey
