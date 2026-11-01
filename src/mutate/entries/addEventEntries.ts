@@ -4,6 +4,7 @@ import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventTyp
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
 import { addDrawEntries } from '@Mutate/drawDefinitions/addDrawEntries';
+import { isCompetitorRole } from '@Query/participant/participantRoleOf';
 import { entityIdMismatch } from '@Helpers/parameters/entityIdMismatch';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { refreshEntryPositions } from './refreshEntryPositions';
@@ -34,7 +35,6 @@ import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import { ROUND_TARGET } from '@Constants/extensionConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { MAIN } from '@Constants/drawDefinitionConstants';
-import { COMPETITOR } from '@Constants/participantRoles';
 import { SUCCESS } from '@Constants/resultConstants';
 import { unique } from '@Tools/arrays';
 import {
@@ -189,11 +189,11 @@ function getTypedParticipantIdsHelper({
         // into a draw as a player — they are all INDIVIDUAL participants. Nothing prevented a referee
         // being drawn against a competitor.
         //
-        // Phrased as "has a role, and it is not COMPETITOR" rather than "is COMPETITOR" on purpose: PAIR
-        // participants and older records may carry no `participantRole` at all, and rejecting those
-        // would break entry for existing tournaments. The hole being closed is a participant carrying a
-        // NON-competitor role; an absent role stays permitted.
-        if (participant.participantRole && participant.participantRole !== COMPETITOR) return false;
+        // `isCompetitorRole` reads an absent role as COMPETITOR: PAIR participants and older or hand-built
+        // records may carry no `participantRole` at all, and rejecting those would break entry for
+        // existing tournaments. The hole being closed is a participant carrying a NON-competitor role;
+        // an absent role stays permitted.
+        if (!isCompetitorRole(participant)) return false;
 
         if (rotatingPartners) {
           return (
