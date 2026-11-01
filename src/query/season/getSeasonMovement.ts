@@ -12,6 +12,7 @@ import type {
   SeasonTier,
 } from '@Types/seasonTypes';
 import type { RoundRobinTallyPolicy } from '@Types/roundRobinTallyPolicy';
+import { STANDINGS_PURPOSE_MOVEMENT } from '@Constants/seasonConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import { ResultType } from '@Types/factoryTypes';
@@ -56,7 +57,15 @@ export function getSeasonMovement(params: GetSeasonMovementArgs): SeasonMovement
     return decorateResult({ result: { error: INVALID_VALUES }, info: 'the season declares no movementRules', stack });
   }
 
-  const result = getSeasonStandings({ season, periodId, matchUps, getSubjectId, orderBy, tallyPolicy });
+  const result = getSeasonStandings({
+    purpose: STANDINGS_PURPOSE_MOVEMENT,
+    getSubjectId,
+    tallyPolicy,
+    periodId,
+    matchUps,
+    orderBy,
+    season,
+  });
   if (result.error) return decorateResult({ result, stack });
 
   const proposals: SeasonMovementProposal[] = [];
