@@ -17,7 +17,7 @@ export type TrimmedProfileDate = DateSchedulingProfile;
 /**
  * Active dates that left a tournament's or an event's list because they fell outside its new range. `eventId` is absent
  * for the tournament's own list. `activeDates` is the list that remains; absent when none remained, so the list is
- * unset and the tournament or event is active on every day of its range.
+ * unset and the tournament or event plays every day of its range (its `weekdays` permitting; see eventPlaysOnDate).
  */
 export type ActiveDateChange = {
   previousActiveDates: string[];
@@ -107,8 +107,8 @@ function pruneDates(activeDates: (Date | string)[] | undefined, start: string, e
  * Prunes active dates that fall outside the new ranges: the tournament's against the tournament range, each event's
  * against the event's own (possibly just reconciled) range, or the tournament's where the event has none.
  *
- * A list left empty is unset, and reported with no `activeDates`: an unset list means every day of the range, so the
- * tournament or event widens, and the report is how a caller sees that and sets new dates. Keeping the out-of-range
+ * A list left empty is unset, and reported with no `activeDates`: an unset list means every day of the range (its
+ * `weekdays` permitting), so the tournament or event widens, and the report is how a caller sees that and sets new dates. Keeping the out-of-range
  * dates instead would leave a list naming days the range no longer holds. Each event whose list changes gets
  * MODIFY_EVENT; the tournament's change is carried by setTournamentDates' MODIFY_TOURNAMENT_DETAIL.
  */

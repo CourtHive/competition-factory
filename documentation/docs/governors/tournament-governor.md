@@ -611,7 +611,7 @@ changes is announced with `MODIFY_EVENT`; the tournament's change is carried by 
 `activeDates` is then the list that remains.
 
 A list that would be left empty is **unset**, and its entry has no `activeDates`. An unset list means every day of the
-range, so the tournament or event widens to its whole range; the entry is how a caller sees that and sets new dates.
+range (its `weekdays` permitting, as `eventPlaysOnDate` reads it), so the tournament or event widens to its whole range; the entry is how a caller sees that and sets new dates.
 The alternative, keeping dates the range no longer holds, would leave a list naming days on which nothing can be
 played. (The MODIFY_TOURNAMENT_DETAIL payload carries `activeDates: []` for an unset tournament list.) An explicit
 `activeDates` argument is still refused with `INVALID_DATE` when it lies outside the new range.
