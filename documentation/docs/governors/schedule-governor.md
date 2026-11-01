@@ -280,11 +280,18 @@ engine.scheduleMatchUps({
   // Limits and policies
   matchUpDailyLimits, // optional - SINGLES, DOUBLES, total limits
   checkPotentialRequestConflicts, // optional boolean (default: true)
+  allowInactiveEventDates, // optional boolean (default: false) - time matchUps on days their event does not play, and warn
 
   // Execution control
   dryRun, // optional boolean - preview without changes
 });
 ```
+
+**Event playing days**: a matchUp is never placed on a day its own event does not play (see
+[Event playing days](#event-playing-days)); skipping is per event, so on one day an event may be skipped while another
+is scheduled. What was skipped is reported in `eventDateSkippedMatchUpIds`, `{ [date]: [{ matchUpId, eventId, reason }] }`,
+present only when something was skipped. `allowInactiveEventDates: true` places such matchUps instead, and the result's
+`warnings` carry one `EVENT_DATE_INACTIVE` per such placement. A skipped matchUp is also listed in `noTimeMatchUpIds`.
 
 #### Timing: where the minutes come from
 
@@ -374,6 +381,7 @@ engine.scheduleProfileRounds({
   dryRun, // optional boolean - preview without changes
   pro, // DEPRECATED - see below
   checkPotentialRequestConflicts, // optional boolean (default: true)
+  allowInactiveEventDates, // optional boolean (default: false) - schedule rounds on days their event does not play, and warn
 
   // Daily-limit accounting (apply to already-scheduled matchUps that contribute
   // to per-participant per-day counters)
@@ -390,6 +398,12 @@ The Day Plan defines what is being scheduled today. When the scheduler reconcile
 
 - `excludeNoDateCompleted` (default `true`) drops `COMPLETED` and `BYE` matchUps that carry no `scheduledDate`. These represent finished play that was never anchored to a specific day; counting them would block legitimate scheduling for the day in question.
 - `excludePriorDates` (default `true`) drops matchUps whose `scheduledDate` is strictly before the date being scheduled. This is a defensive filter: in normal flow same-day filtering already excludes them, but the flag guarantees historical records never leak into a future day's counters.
+
+**Event playing days**: a matchUp is never placed on a day its own event does not play (see
+[Event playing days](#event-playing-days)); skipping is per event, so on one day an event may be skipped while another
+is scheduled. What was skipped is reported in `eventDateSkippedMatchUpIds`, `{ [date]: [{ matchUpId, eventId, reason }] }`,
+present only when something was skipped. `allowInactiveEventDates: true` places such matchUps instead, and the result's
+`warnings` carry one `EVENT_DATE_INACTIVE` per such placement. A skipped matchUp is not listed in `noTimeMatchUpIds`; a dry run reports the same skips.
 
 Set either flag to `false` to restore the pre-defaults legacy semantics where every matchUp in the already-scheduled set consumes its participants' daily-limit budget regardless of status or date.
 
@@ -493,8 +507,15 @@ engine.scheduleProfileGrid({
   // omitted: the tournament's limits, enforced; {}: none enforced, over-limit placements warned
   minCourtGridRows, // optional number - rows per court (default: 10)
   courtIds, // optional array - restrict placement to only these courts
+  allowInactiveEventDates, // optional boolean (default: false) - place matchUps on days their event does not play, and warn
 });
 ```
+
+**Event playing days**: a matchUp is never placed on a day its own event does not play (see
+[Event playing days](#event-playing-days)); skipping is per event, so on one day an event may be skipped while another
+is scheduled. What was skipped is reported in `eventDateSkippedMatchUpIds`, `{ [date]: [{ matchUpId, eventId, reason }] }`,
+present only when something was skipped. `allowInactiveEventDates: true` places such matchUps instead, and the result's
+`warnings` carry one `EVENT_DATE_INACTIVE` per such placement. A skipped matchUp is not listed in `notScheduledMatchUpIds`.
 
 When `courtIds` is provided, only courts in the set are considered as placement targets at each venue. Passing an empty array places nothing. Omitting the parameter places onto all courts at the profile's venues (the default).
 
@@ -517,6 +538,8 @@ An enforced limit refuses a matchUp whose entered participants or winner-advance
   notScheduledMatchUpIds, // record<date, matchUpIds[]> - matchUps that didn't fit per date
   overLimitMatchUpIds,    // record<date, matchUpIds[]> - matchUps rejected by daily limits
   dailyLimitWarningMatchUpIds, // record<date, matchUpIds[]> - placed over a limit the call waived ({})
+  eventDateSkippedMatchUpIds, // record<date, { matchUpId, eventId, reason }[]> - present when any
+  warnings, // present when any - EVENT_DATE_INACTIVE per placement made with allowInactiveEventDates
 }
 ```
 
@@ -1104,10 +1127,18 @@ Professional auto-scheduling with grid-based court assignment.
 
 ```js
 engine.proAutoSchedule({
-  scheduleDate, // required
-  venueIds, // optional
+  scheduledDate, // required
+  matchUps, // required - { inContext: true, nextMatchUps: true }
+  courtIds, // optional
+  allowInactiveEventDates, // optional boolean (default: false) - place matchUps on a day their event does not play, and warn
 });
 ```
+
+**Event playing days**: a matchUp is never placed on a day its own event does not play (see
+[Event playing days](#event-playing-days)); skipping is per event, so on one day an event may be skipped while another
+is scheduled. What was skipped is reported in `eventDateSkippedMatchUpIds`, `{ [date]: [{ matchUpId, eventId, reason }] }`,
+present only when something was skipped. `allowInactiveEventDates: true` places such matchUps instead, and the result's
+`warnings` carry one `EVENT_DATE_INACTIVE` per such placement. A skipped matchUp is also listed in `notScheduled`.
 
 A completed matchUp is never placed (CA 2026-10-23): passed one, the write skips it and it is reported not scheduled.
 `scheduleCompletedMatchUps` is accepted and ignored until the next major.

@@ -8,6 +8,7 @@ import { addMatchUpScheduledTime } from '@Mutate/matchUps/schedule/scheduledTime
 import { getPersonRequests } from '@Query/matchUps/scheduling/getPersonRequests';
 import { checkRequestConflicts, RequestConflict } from './checkRequestConflicts';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
+import { eventDateResolver, EventDateReason } from '@Query/events/eventPlaysOnDate';
 import { resolveScheduleMatchUpsTiming } from './resolveScheduleMatchUpsTiming';
 import { getParticipantReachability } from './getParticipantReachability';
 import { checkDependenciesScheduled } from './checkDependenciesScheduled';
@@ -25,7 +26,7 @@ import { checkDailyLimits } from './checkDailyLimits';
 
 // constants
 import { BYE, ABANDONED, DEFAULTED, RETIRED, WALKOVER, COMPLETED } from '@Constants/matchUpStatusConstants';
-import { INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { EVENT_DATE_INACTIVE, INVALID_DATE, INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { DO_NOT_SCHEDULE } from '@Constants/requestConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
@@ -71,6 +72,7 @@ export function scheduleMatchUps(params) {
     matchUpDailyLimits = {},
 
     checkPotentialRequestConflicts = true,
+    allowInactiveEventDates = false,
     remainingScheduleTimes,
     clearScheduleDates,
 
@@ -204,6 +206,10 @@ export function scheduleMatchUps(params) {
 
   // matchUps are assumed to be in the desired order for scheduling
   const otherDayMatchUpIds: string[] = [];
+  // a matchUp whose event does not play on the date is not timed (§ 6 rule 1), unless the call allows it and is warned
+  const resolveEventDate = eventDateResolver(tournamentRecords);
+  const eventDateSkips: EventDateSkip[] = [];
+  const eventDateInactive: EventDateSkip[] = [];
   let matchUpsToSchedule = targetMatchUps.filter((matchUp) => {
     // only a matchUp already timed on the date is left where it is (§ 6 rule 1): one dated without a time is timed
     const alreadyScheduled = dateTimedMatchUpIds?.includes(matchUp.matchUpId);
@@ -218,6 +224,17 @@ export function scheduleMatchUps(params) {
     if (datedDay && !sameDay(scheduleDate, datedDay)) {
       otherDayMatchUpIds.push(matchUp.matchUpId);
       return false;
+    }
+
+    const { matchUpId, eventId, tournamentId } = matchUp;
+    const verdict = resolveEventDate({ tournamentId, eventId, date: extractDate(scheduleDate) });
+    if (!verdict.plays) {
+      const skip = { matchUpId, eventId, reason: verdict.reason };
+      if (!allowInactiveEventDates) {
+        eventDateSkips.push(skip);
+        return false;
+      }
+      eventDateInactive.push(skip);
     }
     return true;
   });
@@ -433,7 +450,24 @@ export function scheduleMatchUps(params) {
     }
   });
 
-  const noTimeMatchUpIds = [...getMatchUpIds(matchUpsToSchedule), ...refusedMatchUpIds, ...otherDayMatchUpIds];
+  const eventDateSkippedIds = eventDateSkips.map(({ matchUpId }) => matchUpId);
+  const noTimeMatchUpIds = [
+    ...getMatchUpIds(matchUpsToSchedule),
+    ...refusedMatchUpIds,
+    ...otherDayMatchUpIds,
+    ...eventDateSkippedIds,
+  ];
+  // with allowInactiveEventDates, each placement on a day its event does not play is warned about
+  const placed = new Set(scheduledMatchUpIds);
+  const warnings = eventDateInactive
+    .filter(({ matchUpId }) => placed.has(matchUpId))
+    .map(({ matchUpId, eventId, reason }) => ({
+      ...EVENT_DATE_INACTIVE,
+      scheduledDate: extractDate(scheduleDate),
+      matchUpId,
+      eventId,
+      reason,
+    }));
   // a matchUp already on the court grid without a time has just been timed: what its time contradicts there is reported
   const scheduledOnGrid = scheduledMatchUpIds.filter((matchUpId) => onTheGrid(listedMatchUps[matchUpId]?.schedule));
   const proConflicts = dryRun
@@ -474,5 +508,9 @@ export function scheduleMatchUps(params) {
 
     recoveryTimeDeferred,
     dependencyDeferred,
+    ...(eventDateSkips.length ? { eventDateSkippedMatchUpIds: { [extractDate(scheduleDate)]: eventDateSkips } } : {}),
+    ...(warnings.length ? { warnings } : {}),
   };
 }
+
+type EventDateSkip = { matchUpId: string; eventId: string; reason: EventDateReason };

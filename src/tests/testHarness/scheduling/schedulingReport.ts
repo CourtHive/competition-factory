@@ -18,6 +18,7 @@ const REASONS = [
   'recoveryTimeDeferredMatchUpIds',
   'playedOrderDeferredMatchUpIds',
   'dailyLimitWarningMatchUpIds',
+  'eventDateSkippedMatchUpIds',
 ] as const;
 
 /** the methods that decide placements, and so report what they left unscheduled */
@@ -30,13 +31,18 @@ export const SCHEDULING_REPORT_METHODS = new Set([
 
 const sortedIds = (ids: Iterable<string>) => [...new Set(ids)].sort((a, b) => a.localeCompare(b));
 
-/** `{ date: ids[] }`, `{ date: { id: attempts } }` or a bare `ids[]` → `{ date: ids[] }` (a bare list keyed by '') */
+/**
+ * `{ date: ids[] }`, `{ date: { id: attempts } }`, `{ date: [{ matchUpId, … }] }` or a bare `ids[]` → `{ date: ids[] }`
+ * (a bare list keyed by '')
+ */
 function byDate(value: unknown): Record<string, string[]> | undefined {
   if (Array.isArray(value)) return value.length ? { '': sortedIds(value) } : undefined;
   if (!value || typeof value !== 'object') return undefined;
   const out: Record<string, string[]> = {};
   for (const [date, entry] of Object.entries(value)) {
-    const ids = Array.isArray(entry) ? entry : Object.keys(entry ?? {});
+    const ids = Array.isArray(entry)
+      ? entry.map((item) => (typeof item === 'string' ? item : item?.matchUpId))
+      : Object.keys(entry ?? {});
     if (ids.length) out[date] = sortedIds(ids);
   }
   return Object.keys(out).length ? out : undefined;
