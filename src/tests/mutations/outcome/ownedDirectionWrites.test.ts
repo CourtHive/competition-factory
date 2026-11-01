@@ -2149,6 +2149,38 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(4, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
     },
   ],
+  [
+    'COMPASS 16/16 (S6 tail, the BYE walk): a BYE-held matchUp linking its loser on sends a BYE across into another structure (the walk of v1s recursion)',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 16, drawType: COMPASS },
+      setup: [{ target: R1(1, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(3, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'COMPASS 16/15 (S6 tail, the BYE walk): the double BYE whose next matchUp links its loser on: the BYE goes on across that link',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 15, drawType: COMPASS },
+      setup: [{ target: R1(3, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'COMPASS 16/16 (S6 tail, the BYE walk): adjacent double walkovers converge, the own seat placed by the walk of v1s recursion',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 16, drawType: COMPASS },
+      setup: [{ target: R1(1, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'COMPASS 16/14 (S6 tail, the BYE walk): the walk reaches a seat that holds a BYE already, which takes nothing and ends it',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 14, drawType: COMPASS },
+      setup: [{ target: R1(2, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(3, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
@@ -2326,12 +2358,13 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     expect(v2.notices).toEqual(v1.notices);
   });
 
-  it('S6 tail: a BYE chain whose BYE-held matchUp links its loser on, sending a BYE across into another structure, is v1s', () => {
-    // COMPASS 16: East 1/3's double walkover after East 1/1's sends BYEs on through North and South's BYE matchUps
+  it('S6 tail: a BYE chain whose unfillable seat is a fed consolation seat is v1s (one notice composes differently)', () => {
+    // FEED_IN_CHAMPIONSHIP 8/7: the own seat's BYE makes Consolation 3/1 a BYE, then the fed unfillable seat's BYE advances
+    // a position into it; v1's notice takes the advance's context and keeps the first write's event
     const scenario: Scenario = {
-      drawProfile: { drawSize: 16, drawType: COMPASS },
-      setup: [{ target: R1(1, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
-      steps: [{ target: R1(3, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(3, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
     };
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);

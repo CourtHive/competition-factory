@@ -258,6 +258,12 @@ export type OutcomeView = {
       own?: { levels: CarryLevel[]; bounded: boolean };
       unfillable?: { levels: CarryLevel[]; bounded: boolean };
     };
+    /**
+     * A double exit's call (S6 tail, the BYE chain): the BYEs its loser seats take, walked as v1's
+     * `assignDrawPositionBye` recursion sends them, the own seat's first and the unfillable seat's on the draw it leaves.
+     * Undefined where the walk meets anything outside that recursion's plain shape
+     */
+    byeWalk?: { own?: ByeWalk; unfillable?: ByeWalk };
     /** a winner whose target holds a BYE goes on past it into this matchUp, by the winning side (planned, S3) */
     winnerThroughBye?: { 1?: ThroughBye; 2?: ThroughBye };
     /** the participants seeded in the source structure: a seeded loser placed across a link takes the seed with them */
@@ -480,6 +486,21 @@ export type Reservation =
 
 /** the matchUp a participant placed opposite a BYE goes on into, and its drawPositions once they are there */
 export type ThroughBye = { matchUpId: string; drawPositions: number[] };
+
+/**
+ * One seat's BYE and all it sends on, as v1's `assignDrawPositionBye` recursion writes them (S6 tail, the BYE chain):
+ * the seats given a BYE, in the order v1 announces their structures' assignments (the deepest first), and the matchUps
+ * written, in v1's order: made a BYE (`setMatchUpStatusBYE`) or given an advanced position (`advanceWinner`). `named`:
+ * whether v1 names the event for that write
+ */
+export type ByeWalk = {
+  assigns: { structureId: string; drawPosition: number; matchUpId: string; named: boolean }[];
+  writes: (
+    { kind: 'bye'; matchUpId: string; named: boolean } | { kind: 'advance'; matchUpId: string; drawPositions: number[] }
+  )[];
+  /** every matchUp the walk touched */
+  matchUpIds: string[];
+};
 
 /**
  * RULE 1 again (S6 tail): a BYE passed where what lies beyond is no clean matchUp. The carrier goes on through each
