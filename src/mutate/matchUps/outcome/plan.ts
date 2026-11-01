@@ -511,6 +511,7 @@ function exitReason(args: {
   route?: Route;
   write?: MatchUpWrite;
   direction?: DirectionPlan;
+  asDual?: true;
 }): AbstainReason | undefined {
   const { request, view, route, write, direction } = args;
   const { existing } = view;
@@ -528,6 +529,9 @@ function exitReason(args: {
   if (clearedSingleExit(view, route, write)) return undefined;
   if (correctedSingleExit(args)) return undefined;
   if (route === APPLY_VALUES || route === 'swap') return relabelledExit(args) ? undefined : 'exit';
+  // a TEAM line's own single exit (S7): the line directs nothing of the draw's; v1 writes it as a line result, and what
+  // it does to the dual is the dual's own call (`decidingLineOps`, `undecidingLineOps`)
+  if (view.line) return lineExitReason(view, write);
   if (route !== 'winner' || !write?.winningSide || !SINGLE_EXITS.has(write.matchUpStatus)) return 'exit';
   if (request.matchUpStatus !== write.matchUpStatus) return 'exit';
   if (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide) return 'exit';
@@ -538,6 +542,18 @@ function exitReason(args: {
   if (loser?.converged) return convergedReason(view, request, write, loser);
   if (loser?.exit) return carriedReason(view, write);
   return undefined;
+}
+
+/**
+ * S7: a TEAM line's own single exit (WALKOVER, DEFAULTED, RETIRED), deciding its dual (`winner`) or un-deciding a dual
+ * decided before (`line-score`: its lines, with this one, project no winner). The line is written as v1 writes a line
+ * result, with the exit's status and its winner; nothing of the draw is directed by a line, and the dual's part is the
+ * dual's own call. Only a fresh line's single exit reaches here: a line's exit cleared or corrected is read before
+ * (`clearedSingleExit`, `correctedSingleExit`), and `teamReason` keeps v1's every line not to be played. Stays v1's: a
+ * DEFAULTED under a scoring policy's process codes (v1 writes the codes on the line).
+ */
+function lineExitReason(view: OutcomeView, write?: MatchUpWrite): AbstainReason | undefined {
+  return write?.matchUpStatus === DEFAULTED && view.draw.defaultProcessCodes ? 'exit' : undefined;
 }
 
 /**
@@ -604,12 +620,16 @@ function unwoundLoserReason(
  */
 function clearedSingleExit(view: OutcomeView, route?: Route, write?: MatchUpWrite): boolean {
   const { existing } = view;
+  // a dual decided by its own exit, un-decided by a line (`undecidingLineOps`, S7): v1's tally writes the dual as its
+  // lines leave it, in progress or to be played, the winner removed (`updateTieMatchUpScore`); only a dual's tally
+  // writes IN_PROGRESS here
+  const cleared = write?.matchUpStatus === TO_BE_PLAYED || write?.matchUpStatus === IN_PROGRESS;
   return (
     route === REMOVE_DIRECTED &&
     SINGLE_EXITS.has(existing.matchUpStatus) &&
     !!existing.winningSide &&
-    write?.matchUpStatus === TO_BE_PLAYED &&
-    !write.winningSide
+    cleared &&
+    !write?.winningSide
   );
 }
 
@@ -3063,8 +3083,9 @@ function teamReason({
   // a round robin's group tally is re-read from the dual the line writes (S7: `groupTally`, the group read off the dual)
   if (view.draw.tallied && !view.group) return 'team';
   // a line played on a dual already decided keeps its winner: only the dual's tally changes. A fresh line cannot hand it
-  // to the other side, and one that un-decides it (a dual decided by its own exit, which v1 then projects from its
-  // lines alone) is routed `line-score`, v1's above
+  // to the other side, and one that un-decides it (a dual decided by its own call or its own exit, which v1 then projects
+  // from its lines alone) is routed `line-score` and planned with the dual's own removal (`undecidingLineOps`); a line
+  // that is itself a single exit passes `lineExitReason` first (S7)
   // a removal or correction that changes the dual's winner: v1 takes the dual's winner back out of the next dual
   if ((removing || correcting) && line.projectedWinningSide !== line.dualWinningSide) return 'team';
   if (line.dualWinningSide) return undefined;
@@ -3178,9 +3199,10 @@ function abstainReason(args: {
   const swapping = args.route === 'swap';
   // S4: a decided result cleared while its downstream is untouched takes back what it directed (`remove-directed`)
   const removing = args.route === REMOVE_DIRECTED && !!view.existing.winningSide && !write?.winningSide;
-  // a winner cleared or changed in a WIN_RATIO structure: v1 reports the playoff structures it reaches, which v2 does not
-  // read
-  if ((removing || changing) && view.draw.winRatio) return 'link';
+  // a winner cleared or changed in a WIN_RATIO structure: v1's own removal (`removeDirected`) reports the playoff
+  // structures it reaches (`connectedStructures`, a flag on the result), which v2 does not read. A dual's removal a line
+  // makes (`undecidingLineOps`) runs v1's `scoreModification`, which reports nothing: not walled (S7)
+  if ((removing || changing) && view.draw.winRatio && !args.asDual) return 'link';
   // a TEAM line directs nothing, its targets being its dual's: its result removed or corrected takes back and re-enters
   // nothing (no re-entered or changed winner), its dual's tally re-read (`teamReason`, S7)
   if (removing) {
