@@ -47,10 +47,12 @@ export type OutcomeRequest = {
   matchUpFormat?: string;
   flags: OutcomeFlags;
   /**
-   * what else the call carries: notes, which v2 does not plan (the call abstains), and a schedule, which v2 plans where
-   * v1's own writer can write it on the matchUp alone (S7, `scheduleReason`)
+   * what else the call carries: a schedule, which v2 plans where v1's own writer can write it on the matchUp alone (S7,
+   * `scheduleReason`), and notes, which v2 writes onto the call's own matchUp with its result on the clean routes (S7,
+   * `notesReason`), as v1's `addNotes` writes them inside `modifyMatchUpScore`. Notes are a string, or the test
+   * fixture `{ testing: true }` that `addNotes` also writes, which v2 does not plan (deferred, `notesReason`)
    */
-  carries?: { schedule?: MatchUpSchedule; notes?: boolean };
+  carries?: { schedule?: MatchUpSchedule; notes?: string | { testing?: boolean } };
 };
 
 /** § 2: one code, the row of the table that raised it, and what a person or a client needs to see */

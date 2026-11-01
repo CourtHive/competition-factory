@@ -11,6 +11,7 @@ import { isValidExtension } from '@Validators/isValidExtension';
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { findParticipant } from '@Acquire/findParticipant';
 import { isUngrouped } from '@Query/entries/isUngrouped';
+import { moveEntryToGroup } from './moveEntryToGroup';
 
 // constants
 import { INDIVIDUAL, PAIR, TEAM_PARTICIPANT } from '@Constants/participantConstants';
@@ -363,15 +364,13 @@ function buildUpdateEntryStatus({
   const updateEntryStatus = (entries?: Entry[]) => {
     if (entryStatusBlocked(entries)) return { error: EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT };
 
-    filterEntries(entries).forEach((entry: Entry) => {
-      if (entryStatus) {
-        entry.entryStatus = entryStatus;
-        delete entry.entryPosition;
-      }
-      if (entryStage) {
-        entry.entryStage = entryStage;
-        delete entry.entryPosition;
-      }
+    // in the order of participantIds, so entries moved to one group take its next positions in the order given
+    const list = entries ?? [];
+    const targeted = filterEntries(list).sort(
+      (a, b) => participantIds.indexOf(a.participantId) - participantIds.indexOf(b.participantId),
+    );
+    targeted.forEach((entry: Entry) => {
+      if (entryStatus || entryStage) moveEntryToGroup({ entries: list, entry, entryStatus, entryStage });
       if (extension) {
         if (extension.value) {
           addExtension({ element: entry, extension });
