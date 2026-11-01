@@ -152,9 +152,9 @@ export function applyOwnedPlan({
 }
 
 /**
- * A matchUp both given a BYE and advanced through one in the same call (S6 tail): v1's notice buffer keeps the LAST
- * write's context and an EARLIER write's event (`preserveNoticeIdentity`). Which of the two came last, and whether an
- * evented BYE came before an advance that names no event.
+ * A matchUp given a BYE and then another BYE or an advance through one in the same call (S6 tail): v1's notice buffer
+ * keeps the LAST write's context and an EARLIER write's event (`preserveNoticeIdentity`). Whether the advance came last,
+ * and whether an evented BYE came before a later write that names no event (an unfillable seat's BYE, an advance).
  */
 function byeAndAdvance(ops: OutcomeOp[]): { advancedLast: Set<string>; eventKept: Set<string> } {
   const last = new Map<string, 'bye' | 'advance'>();
@@ -163,6 +163,8 @@ function byeAndAdvance(ops: OutcomeOp[]): { advancedLast: Set<string>; eventKept
   for (const op of ops) {
     if (op.op === 'setMatchUpBye') {
       last.set(op.matchUpId, 'bye');
+      // a second BYE naming no event (the seat a produced exit leaves unfillable) keeps an earlier BYE's event
+      if (op.announcesEvent === false && eventedBye.has(op.matchUpId)) eventKept.add(op.matchUpId);
       if (op.announcesEvent !== false) eventedBye.add(op.matchUpId);
     } else if (op.op === 'setMatchUpDrawPositions' && op.advancesThroughBye) {
       last.set(op.matchUpId, 'advance');

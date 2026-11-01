@@ -65,6 +65,13 @@ describe('the event a notice names is compared', () => {
     expect(compareNotices({ planned, added: byeNotice(), topics }).equal).toEqual(false);
   });
 
+  it("a BYE, then a second BYE naming no event (an unfillable seat's): the first BYE's event is kept", () => {
+    const unfillable = { op: 'setMatchUpBye' as const, matchUpId: 'c', announcesEvent: false as const };
+    const planned = plannedNotices({ ops: [bye, stamp('c'), unfillable, stamp('c')], matchUpId: 'm' });
+    expect(compareNotices({ planned, added: byeNotice('e'), topics }).equal).toEqual(true);
+    expect(compareNotices({ planned, added: byeNotice(), topics }).equal).toEqual(false);
+  });
+
   it('an advance through a BYE alone names no event', () => {
     const planned = plannedNotices({ ops: [advance, stamp('c')], matchUpId: 'm' });
     expect(compareNotices({ planned, added: byeNotice(), topics }).equal).toEqual(true);
