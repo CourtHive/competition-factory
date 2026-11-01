@@ -537,12 +537,18 @@ function unwindLoserSeats(
   return levels;
 }
 
-function loserSeatOf(draw: DrawContext, matchUpId: string): WinnerLoserSeat | undefined {
+function loserSeatOf(draw: DrawContext, matchUpId: string, depth = 0): WinnerLoserSeat | undefined {
   const { targetMatchUps, targetLinks } = positionTargets({ ...draw, matchUpId }) ?? {};
   const matchUp = targetMatchUps?.loserMatchUp;
   const drawPosition = targetMatchUps?.loserTargetDrawPosition;
   if (!matchUp || !drawPosition) return undefined;
+  // a BYE there that links its own loser on: an unwind taking it back cascades to that seat (`handleLoserMatchUpRemoval`)
+  const beyond =
+    matchUp.loserMatchUpId && depth < SETTLE_PASS_LIMITS.exitLevels
+      ? loserSeatOf(draw, matchUp.matchUpId, depth + 1)
+      : undefined;
   return {
+    ...(beyond ? { beyond } : {}),
     seat: loserTargetSeat(draw.drawDefinition, matchUp.structureId, drawPosition, matchUp.drawPositions),
     drawPositions: (matchUp.drawPositions ?? []).filter((position): position is number => !!position),
     linkCondition: targetLinks?.loserTargetLink?.linkCondition,

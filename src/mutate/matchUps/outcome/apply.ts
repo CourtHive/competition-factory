@@ -249,9 +249,19 @@ export function eventlessNotices(ops: OutcomeOp[]): { matchUps: Set<string>; str
 const placement = (op: OutcomeOp): op is Extract<OutcomeOp, { op: 'assignPosition' | 'assignBye' }> =>
   op.op === 'assignPosition' || op.op === 'assignBye';
 
+/**
+ * an op whose structure's assignments v1 announces: a placement, and a seat an unwind visits but for a BYE the round-1
+ * loser cascade takes back, which v1 announces no assignments for (S6 tail). The writer and the differential's planned
+ * notices share this one rule
+ */
+export const announcesAssignments = (
+  op: OutcomeOp,
+): op is Extract<OutcomeOp, { op: 'assignPosition' | 'assignBye' | 'withdrawBye' }> =>
+  placement(op) || (op.op === 'withdrawBye' && op.announcesAssignments !== false);
+
 /** each structure a placement or an unwind's seat visit touches, in the order the call first touches it */
 const touchedStructures = (ops: OutcomeOp[]) => [
-  ...new Set(ops.flatMap((op) => (placement(op) || op.op === 'withdrawBye' ? [op.structureId] : []))),
+  ...new Set(ops.flatMap((op) => (announcesAssignments(op) ? [op.structureId] : []))),
 ];
 
 /**

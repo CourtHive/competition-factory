@@ -2530,9 +2530,16 @@ function unwoundSeatOps(
   placedBye: boolean,
   withdrawn: Set<string> = new Set(),
   released: Set<number> = new Set(),
+  cascaded = false,
 ): OutcomeOp[] | undefined {
   const { structureId, drawPosition, matchUpId, seat } = loserSeat;
-  const withdraw: OutcomeOp = { op: 'withdrawBye', structureId, drawPosition };
+  // a BYE the round-1 loser cascade takes back: v1 announces no assignments for it (`drawPositionRemovals`, S6 tail)
+  const withdraw: OutcomeOp = {
+    op: 'withdrawBye',
+    structureId,
+    drawPosition,
+    ...(cascaded ? { announcesAssignments: false as const } : {}),
+  };
   // a BYE this double exit placed went in behind a FIRST_MATCHUP link too (`advanceByeToLoserMatchUp` asks no condition),
   // and comes out the same way (S6 tail); a seat further on behind one may hold a standing reservation, not this double
   // exit's to take back: v1's
@@ -2546,19 +2553,25 @@ function unwoundSeatOps(
   if (Object.keys(byeMatchUp.sideExitProvenance ?? {}).length) return undefined;
   // the BYE beside another (two paired double exits' loser seats, S6 tail): the standing BYE then advances the freed seat
   if (seat.opponentBye) return doubleByeSeatOps(view, loserSeat, byeMatchUp, withdraw);
-  if (byeMatchUp.matchUpStatus !== BYE || byeMatchUp.loserMatchUpId) return undefined;
+  if (byeMatchUp.matchUpStatus !== BYE) return undefined;
+  // the BYE matchUp links its own loser on: to be played again, it takes back the BYE it had sent to that seat
+  // (`handleLoserMatchUpRemoval`): planned at a first-round seat holding a propagated BYE behind no condition (S6 tail)
+  const cascade = byeMatchUp.loserMatchUpId ? cascadedSeatOps(view, loserSeat.beyond, withdrawn, released) : [];
+  if (!cascade) return undefined;
   const opposite = loserSeat.drawPositions.filter((position) => position !== drawPosition);
   const ops: OutcomeOp[] = [
     withdraw,
     { op: 'clearMatchUpBye', matchUpId, drawPosition },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
   ];
+  // a structure's last round (COMPASS's one-round structures): the BYE sent nothing on (S6 tail)
+  if (!byeMatchUp.winnerMatchUpId) return [...ops, ...cascade];
   const next = indexed(view, byeMatchUp.winnerMatchUpId);
   const held = (next?.drawPositions ?? []).filter((position): position is number => !!position);
   // a BYE alone in its matchUp sent nobody on; a next matchUp holding a position is rewritten by v1's position clear
   // all the same, and announced (census 20660398, FEED_IN_CHAMPIONSHIP_TO_SF 16): v1's, unless the own seat's
   // withdrawal releases that position out of it and writes it last, the rewrite's notice superseded (S6 tail)
-  if (!opposite.length) return held.some((position) => !released.has(position)) ? undefined : ops;
+  if (!opposite.length) return held.some((position) => !released.has(position)) ? undefined : [...ops, ...cascade];
   if (opposite.length > 1 || !next || !held.includes(opposite[0])) return undefined;
   // a BYE beside the position there that this unwind withdraws is read as withdrawn: the matchUp is then to be played
   const byeStands = (side: HydratedSide) =>
@@ -2586,7 +2599,19 @@ function unwoundSeatOps(
         releasedDrawPosition: opposite[0],
         announcesContext: false,
       };
-  return [...ops, taken, { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId }];
+  return [...ops, taken, { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId }, ...cascade];
+}
+
+/** the seat a BYE matchUp's loser link feeds, its BYE taken back as v1's round-1 loser cascade takes it (S6 tail) */
+function cascadedSeatOps(
+  view: OutcomeView,
+  beyond: WinnerLoserSeat | undefined,
+  withdrawn: Set<string>,
+  released: Set<number>,
+): OutcomeOp[] | undefined {
+  if (!beyond?.seat?.bye || !beyond.seat.byeFromPropagation || beyond.linkCondition) return undefined;
+  if (indexed(view, beyond.matchUpId)?.roundNumber !== 1) return undefined;
+  return unwoundSeatOps(view, beyond, true, withdrawn, released, true);
 }
 
 /**
@@ -2606,7 +2631,8 @@ function doubleByeSeatOps(
   withdraw: OutcomeOp,
 ): OutcomeOp[] | undefined {
   const { drawPosition } = loserSeat;
-  if (byeMatchUp.matchUpStatus !== BYE || byeMatchUp.loserMatchUpId) return undefined;
+  // the BYE matchUp keeps a BYE (the other one), so v1 cascades nothing from it, whatever it links its loser to (S6 tail)
+  if (byeMatchUp.matchUpStatus !== BYE) return undefined;
   // the one other position of the BYE matchUp (a filtered list, not a side read by index)
   const [other, ...more] = loserSeat.drawPositions.filter((position) => position !== drawPosition);
   const next = indexed(view, byeMatchUp.winnerMatchUpId);
