@@ -666,8 +666,14 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   (`doubleExitAdvancement` finds no winner target). Its codes are v1's projection of the landing's provenance before
   the arrival (`deriveStatusCodes`): a side whose standing exit a double exit delivered shows its outcome code. Stays
   v1's: a landing whose award's position has already gone on into the matchUp it would produce into (v1 takes it back
-  out as the convergence unseats it), and a landing that links its own loser on (its loser seat takes a BYE, which
-  unseats the first carrier there: the BYE chain). A double exit whose produced exit meets a pending one a double exit beside it
+  out as the convergence unseats it). A landing that links its own loser on (S6 tail) is owned where the double exit's
+  BYEs plan as the BYE walk places them (below): from the landing's own loser seat and from the seat its produced exit
+  leaves unfillable, at the first level or a deeper one. A carrier standing on a seat that BYE takes is displaced with
+  their carry (`withdrawDisplacedCarry`): the seat's carried entry withdrawn, and a BYE origin opposite it, the matchUp
+  they had landed in made a BYE and its `scoredTime` taken by `reconcileScoredTimes`, which announces it after every other
+  write; where that matchUp links its loser on, the BYE it becomes sends a BYE on and the carry they took further is
+  displaced the same way. Planned where the displaced carrier's landing holds their carry alone (a single exit awarded to
+  the empty side opposite, no score or codes); any other occupant of such a seat is v1's. A double exit whose produced exit meets a pending one a double exit beside it
   produced there **converges** with it: the matchUp becomes the double exit (`collapseDoubleExitStatus`), with no
   winner, codes `[]`, a `DOUBLE_WALKOVER`'s score blanked and the arriving side's origin beside the standing one, and it
   produces on as one entered there would (`advanceConvergedWinner`); planned with nobody there and the exit produced onward landing clean (or none, from a final). With loser links (under

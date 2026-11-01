@@ -264,6 +264,8 @@ export type OutcomeView = {
      * Undefined where the walk meets anything outside that recursion's plain shape
      */
     byeWalk?: { own?: ByeWalk; unfillable?: ByeWalk };
+    /** a carry whose first landing links its loser on: that landing's seats, walked as a double exit's (S6 tail) */
+    landingWalk?: { own?: ByeWalk; unfillable?: ByeWalk };
     /** a winner whose target holds a BYE goes on past it into this matchUp, by the winning side (planned, S3) */
     winnerThroughBye?: { 1?: ThroughBye; 2?: ThroughBye };
     /** the participants seeded in the source structure: a seeded loser placed across a link takes the seed with them */
@@ -496,7 +498,10 @@ export type ThroughBye = { matchUpId: string; drawPositions: number[] };
 export type ByeWalk = {
   assigns: { structureId: string; drawPosition: number; matchUpId: string; named: boolean }[];
   writes: (
-    { kind: 'bye'; matchUpId: string; named: boolean } | { kind: 'advance'; matchUpId: string; drawPositions: number[] }
+    | { kind: 'bye'; matchUpId: string; named: boolean }
+    | { kind: 'advance'; matchUpId: string; drawPositions: number[] }
+    /** a carrier the BYE displaces: their carry withdrawn from the matchUp they landed in (`withdrawDisplacedCarry`) */
+    | { kind: 'displaced'; matchUpId: string }
   )[];
   /** every matchUp the walk touched */
   matchUpIds: string[];
@@ -546,4 +551,6 @@ export type CarryLevel = {
   through?: ThroughBye;
   /** a BYE opposite the seat with no clean matchUp beyond it: the BYEs passed after it, and where they end (S6 tail) */
   passage?: ByePassage;
+  /** a single exit standing there that links its loser on: the seats the convergence's double exit takes (S6 tail) */
+  walk?: { own?: ByeWalk; unfillable?: ByeWalk };
 };
