@@ -310,6 +310,17 @@ function withRatio(participantResults: ParticipantResults, attribute: string, po
   return view;
 }
 
+/** HEAD_TO_HEAD_PRESSURE: the larger sum of pressure deltas against the other decides; equal sums do not split */
+function pressureWinner(participantIds: string[], participantResults: ParticipantResults) {
+  const [first, second] = participantIds;
+  const against = (a: string, b: string) =>
+    Number((participantResults[a]?.pressureVs as Record<string, number> | undefined)?.[b] ?? 0);
+  const difference = against(first, second) - against(second, first);
+  if (difference > 0) return participantIds.map((participantId) => ({ resolved: true, participantId }));
+  if (difference < 0) return participantIds.reverse().map((participantId) => ({ resolved: true, participantId }));
+  return undefined;
+}
+
 /**
  * A graph measure (GRAPH_MEASURES) added to a view, read from every participant's results: each opponent is scored by
  * the policy's primary measure, once per meeting. Buchholz sums the opponents' scores (Cut1 drops the lowest, Median
@@ -386,6 +397,7 @@ function getHeadToHeadWinner({
 }): FinishingPosition[] | undefined {
   if (!participantIds) return undefined;
   const [first, second] = participantIds;
+  if (mode === 'PRESSURE') return pressureWinner(participantIds, participantResults);
   const winsOver = (a: string, b: string) => participantResults[a].victories.filter((id) => id === b).length;
   const firstWins = winsOver(first, second);
   const secondWins = winsOver(second, first);

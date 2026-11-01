@@ -7,9 +7,10 @@
 /**
  * How a two-participant head-to-head is read. RECORD: the participant with more wins over the other across every
  * meeting; level records do not split. FIRST_VICTORY is v1 (K1): any one victory, whichever participant is checked
- * first; it survives only so the frozen v1 behaviour stays expressible.
+ * first; it survives only so the frozen v1 behaviour stays expressible. PRESSURE: the larger sum of pressure deltas
+ * against the other (`pressureVs`), the competition policy's HEAD_TO_HEAD_PRESSURE.
  */
-export type HeadToHeadMode = 'FIRST_VICTORY' | 'RECORD';
+export type HeadToHeadMode = 'FIRST_VICTORY' | 'RECORD' | 'PRESSURE';
 
 export type StandingsDirective = {
   attribute: string;
