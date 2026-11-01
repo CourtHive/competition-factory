@@ -4,6 +4,8 @@ title: Competition Policy
 
 The **Competition Policy** (`POLICY_TYPE_COMPETITION`) configures a three-track rating system for multi-round competitions such as DrawMatic and Swiss events. It controls how participants are rated, paired, and ranked across rounds.
 
+The leaderboard is ordered by the standings engine shared with round-robin groups and season tables: see [Standings](../concepts/standings.md).
+
 **Policy Type:** `competition`
 
 **When to Use:**

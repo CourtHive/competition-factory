@@ -2,6 +2,8 @@
 
 The **Round Robin Tally Policy** controls how participants are ranked within round robin groups, including tiebreaking procedures, head-to-head calculations, and group order determination.
 
+The ordering itself is the standings engine's, shared with season tables and the competition leaderboard: see [Standings](../concepts/standings.md), including which sports' rules it can express.
+
 ---
 
 ## Overview
