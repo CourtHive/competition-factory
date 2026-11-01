@@ -1,4 +1,5 @@
 import { modifyDrawEntriesNotice, modifyEventEntriesNotice } from '@Mutate/notifications/entriesNotifications';
+import { entryPositionOf, entryStageOf, moveEntryToGroup } from './moveEntryToGroup';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { requireParams } from '@Helpers/parameters/requireParams';
@@ -104,14 +105,14 @@ export function promoteAlternates({
     .filter((plan): plan is AcceptedPlan => !plan.error && plan.promoted.length > 0);
 
   // ── write ──
-  applyPromotion({ entries: event.entries ?? [], promoted: eventPlan.promoted, stage });
+  applyPromotion({ entries: event.entries ?? [], promoted: eventPlan.promoted });
   modifyEventEntriesNotice({ tournamentId, event });
 
-  for (const plan of flightPlans) applyPromotion({ ...plan, stage });
+  for (const plan of flightPlans) applyPromotion(plan);
   if (flightPlans.length) modifyEventNotice({ tournamentId, event });
 
   if (drawDefinition && drawPlan) {
-    applyPromotion({ entries: drawDefinition.entries ?? [], promoted: drawPlan.promoted, stage });
+    applyPromotion({ entries: drawDefinition.entries ?? [], promoted: drawPlan.promoted });
     modifyDrawEntriesNotice({ eventId: event.eventId, drawDefinition, tournamentId });
   }
 
@@ -129,16 +130,6 @@ export function promoteAlternates({
 type AcceptedPlan = { promoted: Entry[]; entries: Entry[]; error?: undefined };
 type RefusedPlan = { error: ErrorType; [key: string]: unknown };
 type PromotionPlan = AcceptedPlan | RefusedPlan;
-
-const stageOf = (entry: Entry) => entry.entryStage ?? MAIN;
-
-// a usable entryPosition, or undefined when the entry has none
-function positionOf(entry: Entry): number | undefined {
-  const value: unknown = entry.entryPosition;
-  if (value === undefined || value === null || value === '') return undefined;
-  const position = Number(value);
-  return Number.isFinite(position) ? position : undefined;
-}
 
 function planPromotion({
   participantIds,
@@ -163,7 +154,9 @@ function planPromotion({
     // the event must hold every requested entry; a draw or flight promotes the ones it holds
     const missing = participantIds.filter((id) => !found.some(({ participantId }) => participantId === id));
     if (!found.length || (missing.length && !lenient)) return { error: PARTICIPANT_ENTRY_NOT_FOUND, missing };
-    promoted = lenient ? found.filter((entry) => entry.entryStatus === ALTERNATE && stageOf(entry) === stage) : found;
+    promoted = lenient
+      ? found.filter((entry) => entry.entryStatus === ALTERNATE && entryStageOf(entry) === stage)
+      : found;
     if (!promoted.length) return { error: PARTICIPANT_ENTRY_NOT_FOUND };
   } else {
     const nextAlternate = getNextAlternate({ entries: elementEntries, stageSequence, stage });
@@ -198,48 +191,17 @@ function getNextAlternate({
   const alternates = entries.filter(
     (entry) =>
       entry.entryStatus === ALTERNATE &&
-      stageOf(entry) === stage &&
+      entryStageOf(entry) === stage &&
       (!stageSequence || entry.entryStageSequence === stageSequence),
   );
-  const positioned = alternates.filter((entry) => positionOf(entry) !== undefined);
+  const positioned = alternates.filter((entry) => entryPositionOf(entry) !== undefined);
   if (!positioned.length) return alternates[0];
   return positioned.reduce((lowest, entry) =>
-    (positionOf(entry) as number) < (positionOf(lowest) as number) ? entry : lowest,
+    (entryPositionOf(entry) as number) < (entryPositionOf(lowest) as number) ? entry : lowest,
   );
 }
 
-function applyPromotion({ entries, promoted, stage }: { entries: Entry[]; promoted: Entry[]; stage: string }) {
-  const inStage = (entry: Entry) => stageOf(entry) === stage;
-
-  for (const participantEntry of promoted) {
-    const alternatePosition = positionOf(participantEntry);
-    if (alternatePosition !== undefined) {
-      // close up the alternates behind the promoted one
-      for (const entry of entries) {
-        const position = positionOf(entry);
-        if (
-          entry.entryStatus === ALTERNATE &&
-          inStage(entry) &&
-          position !== undefined &&
-          position > alternatePosition
-        ) {
-          entry.entryPosition = position - 1;
-        }
-      }
-    }
-
-    // after the stage's accepted entries; read before the status changes, so the entry never counts itself
-    const acceptedPositions = entries
-      .filter((entry) => entry.entryStatus === DIRECT_ACCEPTANCE && inStage(entry))
-      .map(positionOf)
-      .filter((position): position is number => position !== undefined);
-
-    participantEntry.entryStatus = DIRECT_ACCEPTANCE;
-    if (acceptedPositions.length) {
-      participantEntry.entryPosition = Math.max(...acceptedPositions) + 1;
-    } else {
-      // no accepted entry is positioned: an unpositioned entry sorts with them, a position would sort it first
-      delete participantEntry.entryPosition;
-    }
-  }
+// each promoted entry leaves the alternates, which close up behind it, and follows the stage's accepted entries
+function applyPromotion({ entries, promoted }: { entries: Entry[]; promoted: Entry[] }) {
+  for (const entry of promoted) moveEntryToGroup({ entries, entry, entryStatus: DIRECT_ACCEPTANCE });
 }
