@@ -2552,7 +2552,7 @@
     },
     "TournamentStatusEnum": {
       "type": "string",
-      "enum": ["ABANDONED", "CANCELLED"]
+      "enum": ["ACTIVE", "IN_PROGRESS", "COMPLETED", "ABANDONED", "CANCELLED"]
     },
     "EventTypeEnum": {
       "type": "string",
