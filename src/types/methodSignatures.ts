@@ -339,6 +339,7 @@ import type { validateScheduleScenario } from '@Validators/validateScheduleScena
 import type { hydrateTournamentRecord } from '@Mutate/base/hydrateTournamentRecord';
 import type { completeDrawMatchUps } from '@Mutate/simulation/completeDrawMatchUps';
 import type { removeCourtGridBooking } from '@Mutate/venues/removeCourtGridBooking';
+import type { getEntryStatusOrdinals } from '@Query/entries/getEntryStatusOrdinals';
 import type { getEventInconsistencies } from '@Query/event/getEventInconsistencies';
 import type { calculateMatchUpMargin } from '@Query/matchUp/calculateMatchUpMargin';
 import type { checkMatchUpIsComplete } from '@Query/matchUp/checkMatchUpIsComplete';
@@ -992,6 +993,7 @@ export interface MethodSignatures {
   getEligibleVoluntaryConsolationParticipants: EngineMethod<typeof getEligibleVoluntaryConsolationParticipants>;
   getEntriesAndSeedsCount: EngineMethod<typeof getEntriesAndSeedsCount>;
   getEntryFeeRange: EngineMethod<typeof getEntryFeeRange>;
+  getEntryStatusOrdinals: EngineMethod<typeof getEntryStatusOrdinals>;
   getEntryStatusReports: EngineMethod<typeof getEntryStatusReports>;
   getEpisodes: EngineMethod<typeof getEpisodes>;
   getEvaluations: EngineMethod<typeof getEvaluations>;

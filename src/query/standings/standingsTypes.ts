@@ -7,9 +7,12 @@
 /**
  * How a two-participant head-to-head is read. RECORD: the participant with more wins over the other across every
  * meeting; level records do not split. FIRST_VICTORY is v1 (K1): any one victory, whichever participant is checked
- * first; it survives only so the frozen v1 behaviour stays expressible.
+ * first; it survives only so the frozen v1 behaviour stays expressible. PRESSURE: the larger sum of pressure deltas
+ * against the other (`pressureVs`), the competition policy's HEAD_TO_HEAD_PRESSURE. SWEEP (A7): for any number tied, a
+ * participant who beat every other one is placed first, or one who lost to every other one last (NFL wild card); with
+ * no sweep, nothing splits.
  */
-export type HeadToHeadMode = 'FIRST_VICTORY' | 'RECORD';
+export type HeadToHeadMode = 'FIRST_VICTORY' | 'RECORD' | 'PRESSURE' | 'SWEEP';
 
 export type StandingsDirective = {
   attribute: string;
@@ -32,6 +35,13 @@ export type StandingsDirective = {
   disableHeadToHead?: boolean;
   /** for attribute 'headToHead' */
   mode?: HeadToHeadMode;
+  /** for attribute 'external': which caller-supplied value set to read (`externalValues[externalKey]`) */
+  externalKey?: string;
+  /**
+   * a ratio measure with nothing lost: MAX (default) ranks it first, ZERO ranks it as 0, SKIP passes the directive over
+   * for any set where it happens (spec § 5.10)
+   */
+  zeroDivision?: 'MAX' | 'ZERO' | 'SKIP';
 };
 
 export type StandingsPhase = 'PROVISIONAL' | 'FINAL';
@@ -67,6 +77,10 @@ export type StandingsPolicy = {
   demote?: string[];
   onSplit?: SplitMode;
   terminal?: TerminalStep;
+  /** decimal places ratios are compared to (default 3), or EXACT; the same rule the ledger's percentages use */
+  precision?: number | 'EXACT';
+  /** the share of a win a draw is worth (default 0.5), for Sonneborn-Berger */
+  drawCredit?: number;
 };
 
 /** the finishing record the core produces for one participant */
@@ -80,6 +94,8 @@ export type FinishingPosition = {
   subOrder?: number;
   ties?: number;
   GEMscore?: number;
+  /** a policy's `crossGroup` values for this participant, compared in order across groups (best finishers) */
+  crossGroupValues?: number[];
   /** a SHARE terminal: the place stays shared, whatever an organiser's sub-order says */
   shared?: boolean;
 };

@@ -308,6 +308,7 @@ export type FactoryEngineMethod =
   | 'getEligibleVoluntaryConsolationParticipants'
   | 'getEntriesAndSeedsCount'
   | 'getEntryFeeRange'
+  | 'getEntryStatusOrdinals'
   | 'getEntryStatusReports'
   | 'getEpisodes'
   | 'getEvaluations'
@@ -1102,6 +1103,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getEligibleVoluntaryConsolationParticipants',
   'getEntriesAndSeedsCount',
   'getEntryFeeRange',
+  'getEntryStatusOrdinals',
   'getEntryStatusReports',
   'getEpisodes',
   'getEvaluations',

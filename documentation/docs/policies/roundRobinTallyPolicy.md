@@ -2,6 +2,8 @@
 
 The **Round Robin Tally Policy** controls how participants are ranked within round robin groups, including tiebreaking procedures, head-to-head calculations, and group order determination.
 
+The ordering itself is the standings engine's, shared with season tables and the competition leaderboard: see [Standings](../concepts/standings.md), including which sports' rules it can express.
+
 ---
 
 ## Overview
@@ -371,6 +373,32 @@ const { POLICY_ROUND_ROBIN_TALLY_TOC } = fixtures.policies;
 
 ---
 
+### USTA League Championship Policy
+
+`POLICY_ROUND_ROBIN_TALLY_USTA_LEAGUE`: the USTA League championship tie procedure as copied into section regulations
+(USTA/Midwest Section 2026, Combo section M):
+
+- the most individual matches (lines) won (`tieMatchUpsWon`);
+- then the winner of the head-to-head match;
+- then the fewest sets lost, then the fewest games lost;
+- then the Midwest committee method: the fewest sets lost in the head-to-head match, then the fewest games lost in it,
+  then a coin toss (`terminal: 'LOT'`).
+
+An individual default counts 6-0, 6-0 for the receiver, and a match tie-break counts as one set and one game. A section
+that varies the order needs its own policy.
+
+### FIBA Policy
+
+`POLICY_ROUND_ROBIN_TALLY_FIBA`: FIBA Official Basketball Rules 2026, Appendix D:
+
+- `resultPoints`: 2 for a win, 1 for a loss including by default, 0 for a loss by forfeit (a forfeit mapped to `WALKOVER`,
+  a default to `DEFAULTED`);
+- level teams are separated by the games between them, then points difference and points scored in those games, then the
+  same over all group games, then a draw (`terminal: 'LOT'`);
+- `onSplit: 'RESTART'` (D.1.4).
+
+The FIBA ranking step (national-team competitions) is an external value and is not applied.
+
 ## Key Attributes
 
 ### groupOrderKey
@@ -615,6 +643,22 @@ for those purposes: `getSeasonStandings({ purpose })`, with `STANDINGS_PURPOSE_M
 `getSeasonMovement` and `STANDINGS_PURPOSE_ADVANCEMENT` by `getSeasonAdvancement`. `phase: 'FINAL'` skips the
 directive while results are outstanding (a provisional order). A directive skipped by `when` is not reported.
 
+### headToHead directives (RECORD, SWEEP)
+
+Head-to-head may also be written as a directive, `{ attribute: 'headToHead', mode }`:
+
+- `'RECORD'` (the default reading): two tied participants, the one with more wins over the other.
+- `'SWEEP'`: any number tied. A participant who beat every other one is placed first, or else one who lost to every
+  other one is placed last (the NFL's wild-card rule); everyone else goes back to the first directive. With no sweep,
+  nothing splits.
+
+### external
+
+`{ attribute: 'external', externalKey }` reads values from outside the results: a curling Draw Shot Challenge, a
+ranking, fair-play points. They are passed by the caller as `externalValues: { [externalKey]: { [participantId]: number
+} }` to `tallyParticipantResults`, or keyed by subjectId to `getSeasonStandings`; the factory never fetches them. A
+participant without a value reads 0. Use `reversed: true` where lower is better (a draw-shot distance).
+
 ### terminal
 
 What happens to a set no directive splits.
@@ -661,6 +705,87 @@ What happens to a set no directive splits.
 - precision: 7 → 10000000 → 0.6666667
 
 ---
+
+### precision: 'EXACT'
+
+`precision: 'EXACT'` compares and stores percentages unrounded, so two percentages tie only when their fractions are
+equal. With a number (default 3), values equal after rounding to that many decimal places tie. Many rulebooks state
+this explicitly ("win percentage to three decimal places"), so it is a ranking rule, not only a display setting.
+
+### Zero denominators
+
+A percentage with nothing played is 0. For example, `setsPct` for a participant whose only result is a walkover. A
+ratio with nothing lost is unbounded: it ranks first when anything was won, and is 0 when nothing was won either. A
+directive can change that with `zeroDivision` (below).
+
+### Differences and ratios
+
+`setsDiff`, `gamesDiff` and `pointsDiff` (won minus lost) are stored with the other measures. `setsRatio`,
+`gamesRatio` and `pointsRatio` (won over lost) are computed only when ordering, never stored, because a ratio with
+nothing lost is unbounded and a stored tally must stay serialisable. Any of them may be the `groupOrderKey` or a
+directive `attribute`.
+
+A ratio directive's `zeroDivision` decides what an unbeaten ratio means for that directive:
+
+- `'MAX'` (default): it ranks first (FIVB's convention).
+- `'ZERO'`: it reads as 0.
+- `'SKIP'`: the directive is passed over for any tied set where it happens.
+
+### Strength of schedule (graph measures)
+
+`buchholz`, `buchholzCut1`, `buchholzMedian` and `sonnebornBerger` read the whole table, scoring each opponent by the
+policy's primary measure (its `groupOrderKey`), once per meeting:
+
+- `buchholz`: the sum of the opponents' scores.
+- `buchholzCut1`: the same without the lowest.
+- `buchholzMedian`: the same without the highest and the lowest.
+- `sonnebornBerger`: the scores of the opponents beaten, plus `drawCredit` (default 0.5) of the scores of those drawn with.
+
+They are computed only when ordering and never stored. They may be directive attributes, but not the
+`groupOrderKey` (the primary measure scores the opponents), not scoped by `idsFilter`, and not a `crossGroup`
+measure. FIDE's convention for unplayed rounds (a virtual opponent) is not applied: only meetings that were played
+count.
+
+### resultPoints
+
+Classification points by result, for sports whose tables award points per result rather than counting wins: FIBA's 2
+for a win, 1 for a played or defaulted loss and 0 for a forfeit, or volleyball's 3 for a 3-0 or 3-1 win and 2 and 1 for
+a 3-2. The rules are matched in order, and the first that matches decides.
+
+```js
+{
+  groupOrderKey: 'classificationPoints',
+  resultPoints: {
+    rules: [
+      { id: 'forfeit', matchUpStatuses: ['WALKOVER'], winner: 3, loser: 0 },
+      { id: 'five-sets', loserSetsWon: [2], winner: 2, loser: 1 },
+      { id: 'win', winner: 3, loser: 0 },
+      { id: 'draw', isDrawn: true, points: 1 },
+    ],
+  },
+}
+```
+
+- A decided rule may name `matchUpStatuses` and `loserSetsWon` (the sets the loser won), and awards `winner` and
+  `loser` points. A drawn rule awards `points` to both sides.
+- Statuses are mapped by the rules, never inferred: whether a sport's "forfeit" is a `WALKOVER` is the policy author's
+  decision.
+- An unfinished, excluded or BYE result earns nothing. A decided or drawn result that matches no rule is listed on both
+  participants in `classificationUnmatched` rather than counted as 0 in silence.
+- Each participant's tally carries `classificationPoints`, and `classificationContributions` records each result's rule
+  and points. Nothing is written without `resultPoints`.
+
+### denominator
+
+`denominator: 'EXPECTED'` makes `setsPct` and `gamesPct` divide by the sets and games a participant was expected to
+play. For example, a walkover win counts as sets the winner was due to play. The engine works the expected meetings
+out from the group itself (any number of meetings per pair). `'PLAYED'` (default) divides by what was actually played.
+
+### Completion
+
+A group is complete when every meeting has a result, so a double round robin and a group with an excluded status
+(`excludeMatchUpStatuses`) complete, and their order is written as `groupOrder`. Before the standings engine, they
+only ever received `provisionalOrder`.
 
 ### groupTotalGamesPlayed / groupTotalSetsPlayed
 
@@ -885,6 +1010,26 @@ participantResults: {
 - Alternative ranking metric
 - Visual representation of overall performance
 - Can be used as tiebreaker attribute
+
+---
+
+## Best finishers across groups
+
+### crossGroup
+
+When a playoff takes the best finishers of a position across several groups (the best third-placed participants),
+the candidates are compared by `crossGroup`: an ordered list of stored measures, higher first, a `reversed` one lower
+first. The first measure that differs decides. Head-to-head cannot apply across groups.
+
+```js
+{
+  crossGroup: [{ attribute: 'matchUpsPct' }, { attribute: 'gamesDiff' }, { attribute: 'gamesLost', reversed: true }],
+}
+```
+
+The values are written to each participant's tally as `crossGroupValues` when the group is tallied. Without a
+`crossGroup`, candidates are compared by `GEMscore`, as before. A ratio cannot be a `crossGroup` measure, because ratios
+are computed only when ordering and are never stored.
 
 ---
 

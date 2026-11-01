@@ -2,6 +2,7 @@ import { isDrawnResult, isCombinedPointFormat, validateDrawTallyOptions } from '
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { calculatePressureRatings } from './calculatePressureRatings';
 import { countGames, countSets, countPoints } from './scoreCounters';
+import { applyResultPoints, type ResultPoints } from '@Query/standings/resultPoints';
 import { calculatePercentages } from './calculatePercentages';
 import { intersection } from '@Tools/arrays';
 import { ensureInt } from '@Tools/ensureInt';
@@ -218,6 +219,11 @@ export function getMatchUpContribution({
     applyManualGamesOverride({ participantResults: contribution, score, sides });
   }
 
+  const resultPoints = tallyPolicy?.resultPoints as ResultPoints | undefined;
+  if (resultPoints?.rules) {
+    applyResultPoints({ ledger: contribution, resultPoints, matchUp, isDrawn: isDrawnResult(matchUp, matchUpFormat) });
+  }
+
   return { contribution, perPlayer };
 }
 
@@ -267,6 +273,10 @@ function processNoWinnerMatchUp({
       checkInitializeParticipant(participantResults, participantId);
       const result = participantResults[participantId];
       result.matchUpsDrawn += 1;
+      // who it was drawn with, for the graph measures (Sonneborn-Berger, Buchholz); written only on a participant who
+      // drew, so a tally without draws keeps its shape
+      const opponentId = sides[1 - index]?.participantId;
+      if (opponentId) result.drawnWith = [...((result.drawnWith as string[] | undefined) ?? []), opponentId];
       result.setsWon += sets[index];
       result.setsLost += sets[1 - index];
       result.gamesWon += games[index];

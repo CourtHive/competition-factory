@@ -1,13 +1,17 @@
 // Query
+import { orderParticipants } from '@Query/standings/orderParticipants';
 import { getCompetitionPolicy } from './getCompetitionPolicy';
 import { getCompetitionState } from './getCompetitionState';
 
 // types
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import type { ResultType } from '@Types/factoryTypes';
+import type { ParticipantResults, StandingsDirective, StandingsPolicy } from '@Query/standings/standingsTypes';
 import type {
   CompetitionLeaderboardRow,
   CompetitionParticipantState,
+  CompetitionPolicy,
+  CompetitionTiebreak,
   PrimaryRanking,
 } from '@Types/competitionPolicyTypes';
 
@@ -25,98 +29,121 @@ export function getCompetitionLeaderboard(params: GetCompetitionLeaderboardArgs)
   const { tournamentRecord, drawDefinition, event } = params;
 
   const { competitionPolicy } = getCompetitionPolicy({ tournamentRecord, drawDefinition, event });
-  const { competitionState } = getCompetitionState({ drawDefinition });
-  if (!competitionState || !competitionPolicy) return { leaderboard: [] };
+  if (!competitionPolicy) return { leaderboard: [] };
+  // the state the results decide (D6), never the stored copy as it stands
+  const { competitionState } = getCompetitionState({ drawDefinition, competitionPolicy });
+  if (!competitionState) return { leaderboard: [] };
+  return rankCompetitionStates({ competitionPolicy, participantStates: competitionState.participantStates });
+}
 
-  const primaryRanking = competitionPolicy.victoryPolicy.primaryRanking;
-  const participants = Object.values(competitionState.participantStates);
+/** the leaderboard's measures, by the policy's names for them */
+const PRIMARY_MEASURE: Record<PrimaryRanking, string> = {
+  PRESSURE_RATING: 'pressureRating',
+  DYNAMIC_FORM_RATING: 'dynamicFormRating',
+  WINS: 'wins',
+  POINTS: 'totalPointsWon',
+};
 
-  const sorted = [...participants].sort((a, b) => {
-    const diff = getRankingValue(b, primaryRanking) - getRankingValue(a, primaryRanking);
-    if (diff !== 0) return diff;
+const TIEBREAK_DIRECTIVES: Record<CompetitionTiebreak, StandingsDirective[]> = {
+  // the record between a pair; with three or more tied, the wins among only them (a mini-league), so a circle of results
+  // does not depend on the order a sort visits them (C3)
+  HEAD_TO_HEAD: [
+    { attribute: 'headToHead', mode: 'RECORD' },
+    { attribute: 'wins', idsFilter: true },
+  ],
+  HEAD_TO_HEAD_PRESSURE: [{ attribute: 'headToHead', mode: 'PRESSURE' }],
+  POINT_DIFFERENTIAL: [{ attribute: 'pointDifferential' }],
+  STRENGTH_OF_OPPOSITION: [{ attribute: 'opponentStrength' }],
+  DYNAMIC_FORM_RATING: [{ attribute: 'dynamicFormRating' }],
+  PRESSURE_RATING: [{ attribute: 'pressureRating' }],
+  // the graph measures, each opponent scored by the primary measure (C4: v1 declared these and returned 0)
+  BUCHHOLZ: [{ attribute: 'buchholz' }],
+  SONNEBORN_BERGER: [{ attribute: 'sonnebornBerger' }],
+};
 
-    // Apply tiebreak order
-    for (const tiebreak of competitionPolicy.victoryPolicy.tiebreakOrder ?? []) {
-      const tbDiff = applyTiebreak(a, b, tiebreak, competitionState.participantStates);
-      if (tbDiff !== 0) return tbDiff;
-    }
-
-    return 0;
+/**
+ * The leaderboard over given participant states, ordered by the standings engine (spec § 3, D6-3): the policy's primary
+ * ranking, then its tiebreak order as directives; participants level on all of them share a rank (C5: v1 numbered every
+ * row 1, 2, 3 whatever the ties).
+ */
+export function rankCompetitionStates({
+  competitionPolicy,
+  participantStates,
+}: {
+  competitionPolicy: Pick<CompetitionPolicy, 'victoryPolicy'>;
+  participantStates: Record<string, CompetitionParticipantState>;
+}): GetCompetitionLeaderboardResult {
+  const { primaryRanking, tiebreakOrder = [] } = competitionPolicy.victoryPolicy;
+  const policy: StandingsPolicy = {
+    primary: PRIMARY_MEASURE[primaryRanking] ?? 'wins',
+    directives: tiebreakOrder.flatMap((tiebreak) => TIEBREAK_DIRECTIVES[tiebreak] ?? []),
+    honourDisableHeadToHead: false,
+  };
+  const { groupOrder } = orderParticipants({
+    recalculate: ({ participantIds }) => ({ participantResults: ledgerOf(participantStates, participantIds) }),
+    participantResults: ledgerOf(participantStates),
+    policy,
   });
 
-  const leaderboard: CompetitionLeaderboardRow[] = sorted.map((p, i) => ({
-    participantId: p.participantId,
-    rank: i + 1,
-    baselineRating: p.baselineRating,
-    dynamicFormRating: p.dynamicFormRating,
-    pressureRating: p.pressureRating,
-    wins: p.wins,
-    losses: p.losses,
-    draws: p.draws,
-    pointsWon: p.totalPointsWon,
-    pointsLost: p.totalPointsLost,
-  }));
+  const leaderboard: CompetitionLeaderboardRow[] = groupOrder.map(({ participantId, rankOrder, ties }) => {
+    const p = participantStates[participantId];
+    return {
+      participantId,
+      rank: rankOrder ?? 0,
+      ...(ties && { ties }),
+      baselineRating: p.baselineRating,
+      dynamicFormRating: p.dynamicFormRating,
+      pressureRating: p.pressureRating,
+      wins: p.wins,
+      losses: p.losses,
+      draws: p.draws,
+      pointsWon: p.totalPointsWon,
+      pointsLost: p.totalPointsLost,
+    };
+  });
 
   return { leaderboard };
 }
 
-function getRankingValue(p: CompetitionParticipantState, ranking: PrimaryRanking): number {
-  switch (ranking) {
-    case 'PRESSURE_RATING':
-      return p.pressureRating;
-    case 'DYNAMIC_FORM_RATING':
-      return p.dynamicFormRating;
-    case 'WINS':
-      return p.wins;
-    case 'POINTS':
-      return p.totalPointsWon;
-    default:
-      return p.wins;
+/**
+ * The participant states as a standings ledger. A meeting's outcome is read from the rating history as v1's
+ * HEAD_TO_HEAD read it: an actual output above one half a win, below it a loss, at it a draw. Scoped to `participantIds`,
+ * only the meetings among them count toward `wins` (the mini-league).
+ */
+function ledgerOf(participantStates: Record<string, CompetitionParticipantState>, participantIds?: string[]) {
+  const scope = participantIds ? new Set(participantIds) : undefined;
+  const ledger: ParticipantResults = {};
+  for (const [participantId, state] of Object.entries(participantStates)) {
+    if (scope && !scope.has(participantId)) continue;
+    const history = state.ratingHistory.filter(
+      ({ opponentParticipantId }) => !scope || scope.has(opponentParticipantId),
+    );
+    const opponents = (predicate: (actual: number) => boolean) =>
+      history
+        .filter(({ actualOutput }) => predicate(actualOutput))
+        .map(({ opponentParticipantId }) => opponentParticipantId);
+    const opponentRatings = state.ratingHistory.map(
+      ({ opponentParticipantId }) => participantStates[opponentParticipantId]?.baselineRating ?? 0,
+    );
+    const pressureVs: Record<string, number> = {};
+    for (const { opponentParticipantId, pressureDelta } of state.ratingHistory) {
+      pressureVs[opponentParticipantId] = (pressureVs[opponentParticipantId] ?? 0) + pressureDelta;
+    }
+    const victories = opponents((actual) => actual > 0.5);
+    ledger[participantId] = {
+      victories,
+      defeats: opponents((actual) => actual < 0.5),
+      drawnWith: opponents((actual) => actual === 0.5),
+      wins: scope ? victories.length : state.wins,
+      totalPointsWon: state.totalPointsWon,
+      pointDifferential: state.totalPointsWon - state.totalPointsLost,
+      opponentStrength: opponentRatings.length
+        ? opponentRatings.reduce((sum, rating) => sum + rating, 0) / opponentRatings.length
+        : 0,
+      dynamicFormRating: state.dynamicFormRating,
+      pressureRating: state.pressureRating,
+      pressureVs,
+    };
   }
-}
-
-function applyTiebreak(
-  a: CompetitionParticipantState,
-  b: CompetitionParticipantState,
-  tiebreak: string,
-  _participantStates: Record<string, CompetitionParticipantState>,
-): number {
-  // Comparator returns positive ⇒ a sorts AFTER b ⇒ b ranks higher.
-  // Tiebreaks rank larger values higher (matching primary ranking direction),
-  // so each branch returns (b's value − a's value).
-  switch (tiebreak) {
-    case 'POINT_DIFFERENTIAL':
-      return b.totalPointsWon - b.totalPointsLost - (a.totalPointsWon - a.totalPointsLost);
-    case 'DYNAMIC_FORM_RATING':
-      return b.dynamicFormRating - a.dynamicFormRating;
-    case 'PRESSURE_RATING':
-      return b.pressureRating - a.pressureRating;
-    case 'HEAD_TO_HEAD': {
-      const aVsB = a.ratingHistory.filter((h) => h.opponentParticipantId === b.participantId);
-      const bVsA = b.ratingHistory.filter((h) => h.opponentParticipantId === a.participantId);
-      const aWins = aVsB.filter((h) => h.actualOutput > 0.5).length;
-      const bWins = bVsA.filter((h) => h.actualOutput > 0.5).length;
-      return bWins - aWins;
-    }
-    case 'HEAD_TO_HEAD_PRESSURE': {
-      const aVsB = a.ratingHistory.filter((h) => h.opponentParticipantId === b.participantId);
-      const bVsA = b.ratingHistory.filter((h) => h.opponentParticipantId === a.participantId);
-      const aPressure = aVsB.reduce((sum, h) => sum + h.pressureDelta, 0);
-      const bPressure = bVsA.reduce((sum, h) => sum + h.pressureDelta, 0);
-      return bPressure - aPressure;
-    }
-    case 'STRENGTH_OF_OPPOSITION': {
-      const aOpponentRatings = a.ratingHistory.map(
-        (h) => _participantStates[h.opponentParticipantId]?.baselineRating ?? 0,
-      );
-      const bOpponentRatings = b.ratingHistory.map(
-        (h) => _participantStates[h.opponentParticipantId]?.baselineRating ?? 0,
-      );
-      const aAvg = aOpponentRatings.length ? aOpponentRatings.reduce((s, v) => s + v, 0) / aOpponentRatings.length : 0;
-      const bAvg = bOpponentRatings.length ? bOpponentRatings.reduce((s, v) => s + v, 0) / bOpponentRatings.length : 0;
-      return bAvg - aAvg;
-    }
-    default:
-      return 0;
-  }
+  return ledger;
 }

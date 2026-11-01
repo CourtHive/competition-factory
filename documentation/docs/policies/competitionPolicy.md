@@ -4,6 +4,8 @@ title: Competition Policy
 
 The **Competition Policy** (`POLICY_TYPE_COMPETITION`) configures a three-track rating system for multi-round competitions such as DrawMatic and Swiss events. It controls how participants are rated, paired, and ranked across rounds.
 
+The leaderboard is ordered by the standings engine shared with round-robin groups and season tables: see [Standings](../concepts/standings.md).
+
 **Policy Type:** `competition`
 
 **When to Use:**
@@ -171,6 +173,10 @@ The `processingGranularity` field controls when rating updates are applied:
 | `PER_MATCHUP` | Ratings update immediately after each matchUp is scored. A participant's dynamic form rating may change between their first and second matchUp within the same round (if applicable). |
 | `PER_ROUND`   | Ratings update after all matchUps in a round are complete. All matchUps in a round use the same dynamic form ratings for expectation calculations.                                    |
 
+Under `PER_ROUND`, every result of a round is expected from the form ratings at the start of the round, so the order a
+round's results are listed or entered in cannot change any rating. (Before the standings engine they were applied one
+after another; that differed only for a participant who played more than once in a round.)
+
 `PER_ROUND` is the more common choice for Swiss and DrawMatic competitions, where all pairings in a round are determined simultaneously. `PER_MATCHUP` is useful when matchUps complete asynchronously and subsequent pairings depend on live results.
 
 ---
@@ -213,16 +219,23 @@ The `victoryPolicy` block determines the leaderboard ranking.
 
 When participants are tied on the primary ranking, the `tiebreakOrder` array defines the sequence of tiebreak methods applied:
 
-| Tiebreak                 | Description                                                       |
-| ------------------------ | ----------------------------------------------------------------- |
-| `HEAD_TO_HEAD`           | Direct result between tied participants                           |
-| `HEAD_TO_HEAD_PRESSURE`  | Pressure rating differential in head-to-head matchUps             |
-| `POINT_DIFFERENTIAL`     | `totalPointsWon - totalPointsLost`                                |
-| `STRENGTH_OF_OPPOSITION` | Average baseline rating of opponents faced                        |
-| `DYNAMIC_FORM_RATING`    | Current dynamic form rating                                       |
-| `PRESSURE_RATING`        | Cumulative pressure rating                                        |
-| `BUCHHOLZ`               | Sum of opponents' scores (Swiss tiebreak)                         |
-| `SONNEBORN_BERGER`       | Sum of beaten opponents' scores + half of drawn opponents' scores |
+| Tiebreak                 | Description                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------ |
+| `HEAD_TO_HEAD`           | Record between two tied participants; with three or more, wins among only them |
+| `HEAD_TO_HEAD_PRESSURE`  | Pressure rating differential in head-to-head matchUps                          |
+| `POINT_DIFFERENTIAL`     | `totalPointsWon - totalPointsLost`                                             |
+| `STRENGTH_OF_OPPOSITION` | Average baseline rating of opponents faced                                     |
+| `DYNAMIC_FORM_RATING`    | Current dynamic form rating                                                    |
+| `PRESSURE_RATING`        | Cumulative pressure rating                                                     |
+| `BUCHHOLZ`               | Sum of opponents' scores, each scored by the primary ranking                   |
+| `SONNEBORN_BERGER`       | Sum of beaten opponents' scores + half of drawn opponents' scores              |
+
+The leaderboard is ordered by the standings engine, the same one that orders round-robin groups and season tables. When
+a tiebreak separates some of the tied participants, each smaller set is ordered again from the first tiebreak.
+Participants level on the primary ranking and on every tiebreak share a rank, and the row records how many share it
+(`ties`). Before the standings engine, `BUCHHOLZ` and `SONNEBORN_BERGER` were accepted but had no effect, `HEAD_TO_HEAD`
+was compared pair by pair inside a sort (so a circle of results gave an order that depended on the sort), and every row
+was numbered 1, 2, 3 whatever the ties.
 
 ---
 
@@ -288,7 +301,16 @@ const { POLICY_COMPETITION_SWISS } = fixtures.policies;
 
 ## Competition State
 
-Competition state is stored as an extension on the draw definition under the key `COMPETITION_STATE`. It tracks per-participant data and per-round metadata.
+Competition state tracks per-participant data and per-round metadata. It is **derived from the draw's results**:
+`getCompetitionState`, the leaderboard and the DrawMatic and Swiss pairings replay the results in order (round by round,
+in structure order within a round) from each participant's baseline rating. A corrected result counts once, as
+corrected, and a removed result does not count. Under `PER_MATCHUP` every decided result counts. Under `PER_ROUND`, the
+completed results of the rounds marked processed (`processCompetitionRound`) count.
+
+The copy stored on the draw definition (an extension under the key `COMPETITION_STATE`) is a cache: it supplies only the
+inputs (baseline ratings and the processed rounds), and `processCompetitionMatchUp` / `processCompetitionRound` rewrite it
+from the results. Before the standings engine the stored copy was the state itself: each result was added to it as it
+arrived, so re-entering a result counted it twice and removing one reversed nothing.
 
 ### Participant State
 
