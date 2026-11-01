@@ -103,6 +103,7 @@ const { standings, provisional, unanswered, unmapped, unplaced } = seasonGoverno
   tierId, // optional
   getSubjectId, // optional: participant => durable subject id
   orderBy, // optional: rank flat by these tally fields, higher first, even when a policy is declared
+  purpose, // optional: what the table is for (STANDINGS_PURPOSE_*); a policy's directives may apply only for some
 });
 // standings: { [tierId]: [{ subject, participantIds, rank, matchUpsWon, matchUpsLost, valueWon, valueLost, ... }] }
 ```

@@ -9,6 +9,7 @@ import type {
   SeasonStandingsTally,
   SeasonSubject,
 } from '@Types/seasonTypes';
+import { STANDINGS_PURPOSE_ADVANCEMENT } from '@Constants/seasonConstants';
 import type { RoundRobinTallyPolicy } from '@Types/roundRobinTallyPolicy';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import { ResultType } from '@Types/factoryTypes';
@@ -54,6 +55,7 @@ export function getSeasonAdvancement(params: GetSeasonAdvancementArgs): ResultTy
   const outcomes: SeasonAdvancementOutcome[] = [];
   for (const advancement of advancements) {
     const result = getSeasonStandings({
+      purpose: STANDINGS_PURPOSE_ADVANCEMENT,
       periodId: advancement.fromPeriodId,
       tierId: advancement.fromTierId,
       getSubjectId,
