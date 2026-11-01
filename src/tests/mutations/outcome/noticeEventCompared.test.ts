@@ -45,4 +45,28 @@ describe('the event a notice names is compared', () => {
     const added = [{ topic: UPDATE_INCONTEXT_MATCHUP, key: 'm', payload: {} }];
     expect(compareNotices({ planned, added, topics }).equal).toEqual(true);
   });
+
+  // v1's buffer keeps the last write's context and an earlier write's event (`preserveNoticeIdentity`, S6 tail)
+  const bye = { op: 'setMatchUpBye' as const, matchUpId: 'c' };
+  const advance = {
+    op: 'setMatchUpDrawPositions' as const,
+    matchUpId: 'c',
+    drawPositions: [7],
+    advancesThroughBye: true as const,
+  };
+  const byeNotice = (eventId?: string) => [
+    { topic: UPDATE_INCONTEXT_MATCHUP, key: 'm' },
+    { topic: MODIFY_MATCHUP, key: 'c', payload: { eventId } },
+  ];
+
+  it("a BYE, then an advance through it naming no event: the BYE's event is kept", () => {
+    const planned = plannedNotices({ ops: [bye, stamp('c'), advance, stamp('c')], matchUpId: 'm' });
+    expect(compareNotices({ planned, added: byeNotice('e'), topics }).equal).toEqual(true);
+    expect(compareNotices({ planned, added: byeNotice(), topics }).equal).toEqual(false);
+  });
+
+  it('an advance through a BYE alone names no event', () => {
+    const planned = plannedNotices({ ops: [advance, stamp('c')], matchUpId: 'm' });
+    expect(compareNotices({ planned, added: byeNotice(), topics }).equal).toEqual(true);
+  });
 });
