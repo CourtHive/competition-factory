@@ -318,6 +318,7 @@ export type FactoryEngineMethod =
   | 'getEventCompleteness'
   | 'getEventData'
   | 'getEventEntryFees'
+  | 'getEventEntrySpace'
   | 'getEventInconsistencies'
   | 'getEventMatchUpFormatTiming'
   | 'getEventProperties'
@@ -1113,6 +1114,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getEventCompleteness',
   'getEventData',
   'getEventEntryFees',
+  'getEventEntrySpace',
   'getEventInconsistencies',
   'getEventMatchUpFormatTiming',
   'getEventProperties',

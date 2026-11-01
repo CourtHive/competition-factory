@@ -1997,8 +1997,29 @@ export interface EventRegistration {
 export interface EventEntryProfile {
   /** how many entries the event will accept */
   entriesLimit?: number;
-  /** intended draw size before a `drawDefinition` exists to carry one */
+  /** intended MAIN draw size before a `drawDefinition` exists to carry one */
   targetDrawSize?: number;
+  /**
+   * The simple qualifying case: ONE qualifying draw of this size, before a `drawDefinition` exists
+   * to carry it. This is the qualifying draw's size, NOT the number of places it fills in MAIN —
+   * a 32-draw may send 4 or 8 through. That number is `qualifiersCount`.
+   *
+   * Not allowed together with `qualifyingProfiles`: one shape or the other states the qualifying.
+   */
+  qualifyingDrawSize?: number;
+  /**
+   * How many qualifiers enter the MAIN draw — the MAIN positions held back for them. Direct
+   * acceptance places are the MAIN positions less these; see `getEventEntrySpace`.
+   *
+   * Not allowed together with `qualifyingProfiles`, whose final-stage `qualifyingPositions` state it.
+   */
+  qualifiersCount?: number;
+  /**
+   * Qualifying with more than one structure: pre-qualifying feeding qualifying (`stageSequence`
+   * 1 then 2), or several qualifying structures, each feeding MAIN at its own `roundTarget`. Mirrors
+   * the draw generator's `qualifyingProfiles` input, so a profile can be handed to it unchanged.
+   */
+  qualifyingProfiles?: EntryQualifyingProfile[];
   selectionProcess?: SelectionProcessUnion;
   /**
    * WHICH scale orders acceptance — 'WTN', 'NTRP', a federation ranking list.
@@ -2008,9 +2029,37 @@ export interface EventEntryProfile {
    * ("*top down by ranking", "*top down by WTN"), which is the evidence that it needs a field.
    */
   selectionScaleName?: string;
+  /** how many MAIN places are held for wildcards */
   wildcardCount?: number;
   waitlistEnabled?: boolean;
   extensions?: Extension[];
+}
+```
+
+#### EntryQualifyingProfile
+
+```ts
+/**
+ * One qualifying path into MAIN, as {@link EventEntryProfile.qualifyingProfiles} states it before
+ * any structure exists. The structure profile with the highest `stageSequence` is the one that
+ * feeds MAIN; its `qualifyingPositions` are the MAIN places this path fills.
+ */
+export interface EntryQualifyingProfile {
+  /** the MAIN round the qualifiers enter; absent means the first round */
+  roundTarget?: number;
+  structureProfiles: EntryQualifyingStructureProfile[];
+}
+```
+
+#### EntryQualifyingStructureProfile
+
+```ts
+export interface EntryQualifyingStructureProfile {
+  /** 1 for pre-qualifying when there are two stages; absent means 1 */
+  stageSequence?: number;
+  drawSize?: number;
+  /** how many participants this structure sends on: to the next stage, or to MAIN from the last */
+  qualifyingPositions?: number;
 }
 ```
 
