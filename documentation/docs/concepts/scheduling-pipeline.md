@@ -302,7 +302,10 @@ Dates are taken in order. On each date:
    (§ 3.7) together, on the state it leaves, before anything is written. A plan the gate made passes it. One that does
    not is refused whole with `ANACHRONISM`, every offending placement in `context.refusals`, and nothing is written:
    the guard is a planner defect's last stop, not a reason a TD meets. Then each placement is given its date, its
-   time (HH:MM) and its venue.
+   time (HH:MM) and its venue. A date the write refuses (a profile date outside the tournament's dates, which
+   `setSchedulingProfile` does not check) writes nothing for that placement, neither time nor venue: the matchUp is
+   reported in that date's `noTimeMatchUpIds`, not in its `scheduledMatchUpIds`. A dry run does not write, so it
+   does not see that refusal and reports the placement as planned.
 
 Dates named in `clearScheduleDates` are planned on a working copy of the records cleared first, so the plan sees them
 empty and a refusal leaves them as they were; they are cleared on the records only when the plan is written. What
