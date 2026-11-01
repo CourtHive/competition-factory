@@ -102,6 +102,10 @@ engine.addSchedulingProfileRound({
 });
 ```
 
+A `scheduleDate` not yet in the profile is refused with `INVALID_DATE` when it falls outside the competition's dates.
+A date already in the profile is not re-judged. Whatever `setSchedulingProfile` warns of the stored profile's other
+dates (`SCHEDULING_PROFILE_DATES_OUT_OF_RANGE`) is passed on in `warnings`.
+
 ---
 
 ### assignMatchUpVenue
@@ -1316,6 +1320,20 @@ engine.setSchedulingProfile({
   schedulingProfile, // required - profile object
 });
 ```
+
+**Dates outside the tournament.** A profile whose dates fall outside the competition's dates (every loaded tournament's
+range combined, compared as calendar days) is still saved: a profile can outlive a change of tournament dates, the
+repair of an orphaned round re-saves the whole profile, and clients save the whole profile on every edit. The result
+carries a warning naming the out-of-range dates:
+
+```js
+const result = engine.setSchedulingProfile({ schedulingProfile });
+// result.success → true
+// result.warnings → [{ code: 'SCHEDULING_PROFILE_DATES_OUT_OF_RANGE', message, scheduleDates: ['2024-06-20'] }]
+```
+
+No warning is returned when every date is in range, or when a tournament has no dates. The scheduling pipeline writes no
+time for a matchUp whose profile date is refused (see `noTimeMatchUpIds`).
 
 **Profile Structure**:
 
