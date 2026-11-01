@@ -300,6 +300,7 @@ export type FactoryEngineMethod =
   | 'getDrawParticipantRepresentativeIds'
   | 'getDrawStructures'
   | 'getDrawTypeCoercion'
+  | 'getDualIssues'
   | 'getEffectiveRegistrationProfile'
   | 'getEligibleEvents'
   | 'getEligibleTiers'
@@ -1086,6 +1087,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getDrawParticipantRepresentativeIds',
   'getDrawStructures',
   'getDrawTypeCoercion',
+  'getDualIssues',
   'getEffectiveRegistrationProfile',
   'getEligibleEvents',
   'getEligibleTiers',

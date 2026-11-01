@@ -551,6 +551,7 @@ import type { addPersons } from '@Mutate/participants/addPersons';
 import type { setSubOrder } from '@Mutate/structures/setSubOrder';
 import type { disableCourts } from '@Mutate/venues/disableCourts';
 import type { disableVenues } from '@Mutate/venues/disableVenues';
+import type { getDualIssues } from '@Query/matchUp/getDualIssues';
 import type { getScoreboard } from '@Query/scoring/getScoreboard';
 import type { getVenuesReport } from '@Query/venues/venuesReport';
 import type { getDrawStructures } from '@Acquire/findStructure';
@@ -976,6 +977,7 @@ export interface MethodSignatures {
   getDrawParticipantRepresentativeIds: EngineMethod<typeof getDrawParticipantRepresentativeIds>;
   getDrawStructures: EngineMethod<typeof getDrawStructures>;
   getDrawTypeCoercion: EngineMethod<typeof getDrawTypeCoercion>;
+  getDualIssues: EngineMethod<typeof getDualIssues>;
   getEffectiveRegistrationProfile: EngineMethod<typeof getEffectiveRegistrationProfile>;
   getEligibleEvents: EngineMethod<typeof getEligibleEvents>;
   getEligibleTiers: EngineMethod<typeof getEligibleTiers>;
