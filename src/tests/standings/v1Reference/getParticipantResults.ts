@@ -1,0 +1,591 @@
+import { isDrawnResult, isCombinedPointFormat, validateDrawTallyOptions } from './drawnResults';
+import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
+import { calculatePressureRatings } from './calculatePressureRatings';
+import { countGames, countSets, countPoints } from './scoreCounters';
+import { calculatePercentages } from './calculatePercentages';
+import { intersection } from '@Tools/arrays';
+import { ensureInt } from '@Tools/ensureInt';
+import { isExit } from '@Validators/isExit';
+
+// constants and types
+import { completedMatchUpStatuses, DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { INVALID_MATCHUP, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
+import type { MatchUp, MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
+import type { RoundRobinTallyPolicy } from '@Types/roundRobinTallyPolicy';
+import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
+
+type GetParticipantResultsArgs = {
+  matchUps: MatchUp[];
+  participantIds?: string[];
+  pressureRating?: boolean;
+  groupingTotal?: string; // attribute being processed for group totals
+  matchUpFormat?: string;
+  perPlayer?: number;
+  tallyPolicy?: any;
+};
+
+export function getParticipantResults({
+  participantIds,
+  pressureRating,
+  groupingTotal,
+  matchUpFormat,
+  tallyPolicy,
+  perPlayer,
+  matchUps,
+}: GetParticipantResultsArgs) {
+  // TAKES AN ARRAY OF IN-CONTEXT MATCHUPS, not a drawId. `paramsMiddleware` resolves `drawId` into a
+  // `drawDefinition` and stops; it does not gather matchUps. An engine caller writing
+  // `getParticipantResults({ drawId })` therefore supplied no matchUps at all, and this answered
+  // `{ participantResults: {} }` — an empty tally for a fully-played draw, with no error to notice.
+  //
+  // Results are attributed through `sides[].participantId`, which only an IN-CONTEXT matchUp
+  // carries; a stored matchUp has `drawPositions` and would tally to nothing for the same reason.
+  if (!Array.isArray(matchUps)) return { error: MISSING_MATCHUPS };
+
+  // EVERY matchUp must carry both sides, whether or not it has been played.
+  //
+  // `sides[].participantId` is the only thing a tally can attribute to, and BOTH code paths read it:
+  // a decided matchUp through `getSideId`, and an undecided one through `processScore`. Scoping this
+  // to `winningSide` — as it was when first added — closed only the first, so the SAME input (stored,
+  // non-hydrated matchUps) refused once a draw had been played and threw an uncaught TypeError while
+  // it had not. One input class must not have two failure modes separated only by progress.
+  //
+  // Both indices, because getWinningSideId reads index 0 and getLosingSideId reads index 1.
+  //
+  // All-or-nothing is deliberate: skipping the offending matchUps would return a tally silently
+  // missing matches, which is the failure this guard exists to prevent rather than a milder form of
+  // it. An EMPTY array is still a valid question — the guard is on matchUps present but unusable.
+  const unusable = matchUps.some((matchUp) => matchUp && !(matchUp.sides?.[0] && matchUp.sides?.[1]));
+  if (unusable) {
+    return {
+      error: INVALID_MATCHUP,
+      info: 'a matchUp carries no sides to attribute results to; in-context matchUps are required',
+    };
+  }
+
+  const policyValidation = validateDrawTallyOptions(tallyPolicy);
+  if (policyValidation.error) return { error: policyValidation.error, info: policyValidation.info };
+
+  const participantResults = {};
+
+  const excludeMatchUpStatuses = tallyPolicy?.excludeMatchUpStatuses ?? [];
+
+  const filteredMatchUps = filterMatchUps({ matchUps, excludeMatchUpStatuses, participantIds });
+
+  const { totalSets, totalGames } = computeTotals({ filteredMatchUps, excludeMatchUpStatuses, matchUpFormat });
+
+  for (const matchUp of filteredMatchUps ?? []) {
+    const { matchUpStatus, tieMatchUps, tieFormat, score, winningSide, sides } = matchUp;
+
+    // first-class (NATIVE) with fallback to the legacy `_disableAutoCalc` hydrated alias (LEGACY)
+    const disableAutoCalc = matchUp.disableAutoCalc ?? matchUp._disableAutoCalc;
+    const manualGamesOverride =
+      tieFormat && disableAutoCalc && tieFormat.collectionDefinitions.every(({ scoreValue }) => scoreValue);
+
+    const winningParticipantId = winningSide && getWinningSideId(matchUp);
+    const losingParticipantId = winningSide && getLosingSideId(matchUp);
+
+    if (!winningParticipantId && !losingParticipantId) {
+      perPlayer = processNoWinnerMatchUp({
+        participantResults,
+        manualGamesOverride,
+        matchUpFormat: matchUp.matchUpFormat ?? matchUpFormat,
+        isDrawn: isDrawnResult(matchUp, matchUpFormat),
+        tallyPolicy,
+        matchUpStatus,
+        tieMatchUps,
+        perPlayer,
+        score,
+        sides,
+      });
+    } else {
+      checkInitializeParticipant(participantResults, winningParticipantId);
+      checkInitializeParticipant(participantResults, losingParticipantId);
+
+      perPlayer = processDecidedMatchUp({
+        winningParticipantId,
+        losingParticipantId,
+        manualGamesOverride,
+        participantResults,
+        pressureRating,
+        matchUpFormat: matchUp.matchUpFormat ?? matchUpFormat,
+        matchUpStatus,
+        tieMatchUps,
+        tallyPolicy,
+        winningSide,
+        perPlayer,
+        matchUp,
+        score,
+        sides,
+      });
+    }
+
+    if (manualGamesOverride) {
+      applyManualGamesOverride({ participantResults, score, sides });
+    }
+  }
+
+  calculatePercentages({
+    participantResults,
+    groupingTotal,
+    matchUpFormat,
+    tallyPolicy,
+    totalGames,
+    perPlayer,
+    totalSets,
+  });
+
+  return { participantResults };
+}
+
+function filterMatchUps({ matchUps, excludeMatchUpStatuses, participantIds }) {
+  return matchUps?.filter((matchUp) => {
+    return (
+      (matchUp.tieMatchUps || !excludeMatchUpStatuses.includes(matchUp.matchUpStatus)) &&
+      (!participantIds?.length ||
+        intersection(participantIds, [getSideId(matchUp, 0), getSideId(matchUp, 1)]).length === 2)
+    );
+  });
+}
+
+function computeTotals({
+  filteredMatchUps,
+  excludeMatchUpStatuses,
+  matchUpFormat,
+}: {
+  filteredMatchUps: MatchUp[];
+  excludeMatchUpStatuses: (MatchUpStatusUnion | undefined)[];
+  matchUpFormat?: string;
+}) {
+  const allSetsCount = filteredMatchUps?.flatMap(({ score, tieMatchUps }) =>
+    tieMatchUps
+      ? tieMatchUps
+          .filter(({ matchUpStatus }) => !excludeMatchUpStatuses.includes(matchUpStatus))
+          .flatMap(({ score }) => score?.sets?.length ?? 0)
+      : (score?.sets?.length ?? 0),
+  );
+  const totalSets = allSetsCount?.reduce((a, b) => a + b, 0);
+
+  const getGames = (score?: Score, format?: string) =>
+    isCombinedPointFormat(format ?? matchUpFormat)
+      ? 0
+      : (score?.sets?.reduce((total, set) => total + (set?.side1Score ?? 0) + (set?.side2Score ?? 0), 0) ?? 0);
+  const allGamesCount = filteredMatchUps?.flatMap(({ score, tieMatchUps, matchUpFormat: format }) =>
+    tieMatchUps
+      ? tieMatchUps
+          .filter(({ matchUpStatus }) => !excludeMatchUpStatuses.includes(matchUpStatus))
+          .flatMap(({ score, matchUpFormat }) => getGames(score, matchUpFormat))
+      : getGames(score, format),
+  );
+  const totalGames = allGamesCount?.reduce((a, b) => a + b, 0);
+
+  return { totalSets, totalGames };
+}
+
+function processNoWinnerMatchUp({
+  matchUpFormat,
+  tallyPolicy,
+  isDrawn,
+  participantResults,
+  manualGamesOverride,
+  matchUpStatus,
+  tieMatchUps,
+  perPlayer,
+  score,
+  sides,
+}: {
+  participantResults: Record<
+    string,
+    {
+      matchUpsDrawn: number;
+      matchUpsCancelled: number;
+      setsWon: number;
+      setsLost: number;
+      gamesWon: number;
+      gamesLost: number;
+      pointsWon: number;
+      pointsLost: number;
+      [key: string]: unknown;
+    }
+  >;
+  manualGamesOverride?: boolean;
+  matchUpFormat?: string;
+  tallyPolicy?: RoundRobinTallyPolicy;
+  isDrawn: boolean;
+  matchUpStatus?: MatchUpStatusUnion;
+  tieMatchUps?: MatchUp[];
+  perPlayer?: number;
+  score?: Score;
+  sides: NonNullable<MatchUp['sides']>;
+}) {
+  if (isDrawn) {
+    const sets = countSets({ score, matchUpFormat, matchUpStatus, tallyPolicy });
+    const games = countGames({ score: score ?? {}, matchUpFormat, matchUpStatus, tallyPolicy });
+    const { pointsTally } = countPoints({ score: score ?? {}, matchUpFormat });
+    sides.forEach((side, index) => {
+      const participantId = side.participantId;
+      if (!participantId) return;
+      checkInitializeParticipant(participantResults, participantId);
+      const result = participantResults[participantId];
+      result.matchUpsDrawn += 1;
+      result.setsWon += sets[index];
+      result.setsLost += sets[1 - index];
+      result.gamesWon += games[index];
+      result.gamesLost += games[1 - index];
+      result.pointsWon += pointsTally[index];
+      result.pointsLost += pointsTally[1 - index];
+    });
+  } else if (matchUpStatus && completedMatchUpStatuses.includes(matchUpStatus)) {
+    const participantIdSide1 = getSideId({ sides }, 0);
+    const participantIdSide2 = getSideId({ sides }, 1);
+    if (participantIdSide1) {
+      checkInitializeParticipant(participantResults, participantIdSide1);
+      participantResults[participantIdSide1].matchUpsCancelled += 1;
+    }
+    if (participantIdSide2) {
+      checkInitializeParticipant(participantResults, participantIdSide2);
+      participantResults[participantIdSide2].matchUpsCancelled += 1;
+    }
+  } else if (tieMatchUps?.length) {
+    perPlayer = 0;
+
+    for (const tieMatchUp of tieMatchUps) {
+      if (tieMatchUp.winningSide) {
+        tallyTieMatchUpNoWinner({ participantResults, tieMatchUp, sides });
+      }
+
+      processScore({
+        score: tieMatchUp.score,
+        manualGamesOverride,
+        participantResults,
+        sides,
+      });
+    }
+  } else {
+    processScore({
+      manualGamesOverride,
+      participantResults,
+      score,
+      sides,
+    });
+  }
+
+  return perPlayer;
+}
+
+function tallyTieMatchUpNoWinner({ participantResults, tieMatchUp, sides }) {
+  const tieWinningParticipantId = sides?.find(({ sideNumber }) => sideNumber === tieMatchUp.winningSide)?.participantId;
+  const tieLosingParticipantId = sides?.find(({ sideNumber }) => sideNumber === tieMatchUp.winningSide)?.participantId;
+  if (tieWinningParticipantId && tieLosingParticipantId) {
+    checkInitializeParticipant(participantResults, tieWinningParticipantId);
+    checkInitializeParticipant(participantResults, tieLosingParticipantId);
+    participantResults[tieWinningParticipantId].tieMatchUpsWon += 1;
+    participantResults[tieLosingParticipantId].tieMatchUpsLost += 1;
+
+    if (isMatchUpEventType(SINGLES)(tieMatchUp.matchUpType)) {
+      participantResults[tieWinningParticipantId].tieSinglesWon += 1;
+      participantResults[tieLosingParticipantId].tieSinglesLost += 1;
+    } else if (isMatchUpEventType(DOUBLES)(tieMatchUp.matchUpType)) {
+      participantResults[tieWinningParticipantId].tieDoublesWon += 1;
+      participantResults[tieLosingParticipantId].tieDoublesLost += 1;
+    }
+  }
+}
+
+function processDecidedMatchUp({
+  winningParticipantId,
+  losingParticipantId,
+  manualGamesOverride,
+  participantResults,
+  pressureRating,
+  matchUpFormat,
+  matchUpStatus,
+  tieMatchUps,
+  tallyPolicy,
+  winningSide,
+  perPlayer,
+  matchUp,
+  score,
+  sides,
+}) {
+  if (tieMatchUps?.length) {
+    perPlayer = 0;
+
+    for (const tieMatchUp of tieMatchUps) {
+      if (tieMatchUp.winningSide) {
+        tallyTieMatchUpWithWinner({
+          winningParticipantId,
+          losingParticipantId,
+          participantResults,
+          tieMatchUp,
+          winningSide,
+        });
+      }
+
+      processMatchUp({
+        matchUpFormat: tieMatchUp.matchUpFormat,
+        matchUpStatus: tieMatchUp.matchUpStatus,
+        matchUpType: tieMatchUp.matchUpType,
+        score: tieMatchUp.score,
+        sides: tieMatchUp.sides,
+        winningParticipantId,
+        losingParticipantId,
+        manualGamesOverride,
+        participantResults,
+        isTieMatchUp: true,
+        pressureRating,
+        tallyPolicy,
+        winningSide,
+      });
+    }
+    processOutcome({
+      winningParticipantId,
+      losingParticipantId,
+      participantResults,
+      matchUpStatus,
+    });
+  } else {
+    processMatchUp({
+      matchUpFormat: matchUp.matchUpFormat ?? matchUpFormat,
+      matchUpType: matchUp.matchUpType,
+      isTieMatchUp: undefined,
+      winningParticipantId,
+      manualGamesOverride,
+      losingParticipantId,
+      participantResults,
+      pressureRating,
+      matchUpStatus,
+      tallyPolicy,
+      winningSide,
+      score,
+      sides,
+    });
+  }
+
+  return perPlayer;
+}
+
+function tallyTieMatchUpWithWinner({
+  winningParticipantId,
+  losingParticipantId,
+  participantResults,
+  tieMatchUp,
+  winningSide,
+}) {
+  const { matchUpType } = tieMatchUp;
+  const isDoubles = isMatchUpEventType(DOUBLES)(matchUpType);
+  const isSingles = isMatchUpEventType(SINGLES)(matchUpType);
+
+  const tieWonBySameTeam = tieMatchUp.winningSide === winningSide;
+  const tieWinnerId = tieWonBySameTeam ? winningParticipantId : losingParticipantId;
+  const tieLoserId = tieWonBySameTeam ? losingParticipantId : winningParticipantId;
+
+  applyTieResult(participantResults, tieWinnerId, 'Won', isSingles, isDoubles);
+  applyTieResult(participantResults, tieLoserId, 'Lost', isSingles, isDoubles);
+}
+
+function applyTieResult(participantResults, participantId, suffix: 'Won' | 'Lost', isSingles, isDoubles) {
+  if (!participantId) return;
+  participantResults[participantId][`tieMatchUps${suffix}`] += 1;
+  if (isSingles) participantResults[participantId][`tieSingles${suffix}`] += 1;
+  if (isDoubles) participantResults[participantId][`tieDoubles${suffix}`] += 1;
+}
+
+function applyManualGamesOverride({ participantResults, score, sides }) {
+  const gamesWonSide1 = score?.sets?.reduce((total, set) => total + (set?.side1Score ?? 0), 0);
+  const gamesWonSide2 = score?.sets?.reduce((total, set) => total + (set.side2Score ?? 0), 0);
+
+  const side1participantId = sides?.find(({ sideNumber }) => sideNumber === 1)?.participantId;
+  const side2participantId = sides?.find(({ sideNumber }) => sideNumber === 2)?.participantId;
+
+  checkInitializeParticipant(participantResults, side1participantId);
+  checkInitializeParticipant(participantResults, side2participantId);
+
+  if (side1participantId) {
+    participantResults[side1participantId].gamesWon += gamesWonSide1;
+    participantResults[side1participantId].gamesLost += gamesWonSide2;
+  }
+
+  if (side2participantId) {
+    participantResults[side2participantId].gamesWon += gamesWonSide2;
+    participantResults[side2participantId].gamesLost += gamesWonSide1;
+  }
+}
+
+function getWinningSideId(matchUp) {
+  const winnerIndex = matchUp.winningSide - 1;
+  return getSideId(matchUp, winnerIndex);
+}
+
+function getLosingSideId(matchUp) {
+  const loserIndex = 1 - (matchUp.winningSide - 1);
+  return getSideId(matchUp, loserIndex);
+}
+
+/**
+ * The participantId on one side of a decided matchUp.
+ *
+ * Returned `'foo'` — a literal string — when `sides` or the indexed side was absent, from 2021
+ * until 7.0.0. That is a participantId as far as everything downstream is concerned, so a tally run
+ * over stored (non-hydrated) matchUps keyed every result to a participant named `foo` rather than
+ * failing. Two `console.log` calls shipped with it.
+ *
+ * The caller now refuses that input up front, so this returning `undefined` is unreachable defence
+ * rather than a fallback anyone should rely on.
+ */
+function getSideId(matchUp, index) {
+  return matchUp?.sides?.[index]?.participantId;
+}
+
+function checkInitializeParticipant(participantResults, participantId) {
+  if (participantId && !participantResults[participantId])
+    participantResults[participantId] = {
+      allDefaults: 0,
+      defaults: 0,
+      defeats: [],
+      gamesLost: 0,
+      gamesWon: 0,
+      matchUpsCancelled: 0,
+      matchUpsDrawn: 0,
+      matchUpsLost: 0,
+      matchUpsWon: 0,
+      pointsLost: 0,
+      pointsWon: 0,
+      pressureScores: [],
+      ratingVariation: [],
+      retirements: 0,
+      setsLost: 0,
+      setsWon: 0,
+      tieSinglesWon: 0,
+      tieSinglesLost: 0,
+      tieDoublesWon: 0,
+      tieDoublesLost: 0,
+      tieMatchUpsLost: 0,
+      tieMatchUpsWon: 0,
+      victories: [],
+      walkovers: 0,
+    };
+}
+
+function processScore({ manualGamesOverride, participantResults, score, sides }) {
+  const { sets } = score ?? {};
+  const gamesTally: number[][] = [[], []];
+  const setsTally = [0, 0];
+
+  for (const set of sets ?? []) {
+    const { winningSide: setWinningSide, side1Score, side2Score } = set;
+    if (setWinningSide) setsTally[setWinningSide - 1] += 1;
+    gamesTally[0].push(ensureInt(side1Score || 0));
+    gamesTally[1].push(ensureInt(side2Score || 0));
+  }
+
+  const gamesTotal = [gamesTally[0].reduce((a, b) => a + b, 0), gamesTally[1].reduce((a, b) => a + b, 0)];
+
+  sides.forEach((side, i) => {
+    const { participantId } = side;
+    if (participantId) {
+      checkInitializeParticipant(participantResults, participantId);
+      participantResults[participantId].setsWon += setsTally[i];
+      participantResults[participantId].setsLost += setsTally[1 - i];
+      if (!manualGamesOverride) {
+        participantResults[participantId].gamesWon += gamesTotal[i];
+        participantResults[participantId].gamesLost += gamesTotal[1 - i];
+      }
+    }
+  });
+}
+
+function processMatchUp({
+  winningParticipantId,
+  manualGamesOverride,
+  losingParticipantId,
+  participantResults,
+  pressureRating,
+  matchUpFormat,
+  matchUpStatus,
+  isTieMatchUp,
+  matchUpType,
+  tallyPolicy,
+  winningSide,
+  score,
+  sides,
+}) {
+  const winningSideIndex = winningSide && winningSide - 1;
+  const losingSideIndex = 1 - winningSideIndex;
+
+  if (pressureRating && matchUpType === SINGLES) {
+    calculatePressureRatings({ participantResults, sides, score });
+  }
+
+  if (!isTieMatchUp) {
+    processOutcome({
+      winningParticipantId,
+      losingParticipantId,
+      participantResults,
+      matchUpStatus,
+    });
+  }
+
+  const setsTally = countSets({
+    matchUpStatus,
+    matchUpFormat,
+    tallyPolicy,
+    winningSide,
+    score,
+  });
+  const gamesTally = countGames({
+    matchUpStatus,
+    matchUpFormat,
+    tallyPolicy,
+    winningSide,
+    score,
+  });
+  const { pointsTally } = countPoints({ score, matchUpFormat });
+
+  if (winningParticipantId) {
+    participantResults[winningParticipantId].setsWon += setsTally[winningSideIndex];
+    participantResults[winningParticipantId].setsLost += setsTally[losingSideIndex];
+
+    if (!manualGamesOverride) {
+      participantResults[winningParticipantId].gamesWon += gamesTally[winningSideIndex];
+      participantResults[winningParticipantId].gamesLost += gamesTally[losingSideIndex];
+    }
+
+    participantResults[winningParticipantId].pointsWon += pointsTally[winningSideIndex];
+    participantResults[winningParticipantId].pointsLost += pointsTally[losingSideIndex];
+  }
+  if (losingParticipantId) {
+    participantResults[losingParticipantId].setsWon += setsTally[losingSideIndex];
+    participantResults[losingParticipantId].setsLost += setsTally[winningSideIndex];
+
+    if (!manualGamesOverride) {
+      participantResults[losingParticipantId].gamesWon += gamesTally[losingSideIndex];
+      participantResults[losingParticipantId].gamesLost += gamesTally[winningSideIndex];
+    }
+
+    participantResults[losingParticipantId].pointsWon += pointsTally[losingSideIndex];
+    participantResults[losingParticipantId].pointsLost += pointsTally[winningSideIndex];
+  }
+}
+
+function processOutcome({ winningParticipantId, losingParticipantId, participantResults, matchUpStatus }) {
+  if (losingParticipantId) {
+    if (matchUpStatus === WALKOVER) participantResults[losingParticipantId].walkovers += 1;
+    if (matchUpStatus === DEFAULTED) participantResults[losingParticipantId].defaults += 1;
+    if (matchUpStatus === RETIRED) participantResults[losingParticipantId].retirements += 1;
+
+    // attribute to catch all scenarios where participant terminated matchUp irregularly
+    if (isExit(matchUpStatus)) participantResults[losingParticipantId].allDefaults += 1;
+
+    participantResults[losingParticipantId].matchUpsLost += 1;
+  }
+
+  if (winningParticipantId) {
+    participantResults[winningParticipantId].matchUpsWon += 1;
+  }
+
+  if (losingParticipantId && winningParticipantId) {
+    participantResults[losingParticipantId].defeats.push(winningParticipantId);
+    participantResults[winningParticipantId].victories.push(losingParticipantId);
+  }
+}

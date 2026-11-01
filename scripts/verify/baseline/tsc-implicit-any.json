@@ -122,6 +122,7 @@
   "src/tests/mutations/utilities": 15,
   "src/tests/queries/scales": 7,
   "src/tests/queries/scales/policyEncoding": 1,
+  "src/tests/standings/v1Reference": 166,
   "src/tests/testHarness": 2,
   "src/tests/testHarness/exitPropagation": 18,
   "src/tests/testHarness/testUtilities": 11,
