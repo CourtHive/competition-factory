@@ -1,5 +1,6 @@
 import { POLICY_ROUND_ROBIN_TALLY_DEFAULT } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_DEFAULT';
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
+import { tallyParticipantResults as tallyParticipantResultsV1 } from './v1Reference/tallyParticipantResults';
 import { buildMatchUps, type CorpusResult } from './standingsFixtures';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
@@ -94,3 +95,31 @@ it.skipIf(!OUT)(
   },
   600_000,
 );
+
+it.skipIf(!OUT)(
+  'live engine against the frozen v1, paired and interleaved',
+  () => {
+    for (const n of [4, 8, 16, 25]) {
+      for (const shape of ['spread', 'cycle'] as const) {
+        const size = shape === 'cycle' && n % 2 === 0 ? n + 1 : n;
+        if (size > 25) continue;
+        const matchUps = buildMatchUps({ results: groupResults(size, shape) });
+        const params = { matchUps, policyDefinitions: POLICY_ROUND_ROBIN_TALLY_DEFAULT };
+        const live: number[] = [];
+        const reference: number[] = [];
+        // interleaved so drift (JIT, GC, thermal) lands on both sides alike
+        for (let i = 0; i < 41; i++) {
+          live.push(median(() => tallyParticipantResults(params), 3));
+          reference.push(median(() => tallyParticipantResultsV1(params), 3));
+        }
+        const ratio = medianOf(live) / medianOf(reference);
+        appendFileSync(OUT as string, `paired ${shape} n=${size} live/v1 = ${ratio.toFixed(3)}\n`);
+      }
+    }
+  },
+  600_000,
+);
+
+function medianOf(values: number[]) {
+  return [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
+}
