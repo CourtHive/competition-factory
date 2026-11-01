@@ -8,6 +8,7 @@ export * from './competitionFormat';
 export * from './readModelTypes';
 export * from './officiatingTypes';
 export * from './sanctioningTypes';
+export * from './seasonTypes';
 export * from './declarationTypes';
 export * from './tournamentTypes';
 export * from './errorCodeTypes';
