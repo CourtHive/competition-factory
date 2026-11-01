@@ -21,6 +21,7 @@ import type {
 import type {
   SanctioningAuthority,
   TournamentSanction,
+  EventEntryProfile,
   UnifiedEventID,
   VenueTransitEntry,
   Tournament,
@@ -301,6 +302,14 @@ export function activateFromSanctioning({
       if (ep.allowedDrawTypes?.length) event.allowedDrawTypes = [...ep.allowedDrawTypes];
       else if (ep.drawType) event.allowedDrawTypes = [ep.drawType];
 
+      // The sanctioned sizes reach the event's entry profile, the native home for an intended size before
+      // a draw exists. They were dropped here, so nothing downstream could count acceptance places. The
+      // proposal states no qualifier count, so `qualifiersCount` stays for the director to set.
+      const entryProfile: EventEntryProfile = {};
+      if (isPositiveCount(ep.drawSize)) entryProfile.targetDrawSize = ep.drawSize;
+      if (isPositiveCount(ep.qualifyingDrawSize)) entryProfile.qualifyingDrawSize = ep.qualifyingDrawSize;
+      if (Object.keys(entryProfile).length) event.entryProfile = entryProfile;
+
       const eventOtherIds = resolveEventOtherIds(ep, event.eventId, sanctioningRecord);
       if (eventOtherIds.length) event.eventOtherIds = eventOtherIds;
 
@@ -437,4 +446,8 @@ function sanctionedTransits(
     }
   }
   return { venueTransits, unresolvedTransits };
+}
+
+function isPositiveCount(value: unknown): value is number {
+  return Number.isSafeInteger(value) && (value as number) > 0;
 }

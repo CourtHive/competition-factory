@@ -303,6 +303,47 @@ console.log(`${stageEntries.length} entries, ${seedsCount} seeds allowed`);
 
 **8.0.0 engine-removal candidate.** This 7.x route remains available pending review. The full reference has moved to [`getEventEntryFees`](/docs/implementation/records/getEventEntryFees). Package-export status is a separate decision.
 
+## getEventEntrySpace
+
+How many MAIN places an event (or one of its draws) has for entries accepted directly — neither
+qualifiers nor wildcards — and how many of them are still open.
+
+```js
+const { basis, drawPositions, qualifierPositions, wildcardPositions, directAcceptancePlaces, openPlaces } =
+  engine.getEventEntrySpace({
+    eventId, // required
+    drawId, // optional - that draw's positions and entries; otherwise the event's
+  });
+```
+
+**Returns:**
+
+```ts
+{
+  success: true;
+  basis: 'STRUCTURE' | 'TARGET_DRAW_SIZE' | 'SANCTIONING_CONSTRAINTS' | 'NONE'; // where drawPositions came from
+  drawPositions: number; // MAIN draw positions
+  qualifierPositions: number; // MAIN positions held for qualifiers
+  qualifierPositionsBasis: 'STRUCTURE' | 'ENTRY_PROFILE' | 'NONE';
+  wildcardPositions: number; // max(entryProfile.wildcardCount, wildcardsAccepted)
+  wildcardsAccepted: number;
+  directAcceptedCount: number; // MAIN entries in DIRECT_ENTRY_STATUSES, wildcards excluded
+  acceptedCount: number; // directAcceptedCount + wildcardsAccepted
+  directAcceptancePlaces?: number; // drawPositions - qualifierPositions - wildcardPositions; undefined when basis is NONE
+  openPlaces?: number; // directAcceptancePlaces - directAcceptedCount, never below 0; undefined when basis is NONE
+}
+```
+
+**Where the numbers come from.** Once a MAIN structure exists, its positions and the qualifier
+positions its links deliver decide — the same breakdown entry into a draw uses. Before that, the event's
+`entryProfile`: `targetDrawSize` for the positions (then the sanctioning constraints extension's
+`drawSize`), and `qualifiersCount`, or the final stage of each of `qualifyingProfiles`, for the qualifier
+positions. A `qualifyingDrawSize` alone holds no MAIN place: a qualifying draw's size does not say how
+many it sends on. Without `drawId`, positions are summed over every draw that has a MAIN structure and
+counted against the event's entries; entries with no `entryStage` count as MAIN.
+
+---
+
 ## getMaxEntryPosition
 
 Returns the highest `entryPosition` value from entries, optionally filtered by stage and/or entryStatus.
