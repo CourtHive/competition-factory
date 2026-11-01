@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 // constants and types
 import { POLICY_ROUND_ROBIN_TALLY_DEFAULT } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_DEFAULT';
 import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
-import { SUBJECT_PERSON } from '@Constants/seasonConstants';
+import { STANDINGS_PURPOSE_MOVEMENT, SUBJECT_PERSON } from '@Constants/seasonConstants';
 import type { Season } from '@Types/seasonTypes';
 
 /**
@@ -162,5 +162,24 @@ describe('season standings ranked by the tie-score value', () => {
       if (rows[i].valueWon === rows[i - 1].valueWon) expect(rows[i].rank).toBe(rows[i - 1].rank);
       else expect(rows[i].rank).toBeGreaterThan(rows[i - 1].rank);
     }
+  });
+});
+
+describe('a directive that applies only for a purpose (A8)', () => {
+  it('gamesWon breaks the A, B tie only for the movement table', () => {
+    const tallyPolicy = {
+      headToHead: { disabled: true },
+      tallyDirectives: [{ attribute: 'gamesWon', when: { purposes: [STANDINGS_PURPOSE_MOVEMENT] } }],
+    };
+    // published table: nothing else separates A and B (wins and sets level), so they share first place
+    let result: any = getSeasonStandings({ season: season({ tallyPolicy }), matchUps: MATCH_UPS });
+    expect(order(result).slice(0, 2)).toEqual(['A1', 'B1']);
+    // the movement table: B's 32 games to A's 24
+    result = getSeasonStandings({
+      season: season({ tallyPolicy }),
+      matchUps: MATCH_UPS,
+      purpose: STANDINGS_PURPOSE_MOVEMENT,
+    });
+    expect(order(result).slice(0, 2)).toEqual(['B1', 'A2']);
   });
 });
