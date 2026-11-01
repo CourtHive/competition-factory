@@ -2181,6 +2181,22 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(3, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
     },
   ],
+  [
+    'FEED_IN_CHAMPIONSHIP 8/7 (S6 tail, the BYE walk): the fed unfillable seat advances a position into the matchUp the own seat made a BYE',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(3, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'MODIFIED_FEED_IN_CHAMPIONSHIP 8/6 (S6 tail, the BYE walk): both seats make the same matchUp a BYE, the event kept from the first',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 6, drawType: MODIFIED_FEED_IN_CHAMPIONSHIP },
+      setup: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(3, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
 ];
 
 // both first-round feeders of Main round 2 decided: its loser will have won, so FIRST_MATCHUP keeps them out of the
@@ -2348,23 +2364,6 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
       drawProfile: { drawSize: 8, drawType: COMPASS },
       setup: [{ target: R1(1, 'East'), outcome: walkover(1), params: CARRIED }],
       steps: [{ target: R1(2, 'East'), outcome: walkover(1), params: CARRIED }],
-    };
-    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
-    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
-    expect(v1.results[0].success).toEqual(true);
-    expect(v2.v1Writes).toBeGreaterThan(0);
-    expect(v2.results).toEqual(v1.results);
-    expect(v2.record).toEqual(v1.record);
-    expect(v2.notices).toEqual(v1.notices);
-  });
-
-  it('S6 tail: a BYE chain whose unfillable seat is a fed consolation seat is v1s (one notice composes differently)', () => {
-    // FEED_IN_CHAMPIONSHIP 8/7: the own seat's BYE makes Consolation 3/1 a BYE, then the fed unfillable seat's BYE advances
-    // a position into it; v1's notice takes the advance's context and keeps the first write's event
-    const scenario: Scenario = {
-      drawProfile: { drawSize: 8, participantsCount: 7, drawType: FEED_IN_CHAMPIONSHIP },
-      setup: [{ target: R1(3, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
-      steps: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
     };
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);

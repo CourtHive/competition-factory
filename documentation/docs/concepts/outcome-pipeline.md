@@ -730,8 +730,7 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   assignments are announced deepest first, the matchUps in the order written. The walk is planned where every matchUp it
   writes holds no result, score, codes or provenance, no participant is displaced, no seat it reaches is fed or behind a
   link condition (the unfillable seat behind `FIRST_MATCHUP` excepted), no winner link is crossed, and no advance turns a
-  matchUp to be played into a BYE. It serves the convergence's own seat the same way. Stays v1's: an unfillable seat in a
-  fed round (one notice there composes the last write's context with an earlier write's event). A BYE's position sent on
+  matchUp to be played into a BYE. It serves the convergence's own seat the same way. A BYE's position sent on
   into a next matchUp that is a BYE already, its other side the BYE alone, goes into it and on through it into a clean
   matchUp beyond (S6), each announced as `advanceWinner` with no event. The
   unfillable seat takes its BYE behind a `FIRST_MATCHUP` link too, as v1 places it (`advanceByeToLoserMatchUp` asks no

@@ -747,10 +747,8 @@ function byeWalk(
       : undefined;
   if (loserMatchUp && !own) return undefined;
   const conditioned = unfillable?.linkCondition && unfillable.linkCondition !== FIRST_MATCHUP;
-  // a fed unfillable seat: v1's (S6 tail: the differential's evidence decides whether the plain recursion holds there)
-  const fed = !!unfillable && !!context.byId.get(unfillable.matchUpId)?.feedRound;
   const second =
-    unfillable && !conditioned && !fed ? walked(unfillable.structureId, unfillable.drawPosition, false) : undefined;
+    unfillable && !conditioned ? walked(unfillable.structureId, unfillable.drawPosition, false) : undefined;
   return { own, ...(second ? { unfillable: second } : {}) };
 }
 
