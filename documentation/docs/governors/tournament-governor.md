@@ -548,6 +548,8 @@ engine.setTournamentStatus({ status: CANCELLED });
 
 Announced as `MODIFY_TOURNAMENT_DETAIL` with `tournamentStatus`; setting the status the record already has sends nothing.
 
+`status` is one of `ACTIVE`, `IN_PROGRESS`, `COMPLETED`, `ABANDONED` or `CANCELLED` (`TournamentStatusEnum`); anything else is refused with `INVALID_VALUES`. The CODES schema (`tournament.schema.json`) accepts all five, so a record carrying any of them, including the `ACTIVE` that [`activateFromSanctioning`](/docs/governors/sanctioning-governor#activatefromsanctioning) writes, passes whole-record validation.
+
 ---
 
 ## setTournamentDates

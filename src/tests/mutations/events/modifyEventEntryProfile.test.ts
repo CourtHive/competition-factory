@@ -193,7 +193,7 @@ describe('activation from sanctioning carries the sanctioned sizes', () => {
     const [singles, doubles] = tournamentRecord.events;
     expect(singles.entryProfile).toEqual({ targetDrawSize: 32, qualifyingDrawSize: 16 });
     expect(doubles.entryProfile).toBeUndefined();
-    // the events, not the whole record: the schema's TournamentStatusEnum lacks the ACTIVE activation writes
+    // the whole record's validation, ACTIVE included, is tournamentStatusSchema.test.ts
     expect(validateEvent(singles)).toEqual(true);
 
     tournamentEngine.setState(tournamentRecord);
