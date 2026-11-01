@@ -42,7 +42,16 @@ export const V1_DEFAULT_DIRECTIVES: StandingsDirective[] = [
 export const V1_HEAD_TO_HEAD: StandingsDirective = { attribute: 'headToHead', mode: 'RECORD' };
 
 /** measures added by the standings engine (S3c): differences and ratios; any of them may be a primary measure */
-export const V2_MEASURES = ['setsDiff', 'gamesDiff', 'pointsDiff', 'setsRatio', 'gamesRatio', 'pointsRatio'];
+export const V2_MEASURES = [
+  'setsDiff',
+  'gamesDiff',
+  'pointsDiff',
+  'setsRatio',
+  'gamesRatio',
+  'pointsRatio',
+  // from `resultPoints` (S4b)
+  'classificationPoints',
+];
 
 /**
  * ratio measures, won over lost: computed only when ordering, never stored (a ratio with nothing lost is unbounded),

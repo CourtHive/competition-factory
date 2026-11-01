@@ -83,6 +83,7 @@ export function tallyPolicyErrors(tallyPolicy: RoundRobinTallyPolicy, extraMeasu
   }
 
   errors.push(...crossGroupErrors(tallyPolicy.crossGroup, measures));
+  errors.push(...resultPointsErrors(tallyPolicy.resultPoints));
   if (onSplit !== undefined && !SPLIT_MODES.includes(onSplit as string)) {
     errors.push(`onSplit must be one of ${SPLIT_MODES.join(', ')}`);
   }
@@ -111,6 +112,35 @@ function crossGroupErrors(crossGroup: unknown, measures: string[]): string[] {
       return [`crossGroup[${index}]: ${attribute} is not a stored measure`];
     }
     return [];
+  });
+}
+
+/** resultPoints: ordered rules with unique ids and finite awards; a drawn rule awards `points`, a decided one both sides */
+function resultPointsErrors(resultPoints: unknown): string[] {
+  if (resultPoints === undefined) return [];
+  const rules = (resultPoints as { rules?: unknown })?.rules;
+  if (!Array.isArray(rules) || !rules.length) return ['resultPoints.rules must be a non-empty array'];
+  const finite = (value: unknown) => typeof value === 'number' && Number.isFinite(value);
+  const ids = new Set<string>();
+  return rules.flatMap((rule, index) => {
+    const label = `resultPoints.rules[${index}]`;
+    const errors: string[] = [];
+    if (typeof rule?.id !== 'string' || !rule.id) errors.push(`${label} needs an id`);
+    else if (ids.has(rule.id)) errors.push(`${label}: duplicate id ${rule.id}`);
+    else ids.add(rule.id);
+    if (rule?.isDrawn) {
+      if (!finite(rule.points)) errors.push(`${label}: a drawn rule needs finite points`);
+    } else if (!finite(rule?.winner) || !finite(rule?.loser)) {
+      errors.push(`${label}: a decided rule needs finite winner and loser points`);
+    }
+    if (rule?.matchUpStatuses !== undefined && !Array.isArray(rule.matchUpStatuses)) {
+      errors.push(`${label}: matchUpStatuses must be an array`);
+    }
+    const setsOk = (rule?.loserSetsWon ?? []).every?.((n: unknown) => Number.isInteger(n) && (n as number) >= 0);
+    if (rule?.loserSetsWon !== undefined && !(Array.isArray(rule.loserSetsWon) && setsOk)) {
+      errors.push(`${label}: loserSetsWon must be an array of whole numbers`);
+    }
+    return errors;
   });
 }
 
