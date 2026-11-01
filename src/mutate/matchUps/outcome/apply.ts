@@ -98,6 +98,7 @@ export function applyOwnedPlan({
   const released = new Set(
     ops.flatMap((op) => (op.op === 'setMatchUpDrawPositions' && op.releasedDrawPosition ? [op.matchUpId] : [])),
   );
+  const { advancedLast } = byeAndAdvance(ops);
   const stored = new Map(args.matchUpsMap?.drawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
   const subscribed = getTopics().topics.includes(UPDATE_INCONTEXT_MATCHUP);
   // every score write announces its matchUp in context to a subscriber, as v1's `modifyMatchUpScore` does: the call's
@@ -137,6 +138,7 @@ export function applyOwnedPlan({
           exchanged,
           relayed,
           advanced,
+          advancedLast,
           released,
         }),
       eventId: noticeEvent?.eventId,
@@ -151,6 +153,30 @@ export function applyOwnedPlan({
   // a winner's route returns the context `directParticipants` builds, a final's included, which carries something only
   // for an exit (S5): empty
   return shape === 'direction' ? { ...SUCCESS, context: {}, ...tieMatchUpResult } : { ...SUCCESS, ...tieMatchUpResult };
+}
+
+/**
+ * A matchUp given a BYE and then another BYE or an advance through one in the same call (S6 tail): v1's notice buffer
+ * keeps the LAST write's context and an EARLIER write's event (`preserveNoticeIdentity`). Whether the advance came last,
+ * and whether an evented BYE came before a later write that names no event (an unfillable seat's BYE, an advance).
+ */
+function byeAndAdvance(ops: OutcomeOp[]): { advancedLast: Set<string>; eventKept: Set<string> } {
+  const last = new Map<string, 'bye' | 'advance'>();
+  const eventedBye = new Set<string>();
+  const eventKept = new Set<string>();
+  for (const op of ops) {
+    if (op.op === 'setMatchUpBye') {
+      last.set(op.matchUpId, 'bye');
+      // a second BYE naming no event (the seat a produced exit leaves unfillable) keeps an earlier BYE's event
+      if (op.announcesEvent === false && eventedBye.has(op.matchUpId)) eventKept.add(op.matchUpId);
+      if (op.announcesEvent !== false) eventedBye.add(op.matchUpId);
+    } else if (op.op === 'setMatchUpDrawPositions' && op.advancesThroughBye) {
+      last.set(op.matchUpId, 'advance');
+      if (!op.announcesEvent && eventedBye.has(op.matchUpId)) eventKept.add(op.matchUpId);
+    }
+  }
+  const advancedLast = new Set([...last].flatMap(([matchUpId, kind]) => (kind === 'advance' ? [matchUpId] : [])));
+  return { advancedLast, eventKept };
 }
 
 /**
@@ -189,6 +215,8 @@ function noticeRules(ops: OutcomeOp[]) {
   );
   // a BYE an unwind withdraws: v1's `clearDrawPosition` names its position, with neither event nor tournament (S6)
   const unbyed = withdrawnByeNotices(ops);
+  // an advance through a BYE names no event, but an evented BYE written before it keeps its event (`byeAndAdvance`)
+  for (const matchUpId of byeAndAdvance(ops).eventKept) unevented.delete(matchUpId);
   // a team's line-up written with no event, unless a result written after it announces the matchUp (`namedWriters`)
   for (const matchUpId of namedWriters(ops).lineUpUnevented) unevented.add(matchUpId);
   // a settle pass's result write names the event and the tournament, whatever an earlier write of the matchUp left out
@@ -322,12 +350,14 @@ function matchUpContext(
     exchanged: Set<string>;
     relayed: Set<string>;
     advanced: Set<string>;
+    advancedLast: Set<string>;
     released: Set<string>;
   },
 ): string {
-  const { resulted, byes, recoded, exchanged, relayed, advanced, released } = written;
+  const { resulted, byes, recoded, exchanged, relayed, advanced, advancedLast, released } = written;
   if (resulted.has(matchUpId)) return 'modifyMatchUpScore';
-  if (advanced.has(matchUpId) && !byes.has(matchUpId)) return 'advanceWinner';
+  // a BYE and an advance through one: the later write's context (`byeAndAdvance`)
+  if (advanced.has(matchUpId) && (!byes.has(matchUpId) || advancedLast.has(matchUpId))) return 'advanceWinner';
   if (released.has(matchUpId)) return 'releaseAdvancedDrawPosition';
   if (relayed.has(matchUpId)) return 'progressExitStatus';
   // a loser taken back out and their seat then given a BYE (a result turned into a double exit): the BYE is the later

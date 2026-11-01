@@ -14,6 +14,7 @@ import type {
   CompleteDrawMatchUpsArgs,
   GenerateParticipantsArgs,
   GenerateOutcomeArgs,
+  MockSeasonProfile,
 } from '@Types/mocksTypes';
 
 let devContextSet = false;
@@ -25,6 +26,7 @@ let devContextSet = false;
  */
 export type MocksEngine = FactoryEngine & {
   generateTournamentRecord: (params?: GenerateTournamentRecordArgs) => any;
+  generateSeason: (params: { seasonProfile: MockSeasonProfile }) => any;
   modifyTournamentRecord: (params?: ModifyTournamentRecordArgs) => any;
   completeDrawMatchUps: (params: CompleteDrawMatchUpsArgs) => any;
   generateParticipants: (params?: GenerateParticipantsArgs) => any;

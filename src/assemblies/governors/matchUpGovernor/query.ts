@@ -39,6 +39,7 @@ export { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 export { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 export { getMatchUpsStats } from '@Query/matchUps/getMatchUpsStats';
 export { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
+export { getDualIssues } from '@Query/matchUp/getDualIssues';
 export { getRounds } from '@Query/matchUps/scheduling/getRounds';
 export { eventMatchUps } from '@Query/matchUps/getEventMatchUps';
 export { drawMatchUps } from '@Query/matchUps/getDrawMatchUps';
