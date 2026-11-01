@@ -393,12 +393,12 @@ module.exports = {
         {
           type: 'category',
           label: 'Seasons & Leagues',
-          items: ['governors/season-governor'],
+          items: ['governors/season-governor', 'governors/ladder-governor'],
         },
         {
           type: 'category',
           label: 'Scheduling & Venues',
-          items: ['governors/schedule-governor', 'governors/venue-governor'],
+          items: ['governors/schedule-governor', 'governors/venue-governor', 'governors/availability-governor'],
         },
         {
           type: 'category',
