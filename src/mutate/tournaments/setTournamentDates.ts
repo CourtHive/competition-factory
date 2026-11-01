@@ -1,3 +1,4 @@
+import { trimToTournamentRange } from '@Mutate/tournaments/tournamentDateTrims';
 import { clearScheduledMatchUps } from '@Mutate/matchUps/schedule/clearScheduledMatchUps';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { modifiedVenueNotices, venueSnapshot } from '@Mutate/venues/venueNotices';
@@ -11,6 +12,7 @@ import { canonicalDate } from '@Tools/canonicalClock';
 import { extractDate, generateDateRange } from '@Tools/dateTime';
 
 // constants and types
+import type { ActiveDateChange, TrimmedProfileDate } from '@Mutate/tournaments/tournamentDateTrims';
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import { MODIFY_TOURNAMENT_DETAIL } from '@Constants/topicConstants';
 import { INVALID, VALIDATE } from '@Constants/attributeConstants';
@@ -53,6 +55,10 @@ export function setTournamentDates(params: SetTournamentDatesArgs): ResultType &
   unscheduledMatchUpIds?: string[];
   // events whose dates changed to stay inside the new range (TRACKED, CLAMPED or RESET)
   eventDateChanges?: EventDateChange[];
+  // active dates pruned from the tournament's list (no eventId) or an event's, as outside the new ranges
+  activeDateChanges?: ActiveDateChange[];
+  // what left the scheduling profile: its dates outside the new range, in profile shape
+  trimmedSchedulingProfile?: TrimmedProfileDate[];
   datesRemoved?: string[];
   datesAdded?: string[];
 } {
@@ -167,6 +173,9 @@ export function setTournamentDates(params: SetTournamentDatesArgs): ResultType &
   if (activeDates) tournamentRecord.activeDates = activeDates;
   if (weekdays) tournamentRecord.weekdays = weekdays;
 
+  // a change of range leaves no active date or scheduling-profile date outside the new ranges
+  const trims = trimToTournamentRange({ tournamentRecord, startDate, endDate });
+
   let unscheduledMatchUpIds: string[] | undefined;
   if (forcedUnscheduling) {
     const cleared = clearScheduledMatchUps({
@@ -185,7 +194,8 @@ export function setTournamentDates(params: SetTournamentDatesArgs): ResultType &
     payload: definedAttributes({
       parentOrganisation: tournamentRecord.parentOrganisation,
       tournamentId: tournamentRecord.tournamentId,
-      activeDates,
+      // pruned: the list that remains, [] when none remained and the list is unset
+      activeDates: trims.prunedTournamentActiveDates ?? activeDates,
       startDate,
       weekdays,
       endDate,
@@ -196,6 +206,8 @@ export function setTournamentDates(params: SetTournamentDatesArgs): ResultType &
   return {
     ...SUCCESS,
     eventDateChanges: eventDateChanges.length ? eventDateChanges : undefined,
+    trimmedSchedulingProfile: trims.trimmedSchedulingProfile,
+    activeDateChanges: trims.activeDateChanges,
     unscheduledMatchUpIds,
     datesRemoved,
     datesAdded,

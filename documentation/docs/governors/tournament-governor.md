@@ -558,6 +558,8 @@ Sets the start date, end date, active dates, and/or weekdays for a tournament. V
 const {
   unscheduledMatchUpIds, // matchUpIds unscheduled by a force: true date change
   eventDateChanges, // events whose dates changed: { eventId, reason, previousStartDate, previousEndDate, startDate, endDate }[]
+  activeDateChanges, // active dates pruned: { eventId?, previousActiveDates, prunedActiveDates, activeDates? }[]
+  trimmedSchedulingProfile, // what left the scheduling profile, in profile shape: { scheduleDate, venues }[]
   datesRemoved, // dates no longer in the tournament range
   datesAdded, // dates newly in the tournament range
 } = engine.setTournamentDates({
@@ -593,11 +595,38 @@ An event with no `startDate` or `endDate` is left alone; it already uses the tou
 change is announced with `MODIFY_EVENT` and listed in `eventDateChanges` (absent when no event changed). The reset
 rule means a director who shifts a tournament past an event's own days gets an event that plays on every tournament
 day, and `eventDateChanges` says so; the alternative, collapsing the range to one edge day, would invent a
-playing day nobody chose. An event `activeDates` list is not rewritten.
+playing day nobody chose.
 
 A record whose event range already lies outside the tournament range (written before this rule, or edited outside the
 engine) is reported by `getTournamentInconsistencies` as `EVENT_DATES_OUTSIDE_TOURNAMENT` and is reconciled by the
 next `setTournamentDates`.
+
+### Active dates follow the ranges
+
+When `startDate` or `endDate` is given, active dates outside the new ranges are pruned: the tournament's `activeDates`
+against the new tournament range, and each event's `activeDates` against that event's range after the reconciliation
+above (the tournament range for an event with no dates of its own). Each change is listed in `activeDateChanges`
+(absent when nothing was pruned); an entry without `eventId` is the tournament's own list. Every event whose list
+changes is announced with `MODIFY_EVENT`; the tournament's change is carried by `MODIFY_TOURNAMENT_DETAIL`, whose
+`activeDates` is then the list that remains.
+
+A list that would be left empty is **unset**, and its entry has no `activeDates`. An unset list means every day of the
+range, so the tournament or event widens to its whole range; the entry is how a caller sees that and sets new dates.
+The alternative, keeping dates the range no longer holds, would leave a list naming days on which nothing can be
+played. (The MODIFY_TOURNAMENT_DETAIL payload carries `activeDates: []` for an unset tournament list.) An explicit
+`activeDates` argument is still refused with `INVALID_DATE` when it lies outside the new range.
+
+### The scheduling profile follows the range
+
+When `startDate` or `endDate` is given, the stored scheduling profile loses the dates outside the new tournament range.
+The rounds profiled on those dates simply leave the profile: their matchUps are no longer scheduled by it, and nothing
+already written to a matchUp is changed here (a matchUp scheduled outside the new range is handled by the refusal or
+`force` above). What left is returned in `trimmedSchedulingProfile`, in profile shape (absent when nothing was trimmed),
+and the saved profile is announced with `MODIFY_SCHEDULING_PROFILE`, as `setSchedulingProfile` announces it.
+
+In a competition whose profile carries rounds of several tournaments, only this tournament's rounds (and rounds naming
+no tournament) leave a date outside its range; another tournament's rounds on that date stay, and the date stays with
+them. A call that gives neither `startDate` nor `endDate` trims and prunes nothing.
 
 ---
 
