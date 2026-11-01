@@ -67,6 +67,8 @@ export default defineConfig({
         'src/mutate/score/staticScoreChange/**',
         'src/mutate/matchUps/score/history/**',
         'src/tests/testHarness/**',
+        // the frozen v1 standings engine: an oracle for the differential fuzz, not product code
+        'src/tests/standings/v1Reference/**',
         // notice-conformance harness is test infrastructure (like testHarness/**),
         // exercised incrementally as the D-scenarios sweep grows — not product code.
         'src/tests/mutations/notifications/noticeConformance/harness.ts',

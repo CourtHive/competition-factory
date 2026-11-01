@@ -97,6 +97,8 @@ const ALLOWED = {
   'mutate/matchUps/outcome/plan.ts':
     'PLUMBING — abstains when a client sent the array, so v1 writes it; carries the planned array into the op; decides nothing on it',
   'mutate/matchUps/outcome/types.ts': 'PLUMBING — the v2 request carries the submitted array to the write',
+  'mutate/matchUps/outcome/unwindWalk.ts':
+    'PLUMBING — abstains where a matchUp its removal would write carries codes, so v1 writes it; decides nothing on them',
   'mutate/matchUps/outcome/write.ts':
     'WRITE — plans the write as modifyMatchUpScore performs it; the split is at the write (S2b)',
   'mutate/matchUps/score/modifyMatchUpScore.ts': 'PLUMBING — writes what its caller passed',

@@ -96,13 +96,13 @@ Standings per tier, derived from the results of the competitions the season's pe
 **in-context matchUps** it has already selected; the factory never loads records.
 
 ```js
-const { standings, unanswered, unmapped, unplaced } = seasonGovernor.getSeasonStandings({
+const { standings, provisional, unanswered, unmapped, unplaced } = seasonGovernor.getSeasonStandings({
   season,
   matchUps, // in-context matchUps from every referenced record
   periodId, // optional: one period; otherwise every period with includeInStandings
   tierId, // optional
   getSubjectId, // optional: participant => durable subject id
-  orderBy, // optional: tally fields compared in order, higher first
+  orderBy, // optional: rank flat by these tally fields, higher first, even when a policy is declared
 });
 // standings: { [tierId]: [{ subject, participantIds, rank, matchUpsWon, matchUpsLost, valueWon, valueLost, ... }] }
 ```
@@ -111,9 +111,17 @@ const { standings, unanswered, unmapped, unplaced } = seasonGovernor.getSeasonSt
   derived from its lines or reported as an aggregate.
 - By default a TEAM is identified by its `participantId` and an individual by `person.personId`. A pair, or a team
   whose participantId is not stable across records, needs `getSubjectId`.
-- Subjects level on every `orderBy` field share a rank (1, 2, 2, 4).
+- **Ordering.** A season, or a tier, may declare a `tallyPolicy`: the same round-robin tally policy a group uses (primary
+  measure, tie-break directives, head-to-head), applied by the standings engine. A tier's policy overrides the
+  season's. Head-to-head reaches across periods and records, because every result is counted against the durable
+  subject rather than the record-scoped participantId. A policy may rank by `valueWon` / `valueLost` as well as the
+  round-robin measures. Without a policy, or when `orderBy` is passed, tables rank flat by `orderBy` (default: matchUps
+  won, value, sets, games), and subjects level on every field share a rank (1, 2, 2, 4).
+- A placed subject who has not played yet follows every subject who has, sharing that place.
+- `provisional[tierId]` is true while any referenced matchUp in the tier has no result.
 - **Nothing is dropped silently:** a reference no matchUp answered is returned in `unanswered`, a participant with no
-  resolvable identity in `unmapped`, and a subject playing outside its period's placements in `unplaced`.
+  resolvable identity in `unmapped`, and a subject playing outside its period's placements in `unplaced`. An unmapped
+  opponent's result still counts for the subject who played them.
 
 ### getSeasonAdvancement
 

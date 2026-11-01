@@ -1,5 +1,5 @@
 import { modifyTournamentDetailNotice } from '@Mutate/tournaments/tournamentDetailNotice';
-import { validateDrawTallyOptions } from '@Query/matchUps/roundRobinTally/drawnResults';
+import { validateTallyPolicy } from '@Validators/validateTallyPolicy';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
@@ -54,7 +54,9 @@ export function attachPolicies(params: AttachPoliciesArgs): ResultType & { appli
   if (checkParams.error) return checkParams;
   // a drawId that resolves to no draw names no element: it fell through to every loaded record
   if (params.drawId && !params.drawDefinition) return { error: DRAW_DEFINITION_NOT_FOUND };
-  const tallyValidation = validateDrawTallyOptions(params.policyDefinitions?.[POLICY_TYPE_ROUND_ROBIN_TALLY]);
+  const tallyValidation = validateTallyPolicy({
+    tallyPolicy: params.policyDefinitions?.[POLICY_TYPE_ROUND_ROBIN_TALLY],
+  });
   if (tallyValidation.error) return tallyValidation;
 
   const applied: string[] = [];

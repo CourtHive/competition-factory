@@ -1,4 +1,7 @@
 import { getParticipantResults } from '@Query/matchUps/roundRobinTally/getParticipantResults';
+import { matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
+import { orderParticipants } from '@Query/standings/orderParticipants';
+import { fromV1, SEASON_TALLY_MEASURES, V1_PRIMARY_KEYS } from '@Query/standings/fromV1';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { validateSeason } from '@Validators/validateSeason';
 
@@ -14,6 +17,8 @@ import type {
 import { INVALID_VALUES, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 import type { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
 import type { RoundRobinTallyPolicy } from '@Types/roundRobinTallyPolicy';
+import type { ParticipantResults } from '@Query/standings/standingsTypes';
+import type { ErrorType } from '@Constants/errorConditionConstants';
 import { SUBJECT_PERSON, SUBJECT_TEAM } from '@Constants/seasonConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/participantConstants';
@@ -21,8 +26,14 @@ import { ResultType } from '@Types/factoryTypes';
 
 export type SubjectResolver = (participant: HydratedParticipant) => string | undefined;
 
-type ParticipantTally = Partial<Record<keyof SeasonStandingsTally, number>>;
 type TierRows = Record<string, Map<string, SeasonStandingRow>>;
+
+/** a tier's matchUps with sides rewritten to subject keys, and what each key stands for */
+type TierBucket = {
+  matchUps: HydratedMatchUp[];
+  subjects: Map<string, SeasonSubject>;
+  participantIds: Map<string, string[]>;
+};
 
 type GetSeasonStandingsArgs = {
   season: Season;
@@ -51,11 +62,15 @@ export type SeasonStandingsResult = ResultType & {
   unanswered?: CompetitionRef[];
   /** subjects who played in a tier the period's placements do not put them in */
   unplaced?: { tierId: string; periodId: string; subject: SeasonSubject }[];
+  /** keyed by tierId: true while any referenced matchUp in the tier has no result */
+  provisional?: Record<string, boolean>;
 };
 
-type Reports = Required<Omit<SeasonStandingsResult, keyof ResultType | 'standings'>>;
+type Reports = Required<Omit<SeasonStandingsResult, keyof ResultType | 'standings' | 'provisional'>>;
 
 const DEFAULT_ORDER: (keyof SeasonStandingsTally)[] = ['matchUpsWon', 'valueWon', 'setsWon', 'gamesWon'];
+/** a season's ledger carries the tie-score values too, so a policy may rank by them first */
+const SEASON_PRIMARY_KEYS = [...V1_PRIMARY_KEYS, ...SEASON_TALLY_MEASURES];
 const TALLY_FIELDS: (keyof SeasonStandingsTally)[] = [
   'matchUpsWon',
   'matchUpsLost',
@@ -77,8 +92,9 @@ const TALLY_FIELDS: (keyof SeasonStandingsTally)[] = [
  */
 export function getSeasonStandings(params: GetSeasonStandingsArgs): SeasonStandingsResult {
   const stack = 'getSeasonStandings';
-  const { season, matchUps, periodId, tierId, getSubjectId, tallyPolicy } = params;
-  const valid = validateSeason({ season });
+  const { season, matchUps, periodId, tierId, getSubjectId } = params;
+  // a calculation never refuses for the policy itself (spec § 5.10): it was checked when the season was saved
+  const valid = validateSeason({ season, checkPolicies: false });
   if (valid.error) return valid;
   if (!Array.isArray(matchUps)) return decorateResult({ result: { error: MISSING_MATCHUPS }, stack });
 
@@ -95,22 +111,43 @@ export function getSeasonStandings(params: GetSeasonStandingsArgs): SeasonStandi
   }
 
   const rows: TierRows = {};
+  const buckets: Record<string, TierBucket> = {};
   const reports: Reports = { unmapped: [], unanswered: [], unplaced: [] };
 
   for (const period of periods) {
     seedPlacements({ period, rows, tierId });
     for (const ref of period.competitions.filter((competition) => !tierId || competition.tierId === tierId)) {
-      const refResult = tallyReference({ ref, period, matchUps, rows, reports, getSubjectId, tallyPolicy });
-      if (refResult?.error) return decorateResult({ result: refResult, context: { ref }, stack });
+      collectReference({ ref, period, matchUps, buckets, reports, getSubjectId });
     }
   }
 
-  const orderBy = params.orderBy?.length ? params.orderBy : DEFAULT_ORDER;
-  const standings = Object.fromEntries(
-    Object.entries(rows).map(([key, subjectRows]) => [key, rankRows([...subjectRows.values()], orderBy)]),
-  );
+  const standings: Record<string, SeasonStandingRow[]> = {};
+  const provisional: Record<string, boolean> = {};
+  const tierIds = new Set([...Object.keys(rows), ...Object.keys(buckets)]);
+  for (const key of tierIds) {
+    const bucket = buckets[key];
+    const tallyPolicy =
+      params.tallyPolicy ?? season.tiers.find((tier) => tier.tierId === key)?.tallyPolicy ?? season.tallyPolicy;
+    const ledger = bucket ? tierLedger(bucket, tallyPolicy) : { participantResults: {} };
+    if ('error' in ledger && ledger.error) return decorateResult({ result: ledger, context: { tierId: key }, stack });
+    const participantResults = ledger.participantResults as ParticipantResults;
+    for (const [subjectKey, result] of Object.entries(participantResults)) {
+      const subject = bucket?.subjects.get(subjectKey);
+      if (!subject) continue; // an unmapped opponent: credited to the other side, never a row
+      const row = getRow(rows, key, subject);
+      row.participantIds = bucket?.participantIds.get(subjectKey) ?? [];
+      for (const field of TALLY_FIELDS) row[field] = Number(result[field] ?? 0);
+    }
+    const tierRows = [...(rows[key]?.values() ?? [])];
+    // the engine orders by policy unless the caller asks for the flat order by name
+    standings[key] =
+      tallyPolicy && !params.orderBy?.length && bucket
+        ? rankByPolicy({ tierRows, participantResults, bucket, tallyPolicy })
+        : rankRows(tierRows, params.orderBy?.length ? params.orderBy : DEFAULT_ORDER);
+    provisional[key] = !bucket || bucket.matchUps.some((matchUp) => !matchUpCompletion(matchUp));
+  }
 
-  return { standings, ...reports };
+  return { standings, provisional, ...reports };
 }
 
 function referencedMatchUps(ref: CompetitionRef, matchUps: HydratedMatchUp[]) {
@@ -124,67 +161,119 @@ function referencedMatchUps(ref: CompetitionRef, matchUps: HydratedMatchUp[]) {
   );
 }
 
-type TallyReferenceArgs = {
-  tallyPolicy?: RoundRobinTallyPolicy;
+type CollectReferenceArgs = {
+  buckets: Record<string, TierBucket>;
   getSubjectId?: SubjectResolver;
   matchUps: HydratedMatchUp[];
   period: SeasonPeriod;
   ref: CompetitionRef;
   reports: Reports;
-  rows: TierRows;
 };
 
-function tallyReference({ ref, period, matchUps, rows, reports, getSubjectId, tallyPolicy }: TallyReferenceArgs) {
+/**
+ * Adds a reference's matchUps to its tier, each side rewritten from the record-scoped participantId to the subject it
+ * resolves to: one ledger then spans every period and record, so head-to-head reaches across them. A side with no
+ * subject keeps an `unmapped:` key: its opponent is still credited with the result, and it never becomes a row.
+ */
+function collectReference({ ref, period, matchUps, buckets, reports, getSubjectId }: CollectReferenceArgs) {
   const refMatchUps = referencedMatchUps(ref, matchUps);
   if (!refMatchUps.length) {
     reports.unanswered.push(ref);
-    return undefined;
+    return;
   }
-
-  const tally = getParticipantResults({ matchUps: refMatchUps, tallyPolicy });
-  if (tally.error) return tally;
-  const participantResults = (tally.participantResults ?? {}) as Record<string, ParticipantTally>;
-
-  const participants = new Map<string, HydratedParticipant>();
-  for (const matchUp of refMatchUps) {
-    for (const side of matchUp.sides ?? []) {
-      if (side?.participantId && side.participant) participants.set(side.participantId, side.participant);
-    }
-  }
+  buckets[ref.tierId] ??= { matchUps: [], subjects: new Map(), participantIds: new Map() };
+  const bucket = buckets[ref.tierId];
   const placed = placedSubjectKeys(period, ref.tierId);
+  const seen = new Map<string, string>();
 
-  for (const [participantId, participantResult] of Object.entries(participantResults)) {
-    const participant = participants.get(participantId) ?? ({ participantId } as HydratedParticipant);
+  const keyFor = (side?: { participantId?: string; participant?: HydratedParticipant }) => {
+    const participantId = side?.participantId;
+    if (!participantId) return undefined;
+    if (seen.has(participantId)) return seen.get(participantId);
+    const participant = side?.participant ?? ({ participantId } as HydratedParticipant);
     const subject = resolveSubject(participant, getSubjectId);
-    if (!subject) {
+    let key = `unmapped:${participantId}`;
+    if (subject) {
+      key = subjectKey(subject);
+      bucket.subjects.set(key, subject);
+      const participantIds = bucket.participantIds.get(key) ?? [];
+      if (!participantIds.includes(participantId)) participantIds.push(participantId);
+      bucket.participantIds.set(key, participantIds);
+      if (placed && !placed.has(key)) reports.unplaced.push({ tierId: ref.tierId, periodId: period.periodId, subject });
+    } else {
       reports.unmapped.push({ participantId, tierId: ref.tierId, tournamentId: ref.tournamentId });
-      continue;
     }
-    if (placed && !placed.has(subjectKey(subject))) {
-      reports.unplaced.push({ tierId: ref.tierId, periodId: period.periodId, subject });
-    }
+    seen.set(participantId, key);
+    return key;
+  };
 
-    const row = getRow(rows, ref.tierId, subject);
-    if (!row.participantIds.includes(participantId)) row.participantIds.push(participantId);
-    for (const field of TALLY_FIELDS) row[field] += Number(participantResult[field] ?? 0);
-    addTieValues(row, participantId, refMatchUps);
+  for (const matchUp of refMatchUps) {
+    const sides = (matchUp.sides ?? []).map((side) => ({ ...side, participantId: keyFor(side) }));
+    bucket.matchUps.push({ ...matchUp, sides } as HydratedMatchUp);
   }
-  return undefined;
 }
 
-// the tie score (a set whose side scores are the lines, points or games won) summed; REPORTED and DERIVED alike
-function addTieValues(row: SeasonStandingRow, participantId: string, refMatchUps: HydratedMatchUp[]) {
-  for (const matchUp of refMatchUps) {
+/** the tier's ledger: the round-robin tally of its subject-keyed matchUps, plus the tie-score values */
+function tierLedger(
+  bucket: TierBucket,
+  tallyPolicy?: RoundRobinTallyPolicy,
+  participantIds?: string[],
+  groupingTotal?: string,
+): { participantResults?: ParticipantResults; error?: ErrorType; info?: string } {
+  const tally = getParticipantResults({ matchUps: bucket.matchUps, tallyPolicy, participantIds, groupingTotal });
+  if (tally.error) return tally;
+  const participantResults = (tally.participantResults ?? {}) as ParticipantResults;
+  const scoped = participantIds ? new Set(participantIds) : undefined;
+  for (const matchUp of bucket.matchUps) {
     if (matchUp.matchUpType !== TEAM_MATCHUP) continue;
-    const sideIndex = (matchUp.sides ?? []).findIndex((side) => side?.participantId === participantId);
-    if (sideIndex < 0) continue;
-    for (const set of matchUp.score?.sets ?? []) {
-      const own = sideIndex === 0 ? set.side1Score : set.side2Score;
-      const other = sideIndex === 0 ? set.side2Score : set.side1Score;
-      row.valueWon += Number(own ?? 0);
-      row.valueLost += Number(other ?? 0);
-    }
+    const keys = (matchUp.sides ?? []).map((side) => side?.participantId as string);
+    if (scoped && !keys.every((key) => scoped.has(key))) continue;
+    keys.forEach((key, sideIndex) => {
+      const result = participantResults[key];
+      if (!result) return;
+      for (const set of matchUp.score?.sets ?? []) {
+        const own = sideIndex === 0 ? set.side1Score : set.side2Score;
+        const other = sideIndex === 0 ? set.side2Score : set.side1Score;
+        result.valueWon = Number(result.valueWon ?? 0) + Number(own ?? 0);
+        result.valueLost = Number(result.valueLost ?? 0) + Number(other ?? 0);
+      }
+    });
   }
+  return { participantResults };
+}
+
+type RankByPolicyArgs = {
+  participantResults: ParticipantResults;
+  tallyPolicy: RoundRobinTallyPolicy;
+  tierRows: SeasonStandingRow[];
+  bucket: TierBucket;
+};
+
+/**
+ * The standings engine's order (spec § 5): the tier's tally policy, read through `fromV1` with the tie-score values
+ * as primary measures too. A placed subject who has not played follows everyone who has, sharing that place.
+ */
+function rankByPolicy({ tierRows, participantResults, bucket, tallyPolicy }: RankByPolicyArgs) {
+  const played = Object.fromEntries(
+    Object.entries(participantResults).filter(([key]) => bucket.subjects.has(key)),
+  ) as ParticipantResults;
+  const { groupOrder } = orderParticipants({
+    recalculate: ({ participantIds, groupingTotal }) => tierLedger(bucket, tallyPolicy, participantIds, groupingTotal),
+    policy: fromV1(tallyPolicy, SEASON_PRIMARY_KEYS),
+    participantResults: played,
+  });
+  const byKey = new Map(tierRows.map((row) => [subjectKey(row.subject), row]));
+  const ranked = groupOrder.flatMap(({ participantId, rankOrder }) => {
+    const row = byKey.get(participantId);
+    if (!row) return [];
+    row.rank = rankOrder ?? 0;
+    byKey.delete(participantId);
+    return [row];
+  });
+  const unplayedRank = ranked.length + 1;
+  const unplayed = [...byKey.values()].sort((a, b) => a.subject.subjectId.localeCompare(b.subject.subjectId));
+  for (const row of unplayed) row.rank = unplayedRank;
+  return [...ranked, ...unplayed];
 }
 
 function resolveSubject(participant: HydratedParticipant, getSubjectId?: SubjectResolver): SeasonSubject | undefined {

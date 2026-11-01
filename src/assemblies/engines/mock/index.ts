@@ -9,6 +9,7 @@ import { withCapturedClock } from '@Tools/clock';
 import { setState } from '@Assemblies/engines/parts/stateMethods';
 import { FactoryEngine } from '@Types/factoryTypes';
 import type {
+  AnonymizeTournamentRecordArgs,
   GenerateTournamentRecordArgs,
   ModifyTournamentRecordArgs,
   CompleteDrawMatchUpsArgs,
@@ -31,6 +32,7 @@ export type MocksEngine = FactoryEngine & {
   completeDrawMatchUps: (params: CompleteDrawMatchUpsArgs) => any;
   generateParticipants: (params?: GenerateParticipantsArgs) => any;
   generateOutcome: (params?: GenerateOutcomeArgs) => any;
+  anonymizeTournamentRecord: (params?: AnonymizeTournamentRecordArgs) => any;
 };
 
 export const mocksEngine: MocksEngine = (() => {

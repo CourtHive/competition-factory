@@ -85,6 +85,11 @@ export type OutcomeOp =
       ensuredSides?: unknown[];
       /** a TEAM dual's own call that disables auto-calc (`true`) or enables it (`null`, removed), as v1 stores it (S7) */
       disableAutoCalc?: true | null;
+      /**
+       * the call's notes, written onto its own matchUp with the result as v1's `addNotes` writes them inside
+       * `modifyMatchUpScore` (S7, `notesReason`: the clean routes only; a double exit's or a TEAM call's are deferred)
+       */
+      notes?: string;
     }
   | {
       op: 'setMatchUpDrawPositions';
@@ -364,6 +369,7 @@ function setMatchUpResult(matchUp: MatchUp, op: Extract<OutcomeOp, { op: 'setMat
   else delete matchUp.winningSide;
   if (op.matchUpFormat) matchUp.matchUpFormat = op.matchUpFormat;
   if (op.matchUpStatusCodes) matchUp.matchUpStatusCodes = structuredClone(op.matchUpStatusCodes);
+  if (op.notes) matchUp.notes = op.notes;
   if (op.stampsScoredTime === false) return;
   // v1's `applyScoredTime`: captured the first time the matchUp is scored, kept on later corrections, removed with
   // the score so a re-score gets a fresh stamp

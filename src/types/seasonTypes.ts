@@ -1,3 +1,4 @@
+import type { RoundRobinTallyPolicy } from './roundRobinTallyPolicy';
 import type {
   Category,
   Extension,
@@ -52,6 +53,12 @@ export type Season = {
   advancements?: SeasonAdvancement[];
   /** declared before play (R7): how many move up and down between sibling tiers at the close of a period */
   movementRules?: SeasonMovementRule[];
+  /**
+   * how the season's tables are ordered: the round-robin tally policy, read by the standings engine (primary measure,
+   * tie-break directives, head-to-head across periods). A tier's own policy overrides it. Without one, tables are
+   * ranked flat by `orderBy`.
+   */
+  tallyPolicy?: RoundRobinTallyPolicy;
   extensions?: Extension[];
   timeItems?: TimeItem[];
 };
@@ -65,6 +72,8 @@ export type SeasonTier = {
   name?: string;
   gender?: string;
   category?: Category;
+  /** this tier's table ordering, overriding the season's `tallyPolicy` */
+  tallyPolicy?: RoundRobinTallyPolicy;
 };
 
 /** One bounded slice of a season's play: a box-league cycle, the regular season, a playoff, a championship. */

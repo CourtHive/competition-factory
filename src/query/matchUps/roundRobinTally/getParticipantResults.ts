@@ -74,55 +74,17 @@ export function getParticipantResults({
 
   const { totalSets, totalGames } = computeTotals({ filteredMatchUps, excludeMatchUpStatuses, matchUpFormat });
 
+  // the ledger is the sum of each matchUp's own contribution (spec § 5.1), written straight into it: a group has its
+  // matchUps in hand and needs no per-matchUp copy
   for (const matchUp of filteredMatchUps ?? []) {
-    const { matchUpStatus, tieMatchUps, tieFormat, score, winningSide, sides } = matchUp;
-
-    // first-class (NATIVE) with fallback to the legacy `_disableAutoCalc` hydrated alias (LEGACY)
-    const disableAutoCalc = matchUp.disableAutoCalc ?? matchUp._disableAutoCalc;
-    const manualGamesOverride =
-      tieFormat && disableAutoCalc && tieFormat.collectionDefinitions.every(({ scoreValue }) => scoreValue);
-
-    const winningParticipantId = winningSide && getWinningSideId(matchUp);
-    const losingParticipantId = winningSide && getLosingSideId(matchUp);
-
-    if (!winningParticipantId && !losingParticipantId) {
-      perPlayer = processNoWinnerMatchUp({
-        participantResults,
-        manualGamesOverride,
-        matchUpFormat: matchUp.matchUpFormat ?? matchUpFormat,
-        isDrawn: isDrawnResult(matchUp, matchUpFormat),
-        tallyPolicy,
-        matchUpStatus,
-        tieMatchUps,
-        perPlayer,
-        score,
-        sides,
-      });
-    } else {
-      checkInitializeParticipant(participantResults, winningParticipantId);
-      checkInitializeParticipant(participantResults, losingParticipantId);
-
-      perPlayer = processDecidedMatchUp({
-        winningParticipantId,
-        losingParticipantId,
-        manualGamesOverride,
-        participantResults,
-        pressureRating,
-        matchUpFormat: matchUp.matchUpFormat ?? matchUpFormat,
-        matchUpStatus,
-        tieMatchUps,
-        tallyPolicy,
-        winningSide,
-        perPlayer,
-        matchUp,
-        score,
-        sides,
-      });
-    }
-
-    if (manualGamesOverride) {
-      applyManualGamesOverride({ participantResults, score, sides });
-    }
+    perPlayer = getMatchUpContribution({
+      ledger: participantResults,
+      matchUpFormat,
+      pressureRating,
+      tallyPolicy,
+      perPlayer,
+      matchUp,
+    }).perPlayer;
   }
 
   calculatePercentages({
@@ -180,6 +142,83 @@ function computeTotals({
   const totalGames = allGamesCount?.reduce((a, b) => a + b, 0);
 
   return { totalSets, totalGames };
+}
+
+type GetMatchUpContributionArgs = {
+  /** where the contribution is added; omitted, it comes back on its own, keyed like a ledger */
+  ledger?: Record<string, any>;
+  matchUp: MatchUp;
+  matchUpFormat?: string;
+  tallyPolicy?: RoundRobinTallyPolicy;
+  pressureRating?: boolean;
+  perPlayer?: number;
+};
+
+/**
+ * One matchUp's share of the ledger, added into `ledger` (participants keep the order they first appear in), or
+ * returned alone when no ledger is given: a pure function of the one matchUp, so a changed result can replace exactly
+ * its own share. `perPlayer` comes back as 0 after a TEAM matchUp: expected-set denominators do not apply to a team
+ * group (V1-8).
+ */
+export function getMatchUpContribution({
+  ledger,
+  matchUp,
+  matchUpFormat,
+  tallyPolicy,
+  pressureRating,
+  perPlayer,
+}: GetMatchUpContributionArgs): { contribution: Record<string, any>; perPlayer?: number } {
+  const contribution: Record<string, any> = ledger ?? {};
+  const { matchUpStatus, tieMatchUps, tieFormat, score, winningSide, sides } = matchUp;
+
+  // first-class (NATIVE) with fallback to the legacy `_disableAutoCalc` hydrated alias (LEGACY)
+  const disableAutoCalc = matchUp.disableAutoCalc ?? (matchUp as { _disableAutoCalc?: boolean })._disableAutoCalc;
+  const manualGamesOverride =
+    tieFormat && disableAutoCalc && tieFormat.collectionDefinitions.every(({ scoreValue }) => scoreValue);
+
+  const winningParticipantId = winningSide && getWinningSideId(matchUp);
+  const losingParticipantId = winningSide && getLosingSideId(matchUp);
+
+  if (!winningParticipantId && !losingParticipantId) {
+    perPlayer = processNoWinnerMatchUp({
+      participantResults: contribution,
+      manualGamesOverride,
+      matchUpFormat: matchUp.matchUpFormat ?? matchUpFormat,
+      isDrawn: isDrawnResult(matchUp, matchUpFormat),
+      tallyPolicy,
+      matchUpStatus,
+      tieMatchUps,
+      perPlayer,
+      score,
+      sides: sides as NonNullable<MatchUp['sides']>,
+    });
+  } else {
+    checkInitializeParticipant(contribution, winningParticipantId);
+    checkInitializeParticipant(contribution, losingParticipantId);
+
+    perPlayer = processDecidedMatchUp({
+      winningParticipantId,
+      losingParticipantId,
+      manualGamesOverride,
+      participantResults: contribution,
+      pressureRating,
+      matchUpFormat: matchUp.matchUpFormat ?? matchUpFormat,
+      matchUpStatus,
+      tieMatchUps,
+      tallyPolicy,
+      winningSide,
+      perPlayer,
+      matchUp,
+      score,
+      sides,
+    });
+  }
+
+  if (manualGamesOverride) {
+    applyManualGamesOverride({ participantResults: contribution, score, sides });
+  }
+
+  return { contribution, perPlayer };
 }
 
 function processNoWinnerMatchUp({
@@ -275,7 +314,8 @@ function processNoWinnerMatchUp({
 
 function tallyTieMatchUpNoWinner({ participantResults, tieMatchUp, sides }) {
   const tieWinningParticipantId = sides?.find(({ sideNumber }) => sideNumber === tieMatchUp.winningSide)?.participantId;
-  const tieLosingParticipantId = sides?.find(({ sideNumber }) => sideNumber === tieMatchUp.winningSide)?.participantId;
+  // the OTHER side (K10): v1 read the winning side twice, crediting the line winner with both a win and a loss
+  const tieLosingParticipantId = sides?.find(({ sideNumber }) => sideNumber !== tieMatchUp.winningSide)?.participantId;
   if (tieWinningParticipantId && tieLosingParticipantId) {
     checkInitializeParticipant(participantResults, tieWinningParticipantId);
     checkInitializeParticipant(participantResults, tieLosingParticipantId);
