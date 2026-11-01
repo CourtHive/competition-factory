@@ -1,5 +1,89 @@
 # Changelog
 
+## [7.27.0](https://github.com/CourtHive/competition-factory/compare/v7.26.0...v7.27.0) (2026-11-01)
+
+
+### Features
+
+* **dates:** a tournament date change trims the scheduling profile and prunes active dates ([#6078](https://github.com/CourtHive/competition-factory/issues/6078)) ([82512ae](https://github.com/CourtHive/competition-factory/commit/82512ae2cf4bf8f580f7e9f5ca8059d458ed1993))
+* **draws:** resetStructure resets the results of one structure ([#6049](https://github.com/CourtHive/competition-factory/issues/6049)) ([aa129eb](https://github.com/CourtHive/competition-factory/commit/aa129ebe6573bcc262206af87b604e48aa74640d))
+* **entries:** event entryProfile is written and counted ([#6067](https://github.com/CourtHive/competition-factory/issues/6067)) ([4bd13d3](https://github.com/CourtHive/competition-factory/commit/4bd13d36cf36d128499ed63bb86ef53edab98741))
+* **events:** addFlight warns when a participant is already in another flight ([#6033](https://github.com/CourtHive/competition-factory/issues/6033)) ([f1326cc](https://github.com/CourtHive/competition-factory/commit/f1326cce1aa82a04b6452bfc8258b0e7bfab6d4d))
+* **events:** generateFlightProfile can split by a rating band ([#6032](https://github.com/CourtHive/competition-factory/issues/6032)) ([559c18f](https://github.com/CourtHive/competition-factory/commit/559c18ff7f1f82d1452cf9e4d4322721065f23d9))
+* **events:** generateFlightProfile scopes the entries it splits and can append flights ([#6025](https://github.com/CourtHive/competition-factory/issues/6025)) ([bc09b4a](https://github.com/CourtHive/competition-factory/commit/bc09b4ae981863becf4f80c16f1b2bf40572b3d9))
+* **matchUps:** a TEAM dual's lines numbered as they finish, in v1 and v2 ([#6046](https://github.com/CourtHive/competition-factory/issues/6046)) ([730486b](https://github.com/CourtHive/competition-factory/commit/730486b0dfdacd6c8c7186583df615f5fe2511b9))
+* **matchUps:** getDualIssues reports what is wrong with a TEAM dual ([#6038](https://github.com/CourtHive/competition-factory/issues/6038)) ([5968563](https://github.com/CourtHive/competition-factory/commit/596856326a0092526bc38aafd6a856a58a744da1))
+* **outcome:** admit lines of a dual left a dead rubber past the team checks ([#6045](https://github.com/CourtHive/competition-factory/issues/6045)) ([0270fed](https://github.com/CourtHive/competition-factory/commit/0270fed59c9d7e1c0464e12f6e48786e690aa75d))
+* **outcome:** v2 carries an exit through a bye passage ([#6027](https://github.com/CourtHive/competition-factory/issues/6027)) ([b4e510b](https://github.com/CourtHive/competition-factory/commit/b4e510b57228bef4b4e196a2a2520785c122a5fa))
+* **outcome:** v2 converges a carried exit at a deeper level ([#6028](https://github.com/CourtHive/competition-factory/issues/6028)) ([5f940e4](https://github.com/CourtHive/competition-factory/commit/5f940e4b771d4532682e7f13e357e58fdacf767f))
+* **outcome:** v2 converges a carry at a landing that links its loser on ([#6044](https://github.com/CourtHive/competition-factory/issues/6044)) ([ac7a87a](https://github.com/CourtHive/competition-factory/commit/ac7a87a6855b3a80c81913f74044a653ae917fb8))
+* **outcome:** v2 owns a double exit over a matchUp in progress, a dual's included ([#6048](https://github.com/CourtHive/competition-factory/issues/6048)) ([857309b](https://github.com/CourtHive/competition-factory/commit/857309b4f053e928cdd7fc3bec28fe2a5e7ffe4d))
+* **outcome:** v2 owns a TEAM call in a round robin, its group's tally re-read (S7) ([#6022](https://github.com/CourtHive/competition-factory/issues/6022)) ([5a34b28](https://github.com/CourtHive/competition-factory/commit/5a34b2871566199666c5ca231d8ebe8bfeb5d928))
+* **outcome:** v2 owns a TEAM line that un-decides its dual, the dual's winner taken back (S7) ([#6037](https://github.com/CourtHive/competition-factory/issues/6037)) ([64c1212](https://github.com/CourtHive/competition-factory/commit/64c1212f72d70fac73526c953ba8f2e8b58a640f))
+* **outcome:** v2 owns a TEAM line's own exit un-deciding its dual, in round robins too (S7) ([a816a5e](https://github.com/CourtHive/competition-factory/commit/a816a5ece93f43e06effd7442c73d0b51b8f7e43))
+* **outcome:** v2 owns a TEAM line's own exit un-deciding its dual, in round robins too (S7) ([#6075](https://github.com/CourtHive/competition-factory/issues/6075)) ([a816a5e](https://github.com/CourtHive/competition-factory/commit/a816a5ece93f43e06effd7442c73d0b51b8f7e43))
+* **outcome:** v2 places a double exit's bye chain through standing byes ([#6035](https://github.com/CourtHive/competition-factory/issues/6035)) ([6c16b0b](https://github.com/CourtHive/competition-factory/commit/6c16b0bb10ea98e2190997331be42d52ab40783c))
+* **outcome:** v2 refuses a schedule as v1 does; three codes leave APPLY_STAGE_CODES (S7) ([#6026](https://github.com/CourtHive/competition-factory/issues/6026)) ([23fa238](https://github.com/CourtHive/competition-factory/commit/23fa238c9c54b9b7634942124cfcd835b89abdbc))
+* **outcome:** v2 refuses missing draw positions; a mutation lock leaves APPLY_STAGE_CODES (S7) ([#6029](https://github.com/CourtHive/competition-factory/issues/6029)) ([035ba4b](https://github.com/CourtHive/competition-factory/commit/035ba4b36a290a540a3016b3e8461ed44f6fe5ef))
+* **outcome:** v2 refuses the deferred status codes; v1 asks row 24's removal clause first ([#6051](https://github.com/CourtHive/competition-factory/issues/6051)) ([37cf4c0](https://github.com/CourtHive/competition-factory/commit/37cf4c06cdb3ccc5e085d616a5039fd0b973354d))
+* **outcome:** v2 takes back the byes a cleared double exit's bye sent across loser links ([#6047](https://github.com/CourtHive/competition-factory/issues/6047)) ([d3f98c8](https://github.com/CourtHive/competition-factory/commit/d3f98c871ddc1aa9087831e9327e967225adfbc6))
+* **outcome:** v2 walks a cleared double exit's byes back as v1's removal recursion (S6 tail) ([207c5e6](https://github.com/CourtHive/competition-factory/commit/207c5e6de9360f900e1935b46c247ee7414ebd93))
+* **outcome:** v2 walks a cleared double exit's byes back as v1's removal recursion (S6 tail) ([#6061](https://github.com/CourtHive/competition-factory/issues/6061)) ([207c5e6](https://github.com/CourtHive/competition-factory/commit/207c5e6de9360f900e1935b46c247ee7414ebd93))
+* **outcome:** v2 walks a double exit's byes as v1's assignDrawPositionBye recursion ([#6041](https://github.com/CourtHive/competition-factory/issues/6041)) ([3149cb2](https://github.com/CourtHive/competition-factory/commit/3149cb2116d3df929ce4650a5091ff8ba08fc3bc))
+* **outcome:** v2 writes the call's notes onto its matchUp on the clean routes (S7) ([#6053](https://github.com/CourtHive/competition-factory/issues/6053)) ([040524c](https://github.com/CourtHive/competition-factory/commit/040524c7a693c3df550abcc8e9778c22efe0908e))
+* **scheduling:** event playing days: manual placements warn, auto-scheduling skips per event ([#6077](https://github.com/CourtHive/competition-factory/issues/6077)) ([7417040](https://github.com/CourtHive/competition-factory/commit/7417040279266a504e5631dbff3b64cc50794eb8))
+* **scheduling:** eventPlaysOnDate answers whether an event plays on a day ([#6071](https://github.com/CourtHive/competition-factory/issues/6071)) ([16c6fc1](https://github.com/CourtHive/competition-factory/commit/16c6fc1f55f98389584bb34454382d565931fda9))
+* **scheduling:** setSchedulingProfile warns of profile dates outside the tournament ([#6076](https://github.com/CourtHive/competition-factory/issues/6076)) ([f949ad0](https://github.com/CourtHive/competition-factory/commit/f949ad09a93610a3c3ead019c8ccb19d36c1b9cc))
+* **season:** add CODES Series and Season, with derived standings and advancement ([#6036](https://github.com/CourtHive/competition-factory/issues/6036)) ([032ee21](https://github.com/CourtHive/competition-factory/commit/032ee21a667d59f7b263c3fb08bdaa41fbf07880))
+* **season:** declare movement rules, propose movement and plan the next period ([#6040](https://github.com/CourtHive/competition-factory/issues/6040)) ([1eb2518](https://github.com/CourtHive/competition-factory/commit/1eb251847038e56ca03f7ea6d0287a8e9724d9d5))
+* **season:** order season tables with the standings engine ([#6062](https://github.com/CourtHive/competition-factory/issues/6062)) ([f6c4549](https://github.com/CourtHive/competition-factory/commit/f6c4549b26d615465388dd39bf0b12475ac6a098))
+* **standings:** classification points by result ([d9be0a8](https://github.com/CourtHive/competition-factory/commit/d9be0a8085e7c23296956d64cb01bccfae12ebb2))
+* **standings:** exact precision, differences, ratios, expected denominator ([49d794a](https://github.com/CourtHive/competition-factory/commit/49d794abd6f2bf8988b02dec0e4eadaf514dcfe2))
+* **standings:** rank best finishers across groups by crossGroup measures ([d9c118a](https://github.com/CourtHive/competition-factory/commit/d9c118a157d28af6ed923e6d4462c9e135835a58))
+* **standings:** split modes, size and purpose gates, terminal steps ([#6065](https://github.com/CourtHive/competition-factory/issues/6065)) ([b91e253](https://github.com/CourtHive/competition-factory/commit/b91e253e66d4d76f6361bf82bbf42cc833fc078b))
+* **standings:** strength-of-schedule graph measures, buchholz and sonneborn-berger ([c37cb3f](https://github.com/CourtHive/competition-factory/commit/c37cb3fdcb87a1cbd99c0bf667d3dd33ba803a59))
+* **standings:** sweep head-to-head and external values ([f178103](https://github.com/CourtHive/competition-factory/commit/f178103c74c3f7cbfee2dfad1f4040ddfcabebab))
+* **standings:** usta league and fiba standings presets ([be87392](https://github.com/CourtHive/competition-factory/commit/be87392dc91f36f8567376a1adc4b72d1676fcca))
+* **tieFormat:** points-per-position line values; refuse negative values and unreachable goals on save ([#6034](https://github.com/CourtHive/competition-factory/issues/6034)) ([dcf4450](https://github.com/CourtHive/competition-factory/commit/dcf4450a7d4eab0deb4715e72a80bb92ccda963d))
+
+
+### Bug Fixes
+
+* **competition:** derive the competition state from the draw's results ([54d1da3](https://github.com/CourtHive/competition-factory/commit/54d1da322fd486dec77413c46708a73b8257c082))
+* **competition:** order the leaderboard with the standings engine ([c65e3b7](https://github.com/CourtHive/competition-factory/commit/c65e3b77f9a96f2e311a88ebb4f6f6e60953555c))
+* **competition:** rate a per-round round from the ratings at its start ([c408d80](https://github.com/CourtHive/competition-factory/commit/c408d808cd413c2eca9df7471b4b040fca3041f0))
+* **dates:** event ranges follow tournament date changes and never lie outside them ([#6070](https://github.com/CourtHive/competition-factory/issues/6070)) ([3749881](https://github.com/CourtHive/competition-factory/commit/3749881b6c70c9bf8053dc14c75b99a7b9f02f12))
+* **deps:** update tods-competition-factory to 7.26.0 ([#6021](https://github.com/CourtHive/competition-factory/issues/6021)) ([248b3bd](https://github.com/CourtHive/competition-factory/commit/248b3bd72e878d5961cf2315a6e5b4600e15aecf))
+* **entries:** modifyEntriesStatus moves an entry to the end of its new group ([#6066](https://github.com/CourtHive/competition-factory/issues/6066)) ([66a5b54](https://github.com/CourtHive/competition-factory/commit/66a5b5470390e6ec1338caab774a766b6aa15873))
+* **entries:** modifyEntriesStatus refuses participants outside its draw scope ([#6073](https://github.com/CourtHive/competition-factory/issues/6073)) ([9cb5508](https://github.com/CourtHive/competition-factory/commit/9cb550834233c38d217af438ce38c84a6f7b5103))
+* **entries:** number all accepted statuses as one list per stage ([#6074](https://github.com/CourtHive/competition-factory/issues/6074)) ([cc4055e](https://github.com/CourtHive/competition-factory/commit/cc4055eb3ac07546aa13dff2d85e11b1fea8dd2b))
+* **entries:** promoteAlternates places promoted entries after the accepted ones ([#6055](https://github.com/CourtHive/competition-factory/issues/6055)) ([4667990](https://github.com/CourtHive/competition-factory/commit/4667990fed113e349eed3701954b64028ef66dbc))
+* **entries:** stage space counts every entry that takes a direct-acceptance place ([#6081](https://github.com/CourtHive/competition-factory/issues/6081)) ([9b79220](https://github.com/CourtHive/competition-factory/commit/9b79220955dcc3ac9bb29109ac750883e2a73780))
+* **events:** a flight's number is its level; reordering and deletion change display order only ([#6024](https://github.com/CourtHive/competition-factory/issues/6024)) ([84e9557](https://github.com/CourtHive/competition-factory/commit/84e9557711211e29f38da1de4102e284ea17025c))
+* **events:** deleteFlightAndFlightDraw keeps the flight when the draw deletion is refused ([#6023](https://github.com/CourtHive/competition-factory/issues/6023)) ([14f2d21](https://github.com/CourtHive/competition-factory/commit/14f2d21b4f76de743bc5764ce999e7333b72b864))
+* **events:** getEventData lists an event's draws in drawOrder ([#6057](https://github.com/CourtHive/competition-factory/issues/6057)) ([f2c0099](https://github.com/CourtHive/competition-factory/commit/f2c009995520afb7bb124f4c10e0d61d4a14d96f))
+* **events:** setEventDates refuses a date outside the tournament before writing either ([#6058](https://github.com/CourtHive/competition-factory/issues/6058)) ([f52574f](https://github.com/CourtHive/competition-factory/commit/f52574f8d5cf47c5026141aa8c6fe21621eb6af4))
+* **matchUps:** a matchUp that is no longer complete loses its order of finish ([#6030](https://github.com/CourtHive/competition-factory/issues/6030)) ([4fba619](https://github.com/CourtHive/competition-factory/commit/4fba619e3ed12b7e91ddeb54dde2831c2d7c0f3a))
+* **mocks:** anonymizeTournamentRecord replaces every id and identifying field ([#6056](https://github.com/CourtHive/competition-factory/issues/6056)) ([ec75a4d](https://github.com/CourtHive/competition-factory/commit/ec75a4db351655f65a189780b7437b2648a2b803))
+* **outcome:** a matchUp given a BYE then advanced through one keeps v1's notice (S6 tail) ([#6039](https://github.com/CourtHive/competition-factory/issues/6039)) ([4be5dd0](https://github.com/CourtHive/competition-factory/commit/4be5dd0af614a7c3477f241eef58576430b1be0e))
+* **outcome:** a refusal v2 returns is v1's result, field for field ([#6020](https://github.com/CourtHive/competition-factory/issues/6020)) ([b6e3e99](https://github.com/CourtHive/competition-factory/commit/b6e3e99f961fbf33c1133099d6ef0d4487552260))
+* **outcome:** the structural index hands a dual side's team to its lines, as hydration does ([#6042](https://github.com/CourtHive/competition-factory/issues/6042)) ([755ab5d](https://github.com/CourtHive/competition-factory/commit/755ab5d20614cf843889ecc105f5177a3bd6158e))
+* **positions:** qualifierProgression fills only the target round's qualifier positions ([#6052](https://github.com/CourtHive/competition-factory/issues/6052)) ([fcad2c4](https://github.com/CourtHive/competition-factory/commit/fcad2c4a197cd818764fffc58369a0a76aa3ac6c))
+* **schedule:** refuse a schedule's own write errors before the outcome lands (row 29, S7) ([#6060](https://github.com/CourtHive/competition-factory/issues/6060)) ([4d1d7b6](https://github.com/CourtHive/competition-factory/commit/4d1d7b68b326a279fe669bdb96229f55404806a0))
+* **scheduling:** bulkRescheduleMatchUps returns the warnings of its writes ([#6068](https://github.com/CourtHive/competition-factory/issues/6068)) ([82a88f7](https://github.com/CourtHive/competition-factory/commit/82a88f7212456b19f0290485ed55ac090fba4b54))
+* **scheduling:** the pipeline writes no time for a placement whose date is refused ([#6069](https://github.com/CourtHive/competition-factory/issues/6069)) ([8a6f747](https://github.com/CourtHive/competition-factory/commit/8a6f747861fa38e8eacbff5e3238edc885990ee4))
+* **schema:** tournamentStatusEnum accepts every status the engine writes ([#6080](https://github.com/CourtHive/competition-factory/issues/6080)) ([31d6403](https://github.com/CourtHive/competition-factory/commit/31d6403408b2784bedc20553a5eafc513cbeb0ae))
+* **standings:** head-to-head record, disqualification, team ties in progress ([#6064](https://github.com/CourtHive/competition-factory/issues/6064)) ([d7173c1](https://github.com/CourtHive/competition-factory/commit/d7173c18eaa339fbf648a127733e82e76c0147f1))
+* **tieFormat:** a collection whose gender changes is checked against the event's ([#6043](https://github.com/CourtHive/competition-factory/issues/6043)) ([cb648ce](https://github.com/CourtHive/competition-factory/commit/cb648ceefe06cc53b7a3cc246a37b035db2bc17d))
+* **venues:** a court disabled on some dates keeps its hours on the others ([#6050](https://github.com/CourtHive/competition-factory/issues/6050)) ([596a13f](https://github.com/CourtHive/competition-factory/commit/596a13f394cac542934363924864a69faa39bdb6))
+
+
+### Documentation
+
+* **outcome:** trace ERR_FORCED to the error-path tests' forced cascade-write failure (S7) ([#6031](https://github.com/CourtHive/competition-factory/issues/6031)) ([0108a31](https://github.com/CourtHive/competition-factory/commit/0108a31582ddac68ab8da8aa898300b4366377e0))
+* **standings:** football goals are segment scores; level aggregates are the gap ([400c329](https://github.com/CourtHive/competition-factory/commit/400c329e029781536fc8f48017783eccde662db4))
+* **standings:** the standings engine and the sports it supports ([73b1089](https://github.com/CourtHive/competition-factory/commit/73b1089f0d915e1fa4c7366c207c960f319aa150))
+
 ## [7.26.0](https://github.com/CourtHive/competition-factory/compare/v7.25.0...v7.26.0) (2026-10-31)
 
 
