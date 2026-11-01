@@ -2,6 +2,7 @@ import { generateOutcomeFromScoreString as outcomeFromScoreString } from '@Gener
 import { generateOutcome as outcome } from '@Generators/simulation/generateOutcome';
 
 export { generateTournamentRecord } from '@Generators/mocks/generateTournamentRecord';
+export { generateSeason } from '@Generators/mocks/generateSeason';
 export { generateEventWithDraw } from '@Generators/mocks/generateEventWithDraw';
 export { generateParticipants } from '@Generators/mocks/generateParticipants';
 
