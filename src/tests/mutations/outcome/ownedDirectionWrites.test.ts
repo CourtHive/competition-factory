@@ -23,6 +23,7 @@ import {
   DEFAULTED,
   DOUBLE_DEFAULT,
   DOUBLE_WALKOVER,
+  IN_PROGRESS,
   RETIRED,
   TO_BE_PLAYED,
   WALKOVER,
@@ -162,6 +163,19 @@ const SCENARIOS: [string, Scenario][] = [
     {
       drawProfile: { drawSize: 2, drawType: SINGLE_ELIMINATION },
       steps: [{ target: R1(1), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION: a matchUp in progress entered as a double walkover: its score written over',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: [
+        {
+          target: R1(1),
+          outcome: { matchUpStatus: IN_PROGRESS, score: { sets: [{ setNumber: 1, side1Score: 3, side2Score: 2 }] } },
+        },
+      ],
+      steps: [{ target: R1(1), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
     },
   ],
   [

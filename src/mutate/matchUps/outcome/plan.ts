@@ -1146,8 +1146,10 @@ function producedReason(
 ): AbstainReason | undefined {
   const { existing, targets } = view;
   if (!write || !isDoubleExit(write.matchUpStatus) || request.matchUpStatus !== write.matchUpStatus) return 'exit';
-  if (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide || write.matchUpStatusCodes?.length)
-    return 'exit';
+  // a matchUp in progress takes the double exit as one to be played does: v1 writes over its score (a dual's tally),
+  // leaving a dual's played lines as they stand (S7)
+  const open = existing.matchUpStatus === TO_BE_PLAYED || existing.matchUpStatus === IN_PROGRESS;
+  if (!open || existing.winningSide || write.matchUpStatusCodes?.length) return 'exit';
   if (targets.byeTarget) return 'exit';
   // a round robin group's matchUp sends nobody on (`doubleExitAdvancement` returns at once in a container): its result
   // and the group's tally are all there is
