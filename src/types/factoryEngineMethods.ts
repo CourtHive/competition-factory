@@ -247,6 +247,7 @@ export type FactoryEngineMethod =
   | 'generateReport'
   | 'generateRotatingPartnerRound'
   | 'generateScoreString'
+  | 'generateSeason'
   | 'generateSeedingScaleItems'
   | 'generateStatCrew'
   | 'generateSwissRound'
@@ -423,6 +424,8 @@ export type FactoryEngineMethod =
   | 'getSchemaWriteMode'
   | 'getScore'
   | 'getScoreboard'
+  | 'getSeasonAdvancement'
+  | 'getSeasonStandings'
   | 'getSeedingThresholds'
   | 'getSeedsCount'
   | 'getSetComplement'
@@ -774,6 +777,7 @@ export type FactoryEngineMethod =
   | 'validateSchedulingProfile'
   | 'validateSchedulingProfileFormat'
   | 'validateScore'
+  | 'validateSeason'
   | 'validateSegments'
   | 'validateSet'
   | 'validateSetScore'
@@ -1033,6 +1037,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'generateReport',
   'generateRotatingPartnerRound',
   'generateScoreString',
+  'generateSeason',
   'generateSeedingScaleItems',
   'generateStatCrew',
   'generateSwissRound',
@@ -1209,6 +1214,8 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getSchemaWriteMode',
   'getScore',
   'getScoreboard',
+  'getSeasonAdvancement',
+  'getSeasonStandings',
   'getSeedingThresholds',
   'getSeedsCount',
   'getSetComplement',
@@ -1560,6 +1567,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'validateSchedulingProfile',
   'validateSchedulingProfileFormat',
   'validateScore',
+  'validateSeason',
   'validateSegments',
   'validateSet',
   'validateSetScore',
