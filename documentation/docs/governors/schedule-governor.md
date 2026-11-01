@@ -102,6 +102,10 @@ engine.addSchedulingProfileRound({
 });
 ```
 
+A `scheduleDate` not yet in the profile is refused with `INVALID_DATE` when it falls outside the competition's dates.
+A date already in the profile is not re-judged. Whatever `setSchedulingProfile` warns of the stored profile's other
+dates (`SCHEDULING_PROFILE_DATES_OUT_OF_RANGE`) is passed on in `warnings`.
+
 ---
 
 ### assignMatchUpVenue
@@ -398,7 +402,7 @@ The filter constrains capacity; `scheduleProfileRounds` assigns no court (court 
 {
   (scheduledDates, // array - dates where matchUps were scheduled
     scheduledMatchUpIds, // array - matchUpIds that were scheduled
-    noTimeMatchUpIds, // array - matchUps that couldn't fit
+    noTimeMatchUpIds, // array - matchUps that couldn't fit, or whose date was refused (outside the tournament)
     overLimitMatchUpIds, // array - matchUps exceeding participant limits
     requestConflicts); // by date - { [date]: [{ request, scheduleTimes, matchUpIds }] }, one per request broken
 }
@@ -1317,6 +1321,20 @@ engine.setSchedulingProfile({
 });
 ```
 
+**Dates outside the tournament.** A profile whose dates fall outside the competition's dates (every loaded tournament's
+range combined, compared as calendar days) is still saved: a profile can outlive a change of tournament dates, the
+repair of an orphaned round re-saves the whole profile, and clients save the whole profile on every edit. The result
+carries a warning naming the out-of-range dates:
+
+```js
+const result = engine.setSchedulingProfile({ schedulingProfile });
+// result.success → true
+// result.warnings → [{ code: 'SCHEDULING_PROFILE_DATES_OUT_OF_RANGE', message, scheduleDates: ['2024-06-20'] }]
+```
+
+No warning is returned when every date is in range, or when a tournament has no dates. The scheduling pipeline writes no
+time for a matchUp whose profile date is refused (see `noTimeMatchUpIds`).
+
 **Profile Structure**:
 
 ```js
@@ -2063,6 +2081,66 @@ batched against 6,048 asked one by one; the gap grows with the size of the draw.
 
 Rest counts up, so a result describes its `asOf` and nothing later: a caller repainting rest on a timer
 asks again with the new instant rather than keeping an earlier answer.
+
+## Event playing days
+
+An event plays on a calendar day when the day lies in the tournament's range and in the event's range, is one
+of the tournament's `activeDates` (else one of its `weekdays`), and is one of the event's `activeDates` (else one
+of its `weekdays`). `setEventDates` writes the event's range, `activeDates` and `weekdays`;
+`setTournamentDates` writes the tournament's.
+
+- `activeDates` win over `weekdays` at both levels when both are set.
+- An empty array means **unset**, never "no days".
+- The weekday is that of the calendar day, read in UTC, so no time zone moves it.
+- An event range that does not intersect the tournament range (a stale range, left behind when the tournament
+  moved) is **ignored**, and the tournament range applies. `getEventInconsistencies` reports such an event as
+  `EVENT_DATES_OUTSIDE_TOURNAMENT` (a warning).
+
+When a day is not a playing day, the first rule that fails is the `reason`:
+
+| reason                     | the day                                            |
+| -------------------------- | -------------------------------------------------- |
+| `INVALID_DATE`             | is not a `YYYY-MM-DD` calendar day                 |
+| `OUTSIDE_TOURNAMENT_DATES` | lies outside the tournament's `startDate..endDate` |
+| `OUTSIDE_EVENT_DATES`      | lies outside the event's `startDate..endDate`      |
+| `TOURNAMENT_INACTIVE_DATE` | is not one of the tournament's `activeDates`       |
+| `TOURNAMENT_WEEKDAY`       | falls on a weekday the tournament does not play    |
+| `EVENT_INACTIVE_DATE`      | is not one of the event's `activeDates`            |
+| `EVENT_WEEKDAY`            | falls on a weekday the event does not play         |
+
+`getRounds({ scheduleDate })` excludes the rounds of events that do not play on `scheduleDate`, and each round
+of an event whose own dates narrow the tournament's carries that event's `playingDates`.
+`tournamentInfo.eventInfo` (`getTournamentInfo`), `getEventData`'s `eventInfo` and `getAllEventData` carry
+`playingDates` under the same condition, so an unconstrained event adds nothing to a public payload.
+
+### getEventPlayingDates
+
+An event's playing days, enumerated over the tournament range. `constrained` is `true` when the event's own
+range, `activeDates` or `weekdays` narrow the days the tournament plays.
+
+```js
+const { playingDates, constrained } = tournamentEngine.getEventPlayingDates({
+  eventId, // required
+});
+// weekdays: ['SAT', 'SUN'] on a Fri 13 .. Mon 16 tournament
+// → { playingDates: ['2026-11-14', '2026-11-15'], constrained: true }
+```
+
+### getEventDateIssues
+
+The scheduled matchUps whose event does not play on their scheduled day. A matchUp's day is its
+`scheduledDate`, else the date part of its `scheduledTime`. It is derived each time it is asked, so a misplaced
+matchUp stays reported whoever placed it and whenever the event's dates changed.
+
+```js
+const { eventDateIssues } = competitionEngine.getEventDateIssues({
+  scheduledDate, // optional - only matchUps scheduled on this day
+  matchUpIds, // optional - only these matchUps
+});
+// [{ matchUpId, eventId, tournamentId, scheduledDate, reason }]
+```
+
+---
 
 ## Related Documentation
 

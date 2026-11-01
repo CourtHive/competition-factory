@@ -70,6 +70,8 @@ export type TournamentEventInfo = Pick<
   drawDefinitionCount?: number;
   /** every distinct matchUpFormat declared anywhere in the event; absent when none is */
   matchUpFormats?: string[];
+  /** the event's playing days (getEventPlayingDates); absent unless the event's own dates narrow the tournament's */
+  playingDates?: string[];
   entriesCount: number;
 };
 
@@ -180,6 +182,8 @@ export type EventInfo = Pick<
   ballType?: string;
   /** the event's DISPLAY extension value */
   display?: unknown;
+  /** the event's playing days (getEventPlayingDates); absent unless the event's own dates narrow the tournament's */
+  playingDates?: string[];
   publishState?: EventPublishState;
   published?: boolean;
 };

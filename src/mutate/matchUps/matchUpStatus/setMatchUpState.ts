@@ -1,3 +1,4 @@
+import { addMatchUpScheduleItems, scheduleRefusal } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { isPropagatedExit, rewritesCarriedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
 import { removalMissingDrawPositions } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
@@ -5,7 +6,6 @@ import { isDrawnResult, validateDrawTallyOptions } from '@Query/matchUps/roundRo
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { resolveRotatingPartnerOutcome } from '@Query/drawDefinition/resolveRotatingPartnerOutcome';
 import { refreshArrivals } from '@Mutate/drawDefinitions/matchUpGovernor/attemptToSetWinningSide';
-import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { correctionKindChange } from '@Mutate/matchUps/matchUpStatus/correctionKindGuard';
@@ -762,20 +762,18 @@ function resolveAndApplyOutcome({
   // This used to apply it outright, above the dispatch that can refuse — so a rejected outcome left
   // the scheduled date, time and court order behind. Moving the apply down on its own would have
   // inverted the defect (an error over an outcome that had already landed), because the apply path
-  // interleaves validate-and-write per attribute. `validateOnly` runs every refusal and writes
-  // nothing, so both orderings are safe.
+  // interleaves validate-and-write per attribute. `scheduleRefusal` runs every refusal and writes
+  // nothing to this draw (the write's own refusals are met on a copy), so both orderings are safe.
   const { schedule } = params;
   if (schedule) {
-    const check = addMatchUpScheduleItems({
-      disableNotice: true,
-      validateOnly: true,
+    const check = scheduleRefusal({
       tournamentRecords,
       tournamentRecord,
       drawDefinition,
       matchUpId,
       schedule,
     });
-    if (check.error) return check;
+    if (check?.error) return check;
   }
 
   const unplaceable = missingDrawPositionsRefusal({ params, activeDownstream: !!activeDownstream });
@@ -869,7 +867,7 @@ function resolveAndApplyOutcome({
   }
 
   // The schedule is applied only once the outcome has been accepted, and its refusals were already
-  // raised above by the `validateOnly` pass — so this cannot be the step that errors over a draw
+  // raised above by `scheduleRefusal` — so this cannot be the step that errors over a draw
   // this call has just changed. Ordered before `applyScoredTime` so `scoredTime` is stamped onto
   // the schedule this call wrote rather than the one it replaced.
   if (!result?.error && schedule) {
