@@ -9,15 +9,15 @@ import { UUID } from '@Tools/UUID';
 
 // constants and types
 import { internalExtensions, LINKED_TOURNAMENTS, MUTATION_LOCKS } from '@Constants/extensionConstants';
+import type { Extension, MatchUp, Tournament, Venue } from '@Types/tournamentTypes';
 import { GROUP, INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
-import { AnonymizeTournamentRecordArgs } from '@Types/mocksTypes';
+import type { AnonymizeTournamentRecordArgs } from '@Types/mocksTypes';
 import { FEMALE, MALE, OTHER } from '@Constants/genderConstants';
+import type { PresenceAttestation } from '@Types/presenceTypes';
 import { coercedGender } from '@Helpers/coercedGender';
 import { SUCCESS } from '@Constants/resultConstants';
 import { isGendered } from '@Validators/isGendered';
-import { Extension, MatchUp, Tournament, Venue } from '@Types/tournamentTypes';
-import { PresenceAttestation } from '@Types/presenceTypes';
 
 /** a record element read and rewritten generically */
 type Loose = Record<string, any>;

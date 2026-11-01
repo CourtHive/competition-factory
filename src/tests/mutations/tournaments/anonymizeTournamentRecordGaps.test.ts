@@ -2,8 +2,8 @@ import { getTournamentInconsistencies } from '@Query/tournaments/getTournamentIn
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import * as mocksGovernor from '@Assemblies/governors/mocksGovernor';
 import mocksEngine from '@Assemblies/engines/mock';
-import { createSeededRandom } from '@Tools/prng';
 import tournamentEngine from '@Engines/syncEngine';
+import { createSeededRandom } from '@Tools/prng';
 import { describe, expect, it } from 'vitest';
 import addFormats from 'ajv-formats';
 import fs from 'fs-extra';
@@ -11,10 +11,10 @@ import Ajv from 'ajv';
 
 // constants
 import { INDIVIDUAL, PAIR, TEAM as TEAM_PARTICIPANT } from '@Constants/participantConstants';
+import { LINKED_TOURNAMENTS, MUTATION_LOCKS } from '@Constants/extensionConstants';
 import { FEED_IN_CHAMPIONSHIP } from '@Constants/drawDefinitionConstants';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/eventConstants';
 import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
-import { LINKED_TOURNAMENTS, MUTATION_LOCKS } from '@Constants/extensionConstants';
 import { ASSIGN_COURT } from '@Constants/timeItemConstants';
 
 /**
