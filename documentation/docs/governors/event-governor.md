@@ -350,10 +350,45 @@ event.modifyEvent({
     startDate, // optional - must fall within tournament dates
     category, // optional - must validate against current event entries, if any
     endDate, // optional - must fall within tournament dates
+    entryProfile, // optional - merged into event.entryProfile; null clears it (see below)
   },
   eventId,
 });
 ```
+
+**`entryProfile`** states how the event accepts entries, and how many — the way a director sets it when
+there is no sanctioning step to carry the sizes in. It is **merged** key by key into the existing
+profile, so an edit that names only the sizes keeps what it does not show (`selectionProcess`,
+`extensions`, ...). A key set to `null` removes it; `entryProfile: null` clears the whole profile, as
+does removing its last key. The merged profile is validated as stored, and an invalid one is refused
+with `INVALID_VALUES`, leaving the event unchanged.
+
+```js
+engine.modifyEvent({
+  eventId,
+  eventUpdates: {
+    entryProfile: {
+      entriesLimit, // optional - how many entries the event accepts
+      targetDrawSize, // optional - intended MAIN draw size before a draw exists
+      qualifyingDrawSize, // optional - the simple case: one qualifying draw of this size
+      qualifiersCount, // optional - how many qualifiers enter MAIN; must be fewer than qualifyingDrawSize
+      qualifyingProfiles, // optional - [{ roundTarget, structureProfiles: [{ stageSequence, drawSize, qualifyingPositions }] }]
+      wildcardCount, // optional - MAIN places held for wildcards
+      selectionProcess, // optional - SelectionProcessEnum value
+      selectionScaleName, // optional - which scale orders acceptance
+      waitlistEnabled, // optional boolean
+    },
+  },
+});
+```
+
+- `qualifyingProfiles` states multi-structure qualifying (pre-qualifying with `stageSequence` 1 and 2,
+  or several structures feeding different MAIN rounds) and mirrors the draw generator's input of the same
+  name. It replaces `qualifyingDrawSize` and `qualifiersCount`: a profile carrying both is refused, so
+  switching shapes takes nulling the simple keys in the same call.
+- Sizes are positive whole numbers (`qualifiersCount` and `wildcardCount` may be 0); qualifier and
+  wildcard places together may not exceed `targetDrawSize`; a structure profile's `qualifyingPositions`
+  must be fewer than its `drawSize`.
 
 ---
 

@@ -245,7 +245,10 @@ function refuseAgainstDraw(request: OutcomeRequest, view: OutcomeView): Refusal 
 /**
  * rows 16, 25 and 27: the schedule the call carries, refused by v1's writer before the outcome lands, after the draw's
  * checks and before the dispatch, where v1 asks it (`setMatchUpState`'s `validateOnly` pass). v1's result is returned
- * whole. Another code from that pass is not a row here: the call is v1's (`plan.ts` `scheduleReason`)
+ * whole. Row 29: any other code that pass raises (a stop, resume or end time out of order, a venue not found, a court
+ * order not a number, ...), which v1 returns as it stands (`if (check.error) return check`), so v2 does too (S7). It
+ * was left to `scheduleReason`'s abstention, but the decision is compared before any abstention: v1 refused, v2
+ * accepted, a divergence
  */
 function refuseSchedule(view: OutcomeView): Refusal | undefined {
   const refused = view.scheduleRefusal;
@@ -254,7 +257,7 @@ function refuseSchedule(view: OutcomeView): Refusal | undefined {
   if (error.code === INVALID_TIME.code) return refuse(16, INVALID_TIME, rest);
   if (error.code === INVALID_DATE.code) return refuse(25, INVALID_DATE, rest);
   if (error.code === ANACHRONISM.code) return refuse(27, ANACHRONISM, rest);
-  return undefined;
+  return refuse(29, error, rest);
 }
 
 /** § 3's dispatch: rows 13 to 15, and the swap that is accepted instead of refused */
