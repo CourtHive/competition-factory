@@ -51,6 +51,7 @@ import {
   AWAITING_RESULT,
   BYE,
   COMPLETED,
+  DEAD_RUBBER,
   DEFAULTED,
   DOUBLE_DEFAULT,
   DOUBLE_WALKOVER,
@@ -2918,7 +2919,7 @@ function teamReason({
   // a removal or correction that changes the dual's winner: v1 takes the dual's winner back out of the next dual
   if ((removing || correcting) && line.projectedWinningSide !== line.dualWinningSide) return 'team';
   if (line.dualWinningSide) return undefined;
-  const dualStatuses = new Set<string | undefined>([TO_BE_PLAYED, IN_PROGRESS]);
+  const dualStatuses = new Set<string | undefined>([TO_BE_PLAYED, IN_PROGRESS, DEAD_RUBBER]);
   if (!dualStatuses.has(line.dualMatchUpStatus)) return 'team';
   // a line that decides its dual: the dual's own call is planned with it (`decidingLineOps`, S7)
   if (line.projectedWinningSide) return dual && line.projectedStatus === COMPLETED ? undefined : 'team';
