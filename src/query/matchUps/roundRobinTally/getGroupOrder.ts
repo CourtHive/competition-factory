@@ -62,8 +62,17 @@ export function getGroupOrder(params) {
     subOrderMap,
   });
 
+  // crossGroup (K7): the values a best-finisher comparison across groups reads, in order, higher first. Computed here,
+  // where the tally policy is resolved, because the cross-group selection sees only the stored tallies
+  const crossGroup = Array.isArray(tallyPolicy?.crossGroup) ? tallyPolicy.crossGroup : undefined;
   for (const finishingPosition of groupOrder) {
-    finishingPosition.GEMscore = getRatioHash(participantResults[finishingPosition.participantId]);
+    const results = participantResults[finishingPosition.participantId];
+    finishingPosition.GEMscore = getRatioHash(results);
+    if (crossGroup) {
+      finishingPosition.crossGroupValues = crossGroup.map(
+        ({ attribute, reversed }) => (reversed ? -1 : 1) * Number(results[attribute] ?? 0),
+      );
+    }
   }
 
   return { groupOrder, report };

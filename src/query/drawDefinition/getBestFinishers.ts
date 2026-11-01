@@ -24,6 +24,8 @@ type ParticipantResult = {
   groupOrder?: number;
   provisionalOrder?: number;
   GEMscore?: number;
+  /** the tally policy's `crossGroup` values, compared in order, higher first (written when the policy declares them) */
+  crossGroupValues?: number[];
   [key: string]: unknown;
 };
 
@@ -43,6 +45,7 @@ type BestFinishersArgs = {
 type SelectedParticipant = {
   participantId: string;
   GEMscore?: number;
+  crossGroupValues?: number[];
   finishingPosition: number;
   groupingValue: string;
   isBestFinisher: boolean; // true if selected via cross-group ranking (not guaranteed)
@@ -73,6 +76,7 @@ export function getBestFinishers({
       const entry: SelectedParticipant = {
         groupingValue: structureId,
         GEMscore: result.GEMscore,
+        ...(result.crossGroupValues && { crossGroupValues: result.crossGroupValues }),
         isBestFinisher: false,
         finishingPosition,
         participantId,
@@ -98,6 +102,8 @@ export function getBestFinishers({
       if (a.finishingPosition !== b.finishingPosition) {
         return a.finishingPosition - b.finishingPosition;
       }
+      // the policy's crossGroup values when both carry them, compared as a tuple (K7: never packed into one float)
+      if (a.crossGroupValues && b.crossGroupValues) return compareTuples(b.crossGroupValues, a.crossGroupValues);
       // Higher GEMscore is better
       if (rankBy === GEM_SCORE) {
         return (b.GEMscore ?? 0) - (a.GEMscore ?? 0);
@@ -120,4 +126,13 @@ export function getBestFinishers({
   }
 
   return { selectedParticipants, consumedPositions };
+}
+
+/** lexicographic: the first value that differs decides */
+function compareTuples(a: number[], b: number[]) {
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    const difference = (a[i] ?? 0) - (b[i] ?? 0);
+    if (difference) return difference;
+  }
+  return 0;
 }

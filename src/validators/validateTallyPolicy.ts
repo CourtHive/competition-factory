@@ -1,5 +1,5 @@
 import { validateDrawTallyOptions } from '@Query/matchUps/roundRobinTally/drawnResults';
-import { TALLY_MEASURES, V1_PRIMARY_KEYS, V2_MEASURES } from '@Query/standings/fromV1';
+import { RATIO_MEASURES, TALLY_MEASURES, V1_PRIMARY_KEYS, V2_MEASURES } from '@Query/standings/fromV1';
 import { decorateResult } from '@Functions/global/decorateResult';
 
 // constants and types
@@ -72,6 +72,7 @@ export function tallyPolicyErrors(tallyPolicy: RoundRobinTallyPolicy, extraMeasu
     errors.push(`denominator must be one of ${DENOMINATORS.join(', ')}`);
   }
 
+  errors.push(...crossGroupErrors(tallyPolicy.crossGroup, measures));
   if (onSplit !== undefined && !SPLIT_MODES.includes(onSplit as string)) {
     errors.push(`onSplit must be one of ${SPLIT_MODES.join(', ')}`);
   }
@@ -89,6 +90,19 @@ const TERMINAL_STEPS = ['ADJUDICATE', 'SHARE', 'LOT'];
 const PHASES = ['PROVISIONAL', 'FINAL'];
 const DENOMINATORS = ['PLAYED', 'EXPECTED'];
 const ZERO_DIVISIONS = ['MAX', 'ZERO', 'SKIP'];
+
+/** crossGroup: stored measures only, so a ratio (unbounded, computed only when ordering) cannot be one */
+function crossGroupErrors(crossGroup: unknown, measures: string[]): string[] {
+  if (crossGroup === undefined) return [];
+  if (!Array.isArray(crossGroup)) return ['crossGroup must be an array'];
+  return crossGroup.flatMap((entry, index) => {
+    const attribute = entry?.attribute;
+    if (!measures.includes(attribute) || RATIO_MEASURES.includes(attribute)) {
+      return [`crossGroup[${index}]: ${attribute} is not a stored measure`];
+    }
+    return [];
+  });
+}
 
 /** a directive's size and `when` gates */
 function directiveGateErrors(directive: Record<string, unknown>, index: number): string[] {
