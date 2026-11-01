@@ -74,6 +74,8 @@ export type StandingsPolicy = {
   terminal?: TerminalStep;
   /** decimal places ratios are compared to (default 3), or EXACT; the same rule the ledger's percentages use */
   precision?: number | 'EXACT';
+  /** the share of a win a draw is worth (default 0.5), for Sonneborn-Berger */
+  drawCredit?: number;
 };
 
 /** the finishing record the core produces for one participant */

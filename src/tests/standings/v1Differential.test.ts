@@ -185,13 +185,15 @@ function withoutRuledChanges(policyDefinitions?: any) {
   return { ...policyDefinitions, [POLICY_TYPE_ROUND_ROBIN_TALLY]: rest };
 }
 
-/** the measures S3c added (differences, ratios) are new keys on every participant: v1 has none to compare */
+/** keys the standings engine added to a participant (S3c differences, S4a drawnWith): v1 has none to compare */
 function withoutV2Measures(result: any) {
   if (!result.participantResults) return result;
   const participantResults = Object.fromEntries(
     Object.entries<any>(result.participantResults ?? {}).map(([participantId, results]) => {
       const kept = { ...results };
       for (const measure of V2_MEASURES) delete kept[measure];
+      // S4a: who a participant drew with, kept for the graph measures; v1 kept no such list
+      delete kept.drawnWith;
       return [participantId, kept];
     }),
   );

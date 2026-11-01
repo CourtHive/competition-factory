@@ -1,5 +1,5 @@
 import { getGroups } from '@Query/matchUps/roundRobinTally/getGroups';
-import { RATIO_INPUTS, RATIO_MEASURES } from './fromV1';
+import { GRAPH_MEASURES, RATIO_INPUTS, RATIO_MEASURES } from './fromV1';
 import { instanceCount } from '@Tools/arrays';
 import { isNumeric } from '@Tools/math';
 
@@ -259,7 +259,11 @@ function processDirective(
   });
   // an absent result set must not read as an empty group: no split, no report
   if (outcome.error) return {};
-  const measured = withRatio(outcome.participantResults ?? {}, attribute, context.policy);
+  const measured = withGraph(
+    withRatio(outcome.participantResults ?? {}, attribute, context.policy),
+    attribute,
+    context,
+  );
   const participantResults = withZeroDivision(measured, participantIds, directive);
   if (!participantResults)
     return { order: undefined, report: [{ attribute, skipped: 'zeroDivision', participantIds }] };
@@ -302,6 +306,33 @@ function withRatio(participantResults: ParticipantResults, attribute: string, po
     let value = won ? Infinity : 0;
     if (lost) value = exact ? won / lost : Math.round((won / lost) * scale) / scale;
     view[participantId] = { ...results, [attribute]: value };
+  }
+  return view;
+}
+
+/**
+ * A graph measure (GRAPH_MEASURES) added to a view, read from every participant's results: each opponent is scored by
+ * the policy's primary measure, once per meeting. Buchholz sums the opponents' scores (Cut1 drops the lowest, Median
+ * the highest and lowest); Sonneborn-Berger sums the scores of those beaten and `drawCredit` of those drawn with.
+ */
+function withGraph(participantResults: ParticipantResults, attribute: string, context: Context) {
+  if (!GRAPH_MEASURES.includes(attribute)) return participantResults;
+  const { primary, drawCredit = 0.5 } = context.policy;
+  const score = (id: string) => Number(participantResults[id]?.[primary] ?? 0);
+  const view: ParticipantResults = {};
+  for (const [participantId, results] of Object.entries(participantResults)) {
+    const beaten = results.victories ?? [];
+    const lostTo = (results.defeats as string[] | undefined) ?? [];
+    const drawn = (results.drawnWith as string[] | undefined) ?? [];
+    const scores = [...beaten, ...lostTo, ...drawn].map(score).sort((a, b) => a - b);
+    const sum = (values: number[]) => values.reduce((total, value) => total + value, 0);
+    const measures: Record<string, number> = {
+      buchholz: sum(scores),
+      buchholzCut1: sum(scores.slice(1)),
+      buchholzMedian: sum(scores.slice(1, -1)),
+      sonnebornBerger: sum(beaten.map(score)) + drawCredit * sum(drawn.map(score)),
+    };
+    view[participantId] = { ...results, [attribute]: measures[attribute] };
   }
   return view;
 }
