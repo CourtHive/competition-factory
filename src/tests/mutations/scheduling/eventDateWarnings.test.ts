@@ -178,3 +178,97 @@ it('setEventDates and modifyEvent land and warn about scheduled matchUps on now 
   result = tournamentEngine.modifyEvent({ eventId: 'satEvent', eventUpdates: { startDate, endDate } });
   expect(result).toEqual({ success: true });
 });
+
+it('addMatchUpScheduleItems writes a non-playing day and warns; validateOnly warns too; a court edit is quiet', () => {
+  const { sat, fri, venueId } = setup();
+  const { matchUpId, drawId } = sat[0];
+
+  // validateOnly is the internal write check; through the engine the write itself is asked
+  let result: any = tournamentEngine.addMatchUpScheduleItems({ matchUpId, drawId, schedule: { scheduledDate: FRI } });
+  expect(result.success).toEqual(true);
+  expect(result.warnings).toEqual([
+    { ...EVENT_DATE_INACTIVE, matchUpId, eventId: 'satEvent', scheduledDate: FRI, reason: 'EVENT_WEEKDAY' },
+  ]);
+  expect(storedDate(matchUpId)).toEqual(FRI);
+
+  // a date-time with no date: its date is the day judged
+  result = tournamentEngine.addMatchUpScheduleItems({
+    schedule: { scheduledTime: `${FRI}T09:00` },
+    matchUpId: sat[1].matchUpId,
+    drawId,
+  });
+  expect(result.success).toEqual(true);
+  expect(result.warnings?.map(({ code, matchUpId }) => [code, matchUpId])).toEqual([
+    [EVENT_DATE_INACTIVE.code, sat[1].matchUpId],
+  ]);
+
+  // a court or a time alone sets no date: quiet
+  const { courts } = tournamentEngine.getVenuesAndCourts();
+  result = tournamentEngine.addMatchUpScheduleItems({
+    schedule: { venueId, courtId: courts[0].courtId },
+    matchUpId,
+    drawId,
+  });
+  expect(result.success).toEqual(true);
+  expect(result.warnings).toBeUndefined();
+  result = tournamentEngine.addMatchUpScheduleItems({ matchUpId, drawId, schedule: { scheduledTime: '10:00' } });
+  expect(result.warnings).toBeUndefined();
+
+  // a playing day for its event: quiet
+  result = tournamentEngine.addMatchUpScheduleItems({
+    schedule: { scheduledDate: FRI },
+    matchUpId: fri[0].matchUpId,
+    drawId: fri[0].drawId,
+  });
+  expect(result.success).toEqual(true);
+  expect(result.warnings).toBeUndefined();
+});
+
+it('validateOnly returns the warning without writing', async () => {
+  const { sat } = setup();
+  const { addMatchUpScheduleItems } = await import('@Mutate/matchUps/schedule/scheduleItems/scheduleItems');
+  const { tournamentRecord } = tournamentEngine.getTournament();
+  const event = tournamentRecord.events.find(({ eventId }) => eventId === 'satEvent');
+  const drawDefinition = event.drawDefinitions[0];
+  const result: any = addMatchUpScheduleItems({
+    schedule: { scheduledDate: FRI },
+    matchUpId: sat[0].matchUpId,
+    validateOnly: true,
+    tournamentRecord,
+    drawDefinition,
+    event,
+  });
+  expect(result.success).toEqual(true);
+  expect(result.warnings?.[0]).toMatchObject({ ...EVENT_DATE_INACTIVE, reason: 'EVENT_WEEKDAY' });
+  expect(storedDate(sat[0].matchUpId)).toBeUndefined();
+});
+
+it('the bulk paths aggregate the warning, each with its matchUpId', () => {
+  const { sat, fri } = setup();
+  const satIds = sat.map(({ matchUpId }) => matchUpId).sort();
+
+  let result: any = tournamentEngine.bulkScheduleMatchUps({
+    matchUpDetails: [...sat, ...fri].map(({ matchUpId }) => ({ matchUpId, schedule: { scheduledDate: FRI } })),
+  });
+  expect(result.success).toEqual(true);
+  let warned = result.warnings.filter(({ code }) => code === EVENT_DATE_INACTIVE.code);
+  expect(warned.map(({ matchUpId }) => matchUpId).sort()).toEqual(satIds);
+
+  result = tournamentEngine.bulkScheduleTournamentMatchUps({
+    matchUpIds: sat.map(({ matchUpId }) => matchUpId),
+    schedule: { scheduledDate: '2026-11-15' },
+  });
+  expect(result.success).toEqual(true);
+  warned = result.warnings.filter(({ code }) => code === EVENT_DATE_INACTIVE.code);
+  expect(warned.map(({ matchUpId }) => matchUpId).sort()).toEqual(satIds);
+
+  // a day's shift moves the Friday event onto the Saturday, which it does not play
+  result = tournamentEngine.bulkRescheduleMatchUps({
+    matchUpIds: fri.map(({ matchUpId }) => matchUpId),
+    scheduleChange: { daysChange: 1 },
+  });
+  expect(result.success).toEqual(true);
+  warned = result.warnings.filter(({ code }) => code === EVENT_DATE_INACTIVE.code);
+  expect(warned.map(({ matchUpId }) => matchUpId).sort()).toEqual(fri.map(({ matchUpId }) => matchUpId).sort());
+  expect(warned[0]).toMatchObject({ scheduledDate: SAT, eventId: 'friEvent', reason: 'EVENT_WEEKDAY' });
+});
