@@ -16,6 +16,7 @@ import { TEAM } from '@Constants/eventConstants';
 import {
   COMPASS,
   DOUBLE_ELIMINATION,
+  FEED_IN_CHAMPIONSHIP,
   FIRST_MATCH_LOSER_CONSOLATION,
   ROUND_ROBIN,
   SINGLE_ELIMINATION,
@@ -756,6 +757,25 @@ const OWNED: [string, Scenario][] = [
     },
   ],
   [
+    "a dual's own DOUBLE_WALKOVER once a line is played: its tally written over, the line kept as it stands",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1, 0), winningSide: 1 }],
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'DOUBLE_WALKOVER', dual: true },
+    },
+  ],
+  [
+    "FEED_IN_CHAMPIONSHIP: a dual's own DOUBLE_DEFAULT once two lines are played",
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [
+        { target: R1(1, 0), winningSide: 1 },
+        { target: R1(1, 1), winningSide: 2 },
+      ],
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'DOUBLE_DEFAULT', dual: true },
+    },
+  ],
+  [
     "a dual's own DOUBLE_DEFAULT under propagateExitStatus: the DEFAULTED it produces waits in the next dual",
     {
       drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
@@ -1159,15 +1179,6 @@ const KEPT: [string, Scenario][] = [
       policyDefinitions: POLICY_SCORING_DEFAULT,
       setup: [{ target: R1(1, 0), winningSide: 1 }],
       step: { target: R1(1, 1), winningSide: 2, outcome: 'DEFAULTED' },
-      abstains: 'exit',
-    },
-  ],
-  [
-    "a dual's own DOUBLE_WALKOVER once a line is played: v1's (exitReason: a double exit over a dual in progress)",
-    {
-      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
-      setup: [{ target: R1(1, 0), winningSide: 1 }],
-      step: { target: R1(1, 0), winningSide: 1, outcome: 'DOUBLE_WALKOVER', dual: true },
       abstains: 'exit',
     },
   ],
