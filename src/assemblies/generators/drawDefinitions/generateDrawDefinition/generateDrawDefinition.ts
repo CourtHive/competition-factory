@@ -8,6 +8,7 @@ import { getParticipants } from '@Query/participants/getParticipants';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { generateOrGetExisting } from './generateOrGetExisting';
+import { entriesNotPlacedWarnings } from './entriesNotPlaced';
 import { qualifyingGeneration } from './qualifyingGeneration';
 import { hydrateRoundNames } from './hydrateRoundNames';
 import { constantToString } from '@Tools/strings';
@@ -112,7 +113,15 @@ export function generateDrawDefinition(params: GenerateDrawDefinitionArgs): Resu
     event,
   });
   if (genResult.error) return decorateResult({ result: genResult, stack });
-  const { existingDrawDefinition, positioningReports, drawDefinition, structureId, conflicts, entries } = genResult;
+  const {
+    existingDrawDefinition,
+    positioningReports,
+    drawDefinition,
+    structureId,
+    conflicts,
+    entries,
+    entriesNotPlaced,
+  } = genResult;
   if (!drawDefinition) return decorateResult({ result: { error: INVALID_VALUES }, stack });
 
   // generate qualifying structures
@@ -169,6 +178,9 @@ export function generateDrawDefinition(params: GenerateDrawDefinitionArgs): Resu
     remapDrawDefinitionMatchUpIds({ targetMatchUpIds, drawDefinition });
   }
 
+  // the entries generation left out because their stage was full: generation goes on, and says so (CA 2026-11-01)
+  const warnings = entriesNotPlacedWarnings({ entriesNotPlaced, drawDefinition });
+
   return {
     existingDrawDefinition: !!existingDrawDefinition,
     qualifyingConflicts,
@@ -177,6 +189,7 @@ export function generateDrawDefinition(params: GenerateDrawDefinitionArgs): Resu
     structureId,
     ...SUCCESS,
     conflicts,
+    ...(warnings.length ? { warnings } : {}),
   };
 }
 
