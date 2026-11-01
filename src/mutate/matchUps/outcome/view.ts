@@ -1,10 +1,10 @@
+import { scheduleRefusal as scheduleWriteRefusal } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
 import { removalMissingDrawPositions } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { fedLoserPlacementRefusal } from '@Mutate/matchUps/drawPositions/reconcileFedLoserEligibility';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { isValidMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
-import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
 import { resolveTieScoreSource } from '@Query/hierarchical/tieFormats/resolveTieScoreSource';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
@@ -1498,7 +1498,7 @@ function roundRobinGroup({
 
 /**
  * § 2 rows 16, 25 and 27: v1's writer's refusal of the schedule a call carries, asked as v1 asks it before the outcome
- * lands (`addMatchUpScheduleItems` with `validateOnly`: every refusal, nothing written). Its result is kept whole, so
+ * lands (`scheduleRefusal`: every refusal, the write's own met on a copy of the draw, nothing written). Its result is kept whole, so
  * v2's refusal returns what v1 returns
  */
 function scheduleRefusal({
@@ -1508,15 +1508,14 @@ function scheduleRefusal({
 }: Pick<BuildViewArgs, 'tournamentRecord' | 'drawDefinition' | 'request'>): OutcomeView['scheduleRefusal'] {
   const schedule = request.carries?.schedule;
   if (!schedule || !drawDefinition || !tournamentRecord || !request.matchUpId) return undefined;
-  const check: Record<string, unknown> = addMatchUpScheduleItems({
+  // v1's own question (`setMatchUpState`): the refusals, and the write's own on a copy of the draw
+  const check: Record<string, unknown> | undefined = scheduleWriteRefusal({
     matchUpId: request.matchUpId,
-    disableNotice: true,
-    validateOnly: true,
     tournamentRecord,
     drawDefinition,
     schedule,
   });
-  if (!check.error) return undefined;
+  if (!check?.error) return undefined;
   const { error, info, context, stack: _stack, ...extra } = check;
   return {
     error: error as ErrorType,
