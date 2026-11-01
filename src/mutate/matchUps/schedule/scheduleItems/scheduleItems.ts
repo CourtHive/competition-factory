@@ -512,6 +512,28 @@ type AddMatchUpScheduleItemsArgs = {
   event?: Event;
 };
 
+/**
+ * Every refusal the schedule's write can raise, before anything is written. `validateOnly` stops before the timing and
+ * assignment writes (`applyScheduleTiming`, `applyScheduleAssignments`), whose own checks refuse a stop, resume or end
+ * time out of order, a venue not found, and others. A caller that validates before writing something else (an outcome)
+ * and applies the schedule after (`setMatchUpState`) met those refusals after its own writes: measured 2026-11-01, a
+ * winner with `schedule: { stopTime }` returned `ERR_INVALID_STOP_TIME` over a result written and directed. So the
+ * write is also run, on a copy of the draw, with no notice. Read by `setMatchUpState` and by the outcome view (v2).
+ */
+export function scheduleRefusal(
+  params: Omit<AddMatchUpScheduleItemsArgs, 'validateOnly'>,
+): ReturnType<typeof addMatchUpScheduleItems> | undefined {
+  const check = addMatchUpScheduleItems({ ...params, disableNotice: true, validateOnly: true });
+  if (check.error) return check;
+  if (!params.drawDefinition) return undefined;
+  const scratch = addMatchUpScheduleItems({
+    ...params,
+    drawDefinition: structuredClone(params.drawDefinition),
+    disableNotice: true,
+  });
+  return scratch.error ? scratch : undefined;
+}
+
 export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
   error?: ErrorType;
   success?: boolean;
