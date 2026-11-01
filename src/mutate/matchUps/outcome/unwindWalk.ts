@@ -8,7 +8,7 @@ import { overlap } from '@Tools/arrays';
 
 import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { CONTAINER, WINNER } from '@Constants/drawDefinitionConstants';
-import type { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
+import type { DrawDefinition, MatchUp, MatchUpStatusUnion } from '@Types/tournamentTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 import type { RoundProfile } from '@Types/factoryTypes';
 import type { OutcomeOp } from './ops';
@@ -33,7 +33,7 @@ type SimMatchUp = {
   roundPosition?: number;
   /** the positions the matchUp holds as the walk goes (`drawPositions` on the copy v1 writes) */
   positions: number[];
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
   stored: HydratedMatchUp;
 };
 
@@ -49,7 +49,7 @@ type Sim = {
   winnerLinkRounds: Set<string>;
   propagatesBye: boolean;
   notices: Map<string, Notice>;
-  initial: Map<string, { positions: number[]; matchUpStatus?: string }>;
+  initial: Map<string, { positions: number[]; matchUpStatus?: MatchUpStatusUnion }>;
   withdrawn: { structureId: string; drawPosition: number; quiet: boolean; segment: number }[];
   segment: number;
   steps: number;
@@ -268,7 +268,7 @@ function releaseUndecided(
   matchUp: SimMatchUp,
   drawPosition: number,
   initialPositions: number[],
-  initialStatus?: string,
+  initialStatus?: MatchUpStatusUnion,
 ): boolean {
   if (!matchUp.roundNumber || matchUp.matchUpStatus !== TO_BE_PLAYED) return true;
   if (initialStatus !== BYE && !isAnyExit(initialStatus)) return true;
