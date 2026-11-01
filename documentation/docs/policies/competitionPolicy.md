@@ -213,16 +213,23 @@ The `victoryPolicy` block determines the leaderboard ranking.
 
 When participants are tied on the primary ranking, the `tiebreakOrder` array defines the sequence of tiebreak methods applied:
 
-| Tiebreak                 | Description                                                       |
-| ------------------------ | ----------------------------------------------------------------- |
-| `HEAD_TO_HEAD`           | Direct result between tied participants                           |
-| `HEAD_TO_HEAD_PRESSURE`  | Pressure rating differential in head-to-head matchUps             |
-| `POINT_DIFFERENTIAL`     | `totalPointsWon - totalPointsLost`                                |
-| `STRENGTH_OF_OPPOSITION` | Average baseline rating of opponents faced                        |
-| `DYNAMIC_FORM_RATING`    | Current dynamic form rating                                       |
-| `PRESSURE_RATING`        | Cumulative pressure rating                                        |
-| `BUCHHOLZ`               | Sum of opponents' scores (Swiss tiebreak)                         |
-| `SONNEBORN_BERGER`       | Sum of beaten opponents' scores + half of drawn opponents' scores |
+| Tiebreak                 | Description                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------ |
+| `HEAD_TO_HEAD`           | Record between two tied participants; with three or more, wins among only them |
+| `HEAD_TO_HEAD_PRESSURE`  | Pressure rating differential in head-to-head matchUps                          |
+| `POINT_DIFFERENTIAL`     | `totalPointsWon - totalPointsLost`                                             |
+| `STRENGTH_OF_OPPOSITION` | Average baseline rating of opponents faced                                     |
+| `DYNAMIC_FORM_RATING`    | Current dynamic form rating                                                    |
+| `PRESSURE_RATING`        | Cumulative pressure rating                                                     |
+| `BUCHHOLZ`               | Sum of opponents' scores, each scored by the primary ranking                   |
+| `SONNEBORN_BERGER`       | Sum of beaten opponents' scores + half of drawn opponents' scores              |
+
+The leaderboard is ordered by the standings engine, the same one that orders round-robin groups and season tables. When
+a tiebreak separates some of the tied participants, each smaller set is ordered again from the first tiebreak.
+Participants level on the primary ranking and on every tiebreak share a rank, and the row records how many share it
+(`ties`). Before the standings engine, `BUCHHOLZ` and `SONNEBORN_BERGER` were accepted but had no effect, `HEAD_TO_HEAD`
+was compared pair by pair inside a sort (so a circle of results gave an order that depended on the sort), and every row
+was numbered 1, 2, 3 whatever the ties.
 
 ---
 
