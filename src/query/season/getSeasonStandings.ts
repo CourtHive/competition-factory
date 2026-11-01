@@ -53,6 +53,8 @@ type GetSeasonStandingsArgs = {
   tallyPolicy?: RoundRobinTallyPolicy;
   /** what the table is for: a policy's directives may apply only for some purposes (`STANDINGS_PURPOSE_*`) */
   purpose?: string;
+  /** values from outside the results, by key and then subjectId, read by `external` tally directives */
+  externalValues?: Record<string, Record<string, number>>;
 };
 
 export type SeasonStandingsResult = ResultType & {
@@ -166,6 +168,7 @@ function tierStandings({ params, key, bucket, rows }: TierStandingsArgs) {
           phase: provisional ? 'PROVISIONAL' : 'FINAL',
           lotSeed: `${season.seasonId}:${key}`,
           purpose: params.purpose,
+          externalValues: params.externalValues,
           participantResults,
           tallyPolicy,
           tierRows,
@@ -267,11 +270,27 @@ function tierLedger(
   return { participantResults };
 }
 
+/** a caller's external values are keyed by subjectId; the season ledger is keyed by subject key */
+function bySubjectKey(externalValues: Record<string, Record<string, number>> | undefined, bucket: TierBucket) {
+  if (!externalValues) return undefined;
+  return Object.fromEntries(
+    Object.entries(externalValues).map(([key, values]) => [
+      key,
+      Object.fromEntries(
+        [...bucket.subjects.entries()]
+          .filter(([, subject]) => values[subject.subjectId] !== undefined)
+          .map(([subjectKey, subject]) => [subjectKey, values[subject.subjectId]]),
+      ),
+    ]),
+  );
+}
+
 type RankByPolicyArgs = {
   participantResults: ParticipantResults;
   phase: StandingsPhase;
   purpose?: string;
   lotSeed: string;
+  externalValues?: Record<string, Record<string, number>>;
   tallyPolicy: RoundRobinTallyPolicy;
   tierRows: SeasonStandingRow[];
   bucket: TierBucket;
@@ -289,6 +308,7 @@ function rankByPolicy({
   phase,
   purpose,
   lotSeed,
+  externalValues,
 }: RankByPolicyArgs) {
   const played = Object.fromEntries(
     Object.entries(participantResults).filter(([key]) => bucket.subjects.has(key)),
@@ -296,6 +316,7 @@ function rankByPolicy({
   const { groupOrder } = orderParticipants({
     recalculate: ({ participantIds, groupingTotal }) => tierLedger(bucket, tallyPolicy, participantIds, groupingTotal),
     policy: fromV1(tallyPolicy, SEASON_PRIMARY_KEYS),
+    externalValues: bySubjectKey(externalValues, bucket),
     participantResults: played,
     lotSeed,
     purpose,

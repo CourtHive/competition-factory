@@ -43,6 +43,7 @@ export function getGroupOrder(params) {
     matchUpFormat,
     subOrderMap,
     tallyPolicy, // array of attributes to use for tie-breaking
+    externalValues, // values from outside the results, read by `external` directives
     matchUps,
   } = params;
 
@@ -58,6 +59,7 @@ export function getGroupOrder(params) {
     // the first call orders a complete group; the provisional rerun passes requireCompletion: false
     phase: requireCompletion ? 'FINAL' : 'PROVISIONAL',
     lotSeed: matchUps?.[0]?.structureId,
+    externalValues,
     participantResults,
     subOrderMap,
   });
