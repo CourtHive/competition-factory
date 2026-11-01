@@ -69,9 +69,12 @@ export function scheduleProfileVNext(params: ScheduleProfileVNextArgs) {
   if (refusal) return refusal;
 
   if (clearScheduleDates && !dryRun) clearScheduledMatchUps({ tournamentRecords, scheduledDates });
-  const { scheduledMatchUpIds, noTimeMatchUpIds } = dryRun
+  const written = dryRun
     ? { scheduledMatchUpIds: plan.scheduledMatchUpIds, noTimeMatchUpIds: plan.noTimeMatchUpIds }
     : writePlan({ plan, view, tournamentRecords });
+  const { scheduledMatchUpIds } = written;
+  // a matchUp skipped for its event's dates is left without a time too: listed under its reason and in noTimeMatchUpIds
+  const noTimeMatchUpIds = withEventDateSkips(written.noTimeMatchUpIds, view.eventDateSkippedMatchUpIds);
 
   view.dateSchedulingProfiles.forEach((dateSchedulingProfile, index) =>
     computeRoundSchedulePcts({
@@ -136,6 +139,18 @@ export function scheduleProfileVNext(params: ScheduleProfileVNextArgs) {
     proConflicts,
     ...(warnings.length ? { warnings } : {}),
   };
+}
+
+function withEventDateSkips(
+  noTimeMatchUpIds: { [scheduleDate: string]: string[] } | undefined,
+  skips: SchedulingView['eventDateSkippedMatchUpIds'],
+) {
+  const merged = { ...noTimeMatchUpIds };
+  for (const [scheduleDate, dateSkips] of Object.entries(skips)) {
+    if (!dateSkips.length) continue;
+    merged[scheduleDate] = [...(merged[scheduleDate] ?? []), ...dateSkips.map(({ matchUpId }) => matchUpId)];
+  }
+  return merged;
 }
 
 function skipsByDate(skips: SchedulingView['eventDateSkippedMatchUpIds']) {

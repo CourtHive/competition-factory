@@ -403,7 +403,7 @@ The Day Plan defines what is being scheduled today. When the scheduler reconcile
 [Event playing days](#event-playing-days)); skipping is per event, so on one day an event may be skipped while another
 is scheduled. What was skipped is reported in `eventDateSkippedMatchUpIds`, `{ [date]: [{ matchUpId, eventId, reason }] }`,
 present only when something was skipped. `allowInactiveEventDates: true` places such matchUps instead, and the result's
-`warnings` carry one `EVENT_DATE_INACTIVE` per such placement. A skipped matchUp is not listed in `noTimeMatchUpIds`; a dry run reports the same skips.
+`warnings` carry one `EVENT_DATE_INACTIVE` per such placement. A skipped matchUp is also listed in `noTimeMatchUpIds`; a dry run reports the same skips.
 
 Set either flag to `false` to restore the pre-defaults legacy semantics where every matchUp in the already-scheduled set consumes its participants' daily-limit budget regardless of status or date.
 
@@ -515,7 +515,7 @@ engine.scheduleProfileGrid({
 [Event playing days](#event-playing-days)); skipping is per event, so on one day an event may be skipped while another
 is scheduled. What was skipped is reported in `eventDateSkippedMatchUpIds`, `{ [date]: [{ matchUpId, eventId, reason }] }`,
 present only when something was skipped. `allowInactiveEventDates: true` places such matchUps instead, and the result's
-`warnings` carry one `EVENT_DATE_INACTIVE` per such placement. A skipped matchUp is not listed in `notScheduledMatchUpIds`.
+`warnings` carry one `EVENT_DATE_INACTIVE` per such placement. A skipped matchUp is also listed in `notScheduledMatchUpIds`.
 
 When `courtIds` is provided, only courts in the set are considered as placement targets at each venue. Passing an empty array places nothing. Omitting the parameter places onto all courts at the profile's venues (the default).
 

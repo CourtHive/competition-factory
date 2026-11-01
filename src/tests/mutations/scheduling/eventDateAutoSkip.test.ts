@@ -82,8 +82,8 @@ describe('scheduleProfileRounds', () => {
       reason: 'EVENT_WEEKDAY',
       eventId: 'satEvent',
     });
-    // a reason of its own, kept out of noTimeMatchUpIds
-    expect(result.noTimeMatchUpIds[FRI].some((id) => sat.includes(id))).toEqual(false);
+    // a reason of its own, and left without a time: listed in noTimeMatchUpIds too
+    expect(sat.every((id) => result.noTimeMatchUpIds[FRI].includes(id))).toEqual(true);
     expect(result.warnings).toBeUndefined();
 
     // every profiled matchUp left unplaced is accounted for
@@ -150,13 +150,13 @@ describe('scheduleProfileRounds', () => {
 });
 
 describe('scheduleProfileGrid', () => {
-  it('skips per event, and reports the skips apart from notScheduledMatchUpIds', () => {
+  it('skips per event, reported under its reason and in notScheduledMatchUpIds', () => {
     const { sat, fri } = setup();
     const result: any = tournamentEngine.scheduleProfileGrid({ scheduleDates: [FRI] });
     expect(result.success).toEqual(true);
     expect(sorted(result.scheduledMatchUpIds[FRI])).toEqual(sorted(fri));
     expect(skippedIds(result, FRI)).toEqual(sorted(sat));
-    expect((result.notScheduledMatchUpIds[FRI] ?? []).some((id) => sat.includes(id))).toEqual(false);
+    expect(sat.every((id) => result.notScheduledMatchUpIds[FRI].includes(id))).toEqual(true);
     const placed = scheduledOn(FRI);
     expect(sat.some((id) => placed.has(id))).toEqual(false);
   });

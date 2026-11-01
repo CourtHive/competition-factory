@@ -286,8 +286,8 @@ Dates are taken in order. On each date:
    included, and the conflicts its time makes there are reported (§ 7). It is never dropped (CA 2026-10-28). A
    matchUp belongs to the first venue that profiles it on the date. A round whose event does not play on the date
    (§ 3.10) is skipped there: it is resolved to no matchUps and no minutes, so it takes no slot and does not count
-   toward the venue's `T`; its schedulable matchUps not yet timed are reported in `eventDateSkippedMatchUpIds` and not
-   in `noTimeMatchUpIds` (unless the call sets `allowInactiveEventDates`, when the round is resolved like any other).
+   toward the venue's `T`; its schedulable matchUps not yet timed are reported in `eventDateSkippedMatchUpIds` and
+   also in `noTimeMatchUpIds` (unless the call sets `allowInactiveEventDates`, when the round is resolved like any other).
    The skip is decided in the view (§ 4, `kernel.scheduling.view@1`, whose options include
    `allowInactiveEventDates`); the plan reads the view alone and is unchanged (`kernel.scheduling.plan@2`). A
    `roundSegment` applies only when the round has a
@@ -355,7 +355,7 @@ grid, the grid's conflicts that name it are reported per date in `proConflicts` 
 Per date, the profiled rounds of every venue are resolved to their matchUps (a round on a round robin covers its
 groups), skipping BYEs, completed matchUps and matchUps already on a court or a
 court order. A matchUp whose event does not play on the date (§ 3.10) is not offered to the grid: it is reported in
-`eventDateSkippedMatchUpIds` and not in `notScheduledMatchUpIds`. `proAutoSchedule`, which plans one date's grid
+`eventDateSkippedMatchUpIds` and also in `notScheduledMatchUpIds`. `proAutoSchedule`, which plans one date's grid
 from the matchUps it is given, skips the same way, before its view is built, and reports a skipped matchUp both in
 `notScheduled` and in `eventDateSkippedMatchUpIds`; the grid's date view (`kernel.scheduling.grid@1`) never holds
 one. The date's grid is its courts by rows; matchUps already timed are walked earliest first, so they land on

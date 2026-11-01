@@ -330,7 +330,8 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
   return {
     ...SUCCESS,
     scheduledMatchUpIds,
-    notScheduledMatchUpIds,
+    // a matchUp skipped for its event's dates is not scheduled either: listed under its reason and here
+    notScheduledMatchUpIds: withSkips(notScheduledMatchUpIds, eventDateSkippedMatchUpIds),
     dailyLimitWarningMatchUpIds,
     overnightRestWarnings,
     overLimitMatchUpIds,
@@ -340,6 +341,13 @@ export function scheduleProfileGrid(params: ScheduleProfileGridArgs) {
 }
 
 type EventDateSkip = { matchUpId: string; eventId: string; reason: EventDateReason };
+
+function withSkips(notScheduled: Record<string, string[]>, skips: Record<string, EventDateSkip[]>) {
+  const merged = { ...notScheduled };
+  for (const [date, dateSkips] of Object.entries(skips))
+    merged[date] = [...(merged[date] ?? []), ...dateSkips.map(({ matchUpId }) => matchUpId)];
+  return merged;
+}
 
 /** the members that hold something: a call that skipped nothing and warned of nothing keeps its result's shape */
 function presentWhenAny(members: { [key: string]: unknown[] | Record<string, unknown> }) {
