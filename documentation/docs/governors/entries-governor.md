@@ -378,7 +378,7 @@ Promotes a single alternate participant to direct acceptance status.
 
 ```js
 const result = engine.promoteAlternate({
-  participantId, // required - participant to promote
+  participantId, // optional - participant to promote; defaults to the stage's next alternate
   stage, // optional - defaults to MAIN
   stageSequence, // optional - for qualifying stages
   eventId, // required
@@ -391,22 +391,24 @@ const result = engine.promoteAlternate({
 ```ts
 {
   success: boolean;
-  entryStatusModified?: boolean;
   error?: ErrorType;
+  context?: { drawPromotionError, drawId }; // the draw could not promote; the event did
 }
 ```
 
-**Purpose:** Changes participant `entryStatus` from ALTERNATE to DIRECT_ACCEPTANCE.
+**Purpose:** Changes participant `entryStatus` from ALTERNATE to DIRECT_ACCEPTANCE. Without a `participantId` the
+stage's alternate with the lowest `entryPosition` is promoted (with no positioned alternate, the first one entered).
+See `promoteAlternates` for positions, draws and flights.
 
 ---
 
 ## promoteAlternates
 
-Bulk version of `promoteAlternate`. Promotes multiple alternates to direct acceptance.
+Bulk version of `promoteAlternate`. Promotes multiple alternates to direct acceptance, in the order given.
 
 ```js
 const result = engine.promoteAlternates({
-  participantIds, // required - array of participant IDs to promote
+  participantIds, // required - participant IDs to promote, in order of acceptance
   stage, // optional - defaults to MAIN
   stageSequence, // optional - for qualifying stages
   eventId, // required
@@ -415,6 +417,19 @@ const result = engine.promoteAlternates({
 ```
 
 **Purpose:** Efficiently promote multiple alternates at once after withdrawals.
+
+- **Positions.** Each promoted entry takes the next position after the stage's accepted entries (`max + 1`), so
+  promoting several in one call gives them distinct positions in the order of `participantIds`. The alternates behind
+  each promoted entry close up. When no accepted entry in the stage has an `entryPosition`, the promoted entry is
+  left without one.
+- **Refused before any write.** Every id must be an alternate entry of the event in `stage` (and `stageSequence`,
+  when given); otherwise nothing changes. An id that is not an event entry returns `PARTICIPANT_ENTRY_NOT_FOUND`.
+- **Draws.** With `drawId`, the draw's entries are promoted too. With split draws an alternate may not be in the
+  draw's entries: given `eventId`, the event is still promoted and the draw's refusal is returned as
+  `context.drawPromotionError`; given only `drawId`, the call is refused. A generated draw's entries are promoted
+  without placing the participant in the structure.
+- **Flights.** The same alternates are promoted in the `drawEntries` of the draw's flight and of every flight whose
+  draw is not yet generated, wherever they appear there as alternates.
 
 ---
 

@@ -406,12 +406,15 @@ engine.modifyTieFormat({
 
 ## promoteAlternates
 
+Promotes alternates to direct acceptance in the order given, each placed after the accepted entries. See
+[entries governor: promoteAlternates](/docs/governors/entries-governor#promotealternates) for positions, draws and flights.
+
 ```js
 engine.promoteAlternates({
-  participantIds,
+  participantIds, // in order of acceptance
   // either drawId or eventId are REQUIRED
-  eventId, // optional if drawId proided
-  drawId, // optional if eventId proided
+  eventId, // optional if drawId provided
+  drawId, // optional if eventId provided
 });
 ```
 
