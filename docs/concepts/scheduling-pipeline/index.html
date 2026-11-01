@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="docs-wrapper plugin-docs plugin-id-default docs-version-current docs-doc-page docs-doc-id-concepts/scheduling-pipeline" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.10.2">
+<title data-rh="true">The scheduling pipeline | Competition Factory</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://courthive.github.io/competition-factory/docs/concepts/scheduling-pipeline"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="The scheduling pipeline | Competition Factory"><meta data-rh="true" name="description" content="Automated scheduling places matchUps in time and on courts. Two pipelines do it and they compose: the timed"><meta data-rh="true" property="og:description" content="Automated scheduling places matchUps in time and on courts. Two pipelines do it and they compose: the timed"><link data-rh="true" rel="icon" href="/competition-factory/img/favicon.ico"><link data-rh="true" rel="canonical" href="https://courthive.github.io/competition-factory/docs/concepts/scheduling-pipeline"><link data-rh="true" rel="alternate" href="https://courthive.github.io/competition-factory/docs/concepts/scheduling-pipeline" hreflang="en"><link data-rh="true" rel="alternate" href="https://courthive.github.io/competition-factory/docs/concepts/scheduling-pipeline" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"The scheduling pipeline","item":"https://courthive.github.io/competition-factory/docs/concepts/scheduling-pipeline"}]}</script><link rel="stylesheet" href="/competition-factory/assets/css/styles.b8db7a69.css">
+<script src="/competition-factory/assets/js/runtime~main.e0f80e04.js" defer="defer"></script>
+<script src="/competition-factory/assets/js/main.1f7b5534.js" defer="defer"></script>
+</head>
+<body>
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><link rel="preload" as="image" href="/competition-factory/img/CourtHive.svg"><link rel="preload" as="image" href="/competition-factory/img/CourtHive-dark.svg"><div role="region" aria-label="Skip to main content"><a class="skipToContent_Jirb" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/competition-factory/"><div class="navbar__logo"><img src="/competition-factory/img/CourtHive.svg" alt="CourtHive Logo" class="themedComponent_J_Lj themedComponent--light_qupp"><img src="/competition-factory/img/CourtHive-dark.svg" alt="CourtHive Logo" class="themedComponent_J_Lj themedComponent--dark_qFDi"></div><b class="navbar__title text--truncate">Competition Factory</b></a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/competition-factory/docs/">Docs</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><a href="https://github.com/CourtHive/competition-factory" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_X4M5"><use href="#theme-svg-external-link"></use></svg></a><div class="toggle_LrPk colorModeToggle_zncL"><button class="clean-btn toggleButton_mMAr toggleButtonDisabled_xrCc" type="button" disabled="" title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_qryd lightToggleIcon_eybk"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_qryd darkToggleIcon_Ivea"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_qryd systemToggleIcon_R3bN"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_aXYB"><div class="dsla-search-wrapper"><div class="dsla-search-field" data-tags="default,docs-default-current"></div></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_HrOm"><div class="docsWrapper_SaUa"><button aria-label="Scroll back to top" class="clean-btn theme-back-to-top-button backToTopButton_DMTl" type="button"></button><div class="docRoot_yKU4"><aside class="theme-doc-sidebar-container docSidebarContainer_x78a"><div class="sidebarViewport_DD3f"><div class="sidebar_dkuC"><nav aria-label="Docs sidebar" class="menu thin-scrollbar menu_sepK"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/"><span class="categoryLinkLabel_S839">Competition Factory</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret menu__link--active" role="button" aria-expanded="true" href="/competition-factory/docs/concepts/performance"><span class="categoryLinkLabel_S839">Concepts</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/performance"><span class="linkLabel_fhWb">Performance Evidence and Measurement</span></a></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/registration-profile"><span class="categoryLinkLabel_S839">Tournament Setup</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/format-wizard/engine"><span class="categoryLinkLabel_S839">Format Wizard</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/participants"><span class="categoryLinkLabel_S839">Participants</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/events/events-overview"><span class="categoryLinkLabel_S839">Events</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/draws-overview"><span class="categoryLinkLabel_S839">Draws</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/matchup-overview"><span class="categoryLinkLabel_S839">matchUps</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret menu__link--active" role="button" aria-expanded="true" tabindex="0" href="/competition-factory/docs/concepts/scheduling-overview"><span class="categoryLinkLabel_S839">Scheduling</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/scheduling-overview"><span class="linkLabel_fhWb">Overview</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" tabindex="0" href="/competition-factory/docs/concepts/scheduling-pipeline"><span class="linkLabel_fhWb">The scheduling pipeline</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/venues-courts"><span class="linkLabel_fhWb">Venues and Courts</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/scheduling-policy"><span class="linkLabel_fhWb">Scheduling Policy</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/scheduling-profile"><span class="linkLabel_fhWb">Scheduling Profile</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/schedule-scenarios"><span class="linkLabel_fhWb">Schedule Scenarios</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/schedule-locks"><span class="linkLabel_fhWb">Schedule Locks</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/automated-scheduling"><span class="linkLabel_fhWb">Automated Scheduling</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/pro-scheduling"><span class="linkLabel_fhWb">Pro Scheduling</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/scheduling-conflicts"><span class="linkLabel_fhWb">Conflict Reporting</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/date-time-handling"><span class="linkLabel_fhWb">Date and Time Handling</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/competition-clock"><span class="linkLabel_fhWb">Competition Clock</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/randomness"><span class="linkLabel_fhWb">Randomness</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/publishing/publishing-overview"><span class="categoryLinkLabel_S839">Publishing</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/accessors"><span class="categoryLinkLabel_S839">Record Data</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/policies"><span class="categoryLinkLabel_S839">Policies</span></a></div></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/engines/state-engines"><span class="categoryLinkLabel_S839">State Engines</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/implementation/draws/allPlayoffPositionsFilled"><span class="categoryLinkLabel_S839">Implementation reference</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/governors/governors-overview"><span class="categoryLinkLabel_S839">Governors</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/tools/tools-overview"><span class="categoryLinkLabel_S839">Tools</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/testing/testing-overview"><span class="categoryLinkLabel_S839">Testing</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/constants"><span class="categoryLinkLabel_S839">Data</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/whats-new-7.0.0"><span class="categoryLinkLabel_S839">Release Notes &amp; Migration</span></a></div></li></ul></nav></div></div></aside><main class="docMainContainer_tZOt"><div class="container padding-top--md padding-bottom--lg"><div class="row"><div class="col docItemCol_x0aV"><div class="docItemContainer_BCkE"><article><nav class="theme-doc-breadcrumbs breadcrumbsContainer_e3Mu" aria-label="Breadcrumbs"><ul class="breadcrumbs"><li class="breadcrumbs__item"><a aria-label="Home page" class="breadcrumbs__link" href="/competition-factory/"><svg viewBox="0 0 24 24" class="breadcrumbHomeIcon_oQgb"><path d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z" fill="currentColor"></path></svg></a></li><li class="breadcrumbs__item"><span class="breadcrumbs__link">Concepts</span></li><li class="breadcrumbs__item"><span class="breadcrumbs__link">Scheduling</span></li><li class="breadcrumbs__item breadcrumbs__item--active"><span class="breadcrumbs__link">The scheduling pipeline</span></li></ul></nav><div class="tocCollapsible_SVpJ theme-doc-toc-mobile tocMobile_P8BK"><button type="button" class="clean-btn tocCollapsibleButton_mgY_">On this page</button></div><div class="theme-doc-markdown markdown"><header><h1>The scheduling pipeline</h1></header><p>Automated scheduling places matchUps in time and on courts. Two pipelines do it and they compose: the <strong>timed</strong>
+pipeline (<code>scheduleProfileRounds</code>) gives each matchUp a date and a time; the <strong>grid</strong> pipeline (<code>scheduleProfileGrid</code>)
+gives each matchUp a court and an order on a day&#x27;s court grid. A third, <code>scheduleMatchUps</code>, times an explicit list of
+matchUps on one date. All three share one core: the dependency graph, the participant reachability model, the timing
+rules, recovery, daily limits, person requests and the order rule. This page states the rules a second
+implementation has to reproduce: the inputs, the core, each pipeline&#x27;s order of decisions, what is written, what is
+reported, and the guarantees. Where the engine&#x27;s behaviour is a question rather than a decision it is marked <strong>OPEN</strong>.</p>
+<p>First version, 2026-10-23, written from the source and from the golden corpus
+(<code>Mentat/planning/SCHEDULING_PIPELINE_VNEXT.md</code> § 6). The corpus pins it with authored scenarios
+(<code>authored/scheduling/*</code>), a 288-cell scale matrix (<code>pnpm corpus:scheduling-scale</code>), and seven scheduling properties
+checked on every scheduling call the test suite makes (<code>SCHEDULING_PROPERTIES=&lt;file&gt; pnpm vitest run</code>).</p>
+<div class="language-text codeBlockContainer_Oncm theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_nKvf"><pre tabindex="0" class="prism-code language-text codeBlock__Bbt thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_qRwa"><div class="token-line" style="color:#bfc7d5"><span class="token plain">scheduleProfileRounds (timed)          scheduleProfileGrid (grid)            scheduleMatchUps (direct)</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  per date, per venue:                   per date:                              one date, listed matchUps:</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">    profiled rounds → Garman slots         profiled rounds → court-grid rows      Garman slots → place</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">    slot by slot: gate → place             row by row: rules → place</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  writes date, time, venue               writes date, court, courtOrder         writes time (date in it), venue</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">          └──────────────── shared core: graph · reachability · timing · recovery · limits · requests · played order</span><br></div></code></pre></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="1-the-inputs">1. The inputs<a href="#1-the-inputs" class="hash-link" aria-label="Direct link to 1. The inputs" title="Direct link to 1. The inputs" translate="no">​</a></h2>
+<p><strong>The scheduling profile</strong> lists, per date, the venues in play and, per venue, the rounds to schedule there in order.
+A round names a tournament, event, draw, structure and round number; it may narrow itself to <code>matchUpIds</code>, or to a
+<code>roundSegment</code> (<code>segmentNumber</code> of <code>segmentsCount</code>, by round position). A round&#x27;s own <code>periodLength</code> is not read: the
+call&#x27;s sizes every venue&#x27;s periods. A round
+robin&#x27;s rounds are profiled on the round robin&#x27;s containing structure: they cover every group it contains.</p>
+<p><strong>The call</strong> takes <code>scheduleDates</code> (the profile&#x27;s dates to schedule; all of them when absent), <code>clearScheduleDates</code>,
+<code>courtIds</code> (a court filter), <code>periodLength</code> (minutes per scheduling period; when absent, the smaller of 30 and a
+venue&#x27;s <code>T</code> plus recovery, so a short format is not given periods longer than itself) and <code>dryRun</code>. A completed
+matchUp is never scheduled again, and there is no override (CA 2026-10-23): <code>scheduleCompletedMatchUps</code> is accepted
+and ignored by the schedulers until the next major. mocksEngine, auto-scheduling a generated tournament, schedules it
+first and applies its results after, as a real tournament is played.</p>
+<p><strong><code>allowInactiveEventDates</code></strong> (default <code>false</code>), taken by all four schedulers (<code>scheduleProfileRounds</code>,
+<code>scheduleProfileGrid</code>, <code>proAutoSchedule</code>, <code>scheduleMatchUps</code>): see § 3.10. When it is set, a matchUp is placed on a day
+its event does not play, and each such placement is warned about.</p>
+<p><strong><code>clearScheduleDates</code>.</strong> <code>true</code> clears every scheduled matchUp that is not finished, in every tournament loaded, on
+every date, profiled or not; a schedule lock survives. An array clears only the matchUps scheduled on the dates it
+lists. The clear happens before any placement.</p>
+<p><strong>What the record supplies:</strong> courts and their availability per date (with bookings), the scheduling policy (timing and
+daily limits) or its default, the tournament&#x27;s own daily limits, person requests, and every matchUp&#x27;s existing schedule
+and lock.</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="2-refusals">2. Refusals<a href="#2-refusals" class="hash-link" aria-label="Direct link to 2. Refusals" title="Direct link to 2. Refusals" translate="no">​</a></h2>
+<ul>
+<li class="">No valid date remains after narrowing the profile&#x27;s dates by <code>scheduleDates</code>: <code>NO_VALID_DATES</code>.</li>
+<li class="">An empty profile is not refused: the call succeeds and places nothing.</li>
+<li class="">Before scheduling, the profile is validated against the tournament. A profile that names a venue, an event or a draw
+no longer in the record needs repair: the call is refused with
+<code>SCHEDULING_PROFILE_REPAIR_REQUIRED</code> and writes nothing. Its <code>context</code> offers the repaired profile
+(<code>repairedSchedulingProfile</code>, without those rounds), with <code>modifications</code> and <code>issues</code>; saving it with
+<code>setSchedulingProfile</code> is the repair. A round profiled at more than one venue on a date is reported in
+<code>schedulingProfileIssues</code>.</li>
+<li class="">A venue with no courts (none added yet, or all removed) is still a venue (CA 2026-10-23): its rounds are kept and
+place nothing. The timed pipeline reports their matchUps in <code>noTimeMatchUpIds</code>; the grid does not offer them to the
+date&#x27;s other courts and reports them in <code>notScheduledMatchUpIds</code>.</li>
+<li class="">Reading the profile never saves a repair: <code>getSchedulingProfile</code> returns the repaired profile with its
+<code>modifications</code> and leaves the stored one as it is. A query runs on one side only (client or server), so a save there
+would part the two records. The mutations that remove a venue, event or draw (or a venue&#x27;s courts) repair the profile
+as part of their own write.</li>
+<li class="">A profile that orders a round before a round it depends on is not refused and not reported by the scheduler (the
+query <code>getSchedulingProfileIssues</code> reports such rounds, with the matchUps each <code>shouldBeAfter</code>). The gate&#x27;s dependency
+rule (§ 4, step 4.3) still places the rounds in dependency order.</li>
+</ul>
+<p><strong>OPEN:</strong> the remaining parameter refusals (<code>INVALID_VALUES</code> for a malformed <code>courtIds</code> or <code>periodLength</code>) are not yet
+pinned by the corpus.</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="3-the-shared-core">3. The shared core<a href="#3-the-shared-core" class="hash-link" aria-label="Direct link to 3. The shared core" title="Direct link to 3. The shared core" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="31-the-dependency-graph">3.1 The dependency graph<a href="#31-the-dependency-graph" class="hash-link" aria-label="Direct link to 3.1 The dependency graph" title="Direct link to 3.1 The dependency graph" translate="no">​</a></h3>
+<p>A matchUp <strong>depends on</strong> every matchUp upstream of it: through winner links, loser links (consolation and feed-in),
+qualifying-to-main links (a qualifier position depends on the qualifying round that fills it) and round robin group to
+playoff links. The relation is transitive: a final depends on every matchUp of its draw that can feed it. AD_HOC rounds
+and the rounds of a round robin carry no links and impose no order on each other.</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="32-participant-reachability">3.2 Participant reachability<a href="#32-participant-reachability" class="hash-link" aria-label="Direct link to 3.2 Participant reachability" title="Direct link to 3.2 Participant reachability" translate="no">​</a></h3>
+<p>For each matchUp, who might play it, across all dates:</p>
+<ul>
+<li class=""><strong>certain</strong>: in the matchUp&#x27;s sides;</li>
+<li class=""><strong>potential</strong>: can still reach it through a source matchUp not yet decided. A feeder&#x27;s winner path and loser path
+are alternatives for its participants, never both;</li>
+<li class=""><strong>out</strong>: lost a completed feeder and has no route to it (a completed feeder sends only its winner on and only its
+loser to the consolation).</li>
+</ul>
+<p><strong>Near</strong> potentials are those one matchUp away: the participants of a matchUp&#x27;s direct, undecided sources.</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="33-timing">3.3 Timing<a href="#33-timing" class="hash-link" aria-label="Direct link to 3.3 Timing" title="Direct link to 3.3 Timing" translate="no">​</a></h3>
+<p>Each matchUp has an <strong>average</strong> duration, a <strong>recovery</strong> time and a <strong>type-change recovery</strong> time (used when the next
+matchUp a participant plays is of the other matchUpType). They are resolved from:</p>
+<ol>
+<li class="">minutes the call states (<code>scheduleMatchUps</code> only: <code>averageMatchUpMinutes</code>, <code>recoveryMinutes</code>, <code>recoveryMinutesMap</code>);</li>
+<li class="">otherwise the event&#x27;s schedule timing, the tournament&#x27;s <code>scheduling.timing</code>, or the attached scheduling policy,
+by the matchUp&#x27;s format and its event&#x27;s category;</li>
+<li class="">otherwise the default scheduling policy (<code>POLICY_SCHEDULING_DEFAULT</code>): a standard SET3-S:6/TB7 singles averages 90
+minutes and recovers 60.</li>
+</ol>
+<p>A <strong>timed format</strong> carries its own average when no rule names it: a whole-match cap (<code>-M:T60</code>) is the average outright;
+otherwise best-of × set minutes, with the final set&#x27;s minutes substituted when the code gives them (<code>SET3-S:T15-F:T10</code>
+is 40). The floor, when nothing applies, is 90 minutes and no recovery.</p>
+<p><code>scheduleMatchUps</code> with no timing stated anywhere (no call minutes, no policy, no timing on the event or tournament)
+uses 90 minutes and no recovery, as it always has.</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="34-recovery">3.4 Recovery<a href="#34-recovery" class="hash-link" aria-label="Direct link to 3.4 Recovery" title="Direct link to 3.4 Recovery" translate="no">​</a></h3>
+<p>A participant is <strong>free</strong> after a matchUp at its start plus its average plus its recovery (or its type-change recovery
+for a following matchUp of the other type). On one date, a matchUp is placed only where every participant it holds is
+free: its certain participants, and its near potentials (a participant one matchUp away is booked as a potential;
+participants further away are not, by design, 2026-10-16). A matchUp already timed on the date holds its participants
+whether or not the profile is scheduling it, completed or not, for its own minutes. A recorded <code>endTime</code> replaces the
+average in the free time.</p>
+<p><strong>Its own minutes</strong> (CA 2026-10-25): a matchUp already timed on the date holds its participants for its own average
+(from its format) plus its own recovery, once, whatever venues the date profiles; a matchUp the plan places holds them
+for its round&#x27;s average, the same figure its recovery is checked with. No figure from its venue or another round
+lengthens or shortens it (the engine used the greatest average of any venue profiled on the date). A matchUp about to be
+scheduled raises no not-before time from where it was timed before, which may be another date: the matchUps it feeds
+wait only for where it is placed now.</p>
+<p><strong>Transit between venues</strong> (CA 2026-10-25). When a participant&#x27;s consecutive matchUps on a date are at different
+venues, the later may not start before the earlier&#x27;s play ends plus the <strong>greater</strong> of its recovery (or type-change
+recovery) and the transit from the earlier&#x27;s venue to the later&#x27;s: recovery counts toward transit. Either order is
+checked: a matchUp placed before another already timed at another venue must also leave the transit before it. Transit
+holds participants, never courts. The minutes from one venue to another are, in order: the minutes stated for that
+direction (a pair stated once applies both ways; a one-way value only its way); none when the two venues share a
+<code>facilityId</code> (one physical place); else the scheduling policy&#x27;s <code>defaultTimes.transitMinutes</code> (the default policy
+states 30). With no policy stating it there is no transit, and a matchUp with no venue, or two matchUps at the same
+venue, take none. Minutes are whole. A record states the pairs once each in <code>scheduling.venueTransits</code>
+(<code>{ venueIds, minutes, oneWay?, sanctioned? }</code>; a sanctioned value is a floor the minutes never go below), pruned when a
+venue is deleted; where linked records state one pair differently, the greater applies. The planning view carries this
+as <code>transit</code> (<code>defaultMinutes</code>, <code>pairs</code> by direction, <code>facilityIds</code>).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="35-daily-limits">3.5 Daily limits<a href="#35-daily-limits" class="hash-link" aria-label="Direct link to 3.5 Daily limits" title="Direct link to 3.5 Daily limits" translate="no">​</a></h3>
+<p>A participant&#x27;s <strong>day load</strong> is every matchUp they are certain to play on the date, plus, per draw, the longest
+<strong>chain</strong> of matchUps they can only potentially play there: a run of matchUps each of which can feed the next. Two
+potential matchUps where neither feeds the other are alternatives (a winner path and a loser path) and do not add
+(CA, 2026-10-16). Draws add. A matchUp dated on the date counts whether or not it is timed (CA 2026-10-28). A
+participant&#x27;s load counts the date&#x27;s matchUps only: a matchUp on an earlier date, or a
+completed matchUp with no date, does not count against today, but a participant reachable from an earlier date&#x27;s
+feeder counts as a potential of today&#x27;s matchUps.</p>
+<p>The limits are counted by matchUpType and in <code>TOTAL</code>. Each matchUp is checked against the limits of its own tournament
+(the tournament&#x27;s <code>scheduling.dailyLimits</code>, else the scheduling policy&#x27;s <code>defaultDailyLimits</code>; none when neither is
+set), with the participant&#x27;s override from the policy&#x27;s <code>matchUpDailyLimits</code> on top, key by key. A limit of 0 is no
+limit. A matchUp is <strong>over the limit</strong> when adding it takes any certain or potential participant&#x27;s load past a limit.</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="36-person-requests">3.6 Person requests<a href="#36-person-requests" class="hash-link" aria-label="Direct link to 3.6 Person requests" title="Direct link to 3.6 Person requests" translate="no">​</a></h3>
+<p>A <code>DO_NOT_SCHEDULE</code> request on a date blocks a placement whose projected window (start to start plus the matchUp&#x27;s own
+average minutes, its round&#x27;s; CA 2026-10-25) overlaps the request&#x27;s window at all. The people checked are the matchUp&#x27;s individual
+participants (a pair&#x27;s two individuals) and, by default, its potential participants&#x27;.</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="37-played-order">3.7 Played order<a href="#37-played-order" class="hash-link" aria-label="Direct link to 3.7 Played order" title="Direct link to 3.7 Played order" translate="no">​</a></h3>
+<p>A matchUp is never placed at or before a matchUp it depends on, and never after a matchUp that depends on it. This was
+the <strong>played</strong> order (CA, 2026-10-22): only a COMPLETED, RETIRED or DEFAULTED matchUp with a score imposed anything. It
+now binds <strong>plans as well as history</strong> (CA, 2026-10-30): every matchUp but a BYE orders the matchUps linked to it,
+walkovers, defaults and double exits included, however far downstream the link runs. The comparison is scheduled against
+scheduled: an earlier date, or the same date with both times set and at or before. A same-day placement with no time, or
+a matchUp with no date, proves nothing. The profile scheduler asks it of each slot it offers (§ 4, step 4.2) and then
+once of its whole plan (§ 4, step 5); every schedule write refuses it with <code>ANACHRONISM</code>, and <code>plannedOrder: false</code> on a
+write keeps the played order only (see <a class="" href="/competition-factory/docs/governors/schedule-governor">schedule governor: schedule order</a>). The
+facts it reads (<code>playedOrderFacts</code>) are present for any draw with a placed matchUp, played or not.</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="38-the-clock">3.8 The clock<a href="#38-the-clock" class="hash-link" aria-label="Direct link to 3.8 The clock" title="Direct link to 3.8 The clock" translate="no">​</a></h3>
+<p>Every time the scheduler reads or writes is a <strong>wall-clock time at the venue</strong>: hours and minutes, with no date and no
+time zone. The scheduler never converts between zones, and every comparison it makes is on one scheduling day. The
+canonical form is <code>HH:MM</code> (00–23, 00–59), and every write validates through it and stores it (§ 9.9). The 23:59
+cap, which § 9.8 decides to replace, is how the engine reads today. The rules are pinned by the <code>kernel.time.*</code>
+conformance cases.</p>
+<ol>
+<li class=""><strong>A time.</strong> A string is a time when it is <code>H:MM</code> or <code>HH:MM</code>, optionally with seconds (<code>HH:MM:SS</code>, a fraction
+allowed), with hours at most 23, minutes and seconds at most 59; or a 12-hour time, <code>h:mm AM</code> or <code>h:mm PM</code>, hours 1
+to 12; or an ISO date-time (rule 3). Nothing before or after it is allowed. Anything else (<code>24:00</code>, <code>23:60</code>,
+<code>-1:00</code>, <code>8:5</code>, <code>08:00Z</code>, <code>&quot; 8:00&quot;</code>, <code>13:30 PM</code>, <code>12</code>, <code>noon</code>, the empty string) is not a time.</li>
+<li class=""><strong>Tidying.</strong> A time is written as <code>HH:MM</code>: <code>8:00</code> → <code>08:00</code>, <code>08:00:00</code> → <code>08:00</code>, <code>8:30 PM</code> → <code>20:30</code>,
+<code>12:15 AM</code> → <code>00:15</code>.</li>
+<li class=""><strong>A date-time&#x27;s time.</strong> An ISO date-time, zoned or not, contributes the time after its <code>T</code>
+(<code>2026-03-02T09:15:30.000Z</code> → <code>09:15</code>); the zone is not applied. A date-time whose date is not a calendar day
+(rule 7) is not a time. A date and time separated by a space is not read
+as a time.</li>
+<li class=""><strong>Minutes past midnight.</strong> A time&#x27;s hours × 60 + minutes, read from its tidied form, and zero for anything that is
+not a time.</li>
+<li class=""><strong>From minutes.</strong> Minutes past midnight are written as <code>HH:MM</code>, the hours wrapping at 24: 1440 is <code>00:00</code>, 1500 is
+<code>01:00</code>.</li>
+<li class=""><strong>Within the day.</strong> A time plus minutes stays on the scheduling day: a result at or past midnight is <strong><code>23:59</code></strong>,
+the end of the day, and a negative one is <code>00:00</code>. Anything that is not a time counts as <code>00:00</code>. A recovery that
+would end after midnight ends at 23:59 on its own day and <strong>carries into the next date</strong> (§ 9.8): the matchUps timed
+on the day before, stored there or placed there by the same plan, whose own average and recovery minutes end after
+midnight book their participants from <code>00:00</code> to the minute recovery ends, and the matchUps they feed may not start
+before it. A matchUp at 23:00 of 90 minutes with a 60-minute recovery holds its participants until 01:30. A court <strong>booking</strong> that would end past midnight holds its court to 23:59 on its own day and from <code>00:00</code>
+on the next date for the minutes that remain: a matchUp booked at 23:30 for 90 minutes holds the court until 01:00
+of the next date (§ 9.8). A booking&#x27;s end used to wrap, ending at 01:00 of its own day, before it started.</li>
+<li class=""><strong>A calendar day.</strong> The date part, <code>YYYY-MM-DD</code>, of an ISO date or date-time, and a real day on the (proleptic
+Gregorian) calendar: <code>2026-02-30</code> and <code>2026-04-31</code> are not dates, <code>2028-02-29</code> is. A date-time is one whose time
+is a time (rule 1): its date is read as written, the zone not applied. Nothing else is a date: a date and time
+separated by a space (<code>2026-03-02 09:15</code>), an ISO week date (<code>2026-W10</code>), an ordinal date (<code>2026-061</code>), the basic
+format (<code>20260302</code>) and a month (<code>2026-03</code>) are not read. Two values are on the same day when both have a date
+part and the date parts are equal; the time and any zone designator are ignored, and the runtime&#x27;s zone never
+enters. A value with no date part is on no day. Every same-day test the scheduler makes (profile dates, stored
+scheduled dates, court availability dates, person requests) reads it so, and a profile date given as a date-time is
+stored as its day.</li>
+<li class=""><strong>Garman slots</strong> are computed in minutes on the scheduling day (§ 4, step 2) and written back as <code>HH:MM</code>.</li>
+<li class=""><strong>Not-before times</strong> are compared as text. That orders them correctly only because every not-before time the
+scheduler writes is a tidied <code>HH:MM</code>.</li>
+</ol>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="39-court-bookings">3.9 Court bookings<a href="#39-court-bookings" class="hash-link" aria-label="Direct link to 3.9 Court bookings" title="Direct link to 3.9 Court bookings" translate="no">​</a></h3>
+<p>A matchUp already timed on the date holds a court; the venue&#x27;s slots (§ 4 step 2) are computed around what is held.
+Rules decided 2026-10-25 (debate-ruled, CA-reviewed):</p>
+<ol>
+<li class=""><strong>Its own minutes.</strong> A timed matchUp holds a court for its own average minutes, resolved as § 3.3 resolves them: the
+record&#x27;s timing, else the scheduling policy, else a timed format&#x27;s own minutes. A timed matchUp with no format takes
+the event&#x27;s timing, else the default policy&#x27;s average (90). It never takes the minutes of the round being placed.
+Recovery holds participants (§ 3.4), never the court.</li>
+<li class=""><strong>A BYE holds nothing.</strong> A BYE is never played: whatever schedule it carries, it holds no court, adds nothing to a
+participant&#x27;s day (§ 3.5) and raises no not-before time. The lines of a TEAM dual that is a BYE are BYEs too, and no
+scheduler places them (since 7.23.0; a placement already made is not touched).</li>
+<li class=""><strong>No venue.</strong> A timed matchUp with no venue is at the tournament&#x27;s only venue with courts on the date, when there is
+exactly one; otherwise it holds no court. Its participants are held either way.</li>
+<li class=""><strong>A venue but no court.</strong> A timed matchUp at a venue with no court holds one court of that venue for its minutes:
+capacity is the rule, which court is not part of the result. When no court is free for its whole length it still
+holds one. When no court&#x27;s free time ends around it (it runs past every court&#x27;s close), it holds none and is
+reported in <code>unbookedMatchUpIds[date][venueId]</code> rather than dropped silently.</li>
+<li class=""><strong>A booking reads a schedule and a status, nothing else.</strong> A malformed matchUp elsewhere in the view (draw positions
+that are not valid) changes no booking; it used to switch every booking off, so the date read as free. A booking
+that cannot be read stops the run with its error rather than leaving every court free.</li>
+</ol>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="310-event-playing-days">3.10 Event playing days<a href="#310-event-playing-days" class="hash-link" aria-label="Direct link to 3.10 Event playing days" title="Direct link to 3.10 Event playing days" translate="no">​</a></h3>
+<p>An event plays on a calendar day when the day lies in the tournament&#x27;s range and in the event&#x27;s range, is one of the
+tournament&#x27;s <code>activeDates</code> (else, when it states any, one of its <code>weekdays</code>), and is one of the event&#x27;s <code>activeDates</code>
+(else, when it states any, one of its <code>weekdays</code>). The rules, stated once (<code>eventPlaysOnDate</code>):</p>
+<ol>
+<li class="">An empty <code>activeDates</code> or <code>weekdays</code> means unset, never &quot;no days&quot;.</li>
+<li class=""><code>activeDates</code> win over <code>weekdays</code> when both are set, at the tournament and at the event.</li>
+<li class="">The weekday is the calendar day&#x27;s, read in UTC (<code>getUTCDay</code> of the <code>YYYY-MM-DD</code> date): no zone moves it.</li>
+<li class="">An event range that does not intersect the tournament range, or whose bounds are inverted, is ignored: the event&#x27;s
+range is then the tournament&#x27;s (CA 2026-11-01). A missing event bound is the tournament&#x27;s.</li>
+<li class="">A day that is not a <code>YYYY-MM-DD</code> calendar day does not play (it fails closed).</li>
+</ol>
+<p>When a day does not play, the first rule that fails is its <code>reason</code>, in this order: <code>INVALID_DATE</code>,
+<code>OUTSIDE_TOURNAMENT_DATES</code>, <code>OUTSIDE_EVENT_DATES</code>, <code>TOURNAMENT_INACTIVE_DATE</code>, <code>TOURNAMENT_WEEKDAY</code>,
+<code>EVENT_INACTIVE_DATE</code>, <code>EVENT_WEEKDAY</code>.</p>
+<p><strong>The automated schedulers skip per event</strong> (CA 2026-11-01): a matchUp is never placed on a day its own event does not
+play, whatever other events play that day. Each scheduler reports what it skipped in <code>eventDateSkippedMatchUpIds</code>,
+<code>{ [date]: [{ matchUpId, eventId, reason }] }</code>, present only when it skipped something. With
+<code>allowInactiveEventDates</code> nothing is skipped: the matchUp is placed and the result carries one <code>EVENT_DATE_INACTIVE</code>
+warning per such placement in <code>warnings</code> (<code>{ code, message, matchUpId, eventId, scheduledDate, reason }</code>). A director&#x27;s
+manual placement on such a day is written and warned about the same way, never refused; that is not a scheduler&#x27;s
+decision and is outside this page.</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="4-the-timed-pipeline-scheduleprofilerounds">4. The timed pipeline: <code>scheduleProfileRounds</code><a href="#4-the-timed-pipeline-scheduleprofilerounds" class="hash-link" aria-label="Direct link to 4-the-timed-pipeline-scheduleprofilerounds" title="Direct link to 4-the-timed-pipeline-scheduleprofilerounds" translate="no">​</a></h2>
+<p>The call runs in three stages: a <strong>view</strong>, everything the decisions below read, resolved once from the records; a
+<strong>plan</strong>, made from the view alone; and the <strong>writes</strong>. The view is plain data (the hydrated matchUps, the dependency
+graph, reachability, the profile resolved to rounds and minutes, each date&#x27;s available courts, every event&#x27;s timing,
+the minutes of matchUps already timed on a planned date, transit between venues, and the stored facts of every draw
+anyone has played in), so a
+plan can be reproduced from a view without the records: a view written as JSON and read back plans the same.</p>
+<p>Dates are taken in order. On each date:</p>
+<ol>
+<li class="">
+<p><strong>What is already there.</strong> The matchUps already timed on the date are booked first, with their own minutes, so they
+hold their participants for recovery and count toward daily loads. A BYE&#x27;s schedule is never cleared here: an
+operator&#x27;s placement on a seat that became a BYE is preserved.</p>
+</li>
+<li class="">
+<p><strong>Per venue,</strong> the profiled rounds are taken in <code>sortOrder</code> (then profile order) and resolved to their matchUps in
+matchUp order, skipping BYEs, completed matchUps, and matchUps already timed. A matchUp dated on the date without
+a time is not already timed: it is timed like any other, one already on the court grid (a court or a court order)
+included, and the conflicts its time makes there are reported (§ 7). It is never dropped (CA 2026-10-28). A
+matchUp belongs to the first venue that profiles it on the date. A round whose event does not play on the date
+(§ 3.10) is skipped there: it is resolved to no matchUps and no minutes, so it takes no slot and does not count
+toward the venue&#x27;s <code>T</code>; its schedulable matchUps not yet timed are reported in <code>eventDateSkippedMatchUpIds</code> and
+also in <code>noTimeMatchUpIds</code> (unless the call sets <code>allowInactiveEventDates</code>, when the round is resolved like any other).
+The skip is decided in the view (§ 4, <code>kernel.scheduling.view@1</code>, whose options include
+<code>allowInactiveEventDates</code>); the plan reads the view alone and is unchanged (<code>kernel.scheduling.plan@2</code>). A
+<code>roundSegment</code> applies only when the round has a
+power-of-two count of matchUps, the segment count is a power of two smaller than it, and the round lists no
+<code>matchUpIds</code>. Each round&#x27;s matchUps take the minutes of the round&#x27;s <strong>first</strong> matchUp&#x27;s format (<strong>OPEN</strong>, C7: a round
+of mixed formats is timed by its first). A round none of whose matchUps has a format cannot be timed: nothing of
+it is placed, and its matchUps not yet timed are reported in <code>noFormatMatchUpIds</code>. The venue&#x27;s <strong>slots</strong> are its
+Garman times: with <code>C</code> courts available, average minutes <code>T</code> and period length <code>L</code>, the matchUps expected by period
+<code>P</code> are <code>TM = ((L × C) / T) × (P − 1) + C</code>, <strong>rounded to the nearest match</strong>, and a period&#x27;s slots are the difference
+from the period before, computed over each court&#x27;s availability and bookings. Periods number from 0 at the venue&#x27;s
+opening, which takes <code>C</code>; period 1 adds none. This is Brian Garman&#x27;s own numbering and rounding (&quot;The Revised Garman
+System&quot;, 2009-10: 10 courts of 90-minute matches total 10, 10, 13, 17, 20, … 77, 80 over 23 half-hour periods). <code>T</code> is the <strong>greatest</strong> average among the venue&#x27;s rounds on the date (the
+rounds form a single group), and <code>L</code> is the call&#x27;s <code>periodLength</code> (§ 1). Further (decided 2026-10-25):</p>
+<ul>
+<li class=""><code>C</code> at a period is the mean of the courts available at the starts of periods 1..P (period 0 takes the courts
+available at the opening), so a court that opens later adds slots gradually rather than as though it had been open
+all day; a court is available at a period&#x27;s start when it is free for <code>T</code> minutes from it;</li>
+<li class="">period 0 starts at the earliest time, on or after the start of the day, when some court has a free stretch of at
+least <code>T</code>: bookings before it (practice, maintenance, matchUps already timed) delay the opening;</li>
+<li class="">a period adds nothing when no court is available; after a period with none it adds the courts newly available (an
+opening, or a reopening after a closure); otherwise it adds the change in <code>TM</code>;</li>
+<li class="">the day runs from the courts&#x27; earliest opening to their latest closing on the date, unless the call bounds it.</li>
+</ul>
+</li>
+<li class="">
+<p><strong>Slot by slot.</strong> Each slot is offered to the venue&#x27;s remaining matchUps in profile order; the first that passes the
+gate is placed there. A venue&#x27;s pass places at most as many matchUps as it has courts <strong>available on the date</strong>
+(within <code>courtIds</code>; CA 2026-10-25). The engine placed one more, and counted every court of the venue; within one venue
+this changes nothing, since a slot no matchUp takes goes to the back of the venue&#x27;s slots, but across venues sharing
+participants the turns decide which venue reaches a participant first. A slot no matchUp takes is
+retried in a later pass, up to 10 attempts. Venues alternate pass by pass until every venue is complete or the
+passes run out (bounded by the day&#x27;s slots).</p>
+</li>
+<li class="">
+<p><strong>The gate,</strong> in order; the first failure defers the matchUp for this slot, recorded under its reason:</p>
+<ol>
+<li class="">a participant would go over a daily limit (§ 3.5): <code>overLimitMatchUpIds</code>. A participant&#x27;s day only gains matchUps
+as slots are filled, so the matchUp stays over the limit for the rest of the date: it leaves the date&#x27;s list and
+is reported once (one <code>overLimitMatchUpDetails</code> entry, at the first slot it was offered), not under
+<code>noTimeMatchUpIds</code>;</li>
+<li class="">the slot is at or before a played matchUp it depends on, or at or after a played matchUp that depends on it
+(§ 3.7): <code>playedOrderDeferredMatchUpIds</code>, with the first such slot and the played matchUps that refused it. The
+slot stays free for the next matchUp, and a matchUp still unplaced at the end of the date is reported under this
+reason alone;</li>
+<li class="">a matchUp it feeds is already placed earlier than this one would be free: not placed here;</li>
+<li class="">a matchUp it depends on, among the date&#x27;s matchUps, is not yet placed: <code>dependencyDeferredMatchUpIds</code>;</li>
+<li class="">a participant is not yet free (§ 3.4), or the matchUp&#x27;s not-before time (its sources&#x27; free time) is later:
+<code>recoveryTimeDeferredMatchUpIds</code>;</li>
+<li class="">a person request blocks it (§ 3.6): <code>requestConflicts</code>.</li>
+</ol>
+<p>A matchUp that passes is booked: its participants&#x27; loads and free times are updated for the rest of the date.</p>
+</li>
+<li class="">
+<p><strong>The guard, then the write.</strong> Once every date is planned, the whole plan is judged against the played order
+(§ 3.7) together, on the state it leaves, before anything is written. A plan the gate made passes it. One that does
+not is refused whole with <code>ANACHRONISM</code>, every offending placement in <code>context.refusals</code>, and nothing is written:
+the guard is a planner defect&#x27;s last stop, not a reason a TD meets. Then each placement is given its date, its
+time (HH<!-- -->:MM<!-- -->) and its venue. A date the write refuses (a profile date outside the tournament&#x27;s dates, which
+<code>setSchedulingProfile</code> does not check) writes nothing for that placement, neither time nor venue: the matchUp is
+reported in that date&#x27;s <code>noTimeMatchUpIds</code>, not in its <code>scheduledMatchUpIds</code>. A dry run does not write, so it
+does not see that refusal and reports the placement as planned.</p>
+</li>
+</ol>
+<p>Dates named in <code>clearScheduleDates</code> are planned on a working copy of the records cleared first, so the plan sees them
+empty and a refusal leaves them as they were; they are cleared on the records only when the plan is written. What
+remains unplaced on a date is reported in <code>noTimeMatchUpIds</code> for that date, beside whatever reasons it collected. A dry
+run plans exactly as a run does (clearing on the copy included), so it reports what the run would write, and writes
+nothing. The call records an audit of what it did on the tournament (with <code>eventDateSkippedMatchUpIdsCount</code> when it
+skipped a matchUp for its event&#x27;s dates; absent otherwise). When it times a matchUp already on a date&#x27;s court
+grid, the grid&#x27;s conflicts that name it are reported per date in <code>proConflicts</code> (a dry run reports none).</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="5-the-grid-pipeline-scheduleprofilegrid">5. The grid pipeline: <code>scheduleProfileGrid</code><a href="#5-the-grid-pipeline-scheduleprofilegrid" class="hash-link" aria-label="Direct link to 5-the-grid-pipeline-scheduleprofilegrid" title="Direct link to 5-the-grid-pipeline-scheduleprofilegrid" translate="no">​</a></h2>
+<p>Per date, the profiled rounds of every venue are resolved to their matchUps (a round on a round robin covers its
+groups), skipping BYEs, completed matchUps and matchUps already on a court or a
+court order. A matchUp whose event does not play on the date (§ 3.10) is not offered to the grid: it is reported in
+<code>eventDateSkippedMatchUpIds</code> and also in <code>notScheduledMatchUpIds</code>. <code>proAutoSchedule</code>, which plans one date&#x27;s grid
+from the matchUps it is given, skips the same way, before its view is built, and reports a skipped matchUp both in
+<code>notScheduled</code> and in <code>eventDateSkippedMatchUpIds</code>; the grid&#x27;s date view (<code>kernel.scheduling.grid@1</code>) never holds
+one. The date&#x27;s grid is its courts by rows; matchUps already timed are walked earliest first, so they land on
+earlier rows.</p>
+<p><strong>Each date is planned from its own view,</strong> read from the records as the dates before it left them, so a placement on
+an earlier date is seen by a later one: the date&#x27;s grid (its courts by rows, the cells already taken and the free cells
+on the call&#x27;s courts), the matchUps to place, the dependency graph and the reachability over them and the matchUps
+already on the grid, the courts&#x27; closures, and the limits. The date&#x27;s plan reads nothing else
+(<code>kernel.scheduling.grid@1</code>): each placement is a matchUp and the cell it takes (its court, venue and court order).</p>
+<p>Row by row, each remaining matchUp is placed on the row&#x27;s first open court unless:</p>
+<ul>
+<li class="">a matchUp it depends on, or one that depends on it, is already on the row;</li>
+<li class="">a matchUp it depends on is still unplaced;</li>
+<li class="">a matchUp that depends on it is on the previous row;</li>
+<li class="">a participant who can play it is already on the row (unless the two are alternatives for them);</li>
+<li class="">a participant would go over a daily limit (§ 3.5): reported over the limit. The grid applies the limits the timed
+pipeline resolves (CA 2026-10-23); a call given <code>matchUpDailyLimits</code> applies those instead, and one given <code>{}</code> opts
+out: the matchUp is placed and reported in <code>dailyLimitWarningMatchUpIds</code>;</li>
+<li class="">every open court is closed at its time (a time-window court booking).</li>
+</ul>
+<p>A matchUp not placed on a row is offered to the next. The placements are written in one bulk write (date, court and
+court order; refused whole if it breaks the played order) and the call reports, per date, <code>scheduledMatchUpIds</code> (what
+the write wrote), <code>notScheduledMatchUpIds</code> (everything else, including a matchUp the write skipped as completed, locked
+or not found) and <code>overLimitMatchUpIds</code>. A date the grid skips (no court in the <code>courtIds</code> filter, or a refused write)
+reports all its matchUps as not scheduled.</p>
+<p><strong>The two pipelines compose.</strong> Run timed then grid, a matchUp gets a date and time, then a court and an order on that
+date, earlier times on earlier rows.</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="6-the-direct-scheduler-schedulematchups">6. The direct scheduler: <code>scheduleMatchUps</code><a href="#6-the-direct-scheduler-schedulematchups" class="hash-link" aria-label="Direct link to 6-the-direct-scheduler-schedulematchups" title="Direct link to 6-the-direct-scheduler-schedulematchups" translate="no">​</a></h2>
+<p><code>scheduleMatchUps</code> times the listed matchUps, in the order listed, on one <code>scheduleDate</code>, at the venues given (all when
+absent), within <code>startTime</code> and <code>endTime</code> when given. It shares the core (§ 3) and the slot arithmetic (§ 4, step 2);
+it differs from the timed pipeline in what it is given (a list, not a profile), in how its minutes are resolved, and in
+running one pass over one pool of slots rather than venue by venue.</p>
+<p><strong>Refusals.</strong> No <code>matchUpIds</code> (or not a list): <code>MISSING_MATCHUP_IDS</code>; no records: <code>MISSING_TOURNAMENT_RECORDS</code>. A
+<code>scheduleDate</code> that is not a date: <code>INVALID_DATE</code>. An <code>averageMatchUpMinutes</code>, <code>recoveryMinutes</code> or <code>periodLength</code>
+that is not a number: <code>INVALID_VALUES</code>.</p>
+<ol>
+<li class=""><strong>The matchUps.</strong> The listed matchUps, in the order listed, that are not already timed on the date at the venues
+of rule 3, have no winner, are not BYE, DEFAULTED, COMPLETED, ABANDONED, RETIRED or WALKOVER, and have no BYE side
+(a line of a BYE dual). A listed id not found is dropped. A listed matchUp dated on the date without a time is not
+already there: it is timed, one already on the court grid included, and counts toward its participants&#x27; loads when
+it is taken (CA 2026-10-28). Only a matchUp timed on the date holds a court (rule 3).
+A listed matchUp dated on another day is scheduled on that day: the call never moves it to its own date, and reports
+it in <code>noTimeMatchUpIds</code> (CA 2026-10-28). No matchUp changes day through <code>scheduleMatchUps</code>.
+A listed matchUp whose event does not play on <code>scheduleDate</code> (§ 3.10) is not timed: it is reported in
+<code>eventDateSkippedMatchUpIds</code> and also in <code>noTimeMatchUpIds</code>, unless the call sets <code>allowInactiveEventDates</code>.</li>
+<li class=""><strong>The minutes</strong> (§ 3.3, rule 1, and Q1, CA 2026-10-22). Minutes the call states win: <code>averageMatchUpMinutes</code>
+(default 90), <code>recoveryMinutes</code> (default 0) and <code>recoveryMinutesMap</code> (a recovery per matchUpId). When the call
+states none, and the tournament or a matchUp&#x27;s event states timing (an attached scheduling policy,
+<code>scheduling.timing</code>, or the timing extension), each such matchUp&#x27;s recovery is its own format&#x27;s and event&#x27;s, and the
+average is the <strong>greatest</strong> average among them; the matchUps already timed on the date count. When nothing states
+timing: 90 minutes and no recovery.</li>
+<li class=""><strong>The slots</strong> (§ 4, step 2), over every court of the venues (<code>venueIds</code>, else every venue) available on the date,
+from <code>startTime</code> and to <code>endTime</code> when given, else from the earliest opening to the latest closing of those courts,
+with <code>T</code> the average of rule 2 and <code>L</code> the call&#x27;s <code>periodLength</code>, <strong>30 when absent</strong>. The courts are held by every
+matchUp of the venues timed on the date, completed or not, each for its own average (§ 3.9 rule 1), and from 00:00
+by a matchUp of the day before whose own minutes run past midnight (§ 3.8 rule 6). The slots form one pool, in time
+order, shared by every venue.</li>
+<li class=""><strong>What is already there.</strong> Each matchUp timed on the date counts toward its participants&#x27; daily loads, and books its
+participants (§ 3.4) from its time for the average of rule 2 and its recovery. Every matchUp it feeds may not start
+before its participants are free (its not-before time).</li>
+<li class=""><strong>Daily limits first.</strong> The matchUps are taken in order; one that would take a participant over a limit (§ 3.5,
+the limits of the matchUp&#x27;s own tournament and the policy&#x27;s per-participant ones, with the call&#x27;s
+<code>matchUpDailyLimits</code> as the defaults where a tournament states none; until 2026-10-27 the call&#x27;s alone) is
+reported in <code>overLimitMatchUpIds</code> and leaves the list; each other is counted toward its participants&#x27; daily loads.
+Limits are judged once, before any slot, on the list as a whole; a matchUp left unplaced after rule 6 is taken off
+the loads again.</li>
+<li class=""><strong>Slot by slot.</strong> Each slot in turn is offered to the remaining matchUps in order; the first that passes the gate is
+placed there, and booked (§ 3.4). A slot no matchUp takes is skipped (<code>skippedScheduleTimes</code>), and is not offered
+again; the pass ends when the slots or the matchUps run out. The gate, in order:<!-- -->
+<ol>
+<li class="">a matchUp it depends on, among the listed matchUps and those timed on the date (<code>allDateMatchUpIds</code> when the
+call states them), is not yet placed: deferred (<code>dependencyDeferred</code>);</li>
+<li class="">a participant is not free in the matchUp&#x27;s window, or its not-before time is later (§ 3.4, either order: the
+window is its own average and recovery minutes from the slot, so a placement may not run into a participant&#x27;s
+later matchUp on the date; a participant held by a potential booking in another draw counts; no transit applies,
+as no venue is known yet; until 2026-10-27 the window was the slot&#x27;s start alone): deferred
+(<code>recoveryTimeDeferred</code>);</li>
+<li class="">a person request blocks it (§ 3.6; potential participants checked unless <code>checkPotentialRequestConflicts</code> is
+false): not placed here (<code>requestConflicts</code>).</li>
+</ol>
+</li>
+<li class=""><strong>The write.</strong> Each placement, tournament by tournament and draw by draw in the order its matchUps were first
+listed, is judged against the played order (§ 3.7) and, unless refused, written as a time with the date in it
+(<code>YYYY-MM-DDTHH:MM</code>, stored as its date and <code>HH:MM</code>, § 3.8), then its venue when the call names one venue or the
+records hold only one. A refused placement is reported in <code>noTimeMatchUpIds</code> and gets no venue. A dry run writes
+nothing and reports what it would place.</li>
+</ol>
+<p>What remains unplaced is reported in <code>noTimeMatchUpIds</code>, with what it collected on the way. The call also returns
+<code>remainingScheduleTimes</code> (the slots no matchUp took, for a caller that schedules in batches and passes them back as
+<code>remainingScheduleTimes</code>), the participant profiles it built, the not-before times, the overnight rest warnings
+(§ 9.8), and <code>proConflicts</code>: the court grid&#x27;s conflicts (<code>proConflicts</code>) that name a matchUp it timed which was already
+on the grid, such as a time against its court order. A dry run reports none.</p>
+<p><strong>OPEN:</strong> rule 5 counts every listed matchUp toward its participants&#x27; loads before any is placed, and a matchUp left
+unplaced is uncounted after the pass; a matchUp placed late in the list is therefore judged against loads that include
+matchUps not yet placed.</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="7-what-is-reported">7. What is reported<a href="#7-what-is-reported" class="hash-link" aria-label="Direct link to 7. What is reported" title="Direct link to 7. What is reported" translate="no">​</a></h2>
+<p>Per date, every scheduling call reports what it placed (<code>scheduledMatchUpIds</code>) and, per reason, what it left
+unplaced. The corpus records this report as the scheduling step&#x27;s value: matchUpIds only, sorted, per date and reason,
+without the attempts the engine made on the way (those trace one implementation&#x27;s loop, not a rule).
+<code>eventDateSkippedMatchUpIds</code> is one of these reasons (its entries&#x27; <code>matchUpId</code>s).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="71-the-plan">7.1 The plan<a href="#71-the-plan" class="hash-link" aria-label="Direct link to 7.1 The plan" title="Direct link to 7.1 The plan" translate="no">​</a></h3>
+<p>The timed pipeline&#x27;s plan (§ 4) is keyed by canonical date (§ 3.8 rule 7), each date planned once. Its <strong>normative</strong>
+part, what <code>kernel.scheduling.plan@2</code> compares (CA 2026-10-25):</p>
+<ul>
+<li class=""><code>placements[date][venueId]</code>: <code>{ matchUpId, scheduleTime }</code> in write order (venue, tournament, draw, profile order);
+<code>scheduledMatchUpIds[date]</code>: the same ids, in the same order;</li>
+<li class=""><code>matchUpScheduleTimes[matchUpId]</code>: the time of every matchUp timed on a planned date, stored or placed;</li>
+<li class=""><code>unplaced[date][venueId]</code>: the profiled matchUps no slot took; <code>unbookedMatchUpIds[date][venueId]</code>: matchUps timed at
+a venue with no court that no court could hold (§ 3.9 rule 4); <code>noTimeMatchUpIds[date]</code>: those, each venue&#x27;s in
+turn; <code>noFormatMatchUpIds[date]</code>: matchUps of profiled rounds with no format;</li>
+<li class=""><strong>why a matchUp was refused</strong>, each refused matchUp&#x27;s <strong>first</strong> refusal with its facts:
+<code>recoveryTimeDeferredMatchUpIds[date][matchUpId]</code> (<code>scheduleTime</code>, <code>blockingParticipantIds</code>, <code>notBeforeTime</code>),
+<code>dependencyDeferredMatchUpIds[date][matchUpId]</code> (<code>scheduleTime</code>, <code>remainingDependencies</code>),
+<code>playedOrderDeferredMatchUpIds[date][matchUpId]</code> (<code>scheduleTime</code>, <code>blockingMatchUps</code>),
+<code>overLimitMatchUpIds[date]</code> with <code>overLimitMatchUpDetails[date]</code> (the first attempt per matchUp), and
+<code>requestConflicts[date]</code>.</li>
+</ul>
+<p>Every planned date has every key, empty when nothing applies. The rest is <strong>informative</strong>: every later refusal of the
+same matchUp, <code>skippedScheduleTimes</code> (the slots no matchUp took and how often each was offered) and
+<code>scheduleTimesRemaining</code> (the slots left over). They trace how one implementation&#x27;s slot loop ran, depend on its retry
+bound, and are not compared; <code>kernel.scheduling.plan@1</code>, which compared them too, is superseded.</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="8-guarantees">8. Guarantees<a href="#8-guarantees" class="hash-link" aria-label="Direct link to 8. Guarantees" title="Direct link to 8. Guarantees" translate="no">​</a></h2>
+<p>These are checked on every scheduling call the corpus records and the suite makes (<code>corpus/INVARIANTS.md</code>):</p>
+<table><thead><tr><th>property</th><th>statement</th></tr></thead><tbody><tr><td><code>SCHEDULE_NO_BYE_PLACED</code></td><td>a call never places a BYE</td></tr><tr><td><code>SCHEDULE_SOURCES_FIRST</code></td><td>a placed matchUp starts no earlier than every timed matchUp upstream of it is free</td></tr><tr><td><code>SCHEDULE_RECOVERY_RESPECTED</code></td><td>on a date, the later of two matchUps a participant is certain to play starts once the earlier is free</td></tr><tr><td><code>SCHEDULE_DAILY_LIMITS_RESPECTED</code></td><td>a placement never takes a certain participant over a daily limit</td></tr><tr><td><code>SCHEDULE_ACCOUNTED</code></td><td>every schedulable profiled matchUp left unplaced is reported under a reason</td></tr><tr><td><code>SCHEDULE_REPORT_TRUE</code></td><td>the reported <code>scheduledMatchUpIds</code> are exactly what was placed</td></tr><tr><td><code>SCHEDULE_RERUN_STABLE</code></td><td>the same call made again places nothing</td></tr></tbody></table>
+<p>They are stated over certain participants; potential participants are pinned by the authored scenarios. They apply to
+the calls that decide placements; the bulk and reschedule mutations write the times their caller states.</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="9-open-questions">9. Open questions<a href="#9-open-questions" class="hash-link" aria-label="Direct link to 9. Open questions" title="Direct link to 9. Open questions" translate="no">​</a></h2>
+<ol>
+<li class=""><del>The grid reads daily limits only when the call passes <code>matchUpDailyLimits</code>.</del> Decided (CA 2026-10-23): it resolves
+them as the timed pipeline does and enforces them; <code>{}</code> opts out and warns (§ 5). <code>SCHEDULE_DAILY_LIMITS_RESPECTED</code>
+counts court-grid placements too.</li>
+<li class=""><strong>The grid places by row order, not time,</strong> for matchUps with no time: <code>SCHEDULE_SOURCES_FIRST</code> and recovery are
+asked of timed placements, so a grid run&#x27;s ordering is pinned only by its row rules. Should the corpus state a
+row-order property?</li>
+<li class=""><strong>Recovery books potentials one matchUp away only</strong> (by design, 2026-10-16): a participant two rounds away is not
+held. Daily limits count every potential. Is the asymmetry the rule to keep in vNext?</li>
+<li class=""><strong>The parameter refusals</strong> of § 2 other than <code>NO_VALID_DATES</code> are not yet pinned by corpus scenarios
+(<code>authored/scheduling/profile-no-valid-dates</code>, <code>empty-profile-places-nothing</code> and <code>profile-out-of-order</code> pin the
+rest of § 2).</li>
+<li class=""><strong>C7: a round of mixed formats is timed by its first matchUp&#x27;s format</strong> (§ 4, step 2). Should each matchUp take its
+own format&#x27;s minutes?</li>
+<li class=""><del><strong>The first Garman period is counted twice.</strong></del> Decided (CA 2026-10-24, after research and a debate): the period
+numbering was Garman&#x27;s own, period 0 at the opening taking <code>C</code> and period 1 adding none, as every one of his
+published tables does. The defect was truncation: the tables round each total to the nearest match, and the slots
+truncated it, leaving a period short whenever the fraction passed one half. They now round (§ 4, step 2), so one
+court of 90-minute matchUps in 30-minute periods takes its second matchUp at 11:30, when the first is expected to
+end. Pinned by <code>scheduling.plan.garman-one-court.v1</code> (kernel cases) and the published 10-court column in
+<code>garman.test.ts</code>.</li>
+<li class=""><del><strong>Request conflicts are reported beside the dates.</strong></del> Decided (2026-10-24, by two opposed debate agents at CA&#x27;s
+request; pending CA review): conflicts sit under their date, <code>{ [date]: [{ request, scheduleTimes, matchUpIds }] }</code>,
+one entry per request a placement broke. Every reader already assumed date keys (the auto-scheduling audit&#x27;s count,
+TMX&#x27;s results drawer, the corpus report) and misread the mixed shape. Each person request also gets its own id: a
+time code had given every request added in one call the same one. Pinned by
+<code>scheduling.plan.person-request-on-a-placed-side.v1</code>.</li>
+<li class=""><strong>Crossing midnight. DECIDED (CA 2026-10-25): crossed only when necessary, backwards compatible.</strong> Built: the
+date-time arithmetic (<code>kernel.civil.addMinutes@1</code>); court bookings carried into the next date
+(<code>kernel.time.endOnTheDay@1</code>), in every scheduler that builds bookings; and a participant&#x27;s recovery carried into
+the next date by the profile planner (§ 3.8, rule 6). No corpus scenario moved. The policy&#x27;s overnight rest
+(<code>overnightTimes</code>, category-dependent: 12 hours for JUNIOR in the default policy, none otherwise) is <strong>warned, not
+held</strong> (CA 2026-10-25: a guideline a player may waive). No scheduler moves a placement for it
+(<code>scheduling.plan.overnight-rest-is-warned-not-held.v1</code>); every scheduler (the profile planner, <code>scheduleMatchUps</code>,
+the grid and the pro scheduler) returns <code>overnightRestWarnings</code>, a list per date of the participant, the matchUp
+and its time, the previous matchUp and its end, and the rest found and required, for each date it placed and the
+date after, a dry run included. The rest is counted from the previous day&#x27;s last end of play: a recorded
+<code>endTime</code> (an <code>endTime</code> before its start ended after midnight), else the start plus the average minutes. A matchUp
+of the day before still undecided warns for the matchUp its winner or loser goes to, with no <code>participantId</code>:
+whoever advances. Only a placement with a time is measured; a court order alone has none. The category is the
+event&#x27;s stated <code>categoryType</code>, else JUNIOR when its <code>ageCategoryCode</code> is an under-age code of 18 or less (<code>U14</code>,
+<code>16U</code>): the same reading every timing lookup now makes, so a U-coded event also takes the JUNIOR recovery times.
+Not yet built: a stored <code>endDate</code> after midnight, which bookings do not read (they take a matchUp&#x27;s average
+minutes), and either carry in the direct scheduler. The rule:<!-- -->
+<ul>
+<li class=""><strong>A date with no time is unchanged.</strong> <code>scheduledDate</code> alone remains a complete schedule (&quot;on that day, time to be
+set&quot;); with no time there is nothing to add minutes to, so no booking and no recovery follow from it.</li>
+<li class=""><strong><code>scheduledTime</code> is unchanged.</strong> It is the start, <code>HH:MM</code> on the venue&#x27;s wall clock, on <code>scheduledDate</code>; a start
+never crosses midnight. A legacy <code>scheduledTime</code> holding an ISO date-time (written when the matchUp had no
+<code>scheduledDate</code>) is read as that date and time, as today.</li>
+<li class=""><strong>Date-time arithmetic runs only when a time is present and minutes are added</strong> (an end, a recovery, a booking):
+a calendar date-time, a date and a wall-clock time with no zone on the proleptic Gregorian calendar, in whole
+minutes. A result before midnight is <code>HH:MM</code> on the same date, exactly as today; only a result past midnight is
+on the next date (2026-03-02 23:30 plus 90 minutes is 2026-03-03 01:00), and it is stored only where an end is
+stored already, as <code>endDate</code>.</li>
+<li class="">It is UTC-instant arithmetic (UTC has no daylight saving), so it needs no date library: a date-time can be
+computed as a UTC instant, or as a day count since 1970-01-01 × 1440 plus minutes past midnight. A
+daylight-saving change inside a matchUp is ignored, by definition. Zones apply only at the edges (now, an
+embargo, display), always by an explicit IANA zone on the record, never the host&#x27;s.</li>
+<li class="">A booking or a recovery that ends past midnight carries into the next date; overnight rest is counted from the end
+of play and warned, never held.</li>
+<li class="">Nothing carries from a planned date whose schedule the call clears: what was stored there is gone (the court
+bookings now read this as the recovery carry already did, 2026-10-25).</li>
+<li class=""><strong>The consequence:</strong> a schedule that never crosses midnight is placed exactly as today; only the placements the
+23:59 cap and the wrapping booking end decided move.</li>
+<li class=""><strong>A start after midnight is on the next date</strong> (CA 2026-10-25: <em>&quot;if it starts past midnight it is technically
+scheduled for the next day&quot;</em>): a 00:30 start has the next <code>scheduledDate</code>. There is no separate session day.</li>
+</ul>
+</li>
+<li class=""><strong>The clock reads more than <code>HH:MM</code></strong> (§ 3.8). <strong>DECIDED (CA 2026-10-25): invalid forms are refused. Built.</strong>
+<ul>
+<li class=""><strong>At the write</strong>, a date must be a real calendar date, <code>YYYY-MM-DD</code> (<code>2026-02-30</code> is refused), and a time must
+convert unambiguously to <code>HH:MM</code> (00–23, 00–59), which is what is stored: <code>8:00</code>, <code>08:00:00</code>, an ISO date-time
+and a 12-hour time (<code>8:30 PM</code> is stored as <code>20:30</code>) are accepted; <code>23:60</code>, <code>24:00</code>, <code>-1:00</code>, <code>08:00Z</code> and
+<code>&quot; 8:00&quot;</code> are refused. The writes: a matchUp&#x27;s scheduled time and date and its schedule items; court and venue
+availability, bookings and a venue&#x27;s default times; person requests (one request with a date or a time that is
+not one refuses the call); tournament and event dates, which are checked against the calendar and stored as
+sent. A scheduled time given as a date-time stores its time, and its date when the matchUp has none; one naming
+another day than the matchUp&#x27;s scheduledDate is refused (<code>INVALID_DATE</code>), never stored against it (CA 2026-10-28).
+A scheduledDate given beside it in a schedule write is the matchUp&#x27;s date, and the time is written against it.</li>
+<li class=""><strong>At the read</strong>, stored records keep working: the same unambiguous forms are normalised, and anything else reads
+as no time, as a value that is not a time did before. Production holds no such value (below), so the audit that
+would list them is not built.</li>
+<li class=""><strong>Measured 2026-10-25</strong> (read-only, every tournament record in production): scheduled times 43,527, all
+canonical; court availability times 8,682 and dates 4,473, all canonical; scheduled dates 66,580 canonical and
+154 empty strings (a cleared date, which already reads as no date); no date out of the calendar. So the refusals
+change no stored schedule, and the empty-string date is the only legacy form the read has to keep reading as
+absent. The match clock&#x27;s times (start, stop, resume, end) are a different kind of value, instants: 10,395 are
+ISO instants (<code>…T…Z</code>) and 746 bare <code>HH:MM</code>; they are outside this rule.</li>
+</ul>
+</li>
+</ol>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="related">Related<a href="#related" class="hash-link" aria-label="Direct link to Related" title="Direct link to Related" translate="no">​</a></h2>
+<ul>
+<li class=""><a class="" href="/competition-factory/docs/concepts/automated-scheduling">Automated scheduling</a> · <a class="" href="/competition-factory/docs/concepts/scheduling-profile">Scheduling profile</a> ·
+<a class="" href="/competition-factory/docs/concepts/pro-scheduling">Pro scheduling</a> · <a class="" href="/competition-factory/docs/concepts/scheduling-policy">Scheduling policy</a> ·
+<a class="" href="/competition-factory/docs/concepts/scheduling-conflicts">Scheduling conflicts</a> · <a class="" href="/competition-factory/docs/concepts/schedule-locks">Schedule locks</a></li>
+<li class=""><a class="" href="/competition-factory/docs/concepts/outcome-pipeline">The outcome pipeline</a>, the model this page follows.</li>
+</ul></div></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"><a class="pagination-nav__link pagination-nav__link--prev" href="/competition-factory/docs/concepts/scheduling-overview"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">Overview</div></a><a class="pagination-nav__link pagination-nav__link--next" href="/competition-factory/docs/concepts/venues-courts"><div class="pagination-nav__sublabel">Next</div><div class="pagination-nav__label">Venues and Courts</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_G6iu thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#1-the-inputs" class="table-of-contents__link toc-highlight">1. The inputs</a></li><li><a href="#2-refusals" class="table-of-contents__link toc-highlight">2. Refusals</a></li><li><a href="#3-the-shared-core" class="table-of-contents__link toc-highlight">3. The shared core</a><ul><li><a href="#31-the-dependency-graph" class="table-of-contents__link toc-highlight">3.1 The dependency graph</a></li><li><a href="#32-participant-reachability" class="table-of-contents__link toc-highlight">3.2 Participant reachability</a></li><li><a href="#33-timing" class="table-of-contents__link toc-highlight">3.3 Timing</a></li><li><a href="#34-recovery" class="table-of-contents__link toc-highlight">3.4 Recovery</a></li><li><a href="#35-daily-limits" class="table-of-contents__link toc-highlight">3.5 Daily limits</a></li><li><a href="#36-person-requests" class="table-of-contents__link toc-highlight">3.6 Person requests</a></li><li><a href="#37-played-order" class="table-of-contents__link toc-highlight">3.7 Played order</a></li><li><a href="#38-the-clock" class="table-of-contents__link toc-highlight">3.8 The clock</a></li><li><a href="#39-court-bookings" class="table-of-contents__link toc-highlight">3.9 Court bookings</a></li><li><a href="#310-event-playing-days" class="table-of-contents__link toc-highlight">3.10 Event playing days</a></li></ul></li><li><a href="#4-the-timed-pipeline-scheduleprofilerounds" class="table-of-contents__link toc-highlight">4. The timed pipeline: <code>scheduleProfileRounds</code></a></li><li><a href="#5-the-grid-pipeline-scheduleprofilegrid" class="table-of-contents__link toc-highlight">5. The grid pipeline: <code>scheduleProfileGrid</code></a></li><li><a href="#6-the-direct-scheduler-schedulematchups" class="table-of-contents__link toc-highlight">6. The direct scheduler: <code>scheduleMatchUps</code></a></li><li><a href="#7-what-is-reported" class="table-of-contents__link toc-highlight">7. What is reported</a><ul><li><a href="#71-the-plan" class="table-of-contents__link toc-highlight">7.1 The plan</a></li></ul></li><li><a href="#8-guarantees" class="table-of-contents__link toc-highlight">8. Guarantees</a></li><li><a href="#9-open-questions" class="table-of-contents__link toc-highlight">9. Open questions</a></li><li><a href="#related" class="table-of-contents__link toc-highlight">Related</a></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 CourtHive</div></div></div></footer></div>
+</body>
+</html>

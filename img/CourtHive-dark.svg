@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-178.21 -105 356.42 210">
+  <g stroke="#ffffff" fill="none">
+    <path d="M 0,-50 L -86.60,-100 L -173.21,-50 L -173.21,50 L -86.60,100 L 0,50"
+      stroke-width="5" stroke-linejoin="miter" stroke-linecap="round"/>
+    <path d="M 0,-50 L 86.60,-100 L 173.21,-50 L 173.21,50 L 86.60,100 L 0,50"
+      stroke-width="5" stroke-linejoin="miter" stroke-linecap="round"/>
+    <line x1="0" y1="-50" x2="0" y2="50" stroke-width="5"/>
+    <line x1="-112.58" y1="-85" x2="-112.58" y2="85" stroke-width="5"/>
+    <line x1="112.58" y1="-85" x2="112.58" y2="85" stroke-width="5"/>
+    <line x1="-112.58" y1="0" x2="112.58" y2="0" stroke-width="5"/>
+    <line x1="-173.21" y1="0" x2="-161.21" y2="0" stroke-width="5"/>
+    <line x1="161.21" y1="0" x2="173.21" y2="0" stroke-width="5"/>
+  </g>
+</svg>

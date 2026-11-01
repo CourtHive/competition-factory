@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="docs-wrapper plugin-docs plugin-id-default docs-version-current docs-doc-page docs-doc-id-concepts/building-a-tournament" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.10.2">
+<title data-rh="true">Building a tournament | Competition Factory</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://courthive.github.io/competition-factory/docs/concepts/building-a-tournament"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Building a tournament | Competition Factory"><meta data-rh="true" name="description" content="A tournament is built by four writes, in a client&#x27;s order: addParticipants, addEvent, addEventEntries"><meta data-rh="true" property="og:description" content="A tournament is built by four writes, in a client&#x27;s order: addParticipants, addEvent, addEventEntries"><link data-rh="true" rel="icon" href="/competition-factory/img/favicon.ico"><link data-rh="true" rel="canonical" href="https://courthive.github.io/competition-factory/docs/concepts/building-a-tournament"><link data-rh="true" rel="alternate" href="https://courthive.github.io/competition-factory/docs/concepts/building-a-tournament" hreflang="en"><link data-rh="true" rel="alternate" href="https://courthive.github.io/competition-factory/docs/concepts/building-a-tournament" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Building a tournament","item":"https://courthive.github.io/competition-factory/docs/concepts/building-a-tournament"}]}</script><link rel="stylesheet" href="/competition-factory/assets/css/styles.b8db7a69.css">
+<script src="/competition-factory/assets/js/runtime~main.e0f80e04.js" defer="defer"></script>
+<script src="/competition-factory/assets/js/main.1f7b5534.js" defer="defer"></script>
+</head>
+<body>
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><link rel="preload" as="image" href="/competition-factory/img/CourtHive.svg"><link rel="preload" as="image" href="/competition-factory/img/CourtHive-dark.svg"><div role="region" aria-label="Skip to main content"><a class="skipToContent_Jirb" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/competition-factory/"><div class="navbar__logo"><img src="/competition-factory/img/CourtHive.svg" alt="CourtHive Logo" class="themedComponent_J_Lj themedComponent--light_qupp"><img src="/competition-factory/img/CourtHive-dark.svg" alt="CourtHive Logo" class="themedComponent_J_Lj themedComponent--dark_qFDi"></div><b class="navbar__title text--truncate">Competition Factory</b></a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/competition-factory/docs/">Docs</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><a href="https://github.com/CourtHive/competition-factory" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_X4M5"><use href="#theme-svg-external-link"></use></svg></a><div class="toggle_LrPk colorModeToggle_zncL"><button class="clean-btn toggleButton_mMAr toggleButtonDisabled_xrCc" type="button" disabled="" title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_qryd lightToggleIcon_eybk"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_qryd darkToggleIcon_Ivea"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_qryd systemToggleIcon_R3bN"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_aXYB"><div class="dsla-search-wrapper"><div class="dsla-search-field" data-tags="default,docs-default-current"></div></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_HrOm"><div class="docsWrapper_SaUa"><button aria-label="Scroll back to top" class="clean-btn theme-back-to-top-button backToTopButton_DMTl" type="button"></button><div class="docRoot_yKU4"><aside class="theme-doc-sidebar-container docSidebarContainer_x78a"><div class="sidebarViewport_DD3f"><div class="sidebar_dkuC"><nav aria-label="Docs sidebar" class="menu thin-scrollbar menu_sepK"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/"><span class="categoryLinkLabel_S839">Competition Factory</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret menu__link--active" role="button" aria-expanded="true" href="/competition-factory/docs/concepts/performance"><span class="categoryLinkLabel_S839">Concepts</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/performance"><span class="linkLabel_fhWb">Performance Evidence and Measurement</span></a></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/registration-profile"><span class="categoryLinkLabel_S839">Tournament Setup</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/format-wizard/engine"><span class="categoryLinkLabel_S839">Format Wizard</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/participants"><span class="categoryLinkLabel_S839">Participants</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/events/events-overview"><span class="categoryLinkLabel_S839">Events</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret menu__link--active" role="button" aria-expanded="true" tabindex="0" href="/competition-factory/docs/concepts/draws-overview"><span class="categoryLinkLabel_S839">Draws</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/draws-overview"><span class="linkLabel_fhWb">Draw Generation</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/draw-types"><span class="linkLabel_fhWb">Draw Types</span></a></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-3 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/draw-types/single-elimination"><span class="categoryLinkLabel_S839">Draw Type Details</span></a></div></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/draw-positions"><span class="linkLabel_fhWb">drawPositions</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/draw-links"><span class="linkLabel_fhWb">Draw Links</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/draft-draws"><span class="linkLabel_fhWb">Draft Draws</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/additional-seeds"><span class="linkLabel_fhWb">Additional Seeds</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/seed-withdrawal-cascade"><span class="linkLabel_fhWb">Seed Withdrawal Cascade</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/exit-profiles"><span class="linkLabel_fhWb">Exit Profiles</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" tabindex="0" href="/competition-factory/docs/concepts/building-a-tournament"><span class="linkLabel_fhWb">Building a tournament</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/outcome-pipeline"><span class="linkLabel_fhWb">The outcome pipeline</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/exit-propagation"><span class="linkLabel_fhWb">Exit Propagation</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/finishing-positions"><span class="linkLabel_fhWb">Finishing Positions</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/concepts/actions"><span class="linkLabel_fhWb">Actions</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/matchup-overview"><span class="categoryLinkLabel_S839">matchUps</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/scheduling-overview"><span class="categoryLinkLabel_S839">Scheduling</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/publishing/publishing-overview"><span class="categoryLinkLabel_S839">Publishing</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/accessors"><span class="categoryLinkLabel_S839">Record Data</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/concepts/policies"><span class="categoryLinkLabel_S839">Policies</span></a></div></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/engines/state-engines"><span class="categoryLinkLabel_S839">State Engines</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/implementation/draws/allPlayoffPositionsFilled"><span class="categoryLinkLabel_S839">Implementation reference</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/governors/governors-overview"><span class="categoryLinkLabel_S839">Governors</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/tools/tools-overview"><span class="categoryLinkLabel_S839">Tools</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/testing/testing-overview"><span class="categoryLinkLabel_S839">Testing</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/constants"><span class="categoryLinkLabel_S839">Data</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/whats-new-7.0.0"><span class="categoryLinkLabel_S839">Release Notes &amp; Migration</span></a></div></li></ul></nav></div></div></aside><main class="docMainContainer_tZOt"><div class="container padding-top--md padding-bottom--lg"><div class="row"><div class="col docItemCol_x0aV"><div class="docItemContainer_BCkE"><article><nav class="theme-doc-breadcrumbs breadcrumbsContainer_e3Mu" aria-label="Breadcrumbs"><ul class="breadcrumbs"><li class="breadcrumbs__item"><a aria-label="Home page" class="breadcrumbs__link" href="/competition-factory/"><svg viewBox="0 0 24 24" class="breadcrumbHomeIcon_oQgb"><path d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z" fill="currentColor"></path></svg></a></li><li class="breadcrumbs__item"><span class="breadcrumbs__link">Concepts</span></li><li class="breadcrumbs__item"><span class="breadcrumbs__link">Draws</span></li><li class="breadcrumbs__item breadcrumbs__item--active"><span class="breadcrumbs__link">Building a tournament</span></li></ul></nav><div class="tocCollapsible_SVpJ theme-doc-toc-mobile tocMobile_P8BK"><button type="button" class="clean-btn tocCollapsibleButton_mgY_">On this page</button></div><div class="theme-doc-markdown markdown"><header><h1>Building a tournament</h1></header><p>A tournament is built by four writes, in a client&#x27;s order: <strong><code>addParticipants</code></strong>, <strong><code>addEvent</code></strong>, <strong><code>addEventEntries</code></strong>
+and <strong><code>addDrawDefinition</code></strong> (a draw generated by <code>generateDrawDefinition</code>, added as it was generated), with seven
+smaller writes around them (§6: venues and courts, policies and extensions, flights, scale items, publication). This
+page states what each stores, byte for byte, so that a second implementation can reproduce the record they leave: the
+inputs, the refusals, every field written, and the stamps. Where the behaviour is a question rather than a decision it
+is marked <strong>OPEN</strong>.</p>
+<p>First version, 2026-10-29, written from the source; §6 added 2026-10-30. The golden corpus pins it: the <code>mocks</code> source
+(<code>pnpm corpus:mocks</code>) writes generated tournaments as these calls (<code>generateTournamentRecord({ recordMethods: true })</code>),
+with the state hash after every call. A record is hashed in canonical form (RFC 8785), so key order never matters;
+a key holding <code>undefined</code> is not stored.</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="1-what-every-call-shares">1. What every call shares<a href="#1-what-every-call-shares" class="hash-link" aria-label="Direct link to 1. What every call shares" title="Direct link to 1. What every call shares" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="11-the-clock-and-the-stamps">1.1 The clock and the stamps<a href="#11-the-clock-and-the-stamps" class="hash-link" aria-label="Direct link to 1.1 The clock and the stamps" title="Direct link to 1.1 The clock and the stamps" translate="no">​</a></h3>
+<p>An engine call captures one instant when it starts, and every write in the call reads it: an <code>executionQueue</code> shares
+one instant across all its directives. Two kinds of stamp are written from it.</p>
+<p><strong><code>updatedAt</code></strong> (ISO string) is stamped on a drawDefinition, its <strong>top-level</strong> structures and its matchUps, by the
+notices that announce them, never on participants, events, entries or flights. The rule:</p>
+<ul>
+<li class=""><code>t</code> is the captured instant. If the entity&#x27;s existing <code>updatedAt</code> is at or after <code>t</code>, the new value is the existing
+value plus 1 ms; otherwise it is <code>t</code>.</li>
+<li class="">An entity is stamped at most once per call (the first stamp stands).</li>
+</ul>
+<p>So a draw generated in one call and added in the next, under the same instant, is stored one millisecond later than
+its generation stamp, and a matchUp that had no stamp is stored at <code>t</code>.</p>
+<p><strong>The factory stamp</strong> on the tournament record, <code>factory: { ...existing, version, timeStamp }</code>, is written after a
+call on <strong>each record the call modified</strong>, and only on those: a record is modified by a notice that names its
+<code>tournamentId</code> (whether or not anyone subscribes); a notice that names none modifies every loaded record; a notice that
+only reports (<code>dataIssue</code>, <code>audit</code>) modifies nothing. <code>version</code> is the package version; <code>timeStamp</code> is the captured
+instant in epoch milliseconds (a number). A write made with <code>suppressNotifications</code> is stamped as an announced one is:
+its draws, structures and matchUps take <code>updatedAt</code>, and its record the factory stamp; only the notices are dropped. A
+call that writes nothing, or writes only to a working copy (the engine&#x27;s internal <code>disableNotifications</code>), does not
+stamp. A refused call without rollback keeps its earlier writes and is stamped if any of them modified a record; with
+<code>rollbackOnError</code> nothing is kept or stamped. (A state provider without the optional <code>cycleModifiedTournamentIds</code> hook
+stamps every loaded record, and one without <code>markModified</code> leaves a suppressed write unstamped.)</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="12-ids-and-randomness">1.2 Ids and randomness<a href="#12-ids-and-randomness" class="hash-link" aria-label="Direct link to 1.2 Ids and randomness" title="Direct link to 1.2 Ids and randomness" translate="no">​</a></h3>
+<p>An id a write mints (a participant&#x27;s, an event&#x27;s, a TEAM collection&#x27;s) is a v4-style UUID drawn from the call&#x27;s random
+source: a seeded call (<code>nonRandom</code>) draws from a stream derived from its seed, otherwise from the engine&#x27;s configured
+source. A client that supplies its ids makes no draws. Every call in the corpus supplies them.</p>
+<p><strong>The mint.</strong> An id takes four draws <code>r0..r3</code> from the source (<code>setRandomSource(seed)</code> installs mulberry32 seeded
+with <code>seed</code>). Each is scaled and truncated to a 32-bit word, <code>di = trunc(ri × 0xffffffff)</code>, and the id is the words&#x27;
+bytes, least significant first, as two lowercase hex digits each, in the 8-4-4-4-12 form:</p>
+<div class="language-text codeBlockContainer_Oncm theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_nKvf"><pre tabindex="0" class="prism-code language-text codeBlock__Bbt thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_qRwa"><div class="token-line" style="color:#bfc7d5"><span class="token plain">d0[0] d0[1] d0[2] d0[3] - d1[0] d1[1] - (d1[2] &amp; 0x0f | 0x40) d1[3] - (d2[0] &amp; 0x3f | 0x80) d2[1] - d2[2] d2[3] d3[0] d3[1] d3[2] d3[3]</span><br></div></code></pre></div></div>
+<p>where <code>dn[k]</code> is byte <code>k</code> of <code>dn</code> (<code>(dn &gt;&gt; 8k) &amp; 0xff</code>): the version nibble is 4 and the variant bits are <code>10</code>. With a
+prefix, the id is <code>`${prefix}_${id without hyphens}`</code>. A source that returns a value outside <code>[0, 1)</code>, or that
+mints an id it minted among its recent ids, throws (<code>DEGENERATE_RANDOM_SOURCE</code>).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="13-params">1.3 Params<a href="#13-params" class="hash-link" aria-label="Direct link to 1.3 Params" title="Direct link to 1.3 Params" translate="no">​</a></h3>
+<p>The engine copies the params object shallowly, then resolves the record, the event and the draw the call works on.
+<strong>An engine call works only on the records the engine holds</strong>: whether the call names them by id or passes them as
+objects, it is given the ones in state, never the caller&#x27;s own. This is done for every call, before the method runs:</p>
+<ol>
+<li class="">An entity given both as an object and by id must be one entity: a <code>tournamentRecord</code> whose <code>tournamentId</code>, a
+<code>drawDefinition</code> whose <code>drawId</code> or an <code>event</code> whose <code>eventId</code> is not the id given beside it refuses the call
+(<code>INVALID_VALUES</code>).</li>
+<li class="">A <code>tournamentRecord</code> passed is resolved by its <code>tournamentId</code>. A <code>tournamentId</code> (given, or the passed record&#x27;s) that
+names no loaded record refuses the call: <code>MISSING_TOURNAMENT_RECORD</code>.</li>
+<li class="">A <code>drawDefinition</code> passed is resolved by its <code>drawId</code>. A <code>drawId</code> (or a <code>matchUp</code>&#x27;s <code>drawId</code>) found in a loaded record
+gives the call that draw, its event and its record; a flight can name its event after its draw is gone. A passed
+draw found nowhere refuses the call (<code>DRAW_DEFINITION_NOT_FOUND</code>); a <code>drawId</code> found nowhere, given alone, resolves
+nothing and the method decides.</li>
+<li class="">Otherwise an <code>event</code> passed is resolved by its <code>eventId</code>, and an <code>eventId</code> gives the call the stored event and its
+record. An event with no <code>eventId</code>, or an <code>eventId</code> found in no loaded record, refuses the call: <code>EVENT_NOT_FOUND</code>.</li>
+<li class="">The record the call writes is the one resolved, else the one <code>tournamentId</code> names, else the active record. An
+<code>eventId</code> or <code>drawId</code> held by another loaded record moves the call to that record; the active record is unchanged.</li>
+</ol>
+<p>A method&#x27;s creation payload is not resolved: <code>addEvent</code>&#x27;s <code>event</code> and <code>addDrawDefinition</code>&#x27;s <code>drawDefinition</code> are the
+entities it stores. To work on a record, draw or event the engine does not hold (a record being built before it is
+loaded, a generated draw before it is added), call the governor function directly, which works on the object given.
+Called directly, a function given both an entity and its id is held to rule 1.</p>
+<p>Nested objects are <strong>not</strong> copied: an object passed in (a participant, a drawDefinition) is the object stored, and a
+write to it after the call changes the record.</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="2-addparticipants">2. <code>addParticipants</code><a href="#2-addparticipants" class="hash-link" aria-label="Direct link to 2-addparticipants" title="Direct link to 2-addparticipants" translate="no">​</a></h2>
+<p><strong>Inputs.</strong> <code>participants</code> (default <code>[]</code>), <code>allowDuplicateParticipantIdPairs</code>, <code>returnParticipants</code>.</p>
+<p><strong>Refusals</strong>, in order, the first refusal ending the call. A participant is checked against those appended before it
+in the same call, so a refusal can come part way through; the participants appended before it are then removed, and
+the call writes nothing:</p>
+<ol>
+<li class="">No tournament: <code>MISSING_TOURNAMENT_RECORD</code>.</li>
+<li class="">Then per participant, in the add order below:<!-- -->
+<ul>
+<li class="">its <code>participantId</code> is already in the record, including one appended earlier in the same call:
+<code>PARTICIPANT_ID_EXISTS</code>;</li>
+<li class=""><code>participantType</code> not one of INDIVIDUAL, PAIR, TEAM, GROUP: <code>INVALID_PARTICIPANT_TYPE</code>;</li>
+<li class="">no <code>participantRole</code>: <code>MISSING_PARTICIPANT_ROLE</code>;</li>
+<li class="">a <code>person</code> on anything but an INDIVIDUAL, or <code>individualParticipantIds</code> that is not an array: <code>INVALID_VALUES</code>;</li>
+<li class="">PAIR: no <code>individualParticipantIds</code> (<code>MISSING_PARTICIPANT_IDS</code>), not exactly two, or one not an INDIVIDUAL in the
+record (<code>INVALID_PARTICIPANT_IDS</code>);</li>
+<li class="">INDIVIDUAL: a <code>person.sex</code> that is not FEMALE, MALE, OTHER, F, M or O (<code>INVALID_VALUES</code>); no name, meaning neither
+both standard names nor <code>participantOtherName</code> nor <code>participantName</code> (<code>MISSING_PERSON_DETAILS</code>);</li>
+<li class="">TEAM or GROUP: a member id that is not a string (<code>INVALID_VALUES</code>) or not an INDIVIDUAL in the record
+(<code>PARTICIPANT_NOT_FOUND</code>).</li>
+</ul>
+</li>
+</ol>
+<p><strong>What is written.</strong></p>
+<ul>
+<li class=""><code>participants</code> is created on the record if absent (an empty array when the call adds no one); a refused call
+creates nothing.</li>
+<li class="">A participant without a <code>participantId</code> is given one, before anything else, in input order.</li>
+<li class="">Participants whose id was in the record when the call began are skipped (reported in <code>notAdded</code>). The rest are
+appended in this order: every INDIVIDUAL in input order, then every other participant in input order. Each is the
+object passed in.</li>
+<li class=""><code>participantName</code>, when given, has its whitespace collapsed (runs of whitespace become one space, ends trimmed).</li>
+<li class="">INDIVIDUAL: <code>person.sex</code> <code>&#x27;&#x27;</code> or <code>null</code> is removed; F, M, O and the long forms are stored as FEMALE, MALE, OTHER.
+<code>person.standardGivenName</code> and <code>standardFamilyName</code> have their whitespace collapsed. A missing <code>participantName</code>
+becomes <code>&quot;&lt;standardGivenName&gt; &lt;standardFamilyName&gt;&quot;</code> when both are present, otherwise <code>participantOtherName ?? &#x27;&#x27;</code>.</li>
+<li class="">PAIR: if a PAIR of the same two individuals exists (the first in record order), nothing is written for it, unless
+<code>allowDuplicateParticipantIdPairs</code>. A missing <code>participantName</code> is built from its individuals in record order: each
+one&#x27;s <code>standardFamilyName</code>, else <code>participantOtherName</code>, else <code>participantName</code>; nameless ones dropped; a FEMALE and
+MALE pair puts the female first, otherwise names sort (<code>Intl.Collator(&#x27;en&#x27;)</code>); joined with <code>/</code>; one name alone
+becomes <code>&quot;&lt;name&gt;/Unknown&quot;</code>.</li>
+<li class="">TEAM, GROUP: a <code>gender</code> is normalised (F, M, X, A to FEMALE, MALE, MIXED, ANY); <code>individualParticipantIds</code> defaults
+to <code>[]</code>.</li>
+<li class="">No timestamps. One notice for the call, if anything was added.</li>
+</ul>
+<p><strong>Returns</strong> <code>{ success, addedCount }</code>, with <code>participants</code> (copies) when <code>returnParticipants</code>, and <code>notAdded</code> with
+<code>info: EXISTING_PARTICIPANT</code> when some were skipped. When nothing new is given: <code>{ success, addedCount: 0, info }</code>.</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="3-addevent">3. <code>addEvent</code><a href="#3-addevent" class="hash-link" aria-label="Direct link to 3-addevent" title="Direct link to 3-addevent" translate="no">​</a></h2>
+<p><strong>Inputs.</strong> <code>event</code> (it may omit <code>eventId</code>), <code>suppressNotifications</code>, <code>uuids</code> (a pool for TEAM collection ids).
+<code>internalUse</code>, which lets an event arrive with entries or draws, is not a client param.</p>
+<p><strong>Refusals</strong>, in order:</p>
+<ol>
+<li class="">No tournament or no <code>event</code>: <code>MISSING_TOURNAMENT_RECORD</code>, <code>MISSING_EVENT</code> (<code>INVALID_VALUES</code> when not an object).</li>
+<li class="">The event has entries or draws: <code>INVALID_VALUES</code>, <code>info: &#x27;entries/drawDefinitions cannot exist&#x27;</code> (empty arrays
+pass).</li>
+<li class="">TEAM with a <code>tieFormat</code> that does not validate: <code>INVALID_TIE_FORMAT</code>. TEAM with a <code>tieFormatName</code> that is not a
+named format (<code>fixtures.tieFormats</code>, which lists every <code>tieFormatConstants</code> name): <code>INVALID_VALUES</code>. <code>STANDARD</code>,
+the builder&#x27;s fallback for a name it does not know, is not a named format.</li>
+<li class="">The <code>eventId</code> (given or minted) is already an event&#x27;s: <code>EVENT_EXISTS</code>.</li>
+</ol>
+<p><strong>What is written.</strong> A new object, appended to <code>events</code> (created on the record if absent):</p>
+<div class="language-text codeBlockContainer_Oncm theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_nKvf"><pre tabindex="0" class="prism-code language-text codeBlock__Bbt thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_qRwa"><div class="token-line" style="color:#bfc7d5"><span class="token plain">{ eventType: &#x27;SINGLES&#x27;, drawDefinitions: [], entries: [], startDate: record.startDate, endDate: record.endDate, ...event }</span><br></div></code></pre></div></div>
+<ul>
+<li class="">The caller&#x27;s fields override the defaults, an explicit <code>undefined</code> included. Nested objects are stored as given.</li>
+<li class=""><code>gender</code>, when truthy: F, M, X, A (and the long forms) to FEMALE, MALE, MIXED, ANY, exactly and case-sensitively;
+anything else is stored as given.</li>
+<li class=""><code>discipline</code>, when a non-empty string: trimmed, upper-cased, runs of whitespace or <code>-</code> replaced by <code>_</code>.</li>
+<li class="">TEAM with a <code>tieFormat</code>: a copy is stored, each collection without a <code>collectionId</code> given one (from <code>uuids</code>, taken
+from the end, else minted), in order. TEAM with only a <code>tieFormatName</code>: the named format is stored as <code>tieFormat</code> and
+<code>tieFormatName</code> stays; each collection id is taken from <code>uuids</code> (from the end), else minted, or
+<code>&quot;&lt;eventId&gt;-COL-&lt;n&gt;&quot;</code> (the event&#x27;s stored id) when the tournament or event is a mock.</li>
+<li class=""><code>eventId</code>, when absent, is minted, before any collection ids.</li>
+<li class="">No timestamps on the event. The event&#x27;s draws and their matchUps (none, for an event added before its draws) are
+stamped (§1.1), and, unless <code>suppressNotifications</code>, announced, whether or not anything subscribes.</li>
+</ul>
+<p><strong>Returns</strong> <code>{ success, event }</code> (the stored event).</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="4-addevententries">4. <code>addEventEntries</code><a href="#4-addevententries" class="hash-link" aria-label="Direct link to 4-addevententries" title="Direct link to 4-addevententries" translate="no">​</a></h2>
+<p><strong>Inputs.</strong> <code>eventId</code> (or a <code>drawId</code>, which also names the event), <code>participantIds</code>, <code>entryStatus</code>
+(<code>DIRECT_ACCEPTANCE</code>), <code>entryStage</code> (<code>MAIN</code>), <code>entryStageSequence</code>, <code>autoEntryPositions</code> (<code>true</code>), <code>roundTarget</code>,
+<code>extension</code> / <code>extensions</code>, <code>enforceGender</code> (<code>true</code>), <code>enforceCategory</code> (<code>false</code>), and for a draw
+<code>suppressDuplicateEntries</code> (<code>true</code>) and <code>ignoreStageSpace</code>.</p>
+<p><strong>Refusals.</strong> Nothing is written before any of them; the call is all or nothing for the event.</p>
+<ol>
+<li class="">
+<p><code>participantIds</code> not an array: <code>INVALID_PARTICIPANT_IDS</code>. No event: <code>MISSING_EVENT</code>. No ids after removing
+duplicates: <code>MISSING_PARTICIPANT_IDS</code>. An event without <code>eventId</code>: <code>EVENT_NOT_FOUND</code>. A malformed extension:
+<code>INVALID_VALUES</code>.</p>
+</li>
+<li class="">
+<p><strong>Eligibility.</strong> A participant must be a competitor (no <code>participantRole</code>, or <code>COMPETITOR</code>) of the event&#x27;s kind:</p>
+<ul>
+<li class="">SINGLES: an INDIVIDUAL, entered with a status that is not UNGROUPED or UNPAIRED;</li>
+<li class="">DOUBLES: a PAIR, or an INDIVIDUAL entered UNGROUPED or UNPAIRED;</li>
+<li class="">TEAM: a TEAM, or an INDIVIDUAL entered UNGROUPED or UNPAIRED;</li>
+<li class="">HYBRID: an INDIVIDUAL or a PAIR.</li>
+</ul>
+<p>Where the event has a <code>gender</code> other than MIXED or ANY and gender is enforced, an individual&#x27;s <code>person.sex</code> must
+match it. With <code>enforceCategory</code>, every individual must fit the event&#x27;s category. Any participant failing these:
+<code>INVALID_PARTICIPANT_IDS</code>, with <code>context</code> naming <code>mismatchedGender</code> and <code>categoryRejections</code>.</p>
+</li>
+</ol>
+<p><strong>What is written.</strong></p>
+<ul>
+<li class=""><code>entries</code> is created on the event if absent. Each id not already entered gets, in input order:
+<code>{ participantId, entryStatus, entryStage }</code>, plus <code>extensions</code> (copies), an <code>extension</code> (with <code>createdAt</code> set to the
+call&#x27;s instant if it has none), <code>roundTarget</code> and <code>entryStageSequence</code> when given. Existing entries are unchanged.</li>
+<li class="">With <code>autoEntryPositions</code>, the event&#x27;s entries are then rewritten: grouped by stage and status (groups in order of
+first appearance, which can reorder the array), ordered within a group by their existing <code>entryPosition</code> (absent
+last, stable), and numbered <code>entryPosition</code> 1..n per group.</li>
+<li class="">DOUBLES and TEAM: individuals entered UNGROUPED or UNPAIRED who now belong to an entered PAIR or TEAM are removed from
+the event&#x27;s entries (unless one holds a draw position).</li>
+<li class="">With a <code>drawId</code>, the same participants are entered in that draw (and its flight), ungrouped individuals included; a
+refusal there is returned as <code>info</code> and the event&#x27;s entries stand. A participant already in the draw&#x27;s entries is not
+entered again (reported in the draw&#x27;s <code>duplicateEntries</code>, and refused with <code>DUPLICATE_ENTRY</code> when
+<code>suppressDuplicateEntries</code> is false). The draw and its structures are stamped (§1.1).</li>
+<li class="">No stamps on the event or its entries.</li>
+</ul>
+<p><strong>Returns</strong> <code>{ success, addedEntriesCount, removedEntriesCount }</code>, with <code>info</code> when the draw refused.</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="5-adddrawdefinition">5. <code>addDrawDefinition</code><a href="#5-adddrawdefinition" class="hash-link" aria-label="Direct link to 5-adddrawdefinition" title="Direct link to 5-adddrawdefinition" translate="no">​</a></h2>
+<p><strong>Inputs.</strong> <code>eventId</code>, <code>drawDefinition</code> (complete: structures, matchUps, entries, positions), <code>suppressNotifications</code>,
+<code>existingDrawCount</code>, <code>allowReplacement</code>, <code>force</code>, <code>modifyEventEntries</code>, <code>checkEntryStatus</code>, <code>flight</code>.</p>
+<p><strong>Refusals</strong>, in order; nothing is written before any of them:</p>
+<ol>
+<li class="">No draw: <code>MISSING_DRAW_DEFINITION</code>. No event: <code>MISSING_EVENT</code>.</li>
+<li class=""><code>existingDrawCount</code> given and not the event&#x27;s draw count: <code>INVALID_VALUES</code>.</li>
+<li class="">The event&#x27;s flight for this draw names a source draw that is not in the event: <code>MISSING_DRAW_DEFINITION</code>.</li>
+<li class="">The selected flight (<code>flight.flightNumber</code>) is for another draw, or a draw entry is not among its entries:
+<code>INVALID_DRAW_DEFINITION</code>. With <code>checkEntryStatus</code>, a draw entry without a matching event entry:
+<code>INVALID_DRAW_DEFINITION</code>.</li>
+<li class="">The event already has this <code>drawId</code>: <code>DRAW_ID_EXISTS</code>, unless <code>allowReplacement</code>; replacing a draw with scores
+needs <code>force</code> or the scoring policy&#x27;s permission (<code>SCORES_PRESENT</code>).</li>
+</ol>
+<p><strong>What is written</strong>, in this order:</p>
+<ol>
+<li class=""><code>drawDefinitions</code> is created on the event if absent.</li>
+<li class="">With <code>modifyEventEntries</code>, each event entry whose participant is selected in the draw takes the draw entry&#x27;s status.</li>
+<li class=""><strong><code>drawOrder</code></strong> = one more than the largest of the event&#x27;s draws&#x27; <code>drawOrder</code>s and its flights&#x27; <code>flightNumber</code>s
+(0 when there are none).</li>
+<li class=""><strong>The flight.</strong> If the event&#x27;s <code>flightProfile</code> has a flight for this <code>drawId</code>, its <code>drawName</code> is set from the draw,
+and its <code>flightNumber</code> (a number, or a numeric string read as its number) becomes the draw&#x27;s <code>drawOrder</code> when it is
+not already used; the flight then takes <code>drawOrder</code> as its <code>flightNumber</code>. Otherwise a flight is appended (the
+profile created if absent): <code>{ manuallyAdded: true, flightNumber: drawOrder, drawEntries, drawName, drawId }</code>, its
+<code>drawEntries</code> a copy of the draw&#x27;s entries.</li>
+<li class=""><code>drawOrder</code> is set on the draw.</li>
+<li class="">A draw without its stored <code>winnerMatchUpId</code> / <code>loserMatchUpId</code> edges has them written (a generated draw has them).</li>
+<li class="">A new draw is appended to the event&#x27;s <code>drawDefinitions</code> (the object passed in). Every matchUp in it is stamped, then
+the draw and its top-level structures (§1.1), and, unless <code>suppressNotifications</code>, announced. A replacement takes the
+old draw&#x27;s place, stamped the same way.</li>
+</ol>
+<p><strong>Returns</strong> <code>{ success, modifiedEventEntryStatusCount }</code>.</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="6-the-smaller-writes">6. The smaller writes<a href="#6-the-smaller-writes" class="hash-link" aria-label="Direct link to 6. The smaller writes" title="Direct link to 6. The smaller writes" translate="no">​</a></h2>
+<p>Seven calls that a generated tournament makes around the four above: venues and courts, policies and extensions on the
+record, flights, seeding (scale items) and publication. None of them stamps <code>updatedAt</code> except <code>attachPolicies</code> on a
+draw; each raises the notice named, whether or not anything subscribes, and so takes the factory stamp (§1.1).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="61-addvenue">6.1 <code>addVenue</code><a href="#61-addvenue" class="hash-link" aria-label="Direct link to 61-addvenue" title="Direct link to 61-addvenue" translate="no">​</a></h3>
+<p><strong>Inputs.</strong> <code>venue</code>, <code>context</code>, <code>disableNotice</code>. The venue goes to every loaded record (one, unless <code>tournamentId</code>
+names it).</p>
+<ol>
+<li class=""><code>venue</code> not an object: <code>INVALID_VALUES</code>. <code>venueId</code> is minted if absent, onto a copy (the caller&#x27;s object is not
+written).</li>
+<li class="">A venue with this <code>venueId</code> exists: <code>VENUE_EXISTS</code>. <code>defaultStartTime</code> without <code>defaultEndTime</code> (or the reverse), or
+an end not after the start: <code>INVALID_VALUES</code>.</li>
+</ol>
+<p><strong>What is written.</strong> A non-empty <code>dateAvailability</code> is canonicalized (times to <code>HH:MM</code>, a truthy <code>date</code> to
+<code>YYYY-MM-DD</code>), as are <code>defaultStartTime</code> and <code>defaultEndTime</code>. <code>context</code> becomes an extension
+<code>{ name: &#x27;context&#x27;, value, createdAt: now }</code>. A venue added with <code>isPrimary</code> clears <code>isPrimary</code> on the record&#x27;s other
+venues. Each record stores its own copy of the venue (courts as given), <code>venues</code> created if absent; a refusal writes
+nothing. Notice <code>ADD_VENUE</code> unless <code>disableNotice</code>.</p>
+<p><strong>Returns</strong> <code>{ success, venue }</code>.</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="62-addcourts">6.2 <code>addCourts</code><a href="#62-addcourts" class="hash-link" aria-label="Direct link to 62-addcourts" title="Direct link to 62-addcourts" translate="no">​</a></h3>
+<p><strong>Inputs.</strong> <code>venueId</code>, <code>courtsCount</code>, <code>courtNames</code>, <code>courtIds</code>, <code>dateAvailability</code>, <code>courtTimings</code>, <code>dates</code>,
+<code>startTime</code>, <code>endTime</code>, <code>courtNameRoot</code> (default <code>Court</code>), <code>venueAbbreviationRoot</code>, <code>idPrefix</code>.</p>
+<p><strong>Refusals.</strong> <code>venueId</code> not a non-empty string: <code>MISSING_VENUE_ID</code>. No loaded record holds the venue:
+<code>VENUE_NOT_FOUND</code>. <code>courtsCount</code> not numeric and no <code>courtNames</code>: <code>MISSING_COURTS_INFO</code>. A court that cannot be added
+(an id the venue or the call already holds, an invalid availability): <code>INVALID_VALUES</code>
+(<code>not all courts could be generated</code>). Every court is built before any is stored, so a refusal writes nothing.</p>
+<p><strong>What is written</strong>, for court <code>i</code> of <code>courtsCount</code> (a number or a numeric string, else <code>courtNames.length</code>), in every
+record holding the venue:</p>
+<ol>
+<li class=""><strong>Availability</strong>: <code>dateAvailability</code> (default <code>[]</code>) shared by every court, unless <code>courtTimings[i]</code> is given; then
+<code>dates.map((date) =&gt; ({ date, startTime, endTime, ...courtTimings[i] }))</code>, with <code>{ startTime, endTime }</code> appended
+when both are given.</li>
+<li class=""><strong>Name</strong>: <code>courtNames[i]</code>, else <code>`${venue.venueAbbreviation} ${i + 1}`</code> when <code>venueAbbreviationRoot</code> is given and
+the venue has an abbreviation, else <code>`${courtNameRoot} ${i + 1}`</code>.</li>
+<li class=""><strong>Id</strong>: the next of <code>courtIds</code> (taken from the front), else <code>`${idPrefix}-${i + 1}`</code>, else minted.</li>
+<li class=""><code>courts</code> is created on the venue if absent, and the court is appended:
+<code>{ courtId, courtName, dateAvailability, onlineResources: [], venueId }</code>. Each availability entry is copied, its
+<code>date</code> (when truthy) and times converted to their stored forms, and its bookings rebuilt as
+<code>{ startTime, endTime, bookingType }</code>.</li>
+</ol>
+<p>Notice <code>MODIFY_VENUE</code>. <strong>Returns</strong> <code>{ success, courtIds }</code>.</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="63-attachpolicies">6.3 <code>attachPolicies</code><a href="#63-attachpolicies" class="hash-link" aria-label="Direct link to 63-attachpolicies" title="Direct link to 63-attachpolicies" translate="no">​</a></h3>
+<p><strong>Inputs.</strong> <code>policyDefinitions</code> (an object keyed by policy type), <code>allowReplacement</code>, and a draw (<code>drawId</code>), an event
+(<code>eventId</code>) or a <code>tournamentId</code>. The element is the draw, else the event, else the named record; with none of them,
+<strong>every</strong> loaded record. A <code>drawId</code> that resolves to no draw refuses (<code>DRAW_DEFINITION_NOT_FOUND</code>), as an unresolved
+<code>eventId</code> does (<code>EVENT_NOT_FOUND</code>). A round robin tally policy is validated first.</p>
+<p><strong>What is written</strong>, on each element:</p>
+<ol>
+<li class=""><code>extensions</code> is created if absent.</li>
+<li class="">The applied policies are a copy of the element&#x27;s <code>appliedPolicies</code> extension value. For each type given: a falsy
+policy is skipped; a policy that is not an object, holds nothing but its <code>policyName</code> (an attribute whose value is
+<code>undefined</code> does not count: it is not stored), or has a <code>policyName</code> that is not a string refuses
+(<code>INVALID_VALUES</code>); a type already held is skipped unless <code>allowReplacement</code>; otherwise the
+policy replaces that type whole.</li>
+<li class="">If any type was taken, the <code>appliedPolicies</code> extension&#x27;s value is replaced, or the extension is appended:
+<code>{ name: &#x27;appliedPolicies&#x27;, value, createdAt: now }</code>.</li>
+</ol>
+<p>A draw is announced as modified (stamping it and its structures, §1.1); an event or a record is announced as modified.
+Across every loaded record, a record that takes nothing is passed over. Nothing taken anywhere: <code>EXISTING_POLICY_TYPE</code>.
+<strong>Returns</strong> <code>{ success, applied }</code> (the types taken).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="64-addtournamentextension">6.4 <code>addTournamentExtension</code><a href="#64-addtournamentextension" class="hash-link" aria-label="Direct link to 64-addtournamentextension" title="Direct link to 64-addtournamentextension" translate="no">​</a></h3>
+<p><strong>Inputs.</strong> <code>extension</code> (<code>{ name, value }</code>), <code>creationTime</code>. A name that is not a string, or an extension without a
+<code>name</code> or <code>value</code> key, refuses.</p>
+<p><code>extensions</code> is created on the record if absent. The stored extension is a copy carrying <code>createdAt</code> (the caller&#x27;s, else
+now; none with <code>creationTime: false</code>). An extension of the same name has its <code>value</code> replaced; otherwise the copy is
+appended, <strong>only if its value is truthy</strong>. Notice <code>MODIFY_TOURNAMENT_DETAIL</code> if the extensions changed.
+<strong>Returns</strong> <code>{ success }</code>.</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="65-addflight">6.5 <code>addFlight</code><a href="#65-addflight" class="hash-link" aria-label="Direct link to 65-addflight" title="Direct link to 65-addflight" translate="no">​</a></h3>
+<p><strong>Inputs.</strong> <code>eventId</code>, <code>drawId</code>, <code>drawName</code>, <code>drawEntries</code>, <code>stage</code>, <code>qualifyingPositions</code>.</p>
+<p><strong>Refusals</strong>, in order, before any write: no event, <code>MISSING_EVENT</code>; no <code>drawName</code>, <code>MISSING_VALUE</code>; a draw entry whose
+participant is not among the event&#x27;s entries, <code>INVALID_VALUES</code>; the profile has a flight with this <code>drawId</code>,
+<code>EXISTING_FLIGHT</code>.</p>
+<p><strong>What is written.</strong> <code>flightNumber</code> = one more than the largest numeric <code>flightNumber</code> in the event&#x27;s flight profile
+(0 when none). The flight is <code>{ drawId, flightNumber, drawEntries, drawName }</code> (<code>drawId</code> minted if absent,
+<code>drawEntries</code> default <code>[]</code>, stored as passed), with <code>stage</code> and <code>qualifyingPositions</code> only when truthy. The event&#x27;s
+<code>flightProfile</code> becomes <code>{ ...profile, flights: [...flights, flight] }</code> (a profile held as an extension is moved to the
+attribute). Notice <code>MODIFY_EVENT</code>. <strong>Returns</strong> <code>{ success }</code>.</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="66-setparticipantscaleitem">6.6 <code>setParticipantScaleItem</code><a href="#66-setparticipantscaleitem" class="hash-link" aria-label="Direct link to 66-setparticipantscaleitem" title="Direct link to 66-setparticipantscaleitem" translate="no">​</a></h3>
+<p><strong>Inputs.</strong> <code>participantId</code>, <code>scaleItem</code> (<code>{ scaleType, eventType, scaleName, scaleValue, scaleDate, scaleId, createdAt }</code>), <code>removePriorValues</code>.</p>
+<p><strong>Refusals.</strong> <code>scaleItem</code> without the keys <code>scaleType</code>, <code>eventType</code> and <code>scaleName</code>: <code>INVALID_SCALE_ITEM</code>. No such
+participant: <code>PARTICIPANT_NOT_FOUND</code>. A TEAM participant with an <code>eventType</code> other than <code>TEAM</code>, or any of the three
+keys falsy: <code>INVALID_SCALE_ITEM</code>. A changed value with a <code>scaleDate</code> that is not a date: <code>INVALID_DATE</code>, after
+<code>timeItems</code> is created.</p>
+<p><strong>What is written.</strong> <code>itemType</code> is <code>`SCALE.${scaleType}.${eventType}.${scaleName}`</code>; <code>timeItems</code> is created on the
+participant if absent. The value is <strong>unchanged</strong> when it equals the participant&#x27;s current item of that type
+(compared as JSON; <code>undefined</code>, <code>null</code> and <code>&#x27;&#x27;</code> are equal to each other): nothing more is written. Otherwise the time
+item <code>{ itemValue: scaleValue, itemDate: scaleDate, createdAt: scaleItem.createdAt ?? now, itemType }</code> (undefined keys
+dropped), with <code>itemSubTypes: [scaleId]</code> when <code>scaleId</code> is truthy, is appended; <code>removePriorValues</code> first removes the
+items of that type. Notice <code>MODIFY_PARTICIPANTS</code> when the value changed.</p>
+<p><strong>Returns</strong> <code>{ success, newValue }</code>, or <code>{ success, info: VALUE_UNCHANGED, existingValue }</code>.</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="67-publishevent">6.7 <code>publishEvent</code><a href="#67-publishevent" class="hash-link" aria-label="Direct link to 67-publishevent" title="Direct link to 67-publishevent" translate="no">​</a></h3>
+<p><strong>Inputs.</strong> <code>eventId</code>, <code>drawIds</code>, <code>drawDetails</code>, <code>eventDataParams</code>, <code>embargo</code>, <code>status</code> (default <code>PUBLIC</code>),
+<code>removePriorValues</code> (default <code>true</code>).</p>
+<p><strong>Refusals.</strong> No event: <code>MISSING_EVENT</code>. A <code>drawId</code> not in the event: <code>DRAW_DEFINITION_NOT_FOUND</code>. An embargo that is
+not a date: <code>INVALID_EMBARGO</code>. A structure not in its draw: <code>STRUCTURE_NOT_FOUND</code>.</p>
+<p><strong>What is written.</strong> A time item on the event:
+<code>{ itemType: &#x27;PUBLISH.STATUS&#x27;, createdAt: now, itemValue: { ...otherStatuses, [status]: { ...prior, drawDetails } } }</code>.
+A plain publication gives every draw of the event, in order, <code>{ [drawId]: { publishingDetail: { published: true } } }</code>
+(an event without draws gives <code>{}</code>). <code>timeItems</code> is created if absent; with <code>removePriorValues</code> the event&#x27;s earlier
+<code>PUBLISH.STATUS</code> items are removed; the item is appended. Notice <code>PUBLISH_EVENT</code> (its payload carries the event data
+only for a subscriber).</p>
+<p><strong>Returns</strong> <code>{ success, eventData }</code>.</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="7-guarantees">7. Guarantees<a href="#7-guarantees" class="hash-link" aria-label="Direct link to 7. Guarantees" title="Direct link to 7. Guarantees" translate="no">​</a></h2>
+<ul>
+<li class="">A refusal of <code>addParticipants</code>, <code>addEvent</code>, <code>addEventEntries</code> or <code>addDrawDefinition</code> writes nothing.</li>
+<li class="">Given the same record, params, clock and random source, each call stores the same bytes.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="8-open-questions">8. Open questions<a href="#8-open-questions" class="hash-link" aria-label="Direct link to 8. Open questions" title="Direct link to 8. Open questions" translate="no">​</a></h2>
+<p>Resolved 2026-10-30: a replacement with <code>suppressNotifications</code> now stores the new draw (it sat inside the
+notification guard); <code>addEvent</code> stamps an event&#x27;s matchUps whether or not anything subscribes (it stamped them only for
+a subscriber, so the stored bytes depended on who was listening).</p>
+<p>Resolved 2026-10-30, the smaller writes (§6): <code>publishEvent</code>, <code>setParticipantScaleItem</code> and eleven other participant
+writes announce whether or not anything subscribes, so the factory stamp no longer depends on who is listening;
+<code>addCourts</code> counts a numeric string as its number and refuses before storing any court; <code>attachPolicies</code> refuses a
+<code>drawId</code> that resolves to no draw (it attached to every loaded record); <code>addVenue</code> and <code>addTournamentExtension</code> store
+copies and no longer write the caller&#x27;s objects, and <code>addVenue</code> creates <code>venues</code> only when it stores one.</p>
+<p>Resolved 2026-10-30, the four writes: <code>addParticipants</code> is all or nothing (it kept the participants appended before a
+refusal, unannounced); <code>addParticipants</code> and <code>addEvent</code> create no empty <code>participants</code> or <code>events</code> on a refused
+call; <code>addEvent</code> mints the <code>eventId</code> before a named tieFormat&#x27;s collection ids, which take <code>uuids</code> and, for a mock,
+the stored id (they were <code>undefined-COL-n</code>); a new flight&#x27;s <code>drawEntries</code> is a copy of the draw&#x27;s entries (it was
+the same array); a numeric string <code>flightNumber</code> is read as its number (it became a string <code>drawOrder</code>).
+<code>addEventEntries</code> tested <code>isUngrouped(entryStage)</code>, a stage against statuses, which never held: the dead test is
+removed and the behaviour it never changed is stated (§4: every entry made with a <code>drawId</code> reaches the draw,
+ungrouped individuals included, as an AD_HOC doubles field relies on).</p>
+<p>Resolved 2026-10-30 (debate-ruled, two opposed measurements each, pending review): a draw entry made under the
+default <code>suppressDuplicateEntries</code> for a participant already in the draw was reported as a duplicate and written
+anyway (a probe draw then refused automated positioning); it is now skipped, as <code>addDrawEntry</code> and the flight path
+skip it. <code>INTENNSE_2026</code> had a constant, a template and a JSON but no <code>fixtures.tieFormats</code> entry, so <code>addEvent</code> alone
+refused it; it is now published, and <code>STANDARD</code> (the fallback, not a named format) is still refused.</p>
+<p>Resolved 2026-10-30 (CA): the factory stamp goes only to the records a call modified (it went to every loaded record,
+so a record merely loaded beside a written one claimed to have been written); a notice that only reports
+(<code>dataIssue</code>, <code>audit</code>) modifies nothing, and <code>addDrawEntries</code> announces only when the entries changed. A write made with
+<code>suppressNotifications</code> is stamped as an announced one is (it left its draws and matchUps unstamped and the factory
+stamp unmoved); only the engine&#x27;s internal <code>disableNotifications</code>, around working copies, stamps nothing.</p>
+<p><strong>Decided (CA 2026-10-30): an engine call works only on the records it holds (§1.3).</strong> A caller&#x27;s own <code>event</code> object
+was the event the method wrote to: <code>addEventEntries</code> given a copy of the stored event (or an event in no loaded record)
+reported <code>success</code>, wrote the entries into the caller&#x27;s object and left the record unchanged, even beside a correct
+<code>eventId</code>. A <code>tournamentRecord</code> and a <code>drawDefinition</code> passed through the engine behaved the same way. Now every object
+passed is resolved to the one in state, one not held refuses the call, and an object and an id that name different
+entities refuse it, with the engine or without it. A write never silently goes nowhere. (Recorded 2026-10-29 as a
+refusal at 8.0.0; CA brought it forward.)</p>
+<p>Resolved (CA 2026-10-29): a policy attribute whose value is <code>undefined</code> does not count toward a policy (§6.3). It was
+counted, so <code>{ policyName, roundsToSeparate: undefined }</code> was accepted and stored as its name alone, which the same
+check refuses.</p>
+<p>No question is open.</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="related">Related<a href="#related" class="hash-link" aria-label="Direct link to Related" title="Direct link to Related" translate="no">​</a></h2>
+<ul>
+<li class=""><a class="" href="/competition-factory/docs/concepts/scheduling-pipeline">Concepts: the scheduling pipeline</a>, the same treatment for scheduling.</li>
+<li class="">The golden corpus (<code>corpus/README.md</code> in the repository): <code>pnpm corpus:mocks</code>.</li>
+</ul></div></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"><a class="pagination-nav__link pagination-nav__link--prev" href="/competition-factory/docs/concepts/exit-profiles"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">Exit Profiles</div></a><a class="pagination-nav__link pagination-nav__link--next" href="/competition-factory/docs/concepts/outcome-pipeline"><div class="pagination-nav__sublabel">Next</div><div class="pagination-nav__label">The outcome pipeline</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_G6iu thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#1-what-every-call-shares" class="table-of-contents__link toc-highlight">1. What every call shares</a><ul><li><a href="#11-the-clock-and-the-stamps" class="table-of-contents__link toc-highlight">1.1 The clock and the stamps</a></li><li><a href="#12-ids-and-randomness" class="table-of-contents__link toc-highlight">1.2 Ids and randomness</a></li><li><a href="#13-params" class="table-of-contents__link toc-highlight">1.3 Params</a></li></ul></li><li><a href="#2-addparticipants" class="table-of-contents__link toc-highlight">2. <code>addParticipants</code></a></li><li><a href="#3-addevent" class="table-of-contents__link toc-highlight">3. <code>addEvent</code></a></li><li><a href="#4-addevententries" class="table-of-contents__link toc-highlight">4. <code>addEventEntries</code></a></li><li><a href="#5-adddrawdefinition" class="table-of-contents__link toc-highlight">5. <code>addDrawDefinition</code></a></li><li><a href="#6-the-smaller-writes" class="table-of-contents__link toc-highlight">6. The smaller writes</a><ul><li><a href="#61-addvenue" class="table-of-contents__link toc-highlight">6.1 <code>addVenue</code></a></li><li><a href="#62-addcourts" class="table-of-contents__link toc-highlight">6.2 <code>addCourts</code></a></li><li><a href="#63-attachpolicies" class="table-of-contents__link toc-highlight">6.3 <code>attachPolicies</code></a></li><li><a href="#64-addtournamentextension" class="table-of-contents__link toc-highlight">6.4 <code>addTournamentExtension</code></a></li><li><a href="#65-addflight" class="table-of-contents__link toc-highlight">6.5 <code>addFlight</code></a></li><li><a href="#66-setparticipantscaleitem" class="table-of-contents__link toc-highlight">6.6 <code>setParticipantScaleItem</code></a></li><li><a href="#67-publishevent" class="table-of-contents__link toc-highlight">6.7 <code>publishEvent</code></a></li></ul></li><li><a href="#7-guarantees" class="table-of-contents__link toc-highlight">7. Guarantees</a></li><li><a href="#8-open-questions" class="table-of-contents__link toc-highlight">8. Open questions</a></li><li><a href="#related" class="table-of-contents__link toc-highlight">Related</a></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 CourtHive</div></div></div></footer></div>
+</body>
+</html>

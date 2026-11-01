@@ -1,0 +1,1157 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="docs-wrapper plugin-docs plugin-id-default docs-version-current docs-doc-page docs-doc-id-scoring-engine/scoring-engine-spec" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.10.2">
+<title data-rh="true">Scoring engine specification | Competition Factory</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://courthive.github.io/competition-factory/docs/scoring-engine/scoring-engine-spec"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Scoring engine specification | Competition Factory"><meta data-rh="true" name="description" content="The ScoringEngine keeps a CODES matchUp&#x27;s score from the inputs a scorer gives it: points, games,"><meta data-rh="true" property="og:description" content="The ScoringEngine keeps a CODES matchUp&#x27;s score from the inputs a scorer gives it: points, games,"><link data-rh="true" rel="icon" href="/competition-factory/img/favicon.ico"><link data-rh="true" rel="canonical" href="https://courthive.github.io/competition-factory/docs/scoring-engine/scoring-engine-spec"><link data-rh="true" rel="alternate" href="https://courthive.github.io/competition-factory/docs/scoring-engine/scoring-engine-spec" hreflang="en"><link data-rh="true" rel="alternate" href="https://courthive.github.io/competition-factory/docs/scoring-engine/scoring-engine-spec" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Scoring engine specification","item":"https://courthive.github.io/competition-factory/docs/scoring-engine/scoring-engine-spec"}]}</script><link rel="stylesheet" href="/competition-factory/assets/css/styles.b8db7a69.css">
+<script src="/competition-factory/assets/js/runtime~main.e0f80e04.js" defer="defer"></script>
+<script src="/competition-factory/assets/js/main.1f7b5534.js" defer="defer"></script>
+</head>
+<body>
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><link rel="preload" as="image" href="/competition-factory/img/CourtHive.svg"><link rel="preload" as="image" href="/competition-factory/img/CourtHive-dark.svg"><div role="region" aria-label="Skip to main content"><a class="skipToContent_Jirb" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/competition-factory/"><div class="navbar__logo"><img src="/competition-factory/img/CourtHive.svg" alt="CourtHive Logo" class="themedComponent_J_Lj themedComponent--light_qupp"><img src="/competition-factory/img/CourtHive-dark.svg" alt="CourtHive Logo" class="themedComponent_J_Lj themedComponent--dark_qFDi"></div><b class="navbar__title text--truncate">Competition Factory</b></a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/competition-factory/docs/">Docs</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><a href="https://github.com/CourtHive/competition-factory" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_X4M5"><use href="#theme-svg-external-link"></use></svg></a><div class="toggle_LrPk colorModeToggle_zncL"><button class="clean-btn toggleButton_mMAr toggleButtonDisabled_xrCc" type="button" disabled="" title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_qryd lightToggleIcon_eybk"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_qryd darkToggleIcon_Ivea"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_qryd systemToggleIcon_R3bN"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_aXYB"><div class="dsla-search-wrapper"><div class="dsla-search-field" data-tags="default,docs-default-current"></div></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_HrOm"><div class="docsWrapper_SaUa"><button aria-label="Scroll back to top" class="clean-btn theme-back-to-top-button backToTopButton_DMTl" type="button"></button><div class="docRoot_yKU4"><aside class="theme-doc-sidebar-container docSidebarContainer_x78a"><div class="sidebarViewport_DD3f"><div class="sidebar_dkuC"><nav aria-label="Docs sidebar" class="menu thin-scrollbar menu_sepK"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/"><span class="categoryLinkLabel_S839">Competition Factory</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/concepts/performance"><span class="categoryLinkLabel_S839">Concepts</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret menu__link--active" role="button" aria-expanded="true" href="/competition-factory/docs/engines/state-engines"><span class="categoryLinkLabel_S839">State Engines</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/engines/state-engines"><span class="linkLabel_fhWb">Overview</span></a></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/engines/engine-methods"><span class="categoryLinkLabel_S839">Composition &amp; Configuration</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/engines/query-facade"><span class="categoryLinkLabel_S839">Reading State</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/engines/mutation-engines"><span class="categoryLinkLabel_S839">Mutating State</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/engines/engine-logging"><span class="categoryLinkLabel_S839">Diagnostics &amp; Helpers</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/scale-engine/scale-engine-overview"><span class="categoryLinkLabel_S839">Scale Engine</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret menu__link--active" role="button" aria-expanded="true" tabindex="0" href="/competition-factory/docs/scoring-engine/scoring-engine-overview"><span class="categoryLinkLabel_S839">Scoring Engine</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/scoring-engine/scoring-engine-overview"><span class="linkLabel_fhWb">Overview</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/scoring-engine/scoring-engine-api"><span class="linkLabel_fhWb">Core API Reference</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/scoring-engine/event-handlers"><span class="linkLabel_fhWb">Event Handlers &amp; Integration</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/scoring-engine/format-support"><span class="linkLabel_fhWb">Multi-Sport Format Support</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" tabindex="0" href="/competition-factory/docs/scoring-engine/scoring-engine-spec"><span class="linkLabel_fhWb">Scoring engine specification</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/competition-factory/docs/scoring-engine/visualization-applications"><span class="linkLabel_fhWb">Visualization Applications</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/availability-engine/availability-engine-overview"><span class="categoryLinkLabel_S839">Availability Engine</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/engines/draw-engine-overview"><span class="categoryLinkLabel_S839">Draw Engine</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/engines/sanctioning-engine"><span class="categoryLinkLabel_S839">Sanctioning Engine</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" tabindex="0" href="/competition-factory/docs/engines/officiating-engine"><span class="categoryLinkLabel_S839">Officiating Engine</span></a></div></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/implementation/draws/allPlayoffPositionsFilled"><span class="categoryLinkLabel_S839">Implementation reference</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/governors/governors-overview"><span class="categoryLinkLabel_S839">Governors</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/tools/tools-overview"><span class="categoryLinkLabel_S839">Tools</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/testing/testing-overview"><span class="categoryLinkLabel_S839">Testing</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/constants"><span class="categoryLinkLabel_S839">Data</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_mdj3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/competition-factory/docs/whats-new-7.0.0"><span class="categoryLinkLabel_S839">Release Notes &amp; Migration</span></a></div></li></ul></nav></div></div></aside><main class="docMainContainer_tZOt"><div class="container padding-top--md padding-bottom--lg"><div class="row"><div class="col docItemCol_x0aV"><div class="docItemContainer_BCkE"><article><nav class="theme-doc-breadcrumbs breadcrumbsContainer_e3Mu" aria-label="Breadcrumbs"><ul class="breadcrumbs"><li class="breadcrumbs__item"><a aria-label="Home page" class="breadcrumbs__link" href="/competition-factory/"><svg viewBox="0 0 24 24" class="breadcrumbHomeIcon_oQgb"><path d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z" fill="currentColor"></path></svg></a></li><li class="breadcrumbs__item"><span class="breadcrumbs__link">State Engines</span></li><li class="breadcrumbs__item"><span class="breadcrumbs__link">Scoring Engine</span></li><li class="breadcrumbs__item breadcrumbs__item--active"><span class="breadcrumbs__link">Scoring engine specification</span></li></ul></nav><div class="tocCollapsible_SVpJ theme-doc-toc-mobile tocMobile_P8BK"><button type="button" class="clean-btn tocCollapsibleButton_mgY_">On this page</button></div><div class="theme-doc-markdown markdown"><header><h1>Scoring engine specification</h1></header><p>The <code>ScoringEngine</code> keeps a CODES matchUp&#x27;s score from the inputs a scorer gives it: points, games,
+set totals, the end of a timed segment, a late-start baseline, a server correction and a
+substitution. This page states the rules a second implementation has to reproduce without reading
+the TypeScript: the inputs, the closed set of actions and the facts each carries, how a format
+resolves to a rule for each set, each segment kind&#x27;s rules, service, completion, what is refused,
+and how a record is persisted and replayed. The questions this page first left open were decided by
+CA on 2026-10-18; each rule now stands in the section it belongs to, marked &quot;(CA 2026-10-18)&quot;, and
+§ 16 keeps the record of each decision and of v1&#x27;s divergence from it.</p>
+<p>First version, 2026-10-18 (SE1 of the scoring-engine v2 plan), written from the rules first and the
+source second: the conformance suite (79 matrix cells: 75 held by independent cases written from
+rulebooks and format definitions, 4 refused), the engine tests the S1–S13 fixes added, the scoring
+corpus (72 seeded streams) and probes run against factory <code>dev</code> at <code>0fcd079843</code>. Where v1 and a
+rule disagree, this page states the rule and records v1&#x27;s behaviour as <strong>a v1 defect to fix before
+cutover</strong> (the differential of v1 against v2 surfaces each one); it does not encode a v1 accident as
+the rule. A persisted record v1 wrote is still read as v1 read it (§ 12.8).</p>
+<p><strong>Since SE4 (CA 2026-10-22) the <code>ScoringEngine</code> is the reducer this page specifies; v1 is retired.</strong> Every
+v1 defect recorded here was ruled and brought to the rule, by the differential of v1 against v2, before v1
+went; the notes on v1 stay as the record of what changed. The differential retired with v1.</p>
+<div class="language-text codeBlockContainer_Oncm theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_nKvf"><pre tabindex="0" class="prism-code language-text codeBlock__Bbt thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_qRwa"><div class="token-line" style="color:#bfc7d5"><span class="token plain">state = reduce(configuration, timeline)</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">configuration   matchUpFormat → resolved segment rules · competitionFormat · pointMultipliers</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">timeline        point · game · set · endSegment · setInitialScore · setServer · substitution</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">                · challenge · annotation</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">reduce          § 3 format resolution → § 4–8 segment rules → § 9 completion, § 10 service</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">views           § 11 score, situation, points-to, scoreboard, episodes, statistics, events</span><br></div></code></pre></div></div>
+<p><strong>How rules cite their evidence.</strong> A case is cited by its file and the <code>describe</code> title it sits under.
+Conformance files live in <code>src/tests/scoring/conformance/</code> and are named without the
+<code>.conformance.test.ts</code> suffix (<code>standardSets</code>, <code>tiebreakSets</code>, <code>tiebreakSetVariants</code>,
+<code>advantageAndShortSets</code>, <code>timedSegments</code>, <code>aggregateSegments</code>, <code>combinedTotals</code>, <code>finalSegments</code>);
+engine tests live in <code>src/tests/scoring/</code> and are named with their <code>.test.ts</code> file. Every conformance
+case is held five ways by the harness (<code>src/tests/testHarness/scoringConformance/</code>): as played, in the
+1-indexed <code>winningSide</code> spelling, mirrored (side 2 winning what side 1 won gives the mirror image),
+through a correction round trip (undo everything, redo everything, re-enter the last point by
+<code>editPoint</code>), and through a save, load and rebuild. A rule held by a conformance case therefore also
+holds through replay. § 17 places every matrix cell under the sections whose rules score it; a gate
+(<code>specCitesEveryCell.test.ts</code>) fails when a matrix cell is missing from this page.</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="1-inputs-the-configuration-and-the-state">1. Inputs: the configuration and the state<a href="#1-inputs-the-configuration-and-the-state" class="hash-link" aria-label="Direct link to 1. Inputs: the configuration and the state" title="Direct link to 1. Inputs: the configuration and the state" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="11-the-configuration">1.1 The configuration<a href="#11-the-configuration" class="hash-link" aria-label="Direct link to 1.1 The configuration" title="Direct link to 1.1 The configuration" translate="no">​</a></h3>
+<p>An engine is built from:</p>
+<ul>
+<li class=""><code>matchUpFormat</code>: the format code (grammar: <a class="" href="/competition-factory/docs/codes/matchup-format">matchUpFormat codes</a>).
+Absent, it is <code>competitionFormat.matchUpFormat</code>, and absent that, <code>SET3-S:6/TB7</code>. A code that does
+not parse still builds an engine, and every scoring and service action is then refused (§ 2,
+CA 2026-10-18). v1 refuses only point input there and accepts the others: a v1 defect (§ 16, 10).</li>
+<li class=""><code>competitionFormat</code>: a profile. The engine reads its <code>serverRule</code> (§ 10.7), its <code>pointMultipliers</code>
+and its <code>substitutionRules</code> (§ 2.7). Its other profiles (penalties, timers, timeouts, players,
+point results) are returned to the host and change no score.</li>
+<li class=""><code>pointMultipliers</code>: conditional point values. The option wins over the profile&#x27;s.
+A multiplier is <code>{ condition: { results?, strokes? }, value }</code>; the first whose <code>results</code> contains
+the point&#x27;s <code>result</code>, or whose <code>strokes</code> contains its <code>stroke</code>, gives the point its value, and
+otherwise a point is worth 1.</li>
+<li class=""><code>isDoubles</code>, <code>matchUpId</code>: identity only.</li>
+</ul>
+<p>A saved configuration loaded with the record replaces the constructor&#x27;s (§ 12.6).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="12-the-state">1.2 The state<a href="#12-the-state" class="hash-link" aria-label="Direct link to 1.2 The state" title="Direct link to 1.2 The state" translate="no">​</a></h3>
+<p>The state is a CODES matchUp: <code>matchUpFormat</code>, <code>matchUpStatus</code>, <code>matchUpType</code>, two <code>sides</code>,
+<code>score.sets[]</code>, <code>winningSide</code>, <code>history</code> and the side-level service orientation <code>serverFlip</code>.</p>
+<ul>
+<li class="">A new matchUp is <code>TO_BE_PLAYED</code> with no sets. The first accepted scoring input makes it
+<code>IN_PROGRESS</code>. Completion makes it <code>COMPLETED</code>, with <code>winningSide</code> when there is a winner and
+without one for a match that ended level with no declared decider (§ 7, § 9.7), and stamps
+<code>endTime</code>.</li>
+<li class="">A set records <code>side1Score</code>/<code>side2Score</code> (games, points or units, by segment kind),
+<code>side1TiebreakScore</code>/<code>side2TiebreakScore</code> when a tiebreak was played, <code>winningSide</code> when won, the
+per-game point counts <code>side1GameScores</code>/<code>side2GameScores</code> of the games played point by point, and
+engine marks: <code>isTiebreakOnly</code>, <code>isTimed</code>, <code>segmentComplete</code> (a timed segment closed, with or
+without a winner) and <code>currentStreak</code> (a consecutive-points game in progress; never in a set
+tiebreak, which no consecutive-points rule reaches, § 4.3).</li>
+<li class=""><code>history.points</code> holds the materialized points (§ 11.1); <code>history.entries</code> is the timeline
+(§ 12.1); <code>history.substitutions</code> mirrors the substitution entries; <code>history.initialServer</code> is the
+match&#x27;s initial server, when one was named before anything was recorded (§ 2.6).</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="13-sides">1.3 Sides<a href="#13-sides" class="hash-link" aria-label="Direct link to 1.3 Sides" title="Direct link to 1.3 Sides" translate="no">​</a></h3>
+<p>A side is named two ways: 0-indexed (<code>winner</code>, <code>server</code>: 0 is side 1) and 1-indexed (<code>winningSide</code>,
+<code>serverSideNumber</code>: 1 is side 1). An input may use either spelling or both; both spellings must name
+the same side (§ 2.1); both may be given when they agree. A materialized point carries both.</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="14-r2-calculated-values-are-never-inputs">1.4 R2: calculated values are never inputs<a href="#14-r2-calculated-values-are-never-inputs" class="hash-link" aria-label="Direct link to 1.4 R2: calculated values are never inputs" title="Direct link to 1.4 R2: calculated values are never inputs" translate="no">​</a></h3>
+<p><strong>A value the engine calculates is never an input, and never recorded as one</strong> (R2, decided
+2026-10-17). The calculated point fields are <code>pointNumber</code>, <code>index</code>, <code>set</code>, <code>game</code>, <code>number</code>, <code>score</code>,
+<code>pointsToGame</code>, <code>pointsToSet</code>, <code>pointsToMatch</code>, <code>gamesToSet</code>, <code>isBreakpoint</code>, <code>serveSide</code>, and the
+1-indexed spellings <code>winningSide</code> and <code>serverSideNumber</code> (which are inputs only when the caller
+supplied them). A caller that passes a calculated field has it overwritten on the point and left out
+of the timeline, so the entry and the point cannot disagree (<code>publicBoundary.test.ts</code>, &quot;a calculated
+field passed as input is not recorded as one&quot;). A server the engine derives, by the format (§ 10.1–10.4)
+or by the competition&#x27;s rule (§ 10.7), is calculated: it is a snapshot on the materialized point and a
+rebuild derives it again (<code>replayLossless.test.ts</code>, &quot;a calculated server is still not recorded as an
+input (R2)&quot;; <code>scoringAgreement.test.ts</code>, &quot;a server the rule supplied is calculated&quot;). A multiplier&#x27;s
+value is not on this list: the entry records it as the point&#x27;s <code>scoreValue</code>, so a point keeps the value it
+was scored at when the multipliers change (§ 12.2; CA 2026-10-27).</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="2-the-action-set">2. The action set<a href="#2-the-action-set" class="hash-link" aria-label="Direct link to 2. The action set" title="Direct link to 2. The action set" translate="no">​</a></h2>
+<p>The timeline is a closed set of nine action types. Each records only the facts its caller supplied.
+Everything else the engine does is either a view (§ 11) or an edit of the timeline (§ 12.3–12.4).
+The set is versioned: a later action (a correction event, a new annotation) is additive, not a format
+change.</p>
+<table><thead><tr><th>action</th><th>caller-supplied facts</th><th>refused (an error; nothing is written)</th></tr></thead><tbody><tr><td><code>point</code></td><td>the winner; optionally the server, <code>serverParticipantId</code>, <code>scoreValue</code>, <code>timestamp</code>, <code>observedServeSide</code>, decorations (§ 2.1)</td><td>invalid sides or values (§ 2.1); a <code>scoreValue</code> other than 1 where a point is not a unit (§ 4.4, § 7); a segment that takes no points (§ 8)</td></tr><tr><td><code>game</code></td><td><code>winner</code> (0 or 1); optionally <code>tiebreakScore</code> <code>[side1, side2]</code>, <code>timestamp</code></td><td>invalid facts (§ 2.2); a segment that takes no games: outs (§ 8), a combined total (§ 7)</td></tr><tr><td><code>set</code></td><td><code>side1Score</code>, <code>side2Score</code>; optionally tiebreak scores, <code>winningSide</code>, <code>timestamp</code></td><td>invalid facts; a <code>winningSide</code> the segment&#x27;s rule contradicts (§ 2.3); an invalid combined total (§ 7)</td></tr><tr><td><code>endSegment</code></td><td>optionally <code>setNumber</code>, <code>timestamp</code>, <code>reason</code> (a free host string)</td><td>a segment that is not timed, a combined total among them (§ 2.4)</td></tr><tr><td><code>setInitialScore</code></td><td><code>sets[]</code>, optionally <code>currentSetScore</code>, <code>currentGameScore</code>, <code>server</code></td><td>invalid facts; a second baseline once scoring entries exist (§ 2.5); a combined-total baseline that is invalid or has a game score (§ 7)</td></tr><tr><td><code>setServer</code></td><td><code>side</code>, the side due to serve the next point</td><td>a side not 0 or 1 (§ 2.6)</td></tr><tr><td><code>substitution</code></td><td><code>sideNumber</code>, <code>outParticipantId</code>, <code>inParticipantId</code>, optionally <code>timestamp</code></td><td>none throw; four identity refusals return a result instead (§ 2.7)</td></tr><tr><td><code>challenge</code></td><td><code>sideNumber</code>; optionally host fields</td><td>a <code>sideNumber</code> not 1 or 2 (§ 2.8)</td></tr><tr><td><code>annotation</code></td><td>host data</td><td>none (§ 2.8)</td></tr></tbody></table>
+<p><strong>Every action refuses invalid facts before anything is written, as <code>point</code> does</strong> (CA 2026-10-18):
+a side out of range, a score that is not a non-negative integer, a format that does not parse (for
+every action that scores or names a server). v1 validates only <code>addPoint</code> and <code>editPoint</code> (S9):
+<code>addGame({ winner: 2 })</code> scores for side 2, and <code>addSet</code>, <code>endSegment</code> and <code>setInitialScore</code> are not
+validated, a v1 defect (§ 16, 10).</p>
+<p><strong>A closed segment takes no input</strong> (CA 2026-10-18): a point, game or set total aimed at a segment
+that is closed is refused (§ 6.4). <strong>A completed match takes no scoring input</strong>: a point, a game and a
+set total after <code>COMPLETED</code> are ignored alike, recording nothing and returning a result flag that says
+so (CA 2026-10-18, one rule; § 9.6).</p>
+<p><strong>A recorded action clears the redo stack; an action that changes nothing records nothing and keeps
+it</strong> (CA 2026-10-18; § 12.3). v1&#x27;s <code>endSegment</code> keeps the redo stack and records an entry even when it
+changes nothing: a v1 defect (§ 16, 1).</p>
+<p><strong>Refusals apply at the action boundary only</strong> (decided 2026-10-18): a persisted timeline that already
+holds an entry v1 accepted and this page now refuses is replayed as v1 replayed it (§ 12.8).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="21-point">2.1 point<a href="#21-point" class="hash-link" aria-label="Direct link to 2.1 point" title="Direct link to 2.1 point" translate="no">​</a></h3>
+<p><strong>The facts.</strong> The winner, in either spelling. Optionally the server in either spelling,
+<code>serverParticipantId</code> (host metadata, recorded as given, never validated or derived), <code>scoreValue</code> (the
+point&#x27;s value where a segment counts points, § 5–6), <code>timestamp</code>, <code>observedServeSide</code> (<code>deuce</code> or <code>ad</code>,
+recorded beside the expected <code>serveSide</code>), the flags <code>penaltyPoint</code>, <code>wrongSide</code>, <code>wrongServer</code>, and
+any other field a host passes (<code>result</code>, <code>stroke</code>, <code>rallyLength</code>, <code>penaltyType</code>, annotations). Every
+supplied field is recorded and replayed (<code>replayLossless.test.ts</code>, &quot;S1: every recorded point input
+survives a rebuild&quot;).</p>
+<p><strong>Refused, before anything is written</strong> (<code>publicBoundary.test.ts</code>, &quot;S9: invalid input is refused before
+anything is written&quot;; <code>substitutionAndService.test.ts</code>, &quot;S7: an observed court half is a recorded
+input&quot;; <code>inputLevels.test.ts</code>):</p>
+<ol>
+<li class="">the format does not parse;</li>
+<li class=""><code>winner</code> not 0 or 1, <code>winningSide</code> not 1 or 2, <code>server</code> not 0 or 1, <code>serverSideNumber</code> not 1 or 2;</li>
+<li class="">the two spellings of the winner, or of the server, name different sides;</li>
+<li class=""><code>scoreValue</code> negative or not finite (zero is allowed);</li>
+<li class=""><code>observedServeSide</code> other than <code>deuce</code> or <code>ad</code>;</li>
+<li class="">the set in play takes no point input (a segment of outs, § 8);</li>
+<li class="">a <code>scoreValue</code> other than 1 where a point is not a unit: a segment whose points build games, and a
+combined total (§ 4.4, § 7; CA 2026-10-18);</li>
+<li class="">the segment the point is aimed at is closed: a timed segment ended level with no declared tiebreak
+(§ 6.4; CA 2026-10-18).</li>
+</ol>
+<p><strong>Ignored: accepted, and nothing is recorded</strong> (no point, no entry, no event, the redo stack kept;
+the result says it was ignored):</p>
+<ol>
+<li class="">a point that names no winner (<code>aCompletedMatchTakesCorrections.test.ts</code>, &quot;a point the scorer
+ignores records nothing&quot;);</li>
+<li class="">a point after the match is <code>COMPLETED</code> (every conformance file: &quot;a point after the match ends
+changes nothing&quot;; the corpus&#x27;s post-completion point in all 72 streams);</li>
+<li class="">in a non-aggregate exactly-N format, a point after all N sets are closed (<code>tiebreakSets</code>,
+&quot;HAL2X-S<!-- -->:TB11<!-- --> — a level count of halves&quot;);</li>
+<li class="">in a combined total, a point after the segment completes (<code>combinedTotals</code>, &quot;a rally after the total
+changes nothing&quot;). A point whose <code>scoreValue</code> is not 1 there is refused (rule 7), not ignored;
+v1 ignores it silently, a v1 defect (§ 16, 9).</li>
+</ol>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="22-game">2.2 game<a href="#22-game" class="hash-link" aria-label="Direct link to 2.2 game" title="Direct link to 2.2 game" translate="no">​</a></h3>
+<p>Adds one game (or unit) to the open set for the side <code>winner</code> names, creating the next set when the
+last one has a winner. A game in progress point by point is abandoned: its points stay on the
+history, and the set&#x27;s next point opens a new game at 0-0 (a game that wins the set opens none, as a
+point that wins it opens none: SE2a-D3b, CA 2026-10-21) (<code>getEpisodesInterruptedGames.test.ts</code>,
+&quot;credits an interrupted game to no point&quot;). A <code>tiebreakScore</code> is stored as the set&#x27;s tiebreak points.
+The set is then judged by its segment&#x27;s rule (§ 4.2) and the match by § 9. In a timed segment a game
+is a unit of its score (§ 6.2).</p>
+<ul>
+<li class=""><strong>Refused</strong> (CA 2026-10-18, § 2): <code>winner</code> not 0 or 1, a <code>tiebreakScore</code> that is not two
+non-negative integers, a format that does not parse, a closed segment (§ 6.4).</li>
+<li class=""><strong>Ignored</strong> after the match is <code>COMPLETED</code>, as a point is (§ 9.6).</li>
+<li class=""><strong>In a tiebreak-only segment</strong> a game is the segment won 1-0, with <code>tiebreakScore</code> as its points,
+checked against the race to n (§ 5).</li>
+</ul>
+<p>v1 validates no field of a game, applies it to a match already <code>COMPLETED</code> and to a timed segment
+already closed level, and counts a game in a tiebreak-only segment as one of its points: v1 defects
+(§ 16, 4, 5, 10, 11).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="23-set">2.3 set<a href="#23-set" class="hash-link" aria-label="Direct link to 2.3 set" title="Direct link to 2.3 set" translate="no">​</a></h3>
+<p><strong>A set total is judged by its segment&#x27;s rule</strong> (CA 2026-10-18):</p>
+<ol>
+<li class="">a total the rule calls finished is recorded with the winner the rule gives it (6-4, 7-6 with a
+tiebreak, 7-5; for outs the side with more);</li>
+<li class="">an explicit <code>winningSide</code> that contradicts the rule is refused: one naming the loser of a total the
+rule calls finished (6-4 given to side 2), or a side that is behind. On a total the rule does not
+call finished, an explicit <code>winningSide</code> for the side ahead is accepted: it is a set-level mercy or
+manual end (§ 2.4);</li>
+<li class="">a total the rule does not call finished, given with no winner, is recorded as the set in play, open
+(3-1 in a set to six), not refused: the courthive-components inline scorer ignores refusals, so a
+refusal would lose the input. In a tiebreak-only segment that total is the race&#x27;s running points,
+the game in play (§ 5 rule 1), as a baseline reads it: <code>SET3-S:TB11</code> 11-10 is <code>[0, 0]</code> with the game
+in play at 11-10, and the next point plays on from it (SE2a-D13, CA 2026-10-21);</li>
+<li class="">a timed segment&#x27;s total is a finished segment: the side with more wins it, and a level one follows
+§ 9.7 (or its declared tiebreak, § 6.4).</li>
+</ol>
+<p><strong>A total entered while a set is in play closes that set</strong> (CA 2026-10-18): a scorer who scored part
+of a set point by point or game by game, then lost track, declares the set&#x27;s total and keeps scoring.
+The open set takes the declared total and its winner, judged by the rules above; the points and games
+already recorded in it stay on the history; scoring continues in the next set. Mixed entry (games then
+points, points then a total) behaves the same way (<code>aSetTotalClosesTheSetInPlay.test.ts</code>). Undoing the
+total restores the set as it was. v1 appended the total as a new set beside the open one.</p>
+<p>A set with a winner triggers § 9. This is the only input a segment of outs takes (§ 8). In a
+combined total the set is the one segment, validated by § 7. <strong>No set beyond N</strong> in an exactly format:
+a set total after the N sets, like one after <code>COMPLETED</code>, is ignored (§ 9.2, § 9.6).</p>
+<p>v1 infers a winner from any unequal total, whether or not the segment&#x27;s rule would call the set
+finished (<code>SET3-S:6/TB7</code>: 3-1 and 2-0 complete the match), and records sets after the match is
+complete and past N in an exactly format: v1 defects (§ 16, 5, 6, 7).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="24-endsegment">2.4 endSegment<a href="#24-endsegment" class="hash-link" aria-label="Direct link to 2.4 endSegment" title="Direct link to 2.4 endSegment" translate="no">​</a></h3>
+<p><strong><code>endSegment</code> ends timed segments only</strong> (CA 2026-10-18): the timed segment in play, or the one
+<code>setNumber</code> names, by § 6.4. It is refused on any other segment kind, and when there is no timed segment
+to end. Other ways to stop are not this action:</p>
+<ul>
+<li class="">a set-level mercy or manual end is <code>addSet</code> with an explicit <code>winningSide</code> (§ 2.3);</li>
+<li class="">a match-level stop is a <code>matchUpStatus</code> (<code>RETIRED</code>, <code>ABANDONED</code>, <code>DEFAULTED</code>), set outside scoring.</li>
+</ul>
+<p><code>reason</code> is a free host string, recorded and never interpreted (epixodic sends <code>bolt_expired</code>); the
+type widens from <code>&#x27;time&#x27; | &#x27;mercy&#x27; | &#x27;manual&#x27;</code> to <code>string</code>. v1 accepts <code>endSegment</code> on any segment kind
+(closing a <code>SET3-S:6/TB7</code> set at 2-1, and a <code>SET3-S:TB11</code> set at 5-3 as level 0-0): a v1 defect
+(§ 16, 2). A persisted non-timed <code>endSegment</code> entry replays as v1 replayed it (§ 12.8).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="25-setinitialscore">2.5 setInitialScore<a href="#25-setinitialscore" class="hash-link" aria-label="Direct link to 2.5 setInitialScore" title="Direct link to 2.5 setInitialScore" translate="no">​</a></h3>
+<p>A late-start baseline: the sets already played (each with its winner, or one inferred), the set in
+play&#x27;s games, and the game in play&#x27;s points. It replaces the score as it stands and makes the matchUp
+<code>IN_PROGRESS</code>. It is a timeline action: a rebuild replays it where it was set, it survives <code>setState</code>
+alone, and <code>undo</code> removes it (<code>replayLossless.test.ts</code>, &quot;S2: a late-start baseline survives reload and
+is part of the timeline&quot;).</p>
+<p><strong>The baseline&#x27;s rules</strong> (CA 2026-10-18):</p>
+<ol>
+<li class="">Its sets are judged by their segment rule, as <code>addSet</code> judges a total (§ 2.3): 6-5 is not won; the
+final set is the one the deciding-set rule of § 3.2 names, read from the score; a tiebreak-only set
+is read from its points (1-0 with 11-9 is won).</li>
+<li class="">A baseline that decides the match completes it (6-0 6-0 in a best of three is <code>COMPLETED</code>).</li>
+<li class="">An unfinished last set is the set in play. In a tiebreak-only segment its total is the race in play,
+so a <code>currentGameScore</code> given beside it names that race&#x27;s points twice and is refused (SE2a-D14, CA
+2026-10-21: the cleaner rule). A stored baseline v1 took so replays as v1 replayed it, from the
+total, flagged as a legacy shape (§ 12.8).</li>
+<li class="">A supplied <code>server</code> is honoured: it is recorded as a <code>setServer</code> at the baseline&#x27;s position
+(§ 10.6).</li>
+<li class="">A second baseline is refused once the timeline holds scoring entries; a correction uses
+<code>editPoint</code>/<code>removePoint</code> or <code>undo</code> (§ 12.3–12.4).</li>
+<li class=""><code>matchUpStatus</code> and <code>winningSide</code> given beside the sets are checked for consistency with them, and
+refused only when they disagree, not as unknown fields.</li>
+</ol>
+<p>v1 judges a set won when it &quot;reached setTo and ahead&quot; (so 6-5 is won), reads the final set by position,
+never infers a tiebreak-only set, does not complete a decided match, lets a second baseline replace the
+whole score (including games scored since) and ignores <code>server</code>: v1 defects (§ 16, 8).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="26-setserver">2.6 setServer<a href="#26-setserver" class="hash-link" aria-label="Direct link to 2.6 setServer" title="Direct link to 2.6 setServer" translate="no">​</a></h3>
+<p>Names the side due to serve the next point; § 10.6 states what it does to the derivation. A side not
+0 or 1 is refused (§ 2).</p>
+<p><strong>A server correction survives undo and rebuild</strong> (CA 2026-10-18). With <code>recordEntry: false</code> it is not
+an action of its own: it is recorded <strong>attached to the preceding entry</strong>, replayed with it, and undone
+with it, so undoing that point removes the correction too. <strong>With nothing before it</strong> it is the match&#x27;s
+<strong>initial server</strong> (CA 2026-10-21, SE3-E1): kept on the record as <code>history.initialServer</code>, not on the
+timeline, so every rebuild and reload starts from it, and <code>reset</code> clears it. v1 changed the orientation
+without a record, and the next rebuild lost it (<code>SET3-S:6/TB7</code>: servers 1, 1, then after one undo the surviving point&#x27;s
+server is 0); INTENNSE re-applies it after every point and still shows the wrong server after an undo:
+a live v1 defect (§ 16, 16).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="27-substitution-and-the-advisory-rules-s6">2.7 substitution and the advisory rules (S6)<a href="#27-substitution-and-the-advisory-rules-s6" class="hash-link" aria-label="Direct link to 2.7 substitution and the advisory rules (S6)" title="Direct link to 2.7 substitution and the advisory rules (S6)" translate="no">​</a></h3>
+<p>Replaces <code>outParticipantId</code> with <code>inParticipantId</code> in the side&#x27;s lineUp, from the next point on.
+Points already played keep the players recorded on them (§ 11.1). Refused with a result, recording
+nothing and keeping the redo stack: <code>SAME_PARTICIPANT</code>, <code>NO_LINEUP</code> (the side has none),
+<code>OUT_NOT_ON_SIDE</code>, <code>IN_ALREADY_ON_COURT</code> (on either side). A history recorded before these refusals
+replays as it was (<code>substitutionAndService.test.ts</code>, &quot;S6: substitute checks who is on court and says
+what it did&quot;).</p>
+<p><strong>The competition&#x27;s substitution rules are advisory</strong> (CA 2026-10-17). A substitution is never refused
+by them: a required substitution (a player out of time, a penalty removal) is the host&#x27;s to allow.
+<code>evaluateSubstitution()</code> reports what a substitution made now would break: <code>NOT_ALLOWED</code>
+(<code>allowed: false</code>), <code>MAX_PER_MATCHUP</code>, <code>MAX_PER_SEGMENT</code> (counted in the set in play; an event recorded
+before <code>setNumber</code> existed is placed by the point it preceded), <code>TIMING</code> (<code>BETWEEN_GAMES</code> while a game
+has points in it), and <code>MATCHUP_TYPE</code>. Roster sizes and other timings are not reported
+(<code>substitutionAndService.test.ts</code>, &quot;S6: the competition rules are advisory&quot;).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="28-challenge-and-annotation">2.8 challenge and annotation<a href="#28-challenge-and-annotation" class="hash-link" aria-label="Direct link to 2.8 challenge and annotation" title="Direct link to 2.8 challenge and annotation" translate="no">​</a></h3>
+<p><strong>Challenges and annotations are versioned timeline actions that change no score</strong> (CA 2026-10-18).
+A <code>challenge</code> records the side that challenged (<code>sideNumber</code>) and any host fields; an <code>annotation</code>
+records host data. Neither changes the score, the server or any view of the score; both are replayed
+in place and kept through every rebuild. <strong><code>undo</code> takes back whatever was recorded last</strong>, a challenge
+or an annotation included: it does not skip them (CA 2026-10-18). v2 reads v1&#x27;s raw entries,
+<code>{ type: &#x27;challenge&#x27;, data: { sideNumber } }</code> as epixodic writes them (#404(epixodic)), unchanged, as
+<code>challenge</code> actions (§ 12.6). v1 has no such action: the host writes the entry itself, a rebuild keeps
+it without replaying it, and <code>undo</code> pops it, which is already the rule.</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="29-what-is-not-an-action">2.9 What is not an action<a href="#29-what-is-not-an-action" class="hash-link" aria-label="Direct link to 2.9 What is not an action" title="Direct link to 2.9 What is not an action" translate="no">​</a></h3>
+<ul>
+<li class=""><strong>Corrections</strong> are edits of the timeline, not new actions: <code>editPoint</code>, <code>removePoint</code>,
+<code>decoratePoint</code> (§ 12.4), and <code>undo</code>/<code>redo</code> (§ 12.3).</li>
+<li class=""><strong><code>setLineUp</code></strong> sets a side&#x27;s lineUp and its initial snapshot, outside the timeline.</li>
+<li class=""><strong><code>reset</code></strong> starts a new matchUp with the same format and identity: no history, no redo, no lineUps.</li>
+<li class=""><strong><code>markHardBoundary</code></strong> is a deprecated annotation, removed at the next major; a rebuild discards it
+(<code>inputLevels.test.ts</code>, &quot;S8: a hard boundary is an annotation&quot;).</li>
+<li class=""><strong>A match-level stop</strong> (<code>RETIRED</code>, <code>ABANDONED</code>, <code>DEFAULTED</code>) is a <code>matchUpStatus</code>, not a scoring
+action (§ 2.4).</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="3-format-resolution-the-rule-for-set-n">3. Format resolution: the rule for set n<a href="#3-format-resolution-the-rule-for-set-n" class="hash-link" aria-label="Direct link to 3. Format resolution: the rule for set n" title="Direct link to 3. Format resolution: the rule for set n" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="31-the-match">3.1 The match<a href="#31-the-match" class="hash-link" aria-label="Direct link to 3.1 The match" title="Direct link to 3.1 The match" translate="no">​</a></h3>
+<ul>
+<li class=""><strong>Best of N</strong> (<code>SET3</code>, <code>MAP5</code>, …): the first side to win a majority of N sets, ⌊N/2⌋ + 1, wins (for odd N
+that is ⌈N/2⌉; an even N can end level, § 9.7; SE2a-D7, CA 2026-10-21). <code>SET1X</code> and <code>SET1XA</code> read as
+best of one (exactly one set is best of one).</li>
+<li class=""><strong>Exactly N</strong> (<code>X</code>): all N sets are played; a lead is not a win (§ 9.2).</li>
+<li class=""><strong>Aggregate</strong> (<code>A</code>): every set is played and the total across them decides; sets won are not
+consulted (§ 9.3). With <code>X</code> it is exactly N plus a decider (§ 9.4).</li>
+<li class=""><strong>Standalone</strong> (<code>T{minutes}</code>, <code>T{minutes}P</code>): one timed segment, best of one.</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="32-which-format-governs-a-set">3.2 Which format governs a set<a href="#32-which-format-governs-a-set" class="hash-link" aria-label="Direct link to 3.2 Which format governs a set" title="Direct link to 3.2 Which format governs a set" translate="no">​</a></h3>
+<p>The ordinary format (<code>-S:</code>) governs every set except the one the final-segment format (<code>-F:</code>) governs:</p>
+<ol>
+<li class=""><strong>best of N</strong>: the set played with both sides one set from winning (the deciding set), read from
+the score, <strong>and set N whatever the count when it starts</strong> (CA 2026-10-18): a timed segment closed
+level wins no set, so <code>SET3-S:T10-F:T10/TB7</code> can reach set three at one set to love, and set three
+still plays its declared <code>/TB7</code> (<code>timedSegments</code>, &quot;the final set is set N&quot;). v1 read the score only;</li>
+<li class=""><strong>exactly N, not aggregate</strong>: set N, by number, whatever the count before it
+(<code>timedSegments</code>, &quot;SET4X-S:T20P-F<!-- -->:T20<!-- --> — the fourth segment is scored in games … and must be played&quot;);</li>
+<li class=""><strong>exactly N, aggregate</strong>: set N + 1, the decider, and never one of the N (§ 9.4;
+<code>aggregateSegments</code>, &quot;the -F: format does not govern set three&quot;).</li>
+</ol>
+<p>Every rule below, and <strong>every view</strong> (§ 11), reads the format governing the set in play and the
+match&#x27;s completion rule (CA 2026-10-18). Scoring, the score situation, points-to, the scoreboard, server
+derivation, the events and the input levels must agree on it: one predicate decides whether a standard
+set is in its tiebreak (<code>tiebreakServiceOrder.test.ts</code>, &quot;isStandardSetTiebreak&quot;;
+<code>noTiebreakIsNoTiebreak.test.ts</code>). v1&#x27;s scoreboard reads the ordinary format instead: a v1 defect
+(§ 16, 13).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="33-segment-kinds">3.3 Segment kinds<a href="#33-segment-kinds" class="hash-link" aria-label="Direct link to 3.3 Segment kinds" title="Direct link to 3.3 Segment kinds" translate="no">​</a></h3>
+<p>A set format is exactly one kind, recognised in this order:</p>
+<table><thead><tr><th>kind</th><th>written</th><th>point</th><th>game</th><th>set</th><th>rules</th></tr></thead><tbody><tr><td>combined total</td><td><code>P{n}</code>, <code>P{n}DP</code>, <code>P{n}WB{m}</code></td><td>yes</td><td>no</td><td>yes</td><td>§ 7</td></tr><tr><td>outs</td><td><code>O{n}</code></td><td>no</td><td>no</td><td>yes</td><td>§ 8</td></tr><tr><td>timed</td><td><code>T{minutes}[P|G][/TB{n}][@{modifier}]</code></td><td>yes</td><td>yes</td><td>yes</td><td>§ 6</td></tr><tr><td>tiebreak-only</td><td><code>TB{n}[NOAD][@RALLY]</code></td><td>yes</td><td>yes</td><td>yes</td><td>§ 5</td></tr><tr><td>standard</td><td><code>{setTo}[NOAD][WB{n}][/TB{n}[NOAD]][@N]</code></td><td>yes</td><td>yes</td><td>yes</td><td>§ 4</td></tr></tbody></table>
+<p>The input levels are reported by <code>getInputLevels()</code> for the set in play, and <code>addPoint</code> and <code>addGame</code>
+refuse what it reports unavailable (S4; <code>inputLevels.test.ts</code>). <strong>A parser-valid format is not a
+promise of a point model</strong>: a kind with no point model refuses point input rather than scoring it as
+another sport.</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="34-roots-modifiers-and-the-clock">3.4 Roots, modifiers and the clock<a href="#34-roots-modifiers-and-the-clock" class="hash-link" aria-label="Direct link to 3.4 Roots, modifiers and the clock" title="Direct link to 3.4 Roots, modifiers and the clock" translate="no">​</a></h3>
+<ul>
+<li class=""><strong>The root changes nothing about a set&#x27;s rules</strong>, with one exception: whether points build games in a
+timed set (§ 6.2). Exactly N (<code>X</code>) is a format on every root and every kind of set (CA 2026-10-25): the
+grammar refused it on a <code>SET</code> root unless a segment was timed, so <code>SET3X-S:6/TB7</code> scores as <code>INN3X-S:6/TB7</code>. <code>FRM7-S:TB11</code> scores as <code>SET7-S:TB11</code>, and <code>INN3X-S:6/TB7</code>&#x27;s sets take their
+tiebreak at six all (<code>tiebreakSets</code>, &quot;FRM7-S<!-- -->:TB11<!-- -->&quot;; <code>timedSegments</code>, &quot;exactly | INN | standard(tiebreak)&quot;).</li>
+<li class=""><strong>An unknown match modifier is kept, not scored</strong>: <code>SET3Z-S:6/TB7</code> plays as <code>SET3-S:6/TB7</code>
+(<code>finalSegments</code>, &quot;unknownModifiers&quot;).</li>
+<li class=""><strong>A match clock (<code>-M:T{minutes}</code>) is the host&#x27;s to keep</strong> and changes no scoring (<code>standardSets</code>,
+&quot;-M<!-- -->:T60<!-- --> — a match clock is the host’s to keep&quot;). So is a timed segment&#x27;s clock: only <code>endSegment</code>
+closes one.</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="35-the-game-format">3.5 The game format<a href="#35-the-game-format" class="hash-link" aria-label="Direct link to 3.5 The game format" title="Direct link to 3.5 The game format" translate="no">​</a></h3>
+<p><code>-G:</code> is match-level and governs every game built from points in every segment:</p>
+<ul>
+<li class=""><code>-G:TN</code> (or absent): a traditional game (§ 4.1).</li>
+<li class=""><code>-G:TN{n}D</code>: a traditional game whose n-th deuce is decided by the next point (§ 4.1).</li>
+<li class=""><code>-G:{n}C</code>: a game won by the first side to win n points in a row (§ 4.1).</li>
+</ul>
+<p>It never governs a tiebreak (§ 4.3, § 5). <strong>In a timed set whose points build games</strong> (§ 6.2 rule 2)
+the games are of the declared game format, a consecutive-points format included (CA 2026-10-18); v1
+builds traditional games there, a v1 defect (§ 16, 19).</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="4-standard-sets">4. Standard sets<a href="#4-standard-sets" class="hash-link" aria-label="Direct link to 4. Standard sets" title="Direct link to 4. Standard sets" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="41-the-game">4.1 The game<a href="#41-the-game" class="hash-link" aria-label="Direct link to 4.1 The game" title="Direct link to 4.1 The game" translate="no">​</a></h3>
+<p>A game is played point by point to one of these rules (Rules of Tennis, Rule 5; Appendix VI):</p>
+<ol>
+<li class=""><strong>Traditional</strong>: the first side to four points, two clear; from 40-40 a side needs two points in
+a row (<code>standardSets</code>, &quot;Rule 5: from deuce a game needs two consecutive points&quot;).</li>
+<li class=""><strong>No-Ad</strong> (<code>NOAD</code> on the set): at 40-40 the next point wins the game (<code>advantageAndShortSets</code>,
+&quot;SET3-S:6NOAD&quot;). No-Ad changes the game, never the set&#x27;s margin or the tiebreak
+(<code>tiebreakSetVariants</code>, &quot;No-Ad games do not make it sudden death&quot;).</li>
+<li class=""><strong>Deuce cap</strong> <code>TN{n}D</code>: deuce k is k + 2 points all; from the n-th deuce the next point wins the game,
+and before it an advantage converted wins as usual. <code>TN1D</code> is a golden point at the first deuce;
+<code>TN3D</code> is padel&#x27;s star point (<code>tiebreakSetVariants</code>, &quot;the star point&quot;).</li>
+<li class=""><strong>Consecutive</strong> <code>{n}C</code>: the first side to win n points in a row wins the game; a point to the other
+side starts the run again, and alternating points never finish a game (<code>advantageAndShortSets</code>,
+&quot;TYPTI&quot;).</li>
+</ol>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="42-the-set">4.2 The set<a href="#42-the-set" class="hash-link" aria-label="Direct link to 4.2 The set" title="Direct link to 4.2 The set" translate="no">​</a></h3>
+<p>With <code>setTo</code> S, margin W (<code>WB{n}</code>, default 2) and, when declared, a tiebreak at T games all (<code>@T</code>,
+default S):</p>
+<ol>
+<li class=""><strong>Without a tiebreak</strong> (an advantage set): the first side to S games with a lead of W wins the set;
+there is no tiebreak at any score (<code>advantageAndShortSets</code>, &quot;an advantage set plays on past six all&quot;;
+<code>noTiebreakIsNoTiebreak.test.ts</code>). <code>WB1</code> is first to S outright (<code>advantageAndShortSets</code>,
+&quot;win-by-one sets&quot;). The grammar refuses <code>WB</code> beside a tiebreak.</li>
+<li class=""><strong>With a tiebreak</strong>: at T games all a tiebreak game is played, and its winner takes the set by
+T + 1 to T. Otherwise the first side to S games with a lead of two wins the set: 6-4, and 7-5 from
+6-5 (<code>standardSets</code>, &quot;Rule 6: at 6-5 there is no tie-break; 7-5 wins the set&quot;).</li>
+<li class=""><strong>An early tiebreak</strong> (T &lt; S): at T all the tiebreak decides; <code>SET3-S:4/TB5@3</code> is 4-2 or 4-3
+(<code>tiebreakSetVariants</code>, &quot;short sets, tie-break at three all&quot;). <strong>A late tiebreak</strong> (T &gt; S): from S all
+the set plays on as an advantage set until T all (<code>tiebreakSetVariants</code>, &quot;a late tie-break&quot;).</li>
+<li class=""><strong>The one-game set</strong> (<code>S:1/TB7</code>): Rule 6 at S = 1. One game won is not a set without a margin of
+two; 2-0 is; at one game all the declared tiebreak decides, 2-1 (CA 2026-10-17: &quot;Rule 6: margin of
+two&quot;; <code>tiebreakSetVariants</code>, &quot;the one-game set by Rule 6&quot;).</li>
+</ol>
+<p><strong>A tiebreak below S − 1</strong> (<code>@T</code> with T &lt; S − 1) is refused at validation for a new format
+(CA 2026-10-18): the set would close below S without a tiebreak. v1&#x27;s rule (&quot;a side has T + 1 games&quot;)
+is the rule only when T ≥ S − 1; a persisted format with such a tiebreak replays by v1&#x27;s rule
+(§ 12.8). v1&#x27;s grammar accepts the code: a v1 change (§ 16, 19).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="43-the-tiebreak-game">4.3 The tiebreak game<a href="#43-the-tiebreak-game" class="hash-link" aria-label="Direct link to 4.3 The tiebreak game" title="Direct link to 4.3 The tiebreak game" translate="no">​</a></h3>
+<p>A tiebreak to n is won by the first side to n points with the tiebreak margin: <strong>one when it is No-Ad
+(<code>TB{n}NOAD</code>) or when its target is one (<code>TB1</code>, sudden death, CA 2026-10-17), two otherwise</strong> (Rule
+5(b); <code>tiebreakMargin.test.ts</code>). One rule decides the margin for scoring, points-to, score entry and
+the validators. It is scored point by point whatever the game format: a deuce cap or a
+consecutive-points game does not reach it (<code>tiebreakSetVariants</code>, &quot;the cap governs games, not the
+tie-break&quot;; &quot;the tie-break at four all scores point by point&quot;). It is recorded on the set as one more
+game for its winner plus both sides&#x27; tiebreak points: <code>[7, 6, [7, 0]]</code>.</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="44-point-values">4.4 Point values<a href="#44-point-values" class="hash-link" aria-label="Direct link to 4.4 Point values" title="Direct link to 4.4 Point values" translate="no">​</a></h3>
+<p><strong>A <code>scoreValue</code> other than 1 is refused where a point is not a unit</strong> (CA 2026-10-18): in a segment
+whose points build games, a point is one point of a game. A configured multiplier applies only to a
+segment scored in units (§ 5 rule 5, § 6.2 rules 1 and 3); in a game-building segment it is not
+consulted. v1 records the value on the point and ignores it (<code>SET3-S:6/TB7</code>: two points of value 2 are
+30-0): a v1 defect (§ 16, 9).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="45-the-final-set">4.5 The final set<a href="#45-the-final-set" class="hash-link" aria-label="Direct link to 4.5 The final set" title="Direct link to 4.5 The final set" translate="no">​</a></h3>
+<p>The final-set format replaces the ordinary one in the set § 3.2 names and is scored by its own kind:
+an advantage final set (<code>-F:6</code>), a final tiebreak to ten (<code>-F:6/TB10</code>), a late final tiebreak
+(<code>-F:6/TB7@12</code>), a match tiebreak in lieu of the final set (<code>-F:TB10</code>, § 5), a sudden-death one
+(<code>-F:TB10NOAD</code>), a timed final (<code>-F:T20</code>, <code>-F:T20P</code>, § 6) and a final of outs (<code>-F:O3</code>, § 8)
+(<code>standardSets</code>, &quot;final sets that differ from the ordinary set&quot;; <code>finalSegments</code>). A match won before
+the final set never consults its format (<code>tiebreakSets</code>, &quot;the final-set format is never reached&quot;).</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="5-tiebreak-only-segments">5. Tiebreak-only segments<a href="#5-tiebreak-only-segments" class="hash-link" aria-label="Direct link to 5. Tiebreak-only segments" title="Direct link to 5. Tiebreak-only segments" translate="no">​</a></h2>
+<p>A tiebreak-only set (<code>S:TB{n}</code>, or <code>F:TB{n}</code> as a match tiebreak) is one game: a race to n points with
+the tiebreak margin of § 4.3. It is how pickleball, squash, table tennis, badminton, volleyball and
+esports maps write a game.</p>
+<ol>
+<li class=""><strong>While in play</strong> the set records no game won (<code>[0, 0]</code>); its running points are the game in play
+(<code>side1GameScores</code>/<code>side2GameScores</code>), not tiebreak points.</li>
+<li class=""><strong>Won</strong>, it records a game won 1-0 and its points as tiebreak points: 11-9 is <code>[1, 0, [11, 9]]</code>
+(CODES; <code>tiebreakSets</code>, how a tiebreak-only set is recorded).</li>
+<li class=""><strong>Every point given counts.</strong> The engine does not model side-out: without <code>@RALLY</code> it scores every
+point it is given (decided 2026-10-17), and a host recording side-out pickleball adds only the
+points the serving side won (<code>tiebreakSets</code>, &quot;every point given counts&quot;; § 13).</li>
+<li class=""><strong><code>@RALLY</code></strong> changes service only (§ 10.4): every rally scores whoever served, which is already rule 3.</li>
+<li class=""><strong>A point&#x27;s value counts</strong>: a point adds its <code>scoreValue</code>, or its multiplier&#x27;s value, or 1.</li>
+</ol>
+<p>The race to n is pinned for USA Pickleball Rule 4, World Squash Rule 2, ITTF Laws 2.11–2.12, BWF Law 7
+(the 30-point cap is not expressible in <code>TB21</code>), FIVB Rule 6 and VALORANT maps (<code>tiebreakSets</code>).
+<strong>A game given as game input</strong> in a tiebreak-only segment is the segment won 1-0, with <code>tiebreakScore</code>
+as its points, checked against the race to n (11-9 is accepted for <code>TB11</code>, 11-10 is refused); the
+input levels keep offering game there (CA 2026-10-18). v1 adds one point toward the target, so
+<code>SET3-S:TB11</code> needs eleven <code>addGame</code> calls for a set: a v1 defect (§ 16, 11).</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="6-timed-segments">6. Timed segments<a href="#6-timed-segments" class="hash-link" aria-label="Direct link to 6. Timed segments" title="Direct link to 6. Timed segments" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="61-no-target-time-closes-a-segment">6.1 No target: time closes a segment<a href="#61-no-target-time-closes-a-segment" class="hash-link" aria-label="Direct link to 6.1 No target: time closes a segment" title="Direct link to 6.1 No target: time closes a segment" translate="no">​</a></h3>
+<p>A timed segment (<code>T{minutes}</code>) has no game or point target. Points and games accumulate and never
+close it; only <code>endSegment</code> does (<code>timedSegments</code>, &quot;a timed set has no game target&quot;). The clock is the
+host&#x27;s (§ 3.4).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="62-what-a-point-builds">6.2 What a point builds<a href="#62-what-a-point-builds" class="hash-link" aria-label="Direct link to 6.2 What a point builds" title="Direct link to 6.2 What a point builds" translate="no">​</a></h3>
+<ol>
+<li class=""><strong>Points-based</strong> (<code>T{minutes}P</code>): a point adds its value (its <code>scoreValue</code>, or its multiplier&#x27;s
+value, or 1) to its side&#x27;s segment score.</li>
+<li class=""><strong>Games-based under the SET root, not aggregate, not standalone</strong> (<code>SET3-S:T10</code>,
+<code>SET3-S:T10-G:TN3D</code>): a tennis-family timed set. Points build traditional games by the match&#x27;s game
+format (§ 3.5), and the segment counts games (CA 2026-10-17: &quot;Points build games&quot;;
+<code>timedSegments</code>, &quot;timed sets: games from points&quot;). A point&#x27;s value does not apply (§ 4.4).</li>
+<li class=""><strong>Games-based anywhere else</strong>: under another root (<code>HAL2A-S:T45</code>, <code>QTR4A-S:T12</code>), standalone
+(<code>T90</code>), or in an aggregate format (<code>SET2XA-S:T10</code>), a point is one of the sport&#x27;s own units (a goal,
+a basket, an INTENNSE bolt&#x27;s point) and adds its value to the segment score.</li>
+</ol>
+<p>A game given as game input adds one game (rule 2) or one unit (rules 1 and 3).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="63-modifiers">6.3 Modifiers<a href="#63-modifiers" class="hash-link" aria-label="Direct link to 6.3 Modifiers" title="Direct link to 6.3 Modifiers" translate="no">​</a></h3>
+<p><code>@RALLY</code> on a timed segment changes no scoring: every point already scores (<code>timedSegments</code>,
+&quot;SET3-S<!-- -->:T20<!-- -->@RALLY&quot;).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="64-the-end-of-a-segment">6.4 The end of a segment<a href="#64-the-end-of-a-segment" class="hash-link" aria-label="Direct link to 6.4 The end of a segment" title="Direct link to 6.4 The end of a segment" translate="no">​</a></h3>
+<p><code>endSegment</code> closes the segment in play:</p>
+<ol>
+<li class=""><strong>One side ahead</strong>: that side wins the segment (<code>timedSegments</code>, &quot;when time is up the side with more
+games wins the segment&quot;).</li>
+<li class=""><strong>Level, with a declared tiebreak</strong> (<code>T{minutes}/TB{n}</code>, &quot;a tiebreak if level at time&quot;): the segment
+stays open and a tiebreak to n with the margin of § 4.3 is played; points go to it, <code>endSegment</code>
+during it is ignored, and its winner takes the segment by one more game (or point, or unit), with the
+tiebreak points recorded: level 1-1 and won 7-0 is <code>[2, 1, [7, 0]]</code> (CA 2026-10-17: &quot;Play the
+tiebreak&quot;; <code>timedSegments</code>, &quot;level at time, a tiebreak to seven decides the segment&quot;;
+<code>timedSetTiebreak.test.ts</code>). <code>TB1</code> is one sudden-death point.</li>
+<li class=""><strong>Level, with no tiebreak</strong>: the segment is closed without a winner. In an aggregate format its total
+still counts (§ 9.3). Elsewhere a level segment is played and counts toward the sets played, and the
+match follows § 9.7: no segment the format did not declare is played after it (CA 2026-10-18).</li>
+</ol>
+<p><strong>A closed segment takes no input</strong> (CA 2026-10-18): a point, game or set total aimed at it is refused,
+and a second <code>endSegment</code> on it is refused. v1&#x27;s <code>addGame</code> ignores the closed mark, adds to the level
+segment and lets <code>endSegment</code> re-close it with a winner (<code>SET3-S:T10</code>: games 1-1, end, game, end gives
+set one 2-1): a v1 defect (§ 16, 4).</p>
+<p>Ahead at time, a segment that declares a tiebreak plays none (<code>timedSegments</code>, <code>T{minutes}P/TB{points}</code>).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="65-recorded-shape">6.5 Recorded shape<a href="#65-recorded-shape" class="hash-link" aria-label="Direct link to 6.5 Recorded shape" title="Direct link to 6.5 Recorded shape" translate="no">​</a></h3>
+<p>A timed set carries <code>isTimed</code>, its score in games or units, and <code>segmentComplete</code> once closed. A
+tiebreak at time adds tiebreak points as § 4.3 records them.</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="7-combined-totals">7. Combined totals<a href="#7-combined-totals" class="hash-link" aria-label="Direct link to 7. Combined totals" title="Direct link to 7. Combined totals" translate="no">​</a></h2>
+<p><code>SET1-S:P{n}</code> is one segment of rally points that ends when both sides&#x27; points total n (Americano,
+Mexicano). The grammar admits it only as the single segment of a SET-root best of one, with no final,
+game format, modifier or clock.</p>
+<ol>
+<li class=""><strong>A rally adds one point</strong> to its winner. A <code>scoreValue</code> other than 1 is refused (CA 2026-10-18,
+§ 2.1); v1 ignores such a point silently, a v1 defect (§ 16, 9).</li>
+<li class=""><strong>Below n</strong> the segment is open. <strong>At n</strong>, an unequal result is complete with a winner, under every
+variant (<code>combinedTotals</code>, &quot;an unequal result at 32 rallies is complete with a winner&quot;).</li>
+<li class=""><strong>A tie at n</strong> (only an even n can tie):<!-- -->
+<ul>
+<li class=""><code>P{n}</code> (ALLOW): complete, with no winner. The matchUp is <code>COMPLETED</code> without <code>winningSide</code>, and
+<code>onMatchTie</code> fires instead of <code>onMatchComplete</code> (<code>combinedTotals</code>, &quot;16–16 is a completed tie
+without a winner&quot;).</li>
+<li class=""><code>P{n}DP</code>: one deciding rally (<code>combinedTotals</code>, &quot;a tie takes one deciding rally&quot;).</li>
+<li class=""><code>P{n}WB{m}</code>: play continues until a lead of exactly m (<code>combinedTotals</code>, &quot;a tie plays on to a
+two-point margin&quot;).</li>
+</ul>
+</li>
+<li class=""><strong>After completion</strong> a rally changes nothing (§ 2.1).</li>
+<li class=""><strong>Input levels</strong>: points and the segment&#x27;s total (<code>addSet</code>, validated, one segment only); never a
+game, never <code>endSegment</code>. A baseline (<code>setInitialScore</code>) is validated the same way and has no game
+score (<code>combinedTotals</code>, &quot;input levels&quot;).</li>
+<li class=""><strong>Service</strong>: none is derived; supply the server (§ 10.4).</li>
+</ol>
+<p>A total that no play can reach is invalid: above n is reachable only from an even tie, at most one
+rally past it for <code>DP</code>, and never past a lead of m for <code>WB{m}</code>.</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="8-outs-refused">8. Outs: refused<a href="#8-outs-refused" class="hash-link" aria-label="Direct link to 8. Outs: refused" title="Direct link to 8. Outs: refused" translate="no">​</a></h2>
+<p>A segment of outs (<code>O{n}</code>: innings, halves) has no point or game model here. <strong>Point and game input is
+refused, before anything is written; it is scored with set totals</strong> (<code>addSet</code>: an inning&#x27;s runs), the
+side with more winning the set (S4, #5518). A final set of outs refuses points only once it is the set
+in play: the ordinary sets before it score by the point (<code>finalSegments</code>, &quot;a final set of outs refuses
+points only once it is the set in play&quot;; <code>inputLevels.test.ts</code>). The four refused matrix cells are held
+by the matrix gate itself, which checks every harvested code in them refuses point and game input
+(<code>formatMatrix.test.ts</code>, &quot;a refused cell refuses point and game input&quot;). A match clock on an outs
+format is parsed and not enforced (§ 3.4).</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="9-completion">9. Completion<a href="#9-completion" class="hash-link" aria-label="Direct link to 9. Completion" title="Direct link to 9. Completion" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="91-best-of-n">9.1 Best of N<a href="#91-best-of-n" class="hash-link" aria-label="Direct link to 9.1 Best of N" title="Direct link to 9.1 Best of N" translate="no">​</a></h3>
+<p>The match is won by the first side to win a majority of the N sets, ⌊N/2⌋ + 1 (Rule 7; <code>standardSets</code>,
+&quot;Rule 7&quot;; SE2a-D7: ⌈N/2⌉ read for an even N would be half, which § 9.7 rule 4 contradicts). A set without
+a winner (a timed segment closed level) is played and counts for neither side. <strong>No set beyond N is
+played</strong>: when all N sets are played and neither side has a majority, the side with more sets wins, and a
+level count ends the match by § 9.7 (CA 2026-10-18). v1 opens another set after a level timed segment,
+so <code>SET1-S:T10P</code> level at time takes a second set and a <code>SET3-S:T10</code> can need a fourth: a v1 defect
+(§ 16, 3).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="92-exactly-n-not-aggregate">9.2 Exactly N, not aggregate<a href="#92-exactly-n-not-aggregate" class="hash-link" aria-label="Direct link to 9.2 Exactly N, not aggregate" title="Direct link to 9.2 Exactly N, not aggregate" translate="no">​</a></h3>
+<ol>
+<li class="">Reaching a majority of sets before all N are played is a lead, not a win (<code>tiebreakSets</code>, &quot;in HAL3X a
+two-halves lead is not a win&quot;; <code>timedSegments</code>, &quot;exactly | timed&quot;).</li>
+<li class="">Once all N sets are played, the side with more sets wins, however many it took; a sweep is a win
+(<code>tiebreakSets</code>, &quot;a sweep included&quot;).</li>
+<li class="">A level count names no winner (fixed 2026-10-17, #5529: v1 named side 1; <code>tiebreakSets</code>,
+&quot;a level count of halves names no winner&quot;), and <strong>the match is <code>COMPLETED</code> without a winner</strong> unless
+a decider is declared (§ 9.7; CA 2026-10-18). A set closed level counts toward the N played. The
+suite pins a level <code>HAL2X-S:TB11</code> as not complete: that pin changes with v1 (§ 16, 18).</li>
+<li class=""><strong>No set beyond N</strong>: a point after N closed sets is ignored (<code>tiebreakSets</code>, &quot;no half beyond N is
+recorded&quot;), and so is a game or a set total (CA 2026-10-18). v1 records a set total past N
+(<code>HAL2X-S:TB11</code> takes three <code>addSet</code> halves and completes 2-1): a v1 defect (§ 16, 7).</li>
+</ol>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="93-aggregate">9.3 Aggregate<a href="#93-aggregate" class="hash-link" aria-label="Direct link to 9.3 Aggregate" title="Direct link to 9.3 Aggregate" translate="no">​</a></h3>
+<ol>
+<li class="">Every one of the N segments is played (exactly N, or N of a best of N). A lead in segments or in
+total is not a win (<code>aggregateSegments</code>, &quot;a big first-half lead is not a win&quot;).</li>
+<li class=""><strong>The total decides; sets won are not consulted</strong> (<code>aggregateSegments</code>, &quot;winning three quarters of
+four is not consulted&quot;; <code>tiebreakSets</code>, &quot;SET3A-S<!-- -->:TB11<!-- --> — aggregate&quot;).</li>
+<li class="">A segment&#x27;s total is its units: a timed segment&#x27;s own score (games or points, including the unit a
+tiebreak at time added), and a tiebreak-only segment&#x27;s points.</li>
+<li class="">An unequal total after N segments wins. A level total names no winner (<code>aggregateSegments</code>, &quot;a level
+total names no winner&quot;); with no declared decider the match is <code>COMPLETED</code> without a winner, and
+no further segment is played (§ 9.7; CA 2026-10-18). v1 plays further segments of the ordinary
+format until the totals differ (<code>SET3A-S:TB11</code> level 24-24 takes a fourth game; <code>HAL2A-S:T45</code> a
+third half; an <code>XA</code> format without <code>-F:</code> the same at set N + 1): a v1 defect (§ 16, 12).</li>
+<li class=""><strong>An aggregate of standard sets is refused at validation</strong> (SET3A-S:6/TB7, QTR4A-S:6/TB7; CA
+2026-10-18; written as plain text, since the conformance matrix harvests every code the scoring
+docs put in code formatting as a format to score): aggregation is defined over timed and
+tiebreak-only segments, whose scores are units. v1 sums the tiebreak points of a set that had a tiebreak and its games otherwise; a persisted
+record with such a format replays by v1&#x27;s rule (§ 12.8). The courthive-components format editor&#x27;s
+Aggregate toggle is restricted to timed and tiebreak-only sets in the same change
+(<code>courthive-components/src/components/matchUpFormat/matchUpFormat.ts:422-428</code>,
+<code>machine/edits.ts:107-109</code>; tests <code>__tests__/modalStateMachine.test.ts:151</code>,
+<code>__tests__/formatMachine.test.ts:221</code>).</li>
+</ol>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="94-the-aggregate-decider">9.4 The aggregate decider<a href="#94-the-aggregate-decider" class="hash-link" aria-label="Direct link to 9.4 The aggregate decider" title="Direct link to 9.4 The aggregate decider" translate="no">​</a></h3>
+<p>In an exactly-N aggregate format the final-segment format (<code>-F:</code>) is the <strong>decider, set N + 1</strong>, played
+only when the N totals are level, and never one of the N (CA 2026-10-04, the INTENNSE format;
+<code>aggregateDeciderIsSetNPlusOne.test.ts</code>; <code>aggregateSegments</code>, &quot;-F<!-- -->:TB1<!-- --> settles a level total&quot;):</p>
+<ol>
+<li class="">an unequal total after N needs no decider, and nothing past set N is recorded;</li>
+<li class=""><code>-F:TB1</code> (and <code>-F:TB1NOAD</code>) is one sudden-death point: <code>[0, 1, [0, 1]]</code> (CA 2026-10-17: &quot;TB1 is
+sudden death&quot;; <code>aggregateSegments</code>, &quot;the sudden-death decider of a level aggregate&quot;);</li>
+<li class="">a timed decider (<code>-F:T10P</code>) is ended by <code>endSegment</code>, and the side ahead wins the match
+(<code>aggregateSegments</code>, &quot;the -F: decider is set four, timed and points-based&quot;).</li>
+</ol>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="95-combined-totals">9.5 Combined totals<a href="#95-combined-totals" class="hash-link" aria-label="Direct link to 9.5 Combined totals" title="Direct link to 9.5 Combined totals" translate="no">​</a></h3>
+<p>§ 7: complete at the total, with a winner or as a tie.</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="96-after-completion">9.6 After completion<a href="#96-after-completion" class="hash-link" aria-label="Direct link to 9.6 After completion" title="Direct link to 9.6 After completion" translate="no">​</a></h3>
+<p><strong>A completed match takes no scoring input</strong> (CA 2026-10-18, one rule): a point, a game and a set total
+after <code>COMPLETED</code> are ignored alike, recording nothing, keeping the redo stack and returning a result
+flag that says the input was ignored (§ 2.1; the corpus pins the point). v1 applies set and game input
+to a completed match (<code>SET3-S:6/TB7</code> 6-0 6-0 takes a third set by <code>addSet</code> and a fourth by <code>addGame</code>):
+a v1 defect (§ 16, 5). Corrections stay available: a completed match takes <code>editPoint</code> and
+<code>decoratePoint</code> (<code>aCompletedMatchTakesCorrections.test.ts</code>, &quot;a completed match takes per-point
+corrections&quot;).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="97-a-match-that-ends-level">9.7 A match that ends level<a href="#97-a-match-that-ends-level" class="hash-link" aria-label="Direct link to 9.7 A match that ends level" title="Direct link to 9.7 A match that ends level" translate="no">​</a></h3>
+<p><strong>A timed, aggregate or exactly-N match that ends level with no declared decider is <code>COMPLETED</code> with
+no <code>winningSide</code></strong>, and <code>onMatchTie</code> fires, as for a combined-total tie (§ 7) (CA 2026-10-18).</p>
+<ol>
+<li class=""><strong>The engine never plays a segment the format did not declare</strong>: no fourth set in a best of three,
+no play-on in an aggregate, no set N + 1 in an exactly format (an exactly-N aggregate&#x27;s declared
+<code>-F:</code> decider excepted, § 9.4).</li>
+<li class=""><strong>A decider exists only when declared</strong>: a tiebreak on the timed segment (<code>T{minutes}/TB{n}</code>, § 6.4,
+in the ordinary or the final format), or, in an exactly-N aggregate, the final-segment format
+(<code>-F:</code>, § 9.4). In an exactly-N format that is not aggregate <code>-F:</code> is set N (§ 3.2), not a decider.</li>
+<li class=""><strong>The views say a decision is required</strong>: <code>decisionRequired</code> is true on a match <code>COMPLETED</code> without
+a winner (§ 11.2), so a host running an elimination draw knows to ask for a decision. The scoring
+engine records none; the decision is the host&#x27;s (a <code>matchUpStatus</code> and <code>winningSide</code> set outside
+scoring).</li>
+<li class=""><strong>The elimination guard</strong> (CA 2026-10-18: &quot;yes, extend the check&quot;). <code>formatCanEndTied</code>
+(<code>src/validators/tiedFormatCompatibility.ts</code>), checked at draw generation and by
+<code>checkDrawFormatCompatibility</code>, today reports only a <code>P{n}</code> combined total that can tie, so only that
+is refused in a structure that advances a winner. It extends to every format that can end level by this rule: timed,
+aggregate and exactly-N formats with no declared decider; a best-of format with an even N (CA 2026-10-18:
+<code>SET2-S:6/TB7</code> can end 1-1); and a format whose only decider can itself end level (CA 2026-10-18: a timed <code>-F:</code>
+with no <code>/TB</code>, as in <code>SET3XA-S:T10-F:T10P</code>, is not a decider). A real decider is untimed (<code>-F:TB1</code>, <code>-F:TB10</code>)
+or timed with a tiebreak (<code>-F:T10P/TB1</code>). Only a format CHANGE is refused, so a stored draw is untouched and a
+score submitted with the matchUp&#x27;s existing format is accepted; TEAM structures are skipped (the tieFormat
+decides the dual). A policy may still offer such a format for round robin and team play (CA 2026-10-18:
+<code>POLICY_SCORING_USTA</code>&#x27;s <code>SET1-S:T20</code> stays as it is). This is a v1 change (§ 16, 3).</li>
+</ol>
+<p>v1 opens further segments after a level timed segment and after a level aggregate, and keeps a level
+exactly-N match <code>IN_PROGRESS</code>: v1 defects (§ 16, 3, 12, 18). Entries v1 recorded past a level close
+replay as v1 replayed them (§ 12.8).</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="10-service">10. Service<a href="#10-service" class="hash-link" aria-label="Direct link to 10. Service" title="Direct link to 10. Service" translate="no">​</a></h2>
+<p>The server is <strong>side-level</strong>. The engine derives the side due to serve the next point, records it on
+the point as a calculated snapshot unless the caller supplied one (R2, § 1.4), and corrects the
+derivation only when told to (<code>setServer</code>). A server supplied on one point is recorded as played and
+does not change the derivation of later points, except as the orientation of § 10.6.</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="101-standard-sets">10.1 Standard sets<a href="#101-standard-sets" class="hash-link" aria-label="Direct link to 10.1 Standard sets" title="Direct link to 10.1 Standard sets" translate="no">​</a></h3>
+<ol>
+<li class=""><strong>Game by game</strong>: side 1 serves the first game of the match, and the server alternates every game,
+counted across every set and however a game was recorded (by points, <code>addGame</code>, <code>addSet</code> or a
+baseline) (<code>standardSets</code>, &quot;service alternates game by game&quot;).</li>
+<li class=""><strong>The tiebreak</strong> (Rule 5(b)): the side due to serve the next game opens it and serves one point; then
+each side serves two in turn: for an opener o and k points played, the server is
+(o + ⌊(k + 1)/2⌋) mod 2, giving 0, 1, 1, 0, 0, 1, 1, … for opener 0. The tiebreak counts as one game,
+so its opener receives first in the next set (<code>tiebreakServiceOrder.test.ts</code>, &quot;tiebreak service order
+(ITF Rule 5(b))&quot;, including a final-set tiebreak at another games-all and an ordinary-set tiebreak
+when the final set has none; S3 and R1, #5512).</li>
+</ol>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="102-tiebreak-only-segments-and-match-tiebreaks">10.2 Tiebreak-only segments and match tiebreaks<a href="#102-tiebreak-only-segments-and-match-tiebreaks" class="hash-link" aria-label="Direct link to 10.2 Tiebreak-only segments and match tiebreaks" title="Direct link to 10.2 Tiebreak-only segments and match tiebreaks" translate="no">​</a></h3>
+<ol>
+<li class=""><strong>A tennis match tiebreak</strong> (<code>-F:TB{n}</code> after standard sets) keeps Rule 5(b): the opener is the side
+due to serve by the games of the sets before it, and within the set the rotation of § 10.1 applies
+(<code>tiebreakServiceOrder.test.ts</code>, &quot;a match tiebreak in lieu of the final set&quot;).</li>
+<li class=""><strong>A tiebreak-only format</strong> (<code>S:TB{n}</code>: squash, table tennis, pickleball and badminton shapes)
+<strong>derives no server</strong> until each sport&#x27;s own rule is added (CA 2026-10-18; Mentat TASKS, &quot;research:
+each sport&#x27;s service rule for the scoring engine&quot;). A point records the server only when the caller
+supplies it, as under <code>@RALLY</code> (§ 10.4), and the server-based statistics (S/R, break points) are not
+produced (§ 10.8, § 11.3).</li>
+</ol>
+<p>v1 applies tennis&#x27;s Rule 5(b) rotation, the S/R code and break points to every tiebreak-only set
+(<code>SET5-S:TB11</code> squash, <code>SET7-S:TB11</code> table tennis; <code>tiebreakServiceOrder.test.ts</code>, &quot;a standalone
+tiebreak set, both opening servers&quot;): a v1 change (§ 16, 17).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="103-timed-segments">10.3 Timed segments<a href="#103-timed-segments" class="hash-link" aria-label="Direct link to 10.3 Timed segments" title="Direct link to 10.3 Timed segments" translate="no">​</a></h3>
+<p><strong>Service alternates by unit, continuously across segments</strong> (CA 2026-10-18): game by game where points
+build games (§ 6.2 rule 2), point by point otherwise, and a new segment&#x27;s first unit is served by the
+side that did not serve the last unit of the segment before, as games run on across sets (§ 10.1).
+<strong>A tiebreak at time follows Rule 5(b)</strong> (§ 10.1 rule 2), opened by the side due to serve the next
+unit. <strong>A timed aggregate segment takes the aggregate court-half rule</strong> (§ 10.5). v1 opens each new
+segment from the closed segment&#x27;s count (<code>SET3-S:T10P</code> serves 0, 1, 0 in segment one and 1, 1 in
+segment two) and plays the tiebreak at time with no rotation (<code>SET3-S:T20/TB7</code>: 0, 0, 0, 0): v1 defects
+(§ 16, 14).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="104-rally-scoring-and-combined-totals">10.4 Rally scoring and combined totals<a href="#104-rally-scoring-and-combined-totals" class="hash-link" aria-label="Direct link to 10.4 Rally scoring and combined totals" title="Direct link to 10.4 Rally scoring and combined totals" translate="no">​</a></h3>
+<p><strong>Under <code>@RALLY</code> the rally winner serves next</strong> (CA 2026-10-18): the server of a point is the winner
+of the point before it, as under <code>WINNER_SERVES</code> (§ 10.7); the first point&#x27;s server follows the
+orientation (§ 10.6). <strong>In a combined total <code>P{n}</code> no server is derived</strong>: a point records the server
+only when the caller supplies it, and its S/R code is not derived. Nor in a tiebreak-only format
+without <code>@RALLY</code> (§ 10.2).</p>
+<p><strong>Whether the server is derived is its own indicator</strong> (CA 2026-10-18). <code>getNextServer()</code> keeps
+returning 0 or 1 for API compatibility (epixodic computes <code>1 - getNextServer()</code>); <code>isServerDerived()</code>,
+and <code>serverDerived</code> in the score situation (§ 11.2), say whether that answer is the engine&#x27;s
+derivation or only a placeholder. The placeholder is the side the last <code>setServer</code> named, and side 1
+without one. <strong>A completed match derives no server</strong> (CA 2026-10-21): it has no next point, so
+<code>isServerDerived()</code> is <code>false</code>, and <code>getNextServer()</code> still answers the side the rotation would give. Under <code>@RALLY</code> a <code>setServer</code> names the server of the next point only, and the rule resumes
+after it, as a supplied server does under <code>WINNER_SERVES</code>. v1 derives no server under <code>@RALLY</code> and answers a side anyway
+(<code>SET3-S:TB11@RALLY</code> after two points: 1), with no indicator: a v1 defect (§ 16, 15).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="105-the-court-half">10.5 The court half<a href="#105-the-court-half" class="hash-link" aria-label="Direct link to 10.5 The court half" title="Direct link to 10.5 The court half" translate="no">​</a></h3>
+<p>The expected court half (<code>serveSide</code>) is derived from the score before the point: <code>deuce</code> when the
+points played in the game (or in the tiebreak, or in a tiebreak-only set) are even, <code>ad</code> when odd; in an
+aggregate format, timed segments included, from the parity of the aggregate total so far
+(CA 2026-10-18); none in a timed segment that is not aggregate. v1 writes
+the aggregate rule for INTENNSE, whose segments are timed, and never reaches it for a timed segment
+(<code>SET7XA-S:T10P</code> points carry no <code>serveSide</code>): a v1 defect (§ 16, 14). A No-Ad deciding point,
+where the receiver chooses, is still reported as <code>deuce</code>. A caller that saw the half supplies <code>observedServeSide</code>, recorded beside it (S7, CA 2026-10-17;
+<code>substitutionAndService.test.ts</code>, &quot;S7&quot;).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="106-orientation-the-first-explicit-server-and-setserver">10.6 Orientation: the first explicit server and setServer<a href="#106-orientation-the-first-explicit-server-and-setserver" class="hash-link" aria-label="Direct link to 10.6 Orientation: the first explicit server and setServer" title="Direct link to 10.6 Orientation: the first explicit server and setServer" translate="no">​</a></h3>
+<p>The derivations above assume side 1 serves first. The orientation is read in this order:</p>
+<ol>
+<li class=""><strong><code>setServer(side)</code></strong>: at its position on the timeline, the orientation becomes &quot;flipped&quot; exactly
+when <code>side</code> differs from the base derivation there; it governs from that point on and replaces rule 2.
+It is replayed at its position on every rebuild (<code>tiebreakServiceOrder.test.ts</code>, &quot;a set tiebreak
+opened by side 2 after a setServer correction&quot;; &quot;survives undo, redo and reload, including a
+mid-tiebreak setServer correction&quot;; <code>setServer-recordEntry.test.ts</code>). A correction made with
+<code>recordEntry: false</code> is recorded on the entry before it and replayed with it (§ 2.6), and a
+baseline&#x27;s <code>server</code> is a <code>setServer</code> at the baseline&#x27;s position (§ 2.5) (CA 2026-10-18).</li>
+<li class=""><strong>The first recorded point&#x27;s supplied server</strong>: if it differs from the base derivation at that
+point&#x27;s position, every derivation is flipped. A match that starts mid-tiebreak is not placed
+correctly by this rule (a known limit of #5512).</li>
+<li class="">Otherwise side 1 serves first.</li>
+</ol>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="107-the-competitions-rule">10.7 The competition&#x27;s rule<a href="#107-the-competitions-rule" class="hash-link" aria-label="Direct link to 10.7 The competition&#x27;s rule" title="Direct link to 10.7 The competition&#x27;s rule" translate="no">​</a></h3>
+<p>Under <code>serverRule: WINNER_SERVES</code> the server of a point is the winner of the point before it, and side
+1 for the first point. A <code>setServer(side)</code> names the next point&#x27;s server only; the rule resumes after
+that point, and a correction naming the side already named changes nothing and records nothing (CA
+2026-10-21, SE3-E3). The engine supplies that server to the scorer, so the server shown
+(<code>getNextServer()</code>), the server recorded and the server a rebuild derives agree; it is calculated, not
+recorded (S5, #5517). A server the caller supplies is recorded as played, and the rule resumes after it
+(<code>scoringAgreement.test.ts</code>, &quot;S5: the competition server rule decides the recorded server too&quot;).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="108-the-sr-code">10.8 The S/R code<a href="#108-the-sr-code" class="hash-link" aria-label="Direct link to 10.8 The S/R code" title="Direct link to 10.8 The S/R code" translate="no">​</a></h3>
+<p>A point with a known server and no <code>code</code> is coded <code>S</code> when the server won it and <code>R</code> when the receiver
+did. Where no server is derived (§ 10.2, § 10.4) and none is supplied, no S/R code, break point or
+other server-based statistic is produced (CA 2026-10-18).</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="11-views-and-events">11. Views and events<a href="#11-views-and-events" class="hash-link" aria-label="Direct link to 11. Views and events" title="Direct link to 11. Views and events" translate="no">​</a></h2>
+<p>Views are derived from the state and never recorded as inputs. <strong>Every view reads the format
+governing the set in play and the match&#x27;s completion rule</strong> (§ 3.2; CA 2026-10-18).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="111-the-materialized-point">11.1 The materialized point<a href="#111-the-materialized-point" class="hash-link" aria-label="Direct link to 11.1 The materialized point" title="Direct link to 11.1 The materialized point" translate="no">​</a></h3>
+<p>Beside its recorded facts, a point carries: <code>pointNumber</code> (1-based), both spellings of winner and server,
+<code>timestamp</code> (the clock&#x27;s now when not supplied), <code>index</code>, and its coordinates <code>set</code> (0-based),
+<code>game</code> (the games its set had completed before its game began, however they were recorded) and
+<code>number</code> (the points played in its game before it); <code>score</code>, the game score after the point (<code>15-0</code>,
+<code>40-40</code>, <code>A-40</code> in a traditional game; numeric in a tiebreak, a tiebreak-only set, a consecutive-points
+game and a timed segment; <code>0-0</code> when the point completes a game); the points-to decorations (§ 11.2);
+<code>serveSide</code>; <code>scoreValue</code> when the effective value is not 1; and <code>activePlayers</code>, the lineUps on court
+for the point (both players per side in doubles), which every rebuild keeps
+(<code>aRebuildKeepsActivePlayers.test.ts</code>).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="112-points-to-and-the-situation">11.2 Points-to and the situation<a href="#112-points-to-and-the-situation" class="hash-link" aria-label="Direct link to 11.2 Points-to and the situation" title="Direct link to 11.2 Points-to and the situation" translate="no">​</a></h3>
+<p>Computed before each point, from the score at the serve, for the set in play&#x27;s format:</p>
+<ul>
+<li class=""><code>pointsToGame</code>: for each side, the fewest points it must win in a row, the opponent scoring none, to
+win the game (or tiebreak, or tiebreak-only set); counted against the same predicate that completes
+the game, so No-Ad, deuce caps and margins agree (<code>pointsToMinimum.test.ts</code>). A consecutive game needs
+its run length.</li>
+<li class=""><code>gamesToSet</code>, <code>pointsToSet</code> (the game&#x27;s points plus the remaining games at four points each), and
+<code>pointsToMatch</code> (the set&#x27;s points plus the remaining sets at their minimum). <code>gamesToSet</code> is the
+games won in a row that win the set by its rule, the tiebreak counting as one more (4-5 in a
+tiebreak set: 3; the one-game set <code>S:1/TB7</code> from love: 2), and each remaining set is counted at the
+minimum of the format governing it then, a deciding set at the final format&#x27;s (<code>SET3-S:4WB1-F:TB7</code>
+one set down: 16 + 7). A timed segment, outs and a combined total add nothing (SE2b-D23, D25, D26;
+CA 2026-10-21).</li>
+<li class=""><code>isBreakpoint</code>: the receiver needs one point to win the game.</li>
+<li class="">The score situation for the next point: <code>isGamePoint</code> (the server needs one), <code>isBreakPoint</code>,
+<code>isSetPoint</code>, <code>isMatchPoint</code> (either side needs one), <code>isGoldenPoint</code> (both need one, under No-Ad or a
+deuce cap outside a tiebreak), <code>isTiebreak</code>, <code>server</code>, and <code>serverDerived</code> (whether <code>server</code> is the
+engine&#x27;s derivation, § 10.4).</li>
+<li class=""><code>decisionRequired</code>: true when the match is <code>COMPLETED</code> without a winner (§ 9.7), in the situation
+and on the scoreboard, so an elimination host knows to ask for a decision (CA 2026-10-18).</li>
+<li class="">A timed segment has no points-to: every situation flag is false. A combined total&#x27;s match point is a
+rally that would complete it with a winner, and its golden point is the <code>DP</code> rally.</li>
+</ul>
+<p>Points-to-match counts by the match&#x27;s completion rule: sets to win in best of N, all N in exactly N,
+the total in an aggregate (and, level, the declared decider). A side that cannot win the match however
+many points in a row it wins (in exactly N, more sets than the other once all N are played; in an
+aggregate, the greater total) has no count: its <code>pointsToMatch</code> is <code>-1</code>, and it has no match point. v1 counts by best-of sets in exactly and aggregate formats (<code>HAL3X-S:TB11</code> at
+one half to love and 10-0 reports a match point; <code>SET3A-S:TB11</code> at two games to love and 9-0 gives
+<code>pointsToMatch</code> <code>[0, 22]</code>): a v1 defect (§ 16, 13).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="113-score-strings-scoreboard-episodes-statistics">11.3 Score strings, scoreboard, episodes, statistics<a href="#113-score-strings-scoreboard-episodes-statistics" class="hash-link" aria-label="Direct link to 11.3 Score strings, scoreboard, episodes, statistics" title="Direct link to 11.3 Score strings, scoreboard, episodes, statistics" translate="no">​</a></h3>
+<ul>
+<li class="">The score string joins the sets, a set with a tiebreak showing the loser&#x27;s tiebreak points (<code>7-6(3)</code>).</li>
+<li class=""><code>getScoreboard()</code> adds the game in play, read by the format governing the set in play: a
+tiebreak-only set or a set tiebreak shows numeric points. v1 reads the ordinary format and tennis
+points (<code>SET3-S:TB11</code> at 5-3 shows <code>0-0 (G-40)</code>; a <code>-F:4/TB7</code> final-set tiebreak shows <code>(40-15)</code>): a
+v1 defect (§ 16, 13).</li>
+<li class=""><code>getEpisodes()</code> enriches each point with its game, set and match context; a game interrupted by
+<code>addGame</code> or <code>addSet</code> is credited to no point, and a set is complete on the point that won it
+(<code>getEpisodesInterruptedGames.test.ts</code>).</li>
+<li class="">Statistics count each point result in exactly its own categories (S12, <code>scoringAgreement.test.ts</code>);
+standalone enrichment keeps what a point recorded and fills only missing context (S13).</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="114-input-levels-and-input-mode">11.4 Input levels and input mode<a href="#114-input-levels-and-input-mode" class="hash-link" aria-label="Direct link to 11.4 Input levels and input mode" title="Direct link to 11.4 Input levels and input mode" translate="no">​</a></h3>
+<p><code>getInputLevels()</code> reports § 3.3 for the set in play. <code>getInputMode()</code> reports which inputs the
+timeline holds (<code>points</code>, <code>games</code>, <code>sets</code>, <code>mixed</code>, <code>none</code>), not counting baselines, segment ends,
+server corrections, substitutions, challenges or annotations. v1 counts a server correction and a
+substitution as inputs, so a point-only match with one correction is <code>mixed</code>: a v1 defect (§ 16, 13).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="115-events">11.5 Events<a href="#115-events" class="hash-link" aria-label="Direct link to 11.5 Events" title="Direct link to 11.5 Events" translate="no">​</a></h3>
+<p>Handlers fire synchronously after the action, with the state and the score.</p>
+<table><thead><tr><th>event</th><th>fires</th></tr></thead><tbody><tr><td><code>onPoint</code></td><td>a point is recorded (never for a refused or ignored point)</td></tr><tr><td><code>onGameComplete</code></td><td>that point completed a game, with <code>gameWinner</code> the side that won the point (either spelling, S11)</td></tr><tr><td><code>onSetComplete</code></td><td>that point completed a set with a winner, with <code>setWinner</code></td></tr><tr><td><code>onMatchComplete</code></td><td>that point completed the match with a winner, with <code>matchWinner</code></td></tr><tr><td><code>onMatchTie</code></td><td>that point completed the match without a winner (§ 7, § 9.7)</td></tr><tr><td><code>onUndo</code>, <code>onRedo</code>, <code>onReset</code></td><td>their action succeeded; a rebuild re-emits no historical point events</td></tr></tbody></table>
+<p>They fire in that order on one point. Game, set, baseline and segment-end actions fire no scoring
+events, with one exception: the action that ends a match level by § 9.7 (an <code>endSegment</code> closing the
+last timed segment level, a set total completing a level count) fires <code>onMatchTie</code>, as the last rally
+of a combined-total tie does (CA 2026-10-18) (<code>scoringAgreement.test.ts</code>, &quot;S11&quot;; <code>event-handlers</code>
+page). <code>onGameComplete</code> fires only where a point completes a game; a points-based timed segment has none. v1 fires it on every point of such a
+segment (<code>SET3-S:T10P</code>: three points, three events): a v1 defect (§ 16, 13).</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="12-persistence-and-replay">12. Persistence and replay<a href="#12-persistence-and-replay" class="hash-link" aria-label="Direct link to 12. Persistence and replay" title="Direct link to 12. Persistence and replay" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="121-the-timeline">12.1 The timeline<a href="#121-the-timeline" class="hash-link" aria-label="Direct link to 12.1 The timeline" title="Direct link to 12.1 The timeline" translate="no">​</a></h3>
+<p><code>history.entries</code> is an ordered list of <code>{ type, data, timestamp, pointIndex? }</code>. A <code>point</code> entry&#x27;s
+<code>pointIndex</code> is the index of the point it produced in <code>history.points</code>. The score is a pure function of
+the configuration and the entries: <strong>a rebuild</strong> starts from a fresh score and replays every entry in
+order. It keeps everything that is not scoring: the matchUp&#x27;s identity, participants and any metadata a
+host attached; only <code>score</code>, <code>history</code>, <code>winningSide</code>, <code>matchUpStatus</code>, <code>endTime</code> and the orientation
+start over (<code>replayLossless.test.ts</code>, &quot;a rebuild keeps the matchUp identity and participants&quot;). The
+lineUps start from their initial snapshot and the substitutions replay in order, so each point keeps the
+players who played it (<code>aRebuildKeepsActivePlayers.test.ts</code>). An entry of a type the engine does not know
+is kept in place and not replayed (§ 12.6); a <code>challenge</code> or <code>annotation</code> is replayed and changes no
+score (§ 2.8).</p>
+<p>An entry&#x27;s <code>data</code> is the caller&#x27;s facts only (R2): the engine adds nothing it can derive, such as the set an
+<code>endSegment</code> closes, which the replay finds where the entry stands. Input that records nothing starts no
+history. A record that kept a substitution list keeps one, emptied when nothing is replayed into it, and a
+timeline a removal empties is still the record&#x27;s timeline (CA 2026-10-22).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="122-what-a-point-entry-holds">12.2 What a point entry holds<a href="#122-what-a-point-entry-holds" class="hash-link" aria-label="Direct link to 12.2 What a point entry holds" title="Direct link to 12.2 What a point entry holds" translate="no">​</a></h3>
+<p>Every field the caller supplied, including fields beyond the typed options, and no calculated field
+(§ 1.4). A rebuild replays the entry as recorded: its value, flags and decorations survive undo, redo,
+<code>editPoint</code>, <code>removePoint</code> and a reload (<code>replayLossless.test.ts</code>, &quot;S1&quot;). <strong>The entry is authoritative
+over the materialized point</strong>: a point&#x27;s calculated values are a cache, and a rebuild recomputes them
+(R2, decision 4; <code>tiebreakServiceOrder.test.ts</code>, &quot;tiebreak servers on records saved under the old
+rotation&quot;).</p>
+<p>One value is recorded: <strong>a point keeps the value it was scored at</strong>. Where a multiplier gives a point its
+value (§ 5 rule 5), the entry records that value as its <code>scoreValue</code>, as the point does, so a rebuild
+does not re-value it under multipliers set later. <code>setPointMultipliers</code> values the points recorded after
+it, and every rebuild, undo, redo and reload of the history scores it as it was scored (CA 2026-10-27;
+<code>point-multipliers.test.ts</code>, &quot;a point keeps the value it was scored at&quot;).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="123-undo-and-redo">12.3 Undo and redo<a href="#123-undo-and-redo" class="hash-link" aria-label="Direct link to 12.3 Undo and redo" title="Direct link to 12.3 Undo and redo" translate="no">​</a></h3>
+<ul>
+<li class=""><code>undo(n)</code> moves the last n entries, of any type, to the redo stack (a <code>point</code> entry takes its point
+with it, and a server correction attached to an entry goes with that entry, § 2.6) and rebuilds. It
+takes back whatever was recorded last, a challenge or an annotation included (§ 2.8; CA 2026-10-18).
+It returns false when there is nothing to undo, and for <code>n</code> below 1, which undoes nothing (CA
+2026-10-21, SE3-E2).</li>
+<li class=""><code>redo(n)</code> moves the last n back onto the timeline and rebuilds; false, likewise, when there is
+nothing to redo or <code>n</code> is below 1.</li>
+<li class=""><strong>A recorded action clears the redo stack</strong> (point, game, set, segment end, baseline, server
+correction, substitution, challenge, annotation); <strong>an action that changes nothing records nothing</strong>
+and keeps it, as a refused or ignored one does (CA 2026-10-18). v1&#x27;s <code>endSegment</code> does not clear it,
+so <code>SET3-S:T10P</code> point, point, undo, <code>endSegment</code>, redo replays the undone point after the segment
+end, into set 2; and <code>endSegment</code> with no set in play records an entry (<code>setNumber: 0</code>) that <code>undo</code>
+then pops: v1 defects (§ 16, 1).</li>
+<li class="">Undo and redo cross game, set and tiebreak boundaries, and a mix of input levels, as one timeline
+(<code>undo-redo.test.ts</code>).</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="124-corrections">12.4 Corrections<a href="#124-corrections" class="hash-link" aria-label="Direct link to 12.4 Corrections" title="Direct link to 12.4 Corrections" translate="no">​</a></h3>
+<ul>
+<li class=""><code>editPoint(i, data)</code> refuses invalid data before anything changes (§ 2.1), writes every field given
+to the point and to its entry, and rebuilds. A winner or server edited in one spelling clears the
+other spelling on the entry, so the replay reads the edit. An edit that changes the point&#x27;s <code>result</code> or
+<code>stroke</code> and gives no <code>scoreValue</code> drops the entry&#x27;s value, so the point is valued afresh under the
+current multipliers (§ 12.2). With <code>recalculate: false</code> the score is left
+as it was until the next rebuild, which applies the edit (<code>aCompletedMatchTakesCorrections.test.ts</code>).</li>
+<li class=""><code>removePoint(i)</code> removes the point and its entry, renumbers the later point entries, and rebuilds.
+With <code>recalculate: false</code> the score is left as it was until the next rebuild, and it still counts the
+removed point: a point added meanwhile is numbered (<code>index</code>, <code>pointNumber</code>) as that score counts it,
+so no index repeats, and the rebuild renumbers them all (CA 2026-10-21, SE2c-D6). Its entry&#x27;s
+<code>pointIndex</code> is still its position in <code>history.points</code> (§ 12.1), which a correction finds it by.</li>
+<li class=""><code>decoratePoint(i, metadata)</code> writes the metadata to the point and its entry without a rebuild; it
+survives every later rebuild.</li>
+<li class="">An index out of range is a no-op for all three. A rebuilding correction clears the redo stack.</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="125-the-record-a-host-saves">12.5 The record a host saves<a href="#125-the-record-a-host-saves" class="hash-link" aria-label="Direct link to 12.5 The record a host saves" title="Direct link to 12.5 The record a host saves" translate="no">​</a></h3>
+<p>The host saves two things: the matchUp (<code>getState()</code>, a copy) and the supplementary envelope
+(<code>getSupplementaryState()</code>), and restores them with <code>setState</code> then <code>loadSupplementaryState</code>. Both take
+and return copies: what crosses the boundary is never the engine&#x27;s own object (S9,
+<code>publicBoundary.test.ts</code>, &quot;S9: ownership&quot;). <code>setState</code> adopts the matchUp&#x27;s format and identity, clears
+the redo stack, and takes the initial lineUps from the current ones with the substitutions on the
+timeline undone.</p>
+<p>Either engine reads the record the other wrote, so a cutover and a rollback load what is stored. The
+two write the same record but for the orientation&#x27;s encoding: v1 writes <code>serverFlip</code> and a baseline&#x27;s
+<code>serverCorrection</code>, v2 neither, and each reads the other&#x27;s from the timeline, <code>history.initialServer</code>
+and a baseline&#x27;s <code>server</code>. The differential holds both: the whole record is compared after every call,
+and a fresh v1 must name the next server a fresh v2 names when each loads v2&#x27;s record.</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="126-every-persisted-shape-v2-must-read">12.6 Every persisted shape v2 must read<a href="#126-every-persisted-shape-v2-must-read" class="hash-link" aria-label="Direct link to 12.6 Every persisted shape v2 must read" title="Direct link to 12.6 Every persisted shape v2 must read" translate="no">​</a></h3>
+<ol>
+<li class=""><strong>An entries-based record</strong> (<code>history.entries</code> present): rebuilt from its entries. Its point entries
+may predate S1 (#5515) and hold fewer fields; the entry is still authoritative. <strong>Its timeline is
+authoritative over its stored score</strong> (SE2c-D3, CA 2026-10-21): loaded, the record is returned as
+stored, but the next action, and every view, are taken on the score its timeline rebuilds to (with
+the configuration then loaded; <code>loadSupplementaryState</code> prepares it again). That action writes the
+timeline&#x27;s score and keeps the stored points until the next rebuild.</li>
+<li class=""><strong>A legacy point-only record</strong> (points, perhaps a substitution list, no <code>entries</code>): loaded as stored.
+<strong>The first action that changes it, undo, redo and every correction included, first gives it its
+timeline</strong>: its points as point entries, each substitution placed before the point it preceded
+(<code>beforePointIndex</code>), in the order recorded, one past the last point after it (CA 2026-10-22). From then on
+it is an entries-based record, so nothing it holds is lost to an undo, a redo or a rebuild, and an undo
+takes back its last action, a substitution included. A point&#x27;s replay input is every field except the
+calculated ones of § 1.4, so its stored <code>scoreValue</code> (the effective value), its stored <code>server</code> and the
+players it recorded (<code>activePlayers</code>) replay as given, and the old result stands (<code>replayLossless.test.ts</code>,
+&quot;a record with no timeline replays its points with their recorded facts&quot;;
+<code>aRecordWithoutATimelineLosesNothing.test.ts</code>). An undo with nothing to take back gives it no timeline. Its
+rebuild keeps the matchUp&#x27;s identity, participants and host metadata, like every rebuild (§ 12.1;
+<code>aLegacyRebuildKeepsIdentity.test.ts</code>).</li>
+<li class=""><strong>Points saved under the old tiebreak rotation</strong> (before #5512): loaded as stored; calculated servers
+are re-derived on the next rebuild, supplied ones kept.</li>
+<li class=""><strong>Substitution events without <code>setNumber</code></strong> (before 2026-10-17): placed by the point they preceded.</li>
+<li class=""><strong>The supplementary envelope, version 0</strong> (no <code>version</code>): <code>redoStack</code> and <code>initialLineUps</code> only. The
+engine keeps the configuration it was constructed with (<code>replayLossless.test.ts</code>, &quot;an envelope
+written before the version loads as it always did&quot;).</li>
+<li class=""><strong>The supplementary envelope, version 1</strong>: <code>version: 1</code>, <code>redoStack</code>, <code>initialLineUps</code> (keyed by side
+number as a string), and the scoring configuration the history was scored under,
+<code>competitionFormat</code> and <code>pointMultipliers</code>, which <strong>replace the constructor&#x27;s</strong> so a rebuild scores
+the history the same way (S10; &quot;the saved configuration is what the history was scored under&quot;).</li>
+<li class=""><strong>Host-written <code>challenge</code> entries</strong> (epixodic&#x27;s <code>{ type: &#x27;challenge&#x27;, data: { sideNumber } }</code>): read
+unchanged as <code>challenge</code> actions (§ 2.8). Any other foreign entry: kept, not replayed.</li>
+<li class=""><strong><code>hardBoundaries</code></strong> on a set: read and ignored; the next recorded action or rebuild discards them
+(§ 2.9; CA 2026-10-22).</li>
+</ol>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="127-determinism">12.7 Determinism<a href="#127-determinism" class="hash-link" aria-label="Direct link to 12.7 Determinism" title="Direct link to 12.7 Determinism" translate="no">​</a></h3>
+<p>A replay uses the recorded timestamps. An action without one is stamped by the clock, as is <code>endTime</code>
+on completion, so a reproducible stream sets the clock (the corpus does). Otherwise only the creation of a
+matchUp reads them: its <code>createdAt</code>, and the pure <code>createMatchUp</code>&#x27;s minted <code>matchUpId</code> (§ 12.9).</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="128-legacy-shapes-refusals-apply-at-the-action-boundary">12.8 Legacy shapes: refusals apply at the action boundary<a href="#128-legacy-shapes-refusals-apply-at-the-action-boundary" class="hash-link" aria-label="Direct link to 12.8 Legacy shapes: refusals apply at the action boundary" title="Direct link to 12.8 Legacy shapes: refusals apply at the action boundary" translate="no">​</a></h3>
+<p><strong>A refusal this page adds applies when an action is offered, never on replay</strong> (decided 2026-10-18).
+When a persisted timeline already holds entries v1 accepted that the rules above now refuse or ignore,
+the reducer replays them as v1 replayed them, flagged as a legacy shape, so a stored score never
+changes on load. The shapes are those of the decisions recorded in § 16:</p>
+<ul>
+<li class="">scoring past a level close: further segments after a level timed segment or a level aggregate
+(§ 9.7), input into a closed segment (§ 6.4), set or game input after <code>COMPLETED</code> (§ 9.6), a set past
+N (§ 9.2);</li>
+<li class="">a non-timed <code>endSegment</code> (§ 2.4);</li>
+<li class="">a format v1 accepted and validation now refuses: a tiebreak below S − 1 (§ 4.2), an aggregate of
+standard sets (§ 9.3);</li>
+<li class="">an action v1 accepted with facts now refused (§ 2), and a second baseline (§ 2.5).</li>
+</ul>
+<p>The reducer never produces such an entry live. <strong>No version flag is needed</strong>: an entry&#x27;s presence on
+the timeline proves v1 wrote it.</p>
+<p><strong>The replay rule covers only entries distinguishable as v1&#x27;s.</strong> Four entries look the same whether v1
+or the current engine wrote them, and they take the current rule on rebuild (CA 2026-10-18: &quot;Accept the
+change&quot;; no version stamp): a game in a tiebreak-only set (§ 5), a game after a timed segment closed
+level (§ 6.4), a baseline set v1 judged by &quot;reached setTo&quot; (6-5 is no longer won, § 2.5), and a set total
+entered while a set is in play (§ 2.3). A stored archive holding one of them can rebuild to a different
+score.</p>
+<h3 class="anchor anchorTargetStickyNavbar_ZAys" id="129-the-pure-creatematchup-and-addpoint">12.9 The pure <code>createMatchUp</code> and <code>addPoint</code><a href="#129-the-pure-creatematchup-and-addpoint" class="hash-link" aria-label="Direct link to 129-the-pure-creatematchup-and-addpoint" title="Direct link to 129-the-pure-creatematchup-and-addpoint" translate="no">​</a></h3>
+<p>Below the engine sit two published functions on a bare scoring matchUp (the pure <code>addPoint</code> retires at 8.0.0, § 14).</p>
+<p><strong><code>createMatchUp({ matchUpFormat, matchUpId, participants, isDoubles, matchUpType, occurredAt })</code></strong> returns
+<code>{ matchUpId, matchUpFormat, matchUpStatus: TO_BE_PLAYED, matchUpType, sides, score: { sets: [] }, createdAt }</code>:</p>
+<ul>
+<li class=""><code>matchUpId</code> is the caller&#x27;s, else minted from the random source (the mint: <code>concepts/building-a-tournament</code> § 1.2).</li>
+<li class=""><code>matchUpType</code> is the caller&#x27;s, else <code>DOUBLES</code> with <code>isDoubles</code>, else <code>SINGLES</code>.</li>
+<li class=""><code>sides</code> is <code>{ sideNumber, participantId, participant }</code> per participant given, else
+<code>[{ sideNumber: 1 }, { sideNumber: 2 }]</code>.</li>
+<li class=""><code>createdAt</code> is <code>occurredAt</code>, else the clock.</li>
+</ul>
+<p><strong><code>addPoint(matchUp, { winner | winningSide, server | serverSideNumber, timestamp, ... })</code></strong> applies a <code>point</code> action
+(§ 2.1) to the matchUp <strong>in place</strong> and returns it. An input § 2.1 refuses (a side out of range, two spellings
+that disagree) throws. It keeps <code>history.points</code> (§ 11.1) and <strong>no timeline</strong>: no
+<code>history.entries</code> is written, so nothing it records can be undone (§ 12.3). A point without a decidable winner, a point
+after completion (§ 9.6) and a point after the last set of an <code>exactly</code> format are ignored: the matchUp is returned
+unchanged. The score, the status, <code>winningSide</code>, the score strings and <code>endTime</code> are those the engine&#x27;s point action
+writes.</p>
+<p>The corpus&#x27;s scoring source (<code>scoring/&lt;format&gt;/&lt;stream&gt;-seed-&lt;n&gt;</code>, § 15) plays these two: after each call a step
+records the matchUp&#x27;s <code>sets</code>, <code>scoreStringSide1</code>/<code>scoreStringSide2</code> and <code>winningSide</code> when present, and <code>complete</code>
+(<code>matchUpStatus === COMPLETED</code>); the last step, one point after completion, adds the whole matchUp.</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="13-what-is-deliberately-not-modelled">13. What is deliberately not modelled<a href="#13-what-is-deliberately-not-modelled" class="hash-link" aria-label="Direct link to 13. What is deliberately not modelled" title="Direct link to 13. What is deliberately not modelled" translate="no">​</a></h2>
+<p>These are boundaries, not omissions. v2&#x27;s action set is versioned so that a later correction event is
+an additive action, not a format change.</p>
+<ul>
+<li class=""><strong>Participant-level service</strong>: the doubles service order, which player serves (<code>serverParticipantId</code>
+is host metadata only), the receiver and the receiving order, and observed versus expected server
+participant. Deferred by CA (S7) to its own plan.</li>
+<li class=""><strong>ITF Rule 27 corrections</strong>: wrong server, wrong court half, wrong receiving order, and their
+rule-specific remedies. A host corrects the side due to serve with <code>setServer</code>; <code>wrongSide</code> and
+<code>wrongServer</code> are decorations that change no score.</li>
+<li class=""><strong>Side-out scoring</strong>: the engine scores every point it is given (§ 5).</li>
+<li class=""><strong>A sport&#x27;s own service order</strong> in a tiebreak-only format: no server is derived there until each
+sport&#x27;s rule is added (§ 10.2); and the receiver&#x27;s choice of court half on a No-Ad deciding point
+(§ 10.5).</li>
+<li class=""><strong>A decision on a match that ended level</strong> is the host&#x27;s (§ 9.7): the engine says one is required.</li>
+<li class=""><strong>A team-level decider</strong> (decided 2026-10-18). The INTENNSE Arc decider, a level Arc total across a
+team matchUp&#x27;s tieMatchUps, belongs to the team format (tieFormat <code>winCriteria.aggregateValue</code> plus a
+team-level decider), not to <code>-F:</code> on a tieMatchUp, which would fire on a level tieMatchUp when the Arc
+is not level. The grammar refuses <code>SET1A-S:T10-F:TB1</code> (the INTENNSE doubles format) in any case.
+Tracked in Mentat TASKS (&quot;INTENNSE: the Arc&#x27;s deciding point is ignored when the last tieMatchUp is
+uneven&quot;).</li>
+<li class=""><strong>Clocks</strong>: a match clock, a segment clock, shot clocks, timeouts and changeovers are the host&#x27;s.</li>
+<li class=""><strong>Penalties as rules</strong>: <code>penaltyType</code> and <code>penaltyPoint</code> are recorded facts; a penalty point is a point
+the host adds.</li>
+<li class=""><strong>Substitution rules as refusals</strong> (§ 2.7), and rosters.</li>
+<li class=""><strong>Outs and runs point by point</strong> (§ 8).</li>
+<li class=""><strong><code>history.states</code></strong>, a declared field nothing writes or reads.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="14-standing-decisions-carried-over">14. Standing decisions carried over<a href="#14-standing-decisions-carried-over" class="hash-link" aria-label="Direct link to 14. Standing decisions carried over" title="Direct link to 14. Standing decisions carried over" translate="no">​</a></h2>
+<table><thead><tr><th>decision</th><th>where</th></tr></thead><tbody><tr><td>R2: a timeline entry records a server only when supplied; calculated values are snapshots; the entry is authoritative (2026-10-17)</td><td>§ 1.4, § 12.2</td></tr><tr><td>The input-level contract: a kind with no point model refuses point input; <code>getInputLevels()</code> reports it (S4, #5518)</td><td>§ 3.3, § 8</td></tr><tr><td>Substitution rules are advisory; <code>substitute()</code> refuses only identity errors (S6, CA 2026-10-17)</td><td>§ 2.7</td></tr><tr><td><code>observedServeSide</code> is recorded; the participant-level model is deferred (S7, CA 2026-10-17)</td><td>§ 10.5, § 13</td></tr><tr><td>A one-point tiebreak (<code>TB1</code>) is sudden death (CA 2026-10-17, #5529)</td><td>§ 4.3, § 9.4</td></tr><tr><td>The one-game set follows Rule 6: a margin of two, the tiebreak at one all (CA 2026-10-17, #5530)</td><td>§ 4.2</td></tr><tr><td>Timed sets: points build games under the SET root; a level set plays its declared tiebreak; an exactly format&#x27;s final set is set N (CA 2026-10-17, #5533)</td><td>§ 3.2, § 6</td></tr><tr><td>A level exactly-N count names no winner (#5529)</td><td>§ 9.2</td></tr><tr><td>An aggregate decider is set N + 1, never one of the N (CA 2026-10-04)</td><td>§ 3.2, § 9.4</td></tr><tr><td>A finished match takes no more points, and an ignored point records nothing (7.5.0, 7.7.0)</td><td>§ 2.1, § 9.6</td></tr><tr><td>The engine does not model side-out; every point given counts (2026-10-17)</td><td>§ 5, § 13</td></tr><tr><td>CA&#x27;s decisions of 2026-10-18 on the questions this page first left open</td><td>§ 16</td></tr><tr><td>v2&#x27;s reducer never mutates its input; the published pure <code>addPoint</code> keeps its in-place behaviour through 7.x and retires at 8.0.0 (plan § 8.4)</td><td>—</td></tr></tbody></table>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="15-what-the-suite-and-the-corpus-pin">15. What the suite and the corpus pin<a href="#15-what-the-suite-and-the-corpus-pin" class="hash-link" aria-label="Direct link to 15. What the suite and the corpus pin" title="Direct link to 15. What the suite and the corpus pin" translate="no">​</a></h2>
+<table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td>conformance matrix</td><td>81 cells from the factory&#x27;s harvested formats: 77 held by independent cases, 4 refused, none missing (<code>formatMatrix.test.ts</code>); every cell placed in § 17</td></tr><tr><td>conformance cases</td><td>about 300, written from rulebooks (ITF, USA Pickleball, World Squash, ITTF, BWF, FIVB, VALORANT) or from the format definitions, each held five ways (see the opening)</td></tr><tr><td>v1/v2 differential</td><td>retired with v1 at SE4; until then every v1 call was made on the v2 engine too, and the outcome and the whole record compared</td></tr><tr><td>engine tests</td><td>the S1–S13 fixes (#5511–#5521), the defects the cases found (#5529, #5530, #5533) and the replay, boundary and service tests cited above</td></tr><tr><td>scoring corpus</td><td>72 seeded streams (8 formats × 3 biases × 3 seeds) through the pure <code>createMatchUp</code>/<code>addPoint</code>, each step&#x27;s result pinned by the manifest (#5511), and one point after completion each</td></tr><tr><td>class timeline</td><td>undo, redo, edits, baselines, segment ends, server corrections, substitutions, save and load, as corpus scenarios, with every conformance cell (SE3, #5658)</td></tr></tbody></table>
+<p><strong>The reducer as a conformance contract.</strong> <code>kernel.scoring.reduce@1</code> takes a configuration and a timeline (§ 12.1) and
+answers what each entry did (recorded; ignored, with its code; refused, with its code: the message is prose) and the
+score it left: the status and winner (§ 9), the sets as recorded (§ 1.2), the game in play, every materialized point
+(§ 11.1), and the side due to serve with whether it was derived (§ 10.4). How a reducer keeps its service orientation
+is its own. The authored cases (<code>src/tests/testHarness/kernel/cases/scoringReduce.json</code>) each hold one rule of this
+page by claims written from the rule; <code>pnpm kernel:harvest-scoring</code> turns every scoring corpus scenario&#x27;s timeline
+into a further case, generated and never committed. A second implementation runs both through its own adapter, so
+its reducer is graded before its undo, persistence and line-ups are.</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="16-decisions-2026-10-18">16. Decisions (2026-10-18)<a href="#16-decisions-2026-10-18" class="hash-link" aria-label="Direct link to 16. Decisions (2026-10-18)" title="Direct link to 16. Decisions (2026-10-18)" translate="no">​</a></h2>
+<blockquote>
+<p><strong>v1 since then</strong> (2026-10-21): #5612(factory), #5614(factory) and #5618(factory) brought v1 to most of
+these decisions on 2026-10-18, so most &quot;v1 defect&quot; notes below describe v1 before them; they stay as the
+record of each decision. The v1/v2 differential (§ 15) finds no difference on standard and tiebreak-only
+formats beyond three shape questions recorded for CA in the scoring-engine v2 plan (SE2a-D3b, D11, D12).
+On 2026-10-21 CA ruled five of its questions for the rule, and v1 was brought to them: every set carries
+<code>isTiebreakOnly</code> or <code>isTimed</code> by the format governing it, however it was entered (D11); a timed set scored
+in units has no per-game counts (D17); a combined total&#x27;s points carry <code>index</code>, <code>set</code>, <code>game</code> and <code>number</code>
+(D18, § 11.1); the point that wins a tiebreak at time shows <code>0-0</code> (D20, § 11.1); and a consecutive game&#x27;s
+<code>pointsToGame</code> counts the run in progress (D24, § 11.2). A completed match derives no server (D22, § 10.4).</p>
+</blockquote>
+<p>The first version of this page left 21 questions to CA. CA decided all of them on 2026-10-18; each
+rule now stands in the section named, and the v1 behaviour beside it is <strong>a v1 defect to fix before
+cutover</strong>, which the v1/v2 differential surfaces. v1 was probed on factory <code>dev</code> at <code>0fcd079843</code>; the
+streams are given in the sections. One rule covers every new refusal: <strong>refusals apply at the action
+boundary only</strong>, and a persisted timeline holding entries v1 accepted replays as v1 replayed it,
+flagged as a legacy shape, with no version flag (§ 12.8). Nothing is left open.</p>
+<ol>
+<li class=""><strong>DECIDED: the redo stack.</strong> A recorded action clears it; an action that changes nothing records
+nothing (§ 2, § 12.3). v1 defect: <code>endSegment</code> keeps the redo stack and records a no-op entry.</li>
+<li class=""><strong>DECIDED: <code>endSegment</code> ends timed segments only</strong> and is refused elsewhere; a set-level mercy or
+manual end is <code>addSet</code> with an explicit <code>winningSide</code>; a match-level stop is a <code>matchUpStatus</code>;
+<code>reason</code> is a free host string (§ 2.4). v1 defect: accepted on any segment. Persisted non-timed
+entries replay as v1 (§ 12.8).</li>
+<li class=""><strong>DECIDED: a match that ends level with no declared decider is <code>COMPLETED</code> without a winner</strong>,
+<code>onMatchTie</code> fires, no undeclared segment is played, and the views expose <code>decisionRequired</code>
+(§ 6.4, § 9.1, § 9.7, § 11.2). The elimination guard <code>formatCanEndTied</code> extends to timed, aggregate
+and exactly-N formats with no declared decider, even best-of formats, and formats whose decider can end level
+(§ 9.7 rule 4). v1 defect: further segments are
+opened; v1 change: the guard.</li>
+<li class=""><strong>DECIDED: a closed segment takes no input</strong> (§ 2, § 6.4). v1 defect: <code>addGame</code> reopens it.</li>
+<li class=""><strong>DECIDED: a completed match takes no scoring input</strong>; a set and a game are ignored with a result
+flag, as a point is (§ 2, § 9.6). v1 defect: <code>addSet</code> and <code>addGame</code> apply.</li>
+<li class=""><strong>DECIDED: <code>addSet</code> judges a total by its segment&#x27;s rule</strong>: finished totals get the rule&#x27;s winner,
+a contradicting <code>winningSide</code> is refused, an unfinished total with no winner is the set in play
+(§ 2.3). v1 defect: any unequal total is won.</li>
+<li class=""><strong>DECIDED: exactly N takes no set beyond N</strong> (§ 2.3, § 9.2). v1 defect: a set total past N is
+recorded.</li>
+<li class=""><strong>DECIDED: the late-start baseline</strong> judges its sets by their segment rule, completes a decided
+match, keeps an unfinished last set in play, honours <code>server</code> as a recorded <code>setServer</code>, is refused a
+second time once scoring entries exist, and checks <code>matchUpStatus</code>/<code>winningSide</code> for consistency
+(§ 2.5). v1 defects: each of those.</li>
+<li class=""><strong>DECIDED: a <code>scoreValue</code> other than 1 is refused where a point is not a unit</strong>; multipliers apply
+only to segments scored in units (§ 2.1, § 4.4, § 7). v1 defect: recorded and ignored, or silently
+dropped in <code>P{n}</code>.</li>
+<li class=""><strong>DECIDED: every action refuses invalid facts before writing</strong> (§ 1.1, § 2). v1 defect: only
+<code>addPoint</code> and <code>editPoint</code> validate.</li>
+<li class=""><strong>DECIDED: a game in a tiebreak-only segment is the segment won 1-0</strong>, <code>tiebreakScore</code> its points,
+checked against the race to n; the input levels keep offering game (§ 2.2, § 5). v1 defect: a game
+is one point.</li>
+<li class=""><strong>DECIDED: a level aggregate with no declared decider follows decision 3</strong> (§ 9.3, § 9.7). v1
+defect: play-on. The format-support page&#x27;s &quot;a tied total names no winner until a deciding point
+breaks it&quot; now applies only with a declared decider.</li>
+<li class=""><strong>DECIDED: every view reads the format governing the set in play and the completion rule</strong> (§ 3.2,
+§ 11). v1 defects: the scoreboard, points-to-match, <code>onGameComplete</code> in a points-based timed
+segment, and <code>getInputMode()</code>.</li>
+<li class=""><strong>DECIDED: timed service runs continuously across segments</strong>; Rule 5(b) applies to a tiebreak at
+time; a timed aggregate segment takes the aggregate court-half rule (§ 10.3, § 10.5). v1 defects:
+each of those.</li>
+<li class=""><strong>DECIDED: under <code>@RALLY</code> the rally winner serves; in <code>P{n}</code> no server is derived</strong>;
+<code>getNextServer()</code> keeps returning 0 or 1 and <code>isServerDerived()</code> / <code>serverDerived</code> says whether it
+is derived (§ 10.4, § 11.2). v1 defect: no <code>@RALLY</code> derivation and no indicator.</li>
+<li class=""><strong>DECIDED: a server correction survives undo and rebuild</strong>; <code>recordEntry: false</code> attaches it to the
+preceding entry (§ 2.6, § 10.6, § 12.3). v1 defect, live in INTENNSE: the wrong server after an
+undo.</li>
+<li class=""><strong>DECIDED: tiebreak-only formats derive no server</strong> until each sport&#x27;s rule is added (Mentat TASKS,
+&quot;research: each sport&#x27;s service rule for the scoring engine&quot;); a tennis match tiebreak keeps Rule
+5(b); no server-based statistics where no server is derived (§ 10.2, § 10.8). v1 change: Rule 5(b),
+S/R and break points on every tiebreak-only set.</li>
+<li class=""><strong>DECIDED: a level exactly-N match follows decision 3</strong> (§ 9.2, § 9.7). v1 defect: it stays
+<code>IN_PROGRESS</code>; the suite&#x27;s pin on <code>HAL2X-S:TB11</code> changes with it.</li>
+<li class=""><strong>DECIDED: <code>@T</code> with T &lt; S − 1 is refused at validation</strong> for new formats (§ 4.2); a
+consecutive-points game format in a timed set builds the declared game format (§ 3.5); <strong>an
+aggregate of standard sets is refused at validation</strong>, and the courthive-components editor&#x27;s
+Aggregate toggle is restricted to timed and tiebreak-only sets in the same change (§ 9.3 rule 5).
+Persisted formats of either refused kind replay by v1&#x27;s rule (§ 12.8). v1 changes: the grammar, the
+timed game format, the editor.</li>
+<li class=""><strong>DECIDED: challenges and annotations are versioned timeline actions that change no score</strong>; <code>undo</code>
+takes back whatever was recorded last; v1&#x27;s raw <code>challenge</code> entries are read unchanged (§ 2.8,
+§ 12.3, § 12.6). v1 already behaves so for epixodic&#x27;s entries.</li>
+<li class=""><strong>DECIDED: the docs follow the code</strong>: <code>winner</code> and <code>winningSide</code> may both be given when they
+agree (§ 1.3; the API page), <code>addSet</code>&#x27;s JSDoc states what v1 does (§ 2.3), and the
+<code>FORMAT_STANDARD_NOAD</code> comment states an advantage set with No-Ad games (§ 4.2).</li>
+</ol>
+<p><strong>A boundary, not a rule of this engine</strong> (decided 2026-10-18): the INTENNSE Arc decider belongs to the
+team format (§ 13), tracked separately in Mentat TASKS.</p>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="17-the-matrix-cell-by-cell">17. The matrix, cell by cell<a href="#17-the-matrix-cell-by-cell" class="hash-link" aria-label="Direct link to 17. The matrix, cell by cell" title="Direct link to 17. The matrix, cell by cell" translate="no">​</a></h2>
+<p>Every cell of <code>src/tests/scoring/conformance/formatMatrix.ts</code>, by its id, with the sections whose rules
+score it and the cases that hold it. The gate <code>specCitesEveryCell.test.ts</code> fails on a cell missing here,
+on a cited id the matrix does not hold, and on a cell line that names no section.</p>
+<p><strong>Standard sets</strong></p>
+<ul>
+<li class=""><code>bestOf | SET | set:standard(tiebreak) | final:same | game:traditional | noClock | knownModifiers</code> — § 4.1, § 4.2, § 4.3, § 9.1, § 10.1; <code>standardSets</code> (<code>SET3-S:6/TB7</code>, <code>SET5-S:6/TB7</code>, <code>SET3-S:4/TB7</code>), <code>tiebreakServiceOrder.test.ts</code>; corpus <code>scoring/set3-s-6-tb7/*</code>, <code>scoring/set5-s-6-tb7/*</code>, <code>scoring/set3-s-4-tb7/*</code>, <code>scoring/set1-s-8-tb7/*</code></li>
+<li class=""><code>bestOf | SET | set:standard(tiebreak) | final:same | game:traditional | clock | knownModifiers</code> — § 3.4, § 4.2, § 9.1; <code>standardSets</code> (<code>SET3-S:6/TB7-M:T60</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(tiebreak) | final:same | game:traditional | noClock | unknownModifiers</code> — § 3.4, § 4.2, § 4.3; <code>finalSegments</code> (<code>SET3Z-S:6/TB7</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(tiebreak) | final:standard(advantage) | game:traditional | noClock | knownModifiers</code> — § 3.2, § 4.2, § 4.5, § 10.1; <code>standardSets</code> (<code>SET3-S:6/TB7-F:6</code>), <code>tiebreakServiceOrder.test.ts</code></li>
+<li class=""><code>bestOf | SET | set:standard(tiebreak) | final:standard(tiebreak) | game:traditional | noClock | knownModifiers</code> — § 3.2, § 4.3, § 4.5; <code>standardSets</code> (<code>SET3-S:6/TB7-F:6/TB10</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(tiebreak) | final:standard(tiebreak,earlyTiebreak) | game:traditional | noClock | knownModifiers</code> — § 3.2, § 4.2, § 4.5; <code>standardSets</code> (<code>SET5-S:6/TB7-F:6/TB7@12</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(tiebreak) | final:tiebreakSet | game:traditional | noClock | knownModifiers</code> — § 3.2, § 4.5, § 5, § 10.2; <code>standardSets</code> (<code>SET3-S:6/TB7-F:TB10</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(tiebreak) | final:tiebreakSet(noAD) | game:traditional | noClock | knownModifiers</code> — § 4.3, § 4.5, § 5; <code>standardSets</code> (<code>SET3-S:6/TB7-F:TB10NOAD</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(tiebreak) | final:timed(G) | game:traditional | noClock | knownModifiers</code> — § 3.2, § 4.5, § 6.2, § 6.4; <code>finalSegments</code> (<code>SET3-S:6/TB7-F:T20</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(tiebreak) | final:timed(P) | game:traditional | noClock | knownModifiers</code> — § 3.2, § 4.5, § 6.2, § 6.4; <code>finalSegments</code> (<code>SET3-S:6/TB7-F:T20P</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(tiebreak) | final:outs | game:traditional | noClock | knownModifiers</code> — § 3.2, § 3.3, § 8; <code>finalSegments</code> (<code>SET3-S:6/TB7-F:O3</code>), <code>inputLevels.test.ts</code></li>
+<li class=""><code>bestOf | SET | set:standard(tiebreak,earlyTiebreak) | final:same | game:traditional | noClock | knownModifiers</code> — § 4.2, § 4.3; <code>tiebreakSetVariants</code> (<code>SET3-S:4/TB5@3</code>, <code>SET3-S:6/TB7@5</code>, <code>SET1-S:8/TB7@7</code>, <code>SET3-S:6/TB7@12</code>); corpus <code>scoring/set3-s-4-tb5-3/*</code></li>
+<li class=""><code>bestOf | SET | set:standard(tiebreak,earlyTiebreak) | final:tiebreakSet | game:traditional | noClock | knownModifiers</code> — § 4.2, § 4.5, § 5; <code>tiebreakSetVariants</code> (<code>SET3-S:4/TB7@3-F:TB7</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(tiebreak,earlyTiebreak,noAD) | final:same | game:traditional | noClock | knownModifiers</code> — § 4.1, § 4.2, § 4.3; <code>tiebreakSetVariants</code> (<code>SET3-S:4NOAD/TB7@3</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(tiebreak,earlyTiebreak,noAD) | final:tiebreakSet | game:traditional | noClock | knownModifiers</code> — § 4.1, § 4.2, § 4.5, § 5; <code>tiebreakSetVariants</code> (<code>SET3-S:4NOAD/TB5@3-F:TB10</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(tiebreak,earlyTiebreak,tiebreakNoAD,noAD) | final:same | game:traditional | noClock | knownModifiers</code> — § 4.1, § 4.2, § 4.3; <code>tiebreakSetVariants</code> (<code>SET5-S:5NOAD/TB9NOAD@4</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(tiebreak,earlyTiebreak,tiebreakNoAD) | final:same | game:traditional | noClock | knownModifiers</code> — § 4.2, § 4.3; <code>tiebreakSetVariants</code> (<code>SET1-S:6/TB5NOAD@5</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(tiebreak,noAD) | final:same | game:traditional | noClock | knownModifiers</code> — § 4.1, § 4.3; <code>tiebreakSetVariants</code> (<code>SET3-S:6NOAD/TB7</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(tiebreak,noAD) | final:tiebreakSet | game:traditional | noClock | knownModifiers</code> — § 4.1, § 4.5, § 5; <code>tiebreakSetVariants</code> (<code>SET3-S:6NOAD/TB7-F:TB10</code>); corpus <code>scoring/set3-s-6noad-tb7-f-tb10/*</code></li>
+<li class=""><code>bestOf | SET | set:standard(tiebreak,tiebreakNoAD,noAD) | final:same | game:traditional | noClock | knownModifiers</code> — § 4.1, § 4.3; <code>tiebreakSetVariants</code> (<code>SET3-S:6NOAD/TB7NOAD</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(tiebreak,tiebreakNoAD) | final:same | game:traditional | noClock | knownModifiers</code> — § 4.3; <code>tiebreakSetVariants</code> (<code>SET3-S:6/TB7NOAD</code>, <code>SET1-S:6/TB7NOAD</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(tiebreak,oneGame) | final:same | game:traditional | noClock | knownModifiers</code> — § 4.2 rule 4; <code>tiebreakSetVariants</code> (<code>SET3-S:1/TB7</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(tiebreak) | final:same | game:consecutive | noClock | knownModifiers</code> — § 3.5, § 4.1, § 4.3; <code>tiebreakSetVariants</code> (<code>SET3-S:4/TB5-G:3C</code>, <code>SET3-S:6/TB7-G:3C</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(tiebreak) | final:same | game:traditional(deuceCap) | noClock | knownModifiers</code> — § 3.5, § 4.1, § 4.3; <code>tiebreakSetVariants</code> (<code>SET3-S:6/TB7-G:TN3D</code>, <code>SET3-S:6/TB7-G:TN1D</code>, <code>SET3-S:6/TB7-G:TN2D</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(tiebreak) | final:tiebreakSet | game:traditional(deuceCap) | noClock | knownModifiers</code> — § 3.5, § 4.1, § 4.3, § 5; <code>tiebreakSetVariants</code> (<code>SET3-S:6/TB7-G:TN3D-F:TB10</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(advantage) | final:same | game:traditional | noClock | knownModifiers</code> — § 4.1, § 4.2 rule 1, § 9.1; <code>advantageAndShortSets</code> (<code>SET3-S:6</code>, <code>SET1-S:8</code>, <code>SET5-S:6</code>), <code>noTiebreakIsNoTiebreak.test.ts</code></li>
+<li class=""><code>bestOf | SET | set:standard(advantage) | final:same | game:consecutive | noClock | knownModifiers</code> — § 3.5, § 4.1 rule 4, § 4.2 rule 1; <code>advantageAndShortSets</code> (<code>SET5-S:5-G:3C</code>, <code>SET3-S:4-G:2C</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(advantage,noAD) | final:same | game:traditional | noClock | knownModifiers</code> — § 4.1 rule 2, § 4.2 rule 1; <code>advantageAndShortSets</code> (<code>SET3-S:6NOAD</code>, <code>SET1-S:5NOAD</code>); corpus <code>scoring/set3-s-6noad/*</code></li>
+<li class=""><code>bestOf | SET | set:standard(advantage,noAD) | final:tiebreakSet | game:traditional | noClock | knownModifiers</code> — § 4.1, § 4.2, § 4.5, § 5; <code>advantageAndShortSets</code> (<code>SET3-S:4NOAD-F:TB7</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(advantage,winBy1) | final:same | game:traditional | noClock | knownModifiers</code> — § 4.2 rule 1; <code>advantageAndShortSets</code> (<code>SET3-S:5WB1</code>, <code>SET1-S:5WB1</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(advantage,winBy1) | final:same | game:consecutive | noClock | knownModifiers</code> — § 3.5, § 4.1 rule 4, § 4.2 rule 1; <code>advantageAndShortSets</code> (<code>SET5-S:5WB1-G:3C</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(advantage,winBy1) | final:tiebreakSet | game:traditional | noClock | knownModifiers</code> — § 4.2 rule 1, § 4.5, § 5; <code>advantageAndShortSets</code> (<code>SET3-S:4WB1-F:TB7</code>)</li>
+<li class=""><code>bestOf | SET | set:standard(advantage,noAD,winBy1) | final:same | game:traditional | noClock | knownModifiers</code> — § 4.1 rule 2, § 4.2 rule 1; <code>advantageAndShortSets</code> (<code>SET3-S:4NOADWB1</code>, <code>SET1-S:4NOADWB1</code>)</li>
+<li class=""><code>exactly | INN | set:standard(tiebreak) | final:same | game:traditional | noClock | knownModifiers</code> — § 3.4, § 4.2, § 9.2; <code>timedSegments</code> (<code>INN3X-S:6/TB7</code>)</li>
+<li class=""><code>exactly | SET | set:standard(tiebreak) | final:same | game:traditional | noClock | knownModifiers</code> — § 3.4, § 4.2, § 9.2; <code>timedSegments</code> (<code>SET3X-S:6/TB7</code>; exactly N on every root, CA 2026-10-25)</li>
+<li class=""><code>exactly | SET | set:standard(advantage) | final:same | game:traditional | noClock | knownModifiers</code> — § 3.4, § 4.2, § 9.2; <code>timedSegments</code> (<code>SET3X-S:6</code>, <code>SET4X-S:6</code>)</li>
+</ul>
+<p><strong>Tiebreak-only segments</strong></p>
+<ul>
+<li class=""><code>bestOf | SET | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers</code> — § 5, § 9.1, § 10.2; <code>tiebreakSets</code> (<code>SET3-S:TB11</code>, <code>SET5-S:TB11</code>, <code>SET7-S:TB11</code>, <code>SET3-S:TB21</code>, <code>SET1-S:TB10</code>); corpus <code>scoring/set1-s-tb10/*</code></li>
+<li class=""><code>bestOf | SET | set:tiebreakSet | final:tiebreakSet | game:traditional | noClock | knownModifiers</code> — § 3.2, § 5; <code>tiebreakSets</code> (<code>SET5-S:TB25-F:TB15</code>, <code>SET3-S:TB15-F:TB11</code>)</li>
+<li class=""><code>bestOf | SET | set:tiebreakSet(noAD) | final:same | game:traditional | noClock | knownModifiers</code> — § 4.3, § 5; <code>tiebreakSets</code> (<code>SET3-S:TB11NOAD</code>, <code>SET3-S:TB15NOAD</code>)</li>
+<li class=""><code>bestOf | SET | set:tiebreakSet(@RALLY) | final:same | game:traditional | noClock | knownModifiers</code> — § 5 rule 4, § 10.4; <code>tiebreakSets</code> (<code>SET3-S:TB11@RALLY</code>, <code>SET1-S:TB11@RALLY</code>)</li>
+<li class=""><code>bestOf | SET | set:tiebreakSet(@RALLY) | final:tiebreakSet(@RALLY) | game:traditional | noClock | knownModifiers</code> — § 3.2, § 5, § 10.4; <code>tiebreakSets</code> (<code>SET5-S:TB21@RALLY-F:TB15@RALLY</code>)</li>
+<li class=""><code>bestOf | SET | set:tiebreakSet(@RALLY,noAD) | final:same | game:traditional | noClock | knownModifiers</code> — § 4.3, § 5, § 10.4; <code>tiebreakSets</code> (<code>SET3-S:TB11NOAD@RALLY</code>, <code>SET3-S:TB21NOAD@RALLY</code>)</li>
+<li class=""><code>bestOf | SET | set:tiebreakSet(@RALLY,noAD) | final:tiebreakSet(@RALLY,noAD) | game:traditional | noClock | knownModifiers</code> — § 3.2, § 4.3, § 5, § 10.4; <code>tiebreakSets</code> (<code>SET3-S:TB21NOAD@RALLY-F:TB15NOAD@RALLY</code>)</li>
+<li class=""><code>bestOf | FRM | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers</code> — § 3.4, § 5, § 9.1; <code>tiebreakSets</code> (<code>FRM7-S:TB11</code>)</li>
+<li class=""><code>bestOf | MAP | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers</code> — § 3.4, § 5, § 9.1; <code>tiebreakSets</code> (<code>MAP3-S:TB13</code>, <code>MAP5-S:TB13</code>)</li>
+<li class=""><code>bestOf+aggregate | SET | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers</code> — § 5, § 9.3; <code>tiebreakSets</code> (<code>SET3A-S:TB11</code>)</li>
+<li class=""><code>exactly | HAL | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers</code> — § 5, § 9.2; <code>tiebreakSets</code> (<code>HAL2X-S:TB11</code>, <code>HAL3X-S:TB11</code>)</li>
+<li class=""><code>exactly | SET | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers</code> — § 3.4, § 5, § 9.2; <code>tiebreakSets</code> (<code>SET3X-S:TB11</code>, <code>SET2X-S:TB10</code>)</li>
+<li class=""><code>exactly+aggregate | SET | set:tiebreakSet | final:same | game:traditional | noClock | knownModifiers</code> — § 5, § 9.3 rule 4; <code>tiebreakSets</code> (<code>SET3XA-S:TB11</code>, <code>SET7XA-S:TB11</code>)</li>
+</ul>
+<p><strong>Timed segments</strong></p>
+<ul>
+<li class=""><code>bestOf | SET | set:timed(G) | final:same | game:traditional | noClock | knownModifiers</code> — § 6.1, § 6.2 rule 2, § 6.4, § 9.1; <code>timedSegments</code> (<code>SET3-S:T10</code>, <code>SET1-S:T20</code>, <code>SET5-S:T10</code>, <code>SET1X-S:T10</code>)</li>
+<li class=""><code>bestOf | SET | set:timed(G) | final:same | game:traditional(deuceCap) | noClock | knownModifiers</code> — § 3.5, § 4.1 rule 3, § 6.2 rule 2; <code>timedSegments</code> (<code>SET3-S:T10-G:TN3D</code>)</li>
+<li class=""><code>bestOf | SET | set:timed(G) | final:same | game:consecutive | noClock | knownModifiers</code> — § 3.5, § 6.2 rule 2; <code>timedSegments</code> (<code>SET3-S:T10-G:3C</code>)</li>
+<li class=""><code>bestOf | SET | set:timed(G) | final:timed(G) | game:traditional | noClock | knownModifiers</code> — § 3.2, § 6.1, § 6.4; <code>timedSegments</code> (<code>SET3-S:T20-F:T60</code>, <code>SET3-S:T15-F:T10</code>)</li>
+<li class=""><code>bestOf | SET | set:timed(G) | final:timed(G,tiebreak) | game:traditional | noClock | knownModifiers</code> — § 3.2 rule 1, § 6.4 rule 2, § 9.1; <code>timedSegments</code> (<code>SET3-S:T10-F:T10/TB7</code>), <code>viewsReadTheGoverningFormat.test.ts</code></li>
+<li class=""><code>bestOf | SET | set:timed(G) | final:timed(G) | game:traditional(deuceCap) | noClock | knownModifiers</code> — § 3.2, § 3.5, § 6.2 rule 2; <code>timedSegments</code> (<code>SET3-S:T10-G:TN3D-F:T20</code>)</li>
+<li class=""><code>bestOf | SET | set:timed(G,@RALLY) | final:same | game:traditional | noClock | knownModifiers</code> — § 6.3; <code>timedSegments</code> (<code>SET3-S:T20@RALLY</code>)</li>
+<li class=""><code>bestOf | SET | set:timed(G,tiebreak) | final:same | game:traditional | noClock | knownModifiers</code> — § 4.3, § 6.4 rule 2; <code>timedSegments</code> (<code>SET3-S:T20/TB7</code>, <code>SET3-S:T10/TB1</code>, <code>SET3-S:T10G/TB1</code>), <code>timedSetTiebreak.test.ts</code></li>
+<li class=""><code>bestOf | SET | set:timed(P) | final:same | game:traditional | noClock | knownModifiers</code> — § 6.1, § 6.2 rule 1, § 6.4; <code>timedSegments</code> (<code>SET3-S:T10P</code>, <code>SET1-S:T20P</code>, <code>SET1-S:T10P</code>)</li>
+<li class=""><code>bestOf | SET | set:timed(P,tiebreak) | final:same | game:traditional | noClock | knownModifiers</code> — § 4.3, § 6.4 rule 2; <code>timedSegments</code> (<code>SET3-S:T10P/TB1</code>, <code>SET3-S:T10P/TB7</code>, <code>SET3-S:T10P/TB10</code>, <code>SET5-S:T10P/TB1</code>)</li>
+<li class=""><code>exactly | SET | set:timed(G) | final:same | game:traditional | noClock | knownModifiers</code> — § 6.2 rule 2, § 9.2; <code>timedSegments</code> (<code>SET3X-S:T10</code>, <code>SET10X-S:T5</code>, <code>SET9X-S:T10</code>)</li>
+<li class=""><code>exactly | SET | set:timed(P) | final:same | game:traditional | noClock | knownModifiers</code> — § 6.2 rule 1, § 9.2; <code>timedSegments</code> (<code>SET4X-S:T20P</code>, <code>SET3X-S:T10P</code>)</li>
+<li class=""><code>exactly | SET | set:timed(P) | final:timed(G) | game:traditional | noClock | knownModifiers</code> — § 3.2 rule 2, § 6.2, § 9.2; <code>timedSegments</code> (<code>SET4X-S:T20P-F:T20</code>)</li>
+<li class=""><code>exactly | SET | set:timed(P) | final:timed(P) | game:traditional | noClock | knownModifiers</code> — § 3.2 rule 2, § 6.2 rule 1, § 9.2; <code>timedSegments</code> (<code>SET4X-S:T10P-F:T5P</code>)</li>
+<li class=""><code>exactly | SET | set:timed(P,tiebreak) | final:same | game:traditional | noClock | knownModifiers</code> — § 6.4 rule 2, § 9.2; <code>timedSegments</code> (<code>SET3X-S:T10P/TB1</code>)</li>
+<li class=""><code>standalone | SET | set:timed(G) | final:same | game:traditional | noClock | knownModifiers</code> — § 3.1, § 6.2 rule 3, § 6.4; <code>timedSegments</code> (<code>T120</code>, <code>T90</code>, <code>T60</code>, <code>T1</code>)</li>
+<li class=""><code>standalone | SET | set:timed(P) | final:same | game:traditional | noClock | knownModifiers</code> — § 3.1, § 6.2 rule 1, § 6.4; <code>timedSegments</code> (<code>T120P</code>, <code>T30P</code>, <code>T10P</code>)</li>
+</ul>
+<p><strong>Aggregate formats</strong></p>
+<ul>
+<li class=""><code>bestOf+aggregate | HAL | set:timed(G) | final:same | game:traditional | noClock | knownModifiers</code> — § 6.2 rule 3, § 9.3; <code>aggregateSegments</code> (<code>HAL2A-S:T45</code>, <code>HAL2A-S:T20</code>)</li>
+<li class=""><code>bestOf+aggregate | PER | set:timed(G) | final:same | game:traditional | noClock | knownModifiers</code> — § 6.2 rule 3, § 9.3; <code>aggregateSegments</code> (<code>PER3A-S:T20</code>, <code>PER1A-S:T5</code>)</li>
+<li class=""><code>bestOf+aggregate | QTR | set:timed(G) | final:same | game:traditional | noClock | knownModifiers</code> — § 6.2 rule 3, § 9.3; <code>aggregateSegments</code> (<code>QTR4A-S:T12</code>, <code>QTR1A-S:T10</code>)</li>
+<li class=""><code>bestOf+aggregate | RND | set:timed(G) | final:same | game:traditional | noClock | knownModifiers</code> — § 6.2 rule 3, § 9.3; <code>aggregateSegments</code> (<code>RND12A-S:T3</code>, <code>RND5A-S:T5</code>)</li>
+<li class=""><code>bestOf+aggregate | SET | set:timed(G) | final:same | game:traditional | noClock | knownModifiers</code> — § 3.1, § 6.2 rule 3, § 9.3; <code>aggregateSegments</code> (<code>SET3A-S:T10</code>, <code>SET1XA-S:T10</code>, <code>SET1A-S:T20</code>)</li>
+<li class=""><code>exactly+aggregate | INN | set:timed(G) | final:same | game:traditional | noClock | knownModifiers</code> — § 6.2 rule 3, § 9.3; <code>aggregateSegments</code> (<code>INN4XA-S:T12</code>)</li>
+<li class=""><code>exactly+aggregate | SET | set:timed(G) | final:same | game:traditional | noClock | knownModifiers</code> — § 6.2 rule 3, § 9.3; <code>aggregateSegments</code> (<code>SET3XA-S:T10</code>, <code>SET9XA-S:T10</code>)</li>
+<li class=""><code>exactly+aggregate | SET | set:timed(P) | final:same | game:traditional | noClock | knownModifiers</code> — § 6.2 rule 1, § 9.3, § 10.3; <code>aggregateSegments</code> (<code>SET7XA-S:T10P</code>, <code>SET2XA-S:T10P</code>), <code>setServer-recordEntry.test.ts</code></li>
+<li class=""><code>exactly+aggregate | SET | set:timed(G) | final:tiebreakSet | game:traditional | noClock | knownModifiers</code> — § 3.2 rule 3, § 4.3, § 9.4; <code>aggregateSegments</code> (<code>SET3XA-S:T10-F:TB1</code>, <code>SET2XA-S:T20-F:TB1</code>), <code>aggregateDeciderIsSetNPlusOne.test.ts</code></li>
+<li class=""><code>exactly+aggregate | SET | set:timed(G) | final:tiebreakSet(noAD) | game:traditional | noClock | knownModifiers</code> — § 3.2 rule 3, § 9.4; <code>aggregateSegments</code> (<code>SET3XA-S:T10-F:TB1NOAD</code>)</li>
+<li class=""><code>exactly+aggregate | SET | set:timed(G) | final:timed(P) | game:traditional | noClock | knownModifiers</code> — § 3.2 rule 3, § 6.4, § 9.4; <code>aggregateSegments</code> (<code>SET3XA-S:T10-F:T10P</code>)</li>
+</ul>
+<p><strong>Combined totals</strong></p>
+<ul>
+<li class=""><code>bestOf | SET | set:combined(ALLOW) | final:same | game:traditional | noClock | knownModifiers</code> — § 7, § 9.5, § 11.5; <code>combinedTotals</code> (<code>SET1-S:P32</code>, <code>SET1-S:P31</code>, <code>SET1-S:P4</code>)</li>
+<li class=""><code>bestOf | SET | set:combined(DECIDING_POINT) | final:same | game:traditional | noClock | knownModifiers</code> — § 7; <code>combinedTotals</code> (<code>SET1-S:P32DP</code>, <code>SET1-S:P4DP</code>)</li>
+<li class=""><code>bestOf | SET | set:combined(WIN_BY_MARGIN) | final:same | game:traditional | noClock | knownModifiers</code> — § 7; <code>combinedTotals</code> (<code>SET1-S:P32WB2</code>)</li>
+</ul>
+<p><strong>Refused: segments of outs</strong></p>
+<ul>
+<li class=""><code>bestOf | SET | set:outs | final:same | game:traditional | noClock | knownModifiers</code> — § 3.3, § 8; <code>formatMatrix.test.ts</code> (<code>SET1-S:O3</code>)</li>
+<li class=""><code>bestOf+aggregate | HAL | set:outs | final:same | game:traditional | noClock | knownModifiers</code> — § 3.3, § 8; <code>formatMatrix.test.ts</code> (<code>HAL2A-S:O3</code>)</li>
+<li class=""><code>exactly+aggregate | INN | set:outs | final:same | game:traditional | noClock | knownModifiers</code> — § 3.3, § 8; <code>formatMatrix.test.ts</code>, <code>inputLevels.test.ts</code> (<code>INN4XA-S:O3</code>)</li>
+<li class=""><code>exactly+aggregate | INN | set:outs | final:same | game:traditional | clock | knownModifiers</code> — § 3.3, § 3.4, § 8; <code>formatMatrix.test.ts</code> (<code>INN4XA-S:O3-M:T50</code>)</li>
+<li class=""><code>exactly+aggregate | SET | set:outs | final:same | game:traditional | noClock | knownModifiers</code> — § 3.3, § 3.4, § 8; <code>formatMatrix.test.ts</code> (<code>SET3XA-S:O3</code>)</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_ZAys" id="related">Related<a href="#related" class="hash-link" aria-label="Direct link to Related" title="Direct link to Related" translate="no">​</a></h2>
+<ul>
+<li class=""><a class="" href="/competition-factory/docs/scoring-engine/scoring-engine-api">Core API reference</a>, <a class="" href="/competition-factory/docs/scoring-engine/event-handlers">event handlers</a> and
+<a class="" href="/competition-factory/docs/scoring-engine/format-support">format support</a>: the engine&#x27;s surface, which this page specifies.</li>
+<li class=""><a class="" href="/competition-factory/docs/codes/matchup-format-grammar">matchUpFormat grammar specification</a>: the grammar § 3 resolves; <a class="" href="/competition-factory/docs/codes/matchup-format">matchUpFormat codes</a> is the guide to writing codes.</li>
+<li class=""><a class="" href="/competition-factory/docs/concepts/outcome-pipeline">The outcome pipeline</a>: the same kind of specification for
+<code>setMatchUpStatus</code>, which this page follows.</li>
+</ul></div></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"><a class="pagination-nav__link pagination-nav__link--prev" href="/competition-factory/docs/scoring-engine/format-support"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">Multi-Sport Format Support</div></a><a class="pagination-nav__link pagination-nav__link--next" href="/competition-factory/docs/scoring-engine/visualization-applications"><div class="pagination-nav__sublabel">Next</div><div class="pagination-nav__label">Visualization Applications</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_G6iu thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#1-inputs-the-configuration-and-the-state" class="table-of-contents__link toc-highlight">1. Inputs: the configuration and the state</a><ul><li><a href="#11-the-configuration" class="table-of-contents__link toc-highlight">1.1 The configuration</a></li><li><a href="#12-the-state" class="table-of-contents__link toc-highlight">1.2 The state</a></li><li><a href="#13-sides" class="table-of-contents__link toc-highlight">1.3 Sides</a></li><li><a href="#14-r2-calculated-values-are-never-inputs" class="table-of-contents__link toc-highlight">1.4 R2: calculated values are never inputs</a></li></ul></li><li><a href="#2-the-action-set" class="table-of-contents__link toc-highlight">2. The action set</a><ul><li><a href="#21-point" class="table-of-contents__link toc-highlight">2.1 point</a></li><li><a href="#22-game" class="table-of-contents__link toc-highlight">2.2 game</a></li><li><a href="#23-set" class="table-of-contents__link toc-highlight">2.3 set</a></li><li><a href="#24-endsegment" class="table-of-contents__link toc-highlight">2.4 endSegment</a></li><li><a href="#25-setinitialscore" class="table-of-contents__link toc-highlight">2.5 setInitialScore</a></li><li><a href="#26-setserver" class="table-of-contents__link toc-highlight">2.6 setServer</a></li><li><a href="#27-substitution-and-the-advisory-rules-s6" class="table-of-contents__link toc-highlight">2.7 substitution and the advisory rules (S6)</a></li><li><a href="#28-challenge-and-annotation" class="table-of-contents__link toc-highlight">2.8 challenge and annotation</a></li><li><a href="#29-what-is-not-an-action" class="table-of-contents__link toc-highlight">2.9 What is not an action</a></li></ul></li><li><a href="#3-format-resolution-the-rule-for-set-n" class="table-of-contents__link toc-highlight">3. Format resolution: the rule for set n</a><ul><li><a href="#31-the-match" class="table-of-contents__link toc-highlight">3.1 The match</a></li><li><a href="#32-which-format-governs-a-set" class="table-of-contents__link toc-highlight">3.2 Which format governs a set</a></li><li><a href="#33-segment-kinds" class="table-of-contents__link toc-highlight">3.3 Segment kinds</a></li><li><a href="#34-roots-modifiers-and-the-clock" class="table-of-contents__link toc-highlight">3.4 Roots, modifiers and the clock</a></li><li><a href="#35-the-game-format" class="table-of-contents__link toc-highlight">3.5 The game format</a></li></ul></li><li><a href="#4-standard-sets" class="table-of-contents__link toc-highlight">4. Standard sets</a><ul><li><a href="#41-the-game" class="table-of-contents__link toc-highlight">4.1 The game</a></li><li><a href="#42-the-set" class="table-of-contents__link toc-highlight">4.2 The set</a></li><li><a href="#43-the-tiebreak-game" class="table-of-contents__link toc-highlight">4.3 The tiebreak game</a></li><li><a href="#44-point-values" class="table-of-contents__link toc-highlight">4.4 Point values</a></li><li><a href="#45-the-final-set" class="table-of-contents__link toc-highlight">4.5 The final set</a></li></ul></li><li><a href="#5-tiebreak-only-segments" class="table-of-contents__link toc-highlight">5. Tiebreak-only segments</a></li><li><a href="#6-timed-segments" class="table-of-contents__link toc-highlight">6. Timed segments</a><ul><li><a href="#61-no-target-time-closes-a-segment" class="table-of-contents__link toc-highlight">6.1 No target: time closes a segment</a></li><li><a href="#62-what-a-point-builds" class="table-of-contents__link toc-highlight">6.2 What a point builds</a></li><li><a href="#63-modifiers" class="table-of-contents__link toc-highlight">6.3 Modifiers</a></li><li><a href="#64-the-end-of-a-segment" class="table-of-contents__link toc-highlight">6.4 The end of a segment</a></li><li><a href="#65-recorded-shape" class="table-of-contents__link toc-highlight">6.5 Recorded shape</a></li></ul></li><li><a href="#7-combined-totals" class="table-of-contents__link toc-highlight">7. Combined totals</a></li><li><a href="#8-outs-refused" class="table-of-contents__link toc-highlight">8. Outs: refused</a></li><li><a href="#9-completion" class="table-of-contents__link toc-highlight">9. Completion</a><ul><li><a href="#91-best-of-n" class="table-of-contents__link toc-highlight">9.1 Best of N</a></li><li><a href="#92-exactly-n-not-aggregate" class="table-of-contents__link toc-highlight">9.2 Exactly N, not aggregate</a></li><li><a href="#93-aggregate" class="table-of-contents__link toc-highlight">9.3 Aggregate</a></li><li><a href="#94-the-aggregate-decider" class="table-of-contents__link toc-highlight">9.4 The aggregate decider</a></li><li><a href="#95-combined-totals" class="table-of-contents__link toc-highlight">9.5 Combined totals</a></li><li><a href="#96-after-completion" class="table-of-contents__link toc-highlight">9.6 After completion</a></li><li><a href="#97-a-match-that-ends-level" class="table-of-contents__link toc-highlight">9.7 A match that ends level</a></li></ul></li><li><a href="#10-service" class="table-of-contents__link toc-highlight">10. Service</a><ul><li><a href="#101-standard-sets" class="table-of-contents__link toc-highlight">10.1 Standard sets</a></li><li><a href="#102-tiebreak-only-segments-and-match-tiebreaks" class="table-of-contents__link toc-highlight">10.2 Tiebreak-only segments and match tiebreaks</a></li><li><a href="#103-timed-segments" class="table-of-contents__link toc-highlight">10.3 Timed segments</a></li><li><a href="#104-rally-scoring-and-combined-totals" class="table-of-contents__link toc-highlight">10.4 Rally scoring and combined totals</a></li><li><a href="#105-the-court-half" class="table-of-contents__link toc-highlight">10.5 The court half</a></li><li><a href="#106-orientation-the-first-explicit-server-and-setserver" class="table-of-contents__link toc-highlight">10.6 Orientation: the first explicit server and setServer</a></li><li><a href="#107-the-competitions-rule" class="table-of-contents__link toc-highlight">10.7 The competition&#39;s rule</a></li><li><a href="#108-the-sr-code" class="table-of-contents__link toc-highlight">10.8 The S/R code</a></li></ul></li><li><a href="#11-views-and-events" class="table-of-contents__link toc-highlight">11. Views and events</a><ul><li><a href="#111-the-materialized-point" class="table-of-contents__link toc-highlight">11.1 The materialized point</a></li><li><a href="#112-points-to-and-the-situation" class="table-of-contents__link toc-highlight">11.2 Points-to and the situation</a></li><li><a href="#113-score-strings-scoreboard-episodes-statistics" class="table-of-contents__link toc-highlight">11.3 Score strings, scoreboard, episodes, statistics</a></li><li><a href="#114-input-levels-and-input-mode" class="table-of-contents__link toc-highlight">11.4 Input levels and input mode</a></li><li><a href="#115-events" class="table-of-contents__link toc-highlight">11.5 Events</a></li></ul></li><li><a href="#12-persistence-and-replay" class="table-of-contents__link toc-highlight">12. Persistence and replay</a><ul><li><a href="#121-the-timeline" class="table-of-contents__link toc-highlight">12.1 The timeline</a></li><li><a href="#122-what-a-point-entry-holds" class="table-of-contents__link toc-highlight">12.2 What a point entry holds</a></li><li><a href="#123-undo-and-redo" class="table-of-contents__link toc-highlight">12.3 Undo and redo</a></li><li><a href="#124-corrections" class="table-of-contents__link toc-highlight">12.4 Corrections</a></li><li><a href="#125-the-record-a-host-saves" class="table-of-contents__link toc-highlight">12.5 The record a host saves</a></li><li><a href="#126-every-persisted-shape-v2-must-read" class="table-of-contents__link toc-highlight">12.6 Every persisted shape v2 must read</a></li><li><a href="#127-determinism" class="table-of-contents__link toc-highlight">12.7 Determinism</a></li><li><a href="#128-legacy-shapes-refusals-apply-at-the-action-boundary" class="table-of-contents__link toc-highlight">12.8 Legacy shapes: refusals apply at the action boundary</a></li><li><a href="#129-the-pure-creatematchup-and-addpoint" class="table-of-contents__link toc-highlight">12.9 The pure <code>createMatchUp</code> and <code>addPoint</code></a></li></ul></li><li><a href="#13-what-is-deliberately-not-modelled" class="table-of-contents__link toc-highlight">13. What is deliberately not modelled</a></li><li><a href="#14-standing-decisions-carried-over" class="table-of-contents__link toc-highlight">14. Standing decisions carried over</a></li><li><a href="#15-what-the-suite-and-the-corpus-pin" class="table-of-contents__link toc-highlight">15. What the suite and the corpus pin</a></li><li><a href="#16-decisions-2026-10-18" class="table-of-contents__link toc-highlight">16. Decisions (2026-10-18)</a></li><li><a href="#17-the-matrix-cell-by-cell" class="table-of-contents__link toc-highlight">17. The matrix, cell by cell</a></li><li><a href="#related" class="table-of-contents__link toc-highlight">Related</a></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 CourtHive</div></div></div></footer></div>
+</body>
+</html>
