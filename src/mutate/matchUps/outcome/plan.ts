@@ -102,6 +102,7 @@ export type OutcomePlan =
   | { abstain: AbstainReason; ops?: undefined; shape?: undefined };
 
 const REMOVE_DIRECTED: Route = 'remove-directed';
+const LINE_SCORE: Route = 'line-score';
 const DOUBLE_EXIT: Route = 'double-exit';
 const CLEAR_SCORE: Route = 'clear-score';
 const APPLY_VALUES: Route = 'apply-values';
@@ -382,6 +383,9 @@ function directionReason(args: {
   const { view, route, write, direction } = args;
   const { targets } = view;
   // a single exit reaches here only as `exitReason` admits it: directed as a played result
+  // a TEAM line that un-decides its dual (`line-score`) directs nothing of its own either: the dual's removal is its
+  // dual call's (`undecidingLineOps`, S7)
+  if (route === LINE_SCORE && view.line && !direction) return undefined;
   if (route !== 'winner' || !write || !DIRECTED_STATUSES.has(write.matchUpStatus) || !write.winningSide) return 'route';
   // a final: the winner has nowhere to go (no winner target or winner link, so no winner direction); only a loser
   // link may take the loser
@@ -2804,9 +2808,10 @@ function unwoundOps(
  * directed no further. A line that decides its dual is planned with the dual's own call. A line's result removed, or a
  * line cleared, or its result corrected, is planned where its dual's winner does not change and the dual still holds a
  * line's result: the line rewritten, the dual's tally re-read (it directs nothing: `removalReason` is not asked, nor is
- * it a re-entered or changed winner). Stay v1's: a removal or correction that un-decides its dual, a removal that leaves
- * the dual holding no result (`updateTieMatchUpScore` removes its score and an inherited tieFormat), a REPORTED score,
- * and auto-calc off. A line in a round robin takes its dual's group tally (`groupTally`, the group read off the dual).
+ * it a re-entered or changed winner). A line that un-decides its dual (`line-score`) is planned with the dual's own
+ * removal (`undecidingLineOps`). Stay v1's: a removal or correction that un-decides its dual by its own route, a removal
+ * that leaves the dual holding no result (`updateTieMatchUpScore` removes its score and an inherited tieFormat), a
+ * REPORTED score, and auto-calc off. A line in a round robin takes its dual's group tally (`groupTally`).
  */
 function teamReason({
   request,
@@ -2829,10 +2834,13 @@ function teamReason({
   if (!line || view.isTeam) return 'team';
   // a line's result removed, or a line cleared: v1 clears it and re-reads its dual's tally (`removeDirectedParticipants`)
   const removing = route === REMOVE_DIRECTED || route === CLEAR_SCORE;
-  if (!removing && route !== 'winner' && !isDoubleExit(request.matchUpStatus)) return 'team';
+  // a line that un-decides its dual: the dual's own removal is planned with it (`undecidingLineOps`, S7)
+  const undeciding = route === LINE_SCORE && !!dual;
+  if (!removing && !undeciding && route !== 'winner' && !isDoubleExit(request.matchUpStatus)) return 'team';
   // a line's stored result corrected (`winner` over a winner)
-  const correcting = route === 'winner' && !!existing.winningSide;
-  if (!removing && !correcting && (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide)) return 'team';
+  const correcting = (route === 'winner' || undeciding) && !!existing.winningSide;
+  if (!removing && !correcting && !undeciding && (existing.matchUpStatus !== TO_BE_PLAYED || existing.winningSide))
+    return 'team';
   if (line.autoCalcDisabled || line.dualRewrite.scoreReported || !line.projectedScore) return 'team';
   // a round robin's group tally is re-read from the dual the line writes (S7: `groupTally`, the group read off the dual)
   if (view.draw.tallied && !view.group) return 'team';
@@ -3390,15 +3398,18 @@ function resultOps(
  * line-up is set on the next dual's side ahead of the placement, so the placement's `directWinner` is that matchUp's
  * last notice. A loser link out of the dual (its line-up carried onto a consolation seat) stays v1's until probed.
  */
-function decidingLineOps(
+/**
+ * S7: the dual's own call a line's result makes, planned from the view of the dual (`DualCall`) as any call is, and
+ * re-stated as v1's tally writes the dual (`updateTieMatchUpScore`): no status codes, no scored time, the sides and the
+ * tieFormat the line's write ensures. A dual in a round robin is tallied in its group with the line in place among its
+ * lines.
+ */
+function lineDualPlan(
   args: Parameters<typeof planOutcome>[0] & { dual: DualCall; drawDefinition: DrawDefinition },
+  line: NonNullable<OutcomeView['line']>,
+  write: MatchUpWrite,
 ): OutcomePlan {
-  const { dual, view, request, drawDefinition } = args;
-  const line = view.line;
-  const write = args.write;
-  const winningSide = dual.request.winningSide as 1 | 2;
-  if (!line || !write || dual.route !== 'winner') return { abstain: 'team' };
-  // a dual in a round robin is tallied in its group with the deciding line in place among its lines (S7)
+  const { dual, request, drawDefinition } = args;
   const group = dual.view.group && {
     ...dual.view.group,
     matchUps: dual.view.group.matchUps.map((matchUp) =>
@@ -3426,8 +3437,7 @@ function decidingLineOps(
     asDual: true,
   });
   if (!dualPlan.ops) return dualPlan;
-  // v1's tally (`updateTieMatchUpScore`) writes no status codes and stamps no scored time on the dual
-  const dualOps = dualPlan.ops.map((op): OutcomeOp => {
+  const ops = dualPlan.ops.map((op): OutcomeOp => {
     if (op.op !== 'setMatchUpResult' || op.matchUpId !== line.dualMatchUpId) return op;
     const { matchUpStatusCodes: _codes, ...result } = op;
     return {
@@ -3436,6 +3446,65 @@ function decidingLineOps(
       dualTally: { sides: line.dualRewrite.sides, tieFormat: line.dualRewrite.tieFormat },
     };
   });
+  return { ...dualPlan, ops };
+}
+
+/**
+ * S7: a line whose result leaves its decided dual's lines projecting no winner (`line-score`): v1 takes the dual's
+ * winner back out of the next dual and writes its tally (`scoreModification`), so the plan is the line's result, then
+ * the dual's own removal (`undecidedDualCall`, routed `remove-directed`) as v1's tally writes it. A removal that is not
+ * clean abstains as any removal does (`removalReason`).
+ */
+function undecidingLineOps(
+  args: Parameters<typeof planOutcome>[0] & { dual: DualCall; drawDefinition: DrawDefinition },
+): OutcomePlan {
+  const { dual, view, request } = args;
+  const line = view.line;
+  const write = args.write;
+  if (!line || !write || dual.route !== REMOVE_DIRECTED) return { abstain: 'team' };
+  const dualPlan = lineDualPlan(args, line, write);
+  if (!dualPlan.ops) return dualPlan;
+  // the dual's removal writes it as its tally leaves it (the projected score, no winner); `scoreModification` returns
+  // no `tieMatchUpResult`
+  const dualOps = dualPlan.ops.map((op): OutcomeOp =>
+    op.op === 'setMatchUpResult' && op.matchUpId === line.dualMatchUpId
+      ? { ...op, dualTally: { ...op.dualTally, unreturned: true } }
+      : op,
+  );
+
+  // v1 takes the dual's direction back first (`removeDirectedParticipants`, through the line), then writes the line and
+  // the dual: the next dual is announced before them
+  const ownsDual = (op: OutcomeOp) =>
+    (op.op === 'setMatchUpResult' && op.matchUpId === line.dualMatchUpId) ||
+    (op.op === 'stampUpdatedAt' && op.entity === 'matchUp' && op.id === line.dualMatchUpId);
+  return {
+    ops: [
+      ...dualOps.filter((op) => !ownsDual(op)),
+      ...resultOps(request, write, request.matchUpId as string),
+      ...dualOps.filter(ownsDual),
+    ],
+    shape: dualPlan.shape,
+  };
+}
+
+/** S7: a line's result that makes its dual's own call: deciding it, or un-deciding it (`line-score`) */
+function lineDualOps(
+  args: Parameters<typeof planOutcome>[0] & { dual: DualCall; drawDefinition: DrawDefinition },
+): OutcomePlan {
+  return args.route === LINE_SCORE ? undecidingLineOps(args) : decidingLineOps(args);
+}
+
+function decidingLineOps(
+  args: Parameters<typeof planOutcome>[0] & { dual: DualCall; drawDefinition: DrawDefinition },
+): OutcomePlan {
+  const { dual, view, request, drawDefinition } = args;
+  const line = view.line;
+  const write = args.write;
+  const winningSide = dual.request.winningSide as 1 | 2;
+  if (!line || !write || dual.route !== 'winner') return { abstain: 'team' };
+  const dualPlan = lineDualPlan(args, line, write);
+  if (!dualPlan.ops) return dualPlan;
+  const dualOps = dualPlan.ops;
   const carry = lineUpCarry({ line, winningSide, dual });
   const loserCarry = loserLineUpCarry({ line, winningSide, dual });
   const beyond = loserLineUpBeyond({ dual, drawDefinition });
@@ -3694,7 +3763,7 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
   const { request, view, drawDefinition } = args;
   const unrecorded = recordReason(args);
   if (unrecorded || !drawDefinition) return { abstain: unrecorded ?? 'no-record' };
-  if (args.dual) return decidingLineOps({ ...args, dual: args.dual, drawDefinition });
+  if (args.dual) return lineDualOps({ ...args, dual: args.dual, drawDefinition });
   // a double exit asked for again: v1 writes nothing (`satisfiedDoubleExit`)
   if (satisfiedDoubleExit(view, request, args.route)) return { ops: [], shape: 'local' };
   const write = args.write as MatchUpWrite;
