@@ -40,7 +40,6 @@ export function bulkRescheduleMatchUps(params: BulkRescheduleMatchUpsArgs): Resu
   allRescheduled?: boolean;
   notRescheduled?: HydratedMatchUp[];
   rescheduled?: HydratedMatchUp[];
-  warnings?: ResultWarning[];
 } {
   const { overrideScheduleLock, scheduleChange, matchUpIds, dryRun } = params;
   if (!matchUpIds || !Array.isArray(matchUpIds)) return { error: MISSING_MATCHUP_IDS };
@@ -51,17 +50,17 @@ export function bulkRescheduleMatchUps(params: BulkRescheduleMatchUpsArgs): Resu
   const rescheduled: HydratedMatchUp[] = [];
   let notRescheduled: HydratedMatchUp[] = [];
   const lockedMatchUpIds: string[] = [];
-  const warnings: ResultWarning[] = [];
+  const warnings: ScheduleWarning[] = [];
 
   for (const tournamentRecord of Object.values(tournamentRecords)) {
     const result = bulkReschedule({
       overrideScheduleLock,
       lockedMatchUpIds,
+      warnings,
       tournamentRecords,
       tournamentRecord,
       scheduleChange,
       matchUpIds,
-      warnings,
       dryRun,
     });
     if (result.error) return result;
@@ -87,7 +86,6 @@ export function bulkRescheduleMatchUps(params: BulkRescheduleMatchUpsArgs): Resu
 
   const allRescheduled = !!(rescheduled.length && !notRescheduled.length);
 
-  // the warnings of each write (an EVENT_DATE_INACTIVE for a matchUp moved onto a day its event does not play)
   return {
     ...SUCCESS,
     rescheduled,
@@ -97,6 +95,9 @@ export function bulkRescheduleMatchUps(params: BulkRescheduleMatchUpsArgs): Resu
     ...(warnings.length ? { warnings } : {}),
   };
 }
+
+/** a warning returned by the schedule write, naming the matchUp it was raised for */
+type ScheduleWarning = ResultWarning & { matchUpId: string };
 /**
  *
  * @param {object} tournamentRecord - passed in automatically by tournamentEngine
@@ -109,9 +110,9 @@ type BulkRescheduleArgs = {
   overrideScheduleLock?: boolean;
   tournamentRecords?: TournamentRecords;
   lockedMatchUpIds?: string[];
+  /** collects the warnings of each write, each carrying its matchUpId */
+  warnings?: ScheduleWarning[];
   tournamentRecord?: Tournament;
-  /** collects the warnings of every write */
-  warnings?: ResultWarning[];
   matchUpIds: string[];
   scheduleChange: BulkRescheduleMatchUpsArgs['scheduleChange'];
   dryRun?: boolean;
@@ -188,6 +189,7 @@ export function bulkReschedule({
         scheduledNotCompletedMatchUps,
         overrideScheduleLock,
         lockedMatchUpIds,
+        warnings,
         rescheduledMatchUpIds,
         notRescheduledMatchUpIds,
         tournamentRecords,
@@ -197,7 +199,6 @@ export function bulkReschedule({
         daysChange,
         startDate,
         matchUpId,
-        warnings,
         endDate,
         dryRun,
       });
@@ -253,7 +254,7 @@ type RescheduleMatchUpArgs = {
   drawDefinition: DrawDefinition;
   tournamentRecord: Tournament;
   lockedMatchUpIds: string[];
-  warnings: ResultWarning[];
+  warnings: ScheduleWarning[];
   minutesChange?: number;
   daysChange?: number;
   startDate?: string;
@@ -266,6 +267,7 @@ function rescheduleMatchUp({
   scheduledNotCompletedMatchUps,
   overrideScheduleLock,
   lockedMatchUpIds,
+  warnings,
   rescheduledMatchUpIds,
   notRescheduledMatchUpIds,
   tournamentRecords,
@@ -275,7 +277,6 @@ function rescheduleMatchUp({
   daysChange,
   startDate,
   matchUpId,
-  warnings,
   endDate,
   dryRun,
 }: RescheduleMatchUpArgs): ResultType | undefined {
@@ -319,7 +320,8 @@ function rescheduleMatchUp({
       return undefined;
     }
     if (result.error) return result;
-    if (result.warnings?.length) warnings.push(...result.warnings);
+    // what the write had to say is passed on, not dropped, each naming its matchUp
+    for (const warning of result.warnings ?? []) warnings.push({ ...warning, matchUpId });
   }
   if (newScheduledTime || newScheduledDate) {
     rescheduledMatchUpIds.push(matchUpId);
