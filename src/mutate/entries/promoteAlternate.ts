@@ -1,9 +1,10 @@
 import { modifyDrawEntriesNotice, modifyEventEntriesNotice } from '@Mutate/notifications/entriesNotifications';
-import { entryPositionOf, entryStageOf, moveEntryToGroup } from './moveEntryToGroup';
+import { entryPositionOf, entryStageOf } from '@Query/entries/entryPositionGroup';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
+import { moveEntryToGroup } from './moveEntryToGroup';
 
 // constants
 import { ALTERNATE, DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
