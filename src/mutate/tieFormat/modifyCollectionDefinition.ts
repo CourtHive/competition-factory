@@ -1,4 +1,5 @@
 import { validateCollectionValueProfiles } from '@Validators/validateCollectionValueProfiles';
+import { tieFormatGenderValidityCheck } from '@Validators/tieFormatGenderValidityCheck';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
@@ -18,6 +19,7 @@ import { intersection } from '@Tools/arrays';
 
 // constants and types
 import { INVALID_VALUES, MISSING_VALUE, NOT_FOUND, NOT_IMPLEMENTED } from '@Constants/errorConditionConstants';
+import { POLICY_TYPE_MATCHUP_ACTIONS } from '@Constants/policyConstants';
 import { genderConstants } from '@Constants/genderConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
@@ -45,6 +47,9 @@ type ModifyCollectionDefinitionArgs = {
   matchUpType?: EventTypeUnion;
   matchUpCount?: number;
   gender?: GenderUnion;
+  // a changed gender is checked against the event's (or this) unless not enforced, as `addCollectionDefinition` checks
+  referenceGender?: GenderUnion;
+  enforceGender?: boolean;
   collectionId: string;
   structureId?: string;
   category?: Category;
@@ -79,6 +84,8 @@ function modifyDefinition({
   matchUpType,
   structureId,
   matchUpId,
+  referenceGender,
+  enforceGender,
   category,
   eventId,
   gender,
@@ -145,6 +152,19 @@ function modifyDefinition({
       context: { collectionId },
       stack,
     });
+
+  const genderRefusal = changedGenderRefusal({
+    source: sourceCollectionDefinition,
+    tournamentRecord,
+    referenceGender,
+    drawDefinition,
+    enforceGender,
+    matchUpType,
+    gender,
+    event,
+    stack,
+  });
+  if (genderRefusal) return genderRefusal;
 
   const valueValidation = validateValueAssignment({
     collectionValueProfiles,
@@ -299,6 +319,46 @@ function modifyDefinition({
   }
 
   return decorateResult({ result: { ...result, modifications }, stack });
+}
+
+/**
+ * A collection whose gender changes is checked against the event's gender (or `referenceGender`), as an added collection
+ * is (`addCollectionDefinition`): unless `enforceGender` is false, or the matchUpActions policy says so. A collection
+ * whose gender does not change is not re-checked, so other edits to a format stored before the check still apply.
+ */
+function changedGenderRefusal({
+  tournamentRecord,
+  referenceGender,
+  drawDefinition,
+  enforceGender,
+  matchUpType,
+  source,
+  gender,
+  event,
+  stack,
+}: {
+  source: { gender?: GenderUnion; matchUpType?: string };
+  tournamentRecord?: Tournament;
+  drawDefinition?: DrawDefinition;
+  referenceGender?: GenderUnion;
+  enforceGender?: boolean;
+  matchUpType?: string;
+  gender?: GenderUnion;
+  event?: Event;
+  stack: string;
+}): ResultType | undefined {
+  if (!gender || coercedGender(source.gender) === coercedGender(gender)) return undefined;
+  const reference = referenceGender ?? event?.gender;
+  if (!reference) return undefined;
+  const { appliedPolicies } = getAppliedPolicies({ tournamentRecord, drawDefinition, event });
+  const policy = appliedPolicies?.[POLICY_TYPE_MATCHUP_ACTIONS];
+  if ((enforceGender ?? policy?.participants?.enforceGender) === false) return undefined;
+  const result = tieFormatGenderValidityCheck({
+    matchUpType: matchUpType ?? source.matchUpType,
+    referenceGender: reference,
+    gender,
+  });
+  return result.error ? decorateResult({ result, context: { referenceGender: reference, gender }, stack }) : undefined;
 }
 
 function validateModificationInputs({

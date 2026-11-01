@@ -336,6 +336,8 @@ engine.modifyCollectionDefinition({
   eventId, // required if modifying tieFormat for a event
   drawId, // required if modifying tieFormat for a drawDefinition or a structure
   gender, // optional
+  referenceGender, // optional - checked against in place of the event's gender
+  enforceGender, // optional - false skips the gender check
 
   // value assignment, only one is allowed to have a value
   collectionValueProfiles, // optional - [{ collectionPosition: 1, value: 2 }] - there must be a value provided for all matchUp positions
@@ -345,6 +347,8 @@ engine.modifyCollectionDefinition({
   setValue, // optional - value awarded for each set won
 });
 ```
+
+A changed `gender` is checked against the event's gender, as `addCollectionDefinition` checks an added collection: a `FEMALE` collection in a `MALE` event, or `MIXED` singles in a `MIXED` event, is refused with `INVALID_GENDER`. The check is skipped when `enforceGender` is false or the `matchUpActions` policy sets `participants.enforceGender: false`. A collection whose gender does not change is not checked again. `modifyTieFormat` changes each existing collection this way, so the same check applies to it.
 
 ---
 
