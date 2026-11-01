@@ -39,8 +39,27 @@ qualifiers, and every entry already holding one counts against them: the direct-
 `CONFIRMED`, `FEED_IN`) and `LUCKY_LOSER`, which takes a place vacated by a withdrawal. `QUALIFIER`
 entries count against the qualifier positions only, so they never take a direct-acceptance place, and a
 `QUALIFIER` entry is refused once the qualifier positions are full. [`getEventEntrySpace`](#getevententryspace)
-counts the same statuses, so the `openPlaces` it reports is what this method allows. `ALTERNATE` entries
-are limited only by a sanctioned `maxAlternates`; `ignoreStageSpace: true` skips every check.
+counts the same statuses, so the `openPlaces` it reports is what this method allows. `ignoreStageSpace: true`
+skips every check.
+
+**Sanctioning limits.** When the tournament's sanctioning constraints extension matches the event (by
+`eventType`, and `eventName` / `category.categoryName` where the constraint states them), its `maxWildcards`
+and `maxAlternates` bound the stage's `WILDCARD` and `ALTERNATE` entries. A `WILDCARD` beyond `maxWildcards`
+is refused with `NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS`, an `ALTERNATE` beyond `maxAlternates` with
+`ENTRY_STATUS_NOT_ALLOWED_IN_STAGE`, and a single call adding more than the limit leaves with
+`PARTICIPANT_COUNT_EXCEEDS_DRAW_SIZE`. The same limits apply to `addEventEntries` and `addEventEntryPairs` given a
+`drawId`, where the draw's refusal is returned as `info` and the event entries are still made. An unsanctioned
+event, or one the constraints do not match, is unaffected: `WILDCARD` entries are limited only by the places left
+and `ALTERNATE` entries not at all. `event.entryProfile.wildcardCount` is the number of places held for wildcards,
+not a cap, and does not limit them. The limits apply to entries added to an existing draw; draw generation places
+the event's accepted entries without them.
+
+```js
+// with sanctioning constraints { events: [{ eventType: 'SINGLES', maxWildcards: 2 }] }
+engine.addDrawEntries({ eventId, drawId, entryStatus: 'WILDCARD', participantIds: [p1, p2] }); // success
+engine.addDrawEntries({ eventId, drawId, entryStatus: 'WILDCARD', participantIds: [p3] });
+// { error: NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS }
+```
 
 ---
 

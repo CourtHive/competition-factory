@@ -31,7 +31,9 @@ type GetStageSpaceArgs = {
  * The places left to direct entries are the stage's draw positions less its qualifier positions; every
  * entry with a status in PLACE_TAKING_ENTRY_STATUSES (direct entries and lucky losers) counts against
  * them, the same list `getEventEntrySpace` counts. QUALIFIER entries count against the qualifier
- * positions only. ALTERNATE entries are limited only by a sanctioned `maxAlternates`.
+ * positions only. ALTERNATE entries are limited only by a sanctioned `maxAlternates`, WILDCARD entries
+ * additionally by a sanctioned `maxWildcards`. The sanctioning constraints resolve only when both
+ * `tournamentRecord` and `event` are passed; without them the stage is treated as unsanctioned.
  */
 export function getStageSpace({
   entryStatus = DIRECT_ACCEPTANCE,
@@ -95,12 +97,14 @@ export function getStageSpace({
   if (entryStatus === WILDCARD) {
     // Unsanctioned: wildcards limited only by available positions
     if (!constraints) {
-      if (totalEntriesCount < stageDrawPositionsAvailable) return { ...SUCCESS };
+      if (totalEntriesCount < stageDrawPositionsAvailable) return { positionsAvailable, ...SUCCESS };
       return { error: NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS };
     }
-    // Sanctioned: check maxWildcards
+    // Sanctioned: check maxWildcards. positionsAvailable is the lesser of the open places and the wildcards
+    // the sanction has left, so a caller adding several wildcards at once can check the whole batch
     const maxWildcards = constraints.maxWildcards ?? stageDrawPositionsAvailable;
-    if (wildcardEntriesCount < maxWildcards) return { ...SUCCESS };
+    if (wildcardEntriesCount < maxWildcards)
+      return { positionsAvailable: Math.min(positionsAvailable, maxWildcards - wildcardEntriesCount), ...SUCCESS };
     return { error: NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS };
   }
 

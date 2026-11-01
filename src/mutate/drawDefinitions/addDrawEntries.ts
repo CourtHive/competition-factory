@@ -117,11 +117,13 @@ export function addDrawEntries({
       autoEntryPositions,
       stage: entryStage,
       ignoreStageSpace,
+      tournamentRecord,
       participantIds,
       drawDefinition,
       entryStatus,
       roundTarget,
       extension,
+      event,
     });
     if (result.error) return result;
     if (entriesKey(drawDefinition.entries) !== drawEntriesBefore) {
