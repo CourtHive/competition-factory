@@ -199,7 +199,7 @@ importers:
         version: 2.1.1
       courthive-components:
         specifier: 7.3.1
-        version: 7.3.1(@tiptap/pm@3.32.0)(leaflet@1.9.4)(tods-competition-factory@7.26.0)
+        version: 7.3.1(@tiptap/pm@3.32.0)(leaflet@1.9.4)(tods-competition-factory@7.27.0)
       leaflet:
         specifier: ^1.9.4
         version: 1.9.4
@@ -210,8 +210,8 @@ importers:
         specifier: ^19.2.6
         version: 19.3.1(react@19.3.1)
       tods-competition-factory:
-        specifier: 7.26.0
-        version: 7.26.0
+        specifier: 7.27.0
+        version: 7.27.0
 
 packages:
 
@@ -5464,8 +5464,8 @@ packages:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
     engines: {node: '>=8.0'}
 
-  tods-competition-factory@7.26.0:
-    resolution: {integrity: sha512-MXEn8sCvIt3FpalxRPX0dXMOonMkwMrP2/WSko85Rg/r5bkXmKGws7+Cw+n9bRTb50EZMMjYnmKMK3fYXdGTzA==}
+  tods-competition-factory@7.27.0:
+    resolution: {integrity: sha512-mZs3Vq+SYiOF98F3bKj6seoWQj9rO+xDxUhngAbk30xLp33f/JBRmkiNVKeUKAWTTHlvQpqLkdiTG0fdIvYUsg==}
     engines: {node: '>=24'}
 
   toidentifier@1.0.1:
@@ -9535,7 +9535,7 @@ snapshots:
       parse-json: 5.2.0
       path-type: 4.0.0
 
-  courthive-components@7.3.1(@tiptap/pm@3.32.0)(leaflet@1.9.4)(tods-competition-factory@7.26.0):
+  courthive-components@7.3.1(@tiptap/pm@3.32.0)(leaflet@1.9.4)(tods-competition-factory@7.27.0):
     dependencies:
       '@tiptap/core': 3.32.0(@tiptap/pm@3.32.0)
       '@tiptap/extension-color': 3.32.0(@tiptap/extension-text-style@3.32.0(@tiptap/core@3.32.0(@tiptap/pm@3.32.0)))
@@ -9552,7 +9552,7 @@ snapshots:
       focus-trap: 8.2.3
       timepicker-ui: 4.6.0
       tippy.js: 6.3.7
-      tods-competition-factory: 7.26.0
+      tods-competition-factory: 7.27.0
       vanillajs-datepicker: 1.3.4
     optionalDependencies:
       leaflet: 1.9.4
@@ -12897,7 +12897,7 @@ snapshots:
     dependencies:
       is-number: 7.0.0
 
-  tods-competition-factory@7.26.0: {}
+  tods-competition-factory@7.27.0: {}
 
   toidentifier@1.0.1: {}
 
