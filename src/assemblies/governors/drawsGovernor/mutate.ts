@@ -28,6 +28,7 @@ export { addDrawOtherId, setDrawOtherIds } from '@Mutate/drawDefinitions/drawOth
 export { resolveDraftPositions } from '@Mutate/drawDefinitions/draft/resolveDraftPositions';
 
 export { resetQualifyingStructure } from '@Mutate/drawDefinitions/resetQualifyingStructure';
+export { resetStructure } from '@Mutate/drawDefinitions/resetStructure';
 export { removeStructure } from '@Mutate/drawDefinitions/structureGovernor/removeStructure';
 export { swapDrawPositionAssignments } from '@Mutate/matchUps/drawPositions/positionSwap';
 export { removeSeededParticipant } from '@Mutate/drawDefinitions/removeSeededParticipant';

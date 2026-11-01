@@ -83,20 +83,22 @@ export function resetDrawDefinition({ tournamentRecord, removeScheduling, remove
   // assignments by different routes — the lucky-draw playoff path replaces the array wholesale, the
   // non-lucky path maps over it deleting only `participantId`, and VOLUNTARY_CONSOLATION has its own
   // reset. A single pass is easier to prove complete than three.
-  for (const structure of drawDefinition.structures ?? []) {
-    for (const assignment of structure.positionAssignments ?? []) {
-      // not gated on the schema write mode: the mode decides whether an attribute is WRITTEN, and
-      // must never decide whether stale state is removed. Both representations go.
-      delete assignment.disableLinks;
-      if (Array.isArray(assignment.extensions)) removeExtension({ element: assignment, name: DISABLE_LINKS });
-    }
-  }
+  for (const structure of drawDefinition.structures ?? []) clearDisableLinks(structure);
 
   const structureIds = (drawDefinition.structures ?? []).map(({ structureId }) => structureId);
 
   modifyDrawNotice({ drawDefinition, structureIds });
 
   return { ...SUCCESS };
+}
+
+export function clearDisableLinks(structure) {
+  for (const assignment of structure.positionAssignments ?? []) {
+    // not gated on the schema write mode: the mode decides whether an attribute is WRITTEN, and
+    // must never decide whether stale state is removed. Both representations go.
+    delete assignment.disableLinks;
+    if (Array.isArray(assignment.extensions)) removeExtension({ element: assignment, name: DISABLE_LINKS });
+  }
 }
 
 function resetVoluntaryConsolationStructure(structure) {
@@ -200,7 +202,7 @@ function getPlayedPositionsByTargetMatchUp(structure, inContextMatchUps): Map<st
   return playedPositions;
 }
 
-function resetStructureMatchUps({
+export function resetStructureMatchUps({
   removeScheduling,
   tournamentRecord,
   removeAssignments,

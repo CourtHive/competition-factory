@@ -653,6 +653,7 @@ export type FactoryEngineMethod =
   | 'resetMatchUpLineUps'
   | 'resetQualifyingStructure'
   | 'resetScorecard'
+  | 'resetStructure'
   | 'resetTieFormat'
   | 'resetVoluntaryConsolationStructure'
   | 'resolveCourtId'
@@ -1446,6 +1447,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'resetMatchUpLineUps',
   'resetQualifyingStructure',
   'resetScorecard',
+  'resetStructure',
   'resetTieFormat',
   'resetVoluntaryConsolationStructure',
   'resolveCourtId',
