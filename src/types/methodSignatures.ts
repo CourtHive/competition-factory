@@ -437,6 +437,7 @@ import type { analyzeTournament } from '@Query/tournaments/analyzeTournament';
 import type { getTournamentInfo } from '@Query/tournaments/getTournamentInfo';
 import type { addDrawEntries } from '@Mutate/drawDefinitions/addDrawEntries';
 import type { modifyDrawName } from '@Mutate/drawDefinitions/modifyDrawName';
+import type { resetStructure } from '@Mutate/drawDefinitions/resetStructure';
 import type { addEventEntryPairs } from '@Mutate/entries/addEventEntryPairs';
 import type { modifyEventEntries } from '@Mutate/entries/modifyEventEntries';
 import type { removeEventEntries } from '@Mutate/entries/removeEventEntries';
@@ -1309,6 +1310,7 @@ export interface MethodSignatures {
   resetMatchUpLineUps: EngineMethod<typeof resetMatchUpLineUps>;
   resetQualifyingStructure: EngineMethod<typeof resetQualifyingStructure>;
   resetScorecard: EngineMethod<typeof resetScorecard>;
+  resetStructure: EngineMethod<typeof resetStructure>;
   resetTieFormat: EngineMethod<typeof resetTieFormat>;
   resetVoluntaryConsolationStructure: EngineMethod<typeof resetVoluntaryConsolationStructure>;
   resolveDraftPositions: EngineMethod<typeof resolveDraftPositions>;

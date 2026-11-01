@@ -240,6 +240,10 @@ export const MISSING_MAIN_STRUCTURE = {
   message: 'Missing MAIN structure',
   code: 'ERR_MISSING_MAIN_STRUCTURE' as const,
 } satisfies ErrorType;
+export const CANNOT_RESET_STRUCTURE = {
+  message: 'Structure cannot be reset on its own',
+  code: 'ERR_CANNOT_RESET_STRUCTURE' as const,
+} satisfies ErrorType;
 export const UNLINKED_STRUCTURES = {
   message: 'drawDefinition contains unlinked structures',
   code: 'ERR_MISSING_STRUCTURE_LINKS' as const,
@@ -1036,6 +1040,7 @@ export const errorConditionConstants = {
   TOURNAMENT_CATEGORY_IN_USE,
   CANNOT_MODIFY_PARTICIPANT_TYPE,
   CANNOT_REMOVE_MAIN_STRUCTURE,
+  CANNOT_RESET_STRUCTURE,
   CANNOT_REMOVE_PARTICIPANTS,
   CATEGORY_MISMATCH,
   COURT_EXISTS,

@@ -1229,6 +1229,30 @@ after a round robin qualifying-only draw, which no longer deletes the qualifying
 
 --
 
+## resetStructure
+
+```js
+engine.resetStructure({
+  removeScheduling, // optional - also remove the structure's scheduling
+  structureId,
+  drawId,
+});
+```
+
+Resets the results of one structure, as `resetDrawDefinition` does for the whole draw: every matchUp in it returns to
+be played and the positions its own played matchUps delivered are removed. Its positioning stays, including the
+participants fed into it by results in other structures. Unlike `resetQualifyingStructure`, which empties a structure
+that has no scores, this clears the scores and keeps the structure.
+
+Refused with `CANNOT_RESET_STRUCTURE`:
+
+- for the first `MAIN` structure while a link connects it to another structure, since its results position the
+  structures it feeds: reset the draw instead;
+- for any structure that has already delivered a participant through one of its links, such as a qualifying structure
+  whose qualifiers are placed in the main draw. `context.delivered` lists them.
+
+---
+
 ## resetVoluntaryConsolationStructure
 
 ```js
