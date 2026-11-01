@@ -1,5 +1,6 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { generateQualifyingLink } from '@Generators/drawDefinitions/links/generateQualifyingLink';
+import { isSanctionLimitedStatus } from '@Query/drawDefinition/checkSanctionedEntryLimits';
 import { addDrawEntry } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
 import { getQualifiersCount } from '@Query/drawDefinition/getQualifiersCount';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
@@ -34,6 +35,7 @@ export function generateNewDrawDefinition(params): ResultType & {
 
   const {
     suppressDuplicateEntries = true,
+    tournamentRecord,
     ignoreStageSpace,
     appliedPolicies,
     qualifyingOnly,
@@ -44,19 +46,23 @@ export function generateNewDrawDefinition(params): ResultType & {
     drawSize,
     drawType,
     entries,
+    event,
   } = params;
 
   const positioningReports: any[] = [];
   let conflicts: any[] = [];
 
+  // tournamentRecord and event resolve the sanctioning constraints addDrawEntry applies
   const addResult = addEntries({
     suppressDuplicateEntries,
+    tournamentRecord,
     ignoreStageSpace,
     qualifyingOnly,
     drawDefinition,
     drawEntries,
     drawType,
     entries,
+    event,
   });
   if (addResult.error) return addResult;
 
@@ -138,7 +144,8 @@ export function generateNewDrawDefinition(params): ResultType & {
 }
 
 function addEntries(params) {
-  const { ignoreStageSpace, drawDefinition, drawEntries, drawType, qualifyingOnly, entries } = params;
+  const { ignoreStageSpace, tournamentRecord, drawDefinition, drawEntries, drawType, qualifyingOnly, entries, event } =
+    params;
   // add all entries to the draw
   for (const entry of entries) {
     // safeguard: never add WITHDRAWN entries to draw definition
@@ -161,17 +168,20 @@ function addEntries(params) {
       ...entry,
       ignoreStageSpace: ignoreStageSpace ?? (isCrossStage || isAdHocType(drawType)),
       entryStage: entry.entryStage ?? MAIN,
-      event: params.event,
+      tournamentRecord,
       drawDefinition,
+      event,
       drawType,
     };
     const result = addDrawEntry(entryData);
-    if (drawEntries && !isCrossStage && result.error) {
-      // only report errors with drawEntries for the active stage; cross-stage
-      // entries failing to attach (e.g. existing-participant on a previously
-      // populated draw) shouldn't block the primary generation step.
+    // only report errors with drawEntries for the active stage; cross-stage
+    // entries failing to attach (e.g. existing-participant on a previously
+    // populated draw) shouldn't block the primary generation step.
+    if (drawEntries && !isCrossStage && result.error) return result;
+    // an entry whose status the sanction bounds is never dropped: generateOrGetExisting refuses entries over the
+    // sanctioned limits before generating, so this is a backstop
+    if (result.error && isSanctionLimitedStatus({ tournamentRecord, entryStatus: entryData.entryStatus, event }))
       return result;
-    }
   }
 
   return { error: undefined };

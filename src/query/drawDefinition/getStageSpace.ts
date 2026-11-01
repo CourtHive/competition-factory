@@ -1,5 +1,5 @@
 // Query
-import { getDrawCompositionConstraints } from './getDrawCompositionConstraints';
+import { DrawCompositionConstraints, getDrawCompositionConstraints } from './getDrawCompositionConstraints';
 import { getStageEntryTypeCount, getStagePlaceTakingEntriesCount } from './stageGetter';
 import { getStageDrawPositionsBreakdown } from './getStageDrawPositions';
 
@@ -50,14 +50,10 @@ export function getStageSpace({
   const { constraints } = getDrawCompositionConstraints({ tournamentRecord, event });
 
   if (entryStatus === ALTERNATE) {
-    // Unsanctioned: alternates always allowed
-    if (!constraints) return { positionsAvailable: Infinity, ...SUCCESS };
-    // Sanctioned: check maxAlternates
-    if (constraints.maxAlternates === undefined) return { positionsAvailable: Infinity, ...SUCCESS };
-
-    const alternateCount = getStageEntryTypeCount({ entryStatus: ALTERNATE, drawDefinition, stage });
-    if (alternateCount < constraints.maxAlternates)
-      return { positionsAvailable: constraints.maxAlternates - alternateCount, ...SUCCESS };
+    // alternates are limited only by a sanctioned maxAlternates
+    const alternatesAllowance = getSanctionedEntryAllowance({ constraints, drawDefinition, entryStatus, stage });
+    if (alternatesAllowance === undefined) return { positionsAvailable: Infinity, ...SUCCESS };
+    if (alternatesAllowance > 0) return { positionsAvailable: alternatesAllowance, ...SUCCESS };
     return { error: ENTRY_STATUS_NOT_ALLOWED_IN_STAGE };
   }
 
@@ -102,11 +98,50 @@ export function getStageSpace({
     }
     // Sanctioned: check maxWildcards. positionsAvailable is the lesser of the open places and the wildcards
     // the sanction has left, so a caller adding several wildcards at once can check the whole batch
-    const maxWildcards = constraints.maxWildcards ?? stageDrawPositionsAvailable;
-    if (wildcardEntriesCount < maxWildcards)
-      return { positionsAvailable: Math.min(positionsAvailable, maxWildcards - wildcardEntriesCount), ...SUCCESS };
+    const wildcardsAllowance =
+      getSanctionedEntryAllowance({ constraints, drawDefinition, entryStatus, stage }) ??
+      stageDrawPositionsAvailable - wildcardEntriesCount;
+    if (wildcardsAllowance > 0)
+      return { positionsAvailable: Math.min(positionsAvailable, wildcardsAllowance), ...SUCCESS };
     return { error: NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS };
   }
 
   return { positionsAvailable, ...SUCCESS };
+}
+
+type SanctionedEntryAllowanceArgs = {
+  constraints?: DrawCompositionConstraints;
+  drawDefinition?: DrawDefinition;
+  entryStatus?: string;
+  stage: string;
+};
+
+/**
+ * How many more entries of `entryStatus` the sanction admits to a stage: the sanctioned maximum (`maxWildcards` for
+ * WILDCARD, `maxAlternates` for ALTERNATE) less the entries of that status already in the stage. Undefined when the
+ * sanction sets no maximum for the status, and so the stage is not bounded by the sanction. Negative when the stage
+ * already holds more than the sanction allows.
+ */
+export function getSanctionedEntryAllowance({
+  constraints,
+  drawDefinition,
+  entryStatus,
+  stage,
+}: SanctionedEntryAllowanceArgs): number | undefined {
+  const limit = getSanctionedEntryLimit({ constraints, entryStatus });
+  if (limit === undefined) return undefined;
+  return limit - getStageEntryTypeCount({ entryStatus, drawDefinition, stage });
+}
+
+/** The sanctioned maximum for an entryStatus: `maxWildcards` for WILDCARD, `maxAlternates` for ALTERNATE. */
+export function getSanctionedEntryLimit({
+  constraints,
+  entryStatus,
+}: {
+  constraints?: DrawCompositionConstraints;
+  entryStatus?: string;
+}): number | undefined {
+  if (entryStatus === WILDCARD) return constraints?.maxWildcards;
+  if (entryStatus === ALTERNATE) return constraints?.maxAlternates;
+  return undefined;
 }

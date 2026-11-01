@@ -1,7 +1,13 @@
+import { checkSanctionedEntryLimits } from '@Query/drawDefinition/checkSanctionedEntryLimits';
 import { processExistingDrawDefinition } from './processExistingDrawDefinition';
 import { generateNewDrawDefinition } from './generateNewDrawDefinition';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { setUpDrawGeneration } from './setUpDrawGeneration';
+
+// constants
+import { QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { WITHDRAWN } from '@Constants/entryStatusConstants';
 
 // types
 import { DrawMaticArgs, PolicyDefinitions, ResultType } from '@Types/factoryTypes';
@@ -82,14 +88,32 @@ export function generateOrGetExisting(params: GenerateOrGetExisting): ResultType
     params.qualifyingProfiles?.length
   );
 
+  const processExisting = !!(setUpResult.existingQualifyingPlaceholderStructureId || addingQualifyingToExistingMain);
+
+  // Refuse before anything is generated: the entries this generation adds must fit the sanctioning constraints
+  // (maxWildcards, maxAlternates). processExistingDrawDefinition adds only the QUALIFYING drawEntries;
+  // generateNewDrawDefinition adds every entry that is not WITHDRAWN. An explicit ignoreStageSpace and AD_HOC draws
+  // are exempt, as addDrawEntry exempts them.
+  if (!params.ignoreStageSpace && !isAdHocType(params.drawType)) {
+    const entriesToAdd = processExisting
+      ? (params.drawEntries ?? []).filter(({ entryStage }) => entryStage === QUALIFYING)
+      : entries.filter(({ entryStatus }) => entryStatus !== WITHDRAWN);
+    const limitsResult = checkSanctionedEntryLimits({
+      drawDefinition: setUpResult.existingDrawDefinition,
+      tournamentRecord: params.tournamentRecord,
+      entries: entriesToAdd,
+      event: params.event,
+    });
+    if (limitsResult.error) return decorateResult({ result: limitsResult, stack });
+  }
+
   const genResult: ResultType & {
     drawDefinition?: DrawDefinition;
     positioningReports?: any[];
     structureId?: string;
     conflicts?: any[];
   } =
-    ((setUpResult.existingQualifyingPlaceholderStructureId || addingQualifyingToExistingMain) &&
-      processExistingDrawDefinition({ ...params, ...setUpResult })) ||
+    (processExisting && processExistingDrawDefinition({ ...params, ...setUpResult })) ||
     generateNewDrawDefinition({ ...params, ...setUpResult, entries });
   if (genResult.error) return decorateResult({ result: genResult, stack });
 
