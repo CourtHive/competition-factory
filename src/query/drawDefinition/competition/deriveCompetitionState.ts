@@ -42,13 +42,28 @@ export function deriveCompetitionState({
       .map((roundState) => roundState.roundNumber),
   );
 
-  for (const matchUp of canonicalOrder(drawDefinition)) {
-    // PER_MATCHUP counted a result as it was decided; PER_ROUND, every completed result of a round once processed
-    const counted = perRound
+  // PER_MATCHUP counts a result as it is decided; PER_ROUND, every completed result of a round once processed
+  const counted = canonicalOrder(drawDefinition).filter((matchUp) =>
+    perRound
       ? processedRounds.has(matchUp.roundNumber ?? 0) &&
         (!!matchUp.winningSide || (!!matchUp.matchUpStatus && completedMatchUpStatuses.includes(matchUp.matchUpStatus)))
-      : !!matchUp.winningSide;
-    if (counted) applyCompetitionResult({ participantStates, matchUp, competitionPolicy });
+      : !!matchUp.winningSide,
+  );
+
+  if (!perRound) {
+    for (const matchUp of counted) applyCompetitionResult({ participantStates, matchUp, competitionPolicy });
+  } else {
+    // C6: every result of a round is expected from the form ratings at the START of the round, as the policy documents
+    // ("all matchUps in a round use the same dynamic form ratings"); the order a round's results are listed in, or
+    // entered in, cannot change the state. It differs from one-after-another only for a participant who plays more than
+    // once in a round.
+    for (const round of byRound(counted)) {
+      const ratingsAtStart = Object.fromEntries(
+        Object.entries(participantStates).map(([participantId, state]) => [participantId, state.dynamicFormRating]),
+      );
+      for (const matchUp of round)
+        applyCompetitionResult({ participantStates, matchUp, competitionPolicy, ratingsAtStart });
+    }
   }
 
   return { ...competitionState, participantStates, roundStates: { ...competitionState.roundStates } };
@@ -70,6 +85,17 @@ function baselineState(participantId: string, baselineRating: number): Competiti
   };
 }
 
+/** consecutive runs of the same round (the matchUps are already in round order) */
+function byRound(matchUps: MatchUp[]): MatchUp[][] {
+  const rounds: MatchUp[][] = [];
+  for (const matchUp of matchUps) {
+    const last = rounds.at(-1);
+    if (last && last[0].roundNumber === matchUp.roundNumber) last.push(matchUp);
+    else rounds.push([matchUp]);
+  }
+  return rounds;
+}
+
 /** every structure's matchUps, by round, in structure order within a round (a stable sort) */
 function canonicalOrder(drawDefinition: DrawDefinition): MatchUp[] {
   const matchUps = (drawDefinition.structures ?? []).flatMap((structure) => matchUpsOf(structure) ?? []);
@@ -86,10 +112,13 @@ function canonicalOrder(drawDefinition: DrawDefinition): MatchUp[] {
 export function applyCompetitionResult({
   participantStates,
   competitionPolicy,
+  ratingsAtStart,
   matchUp,
 }: {
   participantStates: Record<string, CompetitionParticipantState>;
   competitionPolicy: CompetitionPolicy;
+  /** PER_ROUND: the form ratings the expectation is computed from (the round's start); otherwise the current ones */
+  ratingsAtStart?: Record<string, number>;
   matchUp: MatchUp;
 }) {
   const p1Id = matchUp.sides?.[0]?.participantId;
@@ -112,7 +141,8 @@ export function applyCompetitionResult({
     const actual = side === 1 ? p1Actual : p2Actual;
     const [won, lost] = side === 1 ? [side1Count, side2Count] : [side2Count, side1Count];
     const expectedBaseline = expectedScore(state.baselineRating, opponent.baselineRating, logisticScale);
-    const expectedDynamic = expectedScore(state.dynamicFormRating, opponent.dynamicFormRating, logisticScale);
+    const formOf = (s: CompetitionParticipantState) => ratingsAtStart?.[s.participantId] ?? s.dynamicFormRating;
+    const expectedDynamic = expectedScore(formOf(state), formOf(opponent), logisticScale);
     return {
       pressureDelta: pressureEnabled ? actual - expectedBaseline : 0,
       dynamicAfter: dynamicEnabled

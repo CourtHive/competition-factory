@@ -171,6 +171,10 @@ The `processingGranularity` field controls when rating updates are applied:
 | `PER_MATCHUP` | Ratings update immediately after each matchUp is scored. A participant's dynamic form rating may change between their first and second matchUp within the same round (if applicable). |
 | `PER_ROUND`   | Ratings update after all matchUps in a round are complete. All matchUps in a round use the same dynamic form ratings for expectation calculations.                                    |
 
+Under `PER_ROUND`, every result of a round is expected from the form ratings at the start of the round, so the order a
+round's results are listed or entered in cannot change any rating. (Before the standings engine they were applied one
+after another; that differed only for a participant who played more than once in a round.)
+
 `PER_ROUND` is the more common choice for Swiss and DrawMatic competitions, where all pairings in a round are determined simultaneously. `PER_MATCHUP` is useful when matchUps complete asynchronously and subsequent pairings depend on live results.
 
 ---
