@@ -1,5 +1,6 @@
 import { getFinishingPositionDetails, getRoundId, getRoundProfile, getRoundTiming } from './schedulingUtils';
 import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
+import { eventDateResolver, getEventPlayingDates } from '@Query/events/eventPlaysOnDate';
 import { getProfileRounds } from '@Query/matchUps/scheduling/getProfileRounds';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { roundSort } from '@Functions/sorters/roundSort';
@@ -103,6 +104,20 @@ export function getRounds({
     [];
 
   const excludedRounds: any[] = [];
+  const resolveEventDate = scheduleDate && tournamentRecords ? eventDateResolver(tournamentRecords) : undefined;
+
+  // an event's playing days, once per event, attached to its rounds only when the event's own dates narrow them
+  const playingDatesByEvent = new Map<string, string[] | undefined>();
+  const playingDatesOf = (round: any): string[] | undefined => {
+    const key = `${round.tournamentId}|${round.eventId}`;
+    if (!playingDatesByEvent.has(key)) {
+      const record = tournamentRecords?.[round.tournamentId];
+      const event = record?.events?.find(({ eventId }) => eventId === round.eventId);
+      const result = record && event ? getEventPlayingDates({ tournamentRecord: record, event }) : undefined;
+      playingDatesByEvent.set(key, result?.constrained ? result.playingDates : undefined);
+    }
+    return playingDatesByEvent.get(key);
+  };
 
   const rounds =
     (consideredMatchUps &&
@@ -175,6 +190,7 @@ export function getRounds({
                 ...round,
                 ...context,
                 roundSegment: { segmentsCount, segmentNumber: i + 1 },
+                playingDates: playingDatesOf(round),
                 winnerFinishingPositionRange,
                 unscheduledCount,
                 incompleteCount,
@@ -200,6 +216,7 @@ export function getRounds({
           return definedAttributes({
             ...round,
             ...context,
+            playingDates: playingDatesOf(round),
             winnerFinishingPositionRange,
             unscheduledCount,
             incompleteCount,
@@ -226,13 +243,16 @@ export function getRounds({
           const { isComplete, isScheduled } = round;
           const keepComplete = !excludeCompletedRounds || !isComplete;
           const keepScheduled = !excludeScheduledRounds || !isScheduled;
-          const event = venueId || scheduleDate ? events?.find(({ eventId }) => eventId === round.eventId) : undefined;
+          const event = venueId ? events?.find(({ eventId }) => eventId === round.eventId) : undefined;
 
-          const startDate = event?.startDate ?? tournamentRecord?.startDate;
-          const endDate = event?.endDate ?? tournamentRecord?.endDate;
-          const validStartDate = !scheduleDate || !startDate || new Date(scheduleDate) >= new Date(startDate);
-          const validEndDate = !scheduleDate || !endDate || new Date(scheduleDate) <= new Date(endDate);
-          const validDate = validStartDate && validEndDate;
+          // the event must play on scheduleDate: its range, its active dates or weekdays, the tournament's (eventPlaysOnDate)
+          const validDate =
+            !scheduleDate ||
+            !!resolveEventDate?.({
+              date: extractDate(scheduleDate) || scheduleDate,
+              tournamentId: round.tournamentId,
+              eventId: round.eventId,
+            }).plays;
 
           const validVenue = !venueId || event?.validVenueIds.includes(venueId);
 

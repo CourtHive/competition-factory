@@ -1,6 +1,7 @@
+import { getEventPlayingDates } from '@Query/events/eventPlaysOnDate';
 import { structuresOf } from '@Acquire/structureMembers';
 
-import type { DrawDefinition, Event, Structure } from '@Types/tournamentTypes';
+import type { DrawDefinition, Event, Structure, Tournament } from '@Types/tournamentTypes';
 import type { TournamentEventInfo } from '@Types/viewTypes';
 
 /**
@@ -46,7 +47,19 @@ export function getEventMatchUpFormats(event?: Event): string[] {
   return [...collected];
 }
 
-export function extractEventInfo({ event }): { eventInfo: TournamentEventInfo } {
+/**
+ * An event's playing days for a public payload: present only when the event's own dates, active dates or weekdays
+ * narrow the days its tournament plays, so an unconstrained event adds nothing to the payload.
+ */
+export function constrainedPlayingDates(tournamentRecord?: Tournament, event?: Event): string[] | undefined {
+  if (!tournamentRecord || !event) return undefined;
+  const { playingDates, constrained } = getEventPlayingDates({ tournamentRecord, event });
+  return constrained ? playingDates : undefined;
+}
+
+export function extractEventInfo({ event, tournamentRecord }: { event: Event; tournamentRecord?: Tournament }): {
+  eventInfo: TournamentEventInfo;
+} {
   const {
     competitionFormat,
     surfaceCategory,
@@ -63,7 +76,7 @@ export function extractEventInfo({ event }): { eventInfo: TournamentEventInfo } 
     endDate,
     gender,
     notes,
-  } = event;
+  } = event as Event & { ballType?: string; onlineResources?: any };
 
   const entriesCount = event.entries?.length ?? 0;
 
@@ -75,6 +88,7 @@ export function extractEventInfo({ event }): { eventInfo: TournamentEventInfo } 
   const eventInfo = {
     drawDefinitionCount: event.drawDefinitions?.length,
     matchUpFormats: matchUpFormats.length ? matchUpFormats : undefined,
+    playingDates: constrainedPlayingDates(tournamentRecord, event),
     competitionFormat,
     entriesCount,
     surfaceCategory,

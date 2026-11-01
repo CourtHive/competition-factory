@@ -9,6 +9,7 @@ import { getParticipants } from '@Query/participants/getParticipants';
 import { getPublishState } from '@Query/publishing/getPublishState';
 import { getDrawData } from '@Query/drawDefinition/getDrawData';
 import { getVenueData } from '@Query/venues/getVenueData';
+import { constrainedPlayingDates } from '@Query/event/extractEventInfo';
 import { findExtension } from '@Acquire/findExtension';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { findEvent } from '@Acquire/findEvent';
@@ -256,6 +257,10 @@ function getEventDataUnredacted(params: GetEventDataArgs): EventDataResult {
   if (usePublishState && !eventPublished) {
     delete eventInfo.competitionFormat;
   }
+
+  // only when the event's own dates narrow the tournament's, so unconstrained events keep their payload shape
+  const playingDates = constrainedPlayingDates(tournamentRecord, event);
+  if (playingDates) eventInfo.playingDates = playingDates;
 
   eventInfo.display = findExtension({
     element: event,
