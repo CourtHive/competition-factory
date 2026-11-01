@@ -87,7 +87,7 @@ export type OutcomeOp =
       disableAutoCalc?: true | null;
       /**
        * the call's notes, written onto its own matchUp with the result as v1's `addNotes` writes them inside
-       * `modifyMatchUpScore` (S7, `notesReason`: the clean routes only; a double exit's or a TEAM call's stay v1's)
+       * `modifyMatchUpScore` (S7, `notesReason`: the clean routes only; a double exit's or a TEAM call's are deferred)
        */
       notes?: string;
     }
