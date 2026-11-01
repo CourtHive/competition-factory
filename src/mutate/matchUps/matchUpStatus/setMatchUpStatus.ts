@@ -249,6 +249,9 @@ function settleDraw({
   );
 }
 
+/** the notes v2 may plan: a string (refused above otherwise, but for the test fixture `{ testing }`, which v2 leaves to v1) */
+const carriedNotes = (notes: unknown): string | undefined => (isString(notes) ? notes : undefined);
+
 export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // DECISION: Validate required parameters before any processing
   // WHY: Fail fast if essential data is missing. `matchUpId` is asked for here; `drawDefinition` is
@@ -413,7 +416,7 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
       score: outcome?.score,
       matchUpFormat,
       matchUpId,
-      carries: { schedule, notes: !!notes },
+      carries: { schedule, notes: carriedNotes(notes) },
       flags: {
         allowChangePropagation,
         propagateExitStatus,

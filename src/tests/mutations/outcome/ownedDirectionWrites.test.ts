@@ -2,6 +2,7 @@ import { generateOutcomeFromScoreString } from '@Generators/simulation/generateO
 import { deleteNotices, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { POLICY_SCORING_DEFAULT } from '@Fixtures/policies/POLICY_SCORING_DEFAULT';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
+import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { replayFailure } from '@Tests/testHarness/exitPropagation/sweep';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
@@ -80,6 +81,7 @@ afterEach(() => {
 const TOPICS = [MODIFY_MATCHUP, MODIFY_DRAW_DEFINITION, MODIFY_POSITION_ASSIGNMENTS, UPDATE_INCONTEXT_MATCHUP];
 const won = (winningSide: 1 | 2) => generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide }).outcome;
 const cleared = { matchUpStatus: TO_BE_PLAYED, score: { scoreStringSide1: '', scoreStringSide2: '' } };
+const NOTED = { notes: 'retired hurt' };
 const walkover = (winningSide: 1 | 2) =>
   generateOutcomeFromScoreString({ matchUpStatus: WALKOVER, winningSide }).outcome;
 const exited = (matchUpStatus: string, winningSide: 1 | 2) =>
@@ -156,6 +158,42 @@ const SCENARIOS: [string, Scenario][] = [
       drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
       setup: TO_FINAL_8().slice(0, 6),
       steps: [{ target: FINAL_8(), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'notes: a winner with notes, written onto its matchUp with the result (S7)',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      steps: [{ target: R1(1), outcome: won(1), params: NOTED }],
+    },
+  ],
+  [
+    'notes: a score with no winner, with notes (the removal route)',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      steps: [
+        {
+          target: R1(1),
+          outcome: { score: { sets: [{ setNumber: 1, side1Score: 3, side2Score: 2 }] } },
+          params: NOTED,
+        },
+      ],
+    },
+  ],
+  [
+    'notes: a winner re-scored with notes (the score-only route)',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1), outcome: won(1) }],
+      steps: [{ target: R1(1), outcome: won(1), params: NOTED }],
+    },
+  ],
+  [
+    'notes: a result cleared with notes (the clear route): v1 writes the notes onto the cleared matchUp',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1), outcome: won(1) }],
+      steps: [{ target: R1(1), outcome: cleared, params: NOTED }],
     },
   ],
   [
@@ -2963,5 +3001,24 @@ describe('under v2, a refused outcome returns exactly the result v1 returns', ()
     expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
     expect(v2.notices).toEqual(v1.notices);
+  });
+});
+
+describe('under v2, notes on a double exit are v1s (S7: v1 forwards the calls params to the exits it writes)', () => {
+  it('a double walkover with notes abstains `notes`, and v2 leaves exactly what v1 leaves', () => {
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      steps: [{ target: R1(1), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: NOTED }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const deferred = () => getDifferentialTally()['shadow:abstain:notes']?.deferred ?? 0;
+    const before = deferred();
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(deferred()).toEqual(before + 1);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
   });
 });
