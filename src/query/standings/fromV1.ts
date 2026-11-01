@@ -43,11 +43,12 @@ export const V1_HEAD_TO_HEAD: StandingsDirective = { attribute: 'headToHead', mo
 /**
  * A stored round-robin tally policy as the standings engine reads it. Nothing is reinterpreted: every v1 behaviour,
  * including its quirks (spec § 1: K1 the single victory, K3 the key fallback, K11 the conditional disable), is spelled
- * out as a field, so the core needs no knowledge of v1.
+ * out as a field, so the core needs no knowledge of v1. `primaryKeys` widens the accepted primary measures for a caller
+ * whose ledger has more (a season adds the tie-score values).
  */
-export function fromV1(tallyPolicy?: RoundRobinTallyPolicy): StandingsPolicy {
+export function fromV1(tallyPolicy?: RoundRobinTallyPolicy, primaryKeys: string[] = V1_PRIMARY_KEYS): StandingsPolicy {
   const groupOrderKey = tallyPolicy?.groupOrderKey;
-  const primary = groupOrderKey && V1_PRIMARY_KEYS.includes(groupOrderKey) ? groupOrderKey : 'matchUpsWon';
+  const primary = groupOrderKey && primaryKeys.includes(groupOrderKey) ? groupOrderKey : 'matchUpsWon';
   const headToHeadDisabled = !!(tallyPolicy?.headToHead as { disabled?: boolean } | undefined)?.disabled;
   const stored = (tallyPolicy?.tallyDirectives as StandingsDirective[] | undefined) ?? V1_DEFAULT_DIRECTIVES;
   return {
