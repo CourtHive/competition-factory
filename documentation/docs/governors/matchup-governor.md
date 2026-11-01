@@ -1287,10 +1287,19 @@ Sets the `orderOfFinish` attribute for `matchUps` specified by `matchUpId` in th
 
 ### Validation
 
-Validation is done within a _cohort_ of `matchUps` which have equivalent `structureId`, `matchUpType`, `roundNumber`, and `matchUpTieId` (if applicable).
+Validation is done within a _cohort_ of `matchUps` which have equivalent `structureId`, `matchUpType`, `roundNumber`, and `matchUpTieId` and `collectionId` (if applicable): a TEAM dual's lines are numbered per collection.
 
 - `matchUpIds` in `finishingOrder` must be part of the same _cohort_
 - `orderOfFinish` values must be unique positive integers within the _cohort_
+- a dual's line takes a number only when it was played to a result (`COMPLETED`, `RETIRED`, or `DEFAULTED` with a score); a walkover, a scoreless default, a dead rubber or an abandoned line is refused with `INVALID_MATCHUP_STATUS`
+
+### Automatic numbering of a dual's lines
+
+The factory numbers a dual's lines as they finish, on every write of a line's result, so `setOrderOfFinish` is needed only to correct the order:
+
+- a line played to a result that has no number finishes after the others in its collection. No number goes past the lines that can still count; a gap left by an older record is closed first
+- a line whose result is cleared, or becomes one that does not count, loses its number and the later lines move up
+- a score edit, or a corrected winner, keeps the number
 
 ```js
 engine.setOrderOfFinish({

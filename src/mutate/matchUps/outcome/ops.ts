@@ -264,6 +264,16 @@ export type OutcomeOp =
       matchUpId: string;
       schedule: MatchUpSchedule;
     }
+  | {
+      op: 'setOrderOfFinish';
+      /**
+       * a TEAM dual's line's place in its collection's finishing order (`orderOfFinish`): absent, removed. Planned per
+       * line whose number a line's write changes (the line itself, and the later lines of a cleared one), after that
+       * line's result and before the dual's, as v1's `modifyMatchUpScore` writes them
+       */
+      matchUpId: string;
+      orderOfFinish?: number;
+    }
   | { op: 'stampUpdatedAt'; entity: 'matchUp' | 'structure' | 'drawDefinition'; id: string };
 
 /** the op vocabulary as a literal union, which `verify:outcome-spec` holds to the spec; checked against `OutcomeOp` */
@@ -284,6 +294,7 @@ export type OutcomeOpName =
   | 'setParticipantResults'
   | 'setSideLineUp'
   | 'setMatchUpSchedule'
+  | 'setOrderOfFinish'
   | 'stampUpdatedAt';
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 const opNamesMatch: Same<OutcomeOpName, OutcomeOp['op']> = true;
@@ -471,6 +482,14 @@ function foldSideLineUp(op: OpOf<'setSideLineUp'>, { matchUps }: DrawIndex): Fol
   return {};
 }
 
+function foldOrderOfFinish(op: OpOf<'setOrderOfFinish'>, { matchUps }: DrawIndex): Folded {
+  const matchUp = matchUps.get(op.matchUpId);
+  if (!matchUp) return { error: `setOrderOfFinish: no matchUp ${op.matchUpId}` };
+  if (op.orderOfFinish === undefined) delete matchUp.orderOfFinish;
+  else matchUp.orderOfFinish = op.orderOfFinish;
+  return {};
+}
+
 function foldSchedule(op: OpOf<'setMatchUpSchedule'>, { matchUps }: DrawIndex): Folded {
   const matchUp = matchUps.get(op.matchUpId);
   if (!matchUp) return { error: `setMatchUpSchedule: no matchUp ${op.matchUpId}` };
@@ -620,6 +639,8 @@ function foldOne(op: OutcomeOp, index: DrawIndex, drawDefinition: DrawDefinition
       return foldSideLineUp(op, index);
     case 'setMatchUpSchedule':
       return foldSchedule(op, index);
+    case 'setOrderOfFinish':
+      return foldOrderOfFinish(op, index);
     default:
       return foldStamp(op, index, drawDefinition, stampedBefore);
   }
