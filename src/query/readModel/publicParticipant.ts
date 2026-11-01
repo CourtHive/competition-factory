@@ -1,4 +1,5 @@
 import { getParticipantPrivacyTemplate } from '@Query/participants/participantPrivacy';
+import { isCompetitorRole } from '@Query/participant/participantRoleOf';
 import { getParticipants } from '@Query/participants/getParticipants';
 
 // constants and types
@@ -6,7 +7,6 @@ import { MISSING_POLICY_DEFINITION, MISSING_TOURNAMENT_RECORD } from '@Constants
 import type { PublicParticipant, ReadModelPublicParticipantRow } from '@Types/readModelTypes';
 import type { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
-import { COMPETITOR } from '@Constants/participantRoleValues';
 import type { Tournament } from '@Types/tournamentTypes';
 
 /**
@@ -77,7 +77,7 @@ export function publicParticipantDocuments({
 
   const policyHash = participantPolicyHash(policyDefinitions) as string;
   const documents = (participants ?? [])
-    .filter((participant) => !participant.participantRole || participant.participantRole === COMPETITOR)
+    .filter((participant) => isCompetitorRole(participant))
     .map((participant) => ({
       participantId: participant.participantId,
       participant: participant as PublicParticipant,

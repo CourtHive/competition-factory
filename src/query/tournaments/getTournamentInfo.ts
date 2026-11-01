@@ -4,6 +4,7 @@ import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
 import { scheduledMatchUpTime } from '@Query/matchUp/scheduledMatchUpTime';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
 import { getTimeItemValues } from '@Mutate/timeItems/getTimeItemValues';
+import { isCompetitorRole } from '@Query/participant/participantRoleOf';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { getPublishState } from '@Query/publishing/getPublishState';
 import { extractEventInfo } from '@Query/event/extractEventInfo';
@@ -22,7 +23,6 @@ import { HydratedParticipant } from '@Types/hydrated';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   ADMINISTRATION,
-  COMPETITOR,
   DIRECTOR,
   HOSPITALITY,
   MEDIA,
@@ -261,12 +261,10 @@ export function getTournamentInfo(params?: {
     // in this tournament". The same file publishes `tournamentContacts` from those very staff records,
     // so the two outputs disagreed about what the staff were.
     //
-    // "Has a role and it is not COMPETITOR" rather than "is COMPETITOR", matching the entry gate in
+    // `isCompetitorRole` reads an absent role as COMPETITOR, matching the entry gate in
     // `addEventEntries`: most records carry no `participantRole` at all, and those are players.
     const individualParticipantCount =
-      tournamentRecord.participants?.filter(
-        (p) => p.participantType === INDIVIDUAL && (!p.participantRole || p.participantRole === COMPETITOR),
-      ).length ?? 0;
+      tournamentRecord.participants?.filter((p) => p.participantType === INDIVIDUAL && isCompetitorRole(p)).length ?? 0;
     const teamParticipantCount = tournamentRecord.participants?.filter((p) => p.participantType === TEAM).length ?? 0;
     const eventCount = tournamentRecord.events?.length ?? 0;
 
