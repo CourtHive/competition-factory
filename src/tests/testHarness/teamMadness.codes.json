@@ -3,14 +3,14 @@
   "tournamentGroups": [],
   "processCodes": [],
   "deleted": false,
-  "endDate": "2022-04-24T20:00:00.000Z",
+  "endDate": "2022-05-01T20:00:00.000Z",
   "tournamentId": "b39a689e-73ee-4f26-a19d-a269120a3146",
   "registrationProfile": {
     "entriesClose": "2022-04-29T00:00:00.000Z"
   },
   "tournamentName": "Anonymized: 2022-07-13",
   "localTimeZone": "America/New_York",
-  "startDate": "2022-04-22T00:00:00.000Z",
+  "startDate": "2022-04-29T00:00:00.000Z",
   "events": [
     {
       "allowedDrawTypes": ["ROUND_ROBIN"],
