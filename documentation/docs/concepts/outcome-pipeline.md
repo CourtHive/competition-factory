@@ -1097,13 +1097,20 @@ Stay v1's:
   played nor in progress (a double exit), and a dual's own double exit once a line is played;
 - a decided dual whose losing side held no line-up: v1 carries nothing, and the sides the loser's assignment wrote
   (`updateSideLineUp`, from the draw's line-ups) stand;
-- a line that un-decides its dual, among them a removal or correction that takes its dual's winner away (v1 takes it back out of the
-  next dual) and the first line played on a dual decided by its own exit (WALKOVER, DEFAULTED, RETIRED): v1 projects
-  the dual from its lines alone;
+- a removal or correction that un-decides its dual through the removal or correction route, a line played on a dual
+  decided by its own exit (WALKOVER, DEFAULTED, RETIRED: the dual's exit taken back, `exitReason`), and a line that is
+  itself an exit un-deciding its dual (`exitReason`);
 - a removal that leaves the dual holding no line's result: `updateTieMatchUpScore` removes the dual's score, and its
   tieFormat where it equals the inherited one;
 - auto-calc off;
 - a REPORTED score source (v1 returns before any tally).
+
+**A line that un-decides its dual** (S7, the `line-score` route: a decided dual whose lines, with this one in place,
+project no winner) is planned as v1 writes it (`scoreModification`): the dual's direction taken back first
+(`removeDirectedParticipants` through the line: the winner's position out of the next dual, announced first), then the
+line, then the dual's tally. The dual's part is the dual's own removal, planned from a view of the dual whose request is
+its projected score with no winner (`undecidedDualCall`, routed `remove-directed`, vetted as any removal), and it returns
+no `tieMatchUpResult` (`dualTally.unreturned`).
 
 **A dual in a round robin, and a line of one** (S7), take their group's tally, as v1's `updateTallyIfNeeded` writes it
 from the dual's score write: the group's duals alone (`matchUpTypes: [TEAM]`), tallied under the one dual tally format

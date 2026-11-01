@@ -135,8 +135,8 @@ type Scenario = {
   policyDefinitions?: Record<string, unknown>;
   /** KEPT: the reason v2 leaves the step to v1 (`team` unless named) */
   abstains?: string;
-  /** after the setup, the step's dual is given this exit (for side 1, a single one) by its own call */
-  dualExit?: 'WALKOVER' | 'DEFAULTED' | 'DOUBLE_WALKOVER';
+  /** after the setup, the step's dual is given this exit (for side 1, a single one), or side 1 as winner, by its own call */
+  dualExit?: 'WALKOVER' | 'DEFAULTED' | 'DOUBLE_WALKOVER' | 'winner';
   /** after the setup, this side's stored line-up loses its last assignment (the draw's line-up keeps it) */
   trimmedSeat?: Scenario['loserSeat'];
 };
@@ -214,7 +214,8 @@ function prepare(
   if (dualExit) {
     const { matchUpId } = findDual(step.target);
     const outcome =
-      dualExit === 'DOUBLE_WALKOVER' ? { matchUpStatus: dualExit } : { matchUpStatus: dualExit, winningSide: 1 };
+      (dualExit === 'winner' && { winningSide: 1 }) ||
+      (dualExit === 'DOUBLE_WALKOVER' ? { matchUpStatus: dualExit } : { matchUpStatus: dualExit, winningSide: 1 });
     expect(tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId, outcome }).success).toEqual(true);
   }
   if (autoCalcOff) {
@@ -1065,6 +1066,15 @@ const OWNED: [string, Scenario][] = [
     },
   ],
   [
+    'a line played on a dual decided by its own winner: the dual un-decided from its lines, its winner taken back',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1, 0), winningSide: 1 }],
+      step: { target: R1(1, 1), winningSide: 2 },
+      dualExit: 'winner',
+    },
+  ],
+  [
     'a line call carrying disableAutoCalc: nothing written on the line or its dual',
     {
       drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
@@ -1133,12 +1143,13 @@ const KEPT: [string, Scenario][] = [
     },
   ],
   [
-    'a line played on a dual decided by its own exit: v1 projects the dual from its lines, un-deciding it (line-score)',
+    "a line played on a dual decided by its own exit: v1's (the dual's exit taken back, exitReason)",
     {
       drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
       setup: [{ target: R1(1, 0), winningSide: 1 }],
       step: { target: R1(1, 1), winningSide: 2 },
       dualExit: 'DEFAULTED',
+      abstains: 'exit',
     },
   ],
   [
