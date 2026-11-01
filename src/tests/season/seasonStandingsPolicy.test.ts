@@ -183,3 +183,18 @@ describe('a directive that applies only for a purpose (A8)', () => {
     expect(order(result).slice(0, 2)).toEqual(['B1', 'A2']);
   });
 });
+
+describe('external values in a season table', () => {
+  it('a ranking keyed by subjectId breaks the A, B tie', () => {
+    const tallyPolicy = {
+      headToHead: { disabled: true },
+      tallyDirectives: [{ attribute: 'external', externalKey: 'ranking' }],
+    };
+    let result: any = getSeasonStandings({
+      externalValues: { ranking: { A: 5, B: 10 } },
+      season: season({ tallyPolicy }),
+      matchUps: MATCH_UPS,
+    });
+    expect(order(result).slice(0, 2)).toEqual(['B1', 'A2']);
+  });
+});

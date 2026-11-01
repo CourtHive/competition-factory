@@ -39,6 +39,7 @@ module.exports = {
             'concepts/registration-profile',
             'concepts/tournament-tier',
             'concepts/season',
+            'concepts/standings',
             'concepts/tournament-discovery',
           ],
         },
