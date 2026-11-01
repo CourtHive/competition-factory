@@ -1045,11 +1045,17 @@ Handles progression of qualifiers from qualifying to main draw.
 ```js
 engine.qualifierProgression({
   drawId, // required
-  structureId, // optional - target structure
+  targetRoundNumber, // optional - the main structure round the qualifiers enter; defaults to 1
+  randomList, // optional - a permutation of the qualifier position indexes: the lot that decides who goes where
 });
 ```
 
-**Purpose:** Move qualifiers to main draw after qualifying completes.
+**Purpose:** Move qualifiers to main draw after qualifying completes. Returns `assignedParticipants` (`participantId`,
+`drawPosition`); a placement that fails is skipped, not refused.
+
+Where qualifiers enter the main structure at more than one round, only the qualifier positions that enter at
+`targetRoundNumber` are filled: a round 2 qualifier position (opposite a first round BYE) is never given to a round 1
+qualifier, nor the reverse.
 
 ---
 
