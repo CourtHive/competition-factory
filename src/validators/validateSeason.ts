@@ -34,6 +34,7 @@ export function validateSeason({ season }: { season?: Season }): ResultType & { 
     ...tierErrors(season?.tiers),
     ...periodErrors(season as Season),
     ...advancementErrors(season as Season),
+    ...movementRuleErrors(season as Season),
   ];
 
   if (errors.length) return decorateResult({ result: { error: INVALID_VALUES }, context: { errors }, stack });
@@ -197,4 +198,41 @@ function isValidRule(rule?: SeasonAdvancementRule): boolean {
   return rule.berths.every(
     (berth) => Number.isInteger(berth?.minSubjects) && berth.minSubjects >= 0 && isBerthCount(berth.n),
   );
+}
+
+const isCount = (value: unknown) => value === undefined || (Number.isInteger(value) && (value as number) >= 0);
+
+function movementRuleErrors(season: Season): string[] {
+  if (season.movementRules === undefined) return [];
+  if (!Array.isArray(season.movementRules)) return ['movementRules must be an array'];
+  const tiers = season.tiers ?? [];
+  const tierIds = new Set(tiers.map((tier) => tier?.tierId));
+  const errors: string[] = [];
+  const ruled = new Set<string>();
+  for (const rule of season.movementRules) {
+    const key = rule?.tierId ?? '(default)';
+    if (ruled.has(key)) errors.push(`more than one movement rule for ${key}`);
+    ruled.add(key);
+    if (rule?.tierId !== undefined && !tierIds.has(rule.tierId)) {
+      errors.push(`movement rule names an unknown tierId: ${rule.tierId}`);
+    }
+    if (!isCount(rule?.promote) || !isCount(rule?.relegate)) {
+      errors.push(`movement rule for ${key}: promote and relegate must be whole numbers >= 0`);
+    }
+  }
+  // movement needs an order: every tier needs a numericRank, distinct among its siblings
+  const ranksBySiblings = new Map<string, Set<number>>();
+  for (const tier of tiers) {
+    const rank = tier?.tier?.numericRank;
+    if (!Number.isInteger(rank)) {
+      errors.push(`tier ${tier?.tierId} needs tier.numericRank for movement`);
+      continue;
+    }
+    const siblings = tier.parentTierId ?? '';
+    const ranks = ranksBySiblings.get(siblings) ?? new Set<number>();
+    if (ranks.has(rank as number)) errors.push(`tier ${tier.tierId} shares numericRank ${rank} with a sibling tier`);
+    ranks.add(rank as number);
+    ranksBySiblings.set(siblings, ranks);
+  }
+  return errors;
 }

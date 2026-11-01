@@ -127,6 +127,56 @@ const { outcomes } = seasonGovernor.getSeasonAdvancement({ season, matchUps });
 When subjects are level on rank across the cut, it does not choose between them: those clear of the tie are in
 `advancing` and the tied subjects are in `tiedAtCut`, for the season's tie-break rules to decide.
 
+## Movement between periods and seasons
+
+Promotion and relegation are declared before play as `movementRules` and applied at the close of a period. A rule
+without `tierId` is the default; a rule naming a tier overrides it for that tier.
+
+```js
+movementRules: [
+  { promote: 1, relegate: 1 }, // every box: the winner goes up, the last goes down
+  { tierId: 'box-1', relegate: 2 }, // the top box sends two down
+];
+```
+
+Movement happens between **sibling** tiers (tiers sharing a `parentTierId`, or all top-level tiers), ordered by
+`tier.numericRank`, lower being more prestigious. The top tier never promotes and the bottom tier never relegates.
+
+### getSeasonMovement
+
+```js
+const { proposals, tiedAtCut } = seasonGovernor.getSeasonMovement({ season, periodId, matchUps });
+// proposals: [{ subject, fromTierId, toTierId, movement: 'PROMOTED' | 'RELEGATED' | 'HELD', rank }]
+// tiedAtCut: [{ tierId, cut: 'PROMOTE' | 'RELEGATE', placesAtCut, subjects }]
+```
+
+Every subject in a tier's standings gets a proposal, `HELD` included, labelled by `getTierMovement`. Subjects level
+on rank across a cut get no proposal: they are returned in `tiedAtCut`, with the number of places the cut has for
+them (`placesAtCut`), for the season's tie-break rules or an operator to decide.
+
+### planNextPeriod
+
+```js
+const { nextPeriodId, placements, revisions } = seasonGovernor.planNextPeriod({
+  season,
+  periodId,
+  movements: proposals,
+  tiedAtCut,
+  overrides: [
+    { subject, toTierId: 'box-2', reason: 'won the playoff for the last place', by: 'league admin' },
+    { subject: leaving, reason: 'left the league' }, // no toTierId: withdrawn
+  ],
+});
+```
+
+Turns accepted movement into the next period's `placements`, returned rather than written into the season.
+`nextPeriodId` is absent when the season has no later period, in which case the placements open the next season.
+
+- An override replaces a proposal, settles a tie, or places an entrant; the last override given for a subject wins.
+- Every override that departs from a proposal, settles a tie or withdraws a subject is returned in `revisions`, with
+  the proposed tier and a `getTierMovement` label, so a decision that departs from the declared rule stays visible.
+- A tied subject with no override is an error (`context.unsettled`), never a guess.
+
 ## mocksEngine.generateSeason
 
 A season of team leagues for tests and demos: one record per period, one TEAM event per tier, and the `Season`
