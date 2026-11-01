@@ -32,6 +32,7 @@ import {
   INVALID_PARTICIPANT_ID,
   MISSING_EVENT,
   EXISTING_PARTICIPANT_DRAW_POSITION_ASSIGNMENT,
+  PARTICIPANT_ENTRY_NOT_FOUND,
   MISSING_VALUE,
   INVALID_VALUES,
   INVALID_STAGE,
@@ -155,6 +156,16 @@ export function modifyEntriesStatus({
   }
 
   const updateEventEntries = !!((!flight && !drawDefinition) || entryStatus === WITHDRAWN || (eventSync && singleDraw));
+
+  // Refuse before writing: with a draw scope, each participant must have an entry this call will change.
+  const notInScope = participantsNotInScope({ participantIds, updateEventEntries, drawDefinition, flight, event });
+  if (notInScope.length)
+    return decorateResult({
+      result: { error: PARTICIPANT_ENTRY_NOT_FOUND },
+      info: 'Participants not entered in the draw or flight',
+      context: { participantIds: notInScope, drawId },
+      stack,
+    });
 
   // Refuse before writing: every entries list this call will touch is checked before any is modified.
   const targetEntryLists = getTargetEntryLists({
@@ -384,6 +395,31 @@ function buildUpdateEntryStatus({
   };
 
   return { updateEntryStatus, entryStatusBlocked };
+}
+
+/**
+ * With a draw scope (a flight or drawDefinition), the participantIds that have no entry in the flight's drawEntries
+ * or the draw's entries, nor in the event's entries when the call also updates those (WITHDRAWN, eventSync). Such a
+ * participant would be left unchanged while the call reported success. Without a draw scope, none.
+ */
+type ParticipantsNotInScopeArgs = {
+  drawDefinition?: DrawDefinition;
+  updateEventEntries: boolean;
+  participantIds: string[];
+  flight?: Flight;
+  event?: Event;
+};
+function participantsNotInScope({
+  updateEventEntries,
+  participantIds,
+  drawDefinition,
+  flight,
+  event,
+}: ParticipantsNotInScopeArgs): string[] {
+  if (!flight && !drawDefinition) return [];
+  const lists = [flight?.drawEntries, drawDefinition?.entries, updateEventEntries ? event?.entries : undefined];
+  const entered = new Set(lists.flatMap((entries) => (entries ?? []).map(({ participantId }) => participantId)));
+  return participantIds.filter((participantId) => !entered.has(participantId));
 }
 
 // every entries list modifyEntriesStatus will pass to updateEntryStatus, in the order it does so
