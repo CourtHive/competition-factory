@@ -123,13 +123,6 @@ export function getStageDrawPositionsBreakdown(
   };
 }
 
-// drawSize - qualifyingPositions
-export function getStageDrawPositionsAvailable(
-  params: GetStageDrawPositionsCountArgs & { drawDefinition: DrawDefinition; provisionalPositioning?: boolean },
-) {
-  return getStageDrawPositionsBreakdown(params).positionsAvailable;
-}
-
 function isPositiveInteger(value: unknown): value is number {
   return Number.isSafeInteger(value) && (value as number) > 0;
 }
