@@ -16,6 +16,8 @@ import { eventGovernor } from 'tods-competition-factory';
 
 Adds a drawDefinition to an event in a tournamentRecord. Called after [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition). See examples: [Complete Example](../concepts/events/entries.mdx#complete-example), [Creating Draws from Flight Profiles](../concepts/events/flights.mdx#creating-draws-from-flight-profiles), [Complete Example](../concepts/events/flights.mdx#complete-example).
 
+A draw whose entries exceed a matched sanction's `maxWildcards` (`WILDCARD` entries) or `maxAlternates` (`ALTERNATE` entries) is refused before anything is stored, with `{ error: NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS, context: { entryStatus, stage, limit, count, participantIds } }`, where `participantIds` are the entries beyond the limit. `AD_HOC` draws, unsanctioned events and events the constraints do not match are unaffected.
+
 A `drawDefinition` built outside the factory may not carry the progression links between its matchUps (`winnerMatchUpId`, `loserMatchUpId`). They are derived from its structures and links and stored with the draw, as `generateDrawDefinition` would have stored them. A draw with a malformed round link is stored as it was.
 
 ```js

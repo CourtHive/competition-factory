@@ -1,10 +1,11 @@
 import { generateQualifyingStructures } from '@Generators/drawDefinitions/drawTypes/generateQualifyingStructures';
 import { generateQualifyingLink } from '@Generators/drawDefinitions/links/generateQualifyingLink';
+import { isSanctionLimitedStatus } from '@Query/drawDefinition/checkSanctionedEntryLimits';
 import { addDrawEntry } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
 
 // constants and types
+import type { DrawDefinition, Entry, Event, Tournament } from '@Types/tournamentTypes';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
-import type { DrawDefinition } from '@Types/tournamentTypes';
 import { ResultType } from '@Types/factoryTypes';
 
 export function processExistingDrawDefinition(params): ResultType & {
@@ -67,24 +68,39 @@ export function processExistingDrawDefinition(params): ResultType & {
   );
   // Qualifier counts are derived from structures and links
 
-  addEntries({ drawDefinition, drawEntries, event });
+  const entriesResult = addEntries({ tournamentRecord: params.tournamentRecord, drawDefinition, drawEntries, event });
+  if (entriesResult.error) return entriesResult;
   const qResult = processQualifyingDetails({ mainStructure, qualifyingDetails, drawDefinition });
   if (qResult.error) return qResult;
 
   return { drawDefinition, structureId };
 }
 
-function addEntries({ drawDefinition, drawEntries, event }) {
+type AddEntriesArgs = {
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  drawEntries?: Entry[];
+  event?: Event;
+};
+
+function addEntries({ tournamentRecord, drawDefinition, drawEntries, event }: AddEntriesArgs): ResultType {
   for (const entry of (drawEntries ?? []).filter(({ entryStage }) => entryStage === QUALIFYING)) {
+    // tournamentRecord and event resolve the sanctioning constraints addDrawEntry applies
     const entryData = {
       ...entry,
       entryStage: entry.entryStage ?? MAIN,
+      tournamentRecord,
       drawDefinition,
       event,
     };
-    // ignore errors (EXITING_PARTICIPANT)
-    addDrawEntry(entryData);
+    // other errors are ignored (EXISTING_PARTICIPANT), except for an entry whose status the sanction bounds, which
+    // is never dropped: generateOrGetExisting refuses entries over the sanctioned limits before generating, so this
+    // is a backstop
+    const result = addDrawEntry(entryData);
+    if (result.error && isSanctionLimitedStatus({ tournamentRecord, entryStatus: entry.entryStatus, event }))
+      return result;
   }
+  return { error: undefined };
 }
 
 function processQualifyingDetails({ mainStructure, qualifyingDetails, drawDefinition }): ResultType {

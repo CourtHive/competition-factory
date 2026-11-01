@@ -1,9 +1,11 @@
+import { checkSanctionedEntryLimits } from '@Query/drawDefinition/checkSanctionedEntryLimits';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { addNotice, hasTopic } from '@Global/state/globalState';
 import { getMatchUpId } from '@Functions/global/extractors';
@@ -117,6 +119,18 @@ export function addDrawDefinition(
         error: INVALID_DRAW_DEFINITION,
       },
     });
+
+  // Refuse before writing: a draw whose entries exceed the sanctioning constraints (maxWildcards, maxAlternates) is not
+  // stored. AD_HOC draws are exempt, as addDrawEntry exempts them.
+  if (!isAdHocType(drawDefinition.drawType)) {
+    const limitsResult = checkSanctionedEntryLimits({
+      stack: 'addDrawDefinition',
+      entries: drawEntries,
+      tournamentRecord,
+      event,
+    });
+    if (limitsResult.error) return limitsResult;
+  }
 
   // Refuse before writing: an existing drawId is only replaced when permitted and unscored.
   const existingDrawDefinition = eventDrawDefinitions.find((dd) => dd.drawId === drawId);

@@ -235,6 +235,24 @@ const drawDefinitionValues = {
 const { drawDefinition } = engine.generateDrawDefinition(drawDefinitionValues);
 ```
 
+**Sanctioning limits.** When the tournament's sanctioning constraints extension matches the event, generation
+refuses, before anything is built, entries that would take a draw stage past its `maxWildcards` (`WILDCARD`
+entries) or `maxAlternates` (`ALTERNATE` entries), counting the entries an existing draw (`drawId`) already holds.
+The refusal names the excess:
+
+```js
+const result = engine.generateDrawDefinition({ eventId, drawSize: 8 });
+// result.error: NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS
+// result.context: { entryStatus: 'WILDCARD', stage: 'MAIN', limit: 2, count: 3, participantIds: ['...'] }
+```
+
+`participantIds` are the entries beyond the limit, in entry order. The same check applies to the `QUALIFYING`
+`drawEntries` when qualifying is added to an existing main draw. A sanctioned `WILDCARD` or `ALTERNATE` entry
+that cannot be added for any other reason (no open place) is also refused, never dropped. Generating from the
+event's entries takes only the entries selected for the structure, so `ALTERNATE` entries are checked when
+`drawEntries` carry them. An explicit `ignoreStageSpace: true` and `AD_HOC` draws are exempt; an unsanctioned
+event, or one the constraints do not match, is unaffected. Until 2026-11 generation did not apply the limits.
+
 ### withPlayoffs — Recursive Playoff Generation {#withplayoffs}
 
 The `withPlayoffs` parameter adds PLAY_OFF structures linked to the MAIN structure via LOSER links.
