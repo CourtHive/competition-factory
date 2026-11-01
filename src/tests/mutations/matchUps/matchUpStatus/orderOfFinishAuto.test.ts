@@ -42,6 +42,12 @@ function score(matchUpId: string, scoreString = '6-1 6-1') {
   expect(result.success).toEqual(true);
 }
 
+function correct(matchUpId: string) {
+  const { outcome } = mocksEngine.generateOutcomeFromScoreString({ scoreString: '6-1 6-1', winningSide: 2 });
+  const result: any = tournamentEngine.setMatchUpStatus({ drawId: dual().drawId, matchUpId, outcome });
+  expect(result.success).toEqual(true);
+}
+
 function clear(matchUpId: string) {
   const result: any = tournamentEngine.setMatchUpStatus({ drawId: dual().drawId, matchUpId, outcome: toBePlayed });
   expect(result.success).toEqual(true);
@@ -68,6 +74,20 @@ it('a score edit keeps the number', () => {
   score(s2.matchUpId);
   score(s1.matchUpId, '6-2 6-2');
   expect([orderOf(s1.matchUpId), orderOf(s2.matchUpId)]).toEqual([1, 2]);
+});
+
+// the winner corrected after the dual is decided: v1 takes the result off before writing the new one
+it('a winner corrected keeps the number', () => {
+  unscoredDual();
+  const singles = lines(SINGLES);
+  const doubles = lines(DOUBLES);
+  for (const { matchUpId } of [...singles, ...doubles]) score(matchUpId);
+  expect(dual().winningSide).toEqual(1);
+
+  const [s1, s2, s3] = singles;
+  correct(s1.matchUpId);
+  expect(dual().tieMatchUps.find(({ matchUpId }) => matchUpId === s1.matchUpId).winningSide).toEqual(2);
+  expect([orderOf(s1.matchUpId), orderOf(s2.matchUpId), orderOf(s3.matchUpId)]).toEqual([1, 2, 3]);
 });
 
 it('a cleared line leaves the order and the later lines move up', () => {

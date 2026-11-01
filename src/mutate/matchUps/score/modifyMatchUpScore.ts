@@ -58,6 +58,8 @@ type ModifyMatchUpScoreArgs = {
   derivedStatusCodes?: DerivedStatusCodes;
   drawDefinition?: DrawDefinition;
   removeWinningSide?: boolean;
+  // a winner corrected: the result taken off before the new one is written keeps the line's finishing order
+  keepsFinishingOrder?: boolean;
   matchUpFormat?: string;
   removeScore?: boolean;
   winningSide?: number;
@@ -112,13 +114,14 @@ export function modifyMatchUpScore(params: ModifyMatchUpScoreArgs) {
 
   const wasDefaulted = matchUpStatus && matchUp?.matchUpStatus === DEFAULTED && matchUpStatus !== DEFAULTED;
   // a dual's line, as it was: its finishing order in its collection follows what this write changes (v2: planner ops)
-  const previousLine = matchUp?.collectionId ? lineSnapshot(matchUp) : undefined;
+  const previousLine = matchUp?.collectionId && !params.keepsFinishingOrder ? lineSnapshot(matchUp) : undefined;
 
   applyScoreAndStatus({
     // it describes ONE matchUp: a params spread that carried it into a write elsewhere does not apply it
     derived: params.derivedStatusCodes?.matchUpId === matchUp.matchUpId ? params.derivedStatusCodes : undefined,
     matchUpStatusCodes,
     removeWinningSide: params.removeWinningSide,
+    keepsFinishingOrder: params.keepsFinishingOrder,
     matchUpStatus,
     matchUpFormat,
     removeScore,
@@ -267,6 +270,7 @@ function resolveDualMatchUpTarget({ isDualMatchUp, drawDefinition, matchUpId, ma
 }
 
 function applyScoreAndStatus({
+  keepsFinishingOrder,
   matchUpStatusCodes,
   removeWinningSide,
   derived,
@@ -329,7 +333,7 @@ function applyScoreAndStatus({
   if (matchUpStatus) matchUp.matchUpStatus = matchUpStatus;
   // a matchUp that is no longer complete has no place in its cohort's order of finish (`setOrderOfFinish`); v2 clears
   // it in the same writes (outcome/ops.ts)
-  if (!completedMatchUpStatuses.includes(matchUp.matchUpStatus)) delete matchUp.orderOfFinish;
+  if (!keepsFinishingOrder && !completedMatchUpStatuses.includes(matchUp.matchUpStatus)) delete matchUp.orderOfFinish;
   if (matchUpFormat) matchUp.matchUpFormat = matchUpFormat;
   if (matchUpStatusCodes) matchUp.matchUpStatusCodes = matchUpStatusCodes;
   /**

@@ -41,7 +41,8 @@ export function finishingOrderUpdates({ lines, previous }: FinishingOrderArgs): 
   const others = collection.filter((candidate) => candidate.matchUpId !== line.matchUpId);
 
   const counts = countsForFinishingOrder(line);
-  const counted = countsForFinishingOrder(previous) && previous?.orderOfFinish !== undefined;
+  // a line holding a number is in the order: a winner corrected passes through a result taken off with its number kept
+  const counted = previous?.orderOfFinish !== undefined;
 
   if (counts && !counted) return appendLine({ line, others, collection });
   // read from before the write: the write itself may already have removed the line's number
