@@ -4,6 +4,8 @@
 
 A **season** declares how competitions that recur fit together across tournament records: a box league re-run every
 month, a ladder reset each year, a tiered team league with playoffs and championships, a college dual season.
+Season tables are ordered by the standings engine, the same one that orders round-robin groups: see
+[Standings](./standings.md).
 
 CODES models this with two documents:
 

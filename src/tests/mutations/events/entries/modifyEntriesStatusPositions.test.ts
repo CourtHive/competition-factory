@@ -212,7 +212,7 @@ describe('modifyEntriesStatus entryPositions across groups', () => {
     expect(group(entries, ALTERNATE)).toEqual([[alternateIds[2], 1]]);
   });
 
-  it('a draw alternate moved to LUCKY_LOSER starts that group; the alternates close up', () => {
+  it('a draw alternate moved to LUCKY_LOSER joins the end of the one accepted list; the alternates close up', () => {
     const {
       eventIds: [eventId],
       drawIds: [drawId],
@@ -244,7 +244,7 @@ describe('modifyEntriesStatus entryPositions across groups', () => {
     expect(result.success).toEqual(true);
 
     const entries = flightEntries();
-    expect(group(entries, LUCKY_LOSER)).toEqual([[alternateIds[0], 1]]);
+    expect(group(entries, LUCKY_LOSER)).toEqual([[alternateIds[0], 7]]);
     expect(group(entries, ALTERNATE)).toEqual([
       [alternateIds[1], 1],
       [alternateIds[2], 2],
@@ -252,7 +252,7 @@ describe('modifyEntriesStatus entryPositions across groups', () => {
     expect(group(entries, DIRECT_ACCEPTANCE).map(([, position]) => position)).toEqual([1, 2, 3, 4, 5, 6]);
   });
 
-  it('numbers positions within the stage and status, as refreshEntryPositions does', () => {
+  it('numbers all accepted statuses as one list per stage, as refreshEntryPositions does', () => {
     const { eventId, acceptedIds, alternateIds } = eventWithAlternates();
     let result: any = tournamentEngine.modifyEntriesStatus({
       participantIds: acceptedIds.slice(0, 2),
@@ -266,7 +266,7 @@ describe('modifyEntriesStatus entryPositions across groups', () => {
 
     const entries = eventEntries(eventId);
     expect(group(entries, WILDCARD).map(([, position]) => position)).toEqual([1, 2]);
-    expect(group(entries, DIRECT_ACCEPTANCE).map(([, position]) => position)).toEqual([1, 2, 3, 4, 5]);
-    expect(entryOf(entries, alternateIds[0]).entryPosition).toEqual(5);
+    expect(group(entries, DIRECT_ACCEPTANCE).map(([, position]) => position)).toEqual([3, 4, 5, 6, 7]);
+    expect(entryOf(entries, alternateIds[0]).entryPosition).toEqual(7);
   });
 });

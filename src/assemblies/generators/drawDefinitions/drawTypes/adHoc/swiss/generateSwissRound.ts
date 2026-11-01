@@ -98,7 +98,7 @@ export function generateSwissRound(params: GenerateSwissRoundArgs): GenerateSwis
   // Competition policy: use dynamic form ratings when available
   const { competitionPolicy } = getCompetitionPolicy({ tournamentRecord, drawDefinition, event });
   const { competitionState } = competitionPolicy
-    ? getCompetitionState({ drawDefinition })
+    ? getCompetitionState({ drawDefinition, competitionPolicy })
     : { competitionState: undefined };
 
   let adHocRatings: Record<string, number>;

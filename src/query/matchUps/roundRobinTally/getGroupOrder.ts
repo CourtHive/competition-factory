@@ -43,6 +43,7 @@ export function getGroupOrder(params) {
     matchUpFormat,
     subOrderMap,
     tallyPolicy, // array of attributes to use for tie-breaking
+    externalValues, // values from outside the results, read by `external` directives
     matchUps,
   } = params;
 
@@ -58,12 +59,22 @@ export function getGroupOrder(params) {
     // the first call orders a complete group; the provisional rerun passes requireCompletion: false
     phase: requireCompletion ? 'FINAL' : 'PROVISIONAL',
     lotSeed: matchUps?.[0]?.structureId,
+    externalValues,
     participantResults,
     subOrderMap,
   });
 
+  // crossGroup (K7): the values a best-finisher comparison across groups reads, in order, higher first. Computed here,
+  // where the tally policy is resolved, because the cross-group selection sees only the stored tallies
+  const crossGroup = Array.isArray(tallyPolicy?.crossGroup) ? tallyPolicy.crossGroup : undefined;
   for (const finishingPosition of groupOrder) {
-    finishingPosition.GEMscore = getRatioHash(participantResults[finishingPosition.participantId]);
+    const results = participantResults[finishingPosition.participantId];
+    finishingPosition.GEMscore = getRatioHash(results);
+    if (crossGroup) {
+      finishingPosition.crossGroupValues = crossGroup.map(
+        ({ attribute, reversed }) => (reversed ? -1 : 1) * Number(results[attribute] ?? 0),
+      );
+    }
   }
 
   return { groupOrder, report };
@@ -83,12 +94,16 @@ export function getGroupOrder(params) {
   }
 }
 
-function isComplete({ participantResults, participantsCount }) {
+/**
+ * Every participant has a result for every meeting they are expected to have (K2: `expectedResults`, one per counted
+ * meeting). Without it, v1's rule: participantsCount - 1 results each, which a double round robin never meets.
+ */
+function isComplete({ participantResults, participantsCount, expectedResults }) {
   const resultsArray = getResultsArray({ participantResults });
-  const participantsFinished = resultsArray.filter(
-    (r) =>
-      participantsCount - 1 ===
-      r.results.matchUpsWon + r.results.matchUpsLost + (r.results.matchUpsDrawn ?? 0) + r.results.matchUpsCancelled,
-  );
-  return participantsCount === participantsFinished.length;
+  const participantsFinished = resultsArray.filter((r) => {
+    const results =
+      r.results.matchUpsWon + r.results.matchUpsLost + (r.results.matchUpsDrawn ?? 0) + r.results.matchUpsCancelled;
+    return results === (expectedResults ? expectedResults[r.participantId] : participantsCount - 1);
+  });
+  return (expectedResults ? resultsArray.length : participantsCount) === participantsFinished.length;
 }

@@ -1,4 +1,5 @@
 import { getGroups } from '@Query/matchUps/roundRobinTally/getGroups';
+import { GRAPH_MEASURES, RATIO_INPUTS, RATIO_MEASURES } from './fromV1';
 import { instanceCount } from '@Tools/arrays';
 import { isNumeric } from '@Tools/math';
 
@@ -26,6 +27,11 @@ type OrderParticipantsArgs = {
   phase?: StandingsPhase;
   /** seeds a LOT terminal; the same seed always draws the same order */
   lotSeed?: string;
+  /**
+   * values from outside the results, by key and then participant: a curling Draw Shot Challenge, a ranking, fair-play
+   * points. Read by a directive `{ attribute: 'external', externalKey }`; the factory never fetches them.
+   */
+  externalValues?: Record<string, Record<string, number>>;
 };
 
 /** what every step of one ordering shares */
@@ -35,6 +41,7 @@ type Context = {
   purpose?: string;
   phase?: StandingsPhase;
   lotSeed?: string;
+  externalValues?: Record<string, Record<string, number>>;
 };
 
 type SubSortArgs = {
@@ -57,7 +64,7 @@ type SubSortResult = { order: FinishingPosition[]; report?: unknown[] };
  * `groupTotals`) go back to the caller, memoised here by scope.
  */
 export function orderParticipants(params: OrderParticipantsArgs) {
-  const { participantResults, policy, recalculate, subOrderMap, purpose, phase, lotSeed } = params;
+  const { participantResults, policy, recalculate, subOrderMap, purpose, phase, lotSeed, externalValues } = params;
   const report: unknown[] = [];
   const attribute = policy.primary;
 
@@ -70,8 +77,9 @@ export function orderParticipants(params: OrderParticipantsArgs) {
     : [undefined];
   if (disqualified.length) report.push({ attribute: 'disqualified', participantIds: disqualified });
 
+  const primaryResults = withRatio(participantResults, attribute, policy);
   const sortedTallyGroups = sets.flatMap((participantIds) => {
-    const orderedTallyGroups = getGroups({ participantResults, participantIds, attribute });
+    const orderedTallyGroups = getGroups({ participantResults: primaryResults, participantIds, attribute });
     report.push({ attribute, groups: orderedTallyGroups });
     return sortedGroups(orderedTallyGroups, false);
   });
@@ -79,7 +87,7 @@ export function orderParticipants(params: OrderParticipantsArgs) {
   // One ordering reads one set of results under one policy, so a recalculation is decided by its grouping total and
   // its participant scope alone. An elimination draw ties hundreds of participants, and its sub-sorts asked for the
   // same unscoped recalculation hundreds of times: 809 times for one 512 draw.
-  const context: Context = { policy, recalculate: memoise(recalculate), purpose, phase, lotSeed };
+  const context: Context = { policy, recalculate: memoise(recalculate), purpose, phase, lotSeed, externalValues };
   const sortedOrder = sortedTallyGroups.map((participantIds) => {
     const result = groupSubSort({ participantIds, participantResults, context });
     report.push(...(result.report ?? []));
@@ -168,8 +176,11 @@ function gate(directive: StandingsDirective, size: number, context: Context, hea
   const { when } = directive;
   if (when?.purposes && !(context.purpose && when.purposes.includes(context.purpose))) return 'SKIP';
   if (when?.phase && when.phase !== (context.phase ?? 'FINAL')) return 'SKIP';
-  // head-to-head reads a pair; it is passed over, unreported, for any other size
-  if (directive.attribute === 'headToHead') return size === 2 && !headToHeadDisabled ? 'APPLY' : 'SKIP';
+  // head-to-head reads a pair (a SWEEP reads any number); it is passed over, unreported, for any other size
+  if (directive.attribute === 'headToHead') {
+    const sized = directive.mode === 'SWEEP' ? size >= 2 : size === 2;
+    return sized && !headToHeadDisabled ? 'APPLY' : 'SKIP';
+  }
   if (isNumeric(directive.maxParticipants) && size > (directive.maxParticipants ?? 0)) return 'EXCLUDE';
   if (isNumeric(directive.minParticipants) && size < (directive.minParticipants ?? 0)) return 'EXCLUDE';
   return 'APPLY';
@@ -192,6 +203,11 @@ function groupSubSort(params: SubSortArgs): SubSortResult {
   for (let index = from; index < policy.directives.length; index++) {
     if (gates[index] !== 'APPLY') continue;
     const directive = policy.directives[index];
+    if (directive.attribute === 'headToHead' && directive.mode === 'SWEEP' && participantIds.length > 2) {
+      const swept = sweep(params);
+      if (swept) return swept;
+      continue;
+    }
     if (directive.attribute === 'headToHead') {
       const order = getHeadToHeadWinner({ participantIds, participantResults, mode: directive.mode });
       if (order) {
@@ -207,6 +223,25 @@ function groupSubSort(params: SubSortArgs): SubSortResult {
   }
 
   return terminal({ participantIds, context, report });
+}
+
+/**
+ * SWEEP (A7) over three or more: the one participant who beat every other in the set is resolved first, or else the one
+ * who lost to every other is resolved last; everyone else goes back to the first directive. No sweep, no split.
+ */
+function sweep(params: SubSortArgs): SubSortResult | undefined {
+  const { participantIds, participantResults } = params;
+  const winsOver = (a: string, b: string) => participantResults[a].victories.filter((id) => id === b).length;
+  const beatsAll = (a: string) => participantIds.every((b) => b === a || winsOver(a, b) > winsOver(b, a));
+  const losesToAll = (a: string) => participantIds.every((b) => b === a || winsOver(b, a) > winsOver(a, b));
+  const sweepers = participantIds.filter(beatsAll);
+  const swept = participantIds.filter(losesToAll);
+  const resolved = sweepers.length === 1 ? sweepers[0] : swept.length === 1 && swept[0];
+  if (!resolved) return undefined;
+  const rest = groupSubSort({ ...params, participantIds: participantIds.filter((id) => id !== resolved), from: 0 });
+  const leader = [{ resolved: true, participantId: resolved }];
+  const order = sweepers.length === 1 ? withSubGroups([leader, rest.order]) : withSubGroups([rest.order, leader]);
+  return { order, report: [{ attribute: 'headToHeadSweep', participantIds, resolved }, ...(rest.report ?? [])] };
 }
 
 /** a set no directive splits (TerminalStep) */
@@ -257,7 +292,14 @@ function processDirective(
   });
   // an absent result set must not read as an empty group: no split, no report
   if (outcome.error) return {};
-  const participantResults = outcome.participantResults ?? {};
+  const measured = withExternal(
+    withGraph(withRatio(outcome.participantResults ?? {}, attribute, context.policy), attribute, context),
+    directive,
+    context,
+  );
+  const participantResults = withZeroDivision(measured, participantIds, directive);
+  if (!participantResults)
+    return { order: undefined, report: [{ attribute, skipped: 'zeroDivision', participantIds }] };
 
   const groups = getGroups({ participantResults, participantIds, attribute });
   const report: unknown[] = [{ attribute, reversed, groups, idsFilter, groupTotals }];
@@ -279,6 +321,97 @@ function processDirective(
   // CONTINUE resumes after the directive that split, but re-applies a mini-league to the residue it leaves (A2)
   const resumeAt = onSplit === 'CONTINUE' ? index + (idsFilter ? 0 : 1) : 0;
   return { order: withSubGroups(parts.map((part) => subSort(part, resumeAt))), report };
+}
+
+/**
+ * A ratio measure (won over lost) added to a VIEW of the results for the one attribute that needs it; the results
+ * themselves, which a caller stores, never carry it. Nothing lost: Infinity when anything was won, else 0.
+ */
+function withRatio(participantResults: ParticipantResults, attribute: string, policy: StandingsPolicy) {
+  const inputs = RATIO_INPUTS[attribute];
+  if (!inputs) return participantResults;
+  const exact = policy.precision === 'EXACT';
+  const scale = Math.pow(10, (!exact && (policy.precision as number)) || 3);
+  const view: ParticipantResults = {};
+  for (const [participantId, results] of Object.entries(participantResults)) {
+    const won = Number(results[inputs[0]] ?? 0);
+    const lost = Number(results[inputs[1]] ?? 0);
+    let value = won ? Infinity : 0;
+    if (lost) value = exact ? won / lost : Math.round((won / lost) * scale) / scale;
+    view[participantId] = { ...results, [attribute]: value };
+  }
+  return view;
+}
+
+/** HEAD_TO_HEAD_PRESSURE: the larger sum of pressure deltas against the other decides; equal sums do not split */
+function pressureWinner(participantIds: string[], participantResults: ParticipantResults) {
+  const [first, second] = participantIds;
+  const against = (a: string, b: string) =>
+    Number((participantResults[a]?.pressureVs as Record<string, number> | undefined)?.[b] ?? 0);
+  const difference = against(first, second) - against(second, first);
+  if (difference > 0) return participantIds.map((participantId) => ({ resolved: true, participantId }));
+  if (difference < 0) return participantIds.reverse().map((participantId) => ({ resolved: true, participantId }));
+  return undefined;
+}
+
+/**
+ * A graph measure (GRAPH_MEASURES) added to a view, read from every participant's results: each opponent is scored by
+ * the policy's primary measure, once per meeting. Buchholz sums the opponents' scores (Cut1 drops the lowest, Median
+ * the highest and lowest); Sonneborn-Berger sums the scores of those beaten and `drawCredit` of those drawn with.
+ */
+function withGraph(participantResults: ParticipantResults, attribute: string, context: Context) {
+  if (!GRAPH_MEASURES.includes(attribute)) return participantResults;
+  const { primary, drawCredit = 0.5 } = context.policy;
+  const score = (id: string) => Number(participantResults[id]?.[primary] ?? 0);
+  const view: ParticipantResults = {};
+  for (const [participantId, results] of Object.entries(participantResults)) {
+    const beaten = results.victories ?? [];
+    const lostTo = (results.defeats as string[] | undefined) ?? [];
+    const drawn = (results.drawnWith as string[] | undefined) ?? [];
+    const scores = [...beaten, ...lostTo, ...drawn].map(score).sort((a, b) => a - b);
+    const sum = (values: number[]) => values.reduce((total, value) => total + value, 0);
+    const measures: Record<string, number> = {
+      buchholz: sum(scores),
+      buchholzCut1: sum(scores.slice(1)),
+      buchholzMedian: sum(scores.slice(1, -1)),
+      sonnebornBerger: sum(beaten.map(score)) + drawCredit * sum(drawn.map(score)),
+    };
+    view[participantId] = { ...results, [attribute]: measures[attribute] };
+  }
+  return view;
+}
+
+/**
+ * An `external` directive's values, from the caller's `externalValues[externalKey]`, added to a view. A participant
+ * without a value reads 0, and so ranks below every participant given one in the default (higher first) direction.
+ */
+function withExternal(participantResults: ParticipantResults, directive: StandingsDirective, context: Context) {
+  if (directive.attribute !== 'external') return participantResults;
+  const values = (directive.externalKey && context.externalValues?.[directive.externalKey]) || {};
+  const view: ParticipantResults = {};
+  for (const [participantId, results] of Object.entries(participantResults)) {
+    view[participantId] = { ...results, external: Number(values[participantId] ?? 0) };
+  }
+  return view;
+}
+
+/**
+ * A ratio directive's zero rule (spec § 5.10). The ledger holds a ratio with nothing lost as Infinity (MAX); ZERO reads it
+ * as 0 for this directive, and SKIP passes the directive over (undefined) for a set where any participant has one.
+ */
+function withZeroDivision(
+  participantResults: ParticipantResults,
+  participantIds: string[],
+  directive: StandingsDirective,
+): ParticipantResults | undefined {
+  const { attribute, zeroDivision } = directive;
+  if (!zeroDivision || zeroDivision === 'MAX' || !RATIO_MEASURES.includes(attribute)) return participantResults;
+  const unbeaten = participantIds.filter((id) => participantResults[id]?.[attribute] === Infinity);
+  if (!unbeaten.length) return participantResults;
+  if (zeroDivision === 'SKIP') return undefined;
+  const view = { ...participantResults };
+  for (const id of unbeaten) view[id] = { ...view[id], [attribute]: 0 };
+  return view;
 }
 
 /**
@@ -311,6 +444,7 @@ function getHeadToHeadWinner({
 }): FinishingPosition[] | undefined {
   if (!participantIds) return undefined;
   const [first, second] = participantIds;
+  if (mode === 'PRESSURE') return pressureWinner(participantIds, participantResults);
   const winsOver = (a: string, b: string) => participantResults[a].victories.filter((id) => id === b).length;
   const firstWins = winsOver(first, second);
   const secondWins = winsOver(second, first);
