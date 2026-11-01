@@ -39,6 +39,10 @@ matchUp is never scheduled again, and there is no override (CA 2026-10-23): `sch
 and ignored by the schedulers until the next major. mocksEngine, auto-scheduling a generated tournament, schedules it
 first and applies its results after, as a real tournament is played.
 
+**`allowInactiveEventDates`** (default `false`), taken by all four schedulers (`scheduleProfileRounds`,
+`scheduleProfileGrid`, `proAutoSchedule`, `scheduleMatchUps`): see § 3.10. When it is set, a matchUp is placed on a day
+its event does not play, and each such placement is warned about.
+
 **`clearScheduleDates`.** `true` clears every scheduled matchUp that is not finished, in every tournament loaded, on
 every date, profiled or not; a schedule lock survives. An array clears only the matchUps scheduled on the dates it
 lists. The clear happens before any placement.
@@ -237,6 +241,31 @@ Rules decided 2026-10-25 (debate-ruled, CA-reviewed):
    that are not valid) changes no booking; it used to switch every booking off, so the date read as free. A booking
    that cannot be read stops the run with its error rather than leaving every court free.
 
+### 3.10 Event playing days
+
+An event plays on a calendar day when the day lies in the tournament's range and in the event's range, is one of the
+tournament's `activeDates` (else, when it states any, one of its `weekdays`), and is one of the event's `activeDates`
+(else, when it states any, one of its `weekdays`). The rules, stated once (`eventPlaysOnDate`):
+
+1. An empty `activeDates` or `weekdays` means unset, never "no days".
+2. `activeDates` win over `weekdays` when both are set, at the tournament and at the event.
+3. The weekday is the calendar day's, read in UTC (`getUTCDay` of the `YYYY-MM-DD` date): no zone moves it.
+4. An event range that does not intersect the tournament range, or whose bounds are inverted, is ignored: the event's
+   range is then the tournament's (CA 2026-11-01). A missing event bound is the tournament's.
+5. A day that is not a `YYYY-MM-DD` calendar day does not play (it fails closed).
+
+When a day does not play, the first rule that fails is its `reason`, in this order: `INVALID_DATE`,
+`OUTSIDE_TOURNAMENT_DATES`, `OUTSIDE_EVENT_DATES`, `TOURNAMENT_INACTIVE_DATE`, `TOURNAMENT_WEEKDAY`,
+`EVENT_INACTIVE_DATE`, `EVENT_WEEKDAY`.
+
+**The automated schedulers skip per event** (CA 2026-11-01): a matchUp is never placed on a day its own event does not
+play, whatever other events play that day. Each scheduler reports what it skipped in `eventDateSkippedMatchUpIds`,
+`{ [date]: [{ matchUpId, eventId, reason }] }`, present only when it skipped something. With
+`allowInactiveEventDates` nothing is skipped: the matchUp is placed and the result carries one `EVENT_DATE_INACTIVE`
+warning per such placement in `warnings` (`{ code, message, matchUpId, eventId, scheduledDate, reason }`). A director's
+manual placement on such a day is written and warned about the same way, never refused; that is not a scheduler's
+decision and is outside this page.
+
 ## 4. The timed pipeline: `scheduleProfileRounds`
 
 The call runs in three stages: a **view**, everything the decisions below read, resolved once from the records; a
@@ -255,7 +284,13 @@ Dates are taken in order. On each date:
    matchUp order, skipping BYEs, completed matchUps, and matchUps already timed. A matchUp dated on the date without
    a time is not already timed: it is timed like any other, one already on the court grid (a court or a court order)
    included, and the conflicts its time makes there are reported (§ 7). It is never dropped (CA 2026-10-28). A
-   matchUp belongs to the first venue that profiles it on the date. A `roundSegment` applies only when the round has a
+   matchUp belongs to the first venue that profiles it on the date. A round whose event does not play on the date
+   (§ 3.10) is skipped there: it is resolved to no matchUps and no minutes, so it takes no slot and does not count
+   toward the venue's `T`; its schedulable matchUps not yet timed are reported in `eventDateSkippedMatchUpIds` and
+   also in `noTimeMatchUpIds` (unless the call sets `allowInactiveEventDates`, when the round is resolved like any other).
+   The skip is decided in the view (§ 4, `kernel.scheduling.view@1`, whose options include
+   `allowInactiveEventDates`); the plan reads the view alone and is unchanged (`kernel.scheduling.plan@2`). A
+   `roundSegment` applies only when the round has a
    power-of-two count of matchUps, the segment count is a power of two smaller than it, and the round lists no
    `matchUpIds`. Each round's matchUps take the minutes of the round's **first** matchUp's format (**OPEN**, C7: a round
    of mixed formats is timed by its first). A round none of whose matchUps has a format cannot be timed: nothing of
@@ -311,14 +346,19 @@ Dates named in `clearScheduleDates` are planned on a working copy of the records
 empty and a refusal leaves them as they were; they are cleared on the records only when the plan is written. What
 remains unplaced on a date is reported in `noTimeMatchUpIds` for that date, beside whatever reasons it collected. A dry
 run plans exactly as a run does (clearing on the copy included), so it reports what the run would write, and writes
-nothing. The call records an audit of what it did on the tournament. When it times a matchUp already on a date's court
+nothing. The call records an audit of what it did on the tournament (with `eventDateSkippedMatchUpIdsCount` when it
+skipped a matchUp for its event's dates; absent otherwise). When it times a matchUp already on a date's court
 grid, the grid's conflicts that name it are reported per date in `proConflicts` (a dry run reports none).
 
 ## 5. The grid pipeline: `scheduleProfileGrid`
 
 Per date, the profiled rounds of every venue are resolved to their matchUps (a round on a round robin covers its
 groups), skipping BYEs, completed matchUps and matchUps already on a court or a
-court order. The date's grid is its courts by rows; matchUps already timed are walked earliest first, so they land on
+court order. A matchUp whose event does not play on the date (§ 3.10) is not offered to the grid: it is reported in
+`eventDateSkippedMatchUpIds` and also in `notScheduledMatchUpIds`. `proAutoSchedule`, which plans one date's grid
+from the matchUps it is given, skips the same way, before its view is built, and reports a skipped matchUp both in
+`notScheduled` and in `eventDateSkippedMatchUpIds`; the grid's date view (`kernel.scheduling.grid@1`) never holds
+one. The date's grid is its courts by rows; matchUps already timed are walked earliest first, so they land on
 earlier rows.
 
 **Each date is planned from its own view,** read from the records as the dates before it left them, so a placement on
@@ -365,6 +405,8 @@ that is not a number: `INVALID_VALUES`.
    it is taken (CA 2026-10-28). Only a matchUp timed on the date holds a court (rule 3).
    A listed matchUp dated on another day is scheduled on that day: the call never moves it to its own date, and reports
    it in `noTimeMatchUpIds` (CA 2026-10-28). No matchUp changes day through `scheduleMatchUps`.
+   A listed matchUp whose event does not play on `scheduleDate` (§ 3.10) is not timed: it is reported in
+   `eventDateSkippedMatchUpIds` and also in `noTimeMatchUpIds`, unless the call sets `allowInactiveEventDates`.
 2. **The minutes** (§ 3.3, rule 1, and Q1, CA 2026-10-22). Minutes the call states win: `averageMatchUpMinutes`
    (default 90), `recoveryMinutes` (default 0) and `recoveryMinutesMap` (a recovery per matchUpId). When the call
    states none, and the tournament or a matchUp's event states timing (an attached scheduling policy,
@@ -419,6 +461,7 @@ matchUps not yet placed.
 Per date, every scheduling call reports what it placed (`scheduledMatchUpIds`) and, per reason, what it left
 unplaced. The corpus records this report as the scheduling step's value: matchUpIds only, sorted, per date and reason,
 without the attempts the engine made on the way (those trace one implementation's loop, not a rule).
+`eventDateSkippedMatchUpIds` is one of these reasons (its entries' `matchUpId`s).
 
 ### 7.1 The plan
 

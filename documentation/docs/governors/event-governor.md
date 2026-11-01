@@ -533,6 +533,11 @@ An event's range always lies inside the tournament's. A new event takes the tour
 equals the tournament's follows every tournament change, and a range narrowed with `setEventDates` is kept, cut to the
 new tournament range, or reset to it when none of it is left.
 
+The new dates land even when scheduled matchUps of the event now sit on days it does not play (see
+[Event playing days](./schedule-governor.md#event-playing-days)): the result carries one `EVENT_DATE_INACTIVE` warning
+per such matchUp, `{ code, message, matchUpId, eventId, scheduledDate, reason }`. `modifyEvent` returns the same
+warnings when its `eventUpdates` change the event's dates.
+
 ---
 
 ## setEventEndDate

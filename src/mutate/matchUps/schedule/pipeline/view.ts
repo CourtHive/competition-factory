@@ -12,6 +12,7 @@ import { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
 import { findMatchUpFormatTiming } from '@Acquire/findMatchUpFormatTiming';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
 import { hasByeSide } from '@Mutate/matchUps/schedule/byeScheduling';
+import { eventDateResolver, EventDateReason } from '@Query/events/eventPlaysOnDate';
 import { timingCategoryType } from '@Query/event/timingCategoryType';
 import { extractDate, isValidDateString } from '@Tools/dateTime';
 import { isConvertableInteger, isPowerOf2 } from '@Tools/math';
@@ -72,6 +73,8 @@ export type RoundPlan = {
   error?: ErrorType;
 };
 export type VenuePlan = { venueId: string; rounds: RoundPlan[] };
+/** a profiled matchUp whose event does not play on the date (eventPlaysOnDate), and why */
+export type EventDateSkip = { matchUpId: string; eventId: string; reason: EventDateReason };
 export type DatePlan = { scheduleDate: string; venues: VenuePlan[] };
 
 /**
@@ -117,10 +120,19 @@ export type SchedulingView = PlanningView & {
   dateSchedulingProfiles: DateProfile[];
   tournamentRecords: { [tournamentId: string]: Tournament };
   matchUps: Map<string, HydratedMatchUp>;
+  /**
+   * per date, the profiled matchUps not yet timed whose event does not play on it: their rounds plan nothing on the date
+   * (spec § 4, step 2). Here, not on the planning view, so the plan's contract does not change.
+   */
+  eventDateSkippedMatchUpIds: { [scheduleDate: string]: EventDateSkip[] };
+  /** with `allowInactiveEventDates`: the same matchUps, planned all the same, which a run warns about when it places them */
+  eventDateInactiveMatchUpIds: { [scheduleDate: string]: EventDateSkip[] };
 };
 
 type BuildSchedulingViewArgs = {
   tournamentRecords: { [tournamentId: string]: Tournament };
+  /** plan a round on a date its event does not play, and warn, rather than skip it (default false) */
+  allowInactiveEventDates?: boolean;
   scheduleDates?: string[];
   periodLength?: number;
   courtIds?: string[];
@@ -208,6 +220,7 @@ function roundMinutes(
 }
 
 export function buildSchedulingView({
+  allowInactiveEventDates = false,
   scheduleDates = [],
   tournamentRecords,
   periodLength = 30,
@@ -247,7 +260,15 @@ export function buildSchedulingView({
   const schedulable = (matchUp: HydratedMatchUp) =>
     !hasByeSide(matchUp) && (!matchUp.matchUpStatus || !completedMatchUpStatuses.includes(matchUp.matchUpStatus));
 
+  // a round whose event does not play on the date plans nothing there; its matchUps not yet timed are reported, per event
+  const resolveEventDate = eventDateResolver(tournamentRecords);
+  const eventDateSkippedMatchUpIds: SchedulingView['eventDateSkippedMatchUpIds'] = {};
+  const eventDateInactiveMatchUpIds: SchedulingView['eventDateInactiveMatchUpIds'] = {};
+
   const dates: DatePlan[] = dateProfiles.map((dateProfile) => {
+    const scheduleDate = extractDate(dateProfile.scheduleDate);
+    const skipped = (eventDateSkippedMatchUpIds[scheduleDate] = [] as EventDateSkip[]);
+    const inactive = (eventDateInactiveMatchUpIds[scheduleDate] = [] as EventDateSkip[]);
     // a matchUp belongs to the first venue that profiles it on the date
     const claimed = new Set<string>();
     const venues: VenuePlan[] = (dateProfile.venues ?? []).filter(Boolean).map((venue) => {
@@ -259,6 +280,21 @@ export function buildSchedulingView({
           const roundPeriodLength = round.periodLength || periodLength;
           const { minutes: roundTiming, error } = roundMinutes(round, inRound, tournamentRecords);
           const unscheduled = { round, matchUpIds: [], profiledMatchUpIds: [], periodLength: roundPeriodLength };
+          const verdict = resolveEventDate({
+            tournamentId: round.tournamentId,
+            eventId: round.eventId,
+            date: scheduleDate,
+          });
+          if (!verdict.plays) {
+            const skips = inRound
+              .filter((matchUp) => schedulable(matchUp) && !matchUp.schedule?.scheduledTime)
+              .map(({ matchUpId }) => ({ matchUpId, eventId: round.eventId, reason: verdict.reason }));
+            if (!allowInactiveEventDates) {
+              skipped.push(...skips);
+              return unscheduled;
+            }
+            inactive.push(...skips);
+          }
           if (error) return { ...unscheduled, error };
           // a round none of whose matchUps has a format is not timed, and so schedules nothing; its matchUps not yet
           // timed are reported (CA 2026-10-23)
@@ -275,7 +311,7 @@ export function buildSchedulingView({
         }),
       };
     });
-    return { scheduleDate: extractDate(dateProfile.scheduleDate), venues };
+    return { scheduleDate, venues };
   });
 
   const allCourts: HydratedCourt[] = getVenuesAndCourts({ ignoreDisabled: false, tournamentRecords }).courts ?? [];
@@ -301,6 +337,8 @@ export function buildSchedulingView({
     schedulingProfile,
     personRequests,
     timedMinutes: timedMinutesOf(hydrated, dates, tournamentRecords),
+    eventDateInactiveMatchUpIds,
+    eventDateSkippedMatchUpIds,
     playedOrderFacts: playedOrderFactsOf(tournamentRecords),
     eventTimings: getEventBookingTimings(tournamentRecords),
     transit: venueTransit(tournamentRecords),

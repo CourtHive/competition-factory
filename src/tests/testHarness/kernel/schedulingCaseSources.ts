@@ -598,6 +598,50 @@ export const schedulingCaseSources: Source[] = [
     claims: (plan) => expectEqual(timesOf(plan, eventMatchUps(0, 2)), ['11:30'], "the policy's transit"),
   },
   {
+    caseId: 'scheduling.plan.event-date-skips-per-event.v1',
+    note:
+      'Two events profiled on the first date (a Monday). The first plays Tuesdays only (event weekdays), so its round is ' +
+      'skipped on the Monday: the view gives it no matchUps and no minutes, and nothing of it is timed (§ 4, step 2). The ' +
+      "second event plays every day and is timed as though the first were not profiled. Skipping is per event, by the round's event.",
+    build: () => {
+      twoEvents({ courtsCount: 2 });
+      const { tournamentRecord } = tournamentEngine.getTournament();
+      const result: any = tournamentEngine.setEventDates({
+        eventId: tournamentRecord.events[0].eventId,
+        weekdays: ['TUE'],
+      });
+      if (!result.success) throw new Error('event dates');
+      profileEventRound(0, 1, DAYS[0]);
+      profileEventRound(1, 1, DAYS[0]);
+    },
+    claims: (plan) => {
+      expectEqual(timesOf(plan, eventMatchUps(0, 1)), [undefined], 'the Tuesday event is not timed on the Monday');
+      expectEqual(timesOf(plan, eventMatchUps(1, 1)), ['10:00', '10:00'], 'the other event is timed');
+    },
+  },
+  {
+    caseId: 'scheduling.plan.event-date-allowed-inactive.v1',
+    note:
+      "As the case before, with the call's allowInactiveEventDates: the round of the event that does not play on the date " +
+      'is planned like any other, and a run warns about each placement it makes.',
+    options: { allowInactiveEventDates: true },
+    build: () => {
+      twoEvents({ courtsCount: 3 });
+      const { tournamentRecord } = tournamentEngine.getTournament();
+      const result: any = tournamentEngine.setEventDates({
+        eventId: tournamentRecord.events[0].eventId,
+        weekdays: ['TUE'],
+      });
+      if (!result.success) throw new Error('event dates');
+      profileEventRound(0, 1, DAYS[0]);
+      profileEventRound(1, 1, DAYS[0]);
+    },
+    claims: (plan) => {
+      expectEqual(timesOf(plan, eventMatchUps(0, 1)), ['10:00'], 'the Tuesday event is timed on the Monday');
+      expectEqual(timesOf(plan, eventMatchUps(1, 1)), ['10:00', '10:00'], 'the other event is timed');
+    },
+  },
+  {
     caseId: 'scheduling.plan.cleared-date-carries-nothing.v1',
     note:
       'A matchUp stored at 23:00 on the first date runs past midnight, but the call clears the first date, which it plans: ' +
@@ -681,12 +725,14 @@ function authoredCases({ caseId, note, options = {}, amendView, build, claims }:
     note,
   };
   amendView?.(view);
-  const plan = planSchedule({ ...options, view });
+  // allowInactiveEventDates is read by the view alone: the plan is given the view it shaped
+  const { allowInactiveEventDates: _viewOnly, ...planOptions } = options;
+  const plan = planSchedule({ ...planOptions, view });
   claims(plan, matchUpIds());
   const planCase: KernelCase = {
     caseId,
     operation: 'kernel.scheduling.plan@2',
-    input: { view: planningViewData(view), options },
+    input: { view: planningViewData(view), options: planOptions },
     expected: { kind: 'value', value: overTheWire(normativePlan(plan)) },
     note,
   };

@@ -1,6 +1,8 @@
 import { overnightRestWarningsFor } from '@Query/matchUps/scheduling/getOvernightRestWarnings';
 import { buildGridDateView, planGridDate } from '@Mutate/matchUps/schedule/pipeline/gridPlan';
 import { bulkScheduleMatchUps } from '@Mutate/matchUps/schedule/bulkScheduleMatchUps';
+import { eventDateResolver, EventDateReason } from '@Query/events/eventPlaysOnDate';
+import { extractDate } from '@Tools/dateTime';
 import { validMatchUps } from '@Validators/validMatchUp';
 
 // constants and types
@@ -15,6 +17,8 @@ import { ResultType } from '@Types/factoryTypes';
 
 type ProAutoScheduleArgs = {
   tournamentRecords: { [key: string]: Tournament };
+  /** place matchUps on a date their event does not play, and warn (EVENT_DATE_INACTIVE), rather than skip them */
+  allowInactiveEventDates?: boolean;
   matchUpDailyLimits?: { [key: string]: number };
   dailyLimitOverrides?: DailyLimitOverrides;
   /** the limits are asked but not enforced: a placement over one is made and reported in dailyLimitWarningMatchUpIds */
@@ -44,6 +48,7 @@ function overnightRestOf({ warnOvernightRest, scheduledDate, tournamentRecords }
 }
 
 export function proAutoSchedule({
+  allowInactiveEventDates = false,
   dailyLimitsWarnOnly,
   dailyLimitOverrides,
   matchUpDailyLimits,
@@ -59,6 +64,9 @@ export function proAutoSchedule({
   dailyLimitWarningMatchUpIds?: string[];
   overnightRestWarnings?: { [scheduleDate: string]: OvernightRestWarning[] };
   overLimitMatchUpIds?: string[];
+  eventDateSkippedMatchUpIds?: {
+    [scheduleDate: string]: { matchUpId: string; eventId: string; reason: EventDateReason }[];
+  };
 } {
   if (!validMatchUps(matchUps)) return { error: INVALID_VALUES };
   if (matchUps.some(({ hasContext }) => !hasContext)) {
@@ -67,6 +75,15 @@ export function proAutoSchedule({
       error: MISSING_CONTEXT,
     };
   }
+
+  // a matchUp whose event does not play on the date is not placed: it is reported not scheduled, and why
+  const { playing, skipped, skips } = eventDateFilter({
+    allowInactiveEventDates,
+    tournamentRecords,
+    scheduledDate,
+    matchUps,
+  });
+  matchUps = playing;
 
   // the date's view, then its plan, which reads no record (pipeline/gridPlan.ts), then the write
   const view = buildGridDateView({
@@ -121,7 +138,7 @@ export function proAutoSchedule({
   };
   const unwritten = new Set([...skippedMatchUpIds, ...lockedMatchUpIds, ...notFoundMatchUpIds]);
   const written = scheduled.filter(({ matchUpId }) => !unwritten.has(matchUpId));
-  const notScheduled = [...unplaced, ...scheduled.filter(({ matchUpId }) => unwritten.has(matchUpId))];
+  const notScheduled = [...unplaced, ...scheduled.filter(({ matchUpId }) => unwritten.has(matchUpId)), ...skipped];
 
   // a warning is reported only for a placement the write made
   const warned = dailyLimitWarningMatchUpIds.filter((matchUpId) => !unwritten.has(matchUpId));
@@ -133,5 +150,31 @@ export function proAutoSchedule({
     scheduled: written,
     overLimitMatchUpIds,
     notScheduled,
+    ...(skips.length ? { eventDateSkippedMatchUpIds: { [extractDate(scheduledDate)]: skips } } : {}),
   };
+}
+
+type EventDateFilterArgs = {
+  tournamentRecords: { [key: string]: Tournament };
+  allowInactiveEventDates: boolean;
+  matchUps: HydratedMatchUp[];
+  scheduledDate: string;
+};
+
+/** the matchUps whose event plays on the date, and those it does not, with why (eventPlaysOnDate) */
+function eventDateFilter({ allowInactiveEventDates, tournamentRecords, scheduledDate, matchUps }: EventDateFilterArgs) {
+  const skips: { matchUpId: string; eventId: string; reason: EventDateReason }[] = [];
+  const skipped: HydratedMatchUp[] = [];
+  if (allowInactiveEventDates) return { playing: matchUps, skipped, skips };
+  const resolve = eventDateResolver(tournamentRecords);
+  const date = extractDate(scheduledDate);
+  const playing = matchUps.filter((matchUp) => {
+    const { matchUpId, eventId, tournamentId } = matchUp;
+    const verdict = resolve({ tournamentId, eventId, date });
+    if (verdict.plays) return true;
+    skips.push({ matchUpId, eventId, reason: verdict.reason });
+    skipped.push(matchUp);
+    return false;
+  });
+  return { playing, skipped, skips };
 }
