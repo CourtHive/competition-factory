@@ -2,6 +2,7 @@ import { isDrawnResult, isCombinedPointFormat, validateDrawTallyOptions } from '
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { calculatePressureRatings } from './calculatePressureRatings';
 import { countGames, countSets, countPoints } from './scoreCounters';
+import { applyResultPoints, type ResultPoints } from '@Query/standings/resultPoints';
 import { calculatePercentages } from './calculatePercentages';
 import { intersection } from '@Tools/arrays';
 import { ensureInt } from '@Tools/ensureInt';
@@ -216,6 +217,11 @@ export function getMatchUpContribution({
 
   if (manualGamesOverride) {
     applyManualGamesOverride({ participantResults: contribution, score, sides });
+  }
+
+  const resultPoints = tallyPolicy?.resultPoints as ResultPoints | undefined;
+  if (resultPoints?.rules) {
+    applyResultPoints({ ledger: contribution, resultPoints, matchUp, isDrawn: isDrawnResult(matchUp, matchUpFormat) });
   }
 
   return { contribution, perPlayer };

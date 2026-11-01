@@ -702,6 +702,35 @@ They are computed only when ordering and never stored. They may be directive att
 measure. FIDE's convention for unplayed rounds (a virtual opponent) is not applied: only meetings that were played
 count.
 
+### resultPoints
+
+Classification points by result, for sports whose tables award points per result rather than counting wins: FIBA's 2
+for a win, 1 for a played or defaulted loss and 0 for a forfeit, or volleyball's 3 for a 3-0 or 3-1 win and 2 and 1 for
+a 3-2. The rules are matched in order, and the first that matches decides.
+
+```js
+{
+  groupOrderKey: 'classificationPoints',
+  resultPoints: {
+    rules: [
+      { id: 'forfeit', matchUpStatuses: ['WALKOVER'], winner: 3, loser: 0 },
+      { id: 'five-sets', loserSetsWon: [2], winner: 2, loser: 1 },
+      { id: 'win', winner: 3, loser: 0 },
+      { id: 'draw', isDrawn: true, points: 1 },
+    ],
+  },
+}
+```
+
+- A decided rule may name `matchUpStatuses` and `loserSetsWon` (the sets the loser won), and awards `winner` and
+  `loser` points. A drawn rule awards `points` to both sides.
+- Statuses are mapped by the rules, never inferred: whether a sport's "forfeit" is a `WALKOVER` is the policy author's
+  decision.
+- An unfinished, excluded or BYE result earns nothing. A decided or drawn result that matches no rule is listed on both
+  participants in `classificationUnmatched` rather than counted as 0 in silence.
+- Each participant's tally carries `classificationPoints`, and `classificationContributions` records each result's rule
+  and points. Nothing is written without `resultPoints`.
+
 ### denominator
 
 `denominator: 'EXPECTED'` makes `setsPct` and `gamesPct` divide by the sets and games a participant was expected to
