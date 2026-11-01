@@ -1,4 +1,3 @@
-import { EVENT_DATES_OUTSIDE_TOURNAMENT } from '@Query/event/getEventInconsistencies';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
@@ -156,14 +155,6 @@ it('getRounds honours active dates and weekdays, and carries playingDates for co
   tournamentEngine.setState(tournamentRecord);
   result = tournamentEngine.getRounds({ scheduleDate: '2026-11-13' });
   expect(result.rounds.length).toEqual(2);
-
-  // ...and is reported as an inconsistency, a warning that leaves the record valid
-  result = tournamentEngine.getEventInconsistencies({ eventId: 'friEvent' });
-  expect(result.valid).toEqual(true);
-  const issue = result.inconsistencies.find(({ issueType }) => issueType === EVENT_DATES_OUTSIDE_TOURNAMENT);
-  expect(issue).toMatchObject({ severity: 'warning', eventId: 'friEvent', startDate: '2026-11-20' });
-  result = tournamentEngine.getEventInconsistencies({ eventId: 'satEvent' });
-  expect(result.inconsistencies.some(({ issueType }) => issueType === EVENT_DATES_OUTSIDE_TOURNAMENT)).toEqual(false);
 });
 
 it('public payloads carry playingDates only for constrained events', () => {

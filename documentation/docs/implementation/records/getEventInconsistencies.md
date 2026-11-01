@@ -55,11 +55,6 @@ const { valid, inconsistencies } = engine.getEventInconsistencies({ eventId });
   participant, a `SINGLES` event carrying a `PAIR`, etc.). `HYBRID` events legitimately carry both
   `INDIVIDUAL` and `PAIR`. Reads stored `positionAssignments` and resolves each participant's type
   via the participant map. (error)
-- `EVENT_DATES_OUTSIDE_TOURNAMENT` — the event's own `startDate..endDate` does not intersect the
-  tournament's range, or its bounds are inverted: a stale range, typically left behind when the
-  tournament's dates moved. Scheduling ignores such a range and uses the tournament's (see
-  [Event playing days](../../governors/schedule-governor.md#event-playing-days)). Carries the event's
-  `startDate` and `endDate`. Reported only when a `tournamentRecord` is available. (warning)
 
 > The expected participantType is derived by the shared `expectedParticipantType(eventType)` helper —
 > the same single source of truth `checkValidEntries` uses for entry validation. Entries-vs-placed
