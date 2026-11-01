@@ -237,10 +237,10 @@ function terminal({
  * is made a primitive string first: an object with a crafted `length` must not bound the loop.
  */
 function lotHash(text: string) {
-  const value = typeof text === 'string' ? text : String(text);
   let hash = 0x811c9dc5;
-  for (let i = 0; i < value.length; i++) {
-    hash ^= value.charCodeAt(i);
+  // iterates the characters of a primitive string, so no caller-supplied `length` bounds the loop
+  for (const character of String(text)) {
+    hash ^= character.codePointAt(0) ?? 0;
     hash = Math.imul(hash, 0x01000193) >>> 0;
   }
   return hash;
