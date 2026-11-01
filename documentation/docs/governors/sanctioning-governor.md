@@ -229,6 +229,13 @@ a fallback: a proposal venue is what an applicant typed, so it has no canonical 
 into placeholder courts, which would fabricate identities to be reconciled against a registry later.
 Supplied `venues` always win over the proposal description.
 
+**Draw sizes.** Each event proposal's `drawSize` becomes the activated event's
+`entryProfile.targetDrawSize`, and its `qualifyingDrawSize` becomes `entryProfile.qualifyingDrawSize`
+(positive whole numbers only). A proposal does not state how many qualifiers enter the main draw, so
+`entryProfile.qualifiersCount` is left for the director to set with [`modifyEvent`](/docs/governors/event-governor#modifyevent).
+[`getEventEntrySpace`](/docs/governors/entries-governor#getevententryspace) counts acceptance places from them
+until a draw is generated.
+
 **Returns:** `{ success, tournamentRecord }`
 
 ---

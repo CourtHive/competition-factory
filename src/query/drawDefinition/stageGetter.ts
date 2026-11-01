@@ -50,8 +50,15 @@ export function getStageWildcardsCount({ tournamentRecord, event }: { tournament
   // Unsanctioned: no wildcard limit
   return constraints?.maxWildcards ?? Infinity;
 }
-export function getStageEntryTypeCount({ stage, drawDefinition, entryStatus }) {
-  return drawDefinition.entries.reduce(
+type StageEntryCountArgs = {
+  // counts a list other than the draw's own, e.g. an event's entries before any draw exists
+  entries?: Entry[];
+  drawDefinition?: DrawDefinition;
+  entryStatus?: string;
+  stage?: string;
+};
+export function getStageEntryTypeCount({ stage, drawDefinition, entryStatus, entries }: StageEntryCountArgs) {
+  return (entries ?? drawDefinition?.entries ?? []).reduce(
     (p, c) => (c.entryStage === stage && c.entryStatus === entryStatus ? p + 1 : p),
     0,
   );
@@ -311,20 +318,30 @@ function collectStandardEntries({ provisionalPositioning, finishingPositions, al
   });
 }
 
-export function getStageDirectEntriesCount({ stage, drawDefinition }) {
+export function getStageDirectEntriesCount({
+  stage,
+  drawDefinition,
+  entries,
+}: Omit<StageEntryCountArgs, 'entryStatus'>) {
   return DIRECT_ENTRY_STATUSES.reduce((count, entryStatus) => {
     const statusCount = getStageEntryTypeCount({
       drawDefinition,
+      entries,
       entryStatus,
       stage,
     });
     return (statusCount || 0) + count;
   }, 0);
 }
-export function getStageWildcardEntriesCount({ stage, drawDefinition }) {
+export function getStageWildcardEntriesCount({
+  stage,
+  drawDefinition,
+  entries,
+}: Omit<StageEntryCountArgs, 'entryStatus'>) {
   return getStageEntryTypeCount({
     entryStatus: WILDCARD,
     drawDefinition,
+    entries,
     stage,
   });
 }
