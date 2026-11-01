@@ -1625,6 +1625,15 @@ engine.addMatchUpScheduleItems({
 });
 ```
 
+### A day the event does not play is warned, never refused
+
+When the call sets a date (`scheduledDate`, or the date of a date-time `scheduledTime` given without one) on which the
+matchUp's event does not play (see [Event playing days](#event-playing-days)), the schedule is written and the result's
+`warnings` carry `EVENT_DATE_INACTIVE`: `{ code, message, matchUpId, eventId, scheduledDate, reason }`. A call that
+sets no date (a court, a court order, a time alone) carries none. The bulk writes (`bulkScheduleMatchUps`,
+`bulkScheduleTournamentMatchUps`, `bulkRescheduleMatchUps`) return the warning of each matchUp they write in their own
+`warnings`.
+
 ### Schedule order: a matchUp is never placed at or before a matchUp it depends on
 
 Every write that moves a matchUp's `scheduledDate` or `scheduledTime` (this method, `addMatchUpScheduledTime`,

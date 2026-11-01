@@ -17,6 +17,7 @@ import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
 import { matchUpAssignedCourtId } from '@Query/matchUp/courtAssignment';
 import { scheduleLockConflicts } from '@Query/matchUp/isScheduleLocked';
 import { getParticipants } from '@Query/participants/getParticipants';
+import { eventDateWarning } from '@Query/events/eventDateWarning';
 import { checkPlayedOrder, PendingPlacements } from './playedOrder';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
@@ -48,6 +49,7 @@ import { DrawDefinition, Event, MatchUp, MatchUpSchedule, Tournament } from '@Ty
 import { OFFICIAL_CONFLICT_OF_INTEREST } from '@Constants/officiatingConstants';
 import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
 import { OBJECT, OF_TYPE } from '@Constants/attributeConstants';
+import type { EventDateWarning } from '@Query/events/eventDateWarning';
 import type { OfficialRecord } from '@Types/officiatingTypes';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { OFFICIAL } from '@Constants/participantRoles';
@@ -476,10 +478,30 @@ function checkUnwritableAttributes(schedule: MatchUpSchedule, errorOnUnknownAttr
   };
 }
 
+/** EVENT_DATE_INACTIVE when the call sets a date (`scheduledDate`, else a date-time's date) its event does not play */
+function scheduleDateWarning({
+  tournamentRecord,
+  drawDefinition,
+  matchUpId,
+  schedule,
+  event,
+}: {
+  drawDefinition: DrawDefinition;
+  tournamentRecord: Tournament;
+  schedule: MatchUpSchedule;
+  matchUpId: string;
+  event?: Event;
+}): EventDateWarning | undefined {
+  const { scheduledDate, scheduledTime } = schedule;
+  const date = isClearingValue(scheduledDate) ? extractDate(scheduledTime) : extractDate(scheduledDate);
+  if (!date) return undefined;
+  return eventDateWarning({ tournamentRecord, drawDefinition, scheduledDate: date, matchUpId, event });
+}
+
 /** Success, carrying whatever the call has to say for itself. */
-function scheduleItemsResult(warning: ErrorType | undefined, unwritable: string[]) {
+function scheduleItemsResult(given: (ErrorType | EventDateWarning | undefined)[], unwritable: string[]) {
   const warnings = [
-    ...(warning ? [warning] : []),
+    ...given.filter((warning) => !!warning),
     ...(unwritable.length ? [{ ...UNWRITABLE_SCHEDULE_ATTRIBUTES, attributes: unwritable }] : []),
   ];
   return warnings.length ? { ...SUCCESS, warnings } : { ...SUCCESS };
@@ -511,6 +533,28 @@ type AddMatchUpScheduleItemsArgs = {
   schedule: MatchUpSchedule;
   event?: Event;
 };
+
+/**
+ * Every refusal the schedule's write can raise, before anything is written. `validateOnly` stops before the timing and
+ * assignment writes (`applyScheduleTiming`, `applyScheduleAssignments`), whose own checks refuse a stop, resume or end
+ * time out of order, a venue not found, and others. A caller that validates before writing something else (an outcome)
+ * and applies the schedule after (`setMatchUpState`) met those refusals after its own writes: measured 2026-11-01, a
+ * winner with `schedule: { stopTime }` returned `ERR_INVALID_STOP_TIME` over a result written and directed. So the
+ * write is also run, on a copy of the draw, with no notice. Read by `setMatchUpState` and by the outcome view (v2).
+ */
+export function scheduleRefusal(
+  params: Omit<AddMatchUpScheduleItemsArgs, 'validateOnly'>,
+): ReturnType<typeof addMatchUpScheduleItems> | undefined {
+  const check = addMatchUpScheduleItems({ ...params, disableNotice: true, validateOnly: true });
+  if (check.error) return check;
+  if (!params.drawDefinition) return undefined;
+  const scratch = addMatchUpScheduleItems({
+    ...params,
+    drawDefinition: structuredClone(params.drawDefinition),
+    disableNotice: true,
+  });
+  return scratch.error ? scratch : undefined;
+}
 
 export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
   error?: ErrorType;
@@ -664,7 +708,11 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
   // so a caller can learn whether a schedule would be accepted without applying any of it —
   // `setMatchUpStatus` uses it to refuse before it touches the draw, then applies once the outcome
   // has been accepted.
-  if (validateOnly) return scheduleItemsResult(warning, unwritable);
+  // a day the matchUp's event does not play: written, and warned about, never refused (CA 2026-11-01); a call that sets
+  // no date (a court, an order, a time alone) says nothing about it
+  const dateWarning = scheduleDateWarning({ tournamentRecord, drawDefinition, schedule, matchUpId, event });
+
+  if (validateOnly) return scheduleItemsResult([warning, dateWarning], unwritable);
 
   const timingResult = applyScheduleTiming({
     removePriorValues,
@@ -728,7 +776,7 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
     });
   }
 
-  return scheduleItemsResult(warning, unwritable);
+  return scheduleItemsResult([warning, dateWarning], unwritable);
 }
 
 /**
