@@ -11,19 +11,29 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
 import type { Season } from '@Types/seasonTypes';
 
+// DOMINANT_DUO: three lines a tie, so a season generates quickly even under coverage instrumentation
 const seasonProfile = {
   tiers: [
     { tierId: 'A1', tierValue: 'A-1', teamsCount: 4 },
     { tierId: 'B1', tierValue: 'B-1', teamsCount: 6 },
   ],
+  tieFormatName: 'DOMINANT_DUO',
   periods: [{}, {}],
   seasonName: 'Spring',
 };
 
+// generating a season plays every line of every tie: generate each profile once, hand each test its own copy
+const generated = new Map<string, { season: Season; tournamentRecords: Record<string, any>; matchUps: any[] }>();
+
 function generate(profile: any = seasonProfile) {
-  const result: any = mocksEngine.generateSeason({ seasonProfile: profile });
-  expect(result.success ?? !result.error).toEqual(true);
-  return result as { season: Season; tournamentRecords: Record<string, any> };
+  const key = JSON.stringify(profile);
+  if (!generated.has(key)) {
+    const result: any = mocksEngine.generateSeason({ seasonProfile: profile });
+    expect(result.error).toBeUndefined();
+    generated.set(key, { ...result, matchUps: inContextMatchUps(result.tournamentRecords) });
+  }
+  const { season, tournamentRecords, matchUps } = generated.get(key)!;
+  return { season: structuredClone(season), tournamentRecords, matchUps };
 }
 
 function inContextMatchUps(tournamentRecords: Record<string, any>) {
@@ -50,8 +60,7 @@ describe('generateSeason', () => {
 
 describe('getSeasonStandings', () => {
   it('aggregates each team across both period records, per tier', () => {
-    const { season, tournamentRecords } = generate();
-    const matchUps = inContextMatchUps(tournamentRecords);
+    const { season, matchUps } = generate();
 
     let result: any = getSeasonStandings({ season, matchUps });
     expect(result.error).toBeUndefined();
@@ -83,8 +92,7 @@ describe('getSeasonStandings', () => {
   });
 
   it('sums the tie score as value won and lost', () => {
-    const { season, tournamentRecords } = generate();
-    const matchUps = inContextMatchUps(tournamentRecords);
+    const { season, matchUps } = generate();
     let result: any = getSeasonStandings({ season, matchUps, tierId: 'A1' });
     const totalWon = result.standings.A1.reduce((sum, row) => sum + row.valueWon, 0);
     const totalLost = result.standings.A1.reduce((sum, row) => sum + row.valueLost, 0);
@@ -94,8 +102,7 @@ describe('getSeasonStandings', () => {
   });
 
   it('counts one period alone, and leaves out a period that does not count toward standings', () => {
-    const { season, tournamentRecords } = generate({ ...seasonProfile, periods: [{}, { includeInStandings: false }] });
-    const matchUps = inContextMatchUps(tournamentRecords);
+    const { season, matchUps } = generate({ ...seasonProfile, periods: [{}, { includeInStandings: false }] });
 
     let result: any = getSeasonStandings({ season, matchUps });
     expect(result.standings.A1.every((row) => row.matchUpsWon + row.matchUpsLost === 3)).toEqual(true);
@@ -108,10 +115,8 @@ describe('getSeasonStandings', () => {
   });
 
   it('reports a reference no matchUp answered instead of shrinking the table', () => {
-    const { season, tournamentRecords } = generate();
-    const matchUps = inContextMatchUps(tournamentRecords).filter(
-      (matchUp) => matchUp.tournamentId !== 'mock-season-P2',
-    );
+    const { season, matchUps: all } = generate();
+    const matchUps = all.filter((matchUp) => matchUp.tournamentId !== 'mock-season-P2');
     let result: any = getSeasonStandings({ season, matchUps });
     expect(result.unanswered).toEqual(season.periods[1].competitions);
     // placed teams are still listed, with what they have played
@@ -119,8 +124,7 @@ describe('getSeasonStandings', () => {
   });
 
   it('reports a participant it cannot resolve to a subject, and one playing outside its placement', () => {
-    const { season, tournamentRecords } = generate();
-    const matchUps = inContextMatchUps(tournamentRecords);
+    const { season, matchUps } = generate();
 
     let result: any = getSeasonStandings({
       getSubjectId: (participant) =>
@@ -143,10 +147,10 @@ describe('getSeasonStandings', () => {
   });
 
   it('gives subjects level on every ordered field the same rank', () => {
-    const { season, tournamentRecords } = generate();
+    const { season, matchUps } = generate();
     let result: any = getSeasonStandings({
       season,
-      matchUps: inContextMatchUps(tournamentRecords),
+      matchUps,
       orderBy: ['matchUpsDrawn'],
     });
     expect(result.standings.A1.map((row) => row.rank)).toEqual([1, 1, 1, 1]);
@@ -180,8 +184,7 @@ describe('getSeasonAdvancement (R10)', () => {
   }
 
   it("advances each tier's leader out of its period", () => {
-    const { season, tournamentRecords } = generate();
-    const matchUps = inContextMatchUps(tournamentRecords);
+    const { season, matchUps } = generate();
     const championship = withChampionship(season);
     expect(validateSeason({ season: championship }).valid).toEqual(true);
 
@@ -201,7 +204,7 @@ describe('getSeasonAdvancement (R10)', () => {
   });
 
   it('scales berths with the size of the tier', () => {
-    const { season, tournamentRecords } = generate();
+    const { season, matchUps } = generate();
     const championship = withChampionship(season);
     // 4 teams in A1 and 6 in B1: one berth below 5 teams, two from 5
     for (const advancement of championship.advancements ?? []) {
@@ -215,7 +218,7 @@ describe('getSeasonAdvancement (R10)', () => {
     }
     expect(validateSeason({ season: championship }).valid).toEqual(true);
 
-    let result: any = getSeasonAdvancement({ season: championship, matchUps: inContextMatchUps(tournamentRecords) });
+    let result: any = getSeasonAdvancement({ season: championship, matchUps });
     expect(result.outcomes.map((outcome) => outcome.berths)).toEqual([1, 2]);
     for (const outcome of result.outcomes) {
       expect(outcome.advancing.length + (outcome.tiedAtCut ? 1 : 0)).toBeGreaterThanOrEqual(
@@ -229,10 +232,10 @@ describe('getSeasonAdvancement (R10)', () => {
   });
 
   it('does not pick between subjects level at the cut', () => {
-    const { season, tournamentRecords } = generate();
+    const { season, matchUps } = generate();
     let result: any = getSeasonAdvancement({
       season: withChampionship(season),
-      matchUps: inContextMatchUps(tournamentRecords),
+      matchUps,
       orderBy: ['matchUpsDrawn'], // every team level
       advancementId: 'A1-winner',
     });

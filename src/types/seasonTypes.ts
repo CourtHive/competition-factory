@@ -108,12 +108,8 @@ export type SeasonAdvancement = {
 export type SeasonAdvancementRule =
   { type: 'TOP_N'; n: number } | { type: 'BERTHS_BY_SIZE'; berths: { minSubjects: number; n: number }[] };
 
-/** One subject's line in a season's standings. */
-export type SeasonStandingRow = {
-  subject: SeasonSubject;
-  /** the record-scoped participantIds this subject played as */
-  participantIds: string[];
-  rank: number;
+/** The results a season's standings tally for each subject. */
+export type SeasonStandingsTally = {
   matchUpsWon: number;
   matchUpsLost: number;
   matchUpsDrawn: number;
@@ -126,4 +122,10 @@ export type SeasonStandingRow = {
   gamesLost: number;
 };
 
-export type SeasonStandingsTally = Omit<SeasonStandingRow, 'subject' | 'participantIds' | 'rank'>;
+/** One subject's line in a season's standings. */
+export type SeasonStandingRow = SeasonStandingsTally & {
+  subject: SeasonSubject;
+  /** the record-scoped participantIds this subject played as */
+  participantIds: string[];
+  rank: number;
+};
