@@ -1,5 +1,6 @@
 import { isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { timingCategoryType } from '@Query/event/timingCategoryType';
+import { timingCategoryName } from '@Query/event/timingCategoryName';
 import { getMatchUpFormatTiming } from './getMatchUpFormatTiming';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { findExtension } from '@Acquire/findExtension';
@@ -79,7 +80,7 @@ export function getEventMatchUpFormatTiming({
     }
   }
   const { eventType, eventId, category } = event;
-  const categoryName = category?.categoryName ?? category?.ageCategoryCode ?? eventId;
+  const categoryName = timingCategoryName(event);
   const resolvedCategoryType = categoryType ?? timingCategoryType(category);
 
   if (!eventId) return { error: MISSING_EVENT };

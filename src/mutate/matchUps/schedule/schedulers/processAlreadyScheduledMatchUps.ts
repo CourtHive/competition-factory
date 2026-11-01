@@ -3,6 +3,7 @@ import { modifyParticipantDayMatchUps } from '@Mutate/matchUps/schedule/schedule
 import { updateTimeAfterRecovery } from '@Mutate/matchUps/schedule/scheduleMatchUps/updateTimeAfterRecovery';
 import { findMatchUpFormatTiming } from '@Acquire/findMatchUpFormatTiming';
 import { timingCategoryType } from '@Query/event/timingCategoryType';
+import { timingCategoryName } from '@Query/event/timingCategoryName';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import { findEvent } from '@Acquire/findEvent';
@@ -77,7 +78,7 @@ export function timedMatchUpMinutes({
   const { event } = findEvent({ tournamentRecord, eventId: matchUp.eventId });
   const { category, eventType } = event ?? {};
   const timing = findMatchUpFormatTiming({
-    categoryName: category?.categoryName ?? category?.ageCategoryCode,
+    categoryName: timingCategoryName(event),
     categoryType: timingCategoryType(category),
     tournamentId: matchUp.tournamentId,
     matchUpFormat: matchUp.matchUpFormat,

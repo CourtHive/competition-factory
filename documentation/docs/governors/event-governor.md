@@ -394,6 +394,9 @@ engine.modifyEvent({
 
 ## modifyEventMatchUpFormatTiming
 
+Overrides the average and/or recovery minutes of a `matchUpFormat` for one event, stored in the event's
+`SCHEDULE_TIMING` extension.
+
 ```js
 engine.modifyEventMatchUpFormatTiming({
   recoveryMinutes,
@@ -402,6 +405,11 @@ engine.modifyEventMatchUpFormatTiming({
   eventId,
 });
 ```
+
+The override is keyed by the event's category: `category.categoryName`, else `category.ageCategoryCode`, else the
+event's own `eventId` when it has no category. Every reader resolves the same key (`getMatchUpFormatTiming`,
+`getEventMatchUpFormatTiming` and the auto-schedulers), so an event with no category is scheduled by its override and
+other events stay on the policy.
 
 ---
 
@@ -486,6 +494,8 @@ engine.removeEventEntries({
 ---
 
 ## removeEventMatchUpFormatTiming
+
+Removes the event's timing overrides (its `SCHEDULE_TIMING` extension), returning the event to the scheduling policy.
 
 ```js
 engine.removeEventMatchUpFormatTiming({ eventId });

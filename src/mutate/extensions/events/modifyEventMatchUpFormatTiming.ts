@@ -1,6 +1,7 @@
 import { getModifiedMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getModifiedMatchUpTiming';
 import { modifyMatchUpFormatTiming } from '@Mutate/extensions/matchUps/modifyMatchUpFormatTiming';
 import { isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
+import { timingCategoryName } from '@Query/event/timingCategoryName';
 import { withEventChangeNotice } from '@Mutate/events/eventChangeNotice';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { pushGlobalLog } from '@Functions/global/globalLog';
@@ -39,8 +40,7 @@ export function modifyEventMatchUpFormatTiming(params: ModifyEventMatchUpFormatT
     event: event!,
   });
 
-  const category = event!.category;
-  const categoryName = category?.categoryName || category?.ageCategoryCode || event?.eventId;
+  const categoryName = timingCategoryName(event);
 
   let currentAverageTime = { categoryNames: [categoryName], minutes: {} };
   const currentRecoveryTime = { categoryNames: [categoryName], minutes: {} };

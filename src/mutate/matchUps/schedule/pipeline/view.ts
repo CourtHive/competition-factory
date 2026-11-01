@@ -14,6 +14,7 @@ import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
 import { hasByeSide } from '@Mutate/matchUps/schedule/byeScheduling';
 import { eventDateResolver, EventDateReason } from '@Query/events/eventPlaysOnDate';
 import { timingCategoryType } from '@Query/event/timingCategoryType';
+import { timingCategoryName } from '@Query/event/timingCategoryName';
 import { extractDate, isValidDateString } from '@Tools/dateTime';
 import { isConvertableInteger, isPowerOf2 } from '@Tools/math';
 import { definedAttributes } from '@Tools/definedAttributes';
@@ -206,7 +207,7 @@ function roundMinutes(
   const event = tournamentRecord ? findEvent({ tournamentRecord, drawId: round.drawId }).event : undefined;
   const { eventType, category } = event ?? {};
   const timing = findMatchUpFormatTiming({
-    categoryName: category?.categoryName ?? category?.ageCategoryCode,
+    categoryName: timingCategoryName(event),
     categoryType: timingCategoryType(category),
     tournamentId: round.tournamentId,
     eventId: round.eventId,

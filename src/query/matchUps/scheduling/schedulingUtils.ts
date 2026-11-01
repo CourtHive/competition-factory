@@ -1,4 +1,5 @@
 import { findMatchUpFormatTiming } from '@Acquire/findMatchUpFormatTiming';
+import { timingCategoryName } from '@Query/event/timingCategoryName';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { instanceCount } from '@Tools/arrays';
 
@@ -52,15 +53,14 @@ export function getProfileRoundKey(round?: ProfileRound): string {
 
 export function getRoundTiming({ round, matchUps, events, tournamentRecords }) {
   const event = events.find((event) => event.eventId === round.eventId);
-  const { eventType, category, categoryType } = event ?? {};
-  const { categoryName, ageCategoryCode } = category ?? {};
+  const { eventType, categoryType } = event ?? {};
   const formatCounts = instanceCount(matchUps.map(({ matchUpFormat }) => matchUpFormat));
 
   let roundMinutes = 0;
   Object.keys(formatCounts).forEach((matchUpFormat) => {
     const formatCount = formatCounts[matchUpFormat];
     const result = findMatchUpFormatTiming({
-      categoryName: categoryName || ageCategoryCode,
+      categoryName: timingCategoryName(event),
       tournamentId: round.tournamentId,
       eventId: round.eventId,
       tournamentRecords,
