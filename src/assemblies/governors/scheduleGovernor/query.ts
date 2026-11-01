@@ -1,6 +1,8 @@
 export { getMatchUpsToSchedule } from '@Mutate/matchUps/schedule/scheduleMatchUps/getMatchUpsToSchedule';
 export { getScheduledRoundsDetails } from '@Query/matchUps/scheduling/getScheduledRoundsDetails';
 export { getSchedulingProfileIssues } from '@Query/matchUps/scheduling/getSchedulingProfileIssues';
+export { getEventDateIssues } from '@Query/matchUps/scheduling/getEventDateIssues';
+export { getEventPlayingDates } from '@Query/events/eventPlaysOnDate';
 export { getMatchUpReadiness } from '@Query/matchUps/scheduling/getMatchUpReadiness';
 export { getParticipantRest, getParticipantsRest } from '@Query/matchUps/scheduling/getParticipantRest';
 export { isScheduleLocked, matchUpScheduleLocked } from '@Query/matchUp/isScheduleLocked';

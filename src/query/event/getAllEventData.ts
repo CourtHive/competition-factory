@@ -22,7 +22,7 @@ export function getAllEventData({ tournamentRecord, policyDefinitions }) {
 
   const eventsData = events.map((event) => {
     const { eventId } = event;
-    const eventInfo = extractEventInfo({ event }).eventInfo;
+    const eventInfo = extractEventInfo({ event, tournamentRecord }).eventInfo;
 
     const scheduleTiming = getScheduleTiming({
       tournamentRecord,

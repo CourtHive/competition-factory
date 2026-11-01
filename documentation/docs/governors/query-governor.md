@@ -1728,7 +1728,7 @@ const { rounds, excludedRounds } = engine.getRounds({
   withSplitRounds, // optional boolean - read schedulingProfile and split rounds where defined
   matchUpFilters, // optional - filter competition matchUps before deriving rounds
   withRoundId, // optional boolean - return a unique id for each derived round
-  scheduleDate, // optional - filters out events which are not valid on specified date
+  scheduleDate, // optional - filters out events which do not play on specified date (see getEventPlayingDates)
   venueId, // optional - filters out events which are not valid for specified venue
   context, // optional - object to be spread into derived rounds
 });
@@ -1757,6 +1757,7 @@ Returns the following detail for each round:
     roundName,
     drawName,
     matchUps,
+    playingDates, // the event's playing days, only when its own dates narrow the tournament's
     byeCount
     eventId,
     drawId,
@@ -2476,7 +2477,11 @@ const [event] = tournamentInfo.eventInfo;
 event.matchUpFormat; // the event's OWN declared code, or undefined
 event.competitionFormat; // the event's OWN competitionFormat, or undefined
 event.matchUpFormats; // every distinct code declared anywhere in the event
+event.playingDates; // the event's playing days, only when its own dates, activeDates or weekdays narrow them
 ```
+
+`playingDates` is present only when the event's own range, `activeDates` or `weekdays` narrow the days the
+tournament plays (see [Event playing days](./schedule-governor.md#event-playing-days)).
 
 `matchUpFormats` is a **survey, not a resolution.** It collects distinct codes from the event, each of its
 drawDefinitions, and their structures (depth-first, recursing because round-robin item structures nest),

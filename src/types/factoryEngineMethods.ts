@@ -316,9 +316,11 @@ export type FactoryEngineMethod =
   | 'getEvent'
   | 'getEventCompleteness'
   | 'getEventData'
+  | 'getEventDateIssues'
   | 'getEventEntryFees'
   | 'getEventInconsistencies'
   | 'getEventMatchUpFormatTiming'
+  | 'getEventPlayingDates'
   | 'getEventProperties'
   | 'getEventPublishStatus'
   | 'getEventRankingPoints'
@@ -1110,9 +1112,11 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getEvent',
   'getEventCompleteness',
   'getEventData',
+  'getEventDateIssues',
   'getEventEntryFees',
   'getEventInconsistencies',
   'getEventMatchUpFormatTiming',
+  'getEventPlayingDates',
   'getEventProperties',
   'getEventPublishStatus',
   'getEventRankingPoints',

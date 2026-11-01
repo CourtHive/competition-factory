@@ -3,6 +3,7 @@ import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsisten
 import { positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { expectedParticipantType } from '@Query/event/participantTypeForEvent';
 import { getParticipants } from '@Query/participants/getParticipants';
+import { eventRangeIsDisjoint } from '@Query/events/eventPlaysOnDate';
 
 // constants and types
 import { MatchUpsMap, ParticipantMap, ResultType } from '@Types/factoryTypes';
@@ -26,6 +27,10 @@ import { SUCCESS } from '@Constants/resultConstants';
 // checkValidEntries already covers entry-level coherence (and couples in gender-enforcement policy);
 // folding it into the integrity scan risks policy-dependent false positives and is a later sub-phase.
 export const EVENT_PARTICIPANT_TYPE_MISMATCH = 'EVENT_PARTICIPANT_TYPE_MISMATCH';
+// An event whose own date range does not intersect its tournament's range (or whose bounds are inverted): a stale
+// range, typically left behind when the tournament's dates moved. Scheduling ignores it and falls back to the
+// tournament range (eventPlaysOnDate), so it is a warning: the record still works, but the range says nothing true.
+export const EVENT_DATES_OUTSIDE_TOURNAMENT = 'EVENT_DATES_OUTSIDE_TOURNAMENT';
 
 type GetEventInconsistenciesArgs = {
   tournamentRecord?: Tournament;
@@ -98,7 +103,20 @@ export function getEventInconsistencies(
   if (!participantMap && tournamentRecord) ({ participantMap } = getParticipants({ tournamentRecord }));
   const typeMismatches = getParticipantTypeMismatches(params, participantMap);
 
-  const combined = [...drawInconsistencies, ...typeMismatches];
+  const dateRangeInconsistencies =
+    tournamentRecord && eventRangeIsDisjoint({ tournamentRecord, event })
+      ? [
+          {
+            issueType: EVENT_DATES_OUTSIDE_TOURNAMENT,
+            message: `event dates ${event.startDate}..${event.endDate} do not intersect tournament dates ${tournamentRecord.startDate}..${tournamentRecord.endDate}; scheduling uses the tournament dates`,
+            severity: 'warning',
+            startDate: event.startDate,
+            endDate: event.endDate,
+          },
+        ]
+      : [];
+
+  const combined = [...drawInconsistencies, ...typeMismatches, ...dateRangeInconsistencies];
   const finalized = finalize(combined, { scope: 'EVENT', eventId });
   return { ...SUCCESS, valid: !hasErrorSeverity(finalized), inconsistencies: finalized };
 }
