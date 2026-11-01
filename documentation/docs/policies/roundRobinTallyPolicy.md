@@ -47,9 +47,9 @@ The tiebreaking algorithm works as follows:
 
 **When 2 participants are tied:**
 
-- Direct comparison of their match result
-- Winner places higher
-- If they didn't play: move to next directive
+- Their win-loss record across every meeting
+- More wins over the other places higher
+- If the record is level, or they didn't play: move to next directive
 
 **When 3+ participants are tied:**
 
@@ -58,6 +58,14 @@ The tiebreaking algorithm works as follows:
 - If circular tie (A>B>C>A): move to next directive
 
 **Head-to-head is applied BEFORE tallyDirectives** unless explicitly disabled via `headToHead: { disabled: true }`.
+
+Head-to-head reads the **record** between the two participants across every meeting: the one with more wins over the
+other is placed first. A level record (1-1 in a double round robin) or no meeting does not separate them, and the
+`tallyDirectives` decide. The order in which meetings are listed never matters. (Before the standings engine, any one
+victory decided, so a pair that split two meetings was decided by whichever meeting was found first.)
+
+A directive's `disableHeadToHead` (skip head-to-head when sorting the sets that directive splits off) takes effect only
+when the policy also declares a `headToHead` object.
 
 ---
 
@@ -728,9 +736,14 @@ B: 3 + 6 = 9 games won
 
 ### disqualifyDefaults / disqualifyWalkovers
 
-**Purpose:** Push participants who defaulted/walked over to bottom of group order.
+**Purpose:** A participant who conceded a walkover (`disqualifyWalkovers`) or a default (`disqualifyDefaults`) is
+ordered below every participant who conceded none, whatever their record. The disqualified participants are then
+ordered among themselves by the same policy. A retirement does not disqualify.
 
-**Default:** true (in most built-in policies)
+**Default:** true in the built-in default, JTT and TOC policies.
+
+Implemented by the standings engine. Before it, these flags were declared in the built-in policies but read by no code,
+so a participant who conceded a walkover was ordered by their record like anyone else.
 
 **Example:**
 
@@ -1206,6 +1219,17 @@ With 3+ participants, circular ties are possible:
 **Solution:** Use `maxParticipants: 2` on head-to-head rules to skip circular tie scenarios.
 
 See [maxParticipants documentation](./maxParticipants.md) for details.
+
+---
+
+## Validation
+
+A tally policy is checked where it is saved: `attachPolicies` and `validateSeason` (for a season's or tier's
+`tallyPolicy`) refuse it with `INVALID_VALUES` when it names an unknown `groupOrderKey` or directive `attribute`, has a
+`precision` that is not a whole number of places, `headToHead` that is not an object, or invalid drawn-result options
+(`drawCredit`, `outcomePoints`, `standingsPoints` without `outcomePoints`). `validateTallyPolicy({ tallyPolicy })`
+runs the same checks on its own. Previously an unknown `groupOrderKey` was accepted and silently ranked by
+`matchUpsWon`. A season standings calculation does not refuse for its policy; the season was checked when saved.
 
 ---
 

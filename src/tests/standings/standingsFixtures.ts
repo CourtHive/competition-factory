@@ -43,6 +43,13 @@ export type CorpusCase = {
   orderField: 'groupOrder' | 'provisionalOrder';
   /** participants absent from `rows` must carry neither order field */
   rows: Record<string, CorpusRow>;
+  /**
+   * A RULED behaviour change (spec § 5.8): the ruling that changed this case, and the rows v1 produced. `rows` is the
+   * live engine's; `v1Rows` is checked against the frozen v1 copy, so the v1 record stays verified, not just written.
+   */
+  ruling?: string;
+  v1Rows?: Record<string, CorpusRow>;
+  v1OrderField?: 'groupOrder' | 'provisionalOrder';
   /** the attributes that split a set, in the order the report records them (head-to-head reads `head2Head`) */
   separators?: string[];
   /** v1 refuses the calculation with this error code instead of ordering */
@@ -106,9 +113,9 @@ export function buildMatchUps({ results, format = DEFAULT_FORMAT }: Pick<CorpusC
   });
 }
 
-export function runCase(corpusCase: CorpusCase) {
+export function runCase(corpusCase: CorpusCase, tally: typeof tallyParticipantResults = tallyParticipantResults) {
   const matchUps = buildMatchUps(corpusCase);
-  return tallyParticipantResults({
+  return tally({
     policyDefinitions: corpusCase.policyDefinitions,
     subOrderMap: corpusCase.subOrderMap,
     perPlayer: corpusCase.perPlayer,
