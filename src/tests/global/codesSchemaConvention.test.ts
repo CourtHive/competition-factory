@@ -27,7 +27,11 @@ const schema = JSON.parse(fs.readFileSync('./src/global/schema/tournament.schema
  * the 16 TODS fixtures. Each undeclared field has to be resolved as a real CODES concept or as
  * legacy data first. Shrinking this list is the goal; growing it needs a reason.
  */
-const PERMITTED_OPEN = new Set(['Extension', 'Organisation', 'Tournament', 'Venue']);
+/**
+ * `RoundRobinTallyPolicy` is open by decision, like `Extension`: its TypeScript type is deliberately extensible, and the
+ * tally readers take more members than the stored policies show (CODES policy definitions, slice 2; its `$comment`).
+ */
+const PERMITTED_OPEN = new Set(['Extension', 'Organisation', 'RoundRobinTallyPolicy', 'Tournament', 'Venue']);
 
 const objectDefinitions = Object.entries<any>(schema.definitions).filter(([, def]) => def?.properties);
 
