@@ -91,13 +91,26 @@ export function generateOrGetExisting(params: GenerateOrGetExisting): ResultType
 
   const processExisting = !!(setUpResult.existingQualifyingPlaceholderStructureId || addingQualifyingToExistingMain);
 
+  // Qualifying added to an existing draw with no drawEntries takes the event's QUALIFYING entries, as a new draw
+  // generated from the event's entries does: the first N that fit, the rest reported as ENTRIES_NOT_PLACED. A draw
+  // that already holds QUALIFYING entries (drawEntries carried from the main's generation) keeps those instead.
+  const existingHoldsQualifyingEntries = !!existingDrawDefinition?.entries?.some(
+    ({ entryStage }) => entryStage === QUALIFYING,
+  );
+  const eventQualifyingEntries =
+    processExisting && !params.drawEntries && !existingHoldsQualifyingEntries
+      ? (params.eventEntries ?? []).filter(
+          ({ entryStage, entryStatus }) => entryStage === QUALIFYING && entryStatus !== WITHDRAWN,
+        )
+      : undefined;
+
   // Refuse before anything is generated: the entries this generation adds must fit the sanctioning constraints
-  // (maxWildcards, maxAlternates). processExistingDrawDefinition adds only the QUALIFYING drawEntries;
+  // (maxWildcards, maxAlternates). processExistingDrawDefinition adds only the QUALIFYING drawEntries (or the event's);
   // generateNewDrawDefinition adds every entry that is not WITHDRAWN. An explicit ignoreStageSpace and AD_HOC draws
   // are exempt, as addDrawEntry exempts them.
   if (!params.ignoreStageSpace && !isAdHocType(params.drawType)) {
     const entriesToAdd = processExisting
-      ? (params.drawEntries ?? []).filter(({ entryStage }) => entryStage === QUALIFYING)
+      ? (params.drawEntries ?? eventQualifyingEntries ?? []).filter(({ entryStage }) => entryStage === QUALIFYING)
       : entries.filter(({ entryStatus }) => entryStatus !== WITHDRAWN);
     const limitsResult = checkSanctionedEntryLimits({
       drawDefinition: setUpResult.existingDrawDefinition,
@@ -115,7 +128,7 @@ export function generateOrGetExisting(params: GenerateOrGetExisting): ResultType
     structureId?: string;
     conflicts?: any[];
   } =
-    (processExisting && processExistingDrawDefinition({ ...params, ...setUpResult })) ||
+    (processExisting && processExistingDrawDefinition({ ...params, ...setUpResult, eventQualifyingEntries })) ||
     generateNewDrawDefinition({ ...params, ...setUpResult, entries });
   if (genResult.error) return decorateResult({ result: genResult, stack });
 

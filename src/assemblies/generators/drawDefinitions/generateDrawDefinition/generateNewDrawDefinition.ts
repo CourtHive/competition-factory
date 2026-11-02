@@ -4,6 +4,7 @@ import { isSanctionLimitedStatus } from '@Query/drawDefinition/checkSanctionedEn
 import { addDrawEntry } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
 import { getQualifiersCount } from '@Query/drawDefinition/getQualifiersCount';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
+import { checkQualifyingEntriesFit } from './checkQualifyingEntriesFit';
 import structureTemplate from '@Generators/templates/structureTemplate';
 import { getStageEntries } from '@Query/drawDefinition/stageGetter';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -149,6 +150,20 @@ export function generateNewDrawDefinition(params): ResultType & {
 function addEntries(params): ResultType & { entriesNotPlaced?: EntryNotPlaced[] } {
   const { ignoreStageSpace, tournamentRecord, drawDefinition, drawEntries, drawType, qualifyingOnly, entries, event } =
     params;
+  // explicit QUALIFYING drawEntries that overfill the qualifying structures generated with the main are refused,
+  // never trimmed (CA 2026-11-01). They default to ignoring stage space (see isCrossStage below), so unless
+  // ignoreStageSpace is explicitly false the draw positions refuse them: INSUFFICIENT_DRAW_POSITIONS. A qualifying-only
+  // draw needs no check here: its QUALIFYING drawEntries are not cross-stage, so addDrawEntry refuses them.
+  if (drawEntries && !qualifyingOnly && drawDefinition) {
+    const fitResult = checkQualifyingEntriesFit({
+      ignoreStageSpace: ignoreStageSpace ?? true,
+      stack: 'generateNewDrawDefinition',
+      drawDefinition,
+      drawEntries,
+    });
+    if (fitResult.error) return fitResult;
+  }
+
   // entries left out for want of a place in their stage: reported as an ENTRIES_NOT_PLACED warning
   const entriesNotPlaced: EntryNotPlaced[] = [];
   // add all entries to the draw
