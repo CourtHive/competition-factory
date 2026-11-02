@@ -1,5 +1,6 @@
 import { matchUpFormatTimes, resolveTimingDetails } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
 import { getScheduleTiming } from '@Query/extensions/matchUpFormatTiming/getScheduleTiming';
+import { recordsDefaultPeriodLength } from './defaultPeriodLength';
 import { addDaysToDate, endOnTheDay } from '@Tools/civilDateTime';
 import { calculatePeriodLength } from './calculatePeriodLength';
 import { extractDate, extractTime } from '@Tools/dateTime';
@@ -54,6 +55,7 @@ export function generateBookings({
 
   periodLength =
     periodLength ??
+    recordsDefaultPeriodLength(tournamentRecords) ??
     calculatePeriodLength({
       recoveryMinutes: defaultRecoveryMinutes,
       averageMatchUpMinutes,

@@ -2623,7 +2623,7 @@ This methods is used internally for creating a "virtual" view of court availabil
 const { bookings, relevantMatchUps } = engine.generateBookings({
   defaultRecoveryMinutes, // optional
   averageMatchUpMinutes, // optional
-  periodLength, // optional - scheduling period in minutes
+  periodLength, // optional - scheduling period in minutes; else the tournaments' scheduling policy defaultPeriodLength
   scheduleDate, // optional - only consider matchUps scheduled on scheduleDate
   venueIds, // optional - only consider matchUps at specific venue(s)
   matchUps,

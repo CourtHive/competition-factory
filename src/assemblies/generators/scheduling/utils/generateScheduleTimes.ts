@@ -1,5 +1,6 @@
 import { EventBookingTimings, generateBookings } from './generateBookings';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
+import { recordsDefaultPeriodLength } from './defaultPeriodLength';
 import { getScheduleTimes } from '@Query/venues/getScheduleTimes';
 import { calculatePeriodLength } from './calculatePeriodLength';
 import { getMatchUpId } from '@Functions/global/extractors';
@@ -69,6 +70,7 @@ export function generateScheduleTimes({
 
   periodLength =
     periodLength ??
+    recordsDefaultPeriodLength(tournamentRecords) ??
     calculatePeriodLength({
       recoveryMinutes: defaultRecoveryMinutes,
       averageMatchUpMinutes,
