@@ -596,8 +596,99 @@ engine.modifyParticipant({
 - Omitting a key leaves it untouched. A value equal to the one already stored is never refused: consumers send
   the whole participant on every save, so a home venue since deleted does not block an unrelated edit.
 
-Fields with their own setters are still not written by `modifyParticipant`: `participantOtherIds`
-(`addParticipantOtherId`), `extensions`, `timeItems`, `penalties`, `presence` and `notes`.
+### Write or refuse: no attribute is dropped
+
+Every attribute `modifyParticipant` is given is either **written** or the call is **refused**. None is accepted
+and silently dropped. The rules below keep "send the whole participant back on every save" working:
+
+- `undefined` and `null` leave an attribute untouched. `''` clears an optional scalar, and an empty array or object
+  clears a list or object attribute.
+- **A value equal to the stored one is never refused**, whatever it is. A legacy role, a one-letter name or a home
+  venue that has since been deleted does not block an unrelated edit.
+- Every check runs **before the first write**, so a refused call changes nothing, including the valid attributes
+  sent in the same call.
+- Refusals are `INVALID_VALUES` (or `INVALID_PARTICIPANT_TYPE`, `INVALID_PARTICIPANT_IDS`, `PARTICIPANT_NOT_FOUND`,
+  `INVALID_DATE` where those fit), with `context.field` naming the attribute (for example
+  `person.addresses[0].countryCode`).
+
+#### Person attributes
+
+All of the CODES `Person` attributes are written, each checked against the CODES schema:
+
+```js
+engine.modifyParticipant({
+  participant: {
+    participantId,
+    person: {
+      standardFamilyName: 'Yamada', // at least two characters; '' clears and re-derives participantName
+      standardGivenName: 'Taro',
+      nationalityCode: 'JPN', // see the warning below
+      nativeFamilyName: '山田', // string
+      nativeGivenName: '太郎', // string
+      passportFamilyName: 'YAMADA', // string
+      passportGivenName: 'TARO', // string
+      otherNames: ['Taro Y'], // array of strings
+      previousNames: ['Taro Suzuki'], // array of strings
+      birthYear: 1999, // whole year from 1900 to the current year
+      wheelchair: false, // boolean
+      tennisId: 'T-1', // string; '' clears
+      parentOrganisationId: 'org', // string
+      sectionId: 'section', // string
+      status: 'ACTIVE', // string
+      notes: 'note', // string
+      addresses: [{ addressType: 'HOME', city: 'Osaka', countryCode: 'JPN' }], // CODES Address objects
+      onlineResources: [{ resourceType: 'URL', identifier: 'https://example.org' }], // CODES OnlineResource objects
+      biographicalInformation: { playingHand: 'RIGHT', height: 180, heightUnit: 'CENTIMETER' },
+    },
+  },
+});
+```
+
+`addresses`, `onlineResources` and `biographicalInformation` (with its `teamAttributes`) are closed objects: an
+attribute CODES does not define, a wrong type or a value outside an enumeration is refused. Lists are replaced, not
+merged.
+
+**`nationalityCode` is the one exception to refusal.** A string that is not a recognised country code is written,
+and the result carries a warning in the factory's `warnings` shape:
+
+```js
+const result = engine.modifyParticipant({ participant: { participantId, person: { nationalityCode: 'XKX' } } });
+// result.success  → true
+// result.warnings → [{ code: 'NATIONALITY_CODE_UNRECOGNIZED', message, participantId, nationalityCode: 'XKX' }]
+```
+
+A `nationalityCode` that is not a string is refused.
+
+#### Participant attributes
+
+- `participantRole` must be a participant role (`''` clears it). `participantName` must be a non-empty string.
+- `notes` is stored as a string (`''` clears it). `addNotes` cannot reach a stored participant through the engine.
+- `contacts`, `onlineResources` and `participantRoleResponsibilities` must be arrays, and they replace the stored
+  lists.
+- `individualParticipantIds` must be INDIVIDUAL participants of the tournament. An id the grouping already holds but
+  that no longer exists is tolerated and removed. A PAIR must have exactly two members unless `pairOverride: true`
+  is passed. An INDIVIDUAL has no members (`INVALID_PARTICIPANT_TYPE`).
+- `person` is refused on a participant that is not an INDIVIDUAL.
+- `groupingParticipantId` is checked before anything is written. It must be a TEAM or GROUP of the tournament, and
+  only an INDIVIDUAL can join it.
+
+#### Attributes with their own setters
+
+| Attribute                               | What `modifyParticipant` does                                                                                                                                                                                                                                                            |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `timeItems`                             | **Merged.** A new rating or ranking (`SCALE.RATING.*`, `SCALE.RANKING.*`) is added the way `setParticipantScaleItem` adds one: appended when its value differs from the current one. Nothing stored is ever deleted. Any other new timeItem is refused, naming `addParticipantTimeItem`. |
+| `person.personOtherIds`                 | **Merged**, as `addPersonOtherId` does: upserted by `organisationId`, or by `uniqueOrganisationName` when an entry has no `organisationId`. A new name-only entry stores the name as its `organisationId`, which CODES requires. Entries the caller omits are kept.                      |
+| `extensions`                            | Refused when changed; use `addParticipantExtension` / `removeParticipantExtension`.                                                                                                                                                                                                      |
+| `penalties`                             | Refused when changed; use `addPenalty` / `modifyPenalty` / `removePenalty`.                                                                                                                                                                                                              |
+| `presence`                              | Refused when changed; use `modifyParticipantsSignInStatus`.                                                                                                                                                                                                                              |
+| `participantOtherIds`                   | Refused when changed; use `addParticipantOtherId`.                                                                                                                                                                                                                                       |
+| `person.extensions`, `person.timeItems` | Refused when changed; there is no write path.                                                                                                                                                                                                                                            |
+
+#### Ignored on purpose
+
+Metadata is ignored and never refused: `isMock`, `createdAt`, `updatedAt`, `personId` and `teamId` on the
+participant, and `isMock`, `createdAt` and `updatedAt` on the person. Attributes that are not part of a CODES
+participant are ignored too, such as those `getParticipants` adds when hydrating.
 
 ---
 

@@ -2,6 +2,9 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 
+// constants
+import { NATIONALITY_CODE_UNRECOGNIZED } from '@Constants/errorConditionConstants';
+
 /**
  * `updatePerson` could set a person field but never unset one.
  *
@@ -106,10 +109,17 @@ describe('clearing person fields via modifyParticipant', () => {
     expect(person.birthDate).toEqual('1990-03-04');
   });
 
-  it('still ignores an unrecognised nationalityCode rather than clearing it', () => {
+  it('writes an unrecognised nationalityCode with a warning, rather than clearing it', () => {
     const participant = seedParticipantWithPerson();
-    const person = personAfterModify(participant, { ...participant.person, nationalityCode: 'ZZZ' });
+    const result: any = tournamentEngine.modifyParticipant({
+      participant: { ...participant, person: { ...participant.person, nationalityCode: 'ZZZ' } },
+    });
+    expect(result.success).toEqual(true);
+    expect(result.warnings).toEqual([
+      { ...NATIONALITY_CODE_UNRECOGNIZED, participantId: participant.participantId, nationalityCode: 'ZZZ' },
+    ]);
 
-    expect(person.nationalityCode).toEqual('FRA');
+    const person = tournamentEngine.findParticipant({ participantId: participant.participantId }).participant.person;
+    expect(person.nationalityCode).toEqual('ZZZ');
   });
 });
