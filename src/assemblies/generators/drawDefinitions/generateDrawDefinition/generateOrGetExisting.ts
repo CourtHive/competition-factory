@@ -10,7 +10,7 @@ import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { WITHDRAWN } from '@Constants/entryStatusConstants';
 
 // types
-import { DrawMaticArgs, PolicyDefinitions, ResultType } from '@Types/factoryTypes';
+import { DrawMaticArgs, EntryNotPlaced, PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import {
   DrawDefinition,
   DrawTypeUnion,
@@ -55,6 +55,7 @@ type GenerateOrGetExisting = {
 
 export function generateOrGetExisting(params: GenerateOrGetExisting): ResultType & {
   existingDrawDefinition?: DrawDefinition;
+  entriesNotPlaced?: EntryNotPlaced[];
   drawDefinition?: DrawDefinition;
   positioningReports?: any[];
   drawTypeResult?: any;
@@ -108,6 +109,7 @@ export function generateOrGetExisting(params: GenerateOrGetExisting): ResultType
   }
 
   const genResult: ResultType & {
+    entriesNotPlaced?: EntryNotPlaced[];
     drawDefinition?: DrawDefinition;
     positioningReports?: any[];
     structureId?: string;
@@ -124,6 +126,7 @@ export function generateOrGetExisting(params: GenerateOrGetExisting): ResultType
   structureId = genResult.structureId;
 
   return {
+    entriesNotPlaced: genResult.entriesNotPlaced,
     existingDrawDefinition,
     positioningReports,
     drawDefinition,
