@@ -412,18 +412,90 @@ export type HydratedFlight = Flight & { drawDefinition?: DrawDefinition };
 export type HydratedFlightProfile = Omit<FlightProfile, 'flights'> & { flights: HydratedFlight[] };
 
 /**
- * A SCHEDULING policy: the members typed so far. Its other members (`defaultTimes`, `defaultDailyLimits`,
- * `matchUpAverageTimes`, `matchUpRecoveryTimes`, …) are described in the scheduling policy docs and stay untyped here,
- * as every policy type not listed below is. Stored, like every policy, in the record's applied policies, resolved for a
- * draw from the draw's policy, else its event's, else the tournament's.
+ * Minutes a scheduling timing entry states, by matchUp type. A reader takes the matchUp's own type, else TEAM for a
+ * line of a TEAM event, else `default`. `SINGLES_DOUBLES` / `DOUBLES_SINGLES` are recovery minutes when a participant's
+ * next matchUp changes type (from SINGLES to DOUBLES, and the reverse).
+ */
+export type SchedulingMinutes = {
+  default?: number;
+  SINGLES?: number;
+  DOUBLES?: number;
+  TEAM?: number;
+  SINGLES_DOUBLES?: number;
+  DOUBLES_SINGLES?: number;
+};
+
+/** Minutes for the categories it names: by `categoryNames`, else `categoryTypes`; an entry naming neither matches any. */
+export type SchedulingCategoryTimes = {
+  categoryNames?: string[];
+  categoryTypes?: string[];
+  minutes: SchedulingMinutes;
+};
+
+/** A recovery band keyed on measured played minutes; the band without `upTo` is the catch-all. */
+export type SchedulingRecoveryBand = {
+  upTo?: number;
+  minutes: number;
+};
+
+export type SchedulingRecoveryTimes = SchedulingCategoryTimes & {
+  /** Recovery banded by the measured duration of the previous matchUp; wins over `minutes` when a duration is known. */
+  byPlayedMinutes?: SchedulingRecoveryBand[];
+};
+
+/** Times used when no format-specific entry matches. */
+export type SchedulingDefaultTimes = {
+  averageTimes?: SchedulingCategoryTimes[];
+  recoveryTimes?: SchedulingRecoveryTimes[];
+  /** Rest across a day boundary. Absent means no rule, not zero. */
+  overnightTimes?: SchedulingCategoryTimes[];
+  /** Minutes between two venues with no stated transit. */
+  transitMinutes?: number;
+};
+
+export type SchedulingFormatAverageTimes = {
+  matchUpFormatCodes: string[];
+  averageTimes: SchedulingCategoryTimes[];
+};
+
+export type SchedulingFormatRecoveryTimes = {
+  matchUpFormatCodes: string[];
+  recoveryTimes: SchedulingRecoveryTimes[];
+};
+
+/** Most matchUps a participant may play in a day, per matchUp type and in total. */
+export type SchedulingDailyLimits = {
+  SINGLES?: number;
+  DOUBLES?: number;
+  TEAM?: number;
+  total?: number;
+};
+
+/** One participant's daily limits, overriding the policy's `defaultDailyLimits`. */
+export type SchedulingParticipantDailyLimits = SchedulingDailyLimits & {
+  participantId: string;
+};
+
+/**
+ * A SCHEDULING policy. Stored, like every policy, in the record's applied policies, resolved for a draw from the
+ * draw's policy, else its event's, else the tournament's. Mirrored by the `SchedulingPolicy` definition in the CODES
+ * schema (`tournament.schema.json`); `policyDefinitionsSchema.test.ts` keeps the two in step.
  */
 export type SchedulingPolicy = {
+  policyName?: string;
+  /** Whether courts or venues may be modified once matchUps are scheduled on them. */
+  allowModificationWhenMatchUpsScheduled?: { courts?: boolean; venues?: boolean };
+  defaultTimes?: SchedulingDefaultTimes;
   /**
    * Minutes per scheduling period (Garman's `L`) for a run that does not state one. A run's own `periodLength` wins,
    * then a profile round's own `periodLength`, then this; absent, the schedulers keep their own defaults. A positive
    * number; anything else is ignored.
    */
   defaultPeriodLength?: number;
+  defaultDailyLimits?: SchedulingDailyLimits;
+  matchUpAverageTimes?: SchedulingFormatAverageTimes[];
+  matchUpRecoveryTimes?: SchedulingFormatRecoveryTimes[];
+  matchUpDailyLimits?: SchedulingParticipantDailyLimits[];
 };
 
 export type PolicyDefinitions = {
