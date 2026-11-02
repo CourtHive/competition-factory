@@ -16,6 +16,7 @@ export { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInParticipa
 export { getMatchUpParticipantIds } from '@Query/matchUp/getMatchUpParticipantIds';
 export { getMatchUpCheckInState } from '@Query/matchUp/getMatchUpCheckInState';
 export { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDetails';
+export { resolveHomeParticipantId } from '@Query/matchUp/resolveHomeParticipantId';
 export { matchUpActions } from '@Query/drawDefinition/matchUpActions/matchUpActions';
 export { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 export { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';

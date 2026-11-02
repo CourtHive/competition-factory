@@ -256,14 +256,21 @@ event, or one the constraints do not match, is unaffected. Until 2026-11 generat
 **Entries not placed.** Generating from the event's entries (no `drawEntries`) takes the entries that fit each
 stage, in entry order, and leaves the surplus on the event: a `drawSize: 16` from 20 accepted entries holds the
 first 16. Generation goes on, and the result carries one `ENTRIES_NOT_PLACED` warning per stage that left entries
-out. `drawEntries` are the entries the caller chose and are never trimmed: entries that overfill a new draw are
-refused, and so are `QUALIFYING` `drawEntries` that overfill the qualifying structures when qualifying is added to an
-existing draw (`drawId`), before anything is generated.
+out. Adding qualifying to an existing draw (`drawId`) with no `drawEntries` does the same with the event's
+`QUALIFYING` entries: the first that fit the qualifying structures, in entry order, and a warning for the rest. A
+draw that already holds `QUALIFYING` entries (`drawEntries` carried when its main was generated) keeps those and
+takes none from the event. `drawEntries` are the entries the caller chose and are never trimmed: entries that overfill
+a new draw are refused, `QUALIFYING` `drawEntries` included when the qualifying structures are generated with the
+main, and so are `QUALIFYING` `drawEntries` that overfill the qualifying structures when qualifying is added to an
+existing draw, before anything is generated.
 
 **Overfull `drawEntries`.** The refusal is `NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS`, or
 `INSUFFICIENT_DRAW_POSITIONS` with `ignoreStageSpace: true`. `ignoreStageSpace` skips the per-entry stage-space
-check (and the sanctioned limits); it never admits more entries than the draw has positions. Adding qualifying to an
-existing draw names the counts:
+check (and the sanctioned limits); it never admits more entries than the draw has positions. On a new draw with a
+main, `QUALIFYING` `drawEntries` skip that check unless `ignoreStageSpace: false` is passed, so overfull ones are
+refused with `INSUFFICIENT_DRAW_POSITIONS` when it is unset, and with `NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS` when
+it is `false`. `QUALIFYING` `drawEntries` that overfill the qualifying structures, on a new draw or one qualifying is
+added to, name the counts:
 
 ```js
 const result = engine.generateDrawDefinition({

@@ -1,19 +1,12 @@
 import { generateQualifyingStructures } from '@Generators/drawDefinitions/drawTypes/generateQualifyingStructures';
 import { generateQualifyingLink } from '@Generators/drawDefinitions/links/generateQualifyingLink';
-import { getStageDrawPositionsBreakdown } from '@Query/drawDefinition/getStageDrawPositions';
 import { isSanctionLimitedStatus } from '@Query/drawDefinition/checkSanctionedEntryLimits';
 import { addDrawEntry } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
-import { getStagePlaceTakingEntriesCount } from '@Query/drawDefinition/stageGetter';
-import { decorateResult } from '@Functions/global/decorateResult';
+import { checkQualifyingEntriesFit } from './checkQualifyingEntriesFit';
 import { entryNotPlaced } from './entriesNotPlaced';
 
 // constants and types
-import {
-  INSUFFICIENT_DRAW_POSITIONS,
-  NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS,
-} from '@Constants/errorConditionConstants';
-import type { DrawDefinition, Entry, Event, Structure, Tournament } from '@Types/tournamentTypes';
-import { DIRECT_ACCEPTANCE, WITHDRAWN } from '@Constants/entryStatusConstants';
+import type { DrawDefinition, Entry, Event, Tournament } from '@Types/tournamentTypes';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { EntryNotPlaced, ResultType } from '@Types/factoryTypes';
 
@@ -25,6 +18,7 @@ export function processExistingDrawDefinition(params): ResultType & {
   const drawDefinition: DrawDefinition = params.drawDefinition;
   const {
     existingQualifyingPlaceholderStructureId,
+    eventQualifyingEntries,
     ignoreStageSpace,
     appliedPolicies,
     qualifyingOnly,
@@ -59,6 +53,7 @@ export function processExistingDrawDefinition(params): ResultType & {
     existingQualifyingPlaceholderStructureId,
     qualifyingStructures: qualifyingResult?.structures,
     ignoreStageSpace,
+    stack: 'processExistingDrawDefinition',
     drawDefinition,
     drawEntries,
   });
@@ -89,7 +84,13 @@ export function processExistingDrawDefinition(params): ResultType & {
   );
   // Qualifier counts are derived from structures and links
 
-  const entriesResult = addEntries({ tournamentRecord: params.tournamentRecord, drawDefinition, drawEntries, event });
+  // explicit drawEntries have been checked to fit; the event's QUALIFYING entries are taken first N, the rest warned
+  const entriesResult = addEntries({
+    drawEntries: drawEntries ?? eventQualifyingEntries,
+    tournamentRecord: params.tournamentRecord,
+    drawDefinition,
+    event,
+  });
   if (entriesResult.error) return entriesResult;
   const qResult = processQualifyingDetails({ mainStructure, qualifyingDetails, drawDefinition });
   if (qResult.error) return qResult;
@@ -129,62 +130,6 @@ function addEntries({ tournamentRecord, drawDefinition, drawEntries, event }: Ad
     if (notPlaced) entriesNotPlaced.push(notPlaced);
   }
   return { error: undefined, entriesNotPlaced };
-}
-
-type CheckQualifyingEntriesFitArgs = {
-  existingQualifyingPlaceholderStructureId?: string;
-  qualifyingStructures?: Structure[];
-  drawDefinition: DrawDefinition;
-  ignoreStageSpace?: boolean;
-  drawEntries?: Entry[];
-};
-
-/**
- * Explicit QUALIFYING drawEntries are the entries the caller chose: they are never trimmed to fit. A new qualifying
- * draw refuses entries that overfill it, so adding qualifying to an existing draw refuses them too, with the same
- * error: NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS, or INSUFFICIENT_DRAW_POSITIONS with `ignoreStageSpace` (which
- * skips the per-entry stage-space check, and leaves the draw positions to refuse what does not fit).
- *
- * The places are counted as addDrawEntry's stage space counts them: the qualifying structures' draw positions less
- * any qualifier positions, against every place-taking QUALIFYING entry the draw would hold. Generation from the
- * event's entries (no drawEntries) is not checked here.
- */
-function checkQualifyingEntriesFit(params: CheckQualifyingEntriesFitArgs): ResultType {
-  const { existingQualifyingPlaceholderStructureId, qualifyingStructures, ignoreStageSpace, drawDefinition } = params;
-  const qualifyingDrawEntries = (params.drawEntries ?? []).filter(
-    ({ entryStage, entryStatus }) => entryStage === QUALIFYING && entryStatus !== WITHDRAWN,
-  );
-  if (!qualifyingDrawEntries.length) return {};
-
-  // the draw as it would be: the placeholder replaced by the generated qualifying structures
-  const structures = [
-    ...(drawDefinition.structures ?? []).filter(
-      ({ structureId }) => structureId !== existingQualifyingPlaceholderStructureId,
-    ),
-    ...(qualifyingStructures ?? []),
-  ];
-  const prospectiveDrawDefinition = { ...drawDefinition, structures };
-  const { positionsAvailable, drawPositions } = getStageDrawPositionsBreakdown({
-    drawDefinition: prospectiveDrawDefinition,
-    stage: QUALIFYING,
-  });
-  if (!drawPositions) return {};
-
-  // entries already on the draw keep their places; a drawEntry for the same participant is not added twice
-  const existingEntries = drawDefinition.entries ?? [];
-  const existingIds = new Set(existingEntries.map(({ participantId }) => participantId));
-  const entries = [
-    ...existingEntries,
-    ...qualifyingDrawEntries.filter(({ participantId }) => !existingIds.has(participantId)),
-  ].map((entry) => ({ ...entry, entryStatus: entry.entryStatus ?? DIRECT_ACCEPTANCE }));
-  const entriesCount = getStagePlaceTakingEntriesCount({ stage: QUALIFYING, entries });
-
-  if (entriesCount <= positionsAvailable) return {};
-  return decorateResult({
-    result: { error: ignoreStageSpace ? INSUFFICIENT_DRAW_POSITIONS : NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS },
-    context: { stage: QUALIFYING, entriesCount, drawPositionsCount: positionsAvailable },
-    stack: 'processExistingDrawDefinition',
-  });
 }
 
 function processQualifyingDetails({ mainStructure, qualifyingDetails, drawDefinition }): ResultType {

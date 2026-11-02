@@ -2782,6 +2782,35 @@ const {
 
 ---
 
+## resolveHomeParticipantId
+
+Which side of a matchUp is at home, and on what basis. Read-only: it infers at read time and never writes, so the
+explicit `homeParticipantId` written by `setMatchUpHomeParticipantId` stays the only stored fact. Bases are
+`homeParticipantConstants`. A signal counts only when it singles out **exactly one** side; precedence:
+
+1. `EXPLICIT`: `matchUp.schedule.homeParticipantId` (or its legacy timeItem), when it names one of the sides.
+2. `VENUE`: the matchUp's venue (`schedule.venueId`, or the venue of `schedule.courtId`) is in one side's TEAM
+   `homeVenueIds`.
+3. `HOST_ORGANISATION`: the tournament owner, `parentOrganisation.organisationId`, issued an id to one side: it is
+   the `organisationId` of an entry in that side's `participantOtherIds` that carries a `participantId`. Teams are
+   matched on `participantOtherIds`, never on the tournament-local `participantId`. The tournament's
+   `parentOrganisationId` (a governing body) is not used.
+4. `NONE`: no signal, or a signal matches both sides (same school, shared venue). There is no home participant and
+   `homeParticipantId` is absent; no side is assumed, side 1 included.
+
+Who is viewing is not a signal. `getHomeParticipantId` is unchanged and still returns only the stored value.
+
+```js
+const { homeParticipantId, basis } = engine.resolveHomeParticipantId({
+  matchUpId, // required unless matchUp is given
+  drawId, // optional; resolved from matchUpId when absent
+  matchUp, // optional: a hydrated matchUp ({ inContext: true }), used as is
+});
+// basis: 'EXPLICIT' | 'VENUE' | 'HOST_ORGANISATION' | 'NONE'
+```
+
+---
+
 ## tallyParticipantResults
 
 Generates participant results and groupOrder for round robin structures. Calculates standings based on win/loss records, sets, games, points, and applies tiebreaking directives from the round robin tally policy.

@@ -779,6 +779,9 @@ const { rounds } = engine.getRounds({
 const { homeParticipantId } = engine.getHomeParticipantId({ matchUp });
 ```
 
+Returns only the stored value. To infer the home side from the venue or the host organisation when none is stored,
+see [`resolveHomeParticipantId`](/docs/governors/query-governor#resolvehomeparticipantid).
+
 ---
 
 ## isValidMatchUpFormat
