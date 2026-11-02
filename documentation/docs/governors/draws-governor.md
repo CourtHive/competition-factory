@@ -1133,7 +1133,7 @@ const { removedMatchUpIds } = engine.removeStructure({
 
 ## removeSeededParticipant
 
-Removes a seeded participant from draw and adjusts seeding.
+Removes a participant's seed assignment while retaining the seed slot and its value. The participant remains in the draw at the same position; other seeds are unchanged.
 
 ```js
 engine.removeSeededParticipant({
@@ -1143,7 +1143,7 @@ engine.removeSeededParticipant({
 });
 ```
 
-**Purpose:** Remove participant and rebalance seeds.
+Emits `MODIFY_SEED_ASSIGNMENTS` and `MODIFY_DRAW_DEFINITION` notices. Returns `NOT_FOUND` if the participant is not seeded in the specified structure.
 
 ---
 
