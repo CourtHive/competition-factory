@@ -1185,7 +1185,8 @@ function producedReason(
   const target = targets.winner;
   if (!produced || direction?.decider || !target) return 'exit';
   // the next matchUp holds a BYE on the side the exit is awarded to: the exit passes it (`byeHeldProduced`)
-  if (target.hasBye) return byeHeldProduced(view, produced) ? undefined : 'exit';
+  const source = { matchUpId: request.matchUpId as string, matchUpStatus: write.matchUpStatus as MatchUpStatusUnion };
+  if (target.hasBye) return byeHeldProduced(view, produced, source) ? undefined : 'exit';
   if (target.matchUpStatus !== TO_BE_PLAYED || target.holdsResult || target.hasBye || target.carriesExit) return 'exit';
   if (target.carriedStatuses.length) return 'exit';
   const entry = indexed(view, produced.matchUpId);
@@ -1208,7 +1209,64 @@ type ByeHeldPassage = {
   relays: { matchUpId: string; sideNumber: 1 | 2 }[];
   /** the opponent standing beyond, awarded the exit, whose position goes on into the clean matchUp after */
   onward?: { matchUpId: string; drawPositions: number[] };
+  /** the exit beyond met one standing there: the double exits it makes, level by level, and where the last produces */
+  converged?: ConvergedChain;
 };
+
+type ChainLevel = {
+  matchUpId: string;
+  matchUpStatus: MatchUpStatusUnion;
+  sideNumber: 1 | 2;
+  /** the matchUp whose exit arrives, and what it was: the call's double exit, then each converged level */
+  sourceMatchUpId: string;
+  sourceMatchUpStatus: MatchUpStatusUnion;
+};
+type ConvergedChain = { levels: ChainLevel[]; pending?: ChainLevel };
+
+const cleanBeyond = (matchUp: HydratedMatchUp) =>
+  !matchUp.loserMatchUpId &&
+  !matchUp.matchUpStatusCodes?.length &&
+  !(matchUp.drawPositions ?? []).some(Boolean) &&
+  !matchUp.sides?.some((side) => side.participantId || side.bye);
+
+/**
+ * S7: a produced exit arriving past a BYE where a produced exit stands pending on the other side: the two converge
+ * (`collapseDoubleExitStatus`), and that double exit produces on (v1's `doubleExitAdvancement` again), into a clean
+ * matchUp where it stands pending, or into another pending exit, converging again, to the structure's end. Each level is
+ * recorded on the side its exit arrives at, its source the matchUp that exit came from. Undefined where anything else
+ * stands there (a participant, a position, a loser link, a result, codes, provenance on the arrival side).
+ */
+function producedChain(view: OutcomeView, first: HydratedMatchUp, arrival: ChainLevel): ConvergedChain | undefined {
+  const levels: ChainLevel[] = [];
+  let at = first;
+  let incoming = arrival;
+  for (let hop = 0; hop < 8; hop += 1) {
+    const provenance = at.sideExitProvenance ?? {};
+    const standing = provenance[(3 - incoming.sideNumber) as 1 | 2];
+    if (!SINGLE_EXITS.has(at.matchUpStatus) || at.matchUpStatus === RETIRED || at.winningSide) return undefined;
+    if (provenance[incoming.sideNumber] || !standing || !isDoubleExit(standing.previousMatchUpStatus)) return undefined;
+    if (!cleanBeyond(at)) return undefined;
+    const matchUpStatus = collapseDoubleExitStatus([incoming.matchUpStatus, at.matchUpStatus]);
+    levels.push({ ...incoming, matchUpId: at.matchUpId, matchUpStatus });
+    if (!at.winnerMatchUpId) return { levels };
+    const target = producedTarget(view, at, matchUpStatus);
+    const next = target?.entry;
+    if (!target || target.feed || !next || !cleanBeyond(next)) return undefined;
+    incoming = {
+      matchUpId: next.matchUpId,
+      matchUpStatus: target.matchUpStatus,
+      sideNumber: target.fedSide,
+      sourceMatchUpId: at.matchUpId,
+      sourceMatchUpStatus: matchUpStatus,
+    };
+    if (next.matchUpStatus === TO_BE_PLAYED && !next.winningSide && !next.score?.scoreStringSide1) {
+      if (Object.keys(next.sideExitProvenance ?? {}).length) return undefined;
+      return { levels, pending: incoming };
+    }
+    at = next;
+  }
+  return undefined;
+}
 
 /**
  * S7: a double exit whose next matchUp holds a BYE on the side its produced exit is awarded to (a consolation feed round
@@ -1226,6 +1284,7 @@ type ByeHeldPassage = {
 function byeHeldProduced(
   view: OutcomeView,
   produced: NonNullable<DirectionPlan['produced']>,
+  source: { matchUpId: string; matchUpStatus: MatchUpStatusUnion },
 ): ByeHeldPassage | undefined {
   const { targets } = view;
   if (targets.loserLink || targets.loserMatchUpId) return undefined;
@@ -1247,6 +1306,17 @@ function byeHeldProduced(
       from = beyond;
       continue;
     }
+    // a pending exit standing beyond: the two converge, straight past the first BYE (S7)
+    if (SINGLE_EXITS.has(beyond.matchUpStatus) && !relays.length) {
+      const converged = producedChain(view, beyond, {
+        matchUpId: beyond.matchUpId,
+        matchUpStatus: produced.matchUpStatus,
+        sideNumber: target.fedSide,
+        sourceMatchUpId: source.matchUpId,
+        sourceMatchUpStatus: source.matchUpStatus,
+      });
+      return converged ? { relays, converged } : undefined;
+    }
     if (beyond.matchUpStatus !== TO_BE_PLAYED || beyond.winningSide || beyond.score?.scoreStringSide1) return undefined;
     // a position nobody has reached may stand on the other side (fed there structurally); the arrival side is empty
     const arrival = beyond.sides?.find((side) => side.sideNumber === target.fedSide);
@@ -1262,6 +1332,38 @@ function byeHeldProduced(
   return undefined;
 }
 
+/**
+ * The converged chain's writes (`producedChain`): each level the double exit the two exits make, codes `[]`, the arriving
+ * exit recorded on its side; the first announced with neither event nor tournament (`advanceByeAdvancedDrawPosition`),
+ * the rest with both (`doubleExitAdvancement`). Then the exit the last produces, pending in the clean matchUp after.
+ */
+function chainOps({ levels, pending }: ConvergedChain): OutcomeOp[] {
+  const recorded = (level: ChainLevel): OutcomeOp[] => {
+    const provenance = buildSideExitProvenance({
+      sourceMatchUpStatus: level.sourceMatchUpStatus,
+      sourceMatchUpId: level.sourceMatchUpId,
+      sourceSideNumber: level.sideNumber,
+    });
+    return provenance ? [{ op: 'mergeSideExitProvenance', matchUpId: level.matchUpId, provenance }] : [];
+  };
+  const written = (level: ChainLevel, quiet: boolean, blanked?: boolean): OutcomeOp[] => [
+    {
+      op: 'setMatchUpResult',
+      matchUpId: level.matchUpId,
+      matchUpStatus: level.matchUpStatus,
+      matchUpStatusCodes: [],
+      ...(blanked ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
+      stampsScoredTime: false,
+      ...(quiet ? { announcesContext: false as const } : {}),
+    },
+    ...recorded(level),
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: level.matchUpId },
+  ];
+  // the exit the last level produces is written as any produced exit: a WALKOVER's score blanked
+  const pendingOps = pending ? written(pending, false, pending.matchUpStatus === WALKOVER) : [];
+  return [...levels.flatMap((level, i) => written(level, i === 0)), ...pendingOps];
+}
+
 /** the produced exit past a BYE-held next matchUp, as v1 writes it (`byeHeldProduced`) */
 function byeHeldProducedOps(
   view: OutcomeView,
@@ -1269,9 +1371,10 @@ function byeHeldProducedOps(
   write: MatchUpWrite,
   produced: NonNullable<DirectionPlan['produced']>,
 ): OutcomeOp[] {
-  const passage = byeHeldProduced(view, produced);
+  const source = { matchUpId: request.matchUpId as string, matchUpStatus: write.matchUpStatus as MatchUpStatusUnion };
+  const passage = byeHeldProduced(view, produced, source);
   if (!passage) return [];
-  const { beyond, arrivalSide, relays, onward } = passage;
+  const { beyond, arrivalSide, relays, onward, converged } = passage;
   // in a plain round the BYE came from the matchUp beside this one (a double BYE): its origin is recorded too
   const paired = indexed(view, produced.matchUpId)?.feedRound ? undefined : pairedFeeder(view);
   const recorded = (matchUpId: string, sourceSideNumber: 1 | 2, withPaired?: boolean): OutcomeOp[] => {
@@ -1339,6 +1442,7 @@ function byeHeldProducedOps(
       { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
     ]),
     ...(beyond && arrivalSide ? landedOps(beyond.matchUpId, arrivalSide) : []),
+    ...(converged ? chainOps(converged) : []),
   ];
 }
 
