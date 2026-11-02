@@ -20,7 +20,7 @@ import {
  * and an INVALID_VALUES result naming the field when it is not.
  */
 
-type Kind = 'string' | 'number' | 'boolean' | 'stringOrNumber' | 'country' | 'strings' | readonly string[];
+type Kind = 'string' | 'number' | 'boolean' | 'stringOrNumber' | 'country' | 'stringArray' | readonly string[];
 type Shape = Record<string, Kind | ((value: unknown, field: string) => ResultType | undefined)>;
 
 // Every CODES object carries these. `extensions` and `timeItems` are accepted as arrays: nested objects have no
@@ -78,7 +78,7 @@ const biographicalInformationShape: Shape = {
   doublePlayingHand: Object.values(PlayingDoubleHandCodeEnum),
   height: 'number',
   heightUnit: Object.values(LengthUnitEnum),
-  organisationIds: 'strings',
+  organisationIds: 'stringArray',
   placeOfResidence: 'string',
   playingHand: Object.values(PlayingHandCodeEnum),
   residenceCountryCode: 'country',
@@ -152,7 +152,7 @@ function checkKind(value: unknown, field: string, kind: Exclude<Kind, never>): R
     boolean: () => typeof value === 'boolean',
     stringOrNumber: () => isString(value) || (typeof value === 'number' && Number.isFinite(value)),
     country: () => isString(value) && validNationalityCode(value),
-    strings: () => Array.isArray(value) && value.every(isString),
+    stringArray: () => Array.isArray(value) && value.every(isString),
   };
   return valid[kind as string]() ? undefined : refusal(field, `must be ${describe(kind as string)}`, value);
 }
@@ -161,7 +161,7 @@ function describe(kind: string): string {
   const descriptions: Record<string, string> = {
     stringOrNumber: 'a string or a number',
     country: 'a country code',
-    strings: 'an array of strings',
+    stringArray: 'an array of strings',
   };
   return descriptions[kind] ?? `a ${kind}`;
 }

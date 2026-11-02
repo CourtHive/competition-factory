@@ -31,7 +31,7 @@ import type { ResultType, ResultWarning } from '@Types/factoryTypes';
  */
 
 export type PersonWarning = ResultWarning & { participantId?: string; nationalityCode?: string };
-type Outcome = { write?: unknown; clear?: boolean; error?: ResultType; warning?: PersonWarning };
+type Outcome = { write?: unknown; clear?: boolean; error?: ResultType; alert?: PersonWarning };
 type Rule = (value: unknown, field: string) => Outcome;
 
 const NO_CHANGE: Outcome = {};
@@ -71,7 +71,7 @@ const nationalityCodeRule: Rule = (value, field) => {
   if (isClearRequest(value)) return { clear: true };
   if (!isString(value)) return { error: refusal(field, MUST_BE_A_STRING, value) };
   if (validNationalityCode(value)) return { write: value };
-  return { write: value, warning: { ...NATIONALITY_CODE_UNRECOGNIZED, nationalityCode: value } };
+  return { write: value, alert: { ...NATIONALITY_CODE_UNRECOGNIZED, nationalityCode: value } };
 };
 
 const birthDateRule: Rule = (value) => {
@@ -165,7 +165,7 @@ export function planPersonUpdate({
   for (const [key, rule] of Object.entries(personRules)) {
     const outcome = outcomeFor({ key, rule, value: incoming[key], stored: stored[key] });
     if (outcome.error) return outcome.error;
-    if (outcome.warning) warnings.push({ ...outcome.warning, participantId: existingParticipant.participantId });
+    if (outcome.alert) warnings.push({ ...outcome.alert, participantId: existingParticipant.participantId });
     if (outcome.clear && stored[key] !== undefined) clearedKeys.push(key);
     if (outcome.write !== undefined) values[key] = outcome.write;
   }

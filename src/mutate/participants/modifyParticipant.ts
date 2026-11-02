@@ -83,15 +83,16 @@ export function modifyParticipant(params) {
   if (plan.error) return plan;
 
   // ---- nothing above this line writes ----
-  const { newValues, clearedKeys, personPlan, scaleItems, suppliedParticipantName } = plan as ModificationPlan;
+  const { participantValues, clearedKeys, personPlan, scaleItems, suppliedParticipantName } = plan as ModificationPlan;
   if (personPlan) applyPersonUpdate({ existingParticipant, plan: personPlan });
   applyScaleItems({ participant: existingParticipant, scaleItems });
 
   // A supplied participantName can be superseded by a derived one: from `person` for an INDIVIDUAL, or from the
   // individuals of a PAIR. That is intended precedence, and it is surfaced (PARTICIPANT_NAME_DERIVED_FROM_PERSON).
-  const participantNameSuperseded = !!suppliedParticipantName && newValues.participantName !== suppliedParticipantName;
+  const participantNameSuperseded =
+    !!suppliedParticipantName && participantValues.participantName !== suppliedParticipantName;
 
-  Object.assign(existingParticipant, definedAttributes(newValues));
+  Object.assign(existingParticipant, definedAttributes(participantValues));
   // After the assign, so a cleared key cannot be reinstated by it.
   for (const key of clearedKeys) delete existingParticipant[key];
 
@@ -125,7 +126,7 @@ export function modifyParticipant(params) {
 type Loose = Record<string, any>;
 
 type ModificationPlan = ResultType & {
-  newValues: Loose;
+  participantValues: Loose;
   suppliedParticipantName?: string;
   personPlan?: PersonPlan;
   scaleItems: ScaleItem[];
@@ -143,21 +144,21 @@ type PlanArgs = {
 
 type FieldArgs = {
   existingParticipant: Participant;
-  newValues: Loose;
+  participantValues: Loose;
   clearedKeys: string[];
   participant: Loose;
 };
 
 function planModification(args: PlanArgs): ModificationPlan | ResultType {
   const { existingParticipant, participant, tournamentRecord } = args;
-  const newValues: Loose = {};
+  const participantValues: Loose = {};
   const clearedKeys: string[] = [];
-  const fieldArgs: FieldArgs = { existingParticipant, participant, clearedKeys, newValues };
+  const fieldArgs: FieldArgs = { existingParticipant, participant, clearedKeys, participantValues };
 
   // first, so that a PAIR's derived name and then the person's supersede it, as they always have
   const name = participantNameValue({ existingParticipant, participant });
   if (name.error) return name;
-  if (name.participantName) newValues.participantName = name.participantName;
+  if (name.participantName) participantValues.participantName = name.participantName;
 
   const checks: (() => ResultType | undefined)[] = [
     () => checkGrouping(args),
@@ -166,7 +167,7 @@ function planModification(args: PlanArgs): ModificationPlan | ResultType {
     () => setListAttributes(fieldArgs),
     () => setRoleAndNotes(fieldArgs),
     () => setParticipantOtherName(fieldArgs),
-    () => setIndividualParticipantIds({ ...args, newValues }),
+    () => setIndividualParticipantIds({ ...args, participantValues }),
     () => checkContactParticipantIds(fieldArgs),
   ];
   for (const check of checks) {
@@ -179,14 +180,14 @@ function planModification(args: PlanArgs): ModificationPlan | ResultType {
 
   const personPlan = planPerson({ ...args });
   if (personPlan?.error) return personPlan;
-  if (personPlan?.participantName) newValues.participantName = personPlan.participantName;
+  if (personPlan?.participantName) participantValues.participantName = personPlan.participantName;
 
   return {
     suppliedParticipantName: name.participantName,
     scaleItems: timeItems.scaleItems ?? [],
     clearedKeys,
     personPlan,
-    newValues,
+    participantValues,
   };
 }
 
@@ -231,7 +232,7 @@ function participantNameValue({
 }
 
 // contacts and onlineResources replace the stored list; participantRoleResponsibilities likewise
-function setListAttributes({ existingParticipant, participant, newValues }: FieldArgs) {
+function setListAttributes({ existingParticipant, participant, participantValues }: FieldArgs) {
   const lists: [string, (item: unknown) => boolean, string][] = [
     ['contacts', isObject, 'an array of contacts'],
     ['onlineResources', isObject, 'an array of onlineResources'],
@@ -241,19 +242,19 @@ function setListAttributes({ existingParticipant, participant, newValues }: Fiel
     const value = participant[field];
     if (value === undefined || value === null || sameValue(value, existingParticipant[field])) continue;
     if (!Array.isArray(value) || !value.every(isItem)) return refusal(field, `must be ${description}`, value);
-    newValues[field] = value;
+    participantValues[field] = value;
   }
   return undefined;
 }
 
-function setRoleAndNotes({ existingParticipant, participant, clearedKeys, newValues }: FieldArgs) {
+function setRoleAndNotes({ existingParticipant, participant, clearedKeys, participantValues }: FieldArgs) {
   const { participantRole, notes } = participant;
   if (isClearRequest(participantRole)) {
     clearedKeys.push('participantRole');
   } else if (![undefined, null, existingParticipant.participantRole].includes(participantRole)) {
     if (!Object.keys(participantRoles).includes(participantRole))
       return refusal('participantRole', `must be one of ${Object.keys(participantRoles).join(', ')}`, participantRole);
-    newValues.participantRole = participantRole;
+    participantValues.participantRole = participantRole;
   }
 
   // `addNotes` cannot reach a stored participant through the engine, so notes are written here
@@ -261,32 +262,32 @@ function setRoleAndNotes({ existingParticipant, participant, clearedKeys, newVal
     clearedKeys.push('notes');
   } else if (![undefined, null, existingParticipant.notes].includes(notes)) {
     if (!isString(notes)) return refusal('notes', 'must be a string', notes);
-    newValues.notes = notes;
+    participantValues.notes = notes;
   }
   return undefined;
 }
 
 // Same clear contract as the person fields: '' clears, `undefined` leaves untouched. The assign branch is gated on
 // isString: `definedAttributes` strips only '', null and undefined, so a 0 or a false would otherwise persist.
-function setParticipantOtherName({ participant, clearedKeys, newValues }: FieldArgs): undefined {
+function setParticipantOtherName({ participant, clearedKeys, participantValues }: FieldArgs): undefined {
   const { participantOtherName } = participant;
   if (isClearRequest(participantOtherName)) {
     clearedKeys.push('participantOtherName');
   } else if (isString(participantOtherName)) {
-    newValues.participantOtherName = participantOtherName;
+    participantValues.participantOtherName = participantOtherName;
   }
   return undefined;
 }
 
 // Designated contact people for a grouping, validated against the membership the participant will HAVE after this
 // call. A pointer to a non-member is refused on write instead of being tolerated and filtered on every read.
-function checkContactParticipantIds({ existingParticipant, participant, newValues }: FieldArgs) {
+function checkContactParticipantIds({ existingParticipant, participant, participantValues }: FieldArgs) {
   const { contactParticipantIds } = participant;
   if (!Array.isArray(contactParticipantIds)) return undefined;
-  const membership = newValues.individualParticipantIds ?? existingParticipant.individualParticipantIds ?? [];
+  const membership = participantValues.individualParticipantIds ?? existingParticipant.individualParticipantIds ?? [];
   const invalid = contactParticipantIds.filter((participantId) => !membership.includes(participantId));
   if (invalid.length) return { error: INVALID_PARTICIPANT_IDS, invalid };
-  newValues.contactParticipantIds = contactParticipantIds;
+  participantValues.contactParticipantIds = contactParticipantIds;
   return undefined;
 }
 
@@ -300,8 +301,8 @@ function setIndividualParticipantIds({
   tournamentRecord,
   pairOverride,
   participant,
-  newValues,
-}: PlanArgs & { newValues: Loose }) {
+  participantValues,
+}: PlanArgs & { participantValues: Loose }) {
   const { individualParticipantIds } = participant;
   if (individualParticipantIds === undefined || individualParticipantIds === null) return undefined;
   if (!Array.isArray(individualParticipantIds) || !individualParticipantIds.every(isString))
@@ -326,9 +327,9 @@ function setIndividualParticipantIds({
   if (groupingType === PAIR && new Set(members).size !== 2 && !pairOverride)
     return { error: INVALID_PARTICIPANT_IDS, info: 'a PAIR has exactly two individual participants', invalid: members };
 
-  newValues.individualParticipantIds = members;
+  participantValues.individualParticipantIds = members;
   if (groupingType === PAIR && updateParticipantName) {
-    newValues.participantName = generatePairParticipantName({
+    participantValues.participantName = generatePairParticipantName({
       individualParticipantIds: members,
       individualParticipants,
     });
@@ -346,13 +347,19 @@ const participantStatuses: string[] = Object.values(ParticipantStatusEnum);
  * carries: consumers send the whole participant on every save, and an unrelated edit must not fail on a value
  * this call does not change (a home venue since deleted, say).
  */
-function setParticipantAttributes({ tournamentRecord, existingParticipant, participant, clearedKeys, newValues }) {
+function setParticipantAttributes({
+  tournamentRecord,
+  existingParticipant,
+  participant,
+  clearedKeys,
+  participantValues,
+}) {
   const { homeVenueIds, participantStatus, representing, useOtherName } = participant;
 
   if (homeVenueIds !== undefined) {
     const result = getHomeVenueIds({ tournamentRecord, existingParticipant, homeVenueIds });
     if (result.error) return result;
-    if (result.homeVenueIds?.length) newValues.homeVenueIds = result.homeVenueIds;
+    if (result.homeVenueIds?.length) participantValues.homeVenueIds = result.homeVenueIds;
     else clearedKeys.push('homeVenueIds');
   }
 
@@ -361,7 +368,7 @@ function setParticipantAttributes({ tournamentRecord, existingParticipant, parti
   } else if (participantStatus !== undefined && participantStatus !== existingParticipant.participantStatus) {
     if (!participantStatuses.includes(participantStatus))
       return { error: INVALID_VALUES, info: 'participantStatus must be ACTIVE or WITHDRAWN', participantStatus };
-    newValues.participantStatus = participantStatus;
+    participantValues.participantStatus = participantStatus;
   }
 
   if (isClearRequest(representing)) {
@@ -369,13 +376,13 @@ function setParticipantAttributes({ tournamentRecord, existingParticipant, parti
   } else if (representing !== undefined && representing !== existingParticipant.representing) {
     if (!isString(representing) || !validNationalityCode(representing))
       return { error: INVALID_VALUES, info: 'representing must be a country code', representing };
-    newValues.representing = representing;
+    participantValues.representing = representing;
   }
 
   if (useOtherName !== undefined) {
     if (typeof useOtherName !== 'boolean')
       return { error: INVALID_VALUES, info: 'useOtherName must be a boolean', useOtherName };
-    newValues.useOtherName = useOtherName;
+    participantValues.useOtherName = useOtherName;
   }
 
   return undefined;
