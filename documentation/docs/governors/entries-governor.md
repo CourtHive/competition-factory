@@ -51,8 +51,9 @@ is refused with `NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS`, an `ALTERNATE` beyo
 `drawId`, where the draw's refusal is returned as `info` and the event entries are still made. An unsanctioned
 event, or one the constraints do not match, is unaffected: `WILDCARD` entries are limited only by the places left
 and `ALTERNATE` entries not at all. `event.entryProfile.wildcardCount` is the number of places held for wildcards,
-not a cap, and does not limit them. The limits apply to entries added to an existing draw; draw generation places
-the event's accepted entries without them.
+not a cap, and does not limit them. The limits also bound draw generation and `addDrawDefinition`, which refuse entries
+over them before anything is written (see
+[generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition)).
 
 ```js
 // with sanctioning constraints { events: [{ eventType: 'SINGLES', maxWildcards: 2 }] }

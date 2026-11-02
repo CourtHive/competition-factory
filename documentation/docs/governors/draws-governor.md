@@ -453,6 +453,10 @@ With the `drawId` of a draw already in the event (adding qualifying to a generat
 `addDrawDefinition({ drawDefinition, allowReplacement: true })`, which announces it. Until 2026-10 the stored draw was
 changed in place, unannounced, whether or not the commit followed.
 
+Entries over a matched sanction's `maxWildcards` or `maxAlternates` are refused before anything is built, with
+`NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS` and a context naming the excess `participantIds`; see
+[generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition).
+
 ---
 
 ## generateDrawMaticRound

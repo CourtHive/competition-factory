@@ -59,7 +59,7 @@ scheduleGovernor.scheduleMatchUps({
 
 ## Governor Categories
 
-The Competition Factory includes 16 governors organized into functional areas:
+The Competition Factory's governors are organized into functional areas:
 
 ### Tournament Operations
 
@@ -129,6 +129,21 @@ The Competition Factory includes 16 governors organized into functional areas:
 - Per-participant point breakdowns
 - Composed into the [Scale Engine](/docs/scale-engine/scale-engine-overview)
 
+### Seasons & Leagues
+
+**[Season Governor](./season-governor.md)** - Seasons across tournament records
+
+- Validate a CODES `Season` (tiers, periods, placements, advancements)
+- Season standings per tier, from the results of the competitions a season references
+- Who advances out of a period, and who moves between tiers when a period closes
+- Plan the next period's placements from accepted movement
+
+**[Ladder Governor](./ladder-governor.md)** - Challenge ladders (`LADDER` draws)
+
+- Seat and remove participants; issue, accept and decline challenges
+- Report, confirm and dispute results; move the standing on an attested result
+- Standing by rank or by rating, challenge state, lapses and the ladder policy
+
 ### MatchUp Management
 
 **[MatchUp Governor](./matchup-governor.md)** - MatchUp operations
@@ -175,6 +190,12 @@ The Competition Factory includes 16 governors organized into functional areas:
 - Court availability and bookings
 - Venue extensions and metadata
 
+**[Availability Governor](./availability-governor.md)** - Court availability utilities
+
+- The pure layer under the Availability Engine: rail derivation, capacity curves, collision detection
+- Conflict evaluators, time granularity and the scheduling-plan validation pipeline
+- The bridge between availability blocks and CODES `dateAvailability`
+
 ### Publishing & Queries
 
 **[Publishing Governor](./publishing-governor.md)** - Publish state management
@@ -207,6 +228,19 @@ The Competition Factory includes 16 governors organized into functional areas:
 - Policy validation
 - Policy inheritance
 
+### Sanctioning & Officiating
+
+**[Sanctioning Governor](./sanctioning-governor.md)** - Tournament sanctioning records
+
+- Create a sanctioning record and edit its proposal and event proposals
+- Move it through submission, review, endorsement, approval (or conditions, modification, rejection) and amendments
+- Post-event compliance items, and queries for completeness, eligible tiers, calendar conflicts and status history
+
+**[Officiating Governor](./officiating-governor.md)** - Official records
+
+- Create official records with certifications, evaluations, assignments and suspensions
+- Query certifications, evaluation summaries, eligibility, assignments and assignment conflicts
+
 ### Simulation, Testing & Utilities
 
 **[Simulation Governor](./simulation-governor.md)** - Play a draw out or set one up
@@ -220,6 +254,11 @@ The Competition Factory includes 16 governors organized into functional areas:
 - Create participants with realistic data
 - Generate matchUp outcomes
 - Modify existing tournaments for testing
+
+**[Practice Governor](./practice-governor.md)** - Practice court registrations
+
+- Register participants for time windows inside PRACTICE court bookings
+- Capacity per window, with conflict detection
 
 ---
 
