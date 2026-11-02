@@ -709,6 +709,7 @@ export type FactoryEngineMethod =
   | 'setRandomSource'
   | 'setRegistrationProfile'
   | 'setRotatingPartnerScoring'
+  | 'setSanctionConstraints'
   | 'setSchedulingProfile'
   | 'setState'
   | 'setStructureOrder'
@@ -1508,6 +1509,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'setRandomSource',
   'setRegistrationProfile',
   'setRotatingPartnerScoring',
+  'setSanctionConstraints',
   'setSchedulingProfile',
   'setState',
   'setStructureOrder',

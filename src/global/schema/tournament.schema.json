@@ -3937,6 +3937,93 @@
       },
       "additionalProperties": false
     },
+    "SanctionConstraints": {
+      "description": "Limits a sanctioning provider's rules set for one tournament: provider-defined, enforced by the factory, never derived by it.",
+      "type": "object",
+      "properties": {
+        "definedBy": {
+          "type": "object",
+          "properties": {
+            "providerId": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "organisationName": {
+              "type": "string"
+            }
+          },
+          "required": ["providerId"],
+          "additionalProperties": false
+        },
+        "source": {
+          "type": "object",
+          "properties": {
+            "policyName": {
+              "type": "string"
+            },
+            "policyVersion": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SanctionEventConstraints"
+          }
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Extension"
+          }
+        }
+      },
+      "required": ["definedBy", "events"],
+      "additionalProperties": false
+    },
+    "SanctionEventConstraints": {
+      "description": "The limits for the events an entry matches: eventType always; eventName and categoryName when stated.",
+      "type": "object",
+      "properties": {
+        "match": {
+          "type": "object",
+          "properties": {
+            "eventType": {
+              "$ref": "#/definitions/EventTypeEnum"
+            },
+            "eventName": {
+              "type": "string"
+            },
+            "categoryName": {
+              "type": "string"
+            }
+          },
+          "required": ["eventType"],
+          "additionalProperties": false
+        },
+        "drawSize": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxWildcards": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxAlternates": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxQualifiers": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": ["match"],
+      "additionalProperties": false
+    },
     "TournamentScheduling": {
       "description": "The tournament's scheduling state. profile, dailyLimits and timing were the schedulingProfile, scheduleLimits and scheduleTiming extensions (read either way).",
       "type": "object",
@@ -4254,6 +4341,7 @@
             "$ref": "#/definitions/TimeItem"
           }
         },
+        "constraints": { "$ref": "#/definitions/SanctionConstraints" },
         "extensions": {
           "type": "array",
           "items": {

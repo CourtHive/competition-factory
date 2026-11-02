@@ -3168,8 +3168,33 @@ export interface TournamentSanction {
   fees?: SanctionFee[];
   /** the window in which the application was accepted, where the authority publishes one */
   submissionWindow?: { from?: string; to?: string; timeZone?: string };
+  /** the limits the sanctioning provider's rules set for this tournament: provider-defined, enforced by the factory */
+  constraints?: SanctionConstraints;
   extensions?: Extension[];
   timeItems?: TimeItem[];
+}
+
+/**
+ * Limits a sanctioning provider's rules set for one tournament. The provider defines its rules where sanctioning
+ * applications are reviewed, and they are resolved into these limits there; the factory enforces them and never
+ * derives them. A tournament with none is unconstrained.
+ */
+export interface SanctionConstraints {
+  /** the provider whose rules define these limits: required, a limit with no author is not a sanction constraint */
+  definedBy: { providerId: string; organisationName?: string };
+  /** which of that provider's rule sets produced them */
+  source?: { policyName?: string; policyVersion?: string };
+  events: SanctionEventConstraints[];
+  extensions?: Extension[];
+}
+
+/** The limits for the events an entry matches: eventType always; eventName and categoryName when stated. */
+export interface SanctionEventConstraints {
+  match: { eventType: EventTypeUnion; eventName?: string; categoryName?: string };
+  drawSize?: number;
+  maxWildcards?: number;
+  maxAlternates?: number;
+  maxQualifiers?: number;
 }
 
 /**
