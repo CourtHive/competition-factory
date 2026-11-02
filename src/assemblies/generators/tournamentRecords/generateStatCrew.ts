@@ -1,10 +1,12 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { resolveHomeParticipantId } from '@Query/matchUp/resolveHomeParticipantId';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { formatDate } from '@Tools/dateTime';
 import { jsonToXml } from './jsonToXml';
 
 // constants
+import { EXPLICIT } from '@Constants/homeParticipantConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/participantConstants';
@@ -56,6 +58,7 @@ export function generateStatCrew(params) {
   if (isDual) {
     const teamMatchUp = teamMatchUps[0];
     const { json, xml } = getXml({
+      tournamentRecord,
       teamParticipants,
       teamMatchUp,
       ...attrs,
@@ -78,6 +81,7 @@ export function generateStatCrew(params) {
       const { xml, json } = getXml({
         doubles: teamMatchUp.tieMatchUps?.filter((matchUp) => matchUp.matchUpType === DOUBLES),
         singles: teamMatchUp.tieMatchUps?.filter((matchUp) => matchUp.matchUpType === SINGLES),
+        tournamentRecord,
         teamParticipants,
         teamMatchUp,
         ...attrs,
@@ -90,7 +94,29 @@ export function generateStatCrew(params) {
   return { json: jsonResult, xml: xmlResult, ...SUCCESS };
 }
 
+/**
+ * The home team of one team matchUp, for StatCrew's home/visitor and `neutralgame`.
+ *
+ * `resolveHomeParticipantId` decides, with one StatCrew-only rung kept so existing exports do not regress: a TEAM
+ * carrying `participantRoleResponsibilities: ['Home']`. It sits directly AFTER the explicit
+ * `homeParticipantId` and BEFORE the inferred signals (venue, host organisation): it is a statement the producer
+ * made about the record, and a stated home beats an inferred one, but it is a property of the team rather than of
+ * the matchUp, so a per-matchUp explicit home overrides it. Like every rung it counts only when exactly one team
+ * carries it. With no home team the game is neutral; nothing falls back to a side.
+ */
+function getHomeTeamId({ tournamentRecord, teamMatchUp, teamParticipants }): string | undefined {
+  const result = teamMatchUp ? resolveHomeParticipantId({ tournamentRecord, matchUp: teamMatchUp }) : undefined;
+  const resolved = result && 'basis' in result ? result : undefined;
+  if (resolved?.basis === EXPLICIT) return resolved.homeParticipantId;
+
+  const roleHomeTeams = teamParticipants?.filter((team) => team?.participantRoleResponsibilities?.includes('Home'));
+  if (roleHomeTeams?.length === 1) return roleHomeTeams[0].participantId;
+
+  return resolved?.homeParticipantId;
+}
+
 function getXml({
+  tournamentRecord,
   teamParticipants,
   mappedMatchUps,
   participantMap,
@@ -102,7 +128,10 @@ function getXml({
   doubles,
   singles,
 }) {
-  const homeTeam = teamParticipants?.find((team) => team.participantRoleResponsibilities?.includes('Home'));
+  const homeTeamId = getHomeTeamId({ tournamentRecord, teamMatchUp, teamParticipants });
+  const homeTeam = homeTeamId ? teamParticipants?.find((team) => team?.participantId === homeTeamId) : undefined;
+  // StatCrew always fills both the home and the visitor slot; at a neutral site (`neutralgame: 'Y'`) the slots are
+  // positional only, the second team taking the home slot, and do not claim that either team is at home
   const awayTeams = teamParticipants?.filter((team) => team.participantId !== homeTeam?.participantId);
   const date = formatDate(startDate, '/', 'MDY');
   const homename = homeTeam?.participantName || awayTeams?.[1]?.participantName;

@@ -286,6 +286,7 @@ import type { getSwissStandings } from '@Query/drawDefinitions/swiss/getSwissSta
 import type { getMatchUpCheckInHistory } from '@Query/matchUp/getMatchUpCheckInHistory';
 import type { getMatchUpParticipantIds } from '@Query/matchUp/getMatchUpParticipantIds';
 import type { getMatchUpScheduleBounds } from '@Query/matchUp/getMatchUpScheduleBounds';
+import type { resolveHomeParticipantId } from '@Query/matchUp/resolveHomeParticipantId';
 import type { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import type { getEventDateIssues } from '@Query/matchUps/scheduling/getEventDateIssues';
 import type { getOfficialAssignments } from '@Query/officiating/getOfficialAssignments';
@@ -1323,6 +1324,7 @@ export interface MethodSignatures {
   resetVoluntaryConsolationStructure: EngineMethod<typeof resetVoluntaryConsolationStructure>;
   resolveDraftPositions: EngineMethod<typeof resolveDraftPositions>;
   resolveEntryFee: EngineMethod<typeof resolveEntryFee>;
+  resolveHomeParticipantId: EngineMethod<typeof resolveHomeParticipantId>;
   resolvePointValue: EngineMethod<typeof resolvePointValue>;
   retainScoreForFormat: EngineMethod<typeof retainScoreForFormat>;
   reverseScore: EngineMethod<typeof reverseScore>;
