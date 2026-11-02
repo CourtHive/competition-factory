@@ -5,7 +5,7 @@ import { intersection } from '@Tools/arrays';
 import { expect, it } from 'vitest';
 
 // constants
-import { CANNOT_MODIFY_PARTICIPANT_TYPE } from '@Constants/errorConditionConstants';
+import { CANNOT_MODIFY_PARTICIPANT_TYPE, NATIONALITY_CODE_UNRECOGNIZED } from '@Constants/errorConditionConstants';
 import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
 import { MALE } from '@Constants/genderConstants';
 
@@ -87,8 +87,10 @@ it('can modify PAIR participants', () => {
   result = tournamentEngine.modifyParticipant({
     participant: modifiedSecondIndividual,
   });
-  // fail silently, do not apply invalid nationalityCode
-  expect(result.participant.person.nationalityCode).toEqual(nationalityCode);
+  // an unrecognised nationalityCode is written, and the result warns of it (CA 2026-11-02)
+  expect(nationalityCode).not.toEqual('XXX');
+  expect(result.participant.person.nationalityCode).toEqual('XXX');
+  expect(result.warnings?.map(({ code }) => code)).toEqual([NATIONALITY_CODE_UNRECOGNIZED.code]);
 
   modifiedSecondIndividual.person.nationalityCode = 'USA';
   result = tournamentEngine.modifyParticipant({

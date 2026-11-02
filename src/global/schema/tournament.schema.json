@@ -216,9 +216,7 @@
             "$ref": "#/definitions/TournamentSanction"
           }
         },
-        "scheduling": {
-          "type": "object"
-        },
+        "scheduling": { "$ref": "#/definitions/TournamentScheduling" },
         "tournamentTier": {
           "$ref": "#/definitions/TierClassification"
         },
@@ -4026,6 +4024,268 @@
       "required": ["match"],
       "additionalProperties": false
     },
+    "TournamentScheduling": {
+      "description": "The tournament's scheduling state. profile, dailyLimits and timing were the schedulingProfile, scheduleLimits and scheduleTiming extensions (read either way).",
+      "type": "object",
+      "properties": {
+        "profile": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ScheduleProfileDate"
+          },
+          "description": "The scheduling profile: which rounds are scheduled on which date at which venue, in order."
+        },
+        "dailyLimits": {
+          "$ref": "#/definitions/TournamentScheduleLimits"
+        },
+        "timing": {
+          "$ref": "#/definitions/TournamentScheduleTiming"
+        },
+        "venueTransits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VenueTransitEntry"
+          }
+        },
+        "scenarios": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ScheduleScenario"
+          }
+        },
+        "practice": {
+          "type": "object",
+          "properties": {
+            "defaultCapacity": {
+              "type": ["number", "null"]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "ScheduleProfileDate": {
+      "type": "object",
+      "properties": {
+        "scheduleDate": {
+          "type": "string"
+        },
+        "venues": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ScheduleProfileVenue"
+          }
+        }
+      },
+      "required": ["scheduleDate"],
+      "additionalProperties": false
+    },
+    "ScheduleProfileVenue": {
+      "type": "object",
+      "properties": {
+        "venueId": {
+          "type": "string"
+        },
+        "rounds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ScheduleProfileRound"
+          }
+        }
+      },
+      "required": ["venueId"],
+      "additionalProperties": false
+    },
+    "ScheduleProfileRound": {
+      "description": "A round (or one segment of it) in a scheduling profile. eventName, roundName and sortOrder are display attributes.",
+      "type": "object",
+      "properties": {
+        "tournamentId": {
+          "type": "string"
+        },
+        "eventId": {
+          "type": "string"
+        },
+        "drawId": {
+          "type": "string"
+        },
+        "structureId": {
+          "type": "string"
+        },
+        "roundNumber": {
+          "type": "number"
+        },
+        "roundSegment": {
+          "type": "object",
+          "properties": {
+            "segmentNumber": {
+              "type": "number"
+            },
+            "segmentsCount": {
+              "type": "number"
+            }
+          },
+          "required": ["segmentNumber", "segmentsCount"],
+          "additionalProperties": false
+        },
+        "notBeforeTime": {
+          "type": "string",
+          "description": "'HH:MM': the earliest time the round may start."
+        },
+        "periodLength": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "matchUpIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "containerStructureId": {
+          "type": "string"
+        },
+        "isRoundRobin": {
+          "type": "boolean"
+        },
+        "eventName": {
+          "type": "string"
+        },
+        "roundName": {
+          "type": "string"
+        },
+        "sortOrder": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TournamentScheduleLimits": {
+      "type": "object",
+      "properties": {
+        "dailyLimits": {
+          "$ref": "#/definitions/SchedulingDailyLimits"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TournamentScheduleTiming": {
+      "description": "The tournament's own matchUp format timing, consulted before its scheduling policy.",
+      "type": "object",
+      "properties": {
+        "matchUpAverageTimes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SchedulingFormatAverageTimes"
+          }
+        },
+        "matchUpRecoveryTimes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SchedulingFormatRecoveryTimes"
+          }
+        },
+        "overnightTimes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SchedulingCategoryTimes"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "VenueTransitEntry": {
+      "description": "Minutes to get between two venues; symmetric unless oneWay.",
+      "type": "object",
+      "properties": {
+        "venueIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "minutes": {
+          "type": "number",
+          "minimum": 0
+        },
+        "oneWay": {
+          "type": "boolean"
+        },
+        "sanctioned": {
+          "type": "object",
+          "properties": {
+            "minutes": {
+              "type": "number",
+              "minimum": 0
+            },
+            "sanctioningId": {
+              "type": "string"
+            }
+          },
+          "required": ["minutes"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["venueIds", "minutes"],
+      "additionalProperties": false
+    },
+    "ScheduleScenario": {
+      "description": "A named alternate scheduling plan.",
+      "type": "object",
+      "properties": {
+        "scenarioId": {
+          "type": "string"
+        },
+        "scenarioName": {
+          "type": "string"
+        },
+        "scheduledDates": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "basedOnHash": {
+          "type": "string"
+        },
+        "placements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ScenarioPlacement"
+          }
+        }
+      },
+      "required": ["scenarioId", "scenarioName", "placements"],
+      "additionalProperties": false
+    },
+    "ScenarioPlacement": {
+      "type": "object",
+      "properties": {
+        "tournamentId": {
+          "type": "string"
+        },
+        "matchUpId": {
+          "type": "string"
+        },
+        "schedule": {
+          "$ref": "#/definitions/MatchUpSchedule"
+        }
+      },
+      "required": ["tournamentId", "matchUpId", "schedule"],
+      "additionalProperties": false
+    },
     "TournamentSanction": {
       "$comment": "What a governing body DECIDED about a competition — the instance model from #4710. Three orthogonal axes: decision (did the application succeed), recognition (what the body asserts), classification (what grade is conferred). Before this definition existed the property was declared {\"type\": \"object\"}, so a record carrying decision: 'BANANA' validated.",
       "type": "object",
@@ -5425,9 +5685,7 @@
         "audit": {
           "type": "object"
         },
-        "avoidance": {
-          "type": "object"
-        },
+        "avoidance": { "$ref": "#/definitions/AvoidancePolicy" },
         "competition": {
           "$ref": "#/definitions/CompetitionPolicy"
         },
@@ -5446,9 +5704,7 @@
         "ladder": {
           "type": "object"
         },
-        "matchUpActions": {
-          "type": "object"
-        },
+        "matchUpActions": { "$ref": "#/definitions/MatchUpActionsPolicy" },
         "officiatingConflict": {
           "type": "object"
         },
@@ -5471,12 +5727,8 @@
         "rotatingPartnerTally": {
           "$ref": "#/definitions/RotatingPartnerTallyPolicy"
         },
-        "roundNaming": {
-          "type": "object"
-        },
-        "roundRobinTally": {
-          "type": "object"
-        },
+        "roundNaming": { "$ref": "#/definitions/RoundNamingPolicy" },
+        "roundRobinTally": { "$ref": "#/definitions/RoundRobinTallyPolicy" },
         "sanctioning": {
           "type": "object"
         },
@@ -6023,7 +6275,343 @@
       },
       "required": ["ratingPolicy", "pairingPolicy", "victoryPolicy", "processingGranularity"],
       "additionalProperties": false
+    },
+    "RoundNamingPolicy": {
+      "description": "A round naming policy: how rounds are named and abbreviated.",
+      "type": "object",
+      "properties": {
+        "policyName": {
+          "type": "string"
+        },
+        "namingConventions": {
+          "type": "object",
+          "properties": {
+            "round": {
+              "type": "string"
+            },
+            "pre": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "roundNamingMap": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Round name by the number of matchUps in the round (1: Final)."
+        },
+        "abbreviatedRoundNamingMap": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Abbreviated round name by the number of matchUps in the round."
+        },
+        "qualifyingFinishMap": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "A qualifying structure's final round names, by the number of matchUps."
+        },
+        "affixes": {
+          "type": "object",
+          "properties": {
+            "roundNumber": {
+              "type": "string"
+            },
+            "preFeedRound": {
+              "type": "string"
+            },
+            "preQualifying": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "stageConstants": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Prefix for each stage (MAIN, QUALIFYING, CONSOLATION, PLAY_OFF)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "ActionsStructurePolicy": {
+      "description": "The structures an actions policy entry matches (an empty or absent list matches all) and the actions it allows.",
+      "type": "object",
+      "properties": {
+        "stages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "stageSequences": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "structureTypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "feedProfiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "enabledActions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "disabledActions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "MatchUpActionsPolicy": {
+      "description": "A matchUp actions policy: which actions are offered, and participant and substitution rules.",
+      "type": "object",
+      "properties": {
+        "policyName": {
+          "type": "string"
+        },
+        "enabledStructures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ActionsStructurePolicy"
+          }
+        },
+        "participants": {
+          "type": "object",
+          "properties": {
+            "enforceCategory": {
+              "type": "boolean"
+            },
+            "enforceGender": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "processCodes": {
+          "type": "object",
+          "properties": {
+            "substitution": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "substituteAfterCompleted": {
+          "type": "boolean"
+        },
+        "substituteWithoutScore": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "AvoidancePolicyAttribute": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "An accessor path into the participant, e.g. person.nationalityCode."
+        },
+        "directive": {
+          "type": "string",
+          "description": "An id collection to separate on (pairParticipants, teamParticipants, ...)."
+        },
+        "significantCharacters": {
+          "type": "number"
+        },
+        "includeIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "groupings": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "AvoidancePolicy": {
+      "description": "An avoidance policy: which participant attributes are separated in positioning, and by how much.",
+      "type": "object",
+      "properties": {
+        "policyName": {
+          "type": "string"
+        },
+        "policyAttributes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AvoidancePolicyAttribute"
+          }
+        },
+        "roundsToSeparate": {
+          "type": "number"
+        },
+        "targetDivisions": {
+          "type": "number"
+        },
+        "candidatesCount": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RoundRobinTallyPolicy": {
+      "$comment": "OPEN, and this is a decision: the TypeScript RoundRobinTallyPolicy is deliberately extensible ([key: string]: unknown), and the tally readers take more members than the stored policies show. The members listed are those the readers take; closing it would reject a policy the engine accepts.",
+      "description": "A round robin tally (standings) policy. validateTallyPolicy checks its values where it is saved.",
+      "type": "object",
+      "properties": {
+        "policyName": {
+          "type": "string"
+        },
+        "groupOrderKey": {
+          "type": "string"
+        },
+        "tallyDirectives": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "attribute": {
+                "type": "string"
+              },
+              "idsFilter": {
+                "type": "boolean"
+              },
+              "reversed": {
+                "type": "boolean"
+              },
+              "groupTotals": {
+                "type": "boolean"
+              },
+              "maxParticipants": {
+                "type": "number"
+              }
+            },
+            "required": ["attribute"]
+          }
+        },
+        "headToHead": {
+          "type": "object"
+        },
+        "GEMscore": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "excludeMatchUpStatuses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "disqualifyDefaults": {
+          "type": "boolean"
+        },
+        "disqualifyWalkovers": {
+          "type": "boolean"
+        },
+        "gamesCreditForDefaults": {
+          "type": "boolean"
+        },
+        "gamesCreditForRetirements": {
+          "type": "boolean"
+        },
+        "gamesCreditForTiebreakSets": {
+          "type": "boolean"
+        },
+        "gamesCreditForWalkovers": {
+          "type": "boolean"
+        },
+        "setsCreditForDefaults": {
+          "type": "boolean"
+        },
+        "setsCreditForRetirements": {
+          "type": "boolean"
+        },
+        "setsCreditForWalkovers": {
+          "type": "boolean"
+        },
+        "groupTotalGamesPlayed": {
+          "type": "boolean"
+        },
+        "groupTotalSetsPlayed": {
+          "type": "boolean"
+        },
+        "drawCredit": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "outcomePoints": {
+          "type": "object",
+          "properties": {
+            "win": {
+              "type": "number"
+            },
+            "draw": {
+              "type": "number"
+            },
+            "loss": {
+              "type": "number"
+            }
+          },
+          "required": ["win", "draw", "loss"],
+          "additionalProperties": false
+        },
+        "precision": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "const": "EXACT"
+            }
+          ]
+        },
+        "resultPoints": {
+          "type": "object"
+        },
+        "onSplit": {},
+        "terminal": {},
+        "crossGroup": {},
+        "denominator": {}
+      },
+      "additionalProperties": true
     }
   },
-  "$comment": "CONVENTION: every object definition states `additionalProperties` EXPLICITLY, and the default is `false`. Every definition but the four open ones is closed. A closed definition is what makes a CODES field added to the TypeScript types but never mirrored here a LOUD failure rather than a silent one — the drift fixed in #4718 went unnoticed for exactly this reason on the open definitions. Four definitions are open; each carries a `$comment` saying why. `codesSchemaConvention.test.ts` enforces both halves: no definition may omit the keyword, and the open set may not grow without updating that test."
+  "$comment": "CONVENTION: every object definition states `additionalProperties` EXPLICITLY, and the default is `false`. Every definition but the open ones listed in that test is closed. A closed definition is what makes a CODES field added to the TypeScript types but never mirrored here a LOUD failure rather than a silent one — the drift fixed in #4718 went unnoticed for exactly this reason on the open definitions. The open definitions each carry a `$comment` saying why. `codesSchemaConvention.test.ts` enforces both halves: no definition may omit the keyword, and the open set may not grow without updating that test."
 }

@@ -55,6 +55,13 @@ type RoundProfile = {
 };
 ```
 
+:::info CODES schema
+A tournament's profile is stored at `tournamentRecord.scheduling.profile`, described by the `TournamentScheduling`
+definition in `tournament.schema.json` (with `ScheduleProfileDate`, `ScheduleProfileVenue` and `ScheduleProfileRound`).
+The definitions are closed: a round attribute not listed above does not validate. `periodLength`, `matchUpIds`,
+`containerStructureId` and `isRoundRobin` are also accepted on a round.
+:::
+
 ## Creating a Scheduling Profile
 
 ### Manual Creation

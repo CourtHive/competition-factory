@@ -6,6 +6,10 @@ The ordering itself is the standings engine's, shared with season tables and the
 
 ---
 
+:::info CODES schema
+This policy's shape is the `RoundRobinTallyPolicy` definition in `tournament.schema.json` (under `PolicyDefinitions`), open by decision, like its TypeScript type: it lists the members the tally reads, and `validateTallyPolicy` checks their values where a policy is saved. Policies are still stored in the applied-policies extension.
+:::
+
 ## Overview
 
 Round robin groups require sophisticated tiebreaking rules to determine final standings when participants have equal records. The tally policy provides:

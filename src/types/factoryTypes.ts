@@ -1,4 +1,6 @@
 import { DOUBLES_EVENT, SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
+import type { AvoidancePolicy } from '@Mutate/drawDefinitions/positionGovernor/randomUnseededSeparation';
+import type { MatchUpActionsPolicy } from '@Query/drawDefinition/positionActions/actionPolicyUtils';
 import type { RotatingPartnerScoringPolicies } from './rotatingPartnerScoring';
 import type { RotatingPartnerTallyPolicy } from './rotatingPartnerTally';
 import { SignedInStatusUnion } from '@Constants/participantConstants';
@@ -9,6 +11,7 @@ import { HydratedMatchUp, HydratedParticipant } from './hydrated';
 import { ErrorType } from '@Constants/errorConditionConstants';
 import type { MethodSignatures } from './methodSignatures';
 import type { Attribution } from './presenceTypes';
+import type { LadderPolicy } from './ladderTypes';
 import {
   Category,
   DrawDefinition,
@@ -41,6 +44,10 @@ import {
   POLICY_TYPE_ROTATING_PARTNER_TALLY,
   POLICY_TYPE_ROUND_ROBIN_TALLY,
   POLICY_TYPE_SCHEDULING,
+  POLICY_TYPE_ROUND_NAMING,
+  POLICY_TYPE_MATCHUP_ACTIONS,
+  POLICY_TYPE_AVOIDANCE,
+  POLICY_TYPE_LADDER,
 } from '@Constants/policyConstants';
 
 export type FactoryEngine = {
@@ -498,12 +505,30 @@ export type SchedulingPolicy = {
   matchUpDailyLimits?: SchedulingParticipantDailyLimits[];
 };
 
+/** A ROUND NAMING policy: how rounds are named and abbreviated. Mirrored by the CODES schema's `RoundNamingPolicy`. */
+export type RoundNamingPolicy = {
+  policyName?: string;
+  namingConventions?: { round?: string; pre?: string };
+  /** Round name by the number of matchUps in the round (`1: 'Final'`). */
+  roundNamingMap?: { [matchUpsCount: string]: string };
+  abbreviatedRoundNamingMap?: { [matchUpsCount: string]: string };
+  /** A qualifying structure's final round names, by the number of matchUps. */
+  qualifyingFinishMap?: { [matchUpsCount: string]: string };
+  affixes?: { roundNumber?: string; preFeedRound?: string; preQualifying?: string };
+  /** Prefix for each stage (MAIN, QUALIFYING, CONSOLATION, PLAY_OFF). */
+  stageConstants?: { [stage: string]: string };
+};
+
 export type PolicyDefinitions = {
   [key in ValidPolicyTypes]?: { [key: string]: any };
 } & {
   [POLICY_TYPE_ROTATING_PARTNER_TALLY]?: RotatingPartnerTallyPolicy;
   [POLICY_TYPE_SEEDING]?: SeedingPolicy;
   [POLICY_TYPE_SCHEDULING]?: SchedulingPolicy;
+  [POLICY_TYPE_ROUND_NAMING]?: RoundNamingPolicy;
+  [POLICY_TYPE_MATCHUP_ACTIONS]?: MatchUpActionsPolicy;
+  [POLICY_TYPE_AVOIDANCE]?: AvoidancePolicy;
+  [POLICY_TYPE_LADDER]?: LadderPolicy;
   [POLICY_TYPE_ROUND_ROBIN_TALLY]?: RoundRobinTallyPolicy;
   [POLICY_TYPE_SCORING]?: { rotatingPartners?: RotatingPartnerScoringPolicies; [key: string]: unknown };
 };
