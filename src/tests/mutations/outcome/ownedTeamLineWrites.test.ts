@@ -937,6 +937,78 @@ const OWNED: [string, Scenario][] = [
     },
   ],
   [
+    "FIRST_MATCH_LOSER_CONSOLATION: a dual's own WALKOVER carried to a seat opposite a BYE, on through it: the dual beyond takes the exit",
+    {
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION, participantsCount: 7 },
+      setup: [],
+      step: {
+        target: R1(2, 0),
+        winningSide: 1,
+        outcome: 'WALKOVER',
+        dual: true,
+        flags: { propagateExitStatus: true },
+      },
+    },
+  ],
+  [
+    "a dual's own DOUBLE_WALKOVER beside a decided dual: the WALKOVER it produces in the final is the winner's at once",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [0, 1, 2, 3, 4].map((line) => ({ target: R1(2, line), winningSide: 1 as const })),
+      step: { target: R1(1, 0), winningSide: 1, outcome: 'DOUBLE_WALKOVER', dual: true },
+    },
+  ],
+  [
+    "a dual's own DOUBLE_DEFAULT beside a decided dual: the DEFAULTED it produces in the final is the winner's at once",
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [0, 1, 2, 3, 4].map((line) => ({ target: R1(1, line), winningSide: 2 as const })),
+      step: { target: R1(2, 0), winningSide: 1, outcome: 'DOUBLE_DEFAULT', dual: true },
+    },
+  ],
+  [
+    "COMPASS 8/6: a dual's own WALKOVER carried past a BYE in West: the dual beyond takes it, its sides ensured",
+    {
+      drawProfile: { drawSize: 8, participantsCount: 6, drawType: COMPASS },
+      setup: [],
+      step: {
+        target: R1(2, 0, 'East'),
+        winningSide: 1,
+        outcome: 'WALKOVER',
+        dual: true,
+        flags: { propagateExitStatus: true },
+      },
+    },
+  ],
+  [
+    "COMPASS 8/6: a dual's own WALKOVER for side 2 carried past a BYE: the BYE dual records the carry beside its BYE",
+    {
+      drawProfile: { drawSize: 8, participantsCount: 6, drawType: COMPASS },
+      setup: [],
+      step: {
+        target: R1(3, 0, 'East'),
+        winningSide: 2,
+        outcome: 'WALKOVER',
+        dual: true,
+        flags: { propagateExitStatus: true },
+      },
+    },
+  ],
+  [
+    "COMPASS 8/5: a dual's own WALKOVER carried past two BYEs in West to its last round: each BYE dual takes the line-up",
+    {
+      drawProfile: { drawSize: 8, participantsCount: 5, drawType: COMPASS },
+      setup: [],
+      step: {
+        target: R1(3, 0, 'East'),
+        winningSide: 1,
+        outcome: 'WALKOVER',
+        dual: true,
+        flags: { propagateExitStatus: true },
+      },
+    },
+  ],
+  [
     "DOUBLE_ELIMINATION: a first-round dual's own WALKOVER carried to the losers' dual it reaches",
     {
       drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
@@ -1738,6 +1810,20 @@ describe('under v2, a TEAM line is v2s, deciding its dual or not, and leaves exa
 
 const KEPT: [string, Scenario][] = [
   [
+    "COMPASS 8/7: a dual's carry landing in West and going on to South past a BYE: v1's (the carrier placed again)",
+    {
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: COMPASS },
+      setup: [],
+      step: {
+        target: R1(3, 0, 'East'),
+        winningSide: 1,
+        outcome: 'WALKOVER',
+        dual: true,
+        flags: { propagateExitStatus: true },
+      },
+    },
+  ],
+  [
     "COMPASS: a decided dual whose losing side holds no line-up: the loser's assignment writes its seat's sides",
     {
       drawProfile: { drawSize: 8, drawType: COMPASS },
@@ -1833,20 +1919,6 @@ const KEPT: [string, Scenario][] = [
       ),
       step: {
         target: { structureName: 'Main', roundNumber: 2, roundPosition: 1, line: 0 },
-        winningSide: 1,
-        outcome: 'WALKOVER',
-        dual: true,
-        flags: { propagateExitStatus: true },
-      },
-    },
-  ],
-  [
-    "FIRST_MATCH_LOSER_CONSOLATION: a dual's own WALKOVER carried to a seat opposite a BYE, on through it: v1's",
-    {
-      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION, participantsCount: 7 },
-      setup: [],
-      step: {
-        target: R1(2, 0),
         winningSide: 1,
         outcome: 'WALKOVER',
         dual: true,

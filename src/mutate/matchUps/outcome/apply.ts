@@ -389,8 +389,12 @@ function matchUpContext(
 function namedWriters(ops: OutcomeOp[]) {
   const settled = new Map<string, string>();
   const lineUpUnevented = new Set<string>();
+  // a carry recorded beside the BYE a team's line-up is written on (a dual's passage, S7): v1 records it after the
+  // line-up, so the carry's notice is the matchUp's, with its event
+  const relayed = new Set(ops.flatMap((op) => (op.op === 'mergeSideExitProvenance' ? [op.matchUpId] : [])));
   for (const op of ops) {
     if (op.op === 'setSideLineUp') {
+      if (relayed.has(op.matchUpId)) continue;
       settled.set(op.matchUpId, op.announcedAs);
       if (op.announcesEvent === false) lineUpUnevented.add(op.matchUpId);
     } else if (op.op === 'setMatchUpResult') {

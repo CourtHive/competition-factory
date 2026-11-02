@@ -90,7 +90,7 @@ are asked there (S7, `refuseRoute`): row 24's removal clause, row 28 and row 6's
 | 16  | `ERR_INVALID_TIME`                         | the `schedule` carries a time that does not parse (validated before the write, applied after; asked after row 12 and before the dispatch, rows 26 and 13 to 15, where v1 asks it)                                                                                                                                                                                                                                                                                                                                                                                                                                            | `addMatchUpScheduleItems` with `validateOnly`                                                                                                                                                                                                                      |
 | 25  | `ERR_INVALID_DATE`                         | the `schedule` carries a date, or a date-time's date, outside the tournament or off the calendar (#5774; validated before the write, so the outcome does not land)                                                                                                                                                                                                                                                                                                                                                                                                                                                           | `addMatchUpScheduleItems` with `validateOnly`                                                                                                                                                                                                                      |
 | 27  | `ANACHRONISM`                              | the `schedule` carries a recorded time out of played order with a linked matchUp (an end time given with the outcome is judged before the outcome lands, #5979; validated before the write, so the outcome does not land)                                                                                                                                                                                                                                                                                                                                                                                                    | `addMatchUpScheduleItems` with `validateOnly`                                                                                                                                                                                                                      |
-| 29  | the schedule writer's own code             | the `schedule` refused by v1's writer with any other code (`ERR_INVALID_STOP_TIME`, `ERR_INVALID_RESUME_TIME`, `ERR_INVALID_END_TIME`, `ERR_NOT_FOUND_VENUE`, `ERR_INVALID_VALUES` for a court order, ...), returned whole as v1's `validateOnly` pass returns it (S7: these were compared as v2 accepting, a divergence)                                                                                                                                                                                                                                                                                                    |
+| 29  | the schedule writer's own code             | the `schedule` refused by v1's writer with any other code (`ERR_INVALID_STOP_TIME`, `ERR_INVALID_RESUME_TIME`, `ERR_INVALID_END_TIME`, `ERR_NOT_FOUND_VENUE`, `ERR_INVALID_VALUES` for a court order, ...), returned whole as v1's `validateOnly` pass returns it (S7: these were compared as v2 accepting, a divergence)                                                                                                                                                                                                                                                                                                    | `scheduleRefusal` (`scheduleItems.ts`): the refusals, then the write on a copy of the draw                                                                                                                                                                         |
 | 24  | `ERR_MISSING_DRAW_POSITIONS`               | a winner (or, under `propagateExitStatus`, an exit) for a matchUp stored without `drawPositions` that has sent nothing, is not a line of a dual and is not ad hoc: there is nobody to direct. A second clause after row 15: a score with no winner, or a winner's removal (`remove-directed`), on a matchUp holding no `drawPositions` and not ad hoc, a line's dual included, the dual's auto-calc on (`removeDirectedParticipants`, before its first write; v1 asks it before the dual's writes, `removesDirected`; S7) (2026-10-22: was raised by `directParticipants` after the score was written). Checked after row 16 | `missingDrawPositionsRefusal`                                                                                                                                                                                                                                      |
 | 26  | `ERR_ACTIVE_DRAW_POSITION`                 | a swap (`allowChangePropagation`) over a `FIRST_MATCHUP` link that would place a loser on, or take one off, a fed seat that has played on (v1's `fedLoserPlacementRefusal` and `relabelledPathFeedRefusal`, asked before the swap writes). Decided by v2 since S4, on its structural index                                                                                                                                                                                                                                                                                                                                   | `fedLoserPlacementRefusal`, `relabelledPathFeedRefusal`                                                                                                                                                                                                            |
 | 13  | `ERR_UNCHANGED_CANNOT_CHANGE_OUTCOME`      | a line of a dual that holds a double exit, with the dual's downstream active; or changing a double exit that has propagated                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | `resolveAndApplyOutcome`, `winningSideWithDownstreamDependencies` The context names the stored matchUp beside `winningSide`, as v1's `winningSideWithDownstreamDependencies` does.                                                                                 |
@@ -630,8 +630,8 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   the exit lands by RULE 2 or 3 as above, or the structure's last round, where there is nowhere further and the carry
   stops (nothing more is written). Planned where every BYE-held matchUp passed already holds the carrier's position
   (advanced structurally while their seat was empty) opposite a BYE, and the passage ends in the
-  last round or in a clean matchUp; a BYE whose winner crosses a link (DOUBLE_ELIMINATION's Backdraw final) is v1's,
-  and a TEAM dual's passage is v1's (v1 ensures the dual's sides on each BYE matchUp it passes).
+  last round or in a clean matchUp; a BYE whose winner crosses a link (DOUBLE_ELIMINATION's Backdraw final) is v1's.
+  A TEAM dual's passage is planned as a dual's carry is (S7, below).
   It is announced as a score write, its in-context matchUp to a subscriber
   included, and the call's result carries no propagation context. A matchUp that links its loser on
   (COMPASS, OLYMPIC, PLAYOFF) makes the carrier, its loser, carry the exit again (`propagateExitFrom`'s loop):
@@ -745,9 +745,19 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   unfillable seat takes its BYE behind a `FIRST_MATCHUP` link too, as v1 places it (`advanceByeToLoserMatchUp` asks no
   condition); this matchUp's own `FIRST_MATCHUP` feed stays v1's. v1 writes it through
   `modifyMatchUpScore`, not `setMatchUpState`, so it takes no `scoredTime`. Stay v1's: a double exit with a loser link beside a BYE or into a feed round; a carry past a BYE into anything but a clean matchUp or a BYE passage (above); a
-  present opponent, for a carried or a produced exit, with nowhere clean to go on to; a convergence but RULE 4's clean one; a
+  present opponent, for a carried or a produced exit, with nowhere clean to go on to (a produced exit awarded in the
+  structure's final goes nowhere and is planned, S7: the award is all there is; a final whose winner links out, a
+  qualifying final or DOUBLE_ELIMINATION's into its Decider, has its winner target across the link); a convergence but RULE 4's clean one; a
   correction to or from an exit (but the clean clear below); and an exit whose target holds a BYE, an exit or a result
-  (`exit`, `cascade`).
+  but for this one (S7): a double exit whose next matchUp holds a BYE on the side its produced exit is awarded to (a
+  consolation feed round whose fed seat took a BYE, or a plain round's double BYE). v1 leaves that matchUp a BYE: it
+  records the produced exit beside its BYE on the side the double exit feeds (in a plain round the BYE's own origin, the
+  matchUp beside, too), keeps the codes its policy keeps (`[]`), and sends the exit into the matchUp beyond
+  (`advanceByeAdvancedDrawPosition`), where it stands pending, no winner, its score blanked, recorded on the side that
+  BYE matchUp feeds; no position is advanced, and the matchUp beyond is announced with neither event nor tournament.
+  Planned where nothing links a loser on, the BYE matchUp holds nobody on the fed side, and the matchUp beyond is to be
+  played in a plain round of the same structure, holding no position, result, BYE, provenance or loser link; the rest
+  stays v1's (`exit`, `cascade`).
 
   The first **unwind** is owned too (S6). A **double exit cleared** (the `clear-score` route) is v1's `removeDoubleExit`
   and then the clear's own write. It is owned where all the double exit sent on is its produced exit, still pending, in
@@ -1096,13 +1106,17 @@ team's line-up as the draw holds it on its side of each dual it reaches (`setSid
 `updateSidLineUp`): past a BYE the dual beyond first, then the BYE matchUp. The loser's own dual is announced with no
 event (`assignTeamLineUp` hands `updateSideLineUp` none).
 
-**A dual's own exit carried across its loser link** (`propagateExitStatus`) is written on the dual the losing team
-reaches as any carried exit is, by that dual's own call (`setMatchUpState`), whose `ensureSideLineUps` first writes its
-sides with the team arrived: the carried `setMatchUpResult` takes them as `ensuredSides`. That write comes after the
-team's line-up is written there, so the dual is announced as the carried result is (`modifyMatchUpScore`, with its
-event). Planned where both the reached dual's sides hold their drawPositions; a carry that goes on past the dual it
-reaches (its own loser link, as COMPASS's West), through a BYE, or onto a DOUBLE_ELIMINATION losers' dual its arrival
-half places (hydrated unnumbered, read numbered by v1 after the arrival) stays v1's.
+**A dual's own exit carried across its loser link** (`propagateExitStatus`) is written on the dual it lands on as any
+carried exit is, by that dual's own call (`setMatchUpState`), whose `ensureSideLineUps` first writes its sides with the
+team arrived: the carried `setMatchUpResult` takes them as `ensuredSides`. That write comes after the team's line-up is
+written there, so the dual is announced as the carried result is (`modifyMatchUpScore`, with its event). Past a BYE
+(RULE 1, and its passage) the dual it lands on is the one beyond: the BYE dual keeps its BYE and takes the team's
+line-up from the assignment, then records the carry beside its BYE, so it is announced as the carry is
+(`progressExitStatus`, with its event), and the dual beyond is written with its sides ensured. Planned where the carry
+lands on one dual, both its sides holding their drawPositions; a carry that goes on past the dual it lands on (its own
+loser link, as COMPASS's West: the carrier placed again, whose assignment writes the line-up there), or onto a
+DOUBLE_ELIMINATION losers' dual its arrival half places (hydrated unnumbered, read numbered by v1 after the arrival)
+stays v1's.
 
 **A dual's own double exit** (DOUBLE_WALKOVER or DOUBLE_DEFAULT, on a dual still to be played) is written and advanced
 as any double exit is (`doubleExitAdvancement`): the exit it produces in the next dual, awarded to the side opposite or

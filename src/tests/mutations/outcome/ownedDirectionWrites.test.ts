@@ -150,6 +150,42 @@ const AWARDEE_PLAYED_ON: Step[] = [
 ];
 
 const SCENARIOS: [string, Scenario][] = [
+  // S7: a double exit whose next matchUp holds a BYE on the side its produced exit is awarded to (the fed seat a BYE):
+  // that matchUp stays a BYE and records the exit, which stands pending in the matchUp beyond
+  ...(['DOUBLE_WALKOVER', 'DOUBLE_DEFAULT'] as const).flatMap((status): [string, Scenario][] =>
+    [1, 2, 3, 4].map((roundPosition) => [
+      `FIRST_MATCH_LOSER_CONSOLATION 16: Consolation 1/${roundPosition} ${status} beside a fed BYE: the exit pending beyond`,
+      {
+        drawProfile: { drawSize: 16, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+        setup: [
+          ...[1, 2, 3, 4, 5, 6, 7, 8].map((p) => ({ target: R1(p, 'Main'), outcome: won(1) })),
+          ...[1, 2, 3, 4].map((p) => ({
+            target: { roundNumber: 2, roundPosition: p, structureName: 'Main' },
+            outcome: won(1),
+          })),
+        ],
+        steps: [{ target: R1(roundPosition, 'Consolation'), outcome: { matchUpStatus: status } }],
+      },
+    ]),
+  ),
+  // S7: a semifinal's double exit beside a decided semifinal: the exit it produces in the final is the winner's at once,
+  // who goes nowhere (no winner target): the award is all there is
+  [
+    'SINGLE_ELIMINATION: a semifinal double walkover beside a decided one: the final awarded, nothing onward',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: [...TO_FINAL_8().slice(0, 4), { target: { roundNumber: 2, roundPosition: 2 }, outcome: won(2) }],
+      steps: [{ target: { roundNumber: 2, roundPosition: 1 }, outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION: a semifinal double default beside a decided one, under propagateExitStatus: the final awarded',
+    {
+      drawProfile: { drawSize: 4, drawType: SINGLE_ELIMINATION },
+      setup: [{ target: R1(1), outcome: won(1) }],
+      steps: [{ target: R1(2), outcome: { matchUpStatus: DOUBLE_DEFAULT }, params: CARRIED }],
+    },
+  ],
   // S6 tail, family 8: a final's double exit ENTERED produces nothing: the own write, and the own loser seat's BYE where
   // a link feeds one
   [
