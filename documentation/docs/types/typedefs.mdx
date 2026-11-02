@@ -226,22 +226,7 @@ export interface Tournament {
   sanctions?: TournamentSanction[];
   // CODES first-class group leaf: previously stored as separate
   // `schedulingProfile`, `scheduleLimits`, and `scheduleTiming` extensions.
-  scheduling?: {
-    profile?: any;
-    dailyLimits?: any;
-    timing?: any;
-    /** transit between pairs of venues (scheduling-pipeline.md § 3.4): first-class, never a legacy extension */
-    venueTransits?: VenueTransitEntry[];
-    // Alternate ("contingency") scheduling plans a tournament director builds
-    // off the current schedule, cycles through, and can commit as the official
-    // schedule (uncompleted matchUps only). Persisted first-class — NEVER a
-    // legacy extension, and NEVER emitted to public / arena read surfaces.
-    scenarios?: ScheduleScenario[];
-    practice?: {
-      defaultCapacity?: number | null;
-    };
-    [key: string]: any;
-  };
+  scheduling?: TournamentScheduling;
   season?: string;
   startDate?: string;
   surfaceCategory?: SurfaceCategoryUnion;
@@ -1628,6 +1613,99 @@ export interface ScenarioPlacement {
 }
 ```
 
+#### TournamentScheduling
+
+```ts
+/**
+ * `tournamentRecord.scheduling`: the tournament's scheduling state. `profile`, `dailyLimits` and `timing` were the
+ * `schedulingProfile`, `scheduleLimits` and `scheduleTiming` extensions (read either way); `venueTransits`,
+ * `scenarios` and `practice` were always first-class.
+ */
+export interface TournamentScheduling {
+  /** the scheduling profile: which rounds are scheduled on which date at which venue, in order */
+  profile?: ScheduleProfileDate[];
+  /** the tournament's matchUps-per-day limits for each participant */
+  dailyLimits?: TournamentScheduleLimits;
+  /** the tournament's own matchUp format timing, consulted before its scheduling policy */
+  timing?: TournamentScheduleTiming;
+  /** transit between pairs of venues (scheduling-pipeline.md § 3.4): first-class, never a legacy extension */
+  venueTransits?: VenueTransitEntry[];
+  // Alternate ("contingency") scheduling plans a tournament director builds
+  // off the current schedule, cycles through, and can commit as the official
+  // schedule (uncompleted matchUps only). Persisted first-class — NEVER a
+  // legacy extension, and NEVER emitted to public / arena read surfaces.
+  scenarios?: ScheduleScenario[];
+  practice?: {
+    defaultCapacity?: number | null;
+  };
+}
+```
+
+#### ScheduleProfileDate
+
+```ts
+/** One date of a scheduling profile: the rounds each venue takes that day, in order. */
+export interface ScheduleProfileDate {
+  scheduleDate: string;
+  venues?: ScheduleProfileVenue[];
+}
+```
+
+#### ScheduleProfileVenue
+
+```ts
+export interface ScheduleProfileVenue {
+  venueId: string;
+  rounds?: ScheduleProfileRound[];
+}
+```
+
+#### ScheduleProfileRound
+
+```ts
+/** A round (or one segment of it) in a scheduling profile. */
+export interface ScheduleProfileRound {
+  tournamentId?: string;
+  eventId?: string;
+  drawId?: string;
+  structureId?: string;
+  roundNumber?: number;
+  roundSegment?: { segmentNumber: number; segmentsCount: number };
+  /** 'HH:MM': the earliest time the round may start */
+  notBeforeTime?: string;
+  /** minutes per scheduling period for this round; a run's own periodLength beats it */
+  periodLength?: number;
+  /** the round's matchUps, when a profile names them */
+  matchUpIds?: string[];
+  containerStructureId?: string;
+  isRoundRobin?: boolean;
+  // display attributes, not read by scheduling
+  eventName?: string;
+  roundName?: string;
+  sortOrder?: number;
+}
+```
+
+#### TournamentScheduleLimits
+
+```ts
+/** The value of `scheduling.dailyLimits`, as `setMatchUpDailyLimits` writes it. */
+export interface TournamentScheduleLimits {
+  dailyLimits?: { SINGLES?: number; DOUBLES?: number; TEAM?: number; total?: number };
+}
+```
+
+#### TournamentScheduleTiming
+
+```ts
+/** The tournament's own format timing, as `modifyMatchUpFormatTiming` writes it: the scheduling policy's shapes. */
+export interface TournamentScheduleTiming {
+  matchUpAverageTimes?: SchedulingFormatAverageTimes[];
+  matchUpRecoveryTimes?: SchedulingFormatRecoveryTimes[];
+  overnightTimes?: SchedulingCategoryTimes[];
+}
+```
+
 #### ScheduleScenario
 
 ```ts
@@ -2735,8 +2813,41 @@ export interface TournamentSanction {
   fees?: SanctionFee[];
   /** the window in which the application was accepted, where the authority publishes one */
   submissionWindow?: { from?: string; to?: string; timeZone?: string };
+  /** the limits the sanctioning provider's rules set for this tournament: provider-defined, enforced by the factory */
+  constraints?: SanctionConstraints;
   extensions?: Extension[];
   timeItems?: TimeItem[];
+}
+```
+
+#### SanctionConstraints
+
+```ts
+/**
+ * Limits a sanctioning provider's rules set for one tournament. The provider defines its rules where sanctioning
+ * applications are reviewed, and they are resolved into these limits there; the factory enforces them and never
+ * derives them. A tournament with none is unconstrained.
+ */
+export interface SanctionConstraints {
+  /** the provider whose rules define these limits: required, a limit with no author is not a sanction constraint */
+  definedBy: { providerId: string; organisationName?: string };
+  /** which of that provider's rule sets produced them */
+  source?: { policyName?: string; policyVersion?: string };
+  events: SanctionEventConstraints[];
+  extensions?: Extension[];
+}
+```
+
+#### SanctionEventConstraints
+
+```ts
+/** The limits for the events an entry matches: eventType always; eventName and categoryName when stated. */
+export interface SanctionEventConstraints {
+  match: { eventType: EventTypeUnion; eventName?: string; categoryName?: string };
+  drawSize?: number;
+  maxWildcards?: number;
+  maxAlternates?: number;
+  maxQualifiers?: number;
 }
 ```
 

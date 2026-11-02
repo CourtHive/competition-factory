@@ -269,6 +269,7 @@ import type { addConflictDeclaration } from '@Mutate/officiating/addConflictDecl
 import type { addCollectionDefinition } from '@Mutate/tieFormat/addCollectionDefinition';
 import type { unPublishTournamentInfo } from '@Mutate/timeItems/unPublishTournamentInfo';
 import type { addMutationLock } from '@Mutate/tournaments/mutationLocks/addMutationLock';
+import type { setSanctionConstraints } from '@Mutate/tournaments/setSanctionConstraints';
 import type { getCompetitionProfile } from '@Query/drawDefinition/getCompetitionProfile';
 import type { getPositionsPlayedOff } from '@Query/drawDefinition/getPositionsPlayedOff';
 import type { getTournamentPenalties } from '@Query/participants/getTournamentPenalties';
@@ -1361,6 +1362,7 @@ export interface MethodSignatures {
   setPracticeDefaultCapacity: EngineMethod<typeof setPracticeDefaultCapacity>;
   setRegistrationProfile: EngineMethod<typeof setRegistrationProfile>;
   setRotatingPartnerScoring: EngineMethod<typeof setRotatingPartnerScoring>;
+  setSanctionConstraints: EngineMethod<typeof setSanctionConstraints>;
   setSchedulingProfile: EngineMethod<typeof setSchedulingProfile>;
   setStructureOrder: EngineMethod<typeof setStructureOrder>;
   setSubOrder: EngineMethod<typeof setSubOrder>;
