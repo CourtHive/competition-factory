@@ -32,8 +32,11 @@ afterEach(() => {
 const scoring = (policyName: string) => ({ [POLICY_TYPE_SCORING]: { policyName, requireAllPositionsAssigned: false } });
 const avoidance = { [POLICY_TYPE_AVOIDANCE]: { policyName: 'own', roundsToSeparate: undefined, policyAttributes: [] } };
 
-const ownPolicies = (element: any) =>
-  element?.extensions?.find((extension: any) => extension.name === APPLIED_POLICIES)?.value ?? {};
+/** an element's own policies: its first-class appliedPolicies attribute (CODES), with no extension of the name beside it */
+const ownPolicies = (element: any) => {
+  expect((element?.extensions ?? []).some((extension: any) => extension.name === APPLIED_POLICIES)).toEqual(false);
+  return element?.appliedPolicies ?? {};
+};
 
 function withTournamentScoring() {
   const {

@@ -38,36 +38,57 @@ function generatedDraw(nonRandom = 1) {
   return { drawDefinition, structure: drawDefinition.structures.find((s: any) => s.stage === MAIN) };
 }
 
-describe('trap 1 — a duplicate APPLIED_POLICIES extension is silently ignored', () => {
+describe("trap 1 — a policy put beside the draw's own applied policies is silently ignored", () => {
   /**
    * FALSE CONCLUSION IT PREVENTS: "I attached the avoidance policy to the drawDefinition and the
    * code still cannot see it, therefore the policy does not reach positionSeeds."
    *
-   * `getAppliedPolicies` reads the FIRST extension named APPLIED_POLICIES. A generated draw already
-   * carries one holding the seeding policy, so a *pushed* second extension never wins. The policy
-   * has to be MERGED into the existing value.
+   * A generated draw already holds its seeding policy in its first-class `appliedPolicies` attribute
+   * (CODES), and `getAppliedPolicies` reads that attribute, falling back to the APPLIED_POLICIES
+   * extension only when there is none. So a policy *pushed* as an extension never wins. The policy
+   * has to be MERGED into the attribute.
    */
-  it('ignores a pushed second extension, and honours a merged one', () => {
+  it('ignores a pushed extension beside the attribute, and honours a merged one', () => {
     const { drawDefinition } = generatedDraw();
     const avoidance = { policyAttributes: [{ directive: 'groupParticipants' }] };
 
-    // The generated draw already has one, which is the whole reason the push below loses.
-    const preExisting = (drawDefinition.extensions ?? []).filter((e: any) => e.name === APPLIED_POLICIES);
-    expect(preExisting.length).toEqual(1);
+    // The generated draw already holds its policies, which is the whole reason the push below loses.
+    expect(Object.keys(drawDefinition.appliedPolicies ?? {}).length).toBeGreaterThan(0);
+    expect((drawDefinition.extensions ?? []).filter((e: any) => e.name === APPLIED_POLICIES).length).toEqual(0);
+
+    drawDefinition.extensions = drawDefinition.extensions ?? [];
+    drawDefinition.extensions.push({ name: APPLIED_POLICIES, value: { [POLICY_TYPE_AVOIDANCE]: avoidance } });
+    const afterPush = getAppliedPolicies({ drawDefinition }).appliedPolicies;
+    expect(afterPush?.[POLICY_TYPE_AVOIDANCE]).toBeUndefined();
+    // Control: the read itself works — the attribute's policies come back fine. Without this,
+    // an appliedPolicies of `{}` for any unrelated reason would satisfy the assertion above.
+    expect(Object.keys(afterPush ?? {}).length).toBeGreaterThan(0);
+
+    // Merging into the attribute is what actually works.
+    drawDefinition.appliedPolicies = { ...drawDefinition.appliedPolicies, [POLICY_TYPE_AVOIDANCE]: avoidance };
+    const afterMerge = getAppliedPolicies({ drawDefinition }).appliedPolicies;
+    expect(afterMerge?.[POLICY_TYPE_AVOIDANCE]).toBeDefined();
+  });
+
+  /**
+   * The same trap on a record written before the attribute (policies only in the extension): the reader
+   * takes the FIRST extension of the name, so a pushed second one never wins.
+   */
+  it('on an extension-only record, ignores a pushed second extension, and honours a merged one', () => {
+    const { drawDefinition } = generatedDraw();
+    const avoidance = { policyAttributes: [{ directive: 'groupParticipants' }] };
+    const policies = drawDefinition.appliedPolicies;
+    delete drawDefinition.appliedPolicies;
+    drawDefinition.extensions = [{ name: APPLIED_POLICIES, value: policies }];
 
     drawDefinition.extensions.push({ name: APPLIED_POLICIES, value: { [POLICY_TYPE_AVOIDANCE]: avoidance } });
     const afterPush = getAppliedPolicies({ drawDefinition }).appliedPolicies;
     expect(afterPush?.[POLICY_TYPE_AVOIDANCE]).toBeUndefined();
-    // Control: the read itself works — the FIRST extension's policies come back fine. Without this,
-    // an appliedPolicies of `{}` for any unrelated reason would satisfy the assertion above.
     expect(Object.keys(afterPush ?? {}).length).toBeGreaterThan(0);
 
-    // Merging into the first one is what actually works.
-    drawDefinition.extensions = drawDefinition.extensions.filter((e: any) => e.name !== APPLIED_POLICIES);
-    drawDefinition.extensions.push({
-      name: APPLIED_POLICIES,
-      value: { ...preExisting[0].value, [POLICY_TYPE_AVOIDANCE]: avoidance },
-    });
+    drawDefinition.extensions = [
+      { name: APPLIED_POLICIES, value: { ...policies, [POLICY_TYPE_AVOIDANCE]: avoidance } },
+    ];
     const afterMerge = getAppliedPolicies({ drawDefinition }).appliedPolicies;
     expect(afterMerge?.[POLICY_TYPE_AVOIDANCE]).toBeDefined();
   });

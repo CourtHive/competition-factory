@@ -5,7 +5,6 @@ import { expect, it } from 'vitest';
 // constants
 import { ALTERNATE_PARTICIPANT } from '@Constants/positionActionConstants';
 import { POLICY_TYPE_POSITION_ACTIONS } from '@Constants/policyConstants';
-import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { ALTERNATE } from '@Constants/entryStatusConstants';
 
@@ -132,8 +131,8 @@ it('can extend Alternates to DIRECT_ACCEPTANCE participants in other flights', (
     event,
   } = tournamentEngine.getEvent({ drawId });
 
-  const attachedPolicy = event.extensions.find(({ name }) => name === APPLIED_POLICIES);
-  expect(attachedPolicy.value[POLICY_TYPE_POSITION_ACTIONS]).not.toBeUndefined();
+  // the event's policies are its first-class appliedPolicies attribute (CODES)
+  expect(event.appliedPolicies?.[POLICY_TYPE_POSITION_ACTIONS]).not.toBeUndefined();
 
   let result = tournamentEngine.positionActions({
     drawPosition: 1,

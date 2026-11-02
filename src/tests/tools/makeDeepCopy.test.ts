@@ -5,32 +5,30 @@ import { expect, it, test } from 'vitest';
 import { UUID } from '@Tools/UUID';
 
 // constants
-import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { MALE } from '@Constants/genderConstants';
+
+const TEST_EXTENSION = 'testExtension';
 
 it('can convert extensions during deepCopy', () => {
   let { tournamentRecord } = mocksEngine.generateTournamentRecord();
   tournamentEngine.setState(tournamentRecord);
 
-  const scoringPolicy = {
-    scoring: { policyName: 'TEST', someAttribute: 'somevalue' },
-  };
-  let result = tournamentEngine.attachPolicies({
-    policyDefinitions: scoringPolicy,
-  });
+  // a tournament extension to convert (applied policies, which this used, are a first-class attribute since CODES)
+  const extensionValue = { scoring: { policyName: 'TEST', someAttribute: 'somevalue' } };
+  let result = tournamentEngine.addTournamentExtension({ extension: { name: TEST_EXTENSION, value: extensionValue } });
   expect(result.success).toEqual(true);
 
   ({ tournamentRecord } = tournamentEngine.getTournament());
   const extensionNames = tournamentRecord.extensions.map(({ name }) => name);
-  expect(extensionNames.includes(APPLIED_POLICIES)).toEqual(true);
+  expect(extensionNames.includes(TEST_EXTENSION)).toEqual(true);
 
   ({ tournamentRecord } = tournamentEngine.getTournament({
     convertExtensions: true,
   }));
   expect(tournamentRecord.extensions).toBeUndefined();
-  expect(tournamentRecord._appliedPolicies.scoring).not.toBeUndefined();
+  expect(tournamentRecord[`_${TEST_EXTENSION}`].scoring).not.toBeUndefined();
 
   const participantId = UUID();
   const participant = {
@@ -66,17 +64,15 @@ it('can remove extensions', () => {
   let { tournamentRecord } = mocksEngine.generateTournamentRecord();
   tournamentEngine.setState(tournamentRecord);
 
-  const scoringPolicy = {
-    scoring: { policyName: 'TEST', someAttribute: 'someValue' },
-  };
-  const result = tournamentEngine.attachPolicies({
-    policyDefinitions: scoringPolicy,
+  const extensionValue = { scoring: { policyName: 'TEST', someAttribute: 'someValue' } };
+  const result = tournamentEngine.addTournamentExtension({
+    extension: { name: TEST_EXTENSION, value: extensionValue },
   });
   expect(result.success).toEqual(true);
 
   ({ tournamentRecord } = tournamentEngine.getTournament());
   const extensionNames = tournamentRecord.extensions.map(({ name }) => name);
-  expect(extensionNames.includes(APPLIED_POLICIES)).toEqual(true);
+  expect(extensionNames.includes(TEST_EXTENSION)).toEqual(true);
 
   ({ tournamentRecord } = tournamentEngine.getTournament({
     removeExtensions: true,

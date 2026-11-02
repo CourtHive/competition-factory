@@ -31,8 +31,11 @@ describe('the API upholds one-extension-per-name', () => {
     });
 
     const record = tournamentEngine.getTournament().tournamentRecord;
+    // applied policies are the first-class appliedPolicies attribute (CODES): one value, replaced in place, and no
+    // extension of the name beside it
     const applied = (record.extensions ?? []).filter((e: any) => e.name === APPLIED_POLICIES);
-    expect(applied.length).toEqual(1);
+    expect(applied.length).toEqual(0);
+    expect(record.appliedPolicies?.[POLICY_TYPE_AVOIDANCE]?.policyName).toEqual('second');
     expect(getExtensionAnomalies({ tournamentRecord: record })).toEqual([]);
   });
 });

@@ -47,8 +47,9 @@ it('generates correct finishingPositionRanges for SINGLE_ELIMINATION draws', () 
   result = tournamentEngine.addDrawDefinition({ eventId, drawDefinition });
   expect(result.success).toEqual(true);
 
-  const { extensions } = drawDefinition;
-  expect(extensions.length).toEqual(1);
+  // the draw's seeding policy is its first-class appliedPolicies attribute (CODES), not an extension
+  expect(drawDefinition.extensions?.length ?? 0).toEqual(0);
+  expect(Object.keys(drawDefinition.appliedPolicies ?? {}).length).toEqual(1);
   const { appliedPolicies } = getAppliedPolicies({ drawDefinition });
   expect(appliedPolicies?.seeding?.policyName).toEqual('ITF SEEDING');
 
