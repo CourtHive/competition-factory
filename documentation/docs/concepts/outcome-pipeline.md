@@ -979,7 +979,7 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   a loser carries, the exit a double exit produces, two exits converging, the swap, a decider's
   settlement, TEAM auto-calc and the direction of a dual its lines decide, and an exit that meets a
   BYE (none may be left labelled an exit beside it). A refusal v1 raises at the apply stage, where
-  v2 does not reach (`APPLY_STAGE_CODES`: an assigned or occupied drawPosition inside the exit cascade, and `ERR_FORCED`; and `ERR_MISSING_ASSIGNMENTS`, a manual-scoring line's; the status checks a write makes are v2's own rows since S7, rows 6, 24 and 28), is recorded as
+  v2 does not reach (`APPLY_STAGE_CODES`: `ERR_FORCED`, and `ERR_MISSING_ASSIGNMENTS`, a manual-scoring line's; the status checks a write makes are v2's own rows since S7, rows 6, 24 and 28; an assigned or occupied drawPosition inside the exit cascade is not one since S7: v1 no longer raises either after its first write, so one raised there is a divergence), is recorded as
   deferred rather than a divergence; so is a step v2 does not yet plan, such as a relabel whose
   loser stands past a BYE, or an exit carried into a swap. `getDifferentialTally()` counts compared
   and deferred decisions by route.
