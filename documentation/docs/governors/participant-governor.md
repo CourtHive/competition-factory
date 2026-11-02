@@ -665,6 +665,10 @@ A `nationalityCode` that is not a string is refused.
 - `notes` is stored as a string (`''` clears it). `addNotes` cannot reach a stored participant through the engine.
 - `contacts`, `onlineResources` and `participantRoleResponsibilities` must be arrays, and they replace the stored
   lists.
+- `onlineResources` entries are CODES OnlineResource objects, checked as `person.onlineResources` is: the type is
+  `resourceType`, one of `SOCIAL_MEDIA`, `URL`, `EMAIL` or `OTHER`, and an attribute CODES does not define (such as
+  `resource` in place of `resourceType`) is refused. A stored list that holds such an entry can still be sent back
+  unchanged; a changed list must be all CODES entries.
 - `individualParticipantIds` must be INDIVIDUAL participants of the tournament. An id the grouping already holds but
   that no longer exists is tolerated and removed. A PAIR must have exactly two members unless `pairOverride: true`
   is passed. An INDIVIDUAL has no members (`INVALID_PARTICIPANT_TYPE`).
