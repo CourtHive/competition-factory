@@ -256,6 +256,10 @@ console.log(`${overLimitMatchUpIds.length} matches blocked by daily limits`);
 - 30 minutes: Standard tournaments (best of 3 sets) ← Most common
 - 60 minutes: Long format events (best of 5 sets)
 
+A round in the profile may state its own `periodLength`; the scheduling policy may state a `defaultPeriodLength`. The call's
+`periodLength` beats both, and a round's own beats the policy's; rounds of one venue with different periods are planned in
+stages, each on its own grid (see [The scheduling pipeline § 4](/docs/concepts/scheduling-pipeline#4-the-timed-pipeline-scheduleprofilerounds)).
+
 See [Period Length documentation](/docs/concepts/automated-scheduling#period-length-scheduling-block-size) for detailed explanation.
 :::
 

@@ -59,6 +59,14 @@ The `periodLength` parameter (default: 30 minutes) defines the granularity of ti
 - Championship events with extended match durations
 - Fewer courts and matches, less need for fine-grained optimization
 
+### Where the period comes from
+
+A call's `periodLength` always wins. Without one, the scheduling policy's `defaultPeriodLength` is used
+([Scheduling policy](../policies/scheduling.md#defaultperiodlength)), and in a scheduling profile a round may state its own
+`periodLength`, which beats the policy's. `scheduleProfileRounds` plans rounds of different periods in stages, each on its
+own grid ([The scheduling pipeline § 4](./scheduling-pipeline.md#4-the-timed-pipeline-scheduleprofilerounds)). With nothing
+stated, the defaults are as before.
+
 ### Examples
 
 ```js

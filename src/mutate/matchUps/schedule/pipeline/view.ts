@@ -1,3 +1,4 @@
+import { drawDefaultPeriodLengthResolver, statedPeriodLength } from '@Generators/scheduling/utils/defaultPeriodLength';
 import { getParticipantReachability, ParticipantReachability } from '../scheduleMatchUps/getParticipantReachability';
 import { getSchedulingProfile, schedulingProfileRepairRefusal } from '@Mutate/tournaments/schedulingProfile';
 import { EventBookingTimings, getEventBookingTimings } from '@Generators/scheduling/utils/generateBookings';
@@ -69,7 +70,14 @@ export type RoundPlan = {
   minutes?: Minutes;
   /** a round with no format: its schedulable matchUps not yet timed, which a run reports and does not place */
   noFormatMatchUpIds?: string[];
+  /** the round's own `periodLength`, else the call's, else 30: carried for reporting, never read by the plan */
   periodLength: number;
+  /**
+   * the period the round states: its own `periodLength`, else its scheduling policy's `defaultPeriodLength` (the
+   * draw's, else the event's, else the tournament's). Absent when neither states one: the plan then sizes the round's
+   * periods as it always has (scheduling-pipeline.md § 4, step 2). The call's `periodLength` beats it, in the plan.
+   */
+  statedPeriodLength?: number;
   error?: ErrorType;
 };
 export type VenuePlan = { venueId: string; rounds: RoundPlan[] };
@@ -265,6 +273,13 @@ export function buildSchedulingView({
   const eventDateSkippedMatchUpIds: SchedulingView['eventDateSkippedMatchUpIds'] = {};
   const eventDateInactiveMatchUpIds: SchedulingView['eventDateInactiveMatchUpIds'] = {};
 
+  // the period each round states (its own, else its policy's), read once per draw
+  const drawDefaultPeriod = drawDefaultPeriodLengthResolver(tournamentRecords);
+  const roundStatedPeriod = (round: ProfileRound) => {
+    const minutes = statedPeriodLength(round.periodLength) ?? drawDefaultPeriod(round);
+    return minutes === undefined ? {} : { statedPeriodLength: minutes };
+  };
+
   const dates: DatePlan[] = dateProfiles.map((dateProfile) => {
     const scheduleDate = extractDate(dateProfile.scheduleDate);
     const skipped = (eventDateSkippedMatchUpIds[scheduleDate] = [] as EventDateSkip[]);
@@ -307,7 +322,14 @@ export function buildSchedulingView({
           const profiledMatchUpIds = inRound.filter(schedulable).map(({ matchUpId }) => matchUpId);
           const matchUpIds = profiledMatchUpIds.filter((matchUpId) => !claimed.has(matchUpId));
           matchUpIds.forEach((matchUpId) => claimed.add(matchUpId));
-          return { round, matchUpIds, profiledMatchUpIds, minutes: roundTiming, periodLength: roundPeriodLength };
+          return {
+            round,
+            matchUpIds,
+            profiledMatchUpIds,
+            minutes: roundTiming,
+            periodLength: roundPeriodLength,
+            ...roundStatedPeriod(round),
+          };
         }),
       };
     });

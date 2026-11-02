@@ -1,4 +1,5 @@
 import { matchUpFormatTimes, resolveTimingDetails } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
+import { recordsDefaultPeriodLength } from '@Assemblies/generators/scheduling/utils/defaultPeriodLength';
 import { calculatePeriodLength } from '@Assemblies/generators/scheduling/utils/calculatePeriodLength';
 import { getScheduleTiming } from '@Query/extensions/matchUpFormatTiming/getScheduleTiming';
 import { competitionScheduleMatchUps } from '@Query/matchUps/competitionScheduleMatchUps';
@@ -51,6 +52,7 @@ export function calculateScheduleTimes({
 
   periodLength =
     periodLength ??
+    recordsDefaultPeriodLength(tournamentRecords) ??
     calculatePeriodLength({
       recoveryMinutes: defaultRecoveryMinutes,
       averageMatchUpMinutes,

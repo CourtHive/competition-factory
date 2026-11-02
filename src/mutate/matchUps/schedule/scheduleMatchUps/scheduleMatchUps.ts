@@ -1,3 +1,4 @@
+import { drawDefaultPeriodLengthResolver } from '@Generators/scheduling/utils/defaultPeriodLength';
 import { extractDate, extractTime, isValidDateString, sameDay, zeroPad } from '@Tools/dateTime';
 import { overnightRestWarningsFor } from '@Query/matchUps/scheduling/getOvernightRestWarnings';
 import { getMatchUpDailyLimits } from '@Query/extensions/getMatchUpDailyLimits';
@@ -49,7 +50,8 @@ import {
  * @param {string} startTime - 00:00 - military time string
  * @param {string} endTime - 00:00 - military time string
  *
- * @param {number} periodLength - granularity of time blocks to consider, in minutes
+ * @param {number} periodLength - granularity of time blocks to consider, in minutes; absent, the smallest
+ *   `defaultPeriodLength` the listed matchUps' scheduling policies state (draw, else event, else tournament), else 30
  * @param {number} averageMatchUpMinutes - how long the expected matchUps are expected to last, in minutes, on average
  * @param {number} recoveryMinutes - time in minutes that should be alloted for participants to recover between matches
  *   (when neither is stated, a timing in the tournament or the event decides; with none, 90 and 0)
@@ -76,7 +78,7 @@ export function scheduleMatchUps(params) {
     remainingScheduleTimes,
     clearScheduleDates,
 
-    periodLength = 30,
+    periodLength: statedPeriodLength,
     scheduleDate,
     matchUpIds,
     venueIds,
@@ -136,6 +138,14 @@ export function scheduleMatchUps(params) {
   const targetMatchUps = matchUpIds
     .map((matchUpId) => competitionMatchUps.find((matchUp) => matchUp.matchUpId === matchUpId))
     .filter(Boolean);
+  // the call's period, else the smallest default the listed matchUps' scheduling policies state, else 30
+  const policyPeriodLength = drawDefaultPeriodLengthResolver(tournamentRecords);
+  const policyPeriodLengths = targetMatchUps
+    .map((matchUp) => policyPeriodLength(matchUp))
+    .filter((minutes): minutes is number => minutes !== undefined);
+  const periodLength =
+    statedPeriodLength ?? (policyPeriodLengths.length ? Math.min(...policyPeriodLengths) : undefined) ?? 30;
+
   const listedMatchUps = Object.fromEntries(targetMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
 
   const dateMatchUps = competitionMatchUps.filter(

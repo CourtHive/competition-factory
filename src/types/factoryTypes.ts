@@ -40,6 +40,7 @@ import {
   POLICY_TYPE_SCORING,
   POLICY_TYPE_ROTATING_PARTNER_TALLY,
   POLICY_TYPE_ROUND_ROBIN_TALLY,
+  POLICY_TYPE_SCHEDULING,
 } from '@Constants/policyConstants';
 
 export type FactoryEngine = {
@@ -410,11 +411,27 @@ export type HydratedFlight = Flight & { drawDefinition?: DrawDefinition };
 /** `getFlightProfile`'s return through an engine (called with `eventId`): a deep copy whose flights carry their draws. */
 export type HydratedFlightProfile = Omit<FlightProfile, 'flights'> & { flights: HydratedFlight[] };
 
+/**
+ * A SCHEDULING policy: the members typed so far. Its other members (`defaultTimes`, `defaultDailyLimits`,
+ * `matchUpAverageTimes`, `matchUpRecoveryTimes`, …) are described in the scheduling policy docs and stay untyped here,
+ * as every policy type not listed below is. Stored, like every policy, in the record's applied policies, resolved for a
+ * draw from the draw's policy, else its event's, else the tournament's.
+ */
+export type SchedulingPolicy = {
+  /**
+   * Minutes per scheduling period (Garman's `L`) for a run that does not state one. A run's own `periodLength` wins,
+   * then a profile round's own `periodLength`, then this; absent, the schedulers keep their own defaults. A positive
+   * number; anything else is ignored.
+   */
+  defaultPeriodLength?: number;
+};
+
 export type PolicyDefinitions = {
   [key in ValidPolicyTypes]?: { [key: string]: any };
 } & {
   [POLICY_TYPE_ROTATING_PARTNER_TALLY]?: RotatingPartnerTallyPolicy;
   [POLICY_TYPE_SEEDING]?: SeedingPolicy;
+  [POLICY_TYPE_SCHEDULING]?: SchedulingPolicy;
   [POLICY_TYPE_ROUND_ROBIN_TALLY]?: RoundRobinTallyPolicy;
   [POLICY_TYPE_SCORING]?: { rotatingPartners?: RotatingPartnerScoringPolicies; [key: string]: unknown };
 };
