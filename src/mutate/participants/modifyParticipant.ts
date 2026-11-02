@@ -25,10 +25,16 @@ import { SUCCESS } from '@Constants/resultConstants';
 import { TEAM } from '@Constants/matchUpTypes';
 import {
   CANNOT_MODIFY_PARTICIPANT_TYPE,
-  INVALID_DATE,
+  INVALID_PARTICIPANT_TYPE,
   INVALID_PARTICIPANT_IDS,
+  VENUE_NOT_FOUND,
   INVALID_VALUES,
+  INVALID_DATE,
 } from '@Constants/errorConditionConstants';
+
+// types
+import { ParticipantStatusEnum, type Participant, type Tournament } from '@Types/tournamentTypes';
+import type { ResultType } from '@Types/factoryTypes';
 
 export function modifyParticipant(params) {
   const {
@@ -69,6 +75,16 @@ export function modifyParticipant(params) {
 
   const newValues: any = {};
   const clearedKeys: string[] = [];
+
+  // Refused before anything is written: these used to return success while dropping the value.
+  const attributesResult = setParticipantAttributes({
+    tournamentRecord,
+    existingParticipant,
+    participant,
+    clearedKeys,
+    newValues,
+  });
+  if (attributesResult?.error) return attributesResult;
 
   // validate participant attributes
   if (contacts) newValues.contacts = contacts;
@@ -163,6 +179,74 @@ export function modifyParticipant(params) {
     // conditional: callers that did not hit the precedence see the response shape they always have
     ...(participantNameSuperseded && { info: PARTICIPANT_NAME_DERIVED_FROM_PERSON }),
   };
+}
+
+const participantStatuses: string[] = Object.values(ParticipantStatusEnum);
+
+/**
+ * Participant attributes that had no write path: `modifyParticipant` returned success and dropped them.
+ *
+ * `undefined` leaves a field untouched and '' clears a scalar (see isClearRequest); `[]` clears `homeVenueIds`.
+ * A value is refused, never dropped, when it is invalid -- EXCEPT a value equal to what the participant already
+ * carries: consumers send the whole participant on every save, and an unrelated edit must not fail on a value
+ * this call does not change (a home venue since deleted, say).
+ */
+function setParticipantAttributes({ tournamentRecord, existingParticipant, participant, clearedKeys, newValues }) {
+  const { homeVenueIds, participantStatus, representing, useOtherName } = participant;
+
+  if (homeVenueIds !== undefined) {
+    const result = getHomeVenueIds({ tournamentRecord, existingParticipant, homeVenueIds });
+    if (result.error) return result;
+    if (result.homeVenueIds?.length) newValues.homeVenueIds = result.homeVenueIds;
+    else clearedKeys.push('homeVenueIds');
+  }
+
+  if (isClearRequest(participantStatus)) {
+    clearedKeys.push('participantStatus');
+  } else if (participantStatus !== undefined && participantStatus !== existingParticipant.participantStatus) {
+    if (!participantStatuses.includes(participantStatus))
+      return { error: INVALID_VALUES, info: 'participantStatus must be ACTIVE or WITHDRAWN', participantStatus };
+    newValues.participantStatus = participantStatus;
+  }
+
+  if (isClearRequest(representing)) {
+    clearedKeys.push('representing');
+  } else if (representing !== undefined && representing !== existingParticipant.representing) {
+    if (!isString(representing) || !validNationalityCode(representing))
+      return { error: INVALID_VALUES, info: 'representing must be a country code', representing };
+    newValues.representing = representing;
+  }
+
+  if (useOtherName !== undefined) {
+    if (typeof useOtherName !== 'boolean')
+      return { error: INVALID_VALUES, info: 'useOtherName must be a boolean', useOtherName };
+    newValues.useOtherName = useOtherName;
+  }
+
+  return undefined;
+}
+
+// A TEAM's home venues: each must be a venue of this tournament. Only a TEAM has home venues.
+type GetHomeVenueIdsArgs = { tournamentRecord: Tournament; existingParticipant: Participant; homeVenueIds: unknown };
+type HomeVenueIdsResult = ResultType & { homeVenueIds?: string[]; venueIds?: string[] };
+
+function getHomeVenueIds({
+  tournamentRecord,
+  existingParticipant,
+  homeVenueIds,
+}: GetHomeVenueIdsArgs): HomeVenueIdsResult {
+  if (!Array.isArray(homeVenueIds) || !homeVenueIds.every(isString))
+    return { error: INVALID_VALUES, info: 'homeVenueIds must be an array of venueIds', context: { homeVenueIds } };
+  const uniqueVenueIds: string[] = [...new Set<string>(homeVenueIds)];
+  if (uniqueVenueIds.length && existingParticipant.participantType !== TEAM)
+    return { error: INVALID_PARTICIPANT_TYPE, info: 'only a TEAM participant has homeVenueIds' };
+
+  const venueIds = new Set((tournamentRecord.venues ?? []).map((venue) => venue.venueId));
+  const heldVenueIds = existingParticipant.homeVenueIds ?? [];
+  const unknownVenueIds = uniqueVenueIds.filter((venueId) => !venueIds.has(venueId) && !heldVenueIds.includes(venueId));
+  if (unknownVenueIds.length) return { error: VENUE_NOT_FOUND, venueIds: unknownVenueIds };
+
+  return { homeVenueIds: uniqueVenueIds };
 }
 
 function updateIndividualParticipantIds({
