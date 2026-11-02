@@ -78,7 +78,8 @@ tournamentEngine.attachPolicies({
 ```
 
 Once attached, the policy travels with the tournament record. Like every attached policy, it is stored in the
-tournament's `appliedPolicies` extension, under the `print` key; there is no extension named `print`.
+tournament's `appliedPolicies` attribute (the `appliedPolicies` extension on older records), under the `print` key;
+there is no extension named `print`.
 
 A print policy can also be attached to an event or a draw (`attachPolicies({ policyDefinitions, eventId })`, or
 `drawId`), for prints that belong to them: a draw sheet, a sign-in sheet, a player list.

@@ -3,7 +3,7 @@ title: Avoidance Policies
 ---
 
 :::info CODES schema
-This policy's shape is the `AvoidancePolicy` definition in `tournament.schema.json` (under `PolicyDefinitions`), closed: an attribute it does not list does not validate. Policies are still stored in the applied-policies extension.
+This policy's shape is the `AvoidancePolicy` definition in `tournament.schema.json` (under `PolicyDefinitions`), closed: an attribute it does not list does not validate. Policies are stored in each element's first-class `appliedPolicies` attribute (the `appliedPolicies` extension on older records).
 :::
 
 ## Overview
