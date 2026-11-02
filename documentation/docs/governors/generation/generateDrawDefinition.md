@@ -126,9 +126,15 @@ larger than the entrants can pair) are returned to the caller rather than leavin
   qualifyingConflicts?: any[];        // Conflicts during qualifying generation
   positioningReports?: any[];         // Details of automated positioning decisions
   conflicts?: any[];                  // General generation conflicts
+  warnings?: ResultWarning[];         // ENTRIES_NOT_PLACED per stage that left entries out (present when any)
   success: boolean;
 }
 ```
+
+`warnings` is present when generation left entries out because their stage was full: generating from the event's
+entries takes those that fit and leaves the surplus on the event. Each `ENTRIES_NOT_PLACED` warning is
+`{ code, message, stage, participantIds, count, drawSize, drawId, entries: [{ participantId, entryStatus, reason }] }`.
+See [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition) for an example.
 
 ## Generation Pipeline
 

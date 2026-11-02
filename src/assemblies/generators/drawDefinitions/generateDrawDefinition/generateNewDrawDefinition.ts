@@ -8,6 +8,7 @@ import structureTemplate from '@Generators/templates/structureTemplate';
 import { getStageEntries } from '@Query/drawDefinition/stageGetter';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
+import { entryNotPlaced } from './entriesNotPlaced';
 import { constantToString } from '@Tools/strings';
 import { generateAdHoc } from './generateAdHoc';
 import { prepareStage } from './prepareStage';
@@ -17,10 +18,11 @@ import { ensureInt } from '@Tools/ensureInt';
 import { DIRECT_ENTRY_STATUSES, WITHDRAWN } from '@Constants/entryStatusConstants';
 import { INSUFFICIENT_DRAW_POSITIONS } from '@Constants/errorConditionConstants';
 import { MAIN, POSITION, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { EntryNotPlaced, ResultType } from '@Types/factoryTypes';
 import { DrawDefinition } from '@Types/tournamentTypes';
-import { ResultType } from '@Types/factoryTypes';
 
 export function generateNewDrawDefinition(params): ResultType & {
+  entriesNotPlaced?: EntryNotPlaced[];
   drawDefinition?: DrawDefinition;
   positioningReports?: any[];
   structureId?: string;
@@ -65,6 +67,7 @@ export function generateNewDrawDefinition(params): ResultType & {
     event,
   });
   if (addResult.error) return addResult;
+  const { entriesNotPlaced } = addResult;
 
   // When qualifyingPlaceholder is requested, create the placeholder structure and link
   // BEFORE positioning so that getByesData/getQualifiersCount can account for qualifier positions.
@@ -140,12 +143,14 @@ export function generateNewDrawDefinition(params): ResultType & {
     if (adHocResult?.error) return adHocResult;
   }
 
-  return { drawDefinition, positioningReports, conflicts, structureId };
+  return { drawDefinition, positioningReports, conflicts, structureId, entriesNotPlaced };
 }
 
-function addEntries(params) {
+function addEntries(params): ResultType & { entriesNotPlaced?: EntryNotPlaced[] } {
   const { ignoreStageSpace, tournamentRecord, drawDefinition, drawEntries, drawType, qualifyingOnly, entries, event } =
     params;
+  // entries left out for want of a place in their stage: reported as an ENTRIES_NOT_PLACED warning
+  const entriesNotPlaced: EntryNotPlaced[] = [];
   // add all entries to the draw
   for (const entry of entries) {
     // safeguard: never add WITHDRAWN entries to draw definition
@@ -182,9 +187,12 @@ function addEntries(params) {
     // sanctioned limits before generating, so this is a backstop
     if (result.error && isSanctionLimitedStatus({ tournamentRecord, entryStatus: entryData.entryStatus, event }))
       return result;
+
+    const notPlaced = entryNotPlaced({ entry: entryData, result });
+    if (notPlaced) entriesNotPlaced.push(notPlaced);
   }
 
-  return { error: undefined };
+  return { error: undefined, entriesNotPlaced };
 }
 
 type CheckMainFitsArgs = {

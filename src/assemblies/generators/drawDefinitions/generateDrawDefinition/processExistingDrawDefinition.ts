@@ -2,13 +2,15 @@ import { generateQualifyingStructures } from '@Generators/drawDefinitions/drawTy
 import { generateQualifyingLink } from '@Generators/drawDefinitions/links/generateQualifyingLink';
 import { isSanctionLimitedStatus } from '@Query/drawDefinition/checkSanctionedEntryLimits';
 import { addDrawEntry } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
+import { entryNotPlaced } from './entriesNotPlaced';
 
 // constants and types
 import type { DrawDefinition, Entry, Event, Tournament } from '@Types/tournamentTypes';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
-import { ResultType } from '@Types/factoryTypes';
+import { EntryNotPlaced, ResultType } from '@Types/factoryTypes';
 
 export function processExistingDrawDefinition(params): ResultType & {
+  entriesNotPlaced?: EntryNotPlaced[];
   structureId?: string;
   drawDefinition?: DrawDefinition;
 } {
@@ -73,7 +75,7 @@ export function processExistingDrawDefinition(params): ResultType & {
   const qResult = processQualifyingDetails({ mainStructure, qualifyingDetails, drawDefinition });
   if (qResult.error) return qResult;
 
-  return { drawDefinition, structureId };
+  return { drawDefinition, structureId, entriesNotPlaced: entriesResult.entriesNotPlaced };
 }
 
 type AddEntriesArgs = {
@@ -83,7 +85,11 @@ type AddEntriesArgs = {
   event?: Event;
 };
 
-function addEntries({ tournamentRecord, drawDefinition, drawEntries, event }: AddEntriesArgs): ResultType {
+function addEntries({ tournamentRecord, drawDefinition, drawEntries, event }: AddEntriesArgs): ResultType & {
+  entriesNotPlaced?: EntryNotPlaced[];
+} {
+  // QUALIFYING entries left out for want of a place: reported as an ENTRIES_NOT_PLACED warning
+  const entriesNotPlaced: EntryNotPlaced[] = [];
   for (const entry of (drawEntries ?? []).filter(({ entryStage }) => entryStage === QUALIFYING)) {
     // tournamentRecord and event resolve the sanctioning constraints addDrawEntry applies
     const entryData = {
@@ -99,8 +105,11 @@ function addEntries({ tournamentRecord, drawDefinition, drawEntries, event }: Ad
     const result = addDrawEntry(entryData);
     if (result.error && isSanctionLimitedStatus({ tournamentRecord, entryStatus: entry.entryStatus, event }))
       return result;
+
+    const notPlaced = entryNotPlaced({ entry: entryData, result });
+    if (notPlaced) entriesNotPlaced.push(notPlaced);
   }
-  return { error: undefined };
+  return { error: undefined, entriesNotPlaced };
 }
 
 function processQualifyingDetails({ mainStructure, qualifyingDetails, drawDefinition }): ResultType {

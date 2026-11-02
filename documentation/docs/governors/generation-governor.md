@@ -253,6 +253,31 @@ event's entries takes only the entries selected for the structure, so `ALTERNATE
 `drawEntries` carry them. An explicit `ignoreStageSpace: true` and `AD_HOC` draws are exempt; an unsanctioned
 event, or one the constraints do not match, is unaffected. Until 2026-11 generation did not apply the limits.
 
+**Entries not placed.** Generating from the event's entries (no `drawEntries`) takes the entries that fit each
+stage, in entry order, and leaves the surplus on the event: a `drawSize: 16` from 20 accepted entries holds the
+first 16. Generation goes on, and the result carries one `ENTRIES_NOT_PLACED` warning per stage that left entries
+out. The same applies to the `QUALIFYING` `drawEntries` that do not fit when qualifying is generated into an existing
+draw (`drawId`), which `ignoreStageSpace` does not change. `drawEntries` that overfill a new draw are refused, as
+before, rather than left out.
+
+```js
+const result = engine.generateDrawDefinition({ eventId, drawSize: 16 });
+// result.success: true
+// result.warnings: [{
+//   code: 'ENTRIES_NOT_PLACED',
+//   message: 'Entries were not placed in the draw: the stage had no place left for them.',
+//   stage: 'MAIN', // one warning per stage: MAIN or QUALIFYING
+//   participantIds: ['...'], // the entries left out, in entry order
+//   count: 4,
+//   drawSize: 16, // the stage's draw positions in the generated draw
+//   drawId: '...',
+//   entries: [{ participantId: '...', entryStatus: 'DIRECT_ACCEPTANCE', reason: 'ERR_UNCHANGED_NO_AVAILABLE_STAGE_SPACE' }],
+// }]
+```
+
+An exact fit carries no `warnings`. The warning is on the generation result only: `addDrawDefinition` stores the
+generated draw, whose entries are the ones placed.
+
 ### withPlayoffs — Recursive Playoff Generation {#withplayoffs}
 
 The `withPlayoffs` parameter adds PLAY_OFF structures linked to the MAIN structure via LOSER links.
