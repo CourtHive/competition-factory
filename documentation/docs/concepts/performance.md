@@ -54,9 +54,10 @@ mutation footprint and complete restore evidence before optimization.
 
 ## Reproducing and extending the evidence
 
-Build with `pnpm build`. `pnpm verify:consumer-bundle` checks bare-engine, named-query, aggregate-query and full-engine fixtures using
-esbuild bundle/minify/tree shaking, ESM output and gzip level 9.
-`scripts/verify/baseline/consumer-bundle.json` budgets raw/gzip growth. A budget is not a fresh timing
+Build with `pnpm build`. `pnpm verify:consumer-bundle` checks bare-engine, named-query, aggregate-query, full-engine, scoring-client
+and TMX import-union fixtures using esbuild bundle/minify/tree shaking, ESM output and gzip level 9.
+`scripts/verify/baseline/consumer-bundle.json` budgets raw/gzip growth, and the narrow fixtures must stay
+under a fixed share of the full engine. A budget is not a fresh timing
 benchmark. Compare releases using identical fixture bodies and imports.
 
 For timing, pin code, Node and dependency revisions; reuse identical fixtures and histories across
