@@ -570,6 +570,35 @@ const result = engine.modifyParticipant({
 
 The key is **conditional**: callers that did not hit the precedence see the response shape they always have, so nothing needs to start checking for it.
 
+### Home venues, status, representing, useOtherName
+
+These used to return success while the value was dropped. They are written now, and an invalid value is
+refused before anything is written:
+
+```js
+engine.modifyParticipant({
+  participant: {
+    participantId, // a TEAM
+    homeVenueIds: [venueId], // venues of this tournament; [] clears
+    participantStatus: 'WITHDRAWN', // ACTIVE | WITHDRAWN; '' clears
+    representing: 'FRA', // an ISO or IOC country code; '' clears
+    useOtherName: true, // boolean
+  },
+});
+```
+
+- `homeVenueIds` is replaced, not merged, and duplicates collapse. Only a TEAM has home venues
+  (`INVALID_PARTICIPANT_TYPE` otherwise); a venueId that is not a venue of the tournament is refused with
+  `VENUE_NOT_FOUND`, naming it in `venueIds`. A TEAM's home venues are what
+  [`resolveHomeParticipantId`](./query-governor.md#resolvehomeparticipantid) reads for its `VENUE` basis.
+- An unrecognised `participantStatus`, a `representing` that is not a country code, or a non-boolean
+  `useOtherName` is refused with `INVALID_VALUES`.
+- Omitting a key leaves it untouched. A value equal to the one already stored is never refused: consumers send
+  the whole participant on every save, so a home venue since deleted does not block an unrelated edit.
+
+Fields with their own setters are still not written by `modifyParticipant`: `participantOtherIds`
+(`addParticipantOtherId`), `extensions`, `timeItems`, `penalties`, `presence` and `notes`.
+
 ---
 
 ## modifyParticipantName
