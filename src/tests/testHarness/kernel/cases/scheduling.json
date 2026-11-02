@@ -14179,11 +14179,15 @@
         "eventTimings": {
           "2c584ab6-76cf-4734-9e75-9ea58adf447d": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "2c584ab6-76cf-4734-9e75-9ea58adf447d"
+            }
           },
           "fba78d8d-7238-434e-8a92-f383fc7bf88d": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "fba78d8d-7238-434e-8a92-f383fc7bf88d"
+            }
           }
         },
         "timedMinutes": {},
@@ -14711,6 +14715,7 @@
           "85b58bba-4ddb-44fd-bc51-e608ed080987": {
             "eventType": "SINGLES",
             "scheduleTiming": {
+              "categoryName": "85b58bba-4ddb-44fd-bc51-e608ed080987",
               "policy": {
                 "allowModificationWhenMatchUpsScheduled": {
                   "courts": false,
