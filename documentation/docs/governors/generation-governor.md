@@ -256,9 +256,26 @@ event, or one the constraints do not match, is unaffected. Until 2026-11 generat
 **Entries not placed.** Generating from the event's entries (no `drawEntries`) takes the entries that fit each
 stage, in entry order, and leaves the surplus on the event: a `drawSize: 16` from 20 accepted entries holds the
 first 16. Generation goes on, and the result carries one `ENTRIES_NOT_PLACED` warning per stage that left entries
-out. The same applies to the `QUALIFYING` `drawEntries` that do not fit when qualifying is generated into an existing
-draw (`drawId`), which `ignoreStageSpace` does not change. `drawEntries` that overfill a new draw are refused, as
-before, rather than left out.
+out. `drawEntries` are the entries the caller chose and are never trimmed: entries that overfill a new draw are
+refused, and so are `QUALIFYING` `drawEntries` that overfill the qualifying structures when qualifying is added to an
+existing draw (`drawId`), before anything is generated.
+
+**Overfull `drawEntries`.** The refusal is `NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS`, or
+`INSUFFICIENT_DRAW_POSITIONS` with `ignoreStageSpace: true`. `ignoreStageSpace` skips the per-entry stage-space
+check (and the sanctioned limits); it never admits more entries than the draw has positions. Adding qualifying to an
+existing draw names the counts:
+
+```js
+const result = engine.generateDrawDefinition({
+  ignoreStageSpace: true,
+  qualifyingProfiles,
+  drawEntries, // 12 QUALIFYING entries
+  eventId,
+  drawId, // an existing draw; its qualifying structure has 8 positions
+});
+// result.error: INSUFFICIENT_DRAW_POSITIONS
+// result.context: { stage: 'QUALIFYING', entriesCount: 12, drawPositionsCount: 8 }
+```
 
 ```js
 const result = engine.generateDrawDefinition({ eventId, drawSize: 16 });

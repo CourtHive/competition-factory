@@ -3,7 +3,11 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { ENTRIES_NOT_PLACED, NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS } from '@Constants/errorConditionConstants';
+import {
+  ENTRIES_NOT_PLACED,
+  INSUFFICIENT_DRAW_POSITIONS,
+  NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS,
+} from '@Constants/errorConditionConstants';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';
 
@@ -123,8 +127,8 @@ describe('draw generation warns of the entries it leaves out', () => {
     expect(result.warnings).toBeUndefined();
   });
 
-  it('qualifying generated into an existing placeholder names the qualifying drawEntries left out', () => {
-    const { eventId, qualifyingIds } = seedEvent({ mainCount: 12, qualifyingCount: 12 });
+  it('qualifying drawEntries that overfill an existing placeholder are refused, not left out', () => {
+    const { eventId } = seedEvent({ mainCount: 12, qualifyingCount: 12 });
     const entries = tournamentEngine.getEvent({ eventId }).event.entries;
     const mainEntries = entries.filter(({ entryStage }) => entryStage !== QUALIFYING);
     const qualifyingEntries = entries.filter(({ entryStage }) => entryStage === QUALIFYING);
@@ -143,7 +147,7 @@ describe('draw generation warns of the entries it leaves out', () => {
     result = tournamentEngine.addDrawDefinition({ eventId, drawDefinition: result.drawDefinition });
     expect(result.success).toEqual(true);
 
-    // processExistingDrawDefinition: the qualifying drawEntries beyond the 8 positions are left out
+    // processExistingDrawDefinition: explicit drawEntries are never trimmed (CA 2026-11-01)
     result = tournamentEngine.generateDrawDefinition({
       qualifyingProfiles: [{ structureProfiles: [{ qualifyingPositions: 4, drawSize: 8 }] }],
       drawEntries: qualifyingEntries,
@@ -151,19 +155,7 @@ describe('draw generation warns of the entries it leaves out', () => {
       drawId,
       eventId,
     });
-    expect(result.success).toEqual(true);
-    expect(result.existingDrawDefinition).toEqual(true);
-    expect(stageEntryIds(result.drawDefinition, QUALIFYING)).toEqual(qualifyingIds.slice(0, 8));
-
-    const warnings = notPlacedWarnings(result);
-    expect(warnings.length).toEqual(1);
-    expect(warnings[0]).toMatchObject({
-      participantIds: qualifyingIds.slice(8),
-      stage: QUALIFYING,
-      drawSize: 8,
-      drawId,
-      count: 4,
-    });
+    expect(result.error).toEqual(INSUFFICIENT_DRAW_POSITIONS);
   });
 
   it('a draw from a flight carries its drawEntries: an overfull flight is refused, not left out', () => {
