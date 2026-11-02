@@ -152,6 +152,44 @@ const AWARDEE_PLAYED_ON: Step[] = [
 ];
 
 const SCENARIOS: [string, Scenario][] = [
+  // S7: past the BYE, the matchUp beyond holds a position nobody has reached on its other side: the exit stands pending
+  [
+    'MODIFIED_FEED_IN_CHAMPIONSHIP 8/7: Consolation 1/2 a double walkover beside a BYE, a position unreached beyond',
+    {
+      drawProfile: { drawType: 'MODIFIED_FEED_IN_CHAMPIONSHIP', drawSize: 8, participantsCount: 7 },
+      nonRandom: 257,
+      setup: [
+        { target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED },
+        { target: R1(3, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+        { target: R1(4, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+      ],
+      steps: [{ target: R1(2, 'Consolation'), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED }],
+    },
+  ],
+  // S7: past the BYE, an opponent stands in the matchUp beyond: the exit is theirs at once and they go on
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION 16/16: Consolation 1/4 a double walkover beside a BYE, the opponent beyond awarded it',
+    {
+      drawProfile: { drawType: FIRST_MATCH_LOSER_CONSOLATION, drawSize: 16, participantsCount: 16 },
+      nonRandom: 157,
+      setup: [
+        { target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED },
+        { target: R1(2, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+        { target: R1(3, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+        { target: R1(4, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED },
+        {
+          target: { roundNumber: 3, roundPosition: 1, structureName: 'Consolation' },
+          outcome: { winningSide: 1 },
+          params: CARRIED,
+        },
+        { target: R1(5, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+        { target: R1(6, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED },
+        { target: R1(7, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+        { target: R1(8, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+      ],
+      steps: [{ target: R1(4, 'Consolation'), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED }],
+    },
+  ],
   // S7: the produced exit past a BYE-held next matchUp walks on through BYE-held matchUps (each left a BYE, the exit
   // recorded), to a clean matchUp where it lands pending, or to the structure's end; exit matrix cells' sequences
   ...(

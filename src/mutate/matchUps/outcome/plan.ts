@@ -1202,6 +1202,14 @@ function producedReason(
   return pendingOrAwardedReason(view, entry, awarded);
 }
 
+type ByeHeldPassage = {
+  beyond?: HydratedMatchUp;
+  arrivalSide?: 1 | 2;
+  relays: { matchUpId: string; sideNumber: 1 | 2 }[];
+  /** the opponent standing beyond, awarded the exit, whose position goes on into the clean matchUp after */
+  onward?: { matchUpId: string; drawPositions: number[] };
+};
+
 /**
  * S7: a double exit whose next matchUp holds a BYE on the side its produced exit is awarded to (a consolation feed round
  * whose fed seat took a BYE, or a plain round's double BYE). v1 leaves that matchUp a BYE: it records the produced exit
@@ -1210,13 +1218,15 @@ function producedReason(
  * recorded on the side that BYE matchUp feeds; the BYE's position is not advanced. The two writes keep the codes their
  * policy keeps (`[]`), the score beyond blanked; the matchUp beyond is announced with neither event nor tournament.
  * Planned where nothing links a loser on and the matchUp beyond is to be played in a plain round of the same structure,
- * holding no position, result, score, BYE or loser link. Anything else (a position or an exit already beyond, a BYE there
+ * holding no result, score, BYE or loser link and nobody on the side the exit arrives at: a position nobody has reached
+ * may stand on the other side (the exit pending), or an opponent, straight past the first BYE, who is awarded the exit
+ * and goes on into a clean matchUp, announced `advanceWinner` with neither event nor tournament. Anything else (a position or an exit already beyond, a BYE there
  * too) is v1's; the settle passes' predicates catch those shapes as well (falsified, O13).
  */
 function byeHeldProduced(
   view: OutcomeView,
   produced: NonNullable<DirectionPlan['produced']>,
-): { beyond?: HydratedMatchUp; arrivalSide?: 1 | 2; relays: { matchUpId: string; sideNumber: 1 | 2 }[] } | undefined {
+): ByeHeldPassage | undefined {
   const { targets } = view;
   if (targets.loserLink || targets.loserMatchUpId) return undefined;
   // the BYE matchUp's own loser link takes a BYE in v1 (`advanceByeToLoserMatchUp`), which is not planned
@@ -1238,9 +1248,16 @@ function byeHeldProduced(
       continue;
     }
     if (beyond.matchUpStatus !== TO_BE_PLAYED || beyond.winningSide || beyond.score?.scoreStringSide1) return undefined;
-    if (beyond.sides?.some((side) => side.bye || side.participantId)) return undefined;
-    if ((beyond.drawPositions ?? []).some(Boolean)) return undefined;
-    return { beyond, arrivalSide: target.fedSide, relays };
+    // a position nobody has reached may stand on the other side (fed there structurally); the arrival side is empty
+    const arrival = beyond.sides?.find((side) => side.sideNumber === target.fedSide);
+    if (arrival?.drawPosition || arrival?.participantId) return undefined;
+    const opponent = beyond.sides?.find((side) => side.sideNumber !== target.fedSide && side.participantId);
+    if (!opponent) return { beyond, arrivalSide: target.fedSide, relays };
+    // an opponent standing there is awarded the exit at once and goes on into a clean matchUp (straight past the first
+    // BYE only: `advanceByeAdvancedDrawPosition`'s award)
+    const onward =
+      !relays.length && opponent.drawPosition ? onwardFrom(view, beyond, opponent.drawPosition) : undefined;
+    return onward ? { beyond, arrivalSide: target.fedSide, relays, onward } : undefined;
   }
   return undefined;
 }
@@ -1254,7 +1271,7 @@ function byeHeldProducedOps(
 ): OutcomeOp[] {
   const passage = byeHeldProduced(view, produced);
   if (!passage) return [];
-  const { beyond, arrivalSide, relays } = passage;
+  const { beyond, arrivalSide, relays, onward } = passage;
   // in a plain round the BYE came from the matchUp beside this one (a double BYE): its origin is recorded too
   const paired = indexed(view, produced.matchUpId)?.feedRound ? undefined : pairedFeeder(view);
   const recorded = (matchUpId: string, sourceSideNumber: 1 | 2, withPaired?: boolean): OutcomeOp[] => {
@@ -1274,6 +1291,7 @@ function byeHeldProducedOps(
       op: 'setMatchUpResult',
       matchUpId,
       matchUpStatus: produced.matchUpStatus,
+      ...(onward ? { winningSide: (3 - sideNumber) as 1 | 2 } : {}),
       matchUpStatusCodes: [],
       // v1's writer here removes the score whatever the exit (`removeScore`), leaving it blanked
       score: { scoreStringSide1: '', scoreStringSide2: '' },
@@ -1282,6 +1300,19 @@ function byeHeldProducedOps(
     },
     ...recorded(matchUpId, sideNumber),
     { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
+    // the awardee's position goes on, announced as `advanceWinner` with neither event nor tournament
+    ...(onward
+      ? [
+          {
+            op: 'setMatchUpDrawPositions' as const,
+            matchUpId: onward.matchUpId,
+            drawPositions: onward.drawPositions,
+            advancesThroughBye: true as const,
+            announcesContext: false as const,
+          },
+          { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: onward.matchUpId },
+        ]
+      : []),
   ];
   return [
     {

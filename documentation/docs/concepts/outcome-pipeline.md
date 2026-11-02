@@ -759,9 +759,11 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   a BYE, codes `[]`, score blanked, the exit recorded on the side it arrives at, announced with neither event nor
   tournament; the walk ends at the structure's last round (nothing more written) or lands the exit pending in the first
   clean matchUp, which is then announced with its event and tournament, its matchUp in context read without the
-  tournament (`inContextBare`). Planned where nothing links a loser on, no matchUp walked links its own loser on, and the
-  matchUp landed in is to be played in a plain round of the same structure, holding no position, result, BYE,
-  provenance or loser link; the rest stays v1's (`exit`, `cascade`).
+  tournament (`inContextBare`). Straight past the first BYE, a position nobody has reached may stand on the matchUp's
+  other side (the exit stands pending), or an opponent, who is awarded the exit at once and goes on into a clean matchUp
+  (`advanceWinner`, with neither event nor tournament). Planned where nothing links a loser on, no matchUp walked links
+  its own loser on, and the matchUp landed in is to be played in a plain round of the same structure, holding no result,
+  BYE, provenance or loser link and nobody on the side the exit arrives at; the rest stays v1's (`exit`, `cascade`).
 
   The first **unwind** is owned too (S6). A **double exit cleared** (the `clear-score` route) is v1's `removeDoubleExit`
   and then the clear's own write. It is owned where all the double exit sent on is its produced exit, still pending, in
