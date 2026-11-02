@@ -1240,6 +1240,9 @@ const { eventMatchUpFormatTiming } = engine.getEventMatchUpFormatTiming({
 });
 ```
 
+**Category name.** Overrides are read under `category.categoryName`, else `category.ageCategoryCode`, else the event's
+`eventId`: the same key `modifyEventMatchUpFormatTiming` writes and `getMatchUpFormatTiming` and the schedulers read.
+
 **Category resolution.** When `categoryType` is not supplied it is resolved from the event — `event.category.categoryType`, falling back to `event.category.subType`. An explicitly-passed value still wins.
 
 This matters because timing figures are category-dependent: `POLICY_SCHEDULING_DEFAULT` gives ADULT and WHEELCHAIR doubles 30 minutes of recovery and JUNIOR doubles 60. Callers that relied on the previous behaviour — where an unsupplied `categoryType` meant the event's category was ignored — will now see junior figures for junior events.
@@ -1516,6 +1519,10 @@ const { averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes, overnightMin
 | `typeChangeRecoveryMinutes` | Rest required when the participant crosses singles ↔ doubles                                |
 | `overnightMinutes`          | Minimum rest across a day boundary; `undefined` when no rule is configured                  |
 | `recoveryFromPlayedMinutes` | `true` when `recoveryMinutes` came from a `byPlayedMinutes` band rather than the flat table |
+
+**Category key.** When `categoryName` is not supplied it is resolved from the event: `category.categoryName`, else
+`category.ageCategoryCode`, else the event's `eventId`. This is the key `modifyEventMatchUpFormatTiming` writes an
+event's override under, so an event with no category reads its own override rather than the policy default.
 
 `policyDefinitions` supplies a scheduling policy in place of whatever is attached to the tournamentRecord, following the same `policyDefinitions ?? appliedPolicies` precedence used across the query surface. It lets a caller ask "what would this look like under a different policy" without mutating the record. Omitted, resolution is exactly as before.
 

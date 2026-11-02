@@ -479,7 +479,9 @@
         "eventTimings": {
           "5ff6b9df-fd44-411f-a2de-4dbb49788ad0": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "5ff6b9df-fd44-411f-a2de-4dbb49788ad0"
+            }
           }
         },
         "timedMinutes": {},
@@ -1190,7 +1192,9 @@
         "eventTimings": {
           "85b58bba-4ddb-44fd-bc51-e608ed080987": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "85b58bba-4ddb-44fd-bc51-e608ed080987"
+            }
           }
         },
         "timedMinutes": {},
@@ -1905,7 +1909,9 @@
         "eventTimings": {
           "5ff6b9df-fd44-411f-a2de-4dbb49788ad0": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "5ff6b9df-fd44-411f-a2de-4dbb49788ad0"
+            }
           }
         },
         "timedMinutes": {},
@@ -2518,7 +2524,9 @@
         "eventTimings": {
           "7cc1c2e5-640f-4800-95be-2330926b20df": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "7cc1c2e5-640f-4800-95be-2330926b20df"
+            }
           }
         },
         "timedMinutes": {},
@@ -3136,7 +3144,9 @@
         "eventTimings": {
           "5ff6b9df-fd44-411f-a2de-4dbb49788ad0": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "5ff6b9df-fd44-411f-a2de-4dbb49788ad0"
+            }
           }
         },
         "timedMinutes": {},
@@ -3722,7 +3732,9 @@
         "eventTimings": {
           "7cc1c2e5-640f-4800-95be-2330926b20df": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "7cc1c2e5-640f-4800-95be-2330926b20df"
+            }
           }
         },
         "timedMinutes": {},
@@ -4368,7 +4380,9 @@
         "eventTimings": {
           "5ff6b9df-fd44-411f-a2de-4dbb49788ad0": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "5ff6b9df-fd44-411f-a2de-4dbb49788ad0"
+            }
           }
         },
         "timedMinutes": {},
@@ -5335,11 +5349,15 @@
         "eventTimings": {
           "2c584ab6-76cf-4734-9e75-9ea58adf447d": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "2c584ab6-76cf-4734-9e75-9ea58adf447d"
+            }
           },
           "a918b95d-298b-4055-bcb1-8db249a1a8f5": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "a918b95d-298b-4055-bcb1-8db249a1a8f5"
+            }
           }
         },
         "timedMinutes": {
@@ -6321,11 +6339,15 @@
         "eventTimings": {
           "2c584ab6-76cf-4734-9e75-9ea58adf447d": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "2c584ab6-76cf-4734-9e75-9ea58adf447d"
+            }
           },
           "a918b95d-298b-4055-bcb1-8db249a1a8f5": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "a918b95d-298b-4055-bcb1-8db249a1a8f5"
+            }
           }
         },
         "timedMinutes": {
@@ -7306,11 +7328,15 @@
         "eventTimings": {
           "2c584ab6-76cf-4734-9e75-9ea58adf447d": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "2c584ab6-76cf-4734-9e75-9ea58adf447d"
+            }
           },
           "a918b95d-298b-4055-bcb1-8db249a1a8f5": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "a918b95d-298b-4055-bcb1-8db249a1a8f5"
+            }
           }
         },
         "timedMinutes": {
@@ -8317,11 +8343,15 @@
         "eventTimings": {
           "eb01bcbe-281f-4bdc-af91-0335f19e6708": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "eb01bcbe-281f-4bdc-af91-0335f19e6708"
+            }
           },
           "b93c5eb4-17ee-4c40-a2d6-8dd82438200e": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "b93c5eb4-17ee-4c40-a2d6-8dd82438200e"
+            }
           }
         },
         "timedMinutes": {
@@ -9324,11 +9354,15 @@
         "eventTimings": {
           "2c584ab6-76cf-4734-9e75-9ea58adf447d": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "2c584ab6-76cf-4734-9e75-9ea58adf447d"
+            }
           },
           "a918b95d-298b-4055-bcb1-8db249a1a8f5": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "a918b95d-298b-4055-bcb1-8db249a1a8f5"
+            }
           }
         },
         "timedMinutes": {
@@ -10139,7 +10173,9 @@
         "eventTimings": {
           "5ff6b9df-fd44-411f-a2de-4dbb49788ad0": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "5ff6b9df-fd44-411f-a2de-4dbb49788ad0"
+            }
           }
         },
         "timedMinutes": {
@@ -11165,11 +11201,15 @@
         "eventTimings": {
           "8906aa4f-bb42-4164-b9a0-7687249399d4": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "8906aa4f-bb42-4164-b9a0-7687249399d4"
+            }
           },
           "5daabb52-e09d-4764-9157-cbd06c7715c1": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "5daabb52-e09d-4764-9157-cbd06c7715c1"
+            }
           }
         },
         "timedMinutes": {
@@ -12266,11 +12306,15 @@
         "eventTimings": {
           "8906aa4f-bb42-4164-b9a0-7687249399d4": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "8906aa4f-bb42-4164-b9a0-7687249399d4"
+            }
           },
           "5daabb52-e09d-4764-9157-cbd06c7715c1": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "5daabb52-e09d-4764-9157-cbd06c7715c1"
+            }
           }
         },
         "timedMinutes": {},
@@ -13389,11 +13433,15 @@
         "eventTimings": {
           "8906aa4f-bb42-4164-b9a0-7687249399d4": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "8906aa4f-bb42-4164-b9a0-7687249399d4"
+            }
           },
           "5daabb52-e09d-4764-9157-cbd06c7715c1": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "5daabb52-e09d-4764-9157-cbd06c7715c1"
+            }
           }
         },
         "timedMinutes": {},
@@ -14239,7 +14287,9 @@
         "eventTimings": {
           "5ff6b9df-fd44-411f-a2de-4dbb49788ad0": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "5ff6b9df-fd44-411f-a2de-4dbb49788ad0"
+            }
           }
         },
         "timedMinutes": {
@@ -16959,11 +17009,15 @@
         "eventTimings": {
           "ae1432ab-0ef8-4d49-a069-a63fdccbf897": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "ae1432ab-0ef8-4d49-a069-a63fdccbf897"
+            }
           },
           "7a76e333-46c2-4f18-8ba8-9b6e8c5e8cca": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "7a76e333-46c2-4f18-8ba8-9b6e8c5e8cca"
+            }
           }
         },
         "timedMinutes": {},
@@ -19443,11 +19497,15 @@
         "eventTimings": {
           "2c584ab6-76cf-4734-9e75-9ea58adf447d": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "2c584ab6-76cf-4734-9e75-9ea58adf447d"
+            }
           },
           "a918b95d-298b-4055-bcb1-8db249a1a8f5": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "a918b95d-298b-4055-bcb1-8db249a1a8f5"
+            }
           }
         },
         "timedMinutes": {
@@ -20243,7 +20301,9 @@
         "eventTimings": {
           "5ff6b9df-fd44-411f-a2de-4dbb49788ad0": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "5ff6b9df-fd44-411f-a2de-4dbb49788ad0"
+            }
           }
         },
         "timedMinutes": {
@@ -21032,7 +21092,9 @@
         "eventTimings": {
           "5ff6b9df-fd44-411f-a2de-4dbb49788ad0": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "5ff6b9df-fd44-411f-a2de-4dbb49788ad0"
+            }
           }
         },
         "timedMinutes": {
@@ -21821,7 +21883,9 @@
         "eventTimings": {
           "5ff6b9df-fd44-411f-a2de-4dbb49788ad0": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "5ff6b9df-fd44-411f-a2de-4dbb49788ad0"
+            }
           }
         },
         "timedMinutes": {
@@ -22610,7 +22674,9 @@
         "eventTimings": {
           "5ff6b9df-fd44-411f-a2de-4dbb49788ad0": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "5ff6b9df-fd44-411f-a2de-4dbb49788ad0"
+            }
           }
         },
         "timedMinutes": {
@@ -23399,7 +23465,9 @@
         "eventTimings": {
           "5ff6b9df-fd44-411f-a2de-4dbb49788ad0": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "5ff6b9df-fd44-411f-a2de-4dbb49788ad0"
+            }
           }
         },
         "timedMinutes": {
@@ -24521,6 +24589,7 @@
           "5ff6b9df-fd44-411f-a2de-4dbb49788ad0": {
             "eventType": "SINGLES",
             "scheduleTiming": {
+              "categoryName": "5ff6b9df-fd44-411f-a2de-4dbb49788ad0",
               "policy": {
                 "allowModificationWhenMatchUpsScheduled": {
                   "courts": false,
@@ -25819,11 +25888,15 @@
         "eventTimings": {
           "eb01bcbe-281f-4bdc-af91-0335f19e6708": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "eb01bcbe-281f-4bdc-af91-0335f19e6708"
+            }
           },
           "b93c5eb4-17ee-4c40-a2d6-8dd82438200e": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "b93c5eb4-17ee-4c40-a2d6-8dd82438200e"
+            }
           }
         },
         "timedMinutes": {},
@@ -26868,11 +26941,15 @@
         "eventTimings": {
           "8906aa4f-bb42-4164-b9a0-7687249399d4": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "8906aa4f-bb42-4164-b9a0-7687249399d4"
+            }
           },
           "5daabb52-e09d-4764-9157-cbd06c7715c1": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "5daabb52-e09d-4764-9157-cbd06c7715c1"
+            }
           }
         },
         "timedMinutes": {},
@@ -27781,11 +27858,15 @@
         "eventTimings": {
           "2c584ab6-76cf-4734-9e75-9ea58adf447d": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "2c584ab6-76cf-4734-9e75-9ea58adf447d"
+            }
           },
           "a918b95d-298b-4055-bcb1-8db249a1a8f5": {
             "eventType": "SINGLES",
-            "scheduleTiming": {}
+            "scheduleTiming": {
+              "categoryName": "a918b95d-298b-4055-bcb1-8db249a1a8f5"
+            }
           }
         },
         "timedMinutes": {

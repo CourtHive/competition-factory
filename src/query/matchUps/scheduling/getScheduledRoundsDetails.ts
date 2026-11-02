@@ -3,6 +3,7 @@ import { getContainedStructures } from '@Query/drawDefinition/getContainedStruct
 import { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import { findMatchUpFormatTiming } from '@Acquire/findMatchUpFormatTiming';
 import { timingCategoryType } from '@Query/event/timingCategoryType';
+import { timingCategoryName } from '@Query/event/timingCategoryName';
 import { isConvertableInteger, isPowerOf2 } from '@Tools/math';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { getMatchUpId } from '@Functions/global/extractors';
@@ -140,9 +141,8 @@ export function getScheduledRoundsDetails(params: GetScheduledRoundsDetailsArgs)
 
     for (const matchUpFormat of matchUpFormatOrder) {
       const { eventType, category } = event ?? {};
-      const { categoryName, ageCategoryCode } = category ?? {};
       const { typeChangeRecoveryMinutes, recoveryMinutes, averageMinutes, error } = findMatchUpFormatTiming({
-        categoryName: categoryName ?? ageCategoryCode,
+        categoryName: timingCategoryName(event),
         categoryType: timingCategoryType(category),
         tournamentId: round.tournamentId,
         eventId: round.eventId,

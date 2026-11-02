@@ -2,6 +2,7 @@ import { getIndividualParticipantIds } from '@Query/matchUp/getIndividualPartici
 import { findMatchUpFormatTiming } from '@Acquire/findMatchUpFormatTiming';
 import { getSchedulingMatchUps } from './getSchedulingMatchUps';
 import { timingCategoryType } from '@Query/event/timingCategoryType';
+import { timingCategoryName } from '@Query/event/timingCategoryName';
 import { extractDate, extractTime } from '@Tools/dateTime';
 import { addDaysToDate } from '@Tools/civilDateTime';
 import { findEvent } from '@Acquire/findEvent';
@@ -180,7 +181,7 @@ function timingOf(tournamentRecords: TournamentRecords) {
       const { event } = findEvent({ tournamentRecord, eventId });
       const category = event?.category;
       const timing = findMatchUpFormatTiming({
-        categoryName: category?.categoryName ?? category?.ageCategoryCode,
+        categoryName: timingCategoryName(event),
         categoryType: timingCategoryType(category),
         eventType: event?.eventType,
         tournamentRecords,

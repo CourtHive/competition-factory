@@ -1,5 +1,6 @@
 import { firstClassGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
 import { timingCategoryType } from '@Query/event/timingCategoryType';
+import { timingCategoryName } from '@Query/event/timingCategoryName';
 import { findExtension } from '@Acquire/findExtension';
 import { findPolicy } from '@Acquire/findPolicy';
 
@@ -25,7 +26,8 @@ export function getScheduleTiming({
   categoryType,
   event,
 }: GetScheduleTimingArgs) {
-  categoryName = categoryName ?? event?.category?.categoryName ?? event?.category?.ageCategoryCode;
+  // the key modifyEventMatchUpFormatTiming writes an override under: an uncategorized event is keyed by its eventId
+  categoryName = categoryName ?? timingCategoryName(event);
 
   categoryType = categoryType ?? timingCategoryType(event?.category);
 
