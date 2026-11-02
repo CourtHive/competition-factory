@@ -1,9 +1,9 @@
 import { distribution, takeRecords, beginRun, siteRows, median } from '@Tests/testHarness/exitPropagation/pipelineCost';
 import { deepCorrectionScenario, runPath } from '@Tests/testHarness/exitPropagation/correctionDivergence';
+import { getOutcomePipeline, setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import type { CallRecord, Selector, Site } from '@Tests/testHarness/exitPropagation/pipelineCost';
 import type { DivergenceConfig } from '@Tests/testHarness/exitPropagation/correctionDivergence';
 import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
-import { getOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { expect, it, vi } from 'vitest';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -182,7 +182,16 @@ it('the recorder sees the pipeline: every setMatchUpStatus is bracketed and ever
       candidate.propagateExitStatus,
   );
   expect(cell).toBeDefined();
-  const records = playCell('control', cell!);
+  // the functions counted are v1's pipeline: under v2, which owns this cell's every call (the double exit's WALKOVER
+  // awarded in the final, S7), v1 reads none of them, so the wrappers are checked against v1 whatever the arm
+  const mode = getOutcomePipeline();
+  setOutcomePipeline(OUTCOME_PIPELINE_V1);
+  let records: CallRecord[];
+  try {
+    records = playCell('control', cell!);
+  } finally {
+    setOutcomePipeline(mode);
+  }
 
   // seven participants in a draw of eight: three first-round matchUps, two semifinals of which a
   // double exit takes at least one out of play — at least four results are entered

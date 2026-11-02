@@ -114,8 +114,10 @@ it('sends an exit a double exit produced on past a BYE, and v2 compares it', () 
   resetDifferentialTally();
   expect(runMatrixCell(cell as any, 'produced-past-a-bye')).toBeDefined();
 
-  const compared = Object.entries(getDifferentialTally())
+  const tallied = getDifferentialTally();
+  const compared = Object.entries(tallied)
     .filter(([key]) => key.includes(':produced-past-bye-'))
     .reduce((sum, [, count]) => sum + count.compared, 0);
-  expect(compared).toBeGreaterThan(0);
+  // since S7 v2 writes the plain shape itself (`byeHeldProduced`): its shadow apply is compared with v1's record
+  expect(compared + (tallied['shadow:applied']?.compared ?? 0)).toBeGreaterThan(0);
 });
