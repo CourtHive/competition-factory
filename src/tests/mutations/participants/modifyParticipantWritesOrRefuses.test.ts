@@ -3,8 +3,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { COMPETITOR, OFFICIAL } from '@Constants/participantRoles';
 import { INDIVIDUAL, PAIR, TEAM } from '@Constants/participantConstants';
+import { COMPETITOR, OFFICIAL } from '@Constants/participantRoles';
 import {
   NATIONALITY_CODE_UNRECOGNIZED,
   INVALID_PARTICIPANT_TYPE,

@@ -1,10 +1,10 @@
 import { applyScaleItems, checkSetterOwnedAttributes, planTimeItems, sameValue } from './participantSetterFields';
 import { generatePairParticipantName } from '@Functions/participants/generatePairParticipantName';
-import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { applyPersonUpdate, planPersonUpdate, type PersonPlan } from './modifyPersonFields';
+import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
-import { refusal, validNationalityCode } from './personAttributeShapes';
 import { addIndividualParticipantIds } from './addIndividualParticipantIds';
+import { refusal, validNationalityCode } from './personAttributeShapes';
 import { isClearRequest } from '@Mutate/participants/isClearRequest';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { participantRoles } from '@Constants/participantRoles';
@@ -15,9 +15,9 @@ import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { addParticipant } from './addParticipant';
 
 // constants
-import { GROUP, INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { PARTICIPANT_NAME_DERIVED_FROM_PERSON } from '@Constants/infoConstants';
 import { TOURNAMENT_RECORD, PARTICIPANT } from '@Constants/attributeConstants';
+import { GROUP, INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { TEAM } from '@Constants/matchUpTypes';
 import {
