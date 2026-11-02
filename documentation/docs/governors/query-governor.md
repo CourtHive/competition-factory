@@ -1503,7 +1503,7 @@ const { averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes, overnightMin
     matchUpFormat,
     categoryName, // optional
     categoryType, // optional
-    eventType, // optional - defaults to SINGLES; SINGLES, DOUBLES
+    eventType, // optional - defaults to the event's type, else SINGLES; SINGLES, DOUBLES, TEAM
     eventId, // optional - prioritizes policy definition attached to event before tournament record
     policyDefinitions, // optional - evaluate against a policy not attached to the record
     playedMinutes, // optional - measured duration of the previous matchUp; keys byPlayedMinutes bands
@@ -1523,6 +1523,12 @@ const { averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes, overnightMin
 **Category key.** When `categoryName` is not supplied it is resolved from the event: `category.categoryName`, else
 `category.ageCategoryCode`, else the event's `eventId`. This is the key `modifyEventMatchUpFormatTiming` writes an
 event's override under, so an event with no category reads its own override rather than the policy default.
+
+**TEAM events.** A TEAM event's override is keyed by the event's type, `TEAM`, but its collection (line) matchUps are
+`SINGLES` or `DOUBLES`. When `eventId` names a TEAM event and `eventType` is a line type, minutes keyed by the line's
+own type win, then minutes keyed by `TEAM`, then `default`. So an override set with `modifyEventMatchUpFormatTiming`
+on a TEAM event times its lines: `getMatchUpFormatTiming({ eventId, matchUpFormat, eventType: SINGLES })` returns it, as
+do hydrated `timeAfterRecovery` values and the auto-schedulers. A SINGLES or DOUBLES event is unaffected.
 
 `policyDefinitions` supplies a scheduling policy in place of whatever is attached to the tournamentRecord, following the same `policyDefinitions ?? appliedPolicies` precedence used across the query surface. It lets a caller ask "what would this look like under a different policy" without mutating the record. Omitted, resolution is exactly as before.
 

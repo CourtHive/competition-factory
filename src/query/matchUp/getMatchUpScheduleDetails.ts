@@ -327,7 +327,7 @@ type ComputeRecoveryTimesArgs = {
   matchUpFormat?: string;
   scheduledDate?: string;
   matchUpType?: EventTypeUnion;
-  matchUp: { matchUpType?: EventTypeUnion; matchUpFormat?: string };
+  matchUp: { matchUpType?: EventTypeUnion; matchUpFormat?: string; collectionId?: string };
   endTime?: string;
   scheduledTime?: string;
 };
@@ -361,6 +361,8 @@ function computeRecoveryTimes({
       recoveryMinutes = 0,
       typeChangeRecoveryMinutes = 0,
     } = matchUpFormatTimes({
+      // a collection matchUp is a line of a TEAM event: it also reads the event's TEAM-keyed minutes
+      teamLine: !!matchUp.collectionId,
       timingDetails,
       eventType,
     }));

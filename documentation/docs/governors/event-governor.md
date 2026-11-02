@@ -413,6 +413,10 @@ event's own `eventId` when it has no category. Every reader resolves the same ke
 `getEventMatchUpFormatTiming` and the auto-schedulers), so an event with no category is scheduled by its override and
 other events stay on the policy.
 
+The minutes are stored under the event's type (`minutes: { [eventType]: n }`). For a TEAM event that is `TEAM`; its
+SINGLES and DOUBLES lines read the `TEAM` minutes when they state none for their own type, so the override times every
+line of the event that plays the format.
+
 ---
 
 ## modifyPairAssignment
