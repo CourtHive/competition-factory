@@ -84,7 +84,7 @@ function handleCourtDeletions({
   modifications: VenueModifications;
   tournamentRecord: Tournament;
   venueMatchUps?: HydratedMatchUp[];
-  allowModificationWhenMatchUpsScheduled: boolean;
+  allowModificationWhenMatchUpsScheduled?: boolean;
 }) {
   const existingCourtIds = venue?.courts?.map((court) => court.courtId) ?? [];
   const courtIdsToModify = modifications.courts?.map((court) => court.courtId) ?? [];

@@ -118,6 +118,12 @@ The **Scheduling Policy** (`POLICY_TYPE_SCHEDULING`) controls scheduling behavio
 }
 ```
 
+**In the CODES schema.** This shape is the `SchedulingPolicy` definition in `tournament.schema.json`, beside
+`PolicyDefinitions` (policies keyed by policy type, the value of an element's applied policies) and the seeding and
+competition policy definitions. The definition is closed: a member not listed above, or a `defaultPeriodLength` that is
+not a positive number, does not validate. Policies are still stored in the applied-policies extension, so no record
+definition references these yet.
+
 **Which category a matchUp is timed by.** The `categoryTypes` above are matched against the event's timing
 category type: a stated `category.categoryType` (or `subType`) wins; otherwise an `ageCategoryCode` of 18 or under
 (`U14`, `16U`) reads as `JUNIOR`. Every timing lookup asks it, so an under-age event with no stated type takes the
