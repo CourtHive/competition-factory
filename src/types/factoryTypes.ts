@@ -972,6 +972,24 @@ export type ResultWarning = {
   info?: unknown;
 };
 
+/** an entry draw generation left out, and why: the error addDrawEntry reported for it */
+export type EntryNotPlaced = {
+  participantId: string;
+  entryStatus?: string;
+  entryStage?: string;
+  reason: string;
+};
+
+/** ENTRIES_NOT_PLACED: the entries of one stage that draw generation left out because the stage was full */
+export type EntriesNotPlacedWarning = ResultWarning & {
+  entries: EntryNotPlaced[];
+  participantIds: string[];
+  drawSize: number;
+  message: string;
+  count: number;
+  stage: string;
+};
+
 export type ResultType = {
   context?: { [key: string]: any };
   warnings?: ResultWarning[];
