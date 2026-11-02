@@ -216,9 +216,7 @@
             "$ref": "#/definitions/TournamentSanction"
           }
         },
-        "scheduling": {
-          "type": "object"
-        },
+        "scheduling": { "$ref": "#/definitions/TournamentScheduling" },
         "tournamentTier": {
           "$ref": "#/definitions/TierClassification"
         },
@@ -3937,6 +3935,268 @@
           "type": "string"
         }
       },
+      "additionalProperties": false
+    },
+    "TournamentScheduling": {
+      "description": "The tournament's scheduling state. profile, dailyLimits and timing were the schedulingProfile, scheduleLimits and scheduleTiming extensions (read either way).",
+      "type": "object",
+      "properties": {
+        "profile": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ScheduleProfileDate"
+          },
+          "description": "The scheduling profile: which rounds are scheduled on which date at which venue, in order."
+        },
+        "dailyLimits": {
+          "$ref": "#/definitions/TournamentScheduleLimits"
+        },
+        "timing": {
+          "$ref": "#/definitions/TournamentScheduleTiming"
+        },
+        "venueTransits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VenueTransitEntry"
+          }
+        },
+        "scenarios": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ScheduleScenario"
+          }
+        },
+        "practice": {
+          "type": "object",
+          "properties": {
+            "defaultCapacity": {
+              "type": ["number", "null"]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "ScheduleProfileDate": {
+      "type": "object",
+      "properties": {
+        "scheduleDate": {
+          "type": "string"
+        },
+        "venues": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ScheduleProfileVenue"
+          }
+        }
+      },
+      "required": ["scheduleDate"],
+      "additionalProperties": false
+    },
+    "ScheduleProfileVenue": {
+      "type": "object",
+      "properties": {
+        "venueId": {
+          "type": "string"
+        },
+        "rounds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ScheduleProfileRound"
+          }
+        }
+      },
+      "required": ["venueId"],
+      "additionalProperties": false
+    },
+    "ScheduleProfileRound": {
+      "description": "A round (or one segment of it) in a scheduling profile. eventName, roundName and sortOrder are display attributes.",
+      "type": "object",
+      "properties": {
+        "tournamentId": {
+          "type": "string"
+        },
+        "eventId": {
+          "type": "string"
+        },
+        "drawId": {
+          "type": "string"
+        },
+        "structureId": {
+          "type": "string"
+        },
+        "roundNumber": {
+          "type": "number"
+        },
+        "roundSegment": {
+          "type": "object",
+          "properties": {
+            "segmentNumber": {
+              "type": "number"
+            },
+            "segmentsCount": {
+              "type": "number"
+            }
+          },
+          "required": ["segmentNumber", "segmentsCount"],
+          "additionalProperties": false
+        },
+        "notBeforeTime": {
+          "type": "string",
+          "description": "'HH:MM': the earliest time the round may start."
+        },
+        "periodLength": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "matchUpIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "containerStructureId": {
+          "type": "string"
+        },
+        "isRoundRobin": {
+          "type": "boolean"
+        },
+        "eventName": {
+          "type": "string"
+        },
+        "roundName": {
+          "type": "string"
+        },
+        "sortOrder": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TournamentScheduleLimits": {
+      "type": "object",
+      "properties": {
+        "dailyLimits": {
+          "$ref": "#/definitions/SchedulingDailyLimits"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TournamentScheduleTiming": {
+      "description": "The tournament's own matchUp format timing, consulted before its scheduling policy.",
+      "type": "object",
+      "properties": {
+        "matchUpAverageTimes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SchedulingFormatAverageTimes"
+          }
+        },
+        "matchUpRecoveryTimes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SchedulingFormatRecoveryTimes"
+          }
+        },
+        "overnightTimes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SchedulingCategoryTimes"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "VenueTransitEntry": {
+      "description": "Minutes to get between two venues; symmetric unless oneWay.",
+      "type": "object",
+      "properties": {
+        "venueIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "minutes": {
+          "type": "number",
+          "minimum": 0
+        },
+        "oneWay": {
+          "type": "boolean"
+        },
+        "sanctioned": {
+          "type": "object",
+          "properties": {
+            "minutes": {
+              "type": "number",
+              "minimum": 0
+            },
+            "sanctioningId": {
+              "type": "string"
+            }
+          },
+          "required": ["minutes"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["venueIds", "minutes"],
+      "additionalProperties": false
+    },
+    "ScheduleScenario": {
+      "description": "A named alternate scheduling plan.",
+      "type": "object",
+      "properties": {
+        "scenarioId": {
+          "type": "string"
+        },
+        "scenarioName": {
+          "type": "string"
+        },
+        "scheduledDates": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "basedOnHash": {
+          "type": "string"
+        },
+        "placements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ScenarioPlacement"
+          }
+        }
+      },
+      "required": ["scenarioId", "scenarioName", "placements"],
+      "additionalProperties": false
+    },
+    "ScenarioPlacement": {
+      "type": "object",
+      "properties": {
+        "tournamentId": {
+          "type": "string"
+        },
+        "matchUpId": {
+          "type": "string"
+        },
+        "schedule": {
+          "$ref": "#/definitions/MatchUpSchedule"
+        }
+      },
+      "required": ["tournamentId", "matchUpId", "schedule"],
       "additionalProperties": false
     },
     "TournamentSanction": {

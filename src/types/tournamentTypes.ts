@@ -3,7 +3,12 @@ import type { RotatingPartnerRoundRecord } from './rotatingPartnerRound';
 import type { CompetitionProfile } from './competitionProfile';
 import type { competitionFormat } from './competitionFormat';
 import type { PresenceAttestation } from './presenceTypes';
-import type { FlightProfile } from './factoryTypes';
+import type {
+  SchedulingFormatRecoveryTimes,
+  SchedulingFormatAverageTimes,
+  SchedulingCategoryTimes,
+  FlightProfile,
+} from './factoryTypes';
 
 export interface Tournament {
   activeDates?: Date[] | string[]; // dates from startDate to endDate on which the tournament is active
@@ -53,22 +58,7 @@ export interface Tournament {
   sanctions?: TournamentSanction[];
   // CODES first-class group leaf: previously stored as separate
   // `schedulingProfile`, `scheduleLimits`, and `scheduleTiming` extensions.
-  scheduling?: {
-    profile?: any;
-    dailyLimits?: any;
-    timing?: any;
-    /** transit between pairs of venues (scheduling-pipeline.md § 3.4): first-class, never a legacy extension */
-    venueTransits?: VenueTransitEntry[];
-    // Alternate ("contingency") scheduling plans a tournament director builds
-    // off the current schedule, cycles through, and can commit as the official
-    // schedule (uncompleted matchUps only). Persisted first-class — NEVER a
-    // legacy extension, and NEVER emitted to public / arena read surfaces.
-    scenarios?: ScheduleScenario[];
-    practice?: {
-      defaultCapacity?: number | null;
-    };
-    [key: string]: any;
-  };
+  scheduling?: TournamentScheduling;
   season?: string;
   startDate?: string;
   surfaceCategory?: SurfaceCategoryUnion;
@@ -715,6 +705,75 @@ export interface ScenarioPlacement {
   tournamentId: string;
   matchUpId: string;
   schedule: MatchUpSchedule;
+}
+
+/**
+ * `tournamentRecord.scheduling`: the tournament's scheduling state. `profile`, `dailyLimits` and `timing` were the
+ * `schedulingProfile`, `scheduleLimits` and `scheduleTiming` extensions (read either way); `venueTransits`,
+ * `scenarios` and `practice` were always first-class.
+ */
+export interface TournamentScheduling {
+  /** the scheduling profile: which rounds are scheduled on which date at which venue, in order */
+  profile?: ScheduleProfileDate[];
+  /** the tournament's matchUps-per-day limits for each participant */
+  dailyLimits?: TournamentScheduleLimits;
+  /** the tournament's own matchUp format timing, consulted before its scheduling policy */
+  timing?: TournamentScheduleTiming;
+  /** transit between pairs of venues (scheduling-pipeline.md § 3.4): first-class, never a legacy extension */
+  venueTransits?: VenueTransitEntry[];
+  // Alternate ("contingency") scheduling plans a tournament director builds
+  // off the current schedule, cycles through, and can commit as the official
+  // schedule (uncompleted matchUps only). Persisted first-class — NEVER a
+  // legacy extension, and NEVER emitted to public / arena read surfaces.
+  scenarios?: ScheduleScenario[];
+  practice?: {
+    defaultCapacity?: number | null;
+  };
+}
+
+/** One date of a scheduling profile: the rounds each venue takes that day, in order. */
+export interface ScheduleProfileDate {
+  scheduleDate: string;
+  venues?: ScheduleProfileVenue[];
+}
+
+export interface ScheduleProfileVenue {
+  venueId: string;
+  rounds?: ScheduleProfileRound[];
+}
+
+/** A round (or one segment of it) in a scheduling profile. */
+export interface ScheduleProfileRound {
+  tournamentId?: string;
+  eventId?: string;
+  drawId?: string;
+  structureId?: string;
+  roundNumber?: number;
+  roundSegment?: { segmentNumber: number; segmentsCount: number };
+  /** 'HH:MM': the earliest time the round may start */
+  notBeforeTime?: string;
+  /** minutes per scheduling period for this round; a run's own periodLength beats it */
+  periodLength?: number;
+  /** the round's matchUps, when a profile names them */
+  matchUpIds?: string[];
+  containerStructureId?: string;
+  isRoundRobin?: boolean;
+  // display attributes, not read by scheduling
+  eventName?: string;
+  roundName?: string;
+  sortOrder?: number;
+}
+
+/** The value of `scheduling.dailyLimits`, as `setMatchUpDailyLimits` writes it. */
+export interface TournamentScheduleLimits {
+  dailyLimits?: { SINGLES?: number; DOUBLES?: number; TEAM?: number; total?: number };
+}
+
+/** The tournament's own format timing, as `modifyMatchUpFormatTiming` writes it: the scheduling policy's shapes. */
+export interface TournamentScheduleTiming {
+  matchUpAverageTimes?: SchedulingFormatAverageTimes[];
+  matchUpRecoveryTimes?: SchedulingFormatRecoveryTimes[];
+  overnightTimes?: SchedulingCategoryTimes[];
 }
 
 /**
