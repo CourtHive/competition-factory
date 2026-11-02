@@ -1,11 +1,11 @@
+import { POLICY_TYPE_LADDER, POLICY_TYPE_SCHEDULING, policyConstants } from '@Constants/policyConstants';
 import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
-import { POLICY_TYPE_LADDER, POLICY_TYPE_SCHEDULING, policyConstants } from '@Constants/policyConstants';
 import POLICY_SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
-import { policies } from '@Fixtures/policies';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import { policies } from '@Fixtures/policies';
 import { describe, expect, it } from 'vitest';
 import addFormats from 'ajv-formats';
 import ts from 'typescript';
