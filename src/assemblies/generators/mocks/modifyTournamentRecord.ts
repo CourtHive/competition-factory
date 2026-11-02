@@ -46,7 +46,8 @@ type ExistingEventArgs = EventPolicyArgs & { allUniqueParticipantIds: string[]; 
 function replaceEventPolicies({ tournamentRecord, eventProfile, profileIndex, event }: EventPolicyArgs) {
   const { policyDefinitions } = eventProfile;
   const option = `eventProfiles[${profileIndex}].policyDefinitions`;
-  const ownPolicies = event.extensions?.find((extension) => extension?.name === APPLIED_POLICIES)?.value ?? {};
+  const ownPolicies =
+    event.appliedPolicies ?? event.extensions?.find((extension) => extension?.name === APPLIED_POLICIES)?.value ?? {};
   const given: Record<string, unknown> = isObject(policyDefinitions)
     ? (policyDefinitions as Record<string, unknown>)
     : {};

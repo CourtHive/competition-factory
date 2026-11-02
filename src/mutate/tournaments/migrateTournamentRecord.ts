@@ -11,6 +11,7 @@ import { SIGN_IN_STATUS } from '@Constants/participantConstants';
 import { ResultType, ResultWarning } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
+  APPLIED_POLICIES,
   COMPETITION_STATE,
   DELEGATED_OUTCOME,
   DISABLE_AUTO_CALC,
@@ -133,6 +134,7 @@ function promoteMatchUpScheduleTimeItem(
 }
 
 const TOURNAMENT_FLAT_PROMOTIONS: ExtensionPromotion[] = [
+  { name: APPLIED_POLICIES, attribute: 'appliedPolicies' },
   { name: FACTORY, attribute: 'factory' },
   {
     name: LINKED_TOURNAMENTS,
@@ -148,18 +150,25 @@ const TOURNAMENT_GROUP_PROMOTIONS: GroupExtensionPromotion[] = [
   { name: SCHEDULE_TIMING, groupAttribute: 'scheduling', leafAttribute: 'timing' },
 ];
 
-const EVENT_PROMOTIONS: ExtensionPromotion[] = [{ name: FLIGHT_PROFILE, attribute: 'flightProfile' }];
+const EVENT_PROMOTIONS: ExtensionPromotion[] = [
+  { name: APPLIED_POLICIES, attribute: 'appliedPolicies' },
+  { name: FLIGHT_PROFILE, attribute: 'flightProfile' },
+];
 const ENTRY_PROMOTIONS: ExtensionPromotion[] = [{ name: ROUND_TARGET, attribute: 'roundTarget' }];
 
 // No FLIGHT_PROFILE here: a flight profile lives on the EVENT only. Nothing ever wrote one on a draw (0 of 428 corpus
 // records, 0 of 16 CODES fixtures); a stray draw-level extension stays an extension, which nothing reads either.
 const DRAW_DEFINITION_PROMOTIONS: ExtensionPromotion[] = [
+  { name: APPLIED_POLICIES, attribute: 'appliedPolicies' },
   { name: LINEUPS, attribute: 'lineUps' },
   { name: DRAFT_STATE, attribute: 'draftState' },
   { name: COMPETITION_STATE, attribute: 'competitionState' },
 ];
 
-const STRUCTURE_PROMOTIONS: ExtensionPromotion[] = [{ name: ROUND_TARGET, attribute: 'roundTarget' }];
+const STRUCTURE_PROMOTIONS: ExtensionPromotion[] = [
+  { name: APPLIED_POLICIES, attribute: 'appliedPolicies' },
+  { name: ROUND_TARGET, attribute: 'roundTarget' },
+];
 
 const POSITION_ASSIGNMENT_PROMOTIONS: ExtensionPromotion[] = [
   { name: TALLY, attribute: 'tally' },

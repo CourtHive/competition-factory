@@ -3,9 +3,11 @@ import type { RotatingPartnerRoundRecord } from './rotatingPartnerRound';
 import type { CompetitionProfile } from './competitionProfile';
 import type { competitionFormat } from './competitionFormat';
 import type { PresenceAttestation } from './presenceTypes';
-import type { FlightProfile } from './factoryTypes';
+import type { FlightProfile, PolicyDefinitions } from './factoryTypes';
 
 export interface Tournament {
+  /** the policies this element attaches (CODES first-class; the `appliedPolicies` extension on older records) */
+  appliedPolicies?: PolicyDefinitions;
   activeDates?: Date[] | string[]; // dates from startDate to endDate on which the tournament is active
   createdAt?: Date | string;
   endDate?: string;
@@ -163,6 +165,8 @@ export enum OrganisationTypeEnum {
 export type OrganisationTypeUnion = `${OrganisationTypeEnum}`;
 
 export interface Event {
+  /** the policies this element attaches (CODES first-class; the `appliedPolicies` extension on older records) */
+  appliedPolicies?: PolicyDefinitions;
   activeDates?: Date[] | string[]; // dates from startDate to endDate on which the tournament is active
   allowedDrawTypes?: DrawTypeUnion[];
   category?: Category;
@@ -385,6 +389,8 @@ export enum CategoryEnum {
 export type CategoryUnion = `${CategoryEnum}`;
 
 export interface DrawDefinition {
+  /** the policies this element attaches (CODES first-class; the `appliedPolicies` extension on older records) */
+  appliedPolicies?: PolicyDefinitions;
   /** Versioned format configuration; competition lifecycle state is stored separately. */
   competitionProfile?: CompetitionProfile;
   competitionRoster?: string[];
@@ -1236,6 +1242,8 @@ export interface CollectionGroup {
 
 /** The fields every structure carries, whether it holds matchUps or other structures. */
 export interface StructureBase {
+  /** the policies this element attaches (CODES first-class; the `appliedPolicies` extension on older records) */
+  appliedPolicies?: PolicyDefinitions;
   competitionFormat?: competitionFormat;
   createdAt?: Date | string;
   extensions?: Extension[];
