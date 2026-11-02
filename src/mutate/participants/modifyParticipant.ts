@@ -1,10 +1,10 @@
 import { applyScaleItems, checkSetterOwnedAttributes, planTimeItems, sameValue } from './participantSetterFields';
 import { generatePairParticipantName } from '@Functions/participants/generatePairParticipantName';
+import { checkOnlineResources, refusal, validNationalityCode } from './personAttributeShapes';
 import { applyPersonUpdate, planPersonUpdate, type PersonPlan } from './modifyPersonFields';
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
 import { addIndividualParticipantIds } from './addIndividualParticipantIds';
-import { refusal, validNationalityCode } from './personAttributeShapes';
 import { isClearRequest } from '@Mutate/participants/isClearRequest';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { participantRoles } from '@Constants/participantRoles';
@@ -44,6 +44,8 @@ import type { ResultType, ScaleItem } from '@Types/factoryTypes';
  *   setter named (see participantSetterFields).
  * - Metadata is ignored: `isMock`, `createdAt`, `updatedAt`, `personId` and `teamId`, and attributes that are not
  *   part of a CODES participant (such as those getParticipants adds).
+ * - `onlineResources`, like `person.onlineResources`, is checked against the CODES OnlineResource: an attribute
+ *   CODES does not define (such as `resource` in place of `resourceType`) is refused.
  * - An unrecognised `person.nationalityCode` is written, and the result carries a NATIONALITY_CODE_UNRECOGNIZED
  *   warning.
  */
@@ -231,17 +233,24 @@ function participantNameValue({
   return { participantName: collapsed };
 }
 
-// contacts and onlineResources replace the stored list; participantRoleResponsibilities likewise
+const arrayOf =
+  (isItem: (item: unknown) => boolean, description: string) =>
+  (value: unknown, field: string): ResultType | undefined =>
+    Array.isArray(value) && value.every(isItem) ? undefined : refusal(field, `must be ${description}`, value);
+
+// contacts and onlineResources replace the stored list; participantRoleResponsibilities likewise.
+// onlineResources is checked against the CODES OnlineResource, as person.onlineResources is.
 function setListAttributes({ existingParticipant, participant, participantValues }: FieldArgs) {
-  const lists: [string, (item: unknown) => boolean, string][] = [
-    ['contacts', isObject, 'an array of contacts'],
-    ['onlineResources', isObject, 'an array of onlineResources'],
-    ['participantRoleResponsibilities', isString, 'an array of strings'],
+  const lists: [string, (value: unknown, field: string) => ResultType | undefined][] = [
+    ['contacts', arrayOf(isObject, 'an array of contacts')],
+    ['onlineResources', checkOnlineResources],
+    ['participantRoleResponsibilities', arrayOf(isString, 'an array of strings')],
   ];
-  for (const [field, isItem, description] of lists) {
+  for (const [field, check] of lists) {
     const value = participant[field];
     if (value === undefined || value === null || sameValue(value, existingParticipant[field])) continue;
-    if (!Array.isArray(value) || !value.every(isItem)) return refusal(field, `must be ${description}`, value);
+    const result = check(value, field);
+    if (result) return result;
     participantValues[field] = value;
   }
   return undefined;
