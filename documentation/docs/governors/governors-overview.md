@@ -138,6 +138,12 @@ The Competition Factory's governors are organized into functional areas:
 - Who advances out of a period, and who moves between tiers when a period closes
 - Plan the next period's placements from accepted movement
 
+**[Ladder Governor](./ladder-governor.md)** - Challenge ladders (`LADDER` draws)
+
+- Seat and remove participants; issue, accept and decline challenges
+- Report, confirm and dispute results; move the standing on an attested result
+- Standing by rank or by rating, challenge state, lapses and the ladder policy
+
 ### MatchUp Management
 
 **[MatchUp Governor](./matchup-governor.md)** - MatchUp operations
@@ -183,6 +189,12 @@ The Competition Factory's governors are organized into functional areas:
 - Add/remove courts
 - Court availability and bookings
 - Venue extensions and metadata
+
+**[Availability Governor](./availability-governor.md)** - Court availability utilities
+
+- The pure layer under the Availability Engine: rail derivation, capacity curves, collision detection
+- Conflict evaluators, time granularity and the scheduling-plan validation pipeline
+- The bridge between availability blocks and CODES `dateAvailability`
 
 ### Publishing & Queries
 
