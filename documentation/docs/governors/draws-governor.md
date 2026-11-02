@@ -849,8 +849,8 @@ const isAdHoc = engine.isAdHocType({ drawType }); // AD_HOC | SWISS | LADDER -> 
 Also callable directly, which is how the factory's own generators use it:
 
 ```js
-import { governors } from 'tods-competition-factory';
-governors.drawsGovernor.isAdHocType(drawType); // a bare string is accepted too
+import { drawsGovernor } from 'tods-competition-factory';
+drawsGovernor.isAdHocType(drawType); // a bare string is accepted too
 ```
 
 **Returns:** `boolean`.
