@@ -1278,7 +1278,8 @@ function producedChain(view: OutcomeView, first: HydratedMatchUp, arrival: Chain
  * Planned where nothing links a loser on and the matchUp beyond is to be played in a plain round of the same structure,
  * holding no result, score, BYE or loser link and nobody on the side the exit arrives at: a position nobody has reached
  * may stand on the other side (the exit pending), or an opponent, straight past the first BYE, who is awarded the exit
- * and goes on into a clean matchUp, announced `advanceWinner` with neither event nor tournament. Anything else (a position or an exit already beyond, a BYE there
+ * and goes on into a clean matchUp, announced `advanceWinner` with neither event nor tournament, or a produced exit
+ * pending there, with which it converges (`producedChain`). Anything else (a position or an exit already beyond, a BYE there
  * too) is v1's; the settle passes' predicates catch those shapes as well (falsified, O13).
  */
 function byeHeldProduced(

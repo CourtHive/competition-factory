@@ -152,6 +152,64 @@ const AWARDEE_PLAYED_ON: Step[] = [
 ];
 
 const SCENARIOS: [string, Scenario][] = [
+  // S7: past the BYE, a produced exit stands pending beyond: the two converge, and the double exit produces on
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION 16/15: Consolation 1/4 a double walkover converging past a BYE, twice, to the final',
+    {
+      drawProfile: { drawType: 'FIRST_MATCH_LOSER_CONSOLATION', drawSize: 16, participantsCount: 15 },
+      nonRandom: 167,
+      setup: [
+        { target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED },
+        { target: R1(3, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+        { target: R1(4, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+        { target: R1(2, 'Consolation'), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED },
+        { target: R1(5, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+        { target: R1(6, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+        { target: R1(3, 'Consolation'), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED },
+        { target: R1(7, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+        { target: R1(8, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+      ],
+      steps: [{ target: R1(4, 'Consolation'), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED }],
+    },
+  ],
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION 16/15: Consolation 1/4 a double default converging past a BYE, twice, to the final',
+    {
+      drawProfile: { drawType: 'FIRST_MATCH_LOSER_CONSOLATION', drawSize: 16, participantsCount: 15 },
+      nonRandom: 169,
+      setup: [
+        { target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT }, params: CARRIED },
+        { target: R1(3, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+        { target: R1(4, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+        { target: R1(2, 'Consolation'), outcome: { matchUpStatus: DOUBLE_DEFAULT }, params: CARRIED },
+        { target: R1(5, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+        { target: R1(6, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+        { target: R1(3, 'Consolation'), outcome: { matchUpStatus: DOUBLE_DEFAULT }, params: CARRIED },
+        { target: R1(7, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+        { target: R1(8, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+      ],
+      steps: [{ target: R1(4, 'Consolation'), outcome: { matchUpStatus: DOUBLE_DEFAULT }, params: CARRIED }],
+    },
+  ],
+  [
+    'MODIFIED_FEED_IN_CHAMPIONSHIP 16/16: Consolation 1/4 a double walkover converging past a BYE, pending beyond',
+    {
+      drawProfile: { drawType: 'MODIFIED_FEED_IN_CHAMPIONSHIP', drawSize: 16, participantsCount: 16 },
+      nonRandom: 277,
+      setup: [
+        { target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED },
+        { target: R1(2, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+        { target: R1(3, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+        { target: R1(4, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED },
+        { target: R1(5, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+        { target: R1(6, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+        { target: R1(3, 'Consolation'), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED },
+        { target: R1(7, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+        { target: R1(8, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+      ],
+      steps: [{ target: R1(4, 'Consolation'), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED }],
+    },
+  ],
   // S7: past the BYE, the matchUp beyond holds a position nobody has reached on its other side: the exit stands pending
   [
     'MODIFIED_FEED_IN_CHAMPIONSHIP 8/7: Consolation 1/2 a double walkover beside a BYE, a position unreached beyond',
