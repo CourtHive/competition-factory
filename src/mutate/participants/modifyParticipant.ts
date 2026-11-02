@@ -1,41 +1,52 @@
+import { applyScaleItems, checkSetterOwnedAttributes, planTimeItems, sameValue } from './participantSetterFields';
 import { generatePairParticipantName } from '@Functions/participants/generatePairParticipantName';
-import { coercedSex, isUnrecognizedSex, UNRECOGNIZED_SEX_INFO } from '@Helpers/coercedSex';
+import { applyPersonUpdate, planPersonUpdate, type PersonPlan } from './modifyPersonFields';
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
 import { findTournamentParticipant } from '@Acquire/findTournamentParticipant';
 import { addIndividualParticipantIds } from './addIndividualParticipantIds';
-import { getParticipants } from '@Query/participants/getParticipants';
+import { refusal, validNationalityCode } from './personAttributeShapes';
 import { isClearRequest } from '@Mutate/participants/isClearRequest';
 import { requireParams } from '@Helpers/parameters/requireParams';
-import { getParticipantId } from '@Functions/global/extractors';
 import { participantRoles } from '@Constants/participantRoles';
 import { definedAttributes } from '@Tools/definedAttributes';
-import { isValidDateString } from '@Tools/dateTime';
+import { isObject, isString } from '@Tools/objects';
 import { collapseWhitespace } from '@Tools/strings';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { addParticipant } from './addParticipant';
-import { countries } from '@Fixtures/countryData';
-import { competitionNow } from '@Tools/clock';
-import { isString } from '@Tools/objects';
 
 // constants
-import { GROUP, INDIVIDUAL, PAIR, participantTypes } from '@Constants/participantConstants';
 import { PARTICIPANT_NAME_DERIVED_FROM_PERSON } from '@Constants/infoConstants';
 import { TOURNAMENT_RECORD, PARTICIPANT } from '@Constants/attributeConstants';
+import { GROUP, INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { TEAM } from '@Constants/matchUpTypes';
 import {
   CANNOT_MODIFY_PARTICIPANT_TYPE,
   INVALID_PARTICIPANT_TYPE,
   INVALID_PARTICIPANT_IDS,
+  PARTICIPANT_NOT_FOUND,
   VENUE_NOT_FOUND,
   INVALID_VALUES,
-  INVALID_DATE,
 } from '@Constants/errorConditionConstants';
 
 // types
 import { ParticipantStatusEnum, type Participant, type Tournament } from '@Types/tournamentTypes';
-import type { ResultType } from '@Types/factoryTypes';
+import type { ResultType, ScaleItem } from '@Types/factoryTypes';
 
+/**
+ * Every attribute of the supplied participant is WRITTEN or the call is REFUSED; none is accepted and dropped
+ * (CA 2026-11-02). The rules, which keep "consumers send the whole participant on every save" working:
+ *
+ * - `undefined` and `null` leave an attribute untouched; '' clears an optional scalar (see isClearRequest).
+ * - A value equal to the stored one is never refused, whatever it is (a home venue since deleted, a legacy code).
+ * - Every check runs before the first write, so a refused call changes nothing.
+ * - `timeItems` and `person.personOtherIds` are merged; the other setter-owned attributes are refused with the
+ *   setter named (see participantSetterFields).
+ * - Metadata is ignored: `isMock`, `createdAt`, `updatedAt`, `personId` and `teamId`, and attributes that are not
+ *   part of a CODES participant (such as those getParticipants adds).
+ * - An unrecognised `person.nationalityCode` is written, and the result carries a NATIONALITY_CODE_UNRECOGNIZED
+ *   warning.
+ */
 export function modifyParticipant(params) {
   const {
     updateParticipantName = true,
@@ -57,115 +68,43 @@ export function modifyParticipant(params) {
 
   if (!existingParticipant) return addParticipant({ tournamentRecord, participant });
 
-  const {
-    participantRoleResponsibilities,
-    contactParticipantIds,
-    individualParticipantIds,
-    participantOtherName,
-    participantName,
-    participantRole,
-    participantType,
-    onlineResources,
-    contacts,
-    person,
-  } = participant;
-
+  const { participantType } = participant;
   if (participantType && existingParticipant.participantType !== participantType)
     return { error: CANNOT_MODIFY_PARTICIPANT_TYPE };
 
-  const newValues: any = {};
-  const clearedKeys: string[] = [];
-
-  // Refused before anything is written: these used to return success while dropping the value.
-  const attributesResult = setParticipantAttributes({
-    tournamentRecord,
+  const plan = planModification({
+    updateParticipantName,
+    groupingParticipantId,
     existingParticipant,
+    tournamentRecord,
+    pairOverride,
     participant,
-    clearedKeys,
-    newValues,
   });
-  if (attributesResult?.error) return attributesResult;
+  if (plan.error) return plan;
 
-  // validate participant attributes
-  if (contacts) newValues.contacts = contacts;
-  if (onlineResources) newValues.onlineResources = onlineResources;
+  // ---- nothing above this line writes ----
+  const { participantValues, clearedKeys, personPlan, scaleItems, suppliedParticipantName } = plan as ModificationPlan;
+  if (personPlan) applyPersonUpdate({ existingParticipant, plan: personPlan });
+  applyScaleItems({ participant: existingParticipant, scaleItems });
 
-  // Same clear contract as the person fields below: '' clears, `undefined` leaves untouched.
-  // The previous line could not clear. `participantOtherName || undefined` turned '' into
-  // `undefined`, and `definedAttributes` strips `undefined`, so the key was never assigned AND
-  // never removed -- the stored value simply survived. Identical in shape to the nationalityCode
-  // and birthDate defects already closed here.
-  //
-  // The assign branch is gated on isString because the old `|| undefined` was incidentally
-  // filtering non-string input: without the guard, `definedAttributes` (which strips only '',
-  // null and undefined) would persist a 0 or a false into a name field.
-  if (isClearRequest(participantOtherName)) {
-    clearedKeys.push('participantOtherName');
-  } else if (isString(participantOtherName)) {
-    newValues.participantOtherName = participantOtherName;
-  }
-  const suppliedParticipantName =
-    participantName && isString(participantName) ? collapseWhitespace(participantName) : undefined;
-  if (suppliedParticipantName) newValues.participantName = suppliedParticipantName;
+  // A supplied participantName can be superseded by a derived one: from `person` for an INDIVIDUAL, or from the
+  // individuals of a PAIR. That is intended precedence, and it is surfaced (PARTICIPANT_NAME_DERIVED_FROM_PERSON).
+  const participantNameSuperseded =
+    !!suppliedParticipantName && participantValues.participantName !== suppliedParticipantName;
 
-  if (Array.isArray(individualParticipantIds)) {
-    updateIndividualParticipantIds({
-      individualParticipantIds,
-      updateParticipantName,
-      existingParticipant,
-      participantType,
-      tournamentRecord,
-      pairOverride,
-      newValues,
-    });
-  }
-  // Designated contact people for a grouping. Validated against the membership the participant will
-  // HAVE after this call — `newValues.individualParticipantIds` when membership is being changed in the
-  // same mutation, the existing list otherwise. Validating against the stale list would reject a
-  // legitimate "add these members and make one of them the contact" in a single call.
-  //
-  // A pointer to a non-member is stale rather than authoritative, so it is refused on write instead of
-  // being tolerated and filtered on every read.
-  if (Array.isArray(contactParticipantIds)) {
-    const membership = newValues.individualParticipantIds ?? existingParticipant.individualParticipantIds ?? [];
-    const invalid = contactParticipantIds.filter((participantId) => !membership.includes(participantId));
-    if (invalid.length) return { error: INVALID_PARTICIPANT_IDS, invalid };
-    newValues.contactParticipantIds = contactParticipantIds;
-  }
-
-  if (Object.keys(participantRoles).includes(participantRole)) newValues.participantRole = participantRole;
-  if (Object.keys(participantTypes).includes(participantType)) newValues.participantType = participantType;
-
-  if (Array.isArray(participantRoleResponsibilities))
-    newValues.participantRoleResponsibilities = participantRoleResponsibilities;
-
-  if (existingParticipant.participantType === participantTypes.INDIVIDUAL && person) {
-    const personResult = updatePerson({
-      updateParticipantName,
-      existingParticipant,
-      newValues,
-      person,
-    });
-    if (personResult?.error) return personResult;
-  }
-
-  // A supplied participantName can be superseded by a derived one — from `person` for an INDIVIDUAL,
-  // or from the individuals of a PAIR. That is intended precedence, but returning success while
-  // silently dropping a value the caller passed makes a partial no-op indistinguishable from a full
-  // success. Surface it instead. See PARTICIPANT_NAME_DERIVED_FROM_PERSON.
-  const participantNameSuperseded = !!suppliedParticipantName && newValues.participantName !== suppliedParticipantName;
-
-  Object.assign(existingParticipant, definedAttributes(newValues));
+  Object.assign(existingParticipant, definedAttributes(participantValues));
   // After the assign, so a cleared key cannot be reinstated by it.
   for (const key of clearedKeys) delete existingParticipant[key];
 
   if (groupingParticipantId) {
-    addIndividualParticipantIds({
+    // its refusals were checked by checkGrouping before any write
+    const result = addIndividualParticipantIds({
       individualParticipantIds: [existingParticipant.participantId],
       groupingParticipantId,
       removeFromOtherTeams,
       tournamentRecord,
     });
+    if (result.error) return result;
   }
 
   modifyParticipantsNotice({
@@ -173,12 +112,229 @@ export function modifyParticipant(params) {
     participants: [existingParticipant],
   });
 
+  const warnings = personPlan?.warnings ?? [];
   return {
     participant: makeDeepCopy(existingParticipant),
     ...SUCCESS,
     // conditional: callers that did not hit the precedence see the response shape they always have
     ...(participantNameSuperseded && { info: PARTICIPANT_NAME_DERIVED_FROM_PERSON }),
+    ...(warnings.length ? { warnings } : {}),
   };
+}
+
+// the caller's participant and the values assembled from it: open records, validated attribute by attribute
+type Loose = Record<string, any>;
+
+type ModificationPlan = ResultType & {
+  participantValues: Loose;
+  suppliedParticipantName?: string;
+  personPlan?: PersonPlan;
+  scaleItems: ScaleItem[];
+  clearedKeys: string[];
+};
+
+type PlanArgs = {
+  existingParticipant: Participant;
+  updateParticipantName?: boolean;
+  groupingParticipantId?: string;
+  tournamentRecord: Tournament;
+  pairOverride?: boolean;
+  participant: Loose;
+};
+
+type FieldArgs = {
+  existingParticipant: Participant;
+  participantValues: Loose;
+  clearedKeys: string[];
+  participant: Loose;
+};
+
+function planModification(args: PlanArgs): ModificationPlan | ResultType {
+  const { existingParticipant, participant, tournamentRecord } = args;
+  const participantValues: Loose = {};
+  const clearedKeys: string[] = [];
+  const fieldArgs: FieldArgs = { existingParticipant, participant, clearedKeys, participantValues };
+
+  // first, so that a PAIR's derived name and then the person's supersede it, as they always have
+  const name = participantNameValue({ existingParticipant, participant });
+  if (name.error) return name;
+  if (name.participantName) participantValues.participantName = name.participantName;
+
+  const checks: (() => ResultType | undefined)[] = [
+    () => checkGrouping(args),
+    () => checkSetterOwnedAttributes({ existingParticipant, participant }),
+    () => setParticipantAttributes({ tournamentRecord, ...fieldArgs }),
+    () => setListAttributes(fieldArgs),
+    () => setRoleAndNotes(fieldArgs),
+    () => setParticipantOtherName(fieldArgs),
+    () => setIndividualParticipantIds({ ...args, participantValues }),
+    () => checkContactParticipantIds(fieldArgs),
+  ];
+  for (const check of checks) {
+    const result = check();
+    if (result?.error) return result;
+  }
+
+  const timeItems = planTimeItems({ existingParticipant, timeItems: participant.timeItems });
+  if (timeItems.error) return timeItems;
+
+  const personPlan = planPerson({ ...args });
+  if (personPlan?.error) return personPlan;
+  if (personPlan?.participantName) participantValues.participantName = personPlan.participantName;
+
+  return {
+    suppliedParticipantName: name.participantName,
+    scaleItems: timeItems.scaleItems ?? [],
+    clearedKeys,
+    personPlan,
+    participantValues,
+  };
+}
+
+function planPerson({ existingParticipant, participant, updateParticipantName }: PlanArgs): PersonPlan | undefined {
+  const { person } = participant;
+  if (person === undefined || person === null) return undefined;
+  if (existingParticipant.participantType !== INDIVIDUAL) {
+    if (sameValue(person, existingParticipant.person)) return undefined;
+    return { error: INVALID_PARTICIPANT_TYPE, info: 'only an INDIVIDUAL participant has a person' };
+  }
+  return planPersonUpdate({ existingParticipant, person, updateParticipantName });
+}
+
+// The grouping a participant is added to is checked here, before any write; addIndividualParticipantIds used to run
+// after the participant was modified and its refusal was discarded.
+function checkGrouping({ groupingParticipantId, existingParticipant, tournamentRecord }: PlanArgs) {
+  if (groupingParticipantId === undefined || groupingParticipantId === null) return undefined;
+  const grouping = (tournamentRecord.participants ?? []).find(
+    (candidate) => candidate.participantId === groupingParticipantId,
+  );
+  if (!grouping) return { error: PARTICIPANT_NOT_FOUND, context: { groupingParticipantId } };
+  if (grouping.participantType && ![TEAM, GROUP].includes(grouping.participantType))
+    return { error: INVALID_PARTICIPANT_TYPE, info: 'groupingParticipantId must be a TEAM or a GROUP' };
+  if (existingParticipant.participantType !== INDIVIDUAL)
+    return { error: INVALID_PARTICIPANT_IDS, info: 'only an INDIVIDUAL participant joins a grouping' };
+  return undefined;
+}
+
+function participantNameValue({
+  existingParticipant,
+  participant,
+}: {
+  existingParticipant: Participant;
+  participant: Loose;
+}): ResultType & { participantName?: string } {
+  const { participantName } = participant;
+  if (participantName === undefined || participantName === null) return {};
+  if (sameValue(participantName, existingParticipant.participantName)) return { participantName };
+  const collapsed = isString(participantName) ? collapseWhitespace(participantName) : undefined;
+  if (!collapsed) return refusal('participantName', 'must be a non-empty string', participantName);
+  return { participantName: collapsed };
+}
+
+// contacts and onlineResources replace the stored list; participantRoleResponsibilities likewise
+function setListAttributes({ existingParticipant, participant, participantValues }: FieldArgs) {
+  const lists: [string, (item: unknown) => boolean, string][] = [
+    ['contacts', isObject, 'an array of contacts'],
+    ['onlineResources', isObject, 'an array of onlineResources'],
+    ['participantRoleResponsibilities', isString, 'an array of strings'],
+  ];
+  for (const [field, isItem, description] of lists) {
+    const value = participant[field];
+    if (value === undefined || value === null || sameValue(value, existingParticipant[field])) continue;
+    if (!Array.isArray(value) || !value.every(isItem)) return refusal(field, `must be ${description}`, value);
+    participantValues[field] = value;
+  }
+  return undefined;
+}
+
+function setRoleAndNotes({ existingParticipant, participant, clearedKeys, participantValues }: FieldArgs) {
+  const { participantRole, notes } = participant;
+  if (isClearRequest(participantRole)) {
+    clearedKeys.push('participantRole');
+  } else if (![undefined, null, existingParticipant.participantRole].includes(participantRole)) {
+    if (!Object.keys(participantRoles).includes(participantRole))
+      return refusal('participantRole', `must be one of ${Object.keys(participantRoles).join(', ')}`, participantRole);
+    participantValues.participantRole = participantRole;
+  }
+
+  // `addNotes` cannot reach a stored participant through the engine, so notes are written here
+  if (isClearRequest(notes)) {
+    clearedKeys.push('notes');
+  } else if (![undefined, null, existingParticipant.notes].includes(notes)) {
+    if (!isString(notes)) return refusal('notes', 'must be a string', notes);
+    participantValues.notes = notes;
+  }
+  return undefined;
+}
+
+// Same clear contract as the person fields: '' clears, `undefined` leaves untouched. The assign branch is gated on
+// isString: `definedAttributes` strips only '', null and undefined, so a 0 or a false would otherwise persist.
+function setParticipantOtherName({ participant, clearedKeys, participantValues }: FieldArgs): undefined {
+  const { participantOtherName } = participant;
+  if (isClearRequest(participantOtherName)) {
+    clearedKeys.push('participantOtherName');
+  } else if (isString(participantOtherName)) {
+    participantValues.participantOtherName = participantOtherName;
+  }
+  return undefined;
+}
+
+// Designated contact people for a grouping, validated against the membership the participant will HAVE after this
+// call. A pointer to a non-member is refused on write instead of being tolerated and filtered on every read.
+function checkContactParticipantIds({ existingParticipant, participant, participantValues }: FieldArgs) {
+  const { contactParticipantIds } = participant;
+  if (!Array.isArray(contactParticipantIds)) return undefined;
+  const membership = participantValues.individualParticipantIds ?? existingParticipant.individualParticipantIds ?? [];
+  const invalid = contactParticipantIds.filter((participantId) => !membership.includes(participantId));
+  if (invalid.length) return { error: INVALID_PARTICIPANT_IDS, invalid };
+  participantValues.contactParticipantIds = contactParticipantIds;
+  return undefined;
+}
+
+/**
+ * Members of a PAIR, TEAM or GROUP. An id that is not an INDIVIDUAL of this tournament is refused (one the grouping
+ * already holds is tolerated and removed, as before); a PAIR must have exactly two members unless `pairOverride`.
+ */
+function setIndividualParticipantIds({
+  updateParticipantName,
+  existingParticipant,
+  tournamentRecord,
+  pairOverride,
+  participant,
+  participantValues,
+}: PlanArgs & { participantValues: Loose }) {
+  const { individualParticipantIds } = participant;
+  if (individualParticipantIds === undefined || individualParticipantIds === null) return undefined;
+  if (!Array.isArray(individualParticipantIds) || !individualParticipantIds.every(isString))
+    return refusal('individualParticipantIds', 'must be an array of participantIds', individualParticipantIds);
+
+  const groupingType = existingParticipant.participantType;
+  if (![PAIR, TEAM, GROUP].includes(groupingType as string)) {
+    if (!individualParticipantIds.length) return undefined;
+    return { error: INVALID_PARTICIPANT_TYPE, info: 'only a PAIR, TEAM or GROUP has individualParticipantIds' };
+  }
+
+  const individualParticipants = (tournamentRecord.participants ?? []).filter(
+    ({ participantType }) => participantType === INDIVIDUAL,
+  );
+  const individualIds = new Set(individualParticipants.map(({ participantId }) => participantId));
+  const heldIds = existingParticipant.individualParticipantIds ?? [];
+  const unknown = individualParticipantIds.filter((id) => !individualIds.has(id) && !heldIds.includes(id));
+  if (unknown.length)
+    return { error: INVALID_PARTICIPANT_IDS, info: 'not individual participants of this tournament', invalid: unknown };
+
+  const members = individualParticipantIds.filter((id) => individualIds.has(id));
+  if (groupingType === PAIR && new Set(members).size !== 2 && !pairOverride)
+    return { error: INVALID_PARTICIPANT_IDS, info: 'a PAIR has exactly two individual participants', invalid: members };
+
+  participantValues.individualParticipantIds = members;
+  if (groupingType === PAIR && updateParticipantName) {
+    participantValues.participantName = generatePairParticipantName({
+      individualParticipantIds: members,
+      individualParticipants,
+    });
+  }
+  return undefined;
 }
 
 const participantStatuses: string[] = Object.values(ParticipantStatusEnum);
@@ -191,13 +347,19 @@ const participantStatuses: string[] = Object.values(ParticipantStatusEnum);
  * carries: consumers send the whole participant on every save, and an unrelated edit must not fail on a value
  * this call does not change (a home venue since deleted, say).
  */
-function setParticipantAttributes({ tournamentRecord, existingParticipant, participant, clearedKeys, newValues }) {
+function setParticipantAttributes({
+  tournamentRecord,
+  existingParticipant,
+  participant,
+  clearedKeys,
+  participantValues,
+}) {
   const { homeVenueIds, participantStatus, representing, useOtherName } = participant;
 
   if (homeVenueIds !== undefined) {
     const result = getHomeVenueIds({ tournamentRecord, existingParticipant, homeVenueIds });
     if (result.error) return result;
-    if (result.homeVenueIds?.length) newValues.homeVenueIds = result.homeVenueIds;
+    if (result.homeVenueIds?.length) participantValues.homeVenueIds = result.homeVenueIds;
     else clearedKeys.push('homeVenueIds');
   }
 
@@ -206,7 +368,7 @@ function setParticipantAttributes({ tournamentRecord, existingParticipant, parti
   } else if (participantStatus !== undefined && participantStatus !== existingParticipant.participantStatus) {
     if (!participantStatuses.includes(participantStatus))
       return { error: INVALID_VALUES, info: 'participantStatus must be ACTIVE or WITHDRAWN', participantStatus };
-    newValues.participantStatus = participantStatus;
+    participantValues.participantStatus = participantStatus;
   }
 
   if (isClearRequest(representing)) {
@@ -214,13 +376,13 @@ function setParticipantAttributes({ tournamentRecord, existingParticipant, parti
   } else if (representing !== undefined && representing !== existingParticipant.representing) {
     if (!isString(representing) || !validNationalityCode(representing))
       return { error: INVALID_VALUES, info: 'representing must be a country code', representing };
-    newValues.representing = representing;
+    participantValues.representing = representing;
   }
 
   if (useOtherName !== undefined) {
     if (typeof useOtherName !== 'boolean')
       return { error: INVALID_VALUES, info: 'useOtherName must be a boolean', useOtherName };
-    newValues.useOtherName = useOtherName;
+    participantValues.useOtherName = useOtherName;
   }
 
   return undefined;
@@ -247,139 +409,4 @@ function getHomeVenueIds({
   if (unknownVenueIds.length) return { error: VENUE_NOT_FOUND, venueIds: unknownVenueIds };
 
   return { homeVenueIds: uniqueVenueIds };
-}
-
-function updateIndividualParticipantIds({
-  individualParticipantIds,
-  updateParticipantName,
-  existingParticipant,
-  participantType,
-  tournamentRecord,
-  pairOverride,
-  newValues,
-}) {
-  const { participants: individualParticipants } = getParticipants({
-    participantFilters: { participantTypes: [INDIVIDUAL] },
-    tournamentRecord,
-  });
-  const allIndividualParticipantIds = individualParticipants?.map(getParticipantId);
-
-  if (!allIndividualParticipantIds) return;
-
-  const updatedIndividualParticipantIds = individualParticipantIds.filter(
-    (participantId) => isString(participantId) && allIndividualParticipantIds.includes(participantId),
-  );
-
-  if (
-    [GROUP, TEAM].includes(participantType || existingParticipant.participantType) ||
-    (participantType === PAIR && (updatedIndividualParticipantIds.length === 2 || pairOverride))
-  ) {
-    newValues.individualParticipantIds = updatedIndividualParticipantIds;
-  }
-
-  if (existingParticipant.participantType === participantTypes.PAIR && updateParticipantName) {
-    newValues.participantName = generatePairParticipantName({
-      individualParticipantIds: newValues.individualParticipantIds,
-      individualParticipants,
-    });
-  }
-}
-
-function updatePerson({ updateParticipantName, existingParticipant, newValues, person }) {
-  const newPersonValues: any = {};
-  const clearedKeys: string[] = [];
-  const { nationalityCode, personId, birthDate, tennisId, sex, contacts } = person;
-
-  // Names are whitespace-normalized before they are measured or stored. Before, a
-  // trailing space in a given-name field survived to compose 'Michael  Livson' —
-  // a participantName that renders correctly (HTML collapses the run) and fails
-  // every string comparison made against it afterwards, which is how it hid.
-  // Normalizing ahead of the length check also stops ' A ' from passing a test
-  // that the value actually persisted ('A') would fail.
-  const standardFamilyName = collapseWhitespace(person.standardFamilyName);
-  const standardGivenName = collapseWhitespace(person.standardGivenName);
-
-  // `person.contacts` had no write path anywhere in the factory — declared on the type, readable, and
-  // impossible to persist. That made `Contact.isPublic` inert by construction: nothing could set it, so
-  // the publication gate on `tournamentContacts` had nothing to gate on.
-  //
-  // Replace-whole-array, not merge: a contact list is edited as a list (add a number, remove one, flip
-  // one to public), and a merge would make removal unexpressible. Consistent with the "consumers send
-  // the whole person object" contract above — omitting `contacts` leaves the existing list untouched,
-  // while `[]` clears it.
-  if (Array.isArray(contacts)) newPersonValues.contacts = contacts;
-  // An unrecognized sex used to be skipped without a word, so the caller believed it saved.
-  // It is refused now, before anything is written; '' clears it, since sex is optional.
-  if (isClearRequest(sex)) {
-    clearedKeys.push('sex');
-  } else if (isUnrecognizedSex(sex)) {
-    return { error: INVALID_VALUES, info: UNRECOGNIZED_SEX_INFO, context: { sex } };
-  } else {
-    const canonicalSex = coercedSex(sex);
-    if (canonicalSex) newPersonValues.sex = canonicalSex;
-  }
-
-  let personNameModified;
-  if (isString(personId)) newPersonValues.personId = personId;
-
-  if (isClearRequest(nationalityCode)) {
-    clearedKeys.push('nationalityCode');
-  } else if (nationalityCode && isString(nationalityCode) && validNationalityCode(nationalityCode)) {
-    newPersonValues.nationalityCode = nationalityCode;
-  }
-
-  if (standardFamilyName && isString(standardFamilyName) && standardFamilyName.length > 1) {
-    newPersonValues.standardFamilyName = standardFamilyName;
-    personNameModified = true;
-  }
-
-  if (standardGivenName && isString(standardGivenName) && standardGivenName.length > 1) {
-    newPersonValues.standardGivenName = standardGivenName;
-    personNameModified = true;
-  }
-
-  if (personNameModified && updateParticipantName) {
-    // Collapsed on the existing values too, not only the incoming ones: a record
-    // that already carries 'Michael ' would otherwise re-compose the double space
-    // whenever the OTHER name is the one being edited.
-    const givenName = collapseWhitespace(
-      newPersonValues.standardGivenName || existingParticipant.person?.standardGivenName,
-    );
-    const familyName = collapseWhitespace(
-      newPersonValues.standardFamilyName || existingParticipant.person?.standardFamilyName,
-    );
-    if (givenName && familyName) {
-      newValues.participantName = `${givenName} ${familyName}`;
-    } else {
-      const nameParts = [givenName, familyName].filter(Boolean).join(' ');
-      newValues.participantName =
-        nameParts || existingParticipant.participantOtherName || existingParticipant.participantName;
-    }
-  }
-
-  if (isClearRequest(birthDate)) {
-    clearedKeys.push('birthDate');
-  } else if (birthDate) {
-    if (!isValidDateString(birthDate)) return { error: INVALID_DATE };
-    const birthYear = new Date(birthDate).getFullYear();
-    if (new Date(birthDate) > competitionNow() || birthYear < 1900) {
-      return { error: INVALID_DATE, info: 'birthDate must be a past date' };
-    }
-    newPersonValues.birthDate = birthDate;
-  }
-
-  if (tennisId && isString(tennisId)) {
-    newPersonValues.tennisId = tennisId;
-  }
-
-  Object.assign(existingParticipant.person, newPersonValues);
-  for (const key of clearedKeys) delete existingParticipant.person[key];
-  return undefined;
-}
-
-export function validNationalityCode(code) {
-  return countries
-    .flatMap(({ iso, ioc }) => [iso, ioc])
-    .filter(Boolean)
-    .includes(code);
 }

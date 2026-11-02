@@ -14,6 +14,13 @@ export const EVENT_DATE_INACTIVE = {
   message: 'The event does not play on this date.',
   code: 'EVENT_DATE_INACTIVE' as const,
 } satisfies ErrorType;
+// A person.nationalityCode modifyParticipant wrote although it is not a recognised country code. Always a WARNING,
+// never a refusal (CA 2026-11-02): federations carry codes the country fixture does not list. An instance adds
+// { participantId, nationalityCode }.
+export const NATIONALITY_CODE_UNRECOGNIZED = {
+  message: 'The nationalityCode is not a recognised country code.',
+  code: 'NATIONALITY_CODE_UNRECOGNIZED' as const,
+} satisfies ErrorType;
 // Entries draw generation left out because their stage had no place left for them. Always a WARNING, never a refusal:
 // generating from an event's entries takes the entries that fit and leaves the surplus on the event. An instance adds
 // { stage, participantIds, count, drawSize, entries: [{ participantId, entryStatus, reason }] } per stage.
@@ -1050,6 +1057,7 @@ export const errorConditionConstants = {
   ANACHRONISM,
   SCHEDULING_PROFILE_DATES_OUT_OF_RANGE,
   EVENT_DATE_INACTIVE,
+  NATIONALITY_CODE_UNRECOGNIZED,
   ENTRIES_NOT_PLACED,
   SCHEDULING_PROFILE_REPAIR_REQUIRED,
   UNWRITABLE_SCHEDULE_ATTRIBUTES,
