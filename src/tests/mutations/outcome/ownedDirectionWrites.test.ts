@@ -100,6 +100,8 @@ type Scenario = {
   steps: Step[];
   setup?: Step[];
   policyDefinitions?: Record<string, unknown>;
+  /** the generator's seed (an exit matrix cell's), where the draw's BYEs are where its steps need them */
+  nonRandom?: number;
 };
 
 // `propagateExitStatus`: a WALKOVER or DEFAULTED follows its loser across the link (S5)
@@ -150,6 +152,28 @@ const AWARDEE_PLAYED_ON: Step[] = [
 ];
 
 const SCENARIOS: [string, Scenario][] = [
+  // S7: the produced exit past a BYE-held next matchUp walks on through BYE-held matchUps (each left a BYE, the exit
+  // recorded), to a clean matchUp where it lands pending, or to the structure's end; exit matrix cells' sequences
+  ...(
+    [
+      ['FIRST_MATCH_LOSER_CONSOLATION', 8, 7, 137, 'one BYE passed, then the final: nothing beyond'],
+      ['FIRST_MATCH_LOSER_CONSOLATION', 16, 15, 167, 'one BYE passed, the exit pending in the matchUp beyond'],
+      ['FIRST_ROUND_LOSER_CONSOLATION', 8, 7, 197, 'the BYE matchUp is the final: the exit recorded, nothing beyond'],
+      ['FEED_IN_CHAMPIONSHIP_TO_QF', 8, 7, 100137, 'the BYE matchUp is the final: the exit recorded, nothing beyond'],
+    ] as const
+  ).map(([drawType, drawSize, participantsCount, nonRandom, shape]): [string, Scenario] => [
+    `${drawType} ${drawSize}/${participantsCount}: Consolation 1/2 a double walkover beside a BYE, ${shape}`,
+    {
+      drawProfile: { drawType, drawSize, participantsCount },
+      nonRandom,
+      setup: [
+        { target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED },
+        { target: R1(3, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+        { target: R1(4, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+      ],
+      steps: [{ target: R1(2, 'Consolation'), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED }],
+    },
+  ]),
   // S7: a double exit whose next matchUp holds a BYE on the side its produced exit is awarded to (the fed seat a BYE):
   // that matchUp stays a BYE and records the exit, which stands pending in the matchUp beyond
   ...(['DOUBLE_WALKOVER', 'DOUBLE_DEFAULT'] as const).flatMap((status): [string, Scenario][] =>
@@ -2515,7 +2539,7 @@ function findTarget(target: Target): string {
 /** the steps from a fresh record, every topic subscribed and the clock fixed */
 function play(
   mode: OutcomePipelineMode,
-  { drawProfile, steps, setup = [], policyDefinitions }: Scenario,
+  { drawProfile, steps, setup = [], policyDefinitions, nonRandom = 1 }: Scenario,
   { realClock }: { realClock?: boolean } = {},
 ) {
   setOutcomePipeline(OUTCOME_PIPELINE_V1);
@@ -2523,7 +2547,7 @@ function play(
   setSubscriptions({ subscriptions: {} });
   mocksEngine.generateTournamentRecord({
     drawProfiles: [{ ...drawProfile, drawId: 'd' }],
-    nonRandom: 1,
+    nonRandom,
     setState: true,
   });
   if (policyDefinitions) tournamentEngine.attachPolicies({ policyDefinitions });

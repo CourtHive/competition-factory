@@ -105,7 +105,9 @@ export function applyOwnedPlan({
   // own, and a carried exit's on the matchUp it lands in (S5)
   for (const matchUpId of written) {
     if (!subscribed || !resulted.has(matchUpId) || !stored.has(matchUpId)) continue;
-    const contextless = untournamented.has(matchUpId);
+    const contextless =
+      untournamented.has(matchUpId) ||
+      ops.some((op) => op.op === 'setMatchUpResult' && op.matchUpId === matchUpId && op.inContextBare);
     const record = contextless ? undefined : tournamentRecord;
     deferInContextMatchUp({
       inContextMatchUp: () => getInContextMatchUp({ tournamentRecord: record, drawDefinition, matchUpId }),
