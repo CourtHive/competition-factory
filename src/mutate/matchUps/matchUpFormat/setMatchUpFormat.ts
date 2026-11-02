@@ -70,7 +70,6 @@ export function setMatchUpFormat(params: SetMatchUpStatusArgs) {
     eventId,
     stages,
     drawId,
-    event,
     force, // strip matchUpFormat from scoped matchUps which have not been scored
   } = params;
 
@@ -110,7 +109,7 @@ export function setMatchUpFormat(params: SetMatchUpStatusArgs) {
     modificationsCount += 1;
   }
 
-  const processStructures = (targetDrawDefinition) => {
+  const processStructures = (targetDrawDefinition: DrawDefinition, targetEvent: Event) => {
     const result = applyFormatToStructures({
       drawDefinition: targetDrawDefinition,
       tournamentRecord,
@@ -120,7 +119,7 @@ export function setMatchUpFormat(params: SetMatchUpStatusArgs) {
       structureIds,
       stack,
       force,
-      event,
+      event: targetEvent,
       stages,
     });
     return result;
@@ -133,9 +132,11 @@ export function setMatchUpFormat(params: SetMatchUpStatusArgs) {
     matchUpFormat,
     structureIds,
     eventType,
+    scheduledDates,
     eventIds,
     drawIds,
     stages,
+    force,
   });
 
   if (!modificationsCount) return { ...SUCCESS, info: NO_MODIFICATIONS_APPLIED };
@@ -150,9 +151,23 @@ function applyFormatToEvents({
   matchUpFormat,
   structureIds,
   eventType,
+  scheduledDates,
   eventIds,
   drawIds,
   stages,
+  force,
+}: {
+  processStructures: (drawDefinition: DrawDefinition, event: Event) => ReturnType<typeof applyFormatToStructures>;
+  tournamentRecord?: Tournament;
+  stageSequences?: number[];
+  scheduledDates?: string[];
+  structureIds: string[];
+  matchUpFormat: string;
+  eventType?: string;
+  eventIds: string[];
+  drawIds: string[];
+  stages?: string[];
+  force?: boolean;
 }) {
   let count = 0;
   for (const evt of tournamentRecord?.events ?? []) {
@@ -164,14 +179,23 @@ function applyFormatToEvents({
       continue;
     }
 
-    if (Array.isArray(stageSequences) || Array.isArray(stages) || structureIds?.length || drawIds?.length) {
+    const scoped = Array.isArray(stageSequences) || Array.isArray(stages) || structureIds?.length || drawIds?.length;
+    if (scoped || force || scheduledDates) {
       for (const dd of evt.drawDefinitions ?? []) {
-        if (Array.isArray(drawIds) && !drawIds.includes(dd.drawId)) continue;
-        const result = processStructures(dd);
+        if (drawIds?.length && !drawIds.includes(dd.drawId)) continue;
+        const result = processStructures(dd, evt);
         count += result.modificationsCount;
-        modifyDrawNotice({ structureIds: result.modifiedStructureIds, drawDefinition: dd });
+        if (result.modificationsCount) {
+          modifyDrawNotice({
+            tournamentId: tournamentRecord?.tournamentId,
+            structureIds: result.modifiedStructureIds,
+            drawDefinition: dd,
+            eventId: evt.eventId,
+          });
+        }
       }
-    } else if (evt.matchUpFormat !== matchUpFormat) {
+    }
+    if (!scoped && evt.matchUpFormat !== matchUpFormat) {
       evt.matchUpFormat = matchUpFormat;
       count += 1;
       // event.matchUpFormat is a first-class event attribute — cover the change.
@@ -219,22 +243,24 @@ function applyFormatToStructures({
       [];
 
     const inContextMatchUps: HydratedMatchUp[] =
-      (scheduledDates &&
-        getAllStructureMatchUps({
-          matchUpFilters: { matchUpStatuses: [TO_BE_PLAYED] },
-          contextFilters: { scheduledDates },
-          afterRecoveryTimes: false,
-          inContext: true,
-          structure,
-        }).matchUps) ??
-      [];
+      (scheduledDates?.length
+        ? getAllStructureMatchUps({
+            matchUpFilters: { matchUpStatuses: [TO_BE_PLAYED] },
+            contextFilters: { scheduledDates },
+            afterRecoveryTimes: false,
+            inContext: true,
+            structure,
+          }).matchUps
+        : []) ?? [];
 
     if (matchUps?.length) {
-      const matchUpIdsToModify = inContextMatchUps ? inContextMatchUps.map(getMatchUpId) : matchUps.map(getMatchUpId);
+      const matchUpIdsToModify = new Set((scheduledDates ? inContextMatchUps : matchUps).map(getMatchUpId));
+      const targetFormat = scheduledDates?.length ? matchUpFormat : undefined;
 
       for (const matchUp of matchUps) {
-        if (matchUpIdsToModify.includes(matchUp.matchUpId)) {
-          matchUp.matchUpFormat = scheduledDates?.length ? matchUpFormat : undefined;
+        if (matchUpIdsToModify.has(matchUp.matchUpId) && matchUp.matchUpFormat !== targetFormat) {
+          matchUp.matchUpFormat = targetFormat;
+          modificationsCount += 1;
 
           modifyMatchUpNotice({
             tournamentId: tournamentRecord?.tournamentId,

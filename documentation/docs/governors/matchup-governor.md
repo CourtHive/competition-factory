@@ -1006,6 +1006,8 @@ If an array of `scheduledDates` is provided then `matchUps` which have `matchUpS
 
 The `force` attribute will remove the `matchUpFormat` from all targeted `matchUps` which have `matchUpStatus: TO_BE_PLAYED`; this allows the effect of using `scheduledDates` to be reversed. Use of this attribute will have no effect if `scheduledDates` is also provided.
 
+An explicitly empty `scheduledDates: []` selects no matchUps, even when `force` is true. Omit `scheduledDates` to clear all targeted unplayed overrides. Scored matchUps retain their formats. MatchUp format changes are included in `modificationsCount` and emit `MODIFY_MATCHUP` notices.
+
 :::
 
 ```js
