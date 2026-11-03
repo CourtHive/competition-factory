@@ -1,6 +1,6 @@
+import { validateMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { validateTieFormat } from '@Validators/validateTieFormat';
-import { validateMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { isFunction, isObject, isString } from '@Tools/objects';
 import { entityIdMismatch } from './entityIdMismatch';
 import { intersection } from '@Tools/arrays';
