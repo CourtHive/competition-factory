@@ -1,11 +1,11 @@
 import { asyncEngine, competitionEngineAsync, tournamentEngineAsync } from '../../index';
-import { setStateProvider } from '@Global/state/globalState';
-import legacyConstructor from '@Assemblies/engines/async';
-import assembled from '@Engines/asyncEngine';
-import * as governors from '@Assemblies/governors';
-import { afterEach, describe, expect, it } from 'vitest';
-import syncGlobalState from '@Global/state/syncGlobalState';
 import asyncGlobalState from '@Server/providers/factory/engines/asyncGlobalState';
+import { setStateProvider } from '@Global/state/globalState';
+import syncGlobalState from '@Global/state/syncGlobalState';
+import legacyConstructor from '@Assemblies/engines/async';
+import { afterEach, describe, expect, it } from 'vitest';
+import * as governors from '@Assemblies/governors';
+import assembled from '@Engines/asyncEngine';
 
 afterEach(() => setStateProvider(syncGlobalState));
 
