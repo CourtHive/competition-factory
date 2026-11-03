@@ -9,6 +9,10 @@ each, what `stringify` writes, and which well-formed codes are refused for a new
 scoring is stated there, not here. The [matchUpFormat codes](/docs/codes/matchup-format) page is the guide to
 writing codes; where the two differ, this page is the rule.
 
+The [overtime and extra-time extension](./overtime/index.md) has its own short pages for repeated overtime,
+exact extra-time halves, finite ceilings, golden goals, silver goals and shootout handoffs. It is in development
+and is not yet enabled in published Factory versions; examples there do not change the currently enabled grammar below.
+
 First version, 2026-10-25, written from the parser's rules (`parse` refuses what `isValid` refuses, CA 2026-10-02;
 the refusals for new use, CA 2026-10-18), the existing tests (`parseIsStrict.test.ts`, `matchUpFormatCode.test.ts`,
 `crossSportFormats.test.ts`) and probes of factory `dev`. The four questions that draft left open were decided by CA
