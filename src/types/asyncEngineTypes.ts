@@ -1,3 +1,7 @@
+import type { AsyncEngineDirectMethod } from './asyncEngineDirectMethods';
+import type { setClock, setCompetitionClock } from '../tools/clock';
+import type { setRandomSource } from '../tools/prng';
+import type { Tournament } from './tournamentTypes';
 import type {
   FactoryEngineTyped,
   MethodSignatures,
@@ -6,10 +10,6 @@ import type {
   ResultType,
   TournamentRecords,
 } from './factoryTypes';
-import type { AsyncEngineDirectMethod } from './asyncEngineDirectMethods';
-import type { Tournament } from './tournamentTypes';
-import type { setClock, setCompetitionClock } from '../tools/clock';
-import type { setRandomSource } from '../tools/prng';
 import type {
   DeepCopyAttributes,
   DevContextType,
