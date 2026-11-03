@@ -30,7 +30,7 @@ type TypeChangeArgs = {
     'collectionValueProfiles' | 'collectionValue' | 'matchUpValue' | 'scoreValue' | 'setValue'
   >;
   resetMatchUpTypeChoice?: boolean;
-  reported?: boolean;
+  reportedScoreSource?: boolean;
   matchUpType?: string;
   matchUpCount?: number;
   matchUp?: MatchUp;
@@ -77,7 +77,7 @@ export function planCollectionTypeChange(args: TypeChangeArgs): TypeChangeResult
   if (matchUp.winningSide || completedMatchUpStatuses.includes(matchUp.matchUpStatus!))
     return refusal(CANNOT_MODIFY_TIEFORMAT, 'An encounter with a result cannot change collection type');
   const children = (matchUp.tieMatchUps ?? []).filter((child) => child.collectionId === source.collectionId);
-  if (children.length !== (args.reported ? 0 : source.matchUpCount))
+  if (children.length !== (args.reportedScoreSource ? 0 : source.matchUpCount))
     return refusal(CANNOT_MODIFY_TIEFORMAT, 'Collection definition and rubber count disagree');
   if (children.some((child) => child.matchUpType !== source.matchUpType))
     return refusal(CANNOT_MODIFY_TIEFORMAT, 'Collection definition and rubber types disagree');
