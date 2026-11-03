@@ -115,23 +115,17 @@ describe('overtime grammar foundation (CA 2026-11-03)', () => {
       expect(stringify({ ...regulation, overtimeFormat })).toBeUndefined();
   });
 
-  it('does not activate new-use or live scoring before the runtime slice', () => {
+  it('keeps tournament new-use gated while the public ScoringEngine supports timed overtime', () => {
     expect(parse(OVERTIME)).toBeDefined();
     expect(isValidMatchUpFormat({ matchUpFormat: OVERTIME })).toBe(false);
     expect(resolveFormat(OVERTIME)).toBeUndefined();
     const engine = new ScoringEngine({ matchUpFormat: OVERTIME });
-    const before = engine.getState();
-    for (const action of [
-      () => engine.addPoint({ winner: 0 }),
-      () => engine.addGame({ winner: 0 }),
-      () => engine.addSet({ side1Score: 1, side2Score: 0 }),
-      () => engine.endSegment(),
-      () => engine.setInitialScore({ sets: [{ side1Score: 1, side2Score: 0 }] }),
-      () => engine.setServer(0),
-    ]) {
-      expect(action).toThrow(/Invalid matchUpFormat/);
-      expect(engine.getState()).toEqual(before);
-    }
+    for (let i = 0; i < 3; i++) expect(engine.addSet({ side1Score: 0, side2Score: 0 })).toEqual({ recorded: true });
+    expect(engine.isComplete()).toBe(false);
+    engine.addPoint({ winner: 0 });
+    engine.endSegment();
+    expect(engine.getWinner()).toBe(1);
+    expect(engine.getScore().overtime).toMatchObject({ phase: 'OVERTIME', periodNumber: 1 });
   });
 
   it('also refuses the legacy public point mutator before it can initialize history', () => {

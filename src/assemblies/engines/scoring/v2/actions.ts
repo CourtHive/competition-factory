@@ -62,6 +62,8 @@ export const CALCULATED_POINT_FIELDS: ReadonlySet<string> = new Set([
   'gamesToSet',
   'isBreakpoint',
   'serveSide',
+  'phase',
+  'periodNumber',
 ]);
 
 export function refusal(message: string): Refusal {

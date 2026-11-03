@@ -1,4 +1,6 @@
 import { activePlayersOf, hasLineUps, substituted, type LineUps } from './lineUps';
+import { overtimeScoreContext } from '@Helpers/matchUpFormatCode/overtimeContext';
+import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { isClosed } from './decide';
 
 // constants and types
@@ -121,6 +123,9 @@ export function materialize({
       lineUps.current?.[side.sideNumber] ? { ...side, lineUp: lineUps.current[side.sideNumber] } : side,
     ),
   };
+  const format = parse(base.matchUpFormat);
+  const overtime = format && overtimeScoreContext(format, recorded.score.sets, state.matchUpStatus);
+  if (overtime) recorded.score.overtime = overtime;
   if (previous || entries.length || points.length || initialServer !== undefined) recorded.history = history;
   return recorded;
 }

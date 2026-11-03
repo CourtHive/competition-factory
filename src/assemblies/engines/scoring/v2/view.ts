@@ -1,5 +1,6 @@
 import { NEW_GAME, playGamePoint, playRacePoint } from './segments/game';
 import { inTiebreak, standardSetWinner } from './segments/standard';
+import { overtimeGoverns } from './overtime';
 import { ruleForSet } from './format';
 import { setsWon } from './decide';
 
@@ -144,6 +145,8 @@ function counted(rule: SegmentRule): boolean {
 
 /** the points-to of the next point, or nothing where § 11.2 gives none */
 export function pointsTo(state: ScoringState, position: ServicePosition): PointsTo | undefined {
+  if (position.match.overtime?.suddenDeath && overtimeGoverns(position.match, position.set.setNumber))
+    return { pointsToGame: [1, 1], pointsToSet: [1, 1], pointsToMatch: [1, 1], gamesToSet: [1, 1] };
   const { rule, set, game } = position;
   if (!counted(rule)) return undefined;
   const sides: Side[] = [0, 1];

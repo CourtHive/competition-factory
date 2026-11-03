@@ -1,19 +1,8 @@
 import { INITIAL_SERVICE, afterPoint, corrected, nextServer, serveSide, serviceCode } from './service';
+import { lastPlayableSet, overtimeGoverns, overtimeTotalError, periodForSet } from './overtime';
 import { configuredFormat, resolveFormat, ruleForSet, takesInput } from './format';
-import { lastPlayableSet, overtimeGoverns, overtimeTotalError } from './overtime';
 import { decideMatch, isClosed, setsWon } from './decide';
 import { isBreakpoint, pointsTo } from './view';
-import {
-  decidedInPlay,
-  pointsAreUnits,
-  segmentPoint,
-  atTimeIn,
-  segmentTotal,
-  segmentGame,
-  segmentEnd,
-  openSet,
-  type SegmentStep,
-} from './segments/segment';
 import {
   readChallenge,
   readEndSegment,
@@ -35,6 +24,17 @@ import {
   SET,
   type SetTotal,
 } from './actions';
+import {
+  decidedInPlay,
+  pointsAreUnits,
+  segmentPoint,
+  atTimeIn,
+  segmentTotal,
+  segmentGame,
+  segmentEnd,
+  openSet,
+  type SegmentStep,
+} from './segments/segment';
 
 // constants and types
 import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
@@ -146,14 +146,15 @@ function target(match: MatchRule, state: ScoringState): Target | undefined {
  * `scoring` counts the input toward the scoring entries a second baseline is refused after (§ 2.5).
  */
 function scored(match: MatchRule, state: ScoringState, at: Target, result: SegmentStep, scoring = true): ScoringState {
-  const sets = [...state.sets.slice(0, at.index), result.set];
+  const labeled = { ...result.set, ...periodForSet(match, at.set.setNumber) };
+  const sets = [...state.sets.slice(0, at.index), labeled];
   const decision = decideMatch(match, sets);
   const suddenDeathWin =
     match.overtime?.suddenDeath &&
     overtimeGoverns(match, at.set.setNumber) &&
     decision.complete &&
     decision.winningSide;
-  if (suddenDeathWin) sets[at.index] = { ...result.set, segmentComplete: true, winningSide: decision.winningSide };
+  if (suddenDeathWin) sets[at.index] = { ...labeled, segmentComplete: true, winningSide: decision.winningSide };
   const { winningSide: _previous, game: _game, ...rest } = state;
   return {
     ...rest,
@@ -220,6 +221,7 @@ function point(context: ReducerContext, match: MatchRule, state: ScoringState, e
   const index = state.points.length;
   const materialized = {
     ...pointFacts(entry.data),
+    ...periodForSet(match, at.set.setNumber),
     winner,
     winningSide: (winner + 1) as 1 | 2,
     ...(server === undefined ? {} : { server, serverSideNumber: (server + 1) as 1 | 2 }),
@@ -325,7 +327,7 @@ function baselineSets(match: MatchRule, given: unknown[]): { sets?: ScoredSet[];
     if ((atTimeSet || !isClosed(judged.set)) && i < given.length - 1)
       return { refused: `Set ${i + 1} is not finished and is not the last set` };
     if (atTimeSet) atTime = true;
-    sets.push(judged.set);
+    sets.push({ ...judged.set, ...periodForSet(match, i + 1) });
   }
   return { sets, atTime };
 }
@@ -368,19 +370,61 @@ function baselineInPlay(match: MatchRule, sets: ScoredSet[], data: EntryData): B
   // (SE2a-D14, CA 2026-10-21: refused, the cleaner rule)
   if (given && raceInPlay) return { refused: raceNamedTwice(setNumber) };
   const base: ScoredSet = open && !raceInPlay ? last : openSet(rule, setNumber);
-  const inPlay: ScoredSet = { ...base, side1Score: base.side1Score + games[0], side2Score: base.side2Score + games[1] };
-  if (
-    match.overtime?.suddenDeath &&
-    overtimeGoverns(match, setNumber) &&
-    [inPlay.side1Score, inPlay.side2Score, ...(given ?? [])].some((score) => score > 0)
-  )
-    return { refused: 'a sudden-death overtime with a nonzero score is already decided, not in play' };
+  const checked = overtimeBaselineSet(
+    match,
+    rule,
+    {
+      ...base,
+      side1Score: base.side1Score + games[0],
+      side2Score: base.side2Score + games[1],
+      ...periodForSet(match, setNumber),
+    },
+    given,
+    !!currentSetScore,
+  );
+  if ('refused' in checked) return checked;
+  const inPlay = checked;
   if (decidedInPlay(rule, [inPlay.side1Score, inPlay.side2Score])) return { refused: 'the set in play is already won' };
   // a combined total counts rallies, not games: its set in play has no game in play (§ 7 rule 5)
   if (rule.kind === 'combined') return { sets: [...closed, inPlay] };
-  const points: Pair = given ?? (raceInPlay ? [last.side1Score, last.side2Score] : [0, 0]);
+  const points = baselinePoints(match, rule, inPlay, raceInPlay ? last : undefined, given);
   const withGame = { ...inPlay, side1GameScores: [points[0]], side2GameScores: [points[1]] };
   return { sets: [...closed, withGame], game: { score: points, pointsPlayed: points[0] + points[1] } };
+}
+
+function baselinePoints(
+  match: MatchRule,
+  rule: SegmentRule,
+  inPlay: ScoredSet,
+  race: ScoredSet | undefined,
+  given?: Pair,
+): Pair {
+  if (given) return given;
+  if (match.overtime && rule.kind === 'timed') return [inPlay.side1Score, inPlay.side2Score];
+  return race ? [race.side1Score, race.side2Score] : [0, 0];
+}
+
+function overtimeBaselineSet(
+  match: MatchRule,
+  rule: SegmentRule,
+  set: ScoredSet,
+  given: Pair | undefined,
+  setGiven: boolean,
+): ScoredSet | { refused: string } {
+  if (!match.overtime) return set;
+  let inPlay = set;
+  if (rule.kind === 'timed' && given) {
+    if (setGiven && (given[0] !== set.side1Score || given[1] !== set.side2Score))
+      return { refused: 'timed overtime baseline games and points name the same totals and must agree' };
+    inPlay = { ...set, side1Score: given[0], side2Score: given[1] };
+  }
+  if (
+    match.overtime.suddenDeath &&
+    overtimeGoverns(match, set.setNumber) &&
+    [inPlay.side1Score, inPlay.side2Score, ...(given ?? [])].some((score) => score > 0)
+  )
+    return { refused: 'a sudden-death overtime with a nonzero score is already decided, not in play' };
+  return inPlay;
 }
 
 export const raceNamedTwice = (setNumber: number): string =>

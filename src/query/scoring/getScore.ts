@@ -13,6 +13,7 @@ import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
 import { getCombinedPointScore } from './getCombinedPointScore';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { overtimeScore } from './overtimeScore';
 
 // constants
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
@@ -29,7 +30,9 @@ export interface GetScoreOptions {
  * @returns Score information with pointDisplay and situation
  */
 export function getScore(matchUp: MatchUp, options?: GetScoreOptions): ScoreResult {
-  const combined = parse(matchUp.matchUpFormat)?.setFormat;
+  const format = parse(matchUp.matchUpFormat);
+  if (format?.overtimeFormat) return overtimeScore(matchUp);
+  const combined = format?.setFormat;
   if (combined?.combinedPointTotal) return getCombinedPointScore(matchUp, combined);
   const sets = matchUp.score.sets;
 

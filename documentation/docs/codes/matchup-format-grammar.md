@@ -29,9 +29,9 @@ A valid code is well-formed; a well-formed code may not be valid (§ 6). Every w
 canonical spelling, and `parse` and `stringify` are inverse on it: `stringify(parse(c)) === c` for every canonical
 `c`, and for every well-formed `c`, `stringify(parse(c))` is `c` with its equivalent spellings (§ 4) rewritten.
 
-**Overtime foundation (CA 2026-11-03):** § 9 adds readable overtime syntax. These codes are not yet valid for
-new use or supported by live scoring; the scoring engine refuses them until the reducer and score-record
-integration is implemented. The existing scoring rules below apply to codes without `-O:`.
+**Overtime extension (CA 2026-11-03):** § 9 adds readable overtime syntax. ScoringEngine now supports the
+defined timed subset, including phase-aware records and replay. General tournament new-use validation remains
+gated until its separate activation slice. The existing rules below apply to codes without `-O:`.
 
 ## 2. Lexical rules
 
@@ -231,11 +231,12 @@ standard set, or a final segment identical to the set segment. Four stored codes
 use and read where stored (§ 6: `SET1-S:10/TB7@8`, `SET1-S:11/TB7@8`, `SET1-S:12/TB7@8` and `SET3A-S:6/TB7-F:TB10`,
 seven values in four tournaments).
 
-## 9. Overtime grammar foundation (not activated for scoring)
+## 9. Overtime extension (tournament activation pending)
 
-CA approved conditional overtime repetition on 2026-11-03. This first slice adds parsing and canonical
-serialization only. `isValidMatchUpFormat` returns false for these codes, and both `ScoringEngine` and the public
-point mutator refuse scoring input. Reading the syntax does not imply that the factory can score it yet.
+CA approved conditional overtime repetition on 2026-11-03. Parsing, canonical serialization and the supported
+ScoringEngine subset are implemented. `isValidMatchUpFormat` still returns false for tournament new use,
+and the legacy public point mutator refuses O. Reading additional segment syntax does not imply that every
+combination can be scored. See [scoring specification § 9.8](/docs/scoring-engine/scoring-engine-spec#98-declared-overtime-ca-2026-11-03-scoringengine-integration).
 
 ```text
 {root}{count}[X][A][{matchMods}]-S:{set}[-G:{game}][-O:{limit}[X][SD]/{set}][-F:{set}][-M:T{minutes}]
@@ -257,7 +258,7 @@ point mutator refuse scoring input. Reading the syntax does not imply that the f
   F, and F identical to S is retained: the fallback after overtime is meaningful. Without O, existing F
   rules and canonicalization are unchanged.
 
-| Example                       | Intended progression once scoring is implemented                      |
+| Example                       | ScoringEngine progression                                             |
 | ----------------------------- | --------------------------------------------------------------------- |
 | `QTR4XA-S:T12P-O:3/T5P`       | Up to three additional five-minute periods                            |
 | `QTR4XA-S:T12P-O:U/T5P`       | Repeat five-minute periods while tied                                 |
@@ -278,5 +279,5 @@ point mutator refuse scoring input. Reading the syntax does not imply that the f
 
 Segment equivalences apply inside O, including `T5G` → `T5`, `5WB2` → `5`, and `6/TB7@6` → `6/TB7`.
 The serializer writes O before F and M. It never drops an overtime policy to produce a regulation-only code.
-Overtime accumulation, phase-aware score records, final-decider indexing, correction/replay behavior and
-match-clock precedence must be implemented and verified before the new-use and scoring gates are removed.
+The supported timed subset has overtime accumulation, phase-aware records, final-decider indexing and replay.
+Tournament new-use and legacy scoring activation remain separate. Match-clock precedence is still unresolved.
