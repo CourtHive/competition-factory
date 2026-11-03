@@ -351,11 +351,12 @@ measurement, not the size of an entire application. See [7.x performance](../con
 The third row is the trap. `governors` is a namespace holding every governor, and whether a
 bundler can drop the governors you do not read depends on the bundler and on how you read it:
 
-| How the application reads a governor                                | esbuild   | rolldown (Vite) | rollup |
-| ------------------------------------------------------------------- | --------- | --------------- | ------ |
-| `import { queryGovernor } from 'tods-competition-factory'`          | shakes    | shakes          | shakes |
-| `import { governors } …` then `governors.queryGovernor`             | keeps all | shakes          | shakes |
-| `import { governors } …` then `const { queryGovernor } = governors` | keeps all | keeps all       | shakes |
+| How the application reads a governor                                                             | esbuild   | rolldown (Vite) | rollup |
+| ------------------------------------------------------------------------------------------------ | --------- | --------------- | ------ |
+| `import { queryGovernor } from 'tods-competition-factory'`                                       | shakes    | shakes          | shakes |
+| `import { governors } …` then `governors.queryGovernor`                                          | keeps all | shakes          | shakes |
+| `import { governors } …` then `const { queryGovernor } = governors`                              | keeps all | keeps all       | shakes |
+| `import * as governors from 'tods-competition-factory/governors'` then `governors.queryGovernor` | shakes    | shakes          | shakes |
 
 Measured with esbuild 0.28, rolldown 1.2 and rollup 4.65. esbuild turns a namespace that is imported
 by name into an object with a getter for every member, so any use of `governors` keeps all of them;
@@ -365,6 +366,20 @@ governor by name from the package root, which shakes in all three:
 ```js
 import { syncEngine, queryGovernor } from 'tods-competition-factory'; // retains queryGovernor only
 ```
+
+If you prefer to reach governors through a namespace, import the `governors` subpath with
+`import * as`. That is a direct namespace import of the governors module, which all three bundlers
+see through, so only the governors you read are kept. Read members off it; do not destructure it:
+
+```js
+import { syncEngine } from 'tods-competition-factory';
+import * as governors from 'tods-competition-factory/governors';
+
+syncEngine.importMethods(governors.queryGovernor); // retains queryGovernor only
+```
+
+The subpath carries the same 26 governors as the package root, in ESM and CommonJS, with types.
+`pnpm verify:consumer-bundle` measures this form and holds it under half of `tournamentEngine`.
 
 **Recommendation:** Start with named governor imports and add methods as needed.
 

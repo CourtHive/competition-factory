@@ -49,6 +49,16 @@
         "default": "./dist/index.js"
       }
     },
+    "./governors": {
+      "import": {
+        "types": "./dist/governors.d.mts",
+        "default": "./dist/esm/assemblies/governors/index.mjs"
+      },
+      "require": {
+        "types": "./dist/governors.d.cts",
+        "default": "./dist/governors.js"
+      }
+    },
     "./schema/tournament.schema.json": "./dist/schema/tournament.schema.json"
   },
   "types": "dist/tods-competition-factory.d.ts",
@@ -63,6 +73,9 @@
       ],
       "transform": [
         "./dist/transform.d.ts"
+      ],
+      "governors": [
+        "./dist/governors.d.ts"
       ]
     }
   },
