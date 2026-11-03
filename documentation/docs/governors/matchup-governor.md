@@ -316,8 +316,10 @@ Disable default behavior of auto calculating TEAM matchUp scores.
 engine.disableTieAutoCalc({ drawId, matchUpId });
 ```
 
-This is a **per-matchUp** override — "this particular tie's score was entered by hand" — and is cleared when
-the score is removed. To state that an entire competition publishes only team results and never line detail,
+This is a **per-matchUp** override — "this particular tie's score was entered by hand". Resume calculation
+explicitly with `enableTieAutoCalc`; clearing a score is a separate operation. See
+[Manual TEAM results](../concepts/manual-team-results.md) for score/edit/clear behavior and the UI flow.
+To state that an entire competition publishes only team results and never line detail,
 declare [`scoreSource: REPORTED`](/docs/concepts/tieFormat#score-source--derived-vs-reported) on the
 tieFormat instead: it is inherited by every tie under it and carries no per-matchUp state.
 
@@ -330,6 +332,10 @@ Re-enable default behavior of auto calculating TEAM matchUp scores, and trigger 
 ```js
 engine.enableTieAutoCalc({ drawId, matchUpId });
 ```
+
+Recomputes the parent TEAM result from its current lines, subject to normal progression checks.
+See [Manual TEAM results](../concepts/manual-team-results.md) for the distinction between clearing a
+score and restoring automatic calculation.
 
 ---
 

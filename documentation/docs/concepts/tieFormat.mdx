@@ -156,13 +156,15 @@ When the score is `DERIVED`, three rules govern what the dual stores:
 [`disableTieAutoCalc`](../governors/matchup-governor.md) sets `disableAutoCalc` on a single TEAM `matchUp` and
 has the same protective effect. The two express different things:
 
-- `disableAutoCalc` — **per-matchUp state**: "this particular tie's score was entered by hand". Cleared when
-  the score is removed.
+- `disableAutoCalc` — **per-matchUp state**: "this particular tie's score was entered by hand". Resume
+  automatic calculation explicitly with `enableTieAutoCalc`; clearing a score is a separate operation.
 - `scoreSource: REPORTED` — **declarative and inherited**: "ties under this format never have line detail".
   Carries no per-matchUp state.
 
 Use `disableAutoCalc` for a one-off manual override; use `scoreSource` to describe how a competition
 publishes its results.
+
+See [Manual TEAM results](./manual-team-results.md) for score/edit/clear behavior and the Override/Restore flow.
 
 ## Related
 
