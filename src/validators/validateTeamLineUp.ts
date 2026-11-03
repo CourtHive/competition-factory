@@ -1,3 +1,4 @@
+import { unresolvedCollectionChoice } from '@Helpers/matchUpTypeOptions';
 import { getParticipantId } from '@Functions/global/extractors';
 import { mustBeAnArray } from '@Tools/mustBeAnArray';
 import { unique } from '@Tools/arrays';
@@ -43,6 +44,13 @@ export function validateLineUp({ lineUp, tieFormat }: ValidateLineUpArgs) {
         return false;
       }
 
+      const collection = tieFormat?.collectionDefinitions.find(
+        (definition) => definition.collectionId === collectionAssignment.collectionId,
+      );
+      if (unresolvedCollectionChoice(collection)) {
+        errors.push('Resolve the collection matchUpType choice before assigning players');
+        return false;
+      }
       const { collectionPosition } = collectionAssignment;
       if (typeof collectionPosition !== 'number') {
         errors.push('collectionPosition must be a number');

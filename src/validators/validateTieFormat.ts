@@ -1,5 +1,5 @@
-import { getTieFormatValueTotal } from '@Query/matchUp/calculateWinCriteria';
 import { validateCollectionDefinition } from './validateCollectionDefinition';
+import { getTieFormatValueTotal } from '@Query/matchUp/calculateWinCriteria';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isObject } from '@Tools/objects';
 import { unique } from '@Tools/arrays';
@@ -20,6 +20,7 @@ type ValidateTieFormatArgs = {
    * saved before these rules still scores (CA 2026-10-31: "refuse on save, but not on calculation").
    */
   enforceValues?: boolean;
+  allowResolvedMatchUpTypeOptions?: boolean;
   gender?: GenderUnion;
   category?: Category;
   tieFormat?: any; // not using TieFormat type because incoming value is potentially invalid
@@ -51,6 +52,7 @@ export function validateTieFormat(params: ValidateTieFormatArgs): ResultType {
       referenceCategory: params.category,
       referenceGender: params.gender,
       enforceValues: params.enforceValues,
+      allowResolvedMatchUpTypeOptions: params.allowResolvedMatchUpTypeOptions,
       collectionDefinition,
       checkCollectionIds,
       checkCategory,

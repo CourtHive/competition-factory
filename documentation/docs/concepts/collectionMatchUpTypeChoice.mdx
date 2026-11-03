@@ -1,21 +1,21 @@
 ---
 title: "Captain's Choice: collection match type options"
-description: "Proposed tieFormat contract for choosing singles or doubles per team encounter while retaining the collection's permitted choices."
+description: "tieFormat contract for choosing singles or doubles per team encounter while retaining the collection's permitted choices."
 keywords: [captains choice, captain's choice, singles or doubles, tieFormat, collectionDefinitions]
 ---
 
 ## Specification status
 
-This is the extension to the [tieFormat specification](./tieFormat.mdx). The declaration foundation is
-implemented locally on `feat/noc-u4-captains-choice`: `matchUpTypeOptions` is typed and structurally validated,
-including every offered type's gender compatibility, and choice metadata participates in format identity.
-Copying, aggregation and JSON round trips preserve the declaration.
+This extension is implemented locally on `feat/noc-u4-captains-choice-runtime` and is not released.
+Choice templates can be saved and generate untyped child placeholders. Encounter-scoped selection,
+reselection and explicit reset preserve the declaration, placeholder identities and schedules. Pending choices
+are blocked at assignment, status/result and actual-play entry points; cleanup can still clear a pending line.
 
-Runtime activation remains pending and this capability is not released. New-use saving of choice collections
-is explicitly refused, including already selected declarations, until unresolved assignment/scoring/start-of-play
-guards and atomic selection/reset are implemented. The earlier concrete-type conversion prototype remains
-available on this branch for fixed SINGLES/DOUBLES collections. Do not submit choice declarations to an
-existing release and assume that an ignored field means support.
+The validator checks the declaration and every offered type's gender compatibility. Choice metadata participates
+in format comparison/aggregation and survives copying and JSON reload. General multi-collection selection,
+general tieFormat reset on a local choice format, declaration editing/migration, and UI integration are not
+included. Use the encounter-scoped APIs below for selection/reset; do not treat retaining an unknown field in
+an older release as runtime support.
 
 ## Declaration and selection are different facts
 
@@ -65,6 +65,32 @@ Another encounter may select DOUBLES from the same template. Selection writes an
 copy/override of the effective tieFormat using existing inline or centralized identity rules; it does not
 edit a shared template in place. A centralized fork uses an origin-supplied ID pool for deterministic replay.
 
+## Selecting and resetting a choice
+
+```js
+engine.modifyCollectionDefinition({
+  drawId,
+  matchUpId, // parent TEAM encounter
+  collectionId: 'captains-choice',
+  matchUpType: 'SINGLES',
+  // clearCollectionAssignments: true, // required if prior/inherited assignments must be removed
+  // tieFormatUuids: ['origin-supplied-fork-id'], // required when a shared format must fork
+});
+
+engine.modifyCollectionDefinition({
+  drawId,
+  matchUpId,
+  collectionId: 'captains-choice',
+  resetMatchUpTypeChoice: true,
+  // clearCollectionAssignments: true,
+});
+```
+
+A choice resolution changes no value model. Submit collection value/count changes separately from selection
+or reset. A scorecard clear preserves the selection; `resetScorecard` with `tiebreakReset: true` refuses
+a local choice format before clearing scores. `modifyTieFormat` cannot select/reset multiple choices as a backdoor to the single-collection
+preflight. `resetTieFormat` refuses a local choice format; use the explicit selection reset instead.
+
 ## Validation rules
 
 - An unresolved choice has options and no concrete type; a resolved choice has both. A fixed collection has
@@ -81,6 +107,12 @@ edit a shared template in place. A centralized fork uses an origin-supplied ID p
   rules. This version does not define different genders, scoring formats or values for different options.
 - A selection applies to every collectionPosition in that encounter's collection and to both sides. Independent
   per-position choices, or different types for the opposing teams, are outside this contract.
+
+For explicit save-time validation of an encounter's already resolved tieFormat, pass
+`allowResolvedMatchUpTypeOptions: true` with `enforceValues: true` to `validateTieFormat`. Template validation
+leaves that flag false, so a selected choice cannot become an inherited event/draw/structure default. Read-time
+validation without save-time rules can inspect either state. The collection mutation derives the scope from
+its target; the validation flag is not an authorization to select a template.
 
 The declaration states what can be chosen. Which captain has authority, how captains agree, eligibility,
 submission deadlines and permissions remain competition/application policy. This field does not grant
@@ -108,8 +140,7 @@ not silently restore cleared assignments. Generic in-progress overrides cannot b
 
 Clearing a selection is a distinct, explicit reset: retain the declaration and placeholder IDs, remove the
 local concrete selection and child types, and return the collection to unresolved. Apply the same play and
-assignment protections. Omitting `matchUpType` from a modification request is not a reset. The mutation/API
-shape for this reset remains to be designed before implementation.
+assignment protections. Omitting `matchUpType` from a modification request is not a reset. Use `modifyCollectionDefinition` with `resetMatchUpTypeChoice: true`; do not also supply a concrete type.
 
 ## Inheritance, tallying and persistence
 
@@ -134,12 +165,12 @@ shape for this reset remains to be designed before implementation.
 
 ## Implementation acceptance
 
-The typed field, declaration validation and identity/persistence foundation are implemented. Before enabling
-new use, update generation and all assignment/scoring/start-of-play entry points to refuse unresolved choices,
-and make resolution/reset atomic.
+The typed declaration, placeholder generation, query behavior, guarded entry points and encounter-level
+selection/reset are implemented on the runtime branch. The remaining integration work is the general
+format editor, explicit declaration migration and consumer UI coverage.
 Audit comparison, copying, centralized aggregation, hierarchy, hydration, query filters and persistence so the
 declaration and local selection survive without leaking into other encounters. Coordinate separately with
-outcome-pipeline owners before changing any status/outcome path; this specification changes no such code.
+outcome-pipeline owners before changing any status/outcome path; the runtime adds entry guards and pending-query context, without changing outcome executor propagation.
 
 Regression coverage must include unresolved generation; both selections and assignment cardinalities;
 out-of-options/invalid declarations; unchanged options after reselection/reset; incompatible gender; played

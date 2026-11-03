@@ -14,6 +14,7 @@ import { updateTieFormat } from '@Mutate/tieFormat/updateTieFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { definedAttributes } from '@Tools/definedAttributes';
+import { TieScoreSourceEnum } from '@Types/tournamentTypes';
 import { tieFormatTelemetry } from './tieFormatTelemetry';
 import { isConvertableInteger } from '@Tools/math';
 import { intersection } from '@Tools/arrays';
@@ -38,6 +39,7 @@ import {
 
 // all child matchUps need to be checked for collectionAssignments / collectionPositions which need to be removed when collectionDefinition.collectionIds are removed
 type ModifyCollectionDefinitionArgs = {
+  resetMatchUpTypeChoice?: boolean;
   clearCollectionAssignments?: boolean;
   tieFormatUuids?: string[];
   updateInProgressMatchUps?: boolean;
@@ -75,6 +77,7 @@ export function modifyCollectionDefinition(params: ModifyCollectionDefinitionArg
 }
 
 function modifyDefinition({
+  resetMatchUpTypeChoice,
   clearCollectionAssignments,
   tieFormatUuids,
   updateInProgressMatchUps = false,
@@ -117,6 +120,7 @@ function modifyDefinition({
   };
 
   const inputValidation = validateModificationInputs({
+    resetMatchUpTypeChoice,
     collectionName,
     matchUpFormat,
     matchUpCount,
@@ -160,6 +164,9 @@ function modifyDefinition({
 
   const typeChange = planCollectionTypeChange({
     source: sourceCollectionDefinition,
+    valueAssignments,
+    resetMatchUpTypeChoice,
+    reported: existingTieFormat?.scoreSource === TieScoreSourceEnum.REPORTED,
     matchUpType,
     matchUpCount,
     matchUp,
@@ -256,6 +263,7 @@ function modifyDefinition({
 
   applyFieldModifications({
     targetCollectionDefinition,
+    resetMatchUpTypeChoice: typeChange.plan?.reset,
     sourceCollectionDefinition,
     collectionOrder,
     collectionName,
@@ -269,7 +277,11 @@ function modifyDefinition({
   });
 
   const modifiedTieFormat = definedAttributes(tieFormat);
-  result = validateTieFormat({ tieFormat: modifiedTieFormat, enforceValues: true });
+  result = validateTieFormat({
+    tieFormat: modifiedTieFormat,
+    enforceValues: true,
+    allowResolvedMatchUpTypeOptions: !!matchUp,
+  });
   if (result.error) {
     return decorateResult({ result, stack });
   }
@@ -386,6 +398,7 @@ function changedGenderRefusal({
 }
 
 function validateModificationInputs({
+  resetMatchUpTypeChoice,
   collectionName,
   matchUpFormat,
   matchUpCount,
@@ -426,7 +439,15 @@ function validateModificationInputs({
   }
 
   const valueCount = Object.values(valueAssignments).filter(Boolean).length;
-  if (!valueCount && !collectionOrder && !collectionName && !matchUpFormat && !matchUpCount && !matchUpType) {
+  if (
+    !valueCount &&
+    !collectionOrder &&
+    !collectionName &&
+    !matchUpFormat &&
+    !matchUpCount &&
+    !matchUpType &&
+    !resetMatchUpTypeChoice
+  ) {
     return decorateResult({ result: { error: MISSING_VALUE }, stack });
   }
 
@@ -503,6 +524,7 @@ function isValueModified({
 }
 
 function applyFieldModifications({
+  resetMatchUpTypeChoice,
   targetCollectionDefinition,
   sourceCollectionDefinition,
   collectionOrder,
@@ -531,7 +553,10 @@ function applyFieldModifications({
     targetCollectionDefinition.matchUpCount = matchUpCount;
     modifications.push({ collectionId, matchUpCount });
   }
-  if (matchUpType && sourceCollectionDefinition.matchUpType !== matchUpType) {
+  if (resetMatchUpTypeChoice) {
+    delete targetCollectionDefinition.matchUpType;
+    modifications.push({ collectionId, resetMatchUpTypeChoice: true });
+  } else if (matchUpType && sourceCollectionDefinition.matchUpType !== matchUpType) {
     targetCollectionDefinition.matchUpType = matchUpType;
     modifications.push({ collectionId, matchUpType });
   }

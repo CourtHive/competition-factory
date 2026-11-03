@@ -55,7 +55,7 @@ type AssignMatchUpSideParticipantIdArgs = {
 export function assignTieMatchUpParticipantId(
   params: AssignMatchUpSideParticipantIdArgs,
 ): ResultType & { deletedParticipantId?: string; modifiedLineUp?: LineUp } {
-  const matchUpContext = getTieMatchUpContext(params);
+  const matchUpContext = getTieMatchUpContext({ ...params, requireResolvedMatchUpType: true });
   if (matchUpContext.error) return matchUpContext;
   const stack = 'assignTieMatchUpParticipantId';
 

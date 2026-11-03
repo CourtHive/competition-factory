@@ -3,7 +3,7 @@ import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 /** Validate the choice declaration without assigning an implicit selection. */
 export function matchUpTypeOptionsErrors(
   { matchUpTypeOptions, matchUpType }: { matchUpTypeOptions?: unknown; matchUpType?: unknown },
-  newUse = false,
+  { newUse = false, allowResolved = false }: { newUse?: boolean; allowResolved?: boolean } = {},
 ): string[] {
   if (matchUpTypeOptions === undefined) return [];
   if (!Array.isArray(matchUpTypeOptions)) return ['matchUpTypeOptions must be an array'];
@@ -18,6 +18,21 @@ export function matchUpTypeOptionsErrors(
   }
   if (matchUpType !== undefined && !matchUpTypeOptions.includes(matchUpType))
     errors.push('selected matchUpType must belong to matchUpTypeOptions');
-  if (newUse) errors.push("Captain's Choice matchUpTypeOptions is not yet enabled for new use");
+  if (newUse && matchUpType !== undefined && !allowResolved)
+    errors.push('Resolve matchUpTypeOptions only for a TEAM encounter');
   return errors;
+}
+
+export function unresolvedCollectionChoice(collection?: {
+  matchUpTypeOptions?: unknown;
+  matchUpType?: unknown;
+}): boolean {
+  return collection?.matchUpTypeOptions !== undefined && !collection.matchUpType;
+}
+
+export function choiceMatchUpType<T>(
+  collection: Parameters<typeof unresolvedCollectionChoice>[0],
+  fallback: T,
+): T | undefined {
+  return unresolvedCollectionChoice(collection) ? undefined : fallback;
 }

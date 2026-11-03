@@ -3,6 +3,7 @@ import { compareTieFormats } from '@Query/hierarchical/tieFormats/compareTieForm
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { NOT_IMPLEMENTED } from '@Constants/errorConditionConstants';
 import { setMatchUpState } from './matchUpStatus/setMatchUpState';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { resetTieFormat } from '@Mutate/tieFormat/resetTieFormat';
@@ -12,7 +13,7 @@ import { findStructure } from '@Acquire/findStructure';
 import { isString } from '@Tools/objects';
 
 // constants and types
-import { DrawDefinition, Event, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
+import { DrawDefinition, Event, MatchUpStatusUnion, TieFormat, Tournament } from '@Types/tournamentTypes';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
@@ -53,6 +54,9 @@ export function resetScorecard(params: ResetScoreCardArgs): ResultType {
 
   // Get map of all drawMatchUps and inContextDrawMatchUPs ---------------------
   const matchUpsMap = getMatchUpsMap({ drawDefinition });
+  const choiceReset = choiceScorecardResetRefusal(params, matchUpsMap);
+  if (choiceReset) return choiceReset;
+
   const { matchUps: inContextDrawMatchUps } = getAllDrawMatchUps({
     nextMatchUps: true,
     inContext: true,
@@ -157,4 +161,21 @@ export function resetScorecard(params: ResetScoreCardArgs): ResultType {
   }
 
   return { ...SUCCESS };
+}
+
+function choiceScorecardResetRefusal(
+  params: ResetScoreCardArgs,
+  map: ReturnType<typeof getMatchUpsMap>,
+): ResultType | undefined {
+  if (!params.tiebreakReset) return undefined;
+  const matchUp = map.drawMatchUps.find((item) => item.matchUpId === params.matchUpId);
+  if (!matchUp?.tieFormat && !matchUp?.tieFormatId) return undefined;
+  const format: TieFormat | undefined = resolveTieFormat({
+    matchUp,
+    drawDefinition: params.drawDefinition,
+    event: params.event,
+  }).tieFormat;
+  return format?.collectionDefinitions.some((definition) => definition.matchUpTypeOptions !== undefined)
+    ? { error: NOT_IMPLEMENTED, info: 'Clear scores without tiebreakReset; reset choice selections explicitly' }
+    : undefined;
 }

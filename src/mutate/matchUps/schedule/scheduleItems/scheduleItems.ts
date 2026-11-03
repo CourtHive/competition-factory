@@ -1,5 +1,6 @@
 import { setMatchUpHomeParticipantId } from '@Mutate/matchUps/schedule/scheduleItems/setMatchUpHomeParticipantId';
 import { calledBeforeTournamentStart, setMatchUpCalledAt } from '@Mutate/matchUps/schedule/setMatchUpCalledAt';
+import { collectionChoiceRefusal, collectionChoiceScheduleRefusal } from '@Query/matchUp/collectionChoice';
 import { setMatchUpFirstClassOrTimeItem } from '@Mutate/timeItems/matchUps/setMatchUpFirstClassOrTimeItem';
 import { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems/addMatchUpScheduledDate';
 import { allocateTeamMatchUpCourts } from '@Mutate/matchUps/schedule/allocateTeamMatchUpCourts';
@@ -17,8 +18,8 @@ import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
 import { matchUpAssignedCourtId } from '@Query/matchUp/courtAssignment';
 import { scheduleLockConflicts } from '@Query/matchUp/isScheduleLocked';
 import { getParticipants } from '@Query/participants/getParticipants';
-import { eventDateWarning } from '@Query/events/eventDateWarning';
 import { checkPlayedOrder, PendingPlacements } from './playedOrder';
+import { eventDateWarning } from '@Query/events/eventDateWarning';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { findParticipant } from '@Acquire/findParticipant';
@@ -48,8 +49,8 @@ import { AddScheduleAttributeArgs, PolicyDefinitions, ResultType, TournamentReco
 import { DrawDefinition, Event, MatchUp, MatchUpSchedule, Tournament } from '@Types/tournamentTypes';
 import { OFFICIAL_CONFLICT_OF_INTEREST } from '@Constants/officiatingConstants';
 import { POLICY_TYPE_OFFICIATING_CONFLICT } from '@Constants/policyConstants';
-import { OBJECT, OF_TYPE } from '@Constants/attributeConstants';
 import type { EventDateWarning } from '@Query/events/eventDateWarning';
+import { OBJECT, OF_TYPE } from '@Constants/attributeConstants';
 import type { OfficialRecord } from '@Types/officiatingTypes';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { OFFICIAL } from '@Constants/participantRoles';
@@ -610,6 +611,7 @@ export function addMatchUpScheduleItems(params: AddMatchUpScheduleItemsArgs): {
     overrideScheduleLock,
     tournamentRecord,
     drawDefinition,
+    event,
     schedule,
     matchUp,
     stack,
@@ -852,10 +854,13 @@ function checkScheduleRefusals({
   overrideScheduleLock,
   tournamentRecord,
   drawDefinition,
+  event,
   schedule,
   matchUp,
   stack,
 }): { error?: ResultType; unwritable: string[] } {
+  const choice = collectionChoiceScheduleRefusal({ drawDefinition, event, matchUp, schedule });
+  if (choice) return { error: choice, unwritable: [] };
   // A director's schedule lock pins PLACEMENT. Actual-play attributes
   // (startTime / stopTime / resumeTime / endTime) are never guarded, so a
   // locked matchUp can still be started, suspended and completed. Callers that
@@ -1183,6 +1188,8 @@ export function addMatchUpStartTime({
   if (!validTimeValue(startTime)) return { error: INVALID_TIME };
 
   const { matchUp } = findDrawMatchUp({ drawDefinition, event, matchUpId });
+  const choice = collectionChoiceRefusal({ drawDefinition, event, matchUp });
+  if (choice) return choice;
   const { scheduledDate } = scheduledMatchUpDate({ matchUp });
   const timeItems = matchUp?.timeItems ?? [];
 
@@ -1218,6 +1225,7 @@ export function addMatchUpStartTime({
       disableNotice,
       matchUpId,
       timeItem,
+      event,
     });
   } else {
     return { error: INVALID_START_TIME };
@@ -1280,6 +1288,8 @@ export function addMatchUpEndTime({
   if (!validTimeValue(endTime)) return { error: INVALID_TIME };
 
   const { matchUp } = findDrawMatchUp({ drawDefinition, event, matchUpId });
+  const choice = collectionChoiceRefusal({ drawDefinition, event, matchUp });
+  if (choice) return choice;
   const { scheduledDate } = scheduledMatchUpDate({ matchUp });
   const timeItems = matchUp?.timeItems ?? [];
 
@@ -1355,6 +1365,8 @@ function addChronologicalTimeItem({
   if (!validTimeValue(timeValue)) return { error: INVALID_TIME };
 
   const { matchUp } = findDrawMatchUp({ drawDefinition, event, matchUpId });
+  const choice = collectionChoiceRefusal({ drawDefinition, event, matchUp });
+  if (choice) return choice;
   const { scheduledDate } = scheduledMatchUpDate({ matchUp });
   const timeItems = matchUp?.timeItems ?? [];
 
@@ -1395,6 +1407,7 @@ function addChronologicalTimeItem({
       disableNotice,
       matchUpId,
       timeItem,
+      event,
     });
   } else {
     return { error: invalidError };

@@ -1,6 +1,7 @@
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { generateScoreString } from '@Generators/matchUps/generateScoreString';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { collectionChoiceRefusal } from '@Query/matchUp/collectionChoice';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 
 // constants
@@ -33,6 +34,9 @@ export function setDelegatedOutcome({
     if (result.error) return result;
     matchUp = result.matchUp;
   }
+
+  const choice = collectionChoiceRefusal({ drawDefinition, event, matchUp });
+  if (choice) return choice;
 
   // Accept the canonical outcome: either pre-derived per-side score strings OR a
   // `score.sets` array. Requiring callers to pre-compute scoreStringSide1/2 (as

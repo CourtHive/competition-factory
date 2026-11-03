@@ -4,6 +4,7 @@ import { compareTieFormats } from '@Query/hierarchical/tieFormats/compareTieForm
 import { addCollectionDefinition } from '@Mutate/tieFormat/addCollectionDefinition';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { getTieFormat } from '@Query/hierarchical/tieFormats/getTieFormat';
+import { NOT_IMPLEMENTED } from '@Constants/errorConditionConstants';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { numericSortValue } from '@Tools/arrays';
@@ -43,7 +44,13 @@ export function modifyTieFormat({
 }: ModifyTieFormatArgs) {
   const stack = 'modifyTieFormat';
 
-  if (!validateTieFormat({ tieFormat: modifiedTieFormat, enforceValues: true }).valid) {
+  if (
+    !validateTieFormat({
+      tieFormat: modifiedTieFormat,
+      enforceValues: true,
+      allowResolvedMatchUpTypeOptions: !!matchUpId && !eventId,
+    }).valid
+  ) {
     return decorateResult({
       result: { error: INVALID_TIE_FORMAT },
       info: 'falied validation',
@@ -62,6 +69,8 @@ export function modifyTieFormat({
 
   const { matchUp, tieFormat: existingTieFormat } = result;
   const tieFormat = copyTieFormat(existingTieFormat);
+  const choiceEdit = choiceEditRefusal(existingTieFormat, modifiedTieFormat);
+  if (choiceEdit) return choiceEdit;
 
   const comparison = compareTieFormats({
     descendant: modifiedTieFormat,
@@ -174,4 +183,23 @@ export function modifyTieFormat({
     modifications,
     ...SUCCESS,
   };
+}
+
+/** A multi-collection edit cannot partially select choices before a later collection refuses. */
+function choiceEditRefusal(existing: TieFormat | undefined, modified: TieFormat) {
+  if (!existing) return undefined;
+  const changesChoice = modified.collectionDefinitions.some((definition) => {
+    const source = existing.collectionDefinitions.find((item) => item.collectionId === definition.collectionId);
+    if (!source) return false;
+    return (
+      JSON.stringify(source.matchUpTypeOptions) !== JSON.stringify(definition.matchUpTypeOptions) ||
+      (source.matchUpTypeOptions !== undefined && source.matchUpType !== definition.matchUpType)
+    );
+  });
+  return changesChoice
+    ? {
+        error: NOT_IMPLEMENTED,
+        info: 'Use encounter-scoped modifyCollectionDefinition to select/reset a choice; declaration edits require a separate operation',
+      }
+    : undefined;
 }

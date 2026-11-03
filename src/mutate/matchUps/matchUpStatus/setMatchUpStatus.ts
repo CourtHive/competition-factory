@@ -22,6 +22,7 @@ import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentR
 import type { DeciderSnapshot } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { collectionChoiceOutcomeRefusal } from '@Query/matchUp/collectionChoice';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
 import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
 import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
@@ -671,6 +672,8 @@ function preflightTallyPolicy(params: SetMatchUpStatusArgs): ResultType {
 }
 
 function preflightOutcome(params: SetMatchUpStatusArgs) {
+  const choice = collectionChoiceOutcomeRefusal(params);
+  if (choice) return choice;
   const tallyValidation = preflightTallyPolicy(params);
   if (tallyValidation.error) return tallyValidation;
   const { drawDefinition, event, matchUpId } = params;

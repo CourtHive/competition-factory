@@ -7,6 +7,7 @@ import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/ma
 import { resolveRotatingPartnerOutcome } from '@Query/drawDefinition/resolveRotatingPartnerOutcome';
 import { refreshArrivals } from '@Mutate/drawDefinitions/matchUpGovernor/attemptToSetWinningSide';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
+import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { correctionKindChange } from '@Mutate/matchUps/matchUpStatus/correctionKindGuard';
 import { relabelWithoutDirection } from '@Mutate/matchUps/drawPositions/relabelLoserExit';
@@ -17,6 +18,7 @@ import { ensureGoesTo, holdGoesTo, type GoesToHold } from '@Query/matchUps/addGo
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
+import { collectionChoiceOutcomeRefusal } from '@Query/matchUp/collectionChoice';
 import { swapWinnerLoser } from '@Mutate/matchUps/drawPositions/swapWinnerLoser';
 import { resolveScoringFormat } from '@Query/hierarchical/resolveScoringFormat';
 import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
@@ -47,8 +49,6 @@ import {
   noDownstreamDependencies,
   removesDirected,
 } from '@Mutate/drawDefinitions/matchUpGovernor/noDownstreamDependencies';
-
-import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
 
 // constants and types
 import type { DerivedStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
@@ -158,6 +158,9 @@ type SetMatchUpStateArgs = {
  * consumers call `setMatchUpStatus`.
  */
 export function setMatchUpState(params: SetMatchUpStateArgs): any {
+  const choice = collectionChoiceOutcomeRefusal(params);
+  if (choice) return choice;
+
   // A REFUSED CALL STORES NONE OF THE MISSING EDGES (CA, 2026-10-18): what `ensureGoesTo` writes below is held, and
   // written back if the call returns an error. See `holdGoesTo`.
   const hold = holdGoesTo({ drawDefinition: params.drawDefinition, matchUpsMap: params.matchUpsMap });
