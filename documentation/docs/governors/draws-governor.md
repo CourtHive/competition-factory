@@ -1135,6 +1135,8 @@ const { removedMatchUpIds } = engine.removeStructure({
 
 Removes a participant's seed assignment while retaining the seed slot and its value. The participant remains in the draw at the same position; other seeds are unchanged.
 
+Despite its legacy name, this method removes **only the seeding**. It is the mutation behind the `REMOVE_SEED` position action. To withdraw a seeded participant and move replacement seeds into the vacancy, use [`seedWithdrawalCascade`](#seedwithdrawalcascade).
+
 ```js
 engine.removeSeededParticipant({
   drawId, // required
@@ -1282,6 +1284,26 @@ engine.resetQualifyingStructure({
   structureId,
 });
 ```
+
+---
+
+## seedWithdrawalCascade
+
+Withdraws a seeded participant from their draw position and moves one seed from each successive lower seed block into the vacancy. Both position assignments and seed assignments are updated, and the withdrawn participant's draw entry is marked `WITHDRAWN`.
+
+```js
+const { success, error, vacatedDrawPosition } = engine.seedWithdrawalCascade({
+  drawId,
+  structureId,
+  drawPosition, // the withdrawing seed's current position
+});
+```
+
+The method applies to MAIN stage sequence 1, non-round-robin structures with no active draw positions. It returns the final `vacatedDrawPosition` for the director to fill with an alternate or BYE; it does not fill that vacancy automatically. If the withdrawing seed is in the lowest populated block, the method simply vacates their position without moving another seed.
+
+The `SEED_CASCADE` position action exposes this operation when a lower seed block has assigned replacements. See [Seed Withdrawal Cascade](../concepts/seed-withdrawal-cascade.md) for eligibility, examples, notices and follow-up placement.
+
+To remove only a participant's seed designation while keeping them at their existing draw position, use [`removeSeededParticipant`](#removeseededparticipant), the method behind `REMOVE_SEED`. The two actions have different effects and are not interchangeable.
 
 ---
 
