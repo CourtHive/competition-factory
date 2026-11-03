@@ -444,15 +444,14 @@ it('can assign seedNumbers and drawPositions to seeded participants', () => {
   });
   expect(result.success).toEqual(true);
 
-  // will add a seedNumber and new seedAssignment if participantId is not recognized
-  // drawEngine does not have access to participants and cannot verify validity of participantId
+  // An impossible numeric display value is refused, including on a direct governor call.
   result = modifySeedAssignment({
     participantId: 'additional participant',
     seedValue: '99',
     drawDefinition,
     structureId,
   });
-  expect(result.success).toEqual(true);
+  expect(result.error).toEqual(INVALID_VALUES);
 
   ({ seedAssignments } = getStructureSeedAssignments({
     drawDefinition,
@@ -460,7 +459,7 @@ it('can assign seedNumbers and drawPositions to seeded participants', () => {
   }));
 
   expect(seedAssignments?.length).toEqual(17);
-  expect(seedAssignments?.[16].seedValue).toEqual(99);
+  expect(seedAssignments?.[16].seedValue).toEqual('yyy');
 });
 
 function checkSeedBlocks({ drawSize, policy, expectedBlocks }) {
