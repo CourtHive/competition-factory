@@ -761,7 +761,11 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   clean matchUp, which is then announced with its event and tournament, its matchUp in context read without the
   tournament (`inContextBare`). Straight past the first BYE, a position nobody has reached may stand on the matchUp's
   other side (the exit stands pending), or an opponent, who is awarded the exit at once and goes on into a clean matchUp
-  (`advanceWinner`, with neither event nor tournament). Planned where nothing links a loser on, no matchUp walked links
+  (`advanceWinner`, with neither event nor tournament), or a produced exit pending on its other side: the two converge
+  into the double exit (`collapseDoubleExitStatus`, codes `[]`, the arriving exit recorded on its side, announced with
+  neither event nor tournament), which produces on as any double exit: pending in a clean matchUp after (a WALKOVER's
+  score blanked) or converging again with a pending exit there, each later level announced with its event and
+  tournament, to the structure's end. Planned where nothing links a loser on, no matchUp walked links
   its own loser on, and the matchUp landed in is to be played in a plain round of the same structure, holding no result,
   BYE, provenance or loser link and nobody on the side the exit arrives at; the rest stays v1's (`exit`, `cascade`).
 
