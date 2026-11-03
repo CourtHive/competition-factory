@@ -142,6 +142,29 @@ Clearing a selection is a distinct, explicit reset: retain the declaration and p
 local concrete selection and child types, and return the collection to unresolved. Apply the same play and
 assignment protections. Omitting `matchUpType` from a modification request is not a reset. Use `modifyCollectionDefinition` with `resetMatchUpTypeChoice: true`; do not also supply a concrete type.
 
+## Refusal contract
+
+A rubber (a tie matchUp with a `collectionId`) is **refused** when the effective collection definition of
+its parent TEAM matchUp declares `matchUpTypeOptions` and any of these holds:
+
+- **unresolved**: the collection has no concrete `matchUpType`;
+- **invalid**: the declaration breaks a validation rule above;
+- **mismatched**: the rubber's own `matchUpType` differs from the collection's selected `matchUpType`.
+
+A refusal returns `INVALID_VALUES` with `info` _"Resolve the collection matchUpType choice before
+assigning, scoring or starting its rubbers"_ and `context: { collectionId, matchUpId }`. It writes nothing
+and sends no notices. Rubbers of fixed collections, and matchUps that are not rubbers, are never refused.
+
+| Method                                                                                            | Refused when                                                                                                                                                                                              |
+| ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `setMatchUpStatus`                                                                                | the call creates a result or starts play: a `score`, a `winningSide`, or a `matchUpStatus` other than `TO_BE_PLAYED`. Clearing (`removeScore`, or `TO_BE_PLAYED` with no score or winningSide) is allowed |
+| `setDelegatedOutcome`                                                                             | always                                                                                                                                                                                                    |
+| `addMatchUpScheduleItems`                                                                         | the `schedule` carries a non-empty `startTime`, `stopTime`, `resumeTime` or `endTime`. Placement keys alone (`scheduledDate`, `scheduledTime`, `courtId`, `venueId`, `courtOrder`) are allowed            |
+| `addMatchUpStartTime`, `addMatchUpStopTime`, `addMatchUpResumeTime`, `addMatchUpEndTime`          | always                                                                                                                                                                                                    |
+| `addMatchUpTimeItem`                                                                              | the time item's `itemType` is `START_TIME`, `STOP_TIME`, `RESUME_TIME` or `END_TIME`                                                                                                                      |
+| `assignTieMatchUpParticipantId`, `replaceTieMatchUpParticipantId`, `assignMatchUpSideParticipant` | always                                                                                                                                                                                                    |
+| `applyLineUps`                                                                                    | a lineUp assigns a participant to an unresolved collection (`validateLineUp` reports _"Resolve the collection matchUpType choice before assigning players"_)                                              |
+
 ## Inheritance, tallying and persistence
 
 - Declaration inheritance follows normal tieFormat resolution: matchUp, structure, drawDefinition, event.
