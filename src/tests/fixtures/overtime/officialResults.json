@@ -1,0 +1,1240 @@
+{
+  "retrievedAt": "2026-11-03",
+  "notes": "Factual scores only, primary sources. Away/home side order for NBA/NHL. Football uses the named team order. Shootouts are explicitly outside reducer coverage. No network access in tests.",
+  "results": [
+    {
+      "id": "nba-0021600711",
+      "collection": "NBA official multi-overtime box scores",
+      "date": "2017-01-29",
+      "teams": ["NYK", "ATL"],
+      "sourceUrls": ["https://www.nba.com/game/nyk-vs-atl-0021600711"],
+      "rulesUrls": ["https://official.nba.com/rule-no-5-scoring-and-timing/"],
+      "format": "QTR4XA-S:T12P-O:U/T5P",
+      "regulationPeriods": 4,
+      "mode": "periodEnd",
+      "scope": "full",
+      "officialScore": [139, 142],
+      "playedScore": [139, 142],
+      "officialWinner": 2,
+      "shootoutScore": null,
+      "periods": [
+        {
+          "score": [37, 30],
+          "goals": null
+        },
+        {
+          "score": [28, 31],
+          "goals": null
+        },
+        {
+          "score": [16, 22],
+          "goals": null
+        },
+        {
+          "score": [23, 21],
+          "goals": null
+        },
+        {
+          "score": [9, 9],
+          "goals": null
+        },
+        {
+          "score": [10, 10],
+          "goals": null
+        },
+        {
+          "score": [7, 7],
+          "goals": null
+        },
+        {
+          "score": [9, 12],
+          "goals": null
+        }
+      ]
+    },
+    {
+      "id": "nba-0041800233",
+      "collection": "NBA official multi-overtime box scores",
+      "date": "2019-05-04",
+      "teams": ["DEN", "POR"],
+      "sourceUrls": ["https://www.nba.com/game/den-vs-por-0041800233"],
+      "rulesUrls": ["https://official.nba.com/rule-no-5-scoring-and-timing/"],
+      "format": "QTR4XA-S:T12P-O:U/T5P",
+      "regulationPeriods": 4,
+      "mode": "periodEnd",
+      "scope": "full",
+      "officialScore": [137, 140],
+      "playedScore": [137, 140],
+      "officialWinner": 2,
+      "shootoutScore": null,
+      "periods": [
+        {
+          "score": [17, 23],
+          "goals": null
+        },
+        {
+          "score": [30, 25],
+          "goals": null
+        },
+        {
+          "score": [29, 33],
+          "goals": null
+        },
+        {
+          "score": [26, 21],
+          "goals": null
+        },
+        {
+          "score": [7, 7],
+          "goals": null
+        },
+        {
+          "score": [9, 9],
+          "goals": null
+        },
+        {
+          "score": [11, 11],
+          "goals": null
+        },
+        {
+          "score": [8, 11],
+          "goals": null
+        }
+      ]
+    },
+    {
+      "id": "nba-0022200902",
+      "collection": "NBA official multi-overtime box scores",
+      "date": "2023-02-25",
+      "teams": ["SAC", "LAC"],
+      "sourceUrls": ["https://www.nba.com/game/sac-vs-lac-0022200902"],
+      "rulesUrls": ["https://official.nba.com/rule-no-5-scoring-and-timing/"],
+      "format": "QTR4XA-S:T12P-O:U/T5P",
+      "regulationPeriods": 4,
+      "mode": "periodEnd",
+      "scope": "full",
+      "officialScore": [176, 175],
+      "playedScore": [176, 175],
+      "officialWinner": 1,
+      "shootoutScore": null,
+      "periods": [
+        {
+          "score": [40, 40],
+          "goals": null
+        },
+        {
+          "score": [36, 40],
+          "goals": null
+        },
+        {
+          "score": [34, 37],
+          "goals": null
+        },
+        {
+          "score": [43, 36],
+          "goals": null
+        },
+        {
+          "score": [11, 11],
+          "goals": null
+        },
+        {
+          "score": [12, 11],
+          "goals": null
+        }
+      ]
+    },
+    {
+      "id": "nhl-1996020024",
+      "collection": "NHL Florida 1996-97 first two ties",
+      "date": "1996-10-08",
+      "teams": ["NYR", "FLA"],
+      "sourceUrls": ["https://api-web.nhle.com/v1/gamecenter/1996020024/landing"],
+      "rulesUrls": ["https://records.nhl.com/history/historical-rule-changes"],
+      "format": "PER3XA-S:T20P-O:1SD/T5P",
+      "regulationPeriods": 3,
+      "mode": "suddenDeath",
+      "scope": "full",
+      "officialScore": [1, 1],
+      "playedScore": [1, 1],
+      "officialWinner": null,
+      "shootoutScore": null,
+      "periods": [
+        {
+          "score": [0, 1],
+          "goals": [
+            {
+              "side": 2,
+              "at": "18:58"
+            }
+          ]
+        },
+        {
+          "score": [0, 0],
+          "goals": []
+        },
+        {
+          "score": [1, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "19:28"
+            }
+          ]
+        },
+        {
+          "score": [0, 0],
+          "goals": []
+        }
+      ]
+    },
+    {
+      "id": "nhl-1996020067",
+      "collection": "NHL Florida 1996-97 first two ties",
+      "date": "1996-10-16",
+      "teams": ["FLA", "SJS"],
+      "sourceUrls": ["https://api-web.nhle.com/v1/gamecenter/1996020067/landing"],
+      "rulesUrls": ["https://records.nhl.com/history/historical-rule-changes"],
+      "format": "PER3XA-S:T20P-O:1SD/T5P",
+      "regulationPeriods": 3,
+      "mode": "suddenDeath",
+      "scope": "full",
+      "officialScore": [3, 3],
+      "playedScore": [3, 3],
+      "officialWinner": null,
+      "shootoutScore": null,
+      "periods": [
+        {
+          "score": [0, 2],
+          "goals": [
+            {
+              "side": 2,
+              "at": "02:28"
+            },
+            {
+              "side": 2,
+              "at": "19:04"
+            }
+          ]
+        },
+        {
+          "score": [0, 0],
+          "goals": []
+        },
+        {
+          "score": [3, 1],
+          "goals": [
+            {
+              "side": 1,
+              "at": "02:07"
+            },
+            {
+              "side": 1,
+              "at": "04:42"
+            },
+            {
+              "side": 1,
+              "at": "12:30"
+            },
+            {
+              "side": 2,
+              "at": "13:23"
+            }
+          ]
+        },
+        {
+          "score": [0, 0],
+          "goals": []
+        }
+      ]
+    },
+    {
+      "id": "nhl-2022020071",
+      "collection": "NHL Florida 2022-23 first three OT and first two shootout games",
+      "date": "2022-10-21",
+      "teams": ["TBL", "FLA"],
+      "sourceUrls": ["https://api-web.nhle.com/v1/gamecenter/2022020071/landing"],
+      "rulesUrls": ["https://media.nhl.com/site/asset/public/ext/2022-23/2022-23Rulebook.pdf"],
+      "format": "PER3XA-S:T20P-O:1SD/T5P",
+      "regulationPeriods": 3,
+      "mode": "suddenDeath",
+      "scope": "full",
+      "officialScore": [3, 2],
+      "playedScore": [3, 2],
+      "officialWinner": 1,
+      "shootoutScore": null,
+      "periods": [
+        {
+          "score": [1, 1],
+          "goals": [
+            {
+              "side": 1,
+              "at": "13:04"
+            },
+            {
+              "side": 2,
+              "at": "15:48"
+            }
+          ]
+        },
+        {
+          "score": [0, 1],
+          "goals": [
+            {
+              "side": 2,
+              "at": "15:37"
+            }
+          ]
+        },
+        {
+          "score": [1, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "09:29"
+            }
+          ]
+        },
+        {
+          "score": [1, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "02:08"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nhl-2022020173",
+      "collection": "NHL Florida 2022-23 first three OT and first two shootout games",
+      "date": "2022-11-03",
+      "teams": ["FLA", "SJS"],
+      "sourceUrls": ["https://api-web.nhle.com/v1/gamecenter/2022020173/landing"],
+      "rulesUrls": ["https://media.nhl.com/site/asset/public/ext/2022-23/2022-23Rulebook.pdf"],
+      "format": "PER3XA-S:T20P-O:1SD/T5P",
+      "regulationPeriods": 3,
+      "mode": "suddenDeath",
+      "scope": "throughOvertime",
+      "officialScore": [4, 3],
+      "playedScore": [3, 3],
+      "officialWinner": 1,
+      "shootoutScore": null,
+      "periods": [
+        {
+          "score": [1, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "13:43"
+            }
+          ]
+        },
+        {
+          "score": [1, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "15:50"
+            }
+          ]
+        },
+        {
+          "score": [1, 3],
+          "goals": [
+            {
+              "side": 2,
+              "at": "01:04"
+            },
+            {
+              "side": 2,
+              "at": "06:34"
+            },
+            {
+              "side": 2,
+              "at": "11:48"
+            },
+            {
+              "side": 1,
+              "at": "18:38"
+            }
+          ]
+        },
+        {
+          "score": [0, 0],
+          "goals": []
+        }
+      ]
+    },
+    {
+      "id": "nhl-2022020275",
+      "collection": "NHL Florida 2022-23 first three OT and first two shootout games",
+      "date": "2022-11-19",
+      "teams": ["CGY", "FLA"],
+      "sourceUrls": ["https://api-web.nhle.com/v1/gamecenter/2022020275/landing"],
+      "rulesUrls": ["https://media.nhl.com/site/asset/public/ext/2022-23/2022-23Rulebook.pdf"],
+      "format": "PER3XA-S:T20P-O:1SD/T5P",
+      "regulationPeriods": 3,
+      "mode": "suddenDeath",
+      "scope": "throughOvertime",
+      "officialScore": [5, 4],
+      "playedScore": [4, 4],
+      "officialWinner": 1,
+      "shootoutScore": null,
+      "periods": [
+        {
+          "score": [1, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "15:13"
+            }
+          ]
+        },
+        {
+          "score": [2, 2],
+          "goals": [
+            {
+              "side": 1,
+              "at": "00:50"
+            },
+            {
+              "side": 2,
+              "at": "03:30"
+            },
+            {
+              "side": 2,
+              "at": "10:56"
+            },
+            {
+              "side": 1,
+              "at": "12:58"
+            }
+          ]
+        },
+        {
+          "score": [1, 2],
+          "goals": [
+            {
+              "side": 2,
+              "at": "01:12"
+            },
+            {
+              "side": 1,
+              "at": "06:56"
+            },
+            {
+              "side": 2,
+              "at": "13:46"
+            }
+          ]
+        },
+        {
+          "score": [0, 0],
+          "goals": []
+        }
+      ]
+    },
+    {
+      "id": "nhl-2022020334",
+      "collection": "NHL Florida 2022-23 first three OT and first two shootout games",
+      "date": "2022-11-26",
+      "teams": ["STL", "FLA"],
+      "sourceUrls": ["https://api-web.nhle.com/v1/gamecenter/2022020334/landing"],
+      "rulesUrls": ["https://media.nhl.com/site/asset/public/ext/2022-23/2022-23Rulebook.pdf"],
+      "format": "PER3XA-S:T20P-O:1SD/T5P",
+      "regulationPeriods": 3,
+      "mode": "suddenDeath",
+      "scope": "full",
+      "officialScore": [5, 4],
+      "playedScore": [5, 4],
+      "officialWinner": 1,
+      "shootoutScore": null,
+      "periods": [
+        {
+          "score": [1, 3],
+          "goals": [
+            {
+              "side": 2,
+              "at": "01:20"
+            },
+            {
+              "side": 2,
+              "at": "02:58"
+            },
+            {
+              "side": 2,
+              "at": "08:47"
+            },
+            {
+              "side": 1,
+              "at": "11:39"
+            }
+          ]
+        },
+        {
+          "score": [0, 1],
+          "goals": [
+            {
+              "side": 2,
+              "at": "12:50"
+            }
+          ]
+        },
+        {
+          "score": [3, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "08:16"
+            },
+            {
+              "side": 1,
+              "at": "13:43"
+            },
+            {
+              "side": 1,
+              "at": "16:11"
+            }
+          ]
+        },
+        {
+          "score": [1, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "01:08"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nhl-2022020351",
+      "collection": "NHL Florida 2022-23 first three OT and first two shootout games",
+      "date": "2022-11-28",
+      "teams": ["FLA", "EDM"],
+      "sourceUrls": ["https://api-web.nhle.com/v1/gamecenter/2022020351/landing"],
+      "rulesUrls": ["https://media.nhl.com/site/asset/public/ext/2022-23/2022-23Rulebook.pdf"],
+      "format": "PER3XA-S:T20P-O:1SD/T5P",
+      "regulationPeriods": 3,
+      "mode": "suddenDeath",
+      "scope": "full",
+      "officialScore": [3, 4],
+      "playedScore": [3, 4],
+      "officialWinner": 2,
+      "shootoutScore": null,
+      "periods": [
+        {
+          "score": [1, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "03:49"
+            }
+          ]
+        },
+        {
+          "score": [0, 1],
+          "goals": [
+            {
+              "side": 2,
+              "at": "10:35"
+            }
+          ]
+        },
+        {
+          "score": [2, 2],
+          "goals": [
+            {
+              "side": 2,
+              "at": "05:18"
+            },
+            {
+              "side": 1,
+              "at": "10:58"
+            },
+            {
+              "side": 1,
+              "at": "15:16"
+            },
+            {
+              "side": 2,
+              "at": "19:55"
+            }
+          ]
+        },
+        {
+          "score": [0, 1],
+          "goals": [
+            {
+              "side": 2,
+              "at": "00:22"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nhl-2022030115",
+      "collection": "NHL Florida 2023 complete playoff overtime collection",
+      "date": "2023-04-26",
+      "teams": ["FLA", "BOS"],
+      "sourceUrls": ["https://api-web.nhle.com/v1/gamecenter/2022030115/landing"],
+      "rulesUrls": ["https://media.nhl.com/site/asset/public/ext/2022-23/2022-23Rulebook.pdf"],
+      "format": "PER3XA-S:T20P-O:USD/T20P",
+      "regulationPeriods": 3,
+      "mode": "suddenDeath",
+      "scope": "full",
+      "officialScore": [4, 3],
+      "playedScore": [4, 3],
+      "officialWinner": 1,
+      "shootoutScore": null,
+      "periods": [
+        {
+          "score": [1, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "08:26"
+            }
+          ]
+        },
+        {
+          "score": [1, 1],
+          "goals": [
+            {
+              "side": 2,
+              "at": "02:27"
+            },
+            {
+              "side": 1,
+              "at": "18:52"
+            }
+          ]
+        },
+        {
+          "score": [1, 2],
+          "goals": [
+            {
+              "side": 2,
+              "at": "04:33"
+            },
+            {
+              "side": 1,
+              "at": "05:14"
+            },
+            {
+              "side": 2,
+              "at": "09:16"
+            }
+          ]
+        },
+        {
+          "score": [1, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "06:05"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nhl-2022030117",
+      "collection": "NHL Florida 2023 complete playoff overtime collection",
+      "date": "2023-04-30",
+      "teams": ["FLA", "BOS"],
+      "sourceUrls": ["https://api-web.nhle.com/v1/gamecenter/2022030117/landing"],
+      "rulesUrls": ["https://media.nhl.com/site/asset/public/ext/2022-23/2022-23Rulebook.pdf"],
+      "format": "PER3XA-S:T20P-O:USD/T20P",
+      "regulationPeriods": 3,
+      "mode": "suddenDeath",
+      "scope": "full",
+      "officialScore": [4, 3],
+      "playedScore": [4, 3],
+      "officialWinner": 1,
+      "shootoutScore": null,
+      "periods": [
+        {
+          "score": [1, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "12:23"
+            }
+          ]
+        },
+        {
+          "score": [1, 1],
+          "goals": [
+            {
+              "side": 1,
+              "at": "01:14"
+            },
+            {
+              "side": 2,
+              "at": "07:52"
+            }
+          ]
+        },
+        {
+          "score": [1, 2],
+          "goals": [
+            {
+              "side": 2,
+              "at": "00:55"
+            },
+            {
+              "side": 2,
+              "at": "04:11"
+            },
+            {
+              "side": 1,
+              "at": "19:00"
+            }
+          ]
+        },
+        {
+          "score": [1, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "08:35"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nhl-2022030213",
+      "collection": "NHL Florida 2023 complete playoff overtime collection",
+      "date": "2023-05-07",
+      "teams": ["TOR", "FLA"],
+      "sourceUrls": ["https://api-web.nhle.com/v1/gamecenter/2022030213/landing"],
+      "rulesUrls": ["https://media.nhl.com/site/asset/public/ext/2022-23/2022-23Rulebook.pdf"],
+      "format": "PER3XA-S:T20P-O:USD/T20P",
+      "regulationPeriods": 3,
+      "mode": "suddenDeath",
+      "scope": "full",
+      "officialScore": [2, 3],
+      "playedScore": [2, 3],
+      "officialWinner": 2,
+      "shootoutScore": null,
+      "periods": [
+        {
+          "score": [1, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "02:26"
+            }
+          ]
+        },
+        {
+          "score": [1, 2],
+          "goals": [
+            {
+              "side": 2,
+              "at": "02:36"
+            },
+            {
+              "side": 1,
+              "at": "07:32"
+            },
+            {
+              "side": 2,
+              "at": "12:28"
+            }
+          ]
+        },
+        {
+          "score": [0, 0],
+          "goals": []
+        },
+        {
+          "score": [0, 1],
+          "goals": [
+            {
+              "side": 2,
+              "at": "03:02"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nhl-2022030215",
+      "collection": "NHL Florida 2023 complete playoff overtime collection",
+      "date": "2023-05-12",
+      "teams": ["FLA", "TOR"],
+      "sourceUrls": ["https://api-web.nhle.com/v1/gamecenter/2022030215/landing"],
+      "rulesUrls": ["https://media.nhl.com/site/asset/public/ext/2022-23/2022-23Rulebook.pdf"],
+      "format": "PER3XA-S:T20P-O:USD/T20P",
+      "regulationPeriods": 3,
+      "mode": "suddenDeath",
+      "scope": "full",
+      "officialScore": [3, 2],
+      "playedScore": [3, 2],
+      "officialWinner": 1,
+      "shootoutScore": null,
+      "periods": [
+        {
+          "score": [2, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "03:31"
+            },
+            {
+              "side": 1,
+              "at": "16:18"
+            }
+          ]
+        },
+        {
+          "score": [0, 1],
+          "goals": [
+            {
+              "side": 2,
+              "at": "07:50"
+            }
+          ]
+        },
+        {
+          "score": [0, 1],
+          "goals": [
+            {
+              "side": 2,
+              "at": "15:33"
+            }
+          ]
+        },
+        {
+          "score": [1, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "15:32"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nhl-2022030311",
+      "collection": "NHL Florida 2023 complete playoff overtime collection",
+      "date": "2023-05-18",
+      "teams": ["FLA", "CAR"],
+      "sourceUrls": ["https://api-web.nhle.com/v1/gamecenter/2022030311/landing"],
+      "rulesUrls": ["https://media.nhl.com/site/asset/public/ext/2022-23/2022-23Rulebook.pdf"],
+      "format": "PER3XA-S:T20P-O:USD/T20P",
+      "regulationPeriods": 3,
+      "mode": "suddenDeath",
+      "scope": "full",
+      "officialScore": [3, 2],
+      "playedScore": [3, 2],
+      "officialWinner": 1,
+      "shootoutScore": null,
+      "periods": [
+        {
+          "score": [0, 1],
+          "goals": [
+            {
+              "side": 2,
+              "at": "19:48"
+            }
+          ]
+        },
+        {
+          "score": [2, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "15:28"
+            },
+            {
+              "side": 1,
+              "at": "17:43"
+            }
+          ]
+        },
+        {
+          "score": [0, 1],
+          "goals": [
+            {
+              "side": 2,
+              "at": "03:47"
+            }
+          ]
+        },
+        {
+          "score": [0, 0],
+          "goals": []
+        },
+        {
+          "score": [0, 0],
+          "goals": []
+        },
+        {
+          "score": [0, 0],
+          "goals": []
+        },
+        {
+          "score": [1, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "19:47"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nhl-2022030312",
+      "collection": "NHL Florida 2023 complete playoff overtime collection",
+      "date": "2023-05-20",
+      "teams": ["FLA", "CAR"],
+      "sourceUrls": ["https://api-web.nhle.com/v1/gamecenter/2022030312/landing"],
+      "rulesUrls": ["https://media.nhl.com/site/asset/public/ext/2022-23/2022-23Rulebook.pdf"],
+      "format": "PER3XA-S:T20P-O:USD/T20P",
+      "regulationPeriods": 3,
+      "mode": "suddenDeath",
+      "scope": "full",
+      "officialScore": [2, 1],
+      "playedScore": [2, 1],
+      "officialWinner": 1,
+      "shootoutScore": null,
+      "periods": [
+        {
+          "score": [0, 1],
+          "goals": [
+            {
+              "side": 2,
+              "at": "01:43"
+            }
+          ]
+        },
+        {
+          "score": [1, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "07:43"
+            }
+          ]
+        },
+        {
+          "score": [0, 0],
+          "goals": []
+        },
+        {
+          "score": [1, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "01:51"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nhl-2022030413",
+      "collection": "NHL Florida 2023 complete playoff overtime collection",
+      "date": "2023-06-08",
+      "teams": ["VGK", "FLA"],
+      "sourceUrls": ["https://api-web.nhle.com/v1/gamecenter/2022030413/landing"],
+      "rulesUrls": ["https://media.nhl.com/site/asset/public/ext/2022-23/2022-23Rulebook.pdf"],
+      "format": "PER3XA-S:T20P-O:USD/T20P",
+      "regulationPeriods": 3,
+      "mode": "suddenDeath",
+      "scope": "full",
+      "officialScore": [2, 3],
+      "playedScore": [2, 3],
+      "officialWinner": 2,
+      "shootoutScore": null,
+      "periods": [
+        {
+          "score": [1, 1],
+          "goals": [
+            {
+              "side": 2,
+              "at": "04:08"
+            },
+            {
+              "side": 1,
+              "at": "16:03"
+            }
+          ]
+        },
+        {
+          "score": [1, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "14:59"
+            }
+          ]
+        },
+        {
+          "score": [0, 1],
+          "goals": [
+            {
+              "side": 2,
+              "at": "17:47"
+            }
+          ]
+        },
+        {
+          "score": [0, 1],
+          "goals": [
+            {
+              "side": 2,
+              "at": "04:27"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "football-2014-bel-usa",
+      "collection": "International football official match reports",
+      "date": "2014-07-01",
+      "teams": ["Belgium", "USA"],
+      "sourceUrls": ["https://static.rbfa.be/project/publiek/rencinter/en/wed_8203.htm"],
+      "rulesUrls": ["https://www.theifab.com/laws/latest/determining-the-outcome-of-a-match/"],
+      "format": "HAL2XA-S:T45P-O:2X/T15P",
+      "regulationPeriods": 2,
+      "mode": "exactBlock",
+      "scope": "full",
+      "officialScore": [2, 1],
+      "playedScore": [2, 1],
+      "officialWinner": 1,
+      "shootoutScore": null,
+      "periods": [
+        {
+          "score": [0, 0],
+          "goals": []
+        },
+        {
+          "score": [0, 0],
+          "goals": []
+        },
+        {
+          "score": [2, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "93"
+            },
+            {
+              "side": 1,
+              "at": "105"
+            }
+          ]
+        },
+        {
+          "score": [0, 1],
+          "goals": [
+            {
+              "side": 2,
+              "at": "107"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "football-2016-por-fra",
+      "collection": "International football official match reports",
+      "date": "2016-07-10",
+      "teams": ["Portugal", "France"],
+      "sourceUrls": ["https://www.uefa.com/uefaeuro/history/news/0253-0d81c3763c88-e741506b5589-1000/"],
+      "rulesUrls": ["https://www.theifab.com/laws/latest/determining-the-outcome-of-a-match/"],
+      "format": "HAL2XA-S:T45P-O:2X/T15P",
+      "regulationPeriods": 2,
+      "mode": "exactBlock",
+      "scope": "full",
+      "officialScore": [1, 0],
+      "playedScore": [1, 0],
+      "officialWinner": 1,
+      "shootoutScore": null,
+      "periods": [
+        {
+          "score": [0, 0],
+          "goals": []
+        },
+        {
+          "score": [0, 0],
+          "goals": []
+        },
+        {
+          "score": [0, 0],
+          "goals": []
+        },
+        {
+          "score": [1, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "109"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "football-2000-fra-ita",
+      "collection": "International football official match reports",
+      "date": "2000-07-02",
+      "teams": ["France", "Italy"],
+      "sourceUrls": [
+        "https://www.uefa.com/uefaeuro/history/news/0253-0d7b3013529f-3e15ce8dc46b-1000--trezeguet-s-golden-goal-sinks-italy-as-france-make-histor/",
+        "https://www.fff.fr/article/2830-le-parcours-des-bleus-a-l-euro-2000.html"
+      ],
+      "rulesUrls": [
+        "https://www.uefa.com/uefaeuro/history/news/0253-0d7b3013529f-3e15ce8dc46b-1000--trezeguet-s-golden-goal-sinks-italy-as-france-make-histor/"
+      ],
+      "format": "HAL2XA-S:T45P-O:2SD/T15P",
+      "regulationPeriods": 2,
+      "mode": "suddenDeath",
+      "scope": "full",
+      "officialScore": [2, 1],
+      "playedScore": [2, 1],
+      "officialWinner": 1,
+      "shootoutScore": null,
+      "periods": [
+        {
+          "score": [0, 0],
+          "goals": []
+        },
+        {
+          "score": [1, 1],
+          "goals": [
+            {
+              "side": 2,
+              "at": "second half"
+            },
+            {
+              "side": 1,
+              "at": "second-half added time"
+            }
+          ]
+        },
+        {
+          "score": [1, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "103"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "football-2004-gre-cze",
+      "collection": "International football official match reports",
+      "date": "2004-07-01",
+      "teams": ["Greece", "Czech Republic"],
+      "sourceUrls": [
+        "https://www.uefa.com/uefaeuro/history/news/0253-0d7b43e4d6d3-1e43d840c0a8-1000--dellas-delight-stuns-czech-republic/",
+        "https://www.uefa.com/uefaeuro/match/79108--greece-vs-czech-republic/"
+      ],
+      "rulesUrls": [
+        "https://www.uefa.com/uefaeuro/history/news/0253-0d7b43e4d6d3-1e43d840c0a8-1000--dellas-delight-stuns-czech-republic/"
+      ],
+      "format": "HAL2XA-S:T45P-O:2/T15P",
+      "regulationPeriods": 2,
+      "mode": "periodEnd",
+      "scope": "full",
+      "officialScore": [1, 0],
+      "playedScore": [1, 0],
+      "officialWinner": 1,
+      "shootoutScore": null,
+      "periods": [
+        {
+          "score": [0, 0],
+          "goals": []
+        },
+        {
+          "score": [0, 0],
+          "goals": []
+        },
+        {
+          "score": [1, 0],
+          "goals": [
+            {
+              "side": 1,
+              "at": "105+1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "football-2021-fra-sui",
+      "collection": "International football official match reports",
+      "date": "2021-06-28",
+      "teams": ["France", "Switzerland"],
+      "sourceUrls": ["https://www.fff.fr/selection/matchs/2934-france-suisse.html"],
+      "rulesUrls": ["https://www.theifab.com/laws/latest/determining-the-outcome-of-a-match/"],
+      "format": "HAL2XA-S:T45P-O:2X/T15P",
+      "regulationPeriods": 2,
+      "mode": "exactBlock",
+      "scope": "throughOvertime",
+      "officialScore": [3, 3],
+      "playedScore": [3, 3],
+      "officialWinner": 2,
+      "shootoutScore": [4, 5],
+      "periods": [
+        {
+          "score": [0, 1],
+          "goals": [
+            {
+              "side": 2,
+              "at": "15"
+            }
+          ]
+        },
+        {
+          "score": [3, 2],
+          "goals": [
+            {
+              "side": 1,
+              "at": "57"
+            },
+            {
+              "side": 1,
+              "at": "59"
+            },
+            {
+              "side": 1,
+              "at": "75"
+            },
+            {
+              "side": 2,
+              "at": "81"
+            },
+            {
+              "side": 2,
+              "at": "90"
+            }
+          ]
+        },
+        {
+          "score": [0, 0],
+          "goals": []
+        },
+        {
+          "score": [0, 0],
+          "goals": []
+        }
+      ]
+    }
+  ]
+}
