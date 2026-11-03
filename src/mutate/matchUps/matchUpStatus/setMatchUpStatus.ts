@@ -284,7 +284,11 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
 
   // DECISION: Accept matchUpFormat from either direct param or nested in outcome
   // WHY: Provides flexibility in how API is called - format can be set along with status/score
-  const rotating = preflightOutcome(params);
+  // ONE map for the whole call. `setMatchUpState` builds this itself unless handed one; building it
+  // here instead lets the preflight, the before-snapshot and the warning below read the same flat array
+  // the cascade writes through, so none of them walks the draw again. Its matchUps are the live objects.
+  const matchUpsMap = getMatchUpsMap({ drawDefinition });
+  const rotating = preflightOutcome(params, matchUpsMap);
   if (rotating.error) return rotating;
   params = { ...params, ...rotating, outcome: params.outcome && { ...params.outcome, ...rotating } };
   const matchUpFormat = requestedMatchUpFormat(params);
@@ -390,10 +394,6 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   const finalsBefore = getDeciderFinals(drawDefinition);
   // and the decider structures themselves: the cascade can re-seat a decider while the final's winner stays the same
   const deciderSnapshotBefore = getDeciderSnapshot(drawDefinition);
-  // ONE map for the whole call. `setMatchUpState` builds this itself unless handed one; building it
-  // here instead lets the before-snapshot and the warning below read the same flat array the
-  // cascade writes through, so neither walks the draw again. Its matchUps are the live objects.
-  const matchUpsMap = getMatchUpsMap({ drawDefinition });
   // which matchUps already could never be played, so the warning names only what THIS call left so
   // the double exits standing before the call: one that re-derives to a single exit is settled at the end
   const doubleExitsBefore = new Set(
@@ -671,8 +671,9 @@ function preflightTallyPolicy(params: SetMatchUpStatusArgs): ResultType {
   return inherited.error ? inherited : validateDrawTallyOptions(policyDefinitions?.[POLICY_TYPE_ROUND_ROBIN_TALLY]);
 }
 
-function preflightOutcome(params: SetMatchUpStatusArgs) {
-  const choice = collectionChoiceOutcomeRefusal(params);
+function preflightOutcome(params: SetMatchUpStatusArgs, matchUpsMap: MatchUpsMap) {
+  // an unresolved captain's choice refuses before anything is written
+  const choice = collectionChoiceOutcomeRefusal({ ...params, matchUpsMap });
   if (choice) return choice;
   const tallyValidation = preflightTallyPolicy(params);
   if (tallyValidation.error) return tallyValidation;
