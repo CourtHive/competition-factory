@@ -31,4 +31,5 @@ it('no-floating-promises detects governor, unresolved and dispatch calls on all 
     expectedLines.map((line) => ({ ruleId: '@typescript-eslint/no-floating-promises', line })),
   );
   expect(result.fatalErrorCount).toBe(0);
-});
+  // type-aware linting builds the test tsconfig's whole program: ~5 s on a dev machine, ~36 s on a 2-core CI runner
+}, 180_000);
