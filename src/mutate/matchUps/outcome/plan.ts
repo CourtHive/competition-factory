@@ -1268,6 +1268,11 @@ function producedChain(view: OutcomeView, first: HydratedMatchUp, arrival: Chain
   return undefined;
 }
 
+/** Convergence past the first BYE; a pending exit after a longer walk remains outside this rule. */
+function firstPendingExit(matchUp: HydratedMatchUp, relays: ByeHeldPassage['relays']): boolean {
+  return SINGLE_EXITS.has(matchUp.matchUpStatus) && !relays.length;
+}
+
 /**
  * S7: a double exit whose next matchUp holds a BYE on the side its produced exit is awarded to (a consolation feed round
  * whose fed seat took a BYE, or a plain round's double BYE). v1 leaves that matchUp a BYE: it records the produced exit
@@ -1308,7 +1313,7 @@ function byeHeldProduced(
       continue;
     }
     // a pending exit standing beyond: the two converge, straight past the first BYE (S7)
-    if (SINGLE_EXITS.has(beyond.matchUpStatus) && !relays.length) {
+    if (firstPendingExit(beyond, relays)) {
       const converged = producedChain(view, beyond, {
         matchUpId: beyond.matchUpId,
         matchUpStatus: produced.matchUpStatus,
@@ -1360,9 +1365,13 @@ function chainOps({ levels, pending }: ConvergedChain): OutcomeOp[] {
     ...recorded(level),
     { op: 'stampUpdatedAt', entity: 'matchUp', id: level.matchUpId },
   ];
-  // the exit the last level produces is written as any produced exit: a WALKOVER's score blanked
+  // v1's modifyMatchUpScore blanks every DOUBLE_WALKOVER, including a previously scoreless convergence
+  // (census on:20498521). Defaults retain their score; the produced WALKOVER's score is blanked as well.
   const pendingOps = pending ? written(pending, false, pending.matchUpStatus === WALKOVER) : [];
-  return [...levels.flatMap((level, i) => written(level, i === 0)), ...pendingOps];
+  return [
+    ...levels.flatMap((level, i) => written(level, i === 0, level.matchUpStatus === DOUBLE_WALKOVER)),
+    ...pendingOps,
+  ];
 }
 
 /** the produced exit past a BYE-held next matchUp, as v1 writes it (`byeHeldProduced`) */
