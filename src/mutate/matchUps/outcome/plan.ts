@@ -1243,8 +1243,10 @@ function producedChain(view: OutcomeView, first: HydratedMatchUp, arrival: Chain
   for (let hop = 0; hop < 8; hop += 1) {
     const provenance = at.sideExitProvenance ?? {};
     const standing = provenance[(3 - incoming.sideNumber) as 1 | 2];
-    if (!SINGLE_EXITS.has(at.matchUpStatus) || at.matchUpStatus === RETIRED || at.winningSide) return undefined;
-    if (provenance[incoming.sideNumber] || !standing || !isDoubleExit(standing.previousMatchUpStatus)) return undefined;
+    // a pending exit (no winner); a RETIRED always has one
+    if (!SINGLE_EXITS.has(at.matchUpStatus) || at.winningSide) return undefined;
+    // the exit standing there was produced by a double exit (a carried one converges by its own rule)
+    if (!standing || !isDoubleExit(standing.previousMatchUpStatus)) return undefined;
     if (!cleanBeyond(at)) return undefined;
     const matchUpStatus = collapseDoubleExitStatus([incoming.matchUpStatus, at.matchUpStatus]);
     levels.push({ ...incoming, matchUpId: at.matchUpId, matchUpStatus });
