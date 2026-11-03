@@ -416,7 +416,9 @@ function directionReason(args: {
   if (reservationReason(view, write.winningSide as 1 | 2)) return 'cascade';
   // a target holding a BYE sends the winner on past it: planned when where they go is clean (`winnerThroughBye`)
   const through = target.hasBye ? targets.winnerThroughBye?.[write.winningSide as 1 | 2] : undefined;
-  if ((target.hasBye && !through) || target.holdsResult) return 'cascade';
+  // an unwound call's next matchUp is on the unwind's path, written back to be played before the winner arrives: a
+  // result it holds (an award the unwind releases) is taken back with it
+  if ((target.hasBye && !through) || (target.holdsResult && !unwound)) return 'cascade';
   if (!unwound && (target.carriesExit || target.carriedStatuses.length)) return 'cascade';
   // a target generated with no status (LUCKY_DRAW, adaptive) is written TO_BE_PLAYED by v1 as the winner arrives
   if (target.matchUpStatus !== TO_BE_PLAYED && !through && !unwound) return 'route';
@@ -561,8 +563,9 @@ function lineExitReason(view: OutcomeView, write?: MatchUpWrite): AbstainReason 
  * exit as a clear does (`removeDoubleExit`: the produced exit taken back and the path to the final written back to be
  * played, `unwoundPath`, and the BYEs it placed on loser seats withdrawn), then writes the result and directs it as a
  * played result, the winner into the next matchUp the unwind left to be played (`unwoundOps`, then the direction).
- * Planned where that unwind is the plain one: the produced exit pending, not awarded, and the loser, where a link takes
- * them, placed on the seat the unwind has just freed (`unwoundLoserReason`). The direction's own checks follow
+ * Planned where the unwind leaves no convergence re-derived: the produced exit pending, or awarded and released as the
+ * clear releases it (S7), and the loser, where a link takes them, placed on the seat the unwind has just freed
+ * (`unwoundLoserReason`). The direction's own checks follow
  * (`directionReason`, which reads the next matchUp as the unwind leaves it).
  */
 function givenWinnerReason(args: Parameters<typeof exitReason>[0]): AbstainReason | undefined {
@@ -573,7 +576,10 @@ function givenWinnerReason(args: Parameters<typeof exitReason>[0]): AbstainReaso
   if (direction?.produced || direction?.converged || direction?.decider) return 'exit';
   const levels = unwoundPath(view, request.matchUpId, args.drawDefinition);
   // a convergence the unwind dissolves: the winner then lands beside the re-derived pending exit and is awarded it, v1's
-  if (!levels || levels.some(({ released, rederived }) => released || rederived)) return 'exit';
+  if (!levels || levels.some(({ rederived }) => rederived)) return 'exit';
+  // an award released by the unwind (S7): planned where the paired feeder delivered its winner by a result; an award
+  // made through a BYE beside it is released with another announcement, v1's
+  if (levels.some(({ released }) => released) && pairedFeeder(view)?.matchUpStatus === BYE) return 'exit';
   if (!view.targets.loserMatchUpId && !view.targets.loserLink && !direction?.loser)
     return levels.some(({ seatOps }) => seatOps.length) ? 'exit' : undefined;
   return unwoundLoserReason(view, levels[0], direction?.loser);
