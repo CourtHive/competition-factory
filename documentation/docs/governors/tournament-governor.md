@@ -523,6 +523,8 @@ engine.setSanctionConstraints({ constraints: null }); // removes them
 
 Refused with `INVALID_VALUES`, writing nothing, when the tournament holds no `sanction`, when `definedBy.providerId` is missing or blank, or when any attribute is malformed or not listed above. Announced as `MODIFY_TOURNAMENT_DETAIL` with the `sanction`.
 
+An event is matched by `match.eventType` always, and by `match.eventName` and `match.categoryName` (the event's `category.categoryName`) when they are stated (a non-empty value); when more than one entry of `events` matches, the first applies.
+
 Older records carry the limits as a `sanctioningConstraints` extension (`{ events: [{ eventType, eventName, category: { categoryName }, maxWildcards, ... }] }`). It is still read when the sanction holds none, and `migrateTournamentRecord` promotes it onto a sanction whose `authority` names an organisation (which becomes `definedBy`). Without one, the extension stays and the migration reports `SANCTION_CONSTRAINTS_NOT_PROMOTED`. Under the `BRIDGE` write mode the extension is mirrored; under `LEGACY` only the extension is written.
 
 ---

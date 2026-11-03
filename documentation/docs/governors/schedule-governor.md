@@ -111,7 +111,12 @@ dates (`SCHEDULING_PROFILE_DATES_OUT_OF_RANGE`) is passed on in `warnings`.
 
 A round whose event does not play on `scheduleDate` (see [Event playing days](#event-playing-days)) is added, and the
 result carries an `EVENT_DATE_INACTIVE` warning: `{ code, message, eventId, scheduledDate, reason, roundKey }`.
-`getSchedulingProfileIssues` reports such rounds for as long as they stay profiled.
+`eventId` is the round's, `scheduledDate` the date part of `scheduleDate`, and `roundKey` is
+`tournamentId|eventId|drawId|structureId|roundNumber|segment`: the round's `containerStructureId` stands for its
+`structureId` when `isRoundRobin`, an absent value is empty, and `segment` is `segmentNumber/segmentsCount` for a
+`roundSegment` that states a `segmentsCount`, else empty (so a key without a segment ends in `|`). Any warning
+`setSchedulingProfile` gives for the profile comes before it. `getSchedulingProfileIssues` reports such rounds for as
+long as they stay profiled.
 
 ---
 
@@ -1669,8 +1674,9 @@ engine.addMatchUpScheduleItems({
 
 When the call sets a date (`scheduledDate`, or the date of a date-time `scheduledTime` given without one) on which the
 matchUp's event does not play (see [Event playing days](#event-playing-days)), the schedule is written and the result's
-`warnings` carry `EVENT_DATE_INACTIVE`: `{ code, message, matchUpId, eventId, scheduledDate, reason }`. A call that
-sets no date (a court, a court order, a time alone) carries none. The bulk writes (`bulkScheduleMatchUps`,
+`warnings` carry `EVENT_DATE_INACTIVE`: `{ code, message, matchUpId, eventId, scheduledDate, reason }`, with `code`
+`'EVENT_DATE_INACTIVE'` and `message` `'The event does not play on this date.'` (the same in every `EVENT_DATE_INACTIVE`
+warning). A call that sets no date (a court, a court order, a time alone) carries none. The bulk writes (`bulkScheduleMatchUps`,
 `bulkScheduleTournamentMatchUps`, `bulkRescheduleMatchUps`) return the warning of each matchUp they write in their own
 `warnings`.
 

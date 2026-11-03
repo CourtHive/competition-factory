@@ -196,9 +196,13 @@ the call writes nothing:
 - `entries` is created on the event if absent. Each id not already entered gets, in input order:
   `{ participantId, entryStatus, entryStage }`, plus `extensions` (copies), an `extension` (with `createdAt` set to the
   call's instant if it has none), `roundTarget` and `entryStageSequence` when given. Existing entries are unchanged.
-- With `autoEntryPositions`, the event's entries are then rewritten: grouped by stage and status (groups in order of
-  first appearance, which can reorder the array), ordered within a group by their existing `entryPosition` (absent
-  last, stable), and numbered `entryPosition` 1..n per group.
+- With `autoEntryPositions`, the event's entries are then rewritten: grouped (groups in order of first appearance,
+  which can reorder the array), ordered within a group by their existing `entryPosition` (absent last, stable), and
+  numbered `entryPosition` 1..n per group. Every accepted status (`DIRECT_ACCEPTANCE`, `WILDCARD`, `SPECIAL_EXEMPT`,
+  `JUNIOR_EXEMPT`, `ORGANISER_ACCEPTANCE`, `CONFIRMED`, `QUALIFIER`, `LUCKY_LOSER`) forms **one group per
+  `entryStage`** (`MAIN` when absent); every other status (`ALTERNATE`, `WITHDRAWN`, ...) has its own group per stage.
+  So a `WILDCARD` entered after two `DIRECT_ACCEPTANCE` entries is numbered 3, not 1 (see
+  [modifyEntriesStatus](../governors/entries-governor.md#modifyentriesstatus)).
 - DOUBLES and TEAM: individuals entered UNGROUPED or UNPAIRED who now belong to an entered PAIR or TEAM are removed from
   the event's entries (unless one holds a draw position).
 - With a `drawId`, the same participants are entered in that draw (and its flight), ungrouped individuals included; a
@@ -222,7 +226,10 @@ the call writes nothing:
 4. The selected flight (`flight.flightNumber`) is for another draw, or a draw entry is not among its entries:
    `INVALID_DRAW_DEFINITION`. With `checkEntryStatus`, a draw entry without a matching event entry:
    `INVALID_DRAW_DEFINITION`.
-5. The event already has this `drawId`: `DRAW_ID_EXISTS`, unless `allowReplacement`; replacing a draw with scores
+5. Unless the draw is `AD_HOC`: its entries exceed a matched sanction's `maxWildcards` or `maxAlternates`:
+   `NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS`, naming the first limit exceeded (see
+   [addDrawDefinition](../governors/event-governor.md#adddrawdefinition)).
+6. The event already has this `drawId`: `DRAW_ID_EXISTS`, unless `allowReplacement`; replacing a draw with scores
    needs `force` or the scoring policy's permission (`SCORES_PRESENT`).
 
 **What is written**, in this order:

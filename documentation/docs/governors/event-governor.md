@@ -18,6 +18,8 @@ Adds a drawDefinition to an event in a tournamentRecord. Called after [generateD
 
 A draw whose entries exceed a matched sanction's `maxWildcards` (`WILDCARD` entries) or `maxAlternates` (`ALTERNATE` entries) is refused before anything is stored, with `{ error: NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS, context: { entryStatus, stage, limit, count, participantIds } }`, where `participantIds` are the entries beyond the limit. `AD_HOC` draws, unsanctioned events and events the constraints do not match are unaffected.
 
+When more than one of the constraints' events matches the event, the first in their list applies. The limits are checked `WILDCARD` first, then `ALTERNATE`, and for each status stage by stage in the order the draw's entries first name the stage (`MAIN` when an entry states none); the refusal names the first limit exceeded, with `info` `'<entryStatus> entries exceed the sanctioned limit'`. A participant entered twice in one stage with the same status counts once. The check comes after the entries are validated against the flight and before the existing-`drawId` check (`DRAW_ID_EXISTS`).
+
 A `drawDefinition` built outside the factory may not carry the progression links between its matchUps (`winnerMatchUpId`, `loserMatchUpId`). They are derived from its structures and links and stored with the draw, as `generateDrawDefinition` would have stored them. A draw with a malformed round link is stored as it was.
 
 ```js
