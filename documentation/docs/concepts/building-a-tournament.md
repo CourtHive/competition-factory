@@ -226,7 +226,10 @@ the call writes nothing:
 4. The selected flight (`flight.flightNumber`) is for another draw, or a draw entry is not among its entries:
    `INVALID_DRAW_DEFINITION`. With `checkEntryStatus`, a draw entry without a matching event entry:
    `INVALID_DRAW_DEFINITION`.
-5. The event already has this `drawId`: `DRAW_ID_EXISTS`, unless `allowReplacement`; replacing a draw with scores
+5. Unless the draw is `AD_HOC`: its entries exceed a matched sanction's `maxWildcards` or `maxAlternates`:
+   `NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS`, naming the first limit exceeded (see
+   [addDrawDefinition](../governors/event-governor.md#adddrawdefinition)).
+6. The event already has this `drawId`: `DRAW_ID_EXISTS`, unless `allowReplacement`; replacing a draw with scores
    needs `force` or the scoring policy's permission (`SCORES_PRESENT`).
 
 **What is written**, in this order:

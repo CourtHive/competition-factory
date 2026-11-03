@@ -272,3 +272,20 @@ it('the bulk paths aggregate the warning, each with its matchUpId', () => {
   expect(warned.map(({ matchUpId }) => matchUpId).sort()).toEqual(fri.map(({ matchUpId }) => matchUpId).sort());
   expect(warned[0]).toMatchObject({ scheduledDate: SAT, eventId: 'friEvent', reason: 'EVENT_WEEKDAY' });
 });
+
+it('states the warning message, and the profile round key in full', () => {
+  const { venueId } = setup();
+  const { tournamentId } = tournamentEngine.getTournament().tournamentRecord;
+  const { drawDefinition } = tournamentEngine.getEvent({ drawId: 'satDraw' });
+  const structureId = drawDefinition.structures[0].structureId;
+  const round = { tournamentId, eventId: 'satEvent', drawId: 'satDraw', structureId, roundNumber: 1 };
+
+  let result: any = tournamentEngine.addSchedulingProfileRound({ scheduleDate: FRI, venueId, round });
+  expect(result.warnings[0].code).toEqual('EVENT_DATE_INACTIVE');
+  expect(result.warnings[0].message).toEqual('The event does not play on this date.');
+  expect(result.warnings[0].roundKey).toEqual(`${tournamentId}|satEvent|satDraw|${structureId}|1|`);
+
+  const segmented = { ...round, roundNumber: 2, roundSegment: { segmentNumber: 1, segmentsCount: 2 } };
+  result = tournamentEngine.addSchedulingProfileRound({ scheduleDate: FRI, venueId, round: segmented });
+  expect(result.warnings[0].roundKey).toEqual(`${tournamentId}|satEvent|satDraw|${structureId}|2|1/2`);
+});

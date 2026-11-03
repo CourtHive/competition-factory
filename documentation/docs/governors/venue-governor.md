@@ -180,7 +180,10 @@ are valid against the CODES schema (`Disabled`), and `disableVenues` stores `dis
 
 Read with `ignoreDisabled` (as scheduling does), a court disabled on some dates is left out on those dates. On the
 other dates it asks about, its undated availability is returned as an entry for each date, so a court that holds only
-an undated availability keeps its hours there.
+an undated availability keeps its hours there. The court's dated entries come first (those on a disabled date
+dropped), then one entry per date asked about, in the order the dates are given, copying the first undated entry with
+that `date` added. A date the court holds a dated entry for takes no undated entry. The dates are matched as given, as
+strings.
 
 `disableCourts`, `enableCourts`, `disableVenues` and `enableVenues` send a `modifyVenue` notice for each venue
 they changed, and none for a venue already in the requested state.

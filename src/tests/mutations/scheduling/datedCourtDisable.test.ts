@@ -57,4 +57,28 @@ describe('a court disabled on some dates', () => {
     expect(result.success).toEqual(true);
     expect(scheduledOn(nextDate)).toEqual(control);
   });
+
+  it('lists dated entries first, then one undated entry per date asked, none for a date with a dated entry', () => {
+    const [courtA] = setup();
+    const dated = { date: '2022-09-26', startTime: '10:00', endTime: '11:00' };
+    const disabledDated = { date: startDate, startTime: '09:00', endTime: '10:00' };
+    let result: any = tournamentEngine.modifyCourtAvailability({
+      dateAvailability: [...undatedAvailability, dated, disabledDated],
+      courtId: courtA,
+    });
+    expect(result.success).toEqual(true);
+    result = tournamentEngine.disableCourts({ courtIds: [courtA], dates: [startDate] });
+    expect(result.success).toEqual(true);
+
+    const asked = ['2022-09-27', '2022-09-26', nextDate];
+    const courts = tournamentEngine.getVenuesAndCourts({ ignoreDisabled: true, dates: asked }).courts;
+    const availability = courts.find((court) => court.courtId === courtA)?.dateAvailability;
+    // the dated entry kept (the one on the disabled date dropped), then the undated hours on each date asked that has
+    // no dated entry, in the order asked
+    expect(availability).toEqual([
+      dated,
+      { ...undatedAvailability[0], date: '2022-09-27' },
+      { ...undatedAvailability[0], date: nextDate },
+    ]);
+  });
 });
