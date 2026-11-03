@@ -33,6 +33,13 @@ export function isValidMatchUpFormat({ matchUpFormat }: { matchUpFormat: string 
   return validateMatchUpFormat({ matchUpFormat }).valid;
 }
 
+/** The refusal a mutation returns for a format invalid for new use, or undefined when it is valid. */
+export function matchUpFormatRefusal({ matchUpFormat }: { matchUpFormat: string }) {
+  const validation = validateMatchUpFormat({ matchUpFormat });
+  if (validation.valid) return undefined;
+  return { error: UNRECOGNIZED_MATCHUP_FORMAT, ...(validation.info ? { info: validation.info } : {}) };
+}
+
 /** The new-use verdict with an explanation when an implicit best-of count is even. */
 export function validateMatchUpFormat({ matchUpFormat }: { matchUpFormat: string }): {
   valid: boolean;

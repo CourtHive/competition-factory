@@ -753,15 +753,19 @@ describe('Non-SET root high segment counts', () => {
   });
 
   // CA, 2026-10-02: "I don't see why best of 7 or 9 would be rejected" — the SET root capped best-of below six
-  it('SET root accepts any best-of count: best of seven, nine and six parse and round-trip', () => {
+  it('SET root parses any best-of count; an even implicit best-of is refused for new use (CA 2026-11-03)', () => {
     expect(matchUpFormatCode.parse('SET7-S:TB11')).toEqual({
       bestOf: 7,
       setFormat: { tiebreakSet: { tiebreakTo: 11 } },
     });
     for (const code of ['SET7-S:TB11', 'SET9-S:6/TB7', 'SET7-S:6/TB7-F:TB10', 'SET6-S:6/TB7']) {
-      expect(matchUpFormatCode.isValidMatchUpFormat({ matchUpFormat: code }), code).toBe(true);
       expect(matchUpFormatCode.stringify(matchUpFormatCode.parse(code)), code).toEqual(code);
     }
+    for (const code of ['SET7-S:TB11', 'SET9-S:6/TB7', 'SET7-S:6/TB7-F:TB10']) {
+      expect(matchUpFormatCode.isValidMatchUpFormat({ matchUpFormat: code }), code).toBe(true);
+    }
+    // a stored SET6 record stays readable; new use needs SET6X (exactly six) or an explicit A
+    expect(matchUpFormatCode.isValidMatchUpFormat({ matchUpFormat: 'SET6-S:6/TB7' })).toBe(false);
   });
 
   it('SET root allows large exactly counts for timed formats', () => {

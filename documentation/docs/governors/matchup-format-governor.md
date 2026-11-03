@@ -389,6 +389,30 @@ const formatString = matchUpFormatGovernor.stringify({
 
 ---
 
+## validateMatchUpFormat
+
+The same new-use verdict as `isValidMatchUpFormat`, with an explanation when a code is refused for an even
+implicit best-of count.
+
+```ts
+matchUpFormatGovernor.validateMatchUpFormat({ matchUpFormat: 'SET2-S:6/TB7-F:TB10' });
+// {
+//   valid: false,
+//   error: UNRECOGNIZED_MATCHUP_FORMAT,
+//   info: 'Best-of formats require an odd count; SET2 declares best of 2. Use SET2X for exactly 2 segments,
+//          or explicitly mark aggregate scoring with A. For two regular segments followed by a deciding
+//          segment, use SET3-S:6/TB7-F:TB10.'
+// }
+
+matchUpFormatGovernor.validateMatchUpFormat({ matchUpFormat: 'SET3-S:6/TB7' }); // { valid: true }
+```
+
+Mutations that set a format carry the same explanation with their refusal: in `info` from `applyMatchUpFormat`,
+in `info.message` where the format fails parameter validation, and in `errors` from collection definition
+validation.
+
+---
+
 ## isValid / isValidMatchUpFormat
 
 Validates whether a format code string is properly formed and can be successfully parsed and round-tripped.
@@ -435,8 +459,12 @@ Anything else that does not round-trip is refused by both: trailing characters (
 trailing space), a fractional `@6.5`, an invalid section (`SET5-S:6/TB7-F:S:6`), and a final set on a
 one-set match (`SET1-S:6/TB7-F:TB10`). Sections must appear in the canonical order.
 
-Any best-of count is valid (`SET7-S:TB11`, `SET9-S:6/TB7`), and `X` (exactly) applies to every root and every
-kind of set (`SET3X-S:6/TB7`, `SET3X-S:T10`). An equivalent spelling parses to the same object as its canonical
+Any odd best-of count is valid (`SET7-S:TB11`, `SET9-S:6/TB7`). An even implicit best-of count is refused for
+new use (CA 2026-11-03): `SET6-S:6/TB7` and `SET2-S:6/TB7-F:TB10` declare best of six and best of two. Use `X`
+for exactly N segments (`SET6X-S:6/TB7`; a level exactly-two result is valid) or `A` for aggregate scoring, and
+write two sets plus a deciding match tiebreak as `SET3-S:6/TB7-F:TB10`. A stored even best-of code still parses,
+so existing records stay readable. `X` (exactly) applies to every root and every kind of set
+(`SET3X-S:6/TB7`, `SET3X-S:T10`). An equivalent spelling parses to the same object as its canonical
 form. The full rules are the [grammar specification](/docs/codes/matchup-format-grammar).
 `stringify` never writes a code `parse` refuses, and returns `undefined` instead.
 

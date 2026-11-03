@@ -144,6 +144,7 @@ import type { predictMatchUpCompetitiveBands } from '@Query/matchUp/predictMatch
 import type { getEventStructures, getTournamentStructures } from '@Query/structure/structureGetter';
 import type { getTournamentInconsistencies } from '@Query/tournaments/getTournamentInconsistencies';
 import type { getCompetitionVenues, getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
+import type { isValidMatchUpFormat, validateMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import type { createTournamentRecord } from '@Generators/tournamentRecords/createTournamentRecord';
 import type { addDrawDefinitionTimeItem } from '@Mutate/drawDefinitions/addDrawDefinitionTimeItem';
 import type { attachQualifyingStructure } from '@Mutate/drawDefinitions/attachQualifyingStructure';
@@ -457,7 +458,6 @@ import type { generateRankingList } from '@Query/scales/generateRankingList';
 import type { getQualityWinPoints } from '@Query/scales/getQualityWinPoints';
 import type { getTournamentPoints } from '@Query/scales/getTournamentPoints';
 import type { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
-import type { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import type { publicFindDrawDefinition } from '@Acquire/findDrawDefinition';
 import type { publicFindParticipant } from '@Acquire/publicFindParticipant';
 import type { updateDrawIdsOrder } from '@Mutate/events/updateDrawIdsOrder';
@@ -1420,6 +1420,7 @@ export interface MethodSignatures {
   validateCollectionDefinition: EngineMethod<typeof validateCollectionDefinition>;
   validateLineUp: EngineMethod<typeof validateLineUp>;
   validateMatchUp: EngineMethod<typeof validateMatchUp>;
+  validateMatchUpFormat: EngineMethod<typeof validateMatchUpFormat>;
   validateMatchUpScore: EngineMethod<typeof validateMatchUpScore>;
   validateMCPMatch: EngineMethod<typeof validateMCPMatch>;
   validateOfficiatingStatusTransition: EngineMethod<typeof validateOfficiatingStatusTransition>;

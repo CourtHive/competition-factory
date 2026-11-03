@@ -109,14 +109,7 @@ export function validateCollectionDefinition({
 
   // a stored tieFormat is validated when it is read (team scoring, line-ups), so a format v1 accepted and
   // new use now refuses stays readable there (CA 2026-10-18, scoring engine spec § 12.8)
-  if (matchUpFormat) {
-    const validation = newUse
-      ? validateMatchUpFormat({ matchUpFormat })
-      : { valid: isWellFormedMatchUpFormat({ matchUpFormat }) };
-    if (!validation.valid) {
-      errors.push(`Invalid matchUpFormat: ${matchUpFormat}${validation.info ? `. ${validation.info}` : ''}`);
-    }
-  }
+  if (matchUpFormat) errors.push(...matchUpFormatErrors(matchUpFormat, newUse));
 
   if (checkGender) {
     const types = Array.isArray(matchUpTypeOptions) ? matchUpTypeOptions : [matchUpType];
@@ -209,4 +202,13 @@ function collectionGenderValidity({
     if (result.error) return result;
   }
   return { valid: true };
+}
+
+function matchUpFormatErrors(matchUpFormat: string, newUse?: boolean): string[] {
+  const validation = newUse
+    ? validateMatchUpFormat({ matchUpFormat })
+    : { valid: isWellFormedMatchUpFormat({ matchUpFormat }), info: undefined };
+  if (validation.valid) return [];
+  const explanation = validation.info ? '. ' + validation.info : '';
+  return [`Invalid matchUpFormat: ${matchUpFormat}${explanation}`];
 }

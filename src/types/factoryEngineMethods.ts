@@ -777,6 +777,7 @@ export type FactoryEngineMethod =
   | 'validateDateAvailability'
   | 'validateLineUp'
   | 'validateMatchUp'
+  | 'validateMatchUpFormat'
   | 'validateMatchUpScore'
   | 'validateMCPMatch'
   | 'validateOfficiatingStatusTransition'
@@ -1577,6 +1578,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'validateDateAvailability',
   'validateLineUp',
   'validateMatchUp',
+  'validateMatchUpFormat',
   'validateMatchUpScore',
   'validateMCPMatch',
   'validateOfficiatingStatusTransition',
