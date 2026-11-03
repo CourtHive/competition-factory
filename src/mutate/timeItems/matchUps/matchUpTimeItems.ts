@@ -1,5 +1,7 @@
+import { START_TIME, STOP_TIME, RESUME_TIME, END_TIME } from '@Constants/timeItemConstants';
 import { appendFirstClassOrTimeItem } from '@Mutate/timeItems/appendFirstClassOrTimeItem';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { collectionChoiceRefusal } from '@Query/matchUp/collectionChoice';
 import { getMatchUpPresence } from '@Acquire/presenceAttestations';
 import { addTimeItem } from '@Mutate/timeItems//addTimeItem';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
@@ -39,6 +41,11 @@ export function addMatchUpTimeItem({
 }: AddMatchUpTimeItem) {
   const { matchUp } = findDrawMatchUp({ drawDefinition, event, matchUpId });
   if (!matchUp) return { error: MATCHUP_NOT_FOUND };
+
+  if ([START_TIME, STOP_TIME, RESUME_TIME, END_TIME].includes(timeItem?.itemType ?? '')) {
+    const choice = collectionChoiceRefusal({ drawDefinition, event, matchUp });
+    if (choice) return choice;
+  }
 
   const result = addTimeItem({
     removePriorValues,

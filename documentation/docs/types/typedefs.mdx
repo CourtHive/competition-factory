@@ -1293,7 +1293,7 @@ export interface CollectionDefinition {
   matchUpFormat?: string;
   matchUpType?: EventTypeUnion;
   /** Permitted encounter choices; a concrete matchUpType records selection without removing this declaration.
-   * Declaration support only: new-use saving is gated until unresolved-choice runtime guards are implemented.
+   * Templates omit matchUpType until the collection is resolved for an individual TEAM encounter.
    */
   matchUpTypeOptions?: ('SINGLES' | 'DOUBLES')[];
   matchUpValue?: number;

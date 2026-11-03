@@ -3,6 +3,7 @@ import { START_TIME, STOP_TIME, RESUME_TIME, END_TIME } from '@Constants/timeIte
 import { completedMatchUpStatuses, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { requiredForkIds, writeTieFormat } from '@Mutate/tieFormat/writeTieFormat';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { matchUpTypeOptionsErrors } from '@Helpers/matchUpTypeOptions';
 import { getTeamLineUp } from '@Query/drawDefinition/getTeamLineUp';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { SINGLES, DOUBLES } from '@Constants/matchUpTypes';
@@ -22,6 +23,12 @@ import type {
 // Exploratory, encounter-scoped: no template fan-out and no implicit player conversion.
 type TypeChangeArgs = {
   source: CollectionDefinition;
+  valueAssignments?: Pick<
+    CollectionDefinition,
+    'collectionValueProfiles' | 'collectionValue' | 'matchUpValue' | 'scoreValue' | 'setValue'
+  >;
+  resetMatchUpTypeChoice?: boolean;
+  reported?: boolean;
   matchUpType?: string;
   matchUpCount?: number;
   matchUp?: MatchUp;
@@ -36,7 +43,8 @@ type TypeChangePlan = {
   children: MatchUp[];
   lineUps: { sideNumber: number; lineUp: TeamCompetitor[] }[];
   collectionId: string;
-  matchUpType: string;
+  matchUpType?: MatchUp['matchUpType'];
+  reset: boolean;
   clearAssignments: boolean;
   tieFormatUuids?: string[];
 };
@@ -44,11 +52,12 @@ type TypeChangePlan = {
 type TypeChangeResult = ResultType & { plan?: TypeChangePlan };
 
 export function planCollectionTypeChange(args: TypeChangeArgs): TypeChangeResult {
-  const { source, matchUpType, matchUp, drawDefinition, event, matchUpCount, tieFormatUuids } = args;
-  if (!matchUpType || source.matchUpType === matchUpType) return {};
+  const { source, matchUp, drawDefinition, event, matchUpCount, tieFormatUuids } = args;
+  if (args.resetMatchUpTypeChoice && (!matchUp || !drawDefinition))
+    return { error: NOT_IMPLEMENTED, info: 'Reset a choice only at TEAM encounter scope' };
+  const request = typeChangeRequest(args);
+  if (request.error || !request.change) return request;
   const refusal = (error: ResultType['error'], info: string) => ({ error, info });
-  if (![SINGLES, DOUBLES].includes(matchUpType) || ![SINGLES, DOUBLES].includes(source.matchUpType ?? ''))
-    return refusal(INVALID_VALUES, 'Only SINGLES and DOUBLES conversions are supported');
   if (args.clearCollectionAssignments !== undefined && typeof args.clearCollectionAssignments !== 'boolean')
     return refusal(INVALID_VALUES, 'clearCollectionAssignments must be a boolean');
   if (tieFormatUuids !== undefined && !Array.isArray(tieFormatUuids))
@@ -66,7 +75,7 @@ export function planCollectionTypeChange(args: TypeChangeArgs): TypeChangeResult
   if (matchUp.winningSide || completedMatchUpStatuses.includes(matchUp.matchUpStatus!))
     return refusal(CANNOT_MODIFY_TIEFORMAT, 'An encounter with a result cannot change collection type');
   const children = (matchUp.tieMatchUps ?? []).filter((child) => child.collectionId === source.collectionId);
-  if (children.length !== source.matchUpCount)
+  if (children.length !== (args.reported ? 0 : source.matchUpCount))
     return refusal(CANNOT_MODIFY_TIEFORMAT, 'Collection definition and rubber count disagree');
   if (children.some((child) => child.matchUpType !== source.matchUpType))
     return refusal(CANNOT_MODIFY_TIEFORMAT, 'Collection definition and rubber types disagree');
@@ -105,17 +114,56 @@ export function planCollectionTypeChange(args: TypeChangeArgs): TypeChangeResult
       children,
       lineUps,
       collectionId: source.collectionId,
-      matchUpType,
+      matchUpType: request.change.matchUpType,
+      reset: request.change.reset,
       clearAssignments: !!args.clearCollectionAssignments,
       tieFormatUuids,
     },
   };
 }
 
+function typeChangeRequest({
+  source,
+  matchUpType,
+  resetMatchUpTypeChoice,
+  valueAssignments,
+}: TypeChangeArgs): ResultType & {
+  change?: { matchUpType?: MatchUp['matchUpType']; reset: boolean };
+} {
+  const invalid = (info: string) => ({ error: INVALID_VALUES, info });
+  if (resetMatchUpTypeChoice !== undefined && typeof resetMatchUpTypeChoice !== 'boolean')
+    return invalid('resetMatchUpTypeChoice must be a boolean');
+  const choice = source.matchUpTypeOptions !== undefined;
+  if (resetMatchUpTypeChoice && (!choice || matchUpType !== undefined))
+    return invalid('Reset requires a choice declaration and cannot also select a type');
+  if (choice && matchUpTypeOptionsErrors(source).length) return invalid('Invalid choice declaration');
+  if (
+    choice &&
+    requestsChoiceTransition(source, matchUpType, resetMatchUpTypeChoice) &&
+    Object.entries(valueAssignments ?? {}).some(
+      ([key, value]) =>
+        value !== undefined && JSON.stringify(value) !== JSON.stringify(source[key as keyof CollectionDefinition]),
+    )
+  )
+    return invalid('Resolve/reset the choice separately from collection value changes');
+  if (resetMatchUpTypeChoice) return source.matchUpType === undefined ? {} : { change: { reset: true } };
+  if (!matchUpType || source.matchUpType === matchUpType) return {};
+  if (![SINGLES, DOUBLES].includes(matchUpType) || (!choice && ![SINGLES, DOUBLES].includes(source.matchUpType ?? '')))
+    return invalid('Only SINGLES and DOUBLES conversions are supported');
+  if (choice && !source.matchUpTypeOptions?.includes(matchUpType as 'SINGLES' | 'DOUBLES'))
+    return invalid('Selected matchUpType is not an offered choice');
+  return { change: { matchUpType: matchUpType as MatchUp['matchUpType'], reset: false } };
+}
+
+function requestsChoiceTransition(source: CollectionDefinition, matchUpType?: string, reset?: boolean): boolean {
+  return !!reset || (!!matchUpType && matchUpType !== source.matchUpType);
+}
+
 function played(child: MatchUp): boolean {
   return (
     child.matchUpStatus !== TO_BE_PLAYED ||
     !!child.winningSide ||
+    !!child.delegatedOutcome ||
     !!child.score?.sets?.length ||
     !!child.schedule?.scoredTime ||
     !!child.score?.scoreStringSide1 ||
@@ -155,10 +203,17 @@ export function applyCollectionTypeChange({
     }
   }
   for (const child of children) {
-    child.matchUpType = plan.matchUpType as MatchUp['matchUpType'];
+    if (plan.reset) delete child.matchUpType;
+    else child.matchUpType = plan.matchUpType;
     if (clearAssignments) for (const side of child.sides ?? []) delete side.participantId;
     modifyMatchUpNotice({ matchUp: child, drawDefinition, event, tournamentId: tournamentRecord?.tournamentId });
   }
   modifyMatchUpNotice({ matchUp, drawDefinition, event, tournamentId: tournamentRecord?.tournamentId });
-  return { ...SUCCESS, tieFormat, modifiedMatchUpsCount: 1, modifiedCount: 1 };
+  const storedTieFormat =
+    matchUp.tieFormat ??
+    (matchUp.tieFormatId
+      ? event?.tieFormats?.find((format) => format.tieFormatId === matchUp.tieFormatId)
+      : undefined) ??
+    tieFormat;
+  return { ...SUCCESS, tieFormat: storedTieFormat, modifiedMatchUpsCount: 1, modifiedCount: 1 };
 }

@@ -63,19 +63,20 @@ it('checks every option against gender rules even when the selected doubles type
 });
 
 it.each([{ newUse: true }, { enforceValues: true }])(
-  'gates choice saving while runtime support is pending: %j',
+  'accepts unresolved choice declarations for new use: %j',
   (flags) => {
-    const result = validateCollectionDefinition({ collectionDefinition: collection(), ...flags });
-    expect(result.error).toBeDefined();
-    expect(result.errors?.some((error) => error.includes('not yet enabled'))).toBe(true);
+    expect(validateCollectionDefinition({ collectionDefinition: collection(), ...flags }).valid).toBe(true);
   },
 );
 
-it('keeps value-enforced tieFormat saving gated for both unresolved and selected choices', () => {
-  for (const matchUpType of [undefined, SINGLES, DOUBLES]) {
-    const result = validateTieFormat({ tieFormat: format(collection({ matchUpType })), enforceValues: true });
-    expect(result.error).toBeDefined();
-    expect(result.context?.errors.some((error) => error.includes('not yet enabled'))).toBe(true);
+it('permits selected choices only at encounter scope when saving a tieFormat', () => {
+  expect(validateTieFormat({ tieFormat: format(collection()), enforceValues: true }).valid).toBe(true);
+  for (const matchUpType of [SINGLES, DOUBLES]) {
+    const tieFormat = format(collection({ matchUpType }));
+    expect(validateTieFormat({ tieFormat, enforceValues: true }).error).toBeDefined();
+    expect(validateTieFormat({ tieFormat, enforceValues: true, allowResolvedMatchUpTypeOptions: true }).valid).toBe(
+      true,
+    );
   }
 });
 
@@ -107,32 +108,36 @@ it('copies and JSON-round-trips options independently of the original collection
   expect(first.collectionDefinitions[0].matchUpTypeOptions).toEqual([SINGLES, DOUBLES]);
 });
 
-it('refuses choice event creation before writing an event', () => {
+it('creates an unresolved choice event', () => {
   mocksEngine.generateTournamentRecord({ setState: true });
-  const before = structuredClone(tournamentEngine.getEvents().events);
+  const before = tournamentEngine.getEvents().events.length;
   let result: any = tournamentEngine.addEvent({
-    eventType: TEAM,
-    eventName: 'Choice',
-    tieFormat: format(collection()),
+    event: { eventType: TEAM, eventName: 'Choice', tieFormat: format(collection()) },
   });
-  expect(result.error).toBeDefined();
-  expect(tournamentEngine.getEvents().events).toEqual(before);
+  expect(result.success).toBe(true);
+  expect(tournamentEngine.getEvents().events).toHaveLength(before + 1);
+  expect(
+    tournamentEngine.getTieFormat({ eventId: result.event.eventId }).tieFormat.collectionDefinitions[0]
+      .matchUpTypeOptions,
+  ).toEqual([SINGLES, DOUBLES]);
 });
 
-it('refuses adding a choice collection to an existing draw without changing its tieFormat', () => {
+it('adds an unresolved choice collection to an existing draw', () => {
   const {
     drawIds: [drawId],
   } = mocksEngine.generateTournamentRecord({
     drawProfiles: [{ drawSize: 4, eventType: TEAM, tieFormatName: COLLEGE_D3 }],
     setState: true,
   });
-  const before = structuredClone(tournamentEngine.getTieFormat({ drawId }).tieFormat);
+  const before = tournamentEngine.getTieFormat({ drawId }).tieFormat.collectionDefinitions.length;
   let result: any = tournamentEngine.addCollectionDefinition({ drawId, collectionDefinition: collection() });
-  expect(result.error).toBeDefined();
-  expect(tournamentEngine.getTieFormat({ drawId }).tieFormat).toEqual(before);
+  expect(result.success).toBe(true);
+  const definitions = tournamentEngine.getTieFormat({ drawId }).tieFormat.collectionDefinitions;
+  expect(definitions).toHaveLength(before + 1);
+  expect(definitions.find((definition) => definition.collectionId === 'choice').matchUpType).toBeUndefined();
 });
 
-it('refuses generating a draw from an unresolved choice template', () => {
+it('generates untyped placeholders from an unresolved choice template', () => {
   const {
     eventIds: [eventId],
   } = mocksEngine.generateTournamentRecord({
@@ -140,9 +145,12 @@ it('refuses generating a draw from an unresolved choice template', () => {
     setState: true,
   });
   let result: any = tournamentEngine.generateDrawDefinition({ drawSize: 4, eventId, tieFormat: format(collection()) });
-  expect(result.error).toBeDefined();
-  expect(result.context?.errors.some((error) => error.includes('not yet enabled'))).toBe(true);
-  expect(result.drawDefinition).toBeUndefined();
+  expect(result.success).toBe(true);
+  const children = result.drawDefinition.structures
+    .flatMap((structure) => structure.matchUps ?? [])
+    .flatMap((parent) => parent.tieMatchUps ?? []);
+  expect(children).toHaveLength(3);
+  expect(children.every((child) => child.collectionId === 'choice' && child.matchUpType === undefined)).toBe(true);
 });
 
 it('keeps fixed and choice definitions distinct when aggregating imported metadata', () => {

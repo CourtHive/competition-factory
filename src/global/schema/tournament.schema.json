@@ -2169,6 +2169,13 @@
         "matchUpType": {
           "$ref": "#/definitions/MatchUpTypeEnum"
         },
+        "matchUpTypeOptions": {
+          "description": "Permitted encounter choices; no concrete matchUpType means the choice is unresolved.",
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["SINGLES", "DOUBLES"] }
+        },
         "matchUpValue": {
           "type": "number"
         },
@@ -2188,6 +2195,12 @@
           "$ref": "#/definitions/WinCriteria"
         }
       },
+      "allOf": [
+        {
+          "if": { "required": ["matchUpTypeOptions"] },
+          "then": { "properties": { "matchUpType": { "enum": ["SINGLES", "DOUBLES"] } } }
+        }
+      ],
       "required": ["collectionId"],
       "additionalProperties": false
     },

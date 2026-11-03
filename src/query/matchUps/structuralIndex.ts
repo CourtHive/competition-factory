@@ -3,6 +3,7 @@ import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieForma
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getWinnerLinkRoundNumbers } from '@Query/drawDefinition/linkGetter';
 import { annotateScoreSets, buildMatchUpSides } from './addMatchUpContext';
+import { unresolvedCollectionChoice } from '@Helpers/matchUpTypeOptions';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getCollectionAssignment } from './getCollectionAssignment';
 import { definedAttributes } from '@Tools/definedAttributes';
@@ -194,14 +195,17 @@ function indexLines({
     const collection = tieFormat?.collectionDefinitions?.find(
       (definition) => definition.collectionId === matchUp.collectionId,
     );
-    const matchUpType =
-      matchUp.matchUpType ||
-      collection?.matchUpType ||
-      structure.matchUpType ||
-      drawDefinition.matchUpType ||
-      (!isMatchUpEventType(TEAM)(event?.eventType) && event?.eventType) ||
-      undefined;
+    const unresolvedChoice = unresolvedCollectionChoice(collection);
+    const matchUpType = unresolvedChoice
+      ? undefined
+      : matchUp.matchUpType ||
+        collection?.matchUpType ||
+        structure.matchUpType ||
+        drawDefinition.matchUpType ||
+        (!isMatchUpEventType(TEAM)(event?.eventType) && event?.eventType) ||
+        undefined;
     const collectionAssignmentDetail = getCollectionAssignment({
+      unresolvedChoice,
       collectionPosition: matchUp.collectionPosition,
       collectionId: matchUp.collectionId as string,
       tournamentParticipants: participants,
@@ -218,6 +222,7 @@ function indexLines({
       matchUp,
       event,
       line: {
+        unresolvedChoice,
         matchUpFormat:
           collection?.matchUpFormat ?? structure.matchUpFormat ?? drawDefinition.matchUpFormat ?? event?.matchUpFormat,
         finishingPositionRange: dualEntry.finishingPositionRange,
@@ -253,6 +258,7 @@ function sideTeam(participants: Participant[] | undefined, participantId?: strin
 
 /** what a line takes from its dual and its collection, over its own stored values where hydration puts it so */
 type LineContext = {
+  unresolvedChoice?: boolean;
   collectionAssignmentDetail: ReturnType<typeof getCollectionAssignment>;
   finishingPositionRange?: HydratedMatchUp['finishingPositionRange'];
   matchUpType?: string;
@@ -301,6 +307,7 @@ function indexMatchUp({
     : (matchUp.matchUpFormat ?? structure.matchUpFormat ?? drawDefinition.matchUpFormat ?? event?.matchUpFormat);
 
   const sides = buildMatchUpSides({
+    unresolvedChoice: line?.unresolvedChoice,
     sourceDrawPositionRoundRanges: undefined,
     collectionAssignmentDetail: line?.collectionAssignmentDetail,
     seedAssignments: undefined,

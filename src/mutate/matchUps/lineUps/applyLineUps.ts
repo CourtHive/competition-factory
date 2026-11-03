@@ -4,8 +4,10 @@ import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieForma
 import { getPairedParticipant } from '@Query/participant/getPairedParticipant';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { checkTeamMembership, getTeamMemberships } from './teamMembership';
+import { unresolvedCollectionChoice } from '@Helpers/matchUpTypeOptions';
 import { addParticipant } from '@Mutate/participants/addParticipant';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { validateLineUp } from '@Validators/validateTeamLineUp';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { instanceCount } from '@Tools/arrays';
 
@@ -71,6 +73,9 @@ export function applyLineUps(params: ApplyLineUps) {
     structure,
     event,
   })?.tieFormat;
+
+  const pendingLineUp = unresolvedLineUpRefusal(lineUps, tieFormat);
+  if (pendingLineUp) return pendingLineUp;
 
   const sideAssignments: { [key: string]: TeamCompetitor[] } = {};
   const memberships = getTeamMemberships({ tournamentRecord, event });
@@ -252,4 +257,13 @@ function determineSideNumber(sideNumbers: number[]): number | undefined {
   return (
     ((instances[1] || 0) > (instances[2] || 0) && 1) || ((instances[2] || 0) > (instances[1] || 0) && 2) || undefined
   );
+}
+
+function unresolvedLineUpRefusal(lineUps: unknown[], tieFormat?: TieFormat) {
+  if (!tieFormat?.collectionDefinitions.some(unresolvedCollectionChoice)) return undefined;
+  for (const lineUp of lineUps) {
+    const check = validateLineUp({ lineUp: lineUp as TeamCompetitor[], tieFormat });
+    if (check.error) return check;
+  }
+  return undefined;
 }

@@ -22,6 +22,7 @@ type ValidateCollectionDefinitionArgs = {
   checkGender?: boolean;
   /** the collection is being added, so its matchUpFormat must be valid for new use, not only readable */
   newUse?: boolean;
+  allowResolvedMatchUpTypeOptions?: boolean;
   /** the tieFormat is being saved: refuse negative values (a stored tieFormat stays readable for scoring) */
   enforceValues?: boolean;
   event?: Event;
@@ -34,6 +35,7 @@ export function validateCollectionDefinition({
   referenceCategory,
   referenceGender,
   enforceValues,
+  allowResolvedMatchUpTypeOptions,
   newUse,
   event,
 }: ValidateCollectionDefinitionArgs) {
@@ -76,7 +78,12 @@ export function validateCollectionDefinition({
     errors.push(`matchUpType must be SINGLES, DOUBLES, or HYBRID: ${matchUpType}`);
   }
 
-  errors.push(...matchUpTypeOptionsErrors(collectionDefinition, !!(newUse || enforceValues)));
+  errors.push(
+    ...matchUpTypeOptionsErrors(collectionDefinition, {
+      newUse: !!(newUse || enforceValues),
+      allowResolved: allowResolvedMatchUpTypeOptions,
+    }),
+  );
 
   errors.push(...valueErrors({ collectionDefinition, enforceValues }));
 
