@@ -2,8 +2,8 @@ import { modifySeedAssignmentsNotice } from '@Mutate/notifications/drawNotificat
 import { decorateResult } from '@Functions/global/decorateResult';
 
 // constants and types
-import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 import {

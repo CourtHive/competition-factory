@@ -4,8 +4,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, expect, it } from 'vitest';
 
 // constants
-import { NO_MODIFICATIONS_APPLIED } from '@Constants/errorConditionConstants';
 import { FORMAT_FAST4, FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
+import { NO_MODIFICATIONS_APPLIED } from '@Constants/errorConditionConstants';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { MODIFY_MATCHUP } from '@Constants/topicConstants';
 
