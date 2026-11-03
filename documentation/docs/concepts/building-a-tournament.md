@@ -304,13 +304,16 @@ Notice `MODIFY_VENUE`. **Returns** `{ success, courtIds }`.
 **What is written**, on each element:
 
 1. `extensions` is created if absent.
-2. The applied policies are a copy of the element's `appliedPolicies` extension value. For each type given: a falsy
+2. The applied policies are a copy of the element's own: its first-class `appliedPolicies` attribute (CODES), else,
+   on a record written before it, its `appliedPolicies` extension value. For each type given: a falsy
    policy is skipped; a policy that is not an object, holds nothing but its `policyName` (an attribute whose value is
    `undefined` does not count: it is not stored), or has a `policyName` that is not a string refuses
    (`INVALID_VALUES`); a type already held is skipped unless `allowReplacement`; otherwise the
    policy replaces that type whole.
-3. If any type was taken, the `appliedPolicies` extension's value is replaced, or the extension is appended:
-   `{ name: 'appliedPolicies', value, createdAt: now }`.
+3. If any type was taken, the policies are written by schema write mode: NATIVE (the default) sets the
+   `appliedPolicies` attribute and removes any `appliedPolicies` extension of the element; BRIDGE sets the attribute
+   and also replaces or appends the extension (`{ name: 'appliedPolicies', value, createdAt: now }`); LEGACY writes the
+   extension only.
 
 A draw is announced as modified (stamping it and its structures, §1.1); an event or a record is announced as modified.
 Across every loaded record, a record that takes nothing is passed over. Nothing taken anywhere: `EXISTING_POLICY_TYPE`.

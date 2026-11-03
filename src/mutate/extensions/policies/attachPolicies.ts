@@ -3,7 +3,7 @@ import { validateTallyPolicy } from '@Validators/validateTallyPolicy';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
-import { addExtension } from '@Mutate/extensions/addExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
@@ -85,7 +85,10 @@ export function attachPolicies(params: AttachPoliciesArgs): ResultType & { appli
       });
     } else if (element === params.tournamentRecord) {
       // the tournament's own policies are a root extension
-      modifyTournamentDetailNotice({ tournamentRecord: element, detail: { extensions: element.extensions ?? [] } });
+      modifyTournamentDetailNotice({
+        tournamentRecord: element,
+        detail: { extensions: element.extensions ?? [], appliedPolicies: element.appliedPolicies ?? null },
+      });
     }
   } else if (params.tournamentRecords) {
     const tournamentIds = Object.keys(params.tournamentRecords);
@@ -98,7 +101,13 @@ export function attachPolicies(params: AttachPoliciesArgs): ResultType & { appli
       if (result.error && result.error !== EXISTING_POLICY_TYPE) return result;
       if (!result.applied?.length) continue;
       applied.push(...result.applied);
-      modifyTournamentDetailNotice({ tournamentRecord, detail: { extensions: tournamentRecord.extensions ?? [] } });
+      modifyTournamentDetailNotice({
+        tournamentRecord,
+        detail: {
+          extensions: tournamentRecord.extensions ?? [],
+          appliedPolicies: tournamentRecord.appliedPolicies ?? null,
+        },
+      });
     }
   } else {
     return { error: MISSING_TOURNAMENT_RECORD };
@@ -113,8 +122,12 @@ export function attachPolicies(params: AttachPoliciesArgs): ResultType & { appli
  * the tournament refuse a draw- or event-level attach (EXISTING_POLICY_TYPE). Only a policy already attached to this
  * element refuses, unless `allowReplacement`; one attached here overrides an inherited one, as readers resolve it.
  */
-function ownAppliedPolicies(element?: { extensions?: Extension[] }): PolicyDefinitions {
-  const value = element?.extensions?.find((extension) => extension?.name === APPLIED_POLICIES)?.value;
+function ownAppliedPolicies(element?: {
+  appliedPolicies?: PolicyDefinitions;
+  extensions?: Extension[];
+}): PolicyDefinitions {
+  const value =
+    element?.appliedPolicies ?? element?.extensions?.find((extension) => extension?.name === APPLIED_POLICIES)?.value;
   return value ? makeDeepCopy(value, false, true) : {};
 }
 
@@ -142,8 +155,14 @@ function policyAttachement(params: any, element: any): ResultType & { applied?: 
   }
 
   if (applied?.length) {
-    const extension = { name: APPLIED_POLICIES, value: appliedPolicies };
-    return { ...addExtension({ element, extension }), applied };
+    // the attribute, the extension or both, by schema write mode (NATIVE removes a stale extension)
+    const result = setFirstClassOrExtension({
+      attribute: 'appliedPolicies',
+      name: APPLIED_POLICIES,
+      value: appliedPolicies,
+      element,
+    });
+    return { ...result, applied };
   }
 
   return { applied, error: EXISTING_POLICY_TYPE };

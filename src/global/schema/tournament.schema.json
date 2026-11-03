@@ -5,6 +5,7 @@
     "Tournament": {
       "type": "object",
       "properties": {
+        "appliedPolicies": { "$ref": "#/definitions/PolicyDefinitions" },
         "createdAt": {
           "type": ["string", "object"],
           "format": "date-time"
@@ -436,6 +437,7 @@
     "Event": {
       "type": "object",
       "properties": {
+        "appliedPolicies": { "$ref": "#/definitions/PolicyDefinitions" },
         "registrationProfile": {
           "$ref": "#/definitions/EventRegistration"
         },
@@ -794,6 +796,7 @@
     "DrawDefinition": {
       "type": "object",
       "properties": {
+        "appliedPolicies": { "$ref": "#/definitions/PolicyDefinitions" },
         "lineUps": {
           "type": "object"
         },
@@ -2318,6 +2321,7 @@
     "Structure": {
       "type": "object",
       "properties": {
+        "appliedPolicies": { "$ref": "#/definitions/PolicyDefinitions" },
         "roundTarget": {
           "type": "integer"
         },

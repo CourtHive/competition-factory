@@ -153,21 +153,24 @@ export function projectFieldsOf({ event, drawDefinition }: { event: any; drawDef
   const put = (field: FieldName, key: string, value: any) => {
     projection[field][key] = render(value, names);
   };
-  const putExtensions = (scope: string, extensions: any[] | undefined) => {
+  const putExtensions = (scope: string, extensions: any[] | undefined, element?: any) => {
     for (const extension of extensions ?? []) put('extensions', `${scope}|${extension.name}`, extension.value);
+    // applied policies were an extension until they became a first-class attribute (CODES); projected under the
+    // same key, so a route that leaves an element's policies behind still diverges here
+    if (element?.appliedPolicies !== undefined) put('extensions', `${scope}|appliedPolicies`, element.appliedPolicies);
   };
 
   for (const entry of event?.entries ?? []) put('entries', entryKey('event', entry), entry);
   for (const entry of drawDefinition?.entries ?? []) put('entries', entryKey('draw', entry), entry);
 
-  putExtensions('event', event?.extensions);
-  putExtensions('draw', drawDefinition?.extensions);
+  putExtensions('event', event?.extensions, event);
+  putExtensions('draw', drawDefinition?.extensions, drawDefinition);
 
   eachStructure(drawDefinition, (structure) => {
     const { structureName } = structure;
     for (const seed of structure.seedAssignments ?? [])
       put('seedAssignments', `${structureName}|${seed.seedNumber}`, seed);
-    putExtensions(`S:${structureName}`, structure.extensions);
+    putExtensions(`S:${structureName}`, structure.extensions, structure);
     for (const assignment of structure.positionAssignments ?? [])
       putExtensions(`A:${structureName}|${assignment.drawPosition}`, assignment.extensions);
     for (const matchUp of structure.matchUps ?? []) {

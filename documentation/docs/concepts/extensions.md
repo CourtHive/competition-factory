@@ -871,4 +871,4 @@ Avoid using factory-recognized extension names for custom extensions:
 - **[Time Items](./timeItems.md)** - Temporal data with effective dates
 - **[MatchUp Context](./matchup-context.mdx#extensions-handling)** - Extension hydration
 - **[Participant Context](./participant-context.md)** - Participant extensions
-- **[Policies Overview](/docs/policies/avoidance)** - Applied policies extension
+- **[Policies Overview](/docs/policies/avoidance)** - Applied policies (the first-class `appliedPolicies` attribute; an extension on older records)

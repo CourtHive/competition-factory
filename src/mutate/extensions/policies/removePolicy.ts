@@ -2,8 +2,7 @@ import { modifyTournamentDetailNotice } from '@Mutate/tournaments/tournamentDeta
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
-import { removeExtension } from '@Mutate/extensions/removeExtension';
-import { addExtension } from '@Mutate/extensions/addExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
@@ -80,7 +79,13 @@ function announcePolicyRemoval(params: RemovePolicyArgs, element: DrawDefinition
     modifyEventNotice({ tournamentId, event: params.event });
   } else {
     const tournamentRecord = element as Tournament;
-    modifyTournamentDetailNotice({ tournamentRecord, detail: { extensions: tournamentRecord.extensions ?? [] } });
+    modifyTournamentDetailNotice({
+      tournamentRecord,
+      detail: {
+        extensions: tournamentRecord.extensions ?? [],
+        appliedPolicies: tournamentRecord.appliedPolicies ?? null,
+      },
+    });
   }
 }
 
@@ -91,18 +96,14 @@ function announcePolicyRemoval(params: RemovePolicyArgs, element: DrawDefinition
  * an element that never had them.
  */
 function policyDeletion(element: DrawDefinition | Event | Tournament, policyType: string) {
-  const own = element.extensions?.find((extension) => extension?.name === APPLIED_POLICIES)?.value;
+  const own =
+    element.appliedPolicies ?? element.extensions?.find((extension) => extension?.name === APPLIED_POLICIES)?.value;
   const appliedPolicies = own ? makeDeepCopy(own, false, true) : {};
   if (appliedPolicies[policyType]) {
     delete appliedPolicies[policyType];
-
-    if (Object.keys(appliedPolicies).length) {
-      const extension = { name: APPLIED_POLICIES, value: appliedPolicies };
-      addExtension({ element, extension });
-    } else {
-      removeExtension({ element, name: APPLIED_POLICIES });
-    }
-    return { ...SUCCESS };
+    // the attribute, the extension or both, by schema write mode; none left removes them
+    const value = Object.keys(appliedPolicies).length ? appliedPolicies : undefined;
+    return setFirstClassOrExtension({ element, attribute: 'appliedPolicies', name: APPLIED_POLICIES, value });
   }
 
   return { error: POLICY_NOT_FOUND };
