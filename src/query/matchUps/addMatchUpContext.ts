@@ -797,7 +797,8 @@ function processTieMatchUps(params) {
 }
 
 function inferMissingMatchUpType(matchUp: HydratedMatchUp, unresolvedChoice: boolean): void {
-  if (unresolvedChoice || matchUp.matchUpType) return;
+  if (unresolvedChoice || matchUp.matchUpType) return undefined;
   const { matchUpType } = getMatchUpType({ matchUp });
   if (matchUpType) Object.assign(matchUp, { matchUpType });
+  return undefined;
 }

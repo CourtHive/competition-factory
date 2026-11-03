@@ -1,9 +1,9 @@
 import { CANNOT_MODIFY_TIEFORMAT, INVALID_VALUES, NOT_IMPLEMENTED } from '@Constants/errorConditionConstants';
-import { START_TIME, STOP_TIME, RESUME_TIME, END_TIME } from '@Constants/timeItemConstants';
 import { completedMatchUpStatuses, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { requiredForkIds, writeTieFormat } from '@Mutate/tieFormat/writeTieFormat';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { matchUpTypeOptionsErrors } from '@Helpers/matchUpTypeOptions';
+import { PLAY_TIME_ITEM_TYPES } from '@Query/matchUp/collectionChoice';
 import { getTeamLineUp } from '@Query/drawDefinition/getTeamLineUp';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { SINGLES, DOUBLES } from '@Constants/matchUpTypes';
@@ -20,7 +20,9 @@ import type {
   TeamCompetitor,
 } from '@Types/tournamentTypes';
 
-// Exploratory, encounter-scoped: no template fan-out and no implicit player conversion.
+const LINE_MATCHUP_TYPES = new Set<string>([SINGLES, DOUBLES]);
+
+// Encounter-scoped: no template fan-out and no implicit player conversion.
 type TypeChangeArgs = {
   source: CollectionDefinition;
   valueAssignments?: Pick<
@@ -69,7 +71,7 @@ export function planCollectionTypeChange(args: TypeChangeArgs): TypeChangeResult
   )
     return refusal(INVALID_VALUES, 'tieFormatUuids must contain new nonempty format ids');
   if (!matchUp || !drawDefinition)
-    return refusal(NOT_IMPLEMENTED, 'Exploratory type conversion requires a TEAM matchUpId');
+    return refusal(NOT_IMPLEMENTED, 'Collection type conversion requires a TEAM matchUpId');
   if (matchUpCount !== undefined && matchUpCount !== source.matchUpCount)
     return refusal(INVALID_VALUES, 'Change collection type and count in separate operations');
   if (matchUp.winningSide || completedMatchUpStatuses.includes(matchUp.matchUpStatus!))
@@ -148,7 +150,7 @@ function typeChangeRequest({
     return invalid('Resolve/reset the choice separately from collection value changes');
   if (resetMatchUpTypeChoice) return source.matchUpType === undefined ? {} : { change: { reset: true } };
   if (!matchUpType || source.matchUpType === matchUpType) return {};
-  if (![SINGLES, DOUBLES].includes(matchUpType) || (!choice && ![SINGLES, DOUBLES].includes(source.matchUpType ?? '')))
+  if (!LINE_MATCHUP_TYPES.has(matchUpType) || (!choice && !LINE_MATCHUP_TYPES.has(source.matchUpType ?? '')))
     return invalid('Only SINGLES and DOUBLES conversions are supported');
   if (choice && !source.matchUpTypeOptions?.includes(matchUpType as 'SINGLES' | 'DOUBLES'))
     return invalid('Selected matchUpType is not an offered choice');
@@ -168,7 +170,7 @@ function played(child: MatchUp): boolean {
     !!child.schedule?.scoredTime ||
     !!child.score?.scoreStringSide1 ||
     !!child.score?.scoreStringSide2 ||
-    !!child.timeItems?.some((item) => [START_TIME, STOP_TIME, RESUME_TIME, END_TIME].includes(item.itemType!))
+    !!child.timeItems?.some((item) => PLAY_TIME_ITEM_TYPES.has(item.itemType!))
   );
 }
 
