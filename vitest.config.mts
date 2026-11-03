@@ -72,6 +72,9 @@ export default defineConfig({
         // notice-conformance harness is test infrastructure (like testHarness/**),
         // exercised incrementally as the D-scenarios sweep grows — not product code.
         'src/tests/mutations/notifications/noticeConformance/harness.ts',
+        // typed async engine fixtures: checked by tsc and by a lint regression, never executed
+        'src/tests/engines/typedAsyncEngine.contract.ts',
+        'src/tests/engines/typedAsyncEngine.lint.fixture.ts',
         'src/assemblies/governors/**',
         'src/assemblies/tools/**',
         'src/fixtures/data/**',
