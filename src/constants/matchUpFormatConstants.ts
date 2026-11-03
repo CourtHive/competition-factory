@@ -28,4 +28,5 @@ export const sectionTypes = {
   F: FINAL,
   G: GAME,
   M: MATCHUP,
+  O: 'overtime',
 };

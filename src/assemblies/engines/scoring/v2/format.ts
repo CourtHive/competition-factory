@@ -158,7 +158,9 @@ function segmentRule(
 export function resolveFormat(code: string | undefined): MatchRule | undefined {
   if (!code) return undefined;
   const parsed = parse(code);
-  if (!parsed?.setFormat) return undefined;
+  // The grammar can describe overtime before the reducer/record integration is activated.
+  // Refuse instead of silently scoring an overtime code as regulation alone.
+  if (!parsed?.setFormat || parsed.overtimeFormat) return undefined;
   const exactly = parsed.exactly;
   const n: number = exactly ?? parsed.bestOf ?? 1;
   const context = { tennisFamily: !parsed.matchRoot && !parsed.aggregate && !parsed.simplified };
