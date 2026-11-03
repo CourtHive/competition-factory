@@ -20,14 +20,13 @@ it('generateDrawDefinition will find seeding policy attached to tournamentRecord
   });
 
   tournamentEngine.setState(tournamentRecord);
-  const extensionNames = tournamentRecord.extensions.map(({ name }) => name);
-  expect(extensionNames.includes(APPLIED_POLICIES)).toEqual(true);
-  const appliedPolicies = tournamentRecord.extensions.find(({ name }) => name === APPLIED_POLICIES);
-  expect(Object.keys(appliedPolicies.value).length).toEqual(2);
+  // applied policies are the first-class appliedPolicies attribute (CODES), not an extension
+  expect(tournamentRecord.extensions?.some(({ name }) => name === APPLIED_POLICIES)).toBeFalsy();
+  expect(Object.keys(tournamentRecord.appliedPolicies ?? {}).length).toEqual(2);
 
-  expect(tournamentRecord.extensions[0].value[POLICY_TYPE_ROUND_NAMING]).not.toBeUndefined();
+  expect(tournamentRecord.appliedPolicies?.[POLICY_TYPE_ROUND_NAMING]).not.toBeUndefined();
 
-  expect(tournamentRecord.extensions[0].value[POLICY_TYPE_SEEDING]).not.toBeUndefined();
+  expect(tournamentRecord.appliedPolicies?.[POLICY_TYPE_SEEDING]).not.toBeUndefined();
 
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
   expect(drawDefinition.structures.length).toEqual(1);
@@ -35,6 +34,7 @@ it('generateDrawDefinition will find seeding policy attached to tournamentRecord
 
   // There is no POLICY_TYPE_SEEDING on the drawDefinition because it is attached to the tournamentRecord
   expect(drawDefinition.extensions?.length ?? 0).toEqual(0);
+  expect(drawDefinition.appliedPolicies).toBeUndefined();
 });
 
 it('generateDrawDefinition will find seeding policy attached to event', () => {
@@ -61,17 +61,18 @@ it('generateDrawDefinition will find seeding policy attached to event', () => {
 
   tournamentEngine.setState(tournamentRecord);
   expect(tournamentRecord.extensions).toBeUndefined();
+  expect(tournamentRecord.appliedPolicies).toBeUndefined();
 
   const { drawDefinition, event } = tournamentEngine.getEvent({ drawId });
-  // APPLIED_POLICIES stays an extension; FLIGHT_PROFILE is first-class in NATIVE, an extension in LEGACY
-  expect(event.extensions.some(({ name }) => name === APPLIED_POLICIES)).toBe(true);
+  // APPLIED_POLICIES and FLIGHT_PROFILE are first-class in NATIVE, extensions in LEGACY
+  expect(firstClassOrExtension({ element: event, attribute: 'appliedPolicies', name: APPLIED_POLICIES })).toBeDefined();
   expect(firstClassOrExtension({ element: event, attribute: 'flightProfile', name: FLIGHT_PROFILE })).toBeDefined();
 
-  const appliedPolicies = event.extensions.find(({ name }) => name === APPLIED_POLICIES);
-  expect(Object.keys(appliedPolicies.value).length).toEqual(2);
+  expect(Object.keys(event.appliedPolicies ?? {}).length).toEqual(2);
 
   // There is no POLICY_TYPE_SEEDING on the drawDefinition appliedPolicies because it is attached to the event
   expect(drawDefinition.extensions?.length ?? 0).toEqual(0);
+  expect(drawDefinition.appliedPolicies).toBeUndefined();
 });
 
 it('policyDefinitions can be passed directly into generateDrawDefintion from drawProfiles', () => {
@@ -92,12 +93,10 @@ it('policyDefinitions can be passed directly into generateDrawDefintion from dra
 
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
 
-  // There is no POLICY_TYPE_SEEDING on the drawDefinition attachedPolicies because it is attached to the tournamentRecord
-  expect(drawDefinition.extensions.length).toEqual(1);
-  expect(drawDefinition.extensions.map(({ name }) => name).sort()).toEqual([APPLIED_POLICIES]);
+  // the draw's own policies are its appliedPolicies attribute, and it holds no extension
+  expect(drawDefinition.extensions?.length ?? 0).toEqual(0);
 
-  const appliedPolicies = drawDefinition.extensions.find(({ name }) => name === APPLIED_POLICIES);
-  expect(Object.keys(appliedPolicies.value).length).toEqual(2);
+  expect(Object.keys(drawDefinition.appliedPolicies ?? {}).length).toEqual(2);
 });
 
 test('seeding policies attached to tournamentRecords will be used when generating Draws', () => {

@@ -9,9 +9,7 @@ Some methods on this page are candidates for removal from production engine expo
 :::
 
 ```js
-import { governors } from 'tods-competition-factory';
-
-const { sanctioningGovernor } = governors;
+import { sanctioningGovernor } from 'tods-competition-factory';
 ```
 
 The **sanctioningGovernor** re-exports all sanctioning mutation and query functions for use outside the sanctioning engine. While the `sanctioningEngine` provides a complete stateful API, the governor exports individual functions that can be called directly with a `sanctioningRecord` parameter.

@@ -467,6 +467,10 @@ tournamentEngine.devContext({
 
 ### Import All Governors
 
+This reads every governor. Use it for a full engine; anything narrower should import governors by name,
+or read them off the `tods-competition-factory/governors` subpath imported with `import * as`
+(see [Bundle Size](/docs/engines/custom-engines#bundle-size)).
+
 ```js
 import { governors } from 'tods-competition-factory';
 
@@ -502,12 +506,12 @@ import { scheduleGovernor, publishingGovernor, matchUpGovernor } from 'tods-comp
 ### Use in Custom Engines
 
 ```js
-import { governors, syncEngine } from 'tods-competition-factory';
+import { syncEngine, matchUpGovernor, scheduleGovernor, tournamentGovernor } from 'tods-competition-factory';
 
 // An engine imports the governors it needs; there is no separate engine factory.
-syncEngine.importMethods(governors.tournamentGovernor);
-syncEngine.importMethods(governors.matchUpGovernor);
-syncEngine.importMethods(governors.scheduleGovernor);
+syncEngine.importMethods(tournamentGovernor);
+syncEngine.importMethods(matchUpGovernor);
+syncEngine.importMethods(scheduleGovernor);
 
 syncEngine.setState(tournamentRecord);
 syncEngine.scheduleMatchUps({/* ... */});

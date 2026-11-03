@@ -5,8 +5,8 @@ import { expect, it } from 'vitest';
 
 // constants
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
-import { APPLIED_POLICIES, FLIGHT_PROFILE } from '@Constants/extensionConstants';
 import { POLICY_TYPE_ROUND_NAMING } from '@Constants/policyConstants';
+import { FLIGHT_PROFILE } from '@Constants/extensionConstants';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
 
 it('can modify drawDefinition round naming policy', () => {
@@ -49,9 +49,7 @@ it('can modify drawDefinition round naming policy', () => {
   expect(result.success).toEqual(true);
 
   const { drawDefinition } = tournamentEngine.getEvent({ drawId });
-  expect(
-    drawDefinition.extensions.find(({ name }) => name === APPLIED_POLICIES).value[POLICY_TYPE_ROUND_NAMING].policyName,
-  ).toEqual(policyName);
+  expect(drawDefinition.appliedPolicies[POLICY_TYPE_ROUND_NAMING].policyName).toEqual(policyName);
   matchUps = tournamentEngine.allTournamentMatchUps().matchUps;
   expect(matchUps[0].abbreviatedRoundName).toEqual('W1');
   expect(matchUps[0].roundName).toEqual('Week 1');
@@ -207,8 +205,7 @@ it('applies policyDefinitions without changing drawName', () => {
   expect(drawDefinition.drawName).toEqual(originalName);
 
   // policy should be applied
-  const appliedPolicies = drawDefinition.extensions.find(({ name }: any) => name === APPLIED_POLICIES);
-  expect(appliedPolicies.value[POLICY_TYPE_ROUND_NAMING].policyName).toEqual('Session Naming');
+  expect(drawDefinition.appliedPolicies[POLICY_TYPE_ROUND_NAMING].policyName).toEqual('Session Naming');
 
   // round naming should reflect the policy
   const matchUps = tournamentEngine.allTournamentMatchUps().matchUps;

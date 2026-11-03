@@ -81,8 +81,9 @@ it('can add and remove extensions from tournamentRecords', () => {
   expect(event.extensions.some(({ name }) => name === extensionName)).toBe(true);
   expect(firstClassOrExtension({ element: event, attribute: 'flightProfile', name: 'flightProfile' })).toBeDefined();
 
-  // drawDefinition has 1 because of a policy applied during generation
-  expect(drawDefinition.extensions.length).toEqual(2);
+  // drawDefinition has the custom extension; the policy applied during generation is its appliedPolicies attribute
+  expect(drawDefinition.extensions.length).toEqual(1);
+  expect(drawDefinition.appliedPolicies).toBeDefined();
 
   // Retrieve extensions from elements
   const { extension: tournamentRecordExtension } = tournamentEngine.findExtension({
@@ -131,8 +132,9 @@ it('can add and remove extensions from tournamentRecords', () => {
   // event has the custom extension + FLIGHT_PROFILE (first-class in NATIVE, an extension in LEGACY)
   expect(event.extensions.some(({ name }) => name === extensionName)).toBe(true);
   expect(firstClassOrExtension({ element: event, attribute: 'flightProfile', name: 'flightProfile' })).toBeDefined();
-  // drawDefinition has 1 policy extension + 1 added extension
-  expect(drawDefinition.extensions.length).toEqual(2);
+  // drawDefinition has the added extension (replaced in place); its policies are the appliedPolicies attribute
+  expect(drawDefinition.extensions.length).toEqual(1);
+  expect(drawDefinition.appliedPolicies).toBeDefined();
 
   ({ extension: eventExtension } = tournamentEngine.findExtension({
     name: extensionName,

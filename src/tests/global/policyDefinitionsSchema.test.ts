@@ -48,17 +48,22 @@ function errorsOf(validate: any, value: any): string | undefined {
   return validate(value) ? undefined : ajv.errorsText(validate.errors);
 }
 
-/** Each `appliedPolicies` extension value in a record, with where it was found. */
+/**
+ * Each element's applied policies in a record, in either CODES form (the first-class `appliedPolicies` attribute, or
+ * the `appliedPolicies` extension on older records), with where they were found.
+ */
 function appliedPoliciesIn(value: any, path = ''): { path: string; policies: any }[] {
   const found: { path: string; policies: any }[] = [];
   if (Array.isArray(value)) {
     value.forEach((item, index) => found.push(...appliedPoliciesIn(item, `${path}[${index}]`)));
   } else if (value && typeof value === 'object') {
+    if (value.appliedPolicies && typeof value.appliedPolicies === 'object')
+      found.push({ path: path || '(root)', policies: value.appliedPolicies });
     for (const extension of Array.isArray(value.extensions) ? value.extensions : []) {
       if (extension?.name === APPLIED_POLICIES) found.push({ path: path || '(root)', policies: extension.value });
     }
     for (const [key, child] of Object.entries(value)) {
-      if (key !== 'extensions') found.push(...appliedPoliciesIn(child, `${path}.${key}`));
+      if (key !== 'extensions' && key !== 'appliedPolicies') found.push(...appliedPoliciesIn(child, `${path}.${key}`));
     }
   }
   return found;

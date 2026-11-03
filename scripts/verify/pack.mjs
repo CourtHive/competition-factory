@@ -92,6 +92,24 @@ try {
   fail('require() smoke failed against tarball', err);
 }
 
+// The governors subpath, through the package's own `exports` map: require resolves the CJS shim,
+// import resolves the ESM governors barrel. Both must carry the same governors as the root.
+log('governors subpath smoke (require + import)…');
+const subpathCheck = (sub, root) =>
+  `if (typeof ${sub}.queryGovernor?.getParticipants !== 'function' || Object.keys(${sub}).length !== Object.keys(${root}.governors).length) { console.error('governors subpath does not match the root governors'); process.exit(1); }`;
+try {
+  run(
+    `node -e "const sub = require('tods-competition-factory/governors'); const root = require('tods-competition-factory'); ${subpathCheck('sub', 'root')}"`,
+    { cwd: fixture },
+  );
+  run(
+    `node --input-type=module -e "import * as sub from 'tods-competition-factory/governors'; import * as root from 'tods-competition-factory'; ${subpathCheck('sub', 'root')}"`,
+    { cwd: fixture },
+  );
+} catch (err) {
+  fail('governors subpath smoke failed against tarball', err);
+}
+
 // 5. Clean stage.
 if (!process.env.VERIFY_PACK_KEEP) {
   rmSync(stage, { recursive: true, force: true });

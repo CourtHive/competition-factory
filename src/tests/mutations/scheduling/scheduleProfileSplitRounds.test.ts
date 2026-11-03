@@ -7,7 +7,7 @@ import { expect, it } from 'vitest';
 
 // constants and fixtures
 import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
-import { APPLIED_POLICIES } from '@Constants/extensionConstants';
+import { POLICY_TYPE_SCHEDULING } from '@Constants/policyConstants';
 
 const u16MS = 'U16 Male Singles';
 const showGlobalLog = false;
@@ -95,11 +95,8 @@ it('Can split rounds across multiple venues', () => {
 
   tournamentEngine.setState(result.tournamentRecord);
 
-  const { extension } = tournamentEngine.findExtension({
-    name: APPLIED_POLICIES,
-    discover: true, // discover extension on tournamentRecord or any passed parameters
-  });
-  expect(extension.name).toEqual(APPLIED_POLICIES);
+  // the scheduling policy is attached: the tournament's first-class appliedPolicies attribute (CODES)
+  expect(tournamentEngine.getTournament().tournamentRecord.appliedPolicies?.[POLICY_TYPE_SCHEDULING]).toBeDefined();
 
   const { schedulingProfile: attachedSchedulingProfile } = tournamentEngine.getSchedulingProfile();
 
@@ -265,11 +262,8 @@ it('Can split rounds with multiple BYEs', () => {
 
   tournamentEngine.setState(result.tournamentRecord);
 
-  const { extension } = tournamentEngine.findExtension({
-    name: APPLIED_POLICIES,
-    discover: true, // discover extension on tournamentRecord or any passed parameters
-  });
-  expect(extension.name).toEqual(APPLIED_POLICIES);
+  // the scheduling policy is attached: the tournament's first-class appliedPolicies attribute (CODES)
+  expect(tournamentEngine.getTournament().tournamentRecord.appliedPolicies?.[POLICY_TYPE_SCHEDULING]).toBeDefined();
 
   const { schedulingProfile: attachedSchedulingProfile } = tournamentEngine.getSchedulingProfile();
 
