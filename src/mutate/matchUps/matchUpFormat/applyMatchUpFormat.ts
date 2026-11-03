@@ -1,4 +1,4 @@
-import { isValidMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
+import { validateMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { checkDrawFormatCompatibility } from '@Validators/tiedFormatCompatibility';
@@ -45,7 +45,9 @@ export function applyMatchUpFormat(params: ApplyMatchUpFormatArgs): {
   const paramsCheck = checkRequiredParameters(params, [{ [DRAW_DEFINITION]: true, [MATCHUP_FORMAT]: true }]);
   if (paramsCheck.error) return paramsCheck;
 
-  if (!isValidMatchUpFormat({ matchUpFormat })) return { error: UNRECOGNIZED_MATCHUP_FORMAT };
+  const validation = validateMatchUpFormat({ matchUpFormat });
+  if (!validation.valid)
+    return { error: UNRECOGNIZED_MATCHUP_FORMAT, ...(validation.info ? { info: validation.info } : {}) };
   const compatibility = checkDrawFormatCompatibility({
     ...params,
     structureIds: params.structureIds ?? (structureId ? [structureId] : undefined),
@@ -133,8 +135,11 @@ export function checkMatchUpFormatApplication(params: {
     result.structure?.matchUpFormat ??
     drawDefinition.matchUpFormat ??
     event?.matchUpFormat;
-  if (matchUpFormat !== storedFormat && !isValidMatchUpFormat({ matchUpFormat }))
-    return { error: UNRECOGNIZED_MATCHUP_FORMAT };
+  if (matchUpFormat !== storedFormat) {
+    const validation = validateMatchUpFormat({ matchUpFormat });
+    if (!validation.valid)
+      return { error: UNRECOGNIZED_MATCHUP_FORMAT, ...(validation.info ? { info: validation.info } : {}) };
+  }
 
   if (result.matchUp?.matchUpType === TEAM)
     return {
