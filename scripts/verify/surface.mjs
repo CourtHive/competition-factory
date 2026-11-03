@@ -29,6 +29,9 @@ const FACTORY_ROOT = resolve(__dirname, '../..');
 const BASELINE_DIR = join(FACTORY_ROOT, 'scripts/verify/baseline');
 const LOCAL_BASELINE = join(BASELINE_DIR, 'surface.txt');
 const DIST_DTS = join(FACTORY_ROOT, 'dist/tods-competition-factory.d.ts');
+// Subpath exports with their own declarations: each name is recorded as `<subpath>/<name>`, so
+// dropping the subpath, or a name from it, is a removal like any other.
+const SUBPATH_DTS = { governors: join(FACTORY_ROOT, 'dist/governors.d.ts') };
 
 function log(msg) {
   process.stdout.write(`[verify:surface] ${msg}\n`);
@@ -126,6 +129,10 @@ if (!existsSync(DIST_DTS)) {
 }
 
 const current = extractSurface(DIST_DTS);
+for (const [subpath, dts] of Object.entries(SUBPATH_DTS)) {
+  current.push(...extractSurface(dts).map((name) => `${subpath}/${name}`));
+}
+current.sort((a, b) => (a < b ? -1 : Number(a > b))); // code-unit order, as the baseline is written
 log(`current surface: ${current.length} exports`);
 
 if (args.updateBaseline) {

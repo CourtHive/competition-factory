@@ -77,6 +77,9 @@ jobs:
 
           **Merge with a MERGE COMMIT, never squash**, so the two histories stay joined.
 
+          After it merges, re-anchor \`verify:consumer-bundle\` on ${TAG:-the release} in its own PR:
+          scripts/verify/README.md, "Resetting the consumer-bundle anchor".
+
           CI takes the light path when the diff is the version files alone
           (\`.github/scripts/release-scope.sh\`); anything else gets the full run.
           EOF

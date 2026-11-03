@@ -467,7 +467,8 @@ tournamentEngine.devContext({
 
 ### Import All Governors
 
-This reads every governor. Use it for a full engine; anything narrower should import governors by name
+This reads every governor. Use it for a full engine; anything narrower should import governors by name,
+or read them off the `tods-competition-factory/governors` subpath imported with `import * as`
 (see [Bundle Size](/docs/engines/custom-engines#bundle-size)).
 
 ```js

@@ -10,5 +10,5 @@
     "allowSyntheticDefaultImports": true,
     "lib": ["dom", "esnext"]
   },
-  "include": ["smoke.ts"]
+  "include": ["smoke.ts", "governorsSubpath.ts"]
 }
