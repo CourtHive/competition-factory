@@ -1,5 +1,6 @@
 import { SET, NOAD, CONSECUTIVE, TRADITIONAL } from '@Constants/matchUpFormatConstants';
 import { stringifyCombinedPointFormat } from './combinedPointFormat';
+import { stringifyOvertimeFormat } from './overtimeFormat';
 import { isObject } from '@Tools/objects';
 
 export function stringify(matchUpFormatObject, preserveRedundant?: boolean) {
@@ -79,12 +80,23 @@ function getSetFormat(matchUpFormatObject, preserveRedundant?: boolean) {
   const setCountValue = stringifySet(matchUpFormatObject.setFormat, preserveRedundant);
   const setCode = (setCountValue && `S:${setCountValue}`) || '';
   const finalSetCountValue = stringifySet(matchUpFormatObject.finalSetFormat, preserveRedundant);
+  const overtime = matchUpFormatObject.overtimeFormat;
+  const overtimeCode = overtime
+    ? stringifyOvertimeFormat(overtime, (segment) => stringifySet(segment, preserveRedundant))
+    : undefined;
+  if (
+    overtime &&
+    (!overtimeCode ||
+      !matchUpFormatObject.aggregate ||
+      (overtime.count === 'unlimited' && matchUpFormatObject.finalSetFormat))
+  )
+    return undefined;
 
   const finalSetCode =
     (setLimit &&
-      setLimit > 1 &&
+      (setLimit > 1 || overtime) &&
       finalSetCountValue &&
-      setCountValue !== finalSetCountValue && // don't include final set code if equivalent to other sets
+      (overtime || setCountValue !== finalSetCountValue) && // don't include final set code if equivalent to other sets
       `F:${finalSetCountValue}`) ||
     '';
 
@@ -101,7 +113,9 @@ function getSetFormat(matchUpFormatObject, preserveRedundant?: boolean) {
   const valid = setLimitCode && setCountValue;
 
   if (valid) {
-    return [setLimitCode, setCode, gameCode, finalSetCode, matchUpConstraintCode].filter(Boolean).join('-');
+    return [setLimitCode, setCode, gameCode, overtimeCode && `O:${overtimeCode}`, finalSetCode, matchUpConstraintCode]
+      .filter(Boolean)
+      .join('-');
   }
   return undefined;
 }

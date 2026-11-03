@@ -87,14 +87,16 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
   if (matchUp.matchUpStatus === COMPLETED) return matchUp;
   const newMatchUp = matchUp;
 
-  // Initialize history if not present
-  newMatchUp.history ??= { points: [] };
-
   // Parse format to get structure
-  const formatStructure: FormatStructure | undefined = parse(matchUp.matchUpFormat);
-  if (!formatStructure) {
+  const parsed = parse(matchUp.matchUpFormat);
+  // Overtime syntax is readable before its runtime integration is activated. Never ignore its policy.
+  if (!parsed || parsed.overtimeFormat) {
     throw new Error(`Invalid matchUpFormat: ${matchUp.matchUpFormat}`);
   }
+  const formatStructure: FormatStructure = parsed;
+
+  // Initialize history only after the format has been accepted.
+  newMatchUp.history ??= { points: [] };
   // An exactly format plays N sets and no more ("Exactly N Sets"): once all N are closed a level count
   // names no winner, and a point after it starts nothing. Ignored, as a point after the match is.
   if (

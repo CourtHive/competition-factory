@@ -1,4 +1,5 @@
 import type { RotatingPartnerScoreContract } from '@Types/rotatingPartnerScoring';
+import { parseOvertimeFormat, type OvertimeFormat } from './overtimeFormat';
 import { parseCombinedPointFormat } from './combinedPointFormat';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { isConvertableInteger } from '@Tools/math';
@@ -23,7 +24,7 @@ type TiebreakFormat = {
   invalid?: boolean;
 };
 
-type SetFormat = {
+export type SetFormat = {
   tiebreakFormat?: TiebreakFormat;
   tiebreakSet?: TiebreakFormat;
   tiebreakAt?: string | number;
@@ -59,6 +60,7 @@ export type ParsedFormat = {
   aggregate?: boolean; // only included when true (match-level A mod)
   matchMods?: string[]; // raw unknown modifiers for forward compat
   finalSetFormat?: any;
+  overtimeFormat?: OvertimeFormat;
   simplified?: boolean;
   exactly?: number;
   setFormat?: any;
@@ -110,8 +112,10 @@ export function parse(matchUpFormatCode: string): ParsedFormat | undefined {
 /** The parsed object without what an equivalent spelling adds: a final set like the set, a timed `G`, a default game. */
 function canonicalObject(parsed?: ParsedFormat): ParsedFormat | undefined {
   if (!parsed) return undefined;
-  for (const segment of [parsed.setFormat, parsed.finalSetFormat]) if (segment?.based === 'G') delete segment.based;
-  if (parsed.finalSetFormat && sameSegment(parsed.finalSetFormat, parsed.setFormat)) delete parsed.finalSetFormat;
+  for (const segment of [parsed.setFormat, parsed.finalSetFormat, parsed.overtimeFormat?.setFormat])
+    if (segment?.based === 'G') delete segment.based;
+  if (!parsed.overtimeFormat && parsed.finalSetFormat && sameSegment(parsed.finalSetFormat, parsed.setFormat))
+    delete parsed.finalSetFormat;
   if (parsed.gameFormat?.type === TRADITIONAL && !parsed.gameFormat.deuceAfter) delete parsed.gameFormat;
   return parsed;
 }
@@ -138,16 +142,18 @@ function canonicalSpelling(code: string): string {
   const [head, ...sections] = normalizeTimedBasisG(code).split('-');
   const canonicalHead = head.replace(/^([A-Z]+)1X(A?)$/, '$11$2');
   const rewritten = sections.map((section) => {
-    const match = /^([SF]):(.*)$/.exec(section);
+    const match = /^([SF]:|O:(?:[1-9]\d*|U)(?:X)?(?:SD)?\/)(.*)$/.exec(section);
     if (!match) return section;
     let value = match[2].replace(/^(\d+)((?:NOAD)?)WB2(?=$|\/)/, '$1$2');
     const redundantAt = /^(\d+)(.*\/TB\d+(?:NOAD)?)@(\d+)$/.exec(value);
     if (redundantAt && redundantAt[1] === redundantAt[3]) value = redundantAt[1] + redundantAt[2];
-    return `${match[1]}:${value}`;
+    return `${match[1]}${value}`;
   });
+  const hasOvertime = rewritten.some((section) => section.startsWith('O:'));
   const setSection = rewritten.find((section) => section.startsWith('S:'));
   const kept = rewritten.filter(
-    (section) => section !== 'G:TN' && !(section.startsWith('F:') && section.slice(2) === setSection?.slice(2)),
+    (section) =>
+      section !== 'G:TN' && !(section.startsWith('F:') && !hasOvertime && section.slice(2) === setSection?.slice(2)),
   );
   return [canonicalHead, ...kept].join('-');
 }
@@ -256,25 +262,39 @@ function parseMatchFormat(formatstring: string): ParsedFormat | undefined {
   // Key-based section dispatch (not positional)
   let setFormat: SetFormatResult;
   let finalSetFormat: SetFormatResult;
+  let overtimeFormat: OvertimeFormat | undefined;
   let gameFormat: GameFormat | undefined;
   let matchUpConstraint: { timed: boolean; minutes: number } | undefined;
   let sCount = 0;
   let fCount = 0;
   let gCount = 0;
   let mCount = 0;
+  let oCount = 0;
 
-  const sectionState = { setFormat, finalSetFormat, gameFormat, matchUpConstraint, sCount, fCount, gCount, mCount };
+  const sectionState = {
+    setFormat,
+    finalSetFormat,
+    overtimeFormat,
+    gameFormat,
+    matchUpConstraint,
+    sCount,
+    fCount,
+    gCount,
+    mCount,
+    oCount,
+  };
 
   for (let i = 1; i < parts.length; i++) {
     const parsed = parseSectionPart(parts[i], sectionState);
     if (!parsed) return undefined;
   }
 
-  ({ setFormat, finalSetFormat, gameFormat, matchUpConstraint } = sectionState);
+  ({ setFormat, finalSetFormat, overtimeFormat, gameFormat, matchUpConstraint } = sectionState);
 
   return buildParsedFormat({
     setFormat,
     finalSetFormat,
+    overtimeFormat,
     gameFormat,
     matchUpConstraint,
     matchRoot,
@@ -302,6 +322,11 @@ function parseSectionPart(part: string, state): boolean {
     state.fCount++;
     if (state.fCount > 1) return false;
     state.finalSetFormat = parseSetFormatString(part, value);
+  } else if (key === 'O') {
+    state.oCount++;
+    if (state.oCount > 1) return false;
+    state.overtimeFormat = parseOvertimeFormat(value, (segment) => parseSetFormatString(`S:${segment}`, segment));
+    if (!state.overtimeFormat) return false;
   } else if (key === 'G') {
     state.gCount++;
     if (state.gCount > 1) return false;
@@ -320,6 +345,7 @@ function parseSectionPart(part: string, state): boolean {
 function buildParsedFormat({
   setFormat,
   finalSetFormat,
+  overtimeFormat,
   gameFormat,
   matchUpConstraint,
   matchRoot,
@@ -329,6 +355,7 @@ function buildParsedFormat({
   exactly,
 }): ParsedFormat | undefined {
   if (finalSetFormat?.combinedPointTotal) return undefined;
+  if (overtimeFormat && (!aggregate || (overtimeFormat.count === 'unlimited' && finalSetFormat))) return undefined;
   if (
     setFormat?.combinedPointTotal &&
     (matchRoot !== SET ||
@@ -361,6 +388,7 @@ function buildParsedFormat({
   if (aggregate) result.aggregate = true;
   if (matchMods.length > 0) result.matchMods = matchMods;
   if (finalSetFormat) result.finalSetFormat = finalSetFormat;
+  if (overtimeFormat) result.overtimeFormat = overtimeFormat;
   if (gameFormat) result.gameFormat = gameFormat;
   if (matchUpConstraint) result.matchUpConstraint = matchUpConstraint;
 
