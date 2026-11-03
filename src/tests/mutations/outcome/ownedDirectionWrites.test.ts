@@ -596,6 +596,42 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: R1(2, 'Main'), outcome: cleared }],
     },
   ],
+  // S7: the same double exits given a winner: the award through the BYE released, the winner directed into the next
+  // round; behind a loser link the loser lands on the seat the unwind freed, opposite the standing BYE, and goes on
+  // through it into the matchUp that still holds their position (`unwoundThrough`)
+  ...[SINGLE_ELIMINATION, FEED_IN_CHAMPIONSHIP, DOUBLE_ELIMINATION, FIRST_MATCH_LOSER_CONSOLATION].map(
+    (drawType): [string, Scenario] => [
+      `${drawType} 7 of 8: a double walkover beside the BYE given a winner, the award through the BYE released`,
+      {
+        drawProfile: { drawSize: 8, participantsCount: 7, drawType },
+        setup: [
+          {
+            target: R1(2, drawType === SINGLE_ELIMINATION ? undefined : 'Main'),
+            outcome: { matchUpStatus: DOUBLE_WALKOVER },
+          },
+        ],
+        steps: [{ target: R1(2, drawType === SINGLE_ELIMINATION ? undefined : 'Main'), outcome: won(1) }],
+      },
+    ],
+  ),
+  [
+    'FIRST_MATCH_LOSER_CONSOLATION 7 of 8: a double default beside the BYE given a walkover, the award through the BYE released',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+      setup: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+      steps: [{ target: R1(2, 'Main'), outcome: walkover(2) }],
+    },
+  ],
+  [
+    'COMPASS 5 of 8: a double walkover beside the BYE given a walkover: the loser through West 1/1 into West 2/1, a BYE still',
+    {
+      drawProfile: { drawSize: 8, participantsCount: 5, drawType: COMPASS },
+      nonRandom: 9000230,
+      policyDefinitions: { [POLICY_TYPE_PROGRESSION]: CARRIED },
+      setup: [{ target: R1(2, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2, 'East'), outcome: walkover(1) }],
+    },
+  ],
   // the unwind walk (S6 tail): a cleared double exit beside another, its BYEs removed as v1's removal recursion removes them
   [
     'COMPASS 8 of 8: a double walkover cleared, R1 position 3 a double walkover too: the release empties West 2/1 before the next task looks for it: no visit there',
@@ -3209,14 +3245,6 @@ describe('under v2, a dissolved convergence beyond the clear is v2s; given a win
         drawProfile: { drawSize: 16, drawType: FIRST_ROUND_LOSER_CONSOLATION },
         setup: PAIRED(DOUBLE_WALKOVER, DOUBLE_WALKOVER, 'Main'),
         steps: [{ target: R1(1, 'Main'), outcome: cleared }],
-      },
-    ],
-    [
-      'SINGLE_ELIMINATION 7 of 8: a double walkover beside the BYE given a winner, awarded through the BYE',
-      {
-        drawProfile: { drawSize: 8, participantsCount: 7, drawType: SINGLE_ELIMINATION },
-        setup: [{ target: R1(2), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
-        steps: [{ target: R1(2), outcome: won(1) }],
       },
     ],
     [

@@ -935,8 +935,12 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   announced once, where the call first touches them (the seat the unwind visits), with the event and tournament of the
   loser's placement there (CURTIS: the Play Off's visit first, then the consolation's). A produced exit already awarded
   is released by the unwind as the clear releases it (the awardee's position taken back out of the round they went on
-  to, S7), and the winner then arrives as above; an award made through a BYE beside it stays v1's (released with
-  another announcement). Stay v1's: a convergence the unwind dissolves (the winner would be
+  to, S7), and the winner then arrives as above. An award made through a BYE beside it is released the same way; behind
+  a loser link the double exit's own seat then stood in a double BYE (the paired matchUp's BYE loser beside it) that had
+  sent the seat's own position on, so the loser, placed on the seat the unwind freed, goes on through the standing BYE
+  into the matchUp still holding their position, which v1 announces as the loser's arrival there
+  (`assignMatchUpDrawPosition`, with the event) and stamps: where the unwind withdrew that matchUp's BYE, or where it is
+  the structure's last round (COMPASS's West: a BYE still, by the other standing BYE). Stay v1's: a convergence the unwind dissolves (the winner would be
   awarded the re-derived pending exit), a loser the new result would carry, a BYE that had gone on further than the next
   matchUp (FMLC's second round), and every seat shape the clear leaves to v1.
 

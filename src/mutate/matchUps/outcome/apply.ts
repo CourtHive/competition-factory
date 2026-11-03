@@ -338,6 +338,8 @@ function withdrawnByeNotices(ops: OutcomeOp[]): Map<string, number> {
     if (op.op === 'setMatchUpDrawPositions' && op.withdrawnByePosition)
       unbyed.set(op.matchUpId, op.withdrawnByePosition);
     if (op.op === 'setMatchUpDrawPositions' && op.advancesThroughBye) unbyed.delete(op.matchUpId);
+    // a position placed there after the withdrawal (a loser through the standing BYE, `unwoundThrough`): its notice is last
+    if (op.op === 'setMatchUpDrawPositions' && op.placedDrawPosition) unbyed.delete(op.matchUpId);
     // a BYE matchUp emptied by a release (`releaseAdvancedDrawPosition`'s vacated BYE): the release's notice is the last
     if (op.op === 'setMatchUpDrawPositions' && op.releasedDrawPosition) unbyed.delete(op.matchUpId);
   }
