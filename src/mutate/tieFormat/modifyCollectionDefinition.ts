@@ -166,7 +166,7 @@ function modifyDefinition({
     source: sourceCollectionDefinition,
     valueAssignments,
     resetMatchUpTypeChoice,
-    reported: existingTieFormat?.scoreSource === TieScoreSourceEnum.REPORTED,
+    reportedScoreSource: existingTieFormat?.scoreSource === TieScoreSourceEnum.REPORTED,
     matchUpType,
     matchUpCount,
     matchUp,
