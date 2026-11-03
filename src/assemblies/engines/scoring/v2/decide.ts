@@ -39,6 +39,7 @@ function units(set: ScoredSet): Pair {
  * total names no winner and completes the match (§ 9.7), unless exactly N declares a decider, set N + 1.
  */
 function decideAggregate(match: MatchRule, sets: ScoredSet[]): MatchDecision {
+  if (match.overtime) return decideOvertime(match, sets);
   const counted = sets.slice(0, match.n);
   if (counted.length < match.n || !counted.every(isClosed)) return IN_PLAY;
   const total = counted.reduce<Pair>(
@@ -54,6 +55,37 @@ function decideAggregate(match: MatchRule, sets: ScoredSet[]): MatchDecision {
   const decider = sets[match.n];
   if (!decider || !isClosed(decider)) return IN_PLAY;
   return { complete: true, winningSide: decider.winningSide };
+}
+
+/** Regulation first, then a ceiling/exact block of overtime. F is a separate decision, never summed. */
+function decideOvertime(match: MatchRule, sets: ScoredSet[]): MatchDecision {
+  const regulation = sets.slice(0, match.n);
+  if (regulation.length < match.n || !regulation.every(isClosed)) return IN_PLAY;
+  let total = sumUnits(regulation);
+  if (total[0] !== total[1]) return moreOf(total);
+  const overtime = match.overtime!;
+  const periods = sets.slice(match.n, overtime.count === 'unlimited' ? undefined : match.n + overtime.count);
+  for (const period of periods) {
+    const [a, b] = units(period);
+    total = [total[0] + a, total[1] + b];
+    if (!isClosed(period)) return overtime.suddenDeath && total[0] !== total[1] ? moreOf(total) : IN_PLAY;
+    if (!overtime.exactly && total[0] !== total[1]) return moreOf(total);
+  }
+  if (overtime.count === 'unlimited' || periods.length < overtime.count) return IN_PLAY;
+  if (total[0] !== total[1]) return moreOf(total);
+  if (!match.final) return { complete: true };
+  const decider = sets[match.n + overtime.count];
+  return decider && isClosed(decider) ? { complete: true, winningSide: decider.winningSide } : IN_PLAY;
+}
+
+function sumUnits(sets: ScoredSet[]): Pair {
+  return sets.reduce<Pair>(
+    (sum, set) => {
+      const [a, b] = units(set);
+      return [sum[0] + a, sum[1] + b];
+    },
+    [0, 0],
+  );
 }
 
 /**

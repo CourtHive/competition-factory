@@ -1,6 +1,8 @@
+import { overtimeFinalNumber, overtimeGoverns } from './overtime';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // constants and types
+import type { OvertimeRule } from './overtime';
 import type { Pair } from './types';
 
 /** the default format when neither the configuration nor the competition names one (§ 1.1) */
@@ -55,6 +57,7 @@ export type MatchRule = {
   ordinary: SegmentRule;
   /** the final-segment format (`-F:`), when declared */
   final?: SegmentRule;
+  overtime?: OvertimeRule;
   /**
    * Replay only (§ 12.8): a stored timeline holds input v1 accepted past a completed match or past N. v1 played on:
    * no set limit, and a side wins on more sets (or the greater total) once N segments are closed (`legacy.ts`).
@@ -155,17 +158,22 @@ function segmentRule(
  * Best of N needs a majority of the N, ⌊N/2⌋ + 1 sets. For odd N that is § 9.1's ⌈N/2⌉; for even N it is what
  * § 9.7 rule 4 requires (`SET2-S:6/TB7` can end 1-1), which ⌈N/2⌉ would not allow (decision SE2a-D7).
  */
-export function resolveFormat(code: string | undefined): MatchRule | undefined {
+/** Internal staging option, not a ScoringEngine/public format-editor option. */
+export type FormatResolutionOptions = { allowOvertime?: boolean };
+
+export function resolveFormat(code: string | undefined, options: FormatResolutionOptions = {}): MatchRule | undefined {
   if (!code) return undefined;
   const parsed = parse(code);
   // The grammar can describe overtime before the reducer/record integration is activated.
   // Refuse instead of silently scoring an overtime code as regulation alone.
-  if (!parsed?.setFormat || parsed.overtimeFormat) return undefined;
+  if (!parsed?.setFormat || (parsed.overtimeFormat && !options.allowOvertime)) return undefined;
   const exactly = parsed.exactly;
   const n: number = exactly ?? parsed.bestOf ?? 1;
   const context = { tennisFamily: !parsed.matchRoot && !parsed.aggregate && !parsed.simplified };
   const ordinary = segmentRule(parsed.setFormat, parsed.gameFormat, context);
   const final = parsed.finalSetFormat ? segmentRule(parsed.finalSetFormat, parsed.gameFormat, context) : undefined;
+  const overtime = parsed.overtimeFormat;
+  if (overtime && !supportsOvertime(parsed, n, ordinary, final)) return undefined;
   return {
     code,
     mode: exactly ? 'exactly' : 'bestOf',
@@ -174,7 +182,31 @@ export function resolveFormat(code: string | undefined): MatchRule | undefined {
     setsToWin: Math.floor(n / 2) + 1,
     ordinary,
     ...(final ? { final } : {}),
+    ...(overtime
+      ? {
+          overtime: {
+            count: overtime.count,
+            exactly: !!overtime.exactly,
+            suddenDeath: !!overtime.suddenDeath,
+            rule: segmentRule(overtime.setFormat, parsed.gameFormat, context),
+          },
+        }
+      : {}),
   };
+}
+
+/** Timed units first; clocks, segment-local tiebreaks and other period kinds need separate rulings. */
+function supportsOvertime(
+  parsed: NonNullable<ReturnType<typeof parse>>,
+  n: number,
+  ordinary: SegmentRule,
+  final: SegmentRule | undefined,
+): boolean {
+  const overtime = parsed.overtimeFormat!;
+  if (parsed.matchUpConstraint || ordinary.kind !== 'timed' || ordinary.tiebreak) return false;
+  if (!overtime.setFormat.timed || overtime.setFormat.tiebreakFormat) return false;
+  if (final && final.kind !== 'tiebreakOnly' && (final.kind !== 'timed' || final.tiebreak)) return false;
+  return overtime.count === 'unlimited' || Number.isSafeInteger(n + overtime.count + (final ? 1 : 0));
 }
 
 /** the configured format: the option, else the competition's, else the default (§ 1.1) */
@@ -197,6 +229,7 @@ export function configuredFormat(config: {
  * "set N" of rule 1 applies (decision SE2a-D1).
  */
 export function finalGoverns(match: MatchRule, setNumber: number, setsWon: Pair): boolean {
+  if (match.overtime) return setNumber === overtimeFinalNumber(match);
   if (match.mode === 'exactly') return setNumber === (match.aggregate ? match.n + 1 : match.n);
   if (setNumber === match.n) return true;
   if (match.aggregate) return false;
@@ -206,6 +239,7 @@ export function finalGoverns(match: MatchRule, setNumber: number, setsWon: Pair)
 
 /** the rule governing set `setNumber` (§ 3.2) */
 export function ruleForSet(match: MatchRule, setNumber: number, setsWon: Pair): SegmentRule {
+  if (match.overtime && overtimeGoverns(match, setNumber)) return match.overtime.rule;
   return match.final && finalGoverns(match, setNumber, setsWon) ? match.final : match.ordinary;
 }
 

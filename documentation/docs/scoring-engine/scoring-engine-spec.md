@@ -693,6 +693,40 @@ v1 opens further segments after a level timed segment and after a level aggregat
 exactly-N match `IN_PROGRESS`: v1 defects (§ 16, 3, 12, 18). Entries v1 recorded past a level close
 replay as v1 replayed them (§ 12.8).
 
+### 9.8 Declared overtime (CA 2026-11-03; reducer slice, not publicly activated)
+
+The [grammar specification](/docs/codes/matchup-format-grammar#9-overtime-grammar-foundation-not-activated-for-scoring)
+defines `-O:{limit}[X][SD]/{segment}`. This extends aggregate match completion only when O is declared;
+codes without O retain §§ 9.3–9.7. Public new-use validation and ScoringEngine activation remain gated until
+score-record/view/replay integration is complete. The reducer's internal `allowOvertime` option exercises these
+rules without exposing a new public scoring configuration option.
+
+1. Play every regulation segment. If the regulation aggregate is unequal, finish with that winner and no
+   overtime. If level, continue into the first overtime period, not a completed draw or the F decider.
+2. Overtime periods add to the regulation aggregate. Without X, compare the aggregate after each closed
+   period; an unequal total completes the match. A lead during an ordinary timed period does not complete it.
+3. With X, play the entire declared block before comparing totals. An intermediate lead is not a win. At
+   the end of the block, compare accumulated regulation plus every overtime period, not the final period alone.
+4. U repeats while level, with periods created only as input arrives. It neither preallocates periods nor
+   applies a hidden finite ceiling. U has no F fallback.
+5. SD finishes immediately at a nonzero scoring event in overtime, closing that period too. A zero-valued
+   event does not break the tie. A scoreless period can end at time and repeat, up to the declared limit.
+   Point, game and set-total input agree. A sudden-death period total with scoring by both sides is unreachable
+   and refused before writing; a baseline cannot claim a nonzero sudden-death score still in play.
+6. At a finite ceiling, unequal totals decide the match. Level with no F finishes `COMPLETED` without a
+   winner. Level with F enters its separate decider, segment `regulationCount + overtimeLimit + 1`, never N or
+   N + 1 merely because of the regulation head. This applies to both A and XA heads. F's own result decides
+   the match and is not summed into the sporting aggregate. A timed fallback may itself finish level.
+7. No input opens a period after an earlier winner or past the ceiling/fallback. A baseline including such
+   an unplayed segment is refused unchanged. Replay of an accepted prefix deterministically reconstructs its
+   decision, and removing the deciding input reopens the appropriate period.
+
+The initial reducer supports timed aggregate regulation and timed overtime in scoring units, with no segment-local
+tiebreaks. F may be a tiebreak-only or timed segment with no local tiebreak. Match clocks (`-M:`), non-timed
+regulation/overtime, standard/outs fallbacks, and unsafe finite total segment counts are refused even with internal
+opt-in until their rules are resolved. Other valid-for-reading syntax is not silently approximated.
+These changes belong to scoring, not `setMatchUpStatus` or the outcome propagation pipeline.
+
 ## 10. Service
 
 The server is **side-level**. The engine derives the side due to serve the next point, records it on

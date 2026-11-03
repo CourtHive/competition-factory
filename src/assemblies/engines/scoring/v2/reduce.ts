@@ -1,7 +1,8 @@
 import { INITIAL_SERVICE, afterPoint, corrected, nextServer, serveSide, serviceCode } from './service';
 import { configuredFormat, resolveFormat, ruleForSet, takesInput } from './format';
-import { isBreakpoint, pointsTo } from './view';
+import { lastPlayableSet, overtimeGoverns, overtimeTotalError } from './overtime';
 import { decideMatch, isClosed, setsWon } from './decide';
+import { isBreakpoint, pointsTo } from './view';
 import {
   decidedInPlay,
   pointsAreUnits,
@@ -39,6 +40,7 @@ import {
 import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { PointMultiplier } from '@Types/competitionFormat';
 import type { ServicePosition, ServiceRules } from './service';
+import type { FormatResolutionOptions } from './format';
 import type { MatchRule, SegmentRule } from './format';
 import type {
   EntryData,
@@ -72,9 +74,9 @@ export type ReducerContext = {
   rules: ServiceRules;
 };
 
-export function createContext(config: ScoringConfiguration): ReducerContext {
+export function createContext(config: ScoringConfiguration, options: FormatResolutionOptions = {}): ReducerContext {
   return {
-    match: resolveFormat(configuredFormat(config)),
+    match: resolveFormat(configuredFormat(config), options),
     // the option wins over the profile's (§ 1.1)
     multipliers: config.pointMultipliers ?? config.competitionFormat?.pointMultipliers ?? [],
     // the competition's server rule (§ 10.7)
@@ -133,8 +135,8 @@ function target(match: MatchRule, state: ScoringState): Target | undefined {
     return { set: last, rule, game: state.game, index: state.sets.length - 1, atTime: atTimeIn(rule, last) };
   }
   const setNumber = state.sets.length + 1;
-  const decider = match.mode === 'exactly' && match.aggregate && match.final ? 1 : 0;
-  if (setNumber > match.n + decider && !match.pastClose) return undefined;
+  const limit = lastPlayableSet(match);
+  if (limit !== undefined && setNumber > limit && !match.pastClose) return undefined;
   const rule = ruleForSet(match, setNumber, setsWon(state.sets));
   return { set: openSet(rule, setNumber), rule, index: state.sets.length, atTime: false };
 }
@@ -146,11 +148,17 @@ function target(match: MatchRule, state: ScoringState): Target | undefined {
 function scored(match: MatchRule, state: ScoringState, at: Target, result: SegmentStep, scoring = true): ScoringState {
   const sets = [...state.sets.slice(0, at.index), result.set];
   const decision = decideMatch(match, sets);
+  const suddenDeathWin =
+    match.overtime?.suddenDeath &&
+    overtimeGoverns(match, at.set.setNumber) &&
+    decision.complete &&
+    decision.winningSide;
+  if (suddenDeathWin) sets[at.index] = { ...result.set, segmentComplete: true, winningSide: decision.winningSide };
   const { winningSide: _previous, game: _game, ...rest } = state;
   return {
     ...rest,
     sets,
-    ...(result.game ? { game: result.game } : {}),
+    ...(result.game && !suddenDeathWin ? { game: result.game } : {}),
     matchUpStatus: decision.complete ? COMPLETED : IN_PROGRESS,
     ...(decision.winningSide ? { winningSide: decision.winningSide } : {}),
     scoringEntries: state.scoringEntries + (scoring ? 1 : 0),
@@ -250,6 +258,8 @@ function set(match: MatchRule, state: ScoringState, entry: TimelineEntry): Step 
   if (facts.refused) return refused(state, facts.refused);
   const at = aimed(match, state);
   if (typeof at === 'string') return ignored(state, at);
+  const overtimeError = overtimeTotalError(match, at.set.setNumber, facts.total!.totals);
+  if (overtimeError) return refused(state, refusal(overtimeError));
   const result = segmentTotal(at.rule, at.set.setNumber, facts.total as SetTotal);
   if ('refused' in result) return refused(state, refusal(result.refused));
   return { state: scored(match, state, at, raceInPlay(at.rule, result)), outcome: RECORDED };
@@ -302,8 +312,12 @@ function baselineSets(match: MatchRule, given: unknown[]): { sets?: ScoredSet[];
   const sets: ScoredSet[] = [];
   let atTime = false;
   for (const [i, data] of given.entries()) {
+    if (match.overtime && decideMatch(match, sets).complete)
+      return { refused: 'an overtime baseline includes a segment after the match was decided' };
     const facts = readSetTotal(data as EntryData | undefined);
     if (facts.refused) return { refused: facts.refused.message };
+    const overtimeError = overtimeTotalError(match, i + 1, facts.total!.totals);
+    if (overtimeError) return { refused: overtimeError };
     const rule = ruleForSet(match, i + 1, setsWon(sets));
     const judged = segmentTotal(rule, i + 1, facts.total as SetTotal);
     if ('refused' in judged) return { refused: judged.refused };
@@ -355,6 +369,12 @@ function baselineInPlay(match: MatchRule, sets: ScoredSet[], data: EntryData): B
   if (given && raceInPlay) return { refused: raceNamedTwice(setNumber) };
   const base: ScoredSet = open && !raceInPlay ? last : openSet(rule, setNumber);
   const inPlay: ScoredSet = { ...base, side1Score: base.side1Score + games[0], side2Score: base.side2Score + games[1] };
+  if (
+    match.overtime?.suddenDeath &&
+    overtimeGoverns(match, setNumber) &&
+    [inPlay.side1Score, inPlay.side2Score, ...(given ?? [])].some((score) => score > 0)
+  )
+    return { refused: 'a sudden-death overtime with a nonzero score is already decided, not in play' };
   if (decidedInPlay(rule, [inPlay.side1Score, inPlay.side2Score])) return { refused: 'the set in play is already won' };
   // a combined total counts rallies, not games: its set in play has no game in play (§ 7 rule 5)
   if (rule.kind === 'combined') return { sets: [...closed, inPlay] };
@@ -483,8 +503,12 @@ export type Reduction = {
 };
 
 /** `state = reduce(configuration, timeline)` (§ 12.1): a fresh score, every entry replayed in order */
-export function reduce(config: ScoringConfiguration, timeline: TimelineEntry[]): Reduction {
-  const context = createContext(config);
+export function reduce(
+  config: ScoringConfiguration,
+  timeline: TimelineEntry[],
+  options: FormatResolutionOptions = {},
+): Reduction {
+  const context = createContext(config, options);
   const outcomes: StepOutcome[] = [];
   const legacy: number[] = [];
   let state = initialState();
