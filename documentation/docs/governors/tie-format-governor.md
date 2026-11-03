@@ -353,6 +353,9 @@ A changed `gender` is checked against the event's gender, as `addCollectionDefin
 ### Exploratory encounter-specific type conversion
 
 This section describes the prototype on `explore/noc-u4-collection-matchup-type`; it is not released behavior.
+The separate [Captain's Choice specification](../concepts/collectionMatchUpTypeChoice.mdx) proposes
+`matchUpTypeOptions` to retain the declaration after selection. That declaration, unresolved placeholders
+and reset API are not implemented by this conversion prototype.
 A captain's choice is resolved to one concrete `SINGLES` or `DOUBLES` type for both sides of the collection
 in one TEAM encounter. Different encounters can resolve the same event collection differently.
 
