@@ -2,6 +2,7 @@ import { isValidMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isV
 import { includesMatchUpEventType } from '@Helpers/matchUpEventTypes/includesMatchUpEventType';
 import { validateCollectionValueProfiles } from '@Validators/validateCollectionValueProfiles';
 import { tieFormatGenderValidityCheck } from '@Validators/tieFormatGenderValidityCheck';
+import { matchUpTypeOptionsErrors } from '@Helpers/matchUpTypeOptions';
 import { categoryCanContain } from '@Query/event/categoryCanContain';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isConvertableInteger } from '@Tools/math';
@@ -54,6 +55,7 @@ export function validateCollectionDefinition({
     matchUpFormat,
     matchUpValue,
     matchUpType,
+    matchUpTypeOptions,
     category,
     gender,
   } = collectionDefinition;
@@ -73,6 +75,8 @@ export function validateCollectionDefinition({
   if (matchUpType && !includesMatchUpEventType([SINGLES, DOUBLES, HYBRID], matchUpType)) {
     errors.push(`matchUpType must be SINGLES, DOUBLES, or HYBRID: ${matchUpType}`);
   }
+
+  errors.push(...matchUpTypeOptionsErrors(collectionDefinition, !!(newUse || enforceValues)));
 
   errors.push(...valueErrors({ collectionDefinition, enforceValues }));
 
@@ -104,19 +108,9 @@ export function validateCollectionDefinition({
   }
 
   if (checkGender) {
-    const result = tieFormatGenderValidityCheck({
-      referenceGender,
-      matchUpType,
-      gender,
-    });
-
-    if (result.error) {
-      return decorateResult({
-        context: { referenceGender, gender },
-        result,
-        stack,
-      });
-    }
+    const types = Array.isArray(matchUpTypeOptions) ? matchUpTypeOptions : [matchUpType];
+    const result = collectionGenderValidity({ types, referenceGender, gender });
+    if (result.error) return decorateResult({ context: { referenceGender, gender }, result, stack });
   }
 
   if (checkCategory && referenceCategory && category) {
@@ -187,4 +181,21 @@ function valueErrors({
   }
 
   return errors;
+}
+
+/** Check every offered type, including those not currently selected. */
+function collectionGenderValidity({
+  types,
+  referenceGender,
+  gender,
+}: {
+  types: (string | undefined)[];
+  referenceGender?: GenderUnion;
+  gender?: GenderUnion;
+}) {
+  for (const matchUpType of types) {
+    const result = tieFormatGenderValidityCheck({ matchUpType, referenceGender, gender });
+    if (result.error) return result;
+  }
+  return { valid: true };
 }

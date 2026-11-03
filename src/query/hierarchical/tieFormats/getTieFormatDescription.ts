@@ -8,13 +8,18 @@ export function getTieFormatDesc(tieFormat) {
   const tieFormatName = tieFormat.tieFormatName;
   const tieFormatDesc = tieFormat.collectionDefinitions
     ?.map((def) => {
-      const { matchUpType, matchUpFormat, matchUpCount, category, gender } = def;
+      const { matchUpType, matchUpFormat, matchUpCount, category, gender, matchUpTypeOptions } = def;
 
       if (!matchUpFormats.includes(matchUpFormat)) matchUpFormats.push(matchUpFormat);
 
       const ageCategoryCode = category?.ageCategoryCode;
-      const matchUpTypeCode = matchUpType === DOUBLES_MATCHUP ? 'D' : 'S';
-      return [matchUpCount, matchUpTypeCode, ageCategoryCode, matchUpFormat, gender].join(';');
+      const unresolvedChoice = matchUpTypeOptions !== undefined && matchUpType === undefined;
+      let matchUpTypeCode = matchUpType === DOUBLES_MATCHUP ? 'D' : 'S';
+      if (unresolvedChoice) matchUpTypeCode = '?';
+      const fields = [matchUpCount, matchUpTypeCode, ageCategoryCode, matchUpFormat, gender];
+      // Preserve legacy descriptors exactly; choice declarations also participate in format identity.
+      if (matchUpTypeOptions !== undefined) fields.push(`options:${JSON.stringify(matchUpTypeOptions)}`);
+      return fields.join(';');
     })
     .join('|');
   return {

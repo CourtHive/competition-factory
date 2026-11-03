@@ -1229,6 +1229,10 @@ export interface CollectionDefinition {
   matchUpCount?: number;
   matchUpFormat?: string;
   matchUpType?: EventTypeUnion;
+  /** Permitted encounter choices; a concrete matchUpType records selection without removing this declaration.
+   * Declaration support only: new-use saving is gated until unresolved-choice runtime guards are implemented.
+   */
+  matchUpTypeOptions?: ('SINGLES' | 'DOUBLES')[];
   matchUpValue?: number;
   notes?: string;
   processCodes?: string[];

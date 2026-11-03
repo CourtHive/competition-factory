@@ -6,11 +6,16 @@ keywords: [captains choice, captain's choice, singles or doubles, tieFormat, col
 
 ## Specification status
 
-This is the proposed extension to the [tieFormat specification](./tieFormat.mdx), recorded on
-`explore/noc-u4-collection-matchup-type`. It is not implemented or released. The branch's current conversion
-prototype changes concrete SINGLES/DOUBLES collections; it does not yet recognize the declaration below,
-generate unresolved choice rubbers, or enforce their restrictions. Do not submit this shape to an existing
-release and assume that an ignored field means support.
+This is the extension to the [tieFormat specification](./tieFormat.mdx). The declaration foundation is
+implemented locally on `feat/noc-u4-captains-choice`: `matchUpTypeOptions` is typed and structurally validated,
+including every offered type's gender compatibility, and choice metadata participates in format identity.
+Copying, aggregation and JSON round trips preserve the declaration.
+
+Runtime activation remains pending and this capability is not released. New-use saving of choice collections
+is explicitly refused, including already selected declarations, until unresolved assignment/scoring/start-of-play
+guards and atomic selection/reset are implemented. The earlier concrete-type conversion prototype remains
+available on this branch for fixed SINGLES/DOUBLES collections. Do not submit choice declarations to an
+existing release and assume that an ignored field means support.
 
 ## Declaration and selection are different facts
 
@@ -129,8 +134,9 @@ shape for this reset remains to be designed before implementation.
 
 ## Implementation acceptance
 
-Before enabling this contract, add the typed collection field and validator, update generation and all
-assignment/scoring/start-of-play entry points to refuse unresolved choices, and make resolution/reset atomic.
+The typed field, declaration validation and identity/persistence foundation are implemented. Before enabling
+new use, update generation and all assignment/scoring/start-of-play entry points to refuse unresolved choices,
+and make resolution/reset atomic.
 Audit comparison, copying, centralized aggregation, hierarchy, hydration, query filters and persistence so the
 declaration and local selection survive without leaking into other encounters. Coordinate separately with
 outcome-pipeline owners before changing any status/outcome path; this specification changes no such code.
