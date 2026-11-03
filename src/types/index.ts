@@ -14,6 +14,7 @@ export * from './tournamentTypes';
 export * from './errorCodeTypes';
 export * from './rankingTypes';
 export * from './factoryTypes';
+export type * from './asyncEngineTypes';
 export * from './reportTypes';
 export * from './swissTypes';
 export * from './viewTypes';
