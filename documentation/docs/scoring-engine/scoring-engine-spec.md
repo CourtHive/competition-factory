@@ -752,10 +752,41 @@ not as its game won 1–0. `decidingScore` appears only in the decider phase, be
 first input. `decidedIn` appears only when the result completes, including a level finish. After a closed
 period of an unfinished match, phase context names the next period; completed results name their last period.
 
-The phase-aware scoreboard shows the aggregate and phase, e.g. `139-142 (OT 4)` or
-`3-3 (Decider: 0-3)`. Perspective swaps both aggregate and deciding scores. Standalone score/scoreboard queries
-read the same stored sporting score; service orientation and rally counts are recovered from the timeline.
-Sudden-death overtime exposes match-point/golden-point flags even though its segment is timed.
+The phase-aware scoreboard is `{aggregate} ({label})`, where the aggregate is regulation plus overtime and the
+label names the phase:
+
+- **regulation:** `Regulation {n}`, where `n` is the period in play. Before the first input that is
+  `Regulation 1`, and after a closed period it names the next one. A result decided in regulation shows
+  `Regulation` with no number;
+- **overtime:** `OT {n}`, while in play and when the result is decided there;
+- **decider:** `Decider: {decidingScore}`, e.g. `3-3 (Decider: 0-3)`.
+
+Perspective swaps both aggregate and deciding scores. Standalone score/scoreboard queries read the same stored
+sporting score; service orientation and rally counts are recovered from the timeline. Every row of the table below
+is replayed by `src/tests/documentation/overtimeScoreboard.test.ts`. A period is written as its score pair
+(`3-2`), and `P1` or `P2` is a point won by that side:
+
+| Format                    | Entered        | Scoreboard           |
+| ------------------------- | -------------- | -------------------- |
+| `SET2XA-S:T10P-O:1SD/T5P` | none           | `0-0 (Regulation 1)` |
+| `SET2XA-S:T10P-O:1SD/T5P` | `3-2`          | `3-2 (Regulation 2)` |
+| `SET2XA-S:T10P-O:1SD/T5P` | `3-2, 1-3`     | `4-5 (Regulation)`   |
+| `SET2XA-S:T10P-O:1SD/T5P` | `3-2, 1-2`     | `4-4 (OT 1)`         |
+| `SET2XA-S:T10P-O:1SD/T5P` | `3-2, 1-2, P1` | `5-4 (OT 1)`         |
+
+**Points in sudden-death overtime.** The next scoring event decides the match for whichever side scores it, so
+every point in a sudden-death overtime period carries these values, even though the segment is timed:
+
+| Field           | Value                                                                                                                         |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `pointsToGame`  | `[1, 1]`                                                                                                                      |
+| `pointsToSet`   | `[1, 1]`                                                                                                                      |
+| `pointsToMatch` | `[1, 1]`                                                                                                                      |
+| `gamesToSet`    | `[1, 1]`                                                                                                                      |
+| `isBreakpoint`  | `true` by the general rule (§ 11.2: the receiver needs one point), with the server supplied or derived from the service order |
+
+The score situation follows: `isMatchPoint` and `isSetPoint` are true for both sides. Consumers wanting the
+deciding-point signal should read `isMatchPoint`; `isBreakpoint` carries no sudden-death meaning of its own.
 
 Undo/redo, corrections, supplementary-state JSON round trips and reload recompute phase context. Correcting an
 earlier period can end the match earlier; later entries stay on the timeline but cannot resurrect unplayed
