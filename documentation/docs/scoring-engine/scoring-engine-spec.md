@@ -334,8 +334,10 @@ it without replaying it, and `undo` pops it, which is already the rule.
 
 ### 3.1 The match
 
-- **Best of N** (`SET3`, `MAP5`, …): the first side to win a majority of N sets, ⌊N/2⌋ + 1, wins (for odd N
-  that is ⌈N/2⌉; an even N can end level, § 9.7; SE2a-D7, CA 2026-10-21). `SET1X` and `SET1XA` read as
+- **Best of N** (`SET3`, `MAP5`, …): N must be odd for new use (CA 2026-11-03); the first side to win a
+  majority of N sets, ⌊N/2⌋ + 1 = ⌈N/2⌉, wins. A fixed even count that can finish level is **exactly N**,
+  and requires `X`: `SET2X-S:6/TB7` may finish 1-1, while `SET2-S:6/TB7` is refused for new use.
+  An explicit aggregate `A` follows aggregate completion instead of best-of completion. `SET1X` and `SET1XA` read as
   best of one (exactly one set is best of one).
 - **Exactly N** (`X`): all N sets are played; a lead is not a win (§ 9.2).
 - **Aggregate** (`A`): every set is played and the total across them decides; sets won are not
@@ -592,7 +594,8 @@ format is parsed and not enforced (§ 3.4).
 ### 9.1 Best of N
 
 The match is won by the first side to win a majority of the N sets, ⌊N/2⌋ + 1 (Rule 7; `standardSets`,
-"Rule 7"; SE2a-D7: ⌈N/2⌉ read for an even N would be half, which § 9.7 rule 4 contradicts). A set without
+"Rule 7"). New best-of counts are odd (§ 3.1); the majority formula still describes stored even-count
+codes when read (the former SE2a-D7 interpretation). A set without
 a winner (a timed segment closed level) is played and counts for neither side. **No set beyond N is
 played**: when all N sets are played and neither side has a majority, the side with more sets wins, and a
 level count ends the match by § 9.7 (CA 2026-10-18). v1 opens another set after a level timed segment,
@@ -681,8 +684,9 @@ no `winningSide`**, and `onMatchTie` fires, as for a combined-total tie (§ 7) (
    (`src/validators/tiedFormatCompatibility.ts`), checked at draw generation and by
    `checkDrawFormatCompatibility`, today reports only a `P{n}` combined total that can tie, so only that
    is refused in a structure that advances a winner. It extends to every format that can end level by this rule: timed,
-   aggregate and exactly-N formats with no declared decider; a best-of format with an even N (CA 2026-10-18:
-   `SET2-S:6/TB7` can end 1-1); and a format whose only decider can itself end level (CA 2026-10-18: a timed `-F:`
+   aggregate and exactly-N formats with no declared decider; a historical best-of format with an even N
+   (`SET2-S:6/TB7` was previously allowed to finish 1-1, but new use is refused under the 2026-11-03 ruling);
+   and a format whose only decider can itself end level (CA 2026-10-18: a timed `-F:`
    with no `/TB`, as in `SET3XA-S:T10-F:T10P`, is not a decider). A real decider is untimed (`-F:TB1`, `-F:TB10`)
    or timed with a tiebreak (`-F:T10P/TB1`). Only a format CHANGE is refused, so a stored draw is untouched and a
    score submitted with the matchUp's existing format is accepted; TEAM structures are skipped (the tieFormat
@@ -1231,7 +1235,7 @@ flagged as a legacy shape, with no version flag (§ 12.8). Nothing is left open.
 3. **DECIDED: a match that ends level with no declared decider is `COMPLETED` without a winner**,
    `onMatchTie` fires, no undeclared segment is played, and the views expose `decisionRequired`
    (§ 6.4, § 9.1, § 9.7, § 11.2). The elimination guard `formatCanEndTied` extends to timed, aggregate
-   and exactly-N formats with no declared decider, even best-of formats, and formats whose decider can end level
+   and exactly-N formats with no declared decider, historical even best-of formats, and formats whose decider can end level
    (§ 9.7 rule 4). v1 defect: further segments are
    opened; v1 change: the guard.
 4. **DECIDED: a closed segment takes no input** (§ 2, § 6.4). v1 defect: `addGame` reopens it.
@@ -1287,6 +1291,12 @@ flagged as a legacy shape, with no version flag (§ 12.8). Nothing is left open.
 21. **DECIDED: the docs follow the code**: `winner` and `winningSide` may both be given when they
     agree (§ 1.3; the API page), `addSet`'s JSDoc states what v1 does (§ 2.3), and the
     `FORMAT_STANDARD_NOAD` comment states an advantage set with No-Ad games (§ 4.2).
+22. **DECIDED 2026-11-03: an unmarked best-of count must be odd for new use.** Exactly two sets may
+    finish 1-1, but that is `SET2X`, not `SET2`. Aggregate scoring is explicitly marked `A` and follows
+    its separate rule. `SET2-S:6/TB7-F:TB10` is refused with an explanation pointing to
+    `SET3-S:6/TB7-F:TB10` for two regular sets followed by a deciding match tiebreak. This supersedes the
+    earlier permission for new even best-of formats, without changing replay of stored entries (§ 12.8).
+    Repeated overtime periods are not introduced by this rule.
 
 **A boundary, not a rule of this engine** (decided 2026-10-18): the INTENNSE Arc decider belongs to the
 team format (§ 13), tracked separately in Mentat TASKS.

@@ -1,4 +1,4 @@
-import { isValidMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
+import { validateMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { includesMatchUpEventType } from '@Helpers/matchUpEventTypes/includesMatchUpEventType';
 import { validateCollectionValueProfiles } from '@Validators/validateCollectionValueProfiles';
 import { tieFormatGenderValidityCheck } from '@Validators/tieFormatGenderValidityCheck';
@@ -109,9 +109,13 @@ export function validateCollectionDefinition({
 
   // a stored tieFormat is validated when it is read (team scoring, line-ups), so a format v1 accepted and
   // new use now refuses stays readable there (CA 2026-10-18, scoring engine spec § 12.8)
-  const formatAccepted = newUse ? isValidMatchUpFormat : isWellFormedMatchUpFormat;
-  if (matchUpFormat && !formatAccepted({ matchUpFormat })) {
-    errors.push(`Invalid matchUpFormat: ${matchUpFormat}`);
+  if (matchUpFormat) {
+    const validation = newUse
+      ? validateMatchUpFormat({ matchUpFormat })
+      : { valid: isWellFormedMatchUpFormat({ matchUpFormat }) };
+    if (!validation.valid) {
+      errors.push(`Invalid matchUpFormat: ${matchUpFormat}${validation.info ? `. ${validation.info}` : ''}`);
+    }
   }
 
   if (checkGender) {
