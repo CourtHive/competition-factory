@@ -1,11 +1,15 @@
 import { matchUpTypeOptionsErrors, unresolvedCollectionChoice } from '@Helpers/matchUpTypeOptions';
 import type { DrawDefinition, Event, MatchUp, MatchUpStatusUnion } from '@Types/tournamentTypes';
+import { START_TIME, STOP_TIME, RESUME_TIME, END_TIME } from '@Constants/timeItemConstants';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import type { MatchUpsMap, ResultType } from '@Types/factoryTypes';
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
+
+/** Time items that record play on a line; a choice must be resolved before any is written. */
+export const PLAY_TIME_ITEM_TYPES = new Set<string>([START_TIME, STOP_TIME, RESUME_TIME, END_TIME]);
 
 /** Read raw hierarchy only: refusals must not hydrate/write edges or allocate pair participants. */
 export function collectionChoiceRefusal({
