@@ -158,9 +158,6 @@ type SetMatchUpStateArgs = {
  * consumers call `setMatchUpStatus`.
  */
 export function setMatchUpState(params: SetMatchUpStateArgs): any {
-  const choice = collectionChoiceOutcomeRefusal(params);
-  if (choice) return choice;
-
   // A REFUSED CALL STORES NONE OF THE MISSING EDGES (CA, 2026-10-18): what `ensureGoesTo` writes below is held, and
   // written back if the call returns an error. See `holdGoesTo`.
   const hold = holdGoesTo({ drawDefinition: params.drawDefinition, matchUpsMap: params.matchUpsMap });
@@ -223,12 +220,15 @@ function writeMatchUpState(params: SetMatchUpStateArgs) {
 
   const resolved = resolveMatchUpAndContext({
     matchUpsMap: params.matchUpsMap,
+    removeScore: params.removeScore,
+    outcome: params.outcome,
     tournamentRecord,
     drawDefinition,
-    matchUpId,
-    event,
     matchUpStatus,
     winningSide,
+    matchUpId,
+    event,
+    score,
   });
   if (resolved.error) return resolved;
 
@@ -586,6 +586,8 @@ function validateMatchUpStateInputs({ drawDefinition, matchUpStatus, winningSide
   return undefined;
 }
 
+type ChoiceRefusalArgs = Parameters<typeof collectionChoiceOutcomeRefusal>[0];
+
 function resolveMatchUpAndContext({
   tournamentRecord,
   drawDefinition,
@@ -594,8 +596,14 @@ function resolveMatchUpAndContext({
   matchUpStatus,
   winningSide,
   matchUpsMap: suppliedMap,
+  removeScore,
+  outcome,
+  score,
 }: {
   tournamentRecord?: Tournament;
+  removeScore?: boolean;
+  outcome?: ChoiceRefusalArgs['outcome'];
+  score?: ChoiceRefusalArgs['score'];
   drawDefinition: DrawDefinition;
   matchUpsMap?: MatchUpsMap;
   matchUpStatus?: MatchUpStatusUnion;
@@ -651,6 +659,20 @@ function resolveMatchUpAndContext({
     matchUpStatus,
   });
   if (tieScopeViolation) return { error: MATCHUP_STATUS_OUT_OF_SCOPE, info: tieScopeViolation };
+
+  // an unresolved captain's choice refuses here, reading the call's own map rather than building another
+  const choice = collectionChoiceOutcomeRefusal({
+    drawDefinition,
+    matchUpStatus,
+    removeScore,
+    winningSide,
+    matchUpsMap,
+    outcome,
+    matchUp,
+    event,
+    score,
+  });
+  if (choice?.error) return { error: choice.error, info: choice.info, context: choice.context };
 
   if ((matchUp.winningSide || winningSide) && matchUpStatus === BYE) {
     return {
