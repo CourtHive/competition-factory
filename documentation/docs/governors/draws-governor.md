@@ -925,6 +925,8 @@ Change the display representation of a seedNumber for a specified `participantId
 
 The rationale for `seedValue` is to be able to, for instance, represent the fifth through the eighth seed as `5-8`, or simply as `5`. When there are no restrictions on seed positioning `seedValue` allows assigning seeding to arbitrary `participants`.
 
+Numeric values and every endpoint of a grouped value must not exceed the structure's number of non-BYE draw positions. For a nested round-robin group, the containing draw supplies that bound, so a four-player group in a 32-player draw can still carry a draw-wide seed value. A full 32-position draw refuses `66` or `5-66`; with eight BYEs, the ceiling is 24. An impossible value returns `INVALID_VALUES` before changing assignments or emitting notices, including when `validation: false` permits custom display labels. Empty values and `0` retain their existing clearing behavior. This ceiling applies when position assignments are present; it does not impose the seeding policy's smaller normal seed count on valid additional seeds.
+
 ```js
 engine.modifySeedAssignment({
   participantId,
