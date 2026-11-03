@@ -933,9 +933,12 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   so the next matchUp comes after the call's own result, named for the winner's arrival (`assignMatchUpDrawPosition`),
   while the in-context notices keep the order of the last score write of each matchUp; each structure's assignments are
   announced once, where the call first touches them (the seat the unwind visits), with the event and tournament of the
-  loser's placement there (CURTIS: the Play Off's visit first, then the consolation's). Stay v1's: a produced exit
-  already awarded, a loser the new result would carry, a BYE that had gone on further than the next matchUp (FMLC's
-  second round), and every seat shape the clear leaves to v1.
+  loser's placement there (CURTIS: the Play Off's visit first, then the consolation's). A produced exit already awarded
+  is released by the unwind as the clear releases it (the awardee's position taken back out of the round they went on
+  to, S7), and the winner then arrives as above; an award made through a BYE beside it stays v1's (released with
+  another announcement). Stay v1's: a convergence the unwind dissolves (the winner would be
+  awarded the re-derived pending exit), a loser the new result would carry, a BYE that had gone on further than the next
+  matchUp (FMLC's second round), and every seat shape the clear leaves to v1.
 
   A **double exit asked for again** (the `noop` route: the status it already holds, and no winner) is satisfied, not
   repeated: v1 writes, stamps and announces nothing, whatever score the call carries, and returns success

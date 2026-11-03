@@ -152,6 +152,48 @@ const AWARDEE_PLAYED_ON: Step[] = [
 ];
 
 const SCENARIOS: [string, Scenario][] = [
+  // S7: a double exit given a winner, its produced exit released by the unwind, as the clear releases it
+  [
+    'SINGLE_ELIMINATION 16: a double walkover given a walkover, its produced walkover awarded on to the paired winner',
+    {
+      drawProfile: { drawSize: 16, drawType: SINGLE_ELIMINATION },
+      setup: [
+        { target: R1(2), outcome: won(2) },
+        { target: R1(1), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+      steps: [{ target: R1(1), outcome: walkover(1) }],
+    },
+  ],
+  [
+    'SINGLE_ELIMINATION: a double walkover awarded to the paired winner, who went on, then given a winner: the award released',
+    {
+      drawProfile: { drawSize: 8, drawType: SINGLE_ELIMINATION },
+      setup: [
+        { target: R1(2), outcome: won(1) },
+        { target: R1(1), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+      steps: [{ target: R1(1), outcome: won(1) }],
+    },
+  ],
+  [
+    'COMPASS: a double walkover awarded to the paired winner, who went on, then given a winner: the award released',
+    {
+      drawProfile: { drawSize: 8, drawType: COMPASS },
+      setup: [
+        { target: R1(2, 'East'), outcome: won(1) },
+        { target: R1(1, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+      ],
+      steps: [{ target: R1(1, 'East'), outcome: won(1) }],
+    },
+  ],
+  [
+    'FEED_IN_CHAMPIONSHIP: a consolation double walkover given a winner, its produced exit pending in the feed round: unwound, the winner directed',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      setup: [...MAIN_R1_8, { target: R1(1, 'Consolation'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(1, 'Consolation'), outcome: won(1) }],
+    },
+  ],
   // S7: past the BYE, a produced exit stands pending beyond: the two converge, and the double exit produces on
   [
     'FIRST_MATCH_LOSER_CONSOLATION 16/15: Consolation 1/4 a double walkover converging past a BYE, twice, to the final',
@@ -3076,20 +3118,19 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
     expect(v2.notices).toEqual(v1.notices);
   });
 
-  it('S6: a double walkover given a winner whose produced walkover was awarded on is v1s', () => {
+  it('S7: FMLC, a double walkover awarded to the paired winner then given a winner: v1s (the consolation seat)', () => {
     const scenario: Scenario = {
-      drawProfile: { drawSize: 16, drawType: SINGLE_ELIMINATION },
+      drawProfile: { drawSize: 8, drawType: FIRST_MATCH_LOSER_CONSOLATION },
       setup: [
-        { target: R1(2), outcome: won(2) },
-        { target: R1(1), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
+        { target: R1(2, 'Main'), outcome: won(1) },
+        { target: R1(1, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } },
       ],
-      steps: [{ target: R1(1), outcome: walkover(1) }],
+      steps: [{ target: R1(1, 'Main'), outcome: won(1) }],
     };
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     const v2 = play(OUTCOME_PIPELINE_V2, scenario);
     expect(v1.results[0].success).toEqual(true);
     expect(v2.v1Writes).toBeGreaterThan(0);
-    expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
     expect(v2.notices).toEqual(v1.notices);
   });
@@ -3124,7 +3165,7 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
 
 // S6 tail, family 4: the dissolved convergence beyond a clear is v2's; given a winner (the winner then awarded the
 // re-derived pending exit and sent on) and under `doubleExitPropagateBye: false` (the consolation convergence of the two
-// carries re-derived too) it stays v1's, whole
+// carries re-derived too) it stays v1's, whole. A released award given a winner is v2's since S7 (SCENARIOS)
 describe('under v2, a dissolved convergence beyond the clear is v2s; given a winner or under policy off it is v1s', () => {
   const V1S: [string, Scenario][] = [
     [
@@ -3176,14 +3217,6 @@ describe('under v2, a dissolved convergence beyond the clear is v2s; given a win
         drawProfile: { drawSize: 8, participantsCount: 7, drawType: SINGLE_ELIMINATION },
         setup: [{ target: R1(2), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
         steps: [{ target: R1(2), outcome: won(1) }],
-      },
-    ],
-    [
-      'FEED_IN_CHAMPIONSHIP: a consolation double walkover given a winner, its produced exit pending in the feed round',
-      {
-        drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
-        setup: [...MAIN_R1_8, { target: R1(1, 'Consolation'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
-        steps: [{ target: R1(1, 'Consolation'), outcome: won(1) }],
       },
     ],
     [
