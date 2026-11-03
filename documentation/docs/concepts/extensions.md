@@ -255,6 +255,11 @@ Attached to: `matchUps` (TEAM type)
 
 Purpose: When manual scoring is enabled for TEAM matchUps, disables automatic calculation of team results.
 
+The current public mutations store `matchUp.disableAutoCalc` as a first-class property and retain
+compatibility with the legacy extension shown below. Set manual mode through `setMatchUpStatus` or
+`disableTieAutoCalc`, and resume explicitly with `enableTieAutoCalc`; do not patch the extension directly.
+See [Manual TEAM results](./manual-team-results.md).
+
 ```js
 {
   name: 'disableAutoCalc',

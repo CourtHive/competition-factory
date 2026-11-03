@@ -124,6 +124,7 @@ module.exports = {
             'concepts/hydration',
             'concepts/matchup-filtering',
             'concepts/tieMatchUp',
+            'concepts/manual-team-results',
             'concepts/lineUp',
             'concepts/tieFormat',
             'concepts/collectionMatchUpTypeChoice',
