@@ -43,7 +43,7 @@ export function isWellFormedMatchUpFormat({ matchUpFormat }: { matchUpFormat: st
 type SetSpec = { setTo?: number; tiebreakAt?: number | string; tiebreakFormat?: object } | undefined;
 
 function refusedForNewUse(parsed: ParsedFormat): boolean {
-  // Grammar foundation only: never offer overtime until scoring and score records support it.
+  // Overtime parses and scores, but is not offered for new use until the consumer activation audit clears it.
   if (parsed.overtimeFormat) return true;
   const setFormat: SetSpec = parsed.setFormat;
   const finalSetFormat: SetSpec = parsed.finalSetFormat;
