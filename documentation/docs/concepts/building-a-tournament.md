@@ -196,9 +196,13 @@ the call writes nothing:
 - `entries` is created on the event if absent. Each id not already entered gets, in input order:
   `{ participantId, entryStatus, entryStage }`, plus `extensions` (copies), an `extension` (with `createdAt` set to the
   call's instant if it has none), `roundTarget` and `entryStageSequence` when given. Existing entries are unchanged.
-- With `autoEntryPositions`, the event's entries are then rewritten: grouped by stage and status (groups in order of
-  first appearance, which can reorder the array), ordered within a group by their existing `entryPosition` (absent
-  last, stable), and numbered `entryPosition` 1..n per group.
+- With `autoEntryPositions`, the event's entries are then rewritten: grouped (groups in order of first appearance,
+  which can reorder the array), ordered within a group by their existing `entryPosition` (absent last, stable), and
+  numbered `entryPosition` 1..n per group. Every accepted status (`DIRECT_ACCEPTANCE`, `WILDCARD`, `SPECIAL_EXEMPT`,
+  `JUNIOR_EXEMPT`, `ORGANISER_ACCEPTANCE`, `CONFIRMED`, `QUALIFIER`, `LUCKY_LOSER`) forms **one group per
+  `entryStage`** (`MAIN` when absent); every other status (`ALTERNATE`, `WITHDRAWN`, ...) has its own group per stage.
+  So a `WILDCARD` entered after two `DIRECT_ACCEPTANCE` entries is numbered 3, not 1 (see
+  [modifyEntriesStatus](../governors/entries-governor.md#modifyentriesstatus)).
 - DOUBLES and TEAM: individuals entered UNGROUPED or UNPAIRED who now belong to an entered PAIR or TEAM are removed from
   the event's entries (unless one holds a draw position).
 - With a `drawId`, the same participants are entered in that draw (and its flight), ungrouped individuals included; a
