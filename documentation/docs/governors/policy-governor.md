@@ -66,7 +66,8 @@ refused with `EXISTING_POLICY_TYPE` unless `allowReplacement`; one inherited fro
 refuse, and the element's own then overrides it. With several tournament records loaded and none named, each record
 that does not hold the policy takes it, and a record that does is skipped; the call is refused only if no record took
 any. The change is announced on the element's topic: `modifyDrawDefinition`, `modifyEvent` or
-`modifyTournamentDetail`.
+`modifyTournamentDetail`. A refused call writes nothing and announces nothing: every check, on every record, comes
+before the first write.
 
 **Returns:**
 

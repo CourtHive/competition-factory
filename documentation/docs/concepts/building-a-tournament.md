@@ -322,6 +322,11 @@ Notice `MODIFY_VENUE`. **Returns** `{ success, courtIds }`.
    and also replaces or appends the extension (`{ name: 'appliedPolicies', value, createdAt: now }`); LEGACY writes the
    extension only.
 
+Every refusal comes before the first write: a refused call leaves every element as it was (no `extensions` created)
+and announces nothing. With several loaded records and none named, every record is checked before any is written, so
+a record that already holds a policy type (and so skips that policy's checks) is not written when a later record
+refuses the policy.
+
 A draw is announced as modified (stamping it and its structures, §1.1); an event or a record is announced as modified.
 Across every loaded record, a record that takes nothing is passed over. Nothing taken anywhere: `EXISTING_POLICY_TYPE`.
 **Returns** `{ success, applied }` (the types taken).
