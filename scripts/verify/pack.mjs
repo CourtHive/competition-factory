@@ -72,6 +72,7 @@ log('running tsc against smoke.ts…');
 let tscOutput = '';
 try {
   tscOutput = run('npx --no-install tsc -p .', { cwd: fixture });
+  tscOutput += run('npx --no-install tsc -p tsconfig.async.json', { cwd: fixture });
 } catch (err) {
   fail('tsc against tarball failed — dist .d.ts is referencing something that did not publish', err);
 }
