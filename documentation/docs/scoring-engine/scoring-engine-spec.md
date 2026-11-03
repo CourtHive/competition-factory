@@ -693,13 +693,14 @@ v1 opens further segments after a level timed segment and after a level aggregat
 exactly-N match `IN_PROGRESS`: v1 defects (§ 16, 3, 12, 18). Entries v1 recorded past a level close
 replay as v1 replayed them (§ 12.8).
 
-### 9.8 Declared overtime (CA 2026-11-03; reducer slice, not publicly activated)
+### 9.8 Declared overtime (CA 2026-11-03; ScoringEngine integration)
 
-The [grammar specification](/docs/codes/matchup-format-grammar#9-overtime-grammar-foundation-not-activated-for-scoring)
+The [grammar specification](/docs/codes/matchup-format-grammar#9-overtime-extension-tournament-activation-pending)
 defines `-O:{limit}[X][SD]/{segment}`. This extends aggregate match completion only when O is declared;
-codes without O retain §§ 9.3–9.7. Public new-use validation and ScoringEngine activation remain gated until
-score-record/view/replay integration is complete. The reducer's internal `allowOvertime` option exercises these
-rules without exposing a new public scoring configuration option.
+codes without O retain §§ 9.3–9.7. ScoringEngine supports the timed subset below directly; no caller-facing
+feature flag is needed. General tournament new-use validation and the legacy point mutator remain gated
+pending the separate format/score-validator activation slice. The reducer's internal `allowOvertime` option
+continues to distinguish explicit scoring support from default format resolution.
 
 1. Play every regulation segment. If the regulation aggregate is unequal, finish with that winner and no
    overtime. If level, continue into the first overtime period, not a completed draw or the F decider.
@@ -726,6 +727,44 @@ tiebreaks. F may be a tiebreak-only or timed segment with no local tiebreak. Mat
 regulation/overtime, standard/outs fallbacks, and unsafe finite total segment counts are refused even with internal
 opt-in until their rules are resolved. Other valid-for-reading syntax is not silently approximated.
 These changes belong to scoring, not `setMatchUpStatus` or the outcome propagation pipeline.
+
+#### 9.8.1 Phase-aware records, score views and replay
+
+Only formats declaring O add these fields. Set numbers remain one-based across the entire match. Sets and
+materialized points also carry `phase: 'REGULATION' | 'OVERTIME' | 'DECIDER'` and `periodNumber`, one-based
+within that phase. The final decider's relative period number is 1. These are calculated fields, not timeline facts;
+point decorations cannot replace them. Replaying a record derives them again rather than trusting stored labels.
+
+`score.overtime` and `getScore().overtime` expose the same derived context:
+
+```json
+{
+  "phase": "DECIDER",
+  "periodNumber": 1,
+  "aggregateScore": [3, 3],
+  "decidingScore": [0, 3],
+  "decidedIn": "DECIDER"
+}
+```
+
+Aggregate scores include regulation and overtime only. A tiebreak-only decider is shown in its points,
+not as its game won 1–0. `decidingScore` appears only in the decider phase, beginning at 0–0 before the
+first input. `decidedIn` appears only when the result completes, including a level finish. After a closed
+period of an unfinished match, phase context names the next period; completed results name their last period.
+
+The phase-aware scoreboard shows the aggregate and phase, e.g. `139-142 (OT 4)` or
+`3-3 (Decider: 0-3)`. Perspective swaps both aggregate and deciding scores. Standalone score/scoreboard queries
+read the same stored sporting score; service orientation and rally counts are recovered from the timeline.
+Sudden-death overtime exposes match-point/golden-point flags even though its segment is timed.
+
+Undo/redo, corrections, supplementary-state JSON round trips and reload recompute phase context. Correcting an
+earlier period can end the match earlier; later entries stay on the timeline but cannot resurrect unplayed
+periods through v1's past-close compatibility path. No historical v1 record had O syntax.
+
+An explicit score-only record can become a baseline: completed periods are sets, and its open timed period
+is `currentSetScore`; an open final tiebreak preserves its running points in `currentGameScore`. Timed baseline games and points name the same units; if both are supplied they must
+agree and are counted once. Unsupported overtime and a point-only overtime record without a timeline are
+refused on load before changing the current record. Native saved timelines remain authoritative.
 
 ## 10. Service
 

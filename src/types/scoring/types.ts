@@ -119,14 +119,29 @@ export interface SubstitutionEvent {
  */
 export interface Score {
   sets: SetScore[];
+  /** Derived context only for formats declaring overtime. */
+  overtime?: OvertimeScoreContext;
   scoreStringSide1?: string;
   scoreStringSide2?: string;
+}
+
+export type ScoringPhase = 'REGULATION' | 'OVERTIME' | 'DECIDER';
+export interface ScoringPeriod {
+  phase: ScoringPhase;
+  /** One-based within the phase; setNumber remains one-based across the whole match. */
+  periodNumber: number;
+}
+export interface OvertimeScoreContext extends ScoringPeriod {
+  aggregateScore: [number, number];
+  decidingScore?: [number, number];
+  /** Phase completing the result, including a level finish. */
+  decidedIn?: ScoringPhase;
 }
 
 /**
  * Set score
  */
-export interface SetScore {
+export interface SetScore extends Partial<ScoringPeriod> {
   setNumber: number;
   side1Score?: number;
   side2Score?: number;
@@ -148,6 +163,7 @@ export interface SetScore {
   isTiebreakOnly?: boolean;
   /** Whether this set is timed */
   isTimed?: boolean;
+  segmentComplete?: boolean;
 }
 
 /**
@@ -227,7 +243,7 @@ export type ScoringActionResult = { recorded: true } | { recorded: false; ignore
  * stroke types, court positions, and rally sequences. These decorations are
  * compatible with hive-eye-tracker visualization requirements.
  */
-export interface Point {
+export interface Point extends Partial<ScoringPeriod> {
   /** Sequential point number (1-indexed) */
   pointNumber: number;
 
@@ -554,6 +570,12 @@ export interface FormatStructure {
   matchMods?: string[]; // Unknown modifier letters (forward compat)
   setFormat?: SetFormatStructure;
   finalSetFormat?: SetFormatStructure;
+  overtimeFormat?: {
+    count: number | 'unlimited';
+    exactly?: true;
+    suddenDeath?: true;
+    setFormat: SetFormatStructure;
+  };
   gameFormat?: GameFormatStructure;
   matchUpConstraint?: MatchUpConstraintStructure;
   simplified?: boolean; // True for standalone timed (T20, T10P)
@@ -742,6 +764,7 @@ export interface PointSituation {
  */
 export interface ScoreResult {
   sets: SetScore[];
+  overtime?: OvertimeScoreContext;
   scoreString: string;
   games?: number[];
   points?: number[];

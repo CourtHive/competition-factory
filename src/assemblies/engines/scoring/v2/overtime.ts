@@ -1,3 +1,4 @@
+import { scoringPeriod } from '@Helpers/matchUpFormatCode/overtimeContext';
 import type { MatchRule, SegmentRule } from './format';
 import type { Pair } from './types';
 
@@ -33,5 +34,14 @@ export function lastPlayableSet(match: MatchRule): number | undefined {
 export function overtimeTotalError(match: MatchRule, setNumber: number, totals: Pair): string | undefined {
   return match.overtime?.suddenDeath && overtimeGoverns(match, setNumber) && totals[0] > 0 && totals[1] > 0
     ? 'a sudden-death overtime total cannot have scoring by both sides'
+    : undefined;
+}
+
+export function periodForSet(match: MatchRule, setNumber: number) {
+  return match.overtime
+    ? scoringPeriod(
+        { regulationCount: match.n, overtimeCount: match.overtime.count, finalDecider: !!match.final },
+        setNumber,
+      )
     : undefined;
 }

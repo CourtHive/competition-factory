@@ -9,6 +9,12 @@ import { isAggregateFormat } from './isAggregateFormat';
  * set N + 1, never set N. Every other format keeps its own reading of which set is the final one.
  */
 export function aggregateDeciderSetNumber(parsed: any): number | undefined {
+  if (parsed?.overtimeFormat) {
+    const count = parsed.overtimeFormat.count;
+    return count !== 'unlimited' && parsed.finalSetFormat
+      ? (parsed.exactly ?? parsed.bestOf ?? 1) + count + 1
+      : undefined;
+  }
   const exactly = parsed?.exactly;
   return exactly && isAggregateFormat(parsed) ? exactly + 1 : undefined;
 }
@@ -20,6 +26,7 @@ export function aggregateDeciderSetNumber(parsed: any): number | undefined {
 export function finalSetGoverns(parsed: any, setNumber: number | undefined, otherwise: boolean): boolean {
   const deciderSetNumber = aggregateDeciderSetNumber(parsed);
   if (deciderSetNumber) return setNumber === deciderSetNumber;
+  if (parsed?.overtimeFormat) return false;
   // A non-aggregate exactly format plays every one of its N sets, so its final set is set N, whatever
   // the count: in SET4X-S:T20P-F:T20 the fourth set is games-based even after a 3-0 lead.
   if (parsed?.exactly && setNumber !== undefined) return setNumber === parsed.exactly;

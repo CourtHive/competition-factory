@@ -11,6 +11,9 @@ export * from './help';
 // Scoring types
 export type { MatchUp as ScoringMatchUp, Score as ScoringScore, Point as ScoringPoint } from '@Types/scoring/types';
 export type {
+  ScoringPhase,
+  ScoringPeriod,
+  OvertimeScoreContext,
   SetScore,
   MatchUpHistory,
   ScoreEntry,
