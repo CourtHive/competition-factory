@@ -1,4 +1,4 @@
-import { GRAPH_MEASURES, RATIO_INPUTS, RATIO_MEASURES } from './fromV1';
+import { GRAPH_MEASURES, RATIO_INPUTS, RATIO_MEASURES, SET_MEASURES } from './fromV1';
 import { getGroups } from '@Query/matchUps/roundRobinTally/getGroups';
 import { instanceCount } from '@Tools/arrays';
 import { isNumeric } from '@Tools/math';
@@ -8,6 +8,7 @@ import type {
   FinishingPosition,
   HeadToHeadMode,
   ParticipantResults,
+  ParticipantTally,
   Recalculate,
   StandingsDirective,
   StandingsPhase,
@@ -32,6 +33,17 @@ type OrderParticipantsArgs = {
    * points. Read by a directive `{ attribute: 'external', externalKey }`; the factory never fetches them.
    */
   externalValues?: Record<string, Record<string, number>>;
+} & GroupingInputs;
+
+/**
+ * Inputs from outside the results that group participants, by name: `groupings[groupBy][participantId]` is a group key
+ * (a division), `groupRanks[groupBy][participantId]` a place in that group's own table (1 leads it), decided by the
+ * group's own policy. `participantSets[setKey]` is a set a directive reads records against (the postseason-eligible).
+ */
+export type GroupingInputs = {
+  groupings?: Record<string, Record<string, string>>;
+  groupRanks?: Record<string, Record<string, number>>;
+  participantSets?: Record<string, string[]>;
 };
 
 /** what every step of one ordering shares */
@@ -42,7 +54,7 @@ type Context = {
   phase?: StandingsPhase;
   lotSeed?: string;
   externalValues?: Record<string, Record<string, number>>;
-};
+} & GroupingInputs;
 
 type SubSortArgs = {
   participantResults: ParticipantResults;
@@ -65,6 +77,7 @@ type SubSortResult = { order: FinishingPosition[]; report?: unknown[] };
  */
 export function orderParticipants(params: OrderParticipantsArgs) {
   const { participantResults, policy, recalculate, subOrderMap, purpose, phase, lotSeed, externalValues } = params;
+  const { groupings, groupRanks, participantSets } = params;
   const report: unknown[] = [];
   const attribute = policy.primary;
 
@@ -87,7 +100,17 @@ export function orderParticipants(params: OrderParticipantsArgs) {
   // One ordering reads one set of results under one policy, so a recalculation is decided by its grouping total and
   // its participant scope alone. An elimination draw ties hundreds of participants, and its sub-sorts asked for the
   // same unscoped recalculation hundreds of times: 809 times for one 512 draw.
-  const context: Context = { policy, recalculate: memoise(recalculate), purpose, phase, lotSeed, externalValues };
+  const context: Context = {
+    recalculate: memoise(recalculate),
+    participantSets,
+    externalValues,
+    groupRanks,
+    groupings,
+    purpose,
+    lotSeed,
+    policy,
+    phase,
+  };
   const sortedOrder = sortedTallyGroups.map((participantIds) => {
     const result = groupSubSort({ participantIds, participantResults, context });
     report.push(...(result.report ?? []));
@@ -189,6 +212,8 @@ function gate(directive: StandingsDirective, size: number, context: Context, hea
 function groupSubSort(params: SubSortArgs): SubSortResult {
   const { participantResults, disableHeadToHead, participantIds, context, from = 0 } = params;
   if (participantIds?.length === 1) return { order: [{ resolved: true, participantId: participantIds[0] }] };
+  const reduced = from === 0 ? preReduced(params) : undefined;
+  if (reduced) return reduced;
 
   const { policy } = context;
   const excludedDirectives: StandingsDirective[] = [];
@@ -244,6 +269,42 @@ function sweep(params: SubSortArgs): SubSortResult | undefined {
   return { order, report: [{ attribute: 'headToHeadSweep', participantIds, resolved }, ...(rest.report ?? [])] };
 }
 
+/**
+ * preReduce (A5, NFL wild card step 1): where two or more members of the set share a group, only each group's
+ * best-ranked member is a candidate. The candidates are ordered by the directives and the first one PLACED is
+ * extracted; everyone else, its group-mates included, goes back through the same procedure ("the process repeats for
+ * the next"). When the top candidates stay tied, they keep their shared place and the rest follow. A member with no
+ * group or no rank stands alone. Undefined when nothing is reduced.
+ */
+function preReduced(params: SubSortArgs): SubSortResult | undefined {
+  const { participantIds, context } = params;
+  const groupBy = context.policy.preReduce?.groupBy ?? '';
+  const groups = context.groupings?.[groupBy] ?? {};
+  const ranks = context.groupRanks?.[groupBy] ?? {};
+  const ranked = (id: string) => groups[id] !== undefined && ranks[id] !== undefined;
+  const bestRank: Record<string, number> = {};
+  for (const id of participantIds.filter(ranked))
+    bestRank[groups[id]] = Math.min(bestRank[groups[id]] ?? Infinity, ranks[id]);
+  const candidates = participantIds.filter((id) => !ranked(id) || ranks[id] === bestRank[groups[id]]);
+  if (candidates.length === participantIds.length) return undefined;
+
+  const ordered = groupSubSort({ ...params, participantIds: candidates, from: 0 });
+  const [top] = ordered.order;
+  const sameBlock = (position: FinishingPosition) =>
+    !position.resolved && (position.subGroup ?? []).join() === (top.subGroup ?? []).join();
+  const placed = top.resolved ? [top] : ordered.order.filter(sameBlock);
+  const placedIds = new Set(placed.map(({ participantId }) => participantId));
+  const rest = groupSubSort({ ...params, participantIds: participantIds.filter((id) => !placedIds.has(id)), from: 0 });
+  return {
+    order: withSubGroups([placed, rest.order]),
+    report: [
+      { attribute: 'preReduce', groupBy, candidates, placed: [...placedIds] },
+      ...(ordered.report ?? []),
+      ...(rest.report ?? []),
+    ],
+  };
+}
+
 /** a set no directive splits (TerminalStep) */
 function terminal({
   participantIds,
@@ -297,9 +358,10 @@ function processDirective(
     directive,
     context,
   );
-  const common = withCommonOpponents(measured, participantIds, directive, context.policy);
-  if (!common) return { order: undefined, report: [{ attribute, skipped: 'minSample', participantIds }] };
-  const participantResults = withZeroDivision(common, participantIds, directive);
+  const setMeasure = withSetMeasure(measured, participantIds, directive, context);
+  if (!setMeasure.view)
+    return { order: undefined, report: [{ attribute, skipped: setMeasure.skipped, participantIds }] };
+  const participantResults = withZeroDivision(setMeasure.view, participantIds, directive);
   if (!participantResults)
     return { order: undefined, report: [{ attribute, skipped: 'zeroDivision', participantIds }] };
 
@@ -384,42 +446,88 @@ function withGraph(participantResults: ParticipantResults, attribute: string, co
 }
 
 /**
- * commonOpponents (NFL "common games"), added to a view for the set being sorted: the opponents every member met, read
- * from the whole table's meetings (`victories`, `defeats`, `drawnWith`), and each member's win percentage over every
- * meeting with them, a draw worth `drawCredit`. A member never meets itself, so no member of the set is a common
- * opponent. Undefined when any member has fewer such meetings than `minSample` (default 1): the directive then splits
- * nothing for this set.
+ * A tied-set measure (SET_MEASURES), added to a view for the set being sorted, or the reason it does not apply to this
+ * set. Each is read from the whole table's meetings (`victories`, `defeats`, `drawnWith`) and the caller's groupings:
+ *
+ * - commonOpponents (NFL "common games"): the record against the opponents every member met. A member never meets
+ *   itself, so no member is a common opponent. Skipped when any member has fewer such meetings than `minSample`.
+ * - groupLeader (NBA "division winner"): 1 for a member ranked first in its group (`groupRanks[groupBy]`), else 0.
+ * - recordVsGroup (division or conference win percentage): the record against the members of its own group. Skipped
+ *   unless every member of the set is in the same group (NBA L.2.a: "only if in the same division").
+ * - recordVsSet (NBA, against the postseason-eligible): the record against the caller's `participantSets[setKey]`.
+ *
+ * A record is a win percentage, a draw worth `drawCredit`. A record over no meetings skips the directive for the set.
  */
-function withCommonOpponents(
+function withSetMeasure(
   participantResults: ParticipantResults,
   participantIds: string[],
   directive: StandingsDirective,
-  policy: StandingsPolicy,
-): ParticipantResults | undefined {
-  if (directive.attribute !== 'commonOpponents') return participantResults;
-  const { drawCredit = 0.5 } = policy;
-  const meetings = (id: string) => {
-    const results = participantResults[id];
-    const won = results?.victories ?? [];
-    const lost = (results?.defeats as string[] | undefined) ?? [];
-    const drawn = (results?.drawnWith as string[] | undefined) ?? [];
-    return { won, lost, drawn };
-  };
-  const opponentSets = participantIds.map((id) => {
-    const { won, lost, drawn } = meetings(id);
-    return new Set([...won, ...lost, ...drawn]);
-  });
-  const common = new Set([...(opponentSets[0] ?? [])].filter((id) => opponentSets.every((set) => set.has(id))));
+  context: Context,
+): { view?: ParticipantResults; skipped?: string } {
+  const { attribute } = directive;
+  if (!SET_MEASURES.includes(attribute)) return { view: participantResults };
+  const values = setMeasureValues(participantResults, participantIds, directive, context);
+  if (typeof values === 'string') return { skipped: values };
   const view: ParticipantResults = { ...participantResults };
-  for (const id of participantIds) {
-    const { won, lost, drawn } = meetings(id);
-    const count = (opponents: string[]) => opponents.filter((opponent) => common.has(opponent)).length;
-    const [wins, losses, draws] = [count(won), count(lost), count(drawn)];
-    const played = wins + losses + draws;
-    if (!played || played < (directive.minSample ?? 1)) return undefined;
-    view[id] = { ...view[id], commonOpponents: atPrecision((wins + drawCredit * draws) / played, policy) };
+  for (const id of participantIds) view[id] = { ...view[id], [attribute]: atPrecision(values[id], context.policy) };
+  return { view };
+}
+
+function setMeasureValues(
+  participantResults: ParticipantResults,
+  participantIds: string[],
+  directive: StandingsDirective,
+  context: Context,
+): Record<string, number> | string {
+  const { attribute, groupBy = '', setKey = '', minSample = 1 } = directive;
+  if (attribute === 'groupLeader') {
+    const ranks = context.groupRanks?.[groupBy] ?? {};
+    return Object.fromEntries(participantIds.map((id) => [id, ranks[id] === 1 ? 1 : 0]));
   }
-  return view;
+  let against: (id: string) => Set<string>;
+  if (attribute === 'commonOpponents') {
+    const opponentSets = participantIds.map((id) => opponentsOf(participantResults[id]));
+    const common = new Set([...(opponentSets[0] ?? [])].filter((id) => opponentSets.every((set) => set.has(id))));
+    against = () => common;
+  } else if (attribute === 'recordVsGroup') {
+    const groups = context.groupings?.[groupBy] ?? {};
+    const key = groups[participantIds[0]];
+    if (key === undefined || participantIds.some((id) => groups[id] !== key)) return 'groupBy';
+    const members = new Set(Object.keys(groups).filter((id) => groups[id] === key));
+    against = () => members;
+  } else {
+    const members = new Set(context.participantSets?.[setKey] ?? []);
+    against = () => members;
+  }
+  const { drawCredit = 0.5 } = context.policy;
+  const values: Record<string, number> = {};
+  for (const id of participantIds) {
+    const { played, pct } = recordAgainst(participantResults[id], against(id), drawCredit);
+    if (!played) return 'noMeetings';
+    if (attribute === 'commonOpponents' && played < minSample) return 'minSample';
+    values[id] = pct;
+  }
+  return values;
+}
+
+const meetingsOf = (results?: ParticipantTally) => ({
+  won: results?.victories ?? [],
+  lost: (results?.defeats as string[] | undefined) ?? [],
+  drawnWith: (results?.drawnWith as string[] | undefined) ?? [],
+});
+
+function opponentsOf(results?: ParticipantTally) {
+  const { won, lost, drawnWith } = meetingsOf(results);
+  return new Set([...won, ...lost, ...drawnWith]);
+}
+
+/** a participant's win percentage over every meeting with `opponents`, a draw worth `drawCredit` */
+function recordAgainst(results: ParticipantTally | undefined, opponents: Set<string>, drawCredit: number) {
+  const { won, lost, drawnWith } = meetingsOf(results);
+  const count = (ids: string[]) => ids.filter((id) => opponents.has(id)).length;
+  const [wins, losses, draws] = [count(won), count(lost), count(drawnWith)];
+  const played = wins + losses + draws;
+  return { played, pct: played ? (wins + drawCredit * draws) / played : 0 };
 }
 
 /** a computed fraction at the policy's precision: 3 decimal places by default, or EXACT */

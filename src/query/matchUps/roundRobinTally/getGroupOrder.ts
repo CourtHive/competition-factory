@@ -44,6 +44,9 @@ export function getGroupOrder(params) {
     subOrderMap,
     tallyPolicy, // array of attributes to use for tie-breaking
     externalValues, // values from outside the results, read by `external` directives
+    participantSets, // caller sets read by `recordVsSet` directives
+    groupRanks, // places in each grouping's own table, read by `preReduce` and `groupLeader`
+    groupings, // named groupings of participants (divisions), read by `preReduce` and the grouping measures
     matchUps,
   } = params;
 
@@ -59,7 +62,10 @@ export function getGroupOrder(params) {
     // the first call orders a complete group; the provisional rerun passes requireCompletion: false
     phase: requireCompletion ? 'FINAL' : 'PROVISIONAL',
     lotSeed: matchUps?.[0]?.structureId,
+    participantSets,
     externalValues,
+    groupRanks,
+    groupings,
     participantResults,
     subOrderMap,
   });

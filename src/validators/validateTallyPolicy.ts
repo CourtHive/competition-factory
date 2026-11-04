@@ -93,6 +93,7 @@ export function tallyPolicyErrors(tallyPolicy: RoundRobinTallyPolicy, extraMeasu
   }
 
   errors.push(...crossGroupErrors(tallyPolicy.crossGroup, measures));
+  errors.push(...preReduceErrors(tallyPolicy.preReduce));
   errors.push(...resultPointsErrors(tallyPolicy.resultPoints));
   if (onSplit !== undefined && !SPLIT_MODES.includes(onSplit as string)) {
     errors.push(`onSplit must be one of ${SPLIT_MODES.join(', ')}`);
@@ -125,26 +126,48 @@ function directiveOnlyErrors(directive: Record<string, unknown>, index: number):
   return [];
 }
 
+/** the directive fields only some tied-set measures read, and which */
+const FIELD_READERS: Record<string, string[]> = {
+  minSample: ['commonOpponents'],
+  groupBy: ['groupLeader', 'recordVsGroup'],
+  setKey: ['recordVsSet'],
+};
+
 /**
- * commonOpponents counts meetings against opponents outside the tied set, so a mini-league scope (idsFilter) leaves
- * it nothing; `minSample` is read by it alone, so on any other directive it would be silently ignored
+ * Tied-set measures are valued for the whole tied set from the whole table, so a mini-league scope (idsFilter) cannot
+ * apply. Each field only some of them read is refused elsewhere, where it would be silently ignored, and required where
+ * the measure cannot be read without it.
  */
 function setMeasureErrors(directive: Record<string, unknown>, index: number): string[] {
   const errors: string[] = [];
-  const { attribute, idsFilter, minSample } = directive;
-  if (SET_MEASURES.includes(attribute as string) && idsFilter) {
-    errors.push(
-      `tallyDirectives[${index}]: ${attribute} counts meetings outside the tied set; idsFilter cannot scope it`,
-    );
+  const label = `tallyDirectives[${index}]`;
+  const attribute = directive.attribute as string;
+  if (SET_MEASURES.includes(attribute) && directive.idsFilter) {
+    errors.push(`${label}: ${attribute} reads the whole table; idsFilter cannot scope it`);
   }
-  if (minSample !== undefined) {
-    if (attribute !== 'commonOpponents')
-      errors.push(`tallyDirectives[${index}]: minSample applies only to commonOpponents`);
-    else if (!(Number.isInteger(minSample) && (minSample as number) >= 1)) {
-      errors.push(`tallyDirectives[${index}]: minSample must be a whole number of at least 1`);
-    }
+  for (const [field, readers] of Object.entries(FIELD_READERS)) {
+    const value = directive[field];
+    const reads = readers.includes(attribute);
+    if (value !== undefined && !reads) errors.push(`${label}: ${field} applies only to ${readers.join(', ')}`);
+    if (!reads || field === 'minSample') continue;
+    if (!(typeof value === 'string' && value)) errors.push(`${label}: ${attribute} needs a ${field}`);
+  }
+  const { minSample } = directive;
+  if (
+    attribute === 'commonOpponents' &&
+    minSample !== undefined &&
+    !(Number.isInteger(minSample) && (minSample as number) >= 1)
+  ) {
+    errors.push(`${label}: minSample must be a whole number of at least 1`);
   }
   return errors;
+}
+
+/** preReduce names the caller grouping it reduces by */
+function preReduceErrors(preReduce: unknown): string[] {
+  if (preReduce === undefined) return [];
+  const groupBy = (preReduce as { groupBy?: unknown } | null)?.groupBy;
+  return typeof groupBy === 'string' && groupBy ? [] : ['preReduce must be an object with a groupBy'];
 }
 const TERMINAL_STEPS = ['ADJUDICATE', 'SHARE', 'LOT'];
 const PHASES = ['PROVISIONAL', 'FINAL'];
