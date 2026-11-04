@@ -1,3 +1,4 @@
+import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
 import { validateSetScore } from '@Validators/validateMatchUpScore';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { keyValueScore } from '@Helpers/keyValueScore/keyValueScore';
@@ -162,5 +163,22 @@ describe('the paths that take points', () => {
 
   it('the legacy point path refuses a shootout format', () => {
     expect(() => addPoint({ matchUpFormat: OVERTIME } as any, { winner: 0 } as any)).toThrow(/Invalid matchUpFormat/);
+  });
+});
+
+describe('the public engine', () => {
+  it('takes the tally only while the shootout is in play; past the decider, regulation reads (§ 9.8 rule 7)', () => {
+    const engine = new ScoringEngine({ matchUpFormat: OVERTIME });
+    for (const [side1Score, side2Score] of [
+      [1, 0],
+      [0, 1],
+      [0, 0],
+      [0, 0],
+    ])
+      engine.addSet({ side1Score, side2Score });
+    expect(engine.getInputLevels()).toEqual({ point: false, game: false, set: true });
+    engine.addSet({ side1Score: 4, side2Score: 3 });
+    expect(engine.isComplete()).toBe(true);
+    expect(engine.getInputLevels()).toEqual({ point: true, game: true, set: true });
   });
 });
