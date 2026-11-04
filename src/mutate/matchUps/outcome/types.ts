@@ -371,7 +371,6 @@ export type OutcomeView = {
     /** a line whose last set format is timed: the score survives a status that would otherwise remove it */
     timedTie: boolean;
     rotatingPartners?: boolean;
-    combinedPointRoundRobin?: boolean;
     /** a competition policy processed per matchUp: v1 updates ratings on a result (`processCompetitionMatchUp`) */
     perMatchUpCompetition?: boolean;
     /**

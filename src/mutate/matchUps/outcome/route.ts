@@ -78,6 +78,14 @@ function noDownstreamRoute(request: OutcomeRequest, view: OutcomeView): Route {
   return 'clear-score';
 }
 
+/**
+ * A structure that advances no winner, where a drawn result stands: a round robin, an ad hoc draw, rotating partners.
+ * The result itself must still be one the format permits (`isDrawnResult`).
+ */
+export function noWinnerNeeded(view: OutcomeView): boolean {
+  return !!(view.draw.rotatingPartners || view.draw.winRatio || view.draw.isAdHoc);
+}
+
 export function chooseRoute(request: OutcomeRequest, view: OutcomeView): Route {
   const { winningSide, matchUpStatus, flags } = request;
   const { existing, line } = view;
@@ -87,7 +95,7 @@ export function chooseRoute(request: OutcomeRequest, view: OutcomeView): Route {
   if (
     !view.activeDownstream &&
     !winningSide &&
-    (view.draw.rotatingPartners || view.draw.combinedPointRoundRobin) &&
+    noWinnerNeeded(view) &&
     isDrawnResult({
       matchUpId: request.matchUpId ?? '',
       matchUpStatus: matchUpStatus ?? COMPLETED,

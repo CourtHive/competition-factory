@@ -842,6 +842,10 @@ a 3-2. The rules are matched in order, and the first that matches decides.
   `loser` points. A drawn rule awards `points` to both sides.
 - Statuses are mapped by the rules, never inferred: whether a sport's "forfeit" is a `WALKOVER` is the policy author's
   decision.
+- A drawn result is a COMPLETED matchUp with no winner whose score is a level finish its format permits: a level
+  combined total (`SET1-S:P32`), a level aggregate over all of its segments (`HAL2A-S:T45`, a soccer 1-1), or a
+  level count of sets (`SET3-S:T10`, a timed set closing level). It stands only where no winner is needed: a round
+  robin or an ad hoc draw. A format with a declared overtime (`-O:`) is not read as drawn yet.
 - An unfinished, excluded or BYE result earns nothing. A decided or drawn result that matches no rule is listed on both
   participants in `classificationUnmatched` rather than counted as 0 in silence.
 - Each participant's tally carries `classificationPoints`, and `classificationContributions` records each result's rule
