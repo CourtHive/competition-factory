@@ -153,7 +153,7 @@ pnpm verify:team-arms      # the TEAM-competition arms, which the default suite 
 ```
 
 CI runs all of them on every pull request, with the at-scale exit-propagation sweeps (`verify:deep-corrections`,
-`verify:route-differential`) beside them.
+`verify:route-differential`, `verify:double-exit-sweep`) beside them.
 
 ## Contributing
 
