@@ -34,7 +34,10 @@ type OvertimeOutcomeParams = {
  */
 export function generateOvertimeOutcome(params: OvertimeOutcomeParams) {
   const { matchUpFormat, matchUpStatus, incompleteAt, random } = params;
-  const winner = (params.winningSide as Side | undefined) ?? (randomInt(1, 2, random) as Side);
+  // a winningSide that is not 1 or 2 is absent, as generateOutcome reads it: draw completion passes `false` for a
+  // random winner, which `??` kept, and setMatchUpStatus then refused the outcome (INVALID_WINNING_SIDE)
+  const given = params.winningSide === 1 || params.winningSide === 2 ? (params.winningSide as Side) : undefined;
+  const winner = given ?? (randomInt(1, 2, random) as Side);
 
   const sets = incompleteAt ? unfinishedRegulation(params, incompleteAt) : playedSets(params, winner);
   const finished = !incompleteAt || completedMatchUpStatuses.includes(matchUpStatus);
