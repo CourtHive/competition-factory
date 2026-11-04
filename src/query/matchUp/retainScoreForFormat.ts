@@ -1,6 +1,7 @@
-import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
-import { parse, ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
+import { aggregateDeciderSetNumber, finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
+import { parse, ParsedFormat, SetFormat } from '@Helpers/matchUpFormatCode/parse';
 import { validateSetScore } from '@Validators/validateMatchUpScore';
+import { maxExactlySets } from '@Validators/setCount';
 
 import type { Set } from '@Types/tournamentTypes';
 
@@ -71,9 +72,20 @@ export type RetainedScore = {
   unchanged: boolean;
 };
 
-/** The set count a format plays: every set for an `exactly` format, otherwise the best-of. */
+/**
+ * The set count a format plays: every set for an `exactly` format, otherwise the best-of; an overtime format's
+ * regulation, its overtime periods (unbounded when unlimited) and its decider (`maxExactlySets`).
+ */
 function setCountOf(parsed: ParsedFormat | undefined): number | undefined {
+  if (parsed?.overtimeFormat) return maxExactlySets(parsed);
   return parsed?.exactly ?? parsed?.bestOf;
+}
+
+/** An overtime format's segment at a position past regulation: the decider's `-F:`, else the overtime period's. */
+function overtimeSetFormatAt(parsed: ParsedFormat, index: number): SetFormat | undefined {
+  const deciderSetNumber = parsed.finalSetFormat ? aggregateDeciderSetNumber(parsed) : undefined;
+  if (deciderSetNumber && index === deciderSetNumber - 1) return parsed.finalSetFormat;
+  return parsed.overtimeFormat?.setFormat;
 }
 
 /**
@@ -85,6 +97,8 @@ function setCountOf(parsed: ParsedFormat | undefined): number | undefined {
  */
 function setFormatAt(parsed: ParsedFormat | undefined, index: number): any {
   if (!parsed) return undefined;
+  if (parsed.overtimeFormat && index >= (parsed.exactly ?? 0)) return overtimeSetFormatAt(parsed, index);
+  if (parsed.overtimeFormat) return parsed.setFormat;
   const count = setCountOf(parsed);
   const isDeciding = count !== undefined && index === count - 1;
   return (isDeciding && parsed.finalSetFormat) || parsed.setFormat;

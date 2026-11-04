@@ -1,3 +1,4 @@
+import { retainScoreForFormat } from '@Query/matchUp/retainScoreForFormat';
 import { validateMatchUpScore } from '@Validators/validateMatchUpScore';
 import { checkScoreCompleteness } from '@Validators/scoreCompleteness';
 import { formatCanEndTied } from '@Validators/tiedFormatCompatibility';
@@ -118,4 +119,17 @@ it.each([
   { f: F5, canEndTied: true }, // one period and no decider may finish level
 ])('formatCanEndTied($f) is $canEndTied', ({ f, canEndTied }) => {
   expect(formatCanEndTied(f)).toEqual(canEndTied);
+});
+
+it('retainScoreForFormat keeps every overtime set when the format does not change', () => {
+  const sets = [t(1, 1, 0, 1), t(2, 0, 1, 2), t(3, 0, 0), t(4, 0, 0), tb(5, 1, 0, 1)];
+  const retained = retainScoreForFormat({ sets, matchUpFormat: F1, previousMatchUpFormat: F1 });
+  expect(retained.discarded).toEqual([]);
+  expect(retained.sets.length).toEqual(5);
+});
+
+it('retainScoreForFormat keeps overtime sets under an equivalent overtime format', () => {
+  const sets = [t(1, 25, 25), t(2, 25, 25), t(3, 25, 25), t(4, 25, 25), t(5, 10, 10), t(6, 12, 8, 1)];
+  const retained = retainScoreForFormat({ sets, matchUpFormat: F2, previousMatchUpFormat: 'QTR4XA-S:T12P-O:U/T5P' });
+  expect(retained.sets.length).toEqual(6);
 });
