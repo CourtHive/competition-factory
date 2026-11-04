@@ -1745,7 +1745,7 @@ type DoubleExitSeats = {
   heldLoser?: HeldLoser;
   /** the held exit carried on past the unfillable seat's BYE: the matchUp it lands in and the position's advance there,
    * which v1 makes after the produced exit (S7) */
-  heldBeyond?: { matchUpId: string; arrivalSide: 1 | 2; advance: OutcomeOp[] };
+  heldBeyond?: { matchUpId: string; arrivalSide: 1 | 2; advanceOps: OutcomeOp[] };
 };
 
 type HeldLoser = {
@@ -1911,7 +1911,7 @@ function joinHeldLanding(view: OutcomeView, seats: DoubleExitSeats): boolean {
   const arrives = (op: OutcomeOp) =>
     (op.op === 'setMatchUpDrawPositions' || (op.op === 'stampUpdatedAt' && op.entity === 'matchUp')) &&
     ('matchUpId' in op ? op.matchUpId : op.id) === beyond.matchUpId;
-  seats.heldBeyond = { ...beyond, advance: unfillable.writes.filter(arrives) };
+  seats.heldBeyond = { ...beyond, advanceOps: unfillable.writes.filter(arrives) };
   seats.unfillable = { ...unfillable, writes: unfillable.writes.filter((op) => !arrives(op)) };
   return true;
 }
@@ -2233,7 +2233,7 @@ function doubleExitSeatOps(
       ...(own ? [...own.assigns, ...own.writes] : []),
       ...(unfillable ? [...unfillable.assigns, ...unfillable.writes] : []),
     ],
-    after: seats.heldBeyond ? [...seats.heldBeyond.advance, ...heldBeyondOps(request, seats.heldBeyond)] : [],
+    after: seats.heldBeyond ? [...seats.heldBeyond.advanceOps, ...heldBeyondOps(request, seats.heldBeyond)] : [],
   };
 }
 
