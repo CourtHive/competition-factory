@@ -175,9 +175,9 @@ A segment:
 
 ## 6. Valid for new use
 
-`isValidMatchUpFormat` is false for anything that is not well-formed, and for two kinds of well-formed code that are
-refused for a new format and still read where they are stored (scoring specification § 16, decision 19; CA
-2026-10-18):
+`isValidMatchUpFormat` is false for anything that is not well-formed, and for these kinds of well-formed code that are
+refused for a new format and still read where they are stored (scoring specification § 16, decisions 19 and 22; CA
+2026-10-18 and 2026-11-03):
 
 1. **A tiebreak below S − 1.** A standard segment, `-S:` or `-F:`, whose tiebreak is played at fewer than `setTo − 1`
    games: `SET3-S:4/TB7@2` and `SET3-S:6/TB7@4` are refused; `SET3-S:4/TB7@3`, `SET3-S:6/TB7@5` and
@@ -185,8 +185,14 @@ refused for a new format and still read where they are stored (scoring specifica
 2. **An aggregate of standard sets.** With `A`, a standard `-S:` segment, or a standard `-F:` segment when the code
    has no `X` (with `X` the final segment is the decider, set N + 1, which is not summed): `SET3A-S:6/TB7` and
    `SET3A-S:T10-F:6` are refused; `SET3XA-S:T10-F:6` is valid.
+3. **An even implicit best-of count** (since 7.28.0). Best of N needs an odd N: `SET2-S:6/TB7`, `SET6-S:6/TB7` and
+   `SET2-S:6/TB7-F:TB10` are refused. Use `X` for exactly N segments (`SET2X-S:6/TB7` may finish level), `A` for
+   aggregate scoring, or `SET3-S:6/TB7-F:TB10` for two sets plus a deciding match tiebreak.
+   `validateMatchUpFormat` returns the explanation.
+4. **A declared overtime** (`-O:`, § 9) until its activation slice: it parses and scores, but is not offered for a new
+   format.
 
-A stored code of either kind parses and scores as it always did; only setting it is refused
+A stored code of any of these kinds parses and scores as it always did; only setting it is refused
 (`UNRECOGNIZED_MATCHUP_FORMAT`).
 
 ## 7. What stringify writes

@@ -211,7 +211,7 @@ const parsed = matchUpFormatGovernor.parse('INVALID');
 - `matchRoot` is only included when the root is not `SET` (backward compatibility)
 - `aggregate` is only included when `true`
 - Sections must appear in the canonical order (`-S:`, `-G:`, `-F:`, `-M:`); a code with sections out of order is refused (since 7.5.0)
-- Any best-of count is valid, for every root (since 7.5.0)
+- Any best-of count parses, for every root (since 7.5.0); an even implicit best-of count is refused for new use (since 7.28.0, see [validateMatchUpFormat](#validatematchupformat))
 - Format grammar: `{ROOT}{count}[X][A]-S:{setSpec}[-G:{gameSpec}][-F:{setSpec}][-M:{matchConstraint}]`
 - Outs-based set format (`-S:O3`) is for innings-based sports (baseball, wiffle ball)
 - Match constraint (`-M:T50`) sets a match-level time cap that applies across all segments
