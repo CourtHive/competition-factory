@@ -1,6 +1,7 @@
 import { isTiebreakGamesScore, isTiebreakWon, tiebreakSetGames, wonWithoutTiebreak } from './tiebreakAtRules';
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
+import { shootoutTallyRefusal } from '@Helpers/matchUpFormatCode/shootout';
 import { isTiebreakMarker, readTiebreakSet } from './tiebreakSetShape';
 import { getSetWinningSide } from './getSetWinningSide';
 
@@ -68,7 +69,9 @@ export function analyzeSet(params) {
   // standard-set check — which requires `setTo` — refused every completed one, so a BLW result was
   // never a validated score and `setMatchUpState`'s revert guard failed open on it (2026-10-17)
   const expectOutsSet = !!setFormat?.outs;
-  const expectStandardSet = !expectTiebreakSet && !expectTimedSet && !expectOutsSet;
+  // a shootout decider is a tally (Ruling 3): two totals a shootout can end on, the higher one winning
+  const expectShootoutSet = !!setFormat?.shootout;
+  const expectStandardSet = !expectTiebreakSet && !expectTimedSet && !expectOutsSet && !expectShootoutSet;
 
   const isValidSetNumber = !!(setNumber && maxSetNumber && setNumber <= maxSetNumber);
 
@@ -101,7 +104,9 @@ export function analyzeSet(params) {
   });
 
   const isValidSetOutcome = deriveValidSetOutcome({
-    isValidOutsSetOutcome: expectOutsSet && isValidOutsSetOutcome(setObject, sideGameScores),
+    isValidOutsSetOutcome:
+      (expectOutsSet && isValidOutsSetOutcome(setObject, sideGameScores)) ||
+      (expectShootoutSet && isValidShootoutSetOutcome(setObject, sideGameScores, setFormat.shootout)),
     isValidStandardSetOutcome,
     isValidTiebreakSetOutcome,
     expectStandardSet,
@@ -191,6 +196,11 @@ function isValidOutsSetOutcome(setObject, sideGameScores): boolean {
   if (!isTotal(side1) || !isTotal(side2)) return false;
   const higherSide = (side1 > side2 && 1) || (side2 > side1 && 2) || undefined;
   return setObject?.winningSide === higherSide;
+}
+
+function isValidShootoutSetOutcome(setObject, sideGameScores, rounds: number): boolean {
+  const [side1, side2] = sideGameScores ?? [];
+  return !shootoutTallyRefusal(rounds, [side1, side2]) && isValidOutsSetOutcome(setObject, sideGameScores);
 }
 
 function deriveValidSetOutcome({

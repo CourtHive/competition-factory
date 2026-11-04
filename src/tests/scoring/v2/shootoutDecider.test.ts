@@ -1,4 +1,5 @@
 import { validateSetScore } from '@Validators/validateMatchUpScore';
+import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { keyValueScore } from '@Helpers/keyValueScore/keyValueScore';
 import { addPoint } from '@Mutate/scoring/addPoint';
 import { shootoutTallyRefusal } from '@Helpers/matchUpFormatCode/shootout';
@@ -125,6 +126,20 @@ describe('the static path', () => {
       overtimeScoreVerdict({ matchUpFormat: OVERTIME, matchUpStatus: COMPLETED, sets: sets(decider), winningSide });
     expect(verdict([4, 3], 1)).toMatchObject({ valid: true, winningSide: 1 });
     expect(verdict([7, 5], 1)).toMatchObject({ valid: false, reason: expect.stringMatching(/sudden death/) });
+  });
+
+  it('analyzeMatchUp judges the shootout set by its tally', () => {
+    const valid = (decider: [number, number]) =>
+      analyzeMatchUp({
+        matchUp: {
+          score: { sets: sets(decider) },
+          winningSide: decider[0] > decider[1] ? 1 : 2,
+          matchUpFormat: OVERTIME,
+        },
+        matchUpFormat: OVERTIME,
+      }).validMatchUpOutcome;
+    expect(valid([4, 3])).toBe(true);
+    expect(valid([7, 5])).toBe(false);
   });
 
   it('validates the shootout set by its tally', () => {

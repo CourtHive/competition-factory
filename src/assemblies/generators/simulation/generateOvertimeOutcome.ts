@@ -154,6 +154,11 @@ function timedSet(setNumber: number, side1Score: number, side2Score: number): Pe
 
 function deciderSet(params: OvertimeOutcomeParams, final: SegmentRule, setNumber: number, winner: Side): PeriodSet {
   const { parsedFormat, pointsPerMinute, random } = params;
+  if (final.kind === 'shootout') {
+    const [won, lost] = shootoutTally(final.rounds, random);
+    const [side1Score, side2Score] = winner === 1 ? [won, lost] : [lost, won];
+    return { setNumber, side1Score, side2Score, winningSide: winner };
+  }
   if (final.kind === 'tiebreakOnly') {
     const { to, margin } = final.race;
     // a race ends at its target, or past it by exactly the margin
@@ -165,4 +170,14 @@ function deciderSet(params: OvertimeOutcomeParams, final: SegmentRule, setNumber
   const scores = timedScores(parsedFormat.finalSetFormat?.minutes ?? 0, pointsPerMinute, random);
   favor([scores], winner, random);
   return timedSet(setNumber, scores[0], scores[1]);
+}
+
+/** a shootout's tally, winner first: one in five level through the rounds and won by one in sudden death */
+function shootoutTally(rounds: number, random?: () => number): [number, number] {
+  if (randomInt(1, 5, random) === 1) {
+    const level = randomInt(0, rounds, random);
+    return [level + 1, level];
+  }
+  const won = randomInt(Math.ceil(rounds / 2), rounds, random);
+  return [won, randomInt(0, won - 1, random)];
 }

@@ -1,4 +1,5 @@
 import { generateOutcome } from '@Generators/simulation/generateOutcome';
+import { shootoutTallyRefusal } from '@Helpers/matchUpFormatCode/shootout';
 import { overtimeScoreVerdict } from '@Validators/overtimeScore';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { createSeededRandom } from '@Tools/prng';
@@ -25,6 +26,7 @@ const F3 = 'PER3XA-S:T20P-O:USD/T20P'; // unlimited sudden-death periods
 const F4 = 'PER3XA-S:T20P-O:1SD/T5P-F:TB1'; // one sudden-death period, then a decider
 const F5 = 'HAL2XA-S:T40P-O:1/T10P'; // one period; may finish level, never generated level
 const F6 = 'HAL2XA-S:T45P-O:2/T15P-F:T10P'; // two periods compared at each end, then a timed decider
+const F7 = 'HAL2XA-S:T45P-O:2X/T15P-F:SO5'; // an exact two-period block, then a five-round shootout
 
 function outcomesOf(
   matchUpFormat: string,
@@ -60,6 +62,7 @@ describe.each([
   { f: F4, phases: ['REGULATION', 'OVERTIME', 'DECIDER'] },
   { f: F5, phases: ['REGULATION', 'OVERTIME'] },
   { f: F6, phases: ['REGULATION', 'OVERTIME', 'DECIDER'] },
+  { f: F7, phases: ['REGULATION', 'OVERTIME', 'DECIDER'] },
 ])('$f', ({ f, phases }) => {
   const outcomes = outcomesOf(f);
 
@@ -130,4 +133,14 @@ it('a format the scoring engine does not score is refused', () => {
   // a tiebreak in a timed overtime segment needs a ruling the engine has not had
   const result: any = generateOutcome({ matchUpFormat: 'HAL2XA-S:T45P-O:1/T10P/TB7' });
   expect(result.error).toBeDefined();
+});
+
+it('a shootout decider is a tally a shootout ends on', () => {
+  const tallies = outcomesOf(F7)
+    .map(({ score }) => score.sets.at(-1))
+    .filter((set) => set.phase === 'DECIDER')
+    .map((set) => [set.side1Score, set.side2Score] as [number, number]);
+  expect(tallies.length).toBeGreaterThan(0);
+  for (const tally of tallies) expect(shootoutTallyRefusal(5, tally)).toBeUndefined();
+  expect(tallies.some(([a, b]) => Math.abs(a - b) === 1)).toBe(true);
 });
