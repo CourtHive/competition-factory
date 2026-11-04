@@ -29,7 +29,7 @@ const point = (winner: 0 | 1): TimelineEntry => ({ type: 'point', data: { winner
 const level = [total(1, 0), total(0, 1), total(0, 0), total(1, 1)];
 
 describe('the code', () => {
-  it.each([OVERTIME, NO_OVERTIME])('parses and round-trips: %s', (code) => {
+  it.each([OVERTIME])('parses and round-trips: %s', (code) => {
     expect(parse(code)?.finalSetFormat).toEqual({ shootout: 5 });
     expect(stringify(parse(code))).toEqual(code);
   });
@@ -40,6 +40,7 @@ describe('the code', () => {
     ['where -F: is not a decider of a level aggregate', 'SET3-S:6/TB7-F:SO5'],
     ['in a best-of aggregate', 'SET3A-S:T10-F:SO5'],
     ['after unlimited overtime', 'SET2XA-S:T45P-O:U/T15P-F:SO5'],
+    ['with no overtime (narrowed, CA 2026-11-04)', NO_OVERTIME],
     ['with no rounds', 'SET2XA-S:T45P-F:SO0'],
     ['with a modifier', 'SET2XA-S:T45P-F:SO5X'],
   ])('is not a code %s', (_, code) => {
@@ -48,7 +49,6 @@ describe('the code', () => {
 
   it('is refused for new use until overtime opens', () => {
     expect(isValidMatchUpFormat({ matchUpFormat: OVERTIME })).toBe(false);
-    expect(isValidMatchUpFormat({ matchUpFormat: NO_OVERTIME })).toBe(false);
   });
 
   it('F:TB1 is unchanged', () => {
@@ -67,6 +67,11 @@ describe('the tally', () => {
     [[3, 3], /level/],
     [[0, 0], /level/],
     [[7, 5], /sudden death/],
+    [[4, 1], undefined],
+    [[5, 3], undefined],
+    [[4, 0], /catch up/],
+    [[0, 5], /catch up/],
+    [[5, 2], /catch up/],
     [[6, 8], /sudden death/],
     [[-1, 2], /whole goals/],
     [[2.5, 1], /whole goals/],
@@ -74,6 +79,12 @@ describe('the tally', () => {
     const result = shootoutTallyRefusal(5, tally as [number, number]);
     if (refusal) expect(result).toMatch(refusal);
     else expect(result).toBeUndefined();
+  });
+
+  it('ends once one side cannot catch up: 2-0 in three rounds, never 3-0', () => {
+    expect(shootoutTallyRefusal(3, [2, 0])).toBeUndefined();
+    expect(shootoutTallyRefusal(3, [3, 1])).toBeUndefined();
+    expect(shootoutTallyRefusal(3, [3, 0])).toMatch(/catch up/);
   });
 });
 
@@ -83,7 +94,7 @@ describe('the scoring engine', () => {
     expect(match.final).toEqual({ kind: 'shootout', rounds: 5 });
     expect(takesInput(match.final!, 'point')).toBe(false);
     expect(takesInput(match.final!, 'game')).toBe(false);
-    expect(resolveFormat(NO_OVERTIME)?.final).toEqual({ kind: 'shootout', rounds: 5 });
+    expect(resolveFormat(NO_OVERTIME)).toBeUndefined();
   });
 
   it('a level overtime goes to the shootout, which the tally decides', () => {
@@ -91,11 +102,6 @@ describe('the scoring engine', () => {
     expect(result.outcomes.every((outcome) => outcome.recorded)).toBe(true);
     expect(result.state).toMatchObject({ matchUpStatus: COMPLETED, winningSide: 1 });
     expect(result.state.sets).toHaveLength(5);
-  });
-
-  it('a level aggregate with no overtime goes to the shootout', () => {
-    const result = reduce({ matchUpFormat: NO_OVERTIME }, [total(1, 0), total(0, 1), total(6, 7)]);
-    expect(result.state).toMatchObject({ matchUpStatus: COMPLETED, winningSide: 2 });
   });
 
   it.each([
@@ -143,20 +149,18 @@ describe('the static path', () => {
   });
 
   it('validates the shootout set by its tally', () => {
-    expect(validateSetScore({ side1Score: 5, side2Score: 4 }, NO_OVERTIME, true).isValid).toBe(true);
-    expect(validateSetScore({ side1Score: 3, side2Score: 3 }, NO_OVERTIME, true).isValid).toBe(false);
+    expect(validateSetScore({ side1Score: 5, side2Score: 4 }, OVERTIME, true).isValid).toBe(true);
+    expect(validateSetScore({ side1Score: 3, side2Score: 3 }, OVERTIME, true).isValid).toBe(false);
   });
 });
 
 describe('the paths that take points', () => {
   it('keyed entry refuses a shootout format: it is entered in the dialog', () => {
-    const result = keyValueScore({ value: 1, sets: [], scoreString: '', matchUpFormat: NO_OVERTIME });
+    const result = keyValueScore({ value: 1, sets: [], scoreString: '', matchUpFormat: OVERTIME });
     expect(result.updated).toEqual(false);
   });
 
   it('the legacy point path refuses a shootout format', () => {
-    expect(() => addPoint({ matchUpFormat: NO_OVERTIME } as any, { winner: 0 } as any)).toThrow(
-      /Invalid matchUpFormat/,
-    );
+    expect(() => addPoint({ matchUpFormat: OVERTIME } as any, { winner: 0 } as any)).toThrow(/Invalid matchUpFormat/);
   });
 });

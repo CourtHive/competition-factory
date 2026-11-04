@@ -64,11 +64,13 @@ Sources: [NHL Florida–San Jose](https://api-web.nhle.com/v1/gamecenter/2022020
 HAL2XA-S:T45P-O:2X/T15P-F:SO5
 ```
 
-`SO5` is a shootout of five rounds, the final segment after a level overtime (or, with no `-O:`, after a level
-exactly-N aggregate). It is entered as its final tally, never attempt by attempt: France–Switzerland above is
-`3–3` through extra time and `4–5` in the shootout. A tally is refused when no shootout ends on it: level, or past
-the five rounds by more than one (sudden death is won by one). Attempt-by-attempt entry is a later slice that
-reduces to the same tally.
+`SO5` is a shootout of five rounds, the final segment after a level overtime. It needs `-O:`: a match that goes
+straight to penalties (`SET2XA-S:T45P-F:SO5`) is not a code; its shootout is recorded on the result
+(`score.overtime.decidedIn: 'EXTERNAL'`, `decidedBy: { method: 'SHOOTOUT', tally }`). It is entered as its final
+tally, never attempt by attempt: France–Switzerland above is `3–3` through extra time and `4–5` in the shootout. A
+tally is refused when no shootout ends on it: level, past the five rounds by more than one (sudden death is won by
+one), or more than the shootout could reach before one side could no longer catch up (`4–0` in five rounds; it ends
+at `3–0`). Attempt-by-attempt entry is a later slice that reduces to the same tally.
 
 An NHL shootout-winner goal in the published final is not a goal scored during overtime. Football's
 penalty tally is also separate from the goals scored during the match. Preserving that distinction is

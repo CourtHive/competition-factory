@@ -119,13 +119,15 @@ A segment (`-S:` or `-F:`) is exactly one kind, recognised by how it starts, in 
    containing `NOAD` (CA 2026-10-25). `TB11@rally`, `T10@rally`, `TB11@R_1` and `TB11@RALLY2` are not codes.
    `RALLY` is the one modifier with a meaning (every rally scores); any other upper-case name is kept and not scored
    (`TB11@SIDEOUT`; scoring specification § 3.4).
-5. **Shootout.** `SO{rounds}`, a shootout of that many rounds, is only ever the final segment, and only where `-F:`
-   decides a level aggregate: an exactly-N aggregate (`SET2XA-S:T45P-F:SO5`) or one with finite overtime
-   (`SET2XA-S:T45P-O:2X/T15P-F:SO5`). As `-S:`, as an overtime period, or after a best-of or non-aggregate match it
-   is not a code. It is entered as its final tally, never by point or game: the tally is never level, and above
-   `rounds` it is sudden death, won by one (`7-6` in five rounds; never `7-5`). Its goals are not part of the
-   aggregate. Like overtime, it is refused for new use until overtime is activated. `F:TB1` is unchanged: a one-point
-   decider, not a shootout.
+5. **Shootout.** `SO{rounds}`, a shootout of that many rounds, is only ever the final segment, and only after a
+   level finite overtime of an aggregate (`SET2XA-S:T45P-O:2X/T15P-F:SO5`). As `-S:`, as an overtime period, with no
+   `-O:` (`SET2XA-S:T45P-F:SO5`), or after a best-of or non-aggregate match it is not a code (CA 2026-11-04: a match
+   that goes straight to penalties is recorded as `decidedIn: 'EXTERNAL'` until a decider without overtime is
+   stamped like one with it). It is entered as its final tally, never by point or game: the tally is never level,
+   above `rounds` it is sudden death, won by one (`7-6` in five rounds; never `7-5`), and within `rounds` it ends
+   once one side cannot catch up (`3-0` in five rounds; never `4-0`). Its goals are not part of the aggregate. Like
+   overtime, it is refused for new use until overtime is activated. `F:TB1` is unchanged: a one-point decider, not a
+   shootout.
 
 ## 4. Equivalent spellings
 
