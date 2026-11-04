@@ -103,9 +103,7 @@ describe('generateDrawDefinition policyDefinitions', () => {
 
     result = tournamentEngine.generateDrawDefinition({ policyDefinitions: POLICY_DRAWS_DEFAULT, eventId });
     expect(result.success).toEqual(true);
-    expect(result.drawDefinition.extensions.find((e) => e.name === 'appliedPolicies').value[POLICY_TYPE_DRAWS]).toEqual(
-      POLICY_DRAWS_DEFAULT[POLICY_TYPE_DRAWS],
-    );
+    expect(result.drawDefinition.appliedPolicies[POLICY_TYPE_DRAWS]).toEqual(POLICY_DRAWS_DEFAULT[POLICY_TYPE_DRAWS]);
   });
 
   it('refuses a drawProfile policy in the mocksEngine', () => {
@@ -125,9 +123,9 @@ describe('modifyTournamentRecord: an existing event', () => {
   const POLICY_A = { [POLICY_TYPE_SCORING]: { policyName: 'A', requireParticipantsForScoring: false } };
   const POLICY_B = { [POLICY_TYPE_SCORING]: { policyName: 'B', requireParticipantsForScoring: true } };
 
+  // the event's own policies: the first-class appliedPolicies attribute (CODES)
   function eventPolicies(tournamentRecord) {
-    const extension = tournamentRecord.events[0].extensions?.find((e) => e.name === 'appliedPolicies');
-    return extension?.value ?? {};
+    return tournamentRecord.events[0].appliedPolicies ?? {};
   }
 
   function generate(eventProfile = {}) {

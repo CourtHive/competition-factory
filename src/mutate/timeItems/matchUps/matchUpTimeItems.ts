@@ -1,3 +1,4 @@
+import { collectionChoiceRefusal, PLAY_TIME_ITEM_TYPES } from '@Query/matchUp/collectionChoice';
 import { appendFirstClassOrTimeItem } from '@Mutate/timeItems/appendFirstClassOrTimeItem';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getMatchUpPresence } from '@Acquire/presenceAttestations';
@@ -39,6 +40,11 @@ export function addMatchUpTimeItem({
 }: AddMatchUpTimeItem) {
   const { matchUp } = findDrawMatchUp({ drawDefinition, event, matchUpId });
   if (!matchUp) return { error: MATCHUP_NOT_FOUND };
+
+  if (PLAY_TIME_ITEM_TYPES.has(timeItem?.itemType ?? '')) {
+    const choice = collectionChoiceRefusal({ drawDefinition, event, matchUp });
+    if (choice) return choice;
+  }
 
   const result = addTimeItem({
     removePriorValues,

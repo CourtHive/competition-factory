@@ -124,8 +124,10 @@ module.exports = {
             'concepts/hydration',
             'concepts/matchup-filtering',
             'concepts/tieMatchUp',
+            'concepts/manual-team-results',
             'concepts/lineUp',
             'concepts/tieFormat',
+            'concepts/collectionMatchUpTypeChoice',
           ],
         },
         {
@@ -392,8 +394,13 @@ module.exports = {
         },
         {
           type: 'category',
+          label: 'Seasons & Leagues',
+          items: ['governors/season-governor', 'governors/ladder-governor'],
+        },
+        {
+          type: 'category',
           label: 'Scheduling & Venues',
-          items: ['governors/schedule-governor', 'governors/venue-governor'],
+          items: ['governors/schedule-governor', 'governors/venue-governor', 'governors/availability-governor'],
         },
         {
           type: 'category',
@@ -466,6 +473,19 @@ module.exports = {
             'codes/age-category',
             'codes/matchup-format',
             'codes/matchup-format-grammar',
+            {
+              type: 'category',
+              label: 'Overtime and extra time',
+              link: { type: 'doc', id: 'codes/overtime/index' },
+              items: [
+                'codes/overtime/periods-and-limits',
+                'codes/overtime/golden-and-silver-goals',
+                'codes/overtime/shootouts-and-ties',
+                'codes/overtime/basketball-examples',
+                'codes/overtime/hockey-examples',
+                'codes/overtime/football-examples',
+              ],
+            },
             'codes/online-resources',
             'codes/sanctioning',
           ],

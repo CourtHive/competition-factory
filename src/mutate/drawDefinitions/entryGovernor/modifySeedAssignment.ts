@@ -1,4 +1,5 @@
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
+import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { modifySeedAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { findStructure } from '@Acquire/findStructure';
 import { ensureInt } from '@Tools/ensureInt';
@@ -41,7 +42,7 @@ export function modifySeedAssignment({
   );
   if (tournamentRecord && !participant) return { error: INVALID_PARTICIPANT_ID };
 
-  const { structure } = findStructure({ drawDefinition, structureId });
+  const { structure, containingStructure } = findStructure({ drawDefinition, structureId });
   if (!structure) return { error: STRUCTURE_NOT_FOUND };
 
   const validValue =
@@ -52,6 +53,13 @@ export function modifySeedAssignment({
     (typeof seedValue === 'string' && seedValue.split('-').every((v) => isNumeric(v) && ensureInt(v) > 0));
 
   if (!validValue) return { error: INVALID_VALUES };
+
+  const { positionAssignments } = structureAssignedDrawPositions({ structure: containingStructure ?? structure });
+  const seedValueLimit = positionAssignments.filter((assignment) => !assignment.bye).length;
+  const values = typeof seedValue === 'string' ? seedValue.split('-').map(Number) : [seedValue];
+  if (positionAssignments.length && values.some((value) => typeof value === 'number' && value > seedValueLimit)) {
+    return { error: INVALID_VALUES, info: `seedValue cannot exceed ${seedValueLimit} non-BYE draw positions` };
+  }
 
   const { seedAssignments } = getStructureSeedAssignments({
     drawDefinition,

@@ -1,0 +1,202 @@
+---
+title: "Captain's Choice: collection match type options"
+description: "tieFormat contract for choosing singles or doubles per team encounter while retaining the collection's permitted choices."
+keywords: [captains choice, captain's choice, singles or doubles, tieFormat, collectionDefinitions]
+---
+
+## Specification status
+
+This extension is implemented locally on `feat/noc-u4-captains-choice-runtime` and is not released.
+Choice templates can be saved and generate untyped child placeholders. Encounter-scoped selection,
+reselection and explicit reset preserve the declaration, placeholder identities and schedules. Pending choices
+are blocked at assignment, status/result and actual-play entry points; cleanup can still clear a pending line.
+
+The validator checks the declaration and every offered type's gender compatibility. Choice metadata participates
+in format comparison/aggregation and survives copying and JSON reload. General multi-collection selection,
+general tieFormat reset on a local choice format, declaration editing/migration, and UI integration are not
+included. Use the encounter-scoped APIs below for selection/reset; do not treat retaining an unknown field in
+an older release as runtime support.
+
+## Declaration and selection are different facts
+
+A Captain's Choice collection permits a choice of match type for one TEAM encounter. The declaration
+belongs to the collection definition; the selected type belongs to that collection in the particular encounter.
+Selection must preserve the declaration so consumers can distinguish a chosen singles collection from a
+collection that was always singles.
+
+Add optional `matchUpTypeOptions` to `collectionDefinition`. Initially its members are `SINGLES` and
+`DOUBLES`. `CHOICE` is not a match type: scoring, participant cardinality and results still require a concrete
+`matchUpType`. "Captain's Choice" is a collection name/presentation, not a new matchUpType constant.
+
+### Unresolved declaration on an event, draw or structure
+
+```json
+{
+  "collectionId": "captains-choice",
+  "collectionName": "Captain's Choice",
+  "matchUpTypeOptions": ["SINGLES", "DOUBLES"],
+  "matchUpCount": 1,
+  "matchUpFormat": "SET3-S:6/TB7-F:TB10",
+  "matchUpValue": 1
+}
+```
+
+There is deliberately no `matchUpType`. Neither the first option nor a stored DOUBLES placeholder is a
+selection or an implicit default. Existing collections with a concrete `matchUpType` and no options retain
+their fixed-type meaning.
+
+### Resolved declaration on a TEAM encounter
+
+The encounter's effective tieFormat contains the same collection, with the concrete selection added:
+
+```json
+{
+  "collectionId": "captains-choice",
+  "collectionName": "Captain's Choice",
+  "matchUpTypeOptions": ["SINGLES", "DOUBLES"],
+  "matchUpType": "SINGLES",
+  "matchUpCount": 1,
+  "matchUpFormat": "SET3-S:6/TB7-F:TB10",
+  "matchUpValue": 1
+}
+```
+
+Another encounter may select DOUBLES from the same template. Selection writes an encounter-specific
+copy/override of the effective tieFormat using existing inline or centralized identity rules; it does not
+edit a shared template in place. A centralized fork uses an origin-supplied ID pool for deterministic replay.
+
+## Selecting and resetting a choice
+
+```js
+engine.modifyCollectionDefinition({
+  drawId,
+  matchUpId, // parent TEAM encounter
+  collectionId: 'captains-choice',
+  matchUpType: 'SINGLES',
+  // clearCollectionAssignments: true, // required if prior/inherited assignments must be removed
+  // tieFormatUuids: ['origin-supplied-fork-id'], // required when a shared format must fork
+});
+
+engine.modifyCollectionDefinition({
+  drawId,
+  matchUpId,
+  collectionId: 'captains-choice',
+  resetMatchUpTypeChoice: true,
+  // clearCollectionAssignments: true,
+});
+```
+
+A choice resolution changes no value model. Submit collection value/count changes separately from selection
+or reset. A scorecard clear preserves the selection; `resetScorecard` with `tiebreakReset: true` refuses
+a local choice format before clearing scores. `modifyTieFormat` cannot select/reset multiple choices as a backdoor to the single-collection
+preflight. `resetTieFormat` refuses a local choice format; use the explicit selection reset instead.
+
+## Validation rules
+
+- An unresolved choice has options and no concrete type; a resolved choice has both. A fixed collection has
+  a concrete type and no options. A collection with neither is invalid for new use.
+- Options must be an array of at least two distinct, recognized concrete types. Initial support permits only
+  SINGLES and DOUBLES. Reject an empty list, duplicates, unknown types, TEAM, HYBRID and CHOICE. Preserve
+  option order for presentation; do not infer meaning or a default from that order.
+- A selected `matchUpType` must be a member of the options. Resolve choices only at parent TEAM matchUp
+  scope in this first version. Templates carrying options must remain unresolved; broad preselection and
+  event/draw/structure-wide conversion require a separate design.
+- Every option shares the collection's count, scoring format, gender/category constraints and value model.
+  Validate each permitted combination when the declaration is created, and validate the selected combination
+  again on resolution. MIXED doubles cannot be offered alongside MIXED singles under the existing gender
+  rules. This version does not define different genders, scoring formats or values for different options.
+- A selection applies to every collectionPosition in that encounter's collection and to both sides. Independent
+  per-position choices, or different types for the opposing teams, are outside this contract.
+
+For explicit save-time validation of an encounter's already resolved tieFormat, pass
+`allowResolvedMatchUpTypeOptions: true` with `enforceValues: true` to `validateTieFormat`. Template validation
+leaves that flag false, so a selected choice cannot become an inherited event/draw/structure default. Read-time
+validation without save-time rules can inspect either state. The collection mutation derives the scope from
+its target; the validation flag is not an authorization to select a template.
+
+The declaration states what can be chosen. Which captain has authority, how captains agree, eligibility,
+submission deadlines and permissions remain competition/application policy. This field does not grant
+permission to choose or establish that a selection was made by a captain.
+
+## Generation, assignment and scoring
+
+When line detail is generated, unresolved choice collections receive untyped child placeholders with stable
+matchUpIds, collectionId and collectionPosition. They remain visible as pending choice rubbers; they must not
+be classified as singles or doubles by default. The effective collection declaration supplies their choice
+context; do not duplicate mutable option lists on every stored child.
+
+An unresolved rubber cannot receive player/pair assignments, scores, results or start-of-play actions.
+Preliminary team-roster selection is still possible, but collection assignments must wait for resolution.
+Selecting the type atomically updates the encounter's effective collection and all its child matchUpTypes,
+without replacing their IDs or schedules. Existing assignment methods then apply normal singles/doubles
+cardinality, membership and eligibility checks. A schedule placement lock remains intact.
+
+Changing a previous selection is permitted only while every affected rubber is unplayed, with no winner,
+entered score or actual-play evidence, and the parent encounter has no result. Another collection may already
+be underway. Existing player/pair assignments require explicit clearing; do not choose a remaining singles
+player or manufacture a doubles partner. Clear only the affected collection assignments, preserving rosters,
+other collections, shared pair records and assignment metadata. Override inherited lineups locally so they do
+not silently restore cleared assignments. Generic in-progress overrides cannot bypass these protections.
+
+Clearing a selection is a distinct, explicit reset: retain the declaration and placeholder IDs, remove the
+local concrete selection and child types, and return the collection to unresolved. Apply the same play and
+assignment protections. Omitting `matchUpType` from a modification request is not a reset. Use `modifyCollectionDefinition` with `resetMatchUpTypeChoice: true`; do not also supply a concrete type.
+
+## Refusal contract
+
+A rubber (a tie matchUp with a `collectionId`) is **refused** when the effective collection definition of
+its parent TEAM matchUp declares `matchUpTypeOptions` and any of these holds:
+
+- **unresolved**: the collection has no concrete `matchUpType`;
+- **invalid**: the declaration breaks a validation rule above;
+- **mismatched**: the rubber's own `matchUpType` differs from the collection's selected `matchUpType`.
+
+A refusal returns `INVALID_VALUES` with `info` _"Resolve the collection matchUpType choice before
+assigning, scoring or starting its rubbers"_ and `context: { collectionId, matchUpId }`. It writes nothing
+and sends no notices. Rubbers of fixed collections, and matchUps that are not rubbers, are never refused.
+
+| Method                                                                                            | Refused when                                                                                                                                                                                              |
+| ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `setMatchUpStatus`                                                                                | the call creates a result or starts play: a `score`, a `winningSide`, or a `matchUpStatus` other than `TO_BE_PLAYED`. Clearing (`removeScore`, or `TO_BE_PLAYED` with no score or winningSide) is allowed |
+| `setDelegatedOutcome`                                                                             | always                                                                                                                                                                                                    |
+| `addMatchUpScheduleItems`                                                                         | the `schedule` carries a non-empty `startTime`, `stopTime`, `resumeTime` or `endTime`. Placement keys alone (`scheduledDate`, `scheduledTime`, `courtId`, `venueId`, `courtOrder`) are allowed            |
+| `addMatchUpStartTime`, `addMatchUpStopTime`, `addMatchUpResumeTime`, `addMatchUpEndTime`          | always                                                                                                                                                                                                    |
+| `addMatchUpTimeItem`                                                                              | the time item's `itemType` is `START_TIME`, `STOP_TIME`, `RESUME_TIME` or `END_TIME`                                                                                                                      |
+| `assignTieMatchUpParticipantId`, `replaceTieMatchUpParticipantId`, `assignMatchUpSideParticipant` | always                                                                                                                                                                                                    |
+| `applyLineUps`                                                                                    | a lineUp assigns a participant to an unresolved collection (`validateLineUp` reports _"Resolve the collection matchUpType choice before assigning players"_)                                              |
+
+## Inheritance, tallying and persistence
+
+- Declaration inheritance follows normal tieFormat resolution: matchUp, structure, drawDefinition, event.
+  A concrete choice is local to its TEAM encounter. It does not propagate to subsequent encounters with a
+  team's lineup, nor resolve another encounter that shares the template.
+- Options survive selection, copy-on-write, aggregation/deduplication, serialization and reload. Choice and
+  fixed-type collections are different definitions even if they currently select the same concrete type.
+  Comparison must include the declaration, not just the selected matchUpType/count/value.
+- Collection count and possible value are known before selection. Selection alone does not change winCriteria,
+  result values, standings or the parent score. Pending choice rubbers have no results to tally; an encounter
+  can still be clinched by other collections under its normal winCriteria without playing the choice rubber.
+- For `scoreSource: REPORTED`, the declaration may describe permitted choices without generating lines.
+  An absent reported selection is unknown; never invent one from the aggregate team result.
+- Resolution/reselection/reset must preflight the whole operation before writes, preserve state and emit no
+  mutation notices on refusal, and announce the final parent/changed children on success. Preserve the
+  declaration in audit/persistence records as well as the selected type.
+- NOC extension migration must be explicit. Keep the extension until its declaration, selections and unresolved
+  cases have been verified against this first-class contract; do not infer a selection from its old DOUBLES
+  storage placeholder. New-use validation must refuse unsupported choice declarations until runtime support
+  is available. Tolerant historical readers may retain metadata, but may not treat retention as scoring support.
+
+## Implementation acceptance
+
+The typed declaration, placeholder generation, query behavior, guarded entry points and encounter-level
+selection/reset are implemented on the runtime branch. The remaining integration work is the general
+format editor, explicit declaration migration and consumer UI coverage.
+Audit comparison, copying, centralized aggregation, hierarchy, hydration, query filters and persistence so the
+declaration and local selection survive without leaking into other encounters. Coordinate separately with
+outcome-pipeline owners before changing any status/outcome path; the runtime adds entry guards and pending-query context, without changing outcome executor propagation.
+
+Regression coverage must include unresolved generation; both selections and assignment cardinalities;
+out-of-options/invalid declarations; unchanged options after reselection/reset; incompatible gender; played
+rubber and finished-parent refusal; inherited assignments; schedule locks; shared-format replay identity;
+notice correctness; independent encounters and later rounds; and JSON round trips. Score-source and tally
+checks must prove that declaring/resolving a choice does not fabricate a result or change its value model.

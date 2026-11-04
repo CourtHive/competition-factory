@@ -62,15 +62,16 @@ function placeSeeds(prngSeed: number, withAvoidancePolicy: boolean): Placement |
   });
 
   if (withAvoidancePolicy) {
-    // MERGE into the existing APPLIED_POLICIES extension rather than pushing a second one.
-    // `getAppliedPolicies` reads the FIRST extension of that name, and the generated draw already
-    // carries one holding the seeding policy — so a pushed duplicate is silently ignored and the
-    // policy never arrives. That produces a test that "runs" and measures nothing.
-    drawDefinition.extensions = drawDefinition.extensions ?? [];
-    const applied = drawDefinition.extensions.find((extension: any) => extension.name === APPLIED_POLICIES);
+    // MERGE into the draw's existing applied policies, its first-class appliedPolicies attribute (CODES),
+    // rather than adding an APPLIED_POLICIES extension beside it. The generated draw already holds the
+    // seeding policy there, and the attribute wins over any extension of the name — so a policy put in
+    // an extension is silently ignored and never arrives. That produces a test that "runs" and measures nothing.
     const avoidance = { policyAttributes: [{ directive: 'groupParticipants' }] };
-    if (applied) applied.value = { ...applied.value, [POLICY_TYPE_AVOIDANCE]: avoidance };
-    else drawDefinition.extensions.push({ name: APPLIED_POLICIES, value: { [POLICY_TYPE_AVOIDANCE]: avoidance } });
+    drawDefinition.appliedPolicies = { ...drawDefinition.appliedPolicies, [POLICY_TYPE_AVOIDANCE]: avoidance };
+    // CONTROL: the policy is where the readers look
+    expect((drawDefinition.extensions ?? []).some((extension: any) => extension.name === APPLIED_POLICIES)).toEqual(
+      false,
+    );
   }
 
   // Deliberately NOT filtered to INDIVIDUAL: `idCollections.groupParticipants` is built by filtering

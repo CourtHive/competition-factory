@@ -1,10 +1,16 @@
+import { checkSanctionedEntryLimits } from '@Query/drawDefinition/checkSanctionedEntryLimits';
 import { processExistingDrawDefinition } from './processExistingDrawDefinition';
 import { generateNewDrawDefinition } from './generateNewDrawDefinition';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { setUpDrawGeneration } from './setUpDrawGeneration';
 
+// constants
+import { QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { WITHDRAWN } from '@Constants/entryStatusConstants';
+
 // types
-import { DrawMaticArgs, PolicyDefinitions, ResultType } from '@Types/factoryTypes';
+import { DrawMaticArgs, EntryNotPlaced, PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import {
   DrawDefinition,
   DrawTypeUnion,
@@ -49,6 +55,7 @@ type GenerateOrGetExisting = {
 
 export function generateOrGetExisting(params: GenerateOrGetExisting): ResultType & {
   existingDrawDefinition?: DrawDefinition;
+  entriesNotPlaced?: EntryNotPlaced[];
   drawDefinition?: DrawDefinition;
   positioningReports?: any[];
   drawTypeResult?: any;
@@ -82,14 +89,46 @@ export function generateOrGetExisting(params: GenerateOrGetExisting): ResultType
     params.qualifyingProfiles?.length
   );
 
+  const processExisting = !!(setUpResult.existingQualifyingPlaceholderStructureId || addingQualifyingToExistingMain);
+
+  // Qualifying added to an existing draw with no drawEntries takes the event's QUALIFYING entries, as a new draw
+  // generated from the event's entries does: the first N that fit, the rest reported as ENTRIES_NOT_PLACED. A draw
+  // that already holds QUALIFYING entries (drawEntries carried from the main's generation) keeps those instead.
+  const existingHoldsQualifyingEntries = !!existingDrawDefinition?.entries?.some(
+    ({ entryStage }) => entryStage === QUALIFYING,
+  );
+  const eventQualifyingEntries =
+    processExisting && !params.drawEntries && !existingHoldsQualifyingEntries
+      ? (params.eventEntries ?? []).filter(
+          ({ entryStage, entryStatus }) => entryStage === QUALIFYING && entryStatus !== WITHDRAWN,
+        )
+      : undefined;
+
+  // Refuse before anything is generated: the entries this generation adds must fit the sanctioning constraints
+  // (maxWildcards, maxAlternates). processExistingDrawDefinition adds only the QUALIFYING drawEntries (or the event's);
+  // generateNewDrawDefinition adds every entry that is not WITHDRAWN. An explicit ignoreStageSpace and AD_HOC draws
+  // are exempt, as addDrawEntry exempts them.
+  if (!params.ignoreStageSpace && !isAdHocType(params.drawType)) {
+    const entriesToAdd = processExisting
+      ? (params.drawEntries ?? eventQualifyingEntries ?? []).filter(({ entryStage }) => entryStage === QUALIFYING)
+      : entries.filter(({ entryStatus }) => entryStatus !== WITHDRAWN);
+    const limitsResult = checkSanctionedEntryLimits({
+      drawDefinition: setUpResult.existingDrawDefinition,
+      tournamentRecord: params.tournamentRecord,
+      entries: entriesToAdd,
+      event: params.event,
+    });
+    if (limitsResult.error) return decorateResult({ result: limitsResult, stack });
+  }
+
   const genResult: ResultType & {
+    entriesNotPlaced?: EntryNotPlaced[];
     drawDefinition?: DrawDefinition;
     positioningReports?: any[];
     structureId?: string;
     conflicts?: any[];
   } =
-    ((setUpResult.existingQualifyingPlaceholderStructureId || addingQualifyingToExistingMain) &&
-      processExistingDrawDefinition({ ...params, ...setUpResult })) ||
+    (processExisting && processExistingDrawDefinition({ ...params, ...setUpResult, eventQualifyingEntries })) ||
     generateNewDrawDefinition({ ...params, ...setUpResult, entries });
   if (genResult.error) return decorateResult({ result: genResult, stack });
 
@@ -100,6 +139,7 @@ export function generateOrGetExisting(params: GenerateOrGetExisting): ResultType
   structureId = genResult.structureId;
 
   return {
+    entriesNotPlaced: genResult.entriesNotPlaced,
     existingDrawDefinition,
     positioningReports,
     drawDefinition,

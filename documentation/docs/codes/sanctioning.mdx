@@ -201,3 +201,13 @@ What a governing body _permits_ — allowed formats, fee bounds, submission wind
 fields an organiser may not override — is the **policy layer**, and it lives outside CODES in the
 ingest tier, where it is exercised against real captured federation data. CODES models the
 decision; the policy layer models the rulebook that produced it.
+
+The **limits** that rulebook sets for one tournament are part of the decision, so they live on it:
+`sanction.constraints` (`SanctionConstraints`). They are provider-defined. `definedBy.providerId`
+is required, `source` names the rule set, and each `events[]` entry matches events by `eventType`
+(and `eventName` / `categoryName` when stated) and states `drawSize`, `maxWildcards`,
+`maxAlternates` and `maxQualifiers`. The provider resolves its rules into these limits where the
+application is reviewed; the factory validates and enforces them
+([`setSanctionConstraints`](/docs/governors/tournament-governor#setsanctionconstraints)). The
+legacy `sanctioningConstraints` extension is still read and is promoted by
+`migrateTournamentRecord`.

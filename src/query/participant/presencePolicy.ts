@@ -1,10 +1,10 @@
 import { getPolicyDefinitions } from '@Query/extensions/getAppliedPolicies';
+import { participantRoleOf } from './participantRoleOf';
 
 // constants and types
 import { POLICY_TYPE_SANCTIONING } from '@Constants/policyConstants';
 import type { Category, Participant } from '@Types/tournamentTypes';
 import type { SanctioningPolicy } from '@Types/sanctioningTypes';
-import { COMPETITOR } from '@Constants/participantRoleValues';
 import type { Attribution } from '@Types/presenceTypes';
 import type {
   AttributionCategoryRule,
@@ -45,7 +45,7 @@ export function getPresenceRules(params: {
  * exempt exactly the population the rules are mostly about.
  */
 export function presenceRoleOf(participant?: Participant): string {
-  return participant?.participantRole ?? COMPETITOR;
+  return participantRoleOf(participant);
 }
 
 /**

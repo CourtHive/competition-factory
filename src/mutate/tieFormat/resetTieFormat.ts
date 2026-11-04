@@ -4,6 +4,7 @@ import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParame
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { resolveFromParameters } from '@Helpers/parameters/resolveFromParameters';
 import { removeOrphanedTieFormats } from '@Mutate/tieFormat/writeTieFormat';
+import { NOT_IMPLEMENTED } from '@Constants/errorConditionConstants';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getMatchUpId } from '@Functions/global/extractors';
 
@@ -54,6 +55,9 @@ export function resetTieFormat(params: ResetTieFormatArgs): ResultType & {
 
   // if there is no tieFormat (inline or referenced) there is nothing to do
   if (!matchUp.tieFormat && !matchUp.tieFormatId) return { ...SUCCESS };
+  const localFormat = resolveTieFormat({ matchUp, structure, drawDefinition, event }).tieFormat;
+  if (localFormat?.collectionDefinitions.some((definition) => definition.matchUpTypeOptions !== undefined))
+    return { error: NOT_IMPLEMENTED, info: 'Reset choice selections explicitly with resetMatchUpTypeChoice' };
 
   const tieFormat = resolveTieFormat({
     structure,

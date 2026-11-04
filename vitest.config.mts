@@ -16,9 +16,16 @@ import { testFileAliases } from './vitest.aliases.mjs';
 // the thresholds apply to the merged result, exactly as they did to one whole-suite run (verify.yml).
 const isShard = process.argv.some((arg) => arg.startsWith('--shard'));
 
+// Run against a second implementation (FACTORY_BACKEND, documentation/docs/testing/second-backend.md), every routed
+// scoring write is followed by a comparison of all five views over the whole history, so a long match costs time that
+// grows with the square of its points: a volleyball deciding set took 34.5 s, and its file 115-297 s, under load. Those
+// runs get 180 s per test, over five times the slowest test measured, and still finite so a hang fails; the default
+// suite keeps 30 s.
+const testTimeout = process.env.FACTORY_BACKEND ? 180_000 : 30_000;
+
 export default defineConfig({
   test: {
-    testTimeout: 30000, // 30 seconds for slow tests
+    testTimeout, // 30 seconds for slow tests; 180 under a second implementation (above)
     environment: 'node',
     // Persist transformed modules under node_modules/.vitest-cache so a rerun skips
     // the transform pass. Transform was ~30% of tracked time on a cold local run.
@@ -72,6 +79,9 @@ export default defineConfig({
         // notice-conformance harness is test infrastructure (like testHarness/**),
         // exercised incrementally as the D-scenarios sweep grows — not product code.
         'src/tests/mutations/notifications/noticeConformance/harness.ts',
+        // typed async engine fixtures: checked by tsc and by a lint regression, never executed
+        'src/tests/engines/typedAsyncEngine.contract.ts',
+        'src/tests/engines/typedAsyncEngine.lint.fixture.ts',
         'src/assemblies/governors/**',
         'src/assemblies/tools/**',
         'src/fixtures/data/**',

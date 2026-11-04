@@ -17,6 +17,10 @@ The **MatchUp Actions Policy** (`POLICY_TYPE_MATCHUP_ACTIONS`) controls which ac
 
 ---
 
+:::info CODES schema
+This policy's shape is the `MatchUpActionsPolicy` definition in `tournament.schema.json` (under `PolicyDefinitions`), closed: a member it does not list does not validate. Policies are stored in each element's first-class `appliedPolicies` attribute (the `appliedPolicies` extension on older records).
+:::
+
 ## SCORE status-scope metadata
 
 When `matchUpActions()` offers a `SCORE` action, the action includes

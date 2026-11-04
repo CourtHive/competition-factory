@@ -379,9 +379,9 @@ it.each(['v1', 'v2', 'differential'] as const)(
     const draw = record
       .events!.flatMap((event) => event.drawDefinitions ?? [])
       .find((candidate) => candidate.drawId === drawId)!;
-    draw.extensions ??= [];
-    draw.extensions = draw.extensions.filter((extension) => extension.name !== 'appliedPolicies');
-    draw.extensions.push({ name: 'appliedPolicies', value: { roundRobinTally: { drawCredit: 2 } } });
+    // the draw's policies are its first-class appliedPolicies attribute (CODES); no extension of the name remains
+    draw.extensions = (draw.extensions ?? []).filter((extension) => extension.name !== 'appliedPolicies');
+    draw.appliedPolicies = { roundRobinTally: { drawCredit: 2 } };
     tournamentEngine.setState(corrupted.tournamentRecords);
     const invalidBefore = tournamentEngine.getState();
     let result: any = tournamentEngine.setMatchUpStatus({

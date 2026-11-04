@@ -663,6 +663,7 @@ export type FactoryEngineMethod =
   | 'resolveCourtId'
   | 'resolveDraftPositions'
   | 'resolveEntryFee'
+  | 'resolveHomeParticipantId'
   | 'resolvePointValue'
   | 'resolveStatus'
   | 'resolveVenueId'
@@ -708,6 +709,7 @@ export type FactoryEngineMethod =
   | 'setRandomSource'
   | 'setRegistrationProfile'
   | 'setRotatingPartnerScoring'
+  | 'setSanctionConstraints'
   | 'setSchedulingProfile'
   | 'setState'
   | 'setStructureOrder'
@@ -775,6 +777,7 @@ export type FactoryEngineMethod =
   | 'validateDateAvailability'
   | 'validateLineUp'
   | 'validateMatchUp'
+  | 'validateMatchUpFormat'
   | 'validateMatchUpScore'
   | 'validateMCPMatch'
   | 'validateOfficiatingStatusTransition'
@@ -1461,6 +1464,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'resolveCourtId',
   'resolveDraftPositions',
   'resolveEntryFee',
+  'resolveHomeParticipantId',
   'resolvePointValue',
   'resolveStatus',
   'resolveVenueId',
@@ -1506,6 +1510,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'setRandomSource',
   'setRegistrationProfile',
   'setRotatingPartnerScoring',
+  'setSanctionConstraints',
   'setSchedulingProfile',
   'setState',
   'setStructureOrder',
@@ -1573,6 +1578,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'validateDateAvailability',
   'validateLineUp',
   'validateMatchUp',
+  'validateMatchUpFormat',
   'validateMatchUpScore',
   'validateMCPMatch',
   'validateOfficiatingStatusTransition',

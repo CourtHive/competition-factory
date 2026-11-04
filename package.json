@@ -1,6 +1,6 @@
 {
   "name": "tods-competition-factory",
-  "packageManager": "pnpm@12.15.0",
+  "packageManager": "pnpm@12.16.1",
   "author": "Charles Allen <charles@CourtHive.com> (CourtHive.com)",
   "description": "Create and mutate TODS compliant tournament objects",
   "keywords": [
@@ -49,6 +49,16 @@
         "default": "./dist/index.js"
       }
     },
+    "./governors": {
+      "import": {
+        "types": "./dist/governors.d.mts",
+        "default": "./dist/esm/assemblies/governors/index.mjs"
+      },
+      "require": {
+        "types": "./dist/governors.d.cts",
+        "default": "./dist/governors.js"
+      }
+    },
     "./schema/tournament.schema.json": "./dist/schema/tournament.schema.json"
   },
   "types": "dist/tods-competition-factory.d.ts",
@@ -63,6 +73,9 @@
       ],
       "transform": [
         "./dist/transform.d.ts"
+      ],
+      "governors": [
+        "./dist/governors.d.ts"
       ]
     }
   },
@@ -195,21 +208,21 @@
     }
   },
   "devDependencies": {
-    "@babel/core": "8.0.7",
+    "@babel/core": "8.0.10",
     "@commitlint/cli": "21.2.4",
     "@commitlint/config-conventional": "21.2.4",
     "@dep-tree/cli": "0.23.4",
     "@eslint/js": "10.0.1",
     "@nestjs/class-transformer": "0.4.0",
     "@nestjs/class-validator": "0.13.4",
-    "@nestjs/common": "12.2.0",
+    "@nestjs/common": "12.3.2",
     "@nestjs/config": "12.0.1",
-    "@nestjs/core": "12.2.0",
+    "@nestjs/core": "12.3.2",
     "@nestjs/jwt": "12.0.3",
-    "@nestjs/platform-express": "12.2.0",
-    "@nestjs/schematics": "12.0.10",
-    "@nestjs/swagger": "12.0.3",
-    "@nestjs/testing": "12.2.0",
+    "@nestjs/platform-express": "12.3.2",
+    "@nestjs/schematics": "12.0.12",
+    "@nestjs/swagger": "12.0.5",
+    "@nestjs/testing": "12.3.2",
     "@rollup/plugin-babel": "7.1.0",
     "@rollup/plugin-commonjs": "29.0.3",
     "@rollup/plugin-json": "6.1.0",
@@ -217,10 +230,10 @@
     "@rollup/plugin-terser": "1.0.2",
     "@rollup/plugin-typescript": "12.3.1",
     "@swc/core": "^1.16.1",
-    "@types/node": "26.6.5",
+    "@types/node": "26.6.6",
     "@types/supertest": "7.2.1",
-    "@typescript-eslint/eslint-plugin": "8.72.0",
-    "@typescript-eslint/parser": "8.72.0",
+    "@typescript-eslint/eslint-plugin": "8.72.1",
+    "@typescript-eslint/parser": "8.72.1",
     "@vitest/coverage-v8": "5.0.5",
     "@vitest/ui": "5.0.5",
     "agadoo": "^3.0.0",
@@ -230,7 +243,7 @@
     "bson": "7.3.3",
     "chalk": "6.0.1",
     "esbuild": "0.28.2",
-    "eslint": "10.13.0",
+    "eslint": "10.14.0",
     "eslint-plugin-sonarjs": "4.2.2",
     "fs-extra": "11.4.1",
     "globals": "17.13.0",
@@ -238,17 +251,17 @@
     "istanbul-badges-readme": "^1.9.0",
     "lint-staged": "17.6.0",
     "markdownlint-cli2": "^0.24.0",
-    "mongoose": "9.11.3",
+    "mongoose": "9.11.4",
     "pinst": "3.0.0",
     "prettier": "3.9.10",
     "reflect-metadata": "0.2.2",
     "rimraf": "6.1.3",
-    "rollup": "4.65.0",
+    "rollup": "4.67.2",
     "rollup-plugin-dts": "6.5.1",
     "rxjs": "7.8.2",
     "semver": "7.8.5",
     "supertest": "7.3.1",
-    "tslib": "2.8.1",
+    "tslib": "2.9.1",
     "typescript": "^6.0.2",
     "typescript7": "npm:typescript@7.0.2",
     "unplugin-swc": "^2.0.0",

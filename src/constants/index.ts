@@ -10,6 +10,8 @@ export { eventConstants } from './eventConstants';
 export { extensionConstants } from './extensionConstants';
 export { flightConstants } from './flightConstants';
 export { genderConstants } from './genderConstants';
+export { homeParticipantConstants } from './homeParticipantConstants';
+export type { HomeParticipantBasis } from './homeParticipantConstants';
 export { keyValueConstants } from '@Helpers/keyValueScore/constants';
 export { matchUpActionConstants } from './matchUpActionConstants';
 export { matchUpTypes } from './matchUpTypes';

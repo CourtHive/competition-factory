@@ -28,16 +28,29 @@ scheduleProfileRounds (timed)          scheduleProfileGrid (grid)            sch
 
 **The scheduling profile** lists, per date, the venues in play and, per venue, the rounds to schedule there in order.
 A round names a tournament, event, draw, structure and round number; it may narrow itself to `matchUpIds`, or to a
-`roundSegment` (`segmentNumber` of `segmentsCount`, by round position). A round's own `periodLength` is not read: the
-call's sizes every venue's periods. A round
+`roundSegment` (`segmentNumber` of `segmentsCount`, by round position), and may state its own `periodLength`
+(§ 4, step 2; read since 2026-11-01, CA: until then it was stored and ignored). A round
 robin's rounds are profiled on the round robin's containing structure: they cover every group it contains.
 
 **The call** takes `scheduleDates` (the profile's dates to schedule; all of them when absent), `clearScheduleDates`,
-`courtIds` (a court filter), `periodLength` (minutes per scheduling period; when absent, the smaller of 30 and a
-venue's `T` plus recovery, so a short format is not given periods longer than itself) and `dryRun`. A completed
+`courtIds` (a court filter), `periodLength` (minutes per scheduling period; see **The period** below) and `dryRun`. A completed
 matchUp is never scheduled again, and there is no override (CA 2026-10-23): `scheduleCompletedMatchUps` is accepted
 and ignored by the schedulers until the next major. mocksEngine, auto-scheduling a generated tournament, schedules it
 first and applies its results after, as a real tournament is played.
+
+**The period** (CA 2026-11-01). Each profiled round is planned with the first of these that is stated, a statement
+being a positive number (anything else is ignored, never refused):
+
+1. the call's `periodLength`, which every round takes;
+2. the round's own `periodLength`;
+3. the scheduling policy's `defaultPeriodLength` for the round's draw: the draw's policy, else its event's, else the
+   tournament's, as every scheduling policy setting is resolved;
+4. otherwise the venue's derived period: the smaller of 30 and the venue's `T` (§ 4, step 2), so a short format is not
+   given periods longer than itself.
+
+A stated period is used as stated; only the derived one is shortened. The view carries 2 and 3, resolved, as the round's
+`statedPeriodLength` (absent when neither states one); the plan applies 1 over it. `scheduleMatchUps` (§ 6) and the
+slot utilities (`calculateScheduleTimes`, `generateBookings`) read the policy's default too.
 
 **`allowInactiveEventDates`** (default `false`), taken by all four schedulers (`scheduleProfileRounds`,
 `scheduleProfileGrid`, `proAutoSchedule`, `scheduleMatchUps`): see § 3.10. When it is set, a matchUp is placed on a day
@@ -300,7 +313,7 @@ Dates are taken in order. On each date:
    from the period before, computed over each court's availability and bookings. Periods number from 0 at the venue's
    opening, which takes `C`; period 1 adds none. This is Brian Garman's own numbering and rounding ("The Revised Garman
    System", 2009-10: 10 courts of 90-minute matches total 10, 10, 13, 17, 20, … 77, 80 over 23 half-hour periods). `T` is the **greatest** average among the venue's rounds on the date (the
-   rounds form a single group), and `L` is the call's `periodLength` (§ 1). Further (decided 2026-10-25):
+   rounds form a single group), and `L` is the round's period (§ 1, **The period**). Further (decided 2026-10-25):
    - `C` at a period is the mean of the courts available at the starts of periods 1..P (period 0 takes the courts
      available at the opening), so a court that opens later adds slots gradually rather than as though it had been open
      all day; a court is available at a period's start when it is free for `T` minutes from it;
@@ -309,6 +322,28 @@ Dates are taken in order. On each date:
    - a period adds nothing when no court is available; after a period with none it adds the courts newly available (an
      opening, or a reopening after a closure); otherwise it adds the change in `TM`;
    - the day runs from the courts' earliest opening to their latest closing on the date, unless the call bounds it.
+
+   **Stages** (CA 2026-11-01). When the venue's rounds on the date resolve to more than one period, consecutive rounds
+   (in `sortOrder`, counting only those with matchUps to place) with the same period form a **stage**, and the venue's
+   slots are the stages' slots in turn. Each stage's slots are Garman slots with its own `L`, on its own grid (the
+   opening plus multiples of `L`), and with the venue's one `T` and `C`:
+   - a stage takes as many of its grid's slots as it has matchUps to place; the last stage takes every slot left;
+   - the next stage takes the slots of its own grid that are **at or after the last slot the stage before took** (the
+     hand-over) **and** past the number of slots already handed out (its grid's first `n` slots are skipped, where `n`
+     is the count every earlier stage took). Garman's `TM` is cumulative, so the venue never has more matchUps started
+     by a time than the grid then in force projects for it.
+
+   The hand-over continues the count; it does not restart Garman at the hand-over time, which would start `C` more at
+   once on courts the stage before still holds. Two consequences, correct under Garman: a **coarser grid after a finer
+   one can leave a gap of up to one coarse period** at the hand-over (its `TM` lags by its own `L`: 4 courts of
+   90-minute matchUps, 8 at 15-minute periods ending at 09:45, then 30-minute periods take their next at 10:30); and a
+   **finer grid after a coarser one starts slowly** (after 8 at 30-minute periods ending at 10:00, the 15-minute grid's
+   `TM` has reached 9 at 10:00, so one more starts then, the next at 10:30). A slot belongs to no round: a matchUp
+   deferred past its stage's slots takes the next slot it passes the gate for, on whatever grid. With one period across
+   the venue, always when the call states one, there is one stage, and the slots are exactly the single Garman slots.
+   Pinned by `scheduling.plan.round-period-stages.v1` and `scheduling.plan.policy-default-period.v1` (kernel cases) and
+   `periodLengthStages.test.ts`.
+
 3. **Slot by slot.** Each slot is offered to the venue's remaining matchUps in profile order; the first that passes the
    gate is placed there. A venue's pass places at most as many matchUps as it has courts **available on the date**
    (within `courtIds`; CA 2026-10-25). The engine placed one more, and counted every court of the venue; within one venue
@@ -415,7 +450,9 @@ that is not a number: `INVALID_VALUES`.
    timing: 90 minutes and no recovery.
 3. **The slots** (§ 4, step 2), over every court of the venues (`venueIds`, else every venue) available on the date,
    from `startTime` and to `endTime` when given, else from the earliest opening to the latest closing of those courts,
-   with `T` the average of rule 2 and `L` the call's `periodLength`, **30 when absent**. The courts are held by every
+   with `T` the average of rule 2 and `L` the call's `periodLength`, else the smallest `defaultPeriodLength` the listed
+   matchUps' scheduling policies state (draw, else event, else tournament: one pool serves them all, and a finer grid
+   never denies a format the periods it needs), else **30**. The courts are held by every
    matchUp of the venues timed on the date, completed or not, each for its own average (§ 3.9 rule 1), and from 00:00
    by a matchUp of the day before whose own minutes run past midnight (§ 3.8 rule 6). The slots form one pool, in time
    order, shared by every venue.

@@ -3,7 +3,7 @@ import { validateTallyPolicy } from '@Validators/validateTallyPolicy';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
-import { addExtension } from '@Mutate/extensions/addExtension';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types
@@ -67,9 +67,11 @@ export function attachPolicies(params: AttachPoliciesArgs): ResultType & { appli
     ((params.tournamentId || !params.tournamentRecords) && params.tournamentRecord);
 
   if (element) {
-    const result = policyAttachement(params, element);
+    const plan = planPolicies(params, element);
+    if (plan.error) return plan;
+    const result = writePolicies(element, plan);
     if (result.error) return result;
-    applied.push(...(result?.applied ?? []));
+    applied.push(...plan.applied);
 
     if (params.drawDefinition) {
       modifyDrawNotice({
@@ -85,20 +87,35 @@ export function attachPolicies(params: AttachPoliciesArgs): ResultType & { appli
       });
     } else if (element === params.tournamentRecord) {
       // the tournament's own policies are a root extension
-      modifyTournamentDetailNotice({ tournamentRecord: element, detail: { extensions: element.extensions ?? [] } });
+      modifyTournamentDetailNotice({
+        tournamentRecord: element,
+        detail: { extensions: element.extensions ?? [], appliedPolicies: element.appliedPolicies ?? null },
+      });
     }
   } else if (params.tournamentRecords) {
     const tournamentIds = Object.keys(params.tournamentRecords);
     if (!tournamentIds.length) return { error: MISSING_TOURNAMENT_RECORD };
-    for (const tournamentId of tournamentIds) {
-      const tournamentRecord = params.tournamentRecords[tournamentId];
-      const result = policyAttachement(params, tournamentRecord);
-      // a record that already holds every policy given takes none, and the others still take theirs: refusing here
-      // returned an error after the records before it were written (an error changes nothing, CA 2026-10-18)
-      if (result.error && result.error !== EXISTING_POLICY_TYPE) return result;
-      if (!result.applied?.length) continue;
-      applied.push(...result.applied);
-      modifyTournamentDetailNotice({ tournamentRecord, detail: { extensions: tournamentRecord.extensions ?? [] } });
+    // every record is checked before any is written: a record that holds a policy type skips that policy's checks, so
+    // a later record could refuse a policy after an earlier one had taken the others (an error changes nothing)
+    const { tournamentRecords } = params;
+    const plans = tournamentIds.map((tournamentId) => planPolicies(params, tournamentRecords[tournamentId]));
+    // a record that already holds every policy given takes none, and the others still take theirs
+    const refusal = plans.find((plan) => plan.error && plan.error !== EXISTING_POLICY_TYPE);
+    if (refusal) return refusal;
+    for (const [index, tournamentId] of tournamentIds.entries()) {
+      const tournamentRecord = tournamentRecords[tournamentId];
+      const plan = plans[index];
+      if (plan.error || !plan.applied.length) continue;
+      const result = writePolicies(tournamentRecord, plan);
+      if (result.error) return result;
+      applied.push(...plan.applied);
+      modifyTournamentDetailNotice({
+        tournamentRecord,
+        detail: {
+          extensions: tournamentRecord.extensions ?? [],
+          appliedPolicies: tournamentRecord.appliedPolicies ?? null,
+        },
+      });
     }
   } else {
     return { error: MISSING_TOURNAMENT_RECORD };
@@ -113,38 +130,54 @@ export function attachPolicies(params: AttachPoliciesArgs): ResultType & { appli
  * the tournament refuse a draw- or event-level attach (EXISTING_POLICY_TYPE). Only a policy already attached to this
  * element refuses, unless `allowReplacement`; one attached here overrides an inherited one, as readers resolve it.
  */
-function ownAppliedPolicies(element?: { extensions?: Extension[] }): PolicyDefinitions {
-  const value = element?.extensions?.find((extension) => extension?.name === APPLIED_POLICIES)?.value;
+function ownAppliedPolicies(element?: {
+  appliedPolicies?: PolicyDefinitions;
+  extensions?: Extension[];
+}): PolicyDefinitions {
+  const value =
+    element?.appliedPolicies ?? element?.extensions?.find((extension) => extension?.name === APPLIED_POLICIES)?.value;
   return value ? makeDeepCopy(value, false, true) : {};
 }
 
-function policyAttachement(params: any, element: any): ResultType & { applied?: string[] } {
+type PolicyPlan = ResultType & { appliedPolicies: PolicyDefinitions; applied: string[] };
+
+/**
+ * What attaching the policies would leave on the element, or the refusal, written nowhere: every check runs before the
+ * first write (`writePolicies`), so a refusal leaves the element as it was.
+ */
+function planPolicies(params: any, element: any): PolicyPlan {
   const appliedPolicies = ownAppliedPolicies(element);
-  element.extensions ??= [];
   const applied: string[] = [];
 
   const policyTypes = Object.keys(params.policyDefinitions);
-  if (!policyTypes.length) return { error: MISSING_POLICY_DEFINITION };
+  if (!policyTypes.length) return { error: MISSING_POLICY_DEFINITION, appliedPolicies, applied };
 
   for (const policyType of policyTypes) {
     if (!appliedPolicies[policyType] || params.allowReplacement) {
       const policy = params.policyDefinitions[policyType];
       if (!policy) continue;
-      if (!isObject(policy)) return { error: INVALID_VALUES };
+      if (!isObject(policy)) return { error: INVALID_VALUES, appliedPolicies, applied };
       const { policyName, ...values } = policy;
       // an attribute whose value is undefined is not counted: it is not stored, so a policy holding only such
       // attributes would read back as its name alone, which this check refuses
       const defined = Object.values(values).some((value) => value !== undefined);
-      if (!defined || (policyName && !isString(policyName))) return { error: INVALID_VALUES };
+      if (!defined || (policyName && !isString(policyName))) return { error: INVALID_VALUES, appliedPolicies, applied };
       appliedPolicies[policyType] = params.policyDefinitions[policyType];
       applied.push(policyType);
     }
   }
 
-  if (applied?.length) {
-    const extension = { name: APPLIED_POLICIES, value: appliedPolicies };
-    return { ...addExtension({ element, extension }), applied };
-  }
+  return applied.length ? { appliedPolicies, applied } : { error: EXISTING_POLICY_TYPE, appliedPolicies, applied };
+}
 
-  return { applied, error: EXISTING_POLICY_TYPE };
+/** Writes a plan that took policies: the attribute, the extension or both, by schema write mode. */
+function writePolicies(element: { extensions?: Extension[] }, plan: PolicyPlan): ResultType {
+  element.extensions ??= [];
+  // NATIVE removes a stale extension
+  return setFirstClassOrExtension({
+    attribute: 'appliedPolicies',
+    name: APPLIED_POLICIES,
+    value: plan.appliedPolicies,
+    element,
+  });
 }

@@ -1,4 +1,5 @@
 import { stripCheckInAttribution, strippedParticipant } from '@Query/participants/participantPrivacy';
+import { unresolvedCollectionChoice, choiceMatchUpType } from '@Helpers/matchUpTypeOptions';
 import { getMatchUpCompetitiveProfile } from '@Query/matchUp/getMatchUpCompetitiveProfile';
 import { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInParticipantIds';
 import { isCompletedCombinedPointTie } from '@Validators/isCompletedCombinedPointTie';
@@ -200,12 +201,15 @@ export function addMatchUpContext({
       event?.matchUpFormat)
     : (matchUp.matchUpFormat ?? structure?.matchUpFormat ?? drawDefinition?.matchUpFormat ?? event?.matchUpFormat);
 
-  const matchUpType =
+  const unresolvedChoice = unresolvedCollectionChoice(collectionDefinition);
+  const matchUpType = choiceMatchUpType(
+    collectionDefinition,
     matchUp.matchUpType ||
-    collectionDefinition?.matchUpType ||
-    structure?.matchUpType ||
-    drawDefinition?.matchUpType ||
-    (!isMatchUpEventType(TEAM)(event?.eventType) && event?.eventType);
+      collectionDefinition?.matchUpType ||
+      structure?.matchUpType ||
+      drawDefinition?.matchUpType ||
+      (!isMatchUpEventType(TEAM)(event?.eventType) && event?.eventType),
+  );
 
   const matchUpStatus = isCollectionBye ? BYE : matchUp.matchUpStatus;
   let { schedule, endDate } = getMatchUpScheduleDetails({
@@ -243,6 +247,7 @@ export function addMatchUpContext({
         tournamentParticipants,
         positionAssignments,
         collectionPosition,
+        unresolvedChoice,
         participantMap,
         drawDefinition,
         drawPositions,
@@ -366,6 +371,7 @@ export function addMatchUpContext({
 
   if (Array.isArray(drawPositions)) {
     const sides = buildMatchUpSides({
+      unresolvedChoice,
       sourceDrawPositionRoundRanges,
       collectionAssignmentDetail,
       positionAssignments,
@@ -394,10 +400,7 @@ export function addMatchUpContext({
       event,
     });
 
-    if (!matchUpWithContext.matchUpType) {
-      const { matchUpType } = getMatchUpType({ matchUp: matchUpWithContext });
-      if (matchUpType) Object.assign(matchUpWithContext, { matchUpType });
-    }
+    inferMissingMatchUpType(matchUpWithContext, unresolvedChoice);
 
     inferMatchUpGender({ contextProfile, matchUpWithContext });
   }
@@ -506,6 +509,7 @@ export function annotateScoreSets(matchUpWithContext, matchUpFormat) {
 }
 
 export function buildMatchUpSides({
+  unresolvedChoice = false,
   sourceDrawPositionRoundRanges,
   collectionAssignmentDetail,
   assignmentsByPosition = undefined as Map<number, PositionAssignment> | undefined,
@@ -552,11 +556,13 @@ export function buildMatchUpSides({
     const columnPosition = roundPosition ? (roundPosition - 1) * 2 + index + 1 : undefined;
     const sourceDrawPositionRange = columnPosition ? sourceDrawPositionRoundRanges?.[columnPosition] : undefined;
 
-    return onlyDefined({
-      sourceDrawPositionRange,
-      ...existingSide,
-      ...side,
-    });
+    const resolvedSide = { sourceDrawPositionRange, ...existingSide, ...side };
+    if (unresolvedChoice) {
+      delete resolvedSide.participantId;
+      delete resolvedSide.participant;
+      delete resolvedSide.individualParticipants;
+    }
+    return onlyDefined(resolvedSide);
   });
 }
 
@@ -788,4 +794,11 @@ function processTieMatchUps(params) {
       context: params.context,
     });
   });
+}
+
+function inferMissingMatchUpType(matchUp: HydratedMatchUp, unresolvedChoice: boolean): void {
+  if (unresolvedChoice || matchUp.matchUpType) return undefined;
+  const { matchUpType } = getMatchUpType({ matchUp });
+  if (matchUpType) Object.assign(matchUp, { matchUpType });
+  return undefined;
 }

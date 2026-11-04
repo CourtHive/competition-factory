@@ -196,9 +196,13 @@ the call writes nothing:
 - `entries` is created on the event if absent. Each id not already entered gets, in input order:
   `{ participantId, entryStatus, entryStage }`, plus `extensions` (copies), an `extension` (with `createdAt` set to the
   call's instant if it has none), `roundTarget` and `entryStageSequence` when given. Existing entries are unchanged.
-- With `autoEntryPositions`, the event's entries are then rewritten: grouped by stage and status (groups in order of
-  first appearance, which can reorder the array), ordered within a group by their existing `entryPosition` (absent
-  last, stable), and numbered `entryPosition` 1..n per group.
+- With `autoEntryPositions`, the event's entries are then rewritten: grouped (groups in order of first appearance,
+  which can reorder the array), ordered within a group by their existing `entryPosition` (absent last, stable), and
+  numbered `entryPosition` 1..n per group. Every accepted status (`DIRECT_ACCEPTANCE`, `WILDCARD`, `SPECIAL_EXEMPT`,
+  `JUNIOR_EXEMPT`, `ORGANISER_ACCEPTANCE`, `CONFIRMED`, `QUALIFIER`, `LUCKY_LOSER`) forms **one group per
+  `entryStage`** (`MAIN` when absent); every other status (`ALTERNATE`, `WITHDRAWN`, ...) has its own group per stage.
+  So a `WILDCARD` entered after two `DIRECT_ACCEPTANCE` entries is numbered 3, not 1 (see
+  [modifyEntriesStatus](../governors/entries-governor.md#modifyentriesstatus)).
 - DOUBLES and TEAM: individuals entered UNGROUPED or UNPAIRED who now belong to an entered PAIR or TEAM are removed from
   the event's entries (unless one holds a draw position).
 - With a `drawId`, the same participants are entered in that draw (and its flight), ungrouped individuals included; a
@@ -222,7 +226,10 @@ the call writes nothing:
 4. The selected flight (`flight.flightNumber`) is for another draw, or a draw entry is not among its entries:
    `INVALID_DRAW_DEFINITION`. With `checkEntryStatus`, a draw entry without a matching event entry:
    `INVALID_DRAW_DEFINITION`.
-5. The event already has this `drawId`: `DRAW_ID_EXISTS`, unless `allowReplacement`; replacing a draw with scores
+5. Unless the draw is `AD_HOC`: its entries exceed a matched sanction's `maxWildcards` or `maxAlternates`:
+   `NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS`, naming the first limit exceeded (see
+   [addDrawDefinition](../governors/event-governor.md#adddrawdefinition)).
+6. The event already has this `drawId`: `DRAW_ID_EXISTS`, unless `allowReplacement`; replacing a draw with scores
    needs `force` or the scoring policy's permission (`SCORES_PRESENT`).
 
 **What is written**, in this order:
@@ -304,13 +311,21 @@ Notice `MODIFY_VENUE`. **Returns** `{ success, courtIds }`.
 **What is written**, on each element:
 
 1. `extensions` is created if absent.
-2. The applied policies are a copy of the element's `appliedPolicies` extension value. For each type given: a falsy
+2. The applied policies are a copy of the element's own: its first-class `appliedPolicies` attribute (CODES), else,
+   on a record written before it, its `appliedPolicies` extension value. For each type given: a falsy
    policy is skipped; a policy that is not an object, holds nothing but its `policyName` (an attribute whose value is
    `undefined` does not count: it is not stored), or has a `policyName` that is not a string refuses
    (`INVALID_VALUES`); a type already held is skipped unless `allowReplacement`; otherwise the
    policy replaces that type whole.
-3. If any type was taken, the `appliedPolicies` extension's value is replaced, or the extension is appended:
-   `{ name: 'appliedPolicies', value, createdAt: now }`.
+3. If any type was taken, the policies are written by schema write mode: NATIVE (the default) sets the
+   `appliedPolicies` attribute and removes any `appliedPolicies` extension of the element; BRIDGE sets the attribute
+   and also replaces or appends the extension (`{ name: 'appliedPolicies', value, createdAt: now }`); LEGACY writes the
+   extension only.
+
+Every refusal comes before the first write: a refused call leaves every element as it was (no `extensions` created)
+and announces nothing. With several loaded records and none named, every record is checked before any is written, so
+a record that already holds a policy type (and so skips that policy's checks) is not written when a later record
+refuses the policy.
 
 A draw is announced as modified (stamping it and its structures, §1.1); an event or a record is announced as modified.
 Across every loaded record, a record that takes nothing is passed over. Nothing taken anywhere: `EXISTING_POLICY_TYPE`.

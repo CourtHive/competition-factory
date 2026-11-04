@@ -316,8 +316,10 @@ Disable default behavior of auto calculating TEAM matchUp scores.
 engine.disableTieAutoCalc({ drawId, matchUpId });
 ```
 
-This is a **per-matchUp** override — "this particular tie's score was entered by hand" — and is cleared when
-the score is removed. To state that an entire competition publishes only team results and never line detail,
+This is a **per-matchUp** override — "this particular tie's score was entered by hand". Resume calculation
+explicitly with `enableTieAutoCalc`; clearing a score is a separate operation. See
+[Manual TEAM results](../concepts/manual-team-results.md) for score/edit/clear behavior and the UI flow.
+To state that an entire competition publishes only team results and never line detail,
 declare [`scoreSource: REPORTED`](/docs/concepts/tieFormat#score-source--derived-vs-reported) on the
 tieFormat instead: it is inherited by every tie under it and carries no per-matchUp state.
 
@@ -330,6 +332,10 @@ Re-enable default behavior of auto calculating TEAM matchUp scores, and trigger 
 ```js
 engine.enableTieAutoCalc({ drawId, matchUpId });
 ```
+
+Recomputes the parent TEAM result from its current lines, subject to normal progression checks.
+See [Manual TEAM results](../concepts/manual-team-results.md) for the distinction between clearing a
+score and restoring automatic calculation.
 
 ---
 
@@ -779,6 +785,9 @@ const { rounds } = engine.getRounds({
 const { homeParticipantId } = engine.getHomeParticipantId({ matchUp });
 ```
 
+Returns only the stored value. To infer the home side from the venue or the host organisation when none is stored,
+see [`resolveHomeParticipantId`](/docs/governors/query-governor#resolvehomeparticipantid).
+
 ---
 
 ## isValidMatchUpFormat
@@ -1002,6 +1011,8 @@ Sets the `matchUpFormat` for a specific `matchUp` or for any scope within the hi
 If an array of `scheduledDates` is provided then `matchUps` which have `matchUpStatus: TO_BE_PLAYED` and are scheduled to be played on the specified dates will have their `matchUpFormat` fixed rather than inherited. This means that subsequent changes to the parent `structure.matchUpFormat` will have no effect on such `matchUps`.
 
 The `force` attribute will remove the `matchUpFormat` from all targeted `matchUps` which have `matchUpStatus: TO_BE_PLAYED`; this allows the effect of using `scheduledDates` to be reversed. Use of this attribute will have no effect if `scheduledDates` is also provided.
+
+An explicitly empty `scheduledDates: []` selects no matchUps, even when `force` is true. Omit `scheduledDates` to clear all targeted unplayed overrides. Scored matchUps retain their formats. MatchUp format changes are included in `modificationsCount` and emit `MODIFY_MATCHUP` notices.
 
 :::
 

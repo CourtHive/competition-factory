@@ -111,7 +111,12 @@ dates (`SCHEDULING_PROFILE_DATES_OUT_OF_RANGE`) is passed on in `warnings`.
 
 A round whose event does not play on `scheduleDate` (see [Event playing days](#event-playing-days)) is added, and the
 result carries an `EVENT_DATE_INACTIVE` warning: `{ code, message, eventId, scheduledDate, reason, roundKey }`.
-`getSchedulingProfileIssues` reports such rounds for as long as they stay profiled.
+`eventId` is the round's, `scheduledDate` the date part of `scheduleDate`, and `roundKey` is
+`tournamentId|eventId|drawId|structureId|roundNumber|segment`: the round's `containerStructureId` stands for its
+`structureId` when `isRoundRobin`, an absent value is empty, and `segment` is `segmentNumber/segmentsCount` for a
+`roundSegment` that states a `segmentsCount`, else empty (so a key without a segment ends in `|`). Any warning
+`setSchedulingProfile` gives for the profile comes before it. `getSchedulingProfileIssues` reports such rounds for as
+long as they stay profiled.
 
 ---
 
@@ -273,7 +278,7 @@ engine.scheduleMatchUps({
   venueIds, // optional - defaults to all venues
 
   // Scheduling parameters
-  periodLength, // optional - scheduling block size in minutes (default: 30)
+  periodLength, // optional - scheduling block size in minutes (default: the policy's defaultPeriodLength, else 30)
   averageMatchUpMinutes, // optional - average match duration (see "Timing" below)
   recoveryMinutes, // optional - recovery time between matches (see "Timing" below)
 
@@ -314,6 +319,11 @@ The `periodLength` parameter controls the granularity of scheduling blocks:
 - **60 minutes**: Coarse scheduling for long-format matches
 
 Smaller period lengths provide more precise start times but may reduce court utilization. Larger periods improve grouping but reduce precision.
+
+When the call states no `periodLength`, the scheduling policy's `defaultPeriodLength` is used: for each listed matchUp,
+its draw's policy, else its event's, else the tournament's, and the smallest of those when the listed matchUps' policies
+differ (one slot pool serves them all). With none stated, 30, as before. A `defaultPeriodLength` that is not a positive
+number is ignored. See [Scheduling policy](../policies/scheduling.md#defaultperiodlength).
 
 **See**: [Automated Scheduling - Period Length](../concepts/automated-scheduling.md#period-length-scheduling-block-size) for detailed explanation.
 
@@ -372,7 +382,7 @@ Auto-schedules all rounds specified in a scheduling profile across multiple days
 ```js
 engine.scheduleProfileRounds({
   // Scheduling parameters
-  periodLength, // optional - scheduling block size (default: 30)
+  periodLength, // optional - scheduling block size; when stated, every round takes it (see "Period length" below)
 
   // Date selection
   scheduleDates, // optional - specific dates to schedule
@@ -395,6 +405,21 @@ engine.scheduleProfileRounds({
   // scheduledDate is strictly before the date being scheduled
 });
 ```
+
+**Period length**: each profiled round is planned with the first of these that is stated:
+
+1. the call's `periodLength` (every round takes it);
+2. the round's own `periodLength` in the scheduling profile;
+3. the scheduling policy's `defaultPeriodLength` for the round's draw (the draw's policy, else its event's, else the
+   tournament's);
+4. otherwise the period derived from the venue's average minutes: 30, or the average when it is shorter.
+
+When the rounds of one venue on one date resolve to different periods, they are planned in **stages**: consecutive
+rounds with the same period form a stage, each stage takes Garman slots on its own grid (from the venue's opening, every
+`L` minutes), and the next stage starts no earlier than the last slot the stage before took, continuing Garman's
+cumulative count rather than restarting it. A coarser period after a finer one can therefore leave up to one coarse
+period with no start at the hand-over. With one period across the venue (always when the call states one) the slots are
+exactly as before. See [The scheduling pipeline § 4](../concepts/scheduling-pipeline.md#4-the-timed-pipeline-scheduleprofilerounds).
 
 **Daily-limit accounting with `excludeNoDateCompleted` / `excludePriorDates`**:
 
@@ -903,6 +928,7 @@ const { times } = engine.calculateScheduleTimes({
   scheduleDate, // required
   matchUpIds, // required
   venueIds, // optional
+  periodLength, // optional - minutes per period; else the smallest defaultPeriodLength the tournaments' scheduling policies state, else 30 or the average plus recovery when shorter
 });
 ```
 
@@ -977,6 +1003,7 @@ Generates booking objects for scheduled matchUps.
 ```js
 const { bookings } = engine.generateBookings({
   scheduleDate, // required
+  periodLength, // optional - carried on each booking; else the tournaments' scheduling policy defaultPeriodLength, else derived
 });
 ```
 
@@ -1647,8 +1674,9 @@ engine.addMatchUpScheduleItems({
 
 When the call sets a date (`scheduledDate`, or the date of a date-time `scheduledTime` given without one) on which the
 matchUp's event does not play (see [Event playing days](#event-playing-days)), the schedule is written and the result's
-`warnings` carry `EVENT_DATE_INACTIVE`: `{ code, message, matchUpId, eventId, scheduledDate, reason }`. A call that
-sets no date (a court, a court order, a time alone) carries none. The bulk writes (`bulkScheduleMatchUps`,
+`warnings` carry `EVENT_DATE_INACTIVE`: `{ code, message, matchUpId, eventId, scheduledDate, reason }`, with `code`
+`'EVENT_DATE_INACTIVE'` and `message` `'The event does not play on this date.'` (the same in every `EVENT_DATE_INACTIVE`
+warning). A call that sets no date (a court, a court order, a time alone) carries none. The bulk writes (`bulkScheduleMatchUps`,
 `bulkScheduleTournamentMatchUps`, `bulkRescheduleMatchUps`) return the warning of each matchUp they write in their own
 `warnings`.
 

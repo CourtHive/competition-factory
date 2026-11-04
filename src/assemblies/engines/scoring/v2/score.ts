@@ -1,17 +1,19 @@
-import { positionOf, serverOf } from './reduce';
+import { overtimeScoreContext, overtimeScoreString } from '@Helpers/matchUpFormatCode/overtimeContext';
+import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { combinedClosed } from './segments/combined';
 import { inTiebreak } from './segments/standard';
+import { positionOf, serverOf } from './reduce';
 import { atTimeIn } from './segments/segment';
 import { isClosed } from './decide';
 import { pointsTo } from './view';
 
 // constants and types
-import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { PointSituation, ScoreResult, SetScore } from '@Types/scoring/types';
+import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { CombinedRule, SegmentRule } from './format';
+import type { Pair, ScoringState, Side } from './types';
 import type { ServicePosition } from './service';
 import type { ReducerContext } from './reduce';
-import type { Pair, ScoringState, Side } from './types';
 
 /**
  * ScoringEngine v2 (SE2c): the score as `getScore()` reports it (§ 11.2, § 11.3), read from the reduced state.
@@ -133,9 +135,12 @@ function inPlay(context: ReducerContext, state: ScoringState) {
 
 export function scoreOf(context: ReducerContext, state: ScoringState, sets: SetScore[]): ScoreResult {
   const { games, points, pointDisplay } = inPlay(context, state);
+  const format = context.match?.overtime && parse(context.match.code);
+  const overtime = format && overtimeScoreContext(format, sets, state.matchUpStatus);
   return {
     sets,
-    scoreString: scoreString(sets),
+    scoreString: overtime ? overtimeScoreString(overtime) : scoreString(sets),
+    ...(overtime ? { overtime } : {}),
     games,
     points,
     pointDisplay,

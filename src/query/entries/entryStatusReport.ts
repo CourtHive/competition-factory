@@ -1,4 +1,5 @@
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { isCompetitorRole } from '@Query/participant/participantRoleOf';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { getDetailsWTN } from '@Query/scales/getDetailsWTN';
 
@@ -10,7 +11,6 @@ import { WITHDRAW_PARTICIPANT } from '@Constants/positionActionConstants';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { DOUBLES_EVENT } from '@Constants/eventConstants';
-import { COMPETITOR } from '@Constants/participantRoles';
 import { Tournament } from '@Types/tournamentTypes';
 
 type GetEntryStatusReportsArgs = {
@@ -197,8 +197,7 @@ export function getEntryStatusReports({ tournamentRecord }: GetEntryStatusReport
   }
 
   const individualParticipants = Object.values(participantMap ?? {}).filter(
-    ({ participant: { participantType, participantRole } }) =>
-      participantType === INDIVIDUAL && participantRole === COMPETITOR,
+    ({ participant }) => participant.participantType === INDIVIDUAL && isCompetitorRole(participant),
   );
   const nonParticipatingParticipantIds = individualParticipants
     .filter(({ participant }) => !nonTeamEnteredParticipantIds.includes(participant.participantId))

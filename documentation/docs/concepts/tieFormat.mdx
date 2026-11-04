@@ -12,6 +12,16 @@ For instance, there can be "Men's Singles", "Men's Doubles", "Womens's Singles",
 Each `collectionDefinition` defines how many `matchUps` are in the collection, the `matchUpType` (SINGLES or DOUBLES), the `matchUpFormat` to be used for scoring, and how value is assigned to each `matchUp`.
 `collectionDefinitions` can optionally define `category` and `gender`.
 
+## Captain's Choice collections (unreleased)
+
+The `matchUpTypeOptions` field declares that a collection permits SINGLES or DOUBLES. A concrete
+`matchUpType` records the choice for one TEAM encounter; the permitted options remain after selection.
+An unresolved choice has no concrete type and cannot be assigned players or scored.
+
+See the [Captain's Choice specification](./collectionMatchUpTypeChoice.mdx) for the representation,
+validation, inheritance and selection/reset rules. This capability is implemented on the runtime branch and
+is not yet released; fixed-type collections retain their existing behavior.
+
 ## Value Considerations
 
 The score of a TEAM `matchUp` is the summation of the value assigned for the wins on each side. Value can be assigned in numerous ways.
@@ -146,13 +156,15 @@ When the score is `DERIVED`, three rules govern what the dual stores:
 [`disableTieAutoCalc`](../governors/matchup-governor.md) sets `disableAutoCalc` on a single TEAM `matchUp` and
 has the same protective effect. The two express different things:
 
-- `disableAutoCalc` — **per-matchUp state**: "this particular tie's score was entered by hand". Cleared when
-  the score is removed.
+- `disableAutoCalc` — **per-matchUp state**: "this particular tie's score was entered by hand". Resume
+  automatic calculation explicitly with `enableTieAutoCalc`; clearing a score is a separate operation.
 - `scoreSource: REPORTED` — **declarative and inherited**: "ties under this format never have line detail".
   Carries no per-matchUp state.
 
 Use `disableAutoCalc` for a one-off manual override; use `scoreSource` to describe how a competition
 publishes its results.
+
+See [Manual TEAM results](./manual-team-results.md) for score/edit/clear behavior and the Override/Restore flow.
 
 ## Related
 

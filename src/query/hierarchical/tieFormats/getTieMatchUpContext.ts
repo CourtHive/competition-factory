@@ -1,5 +1,6 @@
 import { includesMatchUpEventType } from '@Helpers/matchUpEventTypes/includesMatchUpEventType';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { collectionChoiceRefusal } from '@Query/matchUp/collectionChoice';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { getParticipantId } from '@Functions/global/extractors';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -26,12 +27,14 @@ import {
 // the tieFormat, collectionId and collectionPosition & etc.
 
 type GetTieMatchUpContextArgs = {
+  requireResolvedMatchUpType?: boolean;
   tournamentRecord: Tournament;
   drawDefinition: DrawDefinition;
   tieMatchUpId: string;
   event: Event;
 };
 export function getTieMatchUpContext({
+  requireResolvedMatchUpType,
   tournamentRecord,
   drawDefinition,
   tieMatchUpId,
@@ -65,6 +68,10 @@ export function getTieMatchUpContext({
     matchUpsMap,
   });
   if (!tieMatchUp) return { error: MATCHUP_NOT_FOUND };
+  if (requireResolvedMatchUpType) {
+    const choice = collectionChoiceRefusal({ drawDefinition, event, matchUp: tieMatchUp, matchUpsMap });
+    if (choice) return choice;
+  }
 
   const { matchUp: inContextTieMatchUp, structure } = findDrawMatchUp({
     tournamentParticipants: tournamentRecord.participants,

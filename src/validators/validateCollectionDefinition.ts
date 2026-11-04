@@ -1,7 +1,8 @@
-import { isValidMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
+import { validateMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { includesMatchUpEventType } from '@Helpers/matchUpEventTypes/includesMatchUpEventType';
 import { validateCollectionValueProfiles } from '@Validators/validateCollectionValueProfiles';
 import { tieFormatGenderValidityCheck } from '@Validators/tieFormatGenderValidityCheck';
+import { matchUpTypeOptionsErrors } from '@Helpers/matchUpTypeOptions';
 import { categoryCanContain } from '@Query/event/categoryCanContain';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isConvertableInteger } from '@Tools/math';
@@ -21,6 +22,7 @@ type ValidateCollectionDefinitionArgs = {
   checkGender?: boolean;
   /** the collection is being added, so its matchUpFormat must be valid for new use, not only readable */
   newUse?: boolean;
+  allowResolvedMatchUpTypeOptions?: boolean;
   /** the tieFormat is being saved: refuse negative values (a stored tieFormat stays readable for scoring) */
   enforceValues?: boolean;
   event?: Event;
@@ -33,6 +35,7 @@ export function validateCollectionDefinition({
   referenceCategory,
   referenceGender,
   enforceValues,
+  allowResolvedMatchUpTypeOptions,
   newUse,
   event,
 }: ValidateCollectionDefinitionArgs) {
@@ -54,6 +57,7 @@ export function validateCollectionDefinition({
     matchUpFormat,
     matchUpValue,
     matchUpType,
+    matchUpTypeOptions,
     category,
     gender,
   } = collectionDefinition;
@@ -73,6 +77,13 @@ export function validateCollectionDefinition({
   if (matchUpType && !includesMatchUpEventType([SINGLES, DOUBLES, HYBRID], matchUpType)) {
     errors.push(`matchUpType must be SINGLES, DOUBLES, or HYBRID: ${matchUpType}`);
   }
+
+  errors.push(
+    ...matchUpTypeOptionsErrors(collectionDefinition, {
+      newUse: !!(newUse || enforceValues),
+      allowResolved: allowResolvedMatchUpTypeOptions,
+    }),
+  );
 
   errors.push(...valueErrors({ collectionDefinition, enforceValues }));
 
@@ -98,25 +109,12 @@ export function validateCollectionDefinition({
 
   // a stored tieFormat is validated when it is read (team scoring, line-ups), so a format v1 accepted and
   // new use now refuses stays readable there (CA 2026-10-18, scoring engine spec § 12.8)
-  const formatAccepted = newUse ? isValidMatchUpFormat : isWellFormedMatchUpFormat;
-  if (matchUpFormat && !formatAccepted({ matchUpFormat })) {
-    errors.push(`Invalid matchUpFormat: ${matchUpFormat}`);
-  }
+  if (matchUpFormat) errors.push(...matchUpFormatErrors(matchUpFormat, newUse));
 
   if (checkGender) {
-    const result = tieFormatGenderValidityCheck({
-      referenceGender,
-      matchUpType,
-      gender,
-    });
-
-    if (result.error) {
-      return decorateResult({
-        context: { referenceGender, gender },
-        result,
-        stack,
-      });
-    }
+    const types = Array.isArray(matchUpTypeOptions) ? matchUpTypeOptions : [matchUpType];
+    const result = collectionGenderValidity({ types, referenceGender, gender });
+    if (result.error) return decorateResult({ context: { referenceGender, gender }, result, stack });
   }
 
   if (checkCategory && referenceCategory && category) {
@@ -187,4 +185,30 @@ function valueErrors({
   }
 
   return errors;
+}
+
+/** Check every offered type, including those not currently selected. */
+function collectionGenderValidity({
+  types,
+  referenceGender,
+  gender,
+}: {
+  types: (string | undefined)[];
+  referenceGender?: GenderUnion;
+  gender?: GenderUnion;
+}) {
+  for (const matchUpType of types) {
+    const result = tieFormatGenderValidityCheck({ matchUpType, referenceGender, gender });
+    if (result.error) return result;
+  }
+  return { valid: true };
+}
+
+function matchUpFormatErrors(matchUpFormat: string, newUse?: boolean): string[] {
+  const validation = newUse
+    ? validateMatchUpFormat({ matchUpFormat })
+    : { valid: isWellFormedMatchUpFormat({ matchUpFormat }), info: undefined };
+  if (validation.valid) return [];
+  const explanation = validation.info ? '. ' + validation.info : '';
+  return [`Invalid matchUpFormat: ${matchUpFormat}${explanation}`];
 }

@@ -22,7 +22,7 @@ A further check, `verify:ecosystem`, runs downstream consumer tests against the 
 | `verify:publint`           | `publint --strict --level warning` — package.json `exports` correctness, per-format type declarations, `sideEffects` / `type` hints, tarball contents match `files` field                                                                                                                                                                                       | ~6 s   |
 | `verify:runtime`           | "compiles but doesn't run" — CJS + ESM smoke against the built dist                                                                                                                                                                                                                                                                                             | ~3 s   |
 | `verify:bundle-size`       | a file in `dist/` grew beyond +10 % vs baseline                                                                                                                                                                                                                                                                                                                 | ~1 s   |
-| `verify:consumer-bundle`   | what a CONSUMER bundles grew beyond +10 % vs baseline: bare `syncEngine` and `syncEngine` + named `queryGovernor`, built from `dist/esm` with esbuild (minify, ESM, gzip); a failure names the source areas that grew                                                                                                                                           | ~1 s   |
+| `verify:consumer-bundle`   | what a CONSUMER bundles, built from `dist/esm` with esbuild (minify, ESM, gzip): seven fixtures, from bare `syncEngine` to TMX's import union, may grow +10 % vs baseline and +15 % vs the last release (anchor); the narrow ones must also stay under a share of `tournamentEngine` (shake ceilings). A failure names the source areas that grew               | ~1 s   |
 | `verify:surface`           | a public export was removed (breaking) or signature drifted                                                                                                                                                                                                                                                                                                     | ~1 s   |
 | `verify:pack`              | the published `.d.ts` references an internal path that didn't get packed; runtime `require()` smoke after `npm install` of the tarball                                                                                                                                                                                                                          | ~30 s  |
 
@@ -46,7 +46,8 @@ The baselines live under `scripts/verify/baseline/`:
 
 - **`surface.txt`** — sorted list of every public export name. Surface drift is computed by set diff against this file. Regenerate after intentional surface changes with `pnpm verify:surface -- --update-baseline`.
 - **`bundle-size.json`** — `{ rawBytes, gzipBytes }` per published file. Growth-budget is +10 % per file by default; override with `--budget=N` (decimal).
-- **`consumer-bundle.json`** — per consumer fixture: raw + gzip of the bundled output, its module count, and its minified bytes per source area (from the esbuild metafile). +10 % by default (`--budget=N`); the areas let a failure say what was pulled in. `verify:bundle-size` cannot see this: when a governor starts importing a generator, the published files grow by one export line, because the generator was already in them. Re-seed with `pnpm verify:consumer-bundle -- --update-baseline`.
+- **`consumer-bundle.json`** — per consumer fixture: raw + gzip of the bundled output, its module count, and its minified bytes per source area (from the esbuild metafile). +10 % by default (`--budget=N`); the areas let a failure say what was pulled in. `verify:bundle-size` cannot see this: when a governor starts importing a generator, the published files grow by one export line, because the generator was already in them. Raising it takes a reason: `pnpm verify:consumer-bundle -- --update-baseline --reason="..."`, which must name every area that grew by 2 KB or more and is stored beside the numbers (`acknowledged`). `--seed-new --reason="..."` adds a new fixture without re-measuring the others. The shake ceilings in the script are not in any baseline, so no flag raises them.
+- **`consumer-bundle-anchor.json`** — each consumer fixture's raw + gzip at the last factory release (`release`, `commit`). A fixture may not grow more than +15 % past it, raw or gzip, whatever the baseline says: `--update-baseline` never writes this file, so acknowledgements between two releases cannot add up past the anchor budget. A fixture added since the release is anchored where it starts (`seeded`, written by `--seed-new` or `--update-baseline`). See [Resetting the consumer-bundle anchor](#resetting-the-consumer-bundle-anchor).
 - **`coverage-headroom.json`** — items of margin per metric before the coverage floor. A change may spend 25 by default (`--budget=N`); accept a new margin with `node scripts/verify/coverage-headroom.mjs --update-baseline`. Percentages hide how close the floor is — 95.09 % against a 95 floor was **39 statements** out of 43,284 — so this tracks the number in items.
 - **`hydrations.json`** — v1's draw hydrations and `getMatchUpsMap` builds per census arm (`calls`, `total`, `worst`); may only fall. Lower it with `PIPELINE_HYDRATIONS=1 HYDRATIONS_UPDATE=1 OUTCOME_PIPELINE=v1 TZ=UTC npx vitest run src/tests/mutations/exitPropagation/pipelineCost.test.ts`; a rise is written only with `HYDRATIONS_ACCEPT_RISE=1` as well.
 - **`any-count.json`** — `any` per directory in non-test `src`; it may only fall (`verify:any-count`, below).
@@ -191,3 +192,23 @@ all in the 14 unconverted writes and the areas another workstream holds). A read
 its soft-form assertions fail under the hard form by design. When the count is 0 everywhere, 8.0.0 deletes the
 `never` fields (Mentat/planning/FACTORY_STRUCTURE_UNIONS_8_0_0.md). The transform refuses to run unless each `never`
 line is found exactly once, so a reshaped `tournamentTypes.ts` fails loudly instead of silently counting the soft form.
+
+## Resetting the consumer-bundle anchor
+
+The anchor moves at a release and only then. After a release is published and its back-merge PR has
+merged into `dev`, on a branch from `dev`:
+
+```bash
+git worktree add --detach ../anchor-vX.Y.Z vX.Y.Z    # the release tag
+(cd ../anchor-vX.Y.Z && pnpm install --frozen-lockfile && pnpm build)
+pnpm build
+pnpm verify:consumer-bundle -- --set-anchor=../anchor-vX.Y.Z
+git worktree remove ../anchor-vX.Y.Z
+```
+
+`--set-anchor` refuses a checkout whose `HEAD` is not exactly the tag `v<version>` of its own
+`package.json`. It bundles every fixture from that checkout's `dist` with this branch's fixtures and
+esbuild, so the anchor and the gate measure the same way; a fixture the release cannot build (it
+imports something added since) is anchored on the current build and marked `seeded`. Commit
+`scripts/verify/baseline/consumer-bundle-anchor.json` alone, with the tag in the subject, and open it
+as its own PR. The back-merge PR body links here.

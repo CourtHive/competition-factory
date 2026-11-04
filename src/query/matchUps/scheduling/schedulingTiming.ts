@@ -35,6 +35,7 @@
  */
 import { getMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
 import { timingCategoryType } from '@Query/event/timingCategoryType';
+import { timingCategoryName } from '@Query/event/timingCategoryName';
 
 // types
 import { Tournament, Event } from '@Types/tournamentTypes';
@@ -62,7 +63,7 @@ export const FALLBACK_TIMING: SchedulingTiming = {
 function categoryOf(event?: Event): { categoryName?: string; categoryType?: string } {
   const category = event?.category;
   return {
-    categoryName: category?.categoryName ?? category?.ageCategoryCode,
+    categoryName: timingCategoryName(event),
     categoryType: timingCategoryType(category),
   };
 }

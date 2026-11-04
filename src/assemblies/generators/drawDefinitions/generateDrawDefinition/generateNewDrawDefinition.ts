@@ -1,12 +1,15 @@
 import { generateDrawTypeAndModifyDrawDefinition } from '@Generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';
 import { generateQualifyingLink } from '@Generators/drawDefinitions/links/generateQualifyingLink';
+import { isSanctionLimitedStatus } from '@Query/drawDefinition/checkSanctionedEntryLimits';
 import { addDrawEntry } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
 import { getQualifiersCount } from '@Query/drawDefinition/getQualifiersCount';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
+import { checkQualifyingEntriesFit } from './checkQualifyingEntriesFit';
 import structureTemplate from '@Generators/templates/structureTemplate';
 import { getStageEntries } from '@Query/drawDefinition/stageGetter';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
+import { entryNotPlaced } from './entriesNotPlaced';
 import { constantToString } from '@Tools/strings';
 import { generateAdHoc } from './generateAdHoc';
 import { prepareStage } from './prepareStage';
@@ -16,10 +19,11 @@ import { ensureInt } from '@Tools/ensureInt';
 import { DIRECT_ENTRY_STATUSES, WITHDRAWN } from '@Constants/entryStatusConstants';
 import { INSUFFICIENT_DRAW_POSITIONS } from '@Constants/errorConditionConstants';
 import { MAIN, POSITION, QUALIFYING } from '@Constants/drawDefinitionConstants';
+import { EntryNotPlaced, ResultType } from '@Types/factoryTypes';
 import { DrawDefinition } from '@Types/tournamentTypes';
-import { ResultType } from '@Types/factoryTypes';
 
 export function generateNewDrawDefinition(params): ResultType & {
+  entriesNotPlaced?: EntryNotPlaced[];
   drawDefinition?: DrawDefinition;
   positioningReports?: any[];
   structureId?: string;
@@ -34,6 +38,7 @@ export function generateNewDrawDefinition(params): ResultType & {
 
   const {
     suppressDuplicateEntries = true,
+    tournamentRecord,
     ignoreStageSpace,
     appliedPolicies,
     qualifyingOnly,
@@ -44,21 +49,26 @@ export function generateNewDrawDefinition(params): ResultType & {
     drawSize,
     drawType,
     entries,
+    event,
   } = params;
 
   const positioningReports: any[] = [];
   let conflicts: any[] = [];
 
+  // tournamentRecord and event resolve the sanctioning constraints addDrawEntry applies
   const addResult = addEntries({
     suppressDuplicateEntries,
+    tournamentRecord,
     ignoreStageSpace,
     qualifyingOnly,
     drawDefinition,
     drawEntries,
     drawType,
     entries,
+    event,
   });
   if (addResult.error) return addResult;
+  const { entriesNotPlaced } = addResult;
 
   // When qualifyingPlaceholder is requested, create the placeholder structure and link
   // BEFORE positioning so that getByesData/getQualifiersCount can account for qualifier positions.
@@ -134,11 +144,28 @@ export function generateNewDrawDefinition(params): ResultType & {
     if (adHocResult?.error) return adHocResult;
   }
 
-  return { drawDefinition, positioningReports, conflicts, structureId };
+  return { drawDefinition, positioningReports, conflicts, structureId, entriesNotPlaced };
 }
 
-function addEntries(params) {
-  const { ignoreStageSpace, drawDefinition, drawEntries, drawType, qualifyingOnly, entries } = params;
+function addEntries(params): ResultType & { entriesNotPlaced?: EntryNotPlaced[] } {
+  const { ignoreStageSpace, tournamentRecord, drawDefinition, drawEntries, drawType, qualifyingOnly, entries, event } =
+    params;
+  // explicit QUALIFYING drawEntries that overfill the qualifying structures generated with the main are refused,
+  // never trimmed (CA 2026-11-01). They default to ignoring stage space (see isCrossStage below), so unless
+  // ignoreStageSpace is explicitly false the draw positions refuse them: INSUFFICIENT_DRAW_POSITIONS. A qualifying-only
+  // draw needs no check here: its QUALIFYING drawEntries are not cross-stage, so addDrawEntry refuses them.
+  if (drawEntries && !qualifyingOnly && drawDefinition) {
+    const fitResult = checkQualifyingEntriesFit({
+      ignoreStageSpace: ignoreStageSpace ?? true,
+      stack: 'generateNewDrawDefinition',
+      drawDefinition,
+      drawEntries,
+    });
+    if (fitResult.error) return fitResult;
+  }
+
+  // entries left out for want of a place in their stage: reported as an ENTRIES_NOT_PLACED warning
+  const entriesNotPlaced: EntryNotPlaced[] = [];
   // add all entries to the draw
   for (const entry of entries) {
     // safeguard: never add WITHDRAWN entries to draw definition
@@ -161,20 +188,26 @@ function addEntries(params) {
       ...entry,
       ignoreStageSpace: ignoreStageSpace ?? (isCrossStage || isAdHocType(drawType)),
       entryStage: entry.entryStage ?? MAIN,
-      event: params.event,
+      tournamentRecord,
       drawDefinition,
+      event,
       drawType,
     };
     const result = addDrawEntry(entryData);
-    if (drawEntries && !isCrossStage && result.error) {
-      // only report errors with drawEntries for the active stage; cross-stage
-      // entries failing to attach (e.g. existing-participant on a previously
-      // populated draw) shouldn't block the primary generation step.
+    // only report errors with drawEntries for the active stage; cross-stage
+    // entries failing to attach (e.g. existing-participant on a previously
+    // populated draw) shouldn't block the primary generation step.
+    if (drawEntries && !isCrossStage && result.error) return result;
+    // an entry whose status the sanction bounds is never dropped: generateOrGetExisting refuses entries over the
+    // sanctioned limits before generating, so this is a backstop
+    if (result.error && isSanctionLimitedStatus({ tournamentRecord, entryStatus: entryData.entryStatus, event }))
       return result;
-    }
+
+    const notPlaced = entryNotPlaced({ entry: entryData, result });
+    if (notPlaced) entriesNotPlaced.push(notPlaced);
   }
 
-  return { error: undefined };
+  return { error: undefined, entriesNotPlaced };
 }
 
 type CheckMainFitsArgs = {

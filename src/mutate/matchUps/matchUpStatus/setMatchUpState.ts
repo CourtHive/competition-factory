@@ -7,6 +7,7 @@ import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/ma
 import { resolveRotatingPartnerOutcome } from '@Query/drawDefinition/resolveRotatingPartnerOutcome';
 import { refreshArrivals } from '@Mutate/drawDefinitions/matchUpGovernor/attemptToSetWinningSide';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
+import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
 import { correctionKindChange } from '@Mutate/matchUps/matchUpStatus/correctionKindGuard';
 import { relabelWithoutDirection } from '@Mutate/matchUps/drawPositions/relabelLoserExit';
@@ -17,6 +18,7 @@ import { ensureGoesTo, holdGoesTo, type GoesToHold } from '@Query/matchUps/addGo
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
+import { collectionChoiceOutcomeRefusal } from '@Query/matchUp/collectionChoice';
 import { swapWinnerLoser } from '@Mutate/matchUps/drawPositions/swapWinnerLoser';
 import { resolveScoringFormat } from '@Query/hierarchical/resolveScoringFormat';
 import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
@@ -47,8 +49,6 @@ import {
   noDownstreamDependencies,
   removesDirected,
 } from '@Mutate/drawDefinitions/matchUpGovernor/noDownstreamDependencies';
-
-import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
 
 // constants and types
 import type { DerivedStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
@@ -220,12 +220,15 @@ function writeMatchUpState(params: SetMatchUpStateArgs) {
 
   const resolved = resolveMatchUpAndContext({
     matchUpsMap: params.matchUpsMap,
+    removeScore: params.removeScore,
+    outcome: params.outcome,
     tournamentRecord,
     drawDefinition,
-    matchUpId,
-    event,
     matchUpStatus,
     winningSide,
+    matchUpId,
+    event,
+    score,
   });
   if (resolved.error) return resolved;
 
@@ -583,6 +586,8 @@ function validateMatchUpStateInputs({ drawDefinition, matchUpStatus, winningSide
   return undefined;
 }
 
+type ChoiceRefusalArgs = Parameters<typeof collectionChoiceOutcomeRefusal>[0];
+
 function resolveMatchUpAndContext({
   tournamentRecord,
   drawDefinition,
@@ -591,8 +596,14 @@ function resolveMatchUpAndContext({
   matchUpStatus,
   winningSide,
   matchUpsMap: suppliedMap,
+  removeScore,
+  outcome,
+  score,
 }: {
   tournamentRecord?: Tournament;
+  removeScore?: boolean;
+  outcome?: ChoiceRefusalArgs['outcome'];
+  score?: ChoiceRefusalArgs['score'];
   drawDefinition: DrawDefinition;
   matchUpsMap?: MatchUpsMap;
   matchUpStatus?: MatchUpStatusUnion;
@@ -648,6 +659,20 @@ function resolveMatchUpAndContext({
     matchUpStatus,
   });
   if (tieScopeViolation) return { error: MATCHUP_STATUS_OUT_OF_SCOPE, info: tieScopeViolation };
+
+  // an unresolved captain's choice refuses here, reading the call's own map rather than building another
+  const choice = collectionChoiceOutcomeRefusal({
+    drawDefinition,
+    matchUpStatus,
+    removeScore,
+    winningSide,
+    matchUpsMap,
+    outcome,
+    matchUp,
+    event,
+    score,
+  });
+  if (choice?.error) return { error: choice.error, info: choice.info, context: choice.context };
 
   if ((matchUp.winningSide || winningSide) && matchUpStatus === BYE) {
     return {

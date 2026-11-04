@@ -104,7 +104,7 @@ larger than the entrants can pair) are returned to the caller rather than leavin
 | `policyDefinitions`      | `PolicyDefinitions` | Seeding, avoidance, or other policies                                                   |
 | `enforceMinimumDrawSize` | `boolean`           | Default `true`. Set to `false` to allow multi-structure draws with only 2 participants. |
 | `drawTypeCoercion`       | `boolean`           | Coerce multi-structure draw types to `SINGLE_ELIMINATION` when `drawSize: 2`            |
-| `ignoreStageSpace`       | `boolean`           | Ignore wildcards count etc. when validating entries                                     |
+| `ignoreStageSpace`       | `boolean`           | Skip per-entry stage-space checks; overfull `drawEntries` are still refused             |
 | `staggeredEntry`         | `boolean`           | Accept non-power-of-2 draw sizes; generates feed arms for extra positions               |
 | `isMock`                 | `boolean`           | Mark generated entities as mock data                                                    |
 
@@ -126,9 +126,19 @@ larger than the entrants can pair) are returned to the caller rather than leavin
   qualifyingConflicts?: any[];        // Conflicts during qualifying generation
   positioningReports?: any[];         // Details of automated positioning decisions
   conflicts?: any[];                  // General generation conflicts
+  warnings?: ResultWarning[];         // ENTRIES_NOT_PLACED per stage that left entries out (present when any)
   success: boolean;
 }
 ```
+
+`warnings` is present when generation left entries out because their stage was full: generating from the event's
+entries (or, when qualifying is added to an existing draw without `drawEntries`, from the event's `QUALIFYING`
+entries) takes those that fit and leaves the surplus on the event. Each `ENTRIES_NOT_PLACED` warning is
+`{ code, message, stage, participantIds, count, drawSize, drawId, entries: [{ participantId, entryStatus, reason }] }`.
+Explicit `drawEntries` are never left out: entries that overfill the draw, or its qualifying structures (generated
+with the main or added to an existing draw), are refused (`NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS`, or
+`INSUFFICIENT_DRAW_POSITIONS` with `ignoreStageSpace`).
+See [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition) for an example.
 
 ## Generation Pipeline
 

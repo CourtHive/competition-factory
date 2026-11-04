@@ -2,6 +2,60 @@
 title: Engine Methods
 ---
 
+## Typed asynchronous engines
+
+The public `asyncEngine`, `tournamentEngineAsync` and `competitionEngineAsync` exports expose
+`AsyncFactoryEngine`. Registered governor methods, including read-only queries, return Promises.
+Their argument and result types reuse the generated method signatures. An unresolved signature
+returns `Promise<unknown>` rather than `any`, so a missing `await` remains visible to type-aware linting.
+
+```ts
+import { tournamentEngineAsync } from 'tods-competition-factory';
+
+// Setup and state snapshots are synchronous.
+tournamentEngineAsync.setState(tournamentRecord);
+const snapshot = tournamentEngineAsync.getState();
+
+// Governor queries and mutations must be awaited.
+const { events } = await tournamentEngineAsync.getEvents();
+const result = await tournamentEngineAsync.setTournamentName({ tournamentName: 'Championship' });
+```
+
+Enable `@typescript-eslint/no-floating-promises` with type information in the consuming application's
+ESLint configuration. TypeScript permits an ignored Promise by itself; the lint rule detects dropped
+calls. Reading a result property before awaiting is a TypeScript error. Explicit `void` remains the
+consumer's opt-out from the lint rule; it does not wait for completion.
+
+`importMethods`, `setState`, `getState`, `getTournament`, configuration methods, `inspect` and event-bus
+registration remain synchronous. `waitFor` already returns a Promise. State setters and configuration
+setters retain their engine chaining behavior. `execute` and `executionQueue` return Promises; dynamic
+`execute` results are `unknown` and should be narrowed before use.
+
+For a custom governor assembly, configure the async state provider and create the engine inside its
+request context, as in [Custom Engines](./custom-engines.md). Handle initialization refusal before
+importing methods:
+
+```ts
+import { asyncEngine, governors } from 'tods-competition-factory';
+
+const engine = asyncEngine();
+if (!('importMethods' in engine)) {
+  throw new Error('Async engine initialization failed', { cause: engine.error });
+}
+engine.importMethods(governors, true, 1);
+const result = await engine.getEvents();
+```
+
+Register custom methods as before; dispatch names without generated signatures through
+`await engine.execute({ method: 'customMethod', params })` and narrow the returned value.
+The internal dynamic assemblies keep their implementation types; applications should use the root
+package exports to receive the public async contract.
+
+The synchronous convenience facades `q`, `build`, `dryRun` and `explain` are intentionally absent from
+the strict async surface: their current implementations do not await async governor calls. Use the
+direct awaited query/mutation or `executionQueue` instead. Their runtime implementations are unchanged;
+this type change does not claim to make those helpers async-safe.
+
 ## importMethods
 
 Imports custom methods into the engine, making them available through the engine's invoke pattern with middleware, subscriptions, and logging support.

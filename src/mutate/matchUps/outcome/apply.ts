@@ -105,7 +105,9 @@ export function applyOwnedPlan({
   // own, and a carried exit's on the matchUp it lands in (S5)
   for (const matchUpId of written) {
     if (!subscribed || !resulted.has(matchUpId) || !stored.has(matchUpId)) continue;
-    const contextless = untournamented.has(matchUpId);
+    const contextless =
+      untournamented.has(matchUpId) ||
+      ops.some((op) => op.op === 'setMatchUpResult' && op.matchUpId === matchUpId && op.inContextBare);
     const record = contextless ? undefined : tournamentRecord;
     deferInContextMatchUp({
       inContextMatchUp: () => getInContextMatchUp({ tournamentRecord: record, drawDefinition, matchUpId }),
@@ -389,8 +391,12 @@ function matchUpContext(
 function namedWriters(ops: OutcomeOp[]) {
   const settled = new Map<string, string>();
   const lineUpUnevented = new Set<string>();
+  // a carry recorded beside the BYE a team's line-up is written on (a dual's passage, S7): v1 records it after the
+  // line-up, so the carry's notice is the matchUp's, with its event
+  const relayed = new Set(ops.flatMap((op) => (op.op === 'mergeSideExitProvenance' ? [op.matchUpId] : [])));
   for (const op of ops) {
     if (op.op === 'setSideLineUp') {
+      if (relayed.has(op.matchUpId)) continue;
       settled.set(op.matchUpId, op.announcedAs);
       if (op.announcesEvent === false) lineUpUnevented.add(op.matchUpId);
     } else if (op.op === 'setMatchUpResult') {

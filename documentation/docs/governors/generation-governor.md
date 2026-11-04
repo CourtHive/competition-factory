@@ -235,6 +235,73 @@ const drawDefinitionValues = {
 const { drawDefinition } = engine.generateDrawDefinition(drawDefinitionValues);
 ```
 
+**Sanctioning limits.** When the tournament's sanctioning constraints extension matches the event, generation
+refuses, before anything is built, entries that would take a draw stage past its `maxWildcards` (`WILDCARD`
+entries) or `maxAlternates` (`ALTERNATE` entries), counting the entries an existing draw (`drawId`) already holds.
+The refusal names the excess:
+
+```js
+const result = engine.generateDrawDefinition({ eventId, drawSize: 8 });
+// result.error: NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS
+// result.context: { entryStatus: 'WILDCARD', stage: 'MAIN', limit: 2, count: 3, participantIds: ['...'] }
+```
+
+`participantIds` are the entries beyond the limit, in entry order. The same check applies to the `QUALIFYING`
+`drawEntries` when qualifying is added to an existing main draw. A sanctioned `WILDCARD` or `ALTERNATE` entry
+that cannot be added for any other reason (no open place) is also refused, never dropped. Generating from the
+event's entries takes only the entries selected for the structure, so `ALTERNATE` entries are checked when
+`drawEntries` carry them. An explicit `ignoreStageSpace: true` and `AD_HOC` draws are exempt; an unsanctioned
+event, or one the constraints do not match, is unaffected. Until 2026-11 generation did not apply the limits.
+
+**Entries not placed.** Generating from the event's entries (no `drawEntries`) takes the entries that fit each
+stage, in entry order, and leaves the surplus on the event: a `drawSize: 16` from 20 accepted entries holds the
+first 16. Generation goes on, and the result carries one `ENTRIES_NOT_PLACED` warning per stage that left entries
+out. Adding qualifying to an existing draw (`drawId`) with no `drawEntries` does the same with the event's
+`QUALIFYING` entries: the first that fit the qualifying structures, in entry order, and a warning for the rest. A
+draw that already holds `QUALIFYING` entries (`drawEntries` carried when its main was generated) keeps those and
+takes none from the event. `drawEntries` are the entries the caller chose and are never trimmed: entries that overfill
+a new draw are refused, `QUALIFYING` `drawEntries` included when the qualifying structures are generated with the
+main, and so are `QUALIFYING` `drawEntries` that overfill the qualifying structures when qualifying is added to an
+existing draw, before anything is generated.
+
+**Overfull `drawEntries`.** The refusal is `NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS`, or
+`INSUFFICIENT_DRAW_POSITIONS` with `ignoreStageSpace: true`. `ignoreStageSpace` skips the per-entry stage-space
+check (and the sanctioned limits); it never admits more entries than the draw has positions. On a new draw with a
+main, `QUALIFYING` `drawEntries` skip that check unless `ignoreStageSpace: false` is passed, so overfull ones are
+refused with `INSUFFICIENT_DRAW_POSITIONS` when it is unset, and with `NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS` when
+it is `false`. `QUALIFYING` `drawEntries` that overfill the qualifying structures, on a new draw or one qualifying is
+added to, name the counts:
+
+```js
+const result = engine.generateDrawDefinition({
+  ignoreStageSpace: true,
+  qualifyingProfiles,
+  drawEntries, // 12 QUALIFYING entries
+  eventId,
+  drawId, // an existing draw; its qualifying structure has 8 positions
+});
+// result.error: INSUFFICIENT_DRAW_POSITIONS
+// result.context: { stage: 'QUALIFYING', entriesCount: 12, drawPositionsCount: 8 }
+```
+
+```js
+const result = engine.generateDrawDefinition({ eventId, drawSize: 16 });
+// result.success: true
+// result.warnings: [{
+//   code: 'ENTRIES_NOT_PLACED',
+//   message: 'Entries were not placed in the draw: the stage had no place left for them.',
+//   stage: 'MAIN', // one warning per stage: MAIN or QUALIFYING
+//   participantIds: ['...'], // the entries left out, in entry order
+//   count: 4,
+//   drawSize: 16, // the stage's draw positions in the generated draw
+//   drawId: '...',
+//   entries: [{ participantId: '...', entryStatus: 'DIRECT_ACCEPTANCE', reason: 'ERR_UNCHANGED_NO_AVAILABLE_STAGE_SPACE' }],
+// }]
+```
+
+An exact fit carries no `warnings`. The warning is on the generation result only: `addDrawDefinition` stores the
+generated draw, whose entries are the ones placed.
+
 ### withPlayoffs — Recursive Playoff Generation {#withplayoffs}
 
 The `withPlayoffs` parameter adds PLAY_OFF structures linked to the MAIN structure via LOSER links.

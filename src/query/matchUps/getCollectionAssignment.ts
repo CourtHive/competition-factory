@@ -19,6 +19,7 @@ type GetDrawPositionCollectionAssignmentArgs = {
   drawPositions?: number[];
   collectionId: string;
   matchUpType?: string;
+  unresolvedChoice?: boolean;
   sideLineUps?: any;
 };
 
@@ -41,11 +42,12 @@ export function getCollectionAssignment({
   collectionId,
   sideLineUps,
   matchUpType,
+  unresolvedChoice,
 }: GetDrawPositionCollectionAssignmentArgs): {
   drawPositionCollectionAssignment?: TeamCollectionAssignment;
   sideNumberCollectionAssignment?: TeamCollectionAssignment;
 } {
-  if (!collectionId || !collectionPosition) return {};
+  if (!collectionId || !collectionPosition || unresolvedChoice) return {};
 
   // `teamParticipant` lands on `sides[].teamParticipant` of every tie matchUp. Two of the three ways
   // it is resolved below reach straight into the RAW participant (`participantMap`, then a scan of

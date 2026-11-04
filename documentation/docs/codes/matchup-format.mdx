@@ -22,7 +22,7 @@ Configure matchUp formats interactively and generate CODES-compliant format code
 
 A matchUpFormat code has the structure:
 
-```
+```text
 {ROOT}{count}[X][A]-S:{setSpec}[-G:{gameSpec}][-F:{setSpec}][-M:{matchConstraint}]
 ```
 
@@ -41,7 +41,7 @@ A matchUpFormat code has the structure:
 
 Single-set timed formats can use a shortened form:
 
-```
+```text
 T{minutes}[P|G]
 ```
 
@@ -136,6 +136,17 @@ Unlike segment-level timed formats (`-S:T45`) where each segment is independentl
 | `XA`     | Combined: exactly N, aggregate        | `SET7XA-S:T10P` (INTENNSE format) |
 
 In an `XA` format, `-F:` describes the sudden-death decider that settles level aggregate totals (`SET3XA-S:T10-F:TB1`). The decider is **not one of the N sets**: it is set N + 1, played only when the totals are level, so `-F:` governs set N + 1 and never set N (since 7.5.0). See [aggregateDeciderSetNumber / finalSetGoverns](/docs/governors/matchup-format-governor#aggregatedecidersetnumber--finalsetgoverns).
+
+## Overtime and extra time
+
+The overtime extension is in development and is not yet enabled in published Factory versions. Its
+explanation and examples are split into short pages:
+
+- [Overtime syntax and overview](./overtime/index.md)
+- [Repeated overtime, exact extra-time halves and finite ceilings](./overtime/periods-and-limits.md)
+- [Sudden death, golden goals and silver goals](./overtime/golden-and-silver-goals.md)
+- [Shootout handoffs and tied results](./overtime/shootouts-and-ties.md)
+- Sporting examples: [basketball](./overtime/basketball-examples.md), [hockey](./overtime/hockey-examples.md), [football](./overtime/football-examples.md)
 
 ## parse and stringify
 
@@ -460,7 +471,7 @@ The `WB{n}` modifier overrides the default game-margin required to win a set whe
 
 In TYPTI rule variants where a set is won by reaching the target game count without any margin requirement, use the `WB1` modifier alongside the existing `-G:{n}C` consecutive-points game format:
 
-```
+```text
 SET5-S:5WB1-G:3C
 ```
 

@@ -334,8 +334,10 @@ it without replaying it, and `undo` pops it, which is already the rule.
 
 ### 3.1 The match
 
-- **Best of N** (`SET3`, `MAP5`, …): the first side to win a majority of N sets, ⌊N/2⌋ + 1, wins (for odd N
-  that is ⌈N/2⌉; an even N can end level, § 9.7; SE2a-D7, CA 2026-10-21). `SET1X` and `SET1XA` read as
+- **Best of N** (`SET3`, `MAP5`, …): N must be odd for new use (CA 2026-11-03); the first side to win a
+  majority of N sets, ⌊N/2⌋ + 1 = ⌈N/2⌉, wins. A fixed even count that can finish level is **exactly N**,
+  and requires `X`: `SET2X-S:6/TB7` may finish 1-1, while `SET2-S:6/TB7` is refused for new use.
+  An explicit aggregate `A` follows aggregate completion instead of best-of completion. `SET1X` and `SET1XA` read as
   best of one (exactly one set is best of one).
 - **Exactly N** (`X`): all N sets are played; a lead is not a win (§ 9.2).
 - **Aggregate** (`A`): every set is played and the total across them decides; sets won are not
@@ -592,7 +594,8 @@ format is parsed and not enforced (§ 3.4).
 ### 9.1 Best of N
 
 The match is won by the first side to win a majority of the N sets, ⌊N/2⌋ + 1 (Rule 7; `standardSets`,
-"Rule 7"; SE2a-D7: ⌈N/2⌉ read for an even N would be half, which § 9.7 rule 4 contradicts). A set without
+"Rule 7"). New best-of counts are odd (§ 3.1); the majority formula still describes stored even-count
+codes when read (the former SE2a-D7 interpretation). A set without
 a winner (a timed segment closed level) is played and counts for neither side. **No set beyond N is
 played**: when all N sets are played and neither side has a majority, the side with more sets wins, and a
 level count ends the match by § 9.7 (CA 2026-10-18). v1 opens another set after a level timed segment,
@@ -681,8 +684,9 @@ no `winningSide`**, and `onMatchTie` fires, as for a combined-total tie (§ 7) (
    (`src/validators/tiedFormatCompatibility.ts`), checked at draw generation and by
    `checkDrawFormatCompatibility`, today reports only a `P{n}` combined total that can tie, so only that
    is refused in a structure that advances a winner. It extends to every format that can end level by this rule: timed,
-   aggregate and exactly-N formats with no declared decider; a best-of format with an even N (CA 2026-10-18:
-   `SET2-S:6/TB7` can end 1-1); and a format whose only decider can itself end level (CA 2026-10-18: a timed `-F:`
+   aggregate and exactly-N formats with no declared decider; a historical best-of format with an even N
+   (`SET2-S:6/TB7` was previously allowed to finish 1-1, but new use is refused under the 2026-11-03 ruling);
+   and a format whose only decider can itself end level (CA 2026-10-18: a timed `-F:`
    with no `/TB`, as in `SET3XA-S:T10-F:T10P`, is not a decider). A real decider is untimed (`-F:TB1`, `-F:TB10`)
    or timed with a tiebreak (`-F:T10P/TB1`). Only a format CHANGE is refused, so a stored draw is untouched and a
    score submitted with the matchUp's existing format is accepted; TEAM structures are skipped (the tieFormat
@@ -692,6 +696,110 @@ no `winningSide`**, and `onMatchTie` fires, as for a combined-total tie (§ 7) (
 v1 opens further segments after a level timed segment and after a level aggregate, and keeps a level
 exactly-N match `IN_PROGRESS`: v1 defects (§ 16, 3, 12, 18). Entries v1 recorded past a level close
 replay as v1 replayed them (§ 12.8).
+
+### 9.8 Declared overtime (CA 2026-11-03; ScoringEngine integration)
+
+The [grammar specification](/docs/codes/matchup-format-grammar#9-overtime-extension-tournament-activation-pending)
+defines `-O:{limit}[X][SD]/{segment}`. This extends aggregate match completion only when O is declared;
+codes without O retain §§ 9.3–9.7. ScoringEngine supports the timed subset below directly; no caller-facing
+feature flag is needed. General tournament new-use validation and the legacy point mutator remain gated
+pending the separate format/score-validator activation slice. The reducer's internal `allowOvertime` option
+continues to distinguish explicit scoring support from default format resolution.
+
+1. Play every regulation segment. If the regulation aggregate is unequal, finish with that winner and no
+   overtime. If level, continue into the first overtime period, not a completed draw or the F decider.
+2. Overtime periods add to the regulation aggregate. Without X, compare the aggregate after each closed
+   period; an unequal total completes the match. A lead during an ordinary timed period does not complete it.
+3. With X, play the entire declared block before comparing totals. An intermediate lead is not a win. At
+   the end of the block, compare accumulated regulation plus every overtime period, not the final period alone.
+4. U repeats while level, with periods created only as input arrives. It neither preallocates periods nor
+   applies a hidden finite ceiling. U has no F fallback.
+5. SD finishes immediately at a nonzero scoring event in overtime, closing that period too. A zero-valued
+   event does not break the tie. A scoreless period can end at time and repeat, up to the declared limit.
+   Point, game and set-total input agree. A sudden-death period total with scoring by both sides is unreachable
+   and refused before writing; a baseline cannot claim a nonzero sudden-death score still in play.
+6. At a finite ceiling, unequal totals decide the match. Level with no F finishes `COMPLETED` without a
+   winner. Level with F enters its separate decider, segment `regulationCount + overtimeLimit + 1`, never N or
+   N + 1 merely because of the regulation head. This applies to both A and XA heads. F's own result decides
+   the match and is not summed into the sporting aggregate. A timed fallback may itself finish level.
+7. No input opens a period after an earlier winner or past the ceiling/fallback. A baseline including such
+   an unplayed segment is refused unchanged. Replay of an accepted prefix deterministically reconstructs its
+   decision, and removing the deciding input reopens the appropriate period.
+
+The initial reducer supports timed aggregate regulation and timed overtime in scoring units, with no segment-local
+tiebreaks. F may be a tiebreak-only or timed segment with no local tiebreak. Match clocks (`-M:`), non-timed
+regulation/overtime, standard/outs fallbacks, and unsafe finite total segment counts are refused even with internal
+opt-in until their rules are resolved. Other valid-for-reading syntax is not silently approximated.
+These changes belong to scoring, not `setMatchUpStatus` or the outcome propagation pipeline.
+
+#### 9.8.1 Phase-aware records, score views and replay
+
+Only formats declaring O add these fields. Set numbers remain one-based across the entire match. Sets and
+materialized points also carry `phase: 'REGULATION' | 'OVERTIME' | 'DECIDER'` and `periodNumber`, one-based
+within that phase. The final decider's relative period number is 1. These are calculated fields, not timeline facts;
+point decorations cannot replace them. Replaying a record derives them again rather than trusting stored labels.
+
+`score.overtime` and `getScore().overtime` expose the same derived context:
+
+```json
+{
+  "phase": "DECIDER",
+  "periodNumber": 1,
+  "aggregateScore": [3, 3],
+  "decidingScore": [0, 3],
+  "decidedIn": "DECIDER"
+}
+```
+
+Aggregate scores include regulation and overtime only. A tiebreak-only decider is shown in its points,
+not as its game won 1–0. `decidingScore` appears only in the decider phase, beginning at 0–0 before the
+first input. `decidedIn` appears only when the result completes, including a level finish. After a closed
+period of an unfinished match, phase context names the next period; completed results name their last period.
+
+The phase-aware scoreboard is `{aggregate} ({label})`, where the aggregate is regulation plus overtime and the
+label names the phase:
+
+- **regulation:** `Regulation {n}`, where `n` is the period in play. Before the first input that is
+  `Regulation 1`, and after a closed period it names the next one. A result decided in regulation shows
+  `Regulation` with no number;
+- **overtime:** `OT {n}`, while in play and when the result is decided there;
+- **decider:** `Decider: {decidingScore}`, e.g. `3-3 (Decider: 0-3)`.
+
+Perspective swaps both aggregate and deciding scores. Standalone score/scoreboard queries read the same stored
+sporting score; service orientation and rally counts are recovered from the timeline. Every row of the table below
+is replayed by `src/tests/documentation/overtimeScoreboard.test.ts`. A period is written as its score pair
+(`3-2`), and `P1` or `P2` is a point won by that side:
+
+| Format                    | Entered        | Scoreboard           |
+| ------------------------- | -------------- | -------------------- |
+| `SET2XA-S:T10P-O:1SD/T5P` | none           | `0-0 (Regulation 1)` |
+| `SET2XA-S:T10P-O:1SD/T5P` | `3-2`          | `3-2 (Regulation 2)` |
+| `SET2XA-S:T10P-O:1SD/T5P` | `3-2, 1-3`     | `4-5 (Regulation)`   |
+| `SET2XA-S:T10P-O:1SD/T5P` | `3-2, 1-2`     | `4-4 (OT 1)`         |
+| `SET2XA-S:T10P-O:1SD/T5P` | `3-2, 1-2, P1` | `5-4 (OT 1)`         |
+
+**Points in sudden-death overtime.** The next scoring event decides the match for whichever side scores it, so
+every point in a sudden-death overtime period carries these values, even though the segment is timed:
+
+| Field           | Value                                                                                                                         |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `pointsToGame`  | `[1, 1]`                                                                                                                      |
+| `pointsToSet`   | `[1, 1]`                                                                                                                      |
+| `pointsToMatch` | `[1, 1]`                                                                                                                      |
+| `gamesToSet`    | `[1, 1]`                                                                                                                      |
+| `isBreakpoint`  | `true` by the general rule (§ 11.2: the receiver needs one point), with the server supplied or derived from the service order |
+
+The score situation follows: `isMatchPoint` and `isSetPoint` are true for both sides. Consumers wanting the
+deciding-point signal should read `isMatchPoint`; `isBreakpoint` carries no sudden-death meaning of its own.
+
+Undo/redo, corrections, supplementary-state JSON round trips and reload recompute phase context. Correcting an
+earlier period can end the match earlier; later entries stay on the timeline but cannot resurrect unplayed
+periods through v1's past-close compatibility path. No historical v1 record had O syntax.
+
+An explicit score-only record can become a baseline: completed periods are sets, and its open timed period
+is `currentSetScore`; an open final tiebreak preserves its running points in `currentGameScore`. Timed baseline games and points name the same units; if both are supplied they must
+agree and are counted once. Unsupported overtime and a point-only overtime record without a timeline are
+refused on load before changing the current record. Native saved timelines remain authoritative.
 
 ## 10. Service
 
@@ -1158,7 +1266,7 @@ flagged as a legacy shape, with no version flag (§ 12.8). Nothing is left open.
 3. **DECIDED: a match that ends level with no declared decider is `COMPLETED` without a winner**,
    `onMatchTie` fires, no undeclared segment is played, and the views expose `decisionRequired`
    (§ 6.4, § 9.1, § 9.7, § 11.2). The elimination guard `formatCanEndTied` extends to timed, aggregate
-   and exactly-N formats with no declared decider, even best-of formats, and formats whose decider can end level
+   and exactly-N formats with no declared decider, historical even best-of formats, and formats whose decider can end level
    (§ 9.7 rule 4). v1 defect: further segments are
    opened; v1 change: the guard.
 4. **DECIDED: a closed segment takes no input** (§ 2, § 6.4). v1 defect: `addGame` reopens it.
@@ -1214,6 +1322,12 @@ flagged as a legacy shape, with no version flag (§ 12.8). Nothing is left open.
 21. **DECIDED: the docs follow the code**: `winner` and `winningSide` may both be given when they
     agree (§ 1.3; the API page), `addSet`'s JSDoc states what v1 does (§ 2.3), and the
     `FORMAT_STANDARD_NOAD` comment states an advantage set with No-Ad games (§ 4.2).
+22. **DECIDED 2026-11-03: an unmarked best-of count must be odd for new use.** Exactly two sets may
+    finish 1-1, but that is `SET2X`, not `SET2`. Aggregate scoring is explicitly marked `A` and follows
+    its separate rule. `SET2-S:6/TB7-F:TB10` is refused with an explanation pointing to
+    `SET3-S:6/TB7-F:TB10` for two regular sets followed by a deciding match tiebreak. This supersedes the
+    earlier permission for new even best-of formats, without changing replay of stored entries (§ 12.8).
+    Repeated overtime periods are not introduced by this rule.
 
 **A boundary, not a rule of this engine** (decided 2026-10-18): the INTENNSE Arc decider belongs to the
 team format (§ 13), tracked separately in Mentat TASKS.

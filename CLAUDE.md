@@ -34,6 +34,11 @@ of past checkpoints. If a release's run was missed:
 only once it is on `master`, so it takes effect after the next checkpoint carries it there; until
 then open the PR by hand. `verify.yml` runs the light path on it (`.github/scripts/release-scope.sh`).
 
+**Then re-anchor the consumer bundle on the release** (CA, 2026-11-03): `verify:consumer-bundle` fails a
+fixture more than +15 % past its size at the last release, and that anchor moves only by
+`--set-anchor` on a built checkout of the new tag, in its own PR. Steps:
+`scripts/verify/README.md` § "Resetting the consumer-bundle anchor".
+
 Full rationale and the CI/release compatibility table:
 `../Mentat/standards/coding-standards.md` § "Branch off `dev`, not `master`".
 

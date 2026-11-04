@@ -1,19 +1,25 @@
 import { generateQualifyingStructures } from '@Generators/drawDefinitions/drawTypes/generateQualifyingStructures';
 import { generateQualifyingLink } from '@Generators/drawDefinitions/links/generateQualifyingLink';
+import { isSanctionLimitedStatus } from '@Query/drawDefinition/checkSanctionedEntryLimits';
 import { addDrawEntry } from '@Mutate/drawDefinitions/entryGovernor/addDrawEntries';
+import { checkQualifyingEntriesFit } from './checkQualifyingEntriesFit';
+import { entryNotPlaced } from './entriesNotPlaced';
 
 // constants and types
+import type { DrawDefinition, Entry, Event, Tournament } from '@Types/tournamentTypes';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
-import type { DrawDefinition } from '@Types/tournamentTypes';
-import { ResultType } from '@Types/factoryTypes';
+import { EntryNotPlaced, ResultType } from '@Types/factoryTypes';
 
 export function processExistingDrawDefinition(params): ResultType & {
+  entriesNotPlaced?: EntryNotPlaced[];
   structureId?: string;
   drawDefinition?: DrawDefinition;
 } {
   const drawDefinition: DrawDefinition = params.drawDefinition;
   const {
     existingQualifyingPlaceholderStructureId,
+    eventQualifyingEntries,
+    ignoreStageSpace,
     appliedPolicies,
     qualifyingOnly,
     drawEntries,
@@ -42,6 +48,17 @@ export function processExistingDrawDefinition(params): ResultType & {
     return qualifyingResult;
   }
 
+  // explicit QUALIFYING drawEntries must fit the qualifying structures: refused before anything is written (CA 2026-11-01)
+  const fitResult = checkQualifyingEntriesFit({
+    existingQualifyingPlaceholderStructureId,
+    qualifyingStructures: qualifyingResult?.structures,
+    ignoreStageSpace,
+    stack: 'processExistingDrawDefinition',
+    drawDefinition,
+    drawEntries,
+  });
+  if (fitResult.error) return fitResult;
+
   drawDefinition.structures = drawDefinition.structures?.filter(
     ({ structureId }) => structureId !== existingQualifyingPlaceholderStructureId,
   );
@@ -67,24 +84,52 @@ export function processExistingDrawDefinition(params): ResultType & {
   );
   // Qualifier counts are derived from structures and links
 
-  addEntries({ drawDefinition, drawEntries, event });
+  // explicit drawEntries have been checked to fit; the event's QUALIFYING entries are taken first N, the rest warned
+  const entriesResult = addEntries({
+    drawEntries: drawEntries ?? eventQualifyingEntries,
+    tournamentRecord: params.tournamentRecord,
+    drawDefinition,
+    event,
+  });
+  if (entriesResult.error) return entriesResult;
   const qResult = processQualifyingDetails({ mainStructure, qualifyingDetails, drawDefinition });
   if (qResult.error) return qResult;
 
-  return { drawDefinition, structureId };
+  return { drawDefinition, structureId, entriesNotPlaced: entriesResult.entriesNotPlaced };
 }
 
-function addEntries({ drawDefinition, drawEntries, event }) {
+type AddEntriesArgs = {
+  tournamentRecord?: Tournament;
+  drawDefinition: DrawDefinition;
+  drawEntries?: Entry[];
+  event?: Event;
+};
+
+function addEntries({ tournamentRecord, drawDefinition, drawEntries, event }: AddEntriesArgs): ResultType & {
+  entriesNotPlaced?: EntryNotPlaced[];
+} {
+  // QUALIFYING entries left out for want of a place: reported as an ENTRIES_NOT_PLACED warning
+  const entriesNotPlaced: EntryNotPlaced[] = [];
   for (const entry of (drawEntries ?? []).filter(({ entryStage }) => entryStage === QUALIFYING)) {
+    // tournamentRecord and event resolve the sanctioning constraints addDrawEntry applies
     const entryData = {
       ...entry,
       entryStage: entry.entryStage ?? MAIN,
+      tournamentRecord,
       drawDefinition,
       event,
     };
-    // ignore errors (EXITING_PARTICIPANT)
-    addDrawEntry(entryData);
+    // other errors are ignored (EXISTING_PARTICIPANT), except for an entry whose status the sanction bounds, which
+    // is never dropped: generateOrGetExisting refuses entries over the sanctioned limits before generating, so this
+    // is a backstop
+    const result = addDrawEntry(entryData);
+    if (result.error && isSanctionLimitedStatus({ tournamentRecord, entryStatus: entry.entryStatus, event }))
+      return result;
+
+    const notPlaced = entryNotPlaced({ entry: entryData, result });
+    if (notPlaced) entriesNotPlaced.push(notPlaced);
   }
+  return { error: undefined, entriesNotPlaced };
 }
 
 function processQualifyingDetails({ mainStructure, qualifyingDetails, drawDefinition }): ResultType {

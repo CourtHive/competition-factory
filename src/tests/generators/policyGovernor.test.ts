@@ -22,6 +22,15 @@ import {
   POLICY_NOT_FOUND,
 } from '@Constants/errorConditionConstants';
 
+/**
+ * The policy types an event itself holds: its first-class appliedPolicies attribute (CODES). The event holds no
+ * extensions at all, so the policies are in one store and nowhere else.
+ */
+function eventPolicyTypes(event: any): string[] {
+  expect(event.extensions ?? []).toEqual([]);
+  return Object.keys(event.appliedPolicies ?? {});
+}
+
 it('can set and remove policies from tournamentRecords and events', () => {
   expect(tournamentEngine).toHaveProperty('attachPolicies');
 
@@ -79,7 +88,7 @@ it('can set and remove policies from tournamentRecords and events', () => {
 
   const { tournamentRecord: updatedRecord } = tournamentEngine.getTournament();
   expect(updatedRecord.events.length).toEqual(1);
-  expect(updatedRecord.events[0].extensions.length).toEqual(1);
+  expect(eventPolicyTypes(updatedRecord.events[0])).toEqual([POLICY_TYPE_AVOIDANCE]);
 
   const { appliedPolicies: updatedAppliedPolicies } = tournamentEngine.getAppliedPolicies({ eventId });
   expect(updatedAppliedPolicies.avoidance.policyName).toEqual('Nationality Code');
@@ -99,7 +108,7 @@ it('can set and remove policies from tournamentRecords and events', () => {
 
   const { tournamentRecord: updatedRecord2 } = tournamentEngine.getTournament();
   expect(updatedRecord2.events.length).toEqual(1);
-  expect(updatedRecord2.events[0].extensions.length).toEqual(1);
+  expect(eventPolicyTypes(updatedRecord2.events[0])).toEqual([POLICY_TYPE_AVOIDANCE]);
 
   const eventState = updatedRecord2.events[0];
 
@@ -122,7 +131,7 @@ it('can set and remove policies from tournamentRecords and events', () => {
   expect(updatedRecord3.events.length).toEqual(1);
   // the event held only its own avoidance policy: the tournament's scoring policy is inherited, not copied onto it
   // (attaching once wrote every inherited policy onto the element, CA 2026-10-18: a bug)
-  expect(updatedRecord3.events[0].extensions.length).toEqual(0);
+  expect(eventPolicyTypes(updatedRecord3.events[0])).toEqual([]);
 
   result = tournamentEngine.attachPolicies({
     policyDefinitions: { ...AVOIDANCE_COUNTRY, ...POLICY_SCORING_DEFAULT },
@@ -138,7 +147,7 @@ it('can set and remove policies from tournamentRecords and events', () => {
 
   const { tournamentRecord: updatedRecord4 } = tournamentEngine.getTournament();
   expect(updatedRecord4.events.length).toEqual(1);
-  expect(updatedRecord4.events[0].extensions.length).toEqual(1);
+  expect(eventPolicyTypes(updatedRecord4.events[0])).toEqual([POLICY_TYPE_SCORING]);
 });
 
 it('can find policies whether on event or tournamentRecord', () => {
@@ -185,7 +194,7 @@ it('can find policies whether on event or tournamentRecord', () => {
 
   const { tournamentRecord: updatedRecord } = tournamentEngine.getTournament();
   expect(updatedRecord.events.length).toEqual(1);
-  expect(updatedRecord.events[0].extensions.length).toEqual(1);
+  expect(eventPolicyTypes(updatedRecord.events[0])).toEqual([POLICY_TYPE_AVOIDANCE]);
 
   ({ policy } = tournamentEngine.findPolicy({ policyType: POLICY_TYPE_SCORING }));
   expect(policy.policyName).toEqual(testPolicyName);

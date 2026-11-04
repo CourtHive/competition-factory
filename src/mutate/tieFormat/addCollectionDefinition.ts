@@ -129,6 +129,7 @@ function addDefinition({
     checkCategory,
     checkGender,
     newUse: true,
+    allowResolvedMatchUpTypeOptions: !!matchUpId && !eventId,
     event,
   });
   if (validationResult.error) {
@@ -200,7 +201,11 @@ function addDefinition({
   let targetMatchUps: any[] = [];
 
   const prunedTieFormat = definedAttributes(tieFormat);
-  result = validateTieFormat({ tieFormat: prunedTieFormat, enforceValues: true });
+  result = validateTieFormat({
+    tieFormat: prunedTieFormat,
+    enforceValues: true,
+    allowResolvedMatchUpTypeOptions: !!matchUpId && !eventId,
+  });
   if (result?.error) {
     return decorateResult({ result: { error: result.error }, stack });
   }

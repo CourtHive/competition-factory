@@ -16,6 +16,10 @@ import { eventGovernor } from 'tods-competition-factory';
 
 Adds a drawDefinition to an event in a tournamentRecord. Called after [generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition). See examples: [Complete Example](../concepts/events/entries.mdx#complete-example), [Creating Draws from Flight Profiles](../concepts/events/flights.mdx#creating-draws-from-flight-profiles), [Complete Example](../concepts/events/flights.mdx#complete-example).
 
+A draw whose entries exceed a matched sanction's `maxWildcards` (`WILDCARD` entries) or `maxAlternates` (`ALTERNATE` entries) is refused before anything is stored, with `{ error: NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS, context: { entryStatus, stage, limit, count, participantIds } }`, where `participantIds` are the entries beyond the limit. `AD_HOC` draws, unsanctioned events and events the constraints do not match are unaffected.
+
+When more than one of the constraints' events matches the event, the first in their list applies. The limits are checked `WILDCARD` first, then `ALTERNATE`, and for each status stage by stage in the order the draw's entries first name the stage (`MAIN` when an entry states none); the refusal names the first limit exceeded, with `info` `'<entryStatus> entries exceed the sanctioned limit'`. A participant entered twice in one stage with the same status counts once. The check comes after the entries are validated against the flight and before the existing-`drawId` check (`DRAW_ID_EXISTS`).
+
 A `drawDefinition` built outside the factory may not carry the progression links between its matchUps (`winnerMatchUpId`, `loserMatchUpId`). They are derived from its structures and links and stored with the draw, as `generateDrawDefinition` would have stored them. A draw with a malformed round link is stored as it was.
 
 ```js
@@ -394,6 +398,9 @@ engine.modifyEvent({
 
 ## modifyEventMatchUpFormatTiming
 
+Overrides the average and/or recovery minutes of a `matchUpFormat` for one event, stored in the event's
+`SCHEDULE_TIMING` extension.
+
 ```js
 engine.modifyEventMatchUpFormatTiming({
   recoveryMinutes,
@@ -402,6 +409,15 @@ engine.modifyEventMatchUpFormatTiming({
   eventId,
 });
 ```
+
+The override is keyed by the event's category: `category.categoryName`, else `category.ageCategoryCode`, else the
+event's own `eventId` when it has no category. Every reader resolves the same key (`getMatchUpFormatTiming`,
+`getEventMatchUpFormatTiming` and the auto-schedulers), so an event with no category is scheduled by its override and
+other events stay on the policy.
+
+The minutes are stored under the event's type (`minutes: { [eventType]: n }`). For a TEAM event that is `TEAM`; its
+SINGLES and DOUBLES lines read the `TEAM` minutes when they state none for their own type, so the override times every
+line of the event that plays the format.
 
 ---
 
@@ -486,6 +502,8 @@ engine.removeEventEntries({
 ---
 
 ## removeEventMatchUpFormatTiming
+
+Removes the event's timing overrides (its `SCHEDULE_TIMING` extension), returning the event to the scheduling policy.
 
 ```js
 engine.removeEventMatchUpFormatTiming({ eventId });

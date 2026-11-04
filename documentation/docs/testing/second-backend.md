@@ -21,6 +21,11 @@ FACTORY_BACKEND=differential FACTORY_BACKEND_COMMAND=/path/to/executable pnpm vi
 | `FACTORY_BACKEND_COMMAND` | the executable                                                                                                       |
 | `FACTORY_BACKEND_REPORT`  | optional: a file each worker appends the calls it routed to, per test file and method                                |
 
+With `FACTORY_BACKEND` set, each test may take 180 seconds instead of the suite's 30 (`vitest.config.mts`). A routed
+scoring write is followed by a comparison of all five views over the whole history, so a long match costs time that
+grows with the square of its points: a volleyball deciding set took 34.5 seconds, and its file up to 297, on a loaded
+host. The default suite keeps 30 seconds.
+
 ## What is routed, and what is not
 
 The engine hands the second implementation the **method only** (`setFactoryBackend`, `engineInvoke`). Its own work

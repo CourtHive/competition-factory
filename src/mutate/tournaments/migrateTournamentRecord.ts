@@ -1,3 +1,4 @@
+import { fromLegacyEventConstraints } from '@Query/drawDefinition/getDrawCompositionConstraints';
 import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { getMatchUpPresence, getParticipantPresence } from '@Acquire/presenceAttestations';
@@ -11,6 +12,7 @@ import { SIGN_IN_STATUS } from '@Constants/participantConstants';
 import { ResultType, ResultWarning } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
+  APPLIED_POLICIES,
   COMPETITION_STATE,
   DELEGATED_OUTCOME,
   DISABLE_AUTO_CALC,
@@ -22,6 +24,7 @@ import {
   LINEUPS,
   LINKED_TOURNAMENTS,
   ROUND_TARGET,
+  SANCTIONING_CONSTRAINTS,
   SCHEDULE_LIMITS,
   SCHEDULE_TIMING,
   SCHEDULING_PROFILE,
@@ -133,6 +136,7 @@ function promoteMatchUpScheduleTimeItem(
 }
 
 const TOURNAMENT_FLAT_PROMOTIONS: ExtensionPromotion[] = [
+  { name: APPLIED_POLICIES, attribute: 'appliedPolicies' },
   { name: FACTORY, attribute: 'factory' },
   {
     name: LINKED_TOURNAMENTS,
@@ -148,18 +152,25 @@ const TOURNAMENT_GROUP_PROMOTIONS: GroupExtensionPromotion[] = [
   { name: SCHEDULE_TIMING, groupAttribute: 'scheduling', leafAttribute: 'timing' },
 ];
 
-const EVENT_PROMOTIONS: ExtensionPromotion[] = [{ name: FLIGHT_PROFILE, attribute: 'flightProfile' }];
+const EVENT_PROMOTIONS: ExtensionPromotion[] = [
+  { name: APPLIED_POLICIES, attribute: 'appliedPolicies' },
+  { name: FLIGHT_PROFILE, attribute: 'flightProfile' },
+];
 const ENTRY_PROMOTIONS: ExtensionPromotion[] = [{ name: ROUND_TARGET, attribute: 'roundTarget' }];
 
 // No FLIGHT_PROFILE here: a flight profile lives on the EVENT only. Nothing ever wrote one on a draw (0 of 428 corpus
 // records, 0 of 16 CODES fixtures); a stray draw-level extension stays an extension, which nothing reads either.
 const DRAW_DEFINITION_PROMOTIONS: ExtensionPromotion[] = [
+  { name: APPLIED_POLICIES, attribute: 'appliedPolicies' },
   { name: LINEUPS, attribute: 'lineUps' },
   { name: DRAFT_STATE, attribute: 'draftState' },
   { name: COMPETITION_STATE, attribute: 'competitionState' },
 ];
 
-const STRUCTURE_PROMOTIONS: ExtensionPromotion[] = [{ name: ROUND_TARGET, attribute: 'roundTarget' }];
+const STRUCTURE_PROMOTIONS: ExtensionPromotion[] = [
+  { name: APPLIED_POLICIES, attribute: 'appliedPolicies' },
+  { name: ROUND_TARGET, attribute: 'roundTarget' },
+];
 
 const POSITION_ASSIGNMENT_PROMOTIONS: ExtensionPromotion[] = [
   { name: TALLY, attribute: 'tally' },
@@ -232,13 +243,52 @@ function applyGroupPromotions(element: any, promotions: GroupExtensionPromotion[
   return n;
 }
 
-function migrateTournamentLevel(record: Tournament, counts: MigrationCounts, clearLegacy: boolean) {
+function migrateTournamentLevel(
+  record: Tournament,
+  counts: MigrationCounts,
+  clearLegacy: boolean,
+  warnings: ResultWarning[],
+) {
   counts.tournament += applyFlatPromotions(record, TOURNAMENT_FLAT_PROMOTIONS, clearLegacy);
+  counts.tournament += promoteSanctionConstraints(record, clearLegacy, warnings);
   counts.tournament += applyGroupPromotions(record, TOURNAMENT_GROUP_PROMOTIONS, clearLegacy);
   for (const participant of record.participants ?? []) {
     counts.participantPresence += promoteParticipantPresence(participant, clearLegacy);
     counts.penaltyLabels += normalizePenaltyTypes(participant);
   }
+}
+
+/**
+ * The legacy `sanctioningConstraints` extension becomes `sanction.constraints`, which is provider-defined: its
+ * `definedBy.providerId` is required. It is promoted only when the record holds a sanction whose `authority` names an
+ * organisation, which becomes `definedBy`. Otherwise the extension stays where it is (readers still read it) and the
+ * run says so: an authorless limit cannot be promoted honestly. A sanction already holding constraints keeps them.
+ */
+export const SANCTION_CONSTRAINTS_NOT_PROMOTED = 'SANCTION_CONSTRAINTS_NOT_PROMOTED';
+
+function promoteSanctionConstraints(record: Tournament, clearLegacy: boolean, warnings: ResultWarning[]): number {
+  const extensions = record.extensions;
+  if (!Array.isArray(extensions)) return 0;
+  const index = extensions.findIndex((extension) => extension?.name === SANCTIONING_CONSTRAINTS);
+  if (index === -1) return 0;
+
+  const sanction = record.sanction;
+  if (!sanction?.constraints) {
+    const providerId = sanction?.authority?.organisationId;
+    if (!providerId) {
+      const info = sanction ? 'the sanction names no authority organisationId' : 'the record holds no sanction';
+      warnings.push({ code: SANCTION_CONSTRAINTS_NOT_PROMOTED, info });
+      return 0;
+    }
+    const legacyEvents = extensions[index]?.value?.events;
+    const organisationName = sanction.authority?.organisationName;
+    sanction.constraints = {
+      definedBy: { providerId, ...(organisationName ? { organisationName } : {}) },
+      events: Array.isArray(legacyEvents) ? legacyEvents.map(fromLegacyEventConstraints) : [],
+    };
+  }
+  if (clearLegacy) extensions.splice(index, 1);
+  return 1;
 }
 
 function migrateVenuesAndCourts(record: Tournament, counts: MigrationCounts, clearLegacy: boolean) {
@@ -329,9 +379,9 @@ export function migrateTournamentRecord({
     courts: 0,
   };
 
-  migrateTournamentLevel(tournamentRecord, counts, clearLegacy);
-  migrateVenuesAndCourts(tournamentRecord, counts, clearLegacy);
   const warnings: ResultWarning[] = [];
+  migrateTournamentLevel(tournamentRecord, counts, clearLegacy, warnings);
+  migrateVenuesAndCourts(tournamentRecord, counts, clearLegacy);
   for (const event of tournamentRecord.events ?? []) {
     migrateEvent(event, { counts, clearLegacy, warnings });
   }

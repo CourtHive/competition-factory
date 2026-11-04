@@ -1,3 +1,4 @@
+import { isCompetitorRole } from '@Query/participant/participantRoleOf';
 import { matchUpsOf } from '@Acquire/structureMembers';
 
 import { isCompetitionProfile } from './competitionProfile';
@@ -6,7 +7,6 @@ import { isCompetitionProfile } from './competitionProfile';
 import type { DrawDefinition, Event, Participant, Tournament, MatchUp } from '@Types/tournamentTypes';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { AD_HOC } from '@Constants/drawDefinitionConstants';
-import { COMPETITOR } from '@Constants/participantRoles';
 import type { ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { DOUBLES } from '@Constants/eventConstants';
@@ -27,10 +27,7 @@ export function isRotatingPartnerDraw(drawDefinition?: DrawDefinition, event?: E
 }
 
 export function isRotatingPartnerEntrant(participant?: Participant): boolean {
-  return (
-    participant?.participantType === INDIVIDUAL &&
-    (!participant.participantRole || participant.participantRole === COMPETITOR)
-  );
+  return participant?.participantType === INDIVIDUAL && isCompetitorRole(participant);
 }
 
 /** The roster contains individuals. Partnership scaffolding is never an entrant. */

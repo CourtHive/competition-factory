@@ -1064,6 +1064,41 @@ const { valid, inconsistencies } = engine.getTournamentInconsistencies();
   range ignores it and uses the tournament range; this finding is how that is flagged. `setTournamentDates` never
   produces such a range, so it marks a record written before that rule or edited outside the engine. (warning)
 
+- `PARTICIPANT_ROLE_MISSING` — participants carrying no `participantRole`. CODES requires only `participantId`, so
+  the record is valid; every role filter and role decision reads the absence as `COMPETITOR` without rewriting the
+  record (see [getParticipants](./participant-governor.md#getparticipants)). One entry per tournament, so the default
+  being applied is visible rather than silent. (info — never makes `valid` false)
+
+  ```js
+  {
+    issueType: 'PARTICIPANT_ROLE_MISSING',
+    message: '172 participant(s) have no participantRole and are treated as COMPETITOR',
+    severity: 'info',
+    scope: 'TOURNAMENT',
+    participantsCount: 172,
+    participantIds: ['...'],
+    assumedRole: 'COMPETITOR',
+  }
+  ```
+
+- `PARTICIPANT_ROLE_INVALID` — participants whose `participantRole` is not a `ParticipantRoleEnum` value (e.g.
+  `"PLAYER"`). These are **not** defaulted to `COMPETITOR` (a misspelt staff role would then count as a player), so a
+  role filter excludes them; this finding says what to fix. One entry per tournament, with a row per offending value
+  and a `suggestedRole` only where the intent is evident (a case variant of a real role, or `PLAYER`/`ATHLETE`/
+  `ENTRANT`/`CONTESTANT` → `COMPETITOR`). (warning — never makes `valid` false)
+
+  ```js
+  {
+    issueType: 'PARTICIPANT_ROLE_INVALID',
+    message: 'PLAYER is not a participant role (172 participant(s)); use COMPETITOR',
+    severity: 'warning',
+    scope: 'TOURNAMENT',
+    participantsCount: 172,
+    participantIds: ['...'],
+    invalidRoles: [{ participantRole: 'PLAYER', participantsCount: 172, participantIds: ['...'], suggestedRole: 'COMPETITOR' }],
+  }
+  ```
+
 > Scheduling collisions are deferred — they require the scheduling model and are a later sub-phase.
 
 ## getTournamentCompleteness
@@ -1204,6 +1239,9 @@ const { eventMatchUpFormatTiming } = engine.getEventMatchUpFormatTiming({
   eventId,
 });
 ```
+
+**Category name.** Overrides are read under `category.categoryName`, else `category.ageCategoryCode`, else the event's
+`eventId`: the same key `modifyEventMatchUpFormatTiming` writes and `getMatchUpFormatTiming` and the schedulers read.
 
 **Category resolution.** When `categoryType` is not supplied it is resolved from the event — `event.category.categoryType`, falling back to `event.category.subType`. An explicitly-passed value still wins.
 
@@ -1465,7 +1503,7 @@ const { averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes, overnightMin
     matchUpFormat,
     categoryName, // optional
     categoryType, // optional
-    eventType, // optional - defaults to SINGLES; SINGLES, DOUBLES
+    eventType, // optional - defaults to the event's type, else SINGLES; SINGLES, DOUBLES, TEAM
     eventId, // optional - prioritizes policy definition attached to event before tournament record
     policyDefinitions, // optional - evaluate against a policy not attached to the record
     playedMinutes, // optional - measured duration of the previous matchUp; keys byPlayedMinutes bands
@@ -1481,6 +1519,16 @@ const { averageMinutes, recoveryMinutes, typeChangeRecoveryMinutes, overnightMin
 | `typeChangeRecoveryMinutes` | Rest required when the participant crosses singles ↔ doubles                                |
 | `overnightMinutes`          | Minimum rest across a day boundary; `undefined` when no rule is configured                  |
 | `recoveryFromPlayedMinutes` | `true` when `recoveryMinutes` came from a `byPlayedMinutes` band rather than the flat table |
+
+**Category key.** When `categoryName` is not supplied it is resolved from the event: `category.categoryName`, else
+`category.ageCategoryCode`, else the event's `eventId`. This is the key `modifyEventMatchUpFormatTiming` writes an
+event's override under, so an event with no category reads its own override rather than the policy default.
+
+**TEAM events.** A TEAM event's override is keyed by the event's type, `TEAM`, but its collection (line) matchUps are
+`SINGLES` or `DOUBLES`. When `eventId` names a TEAM event and `eventType` is a line type, minutes keyed by the line's
+own type win, then minutes keyed by `TEAM`, then `default`. So an override set with `modifyEventMatchUpFormatTiming`
+on a TEAM event times its lines: `getMatchUpFormatTiming({ eventId, matchUpFormat, eventType: SINGLES })` returns it, as
+do hydrated `timeAfterRecovery` values and the auto-schedulers. A SINGLES or DOUBLES event is unaffected.
 
 `policyDefinitions` supplies a scheduling policy in place of whatever is attached to the tournamentRecord, following the same `policyDefinitions ?? appliedPolicies` precedence used across the query surface. It lets a caller ask "what would this look like under a different policy" without mutating the record. Omitted, resolution is exactly as before.
 
@@ -1655,7 +1703,7 @@ const participantFilters = {
   accessorValues: [{ accessor, value }], // optional - see Accessors in Concepts
   eventEntryStatuses, // boolean
   participantTypes: [INDIVIDUAL],
-  participantRoles, [COMPETITOR],
+  participantRoles: [COMPETITOR], // a participant with no participantRole counts as COMPETITOR
   signInStatus, // specific signIn status
   eventIds, // events in which participants appear
 };
@@ -1669,31 +1717,30 @@ const {
   mappedMatchUps, // object { [matchUpId]: matchUp }; when { withMatchUps: true }
   participants, // array of hydrated participants
   matchUps, // array of all matchUps; when { withMatchUps: true }
- } =
-  engine.getParticipants({
-    convertExtensions, // optional - BOOLEAN - convert extensions so _extensionName attributes
-    participantFilters, // optional - filters
-    policyDefinitions, // optional - can accept a privacy policy to filter participant attributes
-    usePublishState, // optional - BOOLEAN - don't add seeding information when not published
-    scheduleAnalysis: {
-      scheduledMinutesDifference // optional - scheduling conflicts determined by scheduledTime difference between matchUps
-    },
-    withDraws, // optional - defaults to true if any other context options are specified
-    withEvents, // optional - defaults to true if any other context options are specified
-    withIndividualParticipants, // optional - boolean or attributeFilter template - include hydrated individualParticiapnts for TEAM/PAIR participants
-    withIOC, // optional - will add IOC country code and countryName to participant persons
-    withISO2, // optional - will add ISO2 country code and countryName to participant persons
-    withMatchUps, // optional - include all matchUps in which the participant appears, as well as potentialMatchUps
-    withOpponents, // optional - include opponent participantIds
-    withPotentialMatchUps, // optional boolean
-    withRankingProfile, // optional boolean - include details necessary for point awards
-    withScaleValues, // optional - include { ratings, rankings } attributes extracted from timeItems
-    withSeeding, // optional - add event seeding
-    withScheduleItems, // optional boolean - include array of scheduled matchUp details
-    withSignInStatus, // optional boolean
-    withStatistics, // optional - adds events, matchUps and statistics, e.g. 'winRatio'
-    withTeamMatchUps // optional boolean
-  });
+} = engine.getParticipants({
+  convertExtensions, // optional - BOOLEAN - convert extensions so _extensionName attributes
+  participantFilters, // optional - filters
+  policyDefinitions, // optional - can accept a privacy policy to filter participant attributes
+  usePublishState, // optional - BOOLEAN - don't add seeding information when not published
+  scheduleAnalysis: {
+    scheduledMinutesDifference, // optional - scheduling conflicts determined by scheduledTime difference between matchUps
+  },
+  withDraws, // optional - defaults to true if any other context options are specified
+  withEvents, // optional - defaults to true if any other context options are specified
+  withIndividualParticipants, // optional - boolean or attributeFilter template - include hydrated individualParticiapnts for TEAM/PAIR participants
+  withIOC, // optional - will add IOC country code and countryName to participant persons
+  withISO2, // optional - will add ISO2 country code and countryName to participant persons
+  withMatchUps, // optional - include all matchUps in which the participant appears, as well as potentialMatchUps
+  withOpponents, // optional - include opponent participantIds
+  withPotentialMatchUps, // optional boolean
+  withRankingProfile, // optional boolean - include details necessary for point awards
+  withScaleValues, // optional - include { ratings, rankings } attributes extracted from timeItems
+  withSeeding, // optional - add event seeding
+  withScheduleItems, // optional boolean - include array of scheduled matchUp details
+  withSignInStatus, // optional boolean
+  withStatistics, // optional - adds events, matchUps and statistics, e.g. 'winRatio'
+  withTeamMatchUps, // optional boolean
+});
 ```
 
 ## getLinkedTournamentIds
@@ -2589,7 +2636,7 @@ This methods is used internally for creating a "virtual" view of court availabil
 const { bookings, relevantMatchUps } = engine.generateBookings({
   defaultRecoveryMinutes, // optional
   averageMatchUpMinutes, // optional
-  periodLength, // optional - scheduling period in minutes
+  periodLength, // optional - scheduling period in minutes; else the tournaments' scheduling policy defaultPeriodLength
   scheduleDate, // optional - only consider matchUps scheduled on scheduleDate
   venueIds, // optional - only consider matchUps at specific venue(s)
   matchUps,
@@ -2731,6 +2778,35 @@ const {
   payload, // attributes to be passed to method
   // additional method-specific options for values to be added to payload when calling method
 } = validAction;
+```
+
+---
+
+## resolveHomeParticipantId
+
+Which side of a matchUp is at home, and on what basis. Read-only: it infers at read time and never writes, so the
+explicit `homeParticipantId` written by `setMatchUpHomeParticipantId` stays the only stored fact. Bases are
+`homeParticipantConstants`. A signal counts only when it singles out **exactly one** side; precedence:
+
+1. `EXPLICIT`: `matchUp.schedule.homeParticipantId` (or its legacy timeItem), when it names one of the sides.
+2. `VENUE`: the matchUp's venue (`schedule.venueId`, or the venue of `schedule.courtId`) is in one side's TEAM
+   `homeVenueIds`.
+3. `HOST_ORGANISATION`: the tournament owner, `parentOrganisation.organisationId`, issued an id to one side: it is
+   the `organisationId` of an entry in that side's `participantOtherIds` that carries a `participantId`. Teams are
+   matched on `participantOtherIds`, never on the tournament-local `participantId`. The tournament's
+   `parentOrganisationId` (a governing body) is not used.
+4. `NONE`: no signal, or a signal matches both sides (same school, shared venue). There is no home participant and
+   `homeParticipantId` is absent; no side is assumed, side 1 included.
+
+Who is viewing is not a signal. `getHomeParticipantId` is unchanged and still returns only the stored value.
+
+```js
+const { homeParticipantId, basis } = engine.resolveHomeParticipantId({
+  matchUpId, // required unless matchUp is given
+  drawId, // optional; resolved from matchUpId when absent
+  matchUp, // optional: a hydrated matchUp ({ inContext: true }), used as is
+});
+// basis: 'EXPLICIT' | 'VENUE' | 'HOST_ORGANISATION' | 'NONE'
 ```
 
 ---

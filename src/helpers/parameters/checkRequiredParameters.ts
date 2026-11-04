@@ -1,3 +1,4 @@
+import { validateMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { isFunction, isObject, isString } from '@Tools/objects';
@@ -180,9 +181,11 @@ export function checkRequiredParameters(
     INVALID_VALUES;
 
   const param = errorParam ?? (paramError[ONE_OF] && Object.keys(paramError[ONE_OF]).join(', '));
+  const formatExplanation =
+    errorParam === MATCHUP_FORMAT ? validateMatchUpFormat({ matchUpFormat: params?.[MATCHUP_FORMAT] }).info : undefined;
 
   return decorateResult({
-    info: { param, message: paramError[MESSAGE] },
+    info: { param, message: paramError[MESSAGE] ?? formatExplanation },
     result: { error },
     stack,
   });

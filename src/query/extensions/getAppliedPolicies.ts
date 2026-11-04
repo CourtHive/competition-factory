@@ -49,7 +49,9 @@ export function getAppliedPolicies({
     // the one ignored. The real exposure is narrower: the invariant is convention rather than
     // enforcement, so a record built outside the API can carry duplicates whose later entries
     // vanish without error. `analyzeTournament` reports those as `extensionAnomalies`.
-    const extensionPolicies = extensions?.find((extension) => extension.name === APPLIED_POLICIES)?.value;
+    // the first-class attribute (CODES), else the legacy extension: records in any write mode read the same
+    const extensionPolicies =
+      params?.appliedPolicies ?? extensions?.find((extension) => extension.name === APPLIED_POLICIES)?.value;
     if (extensionPolicies) {
       for (const key of Object.keys(extensionPolicies))
         if (onlySpecifiedPolicyTypes ? policyTypes.includes(key) : !policyTypes.length || policyTypes.includes(key)) {

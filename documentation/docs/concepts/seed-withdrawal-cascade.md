@@ -8,6 +8,17 @@ When a seeded player withdraws from a tournament **after the draw has been made 
 
 The Competition Factory implements this as the `seedWithdrawalCascade` mutation, available as a position action (`SEED_CASCADE`) when clicking on a seeded participant's draw position.
 
+## Removing seeding or withdrawing a seed
+
+These are separate operations:
+
+| Intent                                                   | Position action | Engine method                                                                       | Effect                                                                                                                       |
+| -------------------------------------------------------- | --------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Remove the seed designation                              | `REMOVE_SEED`   | [`removeSeededParticipant`](../governors/draws-governor.md#removeseededparticipant) | Clears the participant from the seed slot. They keep their draw position; other seeds do not move.                           |
+| Withdraw the seeded participant and cascade replacements | `SEED_CASCADE`  | [`seedWithdrawalCascade`](../governors/draws-governor.md#seedwithdrawalcascade)     | Removes them from their position, marks their draw entry `WITHDRAWN`, moves replacement seeds and returns the final vacancy. |
+
+`removeSeededParticipant` is a legacy name for seed-only removal; it does not withdraw the participant. Use the operation that matches the director's intent rather than inferring withdrawal from that name.
+
 ## Seed Blocks
 
 Seeds are organized into blocks that correspond to their placement in the draw:
@@ -70,8 +81,10 @@ The `SEED_CASCADE` action appears in `positionActions` when:
 1. The draw position contains a **seeded participant**
 2. The structure is **MAIN stage, sequence 1** (not consolation or playoff)
 3. The structure is **not round robin**
-4. **No matchUps have been played** (pre-tournament only)
+4. **No draw positions are active**, including matchUps in progress
 5. At least one **lower seed block has assigned seeds**
+
+Consumers should display the returned `SEED_CASCADE` action separately from `REMOVE_SEED` and dispatch its supplied `method` and `payload`. If no lower block has replacements, the cascade action is omitted; the mutation itself can still withdraw a seed from the lowest populated block and return their vacated position without moving other seeds.
 
 ```javascript
 const { validActions } = tournamentEngine.positionActions({
@@ -102,6 +115,8 @@ const result = tournamentEngine.seedWithdrawalCascade({
 //   vacatedDrawPosition: 13  // where the TD needs to fill
 // }
 ```
+
+The mutation emits `MODIFY_POSITION_ASSIGNMENTS` and `MODIFY_SEED_ASSIGNMENTS`, with the associated draw notice. If the participant's draw entry changes to `WITHDRAWN`, it also emits `MODIFY_DRAW_ENTRIES`. The participant record and withdrawn entry are retained; withdrawing does not delete them from the tournament.
 
 ### After the Cascade
 

@@ -350,6 +350,49 @@ engine.modifyCollectionDefinition({
 
 A changed `gender` is checked against the event's gender, as `addCollectionDefinition` checks an added collection: a `FEMALE` collection in a `MALE` event, or `MIXED` singles in a `MIXED` event, is refused with `INVALID_GENDER`. The check is skipped when `enforceGender` is false or the `matchUpActions` policy sets `participants.enforceGender: false`. A collection whose gender does not change is not checked again. `modifyTieFormat` changes each existing collection this way, so the same check applies to it.
 
+### Encounter-specific type conversion and Captain's Choice (unreleased)
+
+Implemented locally on `feat/noc-u4-captains-choice-runtime`, not yet released. The
+[Captain's Choice specification](../concepts/collectionMatchUpTypeChoice.mdx) describes `matchUpTypeOptions`,
+unresolved placeholders, selection and `resetMatchUpTypeChoice: true`. Fixed SINGLES/DOUBLES collections
+can also use the existing concrete-type conversion, without becoming choice collections.
+A captain's choice is resolved to one concrete `SINGLES` or `DOUBLES` type for both sides of the collection
+in one TEAM encounter. Different encounters can resolve the same event collection differently.
+
+```js
+engine.modifyCollectionDefinition({
+  drawId,
+  matchUpId, // the parent TEAM encounter, not a child rubber
+  collectionId,
+  matchUpType: 'SINGLES',
+  clearCollectionAssignments: true, // explicit: remove existing assignments in this collection only
+  // tieFormatUuids: ['caller-supplied-new-id'], // required if a shared centralized format must fork
+});
+```
+
+The mutation changes the encounter's effective collection definition and every affected child rubber.
+It preserves matchUp IDs, collection positions, schedules (including placement locks), team membership,
+other collection assignments and other encounters. It does not choose a remaining singles player or invent
+a doubles partner. Without explicit clearing, existing assignments cause refusal. Clearing inherited
+assignments writes a local lineup override; the draw's lineup and shared pair participant records remain.
+The existing assignment methods can then populate the resolved singles/doubles rubbers.
+
+Affected rubbers must be TO_BE_PLAYED, without a winner, entered set scores, scoredTime, or actual-play
+timeItems. Overrides do not permit converting played rubbers. An untouched collection can change while
+another collection is underway, but an encounter with a result cannot change. A type change rechecks
+the resulting gender/type combination even when gender is unchanged. Schedule locks pin placement;
+they do not prohibit a type change that preserves that placement.
+
+The mutation preflights the whole affected collection and validates the proposed tieFormat before writing.
+It announces each changed child and the final parent. A shared centralized format requires a caller-supplied
+ID pool so independent executions create the same fork. Missing/colliding IDs are refused before writes.
+
+Current boundaries: draw/event/structure-wide type conversion remains NOT_IMPLEMENTED; changing type
+and count together is refused. Independent per-position choices, choice eligibility/deadlines, agreement
+between captains, UI integration and migration of NOC extensions are not implemented. The existing
+multi-collection `modifyTieFormat` workflow still needs an atomic preflight audit before this conversion
+is offered through a general format editor. This branch does not modify the outcome pipeline.
+
 ---
 
 ## modifyTieFormat

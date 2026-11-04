@@ -453,6 +453,10 @@ With the `drawId` of a draw already in the event (adding qualifying to a generat
 `addDrawDefinition({ drawDefinition, allowReplacement: true })`, which announces it. Until 2026-10 the stored draw was
 changed in place, unannounced, whether or not the commit followed.
 
+Entries over a matched sanction's `maxWildcards` or `maxAlternates` are refused before anything is built, with
+`NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS` and a context naming the excess `participantIds`; see
+[generateDrawDefinition](/docs/governors/generation-governor#generatedrawdefinition).
+
 ---
 
 ## generateDrawMaticRound
@@ -845,8 +849,8 @@ const isAdHoc = engine.isAdHocType({ drawType }); // AD_HOC | SWISS | LADDER -> 
 Also callable directly, which is how the factory's own generators use it:
 
 ```js
-import { governors } from 'tods-competition-factory';
-governors.drawsGovernor.isAdHocType(drawType); // a bare string is accepted too
+import { drawsGovernor } from 'tods-competition-factory';
+drawsGovernor.isAdHocType(drawType); // a bare string is accepted too
 ```
 
 **Returns:** `boolean`.
@@ -920,6 +924,8 @@ engine.modifyDrawDefinition({
 Change the display representation of a seedNumber for a specified `participantId`. This method is included in `validActions` for [positionActions](../policies/positionActions.md).
 
 The rationale for `seedValue` is to be able to, for instance, represent the fifth through the eighth seed as `5-8`, or simply as `5`. When there are no restrictions on seed positioning `seedValue` allows assigning seeding to arbitrary `participants`.
+
+Numeric values and every endpoint of a grouped value must not exceed the structure's number of non-BYE draw positions. For a nested round-robin group, the containing draw supplies that bound, so a four-player group in a 32-player draw can still carry a draw-wide seed value. A full 32-position draw refuses `66` or `5-66`; with eight BYEs, the ceiling is 24. An impossible value returns `INVALID_VALUES` before changing assignments or emitting notices, including when `validation: false` permits custom display labels. Empty values and `0` retain their existing clearing behavior. This ceiling applies when position assignments are present; it does not impose the seeding policy's smaller normal seed count on valid additional seeds.
 
 ```js
 engine.modifySeedAssignment({
@@ -1129,7 +1135,9 @@ const { removedMatchUpIds } = engine.removeStructure({
 
 ## removeSeededParticipant
 
-Removes a seeded participant from draw and adjusts seeding.
+Removes a participant's seed assignment while retaining the seed slot and its value. The participant remains in the draw at the same position; other seeds are unchanged.
+
+Despite its legacy name, this method removes **only the seeding**. It is the mutation behind the `REMOVE_SEED` position action. To withdraw a seeded participant and move replacement seeds into the vacancy, use [`seedWithdrawalCascade`](#seedwithdrawalcascade).
 
 ```js
 engine.removeSeededParticipant({
@@ -1139,7 +1147,7 @@ engine.removeSeededParticipant({
 });
 ```
 
-**Purpose:** Remove participant and rebalance seeds.
+Emits `MODIFY_SEED_ASSIGNMENTS` and `MODIFY_DRAW_DEFINITION` notices. Returns `NOT_FOUND` if the participant is not seeded in the specified structure.
 
 ---
 
@@ -1278,6 +1286,26 @@ engine.resetQualifyingStructure({
   structureId,
 });
 ```
+
+---
+
+## seedWithdrawalCascade
+
+Withdraws a seeded participant from their draw position and moves one seed from each successive lower seed block into the vacancy. Both position assignments and seed assignments are updated, and the withdrawn participant's draw entry is marked `WITHDRAWN`.
+
+```js
+const { success, error, vacatedDrawPosition } = engine.seedWithdrawalCascade({
+  drawId,
+  structureId,
+  drawPosition, // the withdrawing seed's current position
+});
+```
+
+The method applies to MAIN stage sequence 1, non-round-robin structures with no active draw positions. It returns the final `vacatedDrawPosition` for the director to fill with an alternate or BYE; it does not fill that vacancy automatically. If the withdrawing seed is in the lowest populated block, the method simply vacates their position without moving another seed.
+
+The `SEED_CASCADE` position action exposes this operation when a lower seed block has assigned replacements. See [Seed Withdrawal Cascade](../concepts/seed-withdrawal-cascade.md) for eligibility, examples, notices and follow-up placement.
+
+To remove only a participant's seed designation while keeping them at their existing draw position, use [`removeSeededParticipant`](#removeseededparticipant), the method behind `REMOVE_SEED`. The two actions have different effects and are not interchangeable.
 
 ---
 

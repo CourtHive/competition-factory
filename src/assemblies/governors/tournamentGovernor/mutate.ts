@@ -2,6 +2,7 @@ export { cleanExpiredMutationLocks } from '@Mutate/tournaments/mutationLocks/cle
 export { migrateTournamentRecord } from '@Mutate/tournaments/migrateTournamentRecord';
 export { removeMutationLock } from '@Mutate/tournaments/mutationLocks/removeMutationLock';
 export { addMutationLock } from '@Mutate/tournaments/mutationLocks/addMutationLock';
+export { setSanctionConstraints } from '@Mutate/tournaments/setSanctionConstraints';
 export { hydrateTournamentRecord } from '@Mutate/base/hydrateTournamentRecord';
 export { setTournamentStatus } from '@Mutate/tournaments/setTournamentStatus';
 export { removeOnlineResource } from '@Mutate/base/removeOnlineResource';

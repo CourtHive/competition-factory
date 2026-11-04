@@ -1,5 +1,6 @@
 import type { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { PointMultiplier } from '@Types/competitionFormat';
+import type { ScoringPeriod } from '@Types/scoring/types';
 import type { ServiceState } from './service';
 
 /**
@@ -40,7 +41,7 @@ export type TimelineEntry = {
 };
 
 /** a set as the state records it (§ 1.2) */
-export type ScoredSet = {
+export type ScoredSet = Partial<ScoringPeriod> & {
   setNumber: number;
   side1Score: number;
   side2Score: number;

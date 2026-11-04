@@ -2,6 +2,10 @@
 title: Avoidance Policies
 ---
 
+:::info CODES schema
+This policy's shape is the `AvoidancePolicy` definition in `tournament.schema.json` (under `PolicyDefinitions`), closed: an attribute it does not list does not validate. Policies are stored in each element's first-class `appliedPolicies` attribute (the `appliedPolicies` extension on older records).
+:::
+
 ## Overview
 
 **Avoidance Policies** prevent participants with shared attributes (nationality, club, region, etc.) from meeting in early rounds of elimination draws, or ensure they're evenly distributed across round robin brackets. Avoidance helps create fairer, more competitive draws by separating players with common characteristics.

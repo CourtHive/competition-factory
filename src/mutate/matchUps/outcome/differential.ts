@@ -1,9 +1,5 @@
+import { MISSING_ASSIGNMENTS } from '@Constants/errorConditionConstants';
 import type { MatchUpWrite, Refusal } from './types';
-import {
-  DRAW_POSITION_ASSIGNED,
-  DRAW_POSITION_OCCUPIED,
-  MISSING_ASSIGNMENTS,
-} from '@Constants/errorConditionConstants';
 
 /**
  * The `differential` mode: v2 decided, v1 ran, and the two are compared before the result leaves.
@@ -34,12 +30,12 @@ export const APPLY_STAGE_CODES: ReadonlySet<string> = new Set([
   MISSING_ASSIGNMENTS.code,
   // MISSING_DRAW_POSITIONS is not: v2 refuses it as v1 does, row 24, both clauses (v1's `missingDrawPositionsRefusal`
   // before the dispatch; `removeDirectedParticipants`' check after it, S7)
-  // a refusal raised INSIDE the exit cascade, which `setMatchUpStatus` now returns rather than drops (F3,
-  // CA 2026-10-04); v2 does not yet plan the cascade writes that raise it ("an exit carried into a swap")
-  DRAW_POSITION_ASSIGNED.code,
-  // its sibling from the same cascade: `directLoser` placing a loser on a seat another participant holds (census F2,
-  // policy-off DOUBLE_ELIMINATION 8: 20477784 and 20537779 — a refusal after the direction wrote, not yet planned by v2)
-  DRAW_POSITION_OCCUPIED.code,
+  // DRAW_POSITION_ASSIGNED and DRAW_POSITION_OCCUPIED are not (S7, O13): the refusals raised INSIDE the exit cascade
+  // (F3, CA 2026-10-04: `assignDrawPositionBye`, `doubleExitAdvancement`, `directLoser` on a seat another participant
+  // holds) come after v1's first write. Their census cases (F2, policy-off DOUBLE_ELIMINATION 8: 20477784, 20537779)
+  // were fixed in v1 (`doubleEliminationRefusalsThatWrote.test.ts`), and neither code was deferred once over the full
+  // suite or the TEAM arms under differential (2026-11-02). A v1 that raises one now refuses after writing: the
+  // divergence the differential exists to surface, not a refusal to excuse
 ]);
 
 export class OutcomePipelineDivergence extends Error {

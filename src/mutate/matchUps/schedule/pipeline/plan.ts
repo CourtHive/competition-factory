@@ -3,6 +3,7 @@ import { getMatchUpsToSchedule } from '@Mutate/matchUps/schedule/scheduleMatchUp
 import { processNextMatchUps } from '@Mutate/matchUps/schedule/scheduleMatchUps/processNextMatchUps';
 import { PlaceVenueRoundsArgs, scheduleVenueRounds, VenueRoundDetails } from './placeVenueRounds';
 import { generateScheduleTimes } from '@Generators/scheduling/utils/generateScheduleTimes';
+import { stagedScheduleTimes, venueBasePeriodLength } from './periodStages';
 import { extractDate, sameDay, timeStringMinutes } from '@Tools/dateTime';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { carryPastMidnight } from './carryPastMidnight';
@@ -32,7 +33,10 @@ type PlanScheduleArgs = {
   clearScheduleDates?: boolean | string[];
   excludeNoDateCompleted?: boolean;
   excludePriorDates?: boolean;
-  /** the call's own period length: absent, a venue's slots derive theirs from its average minutes */
+  /**
+   * the call's own period length, which every round takes; absent, each round takes the period it states (its own, else
+   * its scheduling policy's default), else a venue's slots derive theirs from its average minutes
+   */
   periodLength?: number;
 };
 
@@ -198,23 +202,26 @@ function planDate({
     const minutesMap = venueMinutesMap(venue);
     const venueCourts = view.courts.filter((court) => court.venueId === venue.venueId);
 
-    // the venue's slots, around what is already booked on its courts that day
+    // the venue's slots, around what is already booked on its courts that day, with a given period
+    const venueScheduleTimes = (venuePeriodLength?: number) =>
+      generateScheduleTimes({
+        courtIds: venueCourts.map((court) => court.courtId),
+        dateCourts: view.dateCourts[scheduleDate] ?? [],
+        averageMatchUpMinutes: slotMinutes,
+        eventTimings: view.eventTimings,
+        venueIds: [venue.venueId],
+        matchUps: hydrated,
+        clearScheduleDates,
+        clearedDates: clearedPlannedDates(view, clearScheduleDates),
+        periodLength: venuePeriodLength,
+        scheduleDate,
+      });
+    const basePeriodLength = venueBasePeriodLength(venue, periodLength);
     const {
-      scheduleTimes = [],
+      scheduleTimes: baseScheduleTimes = [],
       dateScheduledMatchUpIds,
       unbookedMatchUpIds = [],
-    } = generateScheduleTimes({
-      courtIds: venueCourts.map((court) => court.courtId),
-      dateCourts: view.dateCourts[scheduleDate] ?? [],
-      averageMatchUpMinutes: slotMinutes,
-      eventTimings: view.eventTimings,
-      venueIds: [venue.venueId],
-      matchUps: hydrated,
-      clearScheduleDates,
-      clearedDates: clearedPlannedDates(view, clearScheduleDates),
-      periodLength,
-      scheduleDate,
-    });
+    } = venueScheduleTimes(basePeriodLength);
 
     if (unbookedMatchUpIds.length) plan.unbookedMatchUpIds[scheduleDate][venue.venueId] = unbookedMatchUpIds;
 
@@ -242,6 +249,16 @@ function planDate({
       clearDate: already.clearDate,
       matchUpNotBeforeTimes,
       matchUps: hydrated,
+    });
+
+    // rounds stating different periods take their slots in stages, each on its own grid (periodStages.ts)
+    const scheduleTimes = stagedScheduleTimes({
+      scheduleTimesFor: (stagePeriodLength) => venueScheduleTimes(stagePeriodLength).scheduleTimes ?? [],
+      matchUpsToSchedule,
+      baseScheduleTimes,
+      basePeriodLength,
+      periodLength,
+      venue,
     });
 
     venueScheduledRoundDetails[venue.venueId] = {

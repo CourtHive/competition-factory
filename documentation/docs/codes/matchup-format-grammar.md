@@ -9,6 +9,10 @@ each, what `stringify` writes, and which well-formed codes are refused for a new
 scoring is stated there, not here. The [matchUpFormat codes](/docs/codes/matchup-format) page is the guide to
 writing codes; where the two differ, this page is the rule.
 
+The [overtime and extra-time extension](./overtime/index.md) has its own short pages for repeated overtime,
+exact extra-time halves, finite ceilings, golden goals, silver goals and shootout handoffs. It is in development
+and is not yet enabled in published Factory versions; examples there do not change the currently enabled grammar below.
+
 First version, 2026-10-25, written from the parser's rules (`parse` refuses what `isValid` refuses, CA 2026-10-02;
 the refusals for new use, CA 2026-10-18), the existing tests (`parseIsStrict.test.ts`, `matchUpFormatCode.test.ts`,
 `crossSportFormats.test.ts`) and probes of factory `dev`. The four questions that draft left open were decided by CA
@@ -28,6 +32,10 @@ case can show.
 A valid code is well-formed; a well-formed code may not be valid (§ 6). Every well-formed code has exactly one
 canonical spelling, and `parse` and `stringify` are inverse on it: `stringify(parse(c)) === c` for every canonical
 `c`, and for every well-formed `c`, `stringify(parse(c))` is `c` with its equivalent spellings (§ 4) rewritten.
+
+**Overtime extension (CA 2026-11-03):** § 9 adds readable overtime syntax. ScoringEngine now supports the
+defined timed subset, including phase-aware records and replay. General tournament new-use validation remains
+gated until its separate activation slice. The existing rules below apply to codes without `-O:`.
 
 ## 2. Lexical rules
 
@@ -226,3 +234,54 @@ standard set, or a final segment identical to the set segment. Four stored codes
 `@{at}`: `SET3-S:4/TB7@4-F:TB10`, 1,137 values in 33 tournaments, and three rarer ones), and four are refused for new
 use and read where stored (§ 6: `SET1-S:10/TB7@8`, `SET1-S:11/TB7@8`, `SET1-S:12/TB7@8` and `SET3A-S:6/TB7-F:TB10`,
 seven values in four tournaments).
+
+## 9. Overtime extension (tournament activation pending)
+
+CA approved conditional overtime repetition on 2026-11-03. Parsing, canonical serialization and the supported
+ScoringEngine subset are implemented. `isValidMatchUpFormat` still returns false for tournament new use,
+and the legacy public point mutator refuses O. Reading additional segment syntax does not imply that every
+combination can be scored. See [scoring specification § 9.8](/docs/scoring-engine/scoring-engine-spec#98-declared-overtime-ca-2026-11-03-scoringengine-integration).
+
+```text
+{root}{count}[X][A][{matchMods}]-S:{set}[-G:{game}][-O:{limit}[X][SD]/{set}][-F:{set}][-M:T{minutes}]
+```
+
+- `O` is a new section key, distinct from an outs segment such as `S:O3`. Section order is S, G, O, F, M;
+  every section appears at most once. O requires aggregate regulation (`A`).
+- The limit is a positive safe integer (§ 2.4), or `U` for unlimited. The finite limit counts overtime
+  periods only, excluding regulation and the final decider.
+- Without `X`, compare aggregate totals at each overtime period end and finish when unequal. With `X`,
+  play exactly that many overtime periods before comparing totals. `UX` is invalid.
+- `SD` means sudden death: finish when a scoring event breaks the aggregate tie. `XSD` is invalid because
+  mandatory completion conflicts with sudden death. The order is count, X if present, SD if present.
+- The first slash separates the policy from the existing segment grammar; a segment can itself contain a
+  slash (`O:1/T5P/TB1`). Combined-total `P…` segments are not allowed as aggregate overtime. Other segment
+  spellings can be read; supported runtime combinations will be defined before activation.
+- At a finite ceiling, a tied aggregate enters the declared F fallback, or finishes level when F is absent.
+  U with F is invalid because the fallback is unreachable. With O present, a one-period aggregate may have
+  F, and F identical to S is retained: the fallback after overtime is meaningful. Without O, existing F
+  rules and canonicalization are unchanged.
+
+| Example                       | ScoringEngine progression                                             |
+| ----------------------------- | --------------------------------------------------------------------- |
+| `QTR4XA-S:T12P-O:3/T5P`       | Up to three additional five-minute periods                            |
+| `QTR4XA-S:T12P-O:U/T5P`       | Repeat five-minute periods while tied                                 |
+| `HAL2XA-S:T45P-O:2X/T15P`     | Exactly two additional fifteen-minute periods before comparing totals |
+| `PER3XA-S:T20P-O:1SD/T5P`     | One five-minute sudden-death period                                   |
+| `PER3XA-S:T20P-O:3/T5P-F:TB1` | Up to three overtime periods, then a final decider if still tied      |
+
+`parse` adds `overtimeFormat` only when O is present:
+
+```ts
+{
+  count: 3, // positive integer, or 'unlimited'
+  setFormat: { timed: true, minutes: 5, based: 'P' }
+  // exactly: true      only when X is present
+  // suddenDeath: true  only when SD is present
+}
+```
+
+Segment equivalences apply inside O, including `T5G` → `T5`, `5WB2` → `5`, and `6/TB7@6` → `6/TB7`.
+The serializer writes O before F and M. It never drops an overtime policy to produce a regulation-only code.
+The supported timed subset has overtime accumulation, phase-aware records, final-decider indexing and replay.
+Tournament new-use and legacy scoring activation remain separate. Match-clock precedence is still unresolved.

@@ -4,6 +4,7 @@
  * Pure function that formats score for display
  */
 
+import { overtimeScoreContext, overtimeScoreString } from '@Helpers/matchUpFormatCode/overtimeContext';
 import type { MatchUp, GetScoreboardOptions, SetScore, FormatStructure } from '@Types/scoring/types';
 import { isLiveDecidingSet, isStandardSetTiebreak } from '@Tools/scoring/scoringUtilities';
 import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
@@ -21,6 +22,9 @@ import { IN_PROGRESS } from '@Constants/matchUpStatusConstants';
  */
 export function getScoreboard(matchUp: MatchUp, options?: GetScoreboardOptions): string {
   const sets = matchUp.score.sets;
+  const format = parse(matchUp.matchUpFormat);
+  const overtime = format && overtimeScoreContext(format, sets, matchUp.matchUpStatus);
+  if (overtime) return overtimeScoreString(overtime, options?.perspective);
 
   if (sets.length === 0) {
     return '0-0';

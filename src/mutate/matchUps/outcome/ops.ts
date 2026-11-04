@@ -65,6 +65,11 @@ export type OutcomeOp =
        */
       announcesContext?: false;
       /**
+       * true where v1's notice names the tournament and the event but the matchUp it defers in context is read without
+       * the tournament: a produced exit landed past a BYE-held matchUp beyond the first (`carryExitOnward`, S7)
+       */
+      inContextBare?: true;
+      /**
        * the writer v1's notice names where a settle pass makes the write: a carry withdrawn off the loser's matchUp by a
        * relabel, whose last emission is `reconcileScoredTimes` taking its `scoredTime` (S6); a convergence an unwind
        * dissolved, written again as it stands by `settleRederivedDoubleExits` after the call's own write (S6 tail)

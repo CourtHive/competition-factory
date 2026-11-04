@@ -22,6 +22,10 @@ engine.modifyDrawDefinition({
 engine.attachPolicies({ policyDefinitions: { [policyType]: {} } });
 ```
 
+:::info CODES schema
+This policy's shape is the `RoundNamingPolicy` definition in `tournament.schema.json` (under `PolicyDefinitions`), closed: a member it does not list does not validate. Policies are stored in each element's first-class `appliedPolicies` attribute (the `appliedPolicies` extension on older records).
+:::
+
 ## Default Round Naming policy
 
 ```js

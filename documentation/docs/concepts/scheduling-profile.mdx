@@ -55,6 +55,13 @@ type RoundProfile = {
 };
 ```
 
+:::info CODES schema
+A tournament's profile is stored at `tournamentRecord.scheduling.profile`, described by the `TournamentScheduling`
+definition in `tournament.schema.json` (with `ScheduleProfileDate`, `ScheduleProfileVenue` and `ScheduleProfileRound`).
+The definitions are closed: a round attribute not listed above does not validate. `periodLength`, `matchUpIds`,
+`containerStructureId` and `isRoundRobin` are also accepted on a round.
+:::
+
 ## Creating a Scheduling Profile
 
 ### Manual Creation
@@ -255,6 +262,10 @@ console.log(`${overLimitMatchUpIds.length} matches blocked by daily limits`);
 - 15 minutes: Short format tournaments (Fast4, no-ad)
 - 30 minutes: Standard tournaments (best of 3 sets) ← Most common
 - 60 minutes: Long format events (best of 5 sets)
+
+A round in the profile may state its own `periodLength`; the scheduling policy may state a `defaultPeriodLength`. The call's
+`periodLength` beats both, and a round's own beats the policy's; rounds of one venue with different periods are planned in
+stages, each on its own grid (see [The scheduling pipeline § 4](/docs/concepts/scheduling-pipeline#4-the-timed-pipeline-scheduleprofilerounds)).
 
 See [Period Length documentation](/docs/concepts/automated-scheduling#period-length-scheduling-block-size) for detailed explanation.
 :::

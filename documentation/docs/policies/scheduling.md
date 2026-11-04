@@ -68,6 +68,9 @@ The **Scheduling Policy** (`POLICY_TYPE_SCHEDULING`) controls scheduling behavio
       transitMinutes?: number;                    // Between venues with no stated transit (default policy: 30)
     };
 
+    // Minutes per scheduling period (Garman's L) when the run states none (default policy: unset)
+    defaultPeriodLength?: number;                 // A positive number; anything else is ignored
+
     // Default daily limits (overridable per participant)
     defaultDailyLimits?: {
       SINGLES?: number;                           // Max singles matches per day
@@ -114,6 +117,13 @@ The **Scheduling Policy** (`POLICY_TYPE_SCHEDULING`) controls scheduling behavio
   }
 }
 ```
+
+**In the CODES schema.** This shape is the `SchedulingPolicy` definition in `tournament.schema.json`, beside
+`PolicyDefinitions` (policies keyed by policy type, the value of an element's applied policies) and the seeding and
+competition policy definitions. The definition is closed: a member not listed above, or a `defaultPeriodLength` that is
+not a positive number, does not validate. An element stores its policies as its first-class `appliedPolicies`
+attribute (a `PolicyDefinitions`) on the Tournament, Event, DrawDefinition or Structure; older records hold them in an
+`appliedPolicies` extension, which is still read and is promoted by `migrateTournamentRecord`.
 
 **Which category a matchUp is timed by.** The `categoryTypes` above are matched against the event's timing
 category type: a stated `category.categoryType` (or `subType`) wins; otherwise an `ageCategoryCode` of 18 or under
@@ -532,6 +542,41 @@ const timing = tournamentEngine.getMatchUpFormatTiming({
 This is what the [Participant Recovery Time](/docs/governors/report-governor#participant-recovery-time-report) and [Participant Experience](/docs/governors/report-governor#participant-experience-report) reports use to evaluate a completed tournament against a policy other than the one it ran under.
 
 ---
+
+## Default Period Length {#defaultperiodlength}
+
+`defaultPeriodLength` is the scheduling period, in minutes, the automated schedulers use when the run does not state
+one: the size of each Garman period, so the grid a venue's start times fall on. It is resolved for a draw as every
+scheduling policy setting is (the draw's policy, else its event's, else the tournament's), and it is read by:
+
+- `scheduleProfileRounds`, per profiled round: the call's `periodLength` wins, then the round's own `periodLength` in
+  the scheduling profile, then this, then the period derived from the venue's average minutes (30, or the average when
+  shorter). Rounds of one venue resolving to different periods are planned in stages, each on its own grid
+  ([The scheduling pipeline § 4](../concepts/scheduling-pipeline.md#4-the-timed-pipeline-scheduleprofilerounds));
+- `scheduleMatchUps`: the call's `periodLength`, else the smallest default among the listed matchUps' draws, else 30;
+- `calculateScheduleTimes` and `generateBookings`, when called without `periodLength`: the smallest default the
+  tournaments' own policies state, else the derived period.
+
+A stated period is used as stated: unlike the derived one, it is not shortened to a format's average plus recovery. A
+period longer than a matchUp gives several matchUps the same start time on one court; that is Garman's projection,
+whose start times are not-before times.
+
+```js
+import { tournamentEngine, fixtures, factoryConstants } from 'tods-competition-factory';
+const { POLICY_SCHEDULING_DEFAULT } = fixtures.policies;
+const { POLICY_TYPE_SCHEDULING } = factoryConstants.policyConstants;
+
+// 20-minute periods for every round that states none, unless a run states its own
+tournamentEngine.attachPolicies({
+  policyDefinitions: {
+    [POLICY_TYPE_SCHEDULING]: { ...POLICY_SCHEDULING_DEFAULT[POLICY_TYPE_SCHEDULING], defaultPeriodLength: 20 },
+  },
+});
+```
+
+The default policy leaves it unset, so attaching it changes no schedule. Policies are stored in the record's applied
+policies (an extension), so CODES carries the setting as part of that extension's value; the schema does not type
+policy contents.
 
 ## Overnight Recovery
 

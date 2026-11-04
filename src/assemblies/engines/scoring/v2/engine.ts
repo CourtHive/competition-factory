@@ -1,17 +1,18 @@
-import { calculateMatchStatistics } from '@Query/scoring/statistics/standalone';
-import { configuredFormat, DEFAULT_MATCHUP_FORMAT, finalGoverns, takesInput } from './format';
-import { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
+import { overtimeLayout, scoringPeriod, segmentClosed } from '@Helpers/matchUpFormatCode/overtimeContext';
 import { createContext, initialState, positionOf, serverOf, step, INVALID_FORMAT } from './reduce';
+import { configuredFormat, DEFAULT_MATCHUP_FORMAT, finalGoverns, takesInput } from './format';
+import { readChallenge, readPoint, readServer, CALCULATED_POINT_FIELDS } from './actions';
+import { replayLegacy, LEGACY_IGNORED_INPUT, LEGACY_REFUSED_INPUT } from './legacy';
+import { calculateMatchStatistics } from '@Query/scoring/statistics/standalone';
+import { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
 import { createMatchUp } from '@Mutate/scoring/createMatchUp';
 import { getScoreboard } from '@Query/scoring/getScoreboard';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { getEpisodes } from '@Query/scoring/getEpisodes';
-import { readChallenge, readPoint, readServer, CALCULATED_POINT_FIELDS } from './actions';
-import { replayLegacy, LEGACY_IGNORED_INPUT, LEGACY_REFUSED_INPUT } from './legacy';
 import { ruleInPlay, scoreOf } from './score';
 import { materialize } from './record';
-import { setsWon } from './decide';
 import { nowIso } from '@Tools/clock';
+import { setsWon } from './decide';
 import {
   copyLineUps,
   hasLineUps,
@@ -25,10 +26,10 @@ import {
 // constants and types
 import type { MatchStatistics, StatisticsOptions, StatObject } from '@Query/scoring/statistics/types';
 import type { FormatStructure, SetFormatStructure, TeamCompetitor } from '@Types/scoring/types';
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
-import type { PointMultiplier } from '@Types/competitionFormat';
-import type { ReducerContext } from './reduce';
 import type { Side, ScoringState, StepOutcome, TimelineEntry } from './types';
+import type { PointMultiplier } from '@Types/competitionFormat';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
+import type { ReducerContext } from './reduce';
 import type {
   AddGameOptions,
   AddPointOptions,
@@ -41,6 +42,7 @@ import type {
   Point,
   ScoreEntry,
   ScoreResult,
+  SetScore,
   ScoringActionResult,
   SubstitutionEvent,
 } from '@Types/scoring/types';
@@ -147,6 +149,7 @@ export class ScoringEngine {
       isDoubles: options.isDoubles || false,
     });
     this.entries = [];
+    if (this.context().match?.overtime) this.write([]);
   }
 
   // ===========================================================================
@@ -154,12 +157,15 @@ export class ScoringEngine {
   // ===========================================================================
 
   private context(): ReducerContext {
-    const context = createContext({
-      matchUpFormat: this.matchUpFormat,
-      competitionFormat: this.competitionFormat as ReducerContextConfig,
-      pointMultipliers: this.pointMultipliers,
-    });
-    if (!this.pastClose || !context.match) return context;
+    const context = createContext(
+      {
+        matchUpFormat: this.matchUpFormat,
+        competitionFormat: this.competitionFormat as ReducerContextConfig,
+        pointMultipliers: this.pointMultipliers,
+      },
+      { allowOvertime: true },
+    );
+    if (!this.pastClose || !context.match || context.match.overtime) return context;
     return { ...context, match: { ...context.match, pastClose: true } };
   }
 
@@ -205,7 +211,7 @@ export class ScoringEngine {
       const before = state;
       const result = step(context, state, unindexed as TimelineEntry);
       let next = result.state;
-      if (!result.outcome.recorded) {
+      if (!result.outcome.recorded && !context.match?.overtime) {
         const v1 = replayLegacy(context, state, unindexed as TimelineEntry, result.outcome);
         legacy.add(v1?.shape ?? ('refused' in result.outcome ? LEGACY_REFUSED_INPUT : LEGACY_IGNORED_INPUT));
         if (v1) [next, context] = [v1.state, v1.context];
@@ -527,6 +533,10 @@ export class ScoringEngine {
 
   private patchPoint(pointIndex: number, fields: Record<string, unknown>): void {
     const points = [...(this.record.history?.points ?? [])];
+    if (this.context().match?.overtime) {
+      const { phase: _phase, periodNumber: _period, ...metadata } = fields;
+      fields = metadata;
+    }
     points[pointIndex] = { ...points[pointIndex], ...fields } as Point;
     this.record = { ...this.record, history: { ...this.record.history, points } };
   }
@@ -588,6 +598,7 @@ export class ScoringEngine {
     this.legacyShapes = new Set();
     this.stale = false;
     this.initialServer = undefined;
+    if (this.context().match?.overtime) this.write([]);
     this.eventHandlers?.onReset?.(this.eventContext());
   }
 
@@ -597,13 +608,19 @@ export class ScoringEngine {
 
   setState(matchUp: MatchUp): void {
     const loaded = copy(matchUp);
+    const overtime = !!parse(loaded.matchUpFormat)?.overtimeFormat;
+    const overtimeTimeline = overtime ? readOvertimeTimeline(loaded) : undefined;
     this.record = loaded;
     this.matchUpFormat = loaded.matchUpFormat;
     this.redoStack = [];
-    this.entries = loaded.history?.entries ? [...loaded.history.entries] : undefined;
+    this.entries = overtimeTimeline ?? (loaded.history?.entries ? [...loaded.history.entries] : undefined);
     this.lineUps = lineUpsOf(loaded);
     this.initialLineUps = initialLineUpsOf(this.lineUps, this.entries, loaded.history?.substitutions);
     this.initialServer = loaded.history?.initialServer;
+    if (overtime) {
+      this.rebuild();
+      return;
+    }
     // loaded as stored; the reduction is ready for the next action, which rebuilds the record (§ 12.6)
     this.prepare();
     // the legacy shapes are those the last rebuild met, and none has run yet (the API's getLegacyShapes)
@@ -766,6 +783,13 @@ export class ScoringEngine {
     if (!structure || !match) return undefined;
     const closed = this.state.sets.filter((set) => set.winningSide || set.segmentComplete);
     const setNumber = Math.min(positionOf(match, this.state).set.setNumber, Math.max(closed.length + 1, 1));
+    const layout = overtimeLayout(structure);
+    if (layout) {
+      const current = this.state.matchUpStatus === COMPLETED ? (this.state.sets.at(-1)?.setNumber ?? 1) : setNumber;
+      const period = scoringPeriod(layout, current);
+      if (period?.phase === 'OVERTIME') return structure.overtimeFormat?.setFormat;
+      return period?.phase === 'DECIDER' ? structure.finalSetFormat : structure.setFormat;
+    }
     const final = finalGoverns(match, setNumber, setsWon(this.state.sets.slice(0, setNumber - 1)));
     return final && structure.finalSetFormat ? structure.finalSetFormat : structure.setFormat;
   }
@@ -881,6 +905,44 @@ export class ScoringEngine {
 }
 
 type ReducerContextConfig = Parameters<typeof configuredFormat>[0]['competitionFormat'];
+
+/** O did not exist in v1: require a real timeline, or turn an explicit score-only record into a baseline. */
+function readOvertimeTimeline(record: MatchUp): ScoreEntry[] {
+  const context = createContext({ matchUpFormat: record.matchUpFormat }, { allowOvertime: true });
+  if (!context.match?.overtime) throw new Error('Unsupported overtime format');
+  if (record.history?.entries?.length) return [...record.history.entries];
+  if (record.history?.points?.length) throw new Error('Overtime point records require a scoring timeline');
+  const sets = record.score.sets;
+  const last = sets.at(-1);
+  if (!last) return [];
+  const open = record.matchUpStatus !== COMPLETED && !segmentClosed(last);
+  const entry: ScoreEntry = {
+    type: 'setInitialScore',
+    timestamp: record.endTime ?? record.createdAt ?? nowIso(),
+    data: {
+      sets: open ? sets.slice(0, -1) : sets,
+      ...(open ? openOvertimeBaseline(last) : {}),
+      matchUpStatus: record.matchUpStatus,
+      ...(record.winningSide === undefined ? {} : { winningSide: record.winningSide }),
+    },
+  };
+  const result = step(context, initialState(), { ...entry });
+  if (!result.outcome.recorded) refusedWith(result.outcome);
+  return [entry];
+}
+
+function openOvertimeBaseline(set: SetScore): Partial<InitialScoreOptions> {
+  if (set.isTiebreakOnly) {
+    return {
+      currentSetScore: { side1Score: 0, side2Score: 0 },
+      currentGameScore: {
+        side1Points: set.side1GameScores?.at(-1) ?? set.side1TiebreakScore ?? set.side1Score ?? 0,
+        side2Points: set.side2GameScores?.at(-1) ?? set.side2TiebreakScore ?? set.side2Score ?? 0,
+      },
+    };
+  }
+  return { currentSetScore: { side1Score: set.side1Score ?? 0, side2Score: set.side2Score ?? 0 } };
+}
 
 /** the lineUps on court after the timeline: the initial snapshot with its substitutions replayed (§ 12.1) */
 function lineUpsAfter(initial: LineUps | undefined, entries: ScoreEntry[]): LineUps | undefined {

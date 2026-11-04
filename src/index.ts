@@ -64,7 +64,7 @@ export type {
 } from './forge';
 
 // ENGINES - For cusomization --------------------------------------------
-export { asyncEngine } from './assemblies/engines/async';
+export { asyncEngine } from './assemblies/engines/async/public';
 export { syncEngine } from './assemblies/engines/sync';
 export { askEngine } from './assemblies/engines/ask';
 
@@ -103,7 +103,7 @@ export { competitionEngineUntyped, tournamentEngineUntyped } from './tests/engin
 // fetched under a per-tournament lock. The bare `asyncEngine()`
 // factory remains exported for callers that want to assemble a
 // custom governor set themselves.
-export { competitionEngineAsync, tournamentEngineAsync } from './tests/engines/asyncEngine';
+export { competitionEngineAsync, tournamentEngineAsync } from './assemblies/engines/async/public';
 
 // FIXTURES --------------------------------------------------------------
 export { fixtures } from './fixtures';

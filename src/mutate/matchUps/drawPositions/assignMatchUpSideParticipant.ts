@@ -1,5 +1,6 @@
 import { buildIndividualIdsMap, idsShareIndividual } from '@Query/participants/individualParticipantIds';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
+import { collectionChoiceRefusal } from '@Query/matchUp/collectionChoice';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
@@ -59,6 +60,8 @@ export function assignMatchUpSideParticipant({
   });
 
   if (!matchUp) return { error: MATCHUP_NOT_FOUND };
+  const choice = collectionChoiceRefusal({ drawDefinition, event, matchUp });
+  if (choice) return choice;
 
   const isAdHoc =
     !structuresOf(structure) &&

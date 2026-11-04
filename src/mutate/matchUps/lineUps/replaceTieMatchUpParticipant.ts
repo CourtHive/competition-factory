@@ -51,7 +51,7 @@ export function replaceTieMatchUpParticipantId(params: ReplaceTieMatchUpParticip
   participantAdded?: string;
   modifiedLineUp?: LineUp;
 } {
-  const matchUpContext = getTieMatchUpContext(params);
+  const matchUpContext = getTieMatchUpContext({ ...params, requireResolvedMatchUpType: true });
   if (matchUpContext.error) return matchUpContext;
   const stack = 'replaceTieMatchUpParticipantid';
 

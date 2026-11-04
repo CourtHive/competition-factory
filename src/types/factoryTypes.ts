@@ -1,4 +1,6 @@
 import { DOUBLES_EVENT, SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
+import type { AvoidancePolicy } from '@Mutate/drawDefinitions/positionGovernor/randomUnseededSeparation';
+import type { MatchUpActionsPolicy } from '@Query/drawDefinition/positionActions/actionPolicyUtils';
 import type { RotatingPartnerScoringPolicies } from './rotatingPartnerScoring';
 import type { RotatingPartnerTallyPolicy } from './rotatingPartnerTally';
 import { SignedInStatusUnion } from '@Constants/participantConstants';
@@ -9,6 +11,7 @@ import { HydratedMatchUp, HydratedParticipant } from './hydrated';
 import { ErrorType } from '@Constants/errorConditionConstants';
 import type { MethodSignatures } from './methodSignatures';
 import type { Attribution } from './presenceTypes';
+import type { LadderPolicy } from './ladderTypes';
 import {
   Category,
   DrawDefinition,
@@ -40,6 +43,11 @@ import {
   POLICY_TYPE_SCORING,
   POLICY_TYPE_ROTATING_PARTNER_TALLY,
   POLICY_TYPE_ROUND_ROBIN_TALLY,
+  POLICY_TYPE_SCHEDULING,
+  POLICY_TYPE_ROUND_NAMING,
+  POLICY_TYPE_MATCHUP_ACTIONS,
+  POLICY_TYPE_AVOIDANCE,
+  POLICY_TYPE_LADDER,
 } from '@Constants/policyConstants';
 
 export type FactoryEngine = {
@@ -410,11 +418,117 @@ export type HydratedFlight = Flight & { drawDefinition?: DrawDefinition };
 /** `getFlightProfile`'s return through an engine (called with `eventId`): a deep copy whose flights carry their draws. */
 export type HydratedFlightProfile = Omit<FlightProfile, 'flights'> & { flights: HydratedFlight[] };
 
+/**
+ * Minutes a scheduling timing entry states, by matchUp type. A reader takes the matchUp's own type, else TEAM for a
+ * line of a TEAM event, else `default`. `SINGLES_DOUBLES` / `DOUBLES_SINGLES` are recovery minutes when a participant's
+ * next matchUp changes type (from SINGLES to DOUBLES, and the reverse).
+ */
+export type SchedulingMinutes = {
+  default?: number;
+  SINGLES?: number;
+  DOUBLES?: number;
+  TEAM?: number;
+  SINGLES_DOUBLES?: number;
+  DOUBLES_SINGLES?: number;
+};
+
+/** Minutes for the categories it names: by `categoryNames`, else `categoryTypes`; an entry naming neither matches any. */
+export type SchedulingCategoryTimes = {
+  categoryNames?: string[];
+  categoryTypes?: string[];
+  minutes: SchedulingMinutes;
+};
+
+/** A recovery band keyed on measured played minutes; the band without `upTo` is the catch-all. */
+export type SchedulingRecoveryBand = {
+  upTo?: number;
+  minutes: number;
+};
+
+export type SchedulingRecoveryTimes = SchedulingCategoryTimes & {
+  /** Recovery banded by the measured duration of the previous matchUp; wins over `minutes` when a duration is known. */
+  byPlayedMinutes?: SchedulingRecoveryBand[];
+};
+
+/** Times used when no format-specific entry matches. */
+export type SchedulingDefaultTimes = {
+  averageTimes?: SchedulingCategoryTimes[];
+  recoveryTimes?: SchedulingRecoveryTimes[];
+  /** Rest across a day boundary. Absent means no rule, not zero. */
+  overnightTimes?: SchedulingCategoryTimes[];
+  /** Minutes between two venues with no stated transit. */
+  transitMinutes?: number;
+};
+
+export type SchedulingFormatAverageTimes = {
+  matchUpFormatCodes: string[];
+  averageTimes: SchedulingCategoryTimes[];
+};
+
+export type SchedulingFormatRecoveryTimes = {
+  matchUpFormatCodes: string[];
+  recoveryTimes: SchedulingRecoveryTimes[];
+};
+
+/** Most matchUps a participant may play in a day, per matchUp type and in total. */
+export type SchedulingDailyLimits = {
+  SINGLES?: number;
+  DOUBLES?: number;
+  TEAM?: number;
+  total?: number;
+};
+
+/** One participant's daily limits, overriding the policy's `defaultDailyLimits`. */
+export type SchedulingParticipantDailyLimits = SchedulingDailyLimits & {
+  participantId: string;
+};
+
+/**
+ * A SCHEDULING policy. Stored, like every policy, in the record's applied policies, resolved for a draw from the
+ * draw's policy, else its event's, else the tournament's. Mirrored by the `SchedulingPolicy` definition in the CODES
+ * schema (`tournament.schema.json`); `policyDefinitionsSchema.test.ts` keeps the two in step.
+ */
+export type SchedulingPolicy = {
+  policyName?: string;
+  /** Whether courts or venues may be modified once matchUps are scheduled on them. */
+  allowModificationWhenMatchUpsScheduled?: { courts?: boolean; venues?: boolean };
+  defaultTimes?: SchedulingDefaultTimes;
+  /**
+   * Minutes per scheduling period (Garman's `L`) for a run that does not state one. A run's own `periodLength` wins,
+   * then a profile round's own `periodLength`, then this; absent, the schedulers keep their own defaults. A positive
+   * number; anything else is ignored.
+   */
+  defaultPeriodLength?: number;
+  defaultDailyLimits?: SchedulingDailyLimits;
+  matchUpAverageTimes?: SchedulingFormatAverageTimes[];
+  matchUpRecoveryTimes?: SchedulingFormatRecoveryTimes[];
+  matchUpDailyLimits?: SchedulingParticipantDailyLimits[];
+};
+
+/** A ROUND NAMING policy: how rounds are named and abbreviated. Mirrored by the CODES schema's `RoundNamingPolicy`. */
+export type RoundNamingPolicy = {
+  policyName?: string;
+  namingConventions?: { round?: string; pre?: string };
+  /** Round name by the number of matchUps in the round (`1: 'Final'`). */
+  roundNamingMap?: { [matchUpsCount: string]: string };
+  abbreviatedRoundNamingMap?: { [matchUpsCount: string]: string };
+  /** A qualifying structure's final round names, by the number of matchUps. */
+  qualifyingFinishMap?: { [matchUpsCount: string]: string };
+  affixes?: { roundNumber?: string; preFeedRound?: string; preQualifying?: string };
+  /** Prefix for each stage (MAIN, QUALIFYING, CONSOLATION, PLAY_OFF). */
+  stageConstants?: { [stage: string]: string };
+};
+
 export type PolicyDefinitions = {
   [key in ValidPolicyTypes]?: { [key: string]: any };
 } & {
   [POLICY_TYPE_ROTATING_PARTNER_TALLY]?: RotatingPartnerTallyPolicy;
   [POLICY_TYPE_SEEDING]?: SeedingPolicy;
+  [POLICY_TYPE_SCHEDULING]?: SchedulingPolicy;
+  [POLICY_TYPE_ROUND_NAMING]?: RoundNamingPolicy;
+  [POLICY_TYPE_MATCHUP_ACTIONS]?: MatchUpActionsPolicy;
+  [POLICY_TYPE_AVOIDANCE]?: AvoidancePolicy;
+  [POLICY_TYPE_LADDER]?: LadderPolicy;
   [POLICY_TYPE_ROUND_ROBIN_TALLY]?: RoundRobinTallyPolicy;
   [POLICY_TYPE_SCORING]?: { rotatingPartners?: RotatingPartnerScoringPolicies; [key: string]: unknown };
 };
@@ -970,6 +1084,24 @@ export type ResultWarning = {
   /** the error behind the warning, where something was left undone because of one */
   error?: ErrorType;
   info?: unknown;
+};
+
+/** an entry draw generation left out, and why: the error addDrawEntry reported for it */
+export type EntryNotPlaced = {
+  participantId: string;
+  entryStatus?: string;
+  entryStage?: string;
+  reason: string;
+};
+
+/** ENTRIES_NOT_PLACED: the entries of one stage that draw generation left out because the stage was full */
+export type EntriesNotPlacedWarning = ResultWarning & {
+  entries: EntryNotPlaced[];
+  participantIds: string[];
+  drawSize: number;
+  message: string;
+  count: number;
+  stage: string;
 };
 
 export type ResultType = {

@@ -497,6 +497,38 @@ engine.removeOnlineResource({
 
 ---
 
+## setSanctionConstraints
+
+Records the limits a sanctioning provider's rules set for this tournament on its sanction, as `sanction.constraints`. The limits are **provider-defined**: the provider curates its rules where sanctioning applications are reviewed, and they are resolved into these per-tournament limits there. The factory validates their shape and enforces them; it never derives them. Draw generation, `addDrawDefinition` and `addDrawEntries` refuse entries over a matched event's `maxWildcards` / `maxAlternates`.
+
+```js
+engine.setSanctionConstraints({
+  constraints: {
+    definedBy: { providerId, organisationName }, // required: the provider whose rules these are
+    source: { policyName, policyVersion }, // optional: which of its rule sets produced them
+    events: [
+      {
+        match: { eventType: 'SINGLES', eventName, categoryName }, // eventType always; the others when stated
+        drawSize, // optional limits, whole numbers of 0 or more
+        maxWildcards,
+        maxAlternates,
+        maxQualifiers,
+      },
+    ],
+  },
+});
+
+engine.setSanctionConstraints({ constraints: null }); // removes them
+```
+
+Refused with `INVALID_VALUES`, writing nothing, when the tournament holds no `sanction`, when `definedBy.providerId` is missing or blank, or when any attribute is malformed or not listed above. Announced as `MODIFY_TOURNAMENT_DETAIL` with the `sanction`.
+
+An event is matched by `match.eventType` always, and by `match.eventName` and `match.categoryName` (the event's `category.categoryName`) when they are stated (a non-empty value); when more than one entry of `events` matches, the first applies.
+
+Older records carry the limits as a `sanctioningConstraints` extension (`{ events: [{ eventType, eventName, category: { categoryName }, maxWildcards, ... }] }`). It is still read when the sanction holds none, and `migrateTournamentRecord` promotes it onto a sanction whose `authority` names an organisation (which becomes `definedBy`). Without one, the extension stays and the migration reports `SANCTION_CONSTRAINTS_NOT_PROMOTED`. Under the `BRIDGE` write mode the extension is mirrored; under `LEGACY` only the extension is written.
+
+---
+
 ## setTournamentCategories
 
 Define categories to be used in `event` creation for tournament record.

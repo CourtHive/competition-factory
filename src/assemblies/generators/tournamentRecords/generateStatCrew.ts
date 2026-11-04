@@ -1,10 +1,13 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { resolveHomeParticipantId } from '@Query/matchUp/resolveHomeParticipantId';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { formatDate } from '@Tools/dateTime';
 import { jsonToXml } from './jsonToXml';
 
 // constants
+import { INVALID_MATCHUP, MATCHUP_NOT_FOUND } from '@Constants/errorConditionConstants';
+import { EXPLICIT } from '@Constants/homeParticipantConstants';
 import { TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { TEAM } from '@Constants/participantConstants';
@@ -12,13 +15,30 @@ import { SUCCESS } from '@Constants/resultConstants';
 import { unique } from '@Tools/arrays';
 
 // types
+import type { Tournament } from '@Types/tournamentTypes';
 import type { HydratedMatchUp } from '@Types/hydrated';
 
-export function generateStatCrew(params) {
+type GenerateStatCrewArgs = {
+  tournamentRecord: Tournament;
+  matchUpId?: string; // limits the output to this one TEAM matchUp (dual)
+  drawId?: string; // limits the output to the TEAM matchUps of this draw
+  [key: string]: unknown;
+};
+
+// one game per TEAM matchUp, carrying the matchUp it reports: StatCrew's <tngame> has no slot for a matchUpId
+export type StatCrewGame = {
+  matchUpId: string;
+  eventId?: string;
+  drawId?: string;
+  json: any;
+  xml: string;
+};
+
+export function generateStatCrew(params: GenerateStatCrewArgs) {
   const paramsCheck = checkRequiredParameters(params, [{ [TOURNAMENT_RECORD]: true }]);
   if (paramsCheck.error) return paramsCheck;
 
-  const { tournamentRecord } = params;
+  const { tournamentRecord, matchUpId, drawId } = params;
   const { startDate, tournamentId, tournamentName } = tournamentRecord;
 
   const { participantMap, matchUps, mappedMatchUps } = getParticipants({
@@ -27,8 +47,18 @@ export function generateStatCrew(params) {
     tournamentRecord,
   });
 
-  const teamParticipants = tournamentRecord.participants.filter((participant) => participant.participantType === TEAM);
+  const teamParticipants = (tournamentRecord.participants ?? []).filter(
+    (participant) => participant.participantType === TEAM,
+  );
   const teamMatchUps = matchUps?.filter((matchUp) => matchUp.matchUpType === TEAM) ?? [];
+
+  if (matchUpId) {
+    const targetMatchUp = matchUps?.find((matchUp) => matchUp.matchUpId === matchUpId);
+    if (!targetMatchUp || (drawId && targetMatchUp.drawId !== drawId)) return { error: MATCHUP_NOT_FOUND };
+    if (targetMatchUp.matchUpType !== TEAM) return { error: INVALID_MATCHUP, info: 'matchUpId must be a TEAM matchUp' };
+  }
+  const isSelected = (matchUp) =>
+    (!matchUpId || matchUp.matchUpId === matchUpId) && (!drawId || matchUp.drawId === drawId);
   const tieMatchUps =
     teamMatchUps?.reduce((t: any, matchUp) => {
       const tieMatchUps = matchUp?.tieMatchUps ?? [];
@@ -39,7 +69,10 @@ export function generateStatCrew(params) {
 
   const allDuals = tieMatchUps.length === singles.length + doubles.length;
   const isDual = teamMatchUps.length === 1 && allDuals;
-  const tournament = !allDuals ? 'Y' : 'N';
+  // StatCrew's `tournament="Y"` marks a game played as part of a multi-team event rather than a stand-alone dual.
+  // The record describes the event, so a selected matchUp keeps the flag of the record it belongs to
+  const multiTeamEvent = teamMatchUps.length > 1 || teamParticipants.length > 2;
+  const tournament = multiTeamEvent || !allDuals ? 'Y' : 'N';
 
   const attrs = {
     mappedMatchUps,
@@ -52,20 +85,29 @@ export function generateStatCrew(params) {
 
   const xmlResult: string[] = [];
   const jsonResult: any[] = [];
+  const games: StatCrewGame[] = [];
+  const addGame = ({ teamMatchUp, json, xml }) => {
+    const { matchUpId, eventId, drawId } = teamMatchUp;
+    games.push({ matchUpId, eventId, drawId, json, xml });
+    jsonResult.push(json);
+    xmlResult.push(xml);
+  };
 
   if (isDual) {
     const teamMatchUp = teamMatchUps[0];
-    const { json, xml } = getXml({
-      teamParticipants,
-      teamMatchUp,
-      ...attrs,
-      doubles,
-      singles,
-    });
-    jsonResult.push(json);
-    xmlResult.push(xml);
+    if (isSelected(teamMatchUp)) {
+      const { json, xml } = getXml({
+        tournamentRecord,
+        teamParticipants,
+        teamMatchUp,
+        ...attrs,
+        doubles,
+        singles,
+      });
+      addGame({ teamMatchUp, json, xml });
+    }
   } else {
-    for (const teamMatchUp of teamMatchUps) {
+    for (const teamMatchUp of teamMatchUps.filter(isSelected)) {
       const teamParticipantIds = teamMatchUp?.sides
         ?.map(({ participant }) => participant?.participantId)
         .filter(Boolean);
@@ -78,19 +120,42 @@ export function generateStatCrew(params) {
       const { xml, json } = getXml({
         doubles: teamMatchUp.tieMatchUps?.filter((matchUp) => matchUp.matchUpType === DOUBLES),
         singles: teamMatchUp.tieMatchUps?.filter((matchUp) => matchUp.matchUpType === SINGLES),
+        tournamentRecord,
         teamParticipants,
         teamMatchUp,
         ...attrs,
       });
-      jsonResult.push(json);
-      xmlResult.push(xml);
+      addGame({ teamMatchUp, json, xml });
     }
   }
 
-  return { json: jsonResult, xml: xmlResult, ...SUCCESS };
+  // `xml` and `json` stay index-aligned with `games` for existing consumers
+  return { json: jsonResult, xml: xmlResult, games, ...SUCCESS };
+}
+
+/**
+ * The home team of one team matchUp, for StatCrew's home/visitor and `neutralgame`.
+ *
+ * `resolveHomeParticipantId` decides, with one StatCrew-only rung kept so existing exports do not regress: a TEAM
+ * carrying `participantRoleResponsibilities: ['Home']`. It sits directly AFTER the explicit
+ * `homeParticipantId` and BEFORE the inferred signals (venue, host organisation): it is a statement the producer
+ * made about the record, and a stated home beats an inferred one, but it is a property of the team rather than of
+ * the matchUp, so a per-matchUp explicit home overrides it. Like every rung it counts only when exactly one team
+ * carries it. With no home team the game is neutral; nothing falls back to a side.
+ */
+function getHomeTeamId({ tournamentRecord, teamMatchUp, teamParticipants }): string | undefined {
+  const result = teamMatchUp ? resolveHomeParticipantId({ tournamentRecord, matchUp: teamMatchUp }) : undefined;
+  const resolved = result && 'basis' in result ? result : undefined;
+  if (resolved?.basis === EXPLICIT) return resolved.homeParticipantId;
+
+  const roleHomeTeams = teamParticipants?.filter((team) => team?.participantRoleResponsibilities?.includes('Home'));
+  if (roleHomeTeams?.length === 1) return roleHomeTeams[0].participantId;
+
+  return resolved?.homeParticipantId;
 }
 
 function getXml({
+  tournamentRecord,
   teamParticipants,
   mappedMatchUps,
   participantMap,
@@ -102,7 +167,10 @@ function getXml({
   doubles,
   singles,
 }) {
-  const homeTeam = teamParticipants?.find((team) => team.participantRoleResponsibilities?.includes('Home'));
+  const homeTeamId = getHomeTeamId({ tournamentRecord, teamMatchUp, teamParticipants });
+  const homeTeam = homeTeamId ? teamParticipants?.find((team) => team?.participantId === homeTeamId) : undefined;
+  // StatCrew always fills both the home and the visitor slot; at a neutral site (`neutralgame: 'Y'`) the slots are
+  // positional only, the second team taking the home slot, and do not claim that either team is at home
   const awayTeams = teamParticipants?.filter((team) => team.participantId !== homeTeam?.participantId);
   const date = formatDate(startDate, '/', 'MDY');
   const homename = homeTeam?.participantName || awayTeams?.[1]?.participantName;
@@ -117,7 +185,8 @@ function getXml({
 
   const json = definedAttributes({
     venue: {
-      tournamentname: tournament ? tournamentName : undefined,
+      // 'N' is a truthy string: the name belongs only to a game played in a tournament
+      tournamentname: tournament === 'Y' ? tournamentName : undefined,
       neutralgame: !homeTeam ? 'Y' : 'N',
       gameid: tournamentId,
       officials: {},

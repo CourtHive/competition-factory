@@ -81,10 +81,13 @@ The following actions can be controlled by this policy:
 
 ### Seeding Actions
 
-| Action          | Constant      | Method                    | Description                       |
-| --------------- | ------------- | ------------------------- | --------------------------------- |
-| **SEED_VALUE**  | `SEED_VALUE`  | `modifySeedAssignment`    | Add or modify seed value/number   |
-| **REMOVE_SEED** | `REMOVE_SEED` | `removeSeededParticipant` | Remove seeding from a participant |
+| Action           | Constant       | Method                                                                              | Description                                                 |
+| ---------------- | -------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| **SEED_VALUE**   | `SEED_VALUE`   | `modifySeedAssignment`                                                              | Add or modify seed value/number                             |
+| **REMOVE_SEED**  | `REMOVE_SEED`  | [`removeSeededParticipant`](../governors/draws-governor.md#removeseededparticipant) | Remove only the seeding; keep the participant in position   |
+| **SEED_CASCADE** | `SEED_CASCADE` | [`seedWithdrawalCascade`](../governors/draws-governor.md#seedwithdrawalcascade)     | Withdraw a seeded participant and cascade replacement seeds |
+
+`removeSeededParticipant` retains its legacy method name, but `REMOVE_SEED` does not withdraw the participant or rotate other seeds. `SEED_CASCADE` is the separate withdrawal operation. It is offered for a seeded participant in a MAIN stage sequence 1, non-round-robin structure with no active draw positions and assigned seeds in a lower block. See [Seed Withdrawal Cascade](../concepts/seed-withdrawal-cascade.md) for examples and eligibility details.
 
 ### Participant Metadata Actions
 

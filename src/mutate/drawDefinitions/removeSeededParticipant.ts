@@ -1,8 +1,9 @@
+import { modifySeedAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { decorateResult } from '@Functions/global/decorateResult';
 
 // constants and types
+import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { MAIN, QUALIFYING } from '@Constants/drawDefinitionConstants';
-import { DrawDefinition, Tournament } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ResultType } from '@Types/factoryTypes';
 import {
@@ -18,6 +19,7 @@ type RemoveSeededParticipantArgs = {
   drawDefinition: DrawDefinition;
   participantId: string;
   structureId: string;
+  event?: Event;
 };
 
 export function removeSeededParticipant({
@@ -25,6 +27,7 @@ export function removeSeededParticipant({
   drawDefinition,
   participantId,
   structureId,
+  event,
 }: RemoveSeededParticipantArgs): ResultType {
   const stack = 'removeSeededParticipant';
 
@@ -50,6 +53,14 @@ export function removeSeededParticipant({
       result: { error: NOT_FOUND },
       context: { participantId },
     });
+
+  seedAssignment.participantId = undefined;
+  modifySeedAssignmentsNotice({
+    tournamentId: tournamentRecord.tournamentId,
+    eventId: event?.eventId,
+    drawDefinition,
+    structure,
+  });
 
   return { ...SUCCESS };
 }

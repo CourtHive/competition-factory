@@ -1,3 +1,4 @@
+import { isCompetitorRole } from '@Query/participant/participantRoleOf';
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { getAccessorValue } from '@Tools/getAccessorValue';
 import { findExtension } from '@Acquire/findExtension';
@@ -45,7 +46,7 @@ export function createTeamsFromParticipantAttributes({
 
   const teams = {};
   const individualParticipants = (tournamentRecord.participants ?? []).filter(
-    ({ participantType, participantRole }) => participantType === INDIVIDUAL && participantRole === COMPETITOR,
+    (participant) => participant.participantType === INDIVIDUAL && isCompetitorRole(participant),
   );
 
   let teamIndex = 0;
@@ -91,7 +92,7 @@ export function createTeamsFromParticipantAttributes({
   const overlappingTeamParticipantIds = (tournamentRecord.participants ?? [])
     .map((participant) => {
       if (participant.participantType !== TEAM) return undefined;
-      if (participant.participantRole !== COMPETITOR) return undefined;
+      if (!isCompetitorRole(participant)) return undefined;
 
       const { extension } = findExtension({
         name: GROUPING_ATTRIBUTE,

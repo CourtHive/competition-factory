@@ -40,10 +40,19 @@ type Source = {
 };
 type MatchUpIds = { [label: string]: string };
 
-function tournament({ drawSize, courtsCount }: { drawSize: number; courtsCount: number }) {
+function tournament({
+  policyDefinitions,
+  courtsCount,
+  drawSize,
+}: {
+  policyDefinitions?: Record<string, unknown>;
+  courtsCount: number;
+  drawSize: number;
+}) {
   mocksEngine.generateTournamentRecord({
     venueProfiles: [{ venueId: VENUE, courtsCount, startTime: '10:00', endTime: '20:00' }],
     drawProfiles: [{ drawSize }],
+    ...(policyDefinitions ? { policyDefinitions } : {}),
     startDate: DAYS[0],
     endDate: DAYS[1],
     setState: true,
@@ -122,7 +131,13 @@ function eventMatchUps(eventIndex: number, roundNumber: number) {
     .allTournamentMatchUps({ matchUpFilters: { drawIds: [drawId], roundNumbers: [roundNumber] } })
     .matchUps.sort((a: any, b: any) => a.roundPosition - b.roundPosition);
 }
-function profileEventRound(eventIndex: number, roundNumber: number, scheduleDate = DAYS[0], venueId = VENUE) {
+function profileEventRound(
+  eventIndex: number,
+  roundNumber: number,
+  scheduleDate = DAYS[0],
+  venueId = VENUE,
+  periodLength?: number,
+) {
   const { tournamentRecord } = tournamentEngine.getTournament();
   const event = tournamentRecord.events[eventIndex];
   const drawDefinition = event.drawDefinitions[0];
@@ -133,6 +148,7 @@ function profileEventRound(eventIndex: number, roundNumber: number, scheduleDate
       drawId: drawDefinition.drawId,
       eventId: event.eventId,
       roundNumber,
+      ...(periodLength ? { periodLength } : {}),
     },
     venueId,
     scheduleDate,
@@ -686,7 +702,54 @@ export const schedulingCaseSources: Source[] = [
     claims: (plan) =>
       expectEqual(timesOf(plan, eventMatchUps(0, 2)), ['08:00'], 'the overnight rest does not hold the final'),
   },
+  {
+    caseId: 'scheduling.plan.round-period-stages.v1',
+    note:
+      'One court, two events of two first-round matchUps each (90 minutes). The first round states a 30-minute period, ' +
+      'the second a 20-minute one: they are planned in stages, each on its own grid (§ 4, step 2). The first takes ' +
+      'Garman slots at L=30: TM = (30/90)(P-1)+1 is 1 at 10:00 and 2 at P=3, 11:30, the hand-over. The second takes ' +
+      'the 20-minute grid slots past the 2 already handed out, at or after 11:30: TM = (20/90)(P-1)+1 reaches 3 at ' +
+      'P=8 (12:40) and 4 at P=13 (14:20).',
+    build: () => {
+      twoEventsOfTwo();
+      profileEventRound(0, 1, DAYS[0], VENUE, 30);
+      profileEventRound(1, 1, DAYS[0], VENUE, 20);
+    },
+    claims: (plan) => {
+      expectEqual(timesOf(plan, eventMatchUps(0, 1)), ['10:00', '11:30'], 'the first stage on the 30-minute grid');
+      expectEqual(timesOf(plan, eventMatchUps(1, 1)), ['12:40', '14:20'], 'the second stage on the 20-minute grid');
+    },
+  },
+  {
+    caseId: 'scheduling.plan.policy-default-period.v1',
+    note:
+      'One court, two first-round matchUps (90 minutes), and a scheduling policy whose defaultPeriodLength is 60: the ' +
+      "round states no period of its own and the call none, so the policy's is the round's (§ 1). TM = (60/90)(P-1)+1 " +
+      'is 1 at 10:00 and 2 at P=2, 12:00 (the derived 30-minute period would give 11:30).',
+    build: () => {
+      const policy: any = structuredClone(POLICY_SCHEDULING_DEFAULT);
+      policy[POLICY_TYPE_SCHEDULING].defaultPeriodLength = 60;
+      tournament({ drawSize: 4, courtsCount: 1, policyDefinitions: policy });
+      profileRounds([1]);
+    },
+    claims: (plan, ids) =>
+      expectEqual([timeOf(plan, ids['R1.1']), timeOf(plan, ids['R1.2'])], ['10:00', '12:00'], 'on the 60-minute grid'),
+  },
 ];
+
+/** one court, two events of two first-round matchUps, each with its own participants */
+function twoEventsOfTwo() {
+  mocksEngine.generateTournamentRecord({
+    venueProfiles: [{ venueId: VENUE, courtsCount: 1, startTime: '10:00', endTime: '20:00' }],
+    drawProfiles: [
+      { drawSize: 4, uniqueParticipants: true },
+      { drawSize: 4, uniqueParticipants: true },
+    ],
+    startDate: DAYS[0],
+    endDate: DAYS[1],
+    setState: true,
+  });
+}
 
 /**
  * Each source built, planned and held to its claims; the case it yields pins the whole plan. Every source is built on a

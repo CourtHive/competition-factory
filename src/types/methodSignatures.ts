@@ -144,6 +144,7 @@ import type { predictMatchUpCompetitiveBands } from '@Query/matchUp/predictMatch
 import type { getEventStructures, getTournamentStructures } from '@Query/structure/structureGetter';
 import type { getTournamentInconsistencies } from '@Query/tournaments/getTournamentInconsistencies';
 import type { getCompetitionVenues, getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
+import type { isValidMatchUpFormat, validateMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import type { createTournamentRecord } from '@Generators/tournamentRecords/createTournamentRecord';
 import type { addDrawDefinitionTimeItem } from '@Mutate/drawDefinitions/addDrawDefinitionTimeItem';
 import type { attachQualifyingStructure } from '@Mutate/drawDefinitions/attachQualifyingStructure';
@@ -269,6 +270,7 @@ import type { addConflictDeclaration } from '@Mutate/officiating/addConflictDecl
 import type { addCollectionDefinition } from '@Mutate/tieFormat/addCollectionDefinition';
 import type { unPublishTournamentInfo } from '@Mutate/timeItems/unPublishTournamentInfo';
 import type { addMutationLock } from '@Mutate/tournaments/mutationLocks/addMutationLock';
+import type { setSanctionConstraints } from '@Mutate/tournaments/setSanctionConstraints';
 import type { getCompetitionProfile } from '@Query/drawDefinition/getCompetitionProfile';
 import type { getPositionsPlayedOff } from '@Query/drawDefinition/getPositionsPlayedOff';
 import type { getTournamentPenalties } from '@Query/participants/getTournamentPenalties';
@@ -286,6 +288,7 @@ import type { getSwissStandings } from '@Query/drawDefinitions/swiss/getSwissSta
 import type { getMatchUpCheckInHistory } from '@Query/matchUp/getMatchUpCheckInHistory';
 import type { getMatchUpParticipantIds } from '@Query/matchUp/getMatchUpParticipantIds';
 import type { getMatchUpScheduleBounds } from '@Query/matchUp/getMatchUpScheduleBounds';
+import type { resolveHomeParticipantId } from '@Query/matchUp/resolveHomeParticipantId';
 import type { allCompetitionMatchUps } from '@Query/matchUps/getAllCompetitionMatchUps';
 import type { getEventDateIssues } from '@Query/matchUps/scheduling/getEventDateIssues';
 import type { getOfficialAssignments } from '@Query/officiating/getOfficialAssignments';
@@ -455,7 +458,6 @@ import type { generateRankingList } from '@Query/scales/generateRankingList';
 import type { getQualityWinPoints } from '@Query/scales/getQualityWinPoints';
 import type { getTournamentPoints } from '@Query/scales/getTournamentPoints';
 import type { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
-import type { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import type { publicFindDrawDefinition } from '@Acquire/findDrawDefinition';
 import type { publicFindParticipant } from '@Acquire/publicFindParticipant';
 import type { updateDrawIdsOrder } from '@Mutate/events/updateDrawIdsOrder';
@@ -1323,6 +1325,7 @@ export interface MethodSignatures {
   resetVoluntaryConsolationStructure: EngineMethod<typeof resetVoluntaryConsolationStructure>;
   resolveDraftPositions: EngineMethod<typeof resolveDraftPositions>;
   resolveEntryFee: EngineMethod<typeof resolveEntryFee>;
+  resolveHomeParticipantId: EngineMethod<typeof resolveHomeParticipantId>;
   resolvePointValue: EngineMethod<typeof resolvePointValue>;
   retainScoreForFormat: EngineMethod<typeof retainScoreForFormat>;
   reverseScore: EngineMethod<typeof reverseScore>;
@@ -1359,6 +1362,7 @@ export interface MethodSignatures {
   setPracticeDefaultCapacity: EngineMethod<typeof setPracticeDefaultCapacity>;
   setRegistrationProfile: EngineMethod<typeof setRegistrationProfile>;
   setRotatingPartnerScoring: EngineMethod<typeof setRotatingPartnerScoring>;
+  setSanctionConstraints: EngineMethod<typeof setSanctionConstraints>;
   setSchedulingProfile: EngineMethod<typeof setSchedulingProfile>;
   setStructureOrder: EngineMethod<typeof setStructureOrder>;
   setSubOrder: EngineMethod<typeof setSubOrder>;
@@ -1416,6 +1420,7 @@ export interface MethodSignatures {
   validateCollectionDefinition: EngineMethod<typeof validateCollectionDefinition>;
   validateLineUp: EngineMethod<typeof validateLineUp>;
   validateMatchUp: EngineMethod<typeof validateMatchUp>;
+  validateMatchUpFormat: EngineMethod<typeof validateMatchUpFormat>;
   validateMatchUpScore: EngineMethod<typeof validateMatchUpScore>;
   validateMCPMatch: EngineMethod<typeof validateMCPMatch>;
   validateOfficiatingStatusTransition: EngineMethod<typeof validateOfficiatingStatusTransition>;

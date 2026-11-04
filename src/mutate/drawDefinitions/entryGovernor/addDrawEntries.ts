@@ -38,11 +38,13 @@ import {
   Extension,
   Participant,
   StageTypeUnion,
+  Tournament,
 } from '@Types/tournamentTypes';
 
 type AddDrawEntryArgs = {
   suppressDuplicateEntries?: boolean;
   entryStatus?: EntryStatusUnion;
+  tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   entryStageSequence?: number;
   entryStage?: StageTypeUnion;
@@ -66,6 +68,7 @@ export function addDrawEntry(params: AddDrawEntryArgs) {
     entryStageSequence,
     entryStage = MAIN,
     ignoreStageSpace,
+    tournamentRecord,
     drawDefinition,
     entryPosition,
     participant,
@@ -80,11 +83,14 @@ export function addDrawEntry(params: AddDrawEntryArgs) {
   if (!isAdHocType(drawType) && !getValidStage({ stage: entryStage, drawDefinition })) {
     return decorateResult({ result: { error: INVALID_STAGE }, stack });
   }
+  // tournamentRecord and event resolve the sanctioning constraints (maxWildcards, maxAlternates)
   const spaceAvailable = getStageSpace({
     stageSequence: entryStageSequence,
     stage: entryStage,
+    tournamentRecord,
     drawDefinition,
     entryStatus,
+    event,
   });
 
   if (!ignoreStageSpace && !spaceAvailable.success && (!drawType || !isAdHocType(drawType))) {
@@ -172,6 +178,7 @@ export function addDrawEntry(params: AddDrawEntryArgs) {
 type AddDrawEntriesArgs = {
   suppressDuplicateEntries?: boolean;
   entryStatus?: EntryStatusUnion;
+  tournamentRecord?: Tournament;
   drawDefinition: DrawDefinition;
   autoEntryPositions?: boolean;
   ignoreStageSpace?: boolean;
@@ -190,6 +197,7 @@ export function addDrawEntries(params: AddDrawEntriesArgs) {
     entryStatus = DIRECT_ACCEPTANCE,
     autoEntryPositions = true,
     ignoreStageSpace,
+    tournamentRecord,
     participantIds,
     drawDefinition,
     stageSequence,
@@ -217,10 +225,13 @@ export function addDrawEntries(params: AddDrawEntriesArgs) {
     });
   }
 
+  // tournamentRecord and event resolve the sanctioning constraints (maxWildcards, maxAlternates)
   const spaceAvailable = getStageSpace({
+    tournamentRecord,
     drawDefinition,
     stageSequence,
     entryStatus,
+    event,
     stage,
   });
   if (!ignoreStageSpace && !spaceAvailable.success && !isAdHocDraw) {
