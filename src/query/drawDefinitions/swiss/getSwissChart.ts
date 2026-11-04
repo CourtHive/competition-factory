@@ -1,4 +1,5 @@
 import { computeScoreGroups } from '@Generators/drawDefinitions/drawTypes/adHoc/swiss/computeScoreGroups';
+import { swissPolicyOf } from '@Generators/drawDefinitions/drawTypes/adHoc/swiss/swissPolicyOf';
 import { getParticipantId } from '@Functions/global/extractors';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
@@ -7,7 +8,6 @@ import { matchUpsOf } from '@Acquire/structureMembers';
 // constants and types
 import { MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND, ErrorType } from '@Constants/errorConditionConstants';
 import { STRUCTURE_SELECTED_STATUSES } from '@Constants/entryStatusConstants';
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import type { DrawDefinition } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 
@@ -32,6 +32,7 @@ type GetSwissChartResult = {
   rounds?: SwissChartRound[];
   totalRounds?: number;
   error?: ErrorType;
+  info?: string;
   success?: boolean;
 };
 
@@ -43,6 +44,9 @@ export function getSwissChart({ drawDefinition, structureId }: GetSwissChartArgs
     : drawDefinition.structures?.find((s) => isAdHoc({ structure: s }));
 
   if (!structure) return { error: STRUCTURE_NOT_FOUND };
+
+  const { swissPolicy, error, info } = swissPolicyOf({ drawDefinition });
+  if (error) return { error, info };
 
   const allMatchUps = matchUpsOf(structure) ?? [];
   const participantIds = (drawDefinition.entries ?? [])
@@ -68,11 +72,12 @@ export function getSwissChart({ drawDefinition, structureId }: GetSwissChartArgs
   });
 
   for (const roundNum of roundNumbers) {
-    const matchUpsThrough = allMatchUps.filter(
-      (m) => m.matchUpStatus === COMPLETED && (m.roundNumber ?? 0) <= (roundNum ?? 0),
-    );
+    // every matchUp through the round, decided or not: its pairings tell the round's bye
+    const matchUpsThrough = allMatchUps.filter((m) => (m.roundNumber ?? 0) <= (roundNum ?? 0));
 
     const { scoreGroups } = computeScoreGroups({
+      allowDraws: swissPolicy?.allowDraws,
+      byePoints: swissPolicy?.byePoints,
       matchUps: matchUpsThrough,
       participantIds,
     });
