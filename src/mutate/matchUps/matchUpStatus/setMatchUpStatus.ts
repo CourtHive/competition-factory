@@ -356,15 +356,17 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
     // DECISION: Filter out empty sets BEFORE generating score strings
     // WHY: Prevents invalid/incomplete sets from being saved, and filtering afterwards left the
     // generated string describing a set that had just been removed from score.sets
-    const sets = outcome.score.sets.filter(
-      (set) =>
-        set.side1Score ||
-        set.side2Score ||
-        set.side1TiebreakScore ||
-        set.side2TiebreakScore ||
-        set.side1PointScore ||
-        set.side2PointScore,
-    );
+    const sets = outcome.score.sets
+      .filter(
+        (set) =>
+          set.side1Score ||
+          set.side2Score ||
+          set.side1TiebreakScore ||
+          set.side2TiebreakScore ||
+          set.side1PointScore ||
+          set.side2PointScore,
+      )
+      .map(withoutZeroZeroTiebreak);
 
     // DECISION: resolve the matchUp's effective format rather than relying on outcome.matchUpFormat
     // WHY: generateScoreString needs the format to recognize a tiebreak-only deciding set (F:TB10) and
@@ -598,6 +600,22 @@ function withoutPropagationContext(result: ResultType): ResultType {
     Object.entries(result.context).filter(([key]) => !PROPAGATION_CONTEXT_KEYS.includes(key)),
   );
   return { ...result, context };
+}
+
+/**
+ * 0-0 TIEBREAK POINTS ARE NOT RECORDED POINTS (CA, 2026-11-04). No tiebreak finishes 0-0, and the engine refuses
+ * tiebreak points on a set that has not finished, so a set whose tiebreak fields both read 0 carries no tiebreak
+ * result: a feed's empty default. Prod 2026-11-04: an integration sent `6-7` with `0`/`0` and was refused ("Tiebreak
+ * winner must reach 7 points, got 0"). Dropping the pair records it as a bare `7-6`, accepted with
+ * TIEBREAK_POINTS_NOT_RECORDED (ruling V11), and the score string no longer reads `7-6(0)`, which says the loser won
+ * no points. Any other impossible tiebreak (`0-3`, `7-7`) is still refused.
+ */
+type TiebreakPoints = { side1TiebreakScore?: unknown; side2TiebreakScore?: unknown };
+function withoutZeroZeroTiebreak<T extends TiebreakPoints>(set: T): T {
+  const isZero = (value: unknown) => value !== null && value !== '' && value !== undefined && Number(value) === 0;
+  if (!isZero(set.side1TiebreakScore) || !isZero(set.side2TiebreakScore)) return set;
+  const { side1TiebreakScore: _side1, side2TiebreakScore: _side2, ...rest } = set;
+  return rest as unknown as T;
 }
 
 /**
