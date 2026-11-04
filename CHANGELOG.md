@@ -1,5 +1,73 @@
 # Changelog
 
+## [7.28.0](https://github.com/CourtHive/competition-factory/compare/v7.27.0...v7.28.0) (2026-11-04)
+
+
+### Features
+
+* add gated captain choice declaration foundation ([4a06dcf](https://github.com/CourtHive/competition-factory/commit/4a06dcfc3a222c461d4228804536ace1251c25c1))
+* add gated overtime format grammar foundation ([c2559a3](https://github.com/CourtHive/competition-factory/commit/c2559a319c9e9c8e893a8b0dd753461d3f83649d))
+* **codes:** describe scheduling, seeding and competition policies in the schema ([#6103](https://github.com/CourtHive/competition-factory/issues/6103)) ([09dbac6](https://github.com/CourtHive/competition-factory/commit/09dbac62e6b5e55e33bfb2c267eb52ece1fff0de))
+* **codes:** describe Tournament.scheduling in the schema ([#6108](https://github.com/CourtHive/competition-factory/issues/6108)) ([e822bca](https://github.com/CourtHive/competition-factory/commit/e822bca3a62b5bf07f61905e4c7d2ab0101d82e7))
+* **codes:** model the stored round naming, matchUp actions, avoidance and tally policies ([#6107](https://github.com/CourtHive/competition-factory/issues/6107)) ([0390db8](https://github.com/CourtHive/competition-factory/commit/0390db867db7d3b68c722dd6a6715b71dec79c51))
+* **codes:** sanction constraints live on the sanction, defined by a provider ([#6109](https://github.com/CourtHive/competition-factory/issues/6109)) ([e16c100](https://github.com/CourtHive/competition-factory/commit/e16c10003c128a3871ca9617664b317f50af8cc6))
+* **codes:** store applied policies as a first-class appliedPolicies attribute ([#6112](https://github.com/CourtHive/competition-factory/issues/6112)) ([e8413a6](https://github.com/CourtHive/competition-factory/commit/e8413a6ab788a4ebdc2e5c1727e7551abecf38bd))
+* **generation:** warn of the entries a full draw leaves out ([#6092](https://github.com/CourtHive/competition-factory/issues/6092)) ([bc3a157](https://github.com/CourtHive/competition-factory/commit/bc3a157aa57c67154ff154599c8117fd2781c0ae))
+* implement gated overtime scoring reducer with official result cases ([6dd1379](https://github.com/CourtHive/competition-factory/commit/6dd1379caa181d0558fb48df89e3db0110ee8931))
+* integrate overtime score records and public scoring engine ([2c29631](https://github.com/CourtHive/competition-factory/commit/2c2963178055e3d976b05271dc3b29f56e3d85a4))
+* **outcome:** v2 converges a produced exit past a BYE with one pending beyond ([#6114](https://github.com/CourtHive/competition-factory/issues/6114)) ([5a4e688](https://github.com/CourtHive/competition-factory/commit/5a4e68804074cfa9c9388c898be2e1255e2c6a2b))
+* **outcome:** v2 lands a produced exit past a BYE beside an unreached position or an opponent ([#6111](https://github.com/CourtHive/competition-factory/issues/6111)) ([9156e85](https://github.com/CourtHive/competition-factory/commit/9156e8536a82fcde3481fe7254606f1b5e1f38b2))
+* **outcome:** v2 owns a double exit given a winner where the unwind releases an award ([e218136](https://github.com/CourtHive/competition-factory/commit/e21813633d041a76dec26c930dd008c00d53b822))
+* **outcome:** v2 owns a double exit given a winner where the unwind releases an award ([#6124](https://github.com/CourtHive/competition-factory/issues/6124)) ([e218136](https://github.com/CourtHive/competition-factory/commit/e21813633d041a76dec26c930dd008c00d53b822))
+* **outcome:** v2 owns a produced exit in a final or past BYEs, and a dual's carry through a BYE ([#6101](https://github.com/CourtHive/competition-factory/issues/6101)) ([d13bebc](https://github.com/CourtHive/competition-factory/commit/d13bebc76066283745fbcb50f4e7ef1247bf4c3d))
+* **package:** a governors subpath that shakes, and a release anchor for consumer bundles ([#6117](https://github.com/CourtHive/competition-factory/issues/6117)) ([9e9924a](https://github.com/CourtHive/competition-factory/commit/9e9924ab98ec9d47831e5ab67c0733e6ab6b8e97))
+* **query:** resolveHomeParticipantId infers a matchUp's home side ([#6091](https://github.com/CourtHive/competition-factory/issues/6091)) ([f860af0](https://github.com/CourtHive/competition-factory/commit/f860af013aedd11fdec0c8f18b6eb745e33b9d7d))
+* **scheduling:** policy defaultPeriodLength and per-round periods in the profile plan ([#6096](https://github.com/CourtHive/competition-factory/issues/6096)) ([9538880](https://github.com/CourtHive/competition-factory/commit/9538880cf242653ebbaf1696b26e5c278bde9bd7))
+* **statCrew:** select one dual by matchUpId and say which matchUp each game reports ([#6099](https://github.com/CourtHive/competition-factory/issues/6099)) ([e91cd5e](https://github.com/CourtHive/competition-factory/commit/e91cd5ed4b296ebd060f8577e993b76c758775e3))
+* support encounter-scoped captain choice resolution ([721d461](https://github.com/CourtHive/competition-factory/commit/721d461045aadc60af1d4f5abe99ec5c3ec1f5d4))
+* support encounter-scoped collection matchUpType conversion ([5323108](https://github.com/CourtHive/competition-factory/commit/532310837af3a1199b293b7c308713f873d125d4))
+
+
+### Bug Fixes
+
+* apply forced matchUp formats across selected scopes ([f334168](https://github.com/CourtHive/competition-factory/commit/f334168fadf8af5c9d6d3d6f0b0f82ec806b738d))
+* clear seeded participant assignments and notify subscribers ([4ac61fa](https://github.com/CourtHive/competition-factory/commit/4ac61fa571f19b6c9353229c130cb7783257d3c6))
+* **deps:** update tods-competition-factory to 7.27.0 ([#6084](https://github.com/CourtHive/competition-factory/issues/6084)) ([f5f9071](https://github.com/CourtHive/competition-factory/commit/f5f9071b8c9776ad07df78fbad4697eab8884189))
+* **entries:** apply sanctioning maxWildcards and maxAlternates to draw entries ([#6086](https://github.com/CourtHive/competition-factory/issues/6086)) ([4d74644](https://github.com/CourtHive/competition-factory/commit/4d74644cffa2a21f145c9baab87dd0348fc9386a))
+* expose typed async engines with Promise-returning methods ([8d937c3](https://github.com/CourtHive/competition-factory/commit/8d937c33b2b78f0bc95bd0491a7b1be3c671900f))
+* **generation:** refuse entries over sanctioned limits before generating ([#6087](https://github.com/CourtHive/competition-factory/issues/6087)) ([3584d51](https://github.com/CourtHive/competition-factory/commit/3584d5165b3b8ff10a7f2c701a61845b73dcd0e1))
+* **generation:** refuse overfull qualifying drawEntries added to an existing draw ([#6095](https://github.com/CourtHive/competition-factory/issues/6095)) ([ff6f5c2](https://github.com/CourtHive/competition-factory/commit/ff6f5c22afe3561a2c51e9a32369e66faca14e8d))
+* **generation:** take event qualifying entries and refuse overfull drawEntries consistently ([#6097](https://github.com/CourtHive/competition-factory/issues/6097)) ([f20c4d9](https://github.com/CourtHive/competition-factory/commit/f20c4d92b910a439f0234554557515f6ae1dc574))
+* **outcome:** a drawPosition refusal inside the exit cascade is no longer an apply-stage code ([#6102](https://github.com/CourtHive/competition-factory/issues/6102)) ([e30e103](https://github.com/CourtHive/competition-factory/commit/e30e103faa6ba6c827997fc15c55d3b0b4169a8f))
+* **participants:** an absent participantRole reads as COMPETITOR ([#6085](https://github.com/CourtHive/competition-factory/issues/6085)) ([7e81b12](https://github.com/CourtHive/competition-factory/commit/7e81b12c9c792e5991b2ff6eee7fde2046776d0c))
+* **participants:** check participant onlineResources against the CODES schema ([#6110](https://github.com/CourtHive/competition-factory/issues/6110)) ([60b0a86](https://github.com/CourtHive/competition-factory/commit/60b0a862ec5c5078d32cf5997017bd9a9ae145a2))
+* **participants:** modifyParticipant writes homeVenueIds instead of dropping them ([#6100](https://github.com/CourtHive/competition-factory/issues/6100)) ([a50f4ef](https://github.com/CourtHive/competition-factory/commit/a50f4eff359b763ab7058cc3f9e018db8b3842bc))
+* **participants:** modifyParticipant writes or refuses every attribute ([#6106](https://github.com/CourtHive/competition-factory/issues/6106)) ([162ba8f](https://github.com/CourtHive/competition-factory/commit/162ba8fd046bd580391ba57b825c697467484bfc))
+* **policies:** attachPolicies refuses before its first write ([#6125](https://github.com/CourtHive/competition-factory/issues/6125)) ([289fe46](https://github.com/CourtHive/competition-factory/commit/289fe467ca574d5e908ddac90857b1666e51d90e))
+* refuse even implicit best-of matchUpFormat codes for new use ([a25b3ed](https://github.com/CourtHive/competition-factory/commit/a25b3edf3ec5888ff7f5b09f509dd2b40e446edb))
+* reject seed values beyond draw participant capacity ([e30149e](https://github.com/CourtHive/competition-factory/commit/e30149e7d404d1cacb2f65e12fb5ccfb609f8cb7))
+* **scheduling:** read an event timing override under the key it is written under ([#6090](https://github.com/CourtHive/competition-factory/issues/6090)) ([7cb0d5a](https://github.com/CourtHive/competition-factory/commit/7cb0d5a2448cf993c5e0fe00526fab1786fe089c))
+* **scheduling:** time a TEAM event's lines by the event's TEAM-keyed override ([#6098](https://github.com/CourtHive/competition-factory/issues/6098)) ([e4dc5a2](https://github.com/CourtHive/competition-factory/commit/e4dc5a2b011ebd82d6acaa21b114458b4a45f978))
+
+
+### Performance
+
+* read the call's own matchUpsMap for the captain choice refusal ([7fa17bf](https://github.com/CourtHive/competition-factory/commit/7fa17bfb4a92901ff4871fdec8c0fb1457a92c08))
+
+
+### Documentation
+
+* add searchable overtime guides and sporting examples ([22a537f](https://github.com/CourtHive/competition-factory/commit/22a537fe2b2401589ce3e7a9edea88c00bb44a71))
+* clarify manual TEAM score preservation and restoration ([eb269cb](https://github.com/CourtHive/competition-factory/commit/eb269cb78eb7d22f15c4a776a8429e832e0596eb))
+* distinguish seed removal from withdrawal cascades ([3ed8cd2](https://github.com/CourtHive/competition-factory/commit/3ed8cd22cce496f5478f6dd72e975369beb8b578))
+* entry positions, sanctioned limit precedence, dated court hours, event-date warning details ([#6120](https://github.com/CourtHive/competition-factory/issues/6120)) ([3b6c298](https://github.com/CourtHive/competition-factory/commit/3b6c29811bd70752289eabefc0705c780afd831a))
+* **governors:** a Season Governor page, and the overview lists every governor with a page ([#6088](https://github.com/CourtHive/competition-factory/issues/6088)) ([37c8412](https://github.com/CourtHive/competition-factory/commit/37c8412f28391101553cb9c6290d76a66220c8df))
+* **governors:** pages for the ladder and availability governors ([#6089](https://github.com/CourtHive/competition-factory/issues/6089)) ([d280263](https://github.com/CourtHive/competition-factory/commit/d280263544873259e6422abacd80b2b114397dda))
+* **policies:** state every tally policy check made where a policy is saved ([#6118](https://github.com/CourtHive/competition-factory/issues/6118)) ([1fa86d2](https://github.com/CourtHive/competition-factory/commit/1fa86d2ff461cd37b6f81eb867085a0ffd30771b))
+* **scoring:** specify the overtime scoreboard and sudden-death point fields ([03cbb02](https://github.com/CourtHive/competition-factory/commit/03cbb029b125c48dd55b12c455a14abe3dcd8c57))
+* specify captain choice collection declarations and resolution ([3ebaaf6](https://github.com/CourtHive/competition-factory/commit/3ebaaf6961be416d012b0cf49ad92e2eebbc45fc))
+* specify the captain choice refusal contract per method ([2e5f9dc](https://github.com/CourtHive/competition-factory/commit/2e5f9dcae3bf72439010a44195c735984c6cd676))
+
 ## [7.27.0](https://github.com/CourtHive/competition-factory/compare/v7.26.0...v7.27.0) (2026-11-01)
 
 
