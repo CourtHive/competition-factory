@@ -133,6 +133,8 @@ The `competitionFormat` interface allows you to pass a full competition profile 
 
 `competitionFormat` describes how a sport is played (timers, penalties and substitutions); the separate draw-level [`competitionProfile`](../concepts/draw-types/competition-profile.md) describes its competition format, such as Americano or Mexicano.
 
+See [Formats: what, how and scoring](../concepts/formats.md) for how `competitionFormat` relates to `tieFormat` and `matchUpFormat`, and where each is stored.
+
 ### Passing a competitionFormat
 
 ```js

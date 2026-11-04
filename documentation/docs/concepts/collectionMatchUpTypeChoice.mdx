@@ -6,7 +6,7 @@ keywords: [captains choice, captain's choice, singles or doubles, tieFormat, col
 
 ## Specification status
 
-This extension is implemented locally on `feat/noc-u4-captains-choice-runtime` and is not released.
+This extension was released in factory v7.28.0.
 Choice templates can be saved and generate untyped child placeholders. Encounter-scoped selection,
 reselection and explicit reset preserve the declaration, placeholder identities and schedules. Pending choices
 are blocked at assignment, status/result and actual-play entry points; cleanup can still clear a pending line.
@@ -15,7 +15,7 @@ The validator checks the declaration and every offered type's gender compatibili
 in format comparison/aggregation and survives copying and JSON reload. General multi-collection selection,
 general tieFormat reset on a local choice format, declaration editing/migration, and UI integration are not
 included. Use the encounter-scoped APIs below for selection/reset; do not treat retaining an unknown field in
-an older release as runtime support.
+a release before v7.28.0 as runtime support.
 
 ## Declaration and selection are different facts
 
@@ -189,7 +189,7 @@ and sends no notices. Rubbers of fixed collections, and matchUps that are not ru
 ## Implementation acceptance
 
 The typed declaration, placeholder generation, query behavior, guarded entry points and encounter-level
-selection/reset are implemented on the runtime branch. The remaining integration work is the general
+selection/reset were released in v7.28.0. The remaining integration work is the general
 format editor, explicit declaration migration and consumer UI coverage.
 Audit comparison, copying, centralized aggregation, hierarchy, hydration, query filters and persistence so the
 declaration and local selection survive without leaking into other encounters. Coordinate separately with
