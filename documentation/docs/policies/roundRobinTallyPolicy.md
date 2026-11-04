@@ -770,8 +770,10 @@ participant outside the set is a common opponent.
 
 ### Groupings: divisions, conferences and sets
 
-Divisions and conferences are supplied by the caller, like `externalValues`; the factory never fetches them. They are
-passed to `tallyParticipantResults` (and the ordering core) by name:
+Divisions and conferences are supplied by the caller, like `externalValues`; the factory never fetches them. A
+season derives them instead: `getSeasonStandings({ combine: true })` orders a parent tier's table over its divisions'
+matchUps with the grouping `tier` (see [Seasons](../concepts/season.md#getseasonstandings)). Elsewhere they are passed to
+`tallyParticipantResults` (and the ordering core) by name:
 
 ```js
 tallyParticipantResults({
