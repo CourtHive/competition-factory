@@ -1123,6 +1123,25 @@ const { valid, inconsistencies } = engine.getTournamentInconsistencies();
   (for example an implicit best-of with an even count). It is still read and scored as stored, and records written
   by older versions are expected to hold some. Same shape as `MATCHUP_FORMAT_MALFORMED`; each code's `info`
   explains the refusal. (warning — never makes `valid` false)
+- `MATCHUP_SCORE_INVALID_FOR_FORMAT` — a stored score that the matchUp's effective format cannot produce, judged
+  by the same `validateScore` that refuses such a score when it is written. A TEAM line is judged by its collection's
+  format. A score can be stored this way legitimately: an import or a correction passed `disableScoreValidation`,
+  or the score predates the rule that now refuses it. Not reported for a TEAM matchUp (its score is the dual's
+  tally), nor for a score with no resolvable format. One finding per matchUp. (warning — never makes `valid` false)
+
+  ```js
+  {
+    issueType: 'MATCHUP_SCORE_INVALID_FOR_FORMAT',
+    severity: 'warning',
+    scope: 'STRUCTURE',
+    eventId, drawId, structureId, matchUpId,
+    message: 'score 3-7 6-4 6-4 is invalid for SET3-S:6/TB7: Set 1: …',
+    matchUpFormat: 'SET3-S:6/TB7',
+    matchUpStatus: 'COMPLETED',
+    code: 'ERR_INVALID_SCORE',
+    info: 'Set 1: …',
+  }
+  ```
 
 > Scheduling collisions are deferred — they require the scheduling model and are a later sub-phase.
 
