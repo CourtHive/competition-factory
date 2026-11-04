@@ -1,7 +1,7 @@
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
 import { isDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
-import { dualWinningSideChange } from './route';
+import { dualWinningSideChange, noWinnerNeeded } from './route';
 
 // constants and types
 import type { MatchUpWrite, OutcomeRequest, OutcomeView, Route } from './types';
@@ -186,7 +186,7 @@ export function planWrite(request: OutcomeRequest, view: OutcomeView, route: Rou
       return applyScoreAndStatus({ ...asIs, removeScore: true }, request, view);
     case 'apply-values': {
       const removeWinningSide =
-        ((view.draw.rotatingPartners || view.draw.combinedPointRoundRobin) && !!score && !winningSide) ||
+        (noWinnerNeeded(view) && !!score && !winningSide) ||
         (!!view.line && !!view.existing.winningSide && !winningSide && !checkScoreHasValue({ score }));
       const lineStatus = removeWinningSide ? TO_BE_PLAYED : decidedOrIncomplete(winningSide);
       const status = matchUpStatus ?? (view.line ? lineStatus : COMPLETED);
