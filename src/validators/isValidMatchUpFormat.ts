@@ -80,6 +80,8 @@ type SetSpec = { setTo?: number; tiebreakAt?: number | string; tiebreakFormat?: 
 function refusedForNewUse(parsed: ParsedFormat): boolean {
   // Overtime parses and scores, but is not offered for new use until the consumer activation audit clears it.
   if (parsed.overtimeFormat) return true;
+  // So is a shootout decider (Ruling 3): it opens with overtime (S6)
+  if (parsed.finalSetFormat?.shootout) return true;
   const setFormat: SetSpec = parsed.setFormat;
   const finalSetFormat: SetSpec = parsed.finalSetFormat;
   if ([setFormat, finalSetFormat].some(tiebreakBelowSetToLessOne)) return true;

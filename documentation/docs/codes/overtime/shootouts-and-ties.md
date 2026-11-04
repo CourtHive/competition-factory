@@ -58,6 +58,18 @@ Sources: [NHL Florida–San Jose](https://api-web.nhle.com/v1/gamecenter/2022020
 [NHL Calgary–Florida](https://api-web.nhle.com/v1/gamecenter/2022020275/landing),
 [FFF France–Switzerland](https://www.fff.fr/selection/matchs/2934-france-suisse.html).
 
+## A shootout decider: `F:SO{rounds}`
+
+```text
+HAL2XA-S:T45P-O:2X/T15P-F:SO5
+```
+
+`SO5` is a shootout of five rounds, the final segment after a level overtime (or, with no `-O:`, after a level
+exactly-N aggregate). It is entered as its final tally, never attempt by attempt: France–Switzerland above is
+`3–3` through extra time and `4–5` in the shootout. A tally is refused when no shootout ends on it: level, or past
+the five rounds by more than one (sudden death is won by one). Attempt-by-attempt entry is a later slice that
+reduces to the same tally.
+
 An NHL shootout-winner goal in the published final is not a goal scored during overtime. Football's
 penalty tally is also separate from the goals scored during the match. Preserving that distinction is
 essential for standings, statistics, and explaining how a match was decided.

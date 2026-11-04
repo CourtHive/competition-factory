@@ -235,9 +235,11 @@ export function keyValueScore(params) {
   if (!VALID_VALUE_KEYS.includes(value)) {
     return { updated: false, info: 'invalid key' };
   }
-  // overtime is entered in the dialog only (CA, 2026-11-04): keyed entry has no phase for a period
-  if (matchUpFormat && parse(matchUpFormat)?.overtimeFormat) {
-    return { updated: false, info: 'overtime formats are scored in the score dialog' };
+  // overtime and a shootout are entered in the dialog only (CA, 2026-11-04): keyed entry has no phase for a period
+  // and no tally for a shootout
+  const parsedFormat = matchUpFormat ? parse(matchUpFormat) : undefined;
+  if (parsedFormat?.overtimeFormat || parsedFormat?.finalSetFormat?.shootout) {
+    return { updated: false, info: 'overtime and shootout formats are scored in the score dialog' };
   }
 
   if (shiftFirst) lowSide = 3 - lowSide;

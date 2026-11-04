@@ -184,6 +184,7 @@ export const INVALID_FORMAT = 'Invalid matchUpFormat: the format does not parse'
 /** why the set in play refuses an input level (§ 3.3): outs take set totals only; a combined total takes no game */
 function noInput(rule: SegmentRule, input: 'point' | 'game'): string {
   if (rule.kind === 'outs') return `a segment of outs takes set totals only, not a ${input}`;
+  if (rule.kind === 'shootout') return `a shootout is entered as its final tally, not a ${input}`;
   return `a ${rule.kind} segment takes no ${input} input`;
 }
 
