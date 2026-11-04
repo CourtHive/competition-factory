@@ -72,12 +72,22 @@ export function applyOwnedPlan({
   const written = [...new Set(scored.toReversed())].reverse();
   const announced = [...new Set(writes.toReversed())].reverse();
   // a matchUp given its result and then a position (that next matchUp): its last notice is the placement's
-  const lastWrites = new Map(ops.flatMap((op) => ('matchUpId' in op ? [[op.matchUpId, op.op]] : [])));
+  const lastWrites = new Map(ops.flatMap((op) => ('matchUpId' in op ? [[op.matchUpId, op]] : [])));
   const placedLast = new Set(
-    [...lastWrites].flatMap(([matchUpId, op]) => (op === 'setMatchUpDrawPositions' ? [matchUpId] : [])),
+    [...lastWrites].flatMap(([matchUpId, op]) => (op.op === 'setMatchUpDrawPositions' ? [matchUpId] : [])),
+  );
+  // ...or a BYE's withdrawal visiting it after a quiet result write (an unwind's branch writes DOUBLE_ELIMINATION's
+  // Backdraw final back to be played, then the walk from the unfillable seat visits it, S7): v1's buffer keeps the
+  // withdrawal's name, `removeDrawPosition-<n>`, with neither event nor tournament
+  const unbyedLast = new Set(
+    [...lastWrites].flatMap(([matchUpId, op]) =>
+      op.op === 'setMatchUpDrawPositions' && op.withdrawnByePosition ? [matchUpId] : [],
+    ),
   );
   // ...or a BYE written after its result and origin (a held exit's landing the unfillable seat's BYE takes, S7): the BYE's
-  const byedLast = new Set([...lastWrites].flatMap(([matchUpId, op]) => (op === 'setMatchUpBye' ? [matchUpId] : [])));
+  const byedLast = new Set(
+    [...lastWrites].flatMap(([matchUpId, op]) => (op.op === 'setMatchUpBye' ? [matchUpId] : [])),
+  );
   // a line given a finishing number by another line's write is announced as v1's `modifyMatchUpScore` announces it
   const resulted = new Set(
     ops.flatMap((op) => (op.op === 'setMatchUpResult' || op.op === 'setOrderOfFinish' ? [op.matchUpId] : [])),
@@ -124,7 +134,7 @@ export function applyOwnedPlan({
     // a removal's notice is built as v1's `removeSubsequentRoundsParticipant` builds it, whose caller passes no event;
     // unless a score write announces the matchUp after it (a result turned into a double exit: the exit it produces)
     const removedPosition = resulted.has(matchUpId) ? undefined : removed.get(matchUpId);
-    const unbyedPosition = resulted.has(matchUpId) ? undefined : unbyed.get(matchUpId);
+    const unbyedPosition = resulted.has(matchUpId) && !unbyedLast.has(matchUpId) ? undefined : unbyed.get(matchUpId);
     // a settle pass's result write names the event and the tournament, whatever an earlier write of the matchUp in the
     // same call left out (a convergence re-derived past the produced exit's matchUp: contextless on the unwind, S6 tail)
     const settledWrite = settledResults.has(matchUpId);

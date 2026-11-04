@@ -2863,7 +2863,7 @@ function unwoundPath(
   const withdrawn = new Set(
     seats.slice(0, 2).flatMap(({ loserSeat }) => (loserSeat?.seat?.byeFromPropagation ? [seatKey(loserSeat)] : [])),
   );
-  const context = { path, seats, rederived, takenBack, reset, withdrawn, branched };
+  const context = { path, seats, rederived, takenBack, reset, withdrawn, branched, sourceId: source.matchUpId };
   const plain = unwoundLevels(view, context);
   if (plain) return plain;
   // where the plain reading of a placed seat refuses, v1's removal is walked for both placed seats together
@@ -2879,48 +2879,77 @@ type UnwoundContext = {
   reset: number;
   withdrawn: Set<string>;
   branched: boolean;
+  /** the double exit's matchUpId: the source of the carry its own seat relays under `doubleExitPropagateBye: false` */
+  sourceId: string;
 };
 
 /**
+ * Under `doubleExitPropagateBye: false`, what the deeper seats' withdrawals leave for the own seat's passage to read
+ * (`unwoundPassage`, S7): the BYE matchUps they wrote back to be played (`cleared`), and the matchUps whose pending exit
+ * went with the position taken out (`reset`), as v1's chain finds them once the unfillable seat's BYE has gone
+ */
+type UnwindRelay = { sourceId: string; cleared: Set<string>; reset: Set<string> };
+
+/**
  * The levels of an unwind (`unwoundPath`): each matchUp on the path with the writes at the seat its loser link feeds, the
- * placed seats read plainly (`unwoundLevelSeatOps`) or, given a walk, as the walk removes them (`walkedSeatOps`)
+ * placed seats read plainly (`unwoundLevelSeatOps`) or, given a walk, as the walk removes them (`walkedSeatOps`). Under
+ * `doubleExitPropagateBye: false` the deeper seats are read first, as v1 withdraws them first: the own seat's passage
+ * then reads the matchUps those withdrawals wrote (`UnwindRelay`)
  */
 function unwoundLevels(
   view: OutcomeView,
-  { path, seats, rederived, takenBack, reset, withdrawn, branched }: UnwoundContext,
+  { path, seats, rederived, takenBack, reset, withdrawn, branched, sourceId }: UnwoundContext,
   walk?: Map<number, OutcomeOp[]>,
 ): UnwoundLevel[] | undefined {
-  const levels: UnwoundLevel[] = [];
   // a position the own seat's withdrawal releases out of a matchUp a deeper seat's BYE also sends to (a double BYE's next
   // matchUp, a BYE until then, had sent it on): that matchUp is read without it, and written once, by the release
   const released = new Set<number>();
-  for (const [index, id] of path.entries()) {
+  const relay: UnwindRelay = { sourceId, cleared: new Set(), reset: new Set() };
+  const indices = path.map((_, index) => index);
+  const order = branched && indices.length > 1 ? [...indices.slice(1), 0] : indices;
+  const seatOpsAt = new Map<number, OutcomeOp[]>();
+  for (const index of order) {
     const level = seats[index];
-    if (level?.matchUpId !== id) return undefined;
-    const kept = rederived.get(id);
+    if (level?.matchUpId !== path[index]) return undefined;
+    const kept = rederived.get(path[index]);
     // the double exit's own seat and its produced exit's took the BYEs it placed; a seat further on holds nothing yet
     const at = { first: index === 0, placed: index === 0 || index === reset, kept: !!kept };
-    const plain = () => (level.loserSeat ? unwoundLevelSeatOps(view, level, at, withdrawn, branched, released) : []);
+    const plain = () =>
+      level.loserSeat ? unwoundLevelSeatOps(view, level, at, withdrawn, branched, released, relay) : [];
     const seatOps = walk?.get(index) ?? plain();
     if (!seatOps) return undefined;
-    for (const op of seatOps)
-      if (op.op === 'setMatchUpDrawPositions' && op.releasedDrawPosition) released.add(op.releasedDrawPosition);
+    collectUnwound(seatOps, released, relay);
+    seatOpsAt.set(index, seatOps);
+  }
+  return path.map((id, index) => {
     const taken = takenBack.get(id);
-    levels.push({
+    const kept = rederived.get(id);
+    return {
       matchUpId: id,
-      seatOps,
+      seatOps: seatOpsAt.get(index) ?? [],
       ...(taken ? { released: taken } : {}),
       ...(kept ? { rederived: kept } : {}),
-    });
+    };
+  });
+}
+
+/** what a level's seat ops leave for the levels read after them: the positions released, the matchUps cleared or reset */
+function collectUnwound(seatOps: OutcomeOp[], released: Set<number>, relay: UnwindRelay): void {
+  for (const op of seatOps) {
+    if (op.op === 'clearMatchUpBye') relay.cleared.add(op.matchUpId);
+    if (op.op !== 'setMatchUpDrawPositions') continue;
+    if (op.releasedDrawPosition) released.add(op.releasedDrawPosition);
+    if (op.clearsPendingExit) relay.reset.add(op.matchUpId);
   }
-  return levels;
 }
 
 /**
  * The placed seats of an unwind (the double exit's own loser seat, and the seat its produced exit left unfillable) as v1
  * removes their BYEs (`unwindWalk`): the deeper seat first, on the draw that removal leaves, then the own seat. Keyed by
- * the level each seat belongs to. Undefined where either seat holds no propagated BYE, under `doubleExitPropagateBye:
- * false`, or where the walk abstains.
+ * the level each seat belongs to. Under `doubleExitPropagateBye: false` the own seat holds the carry, not a BYE, and is
+ * read plainly (`unwoundBranch`, `unwoundPassage`): the walk takes the seats that do hold a propagated BYE (the
+ * unfillable seat's, S7). Undefined where a seat the walk takes holds no propagated BYE, where no seat is walked, or where
+ * the walk abstains.
  */
 function walkedSeatOps(
   view: OutcomeView,
@@ -2938,14 +2967,14 @@ function walkedSeatOps(
     drawDefinition?: DrawDefinition;
   },
 ): Map<number, OutcomeOp[]> | undefined {
-  if (branched || !drawDefinition || !view.inContextDrawMatchUps) return undefined;
+  if (!drawDefinition || !view.inContextDrawMatchUps) return undefined;
   const placed = [reset, 0].filter(
     (index, i, all) => all.indexOf(index) === i && index < path.length && !rederived.has(path[index]),
   );
   const walkedSeats: { index: number; structureId: string; drawPosition: number }[] = [];
   for (const index of placed) {
     const loserSeat = seats[index]?.loserSeat;
-    if (!loserSeat) continue;
+    if (!loserSeat || (branched && !loserSeat.seat?.bye)) continue;
     if (!loserSeat.seat?.bye || !loserSeat.seat.byeFromPropagation || !loserSeat.structureId) return undefined;
     walkedSeats.push({ index, structureId: loserSeat.structureId, drawPosition: loserSeat.drawPosition });
   }
@@ -3074,6 +3103,19 @@ function awardedReason(view: OutcomeView, source: HydratedMatchUp, target: Produ
 const seatKey = ({ structureId, drawPosition }: { structureId?: string; drawPosition?: number }) =>
   `${structureId}:${drawPosition}`;
 
+/**
+ * Under `doubleExitPropagateBye: false`, a matchUp holding this double exit's own carried exit and nothing else of a
+ * result: one provenance entry, a carried exit naming the double exit as its source, no winner, scoreless, no codes; the
+ * matchUp a BYE (the relay a passage records beside a BYE it passed) or pending that exit (the passage's landing). S7.
+ */
+function ownCarryAlone(matchUp: HydratedMatchUp, sourceId: string): boolean {
+  const [entry, ...more] = Object.values(matchUp.sideExitProvenance ?? {});
+  if (!entry || more.length || entry.sourceMatchUpId !== sourceId) return false;
+  const status = carriedExitStatus(entry);
+  if (!status || matchUp.winningSide || !scoreless(matchUp) || matchUp.matchUpStatusCodes?.length) return false;
+  return matchUp.matchUpStatus === BYE || matchUp.matchUpStatus === status;
+}
+
 function unwoundSeatOps(
   view: OutcomeView,
   loserSeat: WinnerLoserSeat,
@@ -3081,6 +3123,7 @@ function unwoundSeatOps(
   withdrawn: Set<string> = new Set(),
   released: Set<number> = new Set(),
   cascaded = false,
+  relay?: UnwindRelay,
 ): OutcomeOp[] | undefined {
   const { structureId, drawPosition, matchUpId, seat } = loserSeat;
   // a BYE the round-1 loser cascade takes back: v1 announces no assignments for it (`drawPositionRemovals`, S6 tail)
@@ -3099,8 +3142,11 @@ function unwoundSeatOps(
   const byeMatchUp = indexed(view, matchUpId);
   if (!seat.bye || !seat.byeFromPropagation || !byeMatchUp) return undefined;
   // an exit carried onto the BYE matchUp's other side stands once the BYE goes: v1 re-derives the matchUp to it (a
-  // final's consolation seat beside a carried walkover, S6 tail): v1's
-  if (Object.keys(byeMatchUp.sideExitProvenance ?? {}).length) return undefined;
+  // final's consolation seat beside a carried walkover, S6 tail): v1's. Under `doubleExitPropagateBye: false` the carry
+  // may be this double exit's own, relayed past the BYE on its way from the own seat (S7): the passage withdraws it
+  // after this seat (`unwoundPassage`, which reads the matchUp as this withdrawal leaves it: `UnwindRelay`)
+  const relayed = !!relay && ownCarryAlone(byeMatchUp, relay.sourceId);
+  if (!relayed && Object.keys(byeMatchUp.sideExitProvenance ?? {}).length) return undefined;
   // the BYE beside another (two paired double exits' loser seats, S6 tail): the standing BYE then advances the freed seat
   if (seat.opponentBye) return doubleByeSeatOps(view, loserSeat, byeMatchUp, withdraw);
   if (byeMatchUp.matchUpStatus !== BYE) return undefined;
@@ -3123,6 +3169,21 @@ function unwoundSeatOps(
   // withdrawal releases that position out of it and writes it last, the rewrite's notice superseded (S6 tail)
   if (!opposite.length) return held.some((position) => !released.has(position)) ? undefined : [...ops, ...cascade];
   if (opposite.length > 1 || !next || !held.includes(opposite[0])) return undefined;
+  // the BYE had sent the opposite position on into the passage's landing, the own carry pending there (S7): v1's removal
+  // takes the position and the pending exit with it, named for the withdrawn BYE whether or not a position stays
+  // (`updateMatchUpStatusAfterRemoval`; the release path leaves a pending exit alone), and the passage then finds
+  // nothing of this unwind's there
+  if (relayed && next.matchUpStatus !== BYE && ownCarryAlone(next, relay.sourceId)) {
+    if (next.sides?.some((side) => side.bye)) return undefined;
+    const reset: OutcomeOp = {
+      op: 'setMatchUpDrawPositions',
+      matchUpId: next.matchUpId,
+      drawPositions: held.filter((position) => position !== opposite[0]),
+      withdrawnByePosition: drawPosition,
+      clearsPendingExit: true,
+    };
+    return [...ops, reset, { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId }, ...cascade];
+  }
   // a BYE beside the position there that this unwind withdraws is read as withdrawn: the matchUp is then to be played
   const byeStands = (side: HydratedSide) =>
     !!side.bye && !withdrawn.has(seatKey({ structureId: next.structureId, drawPosition: side.drawPosition }));
@@ -3271,6 +3332,7 @@ function unwoundLevelSeatOps(
   withdrawn: Set<string>,
   branched: boolean,
   released: Set<number> = new Set(),
+  relay?: UnwindRelay,
 ): OutcomeOp[] | undefined {
   const { loserSeat } = level;
   if (!loserSeat) return [];
@@ -3280,8 +3342,10 @@ function unwoundLevelSeatOps(
   // holds the carries' own convergence, which the first level's branch refuses before this level is read
   if (at.kept) return [];
   if (branched && !byeHeld) return unwoundBranch(view, loserSeat, at.first, withdrawn);
-  if (branched && !loserSeat.seat?.bye) return unwoundPassage(view, loserSeat);
-  return unwoundSeatOps(view, loserSeat, at.placed, withdrawn, released);
+  if (branched && !loserSeat.seat?.bye) return unwoundPassage(view, loserSeat, relay);
+  // the relay is read whatever the policy: only under `doubleExitPropagateBye: false` can a BYE matchUp hold this
+  // double exit's own carry (its loser seats take BYEs otherwise), so it refuses nothing new under the default
+  return unwoundSeatOps(view, loserSeat, at.placed, withdrawn, released, false, relay);
 }
 
 /**
@@ -3292,7 +3356,7 @@ function unwoundLevelSeatOps(
  * quietly, the carrier's position standing in it (the BYE sent it there). Undefined where the walk meets anything else:
  * another origin beside the carry, an award at the landing (somebody stood opposite and went on), a result.
  */
-function unwoundPassage(view: OutcomeView, loserSeat: WinnerLoserSeat): OutcomeOp[] | undefined {
+function unwoundPassage(view: OutcomeView, loserSeat: WinnerLoserSeat, relay?: UnwindRelay): OutcomeOp[] | undefined {
   const { drawPosition } = loserSeat;
   const start = indexed(view, loserSeat.matchUpId);
   // the seat's matchUp is BYE-held, the seat itself not a BYE: the generated BYE stands opposite (`unwoundLevelSeatOps`)
@@ -3300,7 +3364,9 @@ function unwoundPassage(view: OutcomeView, loserSeat: WinnerLoserSeat): OutcomeO
   const passed: HydratedMatchUp[] = [];
   let at: HydratedMatchUp | undefined = start;
   let landing: HydratedMatchUp | undefined;
-  while (at && !landing) {
+  // the landing a deeper seat's withdrawal already wrote back (`clearsPendingExit`): v1's chain finds nothing of this
+  // unwind's there and stops (S7)
+  while (at && !landing && !relay?.reset.has(at.matchUpId)) {
     const side = sideOf(at, drawPosition);
     const entry = side ? at.sideExitProvenance?.[side] : undefined;
     if (!carriedExitStatus(entry) || Object.keys(at.sideExitProvenance ?? {}).length !== 1) return undefined;
@@ -3326,12 +3392,13 @@ function unwoundPassage(view: OutcomeView, loserSeat: WinnerLoserSeat): OutcomeO
       ]
     : [];
   // each BYE matchUp passed, its provenance withdrawn by v1's score write (the blank score, codes `[]`), which names
-  // neither event nor tournament
+  // neither event nor tournament; one whose BYE a deeper seat's withdrawal took (the unfillable seat's, `cleared`) is to
+  // be played by then, and v1 writes it so (S7)
   const relayed = passed.flatMap((matchUp): OutcomeOp[] => [
     {
       op: 'setMatchUpResult',
       matchUpId: matchUp.matchUpId,
-      matchUpStatus: BYE,
+      matchUpStatus: relay?.cleared.has(matchUp.matchUpId) ? TO_BE_PLAYED : BYE,
       score: BLANK_SCORE,
       matchUpStatusCodes: [],
       stampsScoredTime: false,
