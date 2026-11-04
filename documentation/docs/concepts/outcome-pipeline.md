@@ -953,7 +953,9 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   sent the seat's own position on, so the loser, placed on the seat the unwind freed, goes on through the standing BYE
   into the matchUp still holding their position, which v1 announces as the loser's arrival there
   (`assignMatchUpDrawPosition`, with the event) and stamps: where the unwind withdrew that matchUp's BYE, or where it is
-  the structure's last round (COMPASS's West: a BYE still, by the other standing BYE). Stay v1's: a convergence the unwind dissolves (the winner would be
+  the structure's last round (COMPASS's West: a BYE still, by the other standing BYE), or where it is a BYE still and the
+  loser goes on through each BYE after it to the structure's last round, every matchUp passed announced and stamped the
+  same way (COMPASS / OLYMPIC / FIRST_ROUND_LOSER_CONSOLATION 9 of 16: West's first round, West 2/2, West 3/1). Stay v1's: a convergence the unwind dissolves (the winner would be
   awarded the re-derived pending exit), a loser the new result would carry, a BYE that had gone on further than the next
   matchUp (FMLC's second round), and every seat shape the clear leaves to v1.
 
