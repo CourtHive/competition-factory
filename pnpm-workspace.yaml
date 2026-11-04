@@ -71,6 +71,14 @@ verifyDepsBeforeRun: false
 #   Reached only via markdownlint-cli2 0.23.3, a dev-only lint tool that pins 15.0.1
 #   exactly. Scoped `@15` and caret-bounded, so it neither touches a 14.x consumer nor
 #   floats onto a future major.
+# - katex: GHSA-238p-pmpm-9mq7 (prototype pollution bypasses trust restrictions); vulnerable
+#   <0.18.2, patched 0.18.2. Reached only via markdownlint-cli2 -> markdownlint ->
+#   micromark-extension-math, which asks for ^0.16, so Dependabot cannot raise it
+#   (security_update_not_possible). Dev-only lint tool; caret-bounded to the 0.18 line.
+# - minimatch: GHSA-g3hv-75wg-m249 (DoS via globparts amplification); vulnerable >=7.0.0
+#   <11.0.1, patched 11.0.1. Reached only via eslint and rimraf -> glob, which ask for
+#   ^10, so Dependabot cannot raise it. Scoped `@10` (the only line in the tree) and
+#   caret-bounded to 11.x. Dev-only tooling: the package ships files:[dist].
 overrides:
   typescript: 6.0.3 # block native TS7 (no classic JS API — crashes tsc/nest/sonarjs); pairs with renovate TS-major block
   qs: '^6.15.2'
@@ -88,3 +96,5 @@ overrides:
   smol-toml: '^1.7.1'
   markdown-it@15: '^15.0.2'
   re2js: '>=2.8.7' # GHSA-gg6h-894w-4m9c (quadratic-time lookbehind DoS), via markdownlint
+  katex: '^0.18.2'
+  minimatch@10: '^11.0.1'
