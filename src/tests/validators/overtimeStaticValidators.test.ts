@@ -1,5 +1,6 @@
 import { validateMatchUpScore } from '@Validators/validateMatchUpScore';
 import { checkScoreCompleteness } from '@Validators/scoreCompleteness';
+import { formatCanEndTied } from '@Validators/tiedFormatCompatibility';
 import { setPlayedAfterDecision } from '@Validators/setCount';
 import { analyzeScore } from '@Query/matchUp/analyzeScore';
 import { validateScore } from '@Validators/validateScore';
@@ -107,4 +108,14 @@ it('setPlayedAfterDecision names the set an overtime format could not have playe
   const sets = [t(1, 1, 0, 1), t(2, 1, 0, 1), t(3, 1, 0, 1)];
   expect(setPlayedAfterDecision(sets, F1)).toMatch(/Set 3/);
   expect(setPlayedAfterDecision([t(1, 1, 0, 1), t(2, 0, 1, 2), t(3, 0, 0), t(4, 0, 0)], F1)).toBeUndefined();
+});
+
+it.each([
+  { f: F1, canEndTied: false }, // a TB1 decider settles a level block
+  { f: F2, canEndTied: false }, // unlimited overtime plays until a period ends unequal
+  { f: F3, canEndTied: false }, // unlimited sudden death likewise
+  { f: 'PER3XA-S:T20P-O:1SD/T5P-F:TB1', canEndTied: false },
+  { f: F5, canEndTied: true }, // one period and no decider may finish level
+])('formatCanEndTied($f) is $canEndTied', ({ f, canEndTied }) => {
+  expect(formatCanEndTied(f)).toEqual(canEndTied);
 });
