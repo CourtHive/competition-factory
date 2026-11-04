@@ -302,7 +302,33 @@ const FED_SEATS: [string, Scenario][] = [
   ),
 );
 
+/**
+ * S7, policy off: an FMLC Main double exit whose produced exit on its Consolation seat advances the empty position opposite
+ * into the matchUp the unfillable seat (behind FIRST_MATCHUP) is in: that seat's BYE reads the matchUp as the advance
+ * leaves it, and the position goes on through it. Positions per draw shape (seed 9000230)
+ */
+const JOINED_DRAWS: [number, number, number[]][] = [
+  [8, 7, [3, 4]],
+  [16, 13, [5, 6]],
+  [16, 15, [3, 4, 5, 6, 7, 8]],
+  [32, 27, [3, 4, 9, 10, 13, 14]],
+];
+const JOINED_SEATS: [string, Scenario][] = JOINED_DRAWS.flatMap(([drawSize, participantsCount, positions]) =>
+  positions.flatMap((roundPosition) =>
+    [DOUBLE_WALKOVER, DOUBLE_DEFAULT].map((matchUpStatus): [string, Scenario] => [
+      `${FIRST_MATCH_LOSER_CONSOLATION} ${participantsCount} of ${drawSize} (policy off): R1/${roundPosition} a ${matchUpStatus}, the unfillable BYE beside the produced exit's advance`,
+      {
+        drawProfile: { drawSize, participantsCount, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+        nonRandom: 9000230,
+        policyDefinitions: POLICY_OFF,
+        steps: [{ target: R1(roundPosition, 'Main'), outcome: { matchUpStatus } }],
+      },
+    ]),
+  ),
+);
+
 const SCENARIOS: [string, Scenario][] = [
+  ...JOINED_SEATS,
   ...FED_SEATS,
   [
     'FEED_IN_CHAMPIONSHIP: the Main final entered as a double default under doubleExitPropagateBye false: its fed loser seat takes the BYE (S7)',

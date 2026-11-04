@@ -218,6 +218,9 @@ function noticeRules(ops: OutcomeOp[]) {
         : [],
     ),
   );
+  // ...unless a BYE is written there too: v1's `setMatchUpStatusBye` announces it last, with the tournament (a produced
+  // exit's advance into the matchUp the unfillable seat's BYE makes a BYE, S7; the only order measured)
+  for (const op of ops) if (op.op === 'setMatchUpBye') untournamented.delete(op.matchUpId);
   // a BYE an unwind withdraws: v1's `clearDrawPosition` names its position, with neither event nor tournament (S6)
   const unbyed = withdrawnByeNotices(ops);
   // a loser placed through a BYE into a matchUp an unwind wrote quietly (`unwoundThrough`): v1 announces the arrival last,
