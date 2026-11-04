@@ -123,7 +123,8 @@ export type OutcomeOp =
       advancesThroughBye?: true;
       /**
        * with `advancesThroughBye`: the advance is a settle pass's (`reconcileByeAdvancements`, a seat an unwind freed
-       * beside a standing BYE, S6 tail), which v1 announces with the event
+       * beside a standing BYE, S6 tail), or the participant a held exit is awarded to going on (`directWinner`, S7),
+       * which v1 announces with the event
        */
       announcesEvent?: true;
       /**
