@@ -137,8 +137,9 @@ describe('SET3X-S:T10, recorded COMPLETED', () => {
  * most N + 1 sets, and one decided by sets records N.
  */
 describe('the most sets an exactly format records', () => {
+  // level sets: a decider past set N is played only on a level total
   const timed = (count: number) =>
-    Array.from({ length: count }, (_unused, index) => ({ setNumber: index + 1, side1Score: 30, side2Score: 25 }));
+    Array.from({ length: count }, (_unused, index) => ({ setNumber: index + 1, side1Score: 25, side2Score: 25 }));
 
   it.each([
     ['SET3XA-S:T10-F:TB1', 4, true],
