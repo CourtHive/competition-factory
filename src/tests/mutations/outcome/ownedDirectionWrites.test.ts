@@ -3311,6 +3311,22 @@ describe('under v2, a dissolved convergence beyond the clear is v2s; given a win
         steps: [{ target: R1(2, 'Main'), outcome: won(1) }],
       },
     ],
+    // S7: an award through a BYE released given a winner, the loser then on through a chain of BYEs (West's first round,
+    // then West 2/2, into West 3/1): v1 announces each matchUp passed; `unwoundThrough` reads one
+    ...[COMPASS, OLYMPIC, FIRST_ROUND_LOSER_CONSOLATION].map((drawType): [string, Scenario] => [
+      `${drawType} 9 of 16: R1/5 a double walkover beside the BYE given a walkover, the loser on through two BYEs`,
+      {
+        drawProfile: { drawSize: 16, participantsCount: 9, drawType },
+        nonRandom: 9000230,
+        setup: [
+          {
+            target: R1(5, drawType === FIRST_ROUND_LOSER_CONSOLATION ? 'Main' : 'East'),
+            outcome: { matchUpStatus: DOUBLE_WALKOVER },
+          },
+        ],
+        steps: [{ target: R1(5, drawType === FIRST_ROUND_LOSER_CONSOLATION ? 'Main' : 'East'), outcome: walkover(1) }],
+      },
+    ]),
     [
       'SINGLE_ELIMINATION: a double walkover given a winner, its produced exit converged',
       {
