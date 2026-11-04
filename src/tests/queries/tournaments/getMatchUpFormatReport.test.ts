@@ -2,6 +2,10 @@ import { FORMAT_LOCATION, FORMAT_VERDICT, getMatchUpFormatReport } from '@Query/
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
+import {
+  MATCHUP_FORMAT_MALFORMED,
+  MATCHUP_FORMAT_REFUSED_FOR_NEW_USE,
+} from '@Query/tournaments/getTournamentInconsistencies';
 
 // constants and types
 import { POLICY_TYPE_SANCTIONING, POLICY_TYPE_SCHEDULING, POLICY_TYPE_SCORING } from '@Constants/policyConstants';
@@ -189,5 +193,94 @@ describe('getMatchUpFormatReport', () => {
       REFUSED_FOR_NEW_USE: 1,
       MALFORMED: 1,
     });
+  });
+});
+
+describe('getTournamentInconsistencies: matchUpFormat findings', () => {
+  const formatFindings = (result) =>
+    result.inconsistencies.filter((inconsistency) =>
+      [MATCHUP_FORMAT_MALFORMED, MATCHUP_FORMAT_REFUSED_FOR_NEW_USE].includes(inconsistency.issueType),
+    );
+
+  it('reports nothing for a generated record', () => {
+    tournamentEngine.setState(generate());
+    const result: any = tournamentEngine.getTournamentInconsistencies();
+    expect(result.valid).toEqual(true);
+    expect(formatFindings(result)).toEqual([]);
+  });
+
+  it('a malformed code is an error, and the codes on one element are one finding', () => {
+    const tournamentRecord: any = generate();
+    const [singles] = tournamentRecord.events;
+    const group = singles.drawDefinitions[0].structures[0].structures[0];
+    singles.matchUpFormat = MALFORMED_CODE;
+    singles.competitionFormat = { matchUpFormat: '' };
+    group.matchUpFormat = MALFORMED_CODE;
+
+    tournamentEngine.setState(tournamentRecord);
+    const result: any = tournamentEngine.getTournamentInconsistencies();
+    expect(result.valid).toEqual(false);
+
+    const findings = formatFindings(result);
+    expect(findings).toHaveLength(2);
+    const eventFinding = findings.find((finding) => finding.scope === 'EVENT');
+    expect(eventFinding).toMatchObject({
+      issueType: MATCHUP_FORMAT_MALFORMED,
+      severity: 'error',
+      tournamentId: tournamentRecord.tournamentId,
+      eventId: singles.eventId,
+    });
+    expect(eventFinding.matchUpFormats.map((format) => format.location)).toEqual([
+      FORMAT_LOCATION.EVENT,
+      FORMAT_LOCATION.COMPETITION_FORMAT,
+    ]);
+    // an empty string is malformed, and the finding keeps it as stored
+    expect(eventFinding.matchUpFormats[1].matchUpFormat).toEqual('');
+    expect(eventFinding.message).toContain(MALFORMED_CODE);
+
+    const structureFinding = findings.find((finding) => finding.scope === 'STRUCTURE');
+    expect(structureFinding).toMatchObject({
+      issueType: MATCHUP_FORMAT_MALFORMED,
+      eventId: singles.eventId,
+      drawId: singles.drawDefinitions[0].drawId,
+      structureId: group.structureId,
+    });
+    expect(eventFinding.fingerprint).not.toEqual(structureFinding.fingerprint);
+  });
+
+  it('a refused code is a warning and leaves the record valid', () => {
+    const tournamentRecord: any = generate();
+    tournamentRecord.events[0].drawDefinitions[0].matchUpFormat = REFUSED_CODE;
+
+    tournamentEngine.setState(tournamentRecord);
+    const result: any = tournamentEngine.getTournamentInconsistencies();
+    expect(result.valid).toEqual(true);
+    const findings = formatFindings(result);
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({
+      issueType: MATCHUP_FORMAT_REFUSED_FOR_NEW_USE,
+      severity: 'warning',
+      scope: 'DRAW',
+      drawId: tournamentRecord.events[0].drawDefinitions[0].drawId,
+    });
+    expect(findings[0].matchUpFormats[0].info).toContain('odd count');
+  });
+});
+
+describe('analyzeTournament: matchUpFormatIssues', () => {
+  it('is absent for a clean record and lists only the issues otherwise', () => {
+    const tournamentRecord: any = generate();
+    tournamentEngine.setState(tournamentRecord);
+    let result: any = tournamentEngine.analyzeTournament();
+    expect(result.analysis.matchUpFormatIssues).toBeUndefined();
+
+    tournamentRecord.events[0].matchUpFormat = MALFORMED_CODE;
+    tournamentRecord.events[1].matchUpFormat = REFUSED_CODE;
+    tournamentEngine.setState(tournamentRecord);
+    result = tournamentEngine.analyzeTournament();
+    expect(result.analysis.matchUpFormatIssues.map((entry) => entry.verdict)).toEqual([
+      FORMAT_VERDICT.MALFORMED,
+      FORMAT_VERDICT.REFUSED_FOR_NEW_USE,
+    ]);
   });
 });

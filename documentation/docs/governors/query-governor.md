@@ -1099,6 +1099,31 @@ const { valid, inconsistencies } = engine.getTournamentInconsistencies();
   }
   ```
 
+- `MATCHUP_FORMAT_MALFORMED` — a stored `matchUpFormat` code that cannot be parsed, or a value that is not a
+  string, anywhere in the record: an event, draw, structure or matchUp, a tieFormat's collection definitions,
+  `competitionFormat`, schedule timing, or an applied scoring, scheduling or sanctioning policy (the locations
+  [getMatchUpFormatReport](./tournament-governor.md#getmatchupformatreport) reads). There is one entry per element,
+  listing every malformed code it holds. `scope` and ids are those of the most specific element the code is stored
+  under. (error)
+
+  ```js
+  {
+    issueType: 'MATCHUP_FORMAT_MALFORMED',
+    message: 'matchUpFormat malformed: NOT-A-FORMAT (tournamentRecord.events[0].matchUpFormat)',
+    severity: 'error',
+    scope: 'EVENT',
+    eventId: '...',
+    matchUpFormats: [
+      { location: 'EVENT', path: 'tournamentRecord.events[0].matchUpFormat', matchUpFormat: 'NOT-A-FORMAT' },
+    ],
+  }
+  ```
+
+- `MATCHUP_FORMAT_REFUSED_FOR_NEW_USE` — a stored code that parses, but would be refused if it were being set now
+  (for example an implicit best-of with an even count). It is still read and scored as stored, and records written
+  by older versions are expected to hold some. Same shape as `MATCHUP_FORMAT_MALFORMED`; each code's `info`
+  explains the refusal. (warning — never makes `valid` false)
+
 > Scheduling collisions are deferred — they require the scheduling model and are a later sub-phase.
 
 ## getTournamentCompleteness

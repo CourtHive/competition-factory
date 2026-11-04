@@ -163,6 +163,22 @@ is rare and always upstream of the factory.
 
 `analyzeDraws` reports the same anomalies for draw-level extensions.
 
+### `matchUpFormatIssues`
+
+The stored `matchUpFormat` codes that are `MALFORMED` or `REFUSED_FOR_NEW_USE`, as entries of
+[getMatchUpFormatReport](#getmatchupformatreport), which also lists the `VALID` ones. Present **only when there is
+something to report**, like `extensionAnomalies`.
+
+```js
+const { analysis } = engine.analyzeTournament();
+analysis.matchUpFormatIssues;
+// [{ location: 'EVENT', path: 'tournamentRecord.events[0].matchUpFormat', ids: { eventId: 'event-1' },
+//    matchUpFormat: 'NOT-A-FORMAT', verdict: 'MALFORMED' }]
+```
+
+The same codes are reported by `getTournamentInconsistencies` as `MATCHUP_FORMAT_MALFORMED` (an error) and
+`MATCHUP_FORMAT_REFUSED_FOR_NEW_USE` (a warning).
+
 ---
 
 ## copyTournamentRecord
