@@ -1,5 +1,6 @@
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getMatchUpFormatRecoveryTimes } from './getMatchUpFormatRecoveryTimes';
+import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { parse as parseMatchUpFormat } from '@Helpers/matchUpFormatCode/parse';
 import { getMatchUpFormatAverageTimes } from './getMatchUpFormatAverageTimes';
 import { getOvernightRecoveryTimes } from './getOvernightRecoveryTimes';
@@ -91,11 +92,14 @@ export function resolveTimingDetails({
   // Timed-format default: when matchUpFormat carries explicit durations,
   // derive the default average from the code itself instead of falling back
   // to a flat 90. Whole-match cap (-M:T<n>) wins outright; otherwise the
-  // worst-case total is bestOf * setMinutes, with the final-set minutes
-  // substituted for the last set when -F:T<n> is provided. So:
+  // worst-case total is count * setMinutes (count = exactly, else bestOf),
+  // with the final-set minutes substituted for the last set when -F:T<n>
+  // governs it. So:
   //   SET1-S:T20         → 20
   //   SET3-S:T15         → 45 (3 × 15)
   //   SET3-S:T15-F:T10   → 40 (2 × 15 + 10)
+  //   SET2XA-S:T45P      → 90 (2 × 45)
+  //   SET3XA-S:T10-F:TB1 → 30 (the decider is set 4, beyond the 3)
   //   <anything>-M:T60   → 60
   // Explicit policy / event / tournament timings still take precedence.
   const timedDefaultMinutes = timedDefaultMinutesOf(matchUpFormat);
@@ -173,15 +177,21 @@ function deriveTimedDefaultMinutes(parsed: ReturnType<typeof parseMatchUpFormat>
     parsed.setFormat?.timed && typeof parsed.setFormat.minutes === 'number' ? parsed.setFormat.minutes : undefined;
   if (typeof setMinutes !== 'number') return undefined;
 
-  const bestOf = parsed.bestOf ?? 1;
+  // An exactly-N format plays all N segments and leaves `bestOf` undefined: reading only `bestOf` priced
+  // SET2XA-S:T45P as one 45-minute half
+  const count = parsed.exactly ?? parsed.bestOf ?? 1;
+  // -F: substitutes for the last of the count only when it governs that set; an aggregate format's decider
+  // is set N + 1, played on a level total, and is not part of the regulation priced here
   const finalSetMinutes =
-    parsed.finalSetFormat?.timed && typeof parsed.finalSetFormat.minutes === 'number'
+    parsed.finalSetFormat?.timed &&
+    typeof parsed.finalSetFormat.minutes === 'number' &&
+    finalSetGoverns(parsed, count, true)
       ? parsed.finalSetFormat.minutes
       : undefined;
 
-  if (bestOf <= 1) return setMinutes;
-  if (typeof finalSetMinutes === 'number') return (bestOf - 1) * setMinutes + finalSetMinutes;
-  return bestOf * setMinutes;
+  if (count <= 1) return setMinutes;
+  if (typeof finalSetMinutes === 'number') return (count - 1) * setMinutes + finalSetMinutes;
+  return count * setMinutes;
 }
 
 type MatchUpFormatTimesArgs = {
