@@ -3020,8 +3020,9 @@ function doubleByeSeatOps(
   const beyond = indexed(view, next.winnerMatchUpId);
   if (!beyond || beyond.matchUpStatus !== TO_BE_PLAYED || beyond.winningSide || !scoreless(beyond)) return undefined;
   if (Object.keys(beyond.sideExitProvenance ?? {}).length || beyond.matchUpStatusCodes?.length) return undefined;
-  // the position the next matchUp, a BYE, sent on stands in the matchUp beyond; whatever else stands there stays
-  const stood = positionsOf(beyond).filter((position) => position !== remaining[0]);
+  // the position the next matchUp, a BYE, sent on stands in the matchUp beyond; a feed round's fed seat beside it stays
+  // (a plain round's other position came through a BYE this unwind takes back as well: released with it)
+  const stood = beyond.feedRound ? positionsOf(beyond).filter((position) => position !== remaining[0]) : [];
   const taken: OutcomeOp[] = ownAdvanced
     ? []
     : [

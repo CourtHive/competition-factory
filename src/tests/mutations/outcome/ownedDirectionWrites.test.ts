@@ -195,6 +195,17 @@ const PASSAGES: [string, Scenario][] = (
 
 const SCENARIOS: [string, Scenario][] = [
   ...PASSAGES,
+  // ...and into a plain round whose other position came through the paired BYE, which the unwind takes back too: both
+  // released
+  ...[FEED_IN_CHAMPIONSHIP, DOUBLE_ELIMINATION, MODIFIED_FEED_IN_CHAMPIONSHIP].map((drawType): [string, Scenario] => [
+    `${drawType} 6 of 8: R1/2 a double walkover beside the BYE given a walkover, both positions beyond released`,
+    {
+      drawProfile: { drawSize: 8, participantsCount: 6, drawType },
+      nonRandom: 9000230,
+      setup: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(2, 'Main'), outcome: walkover(1) }],
+    },
+  ]),
   // the released award's seat a double BYE in the consolation's second round, its own position sent on into a feed
   // round that holds its fed seat beside it: taken out of it as v1's position clear takes it (S7)
   ...[FEED_IN_CHAMPIONSHIP, DOUBLE_ELIMINATION].map((drawType): [string, Scenario] => [
