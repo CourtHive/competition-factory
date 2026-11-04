@@ -357,9 +357,9 @@ function buildParsedFormat({
   exactly,
 }): ParsedFormat | undefined {
   if (finalSetFormat?.combinedPointTotal) return undefined;
-  // a shootout decides a level aggregate: only as -F:, and only where -F: is that decider (Ruling 3)
+  // a shootout decides a level overtime: only as -F:, and only after -O: (Ruling 3; narrowed, CA 2026-11-04)
   if (setFormat?.shootout || overtimeFormat?.setFormat?.shootout) return undefined;
-  if (finalSetFormat?.shootout && !(aggregate && (exactly || overtimeFormat))) return undefined;
+  if (finalSetFormat?.shootout && !(aggregate && overtimeFormat)) return undefined;
   if (overtimeFormat && (!aggregate || (overtimeFormat.count === 'unlimited' && finalSetFormat))) return undefined;
   if (
     setFormat?.combinedPointTotal &&

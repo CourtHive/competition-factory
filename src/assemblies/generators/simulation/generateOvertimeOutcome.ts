@@ -179,5 +179,6 @@ function shootoutTally(rounds: number, random?: () => number): [number, number] 
     return [level + 1, level];
   }
   const won = randomInt(Math.ceil(rounds / 2), rounds, random);
-  return [won, randomInt(0, won - 1, random)];
+  // within its rounds the loser kept pace until the end: never 4-0 in five
+  return [won, randomInt(Math.max(0, 2 * won - rounds - 2), won - 1, random)];
 }
