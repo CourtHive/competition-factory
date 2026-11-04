@@ -106,6 +106,8 @@ const { standings, provisional, unanswered, unmapped, unplaced } = seasonGoverno
   getSubjectId, // optional: participant => durable subject id
   orderBy, // optional: rank flat by these tally fields, higher first, even when a policy is declared
   purpose, // optional: what the table is for (STANDINGS_PURPOSE_*); a policy's directives may apply only for some
+  combine, // optional: add a table over each parent tier's own and descendants' matchUps
+  groupings, // optional: named groupings, by subjectId; with groupRanks and participantSets, read by tally directives
 });
 // standings: { [tierId]: [{ subject, participantIds, rank, matchUpsWon, matchUpsLost, valueWon, valueLost, ... }] }
 ```
@@ -122,6 +124,17 @@ const { standings, provisional, unanswered, unmapped, unplaced } = seasonGoverno
   won, value, sets, games), and subjects level on every field share a rank (1, 2, 2, 4).
 - A placed subject who has not played yet follows every subject who has, sharing that place.
 - `provisional[tierId]` is true while any referenced matchUp in the tier has no result.
+- **Combined tables** (`combine: true`): every tier with child tiers gets a table over its own matchUps and all of its
+  descendants', ordered by its own policy. A conference built from its divisions, with the cross-division games
+  referenced on the conference itself, is the shape this serves. The divisions' own tables are unchanged. The combined
+  table's policy may read the grouping `tier`: each subject's direct child tier, and its place among that tier's
+  subjects over the same combined matchUps, ordered by the child tier's policy (division standings count every game,
+  ordered by the division's tie-break). So `preReduce: { groupBy: 'tier' }` is the NFL wild card's first step, and
+  `recordVsGroup` with `groupBy: 'tier'` the division win percentage. With `tierId`, a combined tier reads its
+  descendants' references and returns its own table only.
+- **Groupings from the caller**: `groupings`, `groupRanks` and `participantSets` are keyed by `subjectId`, like
+  `externalValues`, and reach every table's policy; see [Groupings](../policies/roundRobinTallyPolicy.md#groupings-divisions-conferences-and-sets).
+  A combined table's derived `tier` wins over a caller grouping of the same name.
 - **Nothing is dropped silently:** a reference no matchUp answered is returned in `unanswered`, a participant with no
   resolvable identity in `unmapped`, and a subject playing outside its period's placements in `unplaced`. An unmapped
   opponent's result still counts for the subject who played them.

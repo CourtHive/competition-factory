@@ -54,6 +54,10 @@ Standings per tier, derived from the results of the competitions the season's pe
   tallyPolicy?: RoundRobinTallyPolicy; // overrides the season's and tiers' policies
   purpose?: string; // STANDINGS_PURPOSE_*: a policy's directives may apply only for some purposes
   externalValues?: Record<string, Record<string, number>>; // read by `external` tally directives
+  combine?: boolean; // add a table over each parent tier's own and descendants' matchUps
+  groupings?: Record<string, Record<string, string>>; // by name, then subjectId: a group key
+  groupRanks?: Record<string, Record<string, number>>; // by name, then subjectId: a place in its group's own table
+  participantSets?: Record<string, string[]>; // by key: subjectIds, read by `recordVsSet`
 }
 ```
 
