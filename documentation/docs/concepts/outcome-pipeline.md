@@ -711,7 +711,9 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   origin (`conditionallyAdvanceDrawPosition`), with no `scoredTime`; its structure is stamped, and the position
   opposite is advanced into the next matchUp, announced with no event or tournament: a participant standing there goes
   on, an empty position goes ahead of the arrival it awaits. Planned in a first round that is not fed, no BYE opposite
-  the seat. A fed seat (a feed round's: a Main double exit past the first round in FEED_IN_CHAMPIONSHIP,
+  the seat. Where that advance goes into the matchUp the unfillable seat is in (FIRST_MATCH_LOSER_CONSOLATION, behind
+  `FIRST_MATCHUP`), the unfillable seat's BYE reads the matchUp as the advance leaves it: it becomes a BYE, announced
+  last with the tournament, and the advanced position goes on through it (S7). A fed seat (a feed round's: a Main double exit past the first round in FEED_IN_CHAMPIONSHIP,
   DOUBLE_ELIMINATION and their kin) takes a BYE whatever the policy, planned as the BYE chain below plans it (S7). A loser matchUp that links its own loser on (COMPASS, OLYMPIC) leaves that seat to nobody: before the exit
   is written there, the seat takes a BYE with no event, with all it sends on, as the BYEs below go on. Where a BYE
   stands opposite the seat (its matchUp a BYE already), v1 records the exit on the BYE matchUp, on the seat's side, its

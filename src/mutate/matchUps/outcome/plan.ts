@@ -1852,13 +1852,16 @@ function chainedSeats(view: OutcomeView, entry?: HydratedMatchUp): DoubleExitSea
     if (!seats.own) return undefined;
   }
   if (entry?.loserMatchUpId) {
-    seats.unfillable = unfillableByeChain(view, entry, seats.own?.onward, seats.own?.advanced, seats.own?.passed);
+    // the next matchUp as the own seat leaves it: its BYE's onward position, or the produced exit's advance (S7)
+    const ownOnward = seats.own?.onward ?? seats.producedLoser?.onward;
+    seats.unfillable = unfillableByeChain(view, entry, ownOnward, seats.own?.advanced, seats.own?.passed);
     if (!seats.unfillable) return undefined;
   }
   // the matchUps both may touch: the unfillable seat's, which the own seat's BYE sent a position into first; or, the own
   // seat's double BYE having made it a BYE, it and the one its position went on into
   const ownSent = [
     seats.own?.onward?.matchUpId,
+    seats.producedLoser?.onward.matchUpId,
     seats.own?.advanced?.matchUpId,
     seats.own?.advanced?.next?.matchUpId,
     seats.own?.passed?.matchUpId,
@@ -1875,7 +1878,7 @@ function chainedSeats(view: OutcomeView, entry?: HydratedMatchUp): DoubleExitSea
   const touched = [
     ...(seats.own?.matchUpIds ?? []).filter((matchUpId) => !shared.has(matchUpId)),
     ...(seats.unfillable?.matchUpIds ?? []),
-    ...producedLoserMatchUpIds(seats.producedLoser),
+    ...producedLoserMatchUpIds(seats.producedLoser).filter((matchUpId) => !shared.has(matchUpId)),
     ...(seats.heldLoser
       ? [
           seats.heldLoser.byeMatchUpId,
