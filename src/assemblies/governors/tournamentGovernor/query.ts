@@ -5,6 +5,7 @@ export { getApplicableAwardProfileLevels } from '@Query/scales/getApplicableAwar
 export { getTournamentInconsistencies } from '@Query/tournaments/getTournamentInconsistencies';
 export { getTournamentCalendarEntry } from '@Query/tournaments/getTournamentCalendarEntry';
 export { getTournamentCompleteness } from '@Query/tournaments/getTournamentCompleteness';
+export { getMatchUpFormatReport } from '@Query/tournaments/getMatchUpFormatReport';
 export { getCompetitionPenalties } from '@Query/participants/getCompetitionPenalties';
 export { getCompetitionDateRange } from '@Query/tournaments/getCompetitionDateRange';
 export { getTournamentPenalties } from '@Query/participants/getTournamentPenalties';

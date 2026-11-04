@@ -285,6 +285,48 @@ const { penalties } = engine.getCompetitionPenalties({
 
 ---
 
+## getMatchUpFormatReport
+
+Reports every `matchUpFormat` code a tournament record holds, where it is, and whether it can be read. A pure query: nothing in the record is changed.
+
+```js
+const { entries, counts } = engine.getMatchUpFormatReport();
+// counts: { VALID: 41, REFUSED_FOR_NEW_USE: 1, MALFORMED: 0 }
+// entries[0]: {
+//   location: 'EVENT',
+//   path: 'tournamentRecord.events[0].matchUpFormat',
+//   ids: { eventId: 'event-1' },
+//   matchUpFormat: 'SET2-S:6/TB7',
+//   verdict: 'REFUSED_FOR_NEW_USE',
+//   info: 'Best-of formats require an odd count; ...',
+// }
+```
+
+Each entry has one of two verdicts when it is not `VALID`. They mean different things:
+
+- `MALFORMED`: the code cannot be parsed (`isWellFormedMatchUpFormat` is false), or the value is not a string. Nothing can read it, so treat it as an error.
+- `REFUSED_FOR_NEW_USE`: the code parses, but the factory refuses it when a format is being set (`matchUpFormatRefusal`). A stored code is still read and scored as written, so this is a warning. Records from older versions are expected to hold some.
+
+`location` is one of:
+
+| location                                           | where the code is stored                                                                                                                       |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `EVENT`, `DRAW_DEFINITION`, `STRUCTURE`, `MATCHUP` | `matchUpFormat` on that element. Covers round robin groups, `tieMatchUps`, and `matchUps` held on the record or a drawDefinition.              |
+| `COLLECTION_DEFINITION`                            | `collectionDefinitions[].matchUpFormat` in any `tieFormat` (event, drawDefinition, structure, matchUp) and in the event's `tieFormats` catalog |
+| `COMPETITION_FORMAT`                               | `competitionFormat.matchUpFormat` on an event, drawDefinition or structure                                                                     |
+| `SCHEDULE_TIMING`                                  | `matchUpFormatCodes` in the tournament's `scheduling.timing` (or its `scheduleTiming` extension) and in an event's `scheduleTiming` extension  |
+| `SCORING_POLICY`                                   | an applied scoring policy's `defaultMatchUpFormat` and `matchUpFormats[].matchUpFormat`                                                        |
+| `SCHEDULING_POLICY`                                | `matchUpFormatCodes` in an applied scheduling policy's `matchUpAverageTimes` and `matchUpRecoveryTimes`                                        |
+| `SANCTIONING_POLICY`                               | an applied sanctioning policy's `tiers[].allowedMatchUpFormats`                                                                                |
+
+`path` locates the code from the tournament record. `ids` holds whichever of `eventId`, `drawId`, `structureId`, `matchUpId`, `collectionId` and `tieFormatId` apply.
+
+Applied policies are read the way [getAppliedPolicies](#getappliedpolicies) reads them: the first-class `appliedPolicies` attribute when it is present, otherwise the `appliedPolicies` extension. An undefined or null value is treated as absent and is not reported.
+
+**Purpose:** Find the formats in a record that are malformed, or refused for new use, before they cause problems. Useful after importing a record or loading one written by an older version.
+
+---
+
 ## getMutationLocks
 
 Returns all active (non-expired) [mutation locks](../concepts/mutation-locks.md) across the entire tournament, including locks on events, draws, and venues.
