@@ -194,26 +194,39 @@ function resultPointsErrors(resultPoints: unknown): string[] {
   if (!Array.isArray(rules) || !rules.length) return ['resultPoints.rules must be a non-empty array'];
   const finite = (value: unknown) => typeof value === 'number' && Number.isFinite(value);
   const ids = new Set<string>();
-  return rules.flatMap((rule, index) => {
-    const label = `resultPoints.rules[${index}]`;
-    const errors: string[] = [];
-    if (typeof rule?.id !== 'string' || !rule.id) errors.push(`${label} needs an id`);
-    else if (ids.has(rule.id)) errors.push(`${label}: duplicate id ${rule.id}`);
-    else ids.add(rule.id);
-    if (rule?.isDrawn) {
-      if (!finite(rule.points)) errors.push(`${label}: a drawn rule needs finite points`);
-    } else if (!finite(rule?.winner) || !finite(rule?.loser)) {
-      errors.push(`${label}: a decided rule needs finite winner and loser points`);
-    }
-    if (rule?.matchUpStatuses !== undefined && !Array.isArray(rule.matchUpStatuses)) {
-      errors.push(`${label}: matchUpStatuses must be an array`);
-    }
-    const setsOk = (rule?.loserSetsWon ?? []).every?.((n: unknown) => Number.isInteger(n) && (n as number) >= 0);
-    if (rule?.loserSetsWon !== undefined && !(Array.isArray(rule.loserSetsWon) && setsOk)) {
-      errors.push(`${label}: loserSetsWon must be an array of whole numbers`);
-    }
-    return errors;
-  });
+  // a bonus only adds to what a deciding rule awarded, so a list of bonuses alone decides nothing
+  const deciding = rules.some((rule) => rule?.bonus !== true);
+  const listErrors = deciding ? [] : ['resultPoints.rules needs a rule that is not a bonus'];
+  return listErrors.concat(
+    rules.flatMap((rule, index) => {
+      const label = `resultPoints.rules[${index}]`;
+      const errors: string[] = [];
+      if (typeof rule?.id !== 'string' || !rule.id) errors.push(`${label} needs an id`);
+      else if (ids.has(rule.id)) errors.push(`${label}: duplicate id ${rule.id}`);
+      else ids.add(rule.id);
+      if (rule?.isDrawn) {
+        if (!finite(rule.points)) errors.push(`${label}: a drawn rule needs finite points`);
+      } else if (!finite(rule?.winner) || !finite(rule?.loser)) {
+        errors.push(`${label}: a decided rule needs finite winner and loser points`);
+      }
+      if (rule?.matchUpStatuses !== undefined && !Array.isArray(rule.matchUpStatuses)) {
+        errors.push(`${label}: matchUpStatuses must be an array`);
+      }
+      const setsOk = (rule?.loserSetsWon ?? []).every?.((n: unknown) => Number.isInteger(n) && (n as number) >= 0);
+      if (rule?.loserSetsWon !== undefined && !(Array.isArray(rule.loserSetsWon) && setsOk)) {
+        errors.push(`${label}: loserSetsWon must be an array of whole numbers`);
+      }
+      if (rule?.loserMarginAtMost !== undefined) {
+        if (rule.isDrawn) errors.push(`${label}: loserMarginAtMost applies only to a decided rule`);
+        else if (!finite(rule.loserMarginAtMost) || rule.loserMarginAtMost < 0)
+          errors.push(`${label}: loserMarginAtMost must be a finite number of at least 0`);
+      }
+      if (rule?.bonus !== undefined && typeof rule.bonus !== 'boolean') {
+        errors.push(`${label}: bonus must be true or false`);
+      }
+      return errors;
+    }),
+  );
 }
 
 /** a directive's size and `when` gates */
