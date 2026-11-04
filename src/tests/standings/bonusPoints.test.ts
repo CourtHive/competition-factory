@@ -10,7 +10,8 @@ import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
  * table regulations (premrugby.com, read 2026-11-04): 4 for a win, 2 for a draw, 1 to a team that loses a match by 7
  * points or less. The four-try bonus needs the tries, which a score does not record, so it is not tested here.
  */
-const RUGBY = 'HAL2A-S:T40P';
+// a side's points are each half's score, as football's goals are, so points difference is gamesDiff
+const RUGBY = 'HAL2A-S:T40';
 const rugbyPolicy = {
   [POLICY_TYPE_ROUND_ROBIN_TALLY]: {
     policyName: 'rugby losing bonus',
@@ -22,7 +23,7 @@ const rugbyPolicy = {
         { id: 'losingBonus', bonus: true, loserMarginAtMost: 7, winner: 0, loser: 1 },
       ],
     },
-    tallyDirectives: [{ attribute: 'pointsDiff', idsFilter: false }],
+    tallyDirectives: [{ attribute: 'gamesDiff', idsFilter: false }],
   },
 };
 

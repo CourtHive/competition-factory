@@ -886,7 +886,7 @@ a 3-2. The rules are matched in order, and the first that matches decides.
 - Statuses are mapped by the rules, never inferred: whether a sport's "forfeit" is a `WALKOVER` is the policy author's
   decision.
 - A decided rule may also name `loserMarginAtMost`: the loser lost by no more than that many, the sides' scores summed
-  over every set and then subtracted (in a points-based timed format such as rugby's `HAL2A-S:T40P`, the points).
+  over every set and then subtracted (rugby's points, recorded as each half's score in `HAL2A-S:T40`).
 - A rule with `bonus: true` adds to the deciding rule's award instead of deciding. Every bonus rule that matches adds
   its points, wherever it is listed; a result that no deciding rule matches earns no bonus either, and the rules must
   include at least one rule that is not a bonus. A bonus that awards a side nothing is not listed among its
