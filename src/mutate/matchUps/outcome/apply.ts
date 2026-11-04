@@ -76,6 +76,8 @@ export function applyOwnedPlan({
   const placedLast = new Set(
     [...lastWrites].flatMap(([matchUpId, op]) => (op === 'setMatchUpDrawPositions' ? [matchUpId] : [])),
   );
+  // ...or a BYE written after its result and origin (a held exit's landing the unfillable seat's BYE takes, S7): the BYE's
+  const byedLast = new Set([...lastWrites].flatMap(([matchUpId, op]) => (op === 'setMatchUpBye' ? [matchUpId] : [])));
   // a line given a finishing number by another line's write is announced as v1's `modifyMatchUpScore` announces it
   const resulted = new Set(
     ops.flatMap((op) => (op.op === 'setMatchUpResult' || op.op === 'setOrderOfFinish' ? [op.matchUpId] : [])),
@@ -88,7 +90,7 @@ export function applyOwnedPlan({
   // a carry recorded beside a BYE it passed: the BYE matchUp's state is not rewritten, so v1's `progressExitStatus`
   // announces the entry itself (`recordCarryBesideBye`)
   const relayed = new Set(ops.flatMap((op) => (op.op === 'mergeSideExitProvenance' ? [op.matchUpId] : [])));
-  const { removed, unevented, untournamented, unbyed, settledResults, arrived } = noticeRules(ops);
+  const { removed, unevented, untournamented, unbyed, settledResults, arrived, byeNamed } = noticeRules(ops);
   // a position advanced through a BYE a double exit placed: v1's `doubleExitAdvancement` announces it as `advanceWinner`
   const advanced = new Set(
     ops.flatMap((op) => (op.op === 'setMatchUpDrawPositions' && op.advancesThroughBye ? [op.matchUpId] : [])),
@@ -133,6 +135,7 @@ export function applyOwnedPlan({
       // is `assignMatchUpDrawPosition`'s (`directWinner`), a FIRST_MATCHUP reservation's matchUp `setMatchUpStatusBye`'s
       context:
         settled.get(matchUpId) ??
+        (byedLast.has(matchUpId) && resulted.has(matchUpId) ? 'setMatchUpStatusBye' : undefined) ??
         noticeContext(matchUpId, removedPosition, unbyedPosition, {
           resulted: placedLast.has(matchUpId) ? new Set<string>() : resulted,
           byes,
@@ -145,7 +148,8 @@ export function applyOwnedPlan({
         }),
       eventId: noticeEvent?.eventId,
       tournamentId:
-        !settledWrite && ((untournamented.has(matchUpId) && !arrived.has(matchUpId)) || unbyedPosition)
+        !settledWrite &&
+        ((untournamented.has(matchUpId) && !arrived.has(matchUpId) && !byeNamed.has(matchUpId)) || unbyedPosition)
           ? undefined
           : tournamentId,
       drawDefinition,
@@ -218,9 +222,9 @@ function noticeRules(ops: OutcomeOp[]) {
         : [],
     ),
   );
-  // ...unless a BYE is written there too: v1's `setMatchUpStatusBye` announces it last, with the tournament (a produced
-  // exit's advance into the matchUp the unfillable seat's BYE makes a BYE, S7; the only order measured)
-  for (const op of ops) if (op.op === 'setMatchUpBye') untournamented.delete(op.matchUpId);
+  // ...but a BYE written there too: v1's `setMatchUpStatusBye` announces the matchUp last, with the tournament, though
+  // its context stays read without it (the matchUp the unfillable seat's BYE makes a BYE, S7; the only order measured)
+  const byeNamed = new Set(ops.flatMap((op) => (op.op === 'setMatchUpBye' ? [op.matchUpId] : [])));
   // a BYE an unwind withdraws: v1's `clearDrawPosition` names its position, with neither event nor tournament (S6)
   const unbyed = withdrawnByeNotices(ops);
   // a loser placed through a BYE into a matchUp an unwind wrote quietly (`unwoundThrough`): v1 announces the arrival last,
@@ -239,7 +243,7 @@ function noticeRules(ops: OutcomeOp[]) {
   const settledResults = new Set(
     ops.flatMap((op) => (op.op === 'setMatchUpResult' && op.announcedAs ? [op.matchUpId] : [])),
   );
-  return { removed, unevented, untournamented, unbyed, settledResults, arrived };
+  return { removed, unevented, untournamented, unbyed, settledResults, arrived, byeNamed };
 }
 
 /**
