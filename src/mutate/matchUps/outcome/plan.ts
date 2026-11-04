@@ -3196,20 +3196,41 @@ function unwoundSeatOps(
   // withdrawal releases that position out of it and writes it last, the rewrite's notice superseded (S6 tail)
   if (!opposite.length) return held.some((position) => !released.has(position)) ? undefined : [...ops, ...cascade];
   if (opposite.length > 1 || !next || !held.includes(opposite[0])) return undefined;
-  // the BYE had sent the opposite position on into the passage's landing, the own carry pending there (S7): v1's removal
-  // takes the position and the pending exit with it, named for the withdrawn BYE whether or not a position stays
-  // (`updateMatchUpStatusAfterRemoval`; the release path leaves a pending exit alone), and the passage then finds
-  // nothing of this unwind's there
-  if (relayed && next.matchUpStatus !== BYE && ownCarryAlone(next, relay.sourceId)) {
+  const beyond = withdrawnByeNextOps(next, held, opposite[0], drawPosition, withdrawn, relayed ? relay : undefined);
+  return beyond && [...ops, ...beyond, ...cascade];
+}
+
+/**
+ * The next matchUp of a withdrawn BYE's matchUp, which the BYE had sent the opposite position on into (`unwoundSeatOps`):
+ * the position taken back out of it. Where it is the passage's landing, the own carry pending there (S7), v1's removal
+ * takes the position and the pending exit with it, named for the withdrawn BYE whether or not a position stays
+ * (`updateMatchUpStatusAfterRemoval`; the release path leaves a pending exit alone), and the passage then finds nothing
+ * of this unwind's there. Otherwise planned where it is to be played with no result or provenance: where another
+ * position stands, as v1's position clear writes it, named for the withdrawn BYE; alone there, the matchUp is left with
+ * no position, which v1 releases instead (`releaseAdvancedDrawPosition`, with neither event nor tournament):
+ * FIRST_MATCH_LOSER_CONSOLATION's own seat beside an unfilled fed seat, the double BYE its unfillable seat makes behind
+ * FIRST_MATCHUP (S6 tail). Undefined for anything else.
+ */
+function withdrawnByeNextOps(
+  next: HydratedMatchUp,
+  held: number[],
+  advanced: number,
+  drawPosition: number,
+  withdrawn: Set<string>,
+  relay?: UnwindRelay,
+): OutcomeOp[] | undefined {
+  const remaining = held.filter((position) => position !== advanced);
+  const stamp: OutcomeOp = { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId };
+  if (relay && next.matchUpStatus !== BYE && ownCarryAlone(next, relay.sourceId)) {
     if (next.sides?.some((side) => side.bye)) return undefined;
     const reset: OutcomeOp = {
       op: 'setMatchUpDrawPositions',
       matchUpId: next.matchUpId,
-      drawPositions: held.filter((position) => position !== opposite[0]),
+      drawPositions: remaining,
       withdrawnByePosition: drawPosition,
       clearsPendingExit: true,
     };
-    return [...ops, reset, { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId }, ...cascade];
+    return [reset, stamp];
   }
   // a BYE beside the position there that this unwind withdraws is read as withdrawn: the matchUp is then to be played
   const byeStands = (side: HydratedSide) =>
@@ -3218,11 +3239,6 @@ function unwoundSeatOps(
   const toBePlayed = next.matchUpStatus === TO_BE_PLAYED || (next.matchUpStatus === BYE && !standing);
   if (!toBePlayed || next.winningSide || !scoreless(next)) return undefined;
   if (Object.keys(next.sideExitProvenance ?? {}).length || standing) return undefined;
-  const remaining = held.filter((position) => position !== opposite[0]);
-  // the position taken back out of the next matchUp: where another stands, as v1's position clear writes it, named for
-  // the withdrawn BYE; alone there, the matchUp is left with no position, which v1 releases instead
-  // (`releaseAdvancedDrawPosition`, with neither event nor tournament): FIRST_MATCH_LOSER_CONSOLATION's own seat beside an
-  // unfilled fed seat, the double BYE its unfillable seat makes behind FIRST_MATCHUP (S6 tail)
   const taken: OutcomeOp = remaining.length
     ? {
         op: 'setMatchUpDrawPositions',
@@ -3234,10 +3250,10 @@ function unwoundSeatOps(
         op: 'setMatchUpDrawPositions',
         matchUpId: next.matchUpId,
         drawPositions: remaining,
-        releasedDrawPosition: opposite[0],
+        releasedDrawPosition: advanced,
         announcesContext: false,
       };
-  return [...ops, taken, { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId }, ...cascade];
+  return [taken, stamp];
 }
 
 /** the seat a BYE matchUp's loser link feeds, its BYE taken back as v1's round-1 loser cascade takes it (S6 tail) */
