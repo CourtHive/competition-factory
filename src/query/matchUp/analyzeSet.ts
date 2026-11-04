@@ -1,6 +1,6 @@
 import { isTiebreakGamesScore, isTiebreakWon, tiebreakSetGames, wonWithoutTiebreak } from './tiebreakAtRules';
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
-import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
+import { finalSetGoverns, overtimePeriodGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { shootoutTallyRefusal } from '@Helpers/matchUpFormatCode/shootout';
 import { isTiebreakMarker, readTiebreakSet } from './tiebreakSetShape';
 import { getSetWinningSide } from './getSetWinningSide';
@@ -45,7 +45,11 @@ export function analyzeSet(params) {
     setNumber,
     !!(setNumber && maxSetNumber && setNumber === maxSetNumber),
   );
-  const setFormat = (isDecidingSet && matchUpScoringFormat?.finalSetFormat) || matchUpScoringFormat?.setFormat;
+  // an overtime period is played to the overtime segment, not to regulation's
+  const setFormat =
+    (isDecidingSet && matchUpScoringFormat?.finalSetFormat) ||
+    (overtimePeriodGoverns(matchUpScoringFormat, setNumber) && matchUpScoringFormat?.overtimeFormat?.setFormat) ||
+    matchUpScoringFormat?.setFormat;
   if (setFormat?.combinedPointTotal) {
     const analysis = analyzeCombinedPointSet(setObject, setFormat);
     return {

@@ -2,6 +2,7 @@ import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPoin
 import { unlevelDeciderRefusal } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { parse, ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
 import { analyzeSet, SetAnalysisFields } from './analyzeSet';
+import { overtimeDecision } from '@Validators/overtimeScore';
 import { instanceCount } from '@Tools/arrays';
 
 // constants and types
@@ -178,9 +179,13 @@ export function analyzeMatchUp(params?): ResultType &
   // a winner is if both sides score the same exact number of points."*
   const aggregateScores = aggregate ? aggregateSideScores(sets, matchUpScoringFormat) : undefined;
 
-  const calculatedWinningSide = aggregate
-    ? aggregateWinningSide(aggregateScores)
-    : (reachedSetsToWin && maxSetsInstances === 1 && setsWinCounts.indexOf(maxSetsCount) + 1) || undefined;
+  // An overtime format is decided where the scoring engine decides it: a total ahead after the first extra-time
+  // period of an exact block (`O:2X`) is a lead, not a win (S6, measured 2026-11-04)
+  const overtime = overtimeDecision(sets, matchUpFormat);
+  const setsWinner = () =>
+    (reachedSetsToWin && maxSetsInstances === 1 && setsWinCounts.indexOf(maxSetsCount) + 1) || undefined;
+  let calculatedWinningSide = aggregate ? aggregateWinningSide(aggregateScores) : setsWinner();
+  if (overtime) calculatedWinningSide = (overtime.complete && overtime.winningSide) || undefined;
 
   // the aggregate branch above does not consult set counts, and neither may this check: an aggregate
   // is routinely won on fewer segments (2026-10-17: a 25-24 INN4XA win on one inning of three, and

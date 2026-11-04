@@ -1,4 +1,4 @@
-import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
+import { finalSetGoverns, overtimePeriodGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { parseTallyFormat } from './parseTallyFormat';
 import { ensureInt } from '@Tools/ensureInt';
 
@@ -188,8 +188,7 @@ export function countPoints({ matchUpFormat, score }: { matchUpFormat?: string; 
 function formatOf(parsed: Readonly<ParsedFormat> | undefined, setNumber: number): SetFormat | undefined {
   if (parsed?.finalSetFormat && finalSetGoverns(parsed, setNumber, setNumber === parsed.bestOf))
     return parsed.finalSetFormat;
-  const regulation = parsed?.exactly ?? parsed?.bestOf ?? 1;
-  if (parsed?.overtimeFormat && setNumber > regulation) return parsed.overtimeFormat.setFormat;
+  if (overtimePeriodGoverns(parsed, setNumber)) return parsed?.overtimeFormat?.setFormat;
   return parsed?.setFormat;
 }
 
