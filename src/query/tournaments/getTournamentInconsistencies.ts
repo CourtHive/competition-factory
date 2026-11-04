@@ -1,5 +1,6 @@
 import { FORMAT_VERDICT, FormatReportEntry, getMatchUpFormatReport } from '@Query/tournaments/getMatchUpFormatReport';
 import { finalize, hasErrorSeverity, Inconsistency, InconsistencyScope } from '@Query/integrity/inconsistency';
+import { getScoreFormatInconsistencies } from '@Query/tournaments/getScoreFormatInconsistencies';
 import { getEventInconsistencies } from '@Query/event/getEventInconsistencies';
 import { participantRoleOf } from '@Query/participant/participantRoleOf';
 import { getParticipants } from '@Query/participants/getParticipants';
@@ -49,6 +50,10 @@ export const MATCHUP_FORMAT_MALFORMED = 'MATCHUP_FORMAT_MALFORMED';
 //    It is still read and scored as stored, and records written before a refusal existed are expected to hold some,
 //    so this is reported and never makes `valid` false. Same shape as MATCHUP_FORMAT_MALFORMED. (warning)
 export const MATCHUP_FORMAT_REFUSED_FOR_NEW_USE = 'MATCHUP_FORMAT_REFUSED_FOR_NEW_USE';
+//
+//  - MATCHUP_SCORE_INVALID_FOR_FORMAT: a stored score its matchUp's effective format cannot produce. Defined, with its
+//    rules, in `getScoreFormatInconsistencies`. (warning)
+export { MATCHUP_SCORE_INVALID_FOR_FORMAT } from '@Query/tournaments/getScoreFormatInconsistencies';
 
 const VALID_ROLES = new Set<string>(Object.values(participantRoles));
 // Values whose intent is unambiguous enough to name the fix. Anything else gets no suggestion.
@@ -228,6 +233,7 @@ export function getTournamentInconsistencies(
   const invalidRoles = getInvalidRoles(tournamentRecord);
 
   const formatInconsistencies = getFormatInconsistencies(tournamentRecord);
+  const scoreInconsistencies = getScoreFormatInconsistencies(tournamentRecord);
 
   const combined = [
     ...eventInconsistencies,
@@ -235,6 +241,7 @@ export function getTournamentInconsistencies(
     ...missingRoles,
     ...invalidRoles,
     ...formatInconsistencies,
+    ...scoreInconsistencies,
   ];
   const finalized = finalize(combined, { scope: 'TOURNAMENT', tournamentId });
   return { ...SUCCESS, valid: !hasErrorSeverity(finalized), inconsistencies: finalized };
