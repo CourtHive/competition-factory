@@ -702,7 +702,8 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   nowhere: v1 writes that matchUp, a BYE already, as a BYE again (announced with no event at a deeper level). Where the
   next matchUp is a BYE the position had passed through (a BYE opposite it, a feed round's fed BYE included: S6 tail),
   the double BYE goes on from there as from the first (S6). A matchUp the double BYE makes a BYE in its structure's last
-  round sends the position beside it nowhere (S6 tail). Each level is a first-round
+  round sends the position beside it nowhere (S6 tail). A double BYE's matchUp was a BYE already and sent its BYE
+  across its loser link when it became one, so the chain ends there (S7). Each level is a first-round
   seat, free behind no condition, in a clean matchUp: alone, or opposite a BYE, a double BYE there too, planned as the
   first one is but announced with no event (S6), the walk bounded by `SETTLE_PASS_LIMITS.exitLevels` (F9). A level whose
   seat holds a BYE already takes nothing, and the chain ends there (S6 tail). Under `doubleExitPropagateBye: false`

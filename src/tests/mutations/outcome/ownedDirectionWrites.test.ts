@@ -357,7 +357,32 @@ const HELD_JOINS: [string, Scenario][] = HELD_JOIN_DRAWS.flatMap(([drawSize, par
   ),
 );
 
+/**
+ * S7, policy off: a COMPASS East double exit whose West loser matchUp links its own loser on into South, onto a seat
+ * opposite a standing BYE: a double BYE there, whose matchUp was a BYE already and sent its BYE on into Southeast when it
+ * became one, so the chain ends. Positions per draw shape (seed 9000230)
+ */
+const DOUBLE_BYE_END_DRAWS: [number, number, number[]][] = [
+  [16, 13, [5, 6]],
+  [16, 15, [3, 4]],
+  [32, 27, [3, 4, 9, 10, 13, 14]],
+];
+const DOUBLE_BYE_ENDS: [string, Scenario][] = DOUBLE_BYE_END_DRAWS.flatMap(([drawSize, participantsCount, positions]) =>
+  positions.flatMap((roundPosition) =>
+    [DOUBLE_WALKOVER, DOUBLE_DEFAULT].map((matchUpStatus): [string, Scenario] => [
+      `${COMPASS} ${participantsCount} of ${drawSize} (policy off): R1/${roundPosition} a ${matchUpStatus}, the double BYE beyond ending the chain`,
+      {
+        drawProfile: { drawSize, participantsCount, drawType: COMPASS },
+        nonRandom: 9000230,
+        policyDefinitions: POLICY_OFF,
+        steps: [{ target: R1(roundPosition, 'East'), outcome: { matchUpStatus } }],
+      },
+    ]),
+  ),
+);
+
 const SCENARIOS: [string, Scenario][] = [
+  ...DOUBLE_BYE_ENDS,
   ...HELD_JOINS,
   ...JOINED_SEATS,
   ...FED_SEATS,

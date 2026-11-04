@@ -1557,7 +1557,9 @@ function byeChain(
     if (index === 0 && step.onward) planned.onward = step.onward;
     if (index === 0 && step.advanced) planned.advanced = step.advanced;
     if (index === 0 && step.passed) planned.passed = step.passed;
-    if (!step.entry.loserMatchUpId) return planned;
+    // a double BYE's matchUp was a BYE already, and sent its BYE across its loser link when it became one: v1 places
+    // nothing more there (measured: every such seat the view reads holds that BYE), and the chain ends (S7)
+    if (!step.entry.loserMatchUpId || beside) return planned;
     const level = chain?.levels[index];
     if (!step.opposed || !chain || chain.bounded || level?.fromMatchUpId !== step.entry.matchUpId) return undefined;
     // the seat beyond holds a BYE already: v1 places nothing there, and the chain ends (S6 tail, the BYE chain)
