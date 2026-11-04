@@ -399,6 +399,22 @@ const FIRST_MATCHUP_SEATS: [string, Scenario][] = [8, 16, 32].flatMap((drawSize)
 );
 
 /**
+ * S7, policy off: a COMPASS East round-2 double exit whose loser matchUp (North's one matchUp) is its structure's final:
+ * the produced exit is written there, awarded to the empty side opposite, and nothing advances. East's first round played
+ */
+const PRODUCED_FINALS: [string, Scenario][] = [1, 2].flatMap((roundPosition) =>
+  [DOUBLE_WALKOVER, DOUBLE_DEFAULT].map((matchUpStatus): [string, Scenario] => [
+    `${COMPASS} 8 (policy off): East 2/${roundPosition} a ${matchUpStatus}, its exit produced on North's final`,
+    {
+      drawProfile: { drawSize: 8, drawType: COMPASS },
+      policyDefinitions: POLICY_OFF,
+      setup: Array.from({ length: 4 }, (_, i) => ({ target: R1(i + 1, 'East'), outcome: won(1) })),
+      steps: [{ target: { roundNumber: 2, roundPosition, structureName: 'East' }, outcome: { matchUpStatus } }],
+    },
+  ]),
+);
+
+/**
  * S7, policy off: the held exit's landing holds a participant on the other side (East R1/3's loser, through West's BYE):
  * the exit is theirs. West R2/1 is West's final, so nothing goes on (seed 9000230)
  */
@@ -442,6 +458,7 @@ const HELD_AWARDS_ONWARD: [string, Scenario][] = HELD_AWARD_ONWARD_DRAWS.flatMap
 );
 
 const SCENARIOS: [string, Scenario][] = [
+  ...PRODUCED_FINALS,
   ...HELD_AWARDS_ONWARD,
   ...HELD_AWARDS,
   ...FIRST_MATCHUP_SEATS,
