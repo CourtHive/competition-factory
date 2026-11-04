@@ -61,7 +61,7 @@ describe('roundRobinTallyPolicy.md § Validation', () => {
   it('states one rule per check, in the order the validator reports them', () => {
     // CONTROL: the section and its table were found
     expect(section.length).toBeGreaterThan(0);
-    expect(rules.length).toEqual(44);
+    expect(rules.length).toEqual(48);
   });
 
   it.each(rules.map((row) => [row.rule, row]))('refuses: %s', (_rule, { refused, message }) => {

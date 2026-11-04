@@ -1,3 +1,4 @@
+import { decidedResultRefusal, isDecidedOutsideScore } from '@Validators/decidedResult';
 import { checkScoreCompleteness } from '@Validators/scoreCompleteness';
 import { isTiebreakGamesScore } from '@Query/matchUp/tiebreakAtRules';
 import { formatForSet } from '@Query/matchUp/tiebreakSetShape';
@@ -123,6 +124,12 @@ export function validateScore({
   if (scoreStringSide2 !== undefined && typeof scoreStringSide2 !== 'string') return { error: INVALID_VALUES, info };
   if (sets !== undefined && !Array.isArray(sets)) return { error: INVALID_VALUES, info: mustBeAnArray('sets') };
 
+  const decidedRefusal = decidedResultRefusal({ matchUpStatus, matchUpFormat, winningSide, score });
+  if (decidedRefusal) return decidedRefusal;
+  // a result decided outside its score (standings phase 2 § 1.1): the score is judged as the level finish it is, and
+  // the winner by the record that decided it
+  const scoreWinningSide = isDecidedOutsideScore(score) ? undefined : winningSide;
+
   if (sets?.length) {
     const setNumbers = sets.map((set) => set?.setNumber).filter(Boolean);
     if (setNumbers.length !== unique(setNumbers).length)
@@ -147,10 +154,10 @@ export function validateScore({
     }
 
     const { valid: isValidScore } = analyzeScore({
+      winningSide: scoreWinningSide,
       existingMatchUpStatus,
       matchUpStatus,
       matchUpFormat,
-      winningSide,
       score,
     });
 
@@ -163,7 +170,12 @@ export function validateScore({
 
     // Bounds are not completeness: a set must also be one the format can FINISH — see `scoreCompleteness`.
     // `disableScoreValidation` on `setMatchUpStatus` skips this call, and with it this rule.
-    const { isComplete, info } = checkScoreCompleteness({ matchUpFormat, matchUpStatus, winningSide, sets });
+    const { isComplete, info } = checkScoreCompleteness({
+      winningSide: scoreWinningSide,
+      matchUpFormat,
+      matchUpStatus,
+      sets,
+    });
     if (!isComplete) return { error: INVALID_SCORE, info };
 
     // Accepted, but worth saying: a set decided by its tiebreak with no tiebreak points (ruling V11)

@@ -5,7 +5,7 @@ import { parseTallyFormat } from './parseTallyFormat';
 
 // constants and types
 import type { RoundRobinTallyPolicy } from '@Types/roundRobinTallyPolicy';
-import type { MatchUp, Set as SetType } from '@Types/tournamentTypes';
+import type { MatchUp, Score, Set as SetType } from '@Types/tournamentTypes';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import type { ResultType } from '@Types/factoryTypes';
@@ -39,35 +39,34 @@ export function validateDrawTallyOptions(policy?: RoundRobinTallyPolicy): Result
 
 /**
  * Only a complete tie permitted by the scoring contract is a drawn result: a level combined total, or a level finish
- * of a format that can end level (scoring spec § 9.7).
+ * of a format that can end level (scoring spec § 9.7), with no winner named.
  */
 export function isDrawnResult(matchUp: MatchUp, fallbackFormat?: string): boolean {
-  const matchUpFormat = matchUp.matchUpFormat ?? fallbackFormat;
   return (
     matchUp.matchUpStatus === COMPLETED &&
-    (isCompletedCombinedPointTie({
-      score: matchUp.score,
-      winningSide: matchUp.winningSide,
-      matchUpStatus: matchUp.matchUpStatus,
-      matchUpFormat,
-    }) ||
-      isLevelFinish(matchUp, matchUpFormat))
+    matchUp.winningSide === undefined &&
+    isLevelScore(matchUp.score, matchUp.matchUpFormat ?? fallbackFormat)
   );
 }
 
 /**
- * A complete, level finish of a format that can end level and declares no decider that would settle it (scoring spec
- * § 9.7): an aggregate whose N segments total level (a timed decider that closed level too), or N sets played to a
- * level count of sets won. A combined total is `isCompletedCombinedPointTie`'s; a declared overtime is the overtime
- * workstream's, so neither is read here.
+ * A complete, level score of a format that can end level, whoever was then named its winner: a drawn result where no
+ * winner is needed, and the sporting score of a result decided outside it (a shootout, a competition rule, lots, an
+ * official decision) where one is.
+ *
+ * - a level combined total (`isCompletedCombinedPointTie`);
+ * - an aggregate whose N segments total level, a timed decider that closed level too;
+ * - N sets played to a level count of sets won.
+ *
+ * A declared overtime is the overtime workstream's (`overtimeScoreVerdict`), so it is not read here.
  */
-function isLevelFinish(matchUp: MatchUp, matchUpFormat?: string): boolean {
+export function isLevelScore(score?: Score, matchUpFormat?: string): boolean {
+  if (isCompletedCombinedPointTie({ score, matchUpFormat })) return true;
   const parsed = parse(matchUpFormat ?? '');
   const format = parsed?.setFormat;
-  if (matchUp.winningSide !== undefined || !parsed || !format || format.combinedPointTotal || parsed.overtimeFormat)
-    return false;
+  if (!parsed || !format || format.combinedPointTotal || parsed.overtimeFormat) return false;
   if (!parsedFormatCanEndTied(parsed)) return false;
-  const sets = matchUp.score?.sets ?? [];
+  const sets = score?.sets ?? [];
   const n = parsed.exactly ?? parsed.bestOf ?? 1;
   const level = ([a, b]: number[]) => a === b;
   if (parsed.aggregate) {
