@@ -1,6 +1,8 @@
 import { aggregateDeciderSetNumber, finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
+import { generateOvertimeOutcome } from '@Assemblies/generators/simulation/generateOvertimeOutcome';
 import { getSetComplement, getTiebreakComplement } from '@Query/matchUp/getComplement';
 import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
+import { resolveFormat } from '@Assemblies/engines/scoring/v2/format';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
@@ -47,7 +49,8 @@ function validateOutcomeParams({
   sideWeight,
   matchUpFormat,
 }) {
-  if (!isValidMatchUpFormat({ matchUpFormat })) return { error: INVALID_MATCHUP_FORMAT };
+  if (!isValidMatchUpFormat({ matchUpFormat }) && !overtimeRule(matchUpFormat))
+    return { error: INVALID_MATCHUP_FORMAT };
   if (typeof matchUpStatusProfile !== 'object' || matchUpStatusProfile === null) return { error: INVALID_VALUES };
   // falsy means no winner was asked for (completion passes `!randomWinningSide && 1`)
   if (winningSide && winningSide !== 1 && winningSide !== 2)
@@ -60,6 +63,14 @@ function validateOutcomeParams({
     return { error: INVALID_VALUES };
 
   return undefined;
+}
+
+/**
+ * An overtime format the scoring engine scores. A mock outcome is not a new use of the format: it is generated
+ * for one a matchUp already carries, so the new-use refusal does not apply (overtime activation S3).
+ */
+function overtimeRule(matchUpFormat: string) {
+  return parse(matchUpFormat)?.overtimeFormat ? resolveFormat(matchUpFormat, { allowOvertime: true }) : undefined;
 }
 
 function resolveMatchUpStatus({ matchUpStatusProfile, random }) {
@@ -232,6 +243,19 @@ function generateScoredOutcome({ pointsPerMinute, matchUpFormat, matchUpStatus, 
   // for 3 sets this will always be setNumber 1 or setNumber 2
   // because it is not known in advance whether 3 sets will be generated
   const incompleteAt = incompleteSet && (randomPop(generateRange(1, exactly || bestOf), random) || 1);
+
+  const rule = parsedFormat?.overtimeFormat ? overtimeRule(matchUpFormat) : undefined;
+  if (parsedFormat && rule)
+    return generateOvertimeOutcome({
+      incompleteAt: incompleteAt || undefined,
+      pointsPerMinute,
+      matchUpFormat,
+      matchUpStatus,
+      parsedFormat,
+      winningSide,
+      random,
+      rule,
+    });
 
   // used to capture winner by RETIREMENT or DEFAULT
   let weightedWinningSide;
@@ -420,7 +444,7 @@ function generateTimedSet({
   random,
   set,
 }) {
-  const calcPoints = minutes * pointsPerMinute;
+  const calcPoints = Math.round(minutes * pointsPerMinute); // T45 at 2.5 a minute scored 112.5
   const pointsVariation = Math.round(calcPoints * 0.2);
   const totalPoints = calcPoints + randomPop([1, -1], random) * pointsVariation;
   // the use of weightedRandom applies a bell curve distribution to the difference in side scores
