@@ -3,6 +3,7 @@ import { expect, it } from 'vitest';
 
 // constants
 import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
+import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 
 const F1 = 'HAL2XA-S:T45P-O:2X/T15P-F:TB1'; // two halves, an exact two-period block, then a decider
 const F2 = 'QTR4XA-S:T12P-O:U/T5P'; // unlimited periods, compared at each period end
@@ -12,8 +13,13 @@ const F5 = 'HAL2XA-S:T40P-O:1/T10P'; // one period; may finish level
 
 const t = (side1Score: number, side2Score: number) => ({ side1Score, side2Score });
 const tb = (side1TiebreakScore: number, side2TiebreakScore: number) => ({ side1TiebreakScore, side2TiebreakScore });
-const verdict = (matchUpFormat: string, sets: any[], matchUpStatus: string, winningSide?: number, decidedIn?: string) =>
-  overtimeScoreVerdict({ matchUpFormat, matchUpStatus, winningSide, decidedIn, sets: numbered(sets) });
+const verdict = (
+  matchUpFormat: string,
+  sets: any[],
+  matchUpStatus: MatchUpStatusUnion,
+  winningSide?: number,
+  decidedIn?: string,
+) => overtimeScoreVerdict({ matchUpFormat, matchUpStatus, winningSide, decidedIn, sets: numbered(sets) });
 const numbered = (sets: any[]) => sets.map((set, i) => ({ setNumber: i + 1, ...set }));
 
 it('does not apply to a format without overtime', () => {
