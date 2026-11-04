@@ -725,7 +725,9 @@ distinguish explicit scoring support from default format resolution.
    the match and is not summed into the sporting aggregate. A timed fallback may itself finish level.
 7. No input opens a period after an earlier winner or past the ceiling/fallback. A baseline including such
    an unplayed segment is refused unchanged. Replay of an accepted prefix deterministically reconstructs its
-   decision, and removing the deciding input reopens the appropriate period.
+   decision, and removing the deciding input reopens the appropriate period. No set follows the decider: a set
+   number past it reads the regulation segment's rule, so `getInputLevels()` on a match its decider completed
+   reports regulation's levels, not the decider's.
 8. A shootout decider (`-F:SO{rounds}`, only after O) is entered as its final tally, by set total only; point and
    game input are refused. A tally is refused unless a shootout ends on it: never level; past `rounds` won by one
    (sudden death); within `rounds` ended as soon as one side could not catch up, so `2·won − lost ≤ rounds + 2`.
