@@ -10,6 +10,7 @@ import {
 
 // constants and types
 import type { FormatStructure, OvertimeScoreContext, SetScore } from '@Types/scoring/types';
+import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 export function matchUpScore(params) {
@@ -79,7 +80,7 @@ function overtimeStamped({
 }: {
   parsedFormat?: ParsedFormat;
   sets: SetScore[];
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
   incoming?: Partial<OvertimeScoreContext>;
 }): { sets: SetScore[]; overtime?: OvertimeScoreContext } {
   const layout = parsedFormat && overtimeLayout(parsedFormat as FormatStructure);
