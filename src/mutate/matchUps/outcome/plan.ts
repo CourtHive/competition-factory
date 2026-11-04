@@ -3115,7 +3115,18 @@ function carriedBesideBye(
   byeMatchUp: HydratedMatchUp,
   drawPosition: number,
 ): { matchUpStatus: MatchUpStatusUnion; winningSide: 1 | 2 } | undefined {
-  if (byeMatchUp.winnerMatchUpId || byeMatchUp.matchUpStatus !== BYE || byeMatchUp.winningSide) return undefined;
+  return byeMatchUp.winnerMatchUpId ? undefined : carriedOpposite(byeMatchUp, drawPosition);
+}
+
+/**
+ * A participant's carried exit on the side opposite `drawPosition` in a BYE matchUp holding nothing else of a result
+ * (`carriedBesideBye`, `carrierSentOn`): the exit's status, and the side holding `drawPosition`, which wins it
+ */
+function carriedOpposite(
+  byeMatchUp: HydratedMatchUp,
+  drawPosition: number,
+): { matchUpStatus: MatchUpStatusUnion; winningSide: 1 | 2 } | undefined {
+  if (byeMatchUp.matchUpStatus !== BYE || byeMatchUp.winningSide) return undefined;
   if (!scoreless(byeMatchUp) || byeMatchUp.matchUpStatusCodes?.length) return undefined;
   const byeSide = byeMatchUp.sides?.find((side) => side.drawPosition === drawPosition)?.sideNumber;
   if (byeSide !== 1 && byeSide !== 2) return undefined;
@@ -3125,6 +3136,147 @@ function carriedBesideBye(
   const matchUpStatus = carriedExitStatus(kept[1]);
   if (!matchUpStatus || isDoubleExit(kept[1]?.previousMatchUpStatus)) return undefined;
   return { matchUpStatus, winningSide: byeSide };
+}
+
+/**
+ * The carrier a withdrawn BYE had sent on (S7): a participant's carried exit beside the BYE, whose BYE matchUp has a
+ * next matchUp. The BYE advanced the carrier on, past each matchUp another standing BYE holds (a relay: the carry
+ * recorded beside that BYE, RULE 1), to the landing where the carry stands pending over an empty seat (RULE 2: the
+ * carried status, the side opposite the carrier winning, scoreless, no codes, the carry its one entry), the award having
+ * sent nobody on but the participant beside the carrier, if one stands there. When the BYE goes, v1 re-derives the BYE matchUp to the carry
+ * (`updateMatchUpStatusAfterRemoval`), releases the carrier out of every round the BYE moved them through
+ * (`releaseAdvancedDrawPosition`: the position, the carry with it, `withdrawRelayedExit`; `bringCarryHome` finds the
+ * carry recorded beside the BYE already), the relays still BYEs, the landing to be played, its `scoredTime` taken by the
+ * pass that announces it (`reconcileScoredTimes`); a participant the award had sent on (RULE 3) is taken back out of the
+ * matchUp beyond, to be played with nothing else of a result. A carrier the BYE matchUp or a relay would link on as its
+ * loser, an awardee sent further, another entry, a result, a relay's BYE this unwind withdraws: v1's.
+ */
+function carrierSentOn(
+  view: OutcomeView,
+  byeMatchUp: HydratedMatchUp,
+  drawPosition: number,
+  withdrawn: Set<string>,
+): CarrierSentOn | undefined {
+  const rederived = carriedOpposite(byeMatchUp, drawPosition);
+  const side = byeMatchUp.sides?.find((candidate) => candidate.drawPosition !== drawPosition);
+  if (!rederived || !side?.participantId || !side.drawPosition || byeMatchUp.loserMatchUpId) return undefined;
+  const carrier = side.drawPosition;
+  const [entry] = Object.values(byeMatchUp.sideExitProvenance ?? {});
+  const sideOfCarrier = (at: HydratedMatchUp) =>
+    at.sides?.find((candidate) => candidate.drawPosition === carrier)?.sideNumber;
+  // the carry as each matchUp the carrier passed through records it: its one entry, on the carrier's side, the same exit
+  // from the same source, nothing else of a result there, in this structure, no loser link out
+  const carries = (at: HydratedMatchUp): boolean => {
+    const [carried, ...more] = Object.entries(at.sideExitProvenance ?? {});
+    if (!carried || more.length || Number(carried[0]) !== sideOfCarrier(at)) return false;
+    if (carried[1]?.sourceMatchUpId !== entry?.sourceMatchUpId) return false;
+    if (carriedExitStatus(carried[1]) !== rederived.matchUpStatus) return false;
+    return (
+      scoreless(at) && !at.matchUpStatusCodes?.length && at.structureId === byeMatchUp.structureId && !at.loserMatchUpId
+    );
+  };
+  const relays: HydratedMatchUp[] = [];
+  let at = indexed(view, byeMatchUp.winnerMatchUpId);
+  while (at && at.matchUpStatus === BYE && relays.length < 8) {
+    if (!carries(at) || at.winningSide) return undefined;
+    const standing = at.sides?.find((candidate) => candidate.bye);
+    if (
+      !standing?.drawPosition ||
+      withdrawn.has(seatKey({ structureId: at.structureId, drawPosition: standing.drawPosition }))
+    )
+      return undefined;
+    relays.push(at);
+    at = indexed(view, at.winnerMatchUpId);
+  }
+  const carrierSide = at ? sideOfCarrier(at) : undefined;
+  if (!at || (carrierSide !== 1 && carrierSide !== 2) || !carries(at)) return undefined;
+  if (at.matchUpStatus !== rederived.matchUpStatus || at.winningSide !== 3 - carrierSide) return undefined;
+  const awardee = at.sides?.find((candidate) => candidate.sideNumber !== carrierSide);
+  if (awardee?.bye) return undefined;
+  const beyond = indexed(view, at.winnerMatchUpId);
+  // the award sent the participant beside the carrier on (RULE 3): v1 takes them back out of the matchUp beyond, which
+  // holds nothing else of a result and sent them no further (`releaseAdvancedDrawPosition`); an empty seat sent nobody
+  const sent = awardee?.participantId && beyond && positionsOf(beyond).includes(awardee.drawPosition ?? 0);
+  if (
+    beyond &&
+    positionsOf(at).some(
+      (position) => (!sent || position !== awardee.drawPosition) && positionsOf(beyond).includes(position),
+    )
+  )
+    return undefined;
+  if (awardee?.participantId && !sent && beyond) return undefined;
+  if (!sent) return { rederived, carrier, relays, landing: at };
+  if (beyond.matchUpStatus !== TO_BE_PLAYED || beyond.winningSide || !scoreless(beyond)) return undefined;
+  if (beyond.matchUpStatusCodes?.length || Object.keys(beyond.sideExitProvenance ?? {}).length) return undefined;
+  const further = indexed(view, beyond.winnerMatchUpId);
+  if (further && positionsOf(further).includes(awardee.drawPosition ?? 0)) return undefined;
+  return {
+    rederived,
+    carrier,
+    relays,
+    landing: at,
+    released: { matchUp: beyond, drawPosition: awardee.drawPosition ?? 0 },
+  };
+}
+
+type CarrierSentOn = {
+  rederived: { matchUpStatus: MatchUpStatusUnion; winningSide: 1 | 2 };
+  carrier: number;
+  relays: HydratedMatchUp[];
+  landing: HydratedMatchUp;
+  /** the matchUp beyond the landing, holding the participant the award sent on: that position taken back out of it */
+  released?: { matchUp: HydratedMatchUp; drawPosition: number };
+};
+
+/**
+ * The carrier released out of every round the withdrawn BYE moved them through (`carrierSentOn`): the landing loses the
+ * position and the carry and is to be played (`releaseAdvancedDrawPosition`, announced last by the settle pass that takes
+ * its `scoredTime`); the awardee it sent on comes back out of the matchUp beyond; each relay, a BYE still, loses the
+ * position and the carry, written as v1's position clear announces it after the release (`removeDrawPosition-<n>`, the
+ * withdrawn BYE's)
+ */
+function carrierHomeOps({ carrier, relays, landing, released }: CarrierSentOn, drawPosition: number): OutcomeOp[] {
+  const taken = (at: HydratedMatchUp) => positionsOf(at).filter((position) => position !== carrier);
+  return [
+    {
+      op: 'setMatchUpDrawPositions',
+      matchUpId: landing.matchUpId,
+      drawPositions: taken(landing),
+      releasedDrawPosition: carrier,
+    },
+    {
+      op: 'setMatchUpResult',
+      matchUpId: landing.matchUpId,
+      matchUpStatus: TO_BE_PLAYED,
+      announcedAs: 'reconcileScoredTimes',
+    },
+    { op: 'setSideExitProvenance', matchUpId: landing.matchUpId },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: landing.matchUpId },
+    // the awardee taken back out of the matchUp beyond: announced as the release, with neither event nor tournament
+    ...(released
+      ? [
+          {
+            op: 'setMatchUpDrawPositions' as const,
+            matchUpId: released.matchUp.matchUpId,
+            drawPositions: positionsOf(released.matchUp).filter((position) => position !== released.drawPosition),
+            releasedDrawPosition: released.drawPosition,
+            announcesContext: false as const,
+          },
+          { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: released.matchUp.matchUpId },
+        ]
+      : []),
+    // the relays last: v1's position clear rewrites each after the release, and its notice is the one kept
+    ...relays.flatMap((relay): OutcomeOp[] => [
+      {
+        op: 'setMatchUpDrawPositions',
+        matchUpId: relay.matchUpId,
+        drawPositions: taken(relay),
+        withdrawnByePosition: drawPosition,
+      },
+      { op: 'setSideExitProvenance', matchUpId: relay.matchUpId },
+      { op: 'stampUpdatedAt', entity: 'matchUp', id: relay.matchUpId },
+    ]),
+  ];
 }
 
 /**
@@ -3173,7 +3325,10 @@ function unwoundSeatOps(
   // ...or a participant's carried exit beside the BYE in the structure's last round, which stands once the BYE goes: v1
   // re-derives the matchUp to it (S7, `carriedBesideBye`); a carrier the BYE sent on (a next matchUp) is v1's
   const rederived = relayed ? undefined : carriedBesideBye(byeMatchUp, drawPosition);
-  if (!relayed && !rederived && Object.keys(byeMatchUp.sideExitProvenance ?? {}).length) return undefined;
+  // ...or a carrier the BYE sent on into the next matchUp, whom v1 releases back out of it, the carry with them, and the
+  // loser then arrives beside the carry and is awarded it (S7, `carrierSentOn`, `unwoundAwardOps`)
+  const sentOn = relayed || rederived ? undefined : carrierSentOn(view, byeMatchUp, drawPosition, withdrawn);
+  if (!relayed && !rederived && !sentOn && Object.keys(byeMatchUp.sideExitProvenance ?? {}).length) return undefined;
   // the BYE beside another (two paired double exits' loser seats, S6 tail): the standing BYE then advances the freed seat
   if (seat.opponentBye) return doubleByeSeatOps(view, loserSeat, byeMatchUp, withdraw);
   if (byeMatchUp.matchUpStatus !== BYE) return undefined;
@@ -3184,7 +3339,12 @@ function unwoundSeatOps(
   const opposite = loserSeat.drawPositions.filter((position) => position !== drawPosition);
   const ops: OutcomeOp[] = [
     withdraw,
-    { op: 'clearMatchUpBye', matchUpId, drawPosition, ...(rederived ? { rederived } : {}) },
+    {
+      op: 'clearMatchUpBye',
+      matchUpId,
+      drawPosition,
+      ...((rederived ?? sentOn) ? { rederived: rederived ?? sentOn?.rederived } : {}),
+    },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
   ];
   // a structure's last round (COMPASS's one-round structures): the BYE sent nothing on (S6 tail)
@@ -3196,6 +3356,7 @@ function unwoundSeatOps(
   // withdrawal releases that position out of it and writes it last, the rewrite's notice superseded (S6 tail)
   if (!opposite.length) return held.some((position) => !released.has(position)) ? undefined : [...ops, ...cascade];
   if (opposite.length > 1 || !next || !held.includes(opposite[0])) return undefined;
+  if (sentOn) return [...ops, ...carrierHomeOps(sentOn, drawPosition), ...cascade];
   const beyond = withdrawnByeNextOps(next, held, opposite[0], drawPosition, withdrawn, relayed ? relay : undefined);
   return beyond && [...ops, ...beyond, ...cascade];
 }
@@ -3611,8 +3772,11 @@ function unwoundOps(
   if ((route !== CLEAR_SCORE && route !== 'winner') || !isDoubleExit(view.existing.matchUpStatus))
     return { ops: [], reannounced: [] };
   const levels = unwoundPath(view, request.matchUpId, drawDefinition) ?? [];
-  // a seat's advance through a standing BYE is v1's `reconcileByeAdvancements`, after the call's own write
-  const deferred = (op: OutcomeOp) => op.op === 'setMatchUpDrawPositions' && !!op.advancesThroughBye;
+  // a seat's advance through a standing BYE is v1's `reconcileByeAdvancements`, after the call's own write; so is a
+  // released landing's write back to be played (`carrierHomeOps`), announced by `reconcileScoredTimes` after everything
+  const deferred = (op: OutcomeOp) =>
+    (op.op === 'setMatchUpDrawPositions' && !!op.advancesThroughBye) ||
+    (op.op === 'setMatchUpResult' && op.announcedAs === 'reconcileScoredTimes');
   const ops = [...levels].reverse().flatMap(({ matchUpId, seatOps: all, released, rederived }, depth): OutcomeOp[] => {
     const seatOps = all.filter((op) => !deferred(op));
     if (matchUpId === request.matchUpId) return seatOps;
@@ -4726,6 +4890,62 @@ function byeChainOnward(view: OutcomeView, from: HydratedMatchUp, drawPosition: 
   return undefined;
 }
 
+/**
+ * A loser arriving on the seat an unwind freed beside a carried exit, whose carrier the unwind released back
+ * (`carrierSentOn`): the BYE matchUp, re-derived to the carry as the BYE went, is awarded to the loser as they are seated,
+ * and v1's `assignDrawPosition` announces it and sends them on, through each relay (a BYE still, announced as it leaves
+ * it) into the landing the release left to be played (S7). Read off the unwind's own ops: the matchUps the BYE matchUp
+ * leads on to, each written by the unwind for the withdrawn BYE (a relay) or released (the landing). Nothing where the
+ * unwind freed the seat any other way (the loser arrives plainly, `arrivalOps`)
+ */
+function unwoundArrivalOps(view: OutcomeView, unwound: OutcomeOp[], loser?: DirectionPlan['loser']): OutcomeOp[] {
+  const { loserMatchUpId, loserTargetDrawPosition: drawPosition } = view.targets;
+  const byeMatchUp = indexed(view, loserMatchUpId);
+  if (!loser?.arrives || !byeMatchUp || !drawPosition) return [];
+  const cleared = unwound.some(
+    (op) =>
+      op.op === 'clearMatchUpBye' &&
+      op.matchUpId === byeMatchUp.matchUpId &&
+      op.drawPosition === drawPosition &&
+      !!op.rederived,
+  );
+  const writtenBy = (matchUpId: string) =>
+    unwound.find(
+      (op): op is Extract<OutcomeOp, { op: 'setMatchUpDrawPositions' }> =>
+        op.op === 'setMatchUpDrawPositions' && op.matchUpId === matchUpId,
+    );
+  const onward: OutcomeOp[] = [];
+  let at = cleared ? indexed(view, byeMatchUp.winnerMatchUpId) : undefined;
+  for (let hop = 0; at && hop < 9; hop += 1) {
+    const write = writtenBy(at.matchUpId);
+    if (!write || (!write.releasedDrawPosition && write.withdrawnByePosition !== drawPosition)) return [];
+    const drawPositions = [...write.drawPositions, drawPosition].sort((a, b) => a - b);
+    onward.push(
+      {
+        op: 'setMatchUpDrawPositions',
+        matchUpId: at.matchUpId,
+        drawPositions,
+        ...(write.releasedDrawPosition ? {} : { placedDrawPosition: drawPosition }),
+      },
+      { op: 'stampUpdatedAt', entity: 'matchUp', id: at.matchUpId },
+    );
+    if (write.releasedDrawPosition) {
+      return [
+        {
+          op: 'setMatchUpDrawPositions',
+          matchUpId: byeMatchUp.matchUpId,
+          drawPositions: positionsOf(byeMatchUp),
+          placedDrawPosition: drawPosition,
+          rederivesCodes: true,
+        },
+        ...onward,
+      ];
+    }
+    at = indexed(view, at.winnerMatchUpId);
+  }
+  return [];
+}
+
 /** a plain loser arrival: the loser on the seat the link feeds */
 function arrivalOps(view: OutcomeView, loser?: DirectionPlan['loser']): OutcomeOp[] {
   const { loserStructureId, loserTargetDrawPosition } = view.targets;
@@ -4831,7 +5051,8 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
   const seatOps = args.route === DOUBLE_EXIT ? doubleExitSeatOps(view, request, args.direction) : undefined;
   const doubleExitSeated = seatOps?.ops ?? [];
   const producedExit = args.route === DOUBLE_EXIT ? producedExitOps(view, request, write, args.direction) : [];
-  const seated = [...arrival, ...keptOutBye, ...reserved];
+  // ...and, seated beside a carried exit whose carrier the unwind released back, awarded it and sent on (S7)
+  const seated = [...arrival, ...unwoundArrivalOps(view, unwound, loser), ...keptOutBye, ...reserved];
   const line = view.line;
   // a TEAM line's group is its dual's: the dual is tallied with the line's result in place, its lines and its tally (S7)
   const tallied = line

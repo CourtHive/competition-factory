@@ -144,6 +144,12 @@ export type OutcomeOp =
        * with the event; the matchUp's score is left as it is (there is none: a result there keeps the carry)
        */
       releasedDrawPosition?: number;
+      /**
+       * the placement seats a loser beside a carried exit that decides the matchUp for them (RULE 2 on arrival, a seat an
+       * unwind freed and re-derived to the carry, S7): v1's `assignDrawPosition` re-derives its status codes with the
+       * assignment (`progressExitStatus`: `[]`, nothing carried on this side) and announces the matchUp as the assignment
+       */
+      rederivesCodes?: true;
     }
   | {
       op: 'assignPosition';
@@ -462,6 +468,8 @@ function foldMatchUpWrite(
       matchUp.matchUpStatus = TO_BE_PLAYED;
       setSideExitProvenance({ matchUp, provenance: undefined });
     }
+    // the arrival that decides the matchUp by the carried exit beside it: its codes re-derived (`progressExitStatus`)
+    if (op.rederivesCodes) matchUp.matchUpStatusCodes = [];
   }
   return {};
 }
