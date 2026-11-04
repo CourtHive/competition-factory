@@ -88,7 +88,7 @@ export function applyOwnedPlan({
   // a carry recorded beside a BYE it passed: the BYE matchUp's state is not rewritten, so v1's `progressExitStatus`
   // announces the entry itself (`recordCarryBesideBye`)
   const relayed = new Set(ops.flatMap((op) => (op.op === 'mergeSideExitProvenance' ? [op.matchUpId] : [])));
-  const { removed, unevented, untournamented, unbyed, settledResults } = noticeRules(ops);
+  const { removed, unevented, untournamented, unbyed, settledResults, arrived } = noticeRules(ops);
   // a position advanced through a BYE a double exit placed: v1's `doubleExitAdvancement` announces it as `advanceWinner`
   const advanced = new Set(
     ops.flatMap((op) => (op.op === 'setMatchUpDrawPositions' && op.advancesThroughBye ? [op.matchUpId] : [])),
@@ -144,7 +144,10 @@ export function applyOwnedPlan({
           released,
         }),
       eventId: noticeEvent?.eventId,
-      tournamentId: !settledWrite && (untournamented.has(matchUpId) || unbyedPosition) ? undefined : tournamentId,
+      tournamentId:
+        !settledWrite && ((untournamented.has(matchUpId) && !arrived.has(matchUpId)) || unbyedPosition)
+          ? undefined
+          : tournamentId,
       drawDefinition,
       matchUp,
       event: noticeEvent,
@@ -217,6 +220,14 @@ function noticeRules(ops: OutcomeOp[]) {
   );
   // a BYE an unwind withdraws: v1's `clearDrawPosition` names its position, with neither event nor tournament (S6)
   const unbyed = withdrawnByeNotices(ops);
+  // a loser placed through a BYE into a matchUp an unwind wrote quietly (`unwoundThrough`): v1 announces the arrival last,
+  // with the event and the tournament; the in-context notice stays the quiet score write's
+  const arrived = new Set(
+    ops.flatMap((op) =>
+      op.op === 'setMatchUpDrawPositions' && op.placedDrawPosition && !op.removedDrawPosition ? [op.matchUpId] : [],
+    ),
+  );
+  for (const matchUpId of arrived) unevented.delete(matchUpId);
   // an advance through a BYE names no event, but an evented BYE written before it keeps its event (`byeAndAdvance`)
   for (const matchUpId of byeAndAdvance(ops).eventKept) unevented.delete(matchUpId);
   // a team's line-up written with no event, unless a result written after it announces the matchUp (`namedWriters`)
@@ -225,7 +236,7 @@ function noticeRules(ops: OutcomeOp[]) {
   const settledResults = new Set(
     ops.flatMap((op) => (op.op === 'setMatchUpResult' && op.announcedAs ? [op.matchUpId] : [])),
   );
-  return { removed, unevented, untournamented, unbyed, settledResults };
+  return { removed, unevented, untournamented, unbyed, settledResults, arrived };
 }
 
 /**
