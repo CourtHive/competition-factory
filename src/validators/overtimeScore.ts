@@ -1,3 +1,4 @@
+import { shootoutTallyRefusal } from '@Helpers/matchUpFormatCode/shootout';
 import { resolveFormat } from '@Assemblies/engines/scoring/v2/format';
 import { decideMatch } from '@Assemblies/engines/scoring/v2/decide';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
@@ -87,6 +88,8 @@ export function overtimeSetAfterDecision(sets: StaticSet[], matchUpFormat?: stri
 function sequenceViolation(rule: MatchRule, scored: ScoredSet[]): string | undefined {
   const suddenDeathScore = suddenDeathViolation(rule.n, rule.overtime!, scored);
   if (suddenDeathScore) return suddenDeathScore;
+  const shootoutTally = shootoutViolation(rule, scored);
+  if (shootoutTally) return shootoutTally;
   for (let k = 1; k < scored.length; k++) {
     if (decideMatch(rule, scored.slice(0, k)).complete)
       return `Set ${scored[k].setNumber}: played after the match was decided`;
@@ -112,6 +115,15 @@ function toScoredSet(set: StaticSet, index: number, open: boolean): ScoredSet {
     // a static set is a closed one, but for the last set of a score still in progress
     ...(closed ? { segmentComplete: true } : {}),
   };
+}
+
+/** a shootout decider's tally must be one a shootout can end on (Ruling 3) */
+function shootoutViolation(rule: MatchRule, sets: ScoredSet[]): string | undefined {
+  const { overtime, final } = rule;
+  if (final?.kind !== 'shootout' || !overtime || overtime.count === 'unlimited') return undefined;
+  const decider = sets[rule.n + overtime.count];
+  const refusal = decider && shootoutTallyRefusal(final.rounds, [decider.side1Score, decider.side2Score]);
+  return refusal ? `Set ${decider.setNumber}: ${refusal}` : undefined;
 }
 
 function suddenDeathViolation(

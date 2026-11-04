@@ -38,6 +38,7 @@ const SET_KEYS = new Set([
   'based',
   'modifier',
   'outs',
+  'shootout',
   'gameFormat',
 ]);
 const TIEBREAK_KEYS = new Set(['tiebreakTo', 'modifier', 'NoAD']);
@@ -74,6 +75,8 @@ function matchSpec(parsed: FormatStructure): string {
 export function segmentCell(set?: SetFormatStructure): string {
   if (!set) return 'none';
   if (set.outs) return 'outs';
+  // its own coordinate (Ruling 3): a tally-only final, harvested once overtime opens for new use (S6)
+  if (set.shootout) return 'shootout';
   if (set.combinedPointTotal) return `combined(${set.tieResolution ?? 'ALLOW'})`;
   if (set.timed) {
     const traits = [set.based ?? 'G', set.modifier && `@${set.modifier}`, set.tiebreakFormat && 'tiebreak'];

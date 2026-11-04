@@ -43,8 +43,10 @@ export type CombinedRule = {
 
 /** outs (§ 8): no point or game model; scored by set totals */
 export type OutsRule = { kind: 'outs' };
+/** a shootout of `rounds` rounds, entered as a final tally only (Ruling 3, CA 2026-11-04) */
+export type ShootoutRule = { kind: 'shootout'; rounds: number };
 
-export type SegmentRule = StandardRule | TiebreakOnlyRule | TimedRule | CombinedRule | OutsRule;
+export type SegmentRule = StandardRule | TiebreakOnlyRule | TimedRule | CombinedRule | OutsRule | ShootoutRule;
 
 export type MatchRule = {
   code: string;
@@ -74,6 +76,7 @@ type ParsedSetFormat = {
   winningMargin?: number;
   based?: string;
   outs?: number;
+  shootout?: number;
   timed?: boolean;
   tiebreakSet?: ParsedTiebreak;
   tiebreakFormat?: ParsedTiebreak;
@@ -136,6 +139,7 @@ function segmentRule(
 ): SegmentRule {
   if (setFormat.combinedPointTotal !== undefined) return combinedRule(setFormat);
   if (setFormat.outs !== undefined) return { kind: 'outs' };
+  if (setFormat.shootout !== undefined) return { kind: 'shootout', rounds: setFormat.shootout };
   if (setFormat.timed) return timedRule(setFormat, gameFormat, context);
   if (setFormat.tiebreakSet)
     return {
@@ -205,7 +209,8 @@ function supportsOvertime(
   const overtime = parsed.overtimeFormat!;
   if (parsed.matchUpConstraint || ordinary.kind !== 'timed' || ordinary.tiebreak) return false;
   if (!overtime.setFormat.timed || overtime.setFormat.tiebreakFormat) return false;
-  if (final && final.kind !== 'tiebreakOnly' && (final.kind !== 'timed' || final.tiebreak)) return false;
+  const finalSupported = ['tiebreakOnly', 'shootout'].includes(final?.kind ?? '');
+  if (final && !finalSupported && (final.kind !== 'timed' || final.tiebreak)) return false;
   return overtime.count === 'unlimited' || Number.isSafeInteger(n + overtime.count + (final ? 1 : 0));
 }
 
@@ -245,6 +250,7 @@ export function ruleForSet(match: MatchRule, setNumber: number, setsWon: Pair): 
 
 /** whether `rule` is a segment kind that takes `input` (§ 3.3): outs take only set totals; a combined total no game */
 export function takesInput(rule: SegmentRule, input: 'point' | 'game'): boolean {
-  if (rule.kind === 'outs') return false;
+  // outs and a shootout take set totals only
+  if (rule.kind === 'outs' || rule.kind === 'shootout') return false;
   return !(input === 'game' && rule.kind === 'combined');
 }

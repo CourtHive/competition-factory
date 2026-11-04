@@ -620,6 +620,7 @@ export interface MatchUpConstraintStructure {
  * 2. Tiebreak-only set: has tiebreakSet (e.g., S:TB11)
  * 3. Timed set: has timed+minutes (e.g., S:T10P)
  * 4. Outs-based set: has outs (e.g., S:O3 — baseball/wiffle ball innings)
+ * 5. Shootout: has shootout, its rounds (F:SO5) — only ever the final set, entered as a tally
  */
 export interface SetFormatStructure {
   // Combined rally-total segment (SET1-S:P32, P32DP, P32WB2)
@@ -642,6 +643,8 @@ export interface SetFormatStructure {
   modifier?: string;
   // Outs-based set (baseball/wiffle ball innings)
   outs?: number;
+  // Shootout (final set only), entered as a tally
+  shootout?: number;
   // Game format within set
   gameFormat?: GameFormatStructure;
 }

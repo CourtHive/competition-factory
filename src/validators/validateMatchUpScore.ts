@@ -1,4 +1,5 @@
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
+import { shootoutTallyRefusal } from '@Helpers/matchUpFormatCode/shootout';
 /**
  * Validate matchUp score against matchUpFormat
  *
@@ -411,6 +412,11 @@ export function validateSetScore(
     return analysis.valid && (allowIncomplete || analysis.complete)
       ? { isValid: true }
       : { isValid: false, error: 'Invalid or unfinished combined-point score' };
+  }
+  // a shootout is entered as its final tally, never in progress (Ruling 3)
+  if (setFormat.shootout) {
+    const refusal = shootoutTallyRefusal(setFormat.shootout, [set.side1Score ?? 0, set.side2Score ?? 0]);
+    return refusal ? { isValid: false, error: refusal } : { isValid: true };
   }
   // Handle timed sets (based: 'P'/'G' or timed: true)
   if (setFormat.timed) return validateTimedSet(set, setFormat, allowIncomplete, isAggregateFormat(parsed));

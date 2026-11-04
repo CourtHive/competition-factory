@@ -1,5 +1,6 @@
 import { closedTotal, inTiebreakAtTime, timedEnd, timedGame, timedPoint, timedTotal } from './timed';
 import { combinedClosed, combinedPoint, combinedReachable, combinedSet } from './combined';
+import { shootoutTallyRefusal } from '@Helpers/matchUpFormatCode/shootout';
 import { standardGame, standardPoint, standardSetWinner } from './standard';
 import { tiebreakOnlyGame, tiebreakOnlyPoint } from './tiebreakOnly';
 import { raceWinner } from './game';
@@ -118,6 +119,8 @@ export function segmentTotal(rule: SegmentRule, setNumber: number, total: SetTot
   if (refutedRace(rule, total)) return { refused: 'the tiebreak-only set given as won 1-0 is not won by its points' };
   if (rule.kind === 'combined' && !combinedReachable(rule, total.totals))
     return { refused: 'no play reaches that combined total' };
+  const shootout = rule.kind === 'shootout' ? shootoutTallyRefusal(rule.rounds, total.totals) : undefined;
+  if (shootout) return { refused: shootout };
   const judged = givenWinner(rule, total);
   if (judged.refused) return { refused: judged.refused };
   const [side1TiebreakScore, side2TiebreakScore] = total.tiebreakPoints ?? [];
