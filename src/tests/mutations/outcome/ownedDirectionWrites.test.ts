@@ -327,7 +327,38 @@ const JOINED_SEATS: [string, Scenario][] = JOINED_DRAWS.flatMap(([drawSize, part
   ),
 );
 
+/**
+ * S7, policy off: an FMLC Main double exit whose Consolation seat is opposite a BYE, its exit carried on to the matchUp
+ * the unfillable seat (behind FIRST_MATCHUP) is in: that seat's BYE makes the landing a BYE, and once the produced exit
+ * is written the position goes on and the exit lands pending past it. Positions per draw shape (seed 9000230)
+ */
+const HELD_JOIN_DRAWS: [number, number, number[]][] = [
+  [8, 5, [2]],
+  [8, 6, [2, 3]],
+  [8, 7, [2]],
+  [16, 9, [5]],
+  [16, 11, [2, 4, 5]],
+  [16, 13, [2, 4, 7]],
+  [16, 15, [2]],
+  [32, 21, [2, 4, 6, 11, 13]],
+  [32, 27, [2, 6, 8, 11, 15]],
+];
+const HELD_JOINS: [string, Scenario][] = HELD_JOIN_DRAWS.flatMap(([drawSize, participantsCount, positions]) =>
+  positions.flatMap((roundPosition) =>
+    [DOUBLE_WALKOVER, DOUBLE_DEFAULT].map((matchUpStatus): [string, Scenario] => [
+      `${FIRST_MATCH_LOSER_CONSOLATION} ${participantsCount} of ${drawSize} (policy off): R1/${roundPosition} a ${matchUpStatus} beside a BYE, its exit carried past the unfillable BYE`,
+      {
+        drawProfile: { drawSize, participantsCount, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+        nonRandom: 9000230,
+        policyDefinitions: POLICY_OFF,
+        steps: [{ target: R1(roundPosition, 'Main'), outcome: { matchUpStatus } }],
+      },
+    ]),
+  ),
+);
+
 const SCENARIOS: [string, Scenario][] = [
+  ...HELD_JOINS,
   ...JOINED_SEATS,
   ...FED_SEATS,
   [
