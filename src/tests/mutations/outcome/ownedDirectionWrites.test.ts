@@ -183,18 +183,17 @@ const PASSAGES: [string, Scenario][] = (
   ] as const
 ).flatMap(([drawType, structureName]) =>
   PASSAGE_DRAWS.flatMap(([drawSize, participantsCount, roundPosition]) =>
-    PASSAGE_STEPS
-      // CURTIS 7 of 8: the loser's arrival is v1's (`V1S`)
-      .filter(([label]) => !(drawType === CURTIS_CONSOLATION && drawSize === 8 && label !== 'cleared'))
-      .map(([label, doubleExit, outcome]): [string, Scenario] => [
-        `${drawType} ${participantsCount} of ${drawSize} (policy off): R1/${roundPosition} past the BYE, ${label}`,
-        {
-          drawProfile: { drawSize, participantsCount, drawType },
-          policyDefinitions: POLICY_OFF,
-          setup: [{ target: R1(roundPosition, structureName), outcome: { matchUpStatus: doubleExit } }],
-          steps: [{ target: R1(roundPosition, structureName), outcome }],
-        },
-      ]),
+    // CURTIS 7 of 8 given a winner: Main's first round has no loser link, so the unwind's seat writes are the produced
+    // exit's seat's alone and the winner is directed as any (owned since the carried-beside-BYE slice, S7)
+    PASSAGE_STEPS.map(([label, doubleExit, outcome]): [string, Scenario] => [
+      `${drawType} ${participantsCount} of ${drawSize} (policy off): R1/${roundPosition} past the BYE, ${label}`,
+      {
+        drawProfile: { drawSize, participantsCount, drawType },
+        policyDefinitions: POLICY_OFF,
+        setup: [{ target: R1(roundPosition, structureName), outcome: { matchUpStatus: doubleExit } }],
+        steps: [{ target: R1(roundPosition, structureName), outcome }],
+      },
+    ]),
   ),
 );
 
@@ -490,7 +489,79 @@ const WALKED_SEATS: [string, Scenario][] = WALKED_SEAT_DRAWS.flatMap(
     ),
 );
 
+/**
+ * S7: a participant's carried exit standing beside the double exit's BYE in a structure's last round (COMPASS: East R1/3's
+ * defaulted loser carried into West, then as West 1/2's loser into South's final beside the BYE East 1/1's double walkover
+ * sent on through West 1/1; CURTIS: Main 2/1's walkover loser into the Play Off beside the BYE Main 1/3's double default
+ * left on the Play Off seat). The BYE withdrawn, v1 re-derives the matchUp to the carried exit, awarded to the side
+ * without it (`carriedBesideBye`). The exits are carried per call (`CARRIED`); census seeds
+ */
+const SOUTH_FINAL_CARRY: Step[] = [
+  { target: R1(2, 'East'), outcome: won(2), params: CARRIED },
+  { target: R1(3, 'East'), outcome: exited(DEFAULTED, 1), params: CARRIED },
+];
+const CARRIED_BESIDE_BYE: [string, Scenario][] = [
+  ...[
+    ['given a winner', won(1)],
+    ['cleared', cleared],
+  ].flatMap(([label, outcome]): [string, Scenario][] => [
+    [
+      `${COMPASS} 8 (seed 20318646): East 1/1 a double walkover, a default carried into South's final beside its BYE, ${label}`,
+      {
+        drawProfile: { drawSize: 8, drawType: COMPASS },
+        nonRandom: 20318646,
+        setup: [
+          { target: R1(1, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED },
+          ...SOUTH_FINAL_CARRY,
+        ],
+        steps: [{ target: R1(1, 'East'), outcome, params: CARRIED }],
+      },
+    ],
+    [
+      `${COMPASS} 8 (seed 20318646): the default carried into South's final first, then East 1/1's double walkover, ${label}`,
+      {
+        drawProfile: { drawSize: 8, drawType: COMPASS },
+        nonRandom: 20318646,
+        setup: [
+          ...SOUTH_FINAL_CARRY,
+          { target: R1(1, 'East'), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED },
+        ],
+        steps: [{ target: R1(1, 'East'), outcome, params: CARRIED }],
+      },
+    ],
+    ...[WALKOVER, DEFAULTED].map((carried): [string, Scenario] => [
+      `${CURTIS_CONSOLATION} 6 of 8 (policy off, seed 30009232): Main 1/3 a double default, Main 2/1's ${carried} loser carried into the Play Off beside its BYE, ${label}`,
+      {
+        drawProfile: { drawSize: 8, participantsCount: 6, drawType: CURTIS_CONSOLATION },
+        nonRandom: 30009232,
+        policyDefinitions: POLICY_OFF,
+        setup: [
+          { target: R1(3, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT }, params: CARRIED },
+          { target: R1(2, 'Main'), outcome: won(1), params: CARRIED },
+          {
+            target: { roundNumber: 2, roundPosition: 1, structureName: 'Main' },
+            outcome: walkover(1),
+            params: CARRIED,
+          },
+          // the carry relabelled a default once (#5554: the relabel rewrites the carry on the BYE-held matchUp)
+          ...(carried === DEFAULTED
+            ? [
+                {
+                  target: { roundNumber: 2, roundPosition: 1, structureName: 'Main' },
+                  outcome: exited(DEFAULTED, 1),
+                  params: CARRIED,
+                },
+              ]
+            : []),
+        ],
+        steps: [{ target: R1(3, 'Main'), outcome, params: CARRIED }],
+      },
+    ]),
+  ]),
+];
+
 const SCENARIOS: [string, Scenario][] = [
+  ...CARRIED_BESIDE_BYE,
   ...WALKED_SEATS,
   ...PRODUCED_FINALS,
   ...HELD_AWARDS_ONWARD,
@@ -3608,17 +3679,6 @@ describe('under v2, an exit v2 does not plan is v1s, whole', () => {
 // carries re-derived too) it stays v1's, whole. A released award given a winner is v2's since S7 (SCENARIOS)
 describe('under v2, a dissolved convergence beyond the clear is v2s; given a winner or under policy off it is v1s', () => {
   const V1S: [string, Scenario][] = [
-    // S7, policy off: CURTIS's loser through the BYE is v1's (`PASSAGES`; FIRST_MATCH_LOSER_CONSOLATION's passage through
-    // the released award's reservation is v2's since the relay slice)
-    [
-      'CURTIS_CONSOLATION 7 of 8 (policy off): R1/2 past the BYE, given a winner',
-      {
-        drawProfile: { drawSize: 8, participantsCount: 7, drawType: CURTIS_CONSOLATION },
-        policyDefinitions: POLICY_OFF,
-        setup: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
-        steps: [{ target: R1(2, 'Main'), outcome: won(1) }],
-      },
-    ],
     [
       'SINGLE_ELIMINATION: a double walkover given a winner, its produced exit converged',
       {
