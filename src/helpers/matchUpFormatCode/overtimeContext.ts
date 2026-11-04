@@ -94,7 +94,8 @@ export function overtimeResultString(context: OvertimeScoreContext, perspective?
   if (context.decidedIn === 'EXTERNAL') {
     const by = context.decidedBy;
     const label = (by && METHOD_LABELS[by.method]) ?? 'Decided';
-    return `${aggregate} (${label}${by?.tally ? `: ${pair(by.tally)}` : ''})`;
+    const tally = by?.tally ? ': ' + pair(by.tally) : '';
+    return `${aggregate} (${label}${tally})`;
   }
   if (context.decidedIn === 'DECIDER') return overtimeScoreString(context, perspective);
   if (context.decidedIn === 'REGULATION') return level ? `${aggregate} (drawn)` : aggregate;
