@@ -580,7 +580,7 @@ function givenWinnerReason(args: Parameters<typeof exitReason>[0]): AbstainReaso
   if (!view.targets.loserMatchUpId && !view.targets.loserLink && !direction?.loser)
     return levels.some(({ seatOps }) => seatOps.length) ? 'exit' : undefined;
   // a loser placed opposite a standing BYE goes on through it: planned only where the matchUp they go on into is read as
-  // the unwind leaves it (`unwoundThrough`); a further BYE beyond it, which v1 announces too, is v1's
+  // the unwind leaves it (`unwoundThrough`: cleared, the passage's landing, the last round, or a chain of BYEs to it)
   const { loserTargetSeat, loserThroughBye, loserByePassage } = view.targets;
   const unwound = levels.flatMap(({ seatOps }) => seatOps);
   if (
@@ -4434,7 +4434,32 @@ function unwoundThrough(view: OutcomeView, unwound: OutcomeOp[]): ThroughBye | u
     );
   const drawPositions = positionsOf(next);
   if ((!withdrawn && !passage) || !drawPositions.includes(drawPosition)) return undefined;
-  return cleared || landed || !next.winnerMatchUpId ? { matchUpId: next.matchUpId, drawPositions } : undefined;
+  if (cleared || landed || !next.winnerMatchUpId) return { matchUpId: next.matchUpId, drawPositions };
+  // a BYE still, by another standing BYE: the loser goes on through it, and through each BYE after it, to the structure's
+  // last round, and v1 announces each matchUp passed as it announces the first (S7)
+  const onward = byeChainOnward(view, next, drawPosition);
+  return onward ? { matchUpId: next.matchUpId, drawPositions, onward } : undefined;
+}
+
+/**
+ * The BYE-held matchUps a position passes after `from` (walls, never reached refusing: a matchUp no BYE holds, no
+ * standing BYE, the position not there, a structure crossed), each a BYE by another standing BYE and holding the position
+ * already (the BYEs advanced it structurally), to the structure's last round. Undefined where the chain meets anything
+ * else (a matchUp to be played, a structure crossed): v1's.
+ */
+function byeChainOnward(view: OutcomeView, from: HydratedMatchUp, drawPosition: number): ThroughBye[] | undefined {
+  const hops: ThroughBye[] = [];
+  let at: HydratedMatchUp | undefined = from;
+  for (let hop = 0; at && hop < 8; hop += 1) {
+    const standing = at.sides?.some((side) => side.bye && side.drawPosition !== drawPosition);
+    if (at.matchUpStatus !== BYE || !standing || !positionsOf(at).includes(drawPosition)) return undefined;
+    const next = indexed(view, at.winnerMatchUpId);
+    if (!next) return hops;
+    if (next.structureId !== from.structureId) return undefined;
+    hops.push({ matchUpId: next.matchUpId, drawPositions: positionsOf(next) });
+    at = next;
+  }
+  return undefined;
 }
 
 /** a plain loser arrival: the loser on the seat the link feeds */
@@ -4515,7 +4540,7 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
   const carried = carriedFor(view, args, loser);
   const landing = dualCall ? carriedDualLanding(view, drawDefinition, carried.landing, loser) : carried.landing;
   if (!landing) return { abstain: 'team' };
-  const throughBye = [loserThrough, winnerThrough].flatMap((through): OutcomeOp[] =>
+  const throughBye = [loserThrough, ...(loserThrough?.onward ?? []), winnerThrough].flatMap((through): OutcomeOp[] =>
     through
       ? [
           {

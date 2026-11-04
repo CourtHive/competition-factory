@@ -489,7 +489,12 @@ export type Reservation =
     };
 
 /** the matchUp a participant placed opposite a BYE goes on into, and its drawPositions once they are there */
-export type ThroughBye = { matchUpId: string; drawPositions: number[] };
+export type ThroughBye = {
+  matchUpId: string;
+  drawPositions: number[];
+  /** the BYE-held matchUps the position passes after this one, to the structure's last round (S7, `unwoundThrough`) */
+  onward?: ThroughBye[];
+};
 
 /**
  * One seat's BYE and all it sends on, as v1's `assignDrawPositionBye` recursion writes them (S6 tail, the BYE chain):
