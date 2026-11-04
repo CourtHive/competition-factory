@@ -195,6 +195,18 @@ const PASSAGES: [string, Scenario][] = (
 
 const SCENARIOS: [string, Scenario][] = [
   ...PASSAGES,
+  // the released award's seat a double BYE in the consolation's second round, its own position sent on into a feed
+  // round that holds its fed seat beside it: taken out of it as v1's position clear takes it (S7)
+  ...[FEED_IN_CHAMPIONSHIP, DOUBLE_ELIMINATION].map((drawType): [string, Scenario] => [
+    `${drawType} 9 of 16 (policy off): R1/5 past the BYE given a walkover, the award through a BYE released beside a fed seat`,
+    {
+      drawProfile: { drawSize: 16, participantsCount: 9, drawType },
+      nonRandom: 9000230,
+      policyDefinitions: POLICY_OFF,
+      setup: [{ target: R1(5, 'Main'), outcome: { matchUpStatus: DOUBLE_WALKOVER } }],
+      steps: [{ target: R1(5, 'Main'), outcome: walkover(1) }],
+    },
+  ]),
   // the census schedule (run 18, seed 20655968): Main 1/15's double default carried its DEFAULTED past Consolation 1/8's
   // BYE and the BYE Main 2/1's re-entered double default left in Consolation 2/8, which held no score: v1's score write
   // leaves the blank one there

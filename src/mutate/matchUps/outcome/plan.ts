@@ -2987,7 +2987,9 @@ function cascadedSeatOps(
  * released out of the matchUp beyond (`releaseAdvancedDrawPosition`); then, after the call's own write, the standing
  * BYE advances the freed seat into the next matchUp (`reconcileByeAdvancements`, announced `advanceWinner`; deferred by
  * `unwoundOps`). Planned where the next matchUp holds the other BYE's position and one more, nothing else, and the
- * matchUp beyond is to be played holding that one alone. A next matchUp kept a BYE by another standing BYE
+ * matchUp beyond is to be played holding that one, alone or beside a position standing there (a feed round's fed seat:
+ * the one taken out as v1's position clear takes it, named for the withdrawn BYE, S7). A next matchUp kept a BYE by
+ * another standing BYE
  * (FIRST_MATCH_LOSER_CONSOLATION, the advance going on through it) is v1's.
  */
 function doubleByeSeatOps(
@@ -3018,6 +3020,8 @@ function doubleByeSeatOps(
   const beyond = indexed(view, next.winnerMatchUpId);
   if (!beyond || beyond.matchUpStatus !== TO_BE_PLAYED || beyond.winningSide || !scoreless(beyond)) return undefined;
   if (Object.keys(beyond.sideExitProvenance ?? {}).length || beyond.matchUpStatusCodes?.length) return undefined;
+  // the position the next matchUp, a BYE, sent on stands in the matchUp beyond; whatever else stands there stays
+  const stood = positionsOf(beyond).filter((position) => position !== remaining[0]);
   const taken: OutcomeOp[] = ownAdvanced
     ? []
     : [
@@ -3045,13 +3049,22 @@ function doubleByeSeatOps(
     { op: 'clearMatchUpBye', matchUpId: next.matchUpId, drawPosition },
     ...taken,
     { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId },
-    {
-      op: 'setMatchUpDrawPositions',
-      matchUpId: beyond.matchUpId,
-      drawPositions: [],
-      releasedDrawPosition: remaining[0],
-      announcesContext: false,
-    },
+    // alone there it is released; beside a position standing there (a feed round's fed seat) it is taken out as v1's
+    // position clear takes it, named for the withdrawn BYE (S7)
+    stood.length
+      ? {
+          op: 'setMatchUpDrawPositions',
+          matchUpId: beyond.matchUpId,
+          drawPositions: stood,
+          withdrawnByePosition: drawPosition,
+        }
+      : {
+          op: 'setMatchUpDrawPositions',
+          matchUpId: beyond.matchUpId,
+          drawPositions: [],
+          releasedDrawPosition: remaining[0],
+          announcesContext: false,
+        },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: beyond.matchUpId },
     ...freed,
   ];
