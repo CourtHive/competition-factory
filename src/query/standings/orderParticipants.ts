@@ -1,5 +1,5 @@
-import { getGroups } from '@Query/matchUps/roundRobinTally/getGroups';
 import { GRAPH_MEASURES, RATIO_INPUTS, RATIO_MEASURES } from './fromV1';
+import { getGroups } from '@Query/matchUps/roundRobinTally/getGroups';
 import { instanceCount } from '@Tools/arrays';
 import { isNumeric } from '@Tools/math';
 
@@ -297,7 +297,9 @@ function processDirective(
     directive,
     context,
   );
-  const participantResults = withZeroDivision(measured, participantIds, directive);
+  const common = withCommonOpponents(measured, participantIds, directive, context.policy);
+  if (!common) return { order: undefined, report: [{ attribute, skipped: 'minSample', participantIds }] };
+  const participantResults = withZeroDivision(common, participantIds, directive);
   if (!participantResults)
     return { order: undefined, report: [{ attribute, skipped: 'zeroDivision', participantIds }] };
 
@@ -379,6 +381,52 @@ function withGraph(participantResults: ParticipantResults, attribute: string, co
     view[participantId] = { ...results, [attribute]: measures[attribute] };
   }
   return view;
+}
+
+/**
+ * commonOpponents (NFL "common games"), added to a view for the set being sorted: the opponents every member met, read
+ * from the whole table's meetings (`victories`, `defeats`, `drawnWith`), and each member's win percentage over every
+ * meeting with them, a draw worth `drawCredit`. A member never meets itself, so no member of the set is a common
+ * opponent. Undefined when any member has fewer such meetings than `minSample` (default 1): the directive then splits
+ * nothing for this set.
+ */
+function withCommonOpponents(
+  participantResults: ParticipantResults,
+  participantIds: string[],
+  directive: StandingsDirective,
+  policy: StandingsPolicy,
+): ParticipantResults | undefined {
+  if (directive.attribute !== 'commonOpponents') return participantResults;
+  const { drawCredit = 0.5 } = policy;
+  const meetings = (id: string) => {
+    const results = participantResults[id];
+    const won = results?.victories ?? [];
+    const lost = (results?.defeats as string[] | undefined) ?? [];
+    const drawn = (results?.drawnWith as string[] | undefined) ?? [];
+    return { won, lost, drawn };
+  };
+  const opponentSets = participantIds.map((id) => {
+    const { won, lost, drawn } = meetings(id);
+    return new Set([...won, ...lost, ...drawn]);
+  });
+  const common = new Set([...(opponentSets[0] ?? [])].filter((id) => opponentSets.every((set) => set.has(id))));
+  const view: ParticipantResults = { ...participantResults };
+  for (const id of participantIds) {
+    const { won, lost, drawn } = meetings(id);
+    const count = (opponents: string[]) => opponents.filter((opponent) => common.has(opponent)).length;
+    const [wins, losses, draws] = [count(won), count(lost), count(drawn)];
+    const played = wins + losses + draws;
+    if (!played || played < (directive.minSample ?? 1)) return undefined;
+    view[id] = { ...view[id], commonOpponents: atPrecision((wins + drawCredit * draws) / played, policy) };
+  }
+  return view;
+}
+
+/** a computed fraction at the policy's precision: 3 decimal places by default, or EXACT */
+function atPrecision(value: number, policy: StandingsPolicy) {
+  if (policy.precision === 'EXACT') return value;
+  const scale = Math.pow(10, (policy.precision as number) || 3);
+  return Math.round(value * scale) / scale;
 }
 
 /**

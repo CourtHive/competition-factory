@@ -1,6 +1,13 @@
 import { validateDrawTallyOptions } from '@Query/matchUps/roundRobinTally/drawnResults';
-import { GRAPH_MEASURES, RATIO_MEASURES, TALLY_MEASURES, V1_PRIMARY_KEYS, V2_MEASURES } from '@Query/standings/fromV1';
 import { decorateResult } from '@Functions/global/decorateResult';
+import {
+  GRAPH_MEASURES,
+  RATIO_MEASURES,
+  SET_MEASURES,
+  TALLY_MEASURES,
+  V1_PRIMARY_KEYS,
+  V2_MEASURES,
+} from '@Query/standings/fromV1';
 
 // constants and types
 import type { RoundRobinTallyPolicy } from '@Types/roundRobinTallyPolicy';
@@ -54,11 +61,13 @@ export function tallyPolicyErrors(tallyPolicy: RoundRobinTallyPolicy, extraMeasu
       tallyDirectives.forEach((directive, index) => {
         if (!directive || typeof directive !== 'object') errors.push(`tallyDirectives[${index}] must be an object`);
         else {
-          if (!measures.includes(directive.attribute) && !DIRECTIVE_ONLY.includes(directive.attribute)) {
+          const known = [...measures, ...DIRECTIVE_ONLY, ...SET_MEASURES];
+          if (!known.includes(directive.attribute)) {
             errors.push(`tallyDirectives[${index}]: unknown attribute ${directive.attribute}`);
           }
           errors.push(...directiveOnlyErrors(directive, index));
           errors.push(...directiveGateErrors(directive, index));
+          errors.push(...setMeasureErrors(directive, index));
           if (GRAPH_MEASURES.includes(directive.attribute) && directive.idsFilter) {
             errors.push(
               `tallyDirectives[${index}]: ${directive.attribute} reads the whole table; idsFilter cannot scope it`,
@@ -114,6 +123,28 @@ function directiveOnlyErrors(directive: Record<string, unknown>, index: number):
     return [`tallyDirectives[${index}]: an external directive needs an externalKey`];
   }
   return [];
+}
+
+/**
+ * commonOpponents counts meetings against opponents outside the tied set, so a mini-league scope (idsFilter) leaves
+ * it nothing; `minSample` is read by it alone, so on any other directive it would be silently ignored
+ */
+function setMeasureErrors(directive: Record<string, unknown>, index: number): string[] {
+  const errors: string[] = [];
+  const { attribute, idsFilter, minSample } = directive;
+  if (SET_MEASURES.includes(attribute as string) && idsFilter) {
+    errors.push(
+      `tallyDirectives[${index}]: ${attribute} counts meetings outside the tied set; idsFilter cannot scope it`,
+    );
+  }
+  if (minSample !== undefined) {
+    if (attribute !== 'commonOpponents')
+      errors.push(`tallyDirectives[${index}]: minSample applies only to commonOpponents`);
+    else if (!(Number.isInteger(minSample) && (minSample as number) >= 1)) {
+      errors.push(`tallyDirectives[${index}]: minSample must be a whole number of at least 1`);
+    }
+  }
+  return errors;
 }
 const TERMINAL_STEPS = ['ADJUDICATE', 'SHARE', 'LOT'];
 const PHASES = ['PROVISIONAL', 'FINAL'];

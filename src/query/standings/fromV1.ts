@@ -70,6 +70,13 @@ export const RATIO_MEASURES = Object.keys(RATIO_INPUTS);
  */
 export const GRAPH_MEASURES = ['buchholz', 'buchholzCut1', 'buchholzMedian', 'sonnebornBerger'];
 
+/**
+ * Tied-set measures: read from the whole table but valued for the set being sorted, so a participant's value depends on
+ * who else is tied. `commonOpponents` (NFL common games) is each member's record against the opponents every member
+ * met. Directive-only: never the primary measure, never stored, never scoped to the tied (`idsFilter`).
+ */
+export const SET_MEASURES = ['commonOpponents'];
+
 /** the measures a season's ledger adds to the round-robin ledger's: the tie-score values */
 export const SEASON_TALLY_MEASURES = ['valueWon', 'valueLost'];
 

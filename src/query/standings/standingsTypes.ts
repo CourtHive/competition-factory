@@ -42,6 +42,11 @@ export type StandingsDirective = {
    * for any set where it happens (spec § 5.10)
    */
   zeroDivision?: 'MAX' | 'ZERO' | 'SKIP';
+  /**
+   * for attribute 'commonOpponents': the fewest meetings against common opponents each member of the set needs
+   * (default 1). A set with any member below it is not split by this directive (NFL wild card: four).
+   */
+  minSample?: number;
 };
 
 export type StandingsPhase = 'PROVISIONAL' | 'FINAL';
