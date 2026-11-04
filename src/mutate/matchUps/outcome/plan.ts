@@ -577,8 +577,9 @@ function givenWinnerReason(args: Parameters<typeof exitReason>[0]): AbstainReaso
   const levels = unwoundPath(view, request.matchUpId, args.drawDefinition);
   // a convergence the unwind dissolves: the winner then lands beside the re-derived pending exit and is awarded it, v1's
   if (!levels || levels.some(({ rederived }) => rederived)) return 'exit';
-  if (!view.targets.loserMatchUpId && !view.targets.loserLink && !direction?.loser)
-    return levels.some(({ seatOps }) => seatOps.length) ? 'exit' : undefined;
+  // no loser link out of the call's matchUp (CURTIS_CONSOLATION's first round of 8): the unwind's seat writes are the
+  // produced exit's seat's alone, applied as the clear applies them, and the winner is directed as any (S7)
+  if (!view.targets.loserMatchUpId && !view.targets.loserLink && !direction?.loser) return undefined;
   // a loser placed opposite a standing BYE goes on through it: planned only where the matchUp they go on into is read as
   // the unwind leaves it (`unwoundThrough`: cleared, the passage's landing, the last round, or a chain of BYEs to it)
   const { loserTargetSeat, loserThroughBye, loserByePassage } = view.targets;
@@ -3104,6 +3105,29 @@ const seatKey = ({ structureId, drawPosition }: { structureId?: string; drawPosi
   `${structureId}:${drawPosition}`;
 
 /**
+ * A participant's carried exit standing beside the BYE in the structure's last round (S7): the one provenance entry, on
+ * the side opposite the BYE's, a carried exit a participant brought (not a double exit's produced one), the matchUp a
+ * BYE with no winner, score or codes, and no next matchUp (the carrier passed nothing on). Once the BYE goes, v1
+ * re-derives the matchUp to that exit, awarded to the side without it, as `updateMatchUpStatusAfterRemoval` does;
+ * a BYE matchUp with a next matchUp sent the carrier on, and taking them back is v1's. Returns the re-derived state.
+ */
+function carriedBesideBye(
+  byeMatchUp: HydratedMatchUp,
+  drawPosition: number,
+): { matchUpStatus: MatchUpStatusUnion; winningSide: 1 | 2 } | undefined {
+  if (byeMatchUp.winnerMatchUpId || byeMatchUp.matchUpStatus !== BYE || byeMatchUp.winningSide) return undefined;
+  if (!scoreless(byeMatchUp) || byeMatchUp.matchUpStatusCodes?.length) return undefined;
+  const byeSide = byeMatchUp.sides?.find((side) => side.drawPosition === drawPosition)?.sideNumber;
+  if (byeSide !== 1 && byeSide !== 2) return undefined;
+  const entries = Object.entries(byeMatchUp.sideExitProvenance ?? {});
+  const [kept, ...more] = entries;
+  if (!kept || more.length || Number(kept[0]) !== 3 - byeSide) return undefined;
+  const matchUpStatus = carriedExitStatus(kept[1]);
+  if (!matchUpStatus || isDoubleExit(kept[1]?.previousMatchUpStatus)) return undefined;
+  return { matchUpStatus, winningSide: byeSide };
+}
+
+/**
  * Under `doubleExitPropagateBye: false`, a matchUp holding this double exit's own carried exit and nothing else of a
  * result: one provenance entry, a carried exit naming the double exit as its source, no winner, scoreless, no codes; the
  * matchUp a BYE (the relay a passage records beside a BYE it passed) or pending that exit (the passage's landing). S7.
@@ -3146,7 +3170,10 @@ function unwoundSeatOps(
   // may be this double exit's own, relayed past the BYE on its way from the own seat (S7): the passage withdraws it
   // after this seat (`unwoundPassage`, which reads the matchUp as this withdrawal leaves it: `UnwindRelay`)
   const relayed = !!relay && ownCarryAlone(byeMatchUp, relay.sourceId);
-  if (!relayed && Object.keys(byeMatchUp.sideExitProvenance ?? {}).length) return undefined;
+  // ...or a participant's carried exit beside the BYE in the structure's last round, which stands once the BYE goes: v1
+  // re-derives the matchUp to it (S7, `carriedBesideBye`); a carrier the BYE sent on (a next matchUp) is v1's
+  const rederived = relayed ? undefined : carriedBesideBye(byeMatchUp, drawPosition);
+  if (!relayed && !rederived && Object.keys(byeMatchUp.sideExitProvenance ?? {}).length) return undefined;
   // the BYE beside another (two paired double exits' loser seats, S6 tail): the standing BYE then advances the freed seat
   if (seat.opponentBye) return doubleByeSeatOps(view, loserSeat, byeMatchUp, withdraw);
   if (byeMatchUp.matchUpStatus !== BYE) return undefined;
@@ -3157,7 +3184,7 @@ function unwoundSeatOps(
   const opposite = loserSeat.drawPositions.filter((position) => position !== drawPosition);
   const ops: OutcomeOp[] = [
     withdraw,
-    { op: 'clearMatchUpBye', matchUpId, drawPosition },
+    { op: 'clearMatchUpBye', matchUpId, drawPosition, ...(rederived ? { rederived } : {}) },
     { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
   ];
   // a structure's last round (COMPASS's one-round structures): the BYE sent nothing on (S6 tail)

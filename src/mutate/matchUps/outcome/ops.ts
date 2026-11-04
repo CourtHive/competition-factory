@@ -250,6 +250,12 @@ export type OutcomeOp =
        */
       matchUpId: string;
       drawPosition: number;
+      /**
+       * a carried exit standing on the other side once the BYE goes (S7): the matchUp is re-derived to it as v1's
+       * `updateMatchUpStatusAfterRemoval` re-derives it, the exit's status, awarded to the side without it (a carried exit
+       * keeps its award on an empty seat), its provenance kept
+       */
+      rederived?: { matchUpStatus: MatchUpStatusUnion; winningSide: 1 | 2 };
     }
   | {
       op: 'setParticipantResults';
@@ -585,7 +591,8 @@ function foldWithdrawBye(op: OpOf<'withdrawBye'>, { structures, groups }: DrawIn
 function foldClearMatchUpBye(op: OpOf<'clearMatchUpBye'>, { matchUps }: DrawIndex): Folded {
   const matchUp = matchUps.get(op.matchUpId);
   if (!matchUp) return { error: `clearMatchUpBye: no matchUp ${op.matchUpId}` };
-  matchUp.matchUpStatus = TO_BE_PLAYED;
+  matchUp.matchUpStatus = op.rederived?.matchUpStatus ?? TO_BE_PLAYED;
+  if (op.rederived) matchUp.winningSide = op.rederived.winningSide;
   clearOrderOfFinishUnlessCompleted(matchUp);
   return {};
 }
