@@ -4,7 +4,8 @@ import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, expect, it } from 'vitest';
 
 // constants
-import { SINGLE_ELIMINATION, AD_HOC, WIN_RATIO } from '@Constants/drawDefinitionConstants';
+import { SINGLE_ELIMINATION, WIN_RATIO } from '@Constants/drawDefinitionConstants';
+import { UNDECIDED_LEVEL_RESULT } from '@Constants/errorConditionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { DOUBLES_EVENT } from '@Constants/eventConstants';
 
@@ -24,37 +25,39 @@ function setup() {
   return { tournamentRecord, drawId, eventId: event.eventId, structureId, matchUpId };
 }
 
-it('refuses generation of an elimination draw with a tie-capable format', () => {
+// Standings phase 2 § 1.1 (CA 2026-11-04, "allow, decider required"): an elimination draw accepts a format that can
+// end level; a level result there is refused until it names its winner and how it was decided.
+it('generates an elimination draw with a tie-capable format', () => {
   const { eventId } = setup();
-  const before = tournamentEngine.getTournament().tournamentRecord;
-  expect(
-    tournamentEngine.generateDrawDefinition({
-      eventId,
-      drawType: SINGLE_ELIMINATION,
-      drawSize: 4,
-      matchUpFormat: 'SET1-S:P32',
-    }).error,
-  ).toBeTruthy();
-  expect(tournamentEngine.getTournament().tournamentRecord).toEqual(before);
+  const result = tournamentEngine.generateDrawDefinition({
+    eventId,
+    drawType: SINGLE_ELIMINATION,
+    drawSize: 4,
+    matchUpFormat: 'SET1-S:P32',
+  });
+  expect(result.success).toEqual(true);
 });
 
-it.each(['matchUp', 'structure', 'draw', 'event'] as const)(
-  'refuses a tie-capable format at %s scope without writes',
-  (scope) => {
-    const context = setup();
-    const params =
-      scope === 'event'
-        ? { eventId: context.eventId }
-        : {
-            drawId: context.drawId,
-            ...(scope === 'matchUp' ? { matchUpId: context.matchUpId } : {}),
-            ...(scope === 'structure' ? { structureId: context.structureId } : {}),
-          };
-    const before = tournamentEngine.getTournament().tournamentRecord;
-    expect(tournamentEngine.setMatchUpFormat({ ...params, matchUpFormat: 'SET1-S:P32' }).error).toBeTruthy();
-    expect(tournamentEngine.getTournament().tournamentRecord).toEqual(before);
-  },
-);
+it.each(['matchUp', 'structure', 'draw', 'event'] as const)('accepts a tie-capable format at %s scope', (scope) => {
+  const context = setup();
+  const params =
+    scope === 'event'
+      ? { eventId: context.eventId }
+      : {
+          drawId: context.drawId,
+          ...(scope === 'matchUp' ? { matchUpId: context.matchUpId } : {}),
+          ...(scope === 'structure' ? { structureId: context.structureId } : {}),
+        };
+  expect(tournamentEngine.setMatchUpFormat({ ...params, matchUpFormat: 'SET1-S:P32' }).success).toEqual(true);
+  const { event } = tournamentEngine.getEvent({ eventId: context.eventId });
+  const { matchUp } = tournamentEngine.findMatchUp({
+    drawId: context.drawId,
+    matchUpId: context.matchUpId,
+    inContext: true,
+  });
+  // the event scope sets the event's default; the draw keeps the format it declares
+  expect(scope === 'event' ? event.matchUpFormat : matchUp.matchUpFormat).toEqual('SET1-S:P32');
+});
 
 it.each(['SET1-S:P31', 'SET1-S:P32DP', 'SET1-S:P32WB2'])(
   'permits non-tied completion format %s in elimination',
@@ -80,24 +83,10 @@ it.each(['v1', 'v2', 'differential'] as const)(
         disableScoreValidation: true,
         outcome: { matchUpStatus: COMPLETED, score: { sets: [{ setNumber: 1, side1Score: 16, side2Score: 16 }] } },
       }).error,
-    ).toBeTruthy();
+    ).toEqual(UNDECIDED_LEVEL_RESULT);
     expect(tournamentEngine.getTournament().tournamentRecord).toEqual(before);
   },
 );
-
-it('bulk event format validation refuses before changing an earlier social draw', () => {
-  const { eventId } = setup();
-  const record = tournamentEngine.getTournament().tournamentRecord;
-  record.events[0].drawDefinitions.unshift({
-    drawId: 'social',
-    drawType: AD_HOC,
-    structures: [{ structureId: 'social-s', matchUps: [] }],
-  });
-  tournamentEngine.setState(record);
-  const before = tournamentEngine.getTournament().tournamentRecord;
-  expect(tournamentEngine.setMatchUpFormat({ eventId, matchUpFormat: 'SET1-S:P32' }).error).toBeTruthy();
-  expect(tournamentEngine.getTournament().tournamentRecord).toEqual(before);
-});
 
 it('a social structure may have its own tied format without changing the elimination draw default', () => {
   const { drawId } = setup();

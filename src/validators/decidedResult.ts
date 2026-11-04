@@ -6,7 +6,7 @@ import type { DecidedBy, DecidedByMethod, DecidedIn } from '@Types/scoring/types
 import { INVALID_SCORE } from '@Constants/errorConditionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import type { ResultType } from '@Types/factoryTypes';
-import type { Score } from '@Types/tournamentTypes';
+import type { MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
 
 export const EXTERNAL = 'EXTERNAL';
 export const DECIDED_IN: DecidedIn[] = ['REGULATION', 'OVERTIME', 'DECIDER', EXTERNAL];
@@ -37,7 +37,7 @@ export function isDecidedOutsideScore(score?: Score): boolean {
  *   judged by `overtimeScoreVerdict`, so it is not read here.
  */
 export function decidedResultRefusal(params: {
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
   matchUpFormat?: string;
   winningSide?: number;
   score?: Score;

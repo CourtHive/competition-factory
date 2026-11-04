@@ -124,7 +124,12 @@ export function validateScore({
   if (scoreStringSide2 !== undefined && typeof scoreStringSide2 !== 'string') return { error: INVALID_VALUES, info };
   if (sets !== undefined && !Array.isArray(sets)) return { error: INVALID_VALUES, info: mustBeAnArray('sets') };
 
-  const decidedRefusal = decidedResultRefusal({ matchUpStatus, matchUpFormat, winningSide, score });
+  const decidedRefusal = decidedResultRefusal({
+    matchUpStatus: isMatchUpStatus(matchUpStatus) ? matchUpStatus : undefined,
+    matchUpFormat,
+    winningSide,
+    score,
+  });
   if (decidedRefusal) return decidedRefusal;
   // a result decided outside its score (standings phase 2 § 1.1): the score is judged as the level finish it is, and
   // the winner by the record that decided it
