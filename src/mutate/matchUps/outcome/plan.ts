@@ -579,6 +579,18 @@ function givenWinnerReason(args: Parameters<typeof exitReason>[0]): AbstainReaso
   if (!levels || levels.some(({ rederived }) => rederived)) return 'exit';
   if (!view.targets.loserMatchUpId && !view.targets.loserLink && !direction?.loser)
     return levels.some(({ seatOps }) => seatOps.length) ? 'exit' : undefined;
+  // a loser placed opposite a standing BYE goes on through it: planned only where the matchUp they go on into is read as
+  // the unwind leaves it (`unwoundThrough`); a further BYE beyond it, which v1 announces too, is v1's
+  const { loserTargetSeat, loserThroughBye, loserByePassage } = view.targets;
+  const unwound = levels.flatMap(({ seatOps }) => seatOps);
+  if (
+    direction?.loser?.arrives &&
+    loserTargetSeat?.opponentBye &&
+    !loserThroughBye &&
+    !loserByePassage?.through &&
+    !unwoundThrough(view, unwound)
+  )
+    return 'exit';
   return unwoundLoserReason(view, levels[0], direction?.loser);
 }
 
