@@ -35,6 +35,7 @@ import {
   CURTIS_CONSOLATION,
   DOUBLE_ELIMINATION,
   FEED_IN_CHAMPIONSHIP,
+  FEED_IN_CHAMPIONSHIP_TO_SF,
   FIRST_MATCH_LOSER_CONSOLATION,
   FIRST_ROUND_LOSER_CONSOLATION,
   LUCKY_DRAW,
@@ -229,8 +230,57 @@ const RELAYS: [string, Scenario][] = (
   ),
 );
 
+/**
+ * S7, policy off: a Main double exit past the first round, its loser seat a FED one (a feed round's): it takes a BYE
+ * whatever `doubleExitPropagateBye` says, so the own seat's BYE chain plans it, not the produced exit. Main's earlier
+ * rounds played
+ */
+const FED_SEAT_ROUNDS: [number, number, number][] = [
+  [8, 2, 1],
+  [8, 2, 2],
+  [16, 2, 1],
+  [16, 2, 2],
+  [16, 3, 1],
+];
+const FED_SEATS: [string, Scenario][] = [
+  FEED_IN_CHAMPIONSHIP,
+  DOUBLE_ELIMINATION,
+  MODIFIED_FEED_IN_CHAMPIONSHIP,
+  FEED_IN_CHAMPIONSHIP_TO_SF,
+].flatMap((drawType) =>
+  FED_SEAT_ROUNDS.flatMap(([drawSize, roundNumber, roundPosition]) =>
+    [DOUBLE_WALKOVER, DOUBLE_DEFAULT].map((matchUpStatus): [string, Scenario] => [
+      `${drawType} ${drawSize} (policy off): Main ${roundNumber}/${roundPosition} a ${matchUpStatus}, its fed loser seat a BYE`,
+      {
+        drawProfile: { drawSize, drawType },
+        policyDefinitions: POLICY_OFF,
+        setup: [
+          ...Array.from({ length: drawSize / 2 }, (_, i) => ({ target: R1(i + 1, 'Main'), outcome: won(1) })),
+          ...(roundNumber === 3
+            ? Array.from({ length: drawSize / 4 }, (_, i) => ({
+                target: { roundNumber: 2, roundPosition: i + 1, structureName: 'Main' },
+                outcome: won(1),
+              }))
+            : []),
+        ],
+        steps: [{ target: { roundNumber, roundPosition, structureName: 'Main' }, outcome: { matchUpStatus } }],
+      },
+    ]),
+  ),
+);
+
 const SCENARIOS: [string, Scenario][] = [
+  ...FED_SEATS,
   ...RELAYS,
+  [
+    'FEED_IN_CHAMPIONSHIP: the Main final entered as a double default under doubleExitPropagateBye false: its fed loser seat takes the BYE (S7)',
+    {
+      drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
+      policyDefinitions: POLICY_OFF,
+      setup: TO_FINAL_8('Main').slice(0, 6),
+      steps: [{ target: FINAL_8('Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
+    },
+  ],
   ...PASSAGES,
   // ...and into a plain round whose other position came through the paired BYE, which the unwind takes back too: both
   // released
@@ -3417,15 +3467,6 @@ describe('under v2, a dissolved convergence beyond the clear is v2s; given a win
           { target: { roundNumber: 2, roundPosition: 2, structureName: 'Main' }, outcome: won(1) },
         ],
         steps: [{ target: R1(1, 'Consolation'), outcome: cleared }],
-      },
-    ],
-    [
-      'FEED_IN_CHAMPIONSHIP: the Main final entered as a double default under doubleExitPropagateBye false',
-      {
-        drawProfile: { drawSize: 8, drawType: FEED_IN_CHAMPIONSHIP },
-        policyDefinitions: POLICY_OFF,
-        setup: TO_FINAL_8('Main').slice(0, 6),
-        steps: [{ target: FINAL_8('Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
       },
     ],
     [
