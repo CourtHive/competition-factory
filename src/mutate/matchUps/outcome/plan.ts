@@ -1833,6 +1833,9 @@ function walkChain(walk: ByeWalk): ByeChain {
   };
 }
 
+/** the loser seat is a fed one (a feed round's): it takes a BYE whatever `doubleExitPropagateBye` says (S7) */
+const fedSeat = (view: OutcomeView) => !!indexed(view, view.targets.loserMatchUpId)?.feedRound;
+
 /** the seats as the chain's shapes plan them (S5, S6) */
 function chainedSeats(view: OutcomeView, entry?: HydratedMatchUp): DoubleExitSeats | undefined {
   const { targets } = view;
@@ -1841,7 +1844,7 @@ function chainedSeats(view: OutcomeView, entry?: HydratedMatchUp): DoubleExitSea
   if (!view.draw.doubleExitPropagatesBye && targets.loserTargetSeat?.opponentBye) {
     seats.heldLoser = heldLoser(view);
     if (!seats.heldLoser) return undefined;
-  } else if (!view.draw.doubleExitPropagatesBye && (targets.loserLink || targets.loserMatchUpId)) {
+  } else if (!view.draw.doubleExitPropagatesBye && (targets.loserLink || targets.loserMatchUpId) && !fedSeat(view)) {
     seats.producedLoser = producedLoser(view);
     if (!seats.producedLoser) return undefined;
   } else if (targets.loserLink || targets.loserMatchUpId) {
