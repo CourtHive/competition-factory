@@ -1,7 +1,9 @@
-import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
+import { FORMAT_VERDICT, FormatReportEntry, getMatchUpFormatReport } from '@Query/tournaments/getMatchUpFormatReport';
+import { finalize, hasErrorSeverity, Inconsistency, InconsistencyScope } from '@Query/integrity/inconsistency';
 import { getEventInconsistencies } from '@Query/event/getEventInconsistencies';
 import { participantRoleOf } from '@Query/participant/participantRoleOf';
 import { getParticipants } from '@Query/participants/getParticipants';
+import { definedAttributes } from '@Tools/definedAttributes';
 
 // constants and types
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
@@ -35,6 +37,18 @@ export const PARTICIPANT_ROLE_MISSING = 'PARTICIPANT_ROLE_MISSING';
 //    exactly what to fix. One entry per tournament; `invalidRoles` holds one row per offending value
 //    with its count, ids and, where one is evident, a `suggestedRole`. (warning — `valid` stays true)
 export const PARTICIPANT_ROLE_INVALID = 'PARTICIPANT_ROLE_INVALID';
+
+//
+//  - MATCHUP_FORMAT_MALFORMED: a stored matchUpFormat code nothing can read (`getMatchUpFormatReport` verdict
+//    MALFORMED), anywhere in the record: event, draw, structure, matchUp, collection definition, competitionFormat,
+//    schedule timing or an applied policy. One entry per element, listing every malformed code it holds with its
+//    `location` and `path`. (error — CA 2026-11-04)
+export const MATCHUP_FORMAT_MALFORMED = 'MATCHUP_FORMAT_MALFORMED';
+//
+//  - MATCHUP_FORMAT_REFUSED_FOR_NEW_USE: a well-formed stored code that would be refused if it were being set now.
+//    It is still read and scored as stored, and records written before a refusal existed are expected to hold some,
+//    so this is reported and never makes `valid` false. Same shape as MATCHUP_FORMAT_MALFORMED. (warning)
+export const MATCHUP_FORMAT_REFUSED_FOR_NEW_USE = 'MATCHUP_FORMAT_REFUSED_FOR_NEW_USE';
 
 const VALID_ROLES = new Set<string>(Object.values(participantRoles));
 // Values whose intent is unambiguous enough to name the fix. Anything else gets no suggestion.
@@ -139,6 +153,61 @@ function getInvalidRoles(tournamentRecord: Tournament): Partial<Inconsistency>[]
   ];
 }
 
+const FORMAT_ISSUES = {
+  [FORMAT_VERDICT.MALFORMED]: { issueType: MATCHUP_FORMAT_MALFORMED, severity: 'error', label: 'malformed' },
+  [FORMAT_VERDICT.REFUSED_FOR_NEW_USE]: {
+    issueType: MATCHUP_FORMAT_REFUSED_FOR_NEW_USE,
+    severity: 'warning',
+    label: 'refused for new use',
+  },
+} as const;
+
+/**
+ * One inconsistency per issueType per element: the fingerprint identifies an issue by its ids (eventId, drawId,
+ * structureId, matchUpId), so two bad codes on one element are one issue holding both, rather than two issues
+ * sharing one fingerprint. The element is the most specific id the code sits under.
+ */
+function getFormatInconsistencies(tournamentRecord: Tournament): Partial<Inconsistency>[] {
+  const report = getMatchUpFormatReport({ tournamentRecord });
+  if (!('entries' in report)) return [];
+  const grouped = new Map<
+    string,
+    { inconsistency: Partial<Inconsistency>; label: string; entries: FormatReportEntry[] }
+  >();
+
+  for (const entry of report.entries) {
+    if (entry.verdict === FORMAT_VERDICT.VALID) continue;
+    const { issueType, severity, label } = FORMAT_ISSUES[entry.verdict];
+    const { eventId, drawId, structureId, matchUpId } = entry.ids;
+    let scope: InconsistencyScope = 'TOURNAMENT';
+    if (structureId) scope = 'STRUCTURE';
+    else if (drawId) scope = 'DRAW';
+    else if (eventId) scope = 'EVENT';
+
+    const key = [issueType, eventId, drawId, structureId, matchUpId].join('|');
+    const elementIds = definedAttributes({ eventId, drawId, structureId, matchUpId });
+    const group = grouped.get(key) ?? {
+      inconsistency: { issueType, severity, scope, ...elementIds },
+      entries: [] as FormatReportEntry[],
+      label,
+    };
+    group.entries.push(entry);
+    grouped.set(key, group);
+  }
+
+  return [...grouped.values()].map(({ inconsistency, label, entries }) => {
+    const codes = entries.map(({ matchUpFormat, path }) => `${String(matchUpFormat)} (${path})`).join('; ');
+    // `matchUpFormat` is kept as stored, an empty string included, so it is not passed through definedAttributes
+    const matchUpFormats = entries.map(({ location, path, matchUpFormat, info, ids }) => ({
+      location,
+      path,
+      matchUpFormat,
+      ...definedAttributes({ collectionId: ids.collectionId, tieFormatId: ids.tieFormatId, info }),
+    }));
+    return { ...inconsistency, message: `matchUpFormat ${label}: ${codes}`, matchUpFormats };
+  });
+}
+
 export function getTournamentInconsistencies(
   params: GetTournamentInconsistenciesArgs,
 ): ResultType & { valid?: boolean; inconsistencies?: Inconsistency[] } {
@@ -158,7 +227,15 @@ export function getTournamentInconsistencies(
   const missingRoles = getMissingRoles(tournamentRecord);
   const invalidRoles = getInvalidRoles(tournamentRecord);
 
-  const combined = [...eventInconsistencies, ...identityInconsistencies, ...missingRoles, ...invalidRoles];
+  const formatInconsistencies = getFormatInconsistencies(tournamentRecord);
+
+  const combined = [
+    ...eventInconsistencies,
+    ...identityInconsistencies,
+    ...missingRoles,
+    ...invalidRoles,
+    ...formatInconsistencies,
+  ];
   const finalized = finalize(combined, { scope: 'TOURNAMENT', tournamentId });
   return { ...SUCCESS, valid: !hasErrorSeverity(finalized), inconsistencies: finalized };
 }
