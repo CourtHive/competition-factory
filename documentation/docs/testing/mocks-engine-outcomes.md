@@ -231,9 +231,9 @@ outcome is one `analyzeMatchUp` accepts as a validated winning score.
 | overtime                     | `HAL2XA-S:T45P-O:2X/T15P-F:TB1` | regulation, then overtime periods, then the decider, decided in each about 60/25/15 times in 100 (60/40 with no decider or unlimited periods). Every set is numbered in order and stamped with its phase, and `score.overtime` says where the result was decided. A sudden-death period ends on its first score; a level period closes level. A level finish is never generated. An unfinished outcome (a default with a score) stops in regulation. Only the overtime shapes the scoring engine scores are accepted |
 | combined point total         | `SET1-S:P32`, `P32DP`, `P32WB2` | always decisive: the loser takes fewer than half the total. A level total is never generated, because whether it is legal depends on the structure (a winner-advancing draw refuses it); author one where a test needs it                                                                                                                                                                                                                                                                                            |
 
-An overtime format is generated even before overtime is open to new tournament use: an outcome is not a new use
-of a format. Assigning one to an event, draw or matchUp is still refused until activation, so
-`drawProfiles` cannot yet carry one.
+An overtime format the scoring engine scores is open to tournament use (activation, CA 2026-11-04), so `drawProfiles`
+can carry one, and `completeAllMatchUps` plays every matchUp through regulation, overtime and its decider. An outcome
+is not a new use of a format, so `generateOutcome` also accepts an overtime code that is refused for new use.
 
 An invalid `matchUpFormat`, or a status profile the generator cannot read, is refused with an error,
 and `completeAllMatchUps` passes that error on as the generation's error rather than recording an empty

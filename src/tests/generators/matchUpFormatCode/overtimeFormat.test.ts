@@ -115,9 +115,9 @@ describe('overtime grammar foundation (CA 2026-11-03)', () => {
       expect(stringify({ ...regulation, overtimeFormat })).toBeUndefined();
   });
 
-  it('keeps tournament new-use gated while the public ScoringEngine supports timed overtime', () => {
+  it('offers timed overtime for tournament new use, as the public ScoringEngine scores it (S6)', () => {
     expect(parse(OVERTIME)).toBeDefined();
-    expect(isValidMatchUpFormat({ matchUpFormat: OVERTIME })).toBe(false);
+    expect(isValidMatchUpFormat({ matchUpFormat: OVERTIME })).toBe(true);
     expect(resolveFormat(OVERTIME)).toBeUndefined();
     const engine = new ScoringEngine({ matchUpFormat: OVERTIME });
     for (let i = 0; i < 3; i++) expect(engine.addSet({ side1Score: 0, side2Score: 0 })).toEqual({ recorded: true });

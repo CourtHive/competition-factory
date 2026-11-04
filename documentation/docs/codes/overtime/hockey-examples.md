@@ -9,7 +9,7 @@ Hockey distinguishes repeated playoff overtime from a finite regular-season over
 regular-season ties also show that reaching an overtime ceiling need not produce a winner.
 
 :::note Availability
-The overtime extension is in development and is not yet enabled in published Factory versions.
+Overtime codes the scoring engine scores are valid for tournament use in Factory releases after 7.29.0 (CA 2026-11-04); a match clock with overtime, and untimed or tiebreak-bearing periods, are not.
 :::
 
 ## Repeated playoff overtime: sudden death without a ceiling

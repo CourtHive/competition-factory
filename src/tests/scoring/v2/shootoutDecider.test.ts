@@ -47,8 +47,8 @@ describe('the code', () => {
     expect(parse(code)).toBeUndefined();
   });
 
-  it('is refused for new use until overtime opens', () => {
-    expect(isValidMatchUpFormat({ matchUpFormat: OVERTIME })).toBe(false);
+  it('opens for new use with overtime (S6)', () => {
+    expect(isValidMatchUpFormat({ matchUpFormat: OVERTIME })).toBe(true);
   });
 
   it('F:TB1 is unchanged', () => {

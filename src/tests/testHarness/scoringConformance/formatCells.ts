@@ -21,6 +21,7 @@ const FORMAT_KEYS = new Set([
   'gameFormat',
   'matchUpConstraint',
   'simplified',
+  'overtimeFormat',
 ]);
 const SET_KEYS = new Set([
   'combinedPointTotal',
@@ -44,6 +45,7 @@ const SET_KEYS = new Set([
 const TIEBREAK_KEYS = new Set(['tiebreakTo', 'modifier', 'NoAD']);
 const GAME_KEYS = new Set(['type', 'count', 'deuceAfter', 'NoAD']);
 const CONSTRAINT_KEYS = new Set(['timed', 'minutes']);
+const OVERTIME_KEYS = new Set(['count', 'exactly', 'suddenDeath', 'setFormat']);
 
 /** Every parsed key the matrix does not place, as a path: a grammar feature with no coordinate. */
 export function unknownKeys(parsed: FormatStructure): string[] {
@@ -62,6 +64,8 @@ export function unknownKeys(parsed: FormatStructure): string[] {
   }
   check(parsed.gameFormat, GAME_KEYS, 'gameFormat');
   check(parsed.matchUpConstraint, CONSTRAINT_KEYS, 'matchUpConstraint');
+  check(parsed.overtimeFormat, OVERTIME_KEYS, 'overtimeFormat');
+  check(parsed.overtimeFormat?.setFormat, SET_KEYS, 'overtimeFormat.setFormat');
   return unknown;
 }
 
@@ -75,7 +79,7 @@ function matchSpec(parsed: FormatStructure): string {
 export function segmentCell(set?: SetFormatStructure): string {
   if (!set) return 'none';
   if (set.outs) return 'outs';
-  // its own coordinate (Ruling 3): a tally-only final, harvested once overtime opens for new use (S6)
+  // its own coordinate (Ruling 3): a tally-only final, harvested since overtime opened for new use (S6)
   if (set.shootout) return 'shootout';
   if (set.combinedPointTotal) return `combined(${set.tieResolution ?? 'ALLOW'})`;
   if (set.timed) {
@@ -110,6 +114,17 @@ function traitList(traits: (string | false | undefined)[]): string {
   return present.length ? `(${present.join(',')})` : '';
 }
 
+/**
+ * An overtime format's coordinate (activation S6): how many periods (a finite ceiling or unlimited), whether a block
+ * is played out (X) or ends on the first score (SD), and the period's own segment. A shootout decider is the final
+ * segment's `shootout` coordinate.
+ */
+function overtimeCell(overtime: NonNullable<FormatStructure['overtimeFormat']>): string {
+  const traits = [overtime.exactly && 'exactly', overtime.suddenDeath && 'suddenDeath'];
+  const count = overtime.count === 'unlimited' ? 'unlimited' : 'finite';
+  return `overtime:${count}${traitList(traits)}/${segmentCell(overtime.setFormat)}`;
+}
+
 /** The matrix cell a parsed format falls in. */
 export function formatCell(parsed: FormatStructure): string {
   const final = parsed.finalSetFormat ? segmentCell(parsed.finalSetFormat) : 'same';
@@ -118,6 +133,8 @@ export function formatCell(parsed: FormatStructure): string {
     matchSpec(parsed),
     parsed.matchRoot ?? 'SET',
     `set:${segmentCell(parsed.setFormat)}`,
+    // only an overtime format carries the coordinate, so no cell without -O: changes its id
+    ...(parsed.overtimeFormat ? [overtimeCell(parsed.overtimeFormat)] : []),
     `final:${final}`,
     `game:${game}`,
     parsed.matchUpConstraint ? 'clock' : 'noClock',

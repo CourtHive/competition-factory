@@ -1802,5 +1802,288 @@
       "value": "SET3-S:6"
     },
     "note": "§ 7: a tiebreak with no target (0 or absent) is no tiebreak"
+  },
+  {
+    "caseId": "grammar.parse.overtime-exact-block-one-point-decider.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "HAL2XA-S:T45P-O:2X/T15P-F:TB1"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "exactly": 2,
+        "matchRoot": "HAL",
+        "aggregate": true,
+        "setFormat": {
+          "timed": true,
+          "minutes": 45,
+          "based": "P"
+        },
+        "finalSetFormat": {
+          "tiebreakSet": {
+            "tiebreakTo": 1
+          }
+        },
+        "overtimeFormat": {
+          "count": 2,
+          "exactly": true,
+          "setFormat": {
+            "timed": true,
+            "minutes": 15,
+            "based": "P"
+          }
+        }
+      }
+    },
+    "note": "§ 9: X plays the block out; F after a level ceiling"
+  },
+  {
+    "caseId": "grammar.parse.overtime-unlimited.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "QTR4XA-S:T12P-O:U/T5P"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "exactly": 4,
+        "matchRoot": "QTR",
+        "aggregate": true,
+        "setFormat": {
+          "timed": true,
+          "minutes": 12,
+          "based": "P"
+        },
+        "overtimeFormat": {
+          "count": "unlimited",
+          "setFormat": {
+            "timed": true,
+            "minutes": 5,
+            "based": "P"
+          }
+        }
+      }
+    },
+    "note": "§ 9: U repeats while level"
+  },
+  {
+    "caseId": "grammar.parse.overtime-sudden-death.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "PER3XA-S:T20P-O:1SD/T5P"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "exactly": 3,
+        "matchRoot": "PER",
+        "aggregate": true,
+        "setFormat": {
+          "timed": true,
+          "minutes": 20,
+          "based": "P"
+        },
+        "overtimeFormat": {
+          "count": 1,
+          "suddenDeath": true,
+          "setFormat": {
+            "timed": true,
+            "minutes": 5,
+            "based": "P"
+          }
+        }
+      }
+    },
+    "note": "§ 9: SD ends on the score that breaks the tie"
+  },
+  {
+    "caseId": "grammar.parse.overtime-shootout-decider.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "HAL2XA-S:T45P-O:2X/T15P-F:SO5"
+    },
+    "expected": {
+      "kind": "value",
+      "value": {
+        "exactly": 2,
+        "matchRoot": "HAL",
+        "aggregate": true,
+        "setFormat": {
+          "timed": true,
+          "minutes": 45,
+          "based": "P"
+        },
+        "finalSetFormat": {
+          "shootout": 5
+        },
+        "overtimeFormat": {
+          "count": 2,
+          "exactly": true,
+          "setFormat": {
+            "timed": true,
+            "minutes": 15,
+            "based": "P"
+          }
+        }
+      }
+    },
+    "note": "§ 3.4 rule 5: a shootout of five rounds, only as -F: after -O:"
+  },
+  {
+    "caseId": "grammar.parse.shootout-without-overtime.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET2XA-S:T45P-F:SO5"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 3.4 rule 5: a shootout needs -O: (CA 2026-11-04)"
+  },
+  {
+    "caseId": "grammar.parse.shootout-as-set-format.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET2XA-S:SO5"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 3.4 rule 5: a shootout is only ever -F:"
+  },
+  {
+    "caseId": "grammar.parse.shootout-as-overtime-period.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "SET2XA-S:T45P-O:1/SO5"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 3.4 rule 5: a shootout is not an overtime period"
+  },
+  {
+    "caseId": "grammar.parse.overtime-grouping-suffix.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "HAL2XA-S:T30P-O:2B2/T10P"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 9: repeating blocks are deferred, no syntax reserved (Ruling 4)"
+  },
+  {
+    "caseId": "grammar.parse.overtime-unlimited-with-decider.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "QTR4XA-S:T12P-O:U/T5P-F:TB1"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 9: U with F is unreachable"
+  },
+  {
+    "caseId": "grammar.parse.overtime-without-aggregate.v1",
+    "operation": "kernel.format.parse@1",
+    "input": {
+      "matchUpFormat": "PER3X-S:T20P-O:3/T5P"
+    },
+    "expected": {
+      "kind": "error",
+      "code": "UNPARSEABLE_FORMAT"
+    },
+    "note": "§ 9: O requires aggregate regulation"
+  },
+  {
+    "caseId": "grammar.valid.overtime-scored.v1",
+    "operation": "kernel.format.isValid@1",
+    "input": {
+      "matchUpFormat": "HAL2XA-S:T45P-O:2X/T15P-F:TB1"
+    },
+    "expected": {
+      "kind": "value",
+      "value": true
+    },
+    "note": "§ 9: new use is exactly what the scoring engine scores"
+  },
+  {
+    "caseId": "grammar.valid.overtime-shootout.v1",
+    "operation": "kernel.format.isValid@1",
+    "input": {
+      "matchUpFormat": "HAL2XA-S:T45P-O:2X/T15P-F:SO5"
+    },
+    "expected": {
+      "kind": "value",
+      "value": true
+    },
+    "note": "§ 9, § 3.4 rule 5"
+  },
+  {
+    "caseId": "grammar.valid.overtime-unlimited-sudden-death.v1",
+    "operation": "kernel.format.isValid@1",
+    "input": {
+      "matchUpFormat": "PER3XA-S:T20P-O:USD/T20P"
+    },
+    "expected": {
+      "kind": "value",
+      "value": true
+    },
+    "note": "§ 9"
+  },
+  {
+    "caseId": "grammar.valid.overtime-match-clock.v1",
+    "operation": "kernel.format.isValid@1",
+    "input": {
+      "matchUpFormat": "HAL2XA-S:T45P-O:2X/T15P-F:TB1-M:T130"
+    },
+    "expected": {
+      "kind": "value",
+      "value": false
+    },
+    "note": "§ 9: a match clock with overtime is refused (Ruling 1)"
+  },
+  {
+    "caseId": "grammar.valid.overtime-untimed-period.v1",
+    "operation": "kernel.format.isValid@1",
+    "input": {
+      "matchUpFormat": "SET3XA-S:T12P-O:1/TB11"
+    },
+    "expected": {
+      "kind": "value",
+      "value": false
+    },
+    "note": "§ 9: an untimed overtime period is refused"
+  },
+  {
+    "caseId": "grammar.valid.overtime-period-tiebreak.v1",
+    "operation": "kernel.format.isValid@1",
+    "input": {
+      "matchUpFormat": "SET3XA-S:T12P-O:1/T5P/TB1"
+    },
+    "expected": {
+      "kind": "value",
+      "value": false
+    },
+    "note": "§ 9: a period with its own tiebreak is refused"
+  },
+  {
+    "caseId": "grammar.valid.overtime-standard-decider.v1",
+    "operation": "kernel.format.isValid@1",
+    "input": {
+      "matchUpFormat": "SET3XA-S:T12P-O:3/T5P-F:6"
+    },
+    "expected": {
+      "kind": "value",
+      "value": false
+    },
+    "note": "§ 9: a standard-set decider is refused"
   }
 ]

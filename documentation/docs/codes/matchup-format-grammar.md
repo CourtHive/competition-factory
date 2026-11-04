@@ -10,8 +10,8 @@ scoring is stated there, not here. The [matchUpFormat codes](/docs/codes/matchup
 writing codes; where the two differ, this page is the rule.
 
 The [overtime and extra-time extension](./overtime/index.md) has its own short pages for repeated overtime,
-exact extra-time halves, finite ceilings, golden goals, silver goals and shootout handoffs. It is in development
-and is not yet enabled in published Factory versions; examples there do not change the currently enabled grammar below.
+exact extra-time halves, finite ceilings, golden goals, silver goals and shootout handoffs. Overtime codes the scoring
+engine scores are valid for tournament use in Factory releases after 7.29.0 (§ 9).
 
 First version, 2026-10-25, written from the parser's rules (`parse` refuses what `isValid` refuses, CA 2026-10-02;
 the refusals for new use, CA 2026-10-18), the existing tests (`parseIsStrict.test.ts`, `matchUpFormatCode.test.ts`,
@@ -34,8 +34,8 @@ canonical spelling, and `parse` and `stringify` are inverse on it: `stringify(pa
 `c`, and for every well-formed `c`, `stringify(parse(c))` is `c` with its equivalent spellings (§ 4) rewritten.
 
 **Overtime extension (CA 2026-11-03):** § 9 adds readable overtime syntax. ScoringEngine now supports the
-defined timed subset, including phase-aware records and replay. General tournament new-use validation remains
-gated until its separate activation slice. The existing rules below apply to codes without `-O:`.
+defined timed subset, including phase-aware records and replay. Tournament new use opened 2026-11-04 for exactly
+that subset (§ 9). The existing rules below apply to codes without `-O:`.
 
 ## 2. Lexical rules
 
@@ -126,7 +126,7 @@ A segment (`-S:` or `-F:`) is exactly one kind, recognised by how it starts, in 
    stamped like one with it). It is entered as its final tally, never by point or game: the tally is never level,
    above `rounds` it is sudden death, won by one (`7-6` in five rounds; never `7-5`), and within `rounds` it ends
    once one side cannot catch up (`3-0` in five rounds; never `4-0`). Its goals are not part of the aggregate. Like
-   overtime, it is refused for new use until overtime is activated. `F:TB1` is unchanged: a one-point decider, not a
+   overtime, it is valid for new use where the overtime before it is (§ 9). `F:TB1` is unchanged: a one-point decider, not a
    shootout.
 
 ## 4. Equivalent spellings
@@ -251,12 +251,17 @@ standard set, or a final segment identical to the set segment. Four stored codes
 use and read where stored (§ 6: `SET1-S:10/TB7@8`, `SET1-S:11/TB7@8`, `SET1-S:12/TB7@8` and `SET3A-S:6/TB7-F:TB10`,
 seven values in four tournaments).
 
-## 9. Overtime extension (tournament activation pending)
+## 9. Overtime extension
 
-CA approved conditional overtime repetition on 2026-11-03. Parsing, canonical serialization and the supported
-ScoringEngine subset are implemented. `isValidMatchUpFormat` still returns false for tournament new use,
-and the legacy public point mutator refuses O. Reading additional segment syntax does not imply that every
-combination can be scored. See [scoring specification § 9.8](/docs/scoring-engine/scoring-engine-spec#98-declared-overtime-ca-2026-11-03-scoringengine-integration).
+CA approved conditional overtime repetition on 2026-11-03, and its tournament activation on 2026-11-04. Parsing,
+canonical serialization and the supported ScoringEngine subset are implemented. `isValidMatchUpFormat` accepts for
+new use **exactly** the overtime codes the scoring engine scores, asking the same format resolution, so tournament
+validation and scoring cannot disagree: timed aggregate regulation, timed overtime periods without a segment-local
+tiebreak, and a decider (`-F:`) that is a tiebreak-only segment, a shootout (§ 3.4 rule 5) or a timed segment without
+a tiebreak. Refused for new use while they still read: a match clock with overtime (`-M:`; Ruling 1, CA 2026-11-04),
+an untimed or tiebreak-bearing regulation or period, and a standard-set or tiebreak-bearing timed decider. The legacy
+public point mutator still refuses O. Repeating blocks (`O:2B2/T5P`) are deferred with no syntax reserved, so a
+grouping suffix is not a code. See [scoring specification § 9.8](/docs/scoring-engine/scoring-engine-spec#98-declared-overtime-ca-2026-11-03-scoringengine-integration).
 
 ```text
 {root}{count}[X][A][{matchMods}]-S:{set}[-G:{game}][-O:{limit}[X][SD]/{set}][-F:{set}][-M:T{minutes}]
@@ -272,7 +277,7 @@ combination can be scored. See [scoring specification § 9.8](/docs/scoring-engi
   mandatory completion conflicts with sudden death. The order is count, X if present, SD if present.
 - The first slash separates the policy from the existing segment grammar; a segment can itself contain a
   slash (`O:1/T5P/TB1`). Combined-total `P…` segments are not allowed as aggregate overtime. Other segment
-  spellings can be read; supported runtime combinations will be defined before activation.
+  spellings can be read; the combinations valid for new use are those named at the top of this section.
 - At a finite ceiling, a tied aggregate enters the declared F fallback, or finishes level when F is absent.
   U with F is invalid because the fallback is unreachable. With O present, a one-period aggregate may have
   F, and F identical to S is retained: the fallback after overtime is meaningful. Without O, existing F

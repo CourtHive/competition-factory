@@ -10,7 +10,7 @@ goal has sometimes ended the match immediately, sometimes decided it at a period
 left a mandatory second half still to play.
 
 :::note Availability
-The overtime extension is in development and is not yet enabled in published Factory versions.
+Overtime codes the scoring engine scores are valid for tournament use in Factory releases after 7.29.0 (CA 2026-11-04); a match clock with overtime, and untimed or tiebreak-bearing periods, are not.
 :::
 
 ## Exact extra-time halves: Belgium–USA 2014 {#belgium-usa-2014}
