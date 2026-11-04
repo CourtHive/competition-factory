@@ -45,6 +45,10 @@ export function parsedFormatCanEndTied(parsed?: ParsedFormat): boolean {
   if (!parsed || !format) return false;
   if (format.combinedPointTotal) return format.combinedPointTotal % 2 === 0 && format.tieResolution === 'ALLOW';
 
+  // unlimited overtime plays periods until one ends unequal: it cannot finish level (a match clock, which could
+  // end it level, is refused with overtime until the clock-expiry slice, Ruling 1)
+  if (parsed.overtimeFormat?.count === 'unlimited') return false;
+
   if (parsed.aggregate)
     return !(parsed.exactly && parsed.finalSetFormat) || segmentCanCloseLevel(parsed.finalSetFormat);
 
