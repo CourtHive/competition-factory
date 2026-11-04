@@ -231,6 +231,39 @@ const RELAYS: [string, Scenario][] = (
 );
 
 /**
+ * S7: an award through a BYE released given a winner, its loser placed opposite a standing BYE and on through a chain of
+ * BYEs (West's first round, then West 2/2, into West 3/1, a BYE still): v1 announces and stamps each matchUp passed
+ * (`unwoundThrough`'s `onward`). Positions per draw shape (seed 9000230)
+ */
+const THROUGH_CHAIN_DRAWS: [number, number, number[]][] = [[16, 9, [5]]];
+const THROUGH_CHAINS: [string, Scenario][] = (
+  [
+    [COMPASS, 'East'],
+    [OLYMPIC, 'East'],
+    [FIRST_ROUND_LOSER_CONSOLATION, 'Main'],
+  ] as const
+).flatMap(([drawType, structureName]) =>
+  THROUGH_CHAIN_DRAWS.flatMap(([drawSize, participantsCount, positions]) =>
+    positions.flatMap((roundPosition) =>
+      (
+        [
+          [DOUBLE_WALKOVER, walkover(1)],
+          [DOUBLE_DEFAULT, exited(DEFAULTED, 1)],
+        ] as const
+      ).map(([doubleExit, outcome]): [string, Scenario] => [
+        `${drawType} ${participantsCount} of ${drawSize}: R1/${roundPosition} a ${doubleExit} beside the BYE given a winner, the loser on through two BYEs`,
+        {
+          drawProfile: { drawSize, participantsCount, drawType },
+          nonRandom: 9000230,
+          setup: [{ target: R1(roundPosition, structureName), outcome: { matchUpStatus: doubleExit } }],
+          steps: [{ target: R1(roundPosition, structureName), outcome }],
+        },
+      ]),
+    ),
+  ),
+);
+
+/**
  * S7, policy off: a Main double exit past the first round, its loser seat a FED one (a feed round's): it takes a BYE
  * whatever `doubleExitPropagateBye` says, so the own seat's BYE chain plans it, not the produced exit. Main's earlier
  * rounds played
@@ -271,7 +304,6 @@ const FED_SEATS: [string, Scenario][] = [
 
 const SCENARIOS: [string, Scenario][] = [
   ...FED_SEATS,
-  ...RELAYS,
   [
     'FEED_IN_CHAMPIONSHIP: the Main final entered as a double default under doubleExitPropagateBye false: its fed loser seat takes the BYE (S7)',
     {
@@ -281,6 +313,8 @@ const SCENARIOS: [string, Scenario][] = [
       steps: [{ target: FINAL_8('Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT } }],
     },
   ],
+  ...THROUGH_CHAINS,
+  ...RELAYS,
   ...PASSAGES,
   // ...and into a plain round whose other position came through the paired BYE, which the unwind takes back too: both
   // released
@@ -3398,22 +3432,6 @@ describe('under v2, a dissolved convergence beyond the clear is v2s; given a win
         steps: [{ target: R1(2, 'Main'), outcome: won(1) }],
       },
     ],
-    // S7: an award through a BYE released given a winner, the loser then on through a chain of BYEs (West's first round,
-    // then West 2/2, into West 3/1): v1 announces each matchUp passed; `unwoundThrough` reads one
-    ...[COMPASS, OLYMPIC, FIRST_ROUND_LOSER_CONSOLATION].map((drawType): [string, Scenario] => [
-      `${drawType} 9 of 16: R1/5 a double walkover beside the BYE given a walkover, the loser on through two BYEs`,
-      {
-        drawProfile: { drawSize: 16, participantsCount: 9, drawType },
-        nonRandom: 9000230,
-        setup: [
-          {
-            target: R1(5, drawType === FIRST_ROUND_LOSER_CONSOLATION ? 'Main' : 'East'),
-            outcome: { matchUpStatus: DOUBLE_WALKOVER },
-          },
-        ],
-        steps: [{ target: R1(5, drawType === FIRST_ROUND_LOSER_CONSOLATION ? 'Main' : 'East'), outcome: walkover(1) }],
-      },
-    ]),
     [
       'SINGLE_ELIMINATION: a double walkover given a winner, its produced exit converged',
       {
