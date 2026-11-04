@@ -1,3 +1,4 @@
+import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
 import { tiebreakMargin } from '@Tools/scoring/scoringUtilities';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { arrayIndices } from '@Tools/arrays';
@@ -276,20 +277,38 @@ export function getHighTiebreakValue(params?) {
 
 export function getMatchUpWinner({ matchUpFormat, matchUpStatus, winningSide, sets }) {
   const matchUpScoringFormat: any = parse(matchUpFormat);
-  const { bestOf } = matchUpScoringFormat;
-  const scoreGoal = Math.ceil(bestOf / 2);
-  const sideScores = sets?.reduce(
-    (scores, set) => {
-      const { winningSide } = set;
-      if (winningSide) scores[winningSide - 1]++;
-      return scores;
-    },
-    [0, 0],
-  );
+  const { bestOf } = matchUpScoringFormat ?? {};
 
-  let matchUpWinningSide = sideScores?.indexOf(scoreGoal) + 1 || undefined;
+  let matchUpWinningSide;
+  if (isAggregateFormat(matchUpScoringFormat) && matchUpScoringFormat.exactly) {
+    // a leader is not a winner: the aggregate decides only once all N periods are closed, and a level total
+    // names no winner (its decider is entered in the dialog). Reading bestOf, undefined here, made the goal NaN
+    matchUpWinningSide = aggregateWinner(sets, matchUpScoringFormat.exactly);
+  } else {
+    const scoreGoal = Math.ceil(bestOf / 2);
+    const sideScores = sets?.reduce(
+      (scores, set) => {
+        const { winningSide } = set;
+        if (winningSide) scores[winningSide - 1]++;
+        return scores;
+      },
+      [0, 0],
+    );
+    matchUpWinningSide = sideScores?.indexOf(scoreGoal) + 1 || undefined;
+  }
   if (WINNING_STATUSES.includes(matchUpStatus) && winningSide) {
     matchUpWinningSide = winningSide;
   }
   return { matchUpWinningSide };
+}
+
+type KeyedSet = { side1Score?: number; side2Score?: number; winningSide?: number; segmentComplete?: boolean };
+
+function aggregateWinner(sets: KeyedSet[] | undefined, exactly: number): number | undefined {
+  const closed = (sets ?? []).filter((set) => set.winningSide || set.segmentComplete);
+  if (closed.length < exactly) return undefined;
+  const [side1, side2] = closed
+    .slice(0, exactly)
+    .reduce(([a, b], set) => [a + (set.side1Score ?? 0), b + (set.side2Score ?? 0)], [0, 0]);
+  return (side1 > side2 && 1) || (side2 > side1 && 2) || undefined;
 }

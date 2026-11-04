@@ -1,6 +1,7 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { addDynamicRatings } from '@Mutate/participants/scaleItems/addDynamicRatings';
 import { getParticipantScaleItem } from '@Query/participant/getParticipantScaleItem';
+import { aggregateDeciderSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
@@ -144,11 +145,7 @@ export function generateDynamicRatings(params): ResultType & {
         ),
     );
 
-    const parsedFormat: any = matchUpFormat ? parse(matchUpFormat) : {};
-    const bestOf = parsedFormat?.bestOf || 1;
-    const setTo = parsedFormat?.setFormat?.setTo || 1;
-
-    const maxCountables = considerGames ? bestOf * setTo : bestOf;
+    const maxCountables = maxCountablesOf(matchUpFormat, considerGames);
 
     const countables = (score?.sets && aggregateSets(score.sets)) || (winningSide === 1 && [1, 0]) || [0, 1];
 
@@ -179,6 +176,20 @@ export function generateDynamicRatings(params): ResultType & {
     processedMatchUpIds,
     ...(isEloNative && { sourceRatingType: ratingType }),
   };
+}
+
+/**
+ * The most sets a matchUp in this format can count, which `kMultiplier` weights a result by. An exactly-N format
+ * plays N (its `bestOf` is undefined, so it read as 1 and a three-period aggregate counted a third of its weight),
+ * and an aggregate format's decider is one more set, N + 1, played on a level total.
+ */
+export function maxCountablesOf(matchUpFormat: string | undefined, considerGames?: boolean): number {
+  const parsedFormat: any = matchUpFormat ? parse(matchUpFormat) : {};
+  // aggregateDeciderSetNumber names the set an -F: would govern; without an -F: there is no decider to play
+  const deciderSet = parsedFormat?.finalSetFormat ? aggregateDeciderSetNumber(parsedFormat) : undefined;
+  const sets = deciderSet ?? parsedFormat?.exactly ?? parsedFormat?.bestOf ?? 1;
+  const setTo = parsedFormat?.setFormat?.setTo || 1;
+  return considerGames ? sets * setTo : sets;
 }
 
 function resolveParticipantScaleItem({

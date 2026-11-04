@@ -403,6 +403,49 @@ that varies the order needs its own policy.
 
 The FIBA ranking step (national-team competitions) is an external value and is not applied.
 
+### Premier League Policy
+
+`POLICY_ROUND_ROBIN_TALLY_PREMIER_LEAGUE`: Premier League Handbook 2025/26, rules C.4 to C.7 and C.17:
+
+- `resultPoints`: 3 for a win, 1 for a draw; goals are each half's score (`HAL2A-S:T45`), so goal difference is
+  `gamesDiff` and goals scored `gamesWon`;
+- clubs level on points are separated by goal difference, then goals scored (C.5, C.6); clubs still level share the
+  place (C.7, `terminal: 'SHARE'`);
+- C.17 applies only at the end of the season and only where the title, relegation or qualification depends on it: the
+  points in the matches between the tied clubs, as a directive `when: { purposes: ['ADVANCEMENT', 'MOVEMENT'], phase:
+'FINAL' }`. A season table asked for one of those purposes applies it; a caller deciding the title asks with
+  `ADVANCEMENT`.
+
+Not applied: C.17's away goals between the tied clubs (the factory records no home or away side) and its play-off,
+which is a match the organiser arranges.
+
+### MLS Policy
+
+`POLICY_ROUND_ROBIN_TALLY_MLS`: MLS 2026 Competition Guidelines, regular-season tiebreaking procedures:
+
+- `resultPoints`: 3 for a win, 1 for a tie;
+- level clubs are separated by total wins, goal differential, goals for, then head-to-head points and goal
+  differential, then the fewest disciplinary points (an `external` value, `disciplinaryPoints`, fewer is better), then
+  a coin toss or drawing of lots (`terminal: 'LOT'`);
+- once a club is separated, the clubs still tied go through the procedure again (`onSplit: 'EXTRACT_ONE'`).
+
+The head-to-head steps are for a conference table (MLS applies them intraconference only); a table across both
+conferences (the Supporters' Shield) drops them. Not applied: the away and home goal steps, since the factory records
+no home or away side.
+
+### FIVB Policy
+
+`POLICY_ROUND_ROBIN_TALLY_FIVB`: FIVB Volleyball Nations League 2026 Competition Regulations, § 2.5:
+
+- teams are ranked on victories (`matchUpsWon`), then match points: 3 for a 3-0 or 3-1 win, 2 for a 3-2 win, 1 for a
+  2-3 loss, 0 for a 0-3 or 1-3 loss, and 0 for a forfeit (a forfeit mapped to `WALKOVER`, 3 to the winner);
+- then set ratio and points ratio (rally points are each set's tiebreak score, `SET5-S:TB25-F:TB15`; nothing lost
+  ranks first);
+- then the matches among the tied teams only, on the same criteria (`onSplit: 'CONTINUE'`);
+- then the FIVB World Ranking, an `external` value, `worldRanking` (lower is better).
+
+The regulations name no step after the World Ranking.
+
 ## Key Attributes
 
 ### groupOrderKey
@@ -842,6 +885,29 @@ a 3-2. The rules are matched in order, and the first that matches decides.
   `loser` points. A drawn rule awards `points` to both sides.
 - Statuses are mapped by the rules, never inferred: whether a sport's "forfeit" is a `WALKOVER` is the policy author's
   decision.
+- A decided rule may also name `loserMarginAtMost`: the loser lost by no more than that many, the sides' scores summed
+  over every set and then subtracted (rugby's points, recorded as each half's score in `HAL2A-S:T40`).
+- A rule with `bonus: true` adds to the deciding rule's award instead of deciding. Every bonus rule that matches adds
+  its points, wherever it is listed; a result that no deciding rule matches earns no bonus either, and the rules must
+  include at least one rule that is not a bonus. A bonus that awards a side nothing is not listed among its
+  contributions. Rugby's losing bonus (the PREM league table regulations, read 2026-11-04: 4 for a win, 2 for a draw,
+  1 to a team that loses a match by 7 points or less):
+
+```js
+{
+  groupOrderKey: 'classificationPoints',
+  resultPoints: {
+    rules: [
+      { id: 'win', winner: 4, loser: 0 },
+      { id: 'draw', isDrawn: true, points: 2 },
+      { id: 'losingBonus', bonus: true, loserMarginAtMost: 7, winner: 0, loser: 1 },
+    ],
+  },
+}
+```
+
+Rugby's four-try bonus needs the tries, which a score does not record; it is not yet expressible.
+
 - A drawn result is a COMPLETED matchUp with no winner whose score is a level finish its format permits: a level
   combined total (`SET1-S:P32`), a level aggregate over all of its segments (`HAL2A-S:T45`, a soccer 1-1), or a
   level count of sets (`SET3-S:T10`, a timed set closing level). It stands only where no winner is needed: a round
@@ -1573,6 +1639,10 @@ Each rule's example is a policy that it refuses, with the message it gives.
 | Any other rule is decided: it has `winner` and `loser`, both finite numbers.                                                                                       | `{ "resultPoints": { "rules": [{ "id": "win", "winner": 2 }] } }`                                                       | `resultPoints.rules[0]: a decided rule needs finite winner and loser points`           |
 | A rule's `matchUpStatuses`, when present, is an array.                                                                                                             | `{ "resultPoints": { "rules": [{ "id": "wo", "winner": 2, "loser": 0, "matchUpStatuses": "WALKOVER" }] } }`             | `resultPoints.rules[0]: matchUpStatuses must be an array`                              |
 | A rule's `loserSetsWon`, when present, is an array of whole numbers of at least 0.                                                                                 | `{ "resultPoints": { "rules": [{ "id": "close", "winner": 2, "loser": 1, "loserSetsWon": [-1] }] } }`                   | `resultPoints.rules[0]: loserSetsWon must be an array of whole numbers`                |
+| A rule's `loserMarginAtMost`, when present, is a finite number of at least 0.                                                                                      | `{ "resultPoints": { "rules": [{ "id": "close", "winner": 4, "loser": 1, "loserMarginAtMost": -1 }] } }`                | `resultPoints.rules[0]: loserMarginAtMost must be a finite number of at least 0`       |
+| `loserMarginAtMost` is a condition on a decided result, so a drawn rule cannot have one.                                                                           | `{ "resultPoints": { "rules": [{ "id": "draw", "isDrawn": true, "points": 2, "loserMarginAtMost": 7 }] } }`             | `resultPoints.rules[0]: loserMarginAtMost applies only to a decided rule`              |
+| A rule's `bonus`, when present, is `true` or `false`.                                                                                                              | `{ "resultPoints": { "rules": [{ "id": "win", "winner": 4, "loser": 0, "bonus": "yes" }] } }`                           | `resultPoints.rules[0]: bonus must be true or false`                                   |
+| The rules include one that is not a `bonus`: a bonus only adds to what a deciding rule awarded.                                                                    | `{ "resultPoints": { "rules": [{ "id": "close", "winner": 0, "loser": 1, "loserMarginAtMost": 7, "bonus": true }] } }`  | `resultPoints.rules needs a rule that is not a bonus`                                  |
 | `onSplit`, when present, is `RESTART`, `CONTINUE` or `EXTRACT_ONE`.                                                                                                | `{ "onSplit": "RESTARTS" }`                                                                                             | `onSplit must be one of RESTART, CONTINUE, EXTRACT_ONE`                                |
 | `terminal`, when present, is `ADJUDICATE`, `SHARE` or `LOT`.                                                                                                       | `{ "terminal": "COIN" }`                                                                                                | `terminal must be one of ADJUDICATE, SHARE, LOT`                                       |
 | `drawCredit`, when present, is a finite number from 0 to 1.                                                                                                        | `{ "drawCredit": 2 }`                                                                                                   | `drawCredit must be a finite number between 0 and 1`                                   |

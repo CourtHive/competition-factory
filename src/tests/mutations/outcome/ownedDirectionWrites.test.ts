@@ -414,8 +414,53 @@ const PRODUCED_FINALS: [string, Scenario][] = [1, 2].flatMap((roundPosition) =>
   ]),
 );
 
+/**
+ * S7, policy off: the held exit's landing holds a participant on the other side (East R1/3's loser, through West's BYE):
+ * the exit is theirs. West R2/1 is West's final, so nothing goes on (seed 9000230)
+ */
+const HELD_AWARDS: [string, Scenario][] = [COMPASS, OLYMPIC].flatMap((drawType) =>
+  [DOUBLE_WALKOVER, DOUBLE_DEFAULT].map((matchUpStatus): [string, Scenario] => [
+    `${drawType} 6 of 8 (policy off): R1/2 a ${matchUpStatus} beside a BYE, its exit awarded to the loser standing opposite`,
+    {
+      drawProfile: { drawSize: 8, participantsCount: 6, drawType },
+      nonRandom: 9000230,
+      policyDefinitions: POLICY_OFF,
+      setup: [{ target: R1(3, 'East'), outcome: won(1) }],
+      steps: [{ target: R1(2, 'East'), outcome: { matchUpStatus } }],
+    },
+  ]),
+);
+
+/**
+ * ...and where the landing is not the structure's final (OLYMPIC, East's other first-round matchUps played): the awarded
+ * participant goes on into their next matchUp. First-round matchUps to be played per draw shape (seed 9000230)
+ */
+const HELD_AWARD_ONWARD_DRAWS: [number, number, number[], number[]][] = [
+  [16, 13, [2, 4], [2, 4, 5, 6, 7]],
+  [32, 27, [6, 8], [2, 3, 4, 6, 8, 9, 10, 11, 13, 14, 15]],
+];
+const HELD_AWARDS_ONWARD: [string, Scenario][] = HELD_AWARD_ONWARD_DRAWS.flatMap(
+  ([drawSize, participantsCount, positions, played]) =>
+    positions.flatMap((roundPosition) =>
+      [DOUBLE_WALKOVER, DOUBLE_DEFAULT].map((matchUpStatus): [string, Scenario] => [
+        `${OLYMPIC} ${participantsCount} of ${drawSize} (policy off): R1/${roundPosition} a ${matchUpStatus}, its exit awarded opposite and the winner on`,
+        {
+          drawProfile: { drawSize, participantsCount, drawType: OLYMPIC },
+          nonRandom: 9000230,
+          policyDefinitions: POLICY_OFF,
+          setup: played
+            .filter((position) => position !== roundPosition)
+            .map((position) => ({ target: R1(position, 'East'), outcome: won(1) })),
+          steps: [{ target: R1(roundPosition, 'East'), outcome: { matchUpStatus } }],
+        },
+      ]),
+    ),
+);
+
 const SCENARIOS: [string, Scenario][] = [
   ...PRODUCED_FINALS,
+  ...HELD_AWARDS_ONWARD,
+  ...HELD_AWARDS,
   ...FIRST_MATCHUP_SEATS,
   ...DOUBLE_BYE_ENDS,
   ...HELD_JOINS,

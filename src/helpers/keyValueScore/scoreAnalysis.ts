@@ -15,7 +15,8 @@ import {
 } from './constants';
 
 export function getScoreAnalysis({ matchUpFormat, scoreString, winningSide, value, sets }) {
-  const completedSets = sets?.filter((set) => set?.winningSide)?.length || 0;
+  // a closed timed period may be level (no winningSide): segmentComplete marks it closed, as the scoring engine does
+  const completedSets = sets?.filter((set) => set?.winningSide || set?.segmentComplete)?.length || 0;
   const setNumber = completedSets + (winningSide ? 0 : 1);
 
   const matchUpScoringFormat: any = parse(matchUpFormat);

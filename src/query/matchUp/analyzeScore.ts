@@ -206,9 +206,13 @@ export function analyzeScore({
   // For aggregate scoring, calculate winner based on total score across all sets
   const isAggregateScoring = isAggregateFormat(matchUpScoringFormat);
 
+  // a leader is not a winner: an exactly-N aggregate names one only once all N segments are in, as
+  // analyzeMatchUp's aggregateSideScores does. A running total named a winner, so an in-progress score with a
+  // lead (no winningSide) failed the no-winner clause below and was refused
+  const aggregateComplete = !exactly || sets.length >= exactly;
   const calculatedWinningSide =
     isAggregateScoring && sets.length > 0
-      ? calculateAggregateWinner(sets)
+      ? (aggregateComplete && calculateAggregateWinner(sets)) || undefined
       : calculateStandardWinner(maxSetsCount, setsToWin, maxSetsInstances, setsWinCounts, matchUpFormat, !!exactly);
 
   const valid = !!(

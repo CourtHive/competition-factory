@@ -118,6 +118,13 @@ test.each([
   { matchUpFormat: 'SET5-S:T10', expectedMinutes: 50 },
   // Final-set time differs from regular sets.
   { matchUpFormat: 'SET3-S:T15-F:T10', expectedMinutes: 40 },
+  // Exactly-N formats play all N segments: the count is `exactly`, not `bestOf` (which they leave undefined).
+  { matchUpFormat: 'SET2XA-S:T45P', expectedMinutes: 90 },
+  { matchUpFormat: 'SET4XA-S:T12P', expectedMinutes: 48 },
+  // An aggregate format's -F: is the decider, set N + 1, played only on a level total: not one of the N.
+  { matchUpFormat: 'SET3XA-S:T10-F:TB1', expectedMinutes: 30 },
+  // A non-aggregate exactly format's -F: governs set N.
+  { matchUpFormat: 'SET4X-S:T20P-F:T10', expectedMinutes: 70 },
 ])(
   'derives default averageMinutes from timed matchUpFormat ($matchUpFormat → $expectedMinutes)',
   ({ matchUpFormat, expectedMinutes }) => {

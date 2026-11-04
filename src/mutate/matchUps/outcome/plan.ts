@@ -1757,8 +1757,11 @@ type HeldLoser = {
   /** the BYE-held matchUps past it the seat's position already stands in, each recording the exit on that side (S7) */
   relays: { matchUpId: string; sideNumber: 1 | 2 }[];
   /** the matchUp the seat's position stands in past the BYEs, which takes the exit pending; none in the last round */
-  onward?: { matchUpId: string; arrivalSide: 1 | 2 };
+  onward?: { matchUpId: string; arrivalSide: 1 | 2; awarded?: HeldAward };
 };
+
+/** a participant standing opposite the held exit's landing: the exit is theirs, and they go on (S7) */
+type HeldAward = { next?: { matchUpId: string; drawPositions: number[] } };
 
 type ProducedLoser = {
   matchUpId: string;
@@ -2014,10 +2017,23 @@ function heldLoser(view: OutcomeView): HeldLoser | undefined {
       from = onward;
       continue;
     }
-    if (!heldLanding(view, from, onward, arrivalSide)) return undefined;
-    return { ...held, relays, onward: { matchUpId: onward.matchUpId, arrivalSide } };
+    // a participant standing opposite: the exit is awarded to them, and they go on into a clean next matchUp (S7)
+    const awarded = other?.participantId ? heldAward(view, onward, other.drawPosition) : undefined;
+    if (other?.participantId && !awarded) return undefined;
+    if (!awarded && !heldLanding(view, from, onward, arrivalSide)) return undefined;
+    return { ...held, relays, onward: { matchUpId: onward.matchUpId, arrivalSide, ...(awarded ? { awarded } : {}) } };
   }
   return undefined;
+}
+
+/** the held exit's landing awarded to the participant opposite: to be played, and their next matchUp clean or none */
+function heldAward(view: OutcomeView, landing: HydratedMatchUp, drawPosition?: number): HeldAward | undefined {
+  // a landing that links its loser on: decided, nobody loses it, and v1 sends a BYE across that link too (v1's)
+  if (landing.loserMatchUpId || landing.matchUpStatus !== TO_BE_PLAYED || !drawPosition) return undefined;
+  if (landing.sides?.some((side) => side.bye)) return undefined;
+  if (!landing.winnerMatchUpId) return {};
+  const next = onwardFrom(view, landing, drawPosition);
+  return next ? { next } : undefined;
 }
 
 /**
@@ -2106,13 +2122,19 @@ function heldLoserOps(request: OutcomeRequest, held: HeldLoser): OutcomeOp[] {
       exitingSideNumber,
     });
   const blank = { scoreStringSide1: '', scoreStringSide2: '' };
-  const write = (matchUpId: string, matchUpStatus: MatchUpStatusUnion, side: 1 | 2): OutcomeOp[] => {
+  const write = (
+    matchUpId: string,
+    matchUpStatus: MatchUpStatusUnion,
+    side: 1 | 2,
+    awarded?: HeldAward,
+  ): OutcomeOp[] => {
     const provenance = entry(side);
     return [
       {
         op: 'setMatchUpResult',
         matchUpId,
         matchUpStatus,
+        ...(awarded ? { winningSide: (3 - side) as 1 | 2 } : {}),
         matchUpStatusCodes: [],
         stampsScoredTime: false,
         announcesContext: false,
@@ -2126,7 +2148,20 @@ function heldLoserOps(request: OutcomeRequest, held: HeldLoser): OutcomeOp[] {
   return [
     ...write(held.byeMatchUpId, BYE, held.seatSide),
     ...held.relays.flatMap(({ matchUpId, sideNumber }) => write(matchUpId, BYE, sideNumber)),
-    ...(held.onward ? write(held.onward.matchUpId, produced, held.onward.arrivalSide) : []),
+    ...(held.onward ? write(held.onward.matchUpId, produced, held.onward.arrivalSide, held.onward.awarded) : []),
+    ...(held.onward?.awarded?.next
+      ? [
+          // the awarded participant goes on, announced as v1's `advanceWinner`, with the event and the tournament
+          {
+            op: 'setMatchUpDrawPositions' as const,
+            matchUpId: held.onward.awarded.next.matchUpId,
+            drawPositions: held.onward.awarded.next.drawPositions,
+            advancesThroughBye: true as const,
+            announcesEvent: true as const,
+          },
+          { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: held.onward.awarded.next.matchUpId },
+        ]
+      : []),
     { op: 'stampUpdatedAt', entity: 'structure', id: held.structureId },
   ];
 }
