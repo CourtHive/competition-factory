@@ -1749,9 +1749,10 @@ type HeldLoser = {
   /** its structure, which v1's writes there stamp */
   structureId: string;
   seatSide: 1 | 2;
-  /** the matchUp the seat's position already stands in (the BYE advanced it), which takes the exit pending */
-  onwardMatchUpId: string;
-  arrivalSide: 1 | 2;
+  /** the BYE-held matchUps past it the seat's position already stands in, each recording the exit on that side (S7) */
+  relays: { matchUpId: string; sideNumber: 1 | 2 }[];
+  /** the matchUp the seat's position stands in past the BYEs, which takes the exit pending; none in the last round */
+  onward?: { matchUpId: string; arrivalSide: 1 | 2 };
 };
 
 type ProducedLoser = {
@@ -1872,7 +1873,13 @@ function chainedSeats(view: OutcomeView, entry?: HydratedMatchUp): DoubleExitSea
     ...(seats.own?.matchUpIds ?? []).filter((matchUpId) => !shared.has(matchUpId)),
     ...(seats.unfillable?.matchUpIds ?? []),
     ...producedLoserMatchUpIds(seats.producedLoser),
-    ...(seats.heldLoser ? [seats.heldLoser.byeMatchUpId, seats.heldLoser.onwardMatchUpId] : []),
+    ...(seats.heldLoser
+      ? [
+          seats.heldLoser.byeMatchUpId,
+          ...seats.heldLoser.relays.map(({ matchUpId }) => matchUpId),
+          ...(seats.heldLoser.onward ? [seats.heldLoser.onward.matchUpId] : []),
+        ]
+      : []),
     ...(entry ? [entry.matchUpId] : []),
   ];
   return new Set(touched).size === touched.length ? seats : undefined;
@@ -1939,42 +1946,56 @@ function unfillableByeChain(
 /**
  * Under `doubleExitPropagateBye: false`, a loser seat opposite a BYE (its matchUp a BYE already): v1 records the exit the
  * double exit produces on the BYE matchUp, on the seat's side, its score removed (`stampExitOnByeHeldLoserTarget`), and
- * carries it on (`carryExitOnward`) into the matchUp the seat's position already stands in, advanced there by the BYE,
- * where it lands pending with its origin on that side. Planned behind a link with no condition, the BYE matchUp holding
- * no codes or provenance, and the matchUp beyond to be played holding no result, BYE, exit or provenance, nobody on
- * the other side, and a feeder still to be played (or a fed seat) for it.
+ * carries it on (`carryExitOnward`) into the matchUp the seat's position already stands in, advanced there by the BYE.
+ * Where that matchUp is BYE-held too (a double BYE beyond), the exit is recorded there as well and carried on again, to
+ * the structure's last round or to a matchUp to be played, where it lands pending with its origin on that side (S7).
+ * Planned behind a link with no condition, each BYE matchUp holding no codes or provenance, and the landing to be played
+ * holding no result, BYE, exit or provenance and nobody on the other side, whose other feeder is still to be played or a
+ * BYE (the position it advanced waits for its arrival), or which is a fed seat.
  */
 function heldLoser(view: OutcomeView): HeldLoser | undefined {
   const { targets } = view;
-  const { loserTargetDrawPosition, loserMatchUpRecord, loserTargetSeat: seat } = targets;
+  const { loserTargetDrawPosition: drawPosition, loserMatchUpRecord, loserTargetSeat: seat } = targets;
   const byeMatchUp = indexed(view, targets.loserMatchUpId);
-  if (targets.loserLink?.linkCondition || !byeMatchUp || !loserTargetDrawPosition || !seat?.free) return undefined;
+  if (targets.loserLink?.linkCondition || !byeMatchUp || !drawPosition || !seat?.free) return undefined;
   if (targets.loserMatchUpStatus !== BYE || targets.loserMatchUpHasResult || targets.loserMatchUpCarriesExit)
     return undefined;
   if (!loserMatchUpRecord || loserMatchUpRecord.provenance || loserMatchUpRecord.matchUpStatusCodes?.length)
     return undefined;
-  const seatSide = byeMatchUp.feedRound ? 1 : sideOf(byeMatchUp, loserTargetDrawPosition);
-  const onward = indexed(view, byeMatchUp.winnerMatchUpId);
-  const arrivalSide = sideOf(onward, loserTargetDrawPosition);
-  if (!seatSide || !onward || !arrivalSide || onward.structureId !== byeMatchUp.structureId) return undefined;
-  if (onward.matchUpStatus !== TO_BE_PLAYED || onward.winningSide || onward.score?.scoreStringSide1) return undefined;
-  if (Object.keys(onward.sideExitProvenance ?? {}).length || onward.sides?.some((side) => side.bye)) return undefined;
-  const other = onward.sides?.find((side) => side.sideNumber === 3 - arrivalSide);
-  if (other?.participantId) return undefined;
-  const feeder = view.inContextDrawMatchUps?.find(
-    (matchUp) => matchUp.winnerMatchUpId === onward.matchUpId && matchUp.matchUpId !== byeMatchUp.matchUpId,
-  );
-  if (!(feeder?.matchUpStatus === TO_BE_PLAYED || (onward.feedRound && !feeder))) return undefined;
-  return {
-    byeMatchUpId: byeMatchUp.matchUpId,
-    structureId: byeMatchUp.structureId,
-    onwardMatchUpId: onward.matchUpId,
-    arrivalSide,
-    seatSide,
-  };
+  const seatSide = byeMatchUp.feedRound ? 1 : sideOf(byeMatchUp, drawPosition);
+  if (!seatSide) return undefined;
+  const held = { byeMatchUpId: byeMatchUp.matchUpId, structureId: byeMatchUp.structureId, seatSide: seatSide as 1 | 2 };
+  const relays: HeldLoser['relays'] = [];
+  let from = byeMatchUp;
+  for (let hop = 0; hop < 8; hop += 1) {
+    const onward = indexed(view, from.winnerMatchUpId);
+    // the structure's last round: the exit recorded beside the BYEs stops there
+    if (!onward) return { ...held, relays };
+    const arrivalSide = sideOf(onward, drawPosition);
+    if (!arrivalSide || onward.structureId !== byeMatchUp.structureId || onward.winningSide) return undefined;
+    if (onward.score?.scoreStringSide1 || Object.keys(onward.sideExitProvenance ?? {}).length) return undefined;
+    if (onward.matchUpStatusCodes?.length) return undefined;
+    const other = onward.sides?.find((side) => side.sideNumber === 3 - arrivalSide);
+    if (onward.matchUpStatus === BYE) {
+      // a BYE-held matchUp the position passes: the BYE stands opposite it
+      if (!other?.bye || onward.sides?.find((side) => side.sideNumber === arrivalSide)?.bye) return undefined;
+      relays.push({ matchUpId: onward.matchUpId, sideNumber: arrivalSide });
+      from = onward;
+      continue;
+    }
+    if (onward.matchUpStatus !== TO_BE_PLAYED || onward.sides?.some((side) => side.bye)) return undefined;
+    if (other?.participantId) return undefined;
+    const feeder = view.inContextDrawMatchUps?.find(
+      (matchUp) => matchUp.winnerMatchUpId === onward.matchUpId && matchUp.matchUpId !== from.matchUpId,
+    );
+    const waiting = feeder?.matchUpStatus === TO_BE_PLAYED || feeder?.matchUpStatus === BYE;
+    if (!(waiting || (onward.feedRound && !feeder))) return undefined;
+    return { ...held, relays, onward: { matchUpId: onward.matchUpId, arrivalSide } };
+  }
+  return undefined;
 }
 
-/** the exit recorded on the BYE matchUp and carried on, as v1 writes the two, the BYE matchUp first */
+/** the exit recorded on the BYE matchUps and carried on, as v1 writes them, the loser matchUp first */
 function heldLoserOps(request: OutcomeRequest, held: HeldLoser): OutcomeOp[] {
   const status = request.matchUpStatus as MatchUpStatusUnion;
   const entry = (exitingSideNumber: 1 | 2) =>
@@ -2004,7 +2025,8 @@ function heldLoserOps(request: OutcomeRequest, held: HeldLoser): OutcomeOp[] {
   const produced = status === DOUBLE_DEFAULT ? DEFAULTED : WALKOVER;
   return [
     ...write(held.byeMatchUpId, BYE, held.seatSide),
-    ...write(held.onwardMatchUpId, produced, held.arrivalSide),
+    ...held.relays.flatMap(({ matchUpId, sideNumber }) => write(matchUpId, BYE, sideNumber)),
+    ...(held.onward ? write(held.onward.matchUpId, produced, held.onward.arrivalSide) : []),
     { op: 'stampUpdatedAt', entity: 'structure', id: held.structureId },
   ];
 }

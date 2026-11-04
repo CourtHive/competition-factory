@@ -717,7 +717,9 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   score removed, and carries it on into the matchUp the seat's position already stands in, where it lands pending with
   its origin on that side (`stampExitOnByeHeldLoserTarget`, `carryExitOnward`); both written with neither the tournament
   nor the event (`setMatchUpResult.announcesContext: false`), planned where nobody stands on the other side there and its
-  feeder is still to be played. Otherwise outside a feed round, for links with no condition, free seats with no BYE beside them (a BYE there makes a
+  feeder is still to be played, or is a BYE (the position it advanced waits for its arrival). Where that matchUp is
+  BYE-held too, the exit is recorded there the same way and carried on again, to a matchUp to be played or to the
+  structure's last round, where it stops (S7). Otherwise outside a feed round, for links with no condition, free seats with no BYE beside them (a BYE there makes a
   double BYE, below), clean matchUps, and each matchUp touched once, but where the unfillable seat's matchUp is the one the first BYE
   advanced a position into (FIRST_MATCH_LOSER_CONSOLATION): that position goes on again through the second BYE; a
   participant standing opposite the unfillable seat goes on through its BYE the same way (S6). Where the own seat's double BYE
