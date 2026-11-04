@@ -1,5 +1,6 @@
 import { computeScoreGroups } from '@Generators/drawDefinitions/drawTypes/adHoc/swiss/computeScoreGroups';
 import { computeTiebreakers } from '@Generators/drawDefinitions/drawTypes/adHoc/swiss/computeTiebreakers';
+import { swissPolicyOf } from '@Generators/drawDefinitions/drawTypes/adHoc/swiss/swissPolicyOf';
 import { getParticipantId } from '@Functions/global/extractors';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
@@ -23,6 +24,7 @@ type GetSwissStandingsResult = {
   scoreGroups?: ScoreGroup[];
   roundsPlayed?: number;
   error?: ErrorType;
+  info?: string;
   success?: boolean;
 };
 
@@ -49,8 +51,13 @@ export function getSwissStandings({
     return { standings: [], scoreGroups: [], roundsPlayed: 0, ...SUCCESS };
   }
 
-  const { scoreGroups, records } = computeScoreGroups({ participantIds, matchUps });
-  const standings = computeTiebreakers({ records, tiebreakMethods });
+  // the draw's policy decides what a bye and a draw score, and the rounds a dummy's score is capped by (C.07 16.4.2)
+  const { swissPolicy, error, info } = swissPolicyOf({ drawDefinition });
+  if (error) return { error, info };
+  const { allowDraws, byePoints, totalRounds } = swissPolicy ?? {};
+
+  const { scoreGroups, records } = computeScoreGroups({ participantIds, matchUps, allowDraws, byePoints });
+  const standings = computeTiebreakers({ records, tiebreakMethods, totalRounds });
 
   const completedMatchUps = matchUps.filter((m) => m.winningSide);
   const roundNumbers = [...new Set(completedMatchUps.map((m) => m.roundNumber).filter(Boolean))];
