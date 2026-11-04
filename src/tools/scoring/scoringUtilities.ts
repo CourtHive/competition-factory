@@ -217,7 +217,8 @@ export type InputLevels = { point: boolean; game: boolean; set: boolean };
  * refusals read this, so what it reports and what it accepts cannot disagree.
  */
 export function inputLevels(setFormat?: SetFormatStructure): InputLevels {
-  if (setFormat?.outs) return { point: false, game: false, set: true };
+  // a shootout is entered as its final tally (Ruling 3, CA 2026-11-04)
+  if (setFormat?.outs || setFormat?.shootout) return { point: false, game: false, set: true };
   if (setFormat?.combinedPointTotal) return { point: true, game: false, set: true };
   return { point: true, game: true, set: true };
 }
