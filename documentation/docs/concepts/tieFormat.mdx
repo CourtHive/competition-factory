@@ -12,15 +12,17 @@ For instance, there can be "Men's Singles", "Men's Doubles", "Womens's Singles",
 Each `collectionDefinition` defines how many `matchUps` are in the collection, the `matchUpType` (SINGLES or DOUBLES), the `matchUpFormat` to be used for scoring, and how value is assigned to each `matchUp`.
 `collectionDefinitions` can optionally define `category` and `gender`.
 
-## Captain's Choice collections (unreleased)
+See [Formats: what, how and scoring](./formats.md) for how `tieFormat` relates to `matchUpFormat` and `competitionFormat`.
+
+## Captain's Choice collections
 
 The `matchUpTypeOptions` field declares that a collection permits SINGLES or DOUBLES. A concrete
 `matchUpType` records the choice for one TEAM encounter; the permitted options remain after selection.
 An unresolved choice has no concrete type and cannot be assigned players or scored.
 
 See the [Captain's Choice specification](./collectionMatchUpTypeChoice.mdx) for the representation,
-validation, inheritance and selection/reset rules. This capability is implemented on the runtime branch and
-is not yet released; fixed-type collections retain their existing behavior.
+validation, inheritance and selection/reset rules. This capability was released in factory v7.28.0; fixed-type
+collections retain their existing behavior.
 
 ## Value Considerations
 

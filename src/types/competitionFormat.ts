@@ -4,8 +4,9 @@
  * Sits alongside tieFormat (WHAT is played) and matchUpFormat (scoring structure).
  * Covers timers, penalties, substitutions, point multipliers, point descriptors.
  *
- * Hierarchical resolution (same pattern as tieFormat/matchUpFormat):
- *   matchUp > structure > drawDefinition > event
+ * Hierarchical resolution (getCompetitionFormat): structure > drawDefinition > event.
+ * Unlike tieFormat/matchUpFormat (matchUp > structure > drawDefinition > event), a matchUp carries no
+ * competitionFormat; a matchUpId only locates the structure and drawDefinition to resolve from.
  */
 
 import type { Extension } from './tournamentTypes';

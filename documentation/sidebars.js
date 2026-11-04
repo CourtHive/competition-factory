@@ -126,6 +126,7 @@ module.exports = {
             'concepts/tieMatchUp',
             'concepts/manual-team-results',
             'concepts/lineUp',
+            'concepts/formats',
             'concepts/tieFormat',
             'concepts/collectionMatchUpTypeChoice',
           ],
