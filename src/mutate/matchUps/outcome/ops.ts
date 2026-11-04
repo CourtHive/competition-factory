@@ -133,6 +133,12 @@ export type OutcomeOp =
        */
       withdrawnByePosition?: number;
       /**
+       * with `withdrawnByePosition`: the matchUp held a pending exit the withdrawn BYE had carried a position into (a
+       * passage's landing, S7), which goes with the position as v1's `updateMatchUpStatusAfterRemoval` takes it: to be
+       * played, its provenance removed (a pending exit holds no winner, score or codes to take)
+       */
+      clearsPendingExit?: true;
+      /**
        * the position of a participant awarded a carried exit, taken back out of the matchUp they went on into when the
        * carry is withdrawn by a relabel (S6 tail, v1's `relabelWithoutDirection`): announced as `releaseAdvancedDrawPosition`,
        * with the event; the matchUp's score is left as it is (there is none: a result there keeps the carry)
@@ -444,6 +450,12 @@ function foldMatchUpWrite(
       drawDefinition,
       matchUp,
     });
+    // the pending exit the matchUp held goes with the position (v1's `updateMatchUpStatusAfterRemoval`, S7); a pending
+    // exit has no winner, score or codes to take (`ownCarryAlone`)
+    if (op.clearsPendingExit) {
+      matchUp.matchUpStatus = TO_BE_PLAYED;
+      setSideExitProvenance({ matchUp, provenance: undefined });
+    }
   }
   return {};
 }
