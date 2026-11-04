@@ -5,8 +5,10 @@ import { expect, it } from 'vitest';
 // constants
 import { UNRECOGNIZED_MATCHUP_FORMAT } from '@Constants/errorConditionConstants';
 
-// Refused for new use: overtime is gated until activation; an aggregate of standard sets is refused outright.
-const OVERTIME = 'HAL2XA-S:T45P-O:2X/T15P-F:TB1';
+// Refused for new use: overtime the scoring engine does not score (a match clock, Ruling 1); an aggregate of standard
+// sets is refused outright. Overtime the engine scores is accepted (activation S6).
+const OVERTIME = 'HAL2XA-S:T45P-O:2X/T15P-F:TB1-M:T130';
+const SCORED_OVERTIME = 'HAL2XA-S:T45P-O:2X/T15P-F:TB1';
 const AGGREGATE_STANDARD_SETS = 'SET3XA-S:6/TB7';
 const VALID = 'SET3-S:6/TB7';
 
@@ -23,6 +25,12 @@ it.each([OVERTIME, AGGREGATE_STANDARD_SETS])(
     expect(result.success).toEqual(true);
   },
 );
+
+it('addEvent accepts an overtime format the scoring engine scores', () => {
+  mocksEngine.generateTournamentRecord({ setState: true });
+  const result: any = tournamentEngine.addEvent({ event: { eventName: 'E', matchUpFormat: SCORED_OVERTIME } });
+  expect(result.success).toEqual(true);
+});
 
 it('generateDrawDefinition validates a passed matchUpFormat even when it equals the event format', () => {
   const {

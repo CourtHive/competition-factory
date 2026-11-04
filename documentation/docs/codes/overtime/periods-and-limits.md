@@ -9,7 +9,7 @@ The overtime count is independent of the regulation count. Four quarters with up
 four regulation segments and at most three additional periods, not a best-of-seven match.
 
 :::note Availability
-The overtime extension is in development and is not yet enabled in published Factory versions.
+Overtime codes the scoring engine scores are valid for tournament use in Factory releases after 7.29.0 (CA 2026-11-04); a match clock with overtime, and untimed or tiebreak-bearing periods, are not.
 :::
 
 ## Repeated overtime without a ceiling

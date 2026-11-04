@@ -1,4 +1,5 @@
 import type { ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
+import { resolveFormat } from '@Assemblies/engines/scoring/v2/format';
 import { stringify } from '@Helpers/matchUpFormatCode/stringify';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { isString } from '@Tools/objects';
@@ -61,7 +62,7 @@ export function validateMatchUpFormat({ matchUpFormat }: { matchUpFormat: string
     }
     return { ...invalid, info };
   }
-  return refusedForNewUse(parsed) ? invalid : { valid: true };
+  return refusedForNewUse(parsed, matchUpFormat) ? invalid : { valid: true };
 }
 
 /**
@@ -77,10 +78,11 @@ export function isWellFormedMatchUpFormat({ matchUpFormat }: { matchUpFormat: st
 /** The parts of a set format these refusals read. */
 type SetSpec = { setTo?: number; tiebreakAt?: number | string; tiebreakFormat?: object } | undefined;
 
-function refusedForNewUse(parsed: ParsedFormat): boolean {
-  // Overtime parses and scores, but is not offered for new use until the consumer activation audit clears it.
-  // A shootout decider is only ever after -O: (CA 2026-11-04), so it opens with overtime (S6).
-  if (parsed.overtimeFormat) return true;
+function refusedForNewUse(parsed: ParsedFormat, matchUpFormat: string): boolean {
+  // Overtime is offered for new use exactly where the scoring engine scores it (activation S6): one predicate, so a
+  // tournament cannot assign an overtime code the engine refuses (a match clock, a tiebreak-bearing or untimed
+  // segment, a standard-set decider), and no code the engine scores is refused. A shootout decider opens with it.
+  if (parsed.overtimeFormat) return !resolveFormat(matchUpFormat, { allowOvertime: true });
   const setFormat: SetSpec = parsed.setFormat;
   const finalSetFormat: SetSpec = parsed.finalSetFormat;
   if ([setFormat, finalSetFormat].some(tiebreakBelowSetToLessOne)) return true;
