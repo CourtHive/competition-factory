@@ -1766,8 +1766,8 @@ type ProducedLoser = {
   structureId: string;
   /** the side the loser seat is on, which the exit's origin is recorded on; the exit is awarded to the other */
   seatSide: 1 | 2;
-  /** the empty position opposite, advanced ahead of the arrival it awaits (a reservation) */
-  onward: { matchUpId: string; drawPositions: number[] };
+  /** the empty position opposite, advanced ahead of the arrival it awaits (a reservation); none from a final (S7) */
+  onward?: { matchUpId: string; drawPositions: number[] };
   /** the loser matchUp's own loser seat, which nobody will lose into: a BYE placed with no event, and its chain */
   beyond?: ByeChain;
 };
@@ -1867,7 +1867,7 @@ function chainedSeats(view: OutcomeView, entry?: HydratedMatchUp): DoubleExitSea
   // seat's double BYE having made it a BYE, it and the one its position went on into
   const ownSent = [
     seats.own?.onward?.matchUpId,
-    seats.producedLoser?.onward.matchUpId,
+    seats.producedLoser?.onward?.matchUpId,
     seats.own?.advanced?.matchUpId,
     seats.own?.advanced?.next?.matchUpId,
     seats.own?.passed?.matchUpId,
@@ -2132,7 +2132,13 @@ function heldLoserOps(request: OutcomeRequest, held: HeldLoser): OutcomeOp[] {
 }
 
 const producedLoserMatchUpIds = (produced?: ProducedLoser) =>
-  produced ? [produced.matchUpId, produced.onward.matchUpId, ...(produced.beyond?.matchUpIds ?? [])] : [];
+  produced
+    ? [
+        produced.matchUpId,
+        ...(produced.onward ? [produced.onward.matchUpId] : []),
+        ...(produced.beyond?.matchUpIds ?? []),
+      ]
+    : [];
 
 /**
  * Under `doubleExitPropagateBye: false` nobody loses the double exit, and its loser matchUp takes a produced exit
@@ -2160,7 +2166,9 @@ function producedLoser(view: OutcomeView): ProducedLoser | undefined {
   const seatSide = sideOf(loserMatchUp, loserTargetDrawPosition);
   const opposite = (targets.loserMatchUpDrawPositions ?? []).filter((position) => position !== loserTargetDrawPosition);
   const onward = opposite.length === 1 ? onwardFrom(view, loserMatchUp, opposite[0]) : undefined;
-  if (!seatSide || !onward) return undefined;
+  // the loser matchUp its structure's final (a one-round structure, COMPASS's North): the exit is written there and
+  // nothing advances (S7)
+  if (!seatSide || (!onward && (loserMatchUp.winnerMatchUpId || opposite.length !== 1))) return undefined;
   const produced: ProducedLoser = {
     matchUpId: loserMatchUp.matchUpId,
     structureId: loserMatchUp.structureId,
@@ -2203,13 +2211,17 @@ function producedLoserOps(request: OutcomeRequest, produced: ProducedLoser): Out
     },
     ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId: produced.matchUpId, provenance }] : []),
     { op: 'stampUpdatedAt', entity: 'matchUp', id: produced.matchUpId },
-    {
-      op: 'setMatchUpDrawPositions',
-      matchUpId: produced.onward.matchUpId,
-      drawPositions: produced.onward.drawPositions,
-      announcesContext: false,
-    },
-    { op: 'stampUpdatedAt', entity: 'matchUp', id: produced.onward.matchUpId },
+    ...(produced.onward
+      ? [
+          {
+            op: 'setMatchUpDrawPositions' as const,
+            matchUpId: produced.onward.matchUpId,
+            drawPositions: produced.onward.drawPositions,
+            announcesContext: false as const,
+          },
+          { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: produced.onward.matchUpId },
+        ]
+      : []),
     { op: 'stampUpdatedAt', entity: 'structure', id: produced.structureId },
   ];
 }
