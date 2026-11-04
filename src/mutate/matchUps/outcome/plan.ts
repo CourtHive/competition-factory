@@ -2055,15 +2055,18 @@ function heldBeyond(
   if (beyond.score?.scoreStringSide1 || Object.keys(beyond.sideExitProvenance ?? {}).length) return undefined;
   // a participant standing there is awarded the exit (sides read before the advance re-orders them): v1's
   if (beyond.matchUpStatusCodes?.length || beyond.sides?.some((side) => side.participantId)) return undefined;
-  // the side the held position takes: beside another position, in their order (the lower side 1); alone, the side its
-  // feeder's place sends it to
+  // the side the held position takes: beside another position, in their order (the lower side 1); alone in a round that
+  // is not fed, the side its feeder's place sends it to, as the structure pairs it (`getOrderedDrawPositions`)
   const positions = unfillable.onward?.drawPositions ?? [];
   if (!positions.includes(drawPosition) || positions.length > 2) return undefined;
-  const arrivalSide = (
-    positions.length === 2 ? positions.indexOf(drawPosition) + 1 : 2 - ((landing.roundPosition ?? 0) % 2)
-  ) as 1 | 2;
+  const fedFrom = (2 - ((landing.roundPosition ?? 0) % 2)) as 1 | 2;
+  const arrivalSide = positions.length === 2 ? lowerFirst(positions, drawPosition) : fedFrom;
   return heldLanding(view, landing, beyond, arrivalSide) ? { matchUpId: beyond.matchUpId, arrivalSide } : undefined;
 }
+
+/** beside another position, the side a position takes: the numerically lower is side 1 */
+const lowerFirst = (positions: number[], drawPosition: number): 1 | 2 =>
+  drawPosition === Math.min(...positions) ? 1 : 2;
 
 /** the held exit written where it lands past the unfillable seat's BYE: pending, its origin on the arrival side */
 function heldBeyondOps(request: OutcomeRequest, beyond: { matchUpId: string; arrivalSide: 1 | 2 }): OutcomeOp[] {
