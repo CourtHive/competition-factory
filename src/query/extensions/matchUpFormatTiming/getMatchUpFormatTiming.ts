@@ -196,26 +196,29 @@ function deriveTimedDefaultMinutes(parsed: ReturnType<typeof parseMatchUpFormat>
   return regulation + overtimeCeilingMinutes(parsed);
 }
 
-/** a decider that is not timed (a tiebreak race, a shootout) is priced at this many minutes */
+/** a decider that is not timed (a tiebreak race past one point, a shootout) is priced at this many minutes */
 const UNTIMED_DECIDER_MINUTES = 10;
 /** unlimited overtime has no ceiling: it is priced at this many periods */
 const UNLIMITED_OVERTIME_PERIODS_PRICED = 1;
 
 /**
  * Overtime prices its ceiling (CA ruling, 2026-11-04): every period of a finite block, sudden death or not, then the
- * decider (`-F:` follows the block), its own minutes when timed, otherwise UNTIMED_DECIDER_MINUTES. Unlimited periods
- * have no ceiling and price UNLIMITED_OVERTIME_PERIODS_PRICED; a decider never follows them.
+ * decider (`-F:` follows the block), its own minutes when timed, none for a one-point decider, otherwise
+ * UNTIMED_DECIDER_MINUTES. Unlimited periods have no ceiling and price UNLIMITED_OVERTIME_PERIODS_PRICED; a decider
+ * never follows them.
  */
 function overtimeCeilingMinutes(parsed: NonNullable<ReturnType<typeof parseMatchUpFormat>>): number {
   const overtime = parsed.overtimeFormat;
   if (!overtime) return 0;
   const periodMinutes = overtime.setFormat.timed ? (overtime.setFormat.minutes ?? 0) : 0;
   if (overtime.count === 'unlimited') return UNLIMITED_OVERTIME_PERIODS_PRICED * periodMinutes;
-  const final = parsed.finalSetFormat;
-  let deciderMinutes = 0;
-  if (final)
-    deciderMinutes = final.timed && typeof final.minutes === 'number' ? final.minutes : UNTIMED_DECIDER_MINUTES;
-  return overtime.count * periodMinutes + deciderMinutes;
+  return overtime.count * periodMinutes + deciderMinutesOf(parsed.finalSetFormat);
+}
+
+/** a one-point decider (`TB1`) has no time dimension whatsoever (CA, 2026-11-04) */
+function deciderMinutesOf(final: NonNullable<ReturnType<typeof parseMatchUpFormat>>['finalSetFormat']): number {
+  if (!final || final.tiebreakSet?.tiebreakTo === 1) return 0;
+  return final.timed && typeof final.minutes === 'number' ? final.minutes : UNTIMED_DECIDER_MINUTES;
 }
 
 type MatchUpFormatTimesArgs = {
