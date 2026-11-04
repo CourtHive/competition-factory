@@ -1,17 +1,18 @@
-import {
-  GRAPH_MEASURES,
-  RATIO_MEASURES,
-  SEASON_TALLY_MEASURES,
-  TALLY_MEASURES,
-  V1_PRIMARY_KEYS,
-  V2_MEASURES,
-} from '@Query/standings/fromV1';
 import { validateTallyPolicy } from '@Validators/validateTallyPolicy';
 import { validateSeason } from '@Validators/validateSeason';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
+import {
+  GRAPH_MEASURES,
+  RATIO_MEASURES,
+  SEASON_TALLY_MEASURES,
+  SET_MEASURES,
+  TALLY_MEASURES,
+  V1_PRIMARY_KEYS,
+  V2_MEASURES,
+} from '@Query/standings/fromV1';
 
 // constants
 import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
@@ -60,7 +61,7 @@ describe('roundRobinTallyPolicy.md § Validation', () => {
   it('states one rule per check, in the order the validator reports them', () => {
     // CONTROL: the section and its table were found
     expect(section.length).toBeGreaterThan(0);
-    expect(rules.length).toEqual(32);
+    expect(rules.length).toEqual(48);
   });
 
   it.each(rules.map((row) => [row.rule, row]))('refuses: %s', (_rule, { refused, message }) => {
@@ -104,6 +105,7 @@ describe('roundRobinTallyPolicy.md § Validation', () => {
     expect(acceptedNames('Measures')).toEqual(TALLY_MEASURES);
     expect(acceptedNames('Ratio measures')).toEqual(RATIO_MEASURES);
     expect(acceptedNames('Graph measures')).toEqual(GRAPH_MEASURES);
+    expect(acceptedNames('Tied-set measures')).toEqual(SET_MEASURES);
     expect(acceptedNames("A season's extra measures")).toEqual(SEASON_TALLY_MEASURES);
     expect(acceptedNames('Directive-only attributes')).toEqual(['headToHead', 'external']);
   });

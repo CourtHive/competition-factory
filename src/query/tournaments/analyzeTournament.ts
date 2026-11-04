@@ -1,3 +1,4 @@
+import { FORMAT_VERDICT, FormatReportEntry, getMatchUpFormatReport } from '@Query/tournaments/getMatchUpFormatReport';
 import { getExtensionAnomalies } from '@Query/tournaments/getExtensionAnomalies';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { analyzeDraws } from '@Query/tournaments/analyzeDraws';
@@ -29,5 +30,17 @@ export function analyzeTournament({ tournamentRecord }) {
     analysis.extensionAnomalies = extensionAnomalies;
   }
 
+  // stored matchUpFormat codes that are MALFORMED or REFUSED_FOR_NEW_USE; the full list, VALID codes included, is
+  // `getMatchUpFormatReport`. Only present when there is something to report, matching `extensionAnomalies`.
+  const formatReport = getMatchUpFormatReport({ tournamentRecord });
+  const matchUpFormatIssues = 'entries' in formatReport ? formatReport.entries.filter(isFormatIssue) : [];
+  if (matchUpFormatIssues.length) {
+    analysis.matchUpFormatIssues = matchUpFormatIssues;
+  }
+
   return { ...SUCCESS, analysis };
+}
+
+function isFormatIssue(entry: FormatReportEntry): boolean {
+  return entry.verdict !== FORMAT_VERDICT.VALID;
 }

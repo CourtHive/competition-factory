@@ -1,14 +1,28 @@
-import type { SwissParticipantRecord, SwissStanding } from '@Types/swissTypes';
+import type { SwissParticipantRecord, SwissRoundResult, SwissStanding } from '@Types/swissTypes';
 
 type ComputeTiebreakersArgs = {
   records: Map<string, SwissParticipantRecord>;
   tiebreakMethods?: string[];
+  /** the rounds the tournament is scheduled for; absent, the last round any record holds */
+  totalRounds?: number;
 };
 
+/** the points a draw scores, the value C.07 16.3.2 gives a late requested bye and 16.4.2 multiplies to cap a dummy */
+const DRAW_POINTS = 0.5;
+
+/**
+ * The standings, with the graph measures read under FIDE C.07 Art. 16 (Unplayed Rounds Management, as revised from
+ * 1 March 2026): an opponent counts at its adjusted score (16.3), and each of a participant's own unplayed rounds counts
+ * against a dummy scoring the participant's own score, capped (16.4).
+ */
 export function computeTiebreakers({
   records,
   tiebreakMethods = ['BUCHHOLZ', 'SONNEBORN_BERGER'],
+  totalRounds,
 }: ComputeTiebreakersArgs): SwissStanding[] {
+  const lastRound =
+    totalRounds ?? Math.max(0, ...[...records.values()].flatMap(({ rounds }) => rounds.map((r) => r.roundNumber)));
+  const adjusted = new Map([...records].map(([pid, record]) => [pid, adjustedScore(record, lastRound)]));
   const standings: SwissStanding[] = [];
 
   for (const [pid, record] of records) {
@@ -22,14 +36,15 @@ export function computeTiebreakers({
       rank: 0,
     };
 
+    const contributions = roundContributions({ record, adjusted, lastRound });
     if (tiebreakMethods.includes('BUCHHOLZ')) {
-      standing.buchholz = computeBuchholz(pid, records);
+      standing.buchholz = sum(contributions.map(({ value }) => value));
     }
     if (tiebreakMethods.includes('MEDIAN_BUCHHOLZ')) {
-      standing.medianBuchholz = computeMedianBuchholz(pid, records);
+      standing.medianBuchholz = computeMedianBuchholz(contributions);
     }
     if (tiebreakMethods.includes('SONNEBORN_BERGER')) {
-      standing.sonnebornBerger = computeSonnebornBerger(pid, records);
+      standing.sonnebornBerger = sum(contributions.map(({ value, points }) => value * points));
     }
     if (tiebreakMethods.includes('PROGRESSIVE_SCORE')) {
       standing.progressiveScore = computeProgressiveScore(record);
@@ -47,45 +62,68 @@ export function computeTiebreakers({
   return standings;
 }
 
-function computeBuchholz(participantId: string, records: Map<string, SwissParticipantRecord>): number {
-  const record = records.get(participantId);
-  if (!record) return 0;
+type Contribution = { value: number; points: number; voluntary: boolean };
 
-  return record.opponentIds.reduce((sum, oppId) => {
-    const oppRecord = records.get(oppId);
-    return sum + (oppRecord?.points ?? 0);
+const sum = (values: number[]) => values.reduce((total, value) => total + value, 0);
+
+/** a voluntary unplayed round (C.07 16.1.2): one the participant was not available for, a requested bye or a forfeit loss */
+const isVoluntary = (round: SwissRoundResult) => round.unplayed === 'ABSENT' || round.unplayed === 'FORFEIT_LOSS';
+
+/**
+ * A participant's score as its opponents' tie-breaks read it (C.07 16.3): every round as awarded, except a requested bye
+ * followed only by voluntary unplayed rounds, or in the last round (16.2.5), which counts as a draw. A round sat out with
+ * another entrant is the factory's nearest record of a requested bye.
+ */
+function adjustedScore(record: SwissParticipantRecord, lastRound: number) {
+  const { rounds } = record;
+  return rounds.reduce((score, round, index) => {
+    const late =
+      round.unplayed === 'ABSENT' && (round.roundNumber === lastRound || rounds.slice(index + 1).every(isVoluntary));
+    return score + (late ? DRAW_POINTS : round.points);
   }, 0);
 }
 
-function computeMedianBuchholz(participantId: string, records: Map<string, SwissParticipantRecord>): number {
-  const record = records.get(participantId);
-  if (!record || record.opponentIds.length < 3) return computeBuchholz(participantId, records);
-
-  const oppScores = record.opponentIds.map((oppId) => records.get(oppId)?.points ?? 0).sort((a, b) => a - b);
-
-  // drop highest and lowest
-  const trimmed = oppScores.slice(1, -1);
-  return trimmed.reduce((sum, s) => sum + s, 0);
+/**
+ * What each round adds to the graph measures: the opponent's adjusted score for a game played; for an unplayed round,
+ * the dummy's (C.07 16.4), the participant's own score but no more than the scheduled opponent's adjusted score for a
+ * forfeit (16.4.1) or a draw's points times the tournament's rounds for any other (16.4.2).
+ */
+function roundContributions({
+  record,
+  adjusted,
+  lastRound,
+}: {
+  record: SwissParticipantRecord;
+  adjusted: Map<string, number>;
+  lastRound: number;
+}): Contribution[] {
+  const contributions: Contribution[] = [];
+  for (const round of record.rounds) {
+    const opponentScore = round.opponentId ? (adjusted.get(round.opponentId) ?? 0) : 0;
+    let value = opponentScore;
+    if (round.unplayed) {
+      const forfeit = round.unplayed === 'FORFEIT_WIN' || round.unplayed === 'FORFEIT_LOSS';
+      value = Math.min(record.points, forfeit ? opponentScore : DRAW_POINTS * lastRound);
+    } else if (!round.opponentId) continue;
+    contributions.push({ value, points: round.points, voluntary: isVoluntary(round) });
+  }
+  return contributions;
 }
 
-function computeSonnebornBerger(participantId: string, records: Map<string, SwissParticipantRecord>): number {
-  const record = records.get(participantId);
-  if (!record) return 0;
+/**
+ * Buchholz Median-1 (C.07 14.3): cut the least significant value, then the most. The least is the lowest contribution
+ * of a voluntary unplayed round when there is one (16.5.1); fewer than three rounds, nothing is cut.
+ */
+function computeMedianBuchholz(contributions: Contribution[]): number {
+  const values = contributions.map(({ value }) => value);
+  if (values.length < 3) return sum(values);
 
-  let score = 0;
-  for (const oppId of record.opponentIds) {
-    const oppRecord = records.get(oppId);
-    if (!oppRecord) continue;
-
-    const outcome = record.opponentOutcomes.get(oppId);
-    if (outcome === 'WIN') {
-      score += oppRecord.points;
-    } else if (outcome === 'DRAW') {
-      score += oppRecord.points * 0.5;
-    }
-  }
-
-  return score;
+  const voluntary = contributions.filter((c) => c.voluntary).map(({ value }) => value);
+  const least = voluntary.length ? Math.min(...voluntary) : Math.min(...values);
+  const remaining = [...values];
+  remaining.splice(remaining.indexOf(least), 1);
+  remaining.splice(remaining.indexOf(Math.max(...remaining)), 1);
+  return sum(remaining);
 }
 
 function computeProgressiveScore(record: SwissParticipantRecord): number {

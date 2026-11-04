@@ -131,11 +131,34 @@ export interface ScoringPeriod {
   /** One-based within the phase; setNumber remains one-based across the whole match. */
   periodNumber: number;
 }
+/**
+ * How a result was decided outside the scored phases: a shootout with no declared `-F:SO`, a competition rule
+ * (higher placed advances, away goals), lots, or an official decision. Shared with the standings level-results
+ * work (STANDINGS_PHASE_2_PLAN § 1.1), which decides a level result in a format that needs a winner.
+ */
+export type DecidedByMethod = 'SHOOTOUT' | 'COMPETITION_RULE' | 'LOTS' | 'OFFICIAL_DECISION';
+export interface DecidedBy {
+  method: DecidedByMethod;
+  /** the rule applied, e.g. a competition rule's name */
+  rule?: string;
+  note?: string;
+  /** a shootout's tally, side 1 first: the same pair a declared shootout decider records as its deciding score */
+  tally?: [number, number];
+}
+/** The phase completing the result, including a level finish; EXTERNAL when `decidedBy` decided it. */
+export type DecidedIn = ScoringPhase | 'EXTERNAL';
+
 export interface OvertimeScoreContext extends ScoringPeriod {
   aggregateScore: [number, number];
   decidingScore?: [number, number];
   /** Phase completing the result, including a level finish. */
-  decidedIn?: ScoringPhase;
+  decidedIn?: DecidedIn;
+  decidedBy?: DecidedBy;
+  /**
+   * The legible result, side 1 first, derived from the record at write time (CA, 2026-11-04): renderers show it
+   * in place of the per-period `scoreStringSide1`, which stays the lossless encoding of the sets.
+   */
+  scoreString?: string;
 }
 
 /**
@@ -597,6 +620,7 @@ export interface MatchUpConstraintStructure {
  * 2. Tiebreak-only set: has tiebreakSet (e.g., S:TB11)
  * 3. Timed set: has timed+minutes (e.g., S:T10P)
  * 4. Outs-based set: has outs (e.g., S:O3 — baseball/wiffle ball innings)
+ * 5. Shootout: has shootout, its rounds (F:SO5) — only ever the final set, entered as a tally
  */
 export interface SetFormatStructure {
   // Combined rally-total segment (SET1-S:P32, P32DP, P32WB2)
@@ -619,6 +643,8 @@ export interface SetFormatStructure {
   modifier?: string;
   // Outs-based set (baseball/wiffle ball innings)
   outs?: number;
+  // Shootout (final set only), entered as a tally
+  shootout?: number;
   // Game format within set
   gameFormat?: GameFormatStructure;
 }

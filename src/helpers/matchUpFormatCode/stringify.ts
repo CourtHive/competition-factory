@@ -125,6 +125,7 @@ function stringifySet(setObject, preserveRedundant) {
     if (setObject.combinedPointTotal) return stringifyCombinedPointFormat(setObject);
     if (setObject.timed) return timedSetFormat(setObject);
     if (setObject.outs) return `O${setObject.outs}`;
+    if (setObject.shootout) return `SO${setObject.shootout}`;
     if (setObject.tiebreakSet) return tiebreakFormat(setObject.tiebreakSet);
     const setToValue = getNumber(setObject.setTo);
     if (setToValue) {

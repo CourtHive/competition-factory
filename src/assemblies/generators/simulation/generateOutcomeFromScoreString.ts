@@ -107,6 +107,11 @@ export function generateOutcomeFromScoreString(params) {
   if (winningSide && ![1, 2, undefined].includes(winningSide)) return { error: INVALID_VALUES, winningSide };
 
   const neutralParsedSets = scoreString && parseScoreString({ scoreString, matchUpFormat });
+  // an overtime format's labelled scoreboard (`1-1 (Decider: 4-3)`) parses into NaN sets: refuse it rather than
+  // build an outcome from them. Only overtime formats: elsewhere a status word (`6-1 RET`) parses the same way and
+  // the outcome has always been built around it
+  if (parse(matchUpFormat)?.overtimeFormat && Array.isArray(neutralParsedSets) && neutralParsedSets.some(hasNaNScore))
+    return { error: INVALID_VALUES, info: 'the score string could not be read' };
   const isBracketNotation = scoreString?.trim().startsWith('[');
   const inferredWinningSide = inferWinningSide(winningSide, matchUpFormat, neutralParsedSets);
 
@@ -124,4 +129,8 @@ export function generateOutcomeFromScoreString(params) {
       score,
     },
   });
+}
+
+function hasNaNScore(set: { side1Score?: number; side2Score?: number }): boolean {
+  return Number.isNaN(set?.side1Score) || Number.isNaN(set?.side2Score);
 }

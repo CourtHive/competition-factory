@@ -1,16 +1,16 @@
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
-import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
+import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { overlap } from '@Tools/arrays';
 
-import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { CONTAINER, WINNER } from '@Constants/drawDefinitionConstants';
 import type { DrawDefinition, MatchUp, MatchUpStatusUnion } from '@Types/tournamentTypes';
-import type { HydratedMatchUp } from '@Types/hydrated';
+import { CONTAINER, WINNER } from '@Constants/drawDefinitionConstants';
+import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { RoundProfile } from '@Types/factoryTypes';
+import type { HydratedMatchUp } from '@Types/hydrated';
 import type { OutcomeOp } from './ops';
 
 /**
@@ -249,8 +249,13 @@ function removeDrawPosition(sim: Sim, matchUps: SimMatchUp[], matchUp: SimMatchU
   const keeps = advancedByOpponentsBye(sim, matchUps, matchUp, drawPosition);
   if (!keeps && first && (matchUp.roundNumber ?? 0) > first) {
     matchUp.positions = matchUp.positions.filter((position) => position !== drawPosition);
-    // the position across a WINNER link out of this round (`releaseLinkedWinnerAdvancement`): v1's
-    if (sim.winnerLinkRounds.has(roundKey(structureId, matchUp.roundNumber))) return fail(sim);
+    // a participant's position across a WINNER link out of this round (`releaseLinkedWinnerAdvancement`): v1's. A BYE's
+    // position names nobody to release there, and v1 returns without a write (S7: DOUBLE_ELIMINATION's Backdraw final)
+    if (
+      sim.winnerLinkRounds.has(roundKey(structureId, matchUp.roundNumber)) &&
+      sim.participants.has(seatKey(structureId, drawPosition))
+    )
+      return fail(sim);
   }
   const containsBye = matchUp.positions.some((position) => sim.byes.has(seatKey(structureId, position)));
   matchUp.matchUpStatus = containsBye ? BYE : TO_BE_PLAYED;

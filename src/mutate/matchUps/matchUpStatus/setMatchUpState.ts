@@ -879,7 +879,7 @@ function resolveAndApplyOutcome({
     })
   ) {
     result = { ...SUCCESS };
-  } else if (isUndirectedPointOutcome(params, !!activeDownstream)) {
+  } else if (isUndirectedDrawnOutcome(params, !!activeDownstream)) {
     result = applyMatchUpValues(params);
   } else if (!activeDownstream || !hasPropagated) {
     result = noDownstreamDependencies(params);
@@ -937,7 +937,7 @@ export function missingDrawPositionsRefusal({
   if (matchUp.drawPositions || matchUp.collectionId || isAdHoc({ structure })) return undefined;
   if (matchUp.winningSide || isDoubleExit(matchUp.matchUpStatus)) return undefined;
   const directs = !!params.winningSide || (!!params.propagateExitStatus && isExit(matchUpStatus));
-  if (!directs || isUndirectedPointOutcome(params, activeDownstream)) return undefined;
+  if (!directs || isUndirectedDrawnOutcome(params, activeDownstream)) return undefined;
   return decorateResult({ result: { error: MISSING_DRAW_POSITIONS }, stack: 'setMatchUpStatus' });
 }
 
@@ -1406,18 +1406,23 @@ function checkParticipants({
   return { ...SUCCESS };
 }
 
-/** Point-total RR and rotating results retain a score without removing directed positions. */
-function isUndirectedPointOutcome(
+/**
+ * A drawn result where no winner is needed (a round robin, an ad hoc draw, rotating partners) retains its score without
+ * removing directed positions: a level combined total, or a level finish of a format that can end level (§ 9.7).
+ */
+function isUndirectedDrawnOutcome(
   params: SetMatchUpStateArgs & { structure?: Structure; matchUp?: MatchUp; inContextMatchUp?: MatchUp },
   activeDownstream: boolean,
 ): boolean {
   const format = resolveScoringFormat({ ...params, incoming: params.matchUpFormat });
-  const combinedRoundRobin =
-    params.structure?.finishingPosition === WIN_RATIO && !!parse(format ?? '')?.setFormat?.combinedPointTotal;
+  const noWinnerNeeded =
+    params.structure?.finishingPosition === WIN_RATIO ||
+    isAdHoc({ structure: params.structure }) ||
+    isRotatingPartnerDraw(params.drawDefinition, params.event);
   return (
     !activeDownstream &&
     !params.winningSide &&
-    (combinedRoundRobin || isRotatingPartnerDraw(params.drawDefinition, params.event)) &&
+    noWinnerNeeded &&
     isDrawnResult({
       matchUpId: params.matchUpId ?? '',
       matchUpStatus: params.matchUpStatus ?? COMPLETED,

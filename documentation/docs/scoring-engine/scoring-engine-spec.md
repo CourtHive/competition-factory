@@ -1423,6 +1423,7 @@ on a cited id the matrix does not hold, and on a cell line that names no section
 - `exactly+aggregate | INN | set:timed(G) | final:same | game:traditional | noClock | knownModifiers` — § 6.2 rule 3, § 9.3; `aggregateSegments` (`INN4XA-S:T12`)
 - `exactly+aggregate | SET | set:timed(G) | final:same | game:traditional | noClock | knownModifiers` — § 6.2 rule 3, § 9.3; `aggregateSegments` (`SET3XA-S:T10`, `SET9XA-S:T10`)
 - `exactly+aggregate | SET | set:timed(P) | final:same | game:traditional | noClock | knownModifiers` — § 6.2 rule 1, § 9.3, § 10.3; `aggregateSegments` (`SET7XA-S:T10P`, `SET2XA-S:T10P`), `setServer-recordEntry.test.ts`
+- `exactly+aggregate | SET | set:timed(P) | final:tiebreakSet | game:traditional | noClock | knownModifiers` — § 3.2 rule 3, § 4.3, § 9.4; `aggregateSegments` (`SET4XA-S:T12P-F:TB1`), `aggregateDeciderOnLevel.test.ts`
 - `exactly+aggregate | SET | set:timed(G) | final:tiebreakSet | game:traditional | noClock | knownModifiers` — § 3.2 rule 3, § 4.3, § 9.4; `aggregateSegments` (`SET3XA-S:T10-F:TB1`, `SET2XA-S:T20-F:TB1`), `aggregateDeciderIsSetNPlusOne.test.ts`
 - `exactly+aggregate | SET | set:timed(G) | final:tiebreakSet(noAD) | game:traditional | noClock | knownModifiers` — § 3.2 rule 3, § 9.4; `aggregateSegments` (`SET3XA-S:T10-F:TB1NOAD`)
 - `exactly+aggregate | SET | set:timed(G) | final:timed(P) | game:traditional | noClock | knownModifiers` — § 3.2 rule 3, § 6.4, § 9.4; `aggregateSegments` (`SET3XA-S:T10-F:T10P`)

@@ -29,7 +29,13 @@ export const segmentClosed = (set: SetScore): boolean => set.winningSide !== und
 /** A race records its running/final points separately from the game won. */
 function units(set?: SetScore): [number, number] {
   if (!set) return [0, 0];
-  return set.isTiebreakOnly
+  // the engine flags a race isTiebreakOnly; a static score's decider carries only its tiebreak points
+  const tiebreakOnly =
+    set.isTiebreakOnly ||
+    (set.side1Score === undefined &&
+      set.side2Score === undefined &&
+      (set.side1TiebreakScore !== undefined || set.side2TiebreakScore !== undefined));
+  return tiebreakOnly
     ? [
         set.side1TiebreakScore ?? set.side1GameScores?.at(-1) ?? set.side1Score ?? 0,
         set.side2TiebreakScore ?? set.side2GameScores?.at(-1) ?? set.side2Score ?? 0,
@@ -66,6 +72,34 @@ export function overtimeScoreContext(
     ...(period.phase === 'DECIDER' ? { decidingScore: units(sets.find((set) => set.setNumber === finalNumber)) } : {}),
     ...(status === COMPLETED ? { decidedIn: period.phase } : {}),
   };
+}
+
+const METHOD_LABELS: Record<string, string> = {
+  SHOOTOUT: 'Shootout',
+  COMPETITION_RULE: 'Competition rule',
+  LOTS: 'Lots',
+  OFFICIAL_DECISION: 'Official decision',
+};
+
+/**
+ * A completed result's legible string, side 1 first unless `perspective` is 1 (CA, 2026-11-04): the aggregate, then
+ * how it was decided. Decided in regulation reads as the plain aggregate, as every sport writes it; a level finish
+ * says so; a result decided externally names its method. A result in progress reads as the live scoreboard.
+ */
+export function overtimeResultString(context: OvertimeScoreContext, perspective?: number): string {
+  if (!context.decidedIn) return overtimeScoreString(context, perspective);
+  const pair = (scores: [number, number]) => (perspective === 1 ? [...scores].reverse() : scores).join('-');
+  const aggregate = pair(context.aggregateScore);
+  const level = context.aggregateScore[0] === context.aggregateScore[1];
+  if (context.decidedIn === 'EXTERNAL') {
+    const by = context.decidedBy;
+    const label = (by && METHOD_LABELS[by.method]) ?? 'Decided';
+    const tally = by?.tally ? ': ' + pair(by.tally) : '';
+    return `${aggregate} (${label}${tally})`;
+  }
+  if (context.decidedIn === 'DECIDER') return overtimeScoreString(context, perspective);
+  if (context.decidedIn === 'REGULATION') return level ? `${aggregate} (drawn)` : aggregate;
+  return `${aggregate} (OT ${context.periodNumber}${level ? ', drawn' : ''})`;
 }
 
 export function overtimeScoreString(context: OvertimeScoreContext, perspective?: number): string {

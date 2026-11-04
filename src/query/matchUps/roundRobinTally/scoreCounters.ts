@@ -1,9 +1,11 @@
+import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { parseTallyFormat } from './parseTallyFormat';
 import { ensureInt } from '@Tools/ensureInt';
 
 // constants and types
 import { DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
+import { ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { Tally } from '@Types/factoryTypes';
 
@@ -87,7 +89,7 @@ export function countGames({
   } else {
     sets.forEach((set, i) => {
       const setNumber = set.setNumber || i + 1;
-      const whichFormat = setNumber > setsToWin && parsedMatchUpFormat?.finalSetFormat ? 'finalSetFormat' : 'setFormat';
+      const whichFormat = formatKey(parsedMatchUpFormat, setNumber);
       const based = parsedMatchUpFormat?.[whichFormat]?.based;
       const isTiebreakSet = parsedMatchUpFormat?.[whichFormat].tiebreakSet;
 
@@ -107,7 +109,7 @@ export function countGames({
 
   if (matchUpStatus === RETIRED && typeof matchUpWinnerIndex === 'number') {
     // setFormat must consider whether retirment occurred in a finalSet which has a different format
-    const whichFormat = sets.length > setsToWin && parsedMatchUpFormat?.finalSetFormat ? 'finalSetFormat' : 'setFormat';
+    const whichFormat = formatKey(parsedMatchUpFormat, sets.at(-1)?.setNumber || sets.length);
     const format = parsedMatchUpFormat?.[whichFormat];
 
     if (isGamesBased(format.based)) {
@@ -154,14 +156,12 @@ export function countPoints({ matchUpFormat, score }: { matchUpFormat?: string; 
   tiebreaksTally: Tally;
 } {
   const parsedMatchUpFormat = matchUpFormat ? parseTallyFormat(matchUpFormat) : undefined;
-  const bestOf = parsedMatchUpFormat?.bestOf ?? 1;
-  const setsToWin = getSetsToWin(bestOf);
   const tiebreaksTally: Tally = [0, 0];
   const pointsTally: Tally = [0, 0];
 
   score?.sets?.forEach((set, i) => {
     const setNumber = set.setNumber || i + 1;
-    const whichFormat = setNumber > setsToWin && parsedMatchUpFormat?.finalSetFormat ? 'finalSetFormat' : 'setFormat';
+    const whichFormat = formatKey(parsedMatchUpFormat, setNumber);
     const based = parsedMatchUpFormat?.[whichFormat]?.based;
 
     if (isPointsBased(based) || parsedMatchUpFormat?.[whichFormat]?.combinedPointTotal) {
@@ -178,6 +178,16 @@ export function countPoints({ matchUpFormat, score }: { matchUpFormat?: string; 
   });
 
   return { pointsTally, tiebreaksTally };
+}
+
+/**
+ * The format that governs a set: `-F:` governs the final set only, an aggregate's decider (set N + 1), set N of an
+ * exactly-N format, the last set of a best-of. Counting every set past the sets needed to win as the final one read
+ * sets 2..N of an exactly-N format (one set to win) as its decider, and set 4 of a best of five as its fifth.
+ */
+function formatKey(parsed: Readonly<ParsedFormat> | undefined, setNumber: number): 'finalSetFormat' | 'setFormat' {
+  if (!parsed?.finalSetFormat) return 'setFormat';
+  return finalSetGoverns(parsed, setNumber, setNumber === parsed.bestOf) ? 'finalSetFormat' : 'setFormat';
 }
 
 function getSetsToWin(bestOfGames) {

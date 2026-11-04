@@ -11,6 +11,7 @@ type SwissPairingArgs = {
   participantIds: string[];
   matchUps: MatchUp[];
   allowDraws?: boolean;
+  byePoints?: number;
 };
 
 type SwissPairingResult = {
@@ -24,13 +25,17 @@ export function generateSwissPairings({
   participantIds,
   adHocRatings,
   allowDraws,
+  byePoints,
   matchUps,
 }: SwissPairingArgs): SwissPairingResult {
   const completedMatchUps = matchUps.filter((m) => m.winningSide);
+  // every matchUp, decided or not: the score groups need each round's pairings to tell its bye (and its draws, which
+  // carry no winningSide)
   const { scoreGroups, records } = computeScoreGroups({
-    matchUps: completedMatchUps,
     participantIds,
     allowDraws,
+    byePoints,
+    matchUps,
   });
 
   const { encounters } = getEncounters({ matchUps: [...matchUps] });

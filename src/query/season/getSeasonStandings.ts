@@ -1,11 +1,20 @@
-import { getParticipantResults } from '@Query/matchUps/roundRobinTally/getParticipantResults';
-import { matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
-import { orderParticipants } from '@Query/standings/orderParticipants';
 import { fromV1, SEASON_TALLY_MEASURES, V1_PRIMARY_KEYS, V2_MEASURES } from '@Query/standings/fromV1';
+import { getParticipantResults } from '@Query/matchUps/roundRobinTally/getParticipantResults';
+import { orderParticipants, type GroupingInputs } from '@Query/standings/orderParticipants';
+import { matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { validateSeason } from '@Validators/validateSeason';
 
 // constants and types
+import type { ParticipantResults, StandingsPhase } from '@Query/standings/standingsTypes';
+import { INVALID_VALUES, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
+import type { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
+import type { RoundRobinTallyPolicy } from '@Types/roundRobinTallyPolicy';
+import { SUBJECT_PERSON, SUBJECT_TEAM } from '@Constants/seasonConstants';
+import type { ErrorType } from '@Constants/errorConditionConstants';
+import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
+import { TEAM } from '@Constants/participantConstants';
+import { ResultType } from '@Types/factoryTypes';
 import type {
   CompetitionRef,
   Season,
@@ -14,15 +23,6 @@ import type {
   SeasonStandingsTally,
   SeasonSubject,
 } from '@Types/seasonTypes';
-import { INVALID_VALUES, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
-import type { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
-import type { RoundRobinTallyPolicy } from '@Types/roundRobinTallyPolicy';
-import type { ParticipantResults, StandingsPhase } from '@Query/standings/standingsTypes';
-import type { ErrorType } from '@Constants/errorConditionConstants';
-import { SUBJECT_PERSON, SUBJECT_TEAM } from '@Constants/seasonConstants';
-import { TEAM_MATCHUP } from '@Constants/matchUpTypes';
-import { TEAM } from '@Constants/participantConstants';
-import { ResultType } from '@Types/factoryTypes';
 
 export type SubjectResolver = (participant: HydratedParticipant) => string | undefined;
 
@@ -55,7 +55,17 @@ type GetSeasonStandingsArgs = {
   purpose?: string;
   /** values from outside the results, by key and then subjectId, read by `external` tally directives */
   externalValues?: Record<string, Record<string, number>>;
-};
+  /**
+   * Adds, for every tier with child tiers, a table over its own and its descendants' matchUps (a conference from its
+   * divisions), ordered by its own policy. Its policy may read the grouping `tier`: each subject's direct child tier,
+   * and its place among that child's subjects over the same matchUps, ordered by the child's policy. A tier's table
+   * without `combine` is unchanged.
+   */
+  combine?: boolean;
+} & GroupingInputs; // groupings, groupRanks and participantSets keyed by subjectId, like externalValues
+
+/** the grouping a combined table derives: each subject's direct child tier, and its place there */
+type TierGrouping = Required<Pick<GroupingInputs, 'groupings' | 'groupRanks'>>;
 
 export type SeasonStandingsResult = ResultType & {
   /** keyed by tierId, ranked */
@@ -118,17 +128,21 @@ export function getSeasonStandings(params: GetSeasonStandingsArgs): SeasonStandi
   const buckets: Record<string, TierBucket> = {};
   const reports: Reports = { unmapped: [], unanswered: [], unplaced: [] };
 
+  // a combined tier reads its descendants' references too
+  const scope = tierId ? new Set([tierId, ...(params.combine ? descendantIds(season, tierId) : [])]) : undefined;
   for (const period of periods) {
-    seedPlacements({ period, rows, tierId });
-    for (const ref of period.competitions.filter((competition) => !tierId || competition.tierId === tierId)) {
+    seedPlacements({ period, rows, scope });
+    for (const ref of period.competitions.filter((competition) => !scope || scope.has(competition.tierId))) {
       collectReference({ ref, period, matchUps, buckets, reports, getSubjectId });
     }
   }
+  const combined = params.combine ? combineTiers({ params, buckets, rows }) : {};
 
   const standings: Record<string, SeasonStandingRow[]> = {};
   const provisional: Record<string, boolean> = {};
   for (const key of new Set([...Object.keys(rows), ...Object.keys(buckets)])) {
-    const tier = tierStandings({ params, key, bucket: buckets[key], rows });
+    if (tierId && key !== tierId) continue;
+    const tier = tierStandings({ params, key, bucket: buckets[key], rows, derived: combined[key] });
     if (tier.error) return decorateResult({ result: tier, context: { tierId: key }, stack });
     standings[key] = tier.standings ?? [];
     provisional[key] = !!tier.provisional;
@@ -139,16 +153,22 @@ export function getSeasonStandings(params: GetSeasonStandingsArgs): SeasonStandi
 
 type TierStandingsArgs = {
   params: GetSeasonStandingsArgs;
+  derived?: TierGrouping;
   bucket?: TierBucket;
   rows: TierRows;
   key: string;
 };
 
-/** one tier's table: its ledger becomes its rows, ordered by the tier's policy or flat */
-function tierStandings({ params, key, bucket, rows }: TierStandingsArgs) {
+/** the policy a tier's table is ordered by: the caller's, the tier's own, or the season's */
+function policyOf(params: GetSeasonStandingsArgs, tierId: string) {
   const { season } = params;
-  const tallyPolicy =
-    params.tallyPolicy ?? season.tiers.find((tier) => tier.tierId === key)?.tallyPolicy ?? season.tallyPolicy;
+  return params.tallyPolicy ?? season.tiers.find((tier) => tier.tierId === tierId)?.tallyPolicy ?? season.tallyPolicy;
+}
+
+/** one tier's table: its ledger becomes its rows, ordered by the tier's policy or flat */
+function tierStandings({ params, key, bucket, rows, derived }: TierStandingsArgs) {
+  const { season } = params;
+  const tallyPolicy = policyOf(params, key);
   const ledger = bucket ? tierLedger(bucket, tallyPolicy) : { participantResults: {} };
   if ('error' in ledger && ledger.error) return { error: ledger.error, info: ledger.info };
   const participantResults = ledger.participantResults as ParticipantResults;
@@ -169,6 +189,7 @@ function tierStandings({ params, key, bucket, rows }: TierStandingsArgs) {
           lotSeed: `${season.seasonId}:${key}`,
           purpose: params.purpose,
           externalValues: params.externalValues,
+          groupingInputs: groupingInputs(params, bucket, derived),
           participantResults,
           tallyPolicy,
           tierRows,
@@ -271,7 +292,7 @@ function tierLedger(
 }
 
 /** a caller's external values are keyed by subjectId; the season ledger is keyed by subject key */
-function bySubjectKey(externalValues: Record<string, Record<string, number>> | undefined, bucket: TierBucket) {
+function bySubjectKey<T>(externalValues: Record<string, Record<string, T>> | undefined, bucket: TierBucket) {
   if (!externalValues) return undefined;
   return Object.fromEntries(
     Object.entries(externalValues).map(([key, values]) => [
@@ -285,12 +306,151 @@ function bySubjectKey(externalValues: Record<string, Record<string, number>> | u
   );
 }
 
+/**
+ * The caller's groupings, ranks and sets, keyed by subjectId, rekeyed to the ledger's subject keys; a combined table
+ * adds its derived grouping `tier`, which wins over a caller grouping of the same name.
+ */
+function groupingInputs(params: GetSeasonStandingsArgs, bucket: TierBucket, derived?: TierGrouping): GroupingInputs {
+  const keyOf = new Map([...bucket.subjects.entries()].map(([key, subject]) => [subject.subjectId, key]));
+  const participantSets = params.participantSets
+    ? Object.fromEntries(
+        Object.entries(params.participantSets).map(([setKey, subjectIds]) => [
+          setKey,
+          subjectIds.flatMap((subjectId) => keyOf.get(subjectId) ?? []),
+        ]),
+      )
+    : undefined;
+  return {
+    groupings: { ...bySubjectKey(params.groupings, bucket), ...derived?.groupings },
+    groupRanks: { ...bySubjectKey(params.groupRanks, bucket), ...derived?.groupRanks },
+    participantSets,
+  };
+}
+
+const childTiers = (season: Season, tierId: string) => season.tiers.filter((tier) => tier.parentTierId === tierId);
+
+/** every tier below this one, at any depth */
+function descendantIds(season: Season, tierId: string): string[] {
+  return childTiers(season, tierId).flatMap((child) => [child.tierId, ...descendantIds(season, child.tierId)]);
+}
+
+/**
+ * combine: every tier with child tiers gets a table over its own and its descendants' matchUps, and the grouping its
+ * policy may read as `tier`. Built from the tables as collected, so a conference within a league combines its own
+ * divisions, and the league all of them. A subject's group is the direct child tier it was collected or placed under;
+ * its rank is its place among that child's subjects over the combined matchUps, ordered by the child's policy (NFL
+ * division standings count every game, ordered by the division tie-break).
+ */
+function combineTiers({
+  params,
+  buckets,
+  rows,
+}: {
+  params: GetSeasonStandingsArgs;
+  buckets: Record<string, TierBucket>;
+  rows: TierRows;
+}) {
+  const { season } = params;
+  const collected = { ...buckets };
+  const placedRows = Object.fromEntries(Object.entries(rows).map(([key, tierRows]) => [key, [...tierRows.values()]]));
+  const combined: Record<string, TierGrouping> = {};
+  for (const parent of season.tiers) {
+    const children = childTiers(season, parent.tierId);
+    if (!children.length) continue;
+    const group: Record<string, string> = {};
+    const parts = collected[parent.tierId] ? [collected[parent.tierId]] : [];
+    for (const child of children) {
+      for (const id of [child.tierId, ...descendantIds(season, child.tierId)]) {
+        if (collected[id]) parts.push(collected[id]);
+        for (const key of collected[id]?.subjects.keys() ?? []) group[key] ??= child.tierId;
+        for (const row of placedRows[id] ?? []) {
+          getRow(rows, parent.tierId, row.subject);
+          group[subjectKey(row.subject)] ??= child.tierId;
+        }
+      }
+    }
+    if (!parts.length) continue;
+    const bucket = mergeBuckets(parts);
+    buckets[parent.tierId] = bucket;
+    const ranks: Record<string, number> = {};
+    for (const child of children) {
+      const keys = Object.keys(group).filter((key) => group[key] === child.tierId);
+      Object.assign(ranks, rankWithin({ params, bucket, keys, tierId: child.tierId }));
+    }
+    combined[parent.tierId] = { groupings: { tier: group }, groupRanks: { tier: ranks } };
+  }
+  return combined;
+}
+
+/** several tiers' buckets as one; a matchUp referenced by more than one is counted once */
+function mergeBuckets(parts: TierBucket[]): TierBucket {
+  const bucket: TierBucket = { matchUps: [], subjects: new Map(), participantIds: new Map() };
+  const seen = new Set<string>();
+  for (const part of parts) {
+    for (const matchUp of part.matchUps) {
+      const id = `${matchUp.tournamentId}:${matchUp.matchUpId}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      bucket.matchUps.push(matchUp);
+    }
+    for (const [key, subject] of part.subjects) bucket.subjects.set(key, subject);
+    for (const [key, participantIds] of part.participantIds) {
+      bucket.participantIds.set(key, [...new Set([...(bucket.participantIds.get(key) ?? []), ...participantIds])]);
+    }
+  }
+  return bucket;
+}
+
+/** each of a child tier's subjects' place among them over a combined table's matchUps, by the child's policy or flat */
+function rankWithin({
+  params,
+  bucket,
+  keys,
+  tierId,
+}: {
+  params: GetSeasonStandingsArgs;
+  bucket: TierBucket;
+  keys: string[];
+  tierId: string;
+}) {
+  const tallyPolicy = policyOf(params, tierId);
+  const ledger = tierLedger(bucket, tallyPolicy);
+  if (ledger.error) return {};
+  const results = (ledger.participantResults ?? {}) as ParticipantResults;
+  const played = Object.fromEntries(keys.filter((key) => results[key]).map((key) => [key, results[key]]));
+  if (!Object.keys(played).length) return {};
+  if (tallyPolicy && !params.orderBy?.length) {
+    const { groupOrder } = orderParticipants({
+      recalculate: ({ participantIds, groupingTotal }) =>
+        tierLedger(bucket, tallyPolicy, participantIds, groupingTotal),
+      phase: bucket.matchUps.some((matchUp) => !matchUpCompletion(matchUp)) ? 'PROVISIONAL' : 'FINAL',
+      externalValues: bySubjectKey(params.externalValues, bucket),
+      policy: fromV1(tallyPolicy, SEASON_PRIMARY_KEYS),
+      lotSeed: `${params.season.seasonId}:${tierId}`,
+      participantResults: played as ParticipantResults,
+      purpose: params.purpose,
+    });
+    return Object.fromEntries(groupOrder.map(({ participantId, rankOrder }) => [participantId, rankOrder ?? 0]));
+  }
+  const scratch: TierRows = {};
+  const tierRows = Object.keys(played).flatMap((key) => {
+    const subject = bucket.subjects.get(key);
+    if (!subject) return [];
+    const row = getRow(scratch, tierId, subject);
+    for (const field of TALLY_FIELDS) row[field] = Number(played[key][field] ?? 0);
+    return [row];
+  });
+  const ranked = rankRows(tierRows, params.orderBy?.length ? params.orderBy : DEFAULT_ORDER);
+  return Object.fromEntries(ranked.map((row) => [subjectKey(row.subject), row.rank]));
+}
+
 type RankByPolicyArgs = {
   participantResults: ParticipantResults;
   phase: StandingsPhase;
   purpose?: string;
   lotSeed: string;
   externalValues?: Record<string, Record<string, number>>;
+  groupingInputs: GroupingInputs;
   tallyPolicy: RoundRobinTallyPolicy;
   tierRows: SeasonStandingRow[];
   bucket: TierBucket;
@@ -309,6 +469,7 @@ function rankByPolicy({
   purpose,
   lotSeed,
   externalValues,
+  groupingInputs,
 }: RankByPolicyArgs) {
   const played = Object.fromEntries(
     Object.entries(participantResults).filter(([key]) => bucket.subjects.has(key)),
@@ -318,6 +479,7 @@ function rankByPolicy({
     policy: fromV1(tallyPolicy, SEASON_PRIMARY_KEYS),
     externalValues: bySubjectKey(externalValues, bucket),
     participantResults: played,
+    ...groupingInputs,
     lotSeed,
     purpose,
     phase,
@@ -353,9 +515,9 @@ function placedSubjectKeys(period: SeasonPeriod, tierId: string): Set<string> | 
 }
 
 // placed subjects are in the tier whether or not they have played yet
-function seedPlacements({ period, rows, tierId }: { period: SeasonPeriod; rows: TierRows; tierId?: string }) {
+function seedPlacements({ period, rows, scope }: { period: SeasonPeriod; rows: TierRows; scope?: Set<string> }) {
   for (const placement of period.placements ?? []) {
-    if (tierId && placement.tierId !== tierId) continue;
+    if (scope && !scope.has(placement.tierId)) continue;
     for (const subject of placement.subjects) getRow(rows, placement.tierId, subject);
   }
 }

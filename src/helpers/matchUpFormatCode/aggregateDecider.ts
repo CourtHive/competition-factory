@@ -1,5 +1,9 @@
 import { isAggregateFormat } from './isAggregateFormat';
 
+// types
+import type { Set as SetType } from '@Types/tournamentTypes';
+import type { ParsedFormat } from './parse';
+
 /**
  * The set number of an aggregate format's sudden-death decider, or `undefined` for any other format.
  *
@@ -38,4 +42,23 @@ export function openSetNumber(sets: any[] | undefined): number {
   const last = sets?.at(-1);
   const open = last && last.winningSide === undefined && !last.segmentComplete;
   return (sets?.length ?? 0) + (open ? 0 : 1);
+}
+
+/**
+ * Why an exactly-N aggregate's decider could not have been played, or `undefined`: it is set N + 1, played only
+ * when the N sets end level in total. An overtime format's sequence is asked of the scoring engine instead
+ * (`overtimeScoreVerdict`).
+ */
+export function unlevelDeciderRefusal(
+  parsed: Readonly<ParsedFormat> | undefined,
+  sets: Readonly<SetType>[] | undefined,
+): string | undefined {
+  if (parsed?.overtimeFormat) return undefined;
+  const deciderSetNumber = aggregateDeciderSetNumber(parsed);
+  if (!deciderSetNumber || (sets?.length ?? 0) < deciderSetNumber) return undefined;
+  const [side1, side2] = (sets ?? [])
+    .slice(0, deciderSetNumber - 1)
+    .reduce(([a, b], set) => [a + (set.side1Score ?? 0), b + (set.side2Score ?? 0)], [0, 0]);
+  if (side1 === side2) return undefined;
+  return `a decider is played only on a level aggregate: the ${deciderSetNumber - 1} sets ended ${side1}-${side2}`;
 }

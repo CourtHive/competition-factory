@@ -4,19 +4,10 @@ import { isRoundWinnerLink } from '@Query/drawDefinition/linkTraversal';
 import { structuresOf, matchUpsOf } from '@Acquire/structureMembers';
 
 // constants and types
+import { ROUND_OUTCOME, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import type { DrawDefinition, Structure, Event } from '@Types/tournamentTypes';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import type { ResultType } from '@Types/factoryTypes';
-import { TEAM } from '@Constants/eventConstants';
-import {
-  ROUND_OUTCOME,
-  WIN_RATIO,
-  AD_HOC,
-  SWISS,
-  LADDER,
-  ROUND_ROBIN,
-  DOUBLE_ROUND_ROBIN,
-} from '@Constants/drawDefinitionConstants';
 
 /** A timed segment with no tiebreak at time closes level when time is called level (spec § 6.4 rule 3). */
 function segmentCanCloseLevel(setFormat?: { timed?: boolean; tiebreakFormat?: unknown }): boolean {
@@ -24,9 +15,9 @@ function segmentCanCloseLevel(setFormat?: { timed?: boolean; tiebreakFormat?: un
 }
 
 /**
- * Whether a match played in `matchUpFormat` can end level, `COMPLETED` with no `winningSide`: a format
- * a structure that advances a winner cannot direct (scoring-engine spec § 9.7, CA 2026-10-18: "yes,
- * extend the check").
+ * Whether a match played in `matchUpFormat` can end level, `COMPLETED` with no `winningSide` (scoring-engine spec
+ * § 9.7). A structure that advances a winner accepts such a format: its level result names the winner and records how
+ * it was decided (standings phase 2 § 1.1, CA 2026-11-04), and one with no decider is refused at entry.
  *
  * - a `P{n}` combined total with an even n and no tie resolution (§ 7);
  * - an aggregate whose total can tie with no declared decider: only an exactly-N aggregate declares
@@ -45,6 +36,10 @@ export function parsedFormatCanEndTied(parsed?: ParsedFormat): boolean {
   if (!parsed || !format) return false;
   if (format.combinedPointTotal) return format.combinedPointTotal % 2 === 0 && format.tieResolution === 'ALLOW';
 
+  // unlimited overtime plays periods until one ends unequal: it cannot finish level (a match clock, which could
+  // end it level, is refused with overtime until the clock-expiry slice, Ruling 1)
+  if (parsed.overtimeFormat?.count === 'unlimited') return false;
+
   if (parsed.aggregate)
     return !(parsed.exactly && parsed.finalSetFormat) || segmentCanCloseLevel(parsed.finalSetFormat);
 
@@ -52,18 +47,6 @@ export function parsedFormatCanEndTied(parsed?: ParsedFormat): boolean {
   if (setCount % 2 === 0) return true;
   const finalFormat = parsed.finalSetFormat ?? format;
   return segmentCanCloseLevel(finalFormat) || (setCount > 1 && segmentCanCloseLevel(format));
-}
-
-/**
- * A TEAM structure advances the winner of the dual, which its `tieFormat` decides (`winCriteria`), so a
- * `matchUpFormat` there governs only tieMatchUps, which may end level (INTENNSE's `SET2XA-S:T10`).
- */
-function decidedByTieFormat(drawDefinition: DrawDefinition, structure: Structure): boolean {
-  return (
-    drawDefinition.matchUpType === TEAM ||
-    !!(structure.tieFormat ?? drawDefinition.tieFormat) ||
-    (matchUpsOf(structure) ?? []).some((matchUp) => matchUp.matchUpType === TEAM)
-  );
 }
 
 export function advancesMatchWinner(drawDefinition: DrawDefinition, structure: Structure): boolean {
@@ -96,7 +79,7 @@ export function checkDrawFormatCompatibility(params: {
   force?: boolean;
   event?: Event;
 }): ResultType {
-  const { drawDefinition, matchUpFormat, structureIds, matchUpId, force, event } = params;
+  const { drawDefinition, matchUpFormat, structureIds, matchUpId, force } = params;
   const roots = drawStructures(drawDefinition).filter(
     (structure) => !structureIds?.length || structureIds.includes(structure.structureId),
   );
@@ -106,22 +89,6 @@ export function checkDrawFormatCompatibility(params: {
   const structures = scoped.filter(
     (structure) => !matchUpId || (matchUpsOf(structure) ?? []).some((matchUp) => matchUp.matchUpId === matchUpId),
   );
-  // The guard refuses a format CHANGE. A stored draw keeps the format it was generated with, so
-  // re-submitting that format (an outcome carrying the matchUp's own matchUpFormat) is not refused.
-  const currentFormat = (structure: Structure) => {
-    const matchUp = matchUpId ? matchUpsOf(structure)?.find((m) => m.matchUpId === matchUpId) : undefined;
-    return matchUp?.matchUpFormat ?? structure.matchUpFormat ?? drawDefinition.matchUpFormat ?? event?.matchUpFormat;
-  };
-  if (
-    formatCanEndTied(matchUpFormat) &&
-    structures.some(
-      (structure) =>
-        currentFormat(structure) !== matchUpFormat &&
-        !decidedByTieFormat(drawDefinition, structure) &&
-        advancesMatchWinner(drawDefinition, structure),
-    )
-  )
-    return { error: INVALID_VALUES, info: 'tie-capable formats are not allowed in elimination structures' };
   const selectedIds = new Set(structures.map((structure) => structure.structureId));
   const rounds = (drawDefinition.competitionRounds ?? []).filter(
     (round) => selectedIds.has(round.structureId) && (!matchUpId || round.matchUpIds.includes(matchUpId)),
@@ -133,8 +100,4 @@ export function checkDrawFormatCompatibility(params: {
   )
     return { error: INVALID_VALUES, info: 'format is fixed by the applied rotating round scoring contract' };
   return {};
-}
-
-export function generationNeedsWinner(drawType?: string, hasPlayoffs = false): boolean {
-  return hasPlayoffs || ![AD_HOC, SWISS, LADDER, ROUND_ROBIN, DOUBLE_ROUND_ROBIN].includes(drawType ?? '');
 }

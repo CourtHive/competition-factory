@@ -19,7 +19,7 @@ name: Verify
 #   coverage-shard  the coverage run split 4 ways (vitest --shard), each writing a blob report
 #   coverage        merges the 4 blobs (vitest --merge-reports --coverage): the thresholds and
 #                   coverage/coverage-summary.json are computed over the MERGED result
-#   slow-gates      route-differential, deep-corrections and hydrations, one job each
+#   slow-gates      route-differential, double-exit-sweep, deep-corrections and hydrations, one job each
 #   team-arms       verify:team-arms split 5 ways (vitest --shard), one extended-arm file per job
 #   v2-arm          INFORMATIONAL: the suite under OUTCOME_PIPELINE=v2 on a dev PR touching the outcome pipeline,
 #                   split 4 ways (vitest --shard)
@@ -379,7 +379,7 @@ jobs:
       matrix:
         # the same Node matrix as `gates`
         node-version: [26]
-        gate: [route-differential, deep-corrections, hydrations]
+        gate: [route-differential, double-exit-sweep, deep-corrections, hydrations]
     name: ${{ matrix.gate }} (node ${{ matrix.node-version }})
 
     steps:

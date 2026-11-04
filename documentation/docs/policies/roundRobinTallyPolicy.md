@@ -403,6 +403,49 @@ that varies the order needs its own policy.
 
 The FIBA ranking step (national-team competitions) is an external value and is not applied.
 
+### Premier League Policy
+
+`POLICY_ROUND_ROBIN_TALLY_PREMIER_LEAGUE`: Premier League Handbook 2025/26, rules C.4 to C.7 and C.17:
+
+- `resultPoints`: 3 for a win, 1 for a draw; goals are each half's score (`HAL2A-S:T45`), so goal difference is
+  `gamesDiff` and goals scored `gamesWon`;
+- clubs level on points are separated by goal difference, then goals scored (C.5, C.6); clubs still level share the
+  place (C.7, `terminal: 'SHARE'`);
+- C.17 applies only at the end of the season and only where the title, relegation or qualification depends on it: the
+  points in the matches between the tied clubs, as a directive `when: { purposes: ['ADVANCEMENT', 'MOVEMENT'], phase:
+'FINAL' }`. A season table asked for one of those purposes applies it; a caller deciding the title asks with
+  `ADVANCEMENT`.
+
+Not applied: C.17's away goals between the tied clubs (the factory records no home or away side) and its play-off,
+which is a match the organiser arranges.
+
+### MLS Policy
+
+`POLICY_ROUND_ROBIN_TALLY_MLS`: MLS 2026 Competition Guidelines, regular-season tiebreaking procedures:
+
+- `resultPoints`: 3 for a win, 1 for a tie;
+- level clubs are separated by total wins, goal differential, goals for, then head-to-head points and goal
+  differential, then the fewest disciplinary points (an `external` value, `disciplinaryPoints`, fewer is better), then
+  a coin toss or drawing of lots (`terminal: 'LOT'`);
+- once a club is separated, the clubs still tied go through the procedure again (`onSplit: 'EXTRACT_ONE'`).
+
+The head-to-head steps are for a conference table (MLS applies them intraconference only); a table across both
+conferences (the Supporters' Shield) drops them. Not applied: the away and home goal steps, since the factory records
+no home or away side.
+
+### FIVB Policy
+
+`POLICY_ROUND_ROBIN_TALLY_FIVB`: FIVB Volleyball Nations League 2026 Competition Regulations, § 2.5:
+
+- teams are ranked on victories (`matchUpsWon`), then match points: 3 for a 3-0 or 3-1 win, 2 for a 3-2 win, 1 for a
+  2-3 loss, 0 for a 0-3 or 1-3 loss, and 0 for a forfeit (a forfeit mapped to `WALKOVER`, 3 to the winner);
+- then set ratio and points ratio (rally points are each set's tiebreak score, `SET5-S:TB25-F:TB15`; nothing lost
+  ranks first);
+- then the matches among the tied teams only, on the same criteria (`onSplit: 'CONTINUE'`);
+- then the FIVB World Ranking, an `external` value, `worldRanking` (lower is better).
+
+The regulations name no step after the World Ranking.
+
 ## Key Attributes
 
 ### groupOrderKey
@@ -750,6 +793,74 @@ They are computed only when ordering and never stored. They may be directive att
 measure. FIDE's convention for unplayed rounds (a virtual opponent) is not applied: only meetings that were played
 count.
 
+### Common opponents
+
+`commonOpponents` is the NFL's "won-lost-tied percentage in common games". Its value depends on who is tied: for the set
+being sorted, the common opponents are the participants every member of the set has met, and each member is scored by
+its win percentage over every meeting with them, a draw counting `drawCredit` (default 0.5). No member of the set is a
+common opponent of the others, so the meetings among the tied are not counted; head-to-head is a separate directive.
+
+```js
+{ attribute: 'commonOpponents', minSample: 4 }
+```
+
+`minSample` (default 1) is the fewest meetings against common opponents each member needs. When any member of the set
+has fewer, the directive does not split that set and the next directive is tried; the report records
+`{ attribute: 'commonOpponents', skipped: 'minSample', participantIds }`. The NFL requires four for a wild-card tie.
+
+It is most useful where not everyone meets everyone, as in a season table; in a complete round robin, every
+participant outside the set is a common opponent.
+
+### Groupings: divisions, conferences and sets
+
+Divisions and conferences are supplied by the caller, like `externalValues`; the factory never fetches them. A
+season derives them instead: `getSeasonStandings({ combine: true })` orders a parent tier's table over its divisions'
+matchUps with the grouping `tier` (see [Seasons](../concepts/season.md#getseasonstandings)). Elsewhere they are passed to
+`tallyParticipantResults` (and the ordering core) by name:
+
+```js
+tallyParticipantResults({
+  matchUps,
+  policyDefinitions,
+  // named groupings: participantId → group key
+  groupings: { division: { A: 'EAST', B: 'EAST', C: 'WEST' } },
+  // each participant's place in its own group's table, decided by that group's own policy (1 leads it)
+  groupRanks: { division: { B: 1, A: 2, C: 1 } },
+  // sets that records are read against
+  participantSets: { eligible: ['A', 'C'] },
+});
+```
+
+**`preReduce: { groupBy }`** (the NFL wild card's first step): in a tied set where two or more members share a group,
+only each group's best-ranked member competes for the next place. The candidates are ordered by the directives, the
+first one placed is taken, and everyone else, its group-mates included, goes back through the same procedure. A team
+therefore cannot be placed ahead of a tied team that leads it in its own division, but it is not held back behind the
+other divisions' leaders either. When the top candidates stay tied, they keep their shared place and the rest follow. A
+participant with no group, or with no rank, is not reduced. The report records each step as
+`{ attribute: 'preReduce', groupBy, candidates, placed }`.
+
+```js
+{ preReduce: { groupBy: 'division' }, onSplit: 'EXTRACT_ONE', tallyDirectives: [ /* the wild-card steps */ ] }
+```
+
+Three more directive measures read the groupings:
+
+- **`groupLeader`** (`groupBy`): 1 for a participant ranked first in its group, else 0. The NBA's "division winner".
+- **`recordVsGroup`** (`groupBy`): the record against the members of its own group, the division or conference win
+  percentage. It splits only a set whose members all share a group; otherwise it is passed over for that set and the
+  report records `skipped: 'groupBy'` (NBA: "only if in the same division").
+- **`recordVsSet`** (`setKey`): the record against the members of `participantSets[setKey]`, such as the NBA's
+  postseason-eligible teams. The caller defines the set; the NBA's definition depends on the standings themselves.
+
+A record is a win percentage with a draw counting `drawCredit`, like `commonOpponents`. A member of the set with no
+meeting to count passes the directive over for that set (`skipped: 'noMeetings'`).
+
+### Tied-set measures
+
+`commonOpponents`, `groupLeader`, `recordVsGroup` and `recordVsSet` are computed only when ordering and never stored.
+They may be directive attributes, but not the `groupOrderKey`, not scoped by `idsFilter` (each reads the whole table),
+and not a `crossGroup` measure.
+
 ### resultPoints
 
 Classification points by result, for sports whose tables award points per result rather than counting wins: FIBA's 2
@@ -774,6 +885,51 @@ a 3-2. The rules are matched in order, and the first that matches decides.
   `loser` points. A drawn rule awards `points` to both sides.
 - Statuses are mapped by the rules, never inferred: whether a sport's "forfeit" is a `WALKOVER` is the policy author's
   decision.
+- A decided rule may also name `loserMarginAtMost`: the loser lost by no more than that many, the sides' scores summed
+  over every set and then subtracted (rugby's points, recorded as each half's score in `HAL2A-S:T40`).
+- A rule with `bonus: true` adds to the deciding rule's award instead of deciding. Every bonus rule that matches adds
+  its points, wherever it is listed; a result that no deciding rule matches earns no bonus either, and the rules must
+  include at least one rule that is not a bonus. A bonus that awards a side nothing is not listed among its
+  contributions. Rugby's losing bonus (the PREM league table regulations, read 2026-11-04: 4 for a win, 2 for a draw,
+  1 to a team that loses a match by 7 points or less):
+
+```js
+{
+  groupOrderKey: 'classificationPoints',
+  resultPoints: {
+    rules: [
+      { id: 'win', winner: 4, loser: 0 },
+      { id: 'draw', isDrawn: true, points: 2 },
+      { id: 'losingBonus', bonus: true, loserMarginAtMost: 7, winner: 0, loser: 1 },
+    ],
+  },
+}
+```
+
+Rugby's four-try bonus needs the tries, which a score does not record; it is not yet expressible.
+
+- A decided rule may name `decidedIn` (the phase that completed the result: `REGULATION`, `OVERTIME`, `DECIDER`, or
+  `EXTERNAL` for a winner decided outside the score) and `decidedBy` (how that winner was decided: `SHOOTOUT`,
+  `COMPETITION_RULE`, `LOTS`, `OFFICIAL_DECISION`). A result with no record was decided in `REGULATION`. IIHF's
+  3-2-1-0, with a shootout entered as a decided result (an overtime win needs a declared overtime, `-O:`):
+
+```js
+{
+  groupOrderKey: 'classificationPoints',
+  resultPoints: {
+    rules: [
+      { id: 'shootout', decidedBy: ['SHOOTOUT'], winner: 2, loser: 1 },
+      { id: 'regulation', decidedIn: ['REGULATION'], winner: 3, loser: 0 },
+    ],
+  },
+}
+```
+
+- A drawn result is a COMPLETED matchUp with no winner whose score is a level finish its format permits: a level
+  combined total (`SET1-S:P32`), a level aggregate over all of its segments (`HAL2A-S:T45`, a soccer 1-1), or a
+  level count of sets (`SET3-S:T10`, a timed set closing level). It stands only where no winner is needed: a round
+  robin or an ad hoc draw. A format with a declared overtime (`-O:`) is not read as drawn yet. A level result with a
+  winner decided outside the score (`score.overtime.decidedIn: 'EXTERNAL'`) is that winner's win, not a draw.
 - An unfinished, excluded or BYE result earns nothing. A decided or drawn result that matches no rule is listed on both
   participants in `classificationUnmatched` rather than counted as 0 in silence.
 - Each participant's tally carries `classificationPoints`, and `classificationContributions` records each result's rule
@@ -1437,7 +1593,7 @@ listed, and every rule that fails is collected; the refusal is
 ```
 
 `attachPolicies` returns that refusal as it is. `validateSeason` lists each message in its own `context.errors`,
-prefixed by its owner: `season tallyPolicy: ` or `tier <tierId> tallyPolicy: `.
+prefixed by its owner and a space: `season tallyPolicy:` or `tier <tierId> tallyPolicy:`.
 
 ### Accepted names
 
@@ -1452,6 +1608,7 @@ prefixed by its owner: `season tallyPolicy: ` or `tier <tierId> tallyPolicy: `.
   `gamesDiff`, `pointsDiff`, `setsRatio`, `gamesRatio`, `pointsRatio`, `classificationPoints`, `buchholz`,
   `buchholzCut1`, `buchholzMedian`, `sonnebornBerger`.
 - **Directive-only attributes**, which are not measures: `headToHead`, `external`.
+- **Tied-set measures** (a directive `attribute` only): `commonOpponents`, `groupLeader`, `recordVsGroup`, `recordVsSet`.
 - **Ratio measures**: `setsRatio`, `gamesRatio`, `pointsRatio`.
 - **Graph measures**: `buchholz`, `buchholzCut1`, `buchholzMedian`, `sonnebornBerger`.
 - **A season's extra measures**: a season's or a tier's policy may also use `valueWon` and `valueLost`, both as the
@@ -1463,40 +1620,56 @@ prefixed by its owner: `season tallyPolicy: ` or `tier <tierId> tallyPolicy: `.
 nor NaN. In a message, `[i]` is the zero-based index and a value is written as text (an absent one as `undefined`).
 Each rule's example is a policy that it refuses, with the message it gives.
 
-| Rule                                                                                                                                                               | Refused                                                                                                                 | Message                                                                         |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| The policy is an object (`null` is not).                                                                                                                           | `"text"`                                                                                                                | `tallyPolicy must be an object`                                                 |
-| `groupOrderKey`, when present, is a primary measure.                                                                                                               | `{ "groupOrderKey": "gamesWonn" }`                                                                                      | `unknown groupOrderKey: gamesWonn`                                              |
-| `groupOrderKey` is not a graph measure (a graph measure scores opponents by the primary measure; it is also not a primary measure, so the rule above fails first). | `{ "groupOrderKey": "sonnebornBerger" }`                                                                                | `unknown groupOrderKey: sonnebornBerger`                                        |
-| `tallyDirectives`, when present, is an array.                                                                                                                      | `{ "tallyDirectives": {} }`                                                                                             | `tallyDirectives must be an array`                                              |
-| Each directive is an object (`null` is not).                                                                                                                       | `{ "tallyDirectives": [3] }`                                                                                            | `tallyDirectives[0] must be an object`                                          |
-| A directive's `attribute` is a measure or a directive-only attribute.                                                                                              | `{ "tallyDirectives": [{ "attribute": "gamesWonn" }] }`                                                                 | `tallyDirectives[0]: unknown attribute gamesWonn`                               |
-| A `headToHead` directive's `mode`, when present, is `RECORD` or `SWEEP`.                                                                                           | `{ "tallyDirectives": [{ "attribute": "headToHead", "mode": "FIRST" }] }`                                               | `tallyDirectives[0]: headToHead mode must be one of RECORD, SWEEP`              |
-| An `external` directive has an `externalKey` that is a non-empty string.                                                                                           | `{ "tallyDirectives": [{ "attribute": "external" }] }`                                                                  | `tallyDirectives[0]: an external directive needs an externalKey`                |
-| A directive's `minParticipants`, when present, is a whole number of at least 1.                                                                                    | `{ "tallyDirectives": [{ "attribute": "gamesWon", "minParticipants": 0 }] }`                                            | `tallyDirectives[0]: minParticipants must be a whole number of at least 1`      |
-| A directive's `maxParticipants`, when present, is a whole number of at least 1.                                                                                    | `{ "tallyDirectives": [{ "attribute": "gamesWon", "maxParticipants": 1.5 }] }`                                          | `tallyDirectives[0]: maxParticipants must be a whole number of at least 1`      |
-| A directive's `zeroDivision`, when present, is `MAX`, `ZERO` or `SKIP` (any directive may carry it; only a ratio reads it).                                        | `{ "tallyDirectives": [{ "attribute": "setsRatio", "zeroDivision": "INFINITY" }] }`                                     | `tallyDirectives[0]: zeroDivision must be one of MAX, ZERO, SKIP`               |
-| A directive's `when`, when present, is an object (`null` is not).                                                                                                  | `{ "tallyDirectives": [{ "attribute": "gamesWon", "when": "FINAL" }] }`                                                 | `tallyDirectives[0]: when must be an object`                                    |
-| `when.purposes`, when present, is an array of strings.                                                                                                             | `{ "tallyDirectives": [{ "attribute": "gamesWon", "when": { "purposes": "MOVEMENT" } }] }`                              | `tallyDirectives[0]: when.purposes must be an array of strings`                 |
-| `when.phase`, when present, is `PROVISIONAL` or `FINAL`.                                                                                                           | `{ "tallyDirectives": [{ "attribute": "gamesWon", "when": { "phase": "LIVE" } }] }`                                     | `tallyDirectives[0]: when.phase must be one of PROVISIONAL, FINAL`              |
-| A graph measure directive is not scoped by `idsFilter` (a truthy `idsFilter`); it reads the whole table.                                                           | `{ "tallyDirectives": [{ "attribute": "buchholz", "idsFilter": true }] }`                                               | `tallyDirectives[0]: buchholz reads the whole table; idsFilter cannot scope it` |
-| The policy's `headToHead`, when present, is an object (`null` is not).                                                                                             | `{ "headToHead": true }`                                                                                                | `headToHead must be an object`                                                  |
-| `precision`, when present, is `EXACT` or a whole number of at least 0.                                                                                             | `{ "precision": -1 }`                                                                                                   | `precision must be a whole number of decimal places, or 'EXACT'`                |
-| `denominator`, when present, is `PLAYED` or `EXPECTED`.                                                                                                            | `{ "denominator": "ALL" }`                                                                                              | `denominator must be one of PLAYED, EXPECTED`                                   |
-| `crossGroup`, when present, is an array.                                                                                                                           | `{ "crossGroup": {} }`                                                                                                  | `crossGroup must be an array`                                                   |
-| Each `crossGroup` entry's `attribute` is a stored measure: a measure that is neither a ratio nor a graph measure.                                                  | `{ "crossGroup": [{ "attribute": "setsRatio" }] }`                                                                      | `crossGroup[0]: setsRatio is not a stored measure`                              |
-| `resultPoints`, when present, has `rules`: a non-empty array.                                                                                                      | `{ "resultPoints": { "rules": [] } }`                                                                                   | `resultPoints.rules must be a non-empty array`                                  |
-| Each rule has an `id`, a non-empty string.                                                                                                                         | `{ "resultPoints": { "rules": [{ "winner": 2, "loser": 0 }] } }`                                                        | `resultPoints.rules[0] needs an id`                                             |
-| No two rules share an `id`.                                                                                                                                        | `{ "resultPoints": { "rules": [{ "id": "win", "winner": 2, "loser": 0 }, { "id": "win", "winner": 2, "loser": 1 }] } }` | `resultPoints.rules[1]: duplicate id win`                                       |
-| A drawn rule (a truthy `isDrawn`) has `points`, a finite number.                                                                                                   | `{ "resultPoints": { "rules": [{ "id": "draw", "isDrawn": true }] } }`                                                  | `resultPoints.rules[0]: a drawn rule needs finite points`                       |
-| Any other rule is decided: it has `winner` and `loser`, both finite numbers.                                                                                       | `{ "resultPoints": { "rules": [{ "id": "win", "winner": 2 }] } }`                                                       | `resultPoints.rules[0]: a decided rule needs finite winner and loser points`    |
-| A rule's `matchUpStatuses`, when present, is an array.                                                                                                             | `{ "resultPoints": { "rules": [{ "id": "wo", "winner": 2, "loser": 0, "matchUpStatuses": "WALKOVER" }] } }`             | `resultPoints.rules[0]: matchUpStatuses must be an array`                       |
-| A rule's `loserSetsWon`, when present, is an array of whole numbers of at least 0.                                                                                 | `{ "resultPoints": { "rules": [{ "id": "close", "winner": 2, "loser": 1, "loserSetsWon": [-1] }] } }`                   | `resultPoints.rules[0]: loserSetsWon must be an array of whole numbers`         |
-| `onSplit`, when present, is `RESTART`, `CONTINUE` or `EXTRACT_ONE`.                                                                                                | `{ "onSplit": "RESTARTS" }`                                                                                             | `onSplit must be one of RESTART, CONTINUE, EXTRACT_ONE`                         |
-| `terminal`, when present, is `ADJUDICATE`, `SHARE` or `LOT`.                                                                                                       | `{ "terminal": "COIN" }`                                                                                                | `terminal must be one of ADJUDICATE, SHARE, LOT`                                |
-| `drawCredit`, when present, is a finite number from 0 to 1.                                                                                                        | `{ "drawCredit": 2 }`                                                                                                   | `drawCredit must be a finite number between 0 and 1`                            |
-| `outcomePoints`, when present, is an object whose `win`, `draw` and `loss` are finite numbers.                                                                     | `{ "outcomePoints": { "win": 3, "draw": 1 } }`                                                                          | `outcomePoints requires finite win, draw and loss values`                       |
-| A policy ranking by `standingsPoints` (its `groupOrderKey` or any directive's `attribute`) has `outcomePoints`.                                                    | `{ "groupOrderKey": "standingsPoints" }`                                                                                | `standingsPoints ranking requires outcomePoints`                                |
+| Rule                                                                                                                                                               | Refused                                                                                                                 | Message                                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| The policy is an object (`null` is not).                                                                                                                           | `"text"`                                                                                                                | `tallyPolicy must be an object`                                                                                     |
+| `groupOrderKey`, when present, is a primary measure.                                                                                                               | `{ "groupOrderKey": "gamesWonn" }`                                                                                      | `unknown groupOrderKey: gamesWonn`                                                                                  |
+| `groupOrderKey` is not a graph measure (a graph measure scores opponents by the primary measure; it is also not a primary measure, so the rule above fails first). | `{ "groupOrderKey": "sonnebornBerger" }`                                                                                | `unknown groupOrderKey: sonnebornBerger`                                                                            |
+| `tallyDirectives`, when present, is an array.                                                                                                                      | `{ "tallyDirectives": {} }`                                                                                             | `tallyDirectives must be an array`                                                                                  |
+| Each directive is an object (`null` is not).                                                                                                                       | `{ "tallyDirectives": [3] }`                                                                                            | `tallyDirectives[0] must be an object`                                                                              |
+| A directive's `attribute` is a measure, a tied-set measure or a directive-only attribute.                                                                          | `{ "tallyDirectives": [{ "attribute": "gamesWonn" }] }`                                                                 | `tallyDirectives[0]: unknown attribute gamesWonn`                                                                   |
+| A `headToHead` directive's `mode`, when present, is `RECORD` or `SWEEP`.                                                                                           | `{ "tallyDirectives": [{ "attribute": "headToHead", "mode": "FIRST" }] }`                                               | `tallyDirectives[0]: headToHead mode must be one of RECORD, SWEEP`                                                  |
+| An `external` directive has an `externalKey` that is a non-empty string.                                                                                           | `{ "tallyDirectives": [{ "attribute": "external" }] }`                                                                  | `tallyDirectives[0]: an external directive needs an externalKey`                                                    |
+| A directive's `minParticipants`, when present, is a whole number of at least 1.                                                                                    | `{ "tallyDirectives": [{ "attribute": "gamesWon", "minParticipants": 0 }] }`                                            | `tallyDirectives[0]: minParticipants must be a whole number of at least 1`                                          |
+| A directive's `maxParticipants`, when present, is a whole number of at least 1.                                                                                    | `{ "tallyDirectives": [{ "attribute": "gamesWon", "maxParticipants": 1.5 }] }`                                          | `tallyDirectives[0]: maxParticipants must be a whole number of at least 1`                                          |
+| A directive's `zeroDivision`, when present, is `MAX`, `ZERO` or `SKIP` (any directive may carry it; only a ratio reads it).                                        | `{ "tallyDirectives": [{ "attribute": "setsRatio", "zeroDivision": "INFINITY" }] }`                                     | `tallyDirectives[0]: zeroDivision must be one of MAX, ZERO, SKIP`                                                   |
+| A directive's `when`, when present, is an object (`null` is not).                                                                                                  | `{ "tallyDirectives": [{ "attribute": "gamesWon", "when": "FINAL" }] }`                                                 | `tallyDirectives[0]: when must be an object`                                                                        |
+| `when.purposes`, when present, is an array of strings.                                                                                                             | `{ "tallyDirectives": [{ "attribute": "gamesWon", "when": { "purposes": "MOVEMENT" } }] }`                              | `tallyDirectives[0]: when.purposes must be an array of strings`                                                     |
+| `when.phase`, when present, is `PROVISIONAL` or `FINAL`.                                                                                                           | `{ "tallyDirectives": [{ "attribute": "gamesWon", "when": { "phase": "LIVE" } }] }`                                     | `tallyDirectives[0]: when.phase must be one of PROVISIONAL, FINAL`                                                  |
+| A graph measure directive is not scoped by `idsFilter` (a truthy `idsFilter`); it reads the whole table.                                                           | `{ "tallyDirectives": [{ "attribute": "buchholz", "idsFilter": true }] }`                                               | `tallyDirectives[0]: buchholz reads the whole table; idsFilter cannot scope it`                                     |
+| A tied-set measure directive is not scoped by `idsFilter` (a truthy `idsFilter`); it reads the whole table.                                                        | `{ "tallyDirectives": [{ "attribute": "commonOpponents", "idsFilter": true }] }`                                        | `tallyDirectives[0]: commonOpponents reads the whole table; idsFilter cannot scope it`                              |
+| A directive's `minSample`, when present, is on a `commonOpponents` directive (nothing else reads it).                                                              | `{ "tallyDirectives": [{ "attribute": "gamesPct", "minSample": 4 }] }`                                                  | `tallyDirectives[0]: minSample applies only to commonOpponents`                                                     |
+| A directive's `groupBy`, when present, is on a `groupLeader` or `recordVsGroup` directive (nothing else reads it).                                                 | `{ "tallyDirectives": [{ "attribute": "gamesWon", "groupBy": "division" }] }`                                           | `tallyDirectives[0]: groupBy applies only to groupLeader, recordVsGroup`                                            |
+| A `groupLeader` or `recordVsGroup` directive has a `groupBy` that is a non-empty string.                                                                           | `{ "tallyDirectives": [{ "attribute": "groupLeader" }] }`                                                               | `tallyDirectives[0]: groupLeader needs a groupBy`                                                                   |
+| A directive's `setKey`, when present, is on a `recordVsSet` directive (nothing else reads it).                                                                     | `{ "tallyDirectives": [{ "attribute": "recordVsGroup", "groupBy": "division", "setKey": "eligible" }] }`                | `tallyDirectives[0]: setKey applies only to recordVsSet`                                                            |
+| A `recordVsSet` directive has a `setKey` that is a non-empty string.                                                                                               | `{ "tallyDirectives": [{ "attribute": "recordVsSet" }] }`                                                               | `tallyDirectives[0]: recordVsSet needs a setKey`                                                                    |
+| A `commonOpponents` directive's `minSample`, when present, is a whole number of at least 1.                                                                        | `{ "tallyDirectives": [{ "attribute": "commonOpponents", "minSample": 0 }] }`                                           | `tallyDirectives[0]: minSample must be a whole number of at least 1`                                                |
+| The policy's `headToHead`, when present, is an object (`null` is not).                                                                                             | `{ "headToHead": true }`                                                                                                | `headToHead must be an object`                                                                                      |
+| `precision`, when present, is `EXACT` or a whole number of at least 0.                                                                                             | `{ "precision": -1 }`                                                                                                   | `precision must be a whole number of decimal places, or 'EXACT'`                                                    |
+| `denominator`, when present, is `PLAYED` or `EXPECTED`.                                                                                                            | `{ "denominator": "ALL" }`                                                                                              | `denominator must be one of PLAYED, EXPECTED`                                                                       |
+| `crossGroup`, when present, is an array.                                                                                                                           | `{ "crossGroup": {} }`                                                                                                  | `crossGroup must be an array`                                                                                       |
+| Each `crossGroup` entry's `attribute` is a stored measure: a measure that is neither a ratio nor a graph measure.                                                  | `{ "crossGroup": [{ "attribute": "setsRatio" }] }`                                                                      | `crossGroup[0]: setsRatio is not a stored measure`                                                                  |
+| `preReduce`, when present, is an object with a `groupBy` that is a non-empty string.                                                                               | `{ "preReduce": {} }`                                                                                                   | `preReduce must be an object with a groupBy`                                                                        |
+| `resultPoints`, when present, has `rules`: a non-empty array.                                                                                                      | `{ "resultPoints": { "rules": [] } }`                                                                                   | `resultPoints.rules must be a non-empty array`                                                                      |
+| Each rule has an `id`, a non-empty string.                                                                                                                         | `{ "resultPoints": { "rules": [{ "winner": 2, "loser": 0 }] } }`                                                        | `resultPoints.rules[0] needs an id`                                                                                 |
+| No two rules share an `id`.                                                                                                                                        | `{ "resultPoints": { "rules": [{ "id": "win", "winner": 2, "loser": 0 }, { "id": "win", "winner": 2, "loser": 1 }] } }` | `resultPoints.rules[1]: duplicate id win`                                                                           |
+| A drawn rule (a truthy `isDrawn`) has `points`, a finite number.                                                                                                   | `{ "resultPoints": { "rules": [{ "id": "draw", "isDrawn": true }] } }`                                                  | `resultPoints.rules[0]: a drawn rule needs finite points`                                                           |
+| Any other rule is decided: it has `winner` and `loser`, both finite numbers.                                                                                       | `{ "resultPoints": { "rules": [{ "id": "win", "winner": 2 }] } }`                                                       | `resultPoints.rules[0]: a decided rule needs finite winner and loser points`                                        |
+| A rule's `matchUpStatuses`, when present, is an array.                                                                                                             | `{ "resultPoints": { "rules": [{ "id": "wo", "winner": 2, "loser": 0, "matchUpStatuses": "WALKOVER" }] } }`             | `resultPoints.rules[0]: matchUpStatuses must be an array`                                                           |
+| A rule's `loserSetsWon`, when present, is an array of whole numbers of at least 0.                                                                                 | `{ "resultPoints": { "rules": [{ "id": "close", "winner": 2, "loser": 1, "loserSetsWon": [-1] }] } }`                   | `resultPoints.rules[0]: loserSetsWon must be an array of whole numbers`                                             |
+| A rule's `loserMarginAtMost`, when present, is a finite number of at least 0.                                                                                      | `{ "resultPoints": { "rules": [{ "id": "close", "winner": 4, "loser": 1, "loserMarginAtMost": -1 }] } }`                | `resultPoints.rules[0]: loserMarginAtMost must be a finite number of at least 0`                                    |
+| `loserMarginAtMost` is a condition on a decided result, so a drawn rule cannot have one.                                                                           | `{ "resultPoints": { "rules": [{ "id": "draw", "isDrawn": true, "points": 2, "loserMarginAtMost": 7 }] } }`             | `resultPoints.rules[0]: loserMarginAtMost applies only to a decided rule`                                           |
+| A rule's `bonus`, when present, is `true` or `false`.                                                                                                              | `{ "resultPoints": { "rules": [{ "id": "win", "winner": 4, "loser": 0, "bonus": "yes" }] } }`                           | `resultPoints.rules[0]: bonus must be true or false`                                                                |
+| The rules include one that is not a `bonus`: a bonus only adds to what a deciding rule awarded.                                                                    | `{ "resultPoints": { "rules": [{ "id": "close", "winner": 0, "loser": 1, "loserMarginAtMost": 7, "bonus": true }] } }`  | `resultPoints.rules needs a rule that is not a bonus`                                                               |
+| A rule's `decidedIn`, when present, is a non-empty array of `REGULATION`, `OVERTIME`, `DECIDER`, `EXTERNAL`.                                                       | `{ "resultPoints": { "rules": [{ "id": "win", "winner": 3, "loser": 0, "decidedIn": ["PENALTIES"] }] } }`               | `resultPoints.rules[0]: decidedIn must be a non-empty array of REGULATION, OVERTIME, DECIDER, EXTERNAL`             |
+| `decidedIn` is a condition on a decided result, so a drawn rule cannot have one.                                                                                   | `{ "resultPoints": { "rules": [{ "id": "draw", "isDrawn": true, "points": 1, "decidedIn": ["REGULATION"] }] } }`        | `resultPoints.rules[0]: decidedIn applies only to a decided rule`                                                   |
+| A rule's `decidedBy`, when present, is a non-empty array of `SHOOTOUT`, `COMPETITION_RULE`, `LOTS`, `OFFICIAL_DECISION`.                                           | `{ "resultPoints": { "rules": [{ "id": "so", "winner": 2, "loser": 1, "decidedBy": [] }] } }`                           | `resultPoints.rules[0]: decidedBy must be a non-empty array of SHOOTOUT, COMPETITION_RULE, LOTS, OFFICIAL_DECISION` |
+| `decidedBy` is a condition on a decided result, so a drawn rule cannot have one.                                                                                   | `{ "resultPoints": { "rules": [{ "id": "draw", "isDrawn": true, "points": 1, "decidedBy": ["LOTS"] }] } }`              | `resultPoints.rules[0]: decidedBy applies only to a decided rule`                                                   |
+| `onSplit`, when present, is `RESTART`, `CONTINUE` or `EXTRACT_ONE`.                                                                                                | `{ "onSplit": "RESTARTS" }`                                                                                             | `onSplit must be one of RESTART, CONTINUE, EXTRACT_ONE`                                                             |
+| `terminal`, when present, is `ADJUDICATE`, `SHARE` or `LOT`.                                                                                                       | `{ "terminal": "COIN" }`                                                                                                | `terminal must be one of ADJUDICATE, SHARE, LOT`                                                                    |
+| `drawCredit`, when present, is a finite number from 0 to 1.                                                                                                        | `{ "drawCredit": 2 }`                                                                                                   | `drawCredit must be a finite number between 0 and 1`                                                                |
+| `outcomePoints`, when present, is an object whose `win`, `draw` and `loss` are finite numbers.                                                                     | `{ "outcomePoints": { "win": 3, "draw": 1 } }`                                                                          | `outcomePoints requires finite win, draw and loss values`                                                           |
+| A policy ranking by `standingsPoints` (its `groupOrderKey` or any directive's `attribute`) has `outcomePoints`.                                                    | `{ "groupOrderKey": "standingsPoints" }`                                                                                | `standingsPoints ranking requires outcomePoints`                                                                    |
 
 Each directive is checked in turn, through its own rules from `attribute` to `idsFilter`. Every rule in the
 table can fail together with the others, except the last three: of `drawCredit`, `outcomePoints` and the
@@ -1510,6 +1683,7 @@ A policy that uses every option and passes:
   "precision": "EXACT",
   "denominator": "EXPECTED",
   "onSplit": "EXTRACT_ONE",
+  "preReduce": { "groupBy": "division" },
   "terminal": "LOT",
   "drawCredit": 0.5,
   "outcomePoints": { "win": 3, "draw": 1, "loss": 0 },
@@ -1527,6 +1701,10 @@ A policy that uses every option and passes:
     { "attribute": "standingsPoints", "minParticipants": 2, "maxParticipants": 4 },
     { "attribute": "setsRatio", "zeroDivision": "SKIP", "when": { "purposes": ["MOVEMENT"], "phase": "FINAL" } },
     { "attribute": "buchholz", "idsFilter": false },
+    { "attribute": "commonOpponents", "minSample": 4 },
+    { "attribute": "groupLeader", "groupBy": "division" },
+    { "attribute": "recordVsGroup", "groupBy": "conference" },
+    { "attribute": "recordVsSet", "setKey": "eligible" },
     { "attribute": "external", "externalKey": "drawShot", "reversed": true }
   ]
 }

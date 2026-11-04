@@ -11,9 +11,10 @@ import { unique } from '@Tools/arrays';
 // constants and types
 import { INVALID_VALUES, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
+import type { RoundRobinTallyPolicy } from '@Types/roundRobinTallyPolicy';
+import type { GroupingInputs } from '@Query/standings/orderParticipants';
 import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import { BYE } from '@Constants/matchUpStatusConstants';
-import type { RoundRobinTallyPolicy } from '@Types/roundRobinTallyPolicy';
 import type { MatchUp } from '@Types/tournamentTypes';
 import { TEAM } from '@Constants/matchUpTypes';
 
@@ -32,7 +33,7 @@ type TallyParticipantResultsArgs = {
   matchUps: (MatchUp & { structureId?: string })[];
   /** values from outside the results, by key and then participantId, read by `external` tally directives */
   externalValues?: Record<string, Record<string, number>>;
-};
+} & GroupingInputs;
 
 type TallyResultType = {
   completedTieMatchUps?: boolean;
@@ -45,7 +46,10 @@ type TallyResultType = {
 
 export function tallyParticipantResults({
   policyDefinitions,
+  participantSets,
   externalValues,
+  groupRanks,
+  groupings,
   generateReport,
   pressureRating,
   matchUpFormat,
@@ -108,7 +112,10 @@ export function tallyParticipantResults({
     matchUps: consideredMatchUps,
     participantResults,
     participantsCount,
+    participantSets,
     externalValues,
+    groupRanks,
+    groupings,
     matchUpFormat,
     subOrderMap,
     tallyPolicy,
@@ -138,7 +145,10 @@ export function tallyParticipantResults({
       requireCompletion: false,
       participantResults,
       participantsCount,
+      participantSets,
       externalValues,
+      groupRanks,
+      groupings,
       matchUpFormat,
       tallyPolicy,
       subOrderMap,

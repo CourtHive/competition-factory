@@ -42,6 +42,15 @@ export type StandingsDirective = {
    * for any set where it happens (spec § 5.10)
    */
   zeroDivision?: 'MAX' | 'ZERO' | 'SKIP';
+  /**
+   * for attribute 'commonOpponents': the fewest meetings against common opponents each member of the set needs
+   * (default 1). A set with any member below it is not split by this directive (NFL wild card: four).
+   */
+  minSample?: number;
+  /** for attributes 'groupLeader' and 'recordVsGroup': which caller grouping to read (`groupings[groupBy]`) */
+  groupBy?: string;
+  /** for attribute 'recordVsSet': which caller participant set to read (`participantSets[setKey]`) */
+  setKey?: string;
 };
 
 export type StandingsPhase = 'PROVISIONAL' | 'FINAL';
@@ -76,6 +85,11 @@ export type StandingsPolicy = {
    */
   demote?: string[];
   onSplit?: SplitMode;
+  /**
+   * A5 (NFL wild card): in a tied set, only each group's best-ranked member competes for the next place, and its
+   * group-mates refill after it is placed. Reads the caller's `groupings[groupBy]` and `groupRanks[groupBy]`.
+   */
+  preReduce?: { groupBy: string };
   terminal?: TerminalStep;
   /** decimal places ratios are compared to (default 3), or EXACT; the same rule the ledger's percentages use */
   precision?: number | 'EXACT';

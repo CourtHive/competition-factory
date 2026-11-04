@@ -106,7 +106,10 @@ export type OutcomeOp =
        * too (v1's `removeSubsequentRoundsParticipant`, S4)
        */
       removedDrawPosition?: number;
-      /** the position placed in by the same write, when one is: a changed winner replacing the old one (S4) */
+      /**
+       * the position placed in by the same write, when one is: a changed winner replacing the old one (S4); a loser gone
+       * on through a BYE into the matchUp an unwind left holding their position (S7), whose notice is then the last
+       */
       placedDrawPosition?: number;
       /**
        * false where v1 announces the placement with no event or tournament: the winner a double exit's produced exit is
@@ -120,7 +123,8 @@ export type OutcomeOp =
       advancesThroughBye?: true;
       /**
        * with `advancesThroughBye`: the advance is a settle pass's (`reconcileByeAdvancements`, a seat an unwind freed
-       * beside a standing BYE, S6 tail), which v1 announces with the event
+       * beside a standing BYE, S6 tail), or the participant a held exit is awarded to going on (`directWinner`, S7),
+       * which v1 announces with the event
        */
       announcesEvent?: true;
       /**
@@ -128,6 +132,12 @@ export type OutcomeOp =
        * `clearDrawPosition` announces it, `removeDrawPosition-<that BYE's drawPosition>`, with neither event nor tournament
        */
       withdrawnByePosition?: number;
+      /**
+       * with `withdrawnByePosition`: the matchUp held a pending exit the withdrawn BYE had carried a position into (a
+       * passage's landing, S7), which goes with the position as v1's `updateMatchUpStatusAfterRemoval` takes it: to be
+       * played, its provenance removed (a pending exit holds no winner, score or codes to take)
+       */
+      clearsPendingExit?: true;
       /**
        * the position of a participant awarded a carried exit, taken back out of the matchUp they went on into when the
        * carry is withdrawn by a relabel (S6 tail, v1's `relabelWithoutDirection`): announced as `releaseAdvancedDrawPosition`,
@@ -240,6 +250,12 @@ export type OutcomeOp =
        */
       matchUpId: string;
       drawPosition: number;
+      /**
+       * a carried exit standing on the other side once the BYE goes (S7): the matchUp is re-derived to it as v1's
+       * `updateMatchUpStatusAfterRemoval` re-derives it, the exit's status, awarded to the side without it (a carried exit
+       * keeps its award on an empty seat), its provenance kept
+       */
+      rederived?: { matchUpStatus: MatchUpStatusUnion; winningSide: 1 | 2 };
     }
   | {
       op: 'setParticipantResults';
@@ -440,6 +456,12 @@ function foldMatchUpWrite(
       drawDefinition,
       matchUp,
     });
+    // the pending exit the matchUp held goes with the position (v1's `updateMatchUpStatusAfterRemoval`, S7); a pending
+    // exit has no winner, score or codes to take (`ownCarryAlone`)
+    if (op.clearsPendingExit) {
+      matchUp.matchUpStatus = TO_BE_PLAYED;
+      setSideExitProvenance({ matchUp, provenance: undefined });
+    }
   }
   return {};
 }
@@ -569,7 +591,8 @@ function foldWithdrawBye(op: OpOf<'withdrawBye'>, { structures, groups }: DrawIn
 function foldClearMatchUpBye(op: OpOf<'clearMatchUpBye'>, { matchUps }: DrawIndex): Folded {
   const matchUp = matchUps.get(op.matchUpId);
   if (!matchUp) return { error: `clearMatchUpBye: no matchUp ${op.matchUpId}` };
-  matchUp.matchUpStatus = TO_BE_PLAYED;
+  matchUp.matchUpStatus = op.rederived?.matchUpStatus ?? TO_BE_PLAYED;
+  if (op.rederived) matchUp.winningSide = op.rederived.winningSide;
   clearOrderOfFinishUnlessCompleted(matchUp);
   return {};
 }

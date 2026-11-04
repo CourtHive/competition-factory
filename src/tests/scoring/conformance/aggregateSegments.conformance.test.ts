@@ -213,3 +213,20 @@ describe('-F:TB1 — the sudden-death decider of a level aggregate', () => {
     });
   });
 });
+
+describe('exactly+aggregate | SET | timed(P) | final:tiebreakSet — SET4XA-S:T12P-F:TB1', () => {
+  const format = 'SET4XA-S:T12P-F:TB1';
+  const { level, win } = aggregateStreams(4, pointSegment);
+
+  it('engine-defined: an unequal point total after all four segments wins; no decider is played', () => {
+    segmentConforms(format, seq(win.spec, '2'), { sets: win.sets, winningSide: 1, complete: true });
+  });
+
+  it('engine-defined: a level point total goes to one sudden-death point as set five', () => {
+    segmentConforms(format, seq(level.spec, '2'), {
+      sets: [...level.sets, [0, 1, [0, 1]]],
+      winningSide: 2,
+      complete: true,
+    });
+  });
+});

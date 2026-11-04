@@ -1,5 +1,6 @@
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { getMatchUpFormatRecoveryTimes } from './getMatchUpFormatRecoveryTimes';
+import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { parse as parseMatchUpFormat } from '@Helpers/matchUpFormatCode/parse';
 import { getMatchUpFormatAverageTimes } from './getMatchUpFormatAverageTimes';
 import { getOvernightRecoveryTimes } from './getOvernightRecoveryTimes';
@@ -91,12 +92,16 @@ export function resolveTimingDetails({
   // Timed-format default: when matchUpFormat carries explicit durations,
   // derive the default average from the code itself instead of falling back
   // to a flat 90. Whole-match cap (-M:T<n>) wins outright; otherwise the
-  // worst-case total is bestOf * setMinutes, with the final-set minutes
-  // substituted for the last set when -F:T<n> is provided. So:
+  // worst-case total is count * setMinutes (count = exactly, else bestOf),
+  // with the final-set minutes substituted for the last set when -F:T<n>
+  // governs it. So:
   //   SET1-S:T20         → 20
   //   SET3-S:T15         → 45 (3 × 15)
   //   SET3-S:T15-F:T10   → 40 (2 × 15 + 10)
+  //   SET2XA-S:T45P      → 90 (2 × 45)
+  //   SET3XA-S:T10-F:TB1 → 30 (the decider is set 4, beyond the 3)
   //   <anything>-M:T60   → 60
+  //   SET2XA-S:T45P-O:2X/T15P-F:TB1 → 130 (90 + 2 × 15 + an untimed decider's 10)
   // Explicit policy / event / tournament timings still take precedence.
   const timedDefaultMinutes = timedDefaultMinutesOf(matchUpFormat);
   const effectiveDefaultAverage = timedDefaultMinutes ?? defaultAverageMinutes;
@@ -173,15 +178,47 @@ function deriveTimedDefaultMinutes(parsed: ReturnType<typeof parseMatchUpFormat>
     parsed.setFormat?.timed && typeof parsed.setFormat.minutes === 'number' ? parsed.setFormat.minutes : undefined;
   if (typeof setMinutes !== 'number') return undefined;
 
-  const bestOf = parsed.bestOf ?? 1;
+  // An exactly-N format plays all N segments and leaves `bestOf` undefined: reading only `bestOf` priced
+  // SET2XA-S:T45P as one 45-minute half
+  const count = parsed.exactly ?? parsed.bestOf ?? 1;
+  // -F: substitutes for the last of the count only when it governs that set; an aggregate format's decider
+  // is set N + 1, played on a level total, and is not part of the regulation priced here
   const finalSetMinutes =
-    parsed.finalSetFormat?.timed && typeof parsed.finalSetFormat.minutes === 'number'
+    parsed.finalSetFormat?.timed &&
+    typeof parsed.finalSetFormat.minutes === 'number' &&
+    finalSetGoverns(parsed, count, true)
       ? parsed.finalSetFormat.minutes
       : undefined;
 
-  if (bestOf <= 1) return setMinutes;
-  if (typeof finalSetMinutes === 'number') return (bestOf - 1) * setMinutes + finalSetMinutes;
-  return bestOf * setMinutes;
+  let regulation = count * setMinutes;
+  if (count <= 1) regulation = setMinutes;
+  else if (typeof finalSetMinutes === 'number') regulation = (count - 1) * setMinutes + finalSetMinutes;
+  return regulation + overtimeCeilingMinutes(parsed);
+}
+
+/** a decider that is not timed (a tiebreak race past one point, a shootout) is priced at this many minutes */
+const UNTIMED_DECIDER_MINUTES = 10;
+/** unlimited overtime has no ceiling: it is priced at this many periods */
+const UNLIMITED_OVERTIME_PERIODS_PRICED = 1;
+
+/**
+ * Overtime prices its ceiling (CA ruling, 2026-11-04): every period of a finite block, sudden death or not, then the
+ * decider (`-F:` follows the block), its own minutes when timed, none for a one-point decider, otherwise
+ * UNTIMED_DECIDER_MINUTES. Unlimited periods have no ceiling and price UNLIMITED_OVERTIME_PERIODS_PRICED; a decider
+ * never follows them.
+ */
+function overtimeCeilingMinutes(parsed: NonNullable<ReturnType<typeof parseMatchUpFormat>>): number {
+  const overtime = parsed.overtimeFormat;
+  if (!overtime) return 0;
+  const periodMinutes = overtime.setFormat.timed ? (overtime.setFormat.minutes ?? 0) : 0;
+  if (overtime.count === 'unlimited') return UNLIMITED_OVERTIME_PERIODS_PRICED * periodMinutes;
+  return overtime.count * periodMinutes + deciderMinutesOf(parsed.finalSetFormat);
+}
+
+/** a one-point decider (`TB1`) has no time dimension whatsoever (CA, 2026-11-04) */
+function deciderMinutesOf(final: NonNullable<ReturnType<typeof parseMatchUpFormat>>['finalSetFormat']): number {
+  if (!final || final.tiebreakSet?.tiebreakTo === 1) return 0;
+  return final.timed && typeof final.minutes === 'number' ? final.minutes : UNTIMED_DECIDER_MINUTES;
 }
 
 type MatchUpFormatTimesArgs = {

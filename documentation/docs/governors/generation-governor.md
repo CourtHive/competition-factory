@@ -235,7 +235,8 @@ const drawDefinitionValues = {
 const { drawDefinition } = engine.generateDrawDefinition(drawDefinitionValues);
 ```
 
-**Sanctioning limits.** When the tournament's sanctioning constraints extension matches the event, generation
+**Sanctioning limits.** When the tournament's sanctioned event constraints (`sanction.constraints`, else the legacy
+`sanctioningConstraints` extension) match the event, generation
 refuses, before anything is built, entries that would take a draw stage past its `maxWildcards` (`WILDCARD`
 entries) or `maxAlternates` (`ALTERNATE` entries), counting the entries an existing draw (`drawId`) already holds.
 The refusal names the excess:

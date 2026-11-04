@@ -89,8 +89,9 @@ export function addPoint(matchUp: MatchUp, options: AddPointOptions, config?: Ad
 
   // Parse format to get structure
   const parsed = parse(matchUp.matchUpFormat);
-  // Overtime syntax is readable before its runtime integration is activated. Never ignore its policy.
-  if (!parsed || parsed.overtimeFormat) {
+  // Overtime syntax is readable before its runtime integration is activated. Never ignore its policy. A shootout
+  // final takes a tally only (Ruling 3), never a point.
+  if (!parsed || parsed.overtimeFormat || parsed.finalSetFormat?.shootout) {
     throw new Error(`Invalid matchUpFormat: ${matchUp.matchUpFormat}`);
   }
   const formatStructure: FormatStructure = parsed;

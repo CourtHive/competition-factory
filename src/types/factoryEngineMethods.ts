@@ -348,6 +348,7 @@ export type FactoryEngineMethod =
   | 'getMatchUpDailyLimitsUpdate'
   | 'getMatchUpDependencies'
   | 'getMatchUpFormat'
+  | 'getMatchUpFormatReport'
   | 'getMatchUpFormatTiming'
   | 'getMatchUpFormatTimingUpdate'
   | 'getMatchUpFormatVariance'
@@ -1149,6 +1150,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getMatchUpDailyLimitsUpdate',
   'getMatchUpDependencies',
   'getMatchUpFormat',
+  'getMatchUpFormatReport',
   'getMatchUpFormatTiming',
   'getMatchUpFormatTimingUpdate',
   'getMatchUpFormatVariance',

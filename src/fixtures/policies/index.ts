@@ -1,7 +1,10 @@
+import { POLICY_ROUND_ROBIN_TALLY_PREMIER_LEAGUE } from './POLICY_ROUND_ROBIN_TALLY_PREMIER_LEAGUE';
 import { POLICY_ROUND_ROBIN_TALLY_USTA_LEAGUE } from './POLICY_ROUND_ROBIN_TALLY_USTA_LEAGUE';
 import { POLICY_ROUND_ROBIN_TALLY_DEFAULT } from './POLICY_ROUND_ROBIN_TALLY_DEFAULT';
 import { POLICY_MATCHUP_ACTIONS_DEFAULT } from './POLICY_MATCHUP_ACTIONS_DEFAULT';
 import { POLICY_ROUND_ROBIN_TALLY_FIBA } from './POLICY_ROUND_ROBIN_TALLY_FIBA';
+import { POLICY_ROUND_ROBIN_TALLY_FIVB } from './POLICY_ROUND_ROBIN_TALLY_FIVB';
+import { POLICY_ROUND_ROBIN_TALLY_MLS } from './POLICY_ROUND_ROBIN_TALLY_MLS';
 import { POLICY_ROUND_ROBIN_TALLY_JTT } from './POLICY_ROUND_ROBIN_TALLY_JTT';
 import { POLICY_ROUND_ROBIN_TALLY_TOC } from './POLICY_ROUND_ROBIN_TALLY_TOC';
 import { POLICY_PROGRESSION_DEFAULT } from './POLICY_PROGRESSION_DEFAULT';
@@ -121,6 +124,9 @@ export const policies = {
   // standings presets written from rulebooks verified at source (each names its document and edition)
   POLICY_ROUND_ROBIN_TALLY_USTA_LEAGUE,
   POLICY_ROUND_ROBIN_TALLY_FIBA,
+  POLICY_ROUND_ROBIN_TALLY_FIVB,
+  POLICY_ROUND_ROBIN_TALLY_MLS,
+  POLICY_ROUND_ROBIN_TALLY_PREMIER_LEAGUE,
 
   // Sanctioning policies keyed by governing body — the reference copies a consumer needs to see what
   // a body actually requires, rather than re-deriving it. Bare SanctioningPolicy bodies, not policyDefinitions:

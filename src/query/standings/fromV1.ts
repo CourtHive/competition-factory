@@ -70,6 +70,14 @@ export const RATIO_MEASURES = Object.keys(RATIO_INPUTS);
  */
 export const GRAPH_MEASURES = ['buchholz', 'buchholzCut1', 'buchholzMedian', 'sonnebornBerger'];
 
+/**
+ * Tied-set measures: read from the whole table and the caller's groupings, valued for the set being sorted.
+ * `commonOpponents` (NFL common games): the record against the opponents every member met. `groupLeader` (NBA division
+ * winner), `recordVsGroup` (division or conference record) and `recordVsSet` (against a caller's set) read the caller's
+ * groupings. Directive-only: never the primary measure, never stored, never scoped to the tied (`idsFilter`).
+ */
+export const SET_MEASURES = ['commonOpponents', 'groupLeader', 'recordVsGroup', 'recordVsSet'];
+
 /** the measures a season's ledger adds to the round-robin ledger's: the tie-score values */
 export const SEASON_TALLY_MEASURES = ['valueWon', 'valueLost'];
 
@@ -131,5 +139,6 @@ export function fromV1(
     ...(tallyPolicy?.precision !== undefined && { precision: tallyPolicy.precision as number | 'EXACT' }),
     ...(tallyPolicy?.drawCredit !== undefined && { drawCredit: tallyPolicy.drawCredit }),
     ...(tallyPolicy?.terminal !== undefined && { terminal: tallyPolicy.terminal as TerminalStep }),
+    ...(tallyPolicy?.preReduce !== undefined && { preReduce: tallyPolicy.preReduce as { groupBy: string } }),
   };
 }

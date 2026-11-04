@@ -535,6 +535,11 @@ export const INVALID_SCORE = {
   code: 'ERR_INVALID_SCORE' as const,
 } satisfies ErrorType;
 
+export const UNDECIDED_LEVEL_RESULT = {
+  message: 'A level result here needs a decision',
+  code: 'ERR_UNDECIDED_LEVEL_RESULT' as const,
+} satisfies ErrorType;
+
 export const INVALID_WINNING_SIDE = {
   message: 'Invalid winningSide',
   code: 'ERR_INVALID_WINNING_SIDE' as const,
@@ -1263,6 +1268,7 @@ export const errorConditionConstants = {
   UNRECOGNIZED_DRAW_TYPE,
   UNRECOGNIZED_MATCHUP_FORMAT,
   UNRECOGNIZED_MATCHUP_STATUS,
+  UNDECIDED_LEVEL_RESULT,
   VALUE_UNCHANGED,
   VENUE_EXISTS,
   MATCHUPS_SCHEDULED_OUTSIDE_DATES,

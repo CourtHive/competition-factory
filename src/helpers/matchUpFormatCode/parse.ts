@@ -37,6 +37,8 @@ export type SetFormat = {
   setTo?: number;
   winBy?: number;
   outs?: number;
+  /** a shootout of this many rounds, entered as a tally: only ever the final set (`-F:SO5`) */
+  shootout?: number;
   combinedPointTotal?: number;
   tieResolution?: RotatingPartnerScoreContract['tieResolution'];
   winningMargin?: number;
@@ -355,6 +357,9 @@ function buildParsedFormat({
   exactly,
 }): ParsedFormat | undefined {
   if (finalSetFormat?.combinedPointTotal) return undefined;
+  // a shootout decides a level overtime: only as -F:, and only after -O: (Ruling 3; narrowed, CA 2026-11-04)
+  if (setFormat?.shootout || overtimeFormat?.setFormat?.shootout) return undefined;
+  if (finalSetFormat?.shootout && !(aggregate && overtimeFormat)) return undefined;
   if (overtimeFormat && (!aggregate || (overtimeFormat.count === 'unlimited' && finalSetFormat))) return undefined;
   if (
     setFormat?.combinedPointTotal &&
@@ -396,6 +401,7 @@ function buildParsedFormat({
 }
 
 function parseSetFormatString(formatstring: string, setFormatString: string): SetFormatResult {
+  if (setFormatString.startsWith('SO')) return parseShootoutSet(setFormatString);
   if (setFormatString.startsWith('P')) return parseCombinedPointFormat(setFormatString);
   if (setFormatString.startsWith('TB')) {
     return parseTiebreakSetFormat(setFormatString);
@@ -416,6 +422,11 @@ function parseTiebreakSetFormat(setFormatString: string): SetFormatResult {
   const tiebreakSet = parseTiebreakFormat(setFormatString);
   if (tiebreakSet === false) return false;
   return typeof tiebreakSet === 'object' ? { tiebreakSet } : undefined;
+}
+
+function parseShootoutSet(setFormatString: string): SetFormatResult {
+  const match = /^SO([1-9]\d*)$/.exec(setFormatString);
+  return match ? { shootout: Number(match[1]) } : undefined;
 }
 
 function parseOutsBasedSet(setFormatString: string): SetFormatResult {

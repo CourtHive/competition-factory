@@ -1,6 +1,7 @@
 import { addDrawNotice, addMatchUpsNotice, stampUnannounced } from '@Mutate/notifications/drawNotifications';
 import tieFormatDefaults from '@Assemblies/generators/templates/tieFormatDefaults';
 import { addEventNotice } from '@Mutate/notifications/eventNotifications';
+import { matchUpFormatRefusal } from '@Validators/isValidMatchUpFormat';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
@@ -40,6 +41,13 @@ export function addEvent({ suppressNotifications, tournamentRecord, internalUse,
 } {
   const paramsCheck = requireParams({ tournamentRecord, event }, [TOURNAMENT_RECORD, EVENT_ATTR]);
   if (paramsCheck.error) return paramsCheck;
+
+  // adding an event is new use of its matchUpFormat: a refused format stored here reached every draw that
+  // inherits it, unvalidated (checkFormatScopeEquivalence skips a draw format equal to the event's)
+  if (event.matchUpFormat !== undefined) {
+    const refusal = matchUpFormatRefusal({ matchUpFormat: event.matchUpFormat });
+    if (refusal) return refusal;
+  }
 
   // set default startDate, endDate based on tournamentRecord
   const { startDate, endDate } = tournamentRecord;

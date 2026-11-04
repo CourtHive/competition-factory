@@ -188,6 +188,8 @@ export const FORMAT_MATRIX: Record<string, MatrixEntry> = {
     AGGREGATE_SEGMENTS,
   'exactly+aggregate | SET | set:timed(P) | final:same | game:traditional | noClock | knownModifiers':
     AGGREGATE_SEGMENTS,
+  'exactly+aggregate | SET | set:timed(P) | final:tiebreakSet | game:traditional | noClock | knownModifiers':
+    AGGREGATE_SEGMENTS,
   'standalone | SET | set:timed(G) | final:same | game:traditional | noClock | knownModifiers': TIMED_SEGMENTS,
   'standalone | SET | set:timed(P) | final:same | game:traditional | noClock | knownModifiers': TIMED_SEGMENTS,
 };

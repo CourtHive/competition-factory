@@ -40,7 +40,6 @@ import { positionTargets } from '@Query/matchUp/positionTargets';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { isActiveMatchUp } from '@Query/matchUp/activeMatchUp';
-import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { isLucky } from '@Query/drawDefinition/isLucky';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
@@ -809,8 +808,9 @@ function walkSeats(
     return placeWalkBye(context, structureId, drawPosition, named, walk) ? walk : undefined;
   };
   const ownLink = targetData?.targetLinks?.loserTargetLink;
+  // behind FIRST_MATCHUP too: nobody loses a double exit, and v1 places the BYE whatever the condition says (S7)
   const own =
-    loserMatchUp && ownPosition && !ownLink?.linkCondition
+    loserMatchUp && ownPosition && (!ownLink?.linkCondition || ownLink.linkCondition === FIRST_MATCHUP)
       ? walked(loserMatchUp.structureId, ownPosition, true)
       : undefined;
   if (loserMatchUp && !own) return undefined;
@@ -1979,9 +1979,6 @@ export function buildOutcomeView(args: BuildViewArgs): OutcomeView {
       ),
       rotatingPartners: isRotatingPartnerDraw(drawDefinition, event),
       winRatio: structure?.finishingPosition === WIN_RATIO,
-      combinedPointRoundRobin:
-        structure?.finishingPosition === WIN_RATIO &&
-        !!parse(incomingFormat ?? storedFormat ?? '')?.setFormat?.combinedPointTotal,
       timedTie: !!(inContextMatchUp?.collectionId && lastSetFormatIsTimed({ ...inContextMatchUp })),
     },
   };

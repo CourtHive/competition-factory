@@ -72,9 +72,21 @@ export function applyOwnedPlan({
   const written = [...new Set(scored.toReversed())].reverse();
   const announced = [...new Set(writes.toReversed())].reverse();
   // a matchUp given its result and then a position (that next matchUp): its last notice is the placement's
-  const lastWrites = new Map(ops.flatMap((op) => ('matchUpId' in op ? [[op.matchUpId, op.op]] : [])));
+  const lastWrites = new Map(ops.flatMap((op) => ('matchUpId' in op ? [[op.matchUpId, op]] : [])));
   const placedLast = new Set(
-    [...lastWrites].flatMap(([matchUpId, op]) => (op === 'setMatchUpDrawPositions' ? [matchUpId] : [])),
+    [...lastWrites].flatMap(([matchUpId, op]) => (op.op === 'setMatchUpDrawPositions' ? [matchUpId] : [])),
+  );
+  // ...or a BYE's withdrawal visiting it after a quiet result write (an unwind's branch writes DOUBLE_ELIMINATION's
+  // Backdraw final back to be played, then the walk from the unfillable seat visits it, S7): v1's buffer keeps the
+  // withdrawal's name, `removeDrawPosition-<n>`, with neither event nor tournament
+  const unbyedLast = new Set(
+    [...lastWrites].flatMap(([matchUpId, op]) =>
+      op.op === 'setMatchUpDrawPositions' && op.withdrawnByePosition ? [matchUpId] : [],
+    ),
+  );
+  // ...or a BYE written after its result and origin (a held exit's landing the unfillable seat's BYE takes, S7): the BYE's
+  const byedLast = new Set(
+    [...lastWrites].flatMap(([matchUpId, op]) => (op.op === 'setMatchUpBye' ? [matchUpId] : [])),
   );
   // a line given a finishing number by another line's write is announced as v1's `modifyMatchUpScore` announces it
   const resulted = new Set(
@@ -88,7 +100,7 @@ export function applyOwnedPlan({
   // a carry recorded beside a BYE it passed: the BYE matchUp's state is not rewritten, so v1's `progressExitStatus`
   // announces the entry itself (`recordCarryBesideBye`)
   const relayed = new Set(ops.flatMap((op) => (op.op === 'mergeSideExitProvenance' ? [op.matchUpId] : [])));
-  const { removed, unevented, untournamented, unbyed, settledResults } = noticeRules(ops);
+  const { removed, unevented, untournamented, unbyed, settledResults, arrived, byeNamed } = noticeRules(ops);
   // a position advanced through a BYE a double exit placed: v1's `doubleExitAdvancement` announces it as `advanceWinner`
   const advanced = new Set(
     ops.flatMap((op) => (op.op === 'setMatchUpDrawPositions' && op.advancesThroughBye ? [op.matchUpId] : [])),
@@ -122,7 +134,7 @@ export function applyOwnedPlan({
     // a removal's notice is built as v1's `removeSubsequentRoundsParticipant` builds it, whose caller passes no event;
     // unless a score write announces the matchUp after it (a result turned into a double exit: the exit it produces)
     const removedPosition = resulted.has(matchUpId) ? undefined : removed.get(matchUpId);
-    const unbyedPosition = resulted.has(matchUpId) ? undefined : unbyed.get(matchUpId);
+    const unbyedPosition = resulted.has(matchUpId) && !unbyedLast.has(matchUpId) ? undefined : unbyed.get(matchUpId);
     // a settle pass's result write names the event and the tournament, whatever an earlier write of the matchUp in the
     // same call left out (a convergence re-derived past the produced exit's matchUp: contextless on the unwind, S6 tail)
     const settledWrite = settledResults.has(matchUpId);
@@ -133,6 +145,7 @@ export function applyOwnedPlan({
       // is `assignMatchUpDrawPosition`'s (`directWinner`), a FIRST_MATCHUP reservation's matchUp `setMatchUpStatusBye`'s
       context:
         settled.get(matchUpId) ??
+        (byedLast.has(matchUpId) && resulted.has(matchUpId) ? 'setMatchUpStatusBye' : undefined) ??
         noticeContext(matchUpId, removedPosition, unbyedPosition, {
           resulted: placedLast.has(matchUpId) ? new Set<string>() : resulted,
           byes,
@@ -144,7 +157,11 @@ export function applyOwnedPlan({
           released,
         }),
       eventId: noticeEvent?.eventId,
-      tournamentId: !settledWrite && (untournamented.has(matchUpId) || unbyedPosition) ? undefined : tournamentId,
+      tournamentId:
+        !settledWrite &&
+        ((untournamented.has(matchUpId) && !arrived.has(matchUpId) && !byeNamed.has(matchUpId)) || unbyedPosition)
+          ? undefined
+          : tournamentId,
       drawDefinition,
       matchUp,
       event: noticeEvent,
@@ -215,8 +232,19 @@ function noticeRules(ops: OutcomeOp[]) {
         : [],
     ),
   );
+  // ...but a BYE written there too: v1's `setMatchUpStatusBye` announces the matchUp last, with the tournament, though
+  // its context stays read without it (the matchUp the unfillable seat's BYE makes a BYE, S7; the only order measured)
+  const byeNamed = new Set(ops.flatMap((op) => (op.op === 'setMatchUpBye' ? [op.matchUpId] : [])));
   // a BYE an unwind withdraws: v1's `clearDrawPosition` names its position, with neither event nor tournament (S6)
   const unbyed = withdrawnByeNotices(ops);
+  // a loser placed through a BYE into a matchUp an unwind wrote quietly (`unwoundThrough`): v1 announces the arrival last,
+  // with the event and the tournament; the in-context notice stays the quiet score write's
+  const arrived = new Set(
+    ops.flatMap((op) =>
+      op.op === 'setMatchUpDrawPositions' && op.placedDrawPosition && !op.removedDrawPosition ? [op.matchUpId] : [],
+    ),
+  );
+  for (const matchUpId of arrived) unevented.delete(matchUpId);
   // an advance through a BYE names no event, but an evented BYE written before it keeps its event (`byeAndAdvance`)
   for (const matchUpId of byeAndAdvance(ops).eventKept) unevented.delete(matchUpId);
   // a team's line-up written with no event, unless a result written after it announces the matchUp (`namedWriters`)
@@ -225,7 +253,7 @@ function noticeRules(ops: OutcomeOp[]) {
   const settledResults = new Set(
     ops.flatMap((op) => (op.op === 'setMatchUpResult' && op.announcedAs ? [op.matchUpId] : [])),
   );
-  return { removed, unevented, untournamented, unbyed, settledResults };
+  return { removed, unevented, untournamented, unbyed, settledResults, arrived, byeNamed };
 }
 
 /**
@@ -338,6 +366,8 @@ function withdrawnByeNotices(ops: OutcomeOp[]): Map<string, number> {
     if (op.op === 'setMatchUpDrawPositions' && op.withdrawnByePosition)
       unbyed.set(op.matchUpId, op.withdrawnByePosition);
     if (op.op === 'setMatchUpDrawPositions' && op.advancesThroughBye) unbyed.delete(op.matchUpId);
+    // a position placed there after the withdrawal (a loser through the standing BYE, `unwoundThrough`): its notice is last
+    if (op.op === 'setMatchUpDrawPositions' && op.placedDrawPosition) unbyed.delete(op.matchUpId);
     // a BYE matchUp emptied by a release (`releaseAdvancedDrawPosition`'s vacated BYE): the release's notice is the last
     if (op.op === 'setMatchUpDrawPositions' && op.releasedDrawPosition) unbyed.delete(op.matchUpId);
   }

@@ -10,11 +10,11 @@ import { getParticipantIds } from '@Generators/drawDefinitions/drawTypes/adHoc/d
 import { generateAdHocMatchUps } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocMatchUps';
 import { getAdHocRatings } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/getAdHocRatings';
 import { generateSwissPairings } from './swissPairing';
+import { swissPolicyOf } from './swissPolicyOf';
 
 // Acquire
 import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
-import { findExtension } from '@Acquire/findExtension';
 
 // constants
 import { QUALIFYING, WINNER } from '@Constants/drawDefinitionConstants';
@@ -118,14 +118,15 @@ export function generateSwissRound(params: GenerateSwissRoundArgs): GenerateSwis
   }
 
   // get swiss policy from extension or params
-  const swissPolicy =
-    params.swissPolicy ??
-    (findExtension({ element: drawDefinition, name: 'swissPolicy' })?.extension?.value as SwissPolicy | undefined);
+  const policyResult = swissPolicyOf({ drawDefinition, swissPolicy: params.swissPolicy });
+  if (policyResult.error) return { error: policyResult.error, info: policyResult.info };
+  const { swissPolicy } = policyResult;
 
   const existingMatchUps = matchUpsOf(structure) ?? [];
 
   const { participantIdPairings, byeParticipantId } = generateSwissPairings({
     allowDraws: swissPolicy?.allowDraws,
+    byePoints: swissPolicy?.byePoints,
     matchUps: existingMatchUps,
     participantIds,
     adHocRatings,

@@ -4,6 +4,7 @@ import { getLeadingSide } from '@Query/matchUp/checkSetIsComplete';
 import { keyValueTimedSetScore } from './keyValueTimedSetScore';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { processTiebreakSet } from './processTiebreakSet';
+import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { keyValueSetScore } from './keyValueSetScore';
 import { getScoreAnalysis } from './scoreAnalysis';
 import { processOutcome } from './processOutcome';
@@ -210,9 +211,10 @@ function finalizeUpdatedScore({ sets, winningSide, matchUpStatus, matchUpFormat,
   winningSide = matchUpWinningSide;
   if (matchUpWinningSide && (!matchUpStatus || [TO_BE_PLAYED, INCOMPLETE].includes(matchUpStatus))) {
     matchUpStatus = OUTCOME_COMPLETE;
+    // drops the empty placeholder after the last set; a closed 0-0 timed period is played, not empty
     sets = sets.filter((set) => {
-      const { side1Score, side2Score, side1TiebreakScore, side2TiebreakScore } = set;
-      return side1Score || side2Score || side1TiebreakScore || side2TiebreakScore;
+      const { side1Score, side2Score, side1TiebreakScore, side2TiebreakScore, segmentComplete } = set;
+      return segmentComplete || side1Score || side2Score || side1TiebreakScore || side2TiebreakScore;
     });
   } else if (
     scoreString &&
@@ -232,6 +234,12 @@ export function keyValueScore(params) {
 
   if (!VALID_VALUE_KEYS.includes(value)) {
     return { updated: false, info: 'invalid key' };
+  }
+  // overtime and a shootout are entered in the dialog only (CA, 2026-11-04): keyed entry has no phase for a period
+  // and no tally for a shootout
+  const parsedFormat = matchUpFormat ? parse(matchUpFormat) : undefined;
+  if (parsedFormat?.overtimeFormat || parsedFormat?.finalSetFormat?.shootout) {
+    return { updated: false, info: 'overtime and shootout formats are scored in the score dialog' };
   }
 
   if (shiftFirst) lowSide = 3 - lowSide;

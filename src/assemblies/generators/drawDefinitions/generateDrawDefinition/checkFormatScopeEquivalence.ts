@@ -1,4 +1,5 @@
 import { applyMatchUpFormat } from '@Mutate/matchUps/matchUpFormat/applyMatchUpFormat';
+import { matchUpFormatRefusal } from '@Validators/isValidMatchUpFormat';
 import { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
@@ -14,6 +15,13 @@ export function checkFormatScopeEquivalence({
   // if there is a defined matchUpFormat/tieFormat only attach to drawDefinition...
   // ...when there is not an equivalent definition on the parent event
   if (matchUpFormat || tieFormat) {
+    // a passed matchUpFormat is new use even when it equals the event's: the equivalence skip below never
+    // reaches applyMatchUpFormat, so without this a refused stored format was accepted by naming it again
+    if (matchUpFormat) {
+      const refusal = matchUpFormatRefusal({ matchUpFormat });
+      if (refusal) return { ...refusal, info: refusal.info ?? 'matchUpFormat or tieFormat error' };
+    }
+
     const equivalentInScope =
       (matchUpFormat && event?.matchUpFormat === matchUpFormat) ||
       (event?.tieFormat && tieFormat && JSON.stringify(event.tieFormat) === JSON.stringify(tieFormat));

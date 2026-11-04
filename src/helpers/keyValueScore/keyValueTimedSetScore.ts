@@ -1,3 +1,4 @@
+import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
 import { removeFromScore } from './keyValueUtilities';
 import { processOutcome } from './processOutcome';
 import { ensureInt } from '@Tools/ensureInt';
@@ -125,9 +126,17 @@ function handleSpaceKey({ sets, scoreString, winningSide, analysis }) {
   const { side1Score, side2Score } = lastSet;
   const setWinningSide = (side1Score > side2Score && 1) || (side2Score > side1Score && 2) || undefined;
 
-  if (setWinningSide && !winningSide && !analysis.isIncompleteSetScore) {
-    sets.at(-1).winningSide = setWinningSide;
-    sets.push({ setNumber: sets.length + 1 });
+  // an aggregate format's period may end level, even 0-0: it closes on both scores, and counts toward the total
+  const format = analysis.matchUpScoringFormat;
+  const aggregate = isAggregateFormat(format);
+  const levelClose = aggregate && side1Score !== undefined && side2Score !== undefined;
+
+  if ((setWinningSide || levelClose) && !winningSide && !analysis.isIncompleteSetScore) {
+    const closed = sets.at(-1);
+    if (setWinningSide) closed.winningSide = setWinningSide;
+    if (aggregate) closed.segmentComplete = true;
+    // the N periods are all there are: a level total's decider is entered in the dialog, not keyed
+    if (!(aggregate && format?.exactly && sets.length >= format.exactly)) sets.push({ setNumber: sets.length + 1 });
     updatedScoreString += ' ';
     updated = true;
   }

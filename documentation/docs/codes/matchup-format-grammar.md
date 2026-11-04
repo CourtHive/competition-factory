@@ -100,6 +100,7 @@ A segment (`-S:` or `-F:`) is exactly one kind, recognised by how it starts, in 
 
 | kind           | written                                     | starts with   |
 | -------------- | ------------------------------------------- | ------------- |
+| shootout       | `SO{rounds}`, `-F:` only                    | `SO`          |
 | combined total | `P{n}`, `P{n}DP`, `P{n}WB{m}` with m ≥ 2    | `P`           |
 | tiebreak-only  | `TB{n}[NOAD][@{modifier}]`                  | `TB`          |
 | outs           | `O{n}`                                      | `O`           |
@@ -118,6 +119,15 @@ A segment (`-S:` or `-F:`) is exactly one kind, recognised by how it starts, in 
    containing `NOAD` (CA 2026-10-25). `TB11@rally`, `T10@rally`, `TB11@R_1` and `TB11@RALLY2` are not codes.
    `RALLY` is the one modifier with a meaning (every rally scores); any other upper-case name is kept and not scored
    (`TB11@SIDEOUT`; scoring specification § 3.4).
+5. **Shootout.** `SO{rounds}`, a shootout of that many rounds, is only ever the final segment, and only after a
+   level finite overtime of an aggregate (`SET2XA-S:T45P-O:2X/T15P-F:SO5`). As `-S:`, as an overtime period, with no
+   `-O:` (`SET2XA-S:T45P-F:SO5`), or after a best-of or non-aggregate match it is not a code (CA 2026-11-04: a match
+   that goes straight to penalties is recorded as `decidedIn: 'EXTERNAL'` until a decider without overtime is
+   stamped like one with it). It is entered as its final tally, never by point or game: the tally is never level,
+   above `rounds` it is sudden death, won by one (`7-6` in five rounds; never `7-5`), and within `rounds` it ends
+   once one side cannot catch up (`3-0` in five rounds; never `4-0`). Its goals are not part of the aggregate. Like
+   overtime, it is refused for new use until overtime is activated. `F:TB1` is unchanged: a one-point decider, not a
+   shootout.
 
 ## 4. Equivalent spellings
 
@@ -175,9 +185,9 @@ A segment:
 
 ## 6. Valid for new use
 
-`isValidMatchUpFormat` is false for anything that is not well-formed, and for two kinds of well-formed code that are
-refused for a new format and still read where they are stored (scoring specification § 16, decision 19; CA
-2026-10-18):
+`isValidMatchUpFormat` is false for anything that is not well-formed, and for these kinds of well-formed code that are
+refused for a new format and still read where they are stored (scoring specification § 16, decisions 19 and 22; CA
+2026-10-18 and 2026-11-03):
 
 1. **A tiebreak below S − 1.** A standard segment, `-S:` or `-F:`, whose tiebreak is played at fewer than `setTo − 1`
    games: `SET3-S:4/TB7@2` and `SET3-S:6/TB7@4` are refused; `SET3-S:4/TB7@3`, `SET3-S:6/TB7@5` and
@@ -185,8 +195,14 @@ refused for a new format and still read where they are stored (scoring specifica
 2. **An aggregate of standard sets.** With `A`, a standard `-S:` segment, or a standard `-F:` segment when the code
    has no `X` (with `X` the final segment is the decider, set N + 1, which is not summed): `SET3A-S:6/TB7` and
    `SET3A-S:T10-F:6` are refused; `SET3XA-S:T10-F:6` is valid.
+3. **An even implicit best-of count** (since 7.28.0). Best of N needs an odd N: `SET2-S:6/TB7`, `SET6-S:6/TB7` and
+   `SET2-S:6/TB7-F:TB10` are refused. Use `X` for exactly N segments (`SET2X-S:6/TB7` may finish level), `A` for
+   aggregate scoring, or `SET3-S:6/TB7-F:TB10` for two sets plus a deciding match tiebreak.
+   `validateMatchUpFormat` returns the explanation.
+4. **A declared overtime** (`-O:`, § 9) until its activation slice: it parses and scores, but is not offered for a new
+   format.
 
-A stored code of either kind parses and scores as it always did; only setting it is refused
+A stored code of any of these kinds parses and scores as it always did; only setting it is refused
 (`UNRECOGNIZED_MATCHUP_FORMAT`).
 
 ## 7. What stringify writes

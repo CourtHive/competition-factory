@@ -294,6 +294,7 @@ import type { getEventDateIssues } from '@Query/matchUps/scheduling/getEventDate
 import type { getOfficialAssignments } from '@Query/officiating/getOfficialAssignments';
 import type { getOfficialEligibility } from '@Query/officiating/getOfficialEligibility';
 import type { getLinkedTournamentIds } from '@Query/tournaments/getLinkedTournamentIds';
+import type { getMatchUpFormatReport } from '@Query/tournaments/getMatchUpFormatReport';
 import type { getRegistrationProfile } from '@Query/tournaments/getRegistrationProfile';
 import type { modifyTournamentRecord } from '@Generators/mocks/modifyTournamentRecord';
 import type { generateStatCrew } from '@Generators/tournamentRecords/generateStatCrew';
@@ -1037,6 +1038,7 @@ export interface MethodSignatures {
   getMatchUpDailyLimitsUpdate: EngineMethod<typeof getMatchUpDailyLimitsUpdate>;
   getMatchUpDependencies: EngineMethod<typeof getMatchUpDependencies>;
   getMatchUpFormat: EngineMethod<typeof getMatchUpFormat>;
+  getMatchUpFormatReport: EngineMethod<typeof getMatchUpFormatReport>;
   getMatchUpFormatTiming: EngineMethod<typeof getMatchUpFormatTiming>;
   getMatchUpFormatTimingUpdate: EngineMethod<typeof getMatchUpFormatTimingUpdate>;
   getMatchUpFormatVariance: EngineMethod<typeof getMatchUpFormatVariance>;

@@ -71,6 +71,10 @@ const swissPolicy = {
 | `pairingMethod`    | `'SCORE_GROUP' \| 'RATING_BASED'` | `'SCORE_GROUP'`                    | Pairing strategy                               |
 | `colorAlternation` | `boolean`                         | `false`                            | Reserved for side-alternation balancing        |
 | `hardNoRepeat`     | `boolean`                         | `false`                            | Strictly forbid repeat pairings                |
+| `byePoints`        | `1 \| 0.5 \| 0`                   | `1`                                | What the pairing-allocated bye scores          |
+
+A `byePoints` other than 1, 0.5 or 0 is refused with `INVALID_VALUES` by `generateSwissRound`, `getSwissStandings` and
+`getSwissChart`, before any round is paired.
 
 ## Round Generation
 
@@ -109,7 +113,7 @@ This ensures that the strongest players do not meet each other in the opening ro
 
 ### Odd Participant Count
 
-When the participant count is odd, a **bye** is assigned before pairing. The bye goes to the lowest-rated participant in the lowest score group. In round 1, this is the lowest-rated participant overall. The `byeParticipantId` is returned in the result so the caller can record a forfeit win or handle it as needed.
+When the participant count is odd, a **bye** is assigned before pairing. The bye goes to the lowest-rated participant in the lowest score group. In round 1, this is the lowest-rated participant overall. The `byeParticipantId` is returned in the result for display; nothing needs recording. A round's bye is read from the round itself: the one entrant no matchUp of the round names had it, and it scores the policy's `byePoints` (a win by default) in pairing, standings and the chart. When two or more entrants sit out a round, none of them can be told to have had the bye, so none scores; see [Unplayed rounds](#unplayed-rounds).
 
 ### Entrants Sharing an Individual
 
@@ -137,13 +141,14 @@ const { standings, scoreGroups, roundsPlayed } = engine.getSwissStandings({
 ```
 
 Standings are sorted by **points** (wins = 1, draws = 0.5, losses = 0) with tiebreakers applied in the order specified.
+Standings and the chart read the draw's `swissPolicy` for `allowDraws`, `byePoints` and `totalRounds`.
 
 ### Tiebreaker Methods
 
 | Constant            | Method            | Description                                                                                                |
 | ------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------- |
 | `BUCHHOLZ`          | Buchholz          | Sum of all opponents' points. Rewards playing against strong opposition.                                   |
-| `MEDIAN_BUCHHOLZ`   | Median Buchholz   | Buchholz with the highest and lowest opponent scores removed. Reduces the impact of outlier opponents.     |
+| `MEDIAN_BUCHHOLZ`   | Median Buchholz   | Buchholz with the lowest and highest contributions removed (Median-1). Reduces the impact of outliers.     |
 | `SONNEBORN_BERGER`  | Sonneborn-Berger  | Sum of defeated opponents' points, plus half of drawn opponents' points. Rewards beating strong opponents. |
 | `PROGRESSIVE_SCORE` | Progressive Score | Cumulative running total of round-by-round point sums. Rewards early wins over late wins.                  |
 
@@ -153,6 +158,26 @@ Tiebreaker constants are exported from `swissConstants`:
 import { factoryConstants } from 'tods-competition-factory';
 const { BUCHHOLZ, MEDIAN_BUCHHOLZ, PROGRESSIVE_SCORE, SONNEBORN_BERGER } = factoryConstants.swissConstants;
 ```
+
+### Unplayed rounds
+
+Buchholz, Median Buchholz and Sonneborn-Berger follow FIDE Handbook C.07, Article 16 (Unplayed Rounds Management in
+Swiss Tournaments), as revised from 1 March 2026.
+
+- **What counts as unplayed.** The round's bye (scored at `byePoints`), a walkover won or lost, a double walkover (a
+  forfeit loss for both) and a round sat out alongside another entrant (0 points, the factory's nearest record of a
+  requested bye). A walkover scores for its winner but the two did not play, so neither appears in the other's
+  `opponentIds`. A retirement or a default was played and counts as a game.
+- **Opponents' scores (16.3).** An opponent counts at its points, except that a round it sat out that is followed only
+  by voluntary unplayed rounds (sat-out rounds and forfeit losses), or that falls in the last round, counts as a draw.
+- **Own unplayed rounds (16.4).** Each counts against a dummy scoring the participant's own points, but no more than the
+  scheduled opponent's adjusted score for a walkover, or 0.5 times `totalRounds` for any other unplayed round. Without a
+  `totalRounds`, the last round played is used. Sonneborn-Berger multiplies the dummy by the points the round scored.
+- **Median Buchholz (16.5).** The low cut takes the lowest contribution of a voluntary unplayed round when there is one,
+  then the high cut takes the highest remaining.
+
+The 2024 edition's dummy was uncapped; the caps are the 2026 revision. A tournament's own rules may set other provisions
+(16.6); the factory implements the default.
 
 ### SwissStanding Shape
 
