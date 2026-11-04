@@ -1,5 +1,6 @@
 import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
 import { parse, ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
+import { overtimeSetAfterDecision } from './overtimeScore';
 
 // types
 import type { Set as SetType } from '@Types/tournamentTypes';
@@ -16,6 +17,12 @@ const isPlayed = (set?: SetType) =>
 export function maxExactlySets(parsed?: ParsedFormat): number | undefined {
   const exactly = parsed?.exactly;
   if (!exactly) return undefined;
+  // overtime (-O:) adds its periods, without limit when unlimited, and its decider only when -F: declares one
+  const overtime = parsed?.overtimeFormat;
+  if (overtime) {
+    if (overtime.count === 'unlimited') return Number.MAX_SAFE_INTEGER;
+    return exactly + overtime.count + (parsed?.finalSetFormat ? 1 : 0);
+  }
   return exactly + (isAggregateFormat(parsed) ? 1 : 0);
 }
 
@@ -38,6 +45,8 @@ export function maxExactlySets(parsed?: ParsedFormat): number | undefined {
 export function setPlayedAfterDecision(sets: SetType[], matchUpFormat?: string): string | undefined {
   if (!matchUpFormat || !sets?.length) return undefined;
   const parsed = parse(matchUpFormat);
+  // an overtime format's sets are asked of the scoring engine's own decision, so the two cannot disagree
+  if (parsed?.overtimeFormat) return overtimeSetAfterDecision(sets.filter(isPlayed), matchUpFormat);
   const maxSets = maxExactlySets(parsed);
   if (maxSets) {
     const playedCount = sets.filter(isPlayed).length;

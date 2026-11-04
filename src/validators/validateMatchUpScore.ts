@@ -6,6 +6,7 @@ import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPoin
  * Currently implemented in TMX for testing and refinement before factory integration
  */
 import { tiebreakSetGames, isTiebreakGamesScore, tiebreakSetCeiling } from '@Query/matchUp/tiebreakAtRules';
+import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
 import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { isTiebreakMarker } from '@Query/matchUp/tiebreakSetShape';
 import { tiebreakMargin } from '@Tools/scoring/scoringUtilities';
@@ -352,6 +353,7 @@ function validateTimedSet(
   set: SetType,
   setFormat: any,
   allowIncomplete?: boolean,
+  aggregate?: boolean,
 ): { isValid: boolean; error?: string } {
   if (timedSetWinnerContradicts(set)) return { isValid: false, error: 'Timed set winner contradicts the set score' };
   // For timed sets, just validate that scores exist if set is complete
@@ -359,8 +361,10 @@ function validateTimedSet(
     const side1Score = set.side1Score ?? 0;
     const side2Score = set.side2Score ?? 0;
 
-    // At least one side should have a score for completed timed set
-    if (side1Score === 0 && side2Score === 0) {
+    // At least one side should have a score for completed timed set, but for a period of an aggregate, which
+    // counts toward a total and may finish 0-0 (a goalless half, a scoreless overtime period). A 0-0 period
+    // never has a winner: one that names one is refused (and so is a decider's tiebreak in a bolt's place)
+    if (side1Score === 0 && side2Score === 0 && (!aggregate || set.winningSide)) {
       return { isValid: false, error: 'Timed set requires at least one side to have scored' };
     }
 
@@ -409,7 +413,7 @@ export function validateSetScore(
       : { isValid: false, error: 'Invalid or unfinished combined-point score' };
   }
   // Handle timed sets (based: 'P'/'G' or timed: true)
-  if (setFormat.timed) return validateTimedSet(set, setFormat, allowIncomplete);
+  if (setFormat.timed) return validateTimedSet(set, setFormat, allowIncomplete, isAggregateFormat(parsed));
 
   const { setTo, tiebreakAt, tiebreakFormat, tiebreakSet } = setFormat;
 
