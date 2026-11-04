@@ -2,12 +2,14 @@ import { stringifyCombinedPointFormat } from '@Helpers/matchUpFormatCode/combine
 import { advancesMatchWinner, drawStructures } from '@Validators/tiedFormatCompatibility';
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
+import { resolveScoringFormat } from '@Query/hierarchical/resolveScoringFormat';
+import { isLevelScore } from '@Query/matchUps/roundRobinTally/drawnResults';
 import { validateScore } from '@Validators/validateScore';
 import { matchUpsOf } from '@Acquire/structureMembers';
 
 // constants and types
 import type { DrawDefinition, Event, Score, MatchUpStatusUnion } from '@Types/tournamentTypes';
-import { INVALID_VALUES, INVALID_SCORE } from '@Constants/errorConditionConstants';
+import { INVALID_VALUES, INVALID_SCORE, UNDECIDED_LEVEL_RESULT } from '@Constants/errorConditionConstants';
 import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 import type { ResultType } from '@Types/factoryTypes';
 
@@ -26,11 +28,18 @@ export function resolveRotatingPartnerOutcome(params: {
     const structure = drawStructures(drawDefinition).find((candidate) =>
       (matchUpsOf(candidate) ?? []).some((matchUp) => matchUp.matchUpId === matchUpId),
     );
-    const existingWinner = (matchUpsOf(structure) ?? []).find(
-      (matchUp) => matchUp.matchUpId === matchUpId,
-    )?.winningSide;
-    if (structure && advancesMatchWinner(drawDefinition, structure) && (score || !existingWinner))
+    const matchUp = (matchUpsOf(structure) ?? []).find((candidate) => candidate.matchUpId === matchUpId);
+    if (structure && advancesMatchWinner(drawDefinition, structure) && (score || !matchUp?.winningSide)) {
+      // standings phase 2 § 1.1 (CA 2026-11-04), needs a decision: a level result where a winner must advance names
+      // the winner and how it was decided; there is no status for a result awaiting that decision
+      const format = resolveScoringFormat({ incoming: matchUpFormat, matchUp, structure, drawDefinition, event });
+      if (isLevelScore(score, format))
+        return {
+          error: UNDECIDED_LEVEL_RESULT,
+          info: 'a level result here names its winner and how it was decided (score.overtime: decidedIn EXTERNAL, decidedBy)',
+        };
       return { error: INVALID_SCORE, info: 'completed elimination results require a winningSide' };
+    }
   }
   if (!isRotatingPartnerDraw(drawDefinition, event)) return {};
   const round = drawDefinition?.competitionRounds?.find((candidate) => candidate.matchUpIds.includes(matchUpId));

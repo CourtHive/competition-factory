@@ -124,7 +124,7 @@ presets are written only from rulebooks read at source.
 | **Football: league tables** (Premier League Handbook 2025/26, MLS 2026 Competition Guidelines, UEFA league phase) | 3 points a win, 1 a draw; goal difference; goals scored; in some, head-to-head or criteria applied only at the end or only for a title or relegation place; MLS ranks on wins first and adds disciplinary points                    | presets `POLICY_ROUND_ROBIN_TALLY_PREMIER_LEAGUE` and `POLICY_ROUND_ROBIN_TALLY_MLS`; goals are each half's score (`HAL2A-S:T45`), so goal difference is `gamesDiff`; `when: { phase }` and `when: { purposes }`; disciplinary points as an `external` value | **Supported**, except steps that need a home or away side (away goals). A half entered 0-0 is not yet kept, so enter such a match by its played halves                                                      |
 | Football: head-to-head-first tables (La Liga, FIFA, UEFA EURO; partly secondary sources)                          | the tied teams' games first, re-applied to any residue, then overall                                                                                                                                                                | a mini-league with `onSplit: 'CONTINUE'`                                                                                                                                                                                                                     | Supported mechanisms                                                                                                                                                                                        |
 | American football, NFL (NFL tie-breaking procedures)                                                              | head-to-head sweep; one team advanced per step; division leaders first; common opponents; strength of victory and schedule; a coin toss                                                                                             | `preReduce: { groupBy: 'division' }`, `headToHead` mode `SWEEP`, `recordVsGroup`, `commonOpponents` with `minSample: 4`, `onSplit: 'EXTRACT_ONE'`, `terminal: 'LOT'`                                                                                         | **Partial**: strength of victory is not built                                                                                                                                                               |
-| Ice hockey, NHL and IIHF                                                                                          | points percentage; regulation wins; 3-2-1-0 points by regulation or overtime result                                                                                                                                                 | `matchUpsPct`-style percentages; head-to-head among the tied                                                                                                                                                                                                 | **Partial**: distinguishing a regulation win from an overtime win needs a result category the factory does not record                                                                                       |
+| Ice hockey, NHL and IIHF                                                                                          | points percentage; regulation wins; 3-2-1-0 points by regulation or overtime result                                                                                                                                                 | `matchUpsPct`-style percentages; head-to-head among the tied                                                                                                                                                                                                 | **Partial**: a shootout result is decided outside the score, and a rule awards it by `decidedBy: ['SHOOTOUT']`; an overtime win needs a declared overtime (`-O:`), not yet open to tournaments              |
 | Handball (EHF / IHF; secondary sources)                                                                           | 2-1-0 points; head-to-head among the tied, restart                                                                                                                                                                                  | `resultPoints`, the mini-league, `RESTART`                                                                                                                                                                                                                   | Supported mechanisms                                                                                                                                                                                        |
 | Rugby union (Six Nations championship rules, PREM league table regulations; read at source 2026-11-04)            | 4 a win, 2 a draw; 1 for losing by 7 or fewer and 1 for four tries, both possible in one match; Six Nations: points difference, then tries; PREM: wins, points difference, points scored, then the points scored against each other | points are each half's score (`HAL2A-S:T40`), so points difference is `gamesDiff`; `resultPoints` with a `bonus` rule and `loserMarginAtMost` for the losing bonus; `matchUpsWon`, `gamesDiff`, `gamesWon`                                                   | **Partial**: the losing bonus is expressible; the four-try bonus needs try counts, which a score does not record                                                                                            |
 | Cricket (ICC, IPL; not verified at source)                                                                        | net run rate                                                                                                                                                                                                                        | needs runs and overs per innings                                                                                                                                                                                                                             | **Not yet**                                                                                                                                                                                                 |
@@ -137,17 +137,43 @@ presets are written only from rulebooks read at source.
 | Curling (Olympic round robin)                                                             | wins; head-to-head; the Draw Shot Challenge                                                                   | the head-to-head mini-league; the Draw Shot Challenge as an `external` value (lower is better: `reversed`)                                                                                            | **Supported**                                                                                 |
 | Esports group stages                                                                      | head-to-head, then a tiebreaker match where advancement depends on it                                         | the head-to-head mini-league; a tiebreaker match is a played result, and until it is played the organiser's sub-order (`ADJUDICATE`) holds                                                            | **Supported**                                                                                 |
 
+### A level result where a winner must advance
+
+A format that can end level (a football match, a timed set) may be played where a winner must advance: an elimination
+structure, or a playoff. A level result there is **decided outside the score**: the sporting score is kept as played,
+the winner is named, and `score.overtime` records how it was decided.
+
+```js
+outcome: {
+  matchUpStatus: 'COMPLETED',
+  winningSide: 1,
+  score: {
+    sets: [/* the halves, 1-0 and 0-1 */],
+    overtime: { decidedIn: 'EXTERNAL', decidedBy: { method: 'SHOOTOUT', tally: [4, 3] } },
+  },
+}
+```
+
+- `decidedBy.method` is `SHOOTOUT` (with its `tally`, side 1 first, which the winner won), `COMPETITION_RULE` (the
+  rule in `rule`: the better-placed side advances, away goals), `LOTS` or `OFFICIAL_DECISION`. A `note` may say more.
+- Only a level score is decided this way: a score that decides the match, or is not complete, is refused
+  (`ERR_INVALID_SCORE`).
+- Where a winner must advance, a level result without that record is refused with `ERR_UNDECIDED_LEVEL_RESULT`. There
+  is no status for a result awaiting a decision: the matchUp stays as it was until the decision is entered.
+- In a round robin a level result is a draw; one decided outside the score is the winner's win, and a standings rule
+  can award it differently (`decidedIn`, `decidedBy`: see the
+  [round robin tally policy](../policies/roundRobinTallyPolicy.md)).
+- The record is the overtime workstream's: a format that declares overtime (`-O:`) stamps `decidedIn` itself
+  (`REGULATION`, `OVERTIME`, `DECIDER`).
+
 ### Not yet supported, and why
 
 Each of these needs an input the factory does not have yet, not a change to how the engine orders:
 
 - **Withdrawn and expunged participants** (USTA's conditional expunge): needs who withdrew.
 - **Record against the best-placed team outside the tied set** (IIHF): depends on the order being computed.
-- **A winner decided outside the score** (penalties, a competition rule such as the better-placed side advancing, lots,
-  an official decision): needs the result to record how its winner was decided. Elimination structures refuse
-  tie-capable formats until it does.
-- **Result categories beyond win, draw and loss** (hockey regulation versus overtime, rugby's four-try bonus): needs
-  the result to record them.
+- **Result categories beyond win, draw and loss** (hockey's overtime win, rugby's four-try bonus): an overtime win
+  waits on declared overtime formats; the tries are not recorded.
 - **Rates from match statistics** (cricket's net run rate): needs the statistics.
 - **Unplayed rounds in chess** (FIDE C.07 Art. 16, the dummy opponent): built for Swiss draws in `getSwissStandings`
   (see [Swiss](./draw-types/swiss.md#unplayed-rounds)), not for the standings engine's round-robin graph measures,

@@ -4,17 +4,14 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { ROUND_ROBIN_WITH_PLAYOFF, SINGLE_ELIMINATION, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+import { FEED_IN_CHAMPIONSHIP, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { INTENNSE_2026 } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
 
-const TIE_CAPABLE = 'tie-capable formats are not allowed in elimination structures';
-
 // Scoring-engine spec § 9.7 rule 4 (CA 2026-10-18: "yes, extend the check"): a timed, aggregate or
-// exactly-N format that declares no decider ends COMPLETED with no winner, which a structure that
-// advances a winner cannot direct.
+// exactly-N format that declares no decider can end COMPLETED with no winner. Where a structure advances
+// a winner, that level result needs a decision made outside the score (CA 2026-11-04).
 const CAN_END_LEVEL = [
   'SET1-S:P16', // combined total, even n (the guard before the extension)
   'SET3-S:T10', // timed sets, no tiebreak at time
@@ -91,86 +88,59 @@ function setup(eventMatchUpFormat?: string) {
   return eventId;
 }
 
-describe('draw generation refuses a format that can end level in an elimination draw', () => {
-  it.each(['SET3-S:T10', 'SET2XA-S:T10', 'SET3A-S:TB11', 'HAL2X-S:TB11', 'T90'])('%s is refused', (matchUpFormat) => {
+// Standings phase 2 § 1.1 (CA 2026-11-04, "allow, decider required"): an elimination structure accepts a format that
+// can end level. A level result there names its winner and how it was decided, and is refused without one
+// (`decidedResults.test.ts`), so generation and a format change no longer refuse the format itself.
+describe('elimination accepts a format that can end level', () => {
+  it.each(['SET3-S:T10', 'SET2XA-S:T10', 'SET3A-S:TB11', 'HAL2X-S:TB11', 'T90'])('%s is accepted', (matchUpFormat) => {
     const eventId = setup();
-    for (const drawType of [SINGLE_ELIMINATION, ROUND_ROBIN_WITH_PLAYOFF]) {
+    for (const drawType of [SINGLE_ELIMINATION, FEED_IN_CHAMPIONSHIP]) {
       const result = tournamentEngine.generateDrawDefinition({ eventId, drawType, matchUpFormat });
-      expect(result.error).toEqual(INVALID_VALUES);
-      expect(result.info).toEqual(TIE_CAPABLE);
-    }
-  });
-
-  it.each(['SET3-S:T10/TB7', 'SET3XA-S:T10-F:TB1', 'SET1-S:T10P/TB1'])('%s declares a decider', (matchUpFormat) => {
-    const eventId = setup();
-    const result = tournamentEngine.generateDrawDefinition({ eventId, drawType: SINGLE_ELIMINATION, matchUpFormat });
-    expect(result.success).toEqual(true);
-  });
-
-  it('round robin allows a level result', () => {
-    const eventId = setup();
-    for (const matchUpFormat of ['SET3-S:T10', 'SET2XA-S:T10', 'HAL2X-S:TB11']) {
-      const result = tournamentEngine.generateDrawDefinition({
-        eventId,
-        drawType: ROUND_ROBIN,
-        drawSize: 8,
-        matchUpFormat,
-      });
       expect(result.success).toEqual(true);
     }
   });
 
-  it('a draw inheriting the event format is judged by it', () => {
+  it('a draw inheriting the event format is generated with it', () => {
     const eventId = setup('SET3-S:T10');
     const result = tournamentEngine.generateDrawDefinition({ eventId, drawType: SINGLE_ELIMINATION });
-    expect(result.error).toEqual(INVALID_VALUES);
-    expect(result.info).toEqual(TIE_CAPABLE);
-    const roundRobin = tournamentEngine.generateDrawDefinition({ eventId, drawType: ROUND_ROBIN, drawSize: 8 });
-    expect(roundRobin.success).toEqual(true);
-  });
-});
-
-describe('a format change is refused; a stored draw is untouched', () => {
-  it('setMatchUpFormat refuses the change in elimination and allows it in round robin', () => {
-    const {
-      tournamentRecord,
-      drawIds: [eliminationDrawId, roundRobinDrawId],
-    } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [
-        { drawSize: 8, drawType: SINGLE_ELIMINATION, matchUpFormat: 'SET3-S:T10/TB7' },
-        { drawSize: 8, drawType: ROUND_ROBIN, matchUpFormat: 'SET3-S:T10/TB7' },
-      ],
-    });
-    tournamentEngine.setState(tournamentRecord);
-
-    let result: any = tournamentEngine.setMatchUpFormat({ drawId: eliminationDrawId, matchUpFormat: 'SET3-S:T10' });
-    expect(result.error).toEqual(INVALID_VALUES);
-    expect(result.info).toEqual(TIE_CAPABLE);
-
-    const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId: eliminationDrawId, inContext: true });
-    result = tournamentEngine.setMatchUpFormat({
-      drawId: eliminationDrawId,
-      matchUpId: matchUps[0].matchUpId,
-      structureId: matchUps[0].structureId,
-      matchUpFormat: 'SET2XA-S:T10',
-    });
-    expect(result.error).toEqual(INVALID_VALUES);
-
-    result = tournamentEngine.setMatchUpFormat({ drawId: roundRobinDrawId, matchUpFormat: 'SET3-S:T10' });
     expect(result.success).toEqual(true);
+    expect(result.drawDefinition.matchUpFormat ?? tournamentEngine.getEvent({ eventId }).event.matchUpFormat).toEqual(
+      'SET3-S:T10',
+    );
   });
 
-  it('a stored elimination draw with an undecided format scores on, its own format re-submitted', () => {
+  it('setMatchUpFormat changes an elimination draw, or one of its matchUps, to a format that can end level', () => {
     const {
       tournamentRecord,
       drawIds: [drawId],
     } = mocksEngine.generateTournamentRecord({
-      drawProfiles: [{ drawSize: 4, drawType: SINGLE_ELIMINATION, matchUpFormat: 'SET3-S:T10/TB7' }],
+      drawProfiles: [{ drawSize: 8, drawType: SINGLE_ELIMINATION, matchUpFormat: 'SET3-S:T10/TB7' }],
     });
-    // A draw stored before the guard was extended: its format can end level.
-    const drawDefinition = tournamentRecord.events[0].drawDefinitions[0];
-    drawDefinition.matchUpFormat = 'SET3-S:T10';
-    for (const structure of drawDefinition.structures) structure.matchUpFormat = undefined;
+    tournamentEngine.setState(tournamentRecord);
+
+    let result: any = tournamentEngine.setMatchUpFormat({ drawId, matchUpFormat: 'SET3-S:T10' });
+    expect(result.success).toEqual(true);
+
+    const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId, inContext: true });
+    result = tournamentEngine.setMatchUpFormat({
+      drawId,
+      matchUpId: matchUps[0].matchUpId,
+      structureId: matchUps[0].structureId,
+      matchUpFormat: 'SET2XA-S:T10',
+    });
+    expect(result.success).toEqual(true);
+    expect(tournamentEngine.findMatchUp({ drawId, matchUpId: matchUps[0].matchUpId }).matchUp.matchUpFormat).toEqual(
+      'SET2XA-S:T10',
+    );
+  });
+
+  it('a decided format still scores a winner on', () => {
+    const {
+      tournamentRecord,
+      drawIds: [drawId],
+    } = mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ drawSize: 4, drawType: SINGLE_ELIMINATION, matchUpFormat: 'SET3-S:T10' }],
+    });
     tournamentEngine.setState(tournamentRecord);
 
     const { matchUps } = tournamentEngine.allDrawMatchUps({ drawId, matchUpFilters: { roundNumbers: [1] } });
@@ -179,11 +149,7 @@ describe('a format change is refused; a stored draw is untouched', () => {
       scoreString: '3-2 4-1',
       winningSide: 1,
     });
-    const result = tournamentEngine.setMatchUpStatus({
-      outcome: { ...outcome, matchUpFormat: 'SET3-S:T10' },
-      matchUpId: matchUps[0].matchUpId,
-      drawId,
-    });
+    const result = tournamentEngine.setMatchUpStatus({ outcome, matchUpId: matchUps[0].matchUpId, drawId });
     expect(result.success).toEqual(true);
     const { matchUp } = tournamentEngine.findMatchUp({ drawId, matchUpId: matchUps[0].matchUpId });
     expect(matchUp.matchUpStatus).toEqual(COMPLETED);

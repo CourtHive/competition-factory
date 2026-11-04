@@ -1,7 +1,6 @@
 import { buildIndividualIdsMap, getSharedIndividualConflicts } from '@Query/participants/individualParticipantIds';
 import { addVoluntaryConsolationStructure } from '@Mutate/drawDefinitions/addVoluntaryConsolationStructure';
 import { remapDrawDefinitionMatchUpIds } from '@Mutate/drawDefinitions/remapDrawDefinitionMatchUpIds';
-import { formatCanEndTied, generationNeedsWinner } from '@Validators/tiedFormatCompatibility';
 import { addPlayoffStructures } from '@Mutate/drawDefinitions/addPlayoffStructures';
 import { getDrawFormat } from '@Generators/drawDefinitions/getDrawFormat';
 import { getParticipants } from '@Query/participants/getParticipants';
@@ -88,11 +87,6 @@ export function generateDrawDefinition(params: GenerateDrawDefinitionArgs): Resu
   const drawFormatResult = getDrawFormat({ ...params, enforceGender, eventType, matchUpType });
   if (drawFormatResult.error) return decorateResult({ result: drawFormatResult, stack });
   const { matchUpFormat, tieFormat } = drawFormatResult;
-  // The draw's matchUps inherit the event's format when the draw declares none; a TEAM draw's dual is
-  // decided by its tieFormat, whose tieMatchUps may end level.
-  const governingFormat = tieFormat ? undefined : (matchUpFormat ?? event?.matchUpFormat);
-  if (formatCanEndTied(governingFormat) && generationNeedsWinner(drawType, !!params.withPlayoffs))
-    return { error: INVALID_VALUES, info: 'tie-capable formats are not allowed in elimination structures' };
 
   const invalidDrawId = params.drawId && typeof params.drawId !== 'string';
   if (invalidDrawId) return decorateResult({ result: { error: INVALID_VALUES }, stack });

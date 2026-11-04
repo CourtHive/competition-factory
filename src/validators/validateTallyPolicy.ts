@@ -1,5 +1,6 @@
 import { validateDrawTallyOptions } from '@Query/matchUps/roundRobinTally/drawnResults';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { DECIDED_BY_METHODS, DECIDED_IN } from './decidedResult';
 import {
   GRAPH_MEASURES,
   RATIO_MEASURES,
@@ -224,9 +225,21 @@ function resultPointsErrors(resultPoints: unknown): string[] {
       if (rule?.bonus !== undefined && typeof rule.bonus !== 'boolean') {
         errors.push(`${label}: bonus must be true or false`);
       }
-      return errors;
+      return errors.concat(decidedConditionErrors(rule, label));
     }),
   );
+}
+
+/** a rule conditioned on how its result was decided: a decided rule, naming known phases or methods */
+function decidedConditionErrors(rule: Record<string, unknown>, label: string): string[] {
+  const known: Record<string, string[]> = { decidedIn: DECIDED_IN, decidedBy: DECIDED_BY_METHODS };
+  return (['decidedIn', 'decidedBy'] as const).flatMap((key) => {
+    const values = rule?.[key];
+    if (values === undefined) return [];
+    if (rule.isDrawn) return [`${label}: ${key} applies only to a decided rule`];
+    const valid = Array.isArray(values) && values.length > 0 && values.every((value) => known[key].includes(value));
+    return valid ? [] : [`${label}: ${key} must be a non-empty array of ${known[key].join(', ')}`];
+  });
 }
 
 /** a directive's size and `when` gates */
