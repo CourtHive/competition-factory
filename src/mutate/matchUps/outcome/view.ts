@@ -809,8 +809,9 @@ function walkSeats(
     return placeWalkBye(context, structureId, drawPosition, named, walk) ? walk : undefined;
   };
   const ownLink = targetData?.targetLinks?.loserTargetLink;
+  // behind FIRST_MATCHUP too: nobody loses a double exit, and v1 places the BYE whatever the condition says (S7)
   const own =
-    loserMatchUp && ownPosition && !ownLink?.linkCondition
+    loserMatchUp && ownPosition && (!ownLink?.linkCondition || ownLink.linkCondition === FIRST_MATCHUP)
       ? walked(loserMatchUp.structureId, ownPosition, true)
       : undefined;
   if (loserMatchUp && !own) return undefined;

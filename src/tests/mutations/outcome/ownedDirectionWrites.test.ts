@@ -381,7 +381,25 @@ const DOUBLE_BYE_ENDS: [string, Scenario][] = DOUBLE_BYE_END_DRAWS.flatMap(([dra
   ),
 );
 
+/**
+ * S7: an FMLC Main round-2 double exit, its loser seat behind `FIRST_MATCHUP`: nobody loses it, and v1 places the BYE
+ * whatever the condition says (the chain, or the walk where the chain's shapes refuse). Main's first round played
+ */
+const FIRST_MATCHUP_SEATS: [string, Scenario][] = [8, 16, 32].flatMap((drawSize) =>
+  Array.from({ length: drawSize / 4 }, (_, i) => i + 1).flatMap((roundPosition) =>
+    [DOUBLE_WALKOVER, DOUBLE_DEFAULT].map((matchUpStatus): [string, Scenario] => [
+      `${FIRST_MATCH_LOSER_CONSOLATION} ${drawSize}: Main 2/${roundPosition} a ${matchUpStatus}, its loser seat behind FIRST_MATCHUP a BYE`,
+      {
+        drawProfile: { drawSize, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+        setup: Array.from({ length: drawSize / 2 }, (_, i) => ({ target: R1(i + 1, 'Main'), outcome: won(1) })),
+        steps: [{ target: { roundNumber: 2, roundPosition, structureName: 'Main' }, outcome: { matchUpStatus } }],
+      },
+    ]),
+  ),
+);
+
 const SCENARIOS: [string, Scenario][] = [
+  ...FIRST_MATCHUP_SEATS,
   ...DOUBLE_BYE_ENDS,
   ...HELD_JOINS,
   ...JOINED_SEATS,
