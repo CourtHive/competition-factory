@@ -1,5 +1,6 @@
 import { readTiebreakSet, withPointsInTiebreakFields } from '@Query/matchUp/tiebreakSetShape';
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
+import { shootoutTallyRefusal } from '@Helpers/matchUpFormatCode/shootout';
 import { isTiebreakWon, reachedTiebreak } from '@Query/matchUp/tiebreakAtRules';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
@@ -30,6 +31,8 @@ export function checkSetIsComplete({
 
   const setFormat = (isDecidingSet && matchUpScoringFormat.finalSetFormat) || (matchUpScoringFormat?.setFormat ?? {});
   if (setFormat.combinedPointTotal) return analyzeCombinedPointSet(set, setFormat).complete;
+  // a shootout is a final tally: complete once it is a tally a shootout can end on (Ruling 3, CA 2026-11-04)
+  if (setFormat.shootout) return !shootoutTallyRefusal(setFormat.shootout, [set.side1Score, set.side2Score]);
   // A tiebreak-only set's points are read from wherever they are, so a set that carried them in its game
   // fields (a format-aware parse) is the same set as one that carries them beside the 1-0 marker
   const reading = readTiebreakSet(set, setFormat);
