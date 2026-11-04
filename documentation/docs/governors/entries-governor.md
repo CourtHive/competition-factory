@@ -42,7 +42,8 @@ entries count against the qualifier positions only, so they never take a direct-
 counts the same statuses, so the `openPlaces` it reports is what this method allows. `ignoreStageSpace: true`
 skips every check.
 
-**Sanctioning limits.** When the tournament's sanctioning constraints extension matches the event (by
+**Sanctioning limits.** When the tournament's sanctioned event constraints (`sanction.constraints`, else the legacy
+`sanctioningConstraints` extension) match the event (by
 `eventType`, and `eventName` / `category.categoryName` where the constraint states them), its `maxWildcards`
 and `maxAlternates` bound the stage's `WILDCARD` and `ALTERNATE` entries. A `WILDCARD` beyond `maxWildcards`
 is refused with `NO_STAGE_SPACE_AVAILABLE_FOR_ENTRY_STATUS`, an `ALTERNATE` beyond `maxAlternates` with

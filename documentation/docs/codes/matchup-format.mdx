@@ -151,10 +151,12 @@ explanation and examples are split into short pages:
 ## parse and stringify
 
 `isValidMatchUpFormat` answers whether a code is valid **for a new format**; `parse` answers whether a
-stored code can be read. They differ on two kinds of well-formed code that are refused for new use
-(scoring engine specification § 16, decision 19; CA 2026-10-18): a standard set whose tiebreak comes
-below S − 1 (a tiebreak at four all in a set to six), and an aggregate of standard sets (aggregation is
-defined over timed, tiebreak-only and outs segments). A record that already holds one still parses and
+stored code can be read. They differ on well-formed codes that are refused for new use (scoring engine
+specification § 16; [the grammar § 6](./matchup-format-grammar.md#6-valid-for-new-use)): a standard set whose
+tiebreak comes below S − 1 (a tiebreak at four all in a set to six), an aggregate of standard sets (aggregation is
+defined over timed, tiebreak-only and outs segments), an even implicit best-of count (`SET2-S:6/TB7`; use `SET2X`
+for exactly two, or `SET3-S:6/TB7-F:TB10` for two sets plus a match tiebreak), and a declared overtime until its
+activation. A record that already holds one still parses and
 scores as it always did; setting one as a matchUp, structure, draw or collection format is refused
 (`UNRECOGNIZED_MATCHUP_FORMAT`).
 
