@@ -179,6 +179,7 @@
     "verify:coverage": "vitest run --coverage",
     "verify:coverage-headroom": "node scripts/verify/coverage-headroom.mjs",
     "verify:route-differential": "ROUTE_DIFF=1 TZ=UTC vitest run src/tests/mutations/exitPropagation/routeDifferential.test.ts",
+    "verify:double-exit-sweep": "DOUBLE_EXIT_SWEEP=1 TZ=UTC vitest run src/tests/mutations/exitPropagation/doubleExitSweep.test.ts",
     "verify:deep-corrections": "DEEP_CORRECTIONS=1 TZ=UTC vitest run src/tests/mutations/exitPropagation/correctionDivergenceDeep.test.ts",
     "verify:hydrations": "PIPELINE_HYDRATIONS=1 OUTCOME_PIPELINE=v1 TZ=UTC vitest run src/tests/mutations/exitPropagation/pipelineCost.test.ts && PIPELINE_HYDRATIONS=1 OUTCOME_PIPELINE=v2 TZ=UTC vitest run src/tests/mutations/exitPropagation/pipelineCost.test.ts && PIPELINE_HYDRATIONS=1 OUTCOME_PIPELINE=differential TZ=UTC vitest run src/tests/mutations/exitPropagation/pipelineCost.test.ts",
     "verify:team-arms": "TEAM_ARMS=1 TZ=UTC vitest run src/tests/mutations/exitPropagation/teamMatrixExtensionDual.test.ts src/tests/mutations/exitPropagation/teamMatrixExtensionLine.test.ts src/tests/mutations/exitPropagation/teamMatrixCollegeDefault.test.ts src/tests/mutations/exitPropagation/teamMatrixLaverCup.test.ts src/tests/mutations/exitPropagation/teamMatrixUnevenDuals.test.ts",
