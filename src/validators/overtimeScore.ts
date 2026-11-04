@@ -1,0 +1,108 @@
+import { resolveFormat } from '@Assemblies/engines/scoring/v2/format';
+import { decideMatch } from '@Assemblies/engines/scoring/v2/decide';
+import { parse } from '@Helpers/matchUpFormatCode/parse';
+
+// constants and types
+import type { ScoredSet, SideNumber } from '@Assemblies/engines/scoring/v2/types';
+import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
+
+type StaticSet = {
+  setNumber?: number;
+  side1Score?: number;
+  side2Score?: number;
+  side1TiebreakScore?: number;
+  side2TiebreakScore?: number;
+  winningSide?: number;
+  segmentComplete?: boolean;
+};
+
+export type OvertimeScoreVerdict =
+  | { applies: false }
+  | { applies: true; valid: true; winningSide?: number }
+  | { applies: true; valid: false; reason: string };
+
+/**
+ * The static score path's verdict on an overtime format's score, asked of the scoring engine's own decision
+ * (`decideMatch`) so the two cannot disagree. `applies` is false for any format without `-O:`; every other path
+ * keeps its own reading.
+ *
+ * - no set may follow the point at which the match was decided (overtime after a decided regulation, a period
+ *   past an unequal non-exact total, a decider after an unequal overtime);
+ * - a closed sudden-death period ends on its first score, so both sides cannot have scored in it;
+ * - COMPLETED must be decided, with the stated winner (a level finish names none); IN_PROGRESS must not be;
+ * - `decidedIn: 'EXTERNAL'` (standings slice 2: a shootout, competition rule, lots or official decision) may
+ *   carry a winner where the sporting score is level, so the level-finish refusal does not apply to it.
+ */
+export function overtimeScoreVerdict(params: {
+  matchUpStatus?: string;
+  matchUpFormat?: string;
+  winningSide?: number;
+  sets?: StaticSet[];
+  decidedIn?: string;
+}): OvertimeScoreVerdict {
+  const { matchUpFormat, matchUpStatus, winningSide, decidedIn } = params;
+  if (!matchUpFormat || !parse(matchUpFormat)?.overtimeFormat) return { applies: false };
+
+  const rule = resolveFormat(matchUpFormat, { allowOvertime: true });
+  if (!rule?.overtime)
+    return { applies: true, valid: false, reason: 'the scoring engine does not score this overtime format' };
+
+  const sets = params.sets ?? [];
+  const open = matchUpStatus === IN_PROGRESS;
+  const scored = sets.map((set, i) => toScoredSet(set, i, open && i === sets.length - 1));
+
+  const suddenDeathScore = suddenDeathViolation(rule.n, rule.overtime, scored);
+  if (suddenDeathScore) return { applies: true, valid: false, reason: suddenDeathScore };
+
+  for (let k = 1; k < scored.length; k++) {
+    if (decideMatch(rule, scored.slice(0, k)).complete)
+      return { applies: true, valid: false, reason: `set ${k + 1} follows a match decided after set ${k}` };
+  }
+
+  const decision = decideMatch(rule, scored);
+  if (matchUpStatus === COMPLETED) {
+    if (decidedIn === 'EXTERNAL') return { applies: true, valid: true, winningSide };
+    if (!decision.complete) return { applies: true, valid: false, reason: 'the score does not complete the match' };
+    if (decision.winningSide !== (winningSide as SideNumber | undefined))
+      return { applies: true, valid: false, reason: 'winningSide is not the side the score decides' };
+    return { applies: true, valid: true, winningSide: decision.winningSide };
+  }
+  if (matchUpStatus === IN_PROGRESS && decision.complete)
+    return { applies: true, valid: false, reason: 'an in-progress score already decides the match' };
+  return { applies: true, valid: true };
+}
+
+function toScoredSet(set: StaticSet, index: number, open: boolean): ScoredSet {
+  const isTiebreakOnly = set.side1TiebreakScore !== undefined || set.side2TiebreakScore !== undefined;
+  const pair = isTiebreakOnly
+    ? [set.side1TiebreakScore ?? 0, set.side2TiebreakScore ?? 0]
+    : [set.side1Score ?? 0, set.side2Score ?? 0];
+  // a static score need not state each set's winner; a closed unequal set has one (the decider's is the decision)
+  const closed = !open || !!set.winningSide;
+  const derived = (pair[0] > pair[1] && 1) || (pair[1] > pair[0] && 2) || undefined;
+  const winningSide = (set.winningSide as SideNumber | undefined) ?? (closed ? derived : undefined);
+  return {
+    setNumber: set.setNumber ?? index + 1,
+    side1Score: set.side1Score ?? 0,
+    side2Score: set.side2Score ?? 0,
+    ...(isTiebreakOnly ? { isTiebreakOnly, side1TiebreakScore: pair[0], side2TiebreakScore: pair[1] } : {}),
+    ...(winningSide ? { winningSide } : {}),
+    // a static set is a closed one, but for the last set of a score still in progress
+    ...(closed ? { segmentComplete: true } : {}),
+  };
+}
+
+function suddenDeathViolation(
+  n: number,
+  overtime: { suddenDeath?: boolean; count: number | 'unlimited' },
+  sets: ScoredSet[],
+): string | undefined {
+  if (!overtime.suddenDeath) return undefined;
+  const end = overtime.count === 'unlimited' ? sets.length : n + overtime.count;
+  for (let i = n; i < Math.min(end, sets.length); i++) {
+    const { side1Score, side2Score } = sets[i];
+    if (side1Score > 0 && side2Score > 0)
+      return `sudden-death period ${i - n + 1} ends on its first score: both sides cannot have scored in it`;
+  }
+  return undefined;
+}
