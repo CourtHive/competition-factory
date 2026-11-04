@@ -106,7 +106,10 @@ export type OutcomeOp =
        * too (v1's `removeSubsequentRoundsParticipant`, S4)
        */
       removedDrawPosition?: number;
-      /** the position placed in by the same write, when one is: a changed winner replacing the old one (S4) */
+      /**
+       * the position placed in by the same write, when one is: a changed winner replacing the old one (S4); a loser gone
+       * on through a BYE into the matchUp an unwind left holding their position (S7), whose notice is then the last
+       */
       placedDrawPosition?: number;
       /**
        * false where v1 announces the placement with no event or tournament: the winner a double exit's produced exit is

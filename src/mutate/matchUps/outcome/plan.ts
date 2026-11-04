@@ -577,9 +577,6 @@ function givenWinnerReason(args: Parameters<typeof exitReason>[0]): AbstainReaso
   const levels = unwoundPath(view, request.matchUpId, args.drawDefinition);
   // a convergence the unwind dissolves: the winner then lands beside the re-derived pending exit and is awarded it, v1's
   if (!levels || levels.some(({ rederived }) => rederived)) return 'exit';
-  // an award released by the unwind (S7): planned where the paired feeder delivered its winner by a result; an award
-  // made through a BYE beside it is released with another announcement, v1's
-  if (levels.some(({ released }) => released) && pairedFeeder(view)?.matchUpStatus === BYE) return 'exit';
   if (!view.targets.loserMatchUpId && !view.targets.loserLink && !direction?.loser)
     return levels.some(({ seatOps }) => seatOps.length) ? 'exit' : undefined;
   return unwoundLoserReason(view, levels[0], direction?.loser);
@@ -4297,6 +4294,30 @@ function storedSides(drawDefinition: DrawDefinition, matchUpId: string): unknown
   return undefined;
 }
 
+/**
+ * A double exit given a winner whose own loser seat stood in a double BYE (S7): the unwind withdraws the seat's BYE, and
+ * the double BYE had sent the seat's own position on into the next matchUp, where it stands still. The loser then
+ * arrives opposite the standing BYE and goes on through it, and v1 announces the next matchUp as it leaves it
+ * (`assignMatchUpDrawPosition`, with the event), stamped. The stored next matchUp is a BYE until the unwind, so
+ * `throughBye` reads none: it is read as the unwind leaves it. Planned where the unwind withdrew the next matchUp's BYE
+ * at that position (`doubleByeSeatOps`, family 5: it is then to be played) or the next matchUp is the structure's last
+ * round (COMPASS's West: a BYE still, by the other standing BYE, and nothing further to advance into).
+ */
+function unwoundThrough(view: OutcomeView, unwound: OutcomeOp[]): ThroughBye | undefined {
+  const { loserMatchUpId, loserStructureId, loserTargetDrawPosition: drawPosition } = view.targets;
+  const next = indexed(view, indexed(view, loserMatchUpId)?.winnerMatchUpId);
+  if (!next || !drawPosition) return undefined;
+  const withdrawn = unwound.some(
+    (op) => op.op === 'withdrawBye' && op.structureId === loserStructureId && op.drawPosition === drawPosition,
+  );
+  const cleared = unwound.some(
+    (op) => op.op === 'clearMatchUpBye' && op.matchUpId === next.matchUpId && op.drawPosition === drawPosition,
+  );
+  const drawPositions = positionsOf(next);
+  if (!withdrawn || !drawPositions.includes(drawPosition)) return undefined;
+  return cleared || !next.winnerMatchUpId ? { matchUpId: next.matchUpId, drawPositions } : undefined;
+}
+
 /** a plain loser arrival: the loser on the seat the link feeds */
 function arrivalOps(view: OutcomeView, loser?: DirectionPlan['loser']): OutcomeOp[] {
   const { loserStructureId, loserTargetDrawPosition } = view.targets;
@@ -4360,8 +4381,10 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
   // target: their position joins the next matchUp, which is stamped
   const loserThrough =
     loser?.arrives && view.targets.loserTargetSeat?.opponentBye
-      ? (view.targets.loserThroughBye ?? view.targets.loserByePassage?.through)
+      ? (view.targets.loserThroughBye ?? view.targets.loserByePassage?.through ?? unwoundThrough(view, unwound))
       : undefined;
+  // the loser's own position, where the unwind left it standing in the matchUp beyond (`unwoundThrough`)
+  const placedThrough = loserThrough && !view.targets.loserThroughBye && !view.targets.loserByePassage?.through;
   const winnerThrough =
     winner && view.targets.winner?.hasBye ? view.targets.winnerThroughBye?.[write.winningSide as 1 | 2] : undefined;
   // a dual's own call: its loser's assignment writes the team's line-up where it lands (S7)
@@ -4376,7 +4399,14 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
   const throughBye = [loserThrough, winnerThrough].flatMap((through): OutcomeOp[] =>
     through
       ? [
-          { op: 'setMatchUpDrawPositions', matchUpId: through.matchUpId, drawPositions: through.drawPositions },
+          {
+            op: 'setMatchUpDrawPositions',
+            matchUpId: through.matchUpId,
+            drawPositions: through.drawPositions,
+            ...(placedThrough && through === loserThrough
+              ? { placedDrawPosition: view.targets.loserTargetDrawPosition }
+              : {}),
+          },
           { op: 'stampUpdatedAt', entity: 'matchUp', id: through.matchUpId },
         ]
       : [],
