@@ -403,6 +403,49 @@ that varies the order needs its own policy.
 
 The FIBA ranking step (national-team competitions) is an external value and is not applied.
 
+### Premier League Policy
+
+`POLICY_ROUND_ROBIN_TALLY_PREMIER_LEAGUE`: Premier League Handbook 2025/26, rules C.4 to C.7 and C.17:
+
+- `resultPoints`: 3 for a win, 1 for a draw; goals are each half's score (`HAL2A-S:T45`), so goal difference is
+  `gamesDiff` and goals scored `gamesWon`;
+- clubs level on points are separated by goal difference, then goals scored (C.5, C.6); clubs still level share the
+  place (C.7, `terminal: 'SHARE'`);
+- C.17 applies only at the end of the season and only where the title, relegation or qualification depends on it: the
+  points in the matches between the tied clubs, as a directive `when: { purposes: ['ADVANCEMENT', 'MOVEMENT'], phase:
+'FINAL' }`. A season table asked for one of those purposes applies it; a caller deciding the title asks with
+  `ADVANCEMENT`.
+
+Not applied: C.17's away goals between the tied clubs (the factory records no home or away side) and its play-off,
+which is a match the organiser arranges.
+
+### MLS Policy
+
+`POLICY_ROUND_ROBIN_TALLY_MLS`: MLS 2026 Competition Guidelines, regular-season tiebreaking procedures:
+
+- `resultPoints`: 3 for a win, 1 for a tie;
+- level clubs are separated by total wins, goal differential, goals for, then head-to-head points and goal
+  differential, then the fewest disciplinary points (an `external` value, `disciplinaryPoints`, fewer is better), then
+  a coin toss or drawing of lots (`terminal: 'LOT'`);
+- once a club is separated, the clubs still tied go through the procedure again (`onSplit: 'EXTRACT_ONE'`).
+
+The head-to-head steps are for a conference table (MLS applies them intraconference only); a table across both
+conferences (the Supporters' Shield) drops them. Not applied: the away and home goal steps, since the factory records
+no home or away side.
+
+### FIVB Policy
+
+`POLICY_ROUND_ROBIN_TALLY_FIVB`: FIVB Volleyball Nations League 2026 Competition Regulations, § 2.5:
+
+- teams are ranked on victories (`matchUpsWon`), then match points: 3 for a 3-0 or 3-1 win, 2 for a 3-2 win, 1 for a
+  2-3 loss, 0 for a 0-3 or 1-3 loss, and 0 for a forfeit (a forfeit mapped to `WALKOVER`, 3 to the winner);
+- then set ratio and points ratio (rally points are each set's tiebreak score, `SET5-S:TB25-F:TB15`; nothing lost
+  ranks first);
+- then the matches among the tied teams only, on the same criteria (`onSplit: 'CONTINUE'`);
+- then the FIVB World Ranking, an `external` value, `worldRanking` (lower is better).
+
+The regulations name no step after the World Ranking.
+
 ## Key Attributes
 
 ### groupOrderKey
