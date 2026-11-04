@@ -3343,7 +3343,9 @@ function unwoundLevelSeatOps(
   if (at.kept) return [];
   if (branched && !byeHeld) return unwoundBranch(view, loserSeat, at.first, withdrawn);
   if (branched && !loserSeat.seat?.bye) return unwoundPassage(view, loserSeat, relay);
-  return unwoundSeatOps(view, loserSeat, at.placed, withdrawn, released, false, branched ? relay : undefined);
+  // the relay is read whatever the policy: only under `doubleExitPropagateBye: false` can a BYE matchUp hold this
+  // double exit's own carry (its loser seats take BYEs otherwise), so it refuses nothing new under the default
+  return unwoundSeatOps(view, loserSeat, at.placed, withdrawn, released, false, relay);
 }
 
 /**
