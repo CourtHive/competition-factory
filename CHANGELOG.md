@@ -1,5 +1,64 @@
 # Changelog
 
+## [7.29.0](https://github.com/CourtHive/competition-factory/compare/v7.28.0...v7.29.0) (2026-11-04)
+
+
+### Features
+
+* **mocks:** generate overtime outcomes as the scoring engine plays them ([8ddae57](https://github.com/CourtHive/competition-factory/commit/8ddae5701c16007a183cfc357f40cf6ca8195025))
+* **query:** getMatchUpFormatReport, and stored matchUpFormat findings in the integrity check ([#6161](https://github.com/CourtHive/competition-factory/issues/6161)) ([33a7249](https://github.com/CourtHive/competition-factory/commit/33a72499073f720e608ca12ec554a720f98d7723))
+* **scoring:** a tally-only shootout decider, F:SO{n} ([0c2c2aa](https://github.com/CourtHive/competition-factory/commit/0c2c2aa4c1e53090ca02509cc0c3e824adedc20c))
+* **scoring:** judge and generate a shootout decider by its tally ([5e74ffe](https://github.com/CourtHive/competition-factory/commit/5e74ffe7d4f2ca722b62649c45440efc0ca248d1))
+* **scoring:** overtimeScoreVerdict bridges a static score to the engine's decision ([03dcbd6](https://github.com/CourtHive/competition-factory/commit/03dcbd659ace0cc2d3543e8a22b421f0cfb5b6e6))
+* **scoring:** the write path stamps an overtime score as the engine's records are ([8b2fbf7](https://github.com/CourtHive/competition-factory/commit/8b2fbf7a2044b1a54c6663bf8b7384bdf9ab358e))
+* **season:** combine child tiers into their parent's table ([be9957f](https://github.com/CourtHive/competition-factory/commit/be9957fb176a32c0a76823acca5c0eb3df4862b4))
+* **standings:** level results decided outside the score; elimination accepts tie-capable formats ([#6163](https://github.com/CourtHive/competition-factory/issues/6163)) ([aa8a260](https://github.com/CourtHive/competition-factory/commit/aa8a260d32778119eb694b7529358825c507f192))
+* **standings:** order tied sets by divisions, conferences and caller sets ([5579cb9](https://github.com/CourtHive/competition-factory/commit/5579cb9726c8f1ecc98a37fc49eb941b02c3074f))
+* **standings:** rank a tied set by its record against common opponents ([#6140](https://github.com/CourtHive/competition-factory/issues/6140)) ([0540ae2](https://github.com/CourtHive/competition-factory/commit/0540ae2daff7a6a566490894b178c59eb38d8484))
+* **standings:** rugby losing bonus (additive bonus rules) and Premier League, MLS, FIVB presets ([#6156](https://github.com/CourtHive/competition-factory/issues/6156)) ([062c2b9](https://github.com/CourtHive/competition-factory/commit/062c2b9686da96143a359a3d2860603a50326ebe))
+* **swiss:** score byes and walkovers, and read unplayed rounds under FIDE C.07 Art. 16 ([#6148](https://github.com/CourtHive/competition-factory/issues/6148)) ([d12ed10](https://github.com/CourtHive/competition-factory/commit/d12ed10e65b02e4ce627d21dc5a2964c294c66ba))
+* **timing:** price overtime at its ceiling ([208024d](https://github.com/CourtHive/competition-factory/commit/208024d2903222776b9bc600f5d7b2d92d8db1f8))
+
+
+### Bug Fixes
+
+* **deps:** update tods-competition-factory to 7.28.0 ([#6137](https://github.com/CourtHive/competition-factory/issues/6137)) ([825932c](https://github.com/CourtHive/competition-factory/commit/825932cd829a13cec9f5770abfaaf33dc63c224e))
+* **events:** validate a matchUpFormat set on an event or passed to a draw ([#6152](https://github.com/CourtHive/competition-factory/issues/6152)) ([051388f](https://github.com/CourtHive/competition-factory/commit/051388fa9401b2328c30aacfb08b23f88efe5e97))
+* **outcome:** a carried exit beside the withdrawn BYE in a structure's last round ([#6168](https://github.com/CourtHive/competition-factory/issues/6168)) ([e82a6c9](https://github.com/CourtHive/competition-factory/commit/e82a6c9f549ff6ccf4a172e457fc7696494604ab))
+* **outcome:** a released award's loser on through a chain of BYEs stays v1's ([#6139](https://github.com/CourtHive/competition-factory/issues/6139)) ([259448e](https://github.com/CourtHive/competition-factory/commit/259448e89b180a95dc275878833bbc9633a4ee47))
+* **outcome:** keep a level finish as a drawn result where no winner is needed ([#6150](https://github.com/CourtHive/competition-factory/issues/6150)) ([727ead9](https://github.com/CourtHive/competition-factory/commit/727ead93cb6d80157fc728117558e44c50d46607))
+* **outcome:** the double exit's BYE chain past the unfillable BYE and behind FIRST_MATCHUP ([#6149](https://github.com/CourtHive/competition-factory/issues/6149)) ([5c7cef7](https://github.com/CourtHive/competition-factory/commit/5c7cef75963f08b26349f641c6cce4b6feea91a9))
+* **outcome:** the given-winner unwind under policy off beside loser links ([#6164](https://github.com/CourtHive/competition-factory/issues/6164)) ([1e84751](https://github.com/CourtHive/competition-factory/commit/1e84751884eb5026f7610dca72856d73b1b8d493))
+* **outcome:** under policy off a double exit's fed loser seat takes the BYE chain ([#6145](https://github.com/CourtHive/competition-factory/issues/6145)) ([b1078b7](https://github.com/CourtHive/competition-factory/commit/b1078b7f5edfd9dfa2aff3a2c8db4ba6361a11e4))
+* **outcome:** under policy off a held exit is awarded to the participant at its landing ([#6154](https://github.com/CourtHive/competition-factory/issues/6154)) ([1122e32](https://github.com/CourtHive/competition-factory/commit/1122e3205e11ea20caa13fb526cfd7dca0961723))
+* **outcome:** under policy off a produced loser exit is planned on its structure's final ([#6159](https://github.com/CourtHive/competition-factory/issues/6159)) ([3110b90](https://github.com/CourtHive/competition-factory/commit/3110b9099832a9dc6013c0f83b569677a299142c))
+* **outcome:** under policy off the unfillable BYE reads the matchUp the produced exit advanced into ([#6147](https://github.com/CourtHive/competition-factory/issues/6147)) ([6ecc2d3](https://github.com/CourtHive/competition-factory/commit/6ecc2d34c1856b83a51172493181332d0f891cd7))
+* **outcome:** v2 announces a released award's loser on through a chain of BYEs ([#6144](https://github.com/CourtHive/competition-factory/issues/6144)) ([6499194](https://github.com/CourtHive/competition-factory/commit/6499194969026035d91ce6c1309500b7469f6847))
+* **outcome:** v2 carries a policy-off exit on through BYE-held matchUps beyond the loser seat ([#6143](https://github.com/CourtHive/competition-factory/issues/6143)) ([5f3e5dc](https://github.com/CourtHive/competition-factory/commit/5f3e5dceb063f189707108c184d23e2665751fc6))
+* **outcome:** v2 releases an award made through a BYE when a double exit is given a winner ([#6134](https://github.com/CourtHive/competition-factory/issues/6134)) ([c4c3f4a](https://github.com/CourtHive/competition-factory/commit/c4c3f4a191b6aff27dd588539127374eb46403c0))
+* **outcome:** v2 unwinds a policy-off carry that passed a generated BYE ([#6138](https://github.com/CourtHive/competition-factory/issues/6138)) ([27fed80](https://github.com/CourtHive/competition-factory/commit/27fed802dd3c9edf6190cc06cd6467b75b57ab7d))
+* **ratings:** weight an exactly-N format's result by its N sets ([#6158](https://github.com/CourtHive/competition-factory/issues/6158)) ([10909ee](https://github.com/CourtHive/competition-factory/commit/10909ee87e52c386fbdc6b2a63a401642b129292))
+* **scheduling:** a one-point decider has no time dimension ([973c6a7](https://github.com/CourtHive/competition-factory/commit/973c6a73cd1981c84ca6de336a7d10abd935f619))
+* **scheduling:** price an exactly-N timed format by all N segments ([#6153](https://github.com/CourtHive/competition-factory/issues/6153)) ([5fb3995](https://github.com/CourtHive/competition-factory/commit/5fb39955b667d80ae6f86f78960061acbba627d3))
+* **scoring:** a shootout decider needs overtime, and ends once one side cannot catch up ([2e11b9f](https://github.com/CourtHive/competition-factory/commit/2e11b9f993dc217d89e6ec2a0a70947d450d659a))
+* **scoring:** an aggregate format in progress may lead without winning ([#6155](https://github.com/CourtHive/competition-factory/issues/6155)) ([52f82ee](https://github.com/CourtHive/competition-factory/commit/52f82eeba791faea35190b4cd1b246976c5c2745))
+* **scoring:** an aggregate's decider is played only on a level total ([667c3b4](https://github.com/CourtHive/competition-factory/commit/667c3b421b9c44f77920755785f401ab7c10db59))
+* **scoring:** keyed entry closes a level timed period in an aggregate format ([#6157](https://github.com/CourtHive/competition-factory/issues/6157)) ([f8b90f5](https://github.com/CourtHive/competition-factory/commit/f8b90f55e1abc44a2c6fb8f4e1c81cdfc4998466))
+* **scoring:** overtimeScoreVerdict takes a MatchUpStatusUnion ([560cdca](https://github.com/CourtHive/competition-factory/commit/560cdca1775dcafcc985054e65513a86eeac0f32))
+* **scoring:** overtimeStamped takes a MatchUpStatusUnion ([a0a8237](https://github.com/CourtHive/competition-factory/commit/a0a82370eed13ecc7079fd027bc4107835484cb5))
+* **scoring:** read a set by its setNumber when annotating, and refuse an overtime scoreboard string ([5a18b54](https://github.com/CourtHive/competition-factory/commit/5a18b54acd27e3abd37799f20941a6e21af2c28f))
+* **scoring:** retainScoreForFormat counts and reads an overtime format's sets ([386c7b8](https://github.com/CourtHive/competition-factory/commit/386c7b89a4d059c1f15a9b36323e5b441c542cab))
+* **scoring:** the static validators read an overtime score as the engine does ([9e1b5ec](https://github.com/CourtHive/competition-factory/commit/9e1b5ec27990b58251dfd31f5ba5b09c94827ea3))
+* **scoring:** unlimited overtime cannot finish level ([5621f3a](https://github.com/CourtHive/competition-factory/commit/5621f3a115fb7a8700940f5aa13a0bb87545fc5b))
+* **standings:** the final-set format governs the final set only ([90cf36b](https://github.com/CourtHive/competition-factory/commit/90cf36ba3d4a4c23f7425628984ac771c4ea3d28))
+
+
+### Documentation
+
+* 7.28.0 adoption notes; new-use refusals and sanctioned limits brought current ([4a51f82](https://github.com/CourtHive/competition-factory/commit/4a51f826500824fbde6f293cf1b70605a952be21))
+* backfill the 7.24.0 to 7.27.0 releases in the 7.x journey ([561026e](https://github.com/CourtHive/competition-factory/commit/561026ed0d3dd1915bf27bfc687ca1fae7615cc2))
+* **concepts:** formats page relating tieFormat, matchUpFormat and competitionFormat ([#6151](https://github.com/CourtHive/competition-factory/issues/6151)) ([f25a28d](https://github.com/CourtHive/competition-factory/commit/f25a28dfb3095673b9ad8070d8b2f1534dc146c8))
+
 ## [7.28.0](https://github.com/CourtHive/competition-factory/compare/v7.27.0...v7.28.0) (2026-11-04)
 
 
