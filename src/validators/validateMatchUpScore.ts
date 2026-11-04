@@ -8,7 +8,7 @@ import { shootoutTallyRefusal } from '@Helpers/matchUpFormatCode/shootout';
  */
 import { tiebreakSetGames, isTiebreakGamesScore, tiebreakSetCeiling } from '@Query/matchUp/tiebreakAtRules';
 import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
-import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
+import { finalSetGoverns, unlevelDeciderRefusal } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { isTiebreakMarker } from '@Query/matchUp/tiebreakSetShape';
 import { tiebreakMargin } from '@Tools/scoring/scoringUtilities';
 import { getMaxSetScore } from '@Query/matchUp/getComplement';
@@ -547,6 +547,8 @@ export function validateMatchUpScore(
   if (exactly && matchUpStatus === COMPLETED && sets.length < exactly) {
     return { isValid: false, error: `exactly ${exactly} sets are played; ${sets.length} recorded` };
   }
+  const unlevelDecider = unlevelDeciderRefusal(parse(matchUpFormat ?? ''), sets);
+  if (unlevelDecider) return { isValid: false, error: unlevelDecider };
 
   return { isValid: true };
 }

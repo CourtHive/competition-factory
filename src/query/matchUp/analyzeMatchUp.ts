@@ -1,4 +1,5 @@
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
+import { unlevelDeciderRefusal } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { parse, ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
 import { analyzeSet, SetAnalysisFields } from './analyzeSet';
 import { instanceCount } from '@Tools/arrays';
@@ -187,7 +188,12 @@ export function analyzeMatchUp(params?): ResultType &
   const validMatchUpWinningSide =
     (!!aggregate || winningSideSetsCount > losingSideSetsCount) && matchUpWinningSide === calculatedWinningSide;
 
-  const validMatchUpOutcome = calculatedWinningSide && completedSetsHaveValidOutcomes && validMatchUpWinningSide;
+  // an exactly-N aggregate's decider is played only on a level total of the N sets
+  const validMatchUpOutcome =
+    calculatedWinningSide &&
+    completedSetsHaveValidOutcomes &&
+    validMatchUpWinningSide &&
+    !unlevelDeciderRefusal(matchUpScoringFormat, sets);
 
   return {
     completedSetsHaveValidOutcomes,

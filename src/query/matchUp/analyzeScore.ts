@@ -1,6 +1,6 @@
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
-import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
+import { finalSetGoverns, unlevelDeciderRefusal } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { timedSetWinnerContradicts } from '@Validators/timedSetWinner';
 import { overtimeScoreVerdict } from '@Validators/overtimeScore';
 import { parse, ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
@@ -230,6 +230,8 @@ export function analyzeScore({
   const valid = !!(
     validSets &&
     isExactlyComplete &&
+    // an exactly-N aggregate's decider is played only on a level total of the N sets
+    !unlevelDeciderRefusal(matchUpScoringFormat, sets) &&
     ((winningSide && isAggregateScoring && winningSide === calculatedWinningSide) ||
       (winningSide &&
         !isAggregateScoring &&
