@@ -1,35 +1,35 @@
 {
-  "release": "v7.28.0",
-  "commit": "190fc7c92c133fb7a1b9cce19265974a41dbe073",
+  "release": "v7.29.0",
+  "commit": "dc6695994d9f19fb10af9b7702de308cc3ff75a2",
   "measured": "2026-11-04",
   "fixtures": {
     "syncEngine + governors.queryGovernor": {
-      "raw": 2341773,
-      "gzip": 657128
+      "raw": 2375122,
+      "gzip": 667742
     },
     "tournamentEngine": {
-      "raw": 2341777,
-      "gzip": 657173
+      "raw": 2375125,
+      "gzip": 667743
     },
     "syncEngine": {
       "raw": 56234,
-      "gzip": 17693
+      "gzip": 17692
     },
     "syncEngine + queryGovernor": {
-      "raw": 764248,
-      "gzip": 229202
+      "raw": 784997,
+      "gzip": 235951
     },
     "scoreGovernor + tools + fixtures": {
-      "raw": 554729,
-      "gzip": 165751
+      "raw": 567327,
+      "gzip": 169661
     },
     "TMX import union": {
-      "raw": 2478259,
-      "gzip": 696024
+      "raw": 2513469,
+      "gzip": 707199
     },
     "syncEngine + governors subpath namespace": {
-      "raw": 764248,
-      "gzip": 229201
+      "raw": 784997,
+      "gzip": 235951
     }
   }
 }
