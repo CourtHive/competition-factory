@@ -4,6 +4,7 @@ import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // constants and types
 import type { ScoredSet, SideNumber } from '@Assemblies/engines/scoring/v2/types';
+import type { MatchRule } from '@Assemblies/engines/scoring/v2/format';
 import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 
 type StaticSet = {
@@ -51,13 +52,8 @@ export function overtimeScoreVerdict(params: {
   const open = matchUpStatus === IN_PROGRESS;
   const scored = sets.map((set, i) => toScoredSet(set, i, open && i === sets.length - 1));
 
-  const suddenDeathScore = suddenDeathViolation(rule.n, rule.overtime, scored);
-  if (suddenDeathScore) return { applies: true, valid: false, reason: suddenDeathScore };
-
-  for (let k = 1; k < scored.length; k++) {
-    if (decideMatch(rule, scored.slice(0, k)).complete)
-      return { applies: true, valid: false, reason: `set ${k + 1} follows a match decided after set ${k}` };
-  }
+  const sequence = sequenceViolation(rule, scored);
+  if (sequence) return { applies: true, valid: false, reason: sequence };
 
   const decision = decideMatch(rule, scored);
   if (matchUpStatus === COMPLETED) {
@@ -70,6 +66,31 @@ export function overtimeScoreVerdict(params: {
   if (matchUpStatus === IN_PROGRESS && decision.complete)
     return { applies: true, valid: false, reason: 'an in-progress score already decides the match' };
   return { applies: true, valid: true };
+}
+
+/**
+ * The sequence half of the verdict, for callers that ask only which set could not have been played (`setCount`):
+ * a set after the match was decided, or a sudden-death period both sides scored in. `undefined` when the sets
+ * follow the format, and for any format without `-O:`. Every set is read as closed.
+ */
+export function overtimeSetAfterDecision(sets: StaticSet[], matchUpFormat?: string): string | undefined {
+  if (!matchUpFormat || !parse(matchUpFormat)?.overtimeFormat) return undefined;
+  const rule = resolveFormat(matchUpFormat, { allowOvertime: true });
+  if (!rule?.overtime) return undefined;
+  return sequenceViolation(
+    rule,
+    sets.map((set, i) => toScoredSet(set, i, false)),
+  );
+}
+
+function sequenceViolation(rule: MatchRule, scored: ScoredSet[]): string | undefined {
+  const suddenDeathScore = suddenDeathViolation(rule.n, rule.overtime!, scored);
+  if (suddenDeathScore) return suddenDeathScore;
+  for (let k = 1; k < scored.length; k++) {
+    if (decideMatch(rule, scored.slice(0, k)).complete)
+      return `Set ${scored[k].setNumber}: played after the match was decided`;
+  }
+  return undefined;
 }
 
 function toScoredSet(set: StaticSet, index: number, open: boolean): ScoredSet {

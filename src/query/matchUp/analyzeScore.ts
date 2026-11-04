@@ -2,6 +2,7 @@ import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPoin
 import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
 import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { timedSetWinnerContradicts } from '@Validators/timedSetWinner';
+import { overtimeScoreVerdict } from '@Validators/overtimeScore';
 import { parse, ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
 import { tiebreakSetCeiling } from '@Query/matchUp/tiebreakAtRules';
 import { isMatchUpStatus } from '@Validators/isMatchUpStatus';
@@ -194,6 +195,17 @@ export function analyzeScore({
     sets.every((set, i) =>
       validateSet(set, i, matchUpScoringFormat, totalSets ?? 0, i === sets.length - 1, irregularEnding),
     );
+
+  // an overtime format's sequence and decision are asked of the scoring engine's own decision; an irregular
+  // ending keeps its stated winner, as below
+  const overtime = overtimeScoreVerdict({
+    decidedIn: (score as { overtime?: { decidedIn?: string } } | undefined)?.overtime?.decidedIn,
+    matchUpStatus: relevantMatchUpStatus,
+    matchUpFormat,
+    winningSide,
+    sets,
+  });
+  if (overtime.applies) return { valid: validSets && (irregularEnding ? !!winningSide : overtime.valid) };
 
   // For "exactly" formats, COMPLETED matches must have all N sets, and no match has more than N (plus the
   // sudden-death tiebreak of a format decided by aggregate points)
