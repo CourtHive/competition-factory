@@ -485,7 +485,9 @@ export function annotateScoreSets(matchUpWithContext, matchUpFormat) {
   matchUpWithContext.score.sets = matchUpWithContext.score.sets
     .sort((a, b) => a.setNumber - b.setNumber)
     .map((set, i) => {
-      const setNumber = i + 1;
+      // the set's own number: a record with a gap (a decider stored as set 5 after sets 1 and 2) read the decider
+      // as set 3 by position and annotated it with the ordinary format
+      const setNumber = set.setNumber ?? i + 1;
       const isDecidingSet = finalSetGoverns(parsedFormat, setNumber, setNumber === bestOf);
       const currentSetFormat = isDecidingSet && finalSetFormat ? finalSetFormat : setFormat;
       const isTiebreakOnly = currentSetFormat?.tiebreakSet && !currentSetFormat?.timed;

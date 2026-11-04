@@ -1,4 +1,6 @@
+import { generateOutcomeFromScoreString } from '@Assemblies/generators/simulation/generateOutcomeFromScoreString';
 import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
+import { annotateScoreSets } from '@Query/matchUps/addMatchUpContext';
 import { parseScoreString } from '@Tools/parseScoreString';
 import { expect, it } from 'vitest';
 
@@ -113,4 +115,16 @@ it('a format without overtime is written as before: no phase, no score.overtime'
   const score = write('SET3XA-S:T10', [t(1, 3, 2, 1), t(2, 1, 1), t(3, 0, 2, 2)], COMPLETED, 2);
   expect(score.overtime).toBeUndefined();
   expect(score.sets.every((set: any) => set.phase === undefined)).toEqual(true);
+});
+
+it('generateOutcomeFromScoreString refuses a labelled scoreboard string rather than building NaN sets', () => {
+  const result: any = generateOutcomeFromScoreString({ scoreString: '1-1 (Decider: 4-3)', matchUpFormat: F1 });
+  expect(result.error).toBeDefined();
+});
+
+it('annotateScoreSets reads each set by its own setNumber, not its position', () => {
+  const matchUp: any = { score: { sets: [t(1, 1, 0, 1), t(2, 0, 1, 2), tb(5, 4, 3, 1)] } };
+  annotateScoreSets(matchUp, F1);
+  expect(matchUp.score.sets.at(-1).tiebreakSet).toEqual(true);
+  expect(matchUp.score.sets[0].tiebreakSet).toBeUndefined();
 });
