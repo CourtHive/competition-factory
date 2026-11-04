@@ -6,6 +6,7 @@ import { parse } from '@Helpers/matchUpFormatCode/parse';
 import type { ScoredSet, SideNumber } from '@Assemblies/engines/scoring/v2/types';
 import type { MatchRule } from '@Assemblies/engines/scoring/v2/format';
 import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
+import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 
 type StaticSet = {
   setNumber?: number;
@@ -35,7 +36,7 @@ export type OvertimeScoreVerdict =
  *   carry a winner where the sporting score is level, so the level-finish refusal does not apply to it.
  */
 export function overtimeScoreVerdict(params: {
-  matchUpStatus?: string;
+  matchUpStatus?: MatchUpStatusUnion;
   matchUpFormat?: string;
   winningSide?: number;
   sets?: StaticSet[];

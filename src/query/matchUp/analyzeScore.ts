@@ -200,7 +200,7 @@ export function analyzeScore({
   // ending keeps its stated winner, as below
   const overtime = overtimeScoreVerdict({
     decidedIn: (score as { overtime?: { decidedIn?: string } } | undefined)?.overtime?.decidedIn,
-    matchUpStatus: relevantMatchUpStatus,
+    matchUpStatus: isMatchUpStatus(relevantMatchUpStatus) ? relevantMatchUpStatus : undefined,
     matchUpFormat,
     winningSide,
     sets,
