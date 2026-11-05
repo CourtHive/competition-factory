@@ -2,7 +2,7 @@ import { tiebreakSetGames, isTiebreakGamesScore } from '@Helpers/matchUpFormatCo
 import { getWinningSide } from './winningSide';
 import { ensureInt } from '@Tools/ensureInt';
 
-import { SPACE_CHARACTER, SET_TIEBREAK_BRACKETS } from './constants';
+import { SPACE_CHARACTER, SET_TIEBREAK_BRACKETS } from '@Constants/keyValueConstants';
 
 export function processIncompleteSetScore({ analysis, scoreString, sets, value }) {
   let updated;

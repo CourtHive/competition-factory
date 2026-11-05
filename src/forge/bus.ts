@@ -29,8 +29,8 @@
  * `unknown` and consumers cast at the call site.
  */
 
+import type { Topic, TopicPayloadMap } from '@Types/topicTypes';
 import { setSubscriptions } from '@Global/state/globalState';
-import type { Topic, TopicPayloadMap } from './topicTypes';
 
 export type Unsubscribe = () => void;
 type AnyHandler = (payload: any) => void;

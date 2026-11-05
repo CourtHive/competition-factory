@@ -1,15 +1,15 @@
+import { dateStringDaysChange, extractDate, extractTime } from '@Tools/dateTime';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { dateStringDaysChange, extractDate, extractTime } from '@Tools/dateTime';
-import { validTimeString } from '@Validators/regex';
+import { validTimeString } from '@Tools/dateTimePatterns';
 
 // constants and types
 import { END_DATE, END_TIME, START_TIME } from '@Constants/timeItemConstants';
 import { ANACHRONISM } from '@Constants/errorConditionConstants';
-import { BYE } from '@Constants/matchUpStatusConstants';
 import { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
+import { BYE } from '@Constants/matchUpStatusConstants';
 import { ResultType } from '@Types/factoryTypes';
 
 /**

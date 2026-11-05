@@ -11,7 +11,7 @@ import {
   STATUS_RETIREMENT,
   STATUS_SUSPENDED,
   STATUS_INTERRUPTED,
-} from '@Helpers/keyValueScore/constants';
+} from '@Constants/keyValueConstants';
 
 export function stressTests({ matchUpFormat, setTo, games2Win = 2 }) {
   singleSetStressTests({ matchUpFormat, setTo });

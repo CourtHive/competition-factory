@@ -22,7 +22,7 @@
 import { isISODateString } from '@Tools/dateTime';
 
 // types
-import type { DrawPublishingDetails } from '@Mutate/publishing/publishEvent';
+import type { DrawPublishingDetails } from '@Types/publishingTypes';
 
 export interface MatchUpPublishState {
   published: boolean;

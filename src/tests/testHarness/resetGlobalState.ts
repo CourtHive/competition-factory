@@ -18,6 +18,7 @@ import {
   deleteNotices,
   setGlobalLog,
   setDeepCopy,
+  timeKeeper,
 } from '@Global/state/globalState';
 
 /**
@@ -46,6 +47,7 @@ setCallRandomSource(undefined);
 setSaveDrawDeletions(undefined);
 setAuditAuthorityServer(undefined);
 setDeepCopy(true, { stringify: [], ignore: [], toJSON: [], threshold: undefined });
+timeKeeper('reset', 'allTimers'); // a timer another file started is not this file's
 
 setTournamentRecords({});
 setSubscriptions({ subscriptions: {} });

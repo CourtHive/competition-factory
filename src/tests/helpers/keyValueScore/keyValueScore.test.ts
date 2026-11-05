@@ -4,7 +4,7 @@ import { expect, it } from 'vitest';
 // constants and fixtures
 import { INCOMPLETE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import { FORMAT_STANDARD, TIMED20 } from '@Fixtures/scoring/matchUpFormats';
-import { OUTCOME_COMPLETE } from '@Helpers/keyValueScore/constants';
+import { OUTCOME_COMPLETE } from '@Constants/keyValueConstants';
 
 function enterKeyValues(params) {
   const { matchUpFormat, shiftFirst, valuePairs } = params;

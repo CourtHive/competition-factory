@@ -14,9 +14,9 @@
  * needs an offset or an absolute moment — `timeZone` / `zonedDateTime`.
  */
 
+import { timeValidation } from '@Tools/dateTimePatterns';
 import { canonicalTime } from '@Tools/canonicalClock';
 import { zeroPad } from '@Tools/dateTimeInternals';
-import { timeValidation } from '@Validators/regex';
 import { extractDate } from '@Tools/plainDate';
 
 /** Whether a value is a time (`canonicalClock.ts`: `HH:MM` and the forms that convert to it unambiguously). */

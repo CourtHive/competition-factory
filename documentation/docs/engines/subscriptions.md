@@ -180,4 +180,4 @@ const matchUp = await tournamentEngine.waitFor('modifyMatchUp', (p) => p.matchUp
 
 **Interop with `setSubscriptions`:** the bus claims the underlying single-callback slot on first `on()` for a topic. Don't mix the two APIs on the same topic — use one or the other.
 
-See `src/forge/bus.ts` for the implementation and `src/forge/topicTypes.ts` for the payload map.
+See `src/forge/bus.ts` for the implementation and `src/types/topicTypes.ts` for the payload map.

@@ -1,9 +1,19 @@
 import { formatPersonName } from './formatPersonName';
 
-// constants
+// constants and types
 import { INDIVIDUAL, PAIR, TEAM_PARTICIPANT } from '@Constants/participantConstants';
+import { Participant } from '@Types/tournamentTypes';
 
-export function formatParticipantName({ participantMap, participant, formats }) {
+/** How a participant type's names are written: a person format (e.g. `LAST, F.`) and a doubles joiner. */
+export type ParticipantNameFormats = { [participantType: string]: { personFormat: string; doublesJoiner?: string } };
+
+type FormatParticipantNameArgs = {
+  participantMap: { [participantId: string]: Participant };
+  formats: ParticipantNameFormats;
+  participant: Participant;
+};
+
+export function formatParticipantName({ participantMap, participant, formats }: FormatParticipantNameArgs) {
   const { participantType, individualParticipantIds, person } = participant;
   const format = participantType && formats[participantType];
   if (participantType === TEAM_PARTICIPANT) return;
@@ -18,7 +28,7 @@ export function formatParticipantName({ participantMap, participant, formats }) 
     }
     if (participantType === PAIR) {
       participant.participantName = individualParticipantIds
-        ?.map((id) => {
+        ?.map((id: string) => {
           const individual = participantMap[id];
           const person = individual?.person;
           const hasPersonName = person?.standardGivenName || person?.standardFamilyName;

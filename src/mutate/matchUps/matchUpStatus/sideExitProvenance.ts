@@ -1,5 +1,5 @@
-import { OUTCOME_DEFAULT, OUTCOME_RETIREMENT, OUTCOME_WALKOVER } from '@Helpers/keyValueScore/constants';
 import { getSideDrawPosition, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
+import { OUTCOME_DEFAULT, OUTCOME_RETIREMENT, OUTCOME_WALKOVER } from '@Constants/keyValueConstants';
 import { cameDownLoserLink } from '@Mutate/matchUps/drawPositions/cameDownLoserLink';
 import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';

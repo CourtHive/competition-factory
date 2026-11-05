@@ -2,7 +2,7 @@ import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { isConvertableInteger } from '@Tools/math';
 
 // types
-import type { PublishingDetail } from '@Mutate/publishing/publishEvent';
+import type { PublishingDetail } from '@Types/publishingTypes';
 
 /**
  * Withhold the rounds of an AD_HOC structure beyond its published `roundLimit`.

@@ -12,7 +12,7 @@ import {
 
 // constants
 import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { OUTCOME_WALKOVER } from '@Helpers/keyValueScore/constants';
+import { OUTCOME_WALKOVER } from '@Constants/keyValueConstants';
 
 /**
  * Every code in a deployed production vocabulary must survive every shape it can take.

@@ -1,9 +1,10 @@
-import { formatParticipantName } from '@Assemblies/generators/participants/formatParticipantName';
 import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotifications';
+import { formatParticipantName } from '@Helpers/participants/formatParticipantName';
 import { createMap, isObject } from '@Tools/objects';
 
 // constants and types
 import { MISSING_TOURNAMENT_RECORD, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import type { ParticipantNameFormats } from '@Helpers/participants/formatParticipantName';
 import { SUCCESS } from '@Constants/resultConstants';
 import { Tournament } from '@Types/tournamentTypes';
 
@@ -18,7 +19,7 @@ import { Tournament } from '@Types/tournamentTypes';
  */
 
 type RegenArgs = {
-  formats: { [key: string]: { personFormat: string; doublesJoiner: string } }[];
+  formats: ParticipantNameFormats;
   tournamentRecord: Tournament;
 };
 

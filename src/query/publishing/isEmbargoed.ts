@@ -1,4 +1,4 @@
-import { PublishingDetail } from '@Mutate/publishing/publishEvent';
+import { PublishingDetail } from '@Types/publishingTypes';
 import { isISODateString } from '@Tools/dateTime';
 import { competitionNowMs } from '@Tools/clock';
 
