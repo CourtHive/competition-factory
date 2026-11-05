@@ -14,6 +14,12 @@ Each side moves by `K × (actual − expected)` from the ratings before the resu
 - **actual**: 1 for a win and 0 for a loss, unless the policy grades the win;
 - **K**: one value for both sides (the update is then zero-sum), or each player's own.
 
+## Who is rated, and in what order
+
+- **A run carries ratings forward.** matchUps are rated in order, and each starts from the rating an earlier matchUp in the same run produced, whether or not the run writes them (`updateParticipantRatings`).
+- **A pair is rated as its two players.** The side's rating is their average, and each player moves by their own K against it, so under one K both partners move by the same amount (the practice UTR publishes). The pair participant itself is not rated.
+- **An individual or a team** is rated as that participant.
+
 ## Which policy applies
 
 For each matchUp, the first found:
