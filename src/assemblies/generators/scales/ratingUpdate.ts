@@ -37,13 +37,26 @@ export function expectedResult(rating: number, opponentRating: number, expectati
   return 1 / (1 + Math.pow(expectation.base, -gap / expectation.spread));
 }
 
-/** The standard normal distribution function (Abramowitz and Stegun 7.1.26: absolute error under 1.5e-7). */
+/** The standard normal distribution function Φ, to about double precision. */
 export function normalCdf(x: number): number {
-  const z = Math.abs(x) / Math.SQRT2;
-  const t = 1 / (1 + 0.3275911 * z);
-  const polynomial = t * (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))));
-  const erf = 1 - polynomial * Math.exp(-z * z);
+  const erf = erfOf(Math.abs(x) / Math.SQRT2);
   return x >= 0 ? (1 + erf) / 2 : (1 - erf) / 2;
+}
+
+// erf(z) for z ≥ 0: its Maclaurin series below 3, and 1 − erfc(z) by erfc's continued fraction above
+function erfOf(z: number): number {
+  if (z < 3) {
+    let term = z;
+    let sum = z;
+    for (let n = 1; Math.abs(term) > 1e-17 * Math.abs(sum); n += 1) {
+      term *= (-z * z) / n;
+      sum += term / (2 * n + 1);
+    }
+    return (2 / Math.sqrt(Math.PI)) * sum;
+  }
+  let fraction = z;
+  for (let k = 60; k >= 1; k -= 1) fraction = z + k / 2 / fraction;
+  return 1 - Math.exp(-z * z) / (Math.sqrt(Math.PI) * fraction);
 }
 
 /**

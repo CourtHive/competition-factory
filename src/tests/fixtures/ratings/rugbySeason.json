@@ -1,0 +1,81 @@
+{
+  "sport": "rugby",
+  "policy": "POLICY_RATINGS_WORLD_RUGBY",
+  "ratingType": "WORLD_RUGBY",
+  "k": 2,
+  "start": 30,
+  "matchUpFormat": "SET1A-S:T80P",
+  "description": "A rugby union championship: six teams, fifteen matches, one draw. Final scores only, recorded as one segment.",
+  "matches": [
+    {
+      "sides": ["Team 01", "Team 02"],
+      "sets": [[17, 38]]
+    },
+    {
+      "sides": ["Team 03", "Team 04"],
+      "sets": [[24, 27]]
+    },
+    {
+      "sides": ["Team 05", "Team 06"],
+      "sets": [[26, 27]]
+    },
+    {
+      "sides": ["Team 06", "Team 01"],
+      "sets": [[16, 20]]
+    },
+    {
+      "sides": ["Team 04", "Team 05"],
+      "sets": [[16, 14]]
+    },
+    {
+      "sides": ["Team 02", "Team 03"],
+      "sets": [[36, 0]]
+    },
+    {
+      "sides": ["Team 02", "Team 05"],
+      "sets": [[31, 7]]
+    },
+    {
+      "sides": ["Team 06", "Team 04"],
+      "sets": [[30, 21]]
+    },
+    {
+      "sides": ["Team 01", "Team 03"],
+      "sets": [[13, 13]]
+    },
+    {
+      "sides": ["Team 03", "Team 06"],
+      "sets": [[31, 29]]
+    },
+    {
+      "sides": ["Team 04", "Team 02"],
+      "sets": [[23, 22]]
+    },
+    {
+      "sides": ["Team 05", "Team 01"],
+      "sets": [[24, 45]]
+    },
+    {
+      "sides": ["Team 05", "Team 03"],
+      "sets": [[21, 24]]
+    },
+    {
+      "sides": ["Team 02", "Team 06"],
+      "sets": [[17, 13]]
+    },
+    {
+      "sides": ["Team 01", "Team 04"],
+      "sets": [[33, 31]]
+    }
+  ],
+  "teams": ["Team 01", "Team 02", "Team 03", "Team 04", "Team 05", "Team 06"],
+  "source": "Anonymised public results; expected values from an independent implementation of the published method, with the factory storage rounding.",
+  "expected": {
+    "Team 01": 31.84,
+    "Team 02": 32.93,
+    "Team 03": 30.04,
+    "Team 04": 30.77,
+    "Team 05": 25.51,
+    "Team 06": 28.91
+  }
+}

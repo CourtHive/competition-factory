@@ -1,0 +1,144 @@
+{
+  "sport": "nfl",
+  "policy": "POLICY_RATINGS_ELO_538_NFL",
+  "ratingType": "ELO",
+  "k": 20,
+  "start": 1500,
+  "matchUpFormat": "SET1A-S:T60P",
+  "description": "One week of an American football season: thirty-two teams, sixteen games, one won in overtime. Final scores, recorded as one segment.",
+  "matches": [
+    {
+      "sides": ["Team 01", "Team 02"],
+      "sets": [[20, 21]]
+    },
+    {
+      "sides": ["Team 03", "Team 04"],
+      "sets": [[24, 10]]
+    },
+    {
+      "sides": ["Team 05", "Team 06"],
+      "sets": [[24, 3]]
+    },
+    {
+      "sides": ["Team 07", "Team 08"],
+      "sets": [[21, 31]]
+    },
+    {
+      "sides": ["Team 09", "Team 10"],
+      "sets": [[17, 20]]
+    },
+    {
+      "sides": ["Team 11", "Team 12"],
+      "sets": [[16, 15]]
+    },
+    {
+      "sides": ["Team 13", "Team 14"],
+      "sets": [[7, 30]]
+    },
+    {
+      "sides": ["Team 15", "Team 16"],
+      "sets": [[20, 16]]
+    },
+    {
+      "sides": ["Team 17", "Team 18"],
+      "sets": [[25, 9]]
+    },
+    {
+      "sides": ["Team 19", "Team 20"],
+      "sets": [[20, 38]]
+    },
+    {
+      "sides": ["Team 21", "Team 22"],
+      "sets": [[16, 17]]
+    },
+    {
+      "sides": ["Team 23", "Team 24"],
+      "sets": [[20, 25]]
+    },
+    {
+      "sides": ["Team 25", "Team 26"],
+      "sets": [[34, 36]]
+    },
+    {
+      "sides": ["Team 27", "Team 28"],
+      "sets": [[13, 30]]
+    },
+    {
+      "sides": ["Team 29", "Team 30"],
+      "sets": [[0, 40]]
+    },
+    {
+      "sides": ["Team 31", "Team 32"],
+      "sets": [[22, 16]]
+    }
+  ],
+  "teams": [
+    "Team 01",
+    "Team 02",
+    "Team 03",
+    "Team 04",
+    "Team 05",
+    "Team 06",
+    "Team 07",
+    "Team 08",
+    "Team 09",
+    "Team 10",
+    "Team 11",
+    "Team 12",
+    "Team 13",
+    "Team 14",
+    "Team 15",
+    "Team 16",
+    "Team 17",
+    "Team 18",
+    "Team 19",
+    "Team 20",
+    "Team 21",
+    "Team 22",
+    "Team 23",
+    "Team 24",
+    "Team 25",
+    "Team 26",
+    "Team 27",
+    "Team 28",
+    "Team 29",
+    "Team 30",
+    "Team 31",
+    "Team 32"
+  ],
+  "source": "Anonymised public results; expected values from an independent implementation of the published method, with the factory storage rounding.",
+  "expected": {
+    "Team 01": 1493.0,
+    "Team 02": 1507.0,
+    "Team 03": 1527.0,
+    "Team 04": 1473.0,
+    "Team 05": 1531.0,
+    "Team 06": 1469.0,
+    "Team 07": 1476.0,
+    "Team 08": 1524.0,
+    "Team 09": 1486.0,
+    "Team 10": 1514.0,
+    "Team 11": 1507.0,
+    "Team 12": 1493.0,
+    "Team 13": 1468.0,
+    "Team 14": 1532.0,
+    "Team 15": 1516.0,
+    "Team 16": 1484.0,
+    "Team 17": 1528.0,
+    "Team 18": 1472.0,
+    "Team 19": 1471.0,
+    "Team 20": 1529.0,
+    "Team 21": 1493.0,
+    "Team 22": 1507.0,
+    "Team 23": 1482.0,
+    "Team 24": 1518.0,
+    "Team 25": 1489.0,
+    "Team 26": 1511.0,
+    "Team 27": 1471.0,
+    "Team 28": 1529.0,
+    "Team 29": 1463.0,
+    "Team 30": 1537.0,
+    "Team 31": 1519.0,
+    "Team 32": 1481.0
+  }
+}
