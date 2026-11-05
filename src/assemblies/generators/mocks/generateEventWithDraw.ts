@@ -2,7 +2,7 @@ import { generateDrawDefinition } from '@Generators/drawDefinitions/generateDraw
 import { drawMatic } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/drawMatic';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
-import { completeDrawMatchUps } from '@Mutate/simulation/completeDrawMatchUps';
+import { completeDrawMatchUps } from '@Generators/simulation/completeDrawMatchUps';
 import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { resolveCompletionOptions } from './resolveCompletionOptions';
 import { addEventTimeItem } from '@Mutate/timeItems/addTimeItem';

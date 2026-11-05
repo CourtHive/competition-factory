@@ -89,12 +89,12 @@ export { sanctioningEngine } from './assemblies/engines/sanctioning';
 export { officiatingEngine } from './assemblies/engines/officiating';
 
 // ENGINES - For backwards compatibility ---------------------------------
-// Typed defaults — see `tests/engines/syncEngine/index.ts` for the rationale
+// Typed defaults — see `assemblies/engines/sync/assembled.ts` for the rationale
 // and for the `Untyped` opt-out variants for consumers still on the pre-5.x
 // open shape (e.g. third-party packages without TypeScript or with implicit-any
 // reliance — same runtime singleton, looser type).
-export { competitionEngine, tournamentEngine } from './tests/engines/syncEngine';
-export { competitionEngineUntyped, tournamentEngineUntyped } from './tests/engines/syncEngine';
+export { competitionEngine, tournamentEngine } from './assemblies/engines/sync/assembled';
+export { competitionEngineUntyped, tournamentEngineUntyped } from './assemblies/engines/sync/assembled';
 // Async variants — same governor surface as competitionEngine /
 // tournamentEngine, but built atop `asyncEngine()` so each consumer
 // gets per-request state isolation via Node's async_hooks. Use these

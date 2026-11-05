@@ -1,6 +1,6 @@
-import { generateBlockPattern, getSubBlock } from '@Assemblies/generators/drawDefinitions/generateBlockPattern';
 import { getPositionAssignments, structureAssignedDrawPositions } from './positionsGetter';
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
+import { generateBlockPattern, getSubBlock } from '@Helpers/seeding/generateBlockPattern';
 import { getSeedBlocks, getSeedGroups } from '@Query/drawDefinition/getSeedBlocks';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getNumericSeedValue } from '@Query/drawDefinition/getNumericSeedValue';

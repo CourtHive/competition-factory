@@ -1,5 +1,5 @@
-import { generateQualifyingStructure } from '@Assemblies/generators/drawDefinitions/drawTypes/generateQualifyingStructure';
-import { attachQualifyingStructure } from './attachQualifyingStructure';
+import { generateQualifyingStructure } from '@Generators/drawDefinitions/drawTypes/generateQualifyingStructure';
+import { attachQualifyingStructure } from '@Mutate/drawDefinitions/attachQualifyingStructure';
 
 // constants and types
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';

@@ -1,4 +1,4 @@
-import { visualizeScheduledMatchUps } from '@Tests/testHarness/testUtilities/visualizeScheduledMatchUps';
+import { visualizeScheduledMatchUps } from '@Assemblies/tools/visualizeScheduledMatchUps';
 import { extractDate, timeStringMinutes } from '@Tools/dateTime';
 import { mocksEngine, competitionEngine } from '../../..';
 import { hasSchedule } from '@Query/matchUp/hasSchedule';

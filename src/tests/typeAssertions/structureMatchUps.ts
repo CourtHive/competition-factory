@@ -1,9 +1,9 @@
 /** Compiler assertions for the tie-inclusive getter boundary; imported by nothing. */
 import { includesMatchUpStatuses } from '@Mutate/drawDefinitions/matchUpGovernor/includesMatchUpStatuses';
-import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
+import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
 import type { Structure, MatchUp } from '@Types/tournamentTypes';
+import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import type { HydratedMatchUp } from '@Types/hydrated';
 
 type IsAny<T> = 0 extends 1 & T ? true : false;

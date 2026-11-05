@@ -1,4 +1,4 @@
-import { completeDrawMatchUps } from '@Mutate/simulation/completeDrawMatchUps';
+import { completeDrawMatchUps } from '@Generators/simulation/completeDrawMatchUps';
 import { chunkArray, generateRange } from '@Tools/arrays';
 import { timeKeeper } from '@Global/state/globalState';
 import { participantHeadToHead } from '../headToHead';

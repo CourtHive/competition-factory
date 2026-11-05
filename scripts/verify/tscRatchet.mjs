@@ -27,7 +27,7 @@
  *                 `src/types` in which `Structure` and `DrawLink` are the 8.0.0 HARD unions (the `never`
  *                 fields deleted). It holds stage 1 of Mentat/planning/FACTORY_STRUCTURE_UNIONS_8_0_0.md:
  *                 a site converted to read through `matchUpsOf`/`positionAssignmentsOf`/`structuresOf` cannot
- *                 quietly go back. `src/types/typeAssertions` is not counted (its soft-form assertions fail
+ *                 quietly go back. `src/tests/typeAssertions` is not counted (its soft-form assertions fail
  *                 under the hard form by design). At 0 everywhere, 8.0.0 can delete the `never` fields.
  *
  * Run:        node scripts/verify/tscRatchet.mjs <implicit-any|hard-union> [--update-baseline [--accept-rise]]
@@ -56,7 +56,7 @@ const COUNTS = {
     prepare: prepareHardUnion,
     keyOf: (file) => dirname(file),
     counts: () => true,
-    include: (key) => key.startsWith('src/') && !key.startsWith('src/types/typeAssertions'),
+    include: (key) => key.startsWith('src/') && !key.startsWith('src/tests/typeAssertions'),
     fix: 'Read the structure through matchUpsOf/positionAssignmentsOf/structuresOf (@Helpers/drawTopology/structureMembers), or narrow on structureType first.',
   },
 };

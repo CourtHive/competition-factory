@@ -1,5 +1,5 @@
+import { completeDrawMatchUps } from '@Generators/simulation/completeDrawMatchUps';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
-import { completeDrawMatchUps } from '@Mutate/simulation/completeDrawMatchUps';
 import { validMatchUp, validMatchUps } from '@Validators/validMatchUp';
 import { intersection, unique } from '@Tools/arrays';
 import mocksEngine from '@Assemblies/engines/mock';

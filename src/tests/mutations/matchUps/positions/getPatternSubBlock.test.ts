@@ -1,4 +1,4 @@
-import { getSubBlock } from '@Assemblies/generators/drawDefinitions/generateBlockPattern';
+import { getSubBlock } from '@Helpers/seeding/generateBlockPattern';
 import { generateRange } from '@Tools/arrays';
 import { expect, test } from 'vitest';
 

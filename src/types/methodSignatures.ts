@@ -20,6 +20,8 @@
 
 import type { EngineMethod } from './factoryTypes';
 
+import type { getRotatingPartnerRoundPreview } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/getRotatingPartnerRoundPreview';
+import type { generateRotatingPartnerRound } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/generateRotatingPartnerRound';
 import type { generateAmericanoPairings } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/generateAmericanoPairings';
 import type { generateMexicanoPairings } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/generateMexicanoPairings';
 import type { getEligibleVoluntaryConsolationParticipants } from '@Query/drawDefinition/getEligibleVoluntaryConsolationParticipants';
@@ -76,6 +78,7 @@ import type { getCompetitionLeaderboard } from '@Query/drawDefinition/competitio
 import type { getRotatingPartnerScoringPolicy } from '@Query/drawDefinition/getRotatingPartnerScoringPolicy';
 import type { getEligibleEvents, getParticipantEligibility } from '@Query/entries/getParticipantEligibility';
 import type { getParticipantRest, getParticipantsRest } from '@Query/matchUps/scheduling/getParticipantRest';
+import type { addQualifyingStructure } from '@Generators/drawDefinitions/structures/addQualifyingStructure';
 import type { replaceTieMatchUpParticipantId } from '@Mutate/matchUps/lineUps/replaceTieMatchUpParticipant';
 import type { modifyParticipantsPaymentStatus } from '@Mutate/participants/modifyParticipantsPaymentStatus';
 import type { getEntryFeeRange, isIndeterminateFee, resolveEntryFee } from '@Query/entries/resolveEntryFee';
@@ -87,7 +90,6 @@ import type { remapDrawDefinitionMatchUpIds } from '@Mutate/drawDefinitions/rema
 import type { removeMatchUpCourtAssignment } from '@Mutate/matchUps/schedule/removeMatchUpCourtAssignment';
 import type { proColumnResolve } from '@Mutate/matchUps/schedule/schedulers/proScheduler/proColumnResolve';
 import type { createTeamsFromParticipantAttributes } from '@Mutate/participants/createTeamsFromAttributes';
-import type { getRotatingPartnerRoundPreview } from '@Query/drawDefinition/getRotatingPartnerRoundPreview';
 import type { getMatchUpFormatTiming } from '@Query/extensions/matchUpFormatTiming/getMatchUpFormatTiming';
 import type { getScheduleScenarioStatus } from '@Query/matchUps/scheduling/scheduleScenarioReconciliation';
 import type { qualifierProgression } from '@Mutate/drawDefinitions/positionGovernor/qualifierProgression';
@@ -100,11 +102,11 @@ import type { addTournamentOtherId, setTournamentOtherIds } from '@Mutate/tourna
 import type { removeVenueTransit, setVenueTransit, setVenueTransits } from '@Mutate/venues/venueTransits';
 import type { getTournamentActionableMatchUps } from '@Query/tournaments/getTournamentActionableMatchUps';
 import type { anonymizeTournamentRecord } from '@Generators/tournamentRecords/anonymizeTournamentRecord';
-import type { generateRotatingPartnerRound } from '@Mutate/drawDefinitions/generateRotatingPartnerRound';
 import type { removeDrawPositionAssignment } from '@Mutate/drawDefinitions/removeDrawPositionAssignment';
 import type { proAutoSchedule } from '@Mutate/matchUps/schedule/schedulers/proScheduler/proAutoSchedule';
 import type { getAvailableQualifyingTargets } from '@Query/drawDefinition/getAvailableQualifyingTargets';
 import type { getRotatingPartnerTallyPolicy } from '@Query/drawDefinition/getRotatingPartnerTallyPolicy';
+import type { addPlayoffStructures } from '@Generators/drawDefinitions/structures/addPlayoffStructures';
 import type { addElementExtension, removeElementExtension } from '@Mutate/extensions/elementExtensions';
 import type { alternateDrawPositionAssignment } from '@Mutate/matchUps/drawPositions/positionAlternate';
 import type { qualifierDrawPositionAssignment } from '@Mutate/matchUps/drawPositions/positionQualifier';
@@ -204,7 +206,6 @@ import type { setPracticeDefaultCapacity } from '@Mutate/practice/setPracticeDef
 import type { updatePracticeRegistration } from '@Mutate/practice/updatePracticeRegistration';
 import type { getOfficialCertifications } from '@Query/officiating/getOfficialCertifications';
 import type { getTournamentCompleteness } from '@Query/tournaments/getTournamentCompleteness';
-import type { addQualifyingStructure } from '@Mutate/drawDefinitions/addQualifyingStructure';
 import type { destroyPairEntries, destroyPairEntry } from '@Mutate/entries/destroyPairEntry';
 import type { setEntryPosition, setEntryPositions } from '@Mutate/entries/setEntryPositions';
 import type { applyScheduleScenario } from '@Mutate/matchUps/schedule/applyScheduleScenario';
@@ -257,7 +258,6 @@ import type { getMatchUpReadiness } from '@Query/matchUps/scheduling/getMatchUpR
 import type { getParticipantScaleItem } from '@Query/participant/getParticipantScaleItem';
 import type { getAvailableTransitions } from '@Query/sanctioning/getAvailableTransitions';
 import type { getCompetitionDateRange } from '@Query/tournaments/getCompetitionDateRange';
-import type { addPlayoffStructures } from '@Mutate/drawDefinitions/addPlayoffStructures';
 import type { automatedPositioning } from '@Mutate/drawDefinitions/automatedPositioning';
 import type { luckyDrawAdvancement } from '@Mutate/drawDefinitions/luckyDrawAdvancement';
 import type { modifyDrawDefinition } from '@Mutate/drawDefinitions/modifyDrawDefinition';
@@ -274,6 +274,7 @@ import type { getPositionsPlayedOff } from '@Query/drawDefinition/getPositionsPl
 import type { getTournamentPenalties } from '@Query/participants/getTournamentPenalties';
 import type { getPracticeRegistrations } from '@Query/practice/getPracticeRegistrations';
 import type { getRoundVisibilityState } from '@Query/publishing/getRoundVisibilityState';
+import type { completeDrawMatchUps } from '@Generators/simulation/completeDrawMatchUps';
 import type { resetMatchUpLineUps } from '@Mutate/matchUps/lineUps/resetMatchUpLineUps';
 import type { setMatchUpFormat } from '@Mutate/matchUps/matchUpFormat/setMatchUpFormat';
 import type { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
@@ -340,7 +341,6 @@ import type { isTournamentPublished } from '@Query/publishing/isTournamentPublis
 import type { getAggregateTeamResults } from '@Query/scales/getAggregateTeamResults';
 import type { validateScheduleScenario } from '@Validators/validateScheduleScenario';
 import type { hydrateTournamentRecord } from '@Mutate/base/hydrateTournamentRecord';
-import type { completeDrawMatchUps } from '@Mutate/simulation/completeDrawMatchUps';
 import type { removeCourtGridBooking } from '@Mutate/venues/removeCourtGridBooking';
 import type { getEntryStatusOrdinals } from '@Query/entries/getEntryStatusOrdinals';
 import type { getEventInconsistencies } from '@Query/event/getEventInconsistencies';
@@ -651,6 +651,10 @@ import type {
   setTournamentTier,
 } from '@Mutate/tournaments/tournamentDetails';
 import type {
+  addLinkedConsolationStructure,
+  generateConsolationStructure,
+} from '@Generators/drawDefinitions/structures/addLinkedConsolationStructure';
+import type {
   getDrawDefinitionTimeItem,
   getEventTimeItem,
   getParticipantTimeItem,
@@ -680,10 +684,6 @@ import type {
   removeIndividualParticipantIds,
   removeParticipantIdsFromAllTeams,
 } from '@Mutate/participants/removeIndividualParticipantIds';
-import type {
-  addLinkedConsolationStructure,
-  generateConsolationStructure,
-} from '@Mutate/drawDefinitions/addLinkedConsolationStructure';
 import type {
   attachConsolationStructures,
   attachPlayoffStructures,

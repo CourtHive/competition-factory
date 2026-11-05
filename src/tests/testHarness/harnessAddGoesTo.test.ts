@@ -1,4 +1,4 @@
-import { visualizeScheduledMatchUps } from './testUtilities/visualizeScheduledMatchUps';
+import { visualizeScheduledMatchUps } from '@Assemblies/tools/visualizeScheduledMatchUps';
 import { extractTime, timeStringMinutes } from '@Tools/dateTime';
 import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import competitionEngine from '@Engines/syncEngine';

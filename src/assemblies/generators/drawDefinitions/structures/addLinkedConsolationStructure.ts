@@ -1,7 +1,7 @@
-import { getGenerators } from '@Assemblies/generators/drawDefinitions/getGenerators';
+import { attachConsolationStructures } from '@Mutate/drawDefinitions/attachStructures';
+import { getGenerators } from '@Generators/drawDefinitions/getGenerators';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { attachConsolationStructures } from './attachStructures';
 import { findStructure } from '@Acquire/findStructure';
 import { constantToString } from '@Tools/strings';
 

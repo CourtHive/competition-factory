@@ -1,6 +1,6 @@
-import { getRotatingPartnerRoundPreview } from '@Query/drawDefinition/getRotatingPartnerRoundPreview';
+import { getRotatingPartnerRoundPreview } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/getRotatingPartnerRoundPreview';
+import { generateRotatingPartnerRound } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/generateRotatingPartnerRound';
 import { setSubscriptions, deleteNotices, getPayloads, setDeepCopy } from '@Global/state/globalState';
-import { generateRotatingPartnerRound } from '@Mutate/drawDefinitions/generateRotatingPartnerRound';
 import { removeCompetitionProfile } from '@Mutate/drawDefinitions/competitionProfile';
 import { writeModeMatrix } from '@Tests/testHarness/writeModeMatrix';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';

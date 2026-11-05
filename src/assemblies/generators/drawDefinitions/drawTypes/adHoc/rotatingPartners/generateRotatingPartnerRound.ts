@@ -9,11 +9,11 @@ import { addNotice } from '@Global/state/globalState';
 import {
   appliedRotatingPartnerRoundsAreIntact,
   getRotatingPartnerRoundPreview,
-} from '@Query/drawDefinition/getRotatingPartnerRoundPreview';
+} from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/getRotatingPartnerRoundPreview';
 
 // constants and types
+import type { RotatingPartnerRoundArgs } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/getRotatingPartnerRoundPreview';
 import type { RotatingPartnerRound } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/rotatingPartnerTypes';
-import type { RotatingPartnerRoundArgs } from '@Query/drawDefinition/getRotatingPartnerRoundPreview';
 import type { RotatingPartnerScoreContract } from '@Types/rotatingPartnerScoring';
 import type { RotatingPartnerRoundRecord } from '@Types/rotatingPartnerRound';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';

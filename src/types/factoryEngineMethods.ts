@@ -1,6 +1,6 @@
 /**
  * AUTO-GENERATED — do not edit by hand.
- * Source: src/tests/engines/syncEngine + src/assemblies/governors
+ * Source: src/assemblies/engines/sync/assembled.ts + src/assemblies/governors
  * Regenerate: pnpm gen:engine-methods
  * Drift guard:  pnpm check:engine-methods
  */
