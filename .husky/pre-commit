@@ -8,3 +8,4 @@ pnpm verify:generated
 pnpm verify:implicit-any
 pnpm verify:hard-union
 pnpm verify:exit-tenant
+pnpm verify:layers
