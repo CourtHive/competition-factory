@@ -1,7 +1,8 @@
 import { matchesPlayedK } from './ratingUpdate';
 
 // types
-import type { RatingsActualRule, RatingsKRule } from '@Types/ratingsPolicyTypes';
+import type { RatingsActualRule, RatingsKRule, RatingsMarginRule } from '@Types/ratingsPolicyTypes';
+import type { TierClassification } from '@Types/tournamentTypes';
 import type { ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
 
 /** A side's K under the policy; `undefined` where MATCHES_PLAYED has no career count to read. */
@@ -30,4 +31,39 @@ export function winnerActualOf({
 }): number {
   if (rule.rule !== 'SETS_PLAYED_SHARE' || parsedFormat?.exactly !== undefined || parsedFormat?.aggregate) return 1;
   return SETS_PLAYED_SHARE[parsedFormat?.bestOf ?? 0]?.[loserSetsWon] ?? 1;
+}
+
+/** The K multiplier a margin rule gives; 1 where the rule has no margin to read. */
+export function marginMultiplier({
+  rule,
+  marginOfVictory,
+  winnerGameShare,
+  winnerEloDiff = 0,
+}: {
+  rule?: RatingsMarginRule;
+  marginOfVictory?: number;
+  winnerGameShare?: number;
+  winnerEloDiff?: number;
+}): number {
+  if (!rule) return 1;
+  if (rule.rule === 'WINNER_GAME_SHARE') return winnerGameShare ?? 1;
+  if (!marginOfVictory || marginOfVictory < 1) return 1;
+  if (rule.rule === 'GOAL_DIFFERENCE_STEPS') {
+    if (marginOfVictory === 1) return 1;
+    if (marginOfVictory === 2) return 1.5;
+    return (11 + marginOfVictory) / 8;
+  }
+  const { scale, offset, intercept, autocorrelation } = rule;
+  const mov = scale * Math.log(marginOfVictory + offset) + intercept;
+  return (mov * autocorrelation) / (winnerEloDiff * 0.001 + autocorrelation);
+}
+
+/** K for a tournament or event tier, keyed `system:value`: the event's tier first, then the tournament's. */
+export function tierK(kByTier: Record<string, number> | undefined, tiers: (TierClassification | undefined)[]) {
+  if (!kByTier) return undefined;
+  for (const tier of tiers) {
+    const k = tier && kByTier[`${tier.system}:${tier.value}`];
+    if (k !== undefined) return k;
+  }
+  return undefined;
 }
