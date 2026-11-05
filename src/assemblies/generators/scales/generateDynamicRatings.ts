@@ -321,8 +321,9 @@ function updateRatingsForMatchUp({
       const loserScaleValue = scaleItemMap[loserParticipantId]?.scaleValue;
       const loserRating = typeof loserScaleValue === 'object' ? loserScaleValue[accessor] : loserScaleValue;
 
-      const winnerCountables = winningSide ? countables[winningSide] : [0, 0];
-      const loserCountables = winningSide ? countables[3 - winningSide] : [0, 0];
+      // countables are per side, [side1, side2]: winningSide 1 is index 0 (it read the loser's count as the winner's)
+      const winnerCountables = countables[winningSide - 1];
+      const loserCountables = countables[2 - winningSide];
 
       const { newWinnerRating, newLoserRating } = calculateNewRatings({
         ratingType: computeRatingType,
