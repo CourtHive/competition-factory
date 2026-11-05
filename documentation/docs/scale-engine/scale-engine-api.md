@@ -340,7 +340,7 @@ See [Quality Win Points](/docs/scale-engine/quality-win-points) for detailed doc
 
 ### generateDynamicRatings
 
-Generates dynamic ELO-style ratings from completed matchUp results. Processes specified matchUps and calculates new rating values for all participants involved.
+Generates dynamic ELO-style ratings from completed matchUp results. Processes specified matchUps and calculates new rating values for all participants involved. How a rating moves is set by the [Ratings Policy](/docs/policies/ratingsPolicy); without one attached, `POLICY_RATINGS_DEFAULT` (Huang 2014: K = 25 for both players, the actual result by sets played). `considerGames` no longer has an effect.
 
 ```js
 const {
@@ -354,7 +354,8 @@ const {
   updateParticipantRatings, // optional boolean — modify tournament participants with new scaleItems
   removePriorValues, // optional boolean — defaults to true; remove prior scaleItems for same scaleName
   refreshDynamic, // optional boolean — ignore previously calculated dynamic values
-  considerGames, // optional boolean — use games instead of sets for calculation
+  ratingsPolicy, // optional — a ratings policy, ahead of one attached to the event or tournament; see Ratings Policy
+  matchesPlayed, // optional — { [participantId]: career matches played }, required by a MATCHES_PLAYED K
   asDynamic, // optional boolean — use DYNAMIC scaleName prefix
   drawDefinition, // optional — scope to a specific draw (used with refreshDynamic)
 });
@@ -362,7 +363,19 @@ const {
 
 ### calculateNewRatings
 
-Calculates updated ratings for two participants based on a match outcome.
+Calculates updated ratings for two participants based on a match outcome: each moves by `K × (actual − expected)`.
+
+```js
+const { newWinnerRating, newLoserRating } = scaleEngine.calculateNewRatings({
+  winnerRating, // required
+  loserRating, // required
+  ratingType, // optional — defaults to 'ELO'
+  winnerK, // optional — defaults to 25
+  loserK, // optional — defaults to winnerK
+  winnerActual, // optional — the winner's actual result, defaults to 1; the loser takes 1 − winnerActual
+  expectation, // optional — { rule: 'LOGISTIC', base: 10, spread: 400 }
+});
+```
 
 ---
 

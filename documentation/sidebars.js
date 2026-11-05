@@ -216,7 +216,12 @@ module.exports = {
             {
               type: 'category',
               label: 'Scoring & Ranking',
-              items: ['policies/scoringPolicy', 'policies/rankingPolicy', 'policies/competitiveBands'],
+              items: [
+                'policies/scoringPolicy',
+                'policies/rankingPolicy',
+                'policies/ratingsPolicy',
+                'policies/competitiveBands',
+              ],
             },
             {
               type: 'category',

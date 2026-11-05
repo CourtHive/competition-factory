@@ -400,9 +400,6 @@ describe('calculateNewRatings guard paths', () => {
     const result = calculateNewRatings({
       winnerRating: 1500,
       loserRating: 1400,
-      winnerCountables: 10,
-      loserCountables: 10,
-      maxCountables: 3,
       ratingType: 'NONEXISTENT',
       ratings: {},
     });
@@ -413,9 +410,7 @@ describe('calculateNewRatings guard paths', () => {
     const result = calculateNewRatings({
       winnerRating: 1500,
       loserRating: 1400,
-      winnerCountables: 10,
-      loserCountables: 10,
-      maxCountables: 3,
+      winnerK: 25,
       ratingType: ELO,
     });
     expect(result.newWinnerRating).toBeDefined();

@@ -8,7 +8,6 @@ import { attemptToSetMatchUpStatusBYE } from '@Mutate/matchUps/matchUpStatus/att
 import { enableTieAutoCalc } from '@Mutate/drawDefinitions/matchUpGovernor/enableTieAutoCalc';
 import { modifyParticipantOtherName } from '@Mutate/participants/modifyParticipantOtherName';
 import { regenerateParticipantNames } from '@Mutate/participants/regenerateParticipantNames';
-import { aggregateGames, aggregateSets } from '@Assemblies/generators/scales/aggregators';
 import { getParticipantMembership } from '@Query/participants/getParticipantMembership';
 import { getNumericSeedValue } from '@Query/drawDefinition/getNumericSeedValue';
 import { getHomeParticipantId } from '@Query/matchUp/getHomeParticipantId';
@@ -187,34 +186,6 @@ describe('getDrawIsPublished branch coverage', () => {
     const publishStatus = { drawIds: ['d1', 'd2'] };
     expect(getDrawIsPublished({ publishStatus, drawId: 'd1' })).toBe(true);
     expect(getDrawIsPublished({ publishStatus, drawId: 'd3' })).toBe(false);
-  });
-});
-
-describe('aggregators branch coverage', () => {
-  it('aggregateGames returns [0,0] for undefined sets', () => {
-    expect(aggregateGames(undefined)).toEqual([0, 0]);
-  });
-
-  it('aggregateGames sums scores from sets', () => {
-    const sets = [
-      { side1Score: 6, side2Score: 3 },
-      { side1Score: 7, side2Score: 5 },
-    ];
-    expect(aggregateGames(sets)).toEqual([13, 8]);
-  });
-
-  it('aggregateSets returns [0,0] for undefined sets', () => {
-    expect(aggregateSets(undefined)).toEqual([0, 0]);
-  });
-
-  it('aggregateSets counts winning sides', () => {
-    const sets = [{ winningSide: 1 }, { winningSide: 2 }, { winningSide: 1 }];
-    expect(aggregateSets(sets)).toEqual([2, 1]);
-  });
-
-  it('aggregateSets skips sets without winningSide', () => {
-    const sets = [{ winningSide: undefined }, { winningSide: 1 }];
-    expect(aggregateSets(sets)).toEqual([1, 0]);
   });
 });
 
