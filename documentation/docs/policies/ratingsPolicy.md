@@ -26,7 +26,17 @@ For each matchUp, the first found:
 
 1. a `ratingsPolicy` passed to `generateDynamicRatings`;
 2. a ratings policy attached to the matchUp's event, then to the tournament;
-3. `POLICY_RATINGS_DEFAULT`.
+3. the `ratingsPolicy` of the matchUp's `competitionFormat` (its structure's, then its drawDefinition's, then its event's): a preset by name, such as `'POLICY_RATINGS_ELO_538_NHL'`, or a policy inline;
+4. `POLICY_RATINGS_DEFAULT`.
+
+A preset name the factory does not know, or an inline policy without `expectation`, `k` and `actual`, refuses the run with `INVALID_VALUES` before anything is written.
+
+```js
+tournamentEngine.modifyEvent({
+  eventId,
+  eventUpdates: { competitionFormat: { sport: 'OTHER', ratingsPolicy: 'POLICY_RATINGS_ELO_538_NHL' } },
+});
+```
 
 ## Rules
 
