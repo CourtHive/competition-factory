@@ -372,7 +372,10 @@ const { newWinnerRating, newLoserRating } = scaleEngine.calculateNewRatings({
   ratingType, // optional — defaults to 'ELO'
   winnerKFactor, // optional — defaults to 25
   loserKFactor, // optional — defaults to winnerKFactor
-  winnerActual, // optional — the winner's actual result, defaults to 1; the loser takes 1 − winnerActual
+  winnerActual, // optional — the winner's actual result, defaults to 1
+  loserActual, // optional — the loser's, defaults to 1 − winnerActual (FIFA scores a shootout loser 0.5)
+  margin, // optional — { rule, marginOfVictory, winnerGameShare }: the K multiplier of a ratings policy's margin rule
+  protectLosses, // optional boolean — a side that falls short of its expectation keeps its rating
   expectation, // optional — { rule: 'LOGISTIC', base: 10, spread: 400 }
 });
 ```

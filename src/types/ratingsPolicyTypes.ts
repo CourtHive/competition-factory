@@ -20,6 +20,27 @@ export type RatingsActualRule =
    */
   | { rule: 'SETS_PLAYED_SHARE' };
 
+export type RatingsMarginRule =
+  /**
+   * World Football Elo (eloratings.net): K × 1 for a draw or a one-goal win, × 1.5 for two goals, × 1.75 for three,
+   * × (11 + N) / 8 for N ≥ 4.
+   */
+  | { rule: 'GOAL_DIFFERENCE_STEPS' }
+  /**
+   * FiveThirtyEight's NHL and NFL Elo: K × (scale · ln(margin + offset) + intercept) × autocorrelation /
+   * (winnerEloDiff × 0.001 + autocorrelation). NHL: scale 0.6686, offset 0, intercept 0.8048, autocorrelation 2.05.
+   * A level result has no margin and takes × 1.
+   */
+  | { rule: 'LOG_MOV_AUTOCORRECTED'; scale: number; offset: number; intercept: number; autocorrelation: number }
+  /** Weighted Elo, Angelini, Candila & De Angelis 2022: both updates × the winner's share of the games */
+  | { rule: 'WINNER_GAME_SHARE' };
+
+export type RatingsShootoutRule =
+  /** FiveThirtyEight NHL: a full win, rated as won by one goal */
+  | { rule: 'FULL_RESULT'; margin?: number }
+  /** FIFA's men's ranking (SUM): the shootout winner 0.75, the loser 0.5; not zero-sum */
+  | { rule: 'PARTIAL'; winner: number; loser: number };
+
 export type RatingsPolicy = {
   policyName: string;
   /** the published method the policy encodes */
@@ -29,4 +50,18 @@ export type RatingsPolicy = {
   actual: RatingsActualRule;
   /** a WALKOVER: rated as a win (Huang 2014: a straight-sets win), or not rated. Default RATE_AS_WIN */
   walkovers?: 'RATE_AS_WIN' | 'EXCLUDE';
+  /** a COMPLETED result with no winner: 0.5 each, as every published Elo-family method scores it; or not rated */
+  draws?: 'RATE_AS_HALF' | 'EXCLUDE';
+  /** K by the event's tier, then the tournament's, keyed `system:value`; otherwise `k` */
+  kByTier?: Record<string, number>;
+  margin?: RatingsMarginRule;
+  /** a result won in overtime (`score.overtime.decidedIn: 'OVERTIME'`); unset, it is the recorded win */
+  overtimeResult?: { rule: 'FULL_RESULT'; margin?: number };
+  /** a result won in a shootout (an `-F:SO` decider, or decided outside the score by SHOOTOUT); unset, the recorded win */
+  shootoutResult?: RatingsShootoutRule;
+  /**
+   * FIFA's men's ranking: in the knock-out rounds of a final competition a side that underperforms loses nothing. Read
+   * here as a MAIN-stage elimination structure (not round robin, not ad hoc).
+   */
+  protections?: 'KNOCKOUT_LOSS_PROTECTION'[];
 };

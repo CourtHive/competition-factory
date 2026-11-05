@@ -8,8 +8,8 @@ import { recorded } from '@Mutate/simulation/scenarioRecorder';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { calculateNewRatings } from './calculateNewRatings';
 import { getRatingConvertedToELO } from './eloConversions';
-import { kOf, winnerActualOf } from './ratingsPolicyRules';
-import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { ratedResultOf, RatedResult } from './ratedResult';
+import { kOf, tierK } from './ratingsPolicyRules';
 import { findPolicy } from '@Acquire/findPolicy';
 
 // constants, fixtures and types
@@ -112,7 +112,7 @@ export function generateDynamicRatings(params): ResultType & {
   }
 
   for (const { matchUp, policy } of rated) {
-    const { endDate, matchUpFormat, score, sides, winningSide } = matchUp;
+    const { endDate, sides } = matchUp;
 
     const matchUpType = matchUp.matchUpType as EventTypeUnion;
 
@@ -165,21 +165,23 @@ export function generateDynamicRatings(params): ResultType & {
         ),
     );
 
-    const parsedFormat = matchUpFormat ? parse(matchUpFormat) : undefined;
-    const loserSetsWon = (score?.sets ?? []).filter((set) => winningSide && set.winningSide === 3 - winningSide).length;
-    const kFor = (participantId: string) => kOf(policy.k, careerCounts[participantId]);
+    const result = ratedResultOf(matchUp, policy);
+    const event = tournamentRecord.events?.find(({ eventId }) => eventId === matchUp.eventId);
+    const kOfTier = tierK(policy.kByTier, [event?.eventTier, tournamentRecord.tournamentTier]);
+    const kFor = (participantId: string) => kOfTier ?? kOf(policy.k, careerCounts[participantId]);
 
-    updateRatingsForMatchUp({
-      winnerActual: winningSide ? winnerActualOf({ rule: policy.actual, parsedFormat, loserSetsWon }) : undefined,
-      kFor,
-      expectation: policy.expectation,
-      sideParticipantIds,
-      computeRatingType,
-      outputScaleName,
-      scaleItemMap,
-      winningSide,
-      accessor,
-    });
+    if (result) {
+      updateRatingsForMatchUp({
+        expectation: policy.expectation,
+        sideParticipantIds,
+        computeRatingType,
+        outputScaleName,
+        scaleItemMap,
+        accessor,
+        result,
+        kFor,
+      });
+    }
 
     for (const participantId of Object.values(sideParticipantIds).flat()) {
       if (careerCounts[participantId] !== undefined) careerCounts[participantId] += 1;
@@ -328,10 +330,9 @@ type UpdateRatingsForMatchUpArgs = {
   sideParticipantIds: Record<number, string[]>;
   scaleItemMap: Record<string, any>;
   expectation: ExpectationRule;
-  winnerActual?: number;
   computeRatingType: string;
   outputScaleName: string;
-  winningSide?: number;
+  result: RatedResult;
   /** the scale value's accessor, absent for ELO's plain numbers */
   accessor: string;
 };
@@ -340,15 +341,15 @@ function updateRatingsForMatchUp({
   sideParticipantIds,
   computeRatingType,
   outputScaleName,
-  winnerActual,
   scaleItemMap,
-  winningSide,
   expectation,
   accessor,
+  result,
   kFor,
 }: UpdateRatingsForMatchUpArgs) {
-  const winnerIds = winningSide ? (sideParticipantIds[winningSide] ?? []) : [];
-  const loserIds = winningSide ? (sideParticipantIds[3 - winningSide] ?? []) : [];
+  const { winningSide, winnerActual, loserActual, margin, protectLosses } = result;
+  const winnerIds = sideParticipantIds[winningSide] ?? [];
+  const loserIds = sideParticipantIds[3 - winningSide] ?? [];
   if (!winnerIds.length || !loserIds.length) return;
 
   const { defaultInitialization, decimalsCount = 0 } = ratingsParameters[computeRatingType] ?? {};
@@ -367,10 +368,13 @@ function updateRatingsForMatchUp({
       const k = kFor(participantId);
       const { newWinnerRating, newLoserRating } = calculateNewRatings({
         ratingType: computeRatingType,
+        protectLosses,
         winnerActual,
         winnerRating,
+        loserActual,
         loserRating,
         expectation,
+        margin,
         winnerKFactor: k,
         loserKFactor: k,
       });
