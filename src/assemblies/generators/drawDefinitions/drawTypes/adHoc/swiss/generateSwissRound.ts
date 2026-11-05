@@ -8,8 +8,8 @@ import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 // Generators
 import { getParticipantIds } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/getParticipantIds';
 import { generateAdHocMatchUps } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocMatchUps';
-import { getAdHocRatings } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/getAdHocRatings';
-import { formRatingsPolicy } from '@Generators/scales/competition/formRatingsPolicy';
+import { formRatingsPolicy } from '@Helpers/ratings/competition/formRatingsPolicy';
+import { getAdHocRatings } from '@Query/participants/getAdHocRatings';
 import { generateSwissPairings } from './swissPairing';
 import { swissPolicyOf } from './swissPolicyOf';
 

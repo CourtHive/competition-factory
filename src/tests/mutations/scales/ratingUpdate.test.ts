@@ -1,4 +1,4 @@
-import { expectedResult, LOGISTIC_400, matchesPlayedK, normalCdf, ratingUpdate } from '@Generators/scales/ratingUpdate';
+import { expectedResult, LOGISTIC_400, matchesPlayedK, normalCdf, ratingUpdate } from '@Helpers/ratings/ratingUpdate';
 import { expect, it } from 'vitest';
 
 it('expects an even result between equal ratings and about 76% for a 200-point favourite', () => {

@@ -1,8 +1,8 @@
 import { initializeCompetitionState } from '@Mutate/drawDefinitions/competition/initializeCompetitionState';
-import { formRatingsPolicy } from '@Generators/scales/competition/formRatingsPolicy';
-import { deriveCompetitionState } from '@Query/drawDefinition/competition/deriveCompetitionState';
 import { POLICY_RATINGS_COMPETITION_FORM } from '@Fixtures/policies/POLICY_RATINGS_COMPETITION_FORM';
+import { deriveCompetitionState } from '@Query/drawDefinition/competition/deriveCompetitionState';
 import { POLICY_COMPETITION_STANDARD } from '@Fixtures/policies/POLICY_COMPETITION_STANDARD';
+import { formRatingsPolicy } from '@Helpers/ratings/competition/formRatingsPolicy';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import scaleEngine from '@Engines/scaleEngine';

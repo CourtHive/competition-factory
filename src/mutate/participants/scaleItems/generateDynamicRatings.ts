@@ -1,16 +1,16 @@
+import { kOf, resolveRatingsPolicy, tierK } from '@Helpers/ratings/ratingsPolicyRules';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { addDynamicRatings } from '@Mutate/participants/scaleItems/addDynamicRatings';
 import { getParticipantScaleItem } from '@Query/participant/getParticipantScaleItem';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { calculateNewRatings } from '@Helpers/ratings/calculateNewRatings';
 import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
+import { getRatingConvertedToELO } from '@Helpers/ratings/eloConversions';
+import { ratedResultOf, RatedResult } from '@Query/scales/ratedResult';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { recorded } from '@Mutate/simulation/scenarioRecorder';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
-import { calculateNewRatings } from './calculateNewRatings';
-import { getRatingConvertedToELO } from './eloConversions';
-import { ratedResultOf, RatedResult } from './ratedResult';
 import { findStructure } from '@Acquire/findStructure';
-import { kOf, resolveRatingsPolicy, tierK } from './ratingsPolicyRules';
 import { findPolicy } from '@Acquire/findPolicy';
 
 // constants, fixtures and types
@@ -18,6 +18,7 @@ import { INVALID_VALUES, MISSING_MATCHUP_IDS, MISSING_VALUE } from '@Constants/e
 import { ARRAY, ERROR, OF_TYPE, TOURNAMENT_RECORD, VALIDATE } from '@Constants/attributeConstants';
 import { completedMatchUpStatuses, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { POLICY_RATINGS_DEFAULT } from '@Fixtures/policies/POLICY_RATINGS_DEFAULT';
+import type { ExpectationRule } from '@Helpers/ratings/ratingUpdate';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
 import type { competitionFormat } from '@Types/competitionFormat';
 import { POLICY_TYPE_RATINGS } from '@Constants/policyConstants';
@@ -26,7 +27,6 @@ import type { RatingsPolicy } from '@Types/ratingsPolicyTypes';
 import { Event, EventTypeUnion } from '@Types/tournamentTypes';
 import { DYNAMIC, RATING } from '@Constants/scaleConstants';
 import { PAIR } from '@Constants/participantConstants';
-import type { ExpectationRule } from './ratingUpdate';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ELO } from '@Constants/ratingConstants';
 import { ResultType } from '@Types/factoryTypes';
