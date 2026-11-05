@@ -72,6 +72,33 @@ A reference implementation of bracket semantics is deliberately **not** part of 
 feed-profile and FMLC draw types it would re-derive the same assumptions from the same mental model
 and re-inherit the same bugs — a second draft by the same author is not an oracle.
 
+## Matrix tiers
+
+The matrices are most of the suite's running time, and CI runs the suite once per arm. So an ordinary PR
+into `dev` runs a bounded **slice** of the tiered matrices, and the **full** matrices run on checkpoint PRs
+into `master`, on pushes to `master`, and on every local run (CA, 2026-11-05).
+
+`FACTORY_MATRIX_TIER` selects the tier: `full` (the default when unset) or `pr`. `verify.yml` sets `pr`
+only on a `pull_request` whose base is not `master`, so a run that does not set the variable tests more,
+never less. Any other value fails the run.
+
+`tierCells` (`src/tests/testHarness/matrixTier.ts`) chooses the slice. It groups a matrix's cells by a
+stratum (draw type and exit status, for example), keeps every third cell of each group starting at an offset
+that rotates from group to group, and keeps at least one cell per group. A sliced cell is the same cell at the
+same seed as in the full run; the slice only decides which cells register as tests. Each tiered file has a
+control test, `sliceMissingValues`, that fails if the slice loses any value of any dimension, such as a draw
+size, a reduction or the propagate flag.
+
+The quarantine check described below is limited, under the `pr` tier, to keys that name a registered cell or
+name no cell at all, so a typo'd key still fails on a PR. The full run at the checkpoint checks every key.
+
+Tiered today: the TEAM matrix slice files (`teamMatrix.{dual,line}.*.test.ts`), `exitPropagationMatrix.test.ts`
+and `exitPropagationMatrixExtension.test.ts`. To run a PR's slice locally:
+
+```bash
+FACTORY_MATRIX_TIER=pr pnpm test src/tests/mutations/exitPropagation
+```
+
 ## The quarantine registry
 
 `knownFailures.ts` names every currently-failing (cell, property) pair, each with a written

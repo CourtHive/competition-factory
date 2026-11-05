@@ -1,4 +1,5 @@
 import { quarantineFor, unusedQuarantineKeys } from '@Tests/testHarness/exitPropagation/knownFailures';
+import { matrixTier, sliceMissingValues, tierCells } from '@Tests/testHarness/matrixTier';
 import { afterAll, expect, test } from 'vitest';
 import {
   MATRIX_EXTENSION_CELLS,
@@ -28,6 +29,17 @@ import {
 const observedKeys = new Set<string>();
 const extensionLabel = (cell: (typeof MATRIX_EXTENSION_CELLS)[number]) => `ext ${cellLabel(cell)}`;
 
+// matrixTier.ts: a PR into dev registers a third of the cells, every draw type x exit status kept; checkpoints run all 400
+const TIERED = tierCells(MATRIX_EXTENSION_CELLS, { stratum: (cell) => `${cell.drawType} ${cell.exitStatus}` });
+const tieredKeys = new Set(TIERED.map(extensionLabel));
+const extensionKeys = new Set(MATRIX_EXTENSION_CELLS.map(extensionLabel));
+
+// CONTROL: the tier narrows the run, never a dimension of it
+test(`the ${matrixTier} tier keeps every value of every extension dimension`, () => {
+  const dimensions = ['drawType', 'drawSize', 'participantsCount', 'exitStatus', 'propagateExitStatus'] as const;
+  expect(sliceMissingValues(MATRIX_EXTENSION_CELLS, TIERED, [...dimensions])).toEqual([]);
+});
+
 // CONTROL: the composition covers every type it names, and excludes only what it says it excludes
 test('the extension composes 400 cells over seven draw types', () => {
   expect(MATRIX_EXTENSION_DRAW_TYPES).toHaveLength(7);
@@ -35,27 +47,29 @@ test('the extension composes 400 cells over seven draw types', () => {
   expect(new Set(MATRIX_EXTENSION_CELLS.map((cell) => cell.seed)).size).toEqual(MATRIX_EXTENSION_CELLS.length);
 });
 
-test.for(MATRIX_EXTENSION_CELLS)(
-  'ext $drawType $drawSize/$participantsCount $exitStatus propagate=$propagateExitStatus',
-  (cell) => {
-    const key = extensionLabel(cell);
-    observedKeys.add(key);
+test.for(TIERED)('ext $drawType $drawSize/$participantsCount $exitStatus propagate=$propagateExitStatus', (cell) => {
+  const key = extensionLabel(cell);
+  observedKeys.add(key);
 
-    const failures = runMatrixCell(cell, `ext-${cell.seed}`);
-    expect(failures, `${key}: nothing playable`).toBeDefined();
+  const failures = runMatrixCell(cell, `ext-${cell.seed}`);
+  expect(failures, `${key}: nothing playable`).toBeDefined();
 
-    const quarantined = quarantineFor(key);
-    const unexpected = (failures ?? []).filter((failure) => !quarantined.includes(failure.property));
-    if (unexpected.length) {
-      const report = unexpected.map((f) => `${f.property} @ ${f.matchUpId.slice(0, 8)}\n  ${f.detail}`).join('\n');
-      expect(`${key}\n${report}`).toEqual(key);
-    }
+  const quarantined = quarantineFor(key);
+  const unexpected = (failures ?? []).filter((failure) => !quarantined.includes(failure.property));
+  if (unexpected.length) {
+    const report = unexpected.map((f) => `${f.property} @ ${f.matchUpId.slice(0, 8)}\n  ${f.detail}`).join('\n');
+    expect(`${key}\n${report}`).toEqual(key);
+  }
 
-    const stillFailing = new Set((failures ?? []).map((failure) => failure.property));
-    expect(quarantined.filter((property) => !stillFailing.has(property))).toEqual([]);
-  },
-);
+  const stillFailing = new Set((failures ?? []).map((failure) => failure.property));
+  expect(quarantined.filter((property) => !stillFailing.has(property))).toEqual([]);
+});
 
 afterAll(() => {
-  expect(unusedQuarantineKeys(observedKeys, 'ext matrix ')).toEqual([]);
+  // Under the pr tier only keys naming a registered cell, or naming no cell at all (a typo), are held to it here;
+  // the full run at a checkpoint checks the rest.
+  const unused = unusedQuarantineKeys(observedKeys, 'ext matrix ').filter(
+    (key) => tieredKeys.has(key) || !extensionKeys.has(key),
+  );
+  expect(unused).toEqual([]);
 });
