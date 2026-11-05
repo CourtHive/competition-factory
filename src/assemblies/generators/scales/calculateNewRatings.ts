@@ -26,7 +26,7 @@ type CalculateNewRatings = {
   /** the loser's, 1 − winnerActual unless the policy scores it apart (FIFA's shootout loser, 0.5) */
   loserActual?: number;
   /** a margin rule and what it reads; the K multiplier is computed from the ratings in Elo space */
-  margin?: { rule?: RatingsMarginRule; marginOfVictory?: number; winnerGameShare?: number };
+  margin?: { rule?: RatingsMarginRule; marginOfVictory?: number; winnerGameShare?: number; draw?: boolean };
   /** a side whose result fell short of its expectation keeps its rating (FIFA's knock-out loss protection) */
   protectLosses?: boolean;
   expectation?: ExpectationRule;

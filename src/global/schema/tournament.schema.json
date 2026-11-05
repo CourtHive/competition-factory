@@ -5791,7 +5791,7 @@
       ]
     },
     "RatingsMarginRule": {
-      "description": "A K multiplier by the margin of victory: World Football Elo's goal-difference steps, FiveThirtyEight's autocorrelation-corrected log margin, or Weighted Elo's winner game share.",
+      "description": "A K multiplier by the margin of victory: World Football Elo's goal-difference steps, FiveThirtyEight's autocorrelation-corrected log margin (NHL, NFL) or power margin (NBA), or Weighted Elo's winner game share.",
       "oneOf": [
         {
           "type": "object",
@@ -5822,9 +5822,38 @@
             "autocorrelation": {
               "type": "number",
               "exclusiveMinimum": 0
+            },
+            "drawMultiplier": {
+              "type": "number",
+              "exclusiveMinimum": 0
             }
           },
           "required": ["rule", "scale", "offset", "intercept", "autocorrelation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "const": "POWER_MOV_AUTOCORRECTED"
+            },
+            "offset": {
+              "type": "number",
+              "minimum": 0
+            },
+            "power": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "intercept": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "slope": {
+              "type": "number"
+            }
+          },
+          "required": ["rule", "offset", "power", "intercept", "slope"],
           "additionalProperties": false
         },
         {

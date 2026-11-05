@@ -36,7 +36,20 @@ export type RatingsMarginRule =
    * (winnerEloDiff × 0.001 + autocorrelation). NHL: scale 0.6686, offset 0, intercept 0.8048, autocorrelation 2.05.
    * A level result has no margin and takes × 1.
    */
-  | { rule: 'LOG_MOV_AUTOCORRECTED'; scale: number; offset: number; intercept: number; autocorrelation: number }
+  | {
+      rule: 'LOG_MOV_AUTOCORRECTED';
+      scale: number;
+      offset: number;
+      intercept: number;
+      autocorrelation: number;
+      /** FiveThirtyEight NFL: a tie takes 1.525 (2.2 ln 2); unset, a level result takes × 1 */
+      drawMultiplier?: number;
+    }
+  /**
+   * FiveThirtyEight's NBA Elo: K × (margin + offset)^power / (intercept + slope × winnerEloDiff). NBA: offset 3, power
+   * 0.8, intercept 7.5, slope 0.006.
+   */
+  | { rule: 'POWER_MOV_AUTOCORRECTED'; offset: number; power: number; intercept: number; slope: number }
   /** Weighted Elo, Angelini, Candila & De Angelis 2022: both updates × the winner's share of the games */
   | { rule: 'WINNER_GAME_SHARE' };
 
