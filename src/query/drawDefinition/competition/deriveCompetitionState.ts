@@ -1,7 +1,7 @@
 // Generators
 import { deriveCountables } from '@Generators/scales/competition/deriveCountables';
 import { computeActualOutput } from '@Generators/scales/competition/actualOutput';
-import { expectedScore } from '@Generators/scales/competition/expectedScore';
+import { expectedResult, ratingUpdate } from '@Generators/scales/ratingUpdate';
 
 // Acquire
 import { matchUpsOf } from '@Acquire/structureMembers';
@@ -140,14 +140,19 @@ export function applyCompetitionResult({
   const apply = (state: CompetitionParticipantState, opponent: CompetitionParticipantState, side: 1 | 2) => {
     const actual = side === 1 ? p1Actual : p2Actual;
     const [won, lost] = side === 1 ? [side1Count, side2Count] : [side2Count, side1Count];
-    const expectedBaseline = expectedScore(state.baselineRating, opponent.baselineRating, logisticScale);
+    const expectation = { rule: 'LOGISTIC', base: 10, spread: logisticScale } as const;
+    const expectedBaseline = expectedResult(state.baselineRating, opponent.baselineRating, expectation);
     const formOf = (s: CompetitionParticipantState) => ratingsAtStart?.[s.participantId] ?? s.dynamicFormRating;
-    const expectedDynamic = expectedScore(formOf(state), formOf(opponent), logisticScale);
+    // this side's update only; the opponent's is computed from its own actual output in its own call
+    const { deltas } = ratingUpdate({
+      ratings: [formOf(state), formOf(opponent)],
+      actual: [actual, 1 - actual],
+      k: [kFactor, kFactor],
+      expectation,
+    });
     return {
       pressureDelta: pressureEnabled ? actual - expectedBaseline : 0,
-      dynamicAfter: dynamicEnabled
-        ? state.dynamicFormRating + kFactor * (actual - expectedDynamic)
-        : state.dynamicFormRating,
+      dynamicAfter: dynamicEnabled ? state.dynamicFormRating + deltas[0] : state.dynamicFormRating,
       dynamicBefore: state.dynamicFormRating,
       expectedBaseline,
       actual,
