@@ -16,8 +16,8 @@
  *   const matchUp = engine.getState();
  */
 
-import type { PointMultiplier } from '@Mutate/scoring/resolvePointValue';
-import type { getScore } from '@Query/scoring/getScore';
+import type { PointMultiplier } from '@Scoring/v1/resolvePointValue';
+import type { getScore } from '@Scoring/v1/getScore';
 import type {
   SubstitutionViolation,
   SubstitutionResult,

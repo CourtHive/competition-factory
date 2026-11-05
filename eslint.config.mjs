@@ -146,8 +146,9 @@ export default [
      * they read until #5491 and the purity fix that added this rule.
      *
      * `ignores` is a RATCHET, not an allow-list: the files that still import a read-only helper or a type from a
-     * mutation module (22 measured 2026-10-17; 8 after the layering plan's moves, 2026-11-06). Each leaves the list
-     * when its helper moves to `@Query`/`@Acquire`; nothing is ever added to it. A new file under src/query that needs a helper living in `@Mutate` moves the helper.
+     * mutation module (22 measured 2026-10-17; 7 after the layering moves, 2026-11-06). Each leaves the list
+     * when its helper moves to `@Query`/`@Acquire`; nothing is ever added to it. A new file under src/query that needs a
+     * helper living in `@Mutate` moves the helper.
      */
     files: ['src/query/**/*.ts'],
     ignores: [
@@ -157,7 +158,6 @@ export default [
       'src/query/matchUps/scheduling/getScenarioScheduleView.ts',
       'src/query/matchUps/scheduling/getSchedulingProfileIssues.ts',
       'src/query/practice/getPracticeRegistrations.ts',
-      'src/query/scoring/getScore.ts',
       'src/query/venues/getScheduledCourtMatchUps.ts',
     ],
     rules: {
@@ -196,8 +196,8 @@ export default [
     files: [
       'src/functions/global/globalLog.ts',
       'src/global/state/globalState.ts',
-      'src/validators/scoring/mcpValidator.ts',
-      'src/validators/scoring/pbpValidator.ts',
+      'src/scoring/replay/mcpValidator.ts',
+      'src/scoring/replay/pbpValidator.ts',
       'src/server/**',
       'src/tests/**',
       '**/*.test.ts',

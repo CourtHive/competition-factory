@@ -22,6 +22,7 @@ const ALIASES: Record<string, string> = {
   '@Functions': 'src/functions',
   '@Fixtures': 'src/fixtures',
   '@Acquire': 'src/acquire',
+  '@Scoring': 'src/scoring',
   '@Helpers': 'src/helpers',
   '@Global': 'src/global',
   '@Mutate': 'src/mutate',

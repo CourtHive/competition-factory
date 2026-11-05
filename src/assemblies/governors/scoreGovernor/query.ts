@@ -17,13 +17,13 @@ export { parseScoreString } from '@Scoring/parse/parseScoreString';
 export { analyzeSet } from '@Query/matchUp/analyzeSet';
 
 // Point-by-point scoring queries
-export { getScore } from '@Query/scoring/getScore';
-export type { GetScoreOptions } from '@Query/scoring/getScore';
-export { getScoreboard } from '@Query/scoring/getScoreboard';
-export { getWinner } from '@Query/scoring/getWinner';
-export { isComplete } from '@Query/scoring/isComplete';
-export { deduceMatchUpFormat } from '@Query/scoring/deduceMatchUpFormat';
-export { getEpisodes } from '@Query/scoring/getEpisodes';
+export { getScore } from '@Scoring/v1/getScore';
+export type { GetScoreOptions } from '@Scoring/v1/getScore';
+export { getScoreboard } from '@Scoring/v1/getScoreboard';
+export { getWinner } from '@Scoring/v1/getWinner';
+export { isComplete } from '@Scoring/v1/isComplete';
+export { deduceMatchUpFormat } from '@Helpers/matchUpFormatCode/deduceMatchUpFormat';
+export { getEpisodes } from '@Scoring/v1/getEpisodes';
 
 // Statistics
 export { calculateMatchStatistics, enrichPointHistory, getQuickStats } from '@Query/scoring/statistics/standalone';

@@ -1,4 +1,4 @@
-import type { MCPPoint } from '@Validators/scoring/mcpParser';
+import type { MCPPoint } from '@Scoring/replay/mcpParser';
 import { describe, it, expect } from 'vitest';
 import {
   shotSplitter,
@@ -7,7 +7,7 @@ import {
   shotParser,
   parseMCPPoint,
   parsePointWinner,
-} from '@Validators/scoring/mcpParser';
+} from '@Scoring/replay/mcpParser';
 
 describe('mcpParser - Shot Sequence Parsing', () => {
   describe('shotSplitter', () => {

@@ -4,7 +4,7 @@
  * Tests scoring through both the pure addPoint function and
  * the ScoringEngine to verify extraction doesn't break behavior.
  */
-import { addPoint, deriveServerBase, formatGameScore } from '@Mutate/scoring/addPoint';
+import { addPoint, deriveServerBase, formatGameScore } from '@Scoring/v1/addPoint';
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { expect, it } from 'vitest';

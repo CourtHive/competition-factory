@@ -114,6 +114,7 @@
   "src/query/venues": 56,
   "src/scoring/analysis": 1,
   "src/scoring/parse": 11,
+  "src/scoring/v1": 1,
   "src/scoring/views": 12,
   "src/server": 1,
   "src/server/auth": 1,

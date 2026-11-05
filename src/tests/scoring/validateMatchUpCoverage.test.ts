@@ -14,10 +14,10 @@
  * - validateSet with tiebreak expectations
  */
 
-import { validateMatchUp, getSetScoreString, validateSet } from '@Validators/scoring/validateMatchUp';
-import { createMatchUp } from '@Mutate/scoring/createMatchUp';
-import { addPoint } from '@Mutate/scoring/addPoint';
+import { validateMatchUp, getSetScoreString, validateSet } from '@Scoring/replay/validateMatchUp';
+import { createMatchUp } from '@Scoring/v1/createMatchUp';
 import type { MatchUp } from '@Types/scoring/types';
+import { addPoint } from '@Scoring/v1/addPoint';
 import { describe, it, expect } from 'vitest';
 
 // constants
