@@ -4,7 +4,7 @@
   "ratingType": "WORLD_RUGBY",
   "k": 2,
   "start": 30,
-  "matchUpFormat": "SET1A-S:T80P",
+  "matchUpFormat": "SET1A-S:T80",
   "description": "A rugby union championship: six teams, fifteen matches, one draw. Final scores only, recorded as one segment.",
   "matches": [
     {

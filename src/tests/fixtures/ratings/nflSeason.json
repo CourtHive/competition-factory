@@ -4,7 +4,7 @@
   "ratingType": "ELO",
   "k": 20,
   "start": 1500,
-  "matchUpFormat": "SET1A-S:T60P",
+  "matchUpFormat": "SET1A-S:T60",
   "description": "One week of an American football season: thirty-two teams, sixteen games, one won in overtime. Final scores, recorded as one segment.",
   "matches": [
     {
