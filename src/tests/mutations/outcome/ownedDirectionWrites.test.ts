@@ -741,7 +741,32 @@ const UNWOUND_CONVERGENCE: [string, Scenario][] = [FIRST_ROUND_LOSER_CONSOLATION
     ),
 );
 
+// S7: a produced exit relayed past the BYE rests where that BYE was once the unwind withdraws it.
+const PRODUCED_RELAY: [string, Scenario][] = [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((produced) =>
+  [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((stored) =>
+    (
+      [
+        ['cleared', cleared],
+        ['played', won(1)],
+        ['given a walkover', walkover(1)],
+      ] as [string, Record<string, unknown>][]
+    ).map(([label, outcome]): [string, Scenario] => [
+      `DE 8 produced relay: ${produced} relayed beside the BYE of ${stored}, ${label}`,
+      {
+        drawProfile: { drawSize: 8, drawType: DOUBLE_ELIMINATION },
+        setup: [
+          ...MAIN_R1_8,
+          { target: R1(1, 'Backdraw'), outcome: { matchUpStatus: produced } },
+          { target: { roundNumber: 2, roundPosition: 1, structureName: 'Main' }, outcome: { matchUpStatus: stored } },
+        ],
+        steps: [{ target: { roundNumber: 2, roundPosition: 1, structureName: 'Main' }, outcome }],
+      },
+    ]),
+  ),
+);
+
 const SCENARIOS: [string, Scenario][] = [
+  ...PRODUCED_RELAY,
   ...UNWOUND_CONVERGENCE,
   ...UNWOUND_CARRY,
   ...CARRIER_SENT_ON,
