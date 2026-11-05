@@ -24,8 +24,8 @@ type CalculateNewRatings = {
   winnerRating: number;
   loserRating: number;
   ratingType: string;
-  winnerK?: number;
-  loserK?: number;
+  winnerKFactor?: number;
+  loserKFactor?: number;
   ratings?: any;
 };
 
@@ -37,8 +37,8 @@ export function calculateNewRatings(params: CalculateNewRatings) {
   const {
     expectation = LOGISTIC_400,
     ratings = ratingsParameters,
-    winnerK = DEFAULT_K,
-    loserK = winnerK,
+    winnerKFactor = DEFAULT_K,
+    loserKFactor = winnerKFactor,
     winnerActual = 1,
     ratingType = ELO,
   } = params ?? {};
@@ -76,7 +76,7 @@ export function calculateNewRatings(params: CalculateNewRatings) {
   const { deltas } = ratingUpdate({
     ratings: [convertedWinnerRating, convertedLoserRating],
     actual: [winnerActual, 1 - winnerActual],
-    k: [winnerK, loserK],
+    k: [winnerKFactor, loserKFactor],
     expectation,
   });
 

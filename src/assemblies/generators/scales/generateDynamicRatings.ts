@@ -371,8 +371,8 @@ function updateRatingsForMatchUp({
         winnerRating,
         loserRating,
         expectation,
-        winnerK: k,
-        loserK: k,
+        winnerKFactor: k,
+        loserKFactor: k,
       });
       const sideBefore = won ? winnerRating : loserRating;
       const newSideRating = (won ? newWinnerRating : newLoserRating) ?? sideBefore;

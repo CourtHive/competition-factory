@@ -410,7 +410,7 @@ describe('calculateNewRatings guard paths', () => {
     const result = calculateNewRatings({
       winnerRating: 1500,
       loserRating: 1400,
-      winnerK: 25,
+      winnerKFactor: 25,
       ratingType: ELO,
     });
     expect(result.newWinnerRating).toBeDefined();
