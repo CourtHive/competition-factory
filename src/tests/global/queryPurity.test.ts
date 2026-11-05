@@ -91,9 +91,11 @@ it('allows a known writer only inside its gate', () => {
   // opt-out: attaches by default, so only `addEvents: false` makes a write an offense
   expect(isKnownWrite('generateEventsFromTieFormat', {})).toEqual(true);
   expect(isKnownWrite('generateEventsFromTieFormat', { addEvents: false })).toEqual(false);
-  // a second allowance on the same method: the draft entries' notices when it does not attach
-  expect(isKnownWrite('generateEventsFromTieFormat', { addEvents: false, addEntriesFromTeams: true })).toEqual(true);
+  // with `addEvents: false` nothing is attached, so any write is an offense (its draft entries announce nothing)
+  expect(isKnownWrite('generateEventsFromTieFormat', { addEvents: false, addEntriesFromTeams: true })).toEqual(false);
   // ungated, and unlisted
-  expect(isKnownWrite('generateDrawDefinition', {})).toEqual(true);
+  expect(isKnownWrite('generateTournamentRecord', {})).toEqual(true);
+  // a generator whose draft writes are discarded is not listed at all
+  expect(isKnownWrite('generateDrawDefinition', {})).toEqual(false);
   expect(isKnownWrite('getParticipants', {})).toEqual(false);
 });

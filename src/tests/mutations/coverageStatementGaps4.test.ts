@@ -13,7 +13,7 @@ import { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDeta
 import { addCollectionDefinition } from '@Mutate/tieFormat/addCollectionDefinition';
 import { getItemTieFormat } from '@Query/hierarchical/tieFormats/getItemTieFormat';
 import { processTiebreakSet } from '@Helpers/keyValueScore/processTiebreakSet';
-import { calculateNewRatings } from '@Generators/scales/calculateNewRatings';
+import { calculateNewRatings } from '@Helpers/ratings/calculateNewRatings';
 import { validatePlayoffGroups } from '@Validators/validatePlayoffGroups';
 import { addParticipant } from '@Mutate/participants/addParticipant';
 import { getTargetMatchUp } from '@Query/matchUps/getTargetMatchUp';
@@ -32,11 +32,11 @@ import {
 // constants and fixtures
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
+import type { DrawDefinition } from '@Types/tournamentTypes';
 import { COMPETITOR } from '@Constants/participantRoles';
 import { GEM_SCORE } from '@Constants/tallyConstants';
 import { SINGLES } from '@Constants/eventConstants';
 import { ELO } from '@Constants/ratingConstants';
-import type { DrawDefinition } from '@Types/tournamentTypes';
 import {
   INVALID_BOOKINGS,
   INVALID_DATE,

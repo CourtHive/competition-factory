@@ -1,6 +1,6 @@
 // Ratings policy — how a dynamic rating moves on a result, attached via POLICY_TYPE_RATINGS.
 // Every rule encodes a published method; the policy's `source` names it (Mentat planning/RATINGS_POLICY_PLAN.md).
-import type { ExpectationRule } from '@Generators/scales/ratingUpdate';
+import type { ExpectationRule } from '@Helpers/ratings/ratingUpdate';
 
 export type RatingsKRule =
   /** one K for both sides: the update is zero-sum */

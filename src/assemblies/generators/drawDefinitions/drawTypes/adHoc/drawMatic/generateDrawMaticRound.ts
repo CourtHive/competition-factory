@@ -5,8 +5,8 @@ import { buildIndividualIdsMap } from '@Query/participants/individualParticipant
 
 // Generators
 import { generateAdHocMatchUps } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocMatchUps';
-import { formRatingsPolicy } from '@Generators/scales/competition/formRatingsPolicy';
-import { generateDynamicRatings } from '@Generators/scales/generateDynamicRatings';
+import { generateDynamicRatings } from '@Mutate/participants/scaleItems/generateDynamicRatings';
+import { formRatingsPolicy } from '@Helpers/ratings/competition/formRatingsPolicy';
 
 // Acquire
 import { findStructure } from '@Acquire/findStructure';

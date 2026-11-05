@@ -2,8 +2,8 @@
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
 
 // Generators
-import { getAdHocRatings } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/getAdHocRatings';
-import { formRatingsPolicy } from '@Generators/scales/competition/formRatingsPolicy';
+import { formRatingsPolicy } from '@Helpers/ratings/competition/formRatingsPolicy';
+import { getAdHocRatings } from '@Query/participants/getAdHocRatings';
 
 // Mutate
 import { announceDrawChange, attributesSnapshot } from '@Mutate/drawDefinitions/announceDrawChange';

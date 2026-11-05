@@ -1,4 +1,4 @@
-import { getRatingConvertedFromELO, getRatingConvertedToELO } from '@Generators/scales/eloConversions';
+import { getRatingConvertedFromELO, getRatingConvertedToELO } from '@Helpers/ratings/eloConversions';
 import { expect, it } from 'vitest';
 
 // constants
