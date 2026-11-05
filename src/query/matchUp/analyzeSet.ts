@@ -1,8 +1,13 @@
-import { isTiebreakGamesScore, isTiebreakWon, tiebreakSetGames, wonWithoutTiebreak } from './tiebreakAtRules';
-import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
+import {
+  isTiebreakGamesScore,
+  isTiebreakWon,
+  tiebreakSetGames,
+  wonWithoutTiebreak,
+} from '@Helpers/matchUpFormatCode/setRules/tiebreakAtRules';
+import { isTiebreakMarker, readTiebreakSet } from '@Helpers/matchUpFormatCode/setRules/tiebreakSetShape';
 import { finalSetGoverns, overtimePeriodGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
+import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { shootoutTallyRefusal } from '@Helpers/matchUpFormatCode/shootout';
-import { isTiebreakMarker, readTiebreakSet } from './tiebreakSetShape';
 import { getSetWinningSide } from './getSetWinningSide';
 
 // constants

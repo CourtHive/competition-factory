@@ -3,7 +3,7 @@ import { drawMatic } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { completeDrawMatchUps } from '@Mutate/simulation/completeDrawMatchUps';
-import tieFormatDefaults from '@Generators/templates/tieFormatDefaults';
+import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { resolveCompletionOptions } from './resolveCompletionOptions';
 import { addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
 import { applyOutcomes } from '@Mutate/simulation/applyOutcomes';

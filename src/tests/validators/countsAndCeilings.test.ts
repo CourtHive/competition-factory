@@ -1,5 +1,5 @@
 import { validateMatchUpScore, validateSetScore } from '@Validators/validateMatchUpScore';
-import { checkSetIsComplete } from '@Query/matchUp/checkSetIsComplete';
+import { checkSetIsComplete } from '@Helpers/matchUpFormatCode/setRules/setCompletion';
 import { validateScore } from '@Validators/validateScore';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { analyzeSet } from '@Query/matchUp/analyzeSet';

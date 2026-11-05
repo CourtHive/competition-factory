@@ -8,7 +8,7 @@
  * 2026-09-30 from `courthive-components`, left out of #5049 and fixed here: the margin is now capped
  * the same way, so the validator and the analysis agree.
  */
-import { checkSetIsComplete } from '@Query/matchUp/checkSetIsComplete';
+import { checkSetIsComplete } from '@Helpers/matchUpFormatCode/setRules/setCompletion';
 import { validateSetScore } from '@Validators/validateMatchUpScore';
 import { describe, it, expect } from 'vitest';
 

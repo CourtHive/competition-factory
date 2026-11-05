@@ -1,7 +1,13 @@
+import {
+  lastPlayableSet,
+  overtimeGoverns,
+  overtimeTotalError,
+  periodForSet,
+} from '@Helpers/matchUpFormatCode/overtimeRule';
 import { INITIAL_SERVICE, afterPoint, corrected, nextServer, serveSide, serviceCode } from './service';
-import { lastPlayableSet, overtimeGoverns, overtimeTotalError, periodForSet } from './overtime';
-import { configuredFormat, resolveFormat, ruleForSet, takesInput } from './format';
+import { resolveFormat, ruleForSet } from '@Helpers/matchUpFormatCode/matchRule';
 import { decideMatch, isClosed, setsWon } from './decide';
+import { configuredFormat, takesInput } from './format';
 import { isBreakpoint, pointsTo } from './view';
 import {
   readChallenge,
@@ -38,10 +44,10 @@ import {
 
 // constants and types
 import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import type { FormatResolutionOptions } from '@Helpers/matchUpFormatCode/matchRule';
+import type { MatchRule, SegmentRule } from '@Helpers/matchUpFormatCode/matchRule';
 import type { PointMultiplier } from '@Types/competitionFormat';
 import type { ServicePosition, ServiceRules } from './service';
-import type { FormatResolutionOptions } from './format';
-import type { MatchRule, SegmentRule } from './format';
 import type {
   EntryData,
   GameInPlay,

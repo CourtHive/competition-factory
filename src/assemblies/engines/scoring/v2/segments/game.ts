@@ -1,5 +1,5 @@
+import type { GameRule, RaceRule } from '@Helpers/matchUpFormatCode/matchRule';
 import type { GameInPlay, Pair, Side } from '../types';
-import type { GameRule, RaceRule } from '../format';
 
 /** the game in play before its first point */
 export const NEW_GAME: GameInPlay = { score: [0, 0], pointsPlayed: 0 };

@@ -1,6 +1,6 @@
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
-import { getGroupValueGroups } from '@Query/hierarchical/tieFormats/getGroupValueGroups';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
+import { getGroupValueGroups } from '@Helpers/tieFormats/getGroupValueGroups';
 import { evaluateCollectionResult } from './evaluateCollectionResult';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';

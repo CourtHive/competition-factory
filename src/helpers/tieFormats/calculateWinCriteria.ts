@@ -1,4 +1,4 @@
-import { getGroupValueGroups } from '@Query/hierarchical/tieFormats/getGroupValueGroups';
+import { getGroupValueGroups } from '@Helpers/tieFormats/getGroupValueGroups';
 import { isConvertableInteger } from '@Tools/math';
 
 // constants and types

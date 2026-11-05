@@ -1,4 +1,4 @@
-import { analyzeRotatingPartnerScore } from '@Query/matchUp/rotatingPartnerScore';
+import { analyzeRotatingPartnerScore } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { expect, it } from 'vitest';
 
 // constants and types

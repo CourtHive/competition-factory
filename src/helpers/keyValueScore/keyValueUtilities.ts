@@ -1,5 +1,5 @@
 import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
-import { tiebreakMargin } from '@Tools/scoring/scoringUtilities';
+import { tiebreakMargin } from '@Helpers/matchUpFormatCode/formatUtilities';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { arrayIndices } from '@Tools/arrays';
 

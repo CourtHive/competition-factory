@@ -2,8 +2,8 @@ import { inTiebreakAtTime } from './segments/timed';
 import { inTiebreak } from './segments/standard';
 
 // constants and types
+import type { MatchRule, SegmentRule } from '@Helpers/matchUpFormatCode/matchRule';
 import type { GameInPlay, ScoredSet, ScoringState, Side } from './types';
-import type { MatchRule, SegmentRule } from './format';
 
 /**
  * Service (§ 10): the side due to serve the next point, derived from the score, recorded on a point as a calculated

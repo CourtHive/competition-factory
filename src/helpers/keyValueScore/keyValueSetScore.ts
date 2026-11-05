@@ -1,4 +1,4 @@
-import { tiebreakSetGames } from '@Query/matchUp/tiebreakAtRules';
+import { tiebreakSetGames } from '@Helpers/matchUpFormatCode/setRules/tiebreakAtRules';
 import { getWinningSide } from './winningSide';
 
 import { SPACE_CHARACTER, SET_TIEBREAK_BRACKETS, SCORE_JOINER } from '@Constants/keyValueConstants';

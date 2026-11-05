@@ -1,9 +1,9 @@
 import { NEW_GAME } from './game';
 
 // constants and types
+import type { CombinedRule } from '@Helpers/matchUpFormatCode/matchRule';
 import type { GameInPlay, Pair, ScoredSet, Side } from '../types';
 import type { SegmentPoint } from './segment';
-import type { CombinedRule } from '../format';
 
 /**
  * The combined total (§ 7): one segment of rallies, ending when both sides' points total n.

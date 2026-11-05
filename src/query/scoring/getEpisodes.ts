@@ -10,6 +10,8 @@
  * functionality directly from the engine.
  */
 
+import { isLiveDecidingSet, resolveSetType, setHasTiebreak } from '@Helpers/matchUpFormatCode/formatUtilities';
+import { parse } from '@Helpers/matchUpFormatCode/parse';
 import type {
   MatchUp,
   Episode,
@@ -19,8 +21,6 @@ import type {
   ScoreEntry,
   SetScore,
 } from '@Types/scoring/types';
-import { isLiveDecidingSet, resolveSetType, setHasTiebreak } from '@Tools/scoring/scoringUtilities';
-import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // constants
 import { COMPLETED } from '@Constants/matchUpStatusConstants';

@@ -10,7 +10,7 @@ import { UUID, UUIDS } from '@Tools/UUID';
 import { ONE_OF, TIE_FORMAT, TIE_FORMAT_NAME, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
 import { EntryStatusUnion, Event, TieFormat, Tournament } from '@Types/tournamentTypes';
 import { DIRECT_ACCEPTANCE, UNGROUPED } from '@Constants/entryStatusConstants';
-import tieFormatDefaults from '@Generators/templates/tieFormatDefaults';
+import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { FEMALE, MALE, OTHER } from '@Constants/genderConstants';
 import { DOUBLES_EVENT } from '@Constants/eventConstants';

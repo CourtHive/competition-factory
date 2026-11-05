@@ -2,9 +2,9 @@ import { NEW_GAME, playGamePoint, playRacePoint, pointScore } from './game';
 import { gameScoresAfter } from './standard';
 
 // constants and types
+import type { TimedRule } from '@Helpers/matchUpFormatCode/matchRule';
 import type { GameInPlay, Pair, ScoredSet, Side } from '../types';
 import type { SegmentPoint, SegmentStep } from './segment';
-import type { TimedRule } from '../format';
 
 /**
  * The timed segment (§ 6). It has no target: points and games accumulate and never close it; only `endSegment`

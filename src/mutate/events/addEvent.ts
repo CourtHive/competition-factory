@@ -1,8 +1,8 @@
 import { addDrawNotice, addMatchUpsNotice, stampUnannounced } from '@Mutate/notifications/drawNotifications';
-import tieFormatDefaults from '@Assemblies/generators/templates/tieFormatDefaults';
 import { addEventNotice } from '@Mutate/notifications/eventNotifications';
 import { matchUpFormatRefusal } from '@Validators/isValidMatchUpFormat';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
+import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
 import { normalizeDiscipline } from '@Helpers/coercedDiscipline';

@@ -33,6 +33,7 @@ const ALIASES = {
   '@Forge': 'forge',
   '@Acquire': 'acquire',
   '@Helpers': 'helpers',
+  '@Scoring': 'scoring',
   '@Global': 'global',
   '@Mutate': 'mutate',
   '@Server': 'server',

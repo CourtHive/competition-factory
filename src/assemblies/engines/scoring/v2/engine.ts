@@ -1,10 +1,11 @@
 import { overtimeLayout, scoringPeriod, segmentClosed } from '@Helpers/matchUpFormatCode/overtimeContext';
 import { createContext, initialState, positionOf, serverOf, step, INVALID_FORMAT } from './reduce';
-import { configuredFormat, DEFAULT_MATCHUP_FORMAT, finalGoverns, takesInput } from './format';
 import { readChallenge, readPoint, readServer, CALCULATED_POINT_FIELDS } from './actions';
 import { replayLegacy, LEGACY_IGNORED_INPUT, LEGACY_REFUSED_INPUT } from './legacy';
+import { configuredFormat, DEFAULT_MATCHUP_FORMAT, takesInput } from './format';
 import { calculateMatchStatistics } from '@Query/scoring/statistics/standalone';
 import { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
+import { finalGoverns } from '@Helpers/matchUpFormatCode/matchRule';
 import { createMatchUp } from '@Mutate/scoring/createMatchUp';
 import { getScoreboard } from '@Query/scoring/getScoreboard';
 import { parse } from '@Helpers/matchUpFormatCode/parse';

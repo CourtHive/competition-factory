@@ -7,9 +7,9 @@ import { compareTieFormats } from '@Query/hierarchical/tieFormats/compareTieForm
 import { requiredForkIds, writeTieFormat } from '@Mutate/tieFormat/writeTieFormat';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
+import { calculateWinCriteria } from '@Helpers/tieFormats/calculateWinCriteria';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { getTieFormat } from '@Query/hierarchical/tieFormats/getTieFormat';
-import { calculateWinCriteria } from '@Query/matchUp/calculateWinCriteria';
 import { tieFormatTelemetry } from '@Mutate/tieFormat/tieFormatTelemetry';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';

@@ -1,4 +1,4 @@
-import { tiebreakSetGames, isTiebreakGamesScore } from '@Query/matchUp/tiebreakAtRules';
+import { tiebreakSetGames, isTiebreakGamesScore } from '@Helpers/matchUpFormatCode/setRules/tiebreakAtRules';
 import { getWinningSide } from './winningSide';
 import { ensureInt } from '@Tools/ensureInt';
 

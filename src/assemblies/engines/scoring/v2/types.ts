@@ -1,6 +1,6 @@
 import type { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
 import type { PointMultiplier } from '@Types/competitionFormat';
-import type { ScoringPeriod } from '@Types/scoring/types';
+import type { Pair, ScoringPeriod } from '@Types/scoring/types';
 import type { ServiceState } from './service';
 
 /**
@@ -14,7 +14,8 @@ import type { ServiceState } from './service';
 export type Side = 0 | 1;
 /** 1-indexed side: 1 is side 1 (§ 1.3) */
 export type SideNumber = 1 | 2;
-export type Pair = [number, number];
+// a value per side, side 1 first: defined in contracts, where the format rules read it too
+export type { Pair };
 
 /** the configuration an engine is built from (§ 1.1) */
 export type ScoringConfiguration = {

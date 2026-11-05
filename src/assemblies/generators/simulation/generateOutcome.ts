@@ -1,9 +1,9 @@
+import { getSetComplement, getTiebreakComplement } from '@Helpers/matchUpFormatCode/setRules/setComplement';
 import { aggregateDeciderSetNumber, finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { generateOvertimeOutcome } from '@Assemblies/generators/simulation/generateOvertimeOutcome';
-import { getSetComplement, getTiebreakComplement } from '@Query/matchUp/getComplement';
 import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
-import { resolveFormat } from '@Assemblies/engines/scoring/v2/format';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
+import { resolveFormat } from '@Helpers/matchUpFormatCode/matchRule';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { generateRange, randomPop } from '@Tools/arrays';

@@ -12,11 +12,11 @@
  * Calculated BEFORE the point is processed (state at time of serve).
  */
 
-import { inputLevels, isAggregateFormat, isStandardSetTiebreak } from '@Tools/scoring/scoringUtilities';
+import { inputLevels, isAggregateFormat, isStandardSetTiebreak } from '@Helpers/matchUpFormatCode/formatUtilities';
 import type { MatchUp, FormatStructure, SetFormatStructure, SetScore } from '@Types/scoring/types';
 import { checkStandardGameWon, checkStandardSetWon, checkTiebreakWon } from './gameWon';
 import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
-import type { SetType } from '@Tools/scoring/scoringUtilities';
+import type { SetType } from '@Helpers/matchUpFormatCode/formatUtilities';
 import { aggregateTotals } from './matchCompletion';
 import { setFormatFor } from './judgeSet';
 

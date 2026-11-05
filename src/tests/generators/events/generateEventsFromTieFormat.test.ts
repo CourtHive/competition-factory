@@ -4,8 +4,8 @@ import { expect, it } from 'vitest';
 
 // Constants
 import { USTA_GOLD_TEAM_CHALLENGE } from '@Constants/tieFormatConstants';
-import tieFormatDefaults from '@Generators/templates/tieFormatDefaults';
 import { ALTERNATE, UNGROUPED } from '@Constants/entryStatusConstants';
+import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { TEAM_PARTICIPANT } from '@Constants/participantConstants';

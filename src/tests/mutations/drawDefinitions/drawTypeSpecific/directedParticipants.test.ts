@@ -4,8 +4,8 @@ import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDraw
 import { assignDrawPosition } from '@Mutate/matchUps/drawPositions/positionAssignment';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { getStageEntries } from '@Query/drawDefinition/stageGetter';
+import { parseScoreString } from '@Scoring/parse/parseScoreString';
 import { getDrawStructures } from '@Acquire/findStructure';
-import { parseScoreString } from '@Tools/parseScoreString';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 import {

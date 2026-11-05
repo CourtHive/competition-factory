@@ -1,5 +1,5 @@
+import { isStandardSetTiebreak } from '@Helpers/matchUpFormatCode/formatUtilities';
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
-import { isStandardSetTiebreak } from '@Tools/scoring/scoringUtilities';
 import { describe, expect, it } from 'vitest';
 
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';

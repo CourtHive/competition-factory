@@ -1,4 +1,4 @@
-import { checkSetIsComplete, getLeadingSide } from '@Query/matchUp/checkSetIsComplete';
+import { checkSetIsComplete, getLeadingSide } from '@Helpers/matchUpFormatCode/setRules/setCompletion';
 
 export function getWinningSide({ analysis, set }) {
   const leadingSide = getLeadingSide({ set });

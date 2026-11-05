@@ -1,11 +1,11 @@
-import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
-import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
 import { finalSetGoverns, unlevelDeciderRefusal } from '@Helpers/matchUpFormatCode/aggregateDecider';
+import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
+import { tiebreakSetCeiling } from '@Helpers/matchUpFormatCode/setRules/tiebreakAtRules';
+import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
 import { parsedFormatCanEndTied } from '@Validators/tiedFormatCompatibility';
 import { timedSetWinnerContradicts } from '@Validators/timedSetWinner';
-import { overtimeScoreVerdict } from '@Validators/overtimeScore';
 import { parse, ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
-import { tiebreakSetCeiling } from '@Query/matchUp/tiebreakAtRules';
+import { overtimeScoreVerdict } from '@Validators/overtimeScore';
 import { isMatchUpStatus } from '@Validators/isMatchUpStatus';
 import { maxExactlySets } from '@Validators/setCount';
 import { instanceCount } from '@Tools/arrays';

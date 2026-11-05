@@ -14,7 +14,7 @@
  * which is exactly where a silent precedence change would do damage.
  */
 import { getDrawFormat } from '@Generators/drawDefinitions/getDrawFormat';
-import tieFormatDefaults from '@Generators/templates/tieFormatDefaults';
+import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { describe, expect, it } from 'vitest';
 
 // constants
