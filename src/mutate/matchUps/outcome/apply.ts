@@ -464,6 +464,12 @@ function namedWriters(ops: OutcomeOp[]) {
       if (relayed.has(op.matchUpId)) continue;
       settled.set(op.matchUpId, op.announcedAs);
       if (op.announcesEvent === false) lineUpUnevented.add(op.matchUpId);
+    } else if (
+      op.op === 'setMatchUpDrawPositions' &&
+      op.advancesThroughBye &&
+      settled.get(op.matchUpId) === 'withdrawProducedExits'
+    ) {
+      settled.delete(op.matchUpId);
     } else if (op.op === 'setMatchUpResult') {
       if (op.announcedAs) settled.set(op.matchUpId, op.announcedAs);
       else settled.delete(op.matchUpId);
