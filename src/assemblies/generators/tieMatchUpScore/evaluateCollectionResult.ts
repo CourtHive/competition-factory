@@ -1,7 +1,10 @@
+import { aggregateDeciderSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
+import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { isConvertableInteger } from '@Tools/math';
 
-// constants
+// constants and types
 import { COMPLETED, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
+import type { CollectionDefinition, MatchUp } from '@Types/tournamentTypes';
 
 export function evaluateCollectionResult({
   collectionDefinition,
@@ -97,15 +100,28 @@ function accumulateMatchUpValues({
       });
     });
   } else if (isConvertableInteger(scoreValue)) {
-    accumulateScoreValues({ collectionMatchUps, sideMatchUpValues });
+    accumulateScoreValues({ collectionMatchUps, collectionDefinition, sideMatchUpValues });
   } else if (Array.isArray(collectionValueProfiles)) {
     accumulateProfileValues({ collectionMatchUps, collectionDefinition, sideMatchUpValues });
   }
 }
 
-function accumulateScoreValues({ collectionMatchUps, sideMatchUpValues }) {
+type AccumulateScoreValuesArgs = {
+  collectionDefinition: CollectionDefinition;
+  collectionMatchUps: MatchUp[];
+  sideMatchUpValues: number[];
+};
+
+function accumulateScoreValues({
+  collectionMatchUps,
+  collectionDefinition,
+  sideMatchUpValues,
+}: AccumulateScoreValuesArgs) {
   collectionMatchUps.forEach((matchUp) => {
-    matchUp.score?.sets?.forEach((set) => {
+    const deciderSetNumber = deciderSetNumberOf(matchUp.matchUpFormat ?? collectionDefinition.matchUpFormat);
+    matchUp.score?.sets?.forEach((set, index) => {
+      // an aggregate's decider (a TB1 point, a shootout) settles the tieMatchUp and is not part of its score
+      if (deciderSetNumber && (set.setNumber ?? index + 1) === deciderSetNumber) return;
       const { side1TiebreakScore = 0, side2TiebreakScore = 0, side1Score = 0, side2Score = 0 } = set;
 
       if (matchUp.matchUpStatus === COMPLETED || matchUp.winningSide || set.winningSide) {
@@ -118,6 +134,12 @@ function accumulateScoreValues({ collectionMatchUps, sideMatchUpValues }) {
       }
     });
   });
+}
+
+/** The set number of an aggregate format's decider (set N + 1, or the decider after a finite overtime), if any. */
+function deciderSetNumberOf(matchUpFormat?: string): number | undefined {
+  const parsed = matchUpFormat ? parse(matchUpFormat) : undefined;
+  return parsed?.finalSetFormat ? aggregateDeciderSetNumber(parsed) : undefined;
 }
 
 function accumulateProfileValues({ collectionMatchUps, collectionDefinition, sideMatchUpValues }) {

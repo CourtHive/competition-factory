@@ -35,6 +35,7 @@ When there is no `winCriteria` specified, the `valueGoal` defaults to one more t
 - **collecitonValueProfile** - unique values are specified for each `collectionPosition` within a collection
 - **groupValue** - specified value is awarded for reaching a `valueGoal` by accumulating value across collections in the group
 - **scoreValue** - specified value is awarded for each sideScore (typically 1, typically used with `aggregateValue` formats)
+  - a tieMatchUp's aggregate decider (the `-F:` set N + 1 of an exactly-N aggregate, or the decider after a finite overtime, e.g. a shootout) settles that tieMatchUp and is not counted; a tennis match tiebreak is a deciding set, not such a decider, and still counts as one
 
 See [tieFormat type definitions](../types/typedefs.mdx#tieformat)
 

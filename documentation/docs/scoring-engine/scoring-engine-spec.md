@@ -650,6 +650,9 @@ only when the N totals are level, and never one of the N (CA 2026-10-04, the INT
    sudden death"; `aggregateSegments`, "the sudden-death decider of a level aggregate");
 3. a timed decider (`-F:T10P`) is ended by `endSegment`, and the side ahead wins the match
    (`aggregateSegments`, "the -F: decider is set four, timed and points-based").
+4. the decider's point, or a shootout's goals, settles a level total and is never part of it: `analyzeMatchUp`'s
+   `aggregateScores` and a team's `scoreValue` sum the N sets (and any overtime periods) only
+   (`exactlyFormatWinner.test.ts`, `deciderOutOfTeamScore.test.ts`).
 
 ### 9.5 Combined totals
 

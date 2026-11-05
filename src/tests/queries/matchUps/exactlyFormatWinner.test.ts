@@ -231,8 +231,27 @@ describe("INTENNSE's own format, and the one case that stays open", () => {
       matchUpFormat: DECIDER_FORMAT,
     });
 
-    // 56-56 across the bolts, and the decider's single point to side 2.
-    expect(analysis.aggregateScores).toEqual([56, 57]);
+    // 56-56 across the bolts: the decider's single point to side 2 settles it and is not part of the aggregate
+    expect(analysis.aggregateScores).toEqual([56, 56]);
+    expect(analysis.calculatedWinningSide).toEqual(2);
+  });
+
+  it("keeps a shootout's goals out of the aggregate after a finite overtime (Ruling 3)", () => {
+    const SHOOTOUT_FORMAT = 'PER3XA-S:T20P-O:1SD/T5P-F:SO5';
+    const sets = [
+      { setNumber: 1, side1Score: 1, side2Score: 0, winningSide: 1 },
+      { setNumber: 2, side1Score: 0, side2Score: 1, winningSide: 2 },
+      { setNumber: 3, side1Score: 1, side2Score: 1 },
+      { setNumber: 4, side1Score: 0, side2Score: 0, segmentComplete: true },
+      { setNumber: 5, side1Score: 3, side2Score: 4, winningSide: 2 },
+    ];
+
+    const analysis = analyzeMatchUp({
+      matchUp: { score: { sets }, matchUpFormat: SHOOTOUT_FORMAT },
+      matchUpFormat: SHOOTOUT_FORMAT,
+    });
+
+    expect(analysis.aggregateScores).toEqual([2, 2]);
     expect(analysis.calculatedWinningSide).toEqual(2);
   });
 
