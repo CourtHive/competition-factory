@@ -328,13 +328,14 @@ process computes the same assignment, so the shards stay disjoint and together h
 coverage report relies on.
 
 Durations live in `vitest.shardDurations.json`, one map per [matrix tier](./exit-propagation-harness.md#matrix-tiers).
-A file with no recorded duration counts as a light one, so stale durations cost balance, never coverage. To
-refresh a tier from a CI run, download the run's `coverage-blob-node26-*` artifacts into one directory, merge them,
-and record:
+A file with no recorded duration counts as a light one, so stale durations cost balance, never coverage. A file's
+measured time depends on which files shared the runner's CPU with it (one file measured 54 s in one run and 31 s in
+the next), so record from several runs: each file keeps the median of its times. For each run, download its
+`coverage-blob-node26-*` artifacts into one directory and merge them, then record all the reports together:
 
 ```bash
 pnpm exec vitest --merge-reports=<dir> --reporter=json --outputFile=report.json --coverage.enabled=false
-node scripts/updateShardDurations.mjs report.json pr   # a PR into dev; use `full` for a checkpoint or master push
+node scripts/updateShardDurations.mjs pr report-1.json report-2.json report-3.json   # PRs into dev; `full` for checkpoints
 ```
 
 ## Checking documentation contracts
