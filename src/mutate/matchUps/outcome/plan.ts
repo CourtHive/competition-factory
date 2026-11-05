@@ -586,7 +586,7 @@ function givenWinnerReason(args: Parameters<typeof exitReason>[0]): AbstainReaso
   const { loserTargetSeat, loserThroughBye, loserByePassage } = view.targets;
   // the loser carrying their own exit onto the seat the unwind frees: the carry planned on the draw as the unwind leaves
   // it (`unwoundCarryReason`)
-  if (direction?.loser?.exit) return unwoundCarryReason(args, levels[0], direction.loser);
+  if (direction?.loser?.exit) return unwoundCarryReason(args, direction.loser);
   const unwound = levels.flatMap(({ seatOps }) => seatOps);
   if (
     direction?.loser?.arrives &&
@@ -638,31 +638,19 @@ function unwoundLoserReason(
  * unwind wrote back to be played). v1 directs the loser against the draw as its unwind leaves it, and the carry lands
  * there as a fresh carry lands (`progressExitStatus`: RULES 1 to 3, then each further level). So the unwind's ops are
  * folded into a working view, read again as an outcome view with the direction re-planned (`rebuild`), and the carry is
- * planned on that view on a fresh carry's terms (`plainLoserReason`, `carriedReason`); `planOps` writes it from the same
- * view (`unwoundView`). Stays v1's: a seat the unwind does not free, a loser behind a link condition or seeded, a carry
- * the re-planned direction reads as anything but a fresh carry (converged with a re-derived exit), and whatever a fresh
- * carry's own checks keep v1's.
+ * planned on that view on a fresh carry's terms (`plainLoserReason`: the seat free, so a seat the unwind did not free
+ * still holds its BYE and refuses, a seeded loser; `carriedReason`: the landing); `planOps` writes it from the same view
+ * (`unwoundView`). Stays v1's: a loser behind a link condition, a carry the re-planned direction reads as anything but a
+ * fresh carry (converged with a re-derived exit), and whatever a fresh carry's own checks keep v1's.
  */
 function unwoundCarryReason(
   args: Parameters<typeof exitReason>[0],
-  own: UnwoundLevel,
   loser: NonNullable<DirectionPlan['loser']>,
 ): AbstainReason | undefined {
   const { view, write } = args;
   const { targets } = view;
   if (!loser.arrives || !write) return 'exit';
   if (targets.loserLink?.linkCondition || !targets.loserStructureId || !targets.loserTargetDrawPosition) return 'exit';
-  const freed = own.seatOps.some(
-    (op) =>
-      op.op === 'withdrawBye' &&
-      op.structureId === targets.loserStructureId &&
-      op.drawPosition === targets.loserTargetDrawPosition,
-  );
-  const branched =
-    !view.draw.doubleExitPropagatesBye &&
-    own.seatOps.some((op) => op.op === 'setMatchUpResult' && op.matchUpId === targets.loserMatchUpId);
-  if (!freed && !branched) return 'exit';
-  if (targets.seededParticipantIds?.includes(loser.participantId)) return 'loser';
   const after = unwoundView(args);
   if (!after?.direction?.loser?.exit) return 'exit';
   return plainLoserReason(after.view, after.direction) ?? carriedReason(after.view, write);
@@ -4366,7 +4354,8 @@ function carriedFor(
 
 /**
  * The carry's write (`carriedFor`), from the view as a double exit's unwind leaves it where the loser carries their own
- * exit onto the seat the unwind frees (`unwoundCarryReason`, S7), and from the call's view otherwise
+ * exit onto the seat the unwind frees (`unwoundCarryReason`, S7), and from the call's view otherwise. The loser's half
+ * is the call's: the direction re-planned on the unwound view carries the same exit (`unwoundCarryReason` asked)
  */
 function unwoundCarriedFor(
   view: OutcomeView,
@@ -4374,7 +4363,7 @@ function unwoundCarriedFor(
   loser?: DirectionPlan['loser'],
 ): ReturnType<typeof carriedFor> {
   const after = loser?.exit && isDoubleExit(view.existing.matchUpStatus) ? unwoundView(args) : undefined;
-  return carriedFor(after?.view ?? view, args, after?.direction?.loser ?? loser);
+  return carriedFor(after?.view ?? view, args, loser);
 }
 
 /** the schedule attributes v2 plans: those v1's writer writes on the matchUp alone (S7) */

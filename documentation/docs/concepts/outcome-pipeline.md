@@ -927,8 +927,8 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   carry lands there as a fresh carry lands (`progressExitStatus`, RULES 1 to 3, then each further level). So the unwind's
   ops (its deferred settle writes left out) are folded into a working view, read again as an outcome view with the
   direction re-planned (`rebuild`, the composition point a result turned into a double exit uses), and the carry is
-  planned on that view on a fresh carry's own terms (`plainLoserReason`, `carriedReason`) and written from it
-  (`carriedOps`). The writes are the unwind's, then the call's own, then the carry's: the loser's matchUp, freed of the
+  planned on that view on a fresh carry's own terms (`plainLoserReason`: the seat free, as the unwind leaves it;
+  `carriedReason`: the landing) and written from it (`carriedOps`). The writes are the unwind's, then the call's own, then the carry's: the loser's matchUp, freed of the
   BYE, written the carried status, awarded to the side opposite (the participant standing there, or nobody: v1 awards the
   empty side) with the carrier's entry merged into its provenance (`modifyMatchUpScore`, with the event and tournament,
   announced in context); the awardee sent on into the next matchUp, which the unwind had just written as the position
@@ -937,9 +937,10 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   and quiet superseded (a plain placement after a withdrawal, a release or a quiet write is the matchUp's notice:
   `withdrawnByeNotices`, `placedAfter`, the ordered `released`). A feed round's fed seat lands the carry pending over its
   structural position the same way; under `doubleExitPropagateBye: false` the loser's matchUp the unwind wrote back to be
-  played takes the carry the same way (DOUBLE_ELIMINATION). Stays v1's: a seat the unwind does not free, a loser behind a
-  link condition or seeded, a carry the re-planned direction reads as anything but a fresh carry (converged with a
-  re-derived exit), and whatever a fresh carry's own checks keep v1's (a BYE opposite with no clean passage, a landing
+  played takes the carry the same way (DOUBLE_ELIMINATION). Stays v1's: a loser behind a link condition, a carry the
+  re-planned direction reads as anything but a fresh carry (converged with a re-derived exit), and whatever a fresh
+  carry's own checks keep v1's (a seat the unwind did not free, still a BYE on the rebuilt view; a seeded loser; a BYE
+  opposite with no clean passage, a landing
   holding a result or provenance, a further level not clean, a seat the unwind's cascade frees further on, which the
   re-planned walk reads as the stored BYE: COMPASS under `doubleExitPropagateBye: false`).
 

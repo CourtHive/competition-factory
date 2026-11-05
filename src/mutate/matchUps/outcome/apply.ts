@@ -196,14 +196,16 @@ function byeAndAdvance(ops: OutcomeOp[]): { advancedLast: Set<string>; eventKept
   return { advancedLast, eventKept };
 }
 
-/** a positions write that places plainly: no withdrawal, removal, release or advance through a BYE named on it */
+/**
+ * a positions write that places plainly: announced, with no withdrawal, removal or advance through a BYE named on it (a
+ * release names none of those either, and is read here only where a release's own name was not asked first)
+ */
 const plainPlacement = (op: OutcomeOp): op is Extract<OutcomeOp, { op: 'setMatchUpDrawPositions' }> =>
   op.op === 'setMatchUpDrawPositions' &&
   op.announcesContext !== false &&
   !op.advancesThroughBye &&
   !op.withdrawnByePosition &&
-  !op.removedDrawPosition &&
-  !op.releasedDrawPosition;
+  !op.removedDrawPosition;
 
 /**
  * An awardee's position released: v1's `releaseAdvancedDrawPosition` names the matchUp, unless a plain placement writes it
