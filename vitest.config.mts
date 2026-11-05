@@ -103,6 +103,7 @@ export default defineConfig({
       './src/tests/testHarness/schedulingProperties.ts',
       './src/tests/testHarness/schedulingViewRoundTrip.ts',
       './src/tests/testHarness/rethrowCaughtErrors.ts',
+      './src/tests/testHarness/queryPurity.ts',
     ],
     coverage: {
       reporter: ['html', 'json-summary'],

@@ -64,6 +64,7 @@ dist
 # generated kernel conformance cases (pnpm kernel:harvest-scheduling); never committed
 .kernel-cases/
 .notice-coverage/
+.query-purity/
 
 # verify:docs-examples scratch (removed in finally; ignored in case a run is killed)
 .doc-examples-*/

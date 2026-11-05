@@ -33,6 +33,9 @@ function probedCall() {
 
 function setup() {
   mocksEngine.generateTournamentRecord({ drawProfiles: [{ drawSize: 4 }], setState: true });
+  // no observer, as in production: the suite's query-purity check (testHarness/queryPurity.ts) installs one before
+  // every test, and an observer is exactly what makes the engine copy params
+  setInvokeObserver();
 }
 
 it('does not copy params when nothing will read them', () => {
