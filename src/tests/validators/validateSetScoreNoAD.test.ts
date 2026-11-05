@@ -4,7 +4,7 @@
  * Tests the fix where validateSetScore checks set.NoAD property
  * that was set by parseScoreString, not just the format's NoAD
  */
-import { validateSetScore } from '@Validators/validateMatchUpScore';
+import { validateSetScore } from '@Scoring/analysis/validateMatchUpScore';
 import { describe, it, expect } from 'vitest';
 
 describe('validateSetScore - NoAD property from parseScoreString', () => {

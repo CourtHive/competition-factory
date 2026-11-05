@@ -4,15 +4,15 @@
  */
 import { anonymizeTournamentRecord } from '@Generators/tournamentRecords/anonymizeTournamentRecord';
 import { processPlayoffGroups } from '@Generators/drawDefinitions/drawTypes/processPlayoffGroups';
+import { validateSetScore } from '@Scoring/analysis/validateMatchUpScore';
 import { keyValueScore } from '@Helpers/keyValueScore/keyValueScore';
-import { validateSetScore } from '@Validators/validateMatchUpScore';
 import { analyzeSet } from '@Query/matchUp/analyzeSet';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
 
 // constants
-import { INVALID_CONFIGURATION } from '@Constants/errorConditionConstants';
 import { FIRST_ROUND_LOSER_CONSOLATION, AD_HOC, ROUND_OUTCOME } from '@Constants/drawDefinitionConstants';
+import { INVALID_CONFIGURATION } from '@Constants/errorConditionConstants';
 import { COLLEGE_DEFAULT } from '@Constants/tieFormatConstants';
 import { INDIVIDUAL } from '@Constants/participantConstants';
 import { SINGLES_MATCHUP } from '@Constants/matchUpTypes';

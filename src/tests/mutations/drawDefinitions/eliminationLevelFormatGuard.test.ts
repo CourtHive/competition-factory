@@ -1,4 +1,4 @@
-import { formatCanEndTied, parsedFormatCanEndTied } from '@Validators/tiedFormatCompatibility';
+import { formatCanEndTied, parsedFormatCanEndTied } from '@Helpers/matchUpFormatCode/tiedFormat';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';

@@ -10,7 +10,7 @@
  * Raised from `courthive-components`, whose score-entry card had to hand-check exactly this; with the
  * check here, that copy goes.
  */
-import { validateMatchUpScore, validateSetScore } from '@Validators/validateMatchUpScore';
+import { validateMatchUpScore, validateSetScore } from '@Scoring/analysis/validateMatchUpScore';
 import { describe, it, expect } from 'vitest';
 
 const FORMAT = 'SET3-S:6/TB7';

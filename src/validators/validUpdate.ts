@@ -1,4 +1,4 @@
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 
 // constants
 import { completedMatchUpStatuses, IN_PROGRESS } from '@Constants/matchUpStatusConstants';

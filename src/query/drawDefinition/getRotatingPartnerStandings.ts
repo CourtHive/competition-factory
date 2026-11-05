@@ -3,7 +3,7 @@ import { isRotatingPartnerDraw, validateRotatingPartnerEntrants } from '@Validat
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { isRotatingPartnerTallyPolicy } from '@Validators/rotatingPartnerTallyPolicy';
 import { settlementMatches } from '@Validators/rotatingPartnerSettlement';
-import { validateScore } from '@Validators/validateScore';
+import { validateScore } from '@Scoring/analysis/validateScore';
 import { matchUpsOf } from '@Acquire/structureMembers';
 
 // constants and types

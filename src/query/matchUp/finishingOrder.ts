@@ -1,4 +1,4 @@
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 
 // constants and types

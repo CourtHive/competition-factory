@@ -3,7 +3,7 @@ import { applyWithdrawnExits } from '@Mutate/matchUps/matchUpStatus/applyWithdra
 import { byeSeatsOwedTo } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { isAnyExit, isDoubleExit, isExit } from '@Validators/isExit';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';

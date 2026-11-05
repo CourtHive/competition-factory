@@ -8,7 +8,7 @@ import { getPositionAssignments } from '@Query/structure/getPositionAssignments'
 import { isTournamentPublished } from '@Query/publishing/isTournamentPublished';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { modifyEventPublishStatus } from './modifyEventPublishStatus';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';

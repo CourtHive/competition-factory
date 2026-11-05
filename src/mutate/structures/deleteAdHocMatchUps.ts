@@ -2,7 +2,7 @@ import { updateAssignmentParticipantResults } from '@Mutate/drawDefinitions/matc
 import { deleteMatchUpsNotice, modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { getAdHocStructureDetails } from './getAdHocStructureDetails';
 import { getMissingSequenceNumbers, unique } from '@Tools/arrays';
 import { getMatchUpId } from '@Functions/global/extractors';

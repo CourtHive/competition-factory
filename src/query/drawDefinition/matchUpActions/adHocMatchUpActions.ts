@@ -1,6 +1,6 @@
 import { buildIndividualIdsMap } from '@Query/participants/individualParticipantIds';
 import { getEventAlternateParticipantIds } from './getEventAlternateParticipantids';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { getParticipantId } from '@Functions/global/extractors';
 import { matchUpsOf } from '@Acquire/structureMembers';

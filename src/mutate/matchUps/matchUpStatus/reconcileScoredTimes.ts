@@ -1,5 +1,5 @@
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 
 // constants and types
 import { completedMatchUpStatuses, DEAD_RUBBER } from '@Constants/matchUpStatusConstants';

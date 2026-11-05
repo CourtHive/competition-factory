@@ -1,6 +1,6 @@
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
 import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';

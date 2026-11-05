@@ -1,6 +1,6 @@
 import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { findEvent } from '@Acquire/findEvent';
 
 // constants

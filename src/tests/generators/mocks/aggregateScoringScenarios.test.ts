@@ -5,7 +5,7 @@
  */
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { parseScoreString } from '@Scoring/parse/parseScoreString';
-import { analyzeScore } from '@Query/matchUp/analyzeScore';
+import { analyzeScore } from '@Scoring/analysis/analyzeScore';
 import { describe, it, expect } from 'vitest';
 
 // constants

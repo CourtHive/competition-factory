@@ -1,7 +1,7 @@
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
+import { checkScoreCompleteness } from '@Scoring/analysis/scoreCompleteness';
 import { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';
-import { checkScoreCompleteness } from '@Validators/scoreCompleteness';
 import { coercedGender } from '@Helpers/coercedGender';
 import { findMatchUp } from '@Acquire/findMatchUp';
 

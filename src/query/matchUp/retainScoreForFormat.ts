@@ -1,7 +1,7 @@
 import { aggregateDeciderSetNumber, finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { parse, ParsedFormat, SetFormat } from '@Helpers/matchUpFormatCode/parse';
-import { validateSetScore } from '@Validators/validateMatchUpScore';
-import { maxExactlySets } from '@Validators/setCount';
+import { validateSetScore } from '@Scoring/analysis/validateMatchUpScore';
+import { maxExactlySets } from '@Scoring/analysis/setCount';
 
 import type { Set } from '@Types/tournamentTypes';
 

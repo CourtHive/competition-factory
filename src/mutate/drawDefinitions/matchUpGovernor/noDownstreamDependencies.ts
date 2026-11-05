@@ -2,8 +2,8 @@ import { removeDirectedParticipants } from '@Mutate/matchUps/drawPositions/remov
 import { updateTieMatchUpScore } from '@Mutate/matchUps/score/updateTieMatchUpScore';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { lastSetFormatIsTimed } from '@Query/matchUp/lastSetFormatisTimed';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { attemptToSetMatchUpStatus } from './attemptToSetMatchUpStatus';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { checkConnectedStructures } from './checkConnectedStructures';
 import { attemptToSetWinningSide } from './attemptToSetWinningSide';
 import { decorateResult } from '@Functions/global/decorateResult';

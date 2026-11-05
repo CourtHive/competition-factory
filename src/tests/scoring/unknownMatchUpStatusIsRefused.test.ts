@@ -1,7 +1,7 @@
-import { validateMatchUpScore } from '@Validators/validateMatchUpScore';
-import { isMatchUpStatus } from '@Validators/isMatchUpStatus';
-import { analyzeScore } from '@Query/matchUp/analyzeScore';
-import { validateScore } from '@Validators/validateScore';
+import { validateMatchUpScore } from '@Scoring/analysis/validateMatchUpScore';
+import { validateScore } from '@Scoring/analysis/validateScore';
+import { analyzeScore } from '@Scoring/analysis/analyzeScore';
+import { isMatchUpStatus } from '@Constants/isMatchUpStatus';
 import { describe, expect, it } from 'vitest';
 
 // constants

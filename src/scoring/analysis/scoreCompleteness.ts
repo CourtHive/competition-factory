@@ -1,6 +1,6 @@
 import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
-import { validateSetScore } from '@Validators/validateMatchUpScore';
-import { setPlayedAfterDecision } from '@Validators/setCount';
+import { validateSetScore } from '@Scoring/analysis/validateMatchUpScore';
+import { setPlayedAfterDecision } from '@Scoring/analysis/setCount';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // constants and types

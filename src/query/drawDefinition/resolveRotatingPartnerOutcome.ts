@@ -1,15 +1,15 @@
 import { stringifyCombinedPointFormat } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { advancesMatchWinner, drawStructures } from '@Validators/tiedFormatCompatibility';
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
-import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
 import { resolveScoringFormat } from '@Query/hierarchical/resolveScoringFormat';
-import { isLevelScore } from '@Query/matchUps/roundRobinTally/drawnResults';
-import { validateScore } from '@Validators/validateScore';
+import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
+import { validateScore } from '@Scoring/analysis/validateScore';
+import { isLevelScore } from '@Scoring/analysis/levelScore';
 import { matchUpsOf } from '@Acquire/structureMembers';
 
 // constants and types
-import type { DrawDefinition, Event, Score, MatchUpStatusUnion } from '@Types/tournamentTypes';
 import { INVALID_VALUES, INVALID_SCORE, UNDECIDED_LEVEL_RESULT } from '@Constants/errorConditionConstants';
+import type { DrawDefinition, Event, Score, MatchUpStatusUnion } from '@Types/tournamentTypes';
 import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 import type { ResultType } from '@Types/factoryTypes';
 

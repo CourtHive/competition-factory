@@ -1,9 +1,9 @@
+import { decidedResultRefusal, isDecidedOutsideScore } from '@Scoring/analysis/decidedResult';
 import { isTiebreakGamesScore } from '@Helpers/matchUpFormatCode/setRules/tiebreakAtRules';
-import { decidedResultRefusal, isDecidedOutsideScore } from '@Validators/decidedResult';
 import { formatForSet } from '@Helpers/matchUpFormatCode/setRules/tiebreakSetShape';
-import { checkScoreCompleteness } from '@Validators/scoreCompleteness';
-import { isMatchUpStatus } from '@Validators/isMatchUpStatus';
-import { analyzeScore } from '@Query/matchUp/analyzeScore';
+import { checkScoreCompleteness } from '@Scoring/analysis/scoreCompleteness';
+import { analyzeScore } from '@Scoring/analysis/analyzeScore';
+import { isMatchUpStatus } from '@Constants/isMatchUpStatus';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { mustBeAnArray } from '@Tools/mustBeAnArray';
 import { isConvertableInteger } from '@Tools/math';

@@ -1,4 +1,4 @@
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 
 // constants and types
 import type { MatchUpStatusUnion, Score } from '@Types/tournamentTypes';

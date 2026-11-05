@@ -1,6 +1,6 @@
 import { getParticipantResults } from '@Query/matchUps/roundRobinTally/getParticipantResults';
 import { validateTallyPolicy } from '@Validators/validateTallyPolicy';
-import { validateScore } from '@Validators/validateScore';
+import { validateScore } from '@Scoring/analysis/validateScore';
 import { setOutcomePipeline } from '@Global/state/globalState';
 import { afterEach, describe, expect, it } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -9,8 +9,8 @@ import tournamentEngine from '@Engines/syncEngine';
 // constants and types
 import { OUTCOME_PIPELINE_DIFFERENTIAL, OUTCOME_PIPELINE_V1 } from '@Constants/outcomePipelineConstants';
 import { INVALID_SCORE, UNDECIDED_LEVEL_RESULT } from '@Constants/errorConditionConstants';
-import { ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { COMPLETED, IN_PROGRESS, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import type { OutcomePipelineMode } from '@Constants/outcomePipelineConstants';
 import { INTENNSE_2026 } from '@Constants/tieFormatConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';

@@ -1,5 +1,5 @@
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
-import { analyzeScore } from '@Query/matchUp/analyzeScore';
+import { analyzeScore } from '@Scoring/analysis/analyzeScore';
 import { expect, it } from 'vitest';
 
 // constants

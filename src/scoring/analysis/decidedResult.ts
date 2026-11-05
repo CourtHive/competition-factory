@@ -1,5 +1,5 @@
-import { isLevelScore } from '@Query/matchUps/roundRobinTally/drawnResults';
 import { overtimeDecision } from '@Scoring/analysis/overtimeScore';
+import { isLevelScore } from '@Scoring/analysis/levelScore';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // constants and types

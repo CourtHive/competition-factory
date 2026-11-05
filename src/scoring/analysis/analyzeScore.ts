@@ -2,12 +2,12 @@ import { finalSetGoverns, unlevelDeciderRefusal } from '@Helpers/matchUpFormatCo
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { tiebreakSetCeiling } from '@Helpers/matchUpFormatCode/setRules/tiebreakAtRules';
 import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
-import { parsedFormatCanEndTied } from '@Validators/tiedFormatCompatibility';
-import { timedSetWinnerContradicts } from '@Validators/timedSetWinner';
+import { parsedFormatCanEndTied } from '@Helpers/matchUpFormatCode/tiedFormat';
+import { timedSetWinnerContradicts } from '@Scoring/analysis/timedSetWinner';
 import { parse, ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
 import { overtimeScoreVerdict } from '@Scoring/analysis/overtimeScore';
-import { isMatchUpStatus } from '@Validators/isMatchUpStatus';
-import { maxExactlySets } from '@Validators/setCount';
+import { isMatchUpStatus } from '@Constants/isMatchUpStatus';
+import { maxExactlySets } from '@Scoring/analysis/setCount';
 import { instanceCount } from '@Tools/arrays';
 
 // constants and types

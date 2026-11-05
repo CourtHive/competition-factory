@@ -2,11 +2,11 @@ import { checkSanctionedEntryLimits } from '@Query/drawDefinition/checkSanctione
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
+import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { addNotice, hasTopic } from '@Global/state/globalState';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { storeGoesTo } from '@Query/matchUps/addGoesTo';

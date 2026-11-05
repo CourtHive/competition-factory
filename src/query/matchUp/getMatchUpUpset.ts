@@ -1,11 +1,11 @@
-import { checkScoreCompleteness } from '@Validators/scoreCompleteness';
+import { checkScoreCompleteness } from '@Scoring/analysis/scoreCompleteness';
 import { getMatchUpRatingDelta } from './getMatchUpRatingDelta';
 
 // constants and types
 import { ErrorType, INVALID_VALUES, MISSING_MATCHUP } from '@Constants/errorConditionConstants';
 import { RANKING, RATING, SEEDING } from '@Constants/scaleConstants';
-import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import type { HydratedMatchUp, HydratedSide } from '@Types/hydrated';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 export type UpsetBasis = typeof SEEDING | typeof RANKING | typeof RATING;
 

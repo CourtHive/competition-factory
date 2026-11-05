@@ -1,6 +1,6 @@
-import { validateMatchUpScore } from '@Validators/validateMatchUpScore';
+import { validateMatchUpScore } from '@Scoring/analysis/validateMatchUpScore';
 import { parseScoreString } from '@Scoring/parse/parseScoreString';
-import { validateScore } from '@Validators/validateScore';
+import { validateScore } from '@Scoring/analysis/validateScore';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';

@@ -1,7 +1,7 @@
-export { validateSetScore, validateMatchUpScore } from '@Validators/validateMatchUpScore';
+export { validateSetScore, validateMatchUpScore } from '@Scoring/analysis/validateMatchUpScore';
 export { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 export { validateTieFormat } from '@Validators/validateTieFormat';
-export { validateScore } from '@Validators/validateScore';
+export { validateScore } from '@Scoring/analysis/validateScore';
 
 export {
   getSetComplement,
@@ -10,9 +10,9 @@ export {
 } from '@Helpers/matchUpFormatCode/setRules/setComplement';
 export { retainScoreForFormat } from '@Query/matchUp/retainScoreForFormat';
 export type { RetainScoreArgs, RetainedScore } from '@Query/matchUp/retainScoreForFormat';
-export { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+export { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 export { checkSetIsComplete } from '@Helpers/matchUpFormatCode/setRules/setCompletion';
-export { analyzeScore } from '@Query/matchUp/analyzeScore';
+export { analyzeScore } from '@Scoring/analysis/analyzeScore';
 export { parseScoreString } from '@Scoring/parse/parseScoreString';
 export { analyzeSet } from '@Query/matchUp/analyzeSet';
 

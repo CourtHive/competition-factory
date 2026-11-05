@@ -16,9 +16,9 @@ import fs from 'node:fs';
 
 const SRC = path.resolve(__dirname, '../..');
 const VALIDATORS_THAT_CHECK_THE_STATUS = new Set([
-  path.join('validators', 'validateScore.ts'),
-  path.join('validators', 'validateMatchUpScore.ts'),
-  path.join('query', 'matchUp', 'analyzeScore.ts'),
+  path.join('scoring', 'analysis', 'validateScore.ts'),
+  path.join('scoring', 'analysis', 'validateMatchUpScore.ts'),
+  path.join('scoring', 'analysis', 'analyzeScore.ts'),
 ]);
 const erasure = /\b(matchUpStatus|existingStatus)\??:\s*string\b/;
 

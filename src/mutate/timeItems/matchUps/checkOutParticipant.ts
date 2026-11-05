@@ -2,8 +2,8 @@ import { addMatchUpPresenceAttestation } from '@Mutate/timeItems/matchUps/matchU
 import { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInParticipantIds';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getMatchUpParticipantIds } from '@Query/matchUp/getMatchUpParticipantIds';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { resolveFromParameters } from '@Acquire/resolveFromParameters';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { buildAttestation } from '@Mutate/presence/buildAttestation';
 
 // constants and types

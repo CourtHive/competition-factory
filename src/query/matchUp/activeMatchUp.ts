@@ -1,4 +1,4 @@
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { isActiveMatchUpStatus } from '@Query/matchUp/checkStatusType';
 
 // constants and types
