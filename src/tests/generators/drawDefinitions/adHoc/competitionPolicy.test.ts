@@ -1,5 +1,5 @@
 // Generators
-import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
+import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { deriveCountables } from '@Helpers/ratings/competition/deriveCountables';
 import { computeActualOutput } from '@Helpers/ratings/competition/actualOutput';
 import { expectedResult, LOGISTIC_400 } from '@Helpers/ratings/ratingUpdate';

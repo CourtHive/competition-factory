@@ -5,7 +5,7 @@ import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat'
 import { parsedFormatCanEndTied } from '@Validators/tiedFormatCompatibility';
 import { timedSetWinnerContradicts } from '@Validators/timedSetWinner';
 import { parse, ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
-import { overtimeScoreVerdict } from '@Validators/overtimeScore';
+import { overtimeScoreVerdict } from '@Scoring/analysis/overtimeScore';
 import { isMatchUpStatus } from '@Validators/isMatchUpStatus';
 import { maxExactlySets } from '@Validators/setCount';
 import { instanceCount } from '@Tools/arrays';

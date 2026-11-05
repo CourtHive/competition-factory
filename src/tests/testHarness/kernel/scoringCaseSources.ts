@@ -2,7 +2,7 @@ import { normativeReduction } from './normativeReduction';
 import { overTheWire } from './kernel';
 
 // types
-import type { ScoringConfiguration, TimelineEntry } from '@Assemblies/engines/scoring/v2/types';
+import type { ScoringConfiguration, TimelineEntry } from '@Scoring/kernel/types';
 import type { KernelCase } from './kernel';
 
 /**

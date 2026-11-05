@@ -109,6 +109,8 @@
   "src/query/structure": 86,
   "src/query/tournaments": 37,
   "src/query/venues": 56,
+  "src/scoring/parse": 11,
+  "src/scoring/views": 12,
   "src/server": 1,
   "src/server/auth": 1,
   "src/server/auth/guards": 1,

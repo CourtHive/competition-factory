@@ -1,8 +1,8 @@
-import { createContext, initialState, reduce } from '@Assemblies/engines/scoring/v2/reduce';
-import type { ScoredSet, ScoringState } from '@Assemblies/engines/scoring/v2/types';
+import { createContext, initialState, reduce } from '@Scoring/kernel/reduce';
 import { segmentClosed } from '@Helpers/matchUpFormatCode/overtimeContext';
-import { scoreOf } from '@Assemblies/engines/scoring/v2/score';
+import type { ScoredSet, ScoringState } from '@Scoring/kernel/types';
 import type { MatchUp } from '@Types/scoring/types';
+import { scoreOf } from '@Scoring/kernel/score';
 
 /** Read the stored score, not a replay that could overwrite a deliberately unrecalculated correction. */
 export function overtimeScore(matchUp: MatchUp) {

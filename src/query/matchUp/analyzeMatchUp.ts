@@ -1,8 +1,8 @@
-import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { aggregateDeciderSetNumber, unlevelDeciderRefusal } from '@Helpers/matchUpFormatCode/aggregateDecider';
+import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { parse, ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
+import { overtimeDecision } from '@Scoring/analysis/overtimeScore';
 import { analyzeSet, SetAnalysisFields } from './analyzeSet';
-import { overtimeDecision } from '@Validators/overtimeScore';
 import { instanceCount } from '@Tools/arrays';
 
 // constants and types

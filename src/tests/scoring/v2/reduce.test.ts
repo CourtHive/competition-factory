@@ -1,11 +1,11 @@
-import { createContext, initialState, reduce, step } from '@Assemblies/engines/scoring/v2/reduce';
+import { createContext, initialState, reduce, step } from '@Scoring/kernel/reduce';
 import { finalGoverns, resolveFormat } from '@Helpers/matchUpFormatCode/matchRule';
-import { DEFAULT_MATCHUP_FORMAT } from '@Assemblies/engines/scoring/v2/format';
-import { decideMatch } from '@Assemblies/engines/scoring/v2/decide';
+import { DEFAULT_MATCHUP_FORMAT } from '@Scoring/kernel/format';
+import { decideMatch } from '@Scoring/kernel/decide';
 import { describe, expect, it } from 'vitest';
 
 // constants and types
-import type { ScoredSet, TimelineEntry } from '@Assemblies/engines/scoring/v2/types';
+import type { ScoredSet, TimelineEntry } from '@Scoring/kernel/types';
 import type { MatchRule } from '@Helpers/matchUpFormatCode/matchRule';
 
 /*

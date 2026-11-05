@@ -1,2 +1,2 @@
-export { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
+export { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 export { generateOutcome } from '@Generators/simulation/generateOutcome';

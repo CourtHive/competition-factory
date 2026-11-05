@@ -1,6 +1,12 @@
 // constants and types
-import type { SubstitutionError, SubstitutionRules, SubstitutionViolation } from '../ScoringEngine';
-import type { ScoreEntry, SubstitutionEvent, TeamCompetitor } from '@Types/scoring/types';
+import type {
+  SubstitutionViolation,
+  SubstitutionEvent,
+  SubstitutionRules,
+  SubstitutionError,
+  TeamCompetitor,
+  ScoreEntry,
+} from '@Types/scoring/types';
 
 /**
  * ScoringEngine v2 (SE2c): lineUps and substitution (§ 2.7). A side's lineUp is setup, outside the timeline; a

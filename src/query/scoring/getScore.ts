@@ -11,9 +11,9 @@ import { deriveServer, serviceRule, formatGameScore } from '@Mutate/scoring/addP
 import { isDecisionRequired, decisionRequiredSituation } from './decisionRequired';
 import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
+import { overtimeScore } from '@Scoring/analysis/overtimeScoreView';
 import { getCombinedPointScore } from './getCombinedPointScore';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
-import { overtimeScore } from './overtimeScore';
 
 // constants
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';

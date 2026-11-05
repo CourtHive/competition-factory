@@ -1,6 +1,6 @@
-import { generateOutcome } from '@Generators/simulation/generateOutcome';
 import { shootoutTallyRefusal } from '@Helpers/matchUpFormatCode/shootout';
-import { overtimeScoreVerdict } from '@Validators/overtimeScore';
+import { generateOutcome } from '@Generators/simulation/generateOutcome';
+import { overtimeScoreVerdict } from '@Scoring/analysis/overtimeScore';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { createSeededRandom } from '@Tools/prng';
 import { describe, expect, it } from 'vitest';

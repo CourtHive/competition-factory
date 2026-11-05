@@ -1,4 +1,4 @@
-import { generateScoreString } from '@Generators/matchUps/generateScoreString';
+import { generateScoreString } from '@Scoring/views/generateScoreString';
 import { definedAttributes } from '@Tools/definedAttributes';
 
 // constants

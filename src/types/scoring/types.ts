@@ -906,3 +906,24 @@ export interface Episode {
   /** Whether the match is complete after this point */
   complete: boolean;
 }
+
+/**
+ * A competition's substitution rules. Advisory (CA 2026-10-17): the engine reports what a substitution
+ * would break through evaluateSubstitution(), and the host decides; substitute() refuses only a
+ * substitution that would corrupt who is on court. A required substitution (a player out of time, a
+ * penalty removal) is the host's to allow.
+ */
+export interface SubstitutionRules {
+  allowed: boolean;
+  maxPerMatchUp?: number; // Omit = unlimited; 0 = none despite allowed: true
+  maxPerSegment?: number;
+  allowedMatchUpTypes?: string[];
+  timing?: string; // 'BETWEEN_GAMES' | 'BETWEEN_POINTS' | 'ANY'
+  minRosterSize?: number;
+  maxRosterSize?: number;
+}
+/** Why substitute() refused: each would leave the lineUp naming the wrong players. */
+export type SubstitutionError = 'NO_LINEUP' | 'OUT_NOT_ON_SIDE' | 'IN_ALREADY_ON_COURT' | 'SAME_PARTICIPANT';
+export type SubstitutionResult = { success: true } | { success: false; error: SubstitutionError };
+/** A competition substitution rule a substitution made now would break. */
+export type SubstitutionViolation = 'NOT_ALLOWED' | 'MAX_PER_MATCHUP' | 'MAX_PER_SEGMENT' | 'TIMING' | 'MATCHUP_TYPE';

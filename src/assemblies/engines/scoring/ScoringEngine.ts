@@ -16,11 +16,22 @@
  *   const matchUp = engine.getState();
  */
 
-import type { MatchUp, ScoreEntry, TeamCompetitor } from '@Types/scoring/types';
 import type { PointMultiplier } from '@Mutate/scoring/resolvePointValue';
 import type { getScore } from '@Query/scoring/getScore';
+import type {
+  SubstitutionViolation,
+  SubstitutionResult,
+  SubstitutionRules,
+  SubstitutionError,
+  TeamCompetitor,
+  ScoreEntry,
+  MatchUp,
+} from '@Types/scoring/types';
 
 // competitionFormat types (mirrored from factory for standalone use)
+
+// the substitution contract lives in contracts, where the scoring kernel reads it too
+export type { SubstitutionError, SubstitutionResult, SubstitutionRules, SubstitutionViolation };
 export interface TimerProfile {
   shotClockSeconds?: number;
   segmentTimers?: { segmentType: string; minutes: number; direction?: string; stoppageTime?: boolean }[];
@@ -36,26 +47,6 @@ export interface TimeoutRules {
 export interface PenaltyBoxProfile {
   durationSeconds: number;
 }
-/**
- * A competition's substitution rules. Advisory (CA 2026-10-17): the engine reports what a substitution
- * would break through evaluateSubstitution(), and the host decides; substitute() refuses only a
- * substitution that would corrupt who is on court. A required substitution (a player out of time, a
- * penalty removal) is the host's to allow.
- */
-export interface SubstitutionRules {
-  allowed: boolean;
-  maxPerMatchUp?: number; // Omit = unlimited; 0 = none despite allowed: true
-  maxPerSegment?: number;
-  allowedMatchUpTypes?: string[];
-  timing?: string; // 'BETWEEN_GAMES' | 'BETWEEN_POINTS' | 'ANY'
-  minRosterSize?: number;
-  maxRosterSize?: number;
-}
-/** Why substitute() refused: each would leave the lineUp naming the wrong players. */
-export type SubstitutionError = 'NO_LINEUP' | 'OUT_NOT_ON_SIDE' | 'IN_ALREADY_ON_COURT' | 'SAME_PARTICIPANT';
-export type SubstitutionResult = { success: true } | { success: false; error: SubstitutionError };
-/** A competition substitution rule a substitution made now would break. */
-export type SubstitutionViolation = 'NOT_ALLOWED' | 'MAX_PER_MATCHUP' | 'MAX_PER_SEGMENT' | 'TIMING' | 'MATCHUP_TYPE';
 
 export interface PlayerRules {
   maxMinutesPerSegment?: number;

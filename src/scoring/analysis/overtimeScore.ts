@@ -1,12 +1,12 @@
 import { shootoutTallyRefusal } from '@Helpers/matchUpFormatCode/shootout';
 import { resolveFormat } from '@Helpers/matchUpFormatCode/matchRule';
-import { decideMatch } from '@Assemblies/engines/scoring/v2/decide';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { decideMatch } from '@Scoring/kernel/decide';
 
 // constants and types
-import type { ScoredSet, SideNumber } from '@Assemblies/engines/scoring/v2/types';
 import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 import type { MatchRule } from '@Helpers/matchUpFormatCode/matchRule';
+import type { ScoredSet, SideNumber } from '@Scoring/kernel/types';
 import type { MatchUpStatusUnion } from '@Types/tournamentTypes';
 
 type StaticSet = {
