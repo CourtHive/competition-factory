@@ -216,6 +216,16 @@ describe('globalState', () => {
       const status = deepCopyEnabled();
       expect(status.stringify).toEqual(['test']);
     });
+
+    it('clears a threshold only when one is passed explicitly as undefined', () => {
+      setDeepCopy(true, { threshold: 2 });
+      // an attribute set that does not name the threshold leaves it as it was
+      setDeepCopy(true, { stringify: [] });
+      expect(deepCopyEnabled().threshold).toBe(2);
+
+      setDeepCopy(true, { threshold: undefined });
+      expect(deepCopyEnabled().threshold).toBeUndefined();
+    });
   });
 
   describe('notifications', () => {
