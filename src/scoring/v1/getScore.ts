@@ -7,11 +7,11 @@
 
 import type { MatchUp, ScoreResult, PointSituation, FormatStructure, SetFormatStructure } from '@Types/scoring/types';
 import { resolveSetType, isLiveDecidingSet, isStandardSetTiebreak } from '@Helpers/matchUpFormatCode/formatUtilities';
-import { deriveServer, serviceRule, formatGameScore } from '@Mutate/scoring/addPoint';
 import { isDecisionRequired, decisionRequiredSituation } from './decisionRequired';
+import { deriveServer, serviceRule, formatGameScore } from '@Scoring/v1/addPoint';
 import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
-import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
 import { overtimeScore } from '@Scoring/analysis/overtimeScoreView';
+import { calculatePointsTo } from '@Scoring/v1/pointsToCalculator';
 import { getCombinedPointScore } from './getCombinedPointScore';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 

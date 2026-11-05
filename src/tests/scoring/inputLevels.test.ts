@@ -57,8 +57,8 @@ describe('S4: outs segments take set totals, not points or games', () => {
   });
 
   it('the pure addPoint refuses too', async () => {
-    const { addPoint } = await import('@Mutate/scoring/addPoint');
-    const { createMatchUp } = await import('@Mutate/scoring/createMatchUp');
+    const { addPoint } = await import('@Scoring/v1/addPoint');
+    const { createMatchUp } = await import('@Scoring/v1/createMatchUp');
     expect(() => addPoint(createMatchUp({ matchUpFormat: 'INN4XA-S:O3' }), { winner: 0 })).toThrow(/set totals/);
   });
 

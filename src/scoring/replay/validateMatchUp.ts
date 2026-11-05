@@ -9,9 +9,9 @@
  */
 
 import type { MatchUp, SetScore, Participant } from '@Types/scoring/types';
-import { createMatchUp } from '@Mutate/scoring/createMatchUp';
-import { addPoint } from '@Mutate/scoring/addPoint';
-import { getScore } from '@Query/scoring/getScore';
+import { createMatchUp } from '@Scoring/v1/createMatchUp';
+import { addPoint } from '@Scoring/v1/addPoint';
+import { getScore } from '@Scoring/v1/getScore';
 
 // constants
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';

@@ -7,8 +7,8 @@ import { getParticipantResults } from '@Query/matchUps/roundRobinTally/getPartic
 import { getParticipantStats } from '@Query/participant/getParticipantStats';
 import { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';
 import { generateOutcome } from '@Generators/simulation/generateOutcome';
-import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
-import { addPoint, formatGameScore } from '@Mutate/scoring/addPoint';
+import { calculatePointsTo } from '@Scoring/v1/pointsToCalculator';
+import { addPoint, formatGameScore } from '@Scoring/v1/addPoint';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import type { ResultType } from '@Types/factoryTypes';
 import mocksEngine from '@Assemblies/engines/mock';

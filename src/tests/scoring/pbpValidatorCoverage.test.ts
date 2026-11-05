@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { pbpValidator } from '@Validators/scoring/pbpValidator';
+import { pbpValidator } from '@Scoring/replay/pbpValidator';
 
 describe('pbpValidator - Coverage Improvements', () => {
   beforeEach(() => {

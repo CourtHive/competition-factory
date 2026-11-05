@@ -11,7 +11,7 @@
  */
 import { resolveSetType } from '@Helpers/matchUpFormatCode/formatUtilities';
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
-import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
+import { calculatePointsTo } from '@Scoring/v1/pointsToCalculator';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { describe, expect, it } from 'vitest';
 
