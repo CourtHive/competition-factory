@@ -2,7 +2,7 @@ export { getParticipantEligibility, getEligibleEvents } from '@Query/entries/get
 export { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';
 export { getEventStructures } from '@Query/structure/structureGetter';
 export { getEventProperties } from '@Query/event/getEventProperties';
-export { categoryCanContain } from '@Query/event/categoryCanContain';
+export { categoryCanContain } from '@Helpers/categories/categoryCanContain';
 export { getScaledEntries } from '@Query/event/getScaledEntries';
 export { getFlightProfile } from '@Query/event/getFlightProfile';
 export { getEventTimeItem } from '@Query/base/timeItems';

@@ -2,8 +2,8 @@ import { isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { timingCategoryType } from '@Query/event/timingCategoryType';
 import { timingCategoryName } from '@Query/event/timingCategoryName';
 import { getMatchUpFormatTiming } from './getMatchUpFormatTiming';
+import { findExtension } from '@Helpers/extensions/findExtension';
 import { definedAttributes } from '@Tools/definedAttributes';
-import { findExtension } from '@Acquire/findExtension';
 import { findPolicy } from '@Acquire/findPolicy';
 import { unique } from '@Tools/arrays';
 

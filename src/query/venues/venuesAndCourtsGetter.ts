@@ -1,5 +1,5 @@
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { getDisabledStatus } from '@Query/extensions/getDisabledStatus';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { getInContextCourt } from './getInContextCourt';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 

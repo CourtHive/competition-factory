@@ -1,4 +1,4 @@
-import { findExtension } from '@Acquire/findExtension';
+import { findExtension } from '@Helpers/extensions/findExtension';
 import mocksEngine from '@Assemblies/engines/mock';
 import { intersection } from '@Tools/arrays';
 import { expect, it, test } from 'vitest';

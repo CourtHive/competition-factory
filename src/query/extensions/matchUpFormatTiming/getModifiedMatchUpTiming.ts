@@ -1,8 +1,8 @@
 import { findMatchupFormatAverageTimes, findMatchupFormatRecoveryTimes } from '@Acquire/findMatchUpFormatTimes';
-import { firstClassGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
+import { firstClassGroupLeafOrExtension } from '@Helpers/extensions/firstClassGroupLeafOrExtension';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
-import { findExtension } from '@Acquire/findExtension';
+import { findExtension } from '@Helpers/extensions/findExtension';
 
 // constants and types
 import { INVALID, MATCHUP_FORMAT, TOURNAMENT_RECORD, VALIDATE } from '@Constants/attributeConstants';

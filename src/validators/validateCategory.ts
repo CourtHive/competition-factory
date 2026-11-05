@@ -1,5 +1,6 @@
-import { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';
+import { parseCategoryAgeDetails } from '@Helpers/categories/parseCategoryAgeDetails';
 import { decorateResult } from '@Functions/global/decorateResult';
+import { competitionUtcDate } from '@Tools/clock';
 import { isObject } from '@Tools/objects';
 import { isNumeric } from '@Tools/math';
 
@@ -9,7 +10,8 @@ import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 export function validateCategory({ category }) {
   if (!isObject(category)) return { error: INVALID_VALUES };
 
-  const categoryDetails = getCategoryAgeDetails({ category });
+  // no tournament here, so the competition's UTC date, as the engine method resolves it without one
+  const categoryDetails = parseCategoryAgeDetails({ category, today: () => ({ date: competitionUtcDate() }) });
   if (categoryDetails.error) return { error: categoryDetails };
 
   const { ratingMax, ratingMin } = category;

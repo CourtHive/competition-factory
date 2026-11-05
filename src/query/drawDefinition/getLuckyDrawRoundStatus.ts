@@ -3,8 +3,8 @@ import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
+import { findExtension } from '@Helpers/extensions/findExtension';
 import { isLucky } from '@Query/drawDefinition/isLucky';
-import { findExtension } from '@Acquire/findExtension';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types

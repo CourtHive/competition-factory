@@ -1,9 +1,9 @@
 import { initializeStructureSeedAssignments } from '@Mutate/drawDefinitions/positionGovernor/initializeSeedAssignments';
 import { assignSeed } from '@Mutate/drawDefinitions/entryGovernor/seedAssignment';
 import { getValidSeedBlocks } from '@Query/drawDefinition/seedGetter';
+import { findExtension } from '@Helpers/extensions/findExtension';
 import { getScaledEntries } from '@Query/event/getScaledEntries';
 import { getParticipantId } from '@Functions/global/extractors';
-import { findExtension } from '@Acquire/findExtension';
 
 // constants and types
 import type { DrawDefinition, Entry, Event, StageTypeUnion, Structure, Tournament } from '@Types/tournamentTypes';

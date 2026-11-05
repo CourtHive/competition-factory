@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { setAuditAuthorityServer, setSaveDrawDeletions, setSubscriptions } from '@Global/state/globalState';
-import { findExtension } from '@Acquire/findExtension';
+import { findExtension } from '@Helpers/extensions/findExtension';
 import { getTimeItem } from '@Query/base/timeItems';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';

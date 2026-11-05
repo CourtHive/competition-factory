@@ -1,4 +1,4 @@
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { applyVenueConstraints } from './applyVenueConstraints';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { isObject } from '@Tools/objects';

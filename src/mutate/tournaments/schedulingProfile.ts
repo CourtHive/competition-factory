@@ -1,6 +1,7 @@
-import { firstClassGroupLeafOrExtension, setGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
-import { validateSchedulingProfile } from '@Validators/validateSchedulingProfile';
+import { firstClassGroupLeafOrExtension } from '@Helpers/extensions/firstClassGroupLeafOrExtension';
+import { setGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
 import { getCompetitionDateRange } from '@Query/tournaments/getCompetitionDateRange';
+import { validateSchedulingProfile } from '@Validators/validateSchedulingProfile';
 import { getEventIdsAndDrawIds } from '@Query/tournaments/getEventIdsAndDrawIds';
 import { getCompetitionVenues } from '@Query/venues/venuesAndCourtsGetter';
 import { decorateResult } from '@Functions/global/decorateResult';

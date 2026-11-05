@@ -10,9 +10,9 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
+import { findExtension } from '@Helpers/extensions/findExtension';
 import { setSchemaWriteMode } from '@Global/state/globalState';
-import { findExtension } from '@Acquire/findExtension';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 

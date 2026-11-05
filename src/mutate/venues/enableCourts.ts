@@ -1,7 +1,7 @@
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { modifiedVenueNotices, venueSnapshot } from './venueNotices';
 
 // constants

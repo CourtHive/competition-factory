@@ -45,8 +45,8 @@ import {
   type TemplateId,
 } from '@Assemblies/governors/availabilityGovernor/types';
 
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { getDisabledStatus } from '@Query/extensions/getDisabledStatus';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { extractDate } from '@Tools/dateTime';
 
 // types

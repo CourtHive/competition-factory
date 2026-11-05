@@ -1,5 +1,5 @@
 import { getPolicyDefinitions } from '@Query/extensions/getAppliedPolicies';
-import { participantRoleOf } from './participantRoleOf';
+import { participantRoleOf } from '@Helpers/participants/participantRoleOf';
 
 // constants and types
 import { POLICY_TYPE_SANCTIONING } from '@Constants/policyConstants';

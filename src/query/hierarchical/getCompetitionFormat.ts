@@ -1,5 +1,5 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { resolveFromParameters } from '@Helpers/parameters/resolveFromParameters';
+import { resolveFromParameters } from '@Acquire/resolveFromParameters';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types

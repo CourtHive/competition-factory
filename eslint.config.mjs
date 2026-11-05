@@ -146,8 +146,8 @@ export default [
      * they read until #5491 and the purity fix that added this rule.
      *
      * `ignores` is a RATCHET, not an allow-list: the files that still import a read-only helper or a type from a
-     * mutation module (22 measured 2026-10-17; 17 after the publishing types moved to contracts, 2026-11-05). Each leaves the list when its helper moves to `@Query`/`@Acquire`; nothing
-     * is ever added to it. A new file under src/query that needs a helper living in `@Mutate` moves the helper.
+     * mutation module (22 measured 2026-10-17; 13 after the layering plan's moves, 2026-11-06). Each leaves the list
+     * when its helper moves to `@Query`/`@Acquire`; nothing is ever added to it. A new file under src/query that needs a helper living in `@Mutate` moves the helper.
      */
     files: ['src/query/**/*.ts'],
     ignores: [
@@ -157,16 +157,12 @@ export default [
       'src/query/drawDefinition/isActiveDownstream.ts',
       'src/query/drawDefinition/matchUpActions/matchUpActions.ts',
       'src/query/extensions/getMatchUpDailyLimits.ts',
-      'src/query/extensions/matchUpFormatTiming/getModifiedMatchUpTiming.ts',
-      'src/query/extensions/matchUpFormatTiming/getScheduleTiming.ts',
       'src/query/matchUps/competitionScheduleMatchUps.ts',
       'src/query/matchUps/scheduling/getProfileRounds.ts',
       'src/query/matchUps/scheduling/getScenarioScheduleView.ts',
       'src/query/matchUps/scheduling/getSchedulingProfileIssues.ts',
-      'src/query/matchUps/scheduling/getVenueSchedulingDetails.ts',
       'src/query/practice/getPracticeRegistrations.ts',
       'src/query/scoring/getScore.ts',
-      'src/query/tournaments/getTournamentInfo.ts',
       'src/query/venues/getScheduledCourtMatchUps.ts',
     ],
     rules: {

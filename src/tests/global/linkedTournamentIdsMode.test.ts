@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { findExtension } from '@Helpers/extensions/findExtension';
 import { setSchemaWriteMode } from '@Global/state/globalState';
-import { findExtension } from '@Acquire/findExtension';
 import competitionEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 

@@ -307,7 +307,7 @@
     {
       "name": "categoryCanContain",
       "source": {
-        "path": "src/query/event/categoryCanContain.ts",
+        "path": "src/helpers/categories/categoryCanContain.ts",
         "symbol": "categoryCanContain",
         "line": 13
       },

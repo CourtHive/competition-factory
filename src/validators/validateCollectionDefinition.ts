@@ -2,8 +2,8 @@ import { validateMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/is
 import { includesMatchUpEventType } from '@Helpers/matchUpEventTypes/includesMatchUpEventType';
 import { validateCollectionValueProfiles } from '@Validators/validateCollectionValueProfiles';
 import { tieFormatGenderValidityCheck } from '@Validators/tieFormatGenderValidityCheck';
+import { categoryCanContain } from '@Helpers/categories/categoryCanContain';
 import { matchUpTypeOptionsErrors } from '@Helpers/matchUpTypeOptions';
-import { categoryCanContain } from '@Query/event/categoryCanContain';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isConvertableInteger } from '@Tools/math';
 

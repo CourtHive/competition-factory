@@ -2,9 +2,9 @@ import { modifyParticipantsNotice } from '@Mutate/notifications/participantNotif
 import { normalizePenaltyType } from '@Query/participants/normalizePenaltyType';
 import { requireParams } from '@Helpers/parameters/requireParams';
 
-import penaltyTemplate from '@Assemblies/generators/templates/penaltyTemplate';
 import { TOURNAMENT_RECORD, PENALTY_ID } from '@Constants/attributeConstants';
 import { Participant, Penalty, Tournament } from '@Types/tournamentTypes';
+import penaltyTemplate from '@Helpers/participants/penaltyTemplate';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
   PENALTY_NOT_FOUND,

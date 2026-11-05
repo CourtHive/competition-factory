@@ -4,9 +4,9 @@ import { qualifierDrawPositionAssignment } from '@Mutate/matchUps/drawPositions/
 import { getQualifiersData } from '@Mutate/matchUps/drawPositions/positionQualifiers';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { isCompletedStructure } from '@Query/drawDefinition/structureActions';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { mapNumbersToIndexes } from '@Tools/mapNumbersToIndexes';
 import { definedAttributes } from '@Tools/definedAttributes';

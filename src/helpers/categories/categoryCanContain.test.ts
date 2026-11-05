@@ -1,4 +1,4 @@
-import { categoryCanContain } from './categoryCanContain';
+import { categoryCanContain } from '@Helpers/categories/categoryCanContain';
 import { expect, it } from 'vitest';
 
 // constants

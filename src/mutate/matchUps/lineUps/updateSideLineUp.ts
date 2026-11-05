@@ -1,5 +1,5 @@
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types

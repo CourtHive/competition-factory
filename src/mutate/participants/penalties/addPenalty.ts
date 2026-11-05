@@ -10,7 +10,7 @@ import { nowIso } from '@Tools/clock';
 import { MISSING_PARTICIPANT_ID, PARTICIPANT_NOT_FOUND, ErrorType } from '@Constants/errorConditionConstants';
 import { Extension, Penalty, PenaltyTypeUnion, Tournament } from '@Types/tournamentTypes';
 import { TOURNAMENT_RECORD, PENALTY_TYPE } from '@Constants/attributeConstants';
-import penaltyTemplate from '@Assemblies/generators/templates/penaltyTemplate';
+import penaltyTemplate from '@Helpers/participants/penaltyTemplate';
 import { TournamentRecords, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 

@@ -1,5 +1,5 @@
 import { getRotatingPartnerStandings } from '@Query/drawDefinition/getRotatingPartnerStandings';
-import { checkMutationLock } from '@Assemblies/engines/parts/checkMutationLock';
+import { checkMutationLock } from '@Mutate/tournaments/mutationLocks/checkMutationLock';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
 import { matchUpsOf } from '@Acquire/structureMembers';

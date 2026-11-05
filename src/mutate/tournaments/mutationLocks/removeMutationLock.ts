@@ -1,7 +1,7 @@
 import { rootExtensionsFingerprint, rootExtensionsNotice } from '@Mutate/tournaments/tournamentDetailNotice';
+import { findExtension } from '@Helpers/extensions/findExtension';
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { mutationLockNotice } from './mutationLockNotice';
-import { findExtension } from '@Acquire/findExtension';
 import { findVenue } from '@Query/venues/findVenue';
 
 // constants and types

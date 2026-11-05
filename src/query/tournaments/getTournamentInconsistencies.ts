@@ -2,7 +2,7 @@ import { FORMAT_VERDICT, FormatReportEntry, getMatchUpFormatReport } from '@Quer
 import { finalize, hasErrorSeverity, Inconsistency, InconsistencyScope } from '@Query/integrity/inconsistency';
 import { getScoreFormatInconsistencies } from '@Query/tournaments/getScoreFormatInconsistencies';
 import { getEventInconsistencies } from '@Query/event/getEventInconsistencies';
-import { participantRoleOf } from '@Query/participant/participantRoleOf';
+import { participantRoleOf } from '@Helpers/participants/participantRoleOf';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { definedAttributes } from '@Tools/definedAttributes';
 

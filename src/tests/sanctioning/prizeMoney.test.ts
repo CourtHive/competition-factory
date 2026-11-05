@@ -1,4 +1,4 @@
-import { sumAgainstBound, describeAmount } from '@Query/sanctioning/comparePrizeMoney';
+import { sumAgainstBound, describeAmount } from '@Helpers/sanctioning/comparePrizeMoney';
 import { activateFromSanctioning } from '@Mutate/sanctioning/activateFromSanctioning';
 import { validateProposal } from '@Validators/sanctioning/validateProposal';
 import { expect, it, describe } from 'vitest';

@@ -1,8 +1,8 @@
 import { assignDrawPosition as assignPosition } from '@Mutate/matchUps/drawPositions/positionAssignment';
 import { resolveDrawPositions } from '@Assemblies/generators/drawDefinitions/drawPositionsResolver';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { findStructure } from '@Acquire/findStructure';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { randomSource } from '@Tools/prng';

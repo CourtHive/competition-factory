@@ -1,4 +1,4 @@
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { instanceCount } from '@Tools/arrays';
 import { xa } from '@Tools/extractAttributes';
 import { ensureInt } from '@Tools/ensureInt';
