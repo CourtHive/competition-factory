@@ -142,6 +142,11 @@ export type OutcomeOp =
        */
       clearsPendingExit?: true;
       /**
+       * an awarded produced copy withdrawn as its relay's BYE goes (S7): keep the legitimate occupant and blank score,
+       * reset the result and remove its provenance before the arriving loser is planned
+       */
+      withdrawsProducedExit?: true;
+      /**
        * the position of a participant awarded a carried exit, taken back out of the matchUp they went on into when the
        * carry is withdrawn by a relabel (S6 tail, v1's `relabelWithoutDirection`): announced as `releaseAdvancedDrawPosition`,
        * with the event; the matchUp's score is left as it is (there is none: a result there keeps the carry)
@@ -470,6 +475,12 @@ function foldMatchUpWrite(
     if (op.clearsPendingExit) {
       matchUp.matchUpStatus = TO_BE_PLAYED;
       setSideExitProvenance({ matchUp, provenance: undefined });
+    }
+    if (op.withdrawsProducedExit) {
+      matchUp.matchUpStatus = TO_BE_PLAYED;
+      delete matchUp.winningSide;
+      setSideExitProvenance({ matchUp, provenance: undefined });
+      clearOrderOfFinishUnlessCompleted(matchUp);
     }
     // the arrival that decides the matchUp by the carried exit beside it: its codes re-derived (`progressExitStatus`)
     if (op.rederivesCodes) matchUp.matchUpStatusCodes = [];
