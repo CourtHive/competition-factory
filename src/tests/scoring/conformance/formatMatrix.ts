@@ -31,6 +31,10 @@ const TIMED_SEGMENTS: MatrixEntry = {
   status: 'conformance',
   cases: ['src/tests/scoring/conformance/timedSegments.conformance.test.ts'],
 };
+const OVERTIME: MatrixEntry = {
+  status: 'conformance',
+  cases: ['src/tests/scoring/conformance/overtime.conformance.test.ts'],
+};
 const AGGREGATE_SEGMENTS: MatrixEntry = {
   status: 'conformance',
   cases: ['src/tests/scoring/conformance/aggregateSegments.conformance.test.ts'],
@@ -192,4 +196,60 @@ export const FORMAT_MATRIX: Record<string, MatrixEntry> = {
     AGGREGATE_SEGMENTS,
   'standalone | SET | set:timed(G) | final:same | game:traditional | noClock | knownModifiers': TIMED_SEGMENTS,
   'standalone | SET | set:timed(P) | final:same | game:traditional | noClock | knownModifiers': TIMED_SEGMENTS,
+  'bestOf+aggregate | HAL | set:timed(P) | overtime:finite/timed(P) | final:tiebreakSet | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'bestOf+aggregate | PER | set:timed(P) | overtime:finite/timed(P) | final:tiebreakSet | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'bestOf+aggregate | PER | set:timed(P) | overtime:finite/timed(P) | final:timed(P) | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | HAL | set:timed(P) | overtime:finite(exactly)/timed(P) | final:same | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | HAL | set:timed(P) | overtime:finite(exactly)/timed(P) | final:shootout | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | HAL | set:timed(P) | overtime:finite(exactly)/timed(P) | final:tiebreakSet | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | HAL | set:timed(P) | overtime:finite(suddenDeath)/timed(P) | final:same | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | HAL | set:timed(P) | overtime:finite/timed(P) | final:same | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | HAL | set:timed(P) | overtime:finite/timed(P) | final:timed(P) | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | PER | set:timed(G) | overtime:finite/timed(P) | final:timed(G) | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | PER | set:timed(P) | overtime:finite(suddenDeath)/timed(P) | final:same | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | PER | set:timed(P) | overtime:finite(suddenDeath)/timed(P) | final:shootout | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | PER | set:timed(P) | overtime:finite(suddenDeath)/timed(P) | final:tiebreakSet | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | PER | set:timed(P) | overtime:finite/timed(P) | final:tiebreakSet | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | PER | set:timed(P) | overtime:finite/timed(P) | final:timed(P) | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | PER | set:timed(P) | overtime:unlimited(suddenDeath)/timed(P) | final:same | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | QTR | set:timed(P) | overtime:finite/timed(P) | final:same | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | QTR | set:timed(P) | overtime:unlimited/timed(P) | final:same | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | SET | set:timed(P) | overtime:finite(exactly)/timed(G) | final:shootout | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | SET | set:timed(P) | overtime:finite(exactly)/timed(P) | final:shootout | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | SET | set:timed(P) | overtime:finite(exactly)/timed(P) | final:tiebreakSet | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | SET | set:timed(P) | overtime:finite(exactly)/timed(P) | final:tiebreakSet(noAD) | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | SET | set:timed(P) | overtime:finite(suddenDeath)/timed(P) | final:same | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | SET | set:timed(P) | overtime:finite(suddenDeath)/timed(P) | final:tiebreakSet | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | SET | set:timed(P) | overtime:finite/timed(P) | final:same | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | SET | set:timed(P) | overtime:finite/timed(P) | final:timed(P) | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | SET | set:timed(P) | overtime:unlimited(suddenDeath)/timed(P) | final:same | game:traditional | noClock | knownModifiers':
+    OVERTIME,
+  'exactly+aggregate | SET | set:timed(P) | overtime:unlimited/timed(P) | final:same | game:traditional | noClock | knownModifiers':
+    OVERTIME,
 };

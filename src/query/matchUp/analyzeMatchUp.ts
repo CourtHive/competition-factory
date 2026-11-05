@@ -1,7 +1,8 @@
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
-import { unlevelDeciderRefusal } from '@Helpers/matchUpFormatCode/aggregateDecider';
+import { aggregateDeciderSetNumber, unlevelDeciderRefusal } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { parse, ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
 import { analyzeSet, SetAnalysisFields } from './analyzeSet';
+import { overtimeDecision } from '@Validators/overtimeScore';
 import { instanceCount } from '@Tools/arrays';
 
 // constants and types
@@ -15,7 +16,7 @@ export function analyzeMatchUp(params?): ResultType &
     completedSetsHaveValidOutcomes?: boolean;
     validMatchUpWinningSide?: boolean;
     calculatedWinningSide?: number;
-    /** Both sides' points summed across the sets, for an AGGREGATE format only. */
+    /** Both sides' points summed across the sets, for an AGGREGATE format only; a decider's point is not one of them. */
     aggregateScores?: number[];
     isLastSetWithValues?: boolean;
     validMatchUpOutcome?: boolean;
@@ -176,11 +177,27 @@ export function analyzeMatchUp(params?): ResultType &
   // that decider needs modelling. When the sudden-death point is recorded the totals stop being equal
   // and the winner falls out of the same sum. CA: *"The only case where `SET2XA-S:T10` never resolves
   // a winner is if both sides score the same exact number of points."*
-  const aggregateScores = aggregate ? aggregateSideScores(sets, matchUpScoringFormat) : undefined;
+  const deciderSetNumber = deciderSetNumberOf(matchUpScoringFormat);
+  const isDecider = (set: SetType, index: number) => (set?.setNumber ?? index + 1) === deciderSetNumber;
+  const aggregateScores = aggregate
+    ? aggregateSideScores(
+        sets?.filter((set, index) => !isDecider(set, index)),
+        matchUpScoringFormat,
+      )
+    : undefined;
+  const deciderScores =
+    aggregateScores && sidePoints(sets?.filter(isDecider).filter(hasSetValues) ?? [], matchUpScoringFormat);
 
-  const calculatedWinningSide = aggregate
-    ? aggregateWinningSide(aggregateScores)
-    : (reachedSetsToWin && maxSetsInstances === 1 && setsWinCounts.indexOf(maxSetsCount) + 1) || undefined;
+  // An overtime format is decided where the scoring engine decides it: a total ahead after the first extra-time
+  // period of an exact block (`O:2X`) is a lead, not a win (S6, measured 2026-11-04)
+  const overtime = overtimeDecision(sets, matchUpFormat);
+  const setsWinner = () =>
+    (reachedSetsToWin && maxSetsInstances === 1 && setsWinCounts.indexOf(maxSetsCount) + 1) || undefined;
+  // a level aggregate is settled by its decider (set N + 1), whose point is not part of the aggregate
+  let calculatedWinningSide = aggregate
+    ? (aggregateWinningSide(aggregateScores) ?? aggregateWinningSide(deciderScores))
+    : setsWinner();
+  if (overtime) calculatedWinningSide = (overtime.complete && overtime.winningSide) || undefined;
 
   // the aggregate branch above does not consult set counts, and neither may this check: an aggregate
   // is routinely won on fewer segments (2026-10-17: a 25-24 INN4XA win on one inning of three, and
@@ -242,7 +259,13 @@ function aggregateSideScores(
   if (expected !== undefined && played.length < expected) return undefined;
   if (!played.length) return undefined;
 
-  return played.reduce(
+  return sidePoints(played, matchUpScoringFormat);
+}
+
+/** Both sides' points summed across `sets`, read from the fields `analyzeSet` names for each set's format. */
+function sidePoints(sets: SetType[], matchUpScoringFormat: ParsedFormat | undefined): number[] | undefined {
+  if (!sets.length) return undefined;
+  return sets.reduce(
     (totals, setObject) => {
       const { setFormat, sideGameScores, sideTiebreakScores } = analyzeSet({ setObject, matchUpScoringFormat });
       const points = setFormat?.tiebreakSet ? sideTiebreakScores : sideGameScores;
@@ -250,6 +273,16 @@ function aggregateSideScores(
     },
     [0, 0],
   );
+}
+
+/**
+ * The decider is set N + 1 of an aggregate format with a final-set format (`SET3XA-S:T10-F:TB1`), or the decider after
+ * a finite overtime (`-O:1SD/T5P-F:SO5`). Its point or shootout goals settle a level aggregate and are never part of it
+ * (scoring spec § 9.8, Ruling 3, CA 2026-11-04). Without an `-F:` there is no decider set: INTENNSE's implicit
+ * sudden-death point is scored in the last bolt, and is part of the sum.
+ */
+function deciderSetNumberOf(matchUpScoringFormat: ParsedFormat | undefined): number | undefined {
+  return matchUpScoringFormat?.finalSetFormat ? aggregateDeciderSetNumber(matchUpScoringFormat) : undefined;
 }
 
 /** The side ahead on aggregate, or `undefined` while the totals are level and a decider is owed. */

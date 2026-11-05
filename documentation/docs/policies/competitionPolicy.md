@@ -53,8 +53,9 @@ Pairing uses the dynamic form rating so that in-form participants face tougher o
       dynamicFormRating: {
         enabled: boolean;                        // Whether dynamic form rating updates are active
         initializeFrom: 'BASELINE';              // Always initialized from the baseline rating
-        kFactor: number;                         // Elo K-factor controlling update magnitude
-        logisticScale: number;                   // Logistic curve scale (typically 400)
+        kFactor?: number;                        // Elo K-factor controlling update magnitude (default 24)
+        logisticScale?: number;                  // Logistic curve scale (default 400)
+        ratingsPolicy?: string | RatingsPolicy;  // a ratings preset by name or a policy inline (CONSTANT K)
       };
 
       pressureRating?: {
@@ -133,6 +134,8 @@ The dynamic form rating tracks in-competition momentum. It starts equal to the b
 - **Update formula:** `newRating = oldRating + kFactor * (actualOutput - expectedDynamic)`, where `expectedDynamic` is the logistic expectation between the two participants' current dynamic ratings.
 - **kFactor:** Controls sensitivity. Higher values mean faster reaction to recent results. The preset fixtures use `24`.
 - **logisticScale:** The denominator in the logistic function. Standard value is `400`, matching traditional Elo scaling.
+- **ratingsPolicy:** A [ratings policy](./ratingsPolicy.md), by preset name or inline, sets the expectation, K and actual result of the form rating instead: `'POLICY_RATINGS_ELO_WORLD_FOOTBALL'` rates a plain win at K 30. Its K must be `CONSTANT` (a competition holds no career match counts); an unknown name or a K by career matches is refused with `INVALID_VALUES` when competition state starts and when a DrawMatic or Swiss round is generated.
+- **Without a ratingsPolicy** the form rating is the one above, from `kFactor` and `logisticScale`, else `POLICY_RATINGS_COMPETITION_FORM`'s 24 and 400, with the competition's own actual output. A competition policy needs no rating configuration to be used.
 - **Purpose:** Drives pairing. Participants on a hot streak see their dynamic rating rise, leading to tougher pairings in subsequent rounds.
 
 The logistic expectation function:

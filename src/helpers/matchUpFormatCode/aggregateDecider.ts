@@ -37,6 +37,20 @@ export function finalSetGoverns(parsed: any, setNumber: number | undefined, othe
   return otherwise;
 }
 
+/**
+ * Whether `setNumber` is an overtime period: past the N regulation sets and within the overtime ceiling (any number
+ * past N under unlimited overtime). The decider after a finite ceiling is not one; `finalSetGoverns` names it.
+ */
+export function overtimePeriodGoverns(
+  parsed: Readonly<ParsedFormat> | undefined,
+  setNumber: number | undefined,
+): boolean {
+  const overtime = parsed?.overtimeFormat;
+  if (!overtime || setNumber === undefined) return false;
+  const regulation = parsed.exactly ?? parsed.bestOf ?? 1;
+  return setNumber > regulation && (overtime.count === 'unlimited' || setNumber <= regulation + overtime.count);
+}
+
 /** The set a live point lands in: the last set while it is open, otherwise the next one. */
 export function openSetNumber(sets: any[] | undefined): number {
   const last = sets?.at(-1);

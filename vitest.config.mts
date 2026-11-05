@@ -7,7 +7,10 @@
  */
 
 import { configDefaults, defineConfig } from 'vitest/config';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
+import DurationSequencer from './vitest.sequencer.mjs';
 import { testFileAliases } from './vitest.aliases.mjs';
 
 // A `--shard=i/n` run holds a fraction of the suite, so its coverage is a fraction too: every file another
@@ -23,25 +26,73 @@ const isShard = process.argv.some((arg) => arg.startsWith('--shard'));
 // suite keeps 30 s.
 const testTimeout = process.env.FACTORY_BACKEND ? 180_000 : 30_000;
 
+// TEST ISOLATION (CA, 2026-11-05). By default vitest gives every test file a fresh module graph, so each of ~2,100 files
+// re-imports and re-instruments the engine: import was a third of a CI coverage shard. On PRs into dev
+// (FACTORY_MATRIX_TIER=pr) the `shared` project lets a worker keep its modules across files, which halved the suite.
+// Files share module state then, so resetGlobalState.ts restores the engine's global state before every file, and a
+// file that cannot share runs in the `isolated` project:
+// - a file that mocks a module (vi.mock and kin): a module already loaded by an earlier file is not replaced, so the
+//   mock would silently not apply. Found by reading the source, so a new mocking file is isolated without a list;
+// - ISOLATED_FILES: a file that needs state no public setter can clear, with the reason.
+// Checkpoints, master pushes and local runs keep every file isolated, so nothing that passes only by sharing can land.
+const MOCKS_A_MODULE = /\bvi\.(mock|doMock|unmock|doUnmock)\(/;
+const ISOLATED_FILES = [
+  // asserts a bare syncEngine reports METHOD_NOT_FOUND; the test harness's tournamentEngine imports every governor's
+  // methods into the shared sync provider, whose setMethods only merges
+  'src/tests/engines/workshop/enginesWarmup.test.ts',
+  // asserts the async provider's process-wide count of implicit-context warnings ("1 so far")
+  'src/tests/engines/asyncGlobalStateIsolation.test.ts',
+];
+const TEST_FILE = /\.test\.(js|mjs|cjs|ts|mts|cts|jsx|tsx)$/;
+const testFiles = (dir: string): string[] =>
+  readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) return entry.name === 'scratch' || entry.name === 'node_modules' ? [] : testFiles(path);
+    return TEST_FILE.test(entry.name) ? [path] : [];
+  });
+const isolatedFiles = [
+  ...testFiles('src').filter((path) => MOCKS_A_MODULE.test(readFileSync(path, 'utf8'))),
+  ...ISOLATED_FILES,
+];
+const shareModules = process.env.FACTORY_MATRIX_TIER === 'pr';
+const testExclude = [...configDefaults.exclude, '**/scratch/**'];
+
 export default defineConfig({
   test: {
     testTimeout, // 30 seconds for slow tests; 180 under a second implementation (above)
     environment: 'node',
+    // `--shard` splits by recorded duration, not file count (vitest.sequencer.mts); unsharded runs are unaffected
+    sequence: { sequencer: DurationSequencer },
     // Persist transformed modules under node_modules/.vitest-cache so a rerun skips
     // the transform pass. Transform was ~30% of tracked time on a cold local run.
     // The cache lives inside node_modules, so a reinstall invalidates it.
     fsModuleCache: true,
-    include: ['src/**/*.test.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     // Untracked scratch tests are excluded from coverage but were still running
     // and exercising production code — inflating local % above CI's. Excluding
     // them from the runner makes local match CI.
-    exclude: [...configDefaults.exclude, '**/scratch/**'],
+    exclude: testExclude,
+    // see TEST ISOLATION above
+    projects: [
+      { extends: true, test: { name: 'isolated', include: isolatedFiles, isolate: true } },
+      {
+        extends: true,
+        test: {
+          name: 'shared',
+          // `include` lives on the projects only: `extends: true` concatenates arrays, so a root include would put
+          // every file in both projects
+          include: ['src/**/*.test.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+          exclude: [...testExclude, ...isolatedFiles],
+          isolate: !shareModules,
+        },
+      },
+    ],
     // Default pinned to NATIVE (production parity) as of the 2026-07-03 writeMode flip. The whole
     // suite passes under NATIVE; the former `*.native.test.*` first-class-storage siblings are now
     // ordinary specs that run under this default. Legacy-shape storage specs opt back into LEGACY via
     // the `legacyMode()` helper; behavioral specs cover all modes via `writeModeMatrix`.
     // setSchemaWriteModeLegacy.ts is retained for the legacyMode() helper.
     setupFiles: [
+      './src/tests/testHarness/resetGlobalState.ts',
       './src/tests/testHarness/setSchemaWriteModeNative.ts',
       './src/tests/testHarness/seedMathRandom.ts',
       './src/tests/testHarness/corpusRecord.ts',

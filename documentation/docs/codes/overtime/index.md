@@ -11,7 +11,7 @@ code should say how long each extra period lasts, whether to repeat, when to com
 happens if the scores are still level at the limit.
 
 :::note Availability
-The overtime extension is in development and is not yet enabled in published Factory versions.
+Overtime codes the scoring engine scores are valid for tournament use in Factory releases after 7.29.0 (CA 2026-11-04); a match clock with overtime, and untimed or tiebreak-bearing periods, are not.
 :::
 
 ## The overtime section: `-O:`

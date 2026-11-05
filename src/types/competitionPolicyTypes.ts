@@ -1,4 +1,6 @@
 // Competition Policy — static configuration attached via POLICY_TYPE_COMPETITION
+import type { RatingsPolicy } from './ratingsPolicyTypes';
+
 export type BaselineRatingSource = 'SCALE' | 'SEEDING' | 'MANUAL';
 export type ActualOutputMethod = 'POINT_SHARE' | 'WEIGHTED';
 export type PairingMethod = 'DRAW_MATIC' | 'SWISS' | 'LEVEL_BASED';
@@ -31,8 +33,12 @@ export type CompetitionPolicy = {
     dynamicFormRating: {
       enabled: boolean;
       initializeFrom: 'BASELINE';
-      kFactor: number;
-      logisticScale: number;
+      /** without a ratingsPolicy: K, else POLICY_RATINGS_COMPETITION_FORM's 24 */
+      kFactor?: number;
+      /** without a ratingsPolicy: the logistic spread, else POLICY_RATINGS_COMPETITION_FORM's 400 */
+      logisticScale?: number;
+      /** a ratings preset by name or a policy inline, with a CONSTANT K; it sets the expectation, K and actual result */
+      ratingsPolicy?: string | RatingsPolicy;
     };
 
     pressureRating?: {

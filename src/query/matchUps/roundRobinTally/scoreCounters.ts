@@ -1,11 +1,11 @@
-import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
+import { finalSetGoverns, overtimePeriodGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { parseTallyFormat } from './parseTallyFormat';
 import { ensureInt } from '@Tools/ensureInt';
 
 // constants and types
 import { DEFAULTED, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
-import { ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
+import { ParsedFormat, SetFormat } from '@Helpers/matchUpFormatCode/parse';
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';
 import { Tally } from '@Types/factoryTypes';
 
@@ -89,13 +89,12 @@ export function countGames({
   } else {
     sets.forEach((set, i) => {
       const setNumber = set.setNumber || i + 1;
-      const whichFormat = formatKey(parsedMatchUpFormat, setNumber);
-      const based = parsedMatchUpFormat?.[whichFormat]?.based;
-      const isTiebreakSet = parsedMatchUpFormat?.[whichFormat].tiebreakSet;
+      const setFormat = formatOf(parsedMatchUpFormat, setNumber);
+      const isTiebreakSet = setFormat?.tiebreakSet;
 
       const { side1Score, side2Score } = set;
 
-      if (isGamesBased(based) && !isTiebreakSet && !parsedMatchUpFormat?.[whichFormat]?.combinedPointTotal) {
+      if (isGamesBased(setFormat?.based) && !isTiebreakSet && !setFormat?.combinedPointTotal && !setFormat?.shootout) {
         gamesTally[0].push(ensureInt(side1Score || 0));
         gamesTally[1].push(ensureInt(side2Score || 0));
       }
@@ -109,10 +108,9 @@ export function countGames({
 
   if (matchUpStatus === RETIRED && typeof matchUpWinnerIndex === 'number') {
     // setFormat must consider whether retirment occurred in a finalSet which has a different format
-    const whichFormat = formatKey(parsedMatchUpFormat, sets.at(-1)?.setNumber || sets.length);
-    const format = parsedMatchUpFormat?.[whichFormat];
+    const format = formatOf(parsedMatchUpFormat, sets.at(-1)?.setNumber || sets.length);
 
-    if (isGamesBased(format.based)) {
+    if (isGamesBased(format?.based) && !format?.shootout) {
       const gamesForSet = format?.setTo || 0;
 
       const getComplement = (value) => {
@@ -161,10 +159,11 @@ export function countPoints({ matchUpFormat, score }: { matchUpFormat?: string; 
 
   score?.sets?.forEach((set, i) => {
     const setNumber = set.setNumber || i + 1;
-    const whichFormat = formatKey(parsedMatchUpFormat, setNumber);
-    const based = parsedMatchUpFormat?.[whichFormat]?.based;
+    const setFormat = formatOf(parsedMatchUpFormat, setNumber);
+    // a shootout's goals are its own tally, never the sporting aggregate (Ruling 3, CA 2026-11-04)
+    if (setFormat?.shootout) return;
 
-    if (isPointsBased(based) || parsedMatchUpFormat?.[whichFormat]?.combinedPointTotal) {
+    if (isPointsBased(setFormat?.based) || setFormat?.combinedPointTotal) {
       const { side1Score, side2Score } = set;
       if (side1Score) pointsTally[0] += ensureInt(side1Score || 0);
       if (side2Score) pointsTally[1] += ensureInt(side2Score || 0);
@@ -184,10 +183,13 @@ export function countPoints({ matchUpFormat, score }: { matchUpFormat?: string; 
  * The format that governs a set: `-F:` governs the final set only, an aggregate's decider (set N + 1), set N of an
  * exactly-N format, the last set of a best-of. Counting every set past the sets needed to win as the final one read
  * sets 2..N of an exactly-N format (one set to win) as its decider, and set 4 of a best of five as its fifth.
+ * An overtime period, past the N regulation sets and before the decider, is played to the overtime segment.
  */
-function formatKey(parsed: Readonly<ParsedFormat> | undefined, setNumber: number): 'finalSetFormat' | 'setFormat' {
-  if (!parsed?.finalSetFormat) return 'setFormat';
-  return finalSetGoverns(parsed, setNumber, setNumber === parsed.bestOf) ? 'finalSetFormat' : 'setFormat';
+function formatOf(parsed: Readonly<ParsedFormat> | undefined, setNumber: number): SetFormat | undefined {
+  if (parsed?.finalSetFormat && finalSetGoverns(parsed, setNumber, setNumber === parsed.bestOf))
+    return parsed.finalSetFormat;
+  if (overtimePeriodGoverns(parsed, setNumber)) return parsed?.overtimeFormat?.setFormat;
+  return parsed?.setFormat;
 }
 
 function getSetsToWin(bestOfGames) {

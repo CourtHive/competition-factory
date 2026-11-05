@@ -9,7 +9,7 @@ A format must distinguish **finishing level**, **playing a final decider**, and 
 Those outcomes should not be hidden inside an ambiguous overtime count.
 
 :::note Availability
-The overtime extension is in development and is not yet enabled in published Factory versions. A full
+Overtime codes the scoring engine scores are valid for tournament use in Factory releases after 7.29.0 (CA 2026-11-04); a match clock with overtime, and untimed or tiebreak-bearing periods, are not. A full
 shootout attempt model is a separate part of the scoring design.
 :::
 

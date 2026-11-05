@@ -9,7 +9,7 @@ keywords: [sudden death, golden goal, silver goal, extra time]
 the period boundary, or leave a mandatory second half still to play.
 
 :::note Availability
-The overtime extension is in development and is not yet enabled in published Factory versions.
+Overtime codes the scoring engine scores are valid for tournament use in Factory releases after 7.29.0 (CA 2026-11-04); a match clock with overtime, and untimed or tiebreak-bearing periods, are not.
 :::
 
 ## Sudden death ends at the scoring event

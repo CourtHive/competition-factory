@@ -79,7 +79,14 @@ describe.each<OutcomePipelineMode>([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_DIFFER
         [1, 0],
         [0, 1],
       ]);
-      expect(matchUp.score.overtime).toEqual({ decidedIn: 'EXTERNAL', decidedBy: SHOOTOUT });
+      expect(matchUp.score.overtime).toEqual({
+        phase: 'REGULATION',
+        periodNumber: 2,
+        aggregateScore: [1, 1],
+        decidedIn: 'EXTERNAL',
+        decidedBy: SHOOTOUT,
+        scoreString: '1-1 (Shootout: 4-3)',
+      });
 
       const winnerId = matchUp.sides.find((side) => side.sideNumber === 1).participantId;
       const final = tournamentEngine
@@ -110,6 +117,7 @@ describe.each<OutcomePipelineMode>([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_DIFFER
       for (const [matchUpFormat, sets] of [
         ['SET3-S:T10', [...halves([2, 1], [1, 2], [1, 1])]],
         ['SET2XA-S:T10', halves([3, 1], [0, 2])],
+        ['SET2X-S:6/TB7', halves([6, 3], [3, 6]).map((set, index) => ({ ...set, winningSide: index + 1 }))],
       ] as const) {
         const { drawId, matchUpId } = eliminationFirstMatchUp(matchUpFormat);
         const level = score(drawId, matchUpId, { matchUpStatus: COMPLETED, score: { sets } });

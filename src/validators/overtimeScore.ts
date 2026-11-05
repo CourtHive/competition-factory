@@ -71,6 +71,24 @@ export function overtimeScoreVerdict(params: {
 }
 
 /**
+ * Where the scoring engine decides an overtime format's closed sets: `complete`, and the winner of a decided match
+ * (none for a level finish). `undefined` for any format without `-O:`, or one the engine does not score.
+ */
+export function overtimeDecision(
+  sets: StaticSet[] | undefined,
+  matchUpFormat?: string,
+): { complete: boolean; winningSide?: number } | undefined {
+  if (!matchUpFormat || !parse(matchUpFormat)?.overtimeFormat) return undefined;
+  const rule = resolveFormat(matchUpFormat, { allowOvertime: true });
+  if (!rule?.overtime) return undefined;
+  const { complete, winningSide } = decideMatch(
+    rule,
+    (sets ?? []).map((set, i) => toScoredSet(set, i, false)),
+  );
+  return { complete, winningSide };
+}
+
+/**
  * The sequence half of the verdict, for callers that ask only which set could not have been played (`setCount`):
  * a set after the match was decided, or a sudden-death period both sides scored in. `undefined` when the sets
  * follow the format, and for any format without `-O:`. Every set is read as closed.

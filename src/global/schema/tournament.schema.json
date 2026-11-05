@@ -5695,6 +5695,387 @@
       "required": ["endTime", "participantId", "registrationId", "startTime"],
       "additionalProperties": false
     },
+    "RatingsExpectationRule": {
+      "description": "A side's expected result against its opponent: LOGISTIC, 1 / (1 + base^((O - R) / spread)) (base 10, spread 400 in most published methods; FIFA's men's ranking 600); LINEAR, 0.5 + the gap × slope with the gap clamped to ±cap (World Rugby: 0.05, 10); ORDERED_PROBIT, the expected value of the set result, Σ P(i) × resultValues(i), P from the standard normal at the cut-points shifted by scale × the gap (FIVB: 0.008).",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "const": "LOGISTIC"
+            },
+            "base": {
+              "type": "number",
+              "exclusiveMinimum": 1
+            },
+            "spread": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": ["rule", "base", "spread"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "const": "LINEAR"
+            },
+            "slope": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "cap": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": ["rule", "slope", "cap"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "const": "ORDERED_PROBIT"
+            },
+            "scale": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "cutPoints": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 1
+            },
+            "resultValues": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2
+            }
+          },
+          "required": ["rule", "scale", "cutPoints", "resultValues"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "RatingsKRule": {
+      "description": "K: one value for both sides (zero-sum), or FiveThirtyEight's numerator / (m + offset)^shape by the player's career matches m, which the caller passes as matchesPlayed.",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "const": "CONSTANT"
+            },
+            "value": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": ["rule", "value"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "const": "MATCHES_PLAYED"
+            },
+            "numerator": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "offset": {
+              "type": "number",
+              "minimum": 0
+            },
+            "shape": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": ["rule", "numerator", "offset", "shape"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "RatingsActualRule": {
+      "description": "A side's actual result: WIN_LOSS (1 / 0.5 / 0), SETS_PLAYED_SHARE (Huang 2014: best of 3 1 or 2/3, best of 5 1, 0.8 or 0.6) or SCORE_SHARE (the share of the points, else games, else sets won).",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "const": "WIN_LOSS"
+            }
+          },
+          "required": ["rule"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "const": "SETS_PLAYED_SHARE"
+            }
+          },
+          "required": ["rule"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "const": "SCORE_SHARE"
+            }
+          },
+          "required": ["rule"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "const": "SET_SCORE_VALUE"
+            },
+            "values": {
+              "type": "object",
+              "propertyNames": { "pattern": "^[0-9]+-[0-9]+$" },
+              "additionalProperties": { "type": "number" }
+            }
+          },
+          "required": ["rule", "values"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "const": "GOAL_TABLE"
+            },
+            "table": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "number", "minimum": 0, "maximum": 1 }
+              }
+            }
+          },
+          "required": ["rule", "table"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "RatingsMarginRule": {
+      "description": "A K multiplier by the margin of victory: World Football Elo's goal-difference steps, FiveThirtyEight's autocorrelation-corrected log margin (NHL, NFL) or power margin (NBA), Weighted Elo's winner game share, or World Rugby's threshold (× 1.5 above 15 points).",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "const": "GOAL_DIFFERENCE_STEPS"
+            }
+          },
+          "required": ["rule"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "const": "LOG_MOV_AUTOCORRECTED"
+            },
+            "scale": {
+              "type": "number"
+            },
+            "offset": {
+              "type": "number",
+              "minimum": 0
+            },
+            "intercept": {
+              "type": "number"
+            },
+            "autocorrelation": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "drawMultiplier": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": ["rule", "scale", "offset", "intercept", "autocorrelation"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "const": "POWER_MOV_AUTOCORRECTED"
+            },
+            "offset": {
+              "type": "number",
+              "minimum": 0
+            },
+            "power": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "intercept": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "slope": {
+              "type": "number"
+            }
+          },
+          "required": ["rule", "offset", "power", "intercept", "slope"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "const": "WINNER_GAME_SHARE"
+            }
+          },
+          "required": ["rule"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "const": "THRESHOLD"
+            },
+            "above": {
+              "type": "number",
+              "minimum": 0
+            },
+            "multiplier": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": ["rule", "above", "multiplier"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "RatingsFullResultRule": {
+      "type": "object",
+      "properties": {
+        "rule": {
+          "const": "FULL_RESULT"
+        },
+        "margin": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": ["rule"],
+      "additionalProperties": false
+    },
+    "RatingsShootoutRule": {
+      "description": "A win in a shootout: a full win (FiveThirtyEight NHL, by one goal), or partial actual results (FIFA's men's ranking: 0.75 and 0.5).",
+      "oneOf": [
+        {
+          "$ref": "#/definitions/RatingsFullResultRule"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "const": "PARTIAL"
+            },
+            "winner": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "loser": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": ["rule", "winner", "loser"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "RatingsPolicy": {
+      "description": "A ratings policy (POLICY_TYPE_RATINGS): how a dynamic rating moves on a result. Each rule encodes a published rating method, which source names.",
+      "type": "object",
+      "properties": {
+        "policyName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The published method the policy encodes."
+        },
+        "expectation": {
+          "$ref": "#/definitions/RatingsExpectationRule"
+        },
+        "k": {
+          "$ref": "#/definitions/RatingsKRule"
+        },
+        "actual": {
+          "$ref": "#/definitions/RatingsActualRule"
+        },
+        "walkovers": {
+          "enum": ["RATE_AS_WIN", "EXCLUDE"]
+        },
+        "draws": {
+          "enum": ["RATE_AS_HALF", "EXCLUDE"]
+        },
+        "kByTier": {
+          "type": "object",
+          "description": "K by the event's tier, then the tournament's, keyed system:value.",
+          "propertyNames": {
+            "pattern": "^[^:]+:.+$"
+          },
+          "additionalProperties": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
+        },
+        "margin": {
+          "$ref": "#/definitions/RatingsMarginRule"
+        },
+        "overtimeResult": {
+          "$ref": "#/definitions/RatingsFullResultRule"
+        },
+        "shootoutResult": {
+          "$ref": "#/definitions/RatingsShootoutRule"
+        },
+        "protections": {
+          "type": "array",
+          "items": {
+            "enum": ["KNOCKOUT_LOSS_PROTECTION"]
+          },
+          "uniqueItems": true
+        },
+        "winnerMinimumGain": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "FIVB: a winner who would lose points gains this instead, and the loser loses it (0.01)."
+        }
+      },
+      "required": ["policyName", "source", "expectation", "k", "actual"],
+      "additionalProperties": false
+    },
     "PolicyDefinitions": {
       "$comment": "Policies keyed by policy type, the shape of the appliedPolicies extension value on a Tournament, Event, DrawDefinition or Structure (resolved tournament, then event, then draw, then structure; a later level replaces a policy type whole). Its keys are the policy types the factory defines (policyConstants). A policy type described only as an object is not yet modelled here; the modelled ones are closed. Not yet referenced by any record definition: policies are stored in the extension, whose value is unconstrained. See Mentat/planning/CODES_POLICY_DEFINITIONS.md for the path to a first-class attribute.",
       "type": "object",
@@ -5740,6 +6121,9 @@
         "rankingPoints": {
           "type": "object",
           "$comment": "Described by rankingPolicy.schema.json, a separate schema document; not repeated here."
+        },
+        "ratings": {
+          "$ref": "#/definitions/RatingsPolicy"
         },
         "rotatingPartnerTally": {
           "$ref": "#/definitions/RotatingPartnerTallyPolicy"
@@ -6195,9 +6579,13 @@
                 },
                 "logisticScale": {
                   "type": "number"
+                },
+                "ratingsPolicy": {
+                  "description": "A ratings preset by name, or a ratings policy inline with a CONSTANT K: the form rating's expectation, K and actual result. Without one, kFactor and logisticScale, else POLICY_RATINGS_COMPETITION_FORM's 24 and 400.",
+                  "oneOf": [{ "type": "string", "minLength": 1 }, { "$ref": "#/definitions/RatingsPolicy" }]
                 }
               },
-              "required": ["enabled", "initializeFrom", "kFactor", "logisticScale"],
+              "required": ["enabled", "initializeFrom"],
               "additionalProperties": false
             },
             "pressureRating": {

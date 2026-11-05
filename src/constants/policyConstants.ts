@@ -13,6 +13,7 @@ export const POLICY_TYPE_AVOIDANCE = 'avoidance';
 export const POLICY_TYPE_PRIVACY = 'participant';
 export const POLICY_TYPE_DISPLAY = 'display'; // storage for client type displays, e.g. { public: {}, admin: {} }
 export const POLICY_TYPE_SCORING = 'scoring';
+export const POLICY_TYPE_RATINGS = 'ratings';
 export const POLICY_TYPE_LADDER = 'ladder';
 export const POLICY_TYPE_SEEDING = 'seeding';
 export const POLICY_TYPE_FEED_IN = 'feedIn';
@@ -41,6 +42,7 @@ export type ValidPolicyTypes =
   | typeof POLICY_TYPE_COMPETITION
   | typeof POLICY_TYPE_FEED_IN
   | typeof POLICY_TYPE_SCORING
+  | typeof POLICY_TYPE_RATINGS
   | typeof POLICY_TYPE_SEEDING
   | typeof POLICY_TYPE_SANCTIONING
   | typeof POLICY_TYPE_OFFICIATING_CONFLICT
@@ -67,6 +69,7 @@ export const policyConstants = {
   POLICY_TYPE_PRIVACY,
   POLICY_TYPE_FEED_IN,
   POLICY_TYPE_SCORING,
+  POLICY_TYPE_RATINGS,
   POLICY_TYPE_SEEDING,
   POLICY_TYPE_SANCTIONING,
   POLICY_TYPE_OFFICIATING_CONFLICT,

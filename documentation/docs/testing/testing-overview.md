@@ -319,6 +319,55 @@ Scoring conformance does not prove tournament exit propagation. See
 [format support](../scoring-engine/format-support.md) and
 [adoption notes](../whats-new-7.0.0.md#adoption-notes-7160).
 
+## Test isolation
+
+By default vitest gives every test file a fresh module graph, so each file imports, and under coverage instruments,
+the whole engine again. On PRs into `dev` (`FACTORY_MATRIX_TIER=pr`, see
+[matrix tiers](./exit-propagation-harness.md#matrix-tiers)) most files instead run in the `shared` project, where a
+worker keeps its modules from one file to the next. That roughly halves the suite. Checkpoint PRs into `master`, pushes
+to `master` and local runs keep every file isolated, so a test that passes only because files share modules cannot
+land.
+
+Sharing modules means sharing module state, so a test file must not depend on, or leave behind, global state:
+
+- `src/tests/testHarness/resetGlobalState.ts` runs before every file. It restores the engine's global state that the
+  public setters reach: dev context, global log, invoke observer, captured clocks and stamps, the call random source,
+  save-draw-deletions and audit flags, deep copy, loaded tournaments, subscriptions, notices and the mutation status.
+  It also clears the policy registry and the officiating and sanctioning record stores.
+- A file that changes any of that should still restore it itself, and must not start timers or promises it does not
+  await: a callback that fires after its test has ended runs inside whichever file comes next.
+- Two kinds of file run in the `isolated` project, on every tier:
+  - a file that mocks a module (`vi.mock`, `vi.doMock`, `vi.unmock`, `vi.doUnmock`). A module an earlier file already
+    loaded is not replaced, so the mock would silently not apply. `vitest.config.mts` finds these files by reading the
+    source, so a new mocking file is isolated automatically.
+  - a file listed in `ISOLATED_FILES` in `vitest.config.mts`, because it needs state no public setter can clear. Each
+    entry gives the reason.
+
+To check a change against the PR configuration locally:
+
+```bash
+FACTORY_MATRIX_TIER=pr pnpm test --run
+```
+
+## CI shards
+
+CI runs the suite as four coverage shards (`vitest run --shard=i/4`). Vitest's own sharding splits files into
+equal counts, so one shard could carry half again as much test time as another. `vitest.sequencer.mts` splits by
+recorded duration instead: it sorts files heaviest first and gives each to the least-loaded shard. Every shard
+process computes the same assignment, so the shards stay disjoint and together hold every file, which the merged
+coverage report relies on.
+
+Durations live in `vitest.shardDurations.json`, one map per [matrix tier](./exit-propagation-harness.md#matrix-tiers).
+A file with no recorded duration counts as a light one, so stale durations cost balance, never coverage. A file's
+measured time depends on which files shared the runner's CPU with it (one file measured 54 s in one run and 31 s in
+the next), so record from several runs: each file keeps the median of its times. For each run, download its
+`coverage-blob-node26-*` artifacts into one directory and merge them, then record all the reports together:
+
+```bash
+pnpm exec vitest --merge-reports=<dir> --reporter=json --outputFile=report.json --coverage.enabled=false
+node scripts/updateShardDurations.mjs pr report-1.json report-2.json report-3.json   # PRs into dev; `full` for checkpoints
+```
+
 ## Checking documentation contracts
 
 After building the package, run `pnpm verify:docs-model`, `pnpm verify:docs-examples`,

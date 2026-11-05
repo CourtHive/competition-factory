@@ -340,12 +340,13 @@ See [Quality Win Points](/docs/scale-engine/quality-win-points) for detailed doc
 
 ### generateDynamicRatings
 
-Generates dynamic ELO-style ratings from completed matchUp results. Processes specified matchUps and calculates new rating values for all participants involved.
+Generates dynamic ELO-style ratings from completed matchUp results. Processes specified matchUps and calculates new rating values for all participants involved. How a rating moves is set by the [Ratings Policy](/docs/policies/ratingsPolicy); without one attached, `POLICY_RATINGS_DEFAULT` (Huang 2014: K = 25 for both players, the actual result by sets played). `considerGames` no longer has an effect.
 
 ```js
 const {
   modifiedScaleValues, // { [participantId]: newRating }
   processedMatchUpIds, // matchUpIds that were processed
+  ratingsPolicyNames, // the policyName of each ratings policy the run rated by
   outputScaleName, // the scaleName used for output
   ratingType, // the rating type used (e.g. 'ELO')
 } = scaleEngine.generateDynamicRatings({
@@ -354,7 +355,8 @@ const {
   updateParticipantRatings, // optional boolean — modify tournament participants with new scaleItems
   removePriorValues, // optional boolean — defaults to true; remove prior scaleItems for same scaleName
   refreshDynamic, // optional boolean — ignore previously calculated dynamic values
-  considerGames, // optional boolean — use games instead of sets for calculation
+  ratingsPolicy, // optional — a ratings policy, ahead of one attached to the event or tournament; see Ratings Policy
+  matchesPlayed, // optional — { [participantId]: career matches played }, required by a MATCHES_PLAYED K
   asDynamic, // optional boolean — use DYNAMIC scaleName prefix
   drawDefinition, // optional — scope to a specific draw (used with refreshDynamic)
 });
@@ -362,7 +364,22 @@ const {
 
 ### calculateNewRatings
 
-Calculates updated ratings for two participants based on a match outcome.
+Calculates updated ratings for two participants based on a match outcome: each moves by `K × (actual − expected)`.
+
+```js
+const { newWinnerRating, newLoserRating } = scaleEngine.calculateNewRatings({
+  winnerRating, // required
+  loserRating, // required
+  ratingType, // optional — defaults to 'ELO'
+  winnerKFactor, // optional — defaults to 25
+  loserKFactor, // optional — defaults to winnerKFactor
+  winnerActual, // optional — the winner's actual result, defaults to 1
+  loserActual, // optional — the loser's, defaults to 1 − winnerActual (FIFA scores a shootout loser 0.5)
+  margin, // optional — { rule, marginOfVictory, winnerGameShare }: the K multiplier of a ratings policy's margin rule
+  protectLosses, // optional boolean — a side that falls short of its expectation keeps its rating
+  expectation, // optional — { rule: 'LOGISTIC', base: 10, spread: 400 }
+});
+```
 
 ---
 

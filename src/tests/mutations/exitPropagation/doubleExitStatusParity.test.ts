@@ -1,3 +1,4 @@
+import { matrixTier, sliceMissingValues, tierCells } from '@Tests/testHarness/matrixTier';
 import { playForward } from '@Tests/testHarness/exitPropagation/driver';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -81,6 +82,14 @@ const MATRIX = DRAW_TYPES.flatMap((drawType) =>
     })),
   ),
 ).map((cell, index) => ({ ...cell, seed: index + 1 }));
+
+// matrixTier.ts: a PR into dev registers a third of the cells, every draw type kept; checkpoints run all of them
+const TIERED = tierCells(MATRIX, { stratum: (cell) => cell.drawType });
+
+// CONTROL: the tier narrows the run, never a dimension of it
+test(`the ${matrixTier} tier keeps every value of every matrix dimension`, () => {
+  expect(sliceMissingValues(MATRIX, TIERED, ['drawType', 'drawSize', 'participantsCount'])).toEqual([]);
+});
 
 /**
  * Strip identity, keep substance.
@@ -273,11 +282,11 @@ function runConvergingSchedule(cell: (typeof MATRIX)[number], exitStatus: string
   return asWalkoverVocabulary({ outcomes, draw: projectDraw(getDrawDefinition(drawId)) });
 }
 
-test.for(MATRIX)('double-exit parity, converging pairs: $drawType $drawSize/$participantsCount', (cell) => {
+test.for(TIERED)('double-exit parity, converging pairs: $drawType $drawSize/$participantsCount', (cell) => {
   expect(runConvergingSchedule(cell, DOUBLE_DEFAULT)).toEqual(runConvergingSchedule(cell, DOUBLE_WALKOVER));
 });
 
-test.for(MATRIX)('double-exit parity: $drawType $drawSize/$participantsCount', (cell) => {
+test.for(TIERED)('double-exit parity: $drawType $drawSize/$participantsCount', (cell) => {
   // drawIds differ between the two runs by construction, and structureIds/matchUpIds are freshly
   // generated per draw — but both runs use the SAME mocksEngine seed, so those ids are identical
   // across the pair and the projections are directly comparable.

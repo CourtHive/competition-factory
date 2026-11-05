@@ -107,9 +107,7 @@ export function applyOwnedPlan({
   );
   // an awardee's position released when the carry they were awarded is withdrawn: v1's `releaseAdvancedDrawPosition`,
   // with the event (S6 tail)
-  const released = new Set(
-    ops.flatMap((op) => (op.op === 'setMatchUpDrawPositions' && op.releasedDrawPosition ? [op.matchUpId] : [])),
-  );
+  const released = releasedNotices(ops);
   const { advancedLast } = byeAndAdvance(ops);
   const stored = new Map(args.matchUpsMap?.drawMatchUps.map((matchUp) => [matchUp.matchUpId, matchUp]));
   const subscribed = getTopics().topics.includes(UPDATE_INCONTEXT_MATCHUP);
@@ -199,6 +197,42 @@ function byeAndAdvance(ops: OutcomeOp[]): { advancedLast: Set<string>; eventKept
 }
 
 /**
+ * a positions write that places plainly: announced, with no withdrawal, removal or advance through a BYE named on it (a
+ * release names none of those either, and is read here only where a release's own name was not asked first)
+ */
+const plainPlacement = (op: OutcomeOp): op is Extract<OutcomeOp, { op: 'setMatchUpDrawPositions' }> =>
+  op.op === 'setMatchUpDrawPositions' &&
+  op.announcesContext !== false &&
+  !op.advancesThroughBye &&
+  !op.withdrawnByePosition &&
+  !op.removedDrawPosition;
+
+/**
+ * An awardee's position released: v1's `releaseAdvancedDrawPosition` names the matchUp, unless a plain placement writes it
+ * after the release (the awardee sent on again as a carry lands, S7): then the placement's name, as v1's buffer keeps it
+ */
+function releasedNotices(ops: OutcomeOp[]): Set<string> {
+  const released = new Set<string>();
+  for (const op of ops) {
+    if (op.op === 'setMatchUpDrawPositions' && op.releasedDrawPosition) released.add(op.matchUpId);
+    else if (plainPlacement(op)) released.delete(op.matchUpId);
+  }
+  return released;
+}
+
+/** the matchUps among `quiet` a plain placement writes after their quiet write: v1's buffer keeps the placement's notice */
+function placedAfter(ops: OutcomeOp[], quiet: Set<string>): Set<string> {
+  const placed = new Set<string>();
+  const seen = new Set<string>();
+  for (const op of ops) {
+    if ((op.op === 'setMatchUpDrawPositions' || op.op === 'setMatchUpResult') && op.announcesContext === false)
+      seen.add(op.matchUpId);
+    if (plainPlacement(op) && quiet.has(op.matchUpId) && seen.has(op.matchUpId)) placed.add(op.matchUpId);
+  }
+  return placed;
+}
+
+/**
  * Which notices v1 writes with no event, and with no tournament, read off the ops alone (S7): shared by
  * `applyOwnedPlan`, which writes them, and the differential (`plannedNotices`), which holds v1's notices to them
  */
@@ -244,6 +278,9 @@ function noticeRules(ops: OutcomeOp[]) {
       op.op === 'setMatchUpDrawPositions' && op.placedDrawPosition && !op.removedDrawPosition ? [op.matchUpId] : [],
     ),
   );
+  // ...as is a plain placement after a quiet write (an awardee sent on again into the matchUp an unwind's release
+  // emptied, or wrote back to be played, S7): v1's `assignMatchUpDrawPosition` announces it last
+  for (const matchUpId of placedAfter(ops, untournamented)) arrived.add(matchUpId);
   for (const matchUpId of arrived) unevented.delete(matchUpId);
   // an advance through a BYE names no event, but an evented BYE written before it keeps its event (`byeAndAdvance`)
   for (const matchUpId of byeAndAdvance(ops).eventKept) unevented.delete(matchUpId);
@@ -365,11 +402,9 @@ function withdrawnByeNotices(ops: OutcomeOp[]): Map<string, number> {
     if (op.op === 'clearMatchUpBye') unbyed.set(op.matchUpId, op.drawPosition);
     if (op.op === 'setMatchUpDrawPositions' && op.withdrawnByePosition)
       unbyed.set(op.matchUpId, op.withdrawnByePosition);
-    if (op.op === 'setMatchUpDrawPositions' && op.advancesThroughBye) unbyed.delete(op.matchUpId);
-    // a position placed there after the withdrawal (a loser through the standing BYE, `unwoundThrough`): its notice is last
-    if (op.op === 'setMatchUpDrawPositions' && op.placedDrawPosition) unbyed.delete(op.matchUpId);
-    // a BYE matchUp emptied by a release (`releaseAdvancedDrawPosition`'s vacated BYE): the release's notice is the last
-    if (op.op === 'setMatchUpDrawPositions' && op.releasedDrawPosition) unbyed.delete(op.matchUpId);
+    // any later positions write (a seat advanced through the standing BYE, a loser placed through it (`unwoundThrough`),
+    // a release emptying the BYE matchUp, an awardee sent on after the carry lands, S7): its notice is the last
+    else if (op.op === 'setMatchUpDrawPositions') unbyed.delete(op.matchUpId);
   }
   return unbyed;
 }
@@ -429,6 +464,12 @@ function namedWriters(ops: OutcomeOp[]) {
       if (relayed.has(op.matchUpId)) continue;
       settled.set(op.matchUpId, op.announcedAs);
       if (op.announcesEvent === false) lineUpUnevented.add(op.matchUpId);
+    } else if (
+      op.op === 'setMatchUpDrawPositions' &&
+      op.advancesThroughBye &&
+      settled.get(op.matchUpId) === 'withdrawProducedExits'
+    ) {
+      settled.delete(op.matchUpId);
     } else if (op.op === 'setMatchUpResult') {
       if (op.announcedAs) settled.set(op.matchUpId, op.announcedAs);
       else settled.delete(op.matchUpId);

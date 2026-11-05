@@ -1,5 +1,6 @@
 import { MATRIX_CELLS, MATRIX_DRAW_TYPES, cellExitOutcome } from '@Tests/testHarness/exitPropagation/matrixCells';
 import { nextPlayable, playForward, step } from '@Tests/testHarness/exitPropagation/driver';
+import { matrixTier, sliceMissingValues, tierCells } from '@Tests/testHarness/matrixTier';
 import { checkIntegrity } from '@Tests/testHarness/exitPropagation/transitions';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
@@ -90,12 +91,21 @@ function scheduleEverything(drawId: string): Record<string, string> {
 
 const SCHEDULED_CELLS = MATRIX_CELLS.filter((cell) => cell.drawSize === 8);
 
+// matrixTier.ts: a PR into dev registers a third of the cells, every draw type x exit status kept; checkpoints run all 300
+const TIERED = tierCells(SCHEDULED_CELLS, { stratum: (cell) => `${cell.drawType} ${cell.exitStatus}` });
+
+// CONTROL: the tier narrows the run, never a dimension of it
+test(`the ${matrixTier} tier keeps every value of every scheduled dimension`, () => {
+  const dimensions = ['drawType', 'participantsCount', 'exitStatus', 'propagateExitStatus'] as const;
+  expect(sliceMissingValues(SCHEDULED_CELLS, TIERED, [...dimensions])).toEqual([]);
+});
+
 test('the arm covers every draw type of the matrix at drawSize 8', () => {
   expect(SCHEDULED_CELLS).toHaveLength(300);
   expect(new Set(SCHEDULED_CELLS.map((cell) => cell.drawType)).size).toEqual(MATRIX_DRAW_TYPES.length);
 });
 
-test.for(SCHEDULED_CELLS)(
+test.for(TIERED)(
   'scheduled $drawType $drawSize/$participantsCount $exitStatus propagate=$propagateExitStatus keeps every slot',
   (cell) => {
     const drawId = `scheduled-${cell.seed}`;

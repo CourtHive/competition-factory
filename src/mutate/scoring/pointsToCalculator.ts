@@ -12,8 +12,8 @@
  * Calculated BEFORE the point is processed (state at time of serve).
  */
 
+import { inputLevels, isAggregateFormat, isStandardSetTiebreak } from '@Tools/scoring/scoringUtilities';
 import type { MatchUp, FormatStructure, SetFormatStructure, SetScore } from '@Types/scoring/types';
-import { isAggregateFormat, isStandardSetTiebreak } from '@Tools/scoring/scoringUtilities';
 import { checkStandardGameWon, checkStandardSetWon, checkTiebreakWon } from './gameWon';
 import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import type { SetType } from '@Tools/scoring/scoringUtilities';
@@ -45,9 +45,9 @@ export function calculatePointsTo(
   activeSetFormat: SetFormatStructure | undefined,
   server: 0 | 1 | undefined,
 ): PointsToDecoration | undefined {
-  // Timed sets without point structure can't calculate
+  // Timed sets without point structure can't calculate, nor a segment that takes no points (outs, a shootout)
   if (setType === 'timed') return undefined;
-  if (!activeSetFormat) return undefined;
+  if (!activeSetFormat || !inputLevels(activeSetFormat).point) return undefined;
 
   const currentSet = getCurrentSet(matchUp);
   const setsWon = getSetsWon(matchUp);

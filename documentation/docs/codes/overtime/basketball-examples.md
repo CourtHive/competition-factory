@@ -9,7 +9,7 @@ NBA overtime provides clear examples of **repeated overtime without a numerical 
 an overtime period is not enough: play continues until the period ends.
 
 :::note Availability
-The overtime extension is in development and is not yet enabled in published Factory versions.
+Overtime codes the scoring engine scores are valid for tournament use in Factory releases after 7.29.0 (CA 2026-11-04); a match clock with overtime, and untimed or tiebreak-bearing periods, are not.
 :::
 
 ```text

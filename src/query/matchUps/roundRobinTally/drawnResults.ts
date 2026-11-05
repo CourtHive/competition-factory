@@ -1,6 +1,7 @@
 import { isCompletedCombinedPointTie } from '@Validators/isCompletedCombinedPointTie';
 import { parsedFormatCanEndTied } from '@Validators/tiedFormatCompatibility';
 import { parse, type SetFormat } from '@Helpers/matchUpFormatCode/parse';
+import { overtimeDecision } from '@Validators/overtimeScore';
 import { parseTallyFormat } from './parseTallyFormat';
 
 // constants and types
@@ -56,15 +57,19 @@ export function isDrawnResult(matchUp: MatchUp, fallbackFormat?: string): boolea
  *
  * - a level combined total (`isCompletedCombinedPointTie`);
  * - an aggregate whose N segments total level, a timed decider that closed level too;
- * - N sets played to a level count of sets won.
- *
- * A declared overtime is the overtime workstream's (`overtimeScoreVerdict`), so it is not read here.
+ * - N sets played to a level count of sets won;
+ * - a declared overtime the scoring engine completes with no winner (`overtimeDecision`).
  */
 export function isLevelScore(score?: Score, matchUpFormat?: string): boolean {
   if (isCompletedCombinedPointTie({ score, matchUpFormat })) return true;
   const parsed = parse(matchUpFormat ?? '');
   const format = parsed?.setFormat;
-  if (!parsed || !format || format.combinedPointTotal || parsed.overtimeFormat) return false;
+  if (parsed?.overtimeFormat) {
+    // a declared overtime finishes level where the scoring engine completes it with no winner (finite overtime, no -F:)
+    const decision = overtimeDecision(score?.sets, matchUpFormat);
+    return !!decision?.complete && !decision.winningSide;
+  }
+  if (!parsed || !format || format.combinedPointTotal) return false;
   if (!parsedFormatCanEndTied(parsed)) return false;
   const sets = score?.sets ?? [];
   const n = parsed.exactly ?? parsed.bestOf ?? 1;

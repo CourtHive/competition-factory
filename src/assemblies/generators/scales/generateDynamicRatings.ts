@@ -1,7 +1,6 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { addDynamicRatings } from '@Mutate/participants/scaleItems/addDynamicRatings';
 import { getParticipantScaleItem } from '@Query/participant/getParticipantScaleItem';
-import { aggregateDeciderSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
@@ -9,20 +8,28 @@ import { recorded } from '@Mutate/simulation/scenarioRecorder';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { calculateNewRatings } from './calculateNewRatings';
 import { getRatingConvertedToELO } from './eloConversions';
-import { parse } from '@Helpers/matchUpFormatCode/parse';
-import { aggregateSets } from './aggregators';
+import { ratedResultOf, RatedResult } from './ratedResult';
+import { findStructure } from '@Acquire/findStructure';
+import { kOf, resolveRatingsPolicy, tierK } from './ratingsPolicyRules';
+import { findPolicy } from '@Acquire/findPolicy';
 
 // constants, fixtures and types
+import { INVALID_VALUES, MISSING_MATCHUP_IDS, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { ARRAY, ERROR, OF_TYPE, TOURNAMENT_RECORD, VALIDATE } from '@Constants/attributeConstants';
-import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
-import { MISSING_MATCHUP_IDS } from '@Constants/errorConditionConstants';
+import { completedMatchUpStatuses, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { POLICY_RATINGS_DEFAULT } from '@Fixtures/policies/POLICY_RATINGS_DEFAULT';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
+import type { competitionFormat } from '@Types/competitionFormat';
+import { POLICY_TYPE_RATINGS } from '@Constants/policyConstants';
+import { HydratedMatchUp, HydratedSide } from '@Types/hydrated';
+import type { RatingsPolicy } from '@Types/ratingsPolicyTypes';
+import { Event, EventTypeUnion } from '@Types/tournamentTypes';
 import { DYNAMIC, RATING } from '@Constants/scaleConstants';
-import { EventTypeUnion } from '@Types/tournamentTypes';
+import { PAIR } from '@Constants/participantConstants';
+import type { ExpectationRule } from './ratingUpdate';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ELO } from '@Constants/ratingConstants';
 import { ResultType } from '@Types/factoryTypes';
-import { HydratedSide } from '@Types/hydrated';
 
 // the ratings write, logged when a scenario is recorded (see scenarioRecorder)
 const addDynamicRatingsRecorded = recorded('addDynamicRatings', addDynamicRatings);
@@ -30,6 +37,7 @@ const addDynamicRatingsRecorded = recorded('addDynamicRatings', addDynamicRating
 export function generateDynamicRatings(params): ResultType & {
   modifiedScaleValues?: { [key: string]: number };
   processedMatchUpIds?: string[];
+  ratingsPolicyNames?: string[];
   sourceRatingType?: string;
   outputScaleName?: string;
   ratingType?: string;
@@ -49,7 +57,8 @@ export function generateDynamicRatings(params): ResultType & {
     ratingType = ELO, // default to ELO when not provided
     convertToELO, // when true, convert initial ratings to ELO and stay in ELO space
     refreshDynamic, // ignore previously calculated values
-    considerGames, // when true, consider games; otherwise consider sets
+    ratingsPolicy, // a RatingsPolicy, ahead of one attached to the event or tournament and the default
+    matchesPlayed, // { [participantId]: career matches played before this run }, for a MATCHES_PLAYED K
     drawDefinition,
     matchUpIds, // matchUpIds to process for ratings when params.matchUps not provided
     asDynamic, // when true, return dynamic scaleName; otherwise return ratingType
@@ -85,8 +94,40 @@ export function generateDynamicRatings(params): ResultType & {
 
   matchUps.sort(matchUpSort);
 
-  for (const matchUp of matchUps) {
-    const { endDate, matchUpFormat, score, sides, winningSide } = matchUp;
+  // a passed policy, then one attached to the event or tournament, then the competitionFormat's, then the default
+  const policyOf = (matchUp: HydratedMatchUp): RatingsPolicy | undefined => {
+    if (ratingsPolicy) return ratingsPolicy;
+    const event = tournamentRecord.events?.find(({ eventId }) => eventId === matchUp.eventId);
+    const { policy } = findPolicy({ tournamentRecord, event, policyType: POLICY_TYPE_RATINGS });
+    if (policy) return policy;
+    const selected = competitionFormatOf(event, matchUp)?.ratingsPolicy;
+    if (selected === undefined) return POLICY_RATINGS_DEFAULT[POLICY_TYPE_RATINGS];
+    return resolveRatingsPolicy(selected);
+  };
+  const withPolicies = matchUps.map((matchUp) => ({ matchUp, policy: policyOf(matchUp) }));
+  const unresolved = withPolicies.find(({ policy }) => !policy);
+  if (unresolved) {
+    return {
+      error: INVALID_VALUES,
+      info: `ratingsPolicy: no ratings policy for matchUp ${unresolved.matchUp.matchUpId}`,
+    };
+  }
+  const rated = (withPolicies as { matchUp: HydratedMatchUp; policy: RatingsPolicy }[]).filter(
+    ({ matchUp, policy }) => !(matchUp.matchUpStatus === WALKOVER && policy.walkovers === 'EXCLUDE'),
+  );
+
+  // a MATCHES_PLAYED K reads each player's career count, which only the caller holds: refuse before any write
+  const careerCounts: Record<string, number> = { ...matchesPlayed };
+  const uncounted = rated
+    .filter(({ policy }) => policy.k.rule === 'MATCHES_PLAYED')
+    .flatMap(({ matchUp }) => (matchUp.sides ?? []).flatMap(ratedParticipantIds))
+    .filter((participantId) => careerCounts[participantId] === undefined);
+  if (uncounted.length) {
+    return { error: MISSING_VALUE, info: `matchesPlayed: no career count for ${[...new Set(uncounted)].join(', ')}` };
+  }
+
+  for (const { matchUp, policy } of rated) {
+    const { endDate, sides } = matchUp;
 
     const matchUpType = matchUp.matchUpType as EventTypeUnion;
 
@@ -107,58 +148,59 @@ export function generateDynamicRatings(params): ResultType & {
       ? { scaleName: `${ratingType}.${DYNAMIC}`, eventType: matchUpType, scaleType: RATING }
       : undefined;
 
-    const sideParticipantIds: string[] = Object.assign(
+    const sideParticipantIds: Record<number, string[]> = Object.assign(
       {},
-      ...(sides ?? []).map((side: HydratedSide) => {
-        const { sideNumber, participant } = side;
-        return (
-          sideNumber && {
-            [sideNumber]: [participant?.participantId, ...(participant?.individualParticipantIds ?? [])]
-              .filter(Boolean)
-              .flat(),
-          }
-        );
-      }),
+      ...(sides ?? []).map((side: HydratedSide) => side.sideNumber && { [side.sideNumber]: ratedParticipantIds(side) }),
     );
 
     const scaleItemMap = Object.assign(
       {},
       ...Object.values(sideParticipantIds)
         .flat()
-        .map((participantId) =>
-          resolveParticipantScaleItem({
-            participantId,
-            modifiedScaleValues,
-            refreshDynamic,
-            dynamicScaleAttributes,
-            sourceDynamicScaleAttributes,
-            scaleAttributes,
-            tournamentRecord,
-            sourceAccessor,
-            outputScaleName,
-            ratingType,
-            isEloNative,
-            accessor,
-            matchUpType,
-            endDate,
-          }),
+        .map(
+          (participantId) =>
+            // a run carries each rating forward: a later matchUp starts from the value an earlier one produced
+            (modifiedScaleValues[participantId] && { [participantId]: modifiedScaleValues[participantId] }) ||
+            resolveParticipantScaleItem({
+              participantId,
+              modifiedScaleValues,
+              refreshDynamic,
+              dynamicScaleAttributes,
+              sourceDynamicScaleAttributes,
+              scaleAttributes,
+              tournamentRecord,
+              sourceAccessor,
+              outputScaleName,
+              ratingType,
+              isEloNative,
+              accessor,
+              matchUpType,
+              endDate,
+            }),
         ),
     );
 
-    const maxCountables = maxCountablesOf(matchUpFormat, considerGames);
+    const result = ratedResultOf(matchUp, policy);
+    const event = tournamentRecord.events?.find(({ eventId }) => eventId === matchUp.eventId);
+    const kOfTier = tierK(policy.kByTier, [event?.eventTier, tournamentRecord.tournamentTier]);
+    const kFor = (participantId: string) => kOfTier ?? kOf(policy.k, careerCounts[participantId]);
 
-    const countables = (score?.sets && aggregateSets(score.sets)) || (winningSide === 1 && [1, 0]) || [0, 1];
+    if (result) {
+      updateRatingsForMatchUp({
+        expectation: policy.expectation,
+        sideParticipantIds,
+        computeRatingType,
+        outputScaleName,
+        scaleItemMap,
+        accessor,
+        result,
+        kFor,
+      });
+    }
 
-    updateRatingsForMatchUp({
-      sideParticipantIds,
-      computeRatingType,
-      outputScaleName,
-      scaleItemMap,
-      winningSide,
-      countables,
-      maxCountables,
-      accessor,
-    });
+    for (const participantId of Object.values(sideParticipantIds).flat()) {
+      if (careerCounts[participantId] !== undefined) careerCounts[participantId] += 1;
+    }
 
     Object.assign(modifiedScaleValues, scaleItemMap);
 
@@ -167,29 +209,18 @@ export function generateDynamicRatings(params): ResultType & {
     }
   }
 
-  const processedMatchUpIds = matchUps.map(({ matchUpId }) => matchUpId);
+  const processedMatchUpIds = rated.map(({ matchUp }) => matchUp.matchUpId);
+  // the policies the run rated by, so a consumer can say which produced the values
+  const ratingsPolicyNames = [...new Set(rated.map(({ policy }) => policy.policyName))];
 
   return {
     ...SUCCESS,
     modifiedScaleValues,
     outputScaleName,
     processedMatchUpIds,
+    ratingsPolicyNames,
     ...(isEloNative && { sourceRatingType: ratingType }),
   };
-}
-
-/**
- * The most sets a matchUp in this format can count, which `kMultiplier` weights a result by. An exactly-N format
- * plays N (its `bestOf` is undefined, so it read as 1 and a three-period aggregate counted a third of its weight),
- * and an aggregate format's decider is one more set, N + 1, played on a level total.
- */
-export function maxCountablesOf(matchUpFormat: string | undefined, considerGames?: boolean): number {
-  const parsedFormat: any = matchUpFormat ? parse(matchUpFormat) : {};
-  // aggregateDeciderSetNumber names the set an -F: would govern; without an -F: there is no decider to play
-  const deciderSet = parsedFormat?.finalSetFormat ? aggregateDeciderSetNumber(parsedFormat) : undefined;
-  const sets = deciderSet ?? parsedFormat?.exactly ?? parsedFormat?.bestOf ?? 1;
-  const setTo = parsedFormat?.setFormat?.setTo || 1;
-  return considerGames ? sets * setTo : sets;
 }
 
 function resolveParticipantScaleItem({
@@ -300,45 +331,90 @@ function resolveSourceDynamicItem({
   return undefined;
 }
 
+/**
+ * Who a side's result rates: a pair's two players (published practice: the side is rated as their average and each
+ * player moves against it), otherwise the side's participant (an individual, or a team as a unit).
+ */
+function ratedParticipantIds(side: HydratedSide): string[] {
+  const participant = side?.participant;
+  if (participant?.participantType === PAIR && participant.individualParticipantIds?.length) {
+    return participant.individualParticipantIds;
+  }
+  return participant?.participantId ? [participant.participantId] : [];
+}
+
+type UpdateRatingsForMatchUpArgs = {
+  kFor: (participantId: string) => number | undefined;
+  sideParticipantIds: Record<number, string[]>;
+  scaleItemMap: Record<string, any>;
+  expectation: ExpectationRule;
+  computeRatingType: string;
+  outputScaleName: string;
+  result: RatedResult;
+  /** the scale value's accessor, absent for ELO's plain numbers */
+  accessor: string;
+};
+
 function updateRatingsForMatchUp({
   sideParticipantIds,
   computeRatingType,
   outputScaleName,
   scaleItemMap,
-  winningSide,
-  countables,
-  maxCountables,
+  expectation,
   accessor,
-}) {
-  const winningSideParticipantIds = winningSide ? sideParticipantIds[winningSide] : [];
-  const losingSideParticipantIds = winningSide ? sideParticipantIds[3 - winningSide] : [];
+  result,
+  kFor,
+}: UpdateRatingsForMatchUpArgs) {
+  const { winningSide, winnerActual, loserActual, margin, protectLosses, winnerMinimumGain } = result;
+  const winnerIds = sideParticipantIds[winningSide] ?? [];
+  const loserIds = sideParticipantIds[3 - winningSide] ?? [];
+  if (!winnerIds.length || !loserIds.length) return;
 
-  for (const winnerParticipantId of winningSideParticipantIds) {
-    const winnerScaleValue = scaleItemMap[winnerParticipantId]?.scaleValue;
-    const winnerRating = typeof winnerScaleValue === 'object' ? winnerScaleValue[accessor] : winnerScaleValue;
+  const { defaultInitialization, decimalsCount = 0 } = ratingsParameters[computeRatingType] ?? {};
+  const ratingOf = (participantId: string) => {
+    const scaleValue = scaleItemMap[participantId]?.scaleValue;
+    const value = typeof scaleValue === 'object' ? scaleValue?.[accessor] : scaleValue;
+    return Number(value) || defaultInitialization;
+  };
+  const sideRating = (ids: string[]) => ids.reduce((sum, id) => sum + ratingOf(id), 0) / ids.length;
+  const winnerRating = sideRating(winnerIds);
+  const loserRating = sideRating(loserIds);
 
-    for (const loserParticipantId of losingSideParticipantIds) {
-      const loserScaleValue = scaleItemMap[loserParticipantId]?.scaleValue;
-      const loserRating = typeof loserScaleValue === 'object' ? loserScaleValue[accessor] : loserScaleValue;
-
-      const winnerCountables = winningSide ? countables[winningSide] : [0, 0];
-      const loserCountables = winningSide ? countables[3 - winningSide] : [0, 0];
-
+  // each player moves by their own K against the sides' ratings; one player alone takes the new rating as computed
+  const rate = (ids: string[], won: boolean) => {
+    for (const participantId of ids) {
+      const k = kFor(participantId);
       const { newWinnerRating, newLoserRating } = calculateNewRatings({
         ratingType: computeRatingType,
-        winnerCountables,
-        loserCountables,
-        maxCountables,
+        winnerMinimumGain,
+        protectLosses,
+        winnerActual,
         winnerRating,
+        loserActual,
         loserRating,
+        expectation,
+        margin,
+        winnerKFactor: k,
+        loserKFactor: k,
       });
-
-      const newWinnerScaleValue = accessor ? { ...winnerScaleValue, [accessor]: newWinnerRating } : newWinnerRating;
-      const newLoserScaleValue = accessor ? { ...loserScaleValue, [accessor]: newLoserRating } : newLoserRating;
-      scaleItemMap[winnerParticipantId].scaleValue = newWinnerScaleValue;
-      scaleItemMap[loserParticipantId].scaleValue = newLoserScaleValue;
-      scaleItemMap[winnerParticipantId].scaleName = outputScaleName;
-      scaleItemMap[loserParticipantId].scaleName = outputScaleName;
+      const sideBefore = won ? winnerRating : loserRating;
+      const newSideRating = (won ? newWinnerRating : newLoserRating) ?? sideBefore;
+      const newRating =
+        ids.length === 1
+          ? newSideRating
+          : Number.parseFloat((ratingOf(participantId) + (newSideRating - sideBefore)).toFixed(decimalsCount));
+      const scaleValue = scaleItemMap[participantId].scaleValue;
+      scaleItemMap[participantId].scaleValue = accessor ? { ...scaleValue, [accessor]: newRating } : newRating;
+      scaleItemMap[participantId].scaleName = outputScaleName;
     }
-  }
+  };
+  rate(winnerIds, true);
+  rate(loserIds, false);
+}
+
+/** The competitionFormat a matchUp is played under: its structure's, then its drawDefinition's, then its event's. */
+function competitionFormatOf(event: Event | undefined, matchUp: HydratedMatchUp): competitionFormat | undefined {
+  const drawDefinition = event?.drawDefinitions?.find(({ drawId }) => drawId === matchUp.drawId);
+  const { structure } = drawDefinition ? findStructure({ drawDefinition, structureId: matchUp.structureId }) : {};
+  return structure?.competitionFormat ?? drawDefinition?.competitionFormat ?? event?.competitionFormat;
 }

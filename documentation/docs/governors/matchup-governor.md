@@ -1206,6 +1206,10 @@ Three tiebreak records are settled (CA, 2026-10-02):
 - **Impossible tiebreak points are refused**, such as `7-6(10-7)` with a tiebreak to seven. An
   ingestion pipeline can call `scoreGovernor.repairScore` first, which drops such points and keeps
   `7-6`.
+- **`0` and `0` in the tiebreak-point fields are not recorded points** (CA, 2026-11-04). No
+  tiebreak finishes 0-0, so `setMatchUpStatus` drops the pair before validating and storing the
+  set. A `6-7` sent with `0`/`0` is recorded as a bare `7-6`, with the
+  `TIEBREAK_POINTS_NOT_RECORDED` warning, and its score string reads `6-7`, not `6-7(0)`.
 
 ### Score strings are derived, never trusted
 

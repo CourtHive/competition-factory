@@ -1,30 +1,14 @@
+import { ExpectationRule, LOGISTIC_400, ratingUpdate } from './ratingUpdate';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
+import { marginMultiplier } from './ratingsPolicyRules';
 import { convertRange } from './convertRange';
 
 // constants
 import { MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { ELO } from '@Constants/ratingConstants';
 
-// see footnote #3 here:
-// http://fivethirtyeight.com/features/serena-williams-and-the-difference-between-all-time-great-and-greatest-of-all-time/
-const k538 = (countables = 0) => 250 / Math.pow(countables + 5, 0.4);
-const kDefault = () => 1;
-
-// win multipier is scaled by % countables won
-// https://www.stat.berkeley.edu/~aldous/157/Old_Projects/huang.pdf
-function kSet(maxCountables = 3, counted = 2) {
-  const kset = maxCountables / counted;
-  return Number.isNaN(kset) ? eloConfig.kDefault() : kset;
-}
-
-const eloConfig = {
-  nSpread: 400, // determines the 'spread' of the scale
-  diffThreshold: 0.125,
-
-  kCalc: k538, // use calculation defined by FiveThirtyEight.com
-  kMultiplier: kSet, // change to kDefault for value of 1
-  kDefault,
-};
+// types
+import type { RatingsMarginRule } from '@Types/ratingsPolicyTypes';
 
 /**
 export function getRatingDelta({ ratings = ratingsParameters, ratingType, rating, delta }) {
@@ -37,26 +21,42 @@ export function getRatingDelta({ ratings = ratingsParameters, ratingType, rating
  */
 
 type CalculateNewRatings = {
-  winnerCountables: number;
-  loserCountables: number;
-  maxCountables: number;
+  /** the winner's actual result, 1 unless the policy grades the win (e.g. by sets played) */
+  winnerActual?: number;
+  /** the loser's, 1 − winnerActual unless the policy scores it apart (FIFA's shootout loser, 0.5) */
+  loserActual?: number;
+  /** a margin rule and what it reads; the K multiplier is computed from the ratings in Elo space */
+  margin?: { rule?: RatingsMarginRule; marginOfVictory?: number; winnerGameShare?: number; draw?: boolean };
+  /** a side whose result fell short of its expectation keeps its rating (FIFA's knock-out loss protection) */
+  protectLosses?: boolean;
+  /** a winner who would lose points gains this instead and the loser loses it (FIVB's 0.01) */
+  winnerMinimumGain?: number;
+  expectation?: ExpectationRule;
   ratingRange?: number[];
   winnerRating: number;
-  countables?: number;
   loserRating: number;
   ratingType: string;
+  winnerKFactor?: number;
+  loserKFactor?: number;
   ratings?: any;
 };
+
+// the default policy's K (POLICY_RATINGS_DEFAULT: Huang 2014's flat-K run)
+const DEFAULT_K = 25;
 
 export function calculateNewRatings(params: CalculateNewRatings) {
   let { winnerRating, loserRating } = params;
   const {
+    expectation = LOGISTIC_400,
     ratings = ratingsParameters,
-    winnerCountables = 1,
-    loserCountables = 0,
+    winnerKFactor = DEFAULT_K,
+    loserKFactor = winnerKFactor,
+    winnerActual = 1,
+    loserActual = 1 - winnerActual,
+    winnerMinimumGain,
+    protectLosses,
+    margin,
     ratingType = ELO,
-    maxCountables,
-    countables,
   } = params ?? {};
   const ratingParameters = ratings?.[ratingType];
   if (!ratingParameters) return { error: MISSING_VALUE };
@@ -77,39 +77,45 @@ export function calculateNewRatings(params: CalculateNewRatings) {
     if (!inRange(ratingRange, loserRating)) loserRating = ratingParameters.defaultInitialization;
   }
 
+  // a native scale (World Rugby, FIVB) is rated in its own points; any other is converted into ELO and back
+  const eloRange = ratingParameters.native ? consideredRange : ratingsParameters[ELO].range;
+
   // convert inbound ratings from ratingType into ELO
   const convertedWinnerRating = convertRange({
-    targetRange: ratingsParameters[ELO].range,
+    targetRange: eloRange,
     sourceRange: consideredRange,
     value: invertedScale ? ratingRange[0] - winnerRating : winnerRating,
   });
   const convertedLoserRating = convertRange({
-    targetRange: ratingsParameters[ELO].range,
+    targetRange: eloRange,
     sourceRange: consideredRange,
     value: invertedScale ? ratingRange[0] - loserRating : loserRating,
   });
 
-  const getExpectation = (playerRating, opponentRating) =>
-    1 / (1 + Math.pow(10, (opponentRating - playerRating) / eloConfig.nSpread));
+  const kMultiplier = marginMultiplier({ ...margin, winnerEloDiff: convertedWinnerRating - convertedLoserRating });
+  const { deltas } = ratingUpdate({
+    ratings: [convertedWinnerRating, convertedLoserRating],
+    k: [winnerKFactor * kMultiplier, loserKFactor * kMultiplier],
+    actual: [winnerActual, loserActual],
+    expectation,
+  });
+  let [winnerDelta, loserDelta] = protectLosses ? deltas.map((delta) => Math.max(0, delta)) : deltas;
+  if (winnerMinimumGain !== undefined && winnerDelta < winnerMinimumGain) {
+    winnerDelta = winnerMinimumGain;
+    loserDelta = -winnerMinimumGain;
+  }
 
-  const winnerExpectation = getExpectation(convertedWinnerRating, convertedLoserRating);
-  const loserExpectation = getExpectation(convertedLoserRating, convertedWinnerRating);
-
-  const winnerKValue = eloConfig.kCalc(winnerCountables);
-  const loserKValue = eloConfig.kCalc(loserCountables);
-  const k = eloConfig.kMultiplier(maxCountables, countables);
-
-  const winnerUpdatedConvertedRating = convertedWinnerRating + k * winnerKValue * (1 - winnerExpectation);
-  const loserUpdatedConvertedRating = convertedLoserRating + k * loserKValue * (0 - loserExpectation);
+  const winnerUpdatedConvertedRating = convertedWinnerRating + winnerDelta;
+  const loserUpdatedConvertedRating = convertedLoserRating + loserDelta;
 
   // convert calculated new ratings from ELO into ratingType
   const convertedUpdatedWinnerRating = convertRange({
-    sourceRange: ratingsParameters[ELO].range,
+    sourceRange: eloRange,
     value: winnerUpdatedConvertedRating,
     targetRange: consideredRange,
   });
   const convertedUpdatedLoserRating = convertRange({
-    sourceRange: ratingsParameters[ELO].range,
+    sourceRange: eloRange,
     value: loserUpdatedConvertedRating,
     targetRange: consideredRange,
   });
@@ -121,16 +127,8 @@ export function calculateNewRatings(params: CalculateNewRatings) {
   const updatedLoserRating = invertedScale ? ratingRange[0] - convertedUpdatedLoserRating : convertedUpdatedLoserRating;
   let newLoserRating = Number.parseFloat(updatedLoserRating.toFixed(decimalPlaces));
 
-  //  if expected winner && percentageDifference > threshold don't change ratings
-  const percentageDifference = Math.max(...ratingRange)
-    ? Math.abs(winnerRating - loserRating) / Math.max(...ratingRange)
-    : 0;
-
-  if (
-    (convertedUpdatedWinnerRating > convertedUpdatedLoserRating && percentageDifference > eloConfig.diffThreshold) ||
-    newWinnerRating < 0 ||
-    newLoserRating < 0
-  ) {
+  // a rating that would leave the scale's range is not written
+  if (newWinnerRating < 0 || newLoserRating < 0) {
     newWinnerRating = winnerRating;
     newLoserRating = loserRating;
   }

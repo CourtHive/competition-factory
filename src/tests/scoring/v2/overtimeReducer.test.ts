@@ -25,9 +25,9 @@ function play(code: string, timeline: TimelineEntry[]) {
 }
 
 describe('overtime reducer, explicit internal opt-in (CA 2026-11-03)', () => {
-  it('keeps public resolution and new-use validation gated', () => {
+  it('keeps public resolution gated; new use opens where the engine scores (S6)', () => {
     expect(resolveFormat(CAPPED)).toBeUndefined();
-    expect(isValidMatchUpFormat({ matchUpFormat: CAPPED })).toBe(false);
+    expect(isValidMatchUpFormat({ matchUpFormat: CAPPED })).toBe(true);
     expect(resolveFormat(CAPPED, OPTIONS)?.overtime).toMatchObject({ count: 3, rule: { kind: 'timed' } });
   });
 

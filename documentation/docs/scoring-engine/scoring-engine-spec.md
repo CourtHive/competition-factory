@@ -650,6 +650,9 @@ only when the N totals are level, and never one of the N (CA 2026-10-04, the INT
    sudden death"; `aggregateSegments`, "the sudden-death decider of a level aggregate");
 3. a timed decider (`-F:T10P`) is ended by `endSegment`, and the side ahead wins the match
    (`aggregateSegments`, "the -F: decider is set four, timed and points-based").
+4. the decider's point, or a shootout's goals, settles a level total and is never part of it: `analyzeMatchUp`'s
+   `aggregateScores` and a team's `scoreValue` sum the N sets (and any overtime periods) only
+   (`exactlyFormatWinner.test.ts`, `deciderOutOfTeamScore.test.ts`).
 
 ### 9.5 Combined totals
 
@@ -699,12 +702,13 @@ replay as v1 replayed them (§ 12.8).
 
 ### 9.8 Declared overtime (CA 2026-11-03; ScoringEngine integration)
 
-The [grammar specification](/docs/codes/matchup-format-grammar#9-overtime-extension-tournament-activation-pending)
+The [grammar specification](/docs/codes/matchup-format-grammar#9-overtime-extension)
 defines `-O:{limit}[X][SD]/{segment}`. This extends aggregate match completion only when O is declared;
 codes without O retain §§ 9.3–9.7. ScoringEngine supports the timed subset below directly; no caller-facing
-feature flag is needed. General tournament new-use validation and the legacy point mutator remain gated
-pending the separate format/score-validator activation slice. The reducer's internal `allowOvertime` option
-continues to distinguish explicit scoring support from default format resolution.
+feature flag is needed. Tournament new-use validation (`isValidMatchUpFormat`) accepts exactly the overtime codes
+this engine scores, by asking the same format resolution, so the two cannot disagree (activation, CA 2026-11-04).
+The legacy point mutator still refuses overtime. The reducer's internal `allowOvertime` option continues to
+distinguish explicit scoring support from default format resolution.
 
 1. Play every regulation segment. If the regulation aggregate is unequal, finish with that winner and no
    overtime. If level, continue into the first overtime period, not a completed draw or the F decider.
@@ -724,10 +728,16 @@ continues to distinguish explicit scoring support from default format resolution
    the match and is not summed into the sporting aggregate. A timed fallback may itself finish level.
 7. No input opens a period after an earlier winner or past the ceiling/fallback. A baseline including such
    an unplayed segment is refused unchanged. Replay of an accepted prefix deterministically reconstructs its
-   decision, and removing the deciding input reopens the appropriate period.
+   decision, and removing the deciding input reopens the appropriate period. No set follows the decider: a set
+   number past it reads the regulation segment's rule, so `getInputLevels()` on a match its decider completed
+   reports regulation's levels, not the decider's.
+8. A shootout decider (`-F:SO{rounds}`, only after O) is entered as its final tally, by set total only; point and
+   game input are refused. A tally is refused unless a shootout ends on it: never level; past `rounds` won by one
+   (sudden death); within `rounds` ended as soon as one side could not catch up, so `2·won − lost ≤ rounds + 2`.
+   Its goals decide the match and are not summed into the sporting aggregate, as rule 6 says of any F.
 
 The initial reducer supports timed aggregate regulation and timed overtime in scoring units, with no segment-local
-tiebreaks. F may be a tiebreak-only or timed segment with no local tiebreak. Match clocks (`-M:`), non-timed
+tiebreaks. F may be a tiebreak-only segment, a shootout (rule 8), or a timed segment with no local tiebreak. Match clocks (`-M:`), non-timed
 regulation/overtime, standard/outs fallbacks, and unsafe finite total segment counts are refused even with internal
 opt-in until their rules are resolved. Other valid-for-reading syntax is not silently approximated.
 These changes belong to scoring, not `setMatchUpStatus` or the outcome propagation pipeline.
@@ -1433,6 +1443,37 @@ on a cited id the matrix does not hold, and on a cell line that names no section
 - `bestOf | SET | set:combined(ALLOW) | final:same | game:traditional | noClock | knownModifiers` — § 7, § 9.5, § 11.5; `combinedTotals` (`SET1-S:P32`, `SET1-S:P31`, `SET1-S:P4`)
 - `bestOf | SET | set:combined(DECIDING_POINT) | final:same | game:traditional | noClock | knownModifiers` — § 7; `combinedTotals` (`SET1-S:P32DP`, `SET1-S:P4DP`)
 - `bestOf | SET | set:combined(WIN_BY_MARGIN) | final:same | game:traditional | noClock | knownModifiers` — § 7; `combinedTotals` (`SET1-S:P32WB2`)
+
+**Overtime (activation S6)**
+
+- `bestOf+aggregate | HAL | set:timed(P) | overtime:finite/timed(P) | final:tiebreakSet | game:traditional | noClock | knownModifiers` — § 9.3, § 9.8 rule 1, rule 2, rule 6, § 5; `overtime` (`HAL2A-S:T10P-O:1/T5P-F:TB1`)
+- `bestOf+aggregate | PER | set:timed(P) | overtime:finite/timed(P) | final:tiebreakSet | game:traditional | noClock | knownModifiers` — § 9.3, § 9.8 rule 1, rule 2, rule 6, § 5; `overtime` (`PER1A-S:T20P-O:1/T5P-F:TB1`)
+- `bestOf+aggregate | PER | set:timed(P) | overtime:finite/timed(P) | final:timed(P) | game:traditional | noClock | knownModifiers` — § 9.3, § 9.8 rule 1, rule 2, rule 6, § 6.2; `overtime` (`PER1A-S:T20P-O:1/T5P-F:T2P`)
+- `exactly+aggregate | HAL | set:timed(P) | overtime:finite(exactly)/timed(P) | final:same | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 3, rule 6; `overtime` (`HAL2XA-S:T45P-O:2X/T15P`)
+- `exactly+aggregate | HAL | set:timed(P) | overtime:finite(exactly)/timed(P) | final:shootout | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 3, rule 6, rule 8; `overtime` (`HAL2XA-S:T45P-O:2X/T15P-F:SO5`)
+- `exactly+aggregate | HAL | set:timed(P) | overtime:finite(exactly)/timed(P) | final:tiebreakSet | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 3, rule 6, § 5; `overtime` (`HAL2XA-S:T45P-O:2X/T15P-F:TB1`)
+- `exactly+aggregate | HAL | set:timed(P) | overtime:finite(suddenDeath)/timed(P) | final:same | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 5, rule 6; `overtime` (`HAL2XA-S:T45P-O:2SD/T15P`)
+- `exactly+aggregate | HAL | set:timed(P) | overtime:finite/timed(P) | final:same | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 6; `overtime` (`HAL2XA-S:T45P-O:2/T15P`)
+- `exactly+aggregate | HAL | set:timed(P) | overtime:finite/timed(P) | final:timed(P) | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 6, § 6.2; `overtime` (`HAL2XA-S:T45P-O:2/T15P-F:T10P`)
+- `exactly+aggregate | PER | set:timed(G) | overtime:finite/timed(P) | final:timed(G) | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 6, § 6.2; `overtime` (`PER3XA-S:T20-O:1/T5P-F:T20`)
+- `exactly+aggregate | PER | set:timed(P) | overtime:finite(suddenDeath)/timed(P) | final:same | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 5, rule 6; `overtime` (`PER3XA-S:T20P-O:1SD/T5P`)
+- `exactly+aggregate | PER | set:timed(P) | overtime:finite(suddenDeath)/timed(P) | final:shootout | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 5, rule 6, rule 8; `overtime` (`PER3XA-S:T20P-O:1SD/T5P-F:SO5`)
+- `exactly+aggregate | PER | set:timed(P) | overtime:finite(suddenDeath)/timed(P) | final:tiebreakSet | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 5, rule 6, § 5; `overtime` (`PER3XA-S:T20P-O:1SD/T5P-F:TB1`)
+- `exactly+aggregate | PER | set:timed(P) | overtime:finite/timed(P) | final:tiebreakSet | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 6, § 5; `overtime` (`PER3XA-S:T20P-O:3/T5P-F:TB1`)
+- `exactly+aggregate | PER | set:timed(P) | overtime:finite/timed(P) | final:timed(P) | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 6, § 6.2; `overtime` (`PER3XA-S:T20P-O:3/T5P-F:T10P`)
+- `exactly+aggregate | PER | set:timed(P) | overtime:unlimited(suddenDeath)/timed(P) | final:same | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 4, rule 5; `overtime` (`PER3XA-S:T20P-O:USD/T20P`)
+- `exactly+aggregate | QTR | set:timed(P) | overtime:finite/timed(P) | final:same | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 6; `overtime` (`QTR4XA-S:T12P-O:3/T5P`)
+- `exactly+aggregate | QTR | set:timed(P) | overtime:unlimited/timed(P) | final:same | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 4; `overtime` (`QTR4XA-S:T12P-O:U/T5P`)
+- `exactly+aggregate | SET | set:timed(P) | overtime:finite(exactly)/timed(G) | final:shootout | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 3, rule 6, rule 8; `overtime` (`SET2XA-S:T45P-O:2X/T15-F:SO5`)
+- `exactly+aggregate | SET | set:timed(P) | overtime:finite(exactly)/timed(P) | final:shootout | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 3, rule 6, rule 8; `overtime` (`SET2XA-S:T45P-O:2X/T15P-F:SO5`)
+- `exactly+aggregate | SET | set:timed(P) | overtime:finite(exactly)/timed(P) | final:tiebreakSet | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 3, rule 6, § 5; `overtime` (`SET2XA-S:T45P-O:2X/T15P-F:TB1`)
+- `exactly+aggregate | SET | set:timed(P) | overtime:finite(exactly)/timed(P) | final:tiebreakSet(noAD) | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 3, rule 6, § 5; `overtime` (`SET2XA-S:T45P-O:2X/T15P-F:TB1NOAD`)
+- `exactly+aggregate | SET | set:timed(P) | overtime:finite(suddenDeath)/timed(P) | final:same | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 5, rule 6; `overtime` (`SET2XA-S:T10P-O:1SD/T5P`)
+- `exactly+aggregate | SET | set:timed(P) | overtime:finite(suddenDeath)/timed(P) | final:tiebreakSet | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 5, rule 6, § 5; `overtime` (`SET3XA-S:T20P-O:1SD/T5P-F:TB1`)
+- `exactly+aggregate | SET | set:timed(P) | overtime:finite/timed(P) | final:same | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 6; `overtime` (`SET2XA-S:T40P-O:1/T10P`)
+- `exactly+aggregate | SET | set:timed(P) | overtime:finite/timed(P) | final:timed(P) | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 6, § 6.2; `overtime` (`SET2XA-S:T45P-O:2/T15P-F:T5P`)
+- `exactly+aggregate | SET | set:timed(P) | overtime:unlimited(suddenDeath)/timed(P) | final:same | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 4, rule 5; `overtime` (`SET3XA-S:T20P-O:USD/T20P`)
+- `exactly+aggregate | SET | set:timed(P) | overtime:unlimited/timed(P) | final:same | game:traditional | noClock | knownModifiers` — § 9.8 rule 1, rule 2, rule 4; `overtime` (`SET4XA-S:T12P-O:U/T5P`)
 
 **Refused: segments of outs**
 

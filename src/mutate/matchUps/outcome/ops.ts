@@ -72,9 +72,12 @@ export type OutcomeOp =
       /**
        * the writer v1's notice names where a settle pass makes the write: a carry withdrawn off the loser's matchUp by a
        * relabel, whose last emission is `reconcileScoredTimes` taking its `scoredTime` (S6); a convergence an unwind
-       * dissolved, written again as it stands by `settleRederivedDoubleExits` after the call's own write (S6 tail)
+       * dissolved, written again as it stands by `settleRederivedDoubleExits` after the call's own write (S6 tail);
+       * a produced exit awarded on placement (`assignMatchUpDrawPosition`, without an in-context notice), or its stale
+       * relay copy reset by `withdrawProducedExits` (S7)
        */
-      announcedAs?: 'reconcileScoredTimes' | 'settleRederivedDoubleExit';
+      announcedAs?:
+        'reconcileScoredTimes' | 'settleRederivedDoubleExit' | 'assignMatchUpDrawPosition' | 'withdrawProducedExits';
       /**
        * a TEAM dual's write after its line's result (S7), `updateTieMatchUpScore`'s: the sides it ensures and the
        * tieFormat it copies on, each present only where it changes the stored value. v1 returns the write as the
@@ -139,11 +142,22 @@ export type OutcomeOp =
        */
       clearsPendingExit?: true;
       /**
+       * an awarded produced copy withdrawn as its relay's BYE goes (S7): keep the legitimate occupant and blank score,
+       * reset the result and remove its provenance before the arriving loser is planned
+       */
+      withdrawsProducedExit?: true;
+      /**
        * the position of a participant awarded a carried exit, taken back out of the matchUp they went on into when the
        * carry is withdrawn by a relabel (S6 tail, v1's `relabelWithoutDirection`): announced as `releaseAdvancedDrawPosition`,
        * with the event; the matchUp's score is left as it is (there is none: a result there keeps the carry)
        */
       releasedDrawPosition?: number;
+      /**
+       * the placement seats a loser beside a carried exit that decides the matchUp for them (RULE 2 on arrival, a seat an
+       * unwind freed and re-derived to the carry, S7): v1's `assignDrawPosition` re-derives its status codes with the
+       * assignment (`progressExitStatus`: `[]`, nothing carried on this side) and announces the matchUp as the assignment
+       */
+      rederivesCodes?: true;
     }
   | {
       op: 'assignPosition';
@@ -253,9 +267,9 @@ export type OutcomeOp =
       /**
        * a carried exit standing on the other side once the BYE goes (S7): the matchUp is re-derived to it as v1's
        * `updateMatchUpStatusAfterRemoval` re-derives it, the exit's status, awarded to the side without it (a carried exit
-       * keeps its award on an empty seat), its provenance kept
+       * keeps its award on an empty seat), its provenance kept; a produced exit instead stays pending with no winningSide
        */
-      rederived?: { matchUpStatus: MatchUpStatusUnion; winningSide: 1 | 2 };
+      rederived?: { matchUpStatus: MatchUpStatusUnion; winningSide?: 1 | 2 };
     }
   | {
       op: 'setParticipantResults';
@@ -462,6 +476,14 @@ function foldMatchUpWrite(
       matchUp.matchUpStatus = TO_BE_PLAYED;
       setSideExitProvenance({ matchUp, provenance: undefined });
     }
+    if (op.withdrawsProducedExit) {
+      matchUp.matchUpStatus = TO_BE_PLAYED;
+      delete matchUp.winningSide;
+      setSideExitProvenance({ matchUp, provenance: undefined });
+      clearOrderOfFinishUnlessCompleted(matchUp);
+    }
+    // the arrival that decides the matchUp by the carried exit beside it: its codes re-derived (`progressExitStatus`)
+    if (op.rederivesCodes) matchUp.matchUpStatusCodes = [];
   }
   return {};
 }

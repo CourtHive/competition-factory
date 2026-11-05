@@ -1,5 +1,6 @@
 import { MATRIX_CELLS, cellExitOutcome } from '@Tests/testHarness/exitPropagation/matrixCells';
 import { PRODUCED_EXIT_POLICY } from '@Tests/testHarness/exitPropagation/producedExitPolicy';
+import { matrixTier, sliceMissingValues, tierCells } from '@Tests/testHarness/matrixTier';
 import asyncGlobalState from '@Server/providers/factory/engines/asyncGlobalState';
 import type { MatrixCell } from '@Tests/testHarness/exitPropagation/matrixCells';
 import { setStateProvider, setSubscriptions } from '@Global/state/globalState';
@@ -31,6 +32,14 @@ import { INVALID_WINNING_SIDE } from '@Constants/errorConditionConstants';
 const CELLS = MATRIX_CELLS.filter(
   (cell) => cell.drawSize === 16 && cell.participantsCount === 13 && cell.propagateExitStatus,
 );
+
+// matrixTier.ts: a PR into dev registers a third of the cells, every draw type kept; checkpoints run all 50
+const TIERED = tierCells(CELLS, { stratum: (cell) => cell.drawType });
+
+// CONTROL: the tier narrows the run, never a dimension of it
+it(`the ${matrixTier} tier keeps every draw type and exit status`, () => {
+  expect(sliceMissingValues(CELLS, TIERED, ['drawType', 'exitStatus'])).toEqual([]);
+});
 
 function stripEdges(tournamentRecord: any): number {
   let stripped = 0;
@@ -99,7 +108,7 @@ it.each([
     expect(CELLS).toHaveLength(50);
 
     const differing: string[] = [];
-    for (const cell of CELLS) {
+    for (const cell of TIERED) {
       const intact = play(cell, policy, false);
       const bare = play(cell, policy, true);
 

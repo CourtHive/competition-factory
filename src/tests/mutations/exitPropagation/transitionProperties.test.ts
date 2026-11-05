@@ -1,4 +1,5 @@
 import { quarantineFor, unusedQuarantineKeys } from '@Tests/testHarness/exitPropagation/knownFailures';
+import { matrixTier, sliceMissingValues, tierCells } from '@Tests/testHarness/matrixTier';
 import { nextPlayable, playForward } from '@Tests/testHarness/exitPropagation/driver';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -72,7 +73,18 @@ const label = (cell: (typeof MATRIX)[number]) =>
 
 const observedKeys = new Set<string>();
 
-test.for(MATRIX)('properties: $drawType $drawSize/$participantsCount $exitStatus', (cell) => {
+// matrixTier.ts: a PR into dev registers a third of the cells, every draw type x exit status kept; checkpoints run all of them
+const TIERED = tierCells(MATRIX, { stratum: (cell) => `${cell.drawType} ${cell.exitStatus}` });
+const tieredKeys = new Set(TIERED.map(label));
+const matrixKeys = new Set(MATRIX.map(label));
+
+// CONTROL: the tier narrows the run, never a dimension of it
+test(`the ${matrixTier} tier keeps every value of every matrix dimension`, () => {
+  const dimensions = ['drawType', 'drawSize', 'participantsCount', 'exitStatus'] as const;
+  expect(sliceMissingValues(MATRIX, TIERED, [...dimensions])).toEqual([]);
+});
+
+test.for(TIERED)('properties: $drawType $drawSize/$participantsCount $exitStatus', (cell) => {
   setSubscriptions({});
   const key = label(cell);
   observedKeys.add(key);
@@ -126,5 +138,9 @@ test.for(MATRIX)('properties: $drawType $drawSize/$participantsCount $exitStatus
 });
 
 afterAll(() => {
-  expect(unusedQuarantineKeys(observedKeys, 'properties ')).toEqual([]);
+  // under the pr tier only keys naming a registered cell, or no cell at all (a typo), are held to it here
+  const unused = unusedQuarantineKeys(observedKeys, 'properties ').filter(
+    (key) => tieredKeys.has(key) || !matrixKeys.has(key),
+  );
+  expect(unused).toEqual([]);
 });

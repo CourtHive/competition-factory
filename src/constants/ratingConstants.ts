@@ -13,6 +13,8 @@ export const USATT = 'USATT';
 export const ITTF = 'ITTF';
 export const USAR = 'USAR';
 export const BWF = 'BWF';
+export const WORLD_RUGBY = 'WORLD_RUGBY';
+export const FIVB = 'FIVB';
 
 export const ratingConstants = {
   ELO,
@@ -30,6 +32,8 @@ export const ratingConstants = {
   ITTF,
   USAR,
   BWF,
+  WORLD_RUGBY,
+  FIVB,
 } as const;
 
 export default ratingConstants;

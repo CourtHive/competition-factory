@@ -1,7 +1,15 @@
-import { POLICY_TYPE_LADDER, POLICY_TYPE_SCHEDULING, policyConstants } from '@Constants/policyConstants';
+import {
+  POLICY_TYPE_COMPETITION,
+  POLICY_TYPE_LADDER,
+  POLICY_TYPE_RATINGS,
+  POLICY_TYPE_SCHEDULING,
+  policyConstants,
+} from '@Constants/policyConstants';
 import POLICY_SCHEDULING_NO_DAILY_LIMITS from '@Fixtures/policies/POLICY_SCHEDULING_NO_DAILY_LIMITS';
 import POLICY_SCHEDULING_DEFAULT from '@Fixtures/policies/POLICY_SCHEDULING_DEFAULT';
 import POLICY_SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
+import { POLICY_COMPETITION_STANDARD } from '@Fixtures/policies/POLICY_COMPETITION_STANDARD';
+import { ratingsPolicies } from '@Fixtures/policies/ratingsPolicies';
 import { APPLIED_POLICIES } from '@Constants/extensionConstants';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -178,6 +186,76 @@ describe('SchedulingPolicy', () => {
  * The schema and the TypeScript types are two declarations of one shape; each modelled policy's
  * definition lists exactly the members its type declares, in both directions.
  */
+describe('RatingsPolicy', () => {
+  const validateRatings = definition('RatingsPolicy');
+  const validateCompetition = definition('CompetitionPolicy');
+  const DEFAULT = ratingsPolicies.POLICY_RATINGS_DEFAULT;
+
+  it('accepts every ratings preset', () => {
+    const failures = Object.entries(ratingsPolicies)
+      .map(([name, policy]) => [name, errorsOf(validateRatings, policy)])
+      .filter(([, errors]) => errors);
+    // CONTROL: the registry holds the presets, so the check is not vacuous
+    expect(Object.keys(ratingsPolicies).length).toBeGreaterThan(5);
+    expect(failures).toEqual([]);
+  });
+
+  it.each([
+    ['an unknown actual rule', { ...DEFAULT, actual: { rule: 'GOALS' } }],
+    ['no K', (({ k, ...rest }) => rest)(DEFAULT)],
+    ['a K of 0', { ...DEFAULT, k: { rule: 'CONSTANT', value: 0 } }],
+    ['a MATCHES_PLAYED K without its shape', { ...DEFAULT, k: { rule: 'MATCHES_PLAYED', numerator: 250, offset: 5 } }],
+    ['a partial shootout without the loser', { ...DEFAULT, shootoutResult: { rule: 'PARTIAL', winner: 0.75 } }],
+    ['a partial result above 1', { ...DEFAULT, shootoutResult: { rule: 'PARTIAL', winner: 1.5, loser: 0.5 } }],
+    ['a kByTier key without a system', { ...DEFAULT, kByTier: { WORLD_CUP: 60 } }],
+    ['an unknown protection', { ...DEFAULT, protections: ['HOME_PROTECTION'] }],
+    ['a member the type does not declare', { ...DEFAULT, homeAdvantage: 100 }],
+    ['a logistic spread of 0', { ...DEFAULT, expectation: { rule: 'LOGISTIC', base: 10, spread: 0 } }],
+    ['a linear expectation without its cap', { ...DEFAULT, expectation: { rule: 'LINEAR', slope: 0.05 } }],
+    ['a set-score value keyed by a word', { ...DEFAULT, actual: { rule: 'SET_SCORE_VALUE', values: { win: 2 } } }],
+    ['a threshold margin without its multiplier', { ...DEFAULT, margin: { rule: 'THRESHOLD', above: 15 } }],
+    ['a winner minimum gain of 0', { ...DEFAULT, winnerMinimumGain: 0 }],
+  ])('rejects %s', (_, policy) => {
+    expect(validateRatings(policy)).toEqual(false);
+  });
+
+  it('accepts every rule the type declares', () => {
+    const everyRule = {
+      ...DEFAULT,
+      kByTier: { 'FIFA:WORLD_CUP': 60 },
+      draws: 'EXCLUDE',
+      walkovers: 'EXCLUDE',
+      margin: { rule: 'LOG_MOV_AUTOCORRECTED', scale: 0.6686, offset: 0, intercept: 0.8048, autocorrelation: 2.05 },
+      overtimeResult: { rule: 'FULL_RESULT', margin: 1 },
+      shootoutResult: { rule: 'PARTIAL', winner: 0.75, loser: 0.5 },
+      protections: ['KNOCKOUT_LOSS_PROTECTION'],
+    };
+    expect(errorsOf(validateRatings, everyRule)).toBeUndefined();
+    expect(errorsOf(validatePolicies, { [POLICY_TYPE_RATINGS]: everyRule })).toBeUndefined();
+  });
+
+  it("accepts a competition form rating with no K, a preset's name or a policy inline, and rejects a broken one", () => {
+    const standard = POLICY_COMPETITION_STANDARD[POLICY_TYPE_COMPETITION];
+    const withForm = (dynamicFormRating: Record<string, unknown>) => ({
+      ...standard,
+      ratingPolicy: {
+        ...standard.ratingPolicy,
+        dynamicFormRating: { enabled: true, initializeFrom: 'BASELINE', ...dynamicFormRating },
+      },
+    });
+    expect(errorsOf(validateCompetition, standard)).toBeUndefined();
+    expect(errorsOf(validateCompetition, withForm({}))).toBeUndefined();
+    expect(
+      errorsOf(validateCompetition, withForm({ ratingsPolicy: 'POLICY_RATINGS_ELO_WORLD_FOOTBALL' })),
+    ).toBeUndefined();
+    expect(
+      errorsOf(validateCompetition, withForm({ ratingsPolicy: ratingsPolicies.POLICY_RATINGS_COMPETITION_FORM })),
+    ).toBeUndefined();
+    expect(validateCompetition(withForm({ ratingsPolicy: { policyName: 'broken' } }))).toEqual(false);
+    expect(validateCompetition(withForm({ ratingsPolicy: '' }))).toEqual(false);
+  });
+});
+
 describe('the policy definitions match their TypeScript types', () => {
   const PAIRS: [file: string, typeName: string, definitionName: string][] = [
     ['./src/types/factoryTypes.ts', 'SchedulingPolicy', 'SchedulingPolicy'],
@@ -196,6 +274,7 @@ describe('the policy definitions match their TypeScript types', () => {
     ['./src/types/factoryTypes.ts', 'PolicySeedingProfile', 'PolicySeedingProfile'],
     ['./src/types/factoryTypes.ts', 'AdditionalSeedsAllowance', 'AdditionalSeedsAllowance'],
     ['./src/types/competitionPolicyTypes.ts', 'CompetitionPolicy', 'CompetitionPolicy'],
+    ['./src/types/ratingsPolicyTypes.ts', 'RatingsPolicy', 'RatingsPolicy'],
   ];
 
   const files = [...new Set(PAIRS.map(([file]) => file))];

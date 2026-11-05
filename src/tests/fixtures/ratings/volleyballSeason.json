@@ -1,0 +1,80 @@
+{
+  "sport": "volleyball",
+  "policy": "POLICY_RATINGS_FIVB",
+  "ratingType": "FIVB",
+  "k": 6.25,
+  "start": 300,
+  "matchUpFormat": "SET5-S:TB25-F:TB15",
+  "description": "An Olympic volleyball pool (MWF 50): four teams, six matches, every set score. The teams start at 310, 300, 290 and 280, a choice for the fixture.",
+  "matches": [
+    {
+      "sides": ["Team 01", "Team 02"],
+      "sets": [
+        [23, 25],
+        [25, 17],
+        [25, 17],
+        [21, 25],
+        [15, 6]
+      ]
+    },
+    {
+      "sides": ["Team 03", "Team 04"],
+      "sets": [
+        [25, 21],
+        [25, 20],
+        [20, 25],
+        [25, 21]
+      ]
+    },
+    {
+      "sides": ["Team 03", "Team 02"],
+      "sets": [
+        [25, 21],
+        [25, 19],
+        [25, 19]
+      ]
+    },
+    {
+      "sides": ["Team 01", "Team 04"],
+      "sets": [
+        [25, 20],
+        [25, 21],
+        [25, 17]
+      ]
+    },
+    {
+      "sides": ["Team 01", "Team 03"],
+      "sets": [
+        [20, 25],
+        [23, 25],
+        [27, 25],
+        [25, 22],
+        [11, 15]
+      ]
+    },
+    {
+      "sides": ["Team 04", "Team 02"],
+      "sets": [
+        [25, 16],
+        [25, 22],
+        [24, 26],
+        [19, 25],
+        [16, 18]
+      ]
+    }
+  ],
+  "teams": ["Team 01", "Team 02", "Team 03", "Team 04"],
+  "source": "Anonymised public results; expected values from an independent implementation of the published method, with the factory storage rounding.",
+  "expected": {
+    "Team 01": 317.79,
+    "Team 02": 287.07,
+    "Team 03": 318.12,
+    "Team 04": 257.02
+  },
+  "starts": {
+    "Team 01": 310,
+    "Team 02": 300,
+    "Team 03": 290,
+    "Team 04": 280
+  }
+}

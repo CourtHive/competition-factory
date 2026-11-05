@@ -1,4 +1,4 @@
-import type { FormatStructure, OvertimeScoreContext, ScoringPeriod, SetScore } from '@Types/scoring/types';
+import type { DecidedBy, FormatStructure, OvertimeScoreContext, ScoringPeriod, SetScore } from '@Types/scoring/types';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 
 export type OvertimeLayout = { regulationCount: number; overtimeCount: number | 'unlimited'; finalDecider: boolean };
@@ -91,15 +91,51 @@ export function overtimeResultString(context: OvertimeScoreContext, perspective?
   const pair = (scores: [number, number]) => (perspective === 1 ? [...scores].reverse() : scores).join('-');
   const aggregate = pair(context.aggregateScore);
   const level = context.aggregateScore[0] === context.aggregateScore[1];
-  if (context.decidedIn === 'EXTERNAL') {
-    const by = context.decidedBy;
-    const label = (by && METHOD_LABELS[by.method]) ?? 'Decided';
-    const tally = by?.tally ? ': ' + pair(by.tally) : '';
-    return `${aggregate} (${label}${tally})`;
-  }
+  if (context.decidedIn === 'EXTERNAL') return `${aggregate} ${decidedOutsideLabel(context.decidedBy, perspective)}`;
   if (context.decidedIn === 'DECIDER') return overtimeScoreString(context, perspective);
   if (context.decidedIn === 'REGULATION') return level ? `${aggregate} (drawn)` : aggregate;
   return `${aggregate} (OT ${context.periodNumber}${level ? ', drawn' : ''})`;
+}
+
+/** How a result decided outside its score was decided, in brackets: `(Shootout: 4-3)`, `(Lots)`. */
+export function decidedOutsideLabel(decidedBy?: DecidedBy, perspective?: number): string {
+  const label = (decidedBy && METHOD_LABELS[decidedBy.method]) ?? 'Decided';
+  const tally = decidedBy?.tally
+    ? ': ' + (perspective === 1 ? [...decidedBy.tally].reverse() : decidedBy.tally).join('-')
+    : '';
+  return `(${label}${tally})`;
+}
+
+/**
+ * The record of a result decided outside its score in a format without overtime (standings phase 2 § 1.1): no
+ * period follows regulation, so the record is regulation's, with the aggregate where the format totals its sets (a
+ * soccer `1-1 (Shootout: 4-3)`) and the per-set score where it counts sets won (`6-4 4-6 (Lots)`).
+ */
+export function decidedOutsideContext(params: {
+  sets: SetScore[];
+  decidedBy?: DecidedBy;
+  aggregate: boolean;
+  setScores: string;
+}): OvertimeScoreContext {
+  const { sets, decidedBy, aggregate, setScores } = params;
+  const aggregateScore = aggregate
+    ? sets.reduce<[number, number]>(
+        (sum, set) => {
+          const [a, b] = units(set);
+          return [sum[0] + a, sum[1] + b];
+        },
+        [0, 0],
+      )
+    : ([1, 2].map((side) => sets.filter((set) => set.winningSide === side).length) as [number, number]);
+  const context: OvertimeScoreContext = {
+    phase: 'REGULATION',
+    periodNumber: sets.at(-1)?.setNumber ?? 1,
+    aggregateScore,
+    decidedIn: 'EXTERNAL',
+    ...(decidedBy ? { decidedBy } : {}),
+  };
+  const shown = aggregate ? aggregateScore.join('-') : setScores;
+  return { ...context, scoreString: `${shown} ${decidedOutsideLabel(decidedBy)}`.trim() };
 }
 
 export function overtimeScoreString(context: OvertimeScoreContext, perspective?: number): string {
