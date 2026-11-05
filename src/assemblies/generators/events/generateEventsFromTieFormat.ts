@@ -1,5 +1,6 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { addEventEntries } from '@Mutate/entries/addEventEntries';
+import { withDraftWrites } from '@Global/state/withDraftWrites';
 import { coercedGender } from '@Helpers/coercedGender';
 import { isGendered } from '@Validators/isGendered';
 import { addEvent } from '@Mutate/events/addEvent';
@@ -53,12 +54,16 @@ export function generateEventsFromTieFormat(params: GenerateEventsFromTieFormatA
     };
 
     if (params.addEntriesFromTeams) {
-      const result: any = addTeamEntriesToEvent({
-        genderedParticipants,
-        collectionDefinition,
-        entryStatus: params.entryStatus,
-        event,
-      });
+      // the event is a draft until addEvent attaches it, and attaching announces it, entries and all: what adding
+      // entries to the draft announces is discarded with it
+      const result: any = withDraftWrites(() =>
+        addTeamEntriesToEvent({
+          genderedParticipants,
+          collectionDefinition,
+          entryStatus: params.entryStatus,
+          event,
+        }),
+      );
       if (result?.error) return result;
     }
 

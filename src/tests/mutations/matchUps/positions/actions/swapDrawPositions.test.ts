@@ -165,8 +165,10 @@ it('can SWAP assignment.bye with assignment.participantId with 32 drawSize', () 
   expect(options.includes(ALTERNATE_PARTICIPANT)).toEqual(true);
   expect(options.includes(REMOVE_ASSIGNMENT)).toEqual(true);
 
-  expect(assignmentNotifications.length).toEqual(2);
-  expect(drawModifications).toEqual(2);
+  // the swap's alone: the subscriptions predate the mocks generation, whose draft no longer announces the draw it
+  // builds or the positions it places there (the attach announces the new draw as ADD_DRAW_DEFINITION)
+  expect(assignmentNotifications.length).toEqual(1);
+  expect(drawModifications).toEqual(1);
 
   // remove the subscriber: left installed, it fired in every later test and compared updatedAt across
   // different, freshly generated draws, an ordering the stamp never promised (only per draw)
