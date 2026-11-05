@@ -1,6 +1,7 @@
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
 import { finalSetGoverns, unlevelDeciderRefusal } from '@Helpers/matchUpFormatCode/aggregateDecider';
+import { parsedFormatCanEndTied } from '@Validators/tiedFormatCompatibility';
 import { timedSetWinnerContradicts } from '@Validators/timedSetWinner';
 import { overtimeScoreVerdict } from '@Validators/overtimeScore';
 import { parse, ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
@@ -177,6 +178,7 @@ export function analyzeScore({
   }
   const maxSetsCount = Math.max(...setsWinCounts);
   const maxSetsInstances = instanceCount(setsWinCounts)[maxSetsCount];
+  // a match that may finish level (a timed set, an even count of sets: `SET2X-S:6/TB7` 6-3 3-6) completes with no winner
   const timed = matchUpScoringFormat?.setFormat?.timed || matchUpScoringFormat?.finalSetFormat?.timed;
 
   // For calculating setsToWin, both bestOf and exactly use the same formula: Math.ceil(N/2)
@@ -218,10 +220,11 @@ export function analyzeScore({
   // For aggregate scoring, calculate winner based on total score across all sets
   const isAggregateScoring = isAggregateFormat(matchUpScoringFormat);
 
-  // a leader is not a winner: an exactly-N aggregate names one only once all N segments are in, as
-  // analyzeMatchUp's aggregateSideScores does. A running total named a winner, so an in-progress score with a
-  // lead (no winningSide) failed the no-winner clause below and was refused
-  const aggregateComplete = !exactly || sets.length >= exactly;
+  // a leader is not a winner: an aggregate names one only once all N segments are in, as analyzeMatchUp's
+  // aggregateSideScores does. A running total named a winner, so an in-progress score with a lead (no winningSide)
+  // failed the no-winner clause below and was refused: #6155 for exactly-N (`XA`), then best-of N (`HAL2A-S:T45`)
+  const segmentCount = exactly ?? matchUpScoringFormat?.bestOf;
+  const aggregateComplete = !segmentCount || sets.length >= segmentCount;
   const calculatedWinningSide =
     isAggregateScoring && sets.length > 0
       ? (aggregateComplete && calculateAggregateWinner(sets)) || undefined
@@ -242,7 +245,7 @@ export function analyzeScore({
         !calculatedWinningSide &&
         (!relevantMatchUpStatus ||
           ![COMPLETED, DEFAULTED, RETIRED, WALKOVER].includes(relevantMatchUpStatus) ||
-          (timed && relevantMatchUpStatus === COMPLETED))))
+          ((timed || parsedFormatCanEndTied(matchUpScoringFormat)) && relevantMatchUpStatus === COMPLETED))))
   );
 
   return { valid };

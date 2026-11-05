@@ -4,6 +4,7 @@ import { expect, it } from 'vitest';
 
 // constants
 import { COMPLETED, IN_PROGRESS } from '@Constants/tournamentConstants';
+import { INVALID_SCORE } from '@Constants/errorConditionConstants';
 import { ROUND_ROBIN } from '@Constants/drawDefinitionConstants';
 
 // A leader is not a winner: an aggregate format names its winner only once every one of its N segments is in.
@@ -72,4 +73,42 @@ it('the lead becomes a win once all three segments are in', () => {
     drawId,
   });
   expect(result.success).toBeUndefined();
+});
+
+// a best-of aggregate (`A` without `X`) plays its N segments too: #6155 waited for them only in an exactly-N format
+it.each([
+  { matchUpFormat: 'HAL2A-S:T45', sets: [[1, 0]] },
+  { matchUpFormat: 'PER3A-S:T20', sets: [[1, 0]] },
+  {
+    matchUpFormat: 'PER3A-S:T20',
+    sets: [
+      [1, 0],
+      [0, 0],
+    ],
+  },
+])('a best-of aggregate in progress may lead: $matchUpFormat after $sets.length', ({ matchUpFormat, sets }) => {
+  const {
+    drawIds: [drawId],
+  } = mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawType: ROUND_ROBIN, drawSize: 4, matchUpFormat }],
+    setState: true,
+  });
+  const matchUp: any = tournamentEngine.allTournamentMatchUps().matchUps?.[0];
+  const score = {
+    sets: sets.map(([side1Score, side2Score], i) => ({ setNumber: i + 1, side1Score, side2Score })),
+  };
+  let result: any = tournamentEngine.setMatchUpStatus({
+    outcome: { matchUpStatus: IN_PROGRESS, score },
+    matchUpId: matchUp.matchUpId,
+    drawId,
+  });
+  expect(result.success).toEqual(true);
+
+  // and it is not a win before every segment is in
+  result = tournamentEngine.setMatchUpStatus({
+    outcome: { matchUpStatus: COMPLETED, winningSide: 1, score },
+    matchUpId: matchUp.matchUpId,
+    drawId,
+  });
+  expect(result.error).toEqual(INVALID_SCORE);
 });
