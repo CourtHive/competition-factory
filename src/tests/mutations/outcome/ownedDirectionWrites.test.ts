@@ -723,7 +723,26 @@ const UNWOUND_CARRY: [string, Scenario][] = [
   ],
 ];
 
+// S7: a carry brought home by the unwind meets the arriving loser's carry (RULE 4), producing into the freed relay.
+const UNWOUND_CONVERGENCE: [string, Scenario][] = [FIRST_ROUND_LOSER_CONSOLATION, DOUBLE_ELIMINATION].flatMap(
+  (drawType) =>
+    [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((stored) =>
+      [WALKOVER, DEFAULTED].map((standing): [string, Scenario] => [
+        `${drawType} 8: ${stored} given a walkover, converging with the home-coming ${standing}`,
+        {
+          drawProfile: { drawSize: 8, drawType },
+          setup: [
+            { target: R1(2, 'Main'), outcome: exited(standing, 2), params: CARRIED },
+            { target: R1(1, 'Main'), outcome: { matchUpStatus: stored } },
+          ],
+          steps: [{ target: R1(1, 'Main'), outcome: walkover(1), params: CARRIED }],
+        },
+      ]),
+    ),
+);
+
 const SCENARIOS: [string, Scenario][] = [
+  ...UNWOUND_CONVERGENCE,
   ...UNWOUND_CARRY,
   ...CARRIER_SENT_ON,
   ...CARRIED_BESIDE_BYE,

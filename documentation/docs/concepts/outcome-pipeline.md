@@ -920,7 +920,7 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   the four dirs (S7): the walls left are a BYE matchUp whose entry is not a participant's carry on the side opposite the
   BYE (65: a produced exit relayed there, or an entry on the BYE's side), a landing holding something else (20), a relay
   whose standing BYE this unwind withdraws (FIRST_MATCH_LOSER_CONSOLATION, 4), and a matchUp beyond that is not clean
-  (2); a loser who arrives converging with the carry stays v1's at the direction (`unwoundLoserReason`).
+  (2). The loser arriving with a carry that converges is planned against the rebuilt view below.
 
   A double exit given a **single exit whose loser carries it** across their link (`propagateExitStatus`) onto the seat the
   unwind has just freed (S7, `unwoundCarryReason`): v1 directs the loser against the draw as its unwind leaves it, and the
@@ -943,6 +943,19 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   opposite with no clean passage, a landing
   holding a result or provenance, a further level not clean, a seat the unwind's cascade frees further on, which the
   re-planned walk reads as the stored BYE: COMPASS under `doubleExitPropagateBye: false`).
+
+  A double exit given a single exit whose **loser converges with the home-coming carry** (S7,
+  `unwoundConvergedReason`) uses the same rebuild, with the released landings read as the unwind will leave them to be
+  played; deferred BYE advancements remain outside the fold. The rebuilt direction must still converge, and the fresh
+  convergence's checks (`convergedReason`, RULE 4) must admit its free seat, standing carry and produced target. After
+  the unwind and the call's own write, the loser is seated without advancing as an awardee: both sides now carry an
+  exit. The re-derived BYE matchUp becomes the double exit, a DOUBLE_WALKOVER's score is blanked, the arriving side's
+  carried provenance is merged beside the standing side's, and its produced exit is written into the released relay
+  (`convergedOps`, from the rebuilt view). That fresh exit supersedes the relay's deferred reset: its existing scored
+  time stays, as v1's reconciliation leaves the new exit standing. Covered by FRLC and DE 8's Main 1/2 walkover(2)
+  CARRIED, Main 1/1 double exit, then Main 1/1 walkover(1) CARRIED, including a standing default and either stored
+  double exit. A conditioned loser link, a direction that no longer converges, or anything the convergence's own checks
+  refuse stays v1's. No new op field is needed.
 
   A **final's** double exit (or the one matchUp of a one-round structure) produced nothing: cleared or given a winner, its
   unwind is the own loser seat's withdrawal alone, where a link feeds one (FEED_IN_CHAMPIONSHIP's consolation final seat;
