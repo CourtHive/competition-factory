@@ -30,7 +30,7 @@ describe('the published examples', () => {
 });
 
 function rated(ratingsPolicy: any, sides: [number, number]) {
-  const matchUpFormat = 'SET1A-S:T60P';
+  const matchUpFormat = 'SET1A-S:T60';
   // a round robin, where a level result may stand
   const drawProfiles = [{ drawSize: 3, drawType: ROUND_ROBIN, matchUpFormat }];
   const { tournamentRecord } = mocksEngine.generateTournamentRecord({ drawProfiles });

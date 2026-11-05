@@ -4,7 +4,7 @@
   "ratingType": "ELO",
   "k": 20,
   "start": 1500,
-  "matchUpFormat": "SET1A-S:T48P",
+  "matchUpFormat": "SET1A-S:T48",
   "description": "One basketball team's first fifteen games: ten teams, four opponents met twice, two games won in overtime. Final scores, recorded as one segment.",
   "matches": [
     {

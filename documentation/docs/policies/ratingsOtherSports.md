@@ -69,7 +69,7 @@ function recordResult({
 FiveThirtyEight's NBA Elo scales K by the points margin and damps it for a favourite. A 155-104 win between two teams at 1500:
 
 ```ts
-const nba = recordResult({ matchUpFormat: 'SET1A-S:T48P', sets: [[155, 104]], winningSide: 1 });
+const nba = recordResult({ matchUpFormat: 'SET1A-S:T48', sets: [[155, 104]], winningSide: 1 });
 const nbaResult = scaleEngine.generateDynamicRatings({
   ratingsPolicy: fixtures.policies.POLICY_RATINGS_ELO_538_NBA.ratings,
   matchUpIds: [nba.matchUpId],
@@ -83,7 +83,7 @@ const nbaValues = nba.participantIds.map((id) => nbaRatings[id].scaleValue); // 
 FiveThirtyEight's NFL Elo takes the log of the margin; a tie is rated 0.5 each, with K × 1.525:
 
 ```ts
-const nfl = recordResult({ matchUpFormat: 'SET1A-S:T60P', sets: [[40, 0]], winningSide: 1 });
+const nfl = recordResult({ matchUpFormat: 'SET1A-S:T60', sets: [[40, 0]], winningSide: 1 });
 const nflResult = scaleEngine.generateDynamicRatings({
   ratingsPolicy: fixtures.policies.POLICY_RATINGS_ELO_538_NFL.ratings,
   matchUpIds: [nfl.matchUpId],
@@ -98,7 +98,7 @@ World Rugby's own example: Wales (76.92, at home, so 79.92) beat Scotland (76.36
 
 ```ts
 const rugby = recordResult({
-  matchUpFormat: 'SET1A-S:T80P',
+  matchUpFormat: 'SET1A-S:T80',
   sets: [[23, 10]],
   winningSide: 1,
   ratingType: 'WORLD_RUGBY',
@@ -165,7 +165,7 @@ A 2-1 win scores the winner 0.84 (the loser, with one goal and a difference of o
 Instead of passing a policy to each run, attach one to the tournament or event, or name a preset on the event's `competitionFormat`: every matchUp of that event is then rated by it. A policy passed to the run comes first, then one attached to the event or tournament, then the `competitionFormat`'s.
 
 ```ts
-const hockey = recordResult({ matchUpFormat: 'SET1A-S:T60P', sets: [[4, 1]], winningSide: 1 });
+const hockey = recordResult({ matchUpFormat: 'SET1A-S:T60', sets: [[4, 1]], winningSide: 1 });
 tournamentEngine.modifyEvent({
   eventId: hockey.eventId,
   eventUpdates: { competitionFormat: { ratingsPolicy: 'POLICY_RATINGS_ELO_538_NHL' } },
