@@ -1,15 +1,17 @@
 import { tallyParticipantResults as tallyParticipantResultsV1 } from './v1Reference/tallyParticipantResults';
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
 import { buildMatchUps, type CorpusResult } from './standingsFixtures';
-import { V2_MEASURES } from '@Query/standings/fromV1';
 import { describe, expect, it } from 'vitest';
 
 // constants and fixtures
-import { DEFAULTED, DOUBLE_WALKOVER, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { POLICY_ROUND_ROBIN_TALLY_DEFAULT } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_DEFAULT';
+import { DEFAULTED, DOUBLE_WALKOVER, RETIRED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { POLICY_ROUND_ROBIN_TALLY_JTT } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_JTT';
 import { POLICY_ROUND_ROBIN_TALLY_TOC } from '@Fixtures/policies/POLICY_ROUND_ROBIN_TALLY_TOC';
 import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
+
+// constants and types
+import { V2_MEASURES } from '@Constants/tallyMeasureConstants';
 
 /**
  * The live standings engine against the frozen v1 copy (`./v1Reference`, see its README) over seeded random groups:

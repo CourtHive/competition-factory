@@ -10,8 +10,8 @@ import { getParticipantIds } from '@Generators/drawDefinitions/drawTypes/adHoc/d
 import { generateAdHocMatchUps } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocMatchUps';
 import { getAdHocRatings } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/getAdHocRatings';
 import { formRatingsPolicy } from '@Generators/scales/competition/formRatingsPolicy';
+import { swissPolicyOf } from '@Query/drawDefinitions/swiss/swissPolicyOf';
 import { generateSwissPairings } from './swissPairing';
-import { swissPolicyOf } from './swissPolicyOf';
 
 // Acquire
 import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';

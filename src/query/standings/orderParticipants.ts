@@ -1,9 +1,9 @@
-import { GRAPH_MEASURES, RATIO_INPUTS, RATIO_MEASURES, SET_MEASURES } from './fromV1';
 import { getGroups } from '@Query/matchUps/roundRobinTally/getGroups';
 import { instanceCount } from '@Tools/arrays';
 import { isNumeric } from '@Tools/math';
 
 // types
+import { GRAPH_MEASURES, RATIO_INPUTS, RATIO_MEASURES, SET_MEASURES } from '@Constants/tallyMeasureConstants';
 import type {
   FinishingPosition,
   HeadToHeadMode,
