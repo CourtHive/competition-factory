@@ -1,3 +1,4 @@
+import { deriveCountables } from './competition/deriveCountables';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { winnerActualOf } from './ratingsPolicyRules';
@@ -28,13 +29,19 @@ export function ratedResultOf(matchUp: HydratedMatchUp, policy: RatingsPolicy): 
   const margin = { rule: policy.margin, marginOfVictory: marginOfVictoryOf(matchUp), winnerGameShare: undefined };
   const protectLosses = !!policy.protections?.includes('KNOCKOUT_LOSS_PROTECTION') && isKnockout(matchUp);
 
+  // the share of the scoring units won rates a draw by its score too
+  const share = policy.actual.rule === 'SCORE_SHARE' ? scoreShareOf(matchUp) : undefined;
+
   if (!winningSide) {
     if (matchUpStatus !== COMPLETED || policy.draws === 'EXCLUDE') return undefined;
-    return { winningSide: 1, winnerActual: 0.5, loserActual: 0.5, margin, protectLosses };
+    const side1Actual = share?.[0] ?? 0.5;
+    return { winningSide: 1, winnerActual: side1Actual, loserActual: 1 - side1Actual, margin, protectLosses };
   }
 
   const loserSetsWon = (score?.sets ?? []).filter((set) => set.winningSide === 3 - winningSide).length;
-  const winnerActual = winnerActualOf({ rule: policy.actual, parsedFormat, loserSetsWon });
+  const winnerActual = share
+    ? share[winningSide - 1]
+    : winnerActualOf({ rule: policy.actual, parsedFormat, loserSetsWon });
   const result: RatedResult = {
     margin: { ...margin, winnerGameShare: winnerGameShareOf(matchUp) },
     loserActual: 1 - winnerActual,
@@ -84,4 +91,11 @@ function winnerGameShareOf(matchUp: HydratedMatchUp): number | undefined {
 function isKnockout(matchUp: HydratedMatchUp): boolean {
   const { stage, isRoundRobin, drawType } = matchUp as HydratedMatchUp & { isRoundRobin?: boolean };
   return stage === MAIN && !isRoundRobin && drawType !== AD_HOC;
+}
+
+/** Each side's share of the scoring units won (points, else games, else sets), as the competition policy counts them. */
+function scoreShareOf(matchUp: HydratedMatchUp): [number, number] {
+  const { side1Count, side2Count } = deriveCountables(matchUp);
+  const total = side1Count + side2Count;
+  return total ? [side1Count / total, side2Count / total] : [0.5, 0.5];
 }

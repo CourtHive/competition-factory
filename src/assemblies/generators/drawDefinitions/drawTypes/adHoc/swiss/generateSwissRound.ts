@@ -9,6 +9,7 @@ import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { getParticipantIds } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/getParticipantIds';
 import { generateAdHocMatchUps } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocMatchUps';
 import { getAdHocRatings } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/getAdHocRatings';
+import { formRatingsPolicy } from '@Generators/scales/competition/formRatingsPolicy';
 import { generateSwissPairings } from './swissPairing';
 import { swissPolicyOf } from './swissPolicyOf';
 
@@ -97,6 +98,9 @@ export function generateSwissRound(params: GenerateSwissRoundArgs): GenerateSwis
 
   // Competition policy: use dynamic form ratings when available
   const { competitionPolicy } = getCompetitionPolicy({ tournamentRecord, drawDefinition, event });
+  // a form rating that names a ratings policy the factory cannot rate by is refused before anything is generated
+  const formCheck = formRatingsPolicy(competitionPolicy);
+  if (formCheck.error) return { error: formCheck.error, info: formCheck.info };
   const { competitionState } = competitionPolicy
     ? getCompetitionState({ drawDefinition, competitionPolicy })
     : { competitionState: undefined };

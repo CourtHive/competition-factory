@@ -1,9 +1,10 @@
+import { ratingsPolicies } from '@Fixtures/policies/ratingsPolicies';
 import { matchesPlayedK } from './ratingUpdate';
 
 // types
-import type { RatingsActualRule, RatingsKRule, RatingsMarginRule } from '@Types/ratingsPolicyTypes';
-import type { TierClassification } from '@Types/tournamentTypes';
+import type { RatingsActualRule, RatingsKRule, RatingsMarginRule, RatingsPolicy } from '@Types/ratingsPolicyTypes';
 import type { ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
+import type { TierClassification } from '@Types/tournamentTypes';
 
 /** A side's K under the policy; `undefined` where MATCHES_PLAYED has no career count to read. */
 export function kOf(rule: RatingsKRule, matchesPlayed?: number): number | undefined {
@@ -66,4 +67,15 @@ export function tierK(kByTier: Record<string, number> | undefined, tiers: (TierC
     if (k !== undefined) return k;
   }
   return undefined;
+}
+
+/** An inline ratings policy names the three parts every rating reads. */
+export function isRatingsPolicy(policy?: RatingsPolicy): policy is RatingsPolicy {
+  return !!policy?.expectation && !!policy?.k && !!policy?.actual;
+}
+
+/** A ratings policy selected by preset name or given inline; `undefined` for an unknown name or an incomplete policy. */
+export function resolveRatingsPolicy(selected: string | RatingsPolicy): RatingsPolicy | undefined {
+  const policy = typeof selected === 'string' ? ratingsPolicies[selected] : selected;
+  return isRatingsPolicy(policy) ? policy : undefined;
 }

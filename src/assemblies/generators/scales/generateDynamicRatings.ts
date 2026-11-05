@@ -4,14 +4,13 @@ import { getParticipantScaleItem } from '@Query/participant/getParticipantScaleI
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
-import { ratingsPolicies } from '@Fixtures/policies/ratingsPolicies';
 import { recorded } from '@Mutate/simulation/scenarioRecorder';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { calculateNewRatings } from './calculateNewRatings';
 import { getRatingConvertedToELO } from './eloConversions';
 import { ratedResultOf, RatedResult } from './ratedResult';
 import { findStructure } from '@Acquire/findStructure';
-import { kOf, tierK } from './ratingsPolicyRules';
+import { kOf, resolveRatingsPolicy, tierK } from './ratingsPolicyRules';
 import { findPolicy } from '@Acquire/findPolicy';
 
 // constants, fixtures and types
@@ -38,6 +37,7 @@ const addDynamicRatingsRecorded = recorded('addDynamicRatings', addDynamicRating
 export function generateDynamicRatings(params): ResultType & {
   modifiedScaleValues?: { [key: string]: number };
   processedMatchUpIds?: string[];
+  ratingsPolicyNames?: string[];
   sourceRatingType?: string;
   outputScaleName?: string;
   ratingType?: string;
@@ -102,8 +102,7 @@ export function generateDynamicRatings(params): ResultType & {
     if (policy) return policy;
     const selected = competitionFormatOf(event, matchUp)?.ratingsPolicy;
     if (selected === undefined) return POLICY_RATINGS_DEFAULT[POLICY_TYPE_RATINGS];
-    const selectedPolicy = typeof selected === 'string' ? ratingsPolicies[selected] : selected;
-    return isRatingsPolicy(selectedPolicy) ? selectedPolicy : undefined;
+    return resolveRatingsPolicy(selected);
   };
   const withPolicies = matchUps.map((matchUp) => ({ matchUp, policy: policyOf(matchUp) }));
   const unresolved = withPolicies.find(({ policy }) => !policy);
@@ -211,12 +210,15 @@ export function generateDynamicRatings(params): ResultType & {
   }
 
   const processedMatchUpIds = rated.map(({ matchUp }) => matchUp.matchUpId);
+  // the policies the run rated by, so a consumer can say which produced the values
+  const ratingsPolicyNames = [...new Set(rated.map(({ policy }) => policy.policyName))];
 
   return {
     ...SUCCESS,
     modifiedScaleValues,
     outputScaleName,
     processedMatchUpIds,
+    ratingsPolicyNames,
     ...(isEloNative && { sourceRatingType: ratingType }),
   };
 }
@@ -414,9 +416,4 @@ function competitionFormatOf(event: Event | undefined, matchUp: HydratedMatchUp)
   const drawDefinition = event?.drawDefinitions?.find(({ drawId }) => drawId === matchUp.drawId);
   const { structure } = drawDefinition ? findStructure({ drawDefinition, structureId: matchUp.structureId }) : {};
   return structure?.competitionFormat ?? drawDefinition?.competitionFormat ?? event?.competitionFormat;
-}
-
-/** An inline ratings policy names the three parts every rating reads. */
-function isRatingsPolicy(policy?: RatingsPolicy): policy is RatingsPolicy {
-  return !!policy?.expectation && !!policy?.k && !!policy?.actual;
 }
