@@ -1,11 +1,12 @@
-import { fromV1, SEASON_TALLY_MEASURES, V1_PRIMARY_KEYS, V2_MEASURES } from '@Query/standings/fromV1';
 import { getParticipantResults } from '@Query/matchUps/roundRobinTally/getParticipantResults';
 import { orderParticipants, type GroupingInputs } from '@Query/standings/orderParticipants';
 import { matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { validateSeason } from '@Validators/validateSeason';
+import { fromV1 } from '@Query/standings/fromV1';
 
 // constants and types
+import { SEASON_TALLY_MEASURES, V1_PRIMARY_KEYS, V2_MEASURES } from '@Constants/tallyMeasureConstants';
 import type { ParticipantResults, StandingsPhase } from '@Query/standings/standingsTypes';
 import { INVALID_VALUES, MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 import type { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';

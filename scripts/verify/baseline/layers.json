@@ -60,11 +60,6 @@
   "query/drawDefinition/matchUpActions/matchUpActions.ts -> mutate/matchUps/matchUpStatus/setMatchUpState.ts": 1,
   "query/drawDefinition/matchUpActions/matchUpActions.ts -> mutate/matchUps/matchUpStatus/sideExitProvenance.ts": 1,
   "query/drawDefinition/seedGetter.ts -> assemblies/generators/drawDefinitions/generateBlockPattern.ts": 1,
-  "query/drawDefinitions/swiss/getSwissChart.ts -> assemblies/generators/drawDefinitions/drawTypes/adHoc/swiss/computeScoreGroups.ts": 1,
-  "query/drawDefinitions/swiss/getSwissChart.ts -> assemblies/generators/drawDefinitions/drawTypes/adHoc/swiss/swissPolicyOf.ts": 1,
-  "query/drawDefinitions/swiss/getSwissStandings.ts -> assemblies/generators/drawDefinitions/drawTypes/adHoc/swiss/computeScoreGroups.ts": 1,
-  "query/drawDefinitions/swiss/getSwissStandings.ts -> assemblies/generators/drawDefinitions/drawTypes/adHoc/swiss/computeTiebreakers.ts": 1,
-  "query/drawDefinitions/swiss/getSwissStandings.ts -> assemblies/generators/drawDefinitions/drawTypes/adHoc/swiss/swissPolicyOf.ts": 1,
   "query/extensions/getMatchUpDailyLimits.ts -> mutate/extensions/setGroupLeafOrExtension.ts": 1,
   "query/extensions/matchUpFormatTiming/getModifiedMatchUpTiming.ts -> mutate/extensions/setGroupLeafOrExtension.ts": 1,
   "query/extensions/matchUpFormatTiming/getScheduleTiming.ts -> mutate/extensions/setGroupLeafOrExtension.ts": 1,
@@ -137,8 +132,5 @@
   "validators/validateSchedulingProfile.ts -> query/matchUps/getAllStructureMatchUps.ts": 1,
   "validators/validateSchedulingProfile.ts -> query/matchUps/getRoundMatchUps.ts": 1,
   "validators/validateScore.ts -> query/matchUp/analyzeScore.ts": 1,
-  "validators/validateSeason.ts -> query/standings/fromV1.ts": 1,
-  "validators/validateTallyPolicy.ts -> query/matchUps/roundRobinTally/drawnResults.ts": 1,
-  "validators/validateTallyPolicy.ts -> query/standings/fromV1.ts": 1,
   "validators/validUpdate.ts -> query/matchUp/checkScoreHasValue.ts": 1
 }

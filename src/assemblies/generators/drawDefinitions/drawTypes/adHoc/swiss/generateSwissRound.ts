@@ -9,9 +9,9 @@ import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { getParticipantIds } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/getParticipantIds';
 import { generateAdHocMatchUps } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocMatchUps';
 import { formRatingsPolicy } from '@Helpers/ratings/competition/formRatingsPolicy';
+import { swissPolicyOf } from '@Query/drawDefinitions/swiss/swissPolicyOf';
 import { getAdHocRatings } from '@Query/participants/getAdHocRatings';
 import { generateSwissPairings } from './swissPairing';
-import { swissPolicyOf } from './swissPolicyOf';
 
 // Acquire
 import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';

@@ -1,6 +1,6 @@
-import { computeScoreGroups } from '@Generators/drawDefinitions/drawTypes/adHoc/swiss/computeScoreGroups';
-import { computeTiebreakers } from '@Generators/drawDefinitions/drawTypes/adHoc/swiss/computeTiebreakers';
 import { generateSwissPairings } from '@Generators/drawDefinitions/drawTypes/adHoc/swiss/swissPairing';
+import { computeScoreGroups } from '@Query/standings/swiss/computeScoreGroups';
+import { computeTiebreakers } from '@Query/standings/swiss/computeTiebreakers';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { unique } from '@Tools/arrays';

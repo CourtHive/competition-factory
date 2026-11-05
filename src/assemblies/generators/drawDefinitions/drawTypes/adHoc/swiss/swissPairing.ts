@@ -1,6 +1,6 @@
 import { pairingHash } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/generateCandidate';
 import { getEncounters } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/getEncounters';
-import { computeScoreGroups } from './computeScoreGroups';
+import { computeScoreGroups } from '@Query/standings/swiss/computeScoreGroups';
 
 // types
 import type { ScoreGroup, SwissParticipantRecord } from '@Types/swissTypes';
