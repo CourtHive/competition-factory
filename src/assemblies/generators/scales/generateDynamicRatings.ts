@@ -365,7 +365,7 @@ function updateRatingsForMatchUp({
   result,
   kFor,
 }: UpdateRatingsForMatchUpArgs) {
-  const { winningSide, winnerActual, loserActual, margin, protectLosses } = result;
+  const { winningSide, winnerActual, loserActual, margin, protectLosses, winnerMinimumGain } = result;
   const winnerIds = sideParticipantIds[winningSide] ?? [];
   const loserIds = sideParticipantIds[3 - winningSide] ?? [];
   if (!winnerIds.length || !loserIds.length) return;
@@ -386,6 +386,7 @@ function updateRatingsForMatchUp({
       const k = kFor(participantId);
       const { newWinnerRating, newLoserRating } = calculateNewRatings({
         ratingType: computeRatingType,
+        winnerMinimumGain,
         protectLosses,
         winnerActual,
         winnerRating,

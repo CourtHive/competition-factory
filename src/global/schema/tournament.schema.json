@@ -5696,23 +5696,73 @@
       "additionalProperties": false
     },
     "RatingsExpectationRule": {
-      "description": "The expected result of a side rated R against an opponent rated O: 1 / (1 + base^((O - R) / spread)). Base 10 and spread 400 in most published methods; FIFA's men's ranking uses 600.",
-      "type": "object",
-      "properties": {
-        "rule": {
-          "const": "LOGISTIC"
+      "description": "A side's expected result against its opponent: LOGISTIC, 1 / (1 + base^((O - R) / spread)) (base 10, spread 400 in most published methods; FIFA's men's ranking 600); LINEAR, 0.5 + the gap × slope with the gap clamped to ±cap (World Rugby: 0.05, 10); ORDERED_PROBIT, the expected value of the set result, Σ P(i) × resultValues(i), P from the standard normal at the cut-points shifted by scale × the gap (FIVB: 0.008).",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "const": "LOGISTIC"
+            },
+            "base": {
+              "type": "number",
+              "exclusiveMinimum": 1
+            },
+            "spread": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": ["rule", "base", "spread"],
+          "additionalProperties": false
         },
-        "base": {
-          "type": "number",
-          "exclusiveMinimum": 1
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "const": "LINEAR"
+            },
+            "slope": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "cap": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": ["rule", "slope", "cap"],
+          "additionalProperties": false
         },
-        "spread": {
-          "type": "number",
-          "exclusiveMinimum": 0
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "const": "ORDERED_PROBIT"
+            },
+            "scale": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "cutPoints": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 1
+            },
+            "resultValues": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2
+            }
+          },
+          "required": ["rule", "scale", "cutPoints", "resultValues"],
+          "additionalProperties": false
         }
-      },
-      "required": ["rule", "base", "spread"],
-      "additionalProperties": false
+      ]
     },
     "RatingsKRule": {
       "description": "K: one value for both sides (zero-sum), or FiveThirtyEight's numerator / (m + offset)^shape by the player's career matches m, which the caller passes as matchesPlayed.",
@@ -5787,11 +5837,26 @@
           },
           "required": ["rule"],
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "const": "SET_SCORE_VALUE"
+            },
+            "values": {
+              "type": "object",
+              "propertyNames": { "pattern": "^[0-9]+-[0-9]+$" },
+              "additionalProperties": { "type": "number" }
+            }
+          },
+          "required": ["rule", "values"],
+          "additionalProperties": false
         }
       ]
     },
     "RatingsMarginRule": {
-      "description": "A K multiplier by the margin of victory: World Football Elo's goal-difference steps, FiveThirtyEight's autocorrelation-corrected log margin (NHL, NFL) or power margin (NBA), or Weighted Elo's winner game share.",
+      "description": "A K multiplier by the margin of victory: World Football Elo's goal-difference steps, FiveThirtyEight's autocorrelation-corrected log margin (NHL, NFL) or power margin (NBA), Weighted Elo's winner game share, or World Rugby's threshold (× 1.5 above 15 points).",
       "oneOf": [
         {
           "type": "object",
@@ -5864,6 +5929,24 @@
             }
           },
           "required": ["rule"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "const": "THRESHOLD"
+            },
+            "above": {
+              "type": "number",
+              "minimum": 0
+            },
+            "multiplier": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": ["rule", "above", "multiplier"],
           "additionalProperties": false
         }
       ]
@@ -5964,6 +6047,11 @@
             "enum": ["KNOCKOUT_LOSS_PROTECTION"]
           },
           "uniqueItems": true
+        },
+        "winnerMinimumGain": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "FIVB: a winner who would lose points gains this instead, and the loser loses it (0.01)."
         }
       },
       "required": ["policyName", "source", "expectation", "k", "actual"],

@@ -17,6 +17,8 @@ export type RatedResult = {
   loserActual: number;
   margin: { rule?: RatingsMarginRule; marginOfVictory?: number; winnerGameShare?: number; draw?: boolean };
   protectLosses: boolean;
+  /** FIVB: a winner gains at least this */
+  winnerMinimumGain?: number;
 };
 
 /**
@@ -45,11 +47,30 @@ export function ratedResultOf(matchUp: HydratedMatchUp, policy: RatingsPolicy): 
   }
 
   const loserSetsWon = (score?.sets ?? []).filter((set) => set.winningSide === 3 - winningSide).length;
+  if (policy.actual.rule === 'SET_SCORE_VALUE') {
+    const winnerSetsWon = (score?.sets ?? []).filter((set) => set.winningSide === winningSide).length;
+    const { values } = policy.actual;
+    const [winnerValue, loserValue] = [
+      values[`${winnerSetsWon}-${loserSetsWon}`],
+      values[`${loserSetsWon}-${winnerSetsWon}`],
+    ];
+    if (winnerValue === undefined || loserValue === undefined) return undefined;
+    const { winnerMinimumGain } = policy;
+    return {
+      winningSide,
+      winnerActual: winnerValue,
+      loserActual: loserValue,
+      margin,
+      protectLosses,
+      winnerMinimumGain,
+    };
+  }
   const winnerActual = share
     ? share[winningSide - 1]
     : winnerActualOf({ rule: policy.actual, parsedFormat, loserSetsWon });
   const result: RatedResult = {
     margin: { ...margin, winnerGameShare: winnerGameShareOf(matchUp) },
+    winnerMinimumGain: policy.winnerMinimumGain,
     loserActual: 1 - winnerActual,
     protectLosses,
     winnerActual,
