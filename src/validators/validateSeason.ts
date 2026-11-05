@@ -1,12 +1,12 @@
 import { decorateResult } from '@Functions/global/decorateResult';
-import { SEASON_TALLY_MEASURES } from '@Query/standings/fromV1';
 import { tallyPolicyErrors } from './validateTallyPolicy';
 import { isObject } from '@Tools/objects';
 
 // constants and types
 import type { Season, SeasonAdvancement, SeasonAdvancementRule, SeasonPeriod, SeasonTier } from '@Types/seasonTypes';
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { ADVANCE_BERTHS_BY_SIZE, ADVANCE_TOP_N, seasonConstants } from '@Constants/seasonConstants';
+import { SEASON_TALLY_MEASURES } from '@Constants/tallyMeasureConstants';
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { ResultType } from '@Types/factoryTypes';
 
 const STATUSES: string[] = Object.values(seasonConstants.SEASON_STATUS);

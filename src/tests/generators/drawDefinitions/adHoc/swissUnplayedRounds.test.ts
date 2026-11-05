@@ -1,6 +1,6 @@
-import { computeTiebreakers } from '@Generators/drawDefinitions/drawTypes/adHoc/swiss/computeTiebreakers';
-import { computeScoreGroups } from '@Generators/drawDefinitions/drawTypes/adHoc/swiss/computeScoreGroups';
 import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
+import { computeTiebreakers } from '@Query/standings/swiss/computeTiebreakers';
+import { computeScoreGroups } from '@Query/standings/swiss/computeScoreGroups';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, test } from 'vitest';

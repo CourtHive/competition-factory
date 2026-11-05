@@ -1,6 +1,6 @@
-import { computeScoreGroups } from '@Generators/drawDefinitions/drawTypes/adHoc/swiss/computeScoreGroups';
-import { computeTiebreakers } from '@Generators/drawDefinitions/drawTypes/adHoc/swiss/computeTiebreakers';
-import { swissPolicyOf } from '@Generators/drawDefinitions/drawTypes/adHoc/swiss/swissPolicyOf';
+import { computeScoreGroups } from '@Query/standings/swiss/computeScoreGroups';
+import { computeTiebreakers } from '@Query/standings/swiss/computeTiebreakers';
+import { swissPolicyOf } from '@Query/drawDefinitions/swiss/swissPolicyOf';
 import { getParticipantId } from '@Functions/global/extractors';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';

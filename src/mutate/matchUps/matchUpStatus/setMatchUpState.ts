@@ -2,7 +2,6 @@ import { addMatchUpScheduleItems, scheduleRefusal } from '@Mutate/matchUps/sched
 import { isPropagatedExit, rewritesCarriedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
 import { removalMissingDrawPositions } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
-import { isDrawnResult, validateDrawTallyOptions } from '@Query/matchUps/roundRobinTally/drawnResults';
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { resolveRotatingPartnerOutcome } from '@Query/drawDefinition/resolveRotatingPartnerOutcome';
 import { refreshArrivals } from '@Mutate/drawDefinitions/matchUpGovernor/attemptToSetWinningSide';
@@ -25,7 +24,9 @@ import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { ensureSideLineUps } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { isDrawnResult } from '@Query/matchUps/roundRobinTally/drawnResults';
 import { isDeciderStructure } from '@Query/drawDefinition/deciderStructures';
+import { validateDrawTallyOptions } from '@Validators/validateTallyPolicy';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';

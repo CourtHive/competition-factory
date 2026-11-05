@@ -54,11 +54,6 @@
   "query/drawDefinition/matchUpActions/matchUpActions.ts -> mutate/matchUps/matchUpStatus/setMatchUpState.ts": 1,
   "query/drawDefinition/matchUpActions/matchUpActions.ts -> mutate/matchUps/matchUpStatus/sideExitProvenance.ts": 1,
   "query/drawDefinition/seedGetter.ts -> assemblies/generators/drawDefinitions/generateBlockPattern.ts": 1,
-  "query/drawDefinitions/swiss/getSwissChart.ts -> assemblies/generators/drawDefinitions/drawTypes/adHoc/swiss/computeScoreGroups.ts": 1,
-  "query/drawDefinitions/swiss/getSwissChart.ts -> assemblies/generators/drawDefinitions/drawTypes/adHoc/swiss/swissPolicyOf.ts": 1,
-  "query/drawDefinitions/swiss/getSwissStandings.ts -> assemblies/generators/drawDefinitions/drawTypes/adHoc/swiss/computeScoreGroups.ts": 1,
-  "query/drawDefinitions/swiss/getSwissStandings.ts -> assemblies/generators/drawDefinitions/drawTypes/adHoc/swiss/computeTiebreakers.ts": 1,
-  "query/drawDefinitions/swiss/getSwissStandings.ts -> assemblies/generators/drawDefinitions/drawTypes/adHoc/swiss/swissPolicyOf.ts": 1,
   "query/matchUp/getDualIssues.ts -> assemblies/generators/tieMatchUpScore/generateTieMatchUpScore.ts": 1,
   "query/matchUp/getProjectedDualWinningSide.ts -> assemblies/generators/tieMatchUpScore/generateTieMatchUpScore.ts": 1,
   "query/matchUps/addGoesTo.ts -> assemblies/generators/drawDefinitions/addFinishingRounds.ts": 1,
@@ -119,8 +114,5 @@
   "validators/validateSchedulingProfile.ts -> query/matchUps/getAllStructureMatchUps.ts": 1,
   "validators/validateSchedulingProfile.ts -> query/matchUps/getRoundMatchUps.ts": 1,
   "validators/validateScore.ts -> query/matchUp/analyzeScore.ts": 1,
-  "validators/validateSeason.ts -> query/standings/fromV1.ts": 1,
-  "validators/validateTallyPolicy.ts -> query/matchUps/roundRobinTally/drawnResults.ts": 1,
-  "validators/validateTallyPolicy.ts -> query/standings/fromV1.ts": 1,
   "validators/validUpdate.ts -> query/matchUp/checkScoreHasValue.ts": 1
 }

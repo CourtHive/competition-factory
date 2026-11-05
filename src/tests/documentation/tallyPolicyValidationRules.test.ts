@@ -4,6 +4,10 @@ import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
+
+// constants
+import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
+import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import {
   GRAPH_MEASURES,
   RATIO_MEASURES,
@@ -12,11 +16,7 @@ import {
   TALLY_MEASURES,
   V1_PRIMARY_KEYS,
   V2_MEASURES,
-} from '@Query/standings/fromV1';
-
-// constants
-import { POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
-import { INVALID_VALUES } from '@Constants/errorConditionConstants';
+} from '@Constants/tallyMeasureConstants';
 
 /**
  * THE VALIDATION SECTION OF THE TALLY POLICY PAGE IS THE VALIDATOR'S SPECIFICATION.

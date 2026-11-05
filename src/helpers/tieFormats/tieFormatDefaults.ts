@@ -123,6 +123,14 @@ type TieFormatDefaultArgs = {
   event?: Event;
 };
 
+/**
+ * Whether `name` names a tie format in the catalogue. A membership check: it builds nothing, so it draws no ids.
+ * `tieFormatDefaults` itself falls back to STANDARD for a name it does not know, so it cannot answer this.
+ */
+export function isNamedTieFormat(name: unknown): boolean {
+  return typeof name === 'string' && Object.hasOwn(namedFormats, name);
+}
+
 export const tieFormatDefaults = (params?: TieFormatDefaultArgs) => {
   const namedFormat =
     params?.namedFormat && Object.keys(namedFormats).includes(params.namedFormat) ? params.namedFormat : STANDARD;

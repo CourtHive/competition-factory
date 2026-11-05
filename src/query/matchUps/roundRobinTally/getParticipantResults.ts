@@ -1,8 +1,9 @@
-import { isDrawnResult, isCombinedPointFormat, validateDrawTallyOptions } from './drawnResults';
+import { applyResultPoints, type ResultPoints } from '@Query/standings/resultPoints';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
+import { validateDrawTallyOptions } from '@Validators/validateTallyPolicy';
+import { isDrawnResult, isCombinedPointFormat } from './drawnResults';
 import { calculatePressureRatings } from './calculatePressureRatings';
 import { countGames, countSets, countPoints } from './scoreCounters';
-import { applyResultPoints, type ResultPoints } from '@Query/standings/resultPoints';
 import { calculatePercentages } from './calculatePercentages';
 import { intersection } from '@Tools/arrays';
 import { ensureInt } from '@Tools/ensureInt';

@@ -17,7 +17,6 @@ import { settleHeldExits } from '@Mutate/drawDefinitions/positionGovernor/double
 import { announceGoesTo, setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { observePass, recordSettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
 import { reconcileScoredTimes } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
-import { validateDrawTallyOptions } from '@Query/matchUps/roundRobinTally/drawnResults';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import type { DeciderSnapshot } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
@@ -26,6 +25,7 @@ import { collectionChoiceOutcomeRefusal } from '@Query/matchUp/collectionChoice'
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
 import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
 import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
+import { validateDrawTallyOptions } from '@Validators/validateTallyPolicy';
 import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
