@@ -349,6 +349,28 @@ To check a change against the PR configuration locally:
 FACTORY_MATRIX_TIER=pr pnpm test --run
 ```
 
+## Query purity
+
+A query never writes. In every test run, `src/tests/testHarness/queryPurity.ts` checks each engine call to a query or
+a generator for a write to engine state, and fails the test that made it, naming the method and the write:
+
+- a change to the loaded tournament records or the selected tournament;
+- a notice handed to the state provider, which the engine delivers to subscribers after any successful call;
+- the modified flag set, which stamps the record.
+
+Each method's kind (`query`, `mutation`, `generate`, `engine`) is generated into
+`src/tests/testHarness/queryPurity/methodKinds.json` by `pnpm gen:method-kinds`, from the governors' `query`, `mutate`
+and `generate` modules. `pnpm check:method-kinds` (part of `verify:generated`) fails when a new engine method has no
+kind: export it from its governor's `query`, `mutate` or `generate` module.
+
+The writers found when the check was introduced are listed in `queryPurity/knownWriters.ts`, each allowed only under
+the options that cause it, with its disposition. Writes into a copy a query made for itself are not engine state and
+pass. A stamp applied because the modified flag was already set when the query began (a direct, non-engine write left
+it set) is not counted against the query.
+
+- `QUERY_PURITY=report` records instead of failing, one JSON line per test file in `.query-purity/tally.jsonl`.
+- `QUERY_PURITY=0` turns the check off. Its cost on the PR-tier suite is about 3% (paired runs).
+
 ## CI shards
 
 CI runs the suite as four coverage shards (`vitest run --shard=i/4`). Vitest's own sharding splits files into
