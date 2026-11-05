@@ -186,6 +186,12 @@ jobs:
       - name: verify:format
         run: pnpm verify:format
 
+      # The layer ratchet (Mentat/planning/FACTORY_LAYERING_PLAN.md): an import into a higher layer fails
+      # unless the baseline holds it, and a baseline entry the source no longer has fails too, so the
+      # baseline only goes down. Self-tested first: it must fire on planted violations.
+      - name: verify:layers
+        run: pnpm verify:layers
+
       # P37's REGROWTH GUARD. `matchUpStatusCodes` carried the per-side provenance of a propagated exit
       # as well as the scoring policy's vocabulary; the exit tenant is evicted and `sideExitProvenance`
       # is the record. This fails when a NEW file in `src/` reaches for the array, so the destination is
