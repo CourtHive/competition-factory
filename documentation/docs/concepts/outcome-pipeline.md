@@ -920,8 +920,28 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   the four dirs (S7): the walls left are a BYE matchUp whose entry is not a participant's carry on the side opposite the
   BYE (65: a produced exit relayed there, or an entry on the BYE's side), a landing holding something else (20), a relay
   whose standing BYE this unwind withdraws (FIRST_MATCH_LOSER_CONSOLATION, 4), and a matchUp beyond that is not clean
-  (2); a loser who arrives carrying their own exit or converging with the carry stays v1's at the direction
-  (`unwoundLoserReason`).
+  (2); a loser who arrives converging with the carry stays v1's at the direction (`unwoundLoserReason`).
+
+  A double exit given a **single exit whose loser carries it** across their link (`propagateExitStatus`) onto the seat the
+  unwind has just freed (S7, `unwoundCarryReason`): v1 directs the loser against the draw as its unwind leaves it, and the
+  carry lands there as a fresh carry lands (`progressExitStatus`, RULES 1 to 3, then each further level). So the unwind's
+  ops (its deferred settle writes left out) are folded into a working view, read again as an outcome view with the
+  direction re-planned (`rebuild`, the composition point a result turned into a double exit uses), and the carry is
+  planned on that view on a fresh carry's own terms (`plainLoserReason`, `carriedReason`) and written from it
+  (`carriedOps`). The writes are the unwind's, then the call's own, then the carry's: the loser's matchUp, freed of the
+  BYE, written the carried status, awarded to the side opposite (the participant standing there, or nobody: v1 awards the
+  empty side) with the carrier's entry merged into its provenance (`modifyMatchUpScore`, with the event and tournament,
+  announced in context); the awardee sent on into the next matchUp, which the unwind had just written as the position
+  clear or the release left it (the position the BYE advanced taken out, the matchUp emptied) and which v1's
+  `assignMatchUpDrawPosition` now announces last, with the event and tournament, the withdrawal's or the release's name
+  and quiet superseded (a plain placement after a withdrawal, a release or a quiet write is the matchUp's notice:
+  `withdrawnByeNotices`, `placedAfter`, the ordered `released`). A feed round's fed seat lands the carry pending over its
+  structural position the same way; under `doubleExitPropagateBye: false` the loser's matchUp the unwind wrote back to be
+  played takes the carry the same way (DOUBLE_ELIMINATION). Stays v1's: a seat the unwind does not free, a loser behind a
+  link condition or seeded, a carry the re-planned direction reads as anything but a fresh carry (converged with a
+  re-derived exit), and whatever a fresh carry's own checks keep v1's (a BYE opposite with no clean passage, a landing
+  holding a result or provenance, a further level not clean, a seat the unwind's cascade frees further on, which the
+  re-planned walk reads as the stored BYE: COMPASS under `doubleExitPropagateBye: false`).
 
   A **final's** double exit (or the one matchUp of a one-round structure) produced nothing: cleared or given a winner, its
   unwind is the own loser seat's withdrawal alone, where a link feeds one (FEED_IN_CHAMPIONSHIP's consolation final seat;
