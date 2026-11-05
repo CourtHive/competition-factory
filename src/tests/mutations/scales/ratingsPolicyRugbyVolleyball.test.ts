@@ -1,12 +1,12 @@
 import { POLICY_RATINGS_WORLD_RUGBY } from '@Fixtures/policies/POLICY_RATINGS_WORLD_RUGBY';
-import { calculateNewRatings } from '@Generators/scales/calculateNewRatings';
 import { POLICY_RATINGS_FIVB } from '@Fixtures/policies/POLICY_RATINGS_FIVB';
-import { expectedResult, normalCdf } from '@Generators/scales/ratingUpdate';
+import { calculateNewRatings } from '@Helpers/ratings/calculateNewRatings';
+import { expectedResult, normalCdf } from '@Helpers/ratings/ratingUpdate';
 import { describe, expect, it } from 'vitest';
 
 // constants
-import { FIVB, WORLD_RUGBY } from '@Constants/ratingConstants';
 import { POLICY_TYPE_RATINGS } from '@Constants/policyConstants';
+import { FIVB, WORLD_RUGBY } from '@Constants/ratingConstants';
 
 // World Rugby and FIVB rate on their own points scales; each case is the source's own worked example
 

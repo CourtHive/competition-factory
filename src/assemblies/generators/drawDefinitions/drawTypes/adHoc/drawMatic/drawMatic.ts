@@ -1,8 +1,8 @@
 import { generateDrawMaticRound, DrawMaticRoundResult } from './generateDrawMaticRound';
+import { getAdHocRatings } from '@Query/participants/getAdHocRatings';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { getParticipantIds } from './getParticipantIds';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
-import { getAdHocRatings } from './getAdHocRatings';
 import { generateRange } from '@Tools/arrays';
 
 // constants and types

@@ -1,7 +1,7 @@
-import { deriveCountables } from './competition/deriveCountables';
+import { deriveCountables } from '@Helpers/ratings/competition/deriveCountables';
+import { winnerActualOf } from '@Helpers/ratings/ratingsPolicyRules';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
-import { winnerActualOf } from './ratingsPolicyRules';
 
 // constants and types
 import type { RatingsMarginRule, RatingsPolicy } from '@Types/ratingsPolicyTypes';

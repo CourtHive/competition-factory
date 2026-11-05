@@ -1,4 +1,4 @@
-import { kOf, marginMultiplier, tierK, winnerActualOf } from '@Generators/scales/ratingsPolicyRules';
+import { kOf, marginMultiplier, tierK, winnerActualOf } from '@Helpers/ratings/ratingsPolicyRules';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { expect, it } from 'vitest';
 
