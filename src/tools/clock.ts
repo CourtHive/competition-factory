@@ -225,3 +225,8 @@ export function competitionNow(): Date {
 export function competitionNowMs(): number {
   return competitionNow().getTime();
 }
+
+/** The competition's UTC date, for reads with no tournament in scope (officiating runs in its own engine). */
+export function competitionUtcDate(): string {
+  return competitionNow().toISOString().slice(0, 10);
+}

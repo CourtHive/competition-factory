@@ -10,7 +10,7 @@ import {
   MATCH_TIEBREAK_JOINER,
   SPACE_CHARACTER,
   WINNING_STATUSES,
-} from './constants';
+} from '@Constants/keyValueConstants';
 
 export function addOutcome({ scoreString, lowSide, outcome }) {
   ({ scoreString } = removeOutcome({ scoreString }));

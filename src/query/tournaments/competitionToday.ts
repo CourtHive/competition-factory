@@ -27,8 +27,3 @@ export function competitionToday({ tournamentRecord }: { tournamentRecord?: Tour
   // the resolver only returns zones it validated, so a missing part can only be an unusable instant
   return parts ? { date: parts.date } : { error: INVALID_TIME_ZONE };
 }
-
-/** The competition's UTC date, for reads with no tournament in scope (officiating runs in its own engine). */
-export function competitionUtcDate(): string {
-  return competitionNow().toISOString().slice(0, 10);
-}

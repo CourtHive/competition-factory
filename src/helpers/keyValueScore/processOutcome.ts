@@ -19,7 +19,7 @@ import {
   OUTCOME_ABANDONED,
   OUTCOME_INTERRUPTED,
   OUTCOME_SUSPENDED,
-} from './constants';
+} from '@Constants/keyValueConstants';
 
 export function processOutcome({ lowSide, value, sets, scoreString, winningSide, matchUpStatus }) {
   let updated;

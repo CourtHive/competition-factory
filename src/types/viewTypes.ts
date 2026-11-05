@@ -5,7 +5,7 @@
  * Every consumer of these views (server, public viewer, client) reads one shape, so each field here is
  * one the building code actually returns: optional where it is conditionally present, never invented.
  */
-import type { DrawPublishingDetails, PublishingDetail } from '@Mutate/publishing/publishEvent';
+import type { DrawPublishingDetails, PublishingDetail } from '@Types/publishingTypes';
 import { HydratedMatchUp, HydratedParticipant } from './hydrated';
 import { ErrorType } from '@Constants/errorConditionConstants';
 import type { GroupInfo, RoundProfile } from './factoryTypes';

@@ -1,4 +1,4 @@
-import { convertRange } from './convertRange';
+import { convertRange } from '@Tools/math';
 
 // constants and fixtures
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';

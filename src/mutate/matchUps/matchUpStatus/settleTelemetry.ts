@@ -1,5 +1,5 @@
-import { generatePatch } from '../../../forge/jsonPatch';
 import { captureRecord } from '@Tools/recordDiff';
+import { generatePatch } from '@Tools/jsonPatch';
 
 /**
  * SETTLE TELEMETRY: what v1's settle passes cannot report through a result (outcome v2 executor plan § 2.7, § 5 Phase C).

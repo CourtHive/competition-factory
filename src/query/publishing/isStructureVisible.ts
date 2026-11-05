@@ -1,7 +1,7 @@
 import { isVisiblyPublished } from '@Query/publishing/isEmbargoed';
 
 // types
-import type { DrawPublishingDetails } from '@Mutate/publishing/publishEvent';
+import type { DrawPublishingDetails } from '@Types/publishingTypes';
 
 type IsStructureVisibleArgs = {
   drawDetail?: Partial<DrawPublishingDetails>;

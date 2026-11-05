@@ -12,7 +12,7 @@ import {
   SPACE_KEY,
   SET_TIEBREAK_BRACKETS,
   MATCH_TIEBREAK_BRACKETS,
-} from './constants';
+} from '@Constants/keyValueConstants';
 
 export function getScoreAnalysis({ matchUpFormat, scoreString, winningSide, value, sets }) {
   // a closed timed period may be level (no winningSide): segmentComplete marks it closed, as the scoring engine does

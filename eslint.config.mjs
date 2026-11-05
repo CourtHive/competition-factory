@@ -145,8 +145,8 @@ export default [
      * that can reach a mutation module rests its read-only guarantee on convention; three of them wrote to the record
      * they read until #5491 and the purity fix that added this rule.
      *
-     * `ignores` is a RATCHET, not an allow-list: the 22 files that still import a read-only helper or a type from a
-     * mutation module (measured 2026-10-17). Each leaves the list when its helper moves to `@Query`/`@Acquire`; nothing
+     * `ignores` is a RATCHET, not an allow-list: the files that still import a read-only helper or a type from a
+     * mutation module (22 measured 2026-10-17; 17 after the publishing types moved to contracts, 2026-11-05). Each leaves the list when its helper moves to `@Query`/`@Acquire`; nothing
      * is ever added to it. A new file under src/query that needs a helper living in `@Mutate` moves the helper.
      */
     files: ['src/query/**/*.ts'],
@@ -165,11 +165,6 @@ export default [
       'src/query/matchUps/scheduling/getSchedulingProfileIssues.ts',
       'src/query/matchUps/scheduling/getVenueSchedulingDetails.ts',
       'src/query/practice/getPracticeRegistrations.ts',
-      'src/query/publishing/applyRoundLimit.ts',
-      'src/query/publishing/getRoundVisibilityState.ts',
-      'src/query/publishing/isEmbargoed.ts',
-      'src/query/publishing/isStructureVisible.ts',
-      'src/query/readModel/readModelPublish.ts',
       'src/query/scoring/getScore.ts',
       'src/query/tournaments/getTournamentInfo.ts',
       'src/query/venues/getScheduledCourtMatchUps.ts',

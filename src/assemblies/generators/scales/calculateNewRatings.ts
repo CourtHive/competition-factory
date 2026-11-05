@@ -1,7 +1,7 @@
 import { ExpectationRule, LOGISTIC_400, ratingUpdate } from './ratingUpdate';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { marginMultiplier } from './ratingsPolicyRules';
-import { convertRange } from './convertRange';
+import { convertRange } from '@Tools/math';
 
 // constants
 import { MISSING_VALUE } from '@Constants/errorConditionConstants';

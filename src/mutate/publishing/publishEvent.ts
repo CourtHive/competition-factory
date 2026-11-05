@@ -9,34 +9,13 @@ import { getEventData } from '@Query/event/getEventData';
 // constants and types
 import { DRAW_DEFINITION_NOT_FOUND, INVALID_EMBARGO, STRUCTURE_NOT_FOUND } from '@Constants/errorConditionConstants';
 import { EVENT, OBJECT, OF_TYPE, TOURNAMENT_RECORD } from '@Constants/attributeConstants';
+import type { DrawPublishingDetails, PublishingDetail } from '@Types/publishingTypes';
 import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import { Event, Tournament } from '@Types/tournamentTypes';
 import { PUBLISH_EVENT } from '@Constants/topicConstants';
 import { PUBLIC } from '@Constants/timeItemConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { isValidEmbargoDate } from '@Tools/dateTime';
-
-export type ScheduledRoundDetail = {
-  published?: boolean;
-  embargo?: string;
-};
-
-export type PublishingDetail = {
-  scheduledRounds?: { [roundNumber: number]: ScheduledRoundDetail };
-  roundLimit?: number; // only applicable to structureDetails
-  published?: boolean;
-  embargo?: string;
-};
-
-export type DrawPublishingDetails = {
-  structureDetails?: { [key: string]: PublishingDetail }; // if no keys, all published
-  stageDetails?: { [key: string]: PublishingDetail }; // if no keys, all published; stage embargo supercedes structure embargo
-  publishingDetail: PublishingDetail; // draw embargo supercedes structure/stage embargo
-  structureIdsToRemove?: string[];
-  structureIdsToAdd?: string[];
-  stagesToRemove?: string[];
-  stagesToAdd?: string[];
-};
 
 type PublishEventType = {
   includePositionAssignments?: boolean; // include positionAssignments in eventData

@@ -1,7 +1,7 @@
 import { tiebreakSetGames } from '@Query/matchUp/tiebreakAtRules';
 import { getWinningSide } from './winningSide';
 
-import { SPACE_CHARACTER, SET_TIEBREAK_BRACKETS, SCORE_JOINER } from './constants';
+import { SPACE_CHARACTER, SET_TIEBREAK_BRACKETS, SCORE_JOINER } from '@Constants/keyValueConstants';
 
 export function keyValueSetScore({ analysis, lowSide, scoreString, value }) {
   const { setTo, tiebreakAt, tiebreakFormat, noTiebreak, winBy } = analysis?.setFormat ?? {};

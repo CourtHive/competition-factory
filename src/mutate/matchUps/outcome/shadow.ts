@@ -1,6 +1,6 @@
 import { announcesAssignments, eventlessNotices } from './apply';
-import { generatePatch } from '../../../forge/jsonPatch';
 import { captureRecord } from '@Tools/recordDiff';
+import { generatePatch } from '@Tools/jsonPatch';
 import { applyOutcomeOps } from './ops';
 
 // constants and types

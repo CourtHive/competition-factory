@@ -2,7 +2,7 @@ import { getHighTiebreakValue, testTiebreakEntry } from './keyValueUtilities';
 import { tiebreakMargin } from '@Tools/scoring/scoringUtilities';
 import { ensureInt } from '@Tools/ensureInt';
 
-import { MATCH_TIEBREAK_BRACKETS, MATCH_TIEBREAK_JOINER } from './constants';
+import { MATCH_TIEBREAK_BRACKETS, MATCH_TIEBREAK_JOINER } from '@Constants/keyValueConstants';
 
 export function processTiebreakSet({ analysis, auto, lowSide, scoreString = '', sets, value }) {
   let updated, info;

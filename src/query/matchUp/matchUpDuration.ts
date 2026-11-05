@@ -1,5 +1,5 @@
 import { getUTCdateString, dateStringDaysChange } from '@Tools/dateTime';
-import { validTimeString } from '@Validators/regex';
+import { validTimeString } from '@Tools/dateTimePatterns';
 import { competitionNowMs } from '@Tools/clock';
 
 // constants

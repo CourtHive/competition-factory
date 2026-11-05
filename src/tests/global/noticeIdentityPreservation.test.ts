@@ -101,7 +101,7 @@ describe('keyed notice de-dup preserves identity', () => {
     const fs = await import('fs');
     const path = await import('path');
 
-    const types = fs.readFileSync(path.resolve(__dirname, '../../forge/topicTypes.ts'), 'utf8');
+    const types = fs.readFileSync(path.resolve(__dirname, '../../types/topicTypes.ts'), 'utf8');
     const body = types.slice(types.indexOf('export interface NoticeIdentity'));
     const declared = [...body.slice(0, body.indexOf('\n}')).matchAll(/^\s{2}(\w+)\??:/gm)].map((m) => m[1]);
 

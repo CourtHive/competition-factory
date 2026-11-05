@@ -83,7 +83,7 @@ describe('notice identity envelope', () => {
     // Read the map's declared keys from source — the type itself is erased at runtime.
     const fs = await import('fs');
     const path = await import('path');
-    const src = fs.readFileSync(path.resolve(__dirname, '../../../forge/topicTypes.ts'), 'utf8');
+    const src = fs.readFileSync(path.resolve(__dirname, '../../../types/topicTypes.ts'), 'utf8');
     const body = src.slice(src.indexOf('export interface TopicPayloadMap'));
     const keys = [...body.matchAll(/^\s{2}(\w+):\s/gm)].map((m) => m[1]);
 

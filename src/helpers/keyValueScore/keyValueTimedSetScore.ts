@@ -3,7 +3,7 @@ import { removeFromScore } from './keyValueUtilities';
 import { processOutcome } from './processOutcome';
 import { ensureInt } from '@Tools/ensureInt';
 
-import { BACKSPACE, OUTCOMEKEYS, SCORE_JOINER, SPACE_KEY } from './constants';
+import { BACKSPACE, OUTCOMEKEYS, SCORE_JOINER, SPACE_KEY } from '@Constants/keyValueConstants';
 
 export function keyValueTimedSetScore(params) {
   let { sets, info, scoreString, winningSide, matchUpStatus } = params;
