@@ -9,6 +9,7 @@
  * competitionFormat; a matchUpId only locates the structure and drawDefinition to resolve from.
  */
 
+import type { RatingsPolicy } from './ratingsPolicyTypes';
 import type { Extension } from './tournamentTypes';
 
 // ============================================================================
@@ -32,6 +33,11 @@ export interface competitionFormat {
   pointMultipliers?: PointMultiplier[];
   /** Server determination rule: 'ALTERNATE_GAMES' (default) or 'WINNER_SERVES' */
   serverRule?: ServerRule;
+  /**
+   * How a dynamic rating moves on this sport's results: a ratings preset by name ('POLICY_RATINGS_ELO_538_NHL') or a
+   * policy inline. A ratings policy passed to generateDynamicRatings or attached to the event or tournament comes first.
+   */
+  ratingsPolicy?: string | RatingsPolicy;
   extensions?: Extension[];
   notes?: string;
 }

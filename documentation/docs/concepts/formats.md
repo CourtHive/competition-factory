@@ -18,7 +18,8 @@ own.
   [grammar](../codes/matchup-format-grammar.md) covers sets, timed segments, overtime and final-set deciders.
 - **competitionFormat** covers what the scoring code does not: `timerProfile`, `timeoutRules`,
   `substitutionRules`, `playerRules`, `penaltyProfile`, `penaltyBoxProfile`, `pointProfile`, `pointMultipliers`
-  and `serverRule` (`ALTERNATE_GAMES` by default, or `WINNER_SERVES`). It may also name a default
+  `serverRule` (`ALTERNATE_GAMES` by default, or `WINNER_SERVES`) and `ratingsPolicy` (how a dynamic rating moves on
+  its results: see [Ratings Policy](../policies/ratingsPolicy.md)). It may also name a default
   `matchUpFormat`. See `@Types/competitionFormat`.
 
 ## How they nest

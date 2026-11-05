@@ -4,25 +4,28 @@ import { getParticipantScaleItem } from '@Query/participant/getParticipantScaleI
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
+import { ratingsPolicies } from '@Fixtures/policies/ratingsPolicies';
 import { recorded } from '@Mutate/simulation/scenarioRecorder';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { calculateNewRatings } from './calculateNewRatings';
 import { getRatingConvertedToELO } from './eloConversions';
 import { ratedResultOf, RatedResult } from './ratedResult';
+import { findStructure } from '@Acquire/findStructure';
 import { kOf, tierK } from './ratingsPolicyRules';
 import { findPolicy } from '@Acquire/findPolicy';
 
 // constants, fixtures and types
+import { INVALID_VALUES, MISSING_MATCHUP_IDS, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { ARRAY, ERROR, OF_TYPE, TOURNAMENT_RECORD, VALIDATE } from '@Constants/attributeConstants';
-import { MISSING_MATCHUP_IDS, MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { completedMatchUpStatuses, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { POLICY_RATINGS_DEFAULT } from '@Fixtures/policies/POLICY_RATINGS_DEFAULT';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
+import type { competitionFormat } from '@Types/competitionFormat';
 import { POLICY_TYPE_RATINGS } from '@Constants/policyConstants';
 import { HydratedMatchUp, HydratedSide } from '@Types/hydrated';
 import type { RatingsPolicy } from '@Types/ratingsPolicyTypes';
+import { Event, EventTypeUnion } from '@Types/tournamentTypes';
 import { DYNAMIC, RATING } from '@Constants/scaleConstants';
-import { EventTypeUnion } from '@Types/tournamentTypes';
 import { PAIR } from '@Constants/participantConstants';
 import type { ExpectationRule } from './ratingUpdate';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -91,15 +94,28 @@ export function generateDynamicRatings(params): ResultType & {
 
   matchUps.sort(matchUpSort);
 
-  const policyOf = (matchUp: HydratedMatchUp): RatingsPolicy => {
+  // a passed policy, then one attached to the event or tournament, then the competitionFormat's, then the default
+  const policyOf = (matchUp: HydratedMatchUp): RatingsPolicy | undefined => {
     if (ratingsPolicy) return ratingsPolicy;
     const event = tournamentRecord.events?.find(({ eventId }) => eventId === matchUp.eventId);
     const { policy } = findPolicy({ tournamentRecord, event, policyType: POLICY_TYPE_RATINGS });
-    return policy ?? POLICY_RATINGS_DEFAULT[POLICY_TYPE_RATINGS];
+    if (policy) return policy;
+    const selected = competitionFormatOf(event, matchUp)?.ratingsPolicy;
+    if (selected === undefined) return POLICY_RATINGS_DEFAULT[POLICY_TYPE_RATINGS];
+    const selectedPolicy = typeof selected === 'string' ? ratingsPolicies[selected] : selected;
+    return isRatingsPolicy(selectedPolicy) ? selectedPolicy : undefined;
   };
-  const rated = matchUps
-    .map((matchUp) => ({ matchUp, policy: policyOf(matchUp) }))
-    .filter(({ matchUp, policy }) => !(matchUp.matchUpStatus === WALKOVER && policy.walkovers === 'EXCLUDE'));
+  const withPolicies = matchUps.map((matchUp) => ({ matchUp, policy: policyOf(matchUp) }));
+  const unresolved = withPolicies.find(({ policy }) => !policy);
+  if (unresolved) {
+    return {
+      error: INVALID_VALUES,
+      info: `ratingsPolicy: no ratings policy for matchUp ${unresolved.matchUp.matchUpId}`,
+    };
+  }
+  const rated = (withPolicies as { matchUp: HydratedMatchUp; policy: RatingsPolicy }[]).filter(
+    ({ matchUp, policy }) => !(matchUp.matchUpStatus === WALKOVER && policy.walkovers === 'EXCLUDE'),
+  );
 
   // a MATCHES_PLAYED K reads each player's career count, which only the caller holds: refuse before any write
   const careerCounts: Record<string, number> = { ...matchesPlayed };
@@ -391,4 +407,16 @@ function updateRatingsForMatchUp({
   };
   rate(winnerIds, true);
   rate(loserIds, false);
+}
+
+/** The competitionFormat a matchUp is played under: its structure's, then its drawDefinition's, then its event's. */
+function competitionFormatOf(event: Event | undefined, matchUp: HydratedMatchUp): competitionFormat | undefined {
+  const drawDefinition = event?.drawDefinitions?.find(({ drawId }) => drawId === matchUp.drawId);
+  const { structure } = drawDefinition ? findStructure({ drawDefinition, structureId: matchUp.structureId }) : {};
+  return structure?.competitionFormat ?? drawDefinition?.competitionFormat ?? event?.competitionFormat;
+}
+
+/** An inline ratings policy names the three parts every rating reads. */
+function isRatingsPolicy(policy?: RatingsPolicy): policy is RatingsPolicy {
+  return !!policy?.expectation && !!policy?.k && !!policy?.actual;
 }
