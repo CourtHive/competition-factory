@@ -5,8 +5,8 @@
  * reducer holds its own (`v2/decide.ts`), and v1's replay rule went with v1 (SE4).
  */
 
+import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
 import type { FormatStructure, MatchUp, SetScore } from '@Types/scoring/types';
-import { isAggregateFormat } from '@Helpers/matchUpFormatCode/formatUtilities';
 import { nowIso } from '@Tools/clock';
 
 // constants
