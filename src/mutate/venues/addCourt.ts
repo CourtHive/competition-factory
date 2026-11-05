@@ -1,6 +1,6 @@
-import { courtTemplate } from '@Assemblies/generators/templates/courtTemplate';
 import { validDateAvailability } from '@Validators/validateDateAvailability';
 import { extractDate, extractTime, formatDate } from '@Tools/dateTime';
+import { courtTemplate } from '@Helpers/scheduling/courtTemplate';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { addNotice } from '@Global/state/globalState';
 import { findVenue } from '@Query/venues/findVenue';

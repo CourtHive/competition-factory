@@ -2,7 +2,7 @@ import { processAlreadyScheduledMatchUps } from '@Mutate/matchUps/schedule/sched
 import { getMatchUpsToSchedule } from '@Mutate/matchUps/schedule/scheduleMatchUps/getMatchUpsToSchedule';
 import { processNextMatchUps } from '@Mutate/matchUps/schedule/scheduleMatchUps/processNextMatchUps';
 import { PlaceVenueRoundsArgs, scheduleVenueRounds, VenueRoundDetails } from './placeVenueRounds';
-import { generateScheduleTimes } from '@Generators/scheduling/utils/generateScheduleTimes';
+import { generateScheduleTimes } from '@Query/scheduling/generateScheduleTimes';
 import { stagedScheduleTimes, venueBasePeriodLength } from './periodStages';
 import { extractDate, sameDay, timeStringMinutes } from '@Tools/dateTime';
 import { getMatchUpId } from '@Functions/global/extractors';

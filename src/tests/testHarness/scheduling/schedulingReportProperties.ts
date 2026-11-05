@@ -1,5 +1,5 @@
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
-import { getSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
+import { getSchedulingProfile } from '@Query/scheduling/getSchedulingProfile';
 import { placedMatchUpIds } from './schedulingProperties';
 import { extractDate } from '@Tools/dateTime';
 

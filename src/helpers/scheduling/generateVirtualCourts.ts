@@ -1,5 +1,5 @@
-import { generateTimeSlots } from '@Assemblies/generators/scheduling/generateTimeSlots';
-import { getCourtDateAvailability } from '@Query/venues/getCourtDateAvailability';
+import { getCourtDateAvailability } from '@Helpers/scheduling/getCourtDateAvailability';
+import { generateTimeSlots } from '@Helpers/scheduling/generateTimeSlots';
 import { isValidDateString, timeStringMinutes } from '@Tools/dateTime';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';

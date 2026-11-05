@@ -1,4 +1,4 @@
-import { getCourtDateAvailability } from '@Query/venues/getCourtDateAvailability';
+import { getCourtDateAvailability } from '@Helpers/scheduling/getCourtDateAvailability';
 import { timeStringMinutes } from '@Tools/dateTime';
 import { Court } from '@Types/tournamentTypes';
 

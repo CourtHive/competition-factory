@@ -1,7 +1,6 @@
 import { oweDissolvedConvergencesTheirByes } from '@Mutate/matchUps/matchUpStatus/oweDissolvedConvergencesTheirByes';
 import { reconcileConsolationReservations } from '@Mutate/matchUps/matchUpStatus/reconcileConsolationReservations';
 import { reconcileMissedLinkAdvancements } from '@Mutate/matchUps/matchUpStatus/reconcileMissedLinkAdvancements';
-import { matchUpHoldsScheduling, matchUpWillNeverBePlayed } from '@Mutate/matchUps/schedule/byeScheduling';
 import { getDeciderSnapshot, reconcileDeciders } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { settleRederivedDoubleExits } from '@Mutate/matchUps/matchUpStatus/settleRederivedDoubleExits';
 import { settleForwardConsequences } from '@Mutate/matchUps/matchUpStatus/settleForwardConsequences';
@@ -21,6 +20,8 @@ import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentR
 import type { DeciderSnapshot } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
+import { matchUpWillNeverBePlayed } from '@Helpers/scheduling/schedulePredicates';
+import { matchUpHoldsScheduling } from '@Mutate/matchUps/schedule/byeScheduling';
 import { collectionChoiceOutcomeRefusal } from '@Query/matchUp/collectionChoice';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
 import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';

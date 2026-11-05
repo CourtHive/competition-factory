@@ -1,10 +1,10 @@
+import { calculatePeriodLength } from '@Helpers/scheduling/calculatePeriodLength';
 import { EventBookingTimings, generateBookings } from './generateBookings';
+import { getDateTimeBoundary } from '@Helpers/scheduling/getTimeBoundary';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
+import { getScheduleTimes } from '@Helpers/scheduling/getScheduleTimes';
 import { recordsDefaultPeriodLength } from './defaultPeriodLength';
-import { getScheduleTimes } from '@Query/venues/getScheduleTimes';
-import { calculatePeriodLength } from './calculatePeriodLength';
 import { getMatchUpId } from '@Functions/global/extractors';
-import { getDateTimeBoundary } from './getTimeBoundary';
 
 // constants and types
 import { ErrorType, MISSING_TOURNAMENT_RECORDS } from '@Constants/errorConditionConstants';

@@ -1,6 +1,6 @@
-import { generateTimeSlots } from '@Assemblies/generators/scheduling/generateTimeSlots';
-import { getDateTimeBoundary } from '@Generators/scheduling/utils/getTimeBoundary';
 import { extractTime, minutesDifference, timeToDate } from '@Tools/dateTime';
+import { generateTimeSlots } from '@Helpers/scheduling/generateTimeSlots';
+import { getDateTimeBoundary } from '@Helpers/scheduling/getTimeBoundary';
 import { getCourtDateAvailability } from './getCourtDateAvailability';
 
 export function getFirstTimeSlotStartTime({ averageMinutes, startTime, endTime, courts, date }) {

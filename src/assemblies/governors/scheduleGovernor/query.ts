@@ -13,9 +13,9 @@ export { getPersonRequests } from '@Query/matchUps/scheduling/getPersonRequests'
 export { getProfileRounds } from '@Query/matchUps/scheduling/getProfileRounds';
 export { getScenarioScheduleProjection } from '@Query/matchUps/scheduling/getScenarioScheduleProjection';
 export { getScheduleScenarioStatus } from '@Query/matchUps/scheduling/scheduleScenarioReconciliation';
-export { getScenarioScheduleView } from '@Query/matchUps/scheduling/getScenarioScheduleView';
+export { getScenarioScheduleView } from '@Assemblies/governors/scheduleGovernor/getScenarioScheduleView';
 export { getScheduleScenarios, getScheduleScenario } from '@Mutate/tournaments/scheduleScenarios';
-export { getSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
-export { courtGridRows } from '@Generators/scheduling/courtGridRows';
+export { getSchedulingProfile } from '@Query/scheduling/getSchedulingProfile';
+export { courtGridRows } from '@Helpers/scheduling/courtGridRows';
 export { publicFindCourt } from '@Query/venues/findCourt';
 export { findVenue } from '@Query/venues/findVenue';

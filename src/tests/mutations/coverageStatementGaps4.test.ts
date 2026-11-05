@@ -6,12 +6,12 @@ import { addMatchUpScheduledTime, addMatchUpTimeModifiers } from '@Mutate/matchU
 import { bulkRescheduleMatchUps, bulkReschedule } from '@Mutate/matchUps/schedule/bulkRescheduleMatchUps';
 import { createTeamsFromParticipantAttributes } from '@Mutate/participants/createTeamsFromAttributes';
 import { setEventStartDate, setEventEndDate, setEventDates } from '@Mutate/events/setEventDates';
-import { generateVirtualCourts } from '@Generators/scheduling/utils/generateVirtualCourts';
 import { orderCollectionDefinitions } from '@Mutate/tieFormat/orderCollectionDefinitions';
 import { matchUpScheduleChange } from '@Mutate/matchUps/schedule/matchUpScheduleChange';
 import { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDetails';
 import { addCollectionDefinition } from '@Mutate/tieFormat/addCollectionDefinition';
 import { getItemTieFormat } from '@Query/hierarchical/tieFormats/getItemTieFormat';
+import { generateVirtualCourts } from '@Helpers/scheduling/generateVirtualCourts';
 import { processTiebreakSet } from '@Helpers/keyValueScore/processTiebreakSet';
 import { calculateNewRatings } from '@Helpers/ratings/calculateNewRatings';
 import { validatePlayoffGroups } from '@Validators/validatePlayoffGroups';

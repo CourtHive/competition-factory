@@ -2,11 +2,11 @@ import { getScheduledCourtMatchUps, getScheduledVenueMatchUps } from '@Query/ven
 import { bulkScheduleTournamentMatchUps } from '@Mutate/matchUps/schedule/bulkScheduleTournamentMatchUps';
 import { resolveTournamentRecords } from '@Helpers/parameters/resolveTournamentRecords';
 import { checkAndUpdateSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
-import { deletionMessage } from '@Assemblies/generators/matchUps/deletionMessage';
 import { validDateAvailability } from '@Validators/validateDateAvailability';
-import venueTemplate from '@Assemblies/generators/templates/venueTemplate';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { requireParams } from '@Helpers/parameters/requireParams';
+import { deletionMessage } from '@Mutate/venues/deletionMessage';
+import venueTemplate from '@Helpers/scheduling/venueTemplate';
 import { clearPrimaryVenue } from './clearPrimaryVenue';
 import { canonicalTime } from '@Tools/canonicalClock';
 import { addNotice } from '@Global/state/globalState';

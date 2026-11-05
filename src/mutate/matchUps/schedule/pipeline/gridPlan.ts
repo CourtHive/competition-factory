@@ -6,7 +6,7 @@ import { modifyParticipantDayMatchUps } from '../scheduleMatchUps/participantDay
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { getParticipantClashes } from '../scheduleMatchUps/participantClashes';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
-import { getGridBookings } from '@Query/venues/getGridBookings';
+import { getGridBookings } from '@Helpers/scheduling/getGridBookings';
 import { isObject } from '@Tools/objects';
 import { dateGridRows } from './gridRows';
 

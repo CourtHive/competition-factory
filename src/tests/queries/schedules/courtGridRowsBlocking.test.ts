@@ -1,4 +1,4 @@
-import { courtGridRows } from '@Assemblies/generators/scheduling/courtGridRows';
+import { courtGridRows } from '@Helpers/scheduling/courtGridRows';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';
 

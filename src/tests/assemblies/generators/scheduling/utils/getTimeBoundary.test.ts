@@ -1,9 +1,5 @@
+import { getDateTimeBoundary, getCourtsTimeBoundary, getCourtTimeBoundary } from '@Helpers/scheduling/getTimeBoundary';
 import { describe, expect, it } from 'vitest';
-import {
-  getDateTimeBoundary,
-  getCourtsTimeBoundary,
-  getCourtTimeBoundary,
-} from '@Generators/scheduling/utils/getTimeBoundary';
 
 describe('getDateTimeBoundary', () => {
   it('finds earliest startTime across courts for a date', () => {

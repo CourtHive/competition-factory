@@ -1,11 +1,11 @@
 import { getUTCdateString, extractTime, extractDate, timeStringMinutes, dayMinutesToTimeString } from '@Tools/dateTime';
-import { calculatePeriodLength } from '@Generators/scheduling/utils/calculatePeriodLength';
-import { generateVirtualCourts } from '@Generators/scheduling/utils/generateVirtualCourts';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getCourtsAvailableAtPeriodStart } from './getCourtsAvailableAtPeriodStart';
-import { getDateTimeBoundary } from '@Generators/scheduling/utils/getTimeBoundary';
-import { courtGenerator } from '@Assemblies/generators/scheduling/courtGenerator';
+import { calculatePeriodLength } from '@Helpers/scheduling/calculatePeriodLength';
+import { generateVirtualCourts } from '@Helpers/scheduling/generateVirtualCourts';
+import { getDateTimeBoundary } from '@Helpers/scheduling/getTimeBoundary';
 import { getFirstTimeSlotStartTime } from './getFirstTimeSlotStartTime';
+import { courtGenerator } from '@Helpers/scheduling/courtGenerator';
 import { generateRange } from '@Tools/arrays';
 
 // constants and types

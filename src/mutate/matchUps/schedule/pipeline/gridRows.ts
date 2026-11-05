@@ -1,8 +1,8 @@
 import { scheduledSortedMatchUps } from '@Functions/sorters/scheduledSortedMatchUps';
-import { courtGridRows } from '@Assemblies/generators/scheduling/courtGridRows';
+import { getSchedulingProfile } from '@Query/scheduling/getSchedulingProfile';
 import { matchUpCompletion } from '@Query/matchUp/checkMatchUpIsComplete';
-import { getSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
+import { courtGridRows } from '@Helpers/scheduling/courtGridRows';
 import { filterMatchUps } from '@Query/filterMatchUps';
 
 // constants and types

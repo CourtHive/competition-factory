@@ -1,5 +1,5 @@
-import { validateSchedulingProfile } from '@Validators/validateSchedulingProfile';
-import { getSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
+import { validateSchedulingProfile } from '@Query/scheduling/validateSchedulingProfile';
+import { getSchedulingProfile } from '@Query/scheduling/getSchedulingProfile';
 import { getRoundId } from '@Query/matchUps/scheduling/schedulingUtils';
 import { definedAttributes } from '@Tools/definedAttributes';
 

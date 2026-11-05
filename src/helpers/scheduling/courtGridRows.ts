@@ -1,4 +1,4 @@
-import { getGridBookings } from '@Query/venues/getGridBookings';
+import { getGridBookings } from '@Helpers/scheduling/getGridBookings';
 import { generateRange } from '@Tools/arrays';
 
 // constants
