@@ -931,7 +931,7 @@ Where the format declares no shootout and one is entered as a decided result, th
 
 - A drawn result is a COMPLETED matchUp with no winner whose score is a level finish its format permits: a level
   combined total (`SET1-S:P32`), a level aggregate over all of its segments (`HAL2A-S:T45`, a soccer 1-1), or a
-  level count of sets (`SET3-S:T10`, a timed set closing level). It stands only where no winner is needed: a round
+  level count of sets (`SET3-S:T10`, a timed set closing level; `SET2X-S:6/TB7`, one set each). It stands only where no winner is needed: a round
   robin or an ad hoc draw. A format with a declared overtime (`-O:`) is drawn where the scoring engine completes it
   with no winner: a finite overtime with no decider that stays level. A level result with a
   winner decided outside the score (`score.overtime.decidedIn: 'EXTERNAL'`) is that winner's win, not a draw.

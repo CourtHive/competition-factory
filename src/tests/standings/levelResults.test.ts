@@ -85,6 +85,23 @@ describe.each<OutcomePipelineMode>([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_DIFFER
       ]);
     });
 
+    it('keeps a set count split by an exactly-two-set format as a drawn result', () => {
+      setOutcomePipeline(pipeline);
+      const sets = [
+        { setNumber: 1, side1Score: 6, side2Score: 3, winningSide: 1 },
+        { setNumber: 2, side1Score: 3, side2Score: 6, winningSide: 2 },
+      ];
+      const { matchUp } = scoreFirstMatchUp({ drawType: ROUND_ROBIN, matchUpFormat: 'SET2X-S:6/TB7', score: { sets } });
+      expect([matchUp.matchUpStatus, matchUp.winningSide, matchUp.score.sets.length]).toEqual([
+        COMPLETED,
+        undefined,
+        2,
+      ]);
+      const result: any = getParticipantResults({ matchUps: [matchUp] });
+      for (const { participantId } of matchUp.sides)
+        expect(result.participantResults[participantId]).toMatchObject({ matchUpsDrawn: 1, setsWon: 1, setsLost: 1 });
+    });
+
     it('still decides a 2-1', () => {
       setOutcomePipeline(pipeline);
       const { matchUp } = scoreFirstMatchUp({
