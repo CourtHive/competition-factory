@@ -332,7 +332,8 @@ Sharing modules means sharing module state, so a test file must not depend on, o
 
 - `src/tests/testHarness/resetGlobalState.ts` runs before every file. It restores the engine's global state that the
   public setters reach: dev context, global log, invoke observer, captured clocks and stamps, the call random source,
-  save-draw-deletions and audit flags, deep copy, loaded tournaments, subscriptions, notices and the mutation status.
+  save-draw-deletions and audit flags, deep copy, the timeKeeper's timers, loaded tournaments, subscriptions, notices
+  and the mutation status.
   It also clears the policy registry and the officiating and sanctioning record stores.
 - A file that changes any of that should still restore it itself, and must not start timers or promises it does not
   await: a callback that fires after its test has ended runs inside whichever file comes next.
