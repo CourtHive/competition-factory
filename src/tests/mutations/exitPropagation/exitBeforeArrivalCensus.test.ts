@@ -1,4 +1,5 @@
 import { checkIntegrity, getDrawMatchUps, observeMutation } from '@Tests/testHarness/exitPropagation/transitions';
+import { matrixTier, tierCells } from '@Tests/testHarness/matrixTier';
 import { setSubscriptions } from '@Global/state/globalState';
 import { prepareDraw, randomConfig, rng } from '@Tests/testHarness/exitPropagation/sweep';
 import tournamentEngine from '@Engines/syncEngine';
@@ -103,6 +104,15 @@ function playSeed(seed: number): string | undefined {
  */
 const WINDOWS = Array.from({ length: SEEDS.length / 10 }, (_, index) => SEEDS.slice(index * 10, index * 10 + 10));
 
+// matrixTier.ts: a PR into dev replays four of the twelve windows, spread across the seeds; checkpoints replay all twelve
+const TIERED_WINDOWS = tierCells(WINDOWS, { stratum: () => 'seeds' });
+
+// CONTROL: the slice is not empty, and the full tier replays every window
+it(`the ${matrixTier} tier replays ${TIERED_WINDOWS.length} of ${WINDOWS.length} windows`, () => {
+  expect(TIERED_WINDOWS.length).toBeGreaterThan(0);
+  if (matrixTier === 'full') expect(TIERED_WINDOWS).toEqual(WINDOWS);
+});
+
 // Under whichever pipeline the suite runs, so the `differential` run (into and on master) compares v2
 // here too. It was pinned to v1 while seed 9700103 (COMPASS 32/27) diverged: a WALKOVER recorded at
 // `West|2|4` carries its loser past a BYE into `Southwest|2|1`, where a DEFAULTED a double default
@@ -110,7 +120,7 @@ const WINDOWS = Array.from({ length: SEEDS.length / 10 }, (_, index) => SEEDS.sl
 // exit-propagation.md's mixed rule) and the differential, finding that side by an in-context
 // `sideNumber` an unreached side does not carry, expected a WALKOVER instead. Pinned by
 // `aCarriedExitPastAByeMeetsAPendingProducedExit.test.ts`.
-it.each(WINDOWS.map((seeds) => ({ seeds, from: seeds[0] })))(
+it.each(TIERED_WINDOWS.map((seeds) => ({ seeds, from: seeds[0] })))(
   'seeds from $from: recorded exits beside an unreached seat stay within the known budget',
   ({ seeds }) => {
     const failing = seeds.map((seed) => ({ seed, failure: playSeed(seed) })).filter(({ failure }) => failure);

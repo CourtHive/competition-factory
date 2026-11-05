@@ -1,4 +1,5 @@
 import { replayFailure as replay } from '@Tests/testHarness/exitPropagation/sweep';
+import { matrixTier, tierCells } from '@Tests/testHarness/matrixTier';
 import { setSubscriptions } from '@Global/state/globalState';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import path from 'path';
@@ -56,6 +57,17 @@ const INSTANCES: Instance[] = fs
 
 const key = (instance: Instance) => `${instance.arm}:${instance.seed}`;
 
+/** what an instance is expected to classify as: 'F1' while open, the property it is behind, or clean */
+const expectedOf = (instance: Instance) => (OPEN.has(key(instance)) ? 'F1' : (BEHIND[key(instance)] ?? 'clean'));
+
+// matrixTier.ts: a PR into dev replays a third of the instances, every expected classification kept; checkpoints all 45
+const TIERED = tierCells(INSTANCES, { stratum: expectedOf });
+
+// CONTROL: the tier narrows the run, never drops an expected classification
+it(`the ${matrixTier} tier replays every expected classification`, () => {
+  expect(new Set(TIERED.map(expectedOf))).toEqual(new Set(INSTANCES.map(expectedOf)));
+});
+
 // the census's `on` arm: `transitions.ts` reads the flag per mutation
 let priorFlag: string | undefined;
 beforeAll(() => {
@@ -95,7 +107,7 @@ it('holds all 45 instances, each an `on`-arm FIRST_MATCH_LOSER_CONSOLATION sched
   expect(listed.filter((entry) => !INSTANCES.some((instance) => key(instance) === entry))).toEqual([]);
 });
 
-it.each(INSTANCES.map((instance) => [key(instance), instance] as const))('%s', (entry, instance) => {
+it.each(TIERED.map((instance) => [key(instance), instance] as const))('%s', (entry, instance) => {
   const expected = OPEN.has(entry) ? 'F1' : BEHIND[entry];
   expect(classify(instance)).toEqual(expected);
 });

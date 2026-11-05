@@ -1,4 +1,5 @@
 import { replayFailure as replay } from '@Tests/testHarness/exitPropagation/sweep';
+import { matrixTier, tierCells } from '@Tests/testHarness/matrixTier';
 import { POLICY_TYPE_PROGRESSION } from '@Constants/policyConstants';
 import { setSubscriptions } from '@Global/state/globalState';
 import { afterAll, beforeAll, expect, it } from 'vitest';
@@ -106,6 +107,16 @@ const INSTANCES: Instance[] = fs
   .map((line) => JSON.parse(line));
 
 const key = (instance: Instance) => `${instance.arm}:${instance.seed}`;
+
+const stratumOf = (instance: Instance) => `${instance.arm} ${instance.group}`;
+
+// matrixTier.ts: a PR into dev replays a third of the instances, every arm x group kept; checkpoints replay all 53
+const TIERED = tierCells(INSTANCES, { stratum: stratumOf });
+
+// CONTROL: the tier narrows the run, never drops an arm or a group
+it(`the ${matrixTier} tier replays every arm and group`, () => {
+  expect(new Set(TIERED.map(stratumOf))).toEqual(new Set(INSTANCES.map(stratumOf)));
+});
 const POLICY_OFF = { [POLICY_TYPE_PROGRESSION]: { doubleExitPropagateBye: false } };
 
 // the census's `on` arm is an env flag that `transitions.ts` reads per mutation; restored whatever an instance set
@@ -152,7 +163,7 @@ it('holds all 53 instances, each listed in its own group at most once', () => {
   }
 });
 
-it.each(INSTANCES.map((instance) => [`${instance.group} ${key(instance)}`, instance] as const))(
+it.each(TIERED.map((instance) => [`${instance.group} ${key(instance)}`, instance] as const))(
   '%s',
   (_label, instance) => {
     const entry = key(instance);
