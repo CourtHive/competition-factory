@@ -20,6 +20,10 @@ Each side moves by `K × (actual − expected)` from the ratings before the resu
 - **A pair is rated as its two players.** The side's rating is their average, and each player moves by their own K against it, so under one K both partners move by the same amount (the practice UTR publishes). The pair participant itself is not rated.
 - **An individual or a team** is rated as that participant.
 
+## Which policies rated a run
+
+`generateDynamicRatings` returns `ratingsPolicyNames`: the `policyName` of every policy the run rated by, so a consumer can say which produced the values.
+
 ## Which policy applies
 
 For each matchUp, the first found:
@@ -47,6 +51,7 @@ tournamentEngine.modifyEvent({
 | `k`              | `{ rule: 'MATCHES_PLAYED', numerator, offset, shape }`                         | FiveThirtyEight's tennis K, `250 / (m + 5)^0.4`, m the player's career matches played                                                                                                      |
 | `actual`         | `{ rule: 'WIN_LOSS' }`                                                         | 1 / 0                                                                                                                                                                                      |
 | `actual`         | `{ rule: 'SETS_PLAYED_SHARE' }`                                                | Huang 2014: a best-of-3 win in 2 sets is 1 and in 3 is 2/3; a best-of-5 win in 3, 4 and 5 sets is 1, 0.8 and 0.6; the loser takes the complement. Any other format is rated as a plain win |
+| `actual`         | `{ rule: 'SCORE_SHARE' }`                                                      | the share of the points (else games, else sets) won, as UTR rates on the share of games won; a draw can be other than 0.5                                                                  |
 | `walkovers`      | `'RATE_AS_WIN'` (default) or `'EXCLUDE'`                                       | Huang 2014 rates a walkover as a straight-sets win                                                                                                                                         |
 | `draws`          | `'RATE_AS_HALF'` (default) or `'EXCLUDE'`                                      | a COMPLETED result with no winner: 0.5 each, as every published Elo-family method scores it                                                                                                |
 | `kByTier`        | `{ 'system:value': K }`                                                        | K by the event's tier, then the tournament's (`TierClassification`); otherwise `k`                                                                                                         |
@@ -73,6 +78,7 @@ The factory holds no player's career history, so a `MATCHES_PLAYED` K reads the 
 | `POLICY_RATINGS_ELO_WORLD_FOOTBALL` | World Football Elo Ratings (eloratings.net): K 30 (set the 60 / 50 / 40 / 20 match types in `kByTier`), goal-difference steps, a draw 0.5. Not encoded: the +100 home advantage. No shootout rule is published      |
 | `POLICY_RATINGS_FIFA_SUM`           | FIFA, "Revision of the FIFA / Coca-Cola World Ranking", 2018: spread 600, I in `kByTier` (base 10, a friendly inside the international windows), shootout 0.75 / 0.5, knock-out loss protection, no goal margin     |
 | `POLICY_RATINGS_ELO_538_NHL`        | FiveThirtyEight, "How Our NHL Predictions Work", 2021: K 6, log margin with its autocorrelation term, an overtime or shootout win a full win by one goal. Not encoded: home ice, playoff scaling, season reversion  |
+| `POLICY_RATINGS_COMPETITION_FORM`   | The DrawMatic and Swiss competition policies' dynamic form rating: K 24 for both, spread 400, the share of the points (else games) won. The fallback for a competition policy that names no ratings policy          |
 
 A matchUp has no home or away side, so no preset encodes home advantage.
 

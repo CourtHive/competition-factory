@@ -5,6 +5,7 @@ import { buildIndividualIdsMap } from '@Query/participants/individualParticipant
 
 // Generators
 import { generateAdHocMatchUps } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocMatchUps';
+import { formRatingsPolicy } from '@Generators/scales/competition/formRatingsPolicy';
 import { generateDynamicRatings } from '@Generators/scales/generateDynamicRatings';
 
 // Acquire
@@ -128,6 +129,9 @@ export function generateDrawMaticRound(params: GenerateDrawMaticRoundArgs): Resu
 
   // Competition policy overrides legacy dynamicRatings
   const { competitionPolicy } = getCompetitionPolicy({ tournamentRecord, drawDefinition, event });
+  // a form rating that names a ratings policy the factory cannot rate by is refused before anything is generated
+  const formCheck = formRatingsPolicy(competitionPolicy);
+  if (formCheck.error) return { error: formCheck.error, info: formCheck.info };
   const { competitionState } = competitionPolicy
     ? getCompetitionState({ drawDefinition, competitionPolicy })
     : { competitionState: undefined };

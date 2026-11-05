@@ -346,6 +346,7 @@ Generates dynamic ELO-style ratings from completed matchUp results. Processes sp
 const {
   modifiedScaleValues, // { [participantId]: newRating }
   processedMatchUpIds, // matchUpIds that were processed
+  ratingsPolicyNames, // the policyName of each ratings policy the run rated by
   outputScaleName, // the scaleName used for output
   ratingType, // the rating type used (e.g. 'ELO')
 } = scaleEngine.generateDynamicRatings({

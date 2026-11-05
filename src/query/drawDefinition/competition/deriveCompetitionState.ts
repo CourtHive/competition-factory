@@ -1,7 +1,10 @@
 // Generators
+import { fallbackFormPolicy, formRatingsPolicy } from '@Generators/scales/competition/formRatingsPolicy';
 import { deriveCountables } from '@Generators/scales/competition/deriveCountables';
 import { computeActualOutput } from '@Generators/scales/competition/actualOutput';
 import { expectedResult, ratingUpdate } from '@Generators/scales/ratingUpdate';
+import { kOf, winnerActualOf } from '@Generators/scales/ratingsPolicyRules';
+import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // Acquire
 import { matchUpsOf } from '@Acquire/structureMembers';
@@ -10,6 +13,7 @@ import { matchUpsOf } from '@Acquire/structureMembers';
 import type { CompetitionParticipantState, CompetitionPolicy, CompetitionState } from '@Types/competitionPolicyTypes';
 import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
 import type { DrawDefinition, MatchUp } from '@Types/tournamentTypes';
+import type { RatingsActualRule } from '@Types/ratingsPolicyTypes';
 
 /**
  * The competition state as a pure function of the draw's results (Mentat `planning/STANDINGS_ENGINE_SPEC.md` § 3,
@@ -133,20 +137,27 @@ export function applyCompetitionResult({
   const p1Actual = computeActualOutput({ pointsWon: side1Count, pointsLost: side2Count, competitionPolicy });
   const p2Actual = computeActualOutput({ pointsWon: side2Count, pointsLost: side1Count, competitionPolicy });
 
-  const { logisticScale, kFactor, enabled: dynamicEnabled } = competitionPolicy.ratingPolicy.dynamicFormRating;
+  const dynamicEnabled = competitionPolicy.ratingPolicy.dynamicFormRating.enabled;
+  // an invalid reference is refused where competition state starts and rounds are generated; a state folded after the
+  // policy changed keeps today's form rating
+  const form = formRatingsPolicy(competitionPolicy);
+  const formPolicy = form.policy ?? fallbackFormPolicy(competitionPolicy);
+  const { expectation } = formPolicy;
+  const kFactor = kOf(formPolicy.k) ?? 0;
+  const formActualOf = (side: 1 | 2, actual: number) =>
+    form.referenced ? formActual({ rule: formPolicy.actual, matchUp, side, won: [side1Count, side2Count] }) : actual;
   const pressureEnabled = competitionPolicy.ratingPolicy.pressureRating?.enabled;
   const roundNumber = matchUp.roundNumber ?? 0;
 
   const apply = (state: CompetitionParticipantState, opponent: CompetitionParticipantState, side: 1 | 2) => {
     const actual = side === 1 ? p1Actual : p2Actual;
     const [won, lost] = side === 1 ? [side1Count, side2Count] : [side2Count, side1Count];
-    const expectation = { rule: 'LOGISTIC', base: 10, spread: logisticScale } as const;
     const expectedBaseline = expectedResult(state.baselineRating, opponent.baselineRating, expectation);
     const formOf = (s: CompetitionParticipantState) => ratingsAtStart?.[s.participantId] ?? s.dynamicFormRating;
     // this side's update only; the opponent's is computed from its own actual output in its own call
     const { deltas } = ratingUpdate({
       ratings: [formOf(state), formOf(opponent)],
-      actual: [actual, 1 - actual],
+      actual: [formActualOf(side, actual), 1 - formActualOf(side, actual)],
       k: [kFactor, kFactor],
       expectation,
     });
@@ -184,4 +195,28 @@ export function applyCompetitionResult({
       expectedOutput: delta.expectedBaseline,
     });
   });
+}
+
+/** A side's actual result under a referenced ratings policy: win or loss (a draw 0.5), the score share, or Huang's. */
+function formActual({
+  rule,
+  matchUp,
+  side,
+  won,
+}: {
+  rule: RatingsActualRule;
+  matchUp: MatchUp;
+  side: 1 | 2;
+  won: [number, number];
+}): number {
+  const { winningSide, matchUpFormat, score } = matchUp;
+  if (rule.rule === 'SCORE_SHARE') {
+    const total = won[0] + won[1];
+    return total ? won[side - 1] / total : 0.5;
+  }
+  if (!winningSide) return 0.5;
+  const loserSetsWon = (score?.sets ?? []).filter((set) => set.winningSide === 3 - winningSide).length;
+  const parsedFormat = matchUpFormat ? parse(matchUpFormat) : undefined;
+  const winnerActual = winnerActualOf({ rule, parsedFormat, loserSetsWon });
+  return side === winningSide ? winnerActual : 1 - winnerActual;
 }

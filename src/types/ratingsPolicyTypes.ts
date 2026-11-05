@@ -18,7 +18,12 @@ export type RatingsActualRule =
    * Huang 2014: a best-of-3 win in 2 sets is 1 and in 3 is 2/3; a best-of-5 win in 3, 4 and 5 sets is 1, 0.8 and 0.6.
    * The loser takes the complement. Any other format is rated as WIN_LOSS.
    */
-  | { rule: 'SETS_PLAYED_SHARE' };
+  | { rule: 'SETS_PLAYED_SHARE' }
+  /**
+   * The share of the scoring units won: points, else games, else sets (UTR rates on the share of games won; the
+   * competition policy's POINT_SHARE). A draw can be other than 0.5.
+   */
+  | { rule: 'SCORE_SHARE' };
 
 export type RatingsMarginRule =
   /**

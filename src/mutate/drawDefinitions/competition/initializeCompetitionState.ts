@@ -3,6 +3,7 @@ import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompe
 
 // Generators
 import { getAdHocRatings } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/getAdHocRatings';
+import { formRatingsPolicy } from '@Generators/scales/competition/formRatingsPolicy';
 
 // Mutate
 import { announceDrawChange, attributesSnapshot } from '@Mutate/drawDefinitions/announceDrawChange';
@@ -37,6 +38,9 @@ export function initializeCompetitionState(params: InitializeCompetitionStateArg
 
   const { competitionPolicy } = getCompetitionPolicy({ tournamentRecord, drawDefinition, event });
   if (!competitionPolicy) return { ...SUCCESS };
+  // a form rating that names a ratings policy the factory cannot rate by is refused before anything is generated
+  const formCheck = formRatingsPolicy(competitionPolicy);
+  if (formCheck.error) return { error: formCheck.error, info: formCheck.info };
 
   const ratingPolicy = competitionPolicy.ratingPolicy;
   const scaleName = ratingPolicy.baselineRating.scaleName;
