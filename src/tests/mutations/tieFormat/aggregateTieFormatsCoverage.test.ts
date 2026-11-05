@@ -1,5 +1,5 @@
+import { calculateWinCriteria } from '@Helpers/tieFormats/calculateWinCriteria';
 import { aggregateTieFormats } from '@Mutate/tieFormat/aggregateTieFormats';
-import { calculateWinCriteria } from '@Query/matchUp/calculateWinCriteria';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';

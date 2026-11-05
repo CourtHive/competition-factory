@@ -125,6 +125,9 @@ export interface Score {
   scoreStringSide2?: string;
 }
 
+/** a value per side, side 1 first: sets won, a set's games, a period's totals */
+export type Pair = [number, number];
+
 export type ScoringPhase = 'REGULATION' | 'OVERTIME' | 'DECIDER';
 export interface ScoringPeriod {
   phase: ScoringPhase;

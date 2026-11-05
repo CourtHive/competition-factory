@@ -1,4 +1,4 @@
-import { checkSetIsComplete, getLeadingSide } from './checkSetIsComplete';
+import { checkSetIsComplete, getLeadingSide } from '@Helpers/matchUpFormatCode/setRules/setCompletion';
 
 // types
 import type { ParsedFormat } from '@Helpers/matchUpFormatCode/parse';

@@ -5,8 +5,8 @@
  */
 
 import { overtimeScoreContext, overtimeScoreString } from '@Helpers/matchUpFormatCode/overtimeContext';
+import { isLiveDecidingSet, isStandardSetTiebreak } from '@Helpers/matchUpFormatCode/formatUtilities';
 import type { MatchUp, GetScoreboardOptions, SetScore, FormatStructure } from '@Types/scoring/types';
-import { isLiveDecidingSet, isStandardSetTiebreak } from '@Tools/scoring/scoringUtilities';
 import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 

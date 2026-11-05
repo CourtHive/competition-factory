@@ -1,5 +1,5 @@
 import { createContext, initialState, reduce, step } from '@Assemblies/engines/scoring/v2/reduce';
-import { finalGoverns, resolveFormat, ruleForSet } from '@Assemblies/engines/scoring/v2/format';
+import { finalGoverns, resolveFormat, ruleForSet } from '@Helpers/matchUpFormatCode/matchRule';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { describe, expect, it } from 'vitest';
 

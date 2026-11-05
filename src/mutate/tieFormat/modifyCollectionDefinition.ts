@@ -2,10 +2,10 @@ import { validateCollectionValueProfiles } from '@Validators/validateCollectionV
 import { planCollectionTypeChange, applyCollectionTypeChange } from './collectionTypeChange';
 import { tieFormatGenderValidityCheck } from '@Validators/tieFormatGenderValidityCheck';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { calculateWinCriteria } from '@Helpers/tieFormats/calculateWinCriteria';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { getTieFormat } from '@Query/hierarchical/tieFormats/getTieFormat';
-import { calculateWinCriteria } from '@Query/matchUp/calculateWinCriteria';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { withEventChangeNotice } from '@Mutate/events/eventChangeNotice';
 import { coercedGender, normalizeGender } from '@Helpers/coercedGender';

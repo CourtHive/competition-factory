@@ -8,8 +8,8 @@
 
 import { calculatePointsTo, calcPointsToGameInTiebreak } from '@Mutate/scoring/pointsToCalculator';
 import { createMatchUp, addPoint, getScore } from '@Assemblies/governors/scoreGovernor';
+import { resolveSetType } from '@Helpers/matchUpFormatCode/formatUtilities';
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
-import { resolveSetType } from '@Tools/scoring/scoringUtilities';
 import type { SetFormatStructure } from '@Types/scoring/types';
 import { formatGameScore } from '@Mutate/scoring/addPoint';
 import { parse } from '@Helpers/matchUpFormatCode/parse';

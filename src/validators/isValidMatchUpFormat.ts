@@ -1,5 +1,5 @@
 import type { ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
-import { resolveFormat } from '@Assemblies/engines/scoring/v2/format';
+import { resolveFormat } from '@Helpers/matchUpFormatCode/matchRule';
 import { stringify } from '@Helpers/matchUpFormatCode/stringify';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { isString } from '@Tools/objects';

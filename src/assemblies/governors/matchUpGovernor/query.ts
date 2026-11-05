@@ -31,7 +31,7 @@ export { getPredictiveAccuracy } from '@Query/matchUps/getPredictiveAccuracy';
 export { getMatchUpContextIds } from '@Query/matchUp/getMatchUpContextIds';
 export { tournamentMatchUps } from '@Query/matchUps/getTournamentMatchUps';
 export { getHomeParticipantId } from '@Query/matchUp/getHomeParticipantId';
-export { calculateWinCriteria } from '@Query/matchUp/calculateWinCriteria';
+export { calculateWinCriteria } from '@Helpers/tieFormats/calculateWinCriteria';
 export { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
 export { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 export { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';

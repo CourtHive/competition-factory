@@ -1,7 +1,7 @@
+import { isTiebreakGamesScore } from '@Helpers/matchUpFormatCode/setRules/tiebreakAtRules';
 import { decidedResultRefusal, isDecidedOutsideScore } from '@Validators/decidedResult';
+import { formatForSet } from '@Helpers/matchUpFormatCode/setRules/tiebreakSetShape';
 import { checkScoreCompleteness } from '@Validators/scoreCompleteness';
-import { isTiebreakGamesScore } from '@Query/matchUp/tiebreakAtRules';
-import { formatForSet } from '@Query/matchUp/tiebreakSetShape';
 import { isMatchUpStatus } from '@Validators/isMatchUpStatus';
 import { analyzeScore } from '@Query/matchUp/analyzeScore';
 import { parse } from '@Helpers/matchUpFormatCode/parse';

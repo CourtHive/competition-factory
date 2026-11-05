@@ -1,13 +1,13 @@
 import { closedTotal, inTiebreakAtTime, timedEnd, timedGame, timedPoint, timedTotal } from './timed';
 import { combinedClosed, combinedPoint, combinedReachable, combinedSet } from './combined';
-import { shootoutTallyRefusal } from '@Helpers/matchUpFormatCode/shootout';
 import { standardGame, standardPoint, standardSetWinner } from './standard';
+import { shootoutTallyRefusal } from '@Helpers/matchUpFormatCode/shootout';
 import { tiebreakOnlyGame, tiebreakOnlyPoint } from './tiebreakOnly';
 import { raceWinner } from './game';
 
 // constants and types
 import type { GameInPlay, IgnoredCode, Pair, ScoredSet, Side, SideNumber } from '../types';
-import type { SegmentRule } from '../format';
+import type { SegmentRule } from '@Helpers/matchUpFormatCode/matchRule';
 import type { SetTotal } from '../actions';
 
 /** what a point did to the open set: the set and game after it, its coordinates (§ 11.1) and its game score */

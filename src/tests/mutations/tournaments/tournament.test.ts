@@ -1,8 +1,8 @@
 import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAssignments';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import POLICY_SEEDING_ITF from '@Fixtures/policies/POLICY_SEEDING_ITF';
+import { parseScoreString } from '@Scoring/parse/parseScoreString';
 import { POLICY_TYPE_SEEDING } from '@Constants/policyConstants';
-import { parseScoreString } from '@Tools/parseScoreString';
 import { policyComposer } from '@Global/policyComposer';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';

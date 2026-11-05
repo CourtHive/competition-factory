@@ -6,12 +6,16 @@ import { shootoutTallyRefusal } from '@Helpers/matchUpFormatCode/shootout';
  * PROTOTYPE: This logic will be moved to tods-competition-factory
  * Currently implemented in TMX for testing and refinement before factory integration
  */
-import { tiebreakSetGames, isTiebreakGamesScore, tiebreakSetCeiling } from '@Query/matchUp/tiebreakAtRules';
-import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
+import {
+  tiebreakSetGames,
+  isTiebreakGamesScore,
+  tiebreakSetCeiling,
+} from '@Helpers/matchUpFormatCode/setRules/tiebreakAtRules';
 import { finalSetGoverns, unlevelDeciderRefusal } from '@Helpers/matchUpFormatCode/aggregateDecider';
-import { isTiebreakMarker } from '@Query/matchUp/tiebreakSetShape';
-import { tiebreakMargin } from '@Tools/scoring/scoringUtilities';
-import { getMaxSetScore } from '@Query/matchUp/getComplement';
+import { isTiebreakMarker } from '@Helpers/matchUpFormatCode/setRules/tiebreakSetShape';
+import { getMaxSetScore } from '@Helpers/matchUpFormatCode/setRules/setComplement';
+import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
+import { tiebreakMargin } from '@Helpers/matchUpFormatCode/formatUtilities';
 import { timedSetWinnerContradicts } from './timedSetWinner';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { setPlayedAfterDecision } from './setCount';

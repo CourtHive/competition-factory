@@ -1,5 +1,5 @@
+import { getTieFormatValueTotal } from '@Helpers/tieFormats/calculateWinCriteria';
 import { validateCollectionDefinition } from './validateCollectionDefinition';
-import { getTieFormatValueTotal } from '@Query/matchUp/calculateWinCriteria';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isObject } from '@Tools/objects';
 import { unique } from '@Tools/arrays';

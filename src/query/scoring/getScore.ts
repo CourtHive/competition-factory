@@ -6,7 +6,7 @@
  */
 
 import type { MatchUp, ScoreResult, PointSituation, FormatStructure, SetFormatStructure } from '@Types/scoring/types';
-import { resolveSetType, isLiveDecidingSet, isStandardSetTiebreak } from '@Tools/scoring/scoringUtilities';
+import { resolveSetType, isLiveDecidingSet, isStandardSetTiebreak } from '@Helpers/matchUpFormatCode/formatUtilities';
 import { deriveServer, serviceRule, formatGameScore } from '@Mutate/scoring/addPoint';
 import { isDecisionRequired, decisionRequiredSituation } from './decisionRequired';
 import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';

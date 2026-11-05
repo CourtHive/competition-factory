@@ -2,7 +2,7 @@
  * When a game is won. addPoint completes games with these, and pointsToCalculator counts the points to them,
  * so the "points to game" decoration and the point that completes the game cannot disagree.
  */
-import { setHasTiebreak, tiebreakMargin } from '@Tools/scoring/scoringUtilities';
+import { setHasTiebreak, tiebreakMargin } from '@Helpers/matchUpFormatCode/formatUtilities';
 import type { FormatStructure, SetFormatStructure } from '@Types/scoring/types';
 
 /**

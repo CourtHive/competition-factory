@@ -2,8 +2,8 @@ import { NEW_GAME, playRacePoint, pointScore, wonRace } from './game';
 import { gameScoresAfter } from './standard';
 
 // constants and types
+import type { TiebreakOnlyRule } from '@Helpers/matchUpFormatCode/matchRule';
 import type { GameInPlay, Pair, ScoredSet, Side } from '../types';
-import type { TiebreakOnlyRule } from '../format';
 import type { SegmentPoint } from './segment';
 
 /**

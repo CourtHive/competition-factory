@@ -8,9 +8,9 @@ import { isClosed } from './decide';
 import { pointsTo } from './view';
 
 // constants and types
+import type { CombinedRule, SegmentRule } from '@Helpers/matchUpFormatCode/matchRule';
 import type { PointSituation, ScoreResult, SetScore } from '@Types/scoring/types';
 import { COMPLETED, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import type { CombinedRule, SegmentRule } from './format';
 import type { Pair, ScoringState, Side } from './types';
 import type { ServicePosition } from './service';
 import type { ReducerContext } from './reduce';

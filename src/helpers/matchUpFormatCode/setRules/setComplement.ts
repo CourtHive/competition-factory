@@ -1,5 +1,5 @@
-import { tiebreakSetGames } from '@Query/matchUp/tiebreakAtRules';
-import { tiebreakMargin } from '@Tools/scoring/scoringUtilities';
+import { tiebreakSetGames } from '@Helpers/matchUpFormatCode/setRules/tiebreakAtRules';
+import { tiebreakMargin } from '@Helpers/matchUpFormatCode/formatUtilities';
 import { ensureInt } from '@Tools/ensureInt';
 
 type SetComplementArgs = {

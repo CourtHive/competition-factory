@@ -17,6 +17,7 @@ export const testFileAliases = {
   '@Forge': new URL('./src/forge', import.meta.url).pathname,
   '@Acquire': new URL('./src/acquire', import.meta.url).pathname,
   '@Helpers': new URL('./src/helpers', import.meta.url).pathname,
+  '@Scoring': new URL('./src/scoring', import.meta.url).pathname,
   '@Global': new URL('./src/global', import.meta.url).pathname,
   '@Mutate': new URL('./src/mutate', import.meta.url).pathname,
   '@Server': new URL('./src/server', import.meta.url).pathname,

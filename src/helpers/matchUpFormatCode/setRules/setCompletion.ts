@@ -1,7 +1,7 @@
-import { readTiebreakSet, withPointsInTiebreakFields } from '@Query/matchUp/tiebreakSetShape';
+import { readTiebreakSet, withPointsInTiebreakFields } from '@Helpers/matchUpFormatCode/setRules/tiebreakSetShape';
+import { isTiebreakWon, reachedTiebreak } from '@Helpers/matchUpFormatCode/setRules/tiebreakAtRules';
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { shootoutTallyRefusal } from '@Helpers/matchUpFormatCode/shootout';
-import { isTiebreakWon, reachedTiebreak } from '@Query/matchUp/tiebreakAtRules';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // constants

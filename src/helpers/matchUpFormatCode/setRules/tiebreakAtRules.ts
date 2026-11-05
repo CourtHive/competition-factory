@@ -1,4 +1,4 @@
-import { tiebreakMargin } from '@Tools/scoring/scoringUtilities';
+import { tiebreakMargin } from '@Helpers/matchUpFormatCode/formatUtilities';
 
 /**
  * Where a tiebreak set ENDS, for any `tiebreakAt`.

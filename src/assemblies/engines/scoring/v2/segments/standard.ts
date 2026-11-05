@@ -1,8 +1,8 @@
 import { NEW_GAME, playGamePoint, playRacePoint, pointScore } from './game';
 
 // constants and types
+import type { StandardRule } from '@Helpers/matchUpFormatCode/matchRule';
 import type { GameInPlay, Pair, ScoredSet, Side } from '../types';
-import type { StandardRule } from '../format';
 import type { SegmentPoint } from './segment';
 
 /**

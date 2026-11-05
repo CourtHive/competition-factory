@@ -12,7 +12,7 @@ import {
   getMinPointsToSetCompletion,
   getMinPointsToMatchCompletion,
   hasCountablePoints,
-} from '@Tools/scoring/scoringUtilities';
+} from '@Helpers/matchUpFormatCode/formatUtilities';
 
 // constants
 import { CONSECUTIVE } from '@Constants/matchUpFormatConstants';

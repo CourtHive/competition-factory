@@ -1,4 +1,4 @@
-import { tiebreakMargin } from '@Tools/scoring/scoringUtilities';
+import { tiebreakMargin } from '@Helpers/matchUpFormatCode/formatUtilities';
 import { describe, expect, it } from 'vitest';
 
 // One rule for the margin a tiebreak is won by, read by scoring, points-to, score entry, the complement

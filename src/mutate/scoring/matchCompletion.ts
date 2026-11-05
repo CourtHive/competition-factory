@@ -6,7 +6,7 @@
  */
 
 import type { FormatStructure, MatchUp, SetScore } from '@Types/scoring/types';
-import { isAggregateFormat } from '@Tools/scoring/scoringUtilities';
+import { isAggregateFormat } from '@Helpers/matchUpFormatCode/formatUtilities';
 import { nowIso } from '@Tools/clock';
 
 // constants

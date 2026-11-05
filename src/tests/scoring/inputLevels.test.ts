@@ -1,5 +1,5 @@
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
-import { inputLevels } from '@Tools/scoring/scoringUtilities';
+import { inputLevels } from '@Helpers/matchUpFormatCode/formatUtilities';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { describe, expect, it } from 'vitest';
 

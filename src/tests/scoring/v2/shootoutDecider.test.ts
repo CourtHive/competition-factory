@@ -1,15 +1,16 @@
-import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
-import { validateSetScore } from '@Validators/validateMatchUpScore';
-import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
-import { keyValueScore } from '@Helpers/keyValueScore/keyValueScore';
-import { addPoint } from '@Mutate/scoring/addPoint';
 import { shootoutTallyRefusal } from '@Helpers/matchUpFormatCode/shootout';
-import { resolveFormat, takesInput } from '@Assemblies/engines/scoring/v2/format';
+import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
+import { keyValueScore } from '@Helpers/keyValueScore/keyValueScore';
+import { resolveFormat } from '@Helpers/matchUpFormatCode/matchRule';
+import { validateSetScore } from '@Validators/validateMatchUpScore';
+import { takesInput } from '@Assemblies/engines/scoring/v2/format';
 import { stringify } from '@Helpers/matchUpFormatCode/stringify';
 import { overtimeScoreVerdict } from '@Validators/overtimeScore';
+import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { reduce } from '@Assemblies/engines/scoring/v2/reduce';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { addPoint } from '@Mutate/scoring/addPoint';
 import { describe, expect, it } from 'vitest';
 
 // constants and types

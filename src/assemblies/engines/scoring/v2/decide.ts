@@ -1,8 +1,8 @@
 import { combinedClosed } from './segments/combined';
 
 // constants and types
+import type { MatchRule } from '@Helpers/matchUpFormatCode/matchRule';
 import type { Pair, ScoredSet, SideNumber } from './types';
-import type { MatchRule } from './format';
 
 export type MatchDecision = { complete: boolean; winningSide?: SideNumber };
 

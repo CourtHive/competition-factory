@@ -5,7 +5,7 @@
  * late-start baseline must carry, was v1's: the ScoringEngine's reducer holds those rules since SE4 (`v2/`).
  */
 
-import { isLiveDecidingSet } from '@Tools/scoring/scoringUtilities';
+import { isLiveDecidingSet } from '@Helpers/matchUpFormatCode/formatUtilities';
 
 // types
 import type { FormatStructure, SetFormatStructure, SetScore } from '@Types/scoring/types';

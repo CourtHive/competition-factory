@@ -1,4 +1,5 @@
 import { stripCheckInAttribution, strippedParticipant } from '@Query/participants/participantPrivacy';
+import { withPointsInTiebreakFields } from '@Helpers/matchUpFormatCode/setRules/tiebreakSetShape';
 import { unresolvedCollectionChoice, choiceMatchUpType } from '@Helpers/matchUpTypeOptions';
 import { getMatchUpCompetitiveProfile } from '@Query/matchUp/getMatchUpCompetitiveProfile';
 import { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInParticipantIds';
@@ -7,7 +8,6 @@ import { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDeta
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
-import { withPointsInTiebreakFields } from '@Query/matchUp/tiebreakSetShape';
 import { getCollectionAssignment } from './getCollectionAssignment';
 import { getOrderedDrawPositions } from './getOrderedDrawPositions';
 import { getMatchUpType } from '@Query/matchUp/getMatchUpType';

@@ -2,10 +2,10 @@ import { decideMatch, isClosed } from './decide';
 import { step } from './reduce';
 
 // constants and types
-import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
 import type { ScoredPoint, ScoredSet, ScoringState, SideNumber, StepOutcome, TimelineEntry } from './types';
+import { COMPLETED, IN_PROGRESS } from '@Constants/matchUpStatusConstants';
+import type { MatchRule } from '@Helpers/matchUpFormatCode/matchRule';
 import type { ReducerContext } from './reduce';
-import type { MatchRule } from './format';
 
 /**
  * ScoringEngine v2 (SE2c): legacy shapes (§ 12.8). A refusal or an ignore the spec adds applies when an action is
