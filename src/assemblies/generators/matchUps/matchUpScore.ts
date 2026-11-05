@@ -1,7 +1,9 @@
 import { formatForSet, withPointsInTiebreakFields } from '@Query/matchUp/tiebreakSetShape';
 import { parse, ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
 import { generateScoreString } from './generateScoreString';
+import { isString } from '@Tools/objects';
 import {
+  decidedOutsideContext,
   overtimeLayout,
   overtimeResultString,
   overtimeScoreContext,
@@ -63,6 +65,17 @@ export function matchUpScore(params) {
   // set — e.g. score.side1PointScore on an in-progress matchUp — so a caller assigning the result
   // over its own score lost data. Spreading keeps `score` in, `score` out. See competition-factory#4564.
   const stamped = overtimeStamped({ parsedFormat, sets, matchUpStatus, incoming: score.overtime });
+  if (!stamped.overtime && score.overtime?.decidedIn === 'EXTERNAL' && matchUpStatus === COMPLETED) {
+    // a result decided outside its score in a format without overtime (standings phase 2 § 1.1)
+    const aggregate = !!(parsedFormat?.aggregate || parsedFormat?.setFormat?.combinedPointTotal);
+    const decidedBy = score.overtime.decidedBy;
+    stamped.overtime = decidedOutsideContext({
+      sets,
+      decidedBy,
+      aggregate,
+      setScores: isString(scoreStringSide1) ? scoreStringSide1 : '',
+    });
+  }
   return { score: { ...score, ...stamped, scoreStringSide1, scoreStringSide2 } };
 }
 

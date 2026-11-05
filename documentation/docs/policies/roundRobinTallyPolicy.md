@@ -911,24 +911,29 @@ Rugby's four-try bonus needs the tries, which a score does not record; it is not
 - A decided rule may name `decidedIn` (the phase that completed the result: `REGULATION`, `OVERTIME`, `DECIDER`, or
   `EXTERNAL` for a winner decided outside the score) and `decidedBy` (how that winner was decided: `SHOOTOUT`,
   `COMPETITION_RULE`, `LOTS`, `OFFICIAL_DECISION`). A result with no record was decided in `REGULATION`. IIHF's
-  3-2-1-0, with a shootout entered as a decided result (an overtime win needs a declared overtime, `-O:`):
+  3-2-1-0 over a format that declares its overtime and shootout (`PER3XA-S:T20P-O:1SD/T5P-F:SO5`), which records
+  `decidedIn` on every result:
 
 ```js
 {
   groupOrderKey: 'classificationPoints',
   resultPoints: {
     rules: [
-      { id: 'shootout', decidedBy: ['SHOOTOUT'], winner: 2, loser: 1 },
       { id: 'regulation', decidedIn: ['REGULATION'], winner: 3, loser: 0 },
+      { id: 'overtime', decidedIn: ['OVERTIME', 'DECIDER'], winner: 2, loser: 1 },
     ],
   },
 }
 ```
 
+Where the format declares no shootout and one is entered as a decided result, the rule for it is
+`{ id: 'shootout', decidedBy: ['SHOOTOUT'], winner: 2, loser: 1 }`.
+
 - A drawn result is a COMPLETED matchUp with no winner whose score is a level finish its format permits: a level
   combined total (`SET1-S:P32`), a level aggregate over all of its segments (`HAL2A-S:T45`, a soccer 1-1), or a
   level count of sets (`SET3-S:T10`, a timed set closing level). It stands only where no winner is needed: a round
-  robin or an ad hoc draw. A format with a declared overtime (`-O:`) is not read as drawn yet. A level result with a
+  robin or an ad hoc draw. A format with a declared overtime (`-O:`) is drawn where the scoring engine completes it
+  with no winner: a finite overtime with no decider that stays level. A level result with a
   winner decided outside the score (`score.overtime.decidedIn: 'EXTERNAL'`) is that winner's win, not a draw.
 - An unfinished, excluded or BYE result earns nothing. A decided or drawn result that matches no rule is listed on both
   participants in `classificationUnmatched` rather than counted as 0 in silence.

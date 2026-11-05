@@ -79,7 +79,14 @@ describe.each<OutcomePipelineMode>([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_DIFFER
         [1, 0],
         [0, 1],
       ]);
-      expect(matchUp.score.overtime).toEqual({ decidedIn: 'EXTERNAL', decidedBy: SHOOTOUT });
+      expect(matchUp.score.overtime).toEqual({
+        phase: 'REGULATION',
+        periodNumber: 2,
+        aggregateScore: [1, 1],
+        decidedIn: 'EXTERNAL',
+        decidedBy: SHOOTOUT,
+        scoreString: '1-1 (Shootout: 4-3)',
+      });
 
       const winnerId = matchUp.sides.find((side) => side.sideNumber === 1).participantId;
       const final = tournamentEngine

@@ -1,5 +1,6 @@
 import { isLevelScore } from '@Query/matchUps/roundRobinTally/drawnResults';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
+import { overtimeDecision } from './overtimeScore';
 
 // constants and types
 import type { DecidedBy, DecidedByMethod, DecidedIn } from '@Types/scoring/types';
@@ -34,7 +35,8 @@ export function isDecidedOutsideScore(score?: Score): boolean {
  * - `decidedBy.method` is a shootout, a competition rule, lots or an official decision;
  * - a tally is a shootout's, two unequal counts, side 1 first, won by the winner;
  * - the score it decides is level: a score that decides the match needs no decision. A declared overtime's score is
- *   judged by `overtimeScoreVerdict`, so it is not read here.
+ *   asked of the scoring engine (`overtimeDecision`): its regulation is played, its total is level and no period
+ *   or decider played has decided it (a match abandoned level in overtime, or a shootout recorded outside it).
  */
 export function decidedResultRefusal(params: {
   matchUpStatus?: MatchUpStatusUnion;
@@ -58,9 +60,22 @@ export function decidedResultRefusal(params: {
   }
   const tallyRefusal = decidedBy.tally === undefined ? undefined : tallyProblem(decidedBy, winningSide);
   if (tallyRefusal) return refuse(tallyRefusal);
-  if (!parse(matchUpFormat ?? '')?.overtimeFormat && !isLevelScore(score, matchUpFormat))
+  const parsed = parse(matchUpFormat ?? '');
+  const level = parsed?.overtimeFormat
+    ? isLevelOvertimeScore(score, matchUpFormat)
+    : isLevelScore(score, matchUpFormat);
+  if (!level)
     return refuse('only a level score is decided outside it: this score decides the match, or is not complete');
   return undefined;
+}
+
+function isLevelOvertimeScore(score?: Score, matchUpFormat?: string): boolean {
+  const parsed = parse(matchUpFormat ?? '');
+  const sets = score?.sets ?? [];
+  if (sets.length < (parsed?.exactly ?? parsed?.bestOf ?? 1)) return false;
+  if (overtimeDecision(sets, matchUpFormat)?.winningSide) return false;
+  const [side1, side2] = sets.reduce(([a, b], set) => [a + (set.side1Score ?? 0), b + (set.side2Score ?? 0)], [0, 0]);
+  return side1 === side2;
 }
 
 function tallyProblem(decidedBy: Partial<DecidedBy>, winningSide: number): string | undefined {

@@ -218,6 +218,8 @@ export const FORMAT_MATRIX: Record<string, MatrixEntry> = {
     OVERTIME,
   'exactly+aggregate | PER | set:timed(P) | overtime:finite(suddenDeath)/timed(P) | final:same | game:traditional | noClock | knownModifiers':
     OVERTIME,
+  'exactly+aggregate | PER | set:timed(P) | overtime:finite(suddenDeath)/timed(P) | final:shootout | game:traditional | noClock | knownModifiers':
+    OVERTIME,
   'exactly+aggregate | PER | set:timed(P) | overtime:finite(suddenDeath)/timed(P) | final:tiebreakSet | game:traditional | noClock | knownModifiers':
     OVERTIME,
   'exactly+aggregate | PER | set:timed(P) | overtime:finite/timed(P) | final:tiebreakSet | game:traditional | noClock | knownModifiers':

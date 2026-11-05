@@ -24,6 +24,7 @@ import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitS
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { collectionChoiceOutcomeRefusal } from '@Query/matchUp/collectionChoice';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
+import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
 import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
 import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -33,6 +34,7 @@ import { decideOutcomeV2 } from '@Mutate/matchUps/outcome/decide';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
+import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { holdGoesTo } from '@Query/matchUps/addGoesTo';
 import { isDoubleExit } from '@Validators/isExit';
 import { findPolicy } from '@Acquire/findPolicy';
@@ -42,10 +44,11 @@ import { isString } from '@Tools/objects';
 // constants and types
 import { MatchUpsMap, PolicyDefinitions, ResultType, ResultWarning, TournamentRecords } from '@Types/factoryTypes';
 import { INVALID_VALUES, INVALID_WINNING_SIDE, SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
+import { DrawDefinition, Event, MatchUp, Set as SetType, Tournament } from '@Types/tournamentTypes';
 import { POLICY_TYPE_SCORING, POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
-import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';
 import { DRAW_DEFINITION, MATCHUP_ID } from '@Constants/attributeConstants';
 import { SCHEDULE_PRESERVED_ON_EXIT } from '@Constants/scheduleConstants';
+import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { TEAM } from '@Constants/matchUpTypes';
 
 /**
@@ -353,21 +356,6 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
   // set scores present in the string but absent from sets. Regenerating unconditionally makes
   // score.sets the single source of truth. See competition-factory#4564.
   if (outcome?.score?.sets) {
-    // DECISION: Filter out empty sets BEFORE generating score strings
-    // WHY: Prevents invalid/incomplete sets from being saved, and filtering afterwards left the
-    // generated string describing a set that had just been removed from score.sets
-    const sets = outcome.score.sets
-      .filter(
-        (set) =>
-          set.side1Score ||
-          set.side2Score ||
-          set.side1TiebreakScore ||
-          set.side2TiebreakScore ||
-          set.side1PointScore ||
-          set.side2PointScore,
-      )
-      .map(withoutZeroZeroTiebreak);
-
     // DECISION: resolve the matchUp's effective format rather than relying on outcome.matchUpFormat
     // WHY: generateScoreString needs the format to recognize a tiebreak-only deciding set (F:TB10) and
     // render it as [10-8]. The format usually lives on the matchUp, not on the outcome, so spreading
@@ -380,6 +368,11 @@ export function setMatchUpStatus(params: SetMatchUpStatusArgs) {
       event,
       matchUpFormat,
     });
+
+    // DECISION: Filter out empty sets BEFORE generating score strings
+    // WHY: Prevents invalid/incomplete sets from being saved, and filtering afterwards left the
+    // generated string describing a set that had just been removed from score.sets
+    const sets = recordedSets(outcome, effectiveMatchUpFormat).map(withoutZeroZeroTiebreak);
 
     const { score: scoreObject } = matchUpScore({
       ...outcome,
@@ -611,8 +604,45 @@ function withoutPropagationContext(result: ResultType): ResultType {
  * no points. Any other impossible tiebreak (`0-3`, `7-7`) is still refused.
  */
 type TiebreakPoints = { side1TiebreakScore?: unknown; side2TiebreakScore?: unknown };
+const setHasValue = (set: SetType) =>
+  !!(
+    set.side1Score ||
+    set.side2Score ||
+    set.side1TiebreakScore ||
+    set.side2TiebreakScore ||
+    set.side1PointScore ||
+    set.side2PointScore
+  );
+
+/**
+ * The sets an outcome records: a set with no value is a placeholder, except a period of an aggregate format that
+ * finished 0-0 (a goalless half, a scoreless period or overtime), which counts toward the total and is accepted by
+ * the validators. Dropping it lost a played half (`1-0, 0-0` stored as one half) and refused a hockey win with a
+ * scoreless period (`1-0, 0-0, 1-0`). A 0-0 period is played when the result is complete, the period closed, or
+ * play followed it; a trailing 0-0 in an unfinished match stays a placeholder.
+ */
+function recordedSets(
+  outcome: { score: { sets: SetType[] }; matchUpStatus?: string; winningSide?: number },
+  format?: string,
+) {
+  const { sets } = outcome.score;
+  const aggregate = isAggregateFormat(parse(format ?? ''));
+  const complete = outcome.matchUpStatus === COMPLETED || (!outcome.matchUpStatus && !!outcome.winningSide);
+  const goalless = (set: SetType) => isZero(set.side1Score) && isZero(set.side2Score);
+  return sets.filter(
+    (set, index) =>
+      setHasValue(set) ||
+      (aggregate &&
+        goalless(set) &&
+        (complete ||
+          !!(set as { segmentComplete?: boolean }).segmentComplete ||
+          sets.slice(index + 1).some(setHasValue))),
+  );
+}
+
+const isZero = (value: unknown) => value !== null && value !== '' && value !== undefined && Number(value) === 0;
+
 function withoutZeroZeroTiebreak<T extends TiebreakPoints>(set: T): T {
-  const isZero = (value: unknown) => value !== null && value !== '' && value !== undefined && Number(value) === 0;
   if (!isZero(set.side1TiebreakScore) || !isZero(set.side2TiebreakScore)) return set;
   const { side1TiebreakScore: _side1, side2TiebreakScore: _side2, ...rest } = set;
   return rest as unknown as T;
