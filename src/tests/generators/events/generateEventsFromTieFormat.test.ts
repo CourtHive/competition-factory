@@ -3,9 +3,9 @@ import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';
 
 // Constants
+import tieFormatDefaults, { isNamedTieFormat } from '@Helpers/tieFormats/tieFormatDefaults';
 import { USTA_GOLD_TEAM_CHALLENGE } from '@Constants/tieFormatConstants';
 import { ALTERNATE, UNGROUPED } from '@Constants/entryStatusConstants';
-import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { SINGLES_EVENT, TEAM_EVENT } from '@Constants/eventConstants';
 import { INVALID_VALUES } from '@Constants/errorConditionConstants';
 import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
@@ -83,4 +83,19 @@ it('can generate singles/doubles events from tieFormats', () => {
 
   events = tournamentEngine.getEvents().events;
   expect(events.length).toBe(5);
+});
+
+it('refuses a tieFormatName the catalogue does not hold, rather than building STANDARD for it', () => {
+  mocksEngine.generateTournamentRecord({ setState: true });
+  const eventsBefore = tournamentEngine.getEvents().events.length;
+
+  const result: any = tournamentEngine.generateEventsFromTieFormat({ tieFormatName: 'NOT_A_TIE_FORMAT' });
+  expect(result.error).toEqual(INVALID_VALUES);
+  expect(tournamentEngine.getEvents().events.length).toEqual(eventsBefore);
+
+  expect(isNamedTieFormat(USTA_GOLD_TEAM_CHALLENGE)).toEqual(true);
+  expect(isNamedTieFormat('NOT_A_TIE_FORMAT')).toEqual(false);
+  expect(isNamedTieFormat('toString')).toEqual(false); // an inherited key is not a catalogue entry
+  expect(isNamedTieFormat({})).toEqual(false);
+  expect(isNamedTieFormat('')).toEqual(false);
 });
