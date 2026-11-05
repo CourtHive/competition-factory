@@ -15,7 +15,57 @@ tournamentEngine.setState({ tournamentId: 'docs', participants: [
   { participantId: 'player-123', participantName: 'Docs Player', participantType: 'INDIVIDUAL', person: { personId: 'person-docs', standardGivenName: 'Docs' } }
 ], events: [{ eventId: 'event', eventType: 'SINGLES', entries: [] }] });
 const eventId = 'event';`;
+// A page's own fence, by a line it contains: a shared helper an example builds on, run as the page shows it.
+function fenceOf(page, contains) {
+  const markdown = readFileSync(join(root, 'documentation/docs', page), 'utf8');
+  const fences = [...markdown.matchAll(/^```(?:js|javascript|ts|typescript)\s*\n([\s\S]*?)^```/gm)]
+    .map((match) => match[1])
+    .filter((code) => code.includes(contains));
+  if (fences.length !== 1) throw new Error(`${page}: expected exactly one fence containing ${contains}`);
+  return fences[0];
+}
+const RATINGS_OTHER_SPORTS = 'policies/ratingsOtherSports.md';
+const recordResult = fenceOf(RATINGS_OTHER_SPORTS, 'function recordResult(');
+const ratedAs = (values, expected) =>
+  `if (JSON.stringify(${values}) !== JSON.stringify(${JSON.stringify(expected)})) throw new Error('${values}: ' + JSON.stringify(${values}));`;
+
 const cases = [
+  {
+    page: RATINGS_OTHER_SPORTS,
+    contains: 'POLICY_RATINGS_ELO_538_NBA.ratings',
+    setup: recordResult,
+    check: ratedAs('nbaValues', [1532, 1468]),
+  },
+  {
+    page: RATINGS_OTHER_SPORTS,
+    contains: 'POLICY_RATINGS_ELO_538_NFL.ratings',
+    setup: recordResult,
+    check: ratedAs('nflValues', [1537, 1463]),
+  },
+  {
+    page: RATINGS_OTHER_SPORTS,
+    contains: 'POLICY_RATINGS_WORLD_RUGBY.ratings',
+    setup: recordResult,
+    check: ratedAs('rugbyValues', [80.56, 75.72]),
+  },
+  {
+    page: RATINGS_OTHER_SPORTS,
+    contains: 'POLICY_RATINGS_FIVB.ratings',
+    setup: recordResult,
+    check: ratedAs('volleyballValues', [416.51, 190.49]),
+  },
+  {
+    page: RATINGS_OTHER_SPORTS,
+    contains: 'POLICY_RATINGS_FIFA_WOMEN.ratings',
+    setup: recordResult,
+    check: ratedAs('womenValues', [1520, 1480]),
+  },
+  {
+    page: RATINGS_OTHER_SPORTS,
+    contains: "ratingsPolicy: 'POLICY_RATINGS_ELO_538_NHL'",
+    setup: recordResult,
+    check: ratedAs('hockeyNames', ['Elo, FiveThirtyEight NHL']),
+  },
   {
     page: 'scoring-engine/event-handlers.md',
     contains: 'const notifications: string[]',
@@ -165,7 +215,7 @@ try {
     example.code = `${example.setup ?? ''}\n${fences[0]}\n${example.check}`;
     const body = example.code.replaceAll("from 'tods-competition-factory'", `from ${JSON.stringify(packageTypes)}`);
     const file = join(workdir, `example-${index}.ts`);
-    const imports = `import { scoreGovernor, tournamentEngine, mocksEngine, tournamentGovernor, matchUpGovernor } from ${JSON.stringify(packageTypes)};\n`;
+    const imports = `import { scoreGovernor, tournamentEngine, mocksEngine, tournamentGovernor, matchUpGovernor, scaleEngine, fixtures } from ${JSON.stringify(packageTypes)};\n`;
     // The overview already imports scoreGovernor; avoid a duplicate import.
     writeFileSync(file, (body.includes('import { scoreGovernor }') ? '' : imports) + body + '\nexport {};\n');
     return file;
@@ -195,12 +245,23 @@ try {
     const code = ts.transpileModule(sourceCode, {
       compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
     }).outputText;
-    new Function('scoreGovernor', 'tournamentEngine', 'mocksEngine', 'tournamentGovernor', 'matchUpGovernor', code)(
+    new Function(
+      'scoreGovernor',
+      'tournamentEngine',
+      'mocksEngine',
+      'tournamentGovernor',
+      'matchUpGovernor',
+      'scaleEngine',
+      'fixtures',
+      code,
+    )(
       factory.scoreGovernor,
       factory.tournamentEngine,
       factory.mocksEngine,
       factory.tournamentGovernor,
       factory.matchUpGovernor,
+      factory.scaleEngine,
+      factory.fixtures,
     );
     console.log(`[docs-examples] PASS ${example.page}: ${example.contains}`);
   }

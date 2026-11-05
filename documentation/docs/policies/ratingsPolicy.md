@@ -72,6 +72,8 @@ The factory holds no player's career history, so a `MATCHES_PLAYED` K reads the 
 
 ## Presets
 
+For basketball, American football, ice hockey, football, rugby union and volleyball, with runnable examples, see [Rating Other Sports](./ratingsOtherSports.md).
+
 | Preset                              | Method                                                                                                                                                                                                              |
 | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `POLICY_RATINGS_DEFAULT`            | J. Huang, "Elo Ratings and the ATP", Berkeley STAT 157, 2014: K = 25 for both players (the paper's flat-K run; its K by event level needs a level to read), actual result by sets played, a walkover rated as a win |

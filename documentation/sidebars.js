@@ -220,6 +220,7 @@ module.exports = {
                 'policies/scoringPolicy',
                 'policies/rankingPolicy',
                 'policies/ratingsPolicy',
+                'policies/ratingsOtherSports',
                 'policies/competitiveBands',
               ],
             },
