@@ -1,4 +1,4 @@
-import { getRatingConvertedFromELO, getRatingConvertedToELO } from '@Generators/scales/eloConversions';
+import { getRatingConvertedFromELO, getRatingConvertedToELO } from '@Helpers/ratings/eloConversions';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';

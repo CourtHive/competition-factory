@@ -1,5 +1,5 @@
 import { participantScaleItem } from '@Query/participant/participantScaleItem';
-import { getRatingConvertedToELO } from '@Generators/scales/eloConversions';
+import { getRatingConvertedToELO } from '@Helpers/ratings/eloConversions';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { isObject } from '@Tools/objects';
 
