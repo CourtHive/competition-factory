@@ -1550,7 +1550,7 @@ engine.getScheduleScenarioStatus({ scenarioId });
 
 ### getScenarioScheduleView
 
-Grid-ready projection for a client "Plan mode" — returns the same shape as `competitionScheduleMatchUps` (`dateMatchUps` / `rows` / `courtsData` / `courtPrefix`) with the scenario's placements laid on top, so the client renders the plan through its existing grid path. The overlay is applied to a **throwaway deep copy**; the real records / engine state are never mutated.
+Grid-ready projection for a client "Plan mode" — returns the same shape as `competitionScheduleMatchUps` (`dateMatchUps` / `rows` / `courtsData` / `courtPrefix`) with the scenario's placements laid on top, so the client renders the plan through its existing grid path. The overlay is applied to a **throwaway deep copy**; the real records / engine state are never mutated, and no notice reaches a subscriber. Earlier releases delivered the copy's scheduling notices and stamped the real record as modified.
 
 ```js
 const view = engine.getScenarioScheduleView({

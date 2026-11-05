@@ -44,6 +44,9 @@ type Open = {
   checked: boolean;
   before?: string;
   flagSet?: boolean;
+  // the notice buffer's length when the call began: a write the call itself withdraws, by putting the buffer back to
+  // this length (`withDraftWrites`, a rollback), never reaches a subscriber and is not an offense
+  startNotices?: number;
   options: Record<string, boolean>;
   // the records object the call ran against: concurrent requests under per-request providers each hold their own, so
   // an `after` pairs with its own `before` and not with a same-named call another request has open
@@ -101,8 +104,10 @@ function activate(check: QueryPurityCheck) {
   active = check;
 }
 
+const noticeCount = () => (getProvider() as any)?.getNoticeBuffer?.()?.length ?? 0;
+
 function mirror(provider: any) {
-  const { addNotice, markModified } = provider;
+  const { addNotice, markModified, setNoticeBuffer, setMutationStatus } = provider;
   provider.addNotice = function (notice: any, ...rest: any[]) {
     const open = active?.openQuery();
     // counted with notifications disabled too: the query attempted a write, whatever the provider then did with it
@@ -114,6 +119,21 @@ function mirror(provider: any) {
     provider.markModified = function (...args: any[]) {
       active?.openQuery()?.writes.add('modified');
       return markModified.apply(this, args);
+    };
+  // the call put back what it announced: its notices and its modified mark are withdrawn, not written
+  if (typeof setNoticeBuffer === 'function')
+    provider.setNoticeBuffer = function (notices: any[], ...rest: any[]) {
+      const result = setNoticeBuffer.call(this, notices, ...rest);
+      const open = active?.openQuery();
+      if (open && (notices?.length ?? 0) <= (open.startNotices ?? 0))
+        for (const write of [...open.writes]) if (write.startsWith('notice:')) open.writes.delete(write);
+      return result;
+    };
+  if (typeof setMutationStatus === 'function')
+    provider.setMutationStatus = function (status: boolean, ...rest: any[]) {
+      const open = active?.openQuery();
+      if (open && !!status === !!open.flagSet) open.writes.delete('modified');
+      return setMutationStatus.call(this, status, ...rest);
     };
 }
 
@@ -163,6 +183,7 @@ export class QueryPurityCheck {
         methodName: event.methodName,
         before: checked ? fingerprint() : undefined,
         flagSet: checked ? readMutationStatus() === true : undefined,
+        startNotices: checked ? noticeCount() : undefined,
         options: checked ? booleanOptions(event.params) : {},
         records: getTournamentRecords(),
         writes: new Set(),

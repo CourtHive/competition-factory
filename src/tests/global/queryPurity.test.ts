@@ -2,6 +2,7 @@ import { isKnownWrite } from '@Tests/testHarness/queryPurity/knownWriters';
 import { mustNotWrite } from '@Tests/testHarness/queryPurity/methodKinds';
 import { QueryPurityCheck } from '@Tests/testHarness/queryPurity/checker';
 import { addNotice, setInvokeObserver } from '@Global/state/globalState';
+import { withDraftWrites } from '@Global/state/withDraftWrites';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
@@ -48,6 +49,16 @@ it('fires on a query that hands the provider a notice, though the record is unch
     return { success: true };
   });
   expect(offenses.map(({ write }) => write)).toContain(`notice:${MODIFY_DRAW_DEFINITION}`);
+});
+
+it('is quiet on a query that withdraws what it announced (a draft written under withDraftWrites)', () => {
+  const offenses = plantedCall('getParticipants', ({ tournamentRecord }) =>
+    withDraftWrites(() => {
+      addNotice({ topic: MODIFY_DRAW_DEFINITION, payload: { tournamentId: tournamentRecord.tournamentId } });
+      return { success: true };
+    }),
+  );
+  expect(offenses).toEqual([]);
 });
 
 it('fires on a generator that writes', () => {

@@ -27,11 +27,6 @@ export const KNOWN_WRITERS: Record<string, KnownWriter | KnownWriter[]> = {
   generateDrawDefinition: { disposition: DRAFT_NOTICES },
   generateAndPopulatePlayoffStructures: { disposition: DRAFT_NOTICES },
   generateVoluntaryConsolation: { disposition: DRAFT_NOTICES },
-  getScenarioScheduleView: {
-    disposition:
-      'DEFECT, behaviour PR: runs bulkScheduleMatchUps on a draft copy, and the draft writes notices that reach ' +
-      'subscribers (the suspected leak of the layering assessment, confirmed)',
-  },
   generateLineUps: { when: { attach: true }, disposition: OPT_IN },
   generateFlightProfile: { when: { attachFlightProfile: true }, disposition: OPT_IN },
   drawMatic: { when: { updateParticipantRatings: true }, disposition: OPT_IN },
