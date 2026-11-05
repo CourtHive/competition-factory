@@ -11,8 +11,8 @@
  * - Rally scoring: same as tiebreak-only
  */
 
+import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
 import type { MatchUp, FormatStructure, SetScore } from '@Types/scoring/types';
-import { isAggregateFormat } from '@Helpers/matchUpFormatCode/formatUtilities';
 import type { SetType } from '@Helpers/matchUpFormatCode/formatUtilities';
 import { aggregateTotals } from './matchCompletion';
 

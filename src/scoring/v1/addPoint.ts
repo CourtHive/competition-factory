@@ -14,6 +14,7 @@
  */
 
 import { checkStandardGameWon, checkStandardSetWon, checkTiebreakWon } from './gameWon';
+import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
 import { openSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import type { SetType } from '@Helpers/matchUpFormatCode/formatUtilities';
 import type { PointMultiplier } from './resolvePointValue';
@@ -30,7 +31,6 @@ import {
   resolveSetType,
   inputLevelError,
   isLiveDecidingSet,
-  isAggregateFormat,
   isStandardSetTiebreak,
 } from '@Helpers/matchUpFormatCode/formatUtilities';
 import type {

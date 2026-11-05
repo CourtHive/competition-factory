@@ -129,17 +129,6 @@ export function areFormatsEquivalent(code1: string, code2: string): boolean {
 // ============================================================================
 
 /**
- * Check if a parsed format uses aggregate scoring
- *
- * Aggregate is signaled by:
- * parsed.aggregate === true (match-level A: SET7XA, HAL2A)
- */
-export function isAggregateFormat(parsed: FormatStructure | undefined | null): boolean {
-  if (!parsed) return false;
-  return !!parsed.aggregate;
-}
-
-/**
  * Determine the set type for a given set index based on the format
  */
 export type SetType = 'standard' | 'tiebreakOnly' | 'timed' | 'matchTiebreak';
