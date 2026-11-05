@@ -199,15 +199,18 @@ describe('isDrawnResult: a level finish the format permits (scoring spec § 9.7)
     expect(isDrawnResult(matchUp(2))).toEqual(false);
   });
 
-  it('leaves a declared overtime to the overtime workstream', () => {
-    expect(
-      result('HAL2XA-S:T45P-O:2X/T15P', [
-        [1, 0],
-        [0, 1],
-        [0, 0],
-        [0, 0],
-      ]),
-    ).toEqual(false);
+  it('reads a declared overtime as the scoring engine completes it', () => {
+    const levelAfterExtraTime: [number, number][] = [
+      [1, 0],
+      [0, 1],
+      [0, 0],
+      [0, 0],
+    ];
+    // a finite overtime with no decider finishes level
+    expect(result('HAL2XA-S:T45P-O:2X/T15P', levelAfterExtraTime)).toEqual(true);
+    // a shootout follows a level overtime, and overtime follows a level regulation: neither is finished
+    expect(result('HAL2XA-S:T45P-O:2X/T15P-F:SO5', levelAfterExtraTime)).toEqual(false);
+    expect(result('HAL2XA-S:T45P-O:2X/T15P', levelAfterExtraTime.slice(0, 2))).toEqual(false);
   });
 
   it('reads a format that cannot end level as never drawn', () => {

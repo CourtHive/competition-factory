@@ -42,9 +42,9 @@ import { findEvent } from '@Acquire/findEvent';
 import { isString } from '@Tools/objects';
 
 // constants and types
+import { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Set as SetType, Tournament } from '@Types/tournamentTypes';
 import { MatchUpsMap, PolicyDefinitions, ResultType, ResultWarning, TournamentRecords } from '@Types/factoryTypes';
 import { INVALID_VALUES, INVALID_WINNING_SIDE, SETTLE_BOUND_REACHED } from '@Constants/errorConditionConstants';
-import { DrawDefinition, Event, MatchUp, Set as SetType, Tournament } from '@Types/tournamentTypes';
 import { POLICY_TYPE_SCORING, POLICY_TYPE_ROUND_ROBIN_TALLY } from '@Constants/policyConstants';
 import { DRAW_DEFINITION, MATCHUP_ID } from '@Constants/attributeConstants';
 import { SCHEDULE_PRESERVED_ON_EXIT } from '@Constants/scheduleConstants';
@@ -622,7 +622,7 @@ const setHasValue = (set: SetType) =>
  * play followed it; a trailing 0-0 in an unfinished match stays a placeholder.
  */
 function recordedSets(
-  outcome: { score: { sets: SetType[] }; matchUpStatus?: string; winningSide?: number },
+  outcome: { score: { sets: SetType[] }; matchUpStatus?: MatchUpStatusUnion; winningSide?: number },
   format?: string,
 ) {
   const { sets } = outcome.score;
