@@ -1,5 +1,56 @@
 # Changelog
 
+## [7.30.0](https://github.com/CourtHive/competition-factory/compare/v7.29.0...v7.30.0) (2026-11-05)
+
+
+### Features
+
+* **integrity:** report a stored score its format cannot produce ([#6183](https://github.com/CourtHive/competition-factory/issues/6183)) ([939d0ed](https://github.com/CourtHive/competition-factory/commit/939d0eddff190c72014fb0c219283f97670edcb0))
+* **outcome:** plan loser convergence after the given-winner unwind ([#6191](https://github.com/CourtHive/competition-factory/issues/6191)) ([0573d92](https://github.com/CourtHive/competition-factory/commit/0573d927602cd9db3a0d61ccda378d02566c9995))
+* **outcome:** the carrier a withdrawn BYE sent on comes home with the carry (S7) ([#6178](https://github.com/CourtHive/competition-factory/issues/6178)) ([101acbd](https://github.com/CourtHive/competition-factory/commit/101acbd573a5c9aceff5fd9b7c2cbc4e08eda40e))
+* **outcome:** the loser carrying their own exit onto the seat the unwind frees ([#6188](https://github.com/CourtHive/competition-factory/issues/6188)) ([dc7e204](https://github.com/CourtHive/competition-factory/commit/dc7e2049375e6b41314696e872c636fb16a4a5f3))
+* **outcome:** unwind a pending produced exit relay beside a bye ([#6200](https://github.com/CourtHive/competition-factory/issues/6200)) ([9a79203](https://github.com/CourtHive/competition-factory/commit/9a79203e7335dba5eca1cf910ddf30f28700ce2b))
+* **outcome:** unwind an awarded produced exit relay beside a bye ([#6204](https://github.com/CourtHive/competition-factory/issues/6204)) ([1c47d6b](https://github.com/CourtHive/competition-factory/commit/1c47d6bbbda886b9b4ba537fa8e105905a9c8448))
+* **ratings:** a competitionFormat selects its ratings policy ([#6201](https://github.com/CourtHive/competition-factory/issues/6201)) ([4ae9051](https://github.com/CourtHive/competition-factory/commit/4ae905118bed600e81c645dab5da33f518ee3669))
+* **ratings:** a preset for the FIFA Women's World Ranking ([dfd18a0](https://github.com/CourtHive/competition-factory/commit/dfd18a0b390bb6cafc5d991cdac034472b0cb244))
+* **ratings:** a ratings policy; the default becomes Huang 2014's Elo ([00af66a](https://github.com/CourtHive/competition-factory/commit/00af66a627e66f4c50af70766e258b6957a530d4))
+* **ratings:** margin, overtime and shootout, draws and K by tier; team-sport presets ([#6199](https://github.com/CourtHive/competition-factory/issues/6199)) ([05bf64c](https://github.com/CourtHive/competition-factory/commit/05bf64c9f8799c5fda7e826bbfff97af97b20bb3))
+* **ratings:** presets for FiveThirtyEight NFL and NBA Elo ([0043407](https://github.com/CourtHive/competition-factory/commit/004340784ba2c504122b9149425ced0f6fb44f3e))
+* **ratings:** presets for World Rugby and FIVB on their own points scales ([ab2841d](https://github.com/CourtHive/competition-factory/commit/ab2841db8458debcc0e7016fe5007326c4de8df8))
+* **ratings:** the competition form rating may name a ratings policy, with today's as the fallback ([#6202](https://github.com/CourtHive/competition-factory/issues/6202)) ([fa04e1e](https://github.com/CourtHive/competition-factory/commit/fa04e1ee172c3e0b1f41a9c8aa0ab977c41d254a))
+* **schema:** a modelled RatingsPolicy; the competition form rating's ratingsPolicy ([#6205](https://github.com/CourtHive/competition-factory/issues/6205)) ([0d04dc4](https://github.com/CourtHive/competition-factory/commit/0d04dc45ed0b821c2ef73e5e396ccafef8c0429c))
+* **scoring:** overtime opens for new use where the scoring engine scores it ([06aa76f](https://github.com/CourtHive/competition-factory/commit/06aa76f5b2f999ee99f75a822e1a7c8f60c5869b))
+* **standings:** hockey's 3-2-1-0 from recorded overtime; goalless periods kept ([#6189](https://github.com/CourtHive/competition-factory/issues/6189)) ([7a64997](https://github.com/CourtHive/competition-factory/commit/7a649970cdd694f37381ba932a0e5943c41a1adf))
+
+
+### Bug Fixes
+
+* **deps:** override katex and minimatch for two dev-only advisories ([ced5842](https://github.com/CourtHive/competition-factory/commit/ced5842e7e2c685ece715076e352a59fa8a12374))
+* **deps:** update tods-competition-factory to 7.29.0 ([48f4be6](https://github.com/CourtHive/competition-factory/commit/48f4be69f362f4c3517272d794fb8fa792ae4824))
+* **integrity:** a link to a structure the draw does not hold no longer takes down the scan ([#6209](https://github.com/CourtHive/competition-factory/issues/6209)) ([dd76d11](https://github.com/CourtHive/competition-factory/commit/dd76d11ca652f5e65ddebf3cd3220de725bdf0ea))
+* **mocks:** an overtime outcome reads a winningSide that is not 1 or 2 as absent ([6d64691](https://github.com/CourtHive/competition-factory/commit/6d646914f603fa2a98e326d7923df146d56b62c3))
+* **ratings:** a run carries ratings forward; a pair is rated as its players ([115fd4d](https://github.com/CourtHive/competition-factory/commit/115fd4dadbf0a9a3675d1a7186657ac6af4098fe))
+* **ratings:** a winner's K reads the winner's own set count ([#6193](https://github.com/CourtHive/competition-factory/issues/6193)) ([f69f0c8](https://github.com/CourtHive/competition-factory/commit/f69f0c890f42f3cbe9eb5407ce656724866ff279))
+* **ratings:** the ratings policy type in PolicyDefinitions and the CODES schema ([e822f79](https://github.com/CourtHive/competition-factory/commit/e822f7970aa1a80ecb17f6b9a0ca3a8f9501ee27))
+* **scheduling:** a tiebreak decider has no time dimension ([#6186](https://github.com/CourtHive/competition-factory/issues/6186)) ([70f78cc](https://github.com/CourtHive/competition-factory/commit/70f78cc1f7b6ac4a2b4ba7a4e09b69d027f15bee))
+* **scheduling:** an untimed decider adds no allowance; record which format owns time ([#6187](https://github.com/CourtHive/competition-factory/issues/6187)) ([eb959f4](https://github.com/CourtHive/competition-factory/commit/eb959f4aa146087f32383cbfa64016df877faa9c))
+* **scoring:** 0-0 tiebreak points are not recorded points ([#6176](https://github.com/CourtHive/competition-factory/issues/6176)) ([0585920](https://github.com/CourtHive/competition-factory/commit/0585920be33cdca364c853618c65aa29c0fb6a4c))
+* **scoring:** a best-of aggregate may lead in progress; an exactly-two-set split is level ([#6190](https://github.com/CourtHive/competition-factory/issues/6190)) ([18a6260](https://github.com/CourtHive/competition-factory/commit/18a6260302dfc03e0cfab723fc3b7983790fe659))
+* **scoring:** a shootout decider is a tally on every path before overtime opens ([6840069](https://github.com/CourtHive/competition-factory/commit/68400695f30aaa6472390fc2c77dbbb1d108d4e6))
+* **scoring:** an aggregate's decider settles a level total and is not part of it ([#6192](https://github.com/CourtHive/competition-factory/issues/6192)) ([75879bd](https://github.com/CourtHive/competition-factory/commit/75879bd4a8f0983547c295ccad7a16ac8eaf67f3))
+* **scoring:** static analysis follows overtime periods and the engine's decision ([d95be1e](https://github.com/CourtHive/competition-factory/commit/d95be1e5b2118c8e23f29e9d7db8efe566cde747))
+
+
+### Documentation
+
+* 7.29.0 adoption notes and journey row ([4f3168e](https://github.com/CourtHive/competition-factory/commit/4f3168e69cce53e4568b06cb1983eb0673f0b2bc))
+* policies/ratingsPolicy.md (new), scale-engine API. ([00af66a](https://github.com/CourtHive/competition-factory/commit/00af66a627e66f4c50af70766e258b6957a530d4))
+* policies/ratingsPolicy.md, concepts/formats.md. ([4ae9051](https://github.com/CourtHive/competition-factory/commit/4ae905118bed600e81c645dab5da33f518ee3669))
+* policies/ratingsPolicy.md, scale-engine API. ([05bf64c](https://github.com/CourtHive/competition-factory/commit/05bf64c9f8799c5fda7e826bbfff97af97b20bb3))
+* policies/ratingsPolicy.md, who is rated and in what order. ([115fd4d](https://github.com/CourtHive/competition-factory/commit/115fd4dadbf0a9a3675d1a7186657ac6af4098fe))
+* **ratings:** rating other sports, with examples the docs check runs ([bf3ca9c](https://github.com/CourtHive/competition-factory/commit/bf3ca9c90d020f25e9566258735617958d92a4cd))
+* **scoring:** no set follows an overtime decider ([894822e](https://github.com/CourtHive/competition-factory/commit/894822e233b445934caa0d21ee806b605a6b7177))
+
 ## [7.29.0](https://github.com/CourtHive/competition-factory/compare/v7.28.0...v7.29.0) (2026-11-04)
 
 
