@@ -11,7 +11,7 @@ import { relative } from 'node:path';
  * Every shard process computes the same assignment from the same sorted file list and the same durations, so the
  * shards stay disjoint and together cover every file, which `vitest --merge-reports --coverage` relies on.
  * Durations come from `vitest.shardDurations.json`, per matrix tier (src/tests/testHarness/matrixTier.ts), written by
- * `scripts/updateShardDurations.mjs` from a CI run's merged report. A file with no recorded duration (a new test)
+ * `scripts/updateShardDurations.mjs` as the median over several CI runs. A file with no recorded duration (a new test)
  * weighs DEFAULT_SECONDS: stale durations cost balance, never coverage.
  */
 const DEFAULT_SECONDS = 0.5;
