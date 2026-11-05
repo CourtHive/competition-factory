@@ -1,4 +1,4 @@
-import { expectedResult, LOGISTIC_400, matchesPlayedK, ratingUpdate } from '@Generators/scales/ratingUpdate';
+import { expectedResult, LOGISTIC_400, matchesPlayedK, normalCdf, ratingUpdate } from '@Generators/scales/ratingUpdate';
 import { expect, it } from 'vitest';
 
 it('expects an even result between equal ratings and about 76% for a 200-point favourite', () => {
@@ -27,4 +27,15 @@ it('moves each side by k × (actual − expected), zero-sum when the Ks are equa
 it('is not zero-sum when the Ks differ', () => {
   const { deltas } = ratingUpdate({ ratings: [1500, 1500], actual: [1, 0], k: [30, 20], expectation: LOGISTIC_400 });
   expect(deltas).toEqual([15, -10]);
+});
+
+it.each([
+  [0, 0.5],
+  [1, 0.8413447460685429],
+  [-1.06, 0.14457229966390955],
+  [4.5, 0.9999966023268753], // the continued fraction, past z = 3
+  [-5, 2.866515718791945e-7],
+  [6.5, 0.99999999995984],
+])('reads the standard normal distribution at %s as %s (Python erfc)', (x, expected) => {
+  expect(normalCdf(x)).toBeCloseTo(expected, 13);
 });
