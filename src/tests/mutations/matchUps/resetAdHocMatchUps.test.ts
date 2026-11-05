@@ -1,5 +1,5 @@
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';

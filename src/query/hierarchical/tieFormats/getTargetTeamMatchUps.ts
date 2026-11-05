@@ -1,5 +1,5 @@
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 
 // constants and types

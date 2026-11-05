@@ -1,5 +1,5 @@
-import { validateMatchUpScore } from '@Validators/validateMatchUpScore';
-import { analyzeScore } from '@Query/matchUp/analyzeScore';
+import { validateMatchUpScore } from '@Scoring/analysis/validateMatchUpScore';
+import { analyzeScore } from '@Scoring/analysis/analyzeScore';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';

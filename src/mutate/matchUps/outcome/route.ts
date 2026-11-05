@@ -1,6 +1,6 @@
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { isDrawnResult } from '@Query/matchUps/roundRobinTally/drawnResults';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { clearsABye } from '@Query/matchUp/clearsABye';
 

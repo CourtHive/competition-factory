@@ -1,5 +1,5 @@
+import { DECIDED_BY_METHODS, DECIDED_IN } from '@Scoring/analysis/decidedResult';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { DECIDED_BY_METHODS, DECIDED_IN } from './decidedResult';
 
 // constants and types
 import type { RoundRobinTallyPolicy } from '@Types/roundRobinTallyPolicy';

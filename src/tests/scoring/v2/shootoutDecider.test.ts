@@ -1,10 +1,10 @@
 import { shootoutTallyRefusal } from '@Helpers/matchUpFormatCode/shootout';
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { validateSetScore } from '@Scoring/analysis/validateMatchUpScore';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { overtimeScoreVerdict } from '@Scoring/analysis/overtimeScore';
 import { keyValueScore } from '@Helpers/keyValueScore/keyValueScore';
 import { resolveFormat } from '@Helpers/matchUpFormatCode/matchRule';
-import { validateSetScore } from '@Validators/validateMatchUpScore';
 import { stringify } from '@Helpers/matchUpFormatCode/stringify';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { parse } from '@Helpers/matchUpFormatCode/parse';

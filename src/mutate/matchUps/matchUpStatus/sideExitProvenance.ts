@@ -2,7 +2,7 @@ import { getSideDrawPosition, getWinningSideDrawPosition } from '@Query/matchUps
 import { OUTCOME_DEFAULT, OUTCOME_RETIREMENT, OUTCOME_WALKOVER } from '@Constants/keyValueConstants';
 import { cameDownLoserLink } from '@Mutate/matchUps/drawPositions/cameDownLoserLink';
 import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { writeNativeEnabled } from '@Global/state/globalState';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { definedAttributes } from '@Tools/definedAttributes';

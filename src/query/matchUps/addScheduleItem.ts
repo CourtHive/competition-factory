@@ -1,4 +1,4 @@
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { extractDate, extractTime } from '@Tools/dateTime';
 
 // constants

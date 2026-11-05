@@ -1,11 +1,11 @@
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
+import { validateScore } from '@Scoring/analysis/validateScore';
 import { Inconsistency } from '@Query/integrity/inconsistency';
 import { definedAttributes } from '@Tools/definedAttributes';
-import { validateScore } from '@Validators/validateScore';
 
 // constants and types
-import { HydratedMatchUp } from '@Types/hydrated';
 import { Tournament } from '@Types/tournamentTypes';
+import { HydratedMatchUp } from '@Types/hydrated';
 import { TEAM } from '@Constants/matchUpTypes';
 
 //  - MATCHUP_SCORE_INVALID_FOR_FORMAT: a stored score its matchUp's effective format cannot produce, by the same

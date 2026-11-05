@@ -6,7 +6,7 @@ import { deleteParticipants } from '@Mutate/participants/deleteParticipants';
 import { updateTeamLineUp } from '@Mutate/drawDefinitions/updateTeamLineUp';
 import { modifyParticipant } from '@Mutate/participants/modifyParticipant';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { addParticipant } from '@Mutate/participants/addParticipant';
 import { decorateResult } from '@Functions/global/decorateResult';

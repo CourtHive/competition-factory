@@ -1,11 +1,11 @@
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { checkSetIsComplete } from '@Helpers/matchUpFormatCode/setRules/setCompletion';
-import { validateMatchUpScore } from '@Validators/validateMatchUpScore';
+import { validateMatchUpScore } from '@Scoring/analysis/validateMatchUpScore';
 import { ScoringEngine } from '@Assemblies/governors/scoreGovernor';
 import { stringify } from '@Helpers/matchUpFormatCode/stringify';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { setOutcomePipeline } from '@Global/state/globalState';
-import { analyzeScore } from '@Query/matchUp/analyzeScore';
+import { analyzeScore } from '@Scoring/analysis/analyzeScore';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, expect, it } from 'vitest';

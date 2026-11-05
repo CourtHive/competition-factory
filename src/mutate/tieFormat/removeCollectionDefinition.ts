@@ -12,7 +12,7 @@ import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { getTieFormat } from '@Query/hierarchical/tieFormats/getTieFormat';
 import { tieFormatTelemetry } from '@Mutate/tieFormat/tieFormatTelemetry';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { validateTieFormat } from '@Validators/validateTieFormat';

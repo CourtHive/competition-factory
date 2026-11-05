@@ -1,5 +1,5 @@
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { getParticipantId } from '@Functions/global/extractors';
 import { coercedGender } from '@Helpers/coercedGender';
 import { isMixed } from '@Validators/isMixed';

@@ -86,7 +86,6 @@
   "types/typeAssertions/structureMatchUps.ts -> query/matchUps/getAllStructureMatchUps.ts": 1,
   "validators/appliedRotatingPartnerRoundsAreIntact.ts -> acquire/structureMembers.ts": 1,
   "validators/appliedRotatingPartnerRoundsAreIntact.ts -> query/drawDefinition/getRotatingPartnerScoringContract.ts": 1,
-  "validators/decidedResult.ts -> query/matchUps/roundRobinTally/drawnResults.ts": 1,
   "validators/rotatingPartnerDraw.ts -> acquire/structureMembers.ts": 1,
   "validators/scoring/mcpValidator.ts -> mutate/scoring/addPoint.ts": 1,
   "validators/scoring/mcpValidator.ts -> mutate/scoring/createMatchUp.ts": 1,
@@ -104,7 +103,5 @@
   "validators/validateSchedulingProfile.ts -> acquire/findStructure.ts": 1,
   "validators/validateSchedulingProfile.ts -> acquire/structureMembers.ts": 1,
   "validators/validateSchedulingProfile.ts -> query/matchUps/getAllStructureMatchUps.ts": 1,
-  "validators/validateSchedulingProfile.ts -> query/matchUps/getRoundMatchUps.ts": 1,
-  "validators/validateScore.ts -> query/matchUp/analyzeScore.ts": 1,
-  "validators/validUpdate.ts -> query/matchUp/checkScoreHasValue.ts": 1
+  "validators/validateSchedulingProfile.ts -> query/matchUps/getRoundMatchUps.ts": 1
 }

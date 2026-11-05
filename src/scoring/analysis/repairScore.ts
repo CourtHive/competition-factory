@@ -2,7 +2,7 @@ import { isTiebreakGamesScore } from '@Helpers/matchUpFormatCode/setRules/tiebre
 import { formatForSet } from '@Helpers/matchUpFormatCode/setRules/tiebreakSetShape';
 import { INVALID_TIEBREAK_POINTS_DROPPED } from '@Constants/scoreWarningConstants';
 import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
-import { validateSetScore } from '@Validators/validateMatchUpScore';
+import { validateSetScore } from '@Scoring/analysis/validateMatchUpScore';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // types

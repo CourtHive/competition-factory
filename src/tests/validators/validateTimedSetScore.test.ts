@@ -1,4 +1,4 @@
-import { validateSetScore, validateMatchUpScore } from '@Validators/validateMatchUpScore';
+import { validateSetScore, validateMatchUpScore } from '@Scoring/analysis/validateMatchUpScore';
 import { expect, it } from 'vitest';
 
 // types

@@ -1,5 +1,5 @@
 import { getMaxSetScore, getSetComplement } from '@Helpers/matchUpFormatCode/setRules/setComplement';
-import { validateMatchUpScore, validateSetScore } from '@Validators/validateMatchUpScore';
+import { validateMatchUpScore, validateSetScore } from '@Scoring/analysis/validateMatchUpScore';
 import { checkSetIsComplete } from '@Helpers/matchUpFormatCode/setRules/setCompletion';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { analyzeSet } from '@Query/matchUp/analyzeSet';

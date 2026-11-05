@@ -1,10 +1,10 @@
-import { validateMatchUpScore, validateSetScore } from '@Validators/validateMatchUpScore';
+import { validateMatchUpScore, validateSetScore } from '@Scoring/analysis/validateMatchUpScore';
 import { checkSetIsComplete } from '@Helpers/matchUpFormatCode/setRules/setCompletion';
 import { enterValues, scoreMatchUp } from '../helpers/keyValueScore/primitives';
 import { setHasTiebreak } from '@Helpers/matchUpFormatCode/formatUtilities';
 import { retainScoreForFormat } from '@Query/matchUp/retainScoreForFormat';
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
-import { validateScore } from '@Validators/validateScore';
+import { validateScore } from '@Scoring/analysis/validateScore';
 import { describe, expect, it } from 'vitest';
 
 import { COMPLETED } from '@Constants/matchUpStatusConstants';

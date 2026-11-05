@@ -2,7 +2,7 @@ import { deleteMatchUpsNotice, modifyDrawNotice, modifyMatchUpNotice } from '@Mu
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { resequenceStructures } from './resequenceStructures';

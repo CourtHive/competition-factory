@@ -2,8 +2,8 @@
  * Statement-coverage gap tests — batch 2
  * Targets ~150 uncovered statements across 15 files to push past 95%.
  */
+import { validateSetScore, validateMatchUpScore } from '@Scoring/analysis/validateMatchUpScore';
 import { getParticipantResults } from '@Query/matchUps/roundRobinTally/getParticipantResults';
-import { validateSetScore, validateMatchUpScore } from '@Validators/validateMatchUpScore';
 import { getParticipantStats } from '@Query/participant/getParticipantStats';
 import { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';
 import { generateOutcome } from '@Generators/simulation/generateOutcome';

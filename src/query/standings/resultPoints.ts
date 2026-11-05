@@ -1,8 +1,8 @@
-import { decidedRecordOf } from '@Validators/decidedResult';
+import { decidedRecordOf } from '@Scoring/analysis/decidedResult';
 
 // constants and types
-import type { DecidedByMethod, DecidedIn } from '@Types/scoring/types';
 import type { MatchUp, MatchUpStatusUnion } from '@Types/tournamentTypes';
+import type { DecidedByMethod, DecidedIn } from '@Types/scoring/types';
 
 /**
  * Classification points by result (the E1 proposal, Mentat `planning/ROUND_ROBIN_RESULT_POINTS.md`; spec § 5.2): FIBA's

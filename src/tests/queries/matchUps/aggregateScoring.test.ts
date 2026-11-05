@@ -1,5 +1,5 @@
-import { analyzeScore } from '@Query/matchUp/analyzeScore';
-import { validateScore } from '@Validators/validateScore';
+import { validateScore } from '@Scoring/analysis/validateScore';
+import { analyzeScore } from '@Scoring/analysis/analyzeScore';
 import { expect, it } from 'vitest';
 
 // constants

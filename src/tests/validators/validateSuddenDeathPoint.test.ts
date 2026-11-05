@@ -9,7 +9,7 @@
  * the same way, so the validator and the analysis agree.
  */
 import { checkSetIsComplete } from '@Helpers/matchUpFormatCode/setRules/setCompletion';
-import { validateSetScore } from '@Validators/validateMatchUpScore';
+import { validateSetScore } from '@Scoring/analysis/validateMatchUpScore';
 import { describe, it, expect } from 'vitest';
 
 const SUDDEN_DEATH = 'SET3XA-S:T10-F:TB1';

@@ -1,6 +1,6 @@
 import { carriedExitStatus, setSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { settleUnlessIdle } from './indexPrecheck';

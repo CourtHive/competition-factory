@@ -27,8 +27,8 @@ import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat'
 import { validateDrawTallyOptions } from '@Validators/validateTallyPolicy';
 import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
+import { tiebreakPointsWarnings } from '@Scoring/analysis/validateScore';
 import { getMatchUpFormat } from '@Query/hierarchical/getMatchUpFormat';
-import { tiebreakPointsWarnings } from '@Validators/validateScore';
 import { decideOutcomeV2 } from '@Mutate/matchUps/outcome/decide';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';

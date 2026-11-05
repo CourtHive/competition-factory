@@ -1,8 +1,8 @@
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
 import { getMatchUpStatusScopeViolation } from '@Query/matchUps/getMatchUpStatusScopeViolation';
 import { rewritesCarriedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
-import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
-import { validateScore } from '@Validators/validateScore';
+import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
+import { validateScore } from '@Scoring/analysis/validateScore';
 import { isDoubleExit } from '@Validators/isExit';
 import { chooseRoute } from './route';
 

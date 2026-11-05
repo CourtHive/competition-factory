@@ -1,7 +1,7 @@
+import { validateMatchUpScore } from '@Scoring/analysis/validateMatchUpScore';
+import { checkScoreCompleteness } from '@Scoring/analysis/scoreCompleteness';
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
 import { generateOutcome } from '@Generators/simulation/generateOutcome';
-import { validateMatchUpScore } from '@Validators/validateMatchUpScore';
-import { checkScoreCompleteness } from '@Validators/scoreCompleteness';
 import { parseScoreString } from '@Scoring/parse/parseScoreString';
 import { describe, expect, it } from 'vitest';
 

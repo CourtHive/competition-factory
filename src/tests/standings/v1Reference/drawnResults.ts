@@ -1,4 +1,4 @@
-import { isCompletedCombinedPointTie } from '@Validators/isCompletedCombinedPointTie';
+import { isCompletedCombinedPointTie } from '@Scoring/analysis/isCompletedCombinedPointTie';
 import { parseTallyFormat } from './parseTallyFormat';
 
 // constants and types
