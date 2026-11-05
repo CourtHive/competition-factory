@@ -49,6 +49,11 @@ permissions:
 # warning today and de-risks the runner-side migration.
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  # MATRIX TIERS (CA, 2026-11-05; src/tests/testHarness/matrixTier.ts). An ordinary PR into dev runs a bounded,
+  # stratified slice of the heavy exit-propagation matrices; a checkpoint PR into master, a push to master and a
+  # manual dispatch run them in full. Only a pull_request whose base is not master gets `pr`: anything else, an
+  # unset variable included, is the full run.
+  FACTORY_MATRIX_TIER: ${{ (github.event_name == 'pull_request' && github.base_ref != 'master') && 'pr' || 'full' }}
 
 jobs:
   # A release-please PR (into master) or the back-merge PR (master into dev, after a publish) changes

@@ -1,5 +1,6 @@
 import { quarantineFor, unusedQuarantineKeys } from '@Tests/testHarness/exitPropagation/knownFailures';
 import { TEAM_DUAL_CELLS, TEAM_LINE_CELLS, runMatrixCell, cellLabel } from './matrixCells';
+import { matrixTier, sliceMissingValues, tierCells } from '@Tests/testHarness/matrixTier';
 import { afterAll, expect, test } from 'vitest';
 
 // constants and types
@@ -23,7 +24,9 @@ export function teamMatrixSlice(arm: 'dual' | 'line', drawType: string): MatrixC
  */
 export function runTeamMatrixSlice(arm: 'dual' | 'line', drawType: string): void {
   const cells = teamMatrixSlice(arm, drawType);
-  const sliceKeys = new Set(cells.map(teamLabel));
+  // matrixTier.ts: a PR into dev registers a third of the cells, every exit status kept; checkpoints run all 60
+  const tiered = tierCells(cells, { stratum: (cell) => cell.exitStatus });
+  const sliceKeys = new Set(tiered.map(teamLabel));
   const observedKeys = new Set<string>();
 
   // CONTROL: the slice is not empty, so a renamed draw type cannot pass vacuously
@@ -31,7 +34,14 @@ export function runTeamMatrixSlice(arm: 'dual' | 'line', drawType: string): void
     expect(cells).toHaveLength(60);
   });
 
-  test.for(cells)(
+  // CONTROL: the tier narrows the run, never a dimension of it
+  test(`the ${matrixTier} tier keeps every draw size, reduction, exit status and propagation of the ${drawType} cells`, () => {
+    expect(
+      sliceMissingValues(cells, tiered, ['drawSize', 'participantsCount', 'exitStatus', 'propagateExitStatus']),
+    ).toEqual([]);
+  });
+
+  test.for(tiered)(
     'team $eventType $drawType $drawSize/$participantsCount $exitStatus propagate=$propagateExitStatus lines=$lineUps',
     { timeout: 180_000 },
     (cell) => {

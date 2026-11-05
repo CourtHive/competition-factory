@@ -1,5 +1,6 @@
 import { quarantineFor, unusedQuarantineKeys } from '@Tests/testHarness/exitPropagation/knownFailures';
 import { nextPlayable, playForward, step } from '@Tests/testHarness/exitPropagation/driver';
+import { matrixTier, sliceMissingValues, tierCells } from '@Tests/testHarness/matrixTier';
 import { checkIntegrity } from '@Tests/testHarness/exitPropagation/transitions';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
@@ -90,7 +91,19 @@ const label = (cell: (typeof MATRIX)[number]) =>
 
 const observedKeys = new Set<string>();
 
-test.for(MATRIX)('$drawType $drawSize/$participantsCount $exitStatus propagate=$propagateExitStatus', (cell) => {
+// matrixTier.ts: a PR into dev registers a third of the cells, every draw type x exit status kept; checkpoints run all 600
+const TIERED = tierCells(MATRIX, { stratum: (cell) => `${cell.drawType} ${cell.exitStatus}` });
+const tieredKeys = new Set(TIERED.map(label));
+const matrixKeys = new Set(MATRIX.map(label));
+
+// CONTROL: the tier narrows the run, never a dimension of it
+test(`the ${matrixTier} tier keeps every value of every matrix dimension`, () => {
+  expect(MATRIX).toHaveLength(600);
+  const dimensions = ['drawType', 'drawSize', 'participantsCount', 'exitStatus', 'propagateExitStatus'] as const;
+  expect(sliceMissingValues(MATRIX, TIERED, [...dimensions])).toEqual([]);
+});
+
+test.for(TIERED)('$drawType $drawSize/$participantsCount $exitStatus propagate=$propagateExitStatus', (cell) => {
   setSubscriptions({});
   const key = label(cell);
   observedKeys.add(key);
@@ -139,5 +152,10 @@ test.for(MATRIX)('$drawType $drawSize/$participantsCount $exitStatus propagate=$
 afterAll(() => {
   // Guards against a quarantine entry outliving the cell it names — a typo'd or stale key would
   // otherwise silently excuse nothing forever.
-  expect(unusedQuarantineKeys(observedKeys, 'matrix ')).toEqual([]);
+  // Under the pr tier a cell left out of the slice is not observed, so only keys naming a registered cell, or
+  // naming no cell at all (a typo), are held to it here; the full run at a checkpoint checks the rest.
+  const unused = unusedQuarantineKeys(observedKeys, 'matrix ').filter(
+    (key) => tieredKeys.has(key) || !matrixKeys.has(key),
+  );
+  expect(unused).toEqual([]);
 });
