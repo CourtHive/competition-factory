@@ -5741,6 +5741,9 @@
           "type": "object",
           "$comment": "Described by rankingPolicy.schema.json, a separate schema document; not repeated here."
         },
+        "ratings": {
+          "type": "object"
+        },
         "rotatingPartnerTally": {
           "$ref": "#/definitions/RotatingPartnerTallyPolicy"
         },

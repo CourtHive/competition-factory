@@ -10,6 +10,7 @@ import type { FactoryEngineMethod } from './factoryEngineMethods';
 import { HydratedMatchUp, HydratedParticipant } from './hydrated';
 import { ErrorType } from '@Constants/errorConditionConstants';
 import type { MethodSignatures } from './methodSignatures';
+import type { RatingsPolicy } from './ratingsPolicyTypes';
 import type { Attribution } from './presenceTypes';
 import type { LadderPolicy } from './ladderTypes';
 import {
@@ -48,6 +49,7 @@ import {
   POLICY_TYPE_MATCHUP_ACTIONS,
   POLICY_TYPE_AVOIDANCE,
   POLICY_TYPE_LADDER,
+  POLICY_TYPE_RATINGS,
 } from '@Constants/policyConstants';
 
 export type FactoryEngine = {
@@ -530,6 +532,7 @@ export type PolicyDefinitions = {
   [POLICY_TYPE_AVOIDANCE]?: AvoidancePolicy;
   [POLICY_TYPE_LADDER]?: LadderPolicy;
   [POLICY_TYPE_ROUND_ROBIN_TALLY]?: RoundRobinTallyPolicy;
+  [POLICY_TYPE_RATINGS]?: RatingsPolicy;
   [POLICY_TYPE_SCORING]?: { rotatingPartners?: RotatingPartnerScoringPolicies; [key: string]: unknown };
 };
 
