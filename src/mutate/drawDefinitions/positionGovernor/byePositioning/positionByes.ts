@@ -1,5 +1,5 @@
 import { assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
-import { positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
+import { positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { getQualifiersData } from '@Mutate/matchUps/drawPositions/positionQualifiers';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getSeedOrderByePositions } from './getSeedOrderedByePositions';

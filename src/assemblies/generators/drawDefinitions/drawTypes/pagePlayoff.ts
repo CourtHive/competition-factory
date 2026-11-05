@@ -1,5 +1,5 @@
 import { pagePlayoffLinks } from '@Generators/drawDefinitions/links/pagePlayoffLinks';
-import { structureTemplate } from '@Generators/templates/structureTemplate';
+import { structureTemplate } from '@Helpers/drawTopology/templates/structureTemplate';
 import { treeMatchUps } from './eliminationTree';
 
 // constants and types

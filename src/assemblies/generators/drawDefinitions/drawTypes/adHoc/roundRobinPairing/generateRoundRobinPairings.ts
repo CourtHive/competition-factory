@@ -1,5 +1,5 @@
-import { groupRounds } from '@Generators/drawDefinitions/drawTypes/roundRobin/roundRobinGroups';
 import { getSharedIndividualConflicts } from '@Query/participants/individualParticipantIds';
+import { groupRounds } from '@Helpers/drawTopology/roundRobin/roundRobinGroups';
 import { generateRange } from '@Tools/arrays';
 
 // constants and types

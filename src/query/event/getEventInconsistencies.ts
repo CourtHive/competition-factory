@@ -1,6 +1,6 @@
+import { positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
-import { positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { expectedParticipantType } from '@Query/event/participantTypeForEvent';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { extractDate } from '@Tools/dateTime';

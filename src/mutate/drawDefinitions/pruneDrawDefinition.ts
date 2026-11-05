@@ -1,5 +1,5 @@
 import { deleteMatchUpsNotice, modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
+import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { analyzeDraws } from '@Query/tournaments/analyzeDraws';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { getDrawStructures } from '@Acquire/findStructure';

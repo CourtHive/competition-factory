@@ -146,16 +146,11 @@ export default [
      * they read until #5491 and the purity fix that added this rule.
      *
      * `ignores` is a RATCHET, not an allow-list: the files that still import a read-only helper or a type from a
-     * mutation module (22 measured 2026-10-17; 13 after the layering plan's moves, 2026-11-06). Each leaves the list
+     * mutation module (22 measured 2026-10-17; 8 after the layering plan's moves, 2026-11-06). Each leaves the list
      * when its helper moves to `@Query`/`@Acquire`; nothing is ever added to it. A new file under src/query that needs a helper living in `@Mutate` moves the helper.
      */
     files: ['src/query/**/*.ts'],
     ignores: [
-      'src/query/drawDefinition/getDrawInconsistencies.ts',
-      'src/query/drawDefinition/getStructureInconsistencies.ts',
-      'src/query/drawDefinition/hasPropagatedExitDownstream.ts',
-      'src/query/drawDefinition/isActiveDownstream.ts',
-      'src/query/drawDefinition/matchUpActions/matchUpActions.ts',
       'src/query/extensions/getMatchUpDailyLimits.ts',
       'src/query/matchUps/competitionScheduleMatchUps.ts',
       'src/query/matchUps/scheduling/getProfileRounds.ts',

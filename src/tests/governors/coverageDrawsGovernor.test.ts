@@ -3,8 +3,8 @@
 // Generators
 import { generateDrawStructuresAndLinks } from '@Generators/drawDefinitions/generateDrawStructuresAndLinks';
 import { getDrawTypeCoercion } from '@Generators/drawDefinitions/getDrawTypeCoercion';
-import { addFinishingRounds } from '@Generators/drawDefinitions/addFinishingRounds';
 import { newDrawDefinition } from '@Generators/drawDefinitions/newDrawDefinition';
+import { addFinishingRounds } from '@Query/structure/addFinishingRounds';
 import { MISSING_MATCHUPS } from '@Constants/errorConditionConstants';
 
 // Query

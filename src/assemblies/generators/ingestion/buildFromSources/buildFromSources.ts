@@ -20,10 +20,10 @@
 //   The unwrapped factory shapes are accepted too.
 
 import { deriveSourceLinks, DerivedLink, SourceDraw, SourceStructure } from './deriveSourceLinks';
-import { inferDrawLinks, InferredLink } from '@Mutate/drawDefinitions/links/inferDrawLinks';
 import { Event, MatchUp, Structure, TieFormat, Tournament } from '@Types/tournamentTypes';
+import { inferDrawLinks, InferredLink } from '@Query/drawDefinition/inferDrawLinks';
+import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { dehydrateRecordMatchUps } from '@Mutate/tournaments/dehydrate';
-import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 
 // ------------------------------------------------------------------- types
 //

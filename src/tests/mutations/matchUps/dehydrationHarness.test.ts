@@ -1,3 +1,8 @@
+import { buildFromSources } from '@Generators/ingestion/buildFromSources/buildFromSources';
+import { dehydrateMatchUps } from '@Mutate/tournaments/dehydrate';
+import tournamentEngine from '@Engines/syncEngine';
+import mocksEngine from '@Assemblies/engines/mock';
+import { describe, expect, it } from 'vitest';
 import {
   withoutDerivedValues,
   hydrationLeftovers,
@@ -6,11 +11,6 @@ import {
   matchUpsById,
   canonical,
 } from '@Tests/testHarness/dehydration';
-import { buildFromSources } from '@Tools/buildFromSources/buildFromSources';
-import { dehydrateMatchUps } from '@Mutate/tournaments/dehydrate';
-import tournamentEngine from '@Engines/syncEngine';
-import mocksEngine from '@Assemblies/engines/mock';
-import { describe, expect, it } from 'vitest';
 
 // constants
 import { COLLEGE_DEFAULT, DOMINANT_DUO } from '@Constants/tieFormatConstants';

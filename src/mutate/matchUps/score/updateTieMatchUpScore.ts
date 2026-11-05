@@ -1,4 +1,4 @@
-import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
+import { generateTieMatchUpScore } from '@Query/matchUp/tieMatchUpScore/generateTieMatchUpScore';
 import { resolveTieScoreSource } from '@Query/hierarchical/tieFormats/resolveTieScoreSource';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';

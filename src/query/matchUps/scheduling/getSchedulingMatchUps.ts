@@ -1,10 +1,10 @@
 import { getMatchUpScheduleDetails } from '@Query/matchUp/getMatchUpScheduleDetails';
 import { bucketStructureMatchUps } from '@Query/structure/getStructureMatchUps';
 import { addUpcomingMatchUps } from '@Query/matchUp/addUpcomingMatchUps';
-import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { buildStructuralIndex } from '@Query/matchUps/structuralIndex';
+import { structuresOf } from '@Helpers/drawTopology/structureMembers';
+import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { getDrawStructures } from '@Acquire/findStructure';
-import { structuresOf } from '@Acquire/structureMembers';
 
 // types
 import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';

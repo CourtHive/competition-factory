@@ -1,8 +1,8 @@
 import { generatePlayoffStructures } from '@Generators/drawDefinitions/drawTypes/playoffStructures';
 import { generatePagePlayoff } from '@Generators/drawDefinitions/drawTypes/pagePlayoff';
+import structureTemplate from '@Helpers/drawTopology/templates/structureTemplate';
 import { getPositionRangeMap } from '@Query/drawDefinition/getPositionRangeMap';
 import { firstRoundLoserConsolation } from './firstRoundLoserConsolation';
-import structureTemplate from '@Generators/templates/structureTemplate';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { structureSort } from '@Functions/sorters/structureSort';
 import { generateCurtisConsolation } from './curtisConsolation';

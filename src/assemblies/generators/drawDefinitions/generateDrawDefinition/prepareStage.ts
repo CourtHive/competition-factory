@@ -1,9 +1,9 @@
 import { getSeedsCountAndStageEntries, seeding } from '@Mutate/drawDefinitions/structureSeeding';
 import { automatedPositioning } from '@Mutate/drawDefinitions/automatedPositioning';
 import { positionPagePlayoff } from '@Mutate/drawDefinitions/positionPagePlayoff';
+import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { getQualifiersCount } from '@Query/drawDefinition/getQualifiersCount';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { getDrawStructures } from '@Acquire/findStructure';
 

@@ -1,10 +1,10 @@
-import { isPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { isPropagatedExit } from '@Helpers/drawTopology/sideExitProvenance';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isExit } from '@Validators/isExit';
 
 // constants and types
-import { BYE } from '@Constants/matchUpStatusConstants';
 import { MatchUp, MatchUpStatusUnion } from '@Types/tournamentTypes';
+import { BYE } from '@Constants/matchUpStatusConstants';
 import {
   ALLOCATE_COURTS,
   ASSIGN_COURT,

@@ -1,4 +1,4 @@
-import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
+import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 
 // constants and types

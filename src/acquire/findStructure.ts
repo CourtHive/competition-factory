@@ -1,7 +1,7 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
+import { structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { structureSort } from '@Functions/sorters/structureSort';
-import { structuresOf } from '@Acquire/structureMembers';
 
 // constants and types
 import { MISSING_STRUCTURES, STRUCTURE_NOT_FOUND, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';

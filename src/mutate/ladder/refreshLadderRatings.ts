@@ -1,7 +1,7 @@
 import { setParticipantScaleItem } from '@Mutate/participants/scaleItems/addScaleItems';
 import { getLadderOrdering, getLadderPolicy } from '@Query/ladder/getLadderPolicy';
+import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
-import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { isLadder } from '@Query/drawDefinition/isLadder';
 
 // constants and types

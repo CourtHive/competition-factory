@@ -1,10 +1,10 @@
 import { generateRoundRobinWithPlayOff } from './drawTypes/roundRobin/generateRoundRobinWithPlayoff';
 import { firstRoundLoserConsolation } from './drawTypes/firstRoundLoserConsolation';
+import structureTemplate from '@Helpers/drawTopology/templates/structureTemplate';
 import { generateDoubleElimination } from './drawTypes/doubleEliminattion';
 import { generateCurtisConsolation } from './drawTypes/curtisConsolation';
 import { generatePlayoffStructures } from './drawTypes/playoffStructures';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
-import structureTemplate from '@Generators/templates/structureTemplate';
 import { generateRoundRobin } from './drawTypes/roundRobin/roundRobin';
 import { generateAdaptiveStructures } from './drawTypes/adaptiveDraw';
 import { customLuckyDraw } from './drawTypes/customLuckyDraw';

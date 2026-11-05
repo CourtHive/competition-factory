@@ -2,6 +2,7 @@ import { addMatchUpsNotice, modifyDrawNotice } from '@Mutate/notifications/drawN
 import { getStageDrawPositionsCount } from '@Query/drawDefinition/getStageDrawPositions';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { generateDrawStructuresAndLinks } from './generateDrawStructuresAndLinks';
+import { generateTieMatchUps } from '@Helpers/drawTopology/templates/tieMatchUps';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { checkTieFormat } from '@Mutate/tieFormat/checkTieFormat';
@@ -11,7 +12,6 @@ import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { addGoesTo } from '@Query/matchUps/addGoesTo';
-import { generateTieMatchUps } from './tieMatchUps';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // constants and types

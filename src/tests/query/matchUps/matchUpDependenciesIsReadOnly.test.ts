@@ -1,6 +1,6 @@
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
+import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
-import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 

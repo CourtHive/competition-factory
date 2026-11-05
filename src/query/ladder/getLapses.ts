@@ -1,7 +1,7 @@
 import { addDaysIso, getChallengeState, itemDateIso } from '@Query/ladder/getChallengeState';
 import { resolveLadderStructure } from '@Query/ladder/resolveLadderContext';
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { getLadderPolicy } from '@Query/ladder/getLadderPolicy';
-import { matchUpsOf } from '@Acquire/structureMembers';
 
 // constants and types
 import { CONSECUTIVE, DECLINE, EXPIRY, FORFEIT_POSITION, ROLLING, UNPLAYED } from '@Constants/ladderConstants';

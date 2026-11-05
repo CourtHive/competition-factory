@@ -1,11 +1,11 @@
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
-import { carriedExitStatus } from './sideExitProvenance';
 import { isDoubleExit } from '@Validators/isExit';
 
 // constants and types

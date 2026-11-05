@@ -1,4 +1,4 @@
-import { structuresOf } from '@Acquire/structureMembers';
+import { structuresOf } from '@Helpers/drawTopology/structureMembers';
 
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 

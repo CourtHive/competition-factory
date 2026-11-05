@@ -1,9 +1,9 @@
 import { buildIndividualIdsMap } from '@Query/participants/individualParticipantIds';
 import { getEventAlternateParticipantIds } from './getEventAlternateParticipantids';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { getParticipantId } from '@Functions/global/extractors';
-import { matchUpsOf } from '@Acquire/structureMembers';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { unique } from '@Tools/arrays';
 

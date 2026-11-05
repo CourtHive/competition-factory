@@ -1,7 +1,7 @@
+import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { byeSeatPositionsOwedTo, byeSeatStands } from './feederSendsNobody';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
-import { positionAssignmentsOf } from '@Acquire/structureMembers';
 
 // constants and types
 import type { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';

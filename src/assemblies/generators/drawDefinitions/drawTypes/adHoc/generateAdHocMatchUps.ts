@@ -1,6 +1,6 @@
 import { buildIndividualIdsMap, idsShareIndividual } from '@Query/participants/individualParticipantIds';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
-import { generateTieMatchUps } from '@Generators/drawDefinitions/tieMatchUps';
+import { generateTieMatchUps } from '@Helpers/drawTopology/templates/tieMatchUps';
 import { getAvailableMatchUpsCount } from './getAvailableMatchUpsCount';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { definedAttributes } from '@Tools/definedAttributes';
@@ -9,16 +9,16 @@ import { generateRange } from '@Tools/arrays';
 import { UUID } from '@Tools/UUID';
 
 // constants and types
+import { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
+import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
+import { SUCCESS } from '@Constants/resultConstants';
+import { TEAM } from '@Constants/matchUpTypes';
 import {
   SHARED_INDIVIDUAL_PARTICIPANT,
   MISSING_DRAW_DEFINITION,
   INVALID_VALUES,
   ErrorType,
 } from '@Constants/errorConditionConstants';
-import { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';
-import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
-import { SUCCESS } from '@Constants/resultConstants';
-import { TEAM } from '@Constants/matchUpTypes';
 
 type GenerateAdHocMatchUpsArgs = {
   participantIdPairings?: {

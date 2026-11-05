@@ -2,10 +2,10 @@ import { modifyMatchUpNotice, modifyPositionAssignmentsNotice } from '@Mutate/no
 import type { ClearDrawPosition } from '@Mutate/matchUps/matchUpStatus/withdrawByeSeats';
 import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { releaseAdvancedDrawPosition } from './releaseAdvancedDrawPosition';
-import { isRoundWinnerLink } from '@Query/drawDefinition/linkTraversal';
-import { positionAssignmentsOf } from '@Acquire/structureMembers';
+import { isRoundWinnerLink } from '@Helpers/drawTopology/linkTraversal';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { findStructure } from '@Acquire/findStructure';
 

@@ -1,7 +1,7 @@
 import { getMatchUpDependencies } from '@Query/matchUps/getMatchUpDependencies';
 import { buildStructuralIndex } from '@Query/matchUps/structuralIndex';
+import { structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
-import { structuresOf } from '@Acquire/structureMembers';
 
 // types
 import type { TournamentRecords } from '@Types/factoryTypes';

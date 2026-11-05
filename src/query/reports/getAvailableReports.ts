@@ -1,5 +1,5 @@
+import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
-import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { TEAM_PARTICIPANT } from '@Constants/participantConstants';
 import { ReportAvailability } from '@Types/reportTypes';
 import { Tournament } from '@Types/tournamentTypes';

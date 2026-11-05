@@ -1,4 +1,4 @@
-import { carriedExitStatus, getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { carriedExitStatus, getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
 import { releaseAdvancedDrawPositionAcrossLinks } from './releaseLinkedWinnerAdvancement';
 import { structureAssignedDrawPositions } from '@Query/drawDefinition/positionsGetter';
 import { clearDrawPosition } from '@Mutate/matchUps/drawPositions/positionClear';

@@ -1,5 +1,5 @@
 import { generateDrawStructuresAndLinks } from '@Generators/drawDefinitions/generateDrawStructuresAndLinks';
-import { positionAssignmentsOf } from '@Acquire/structureMembers';
+import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 
 // constants and types
 import { CONTAINER, DRAW, LOSER, POSITION, ROUND_ROBIN, TOP_DOWN } from '@Constants/drawDefinitionConstants';

@@ -1,4 +1,4 @@
-import { traversesByFinishingPosition } from '@Query/drawDefinition/linkTraversal';
+import { traversesByFinishingPosition } from '@Helpers/drawTopology/linkTraversal';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types

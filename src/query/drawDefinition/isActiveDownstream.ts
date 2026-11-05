@@ -1,4 +1,4 @@
-import { getSideExitProvenance, isPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { getSideExitProvenance, isPropagatedExit } from '@Helpers/drawTopology/sideExitProvenance';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';

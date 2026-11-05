@@ -1,6 +1,6 @@
+import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { fromLegacyEventConstraints } from '@Query/drawDefinition/getDrawCompositionConstraints';
 import { normalizeDrawPositions } from '@Mutate/matchUps/drawPositions/normalizeDrawPositions';
-import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { getMatchUpPresence, getParticipantPresence } from '@Acquire/presenceAttestations';
 import { normalizePenaltyType } from '@Query/participants/normalizePenaltyType';
 import { storeGoesToResult } from '@Query/matchUps/addGoesTo';

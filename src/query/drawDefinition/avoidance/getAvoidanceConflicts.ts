@@ -1,4 +1,4 @@
-import { getRoundRobinGroupMatchUps } from '@Assemblies/generators/drawDefinitions/drawTypes/roundRobin/roundRobinGroups';
+import { getRoundRobinGroupMatchUps } from '@Helpers/drawTopology/roundRobin/roundRobinGroups';
 import { overlap } from '@Tools/arrays';
 
 export function getAvoidanceConflicts({ isRoundRobin, groupedParticipants }) {

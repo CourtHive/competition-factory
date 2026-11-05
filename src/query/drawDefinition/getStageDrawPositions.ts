@@ -1,7 +1,7 @@
 // Query
 import { getEntryProfileQualifiersCount } from '@Helpers/entries/getEntryProfileQualifiers';
 import { getDrawCompositionConstraints } from './getDrawCompositionConstraints';
-import { positionAssignmentsOf } from '@Acquire/structureMembers';
+import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { getQualifiersCount } from './getQualifiersCount';
 
 // constants

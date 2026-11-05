@@ -1,5 +1,5 @@
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { getDrawStructures } from '@Acquire/findStructure';
-import { matchUpsOf } from '@Acquire/structureMembers';
 
 // constants and types
 import { generateDrawTypeAndModifyDrawDefinition } from '@Assemblies/generators/drawDefinitions/generateDrawTypeAndModifyDrawDefinition';

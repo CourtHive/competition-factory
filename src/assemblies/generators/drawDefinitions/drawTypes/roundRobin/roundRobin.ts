@@ -1,12 +1,17 @@
-import { getRoundRobinGroupMatchUps, drawPositionsHash, groupRounds } from './roundRobinGroups';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
-import { structureTemplate } from '@Generators/templates/structureTemplate';
+import { getValidGroupSizes } from '@Helpers/drawTopology/roundRobin/validGroupSizes';
+import { structureTemplate } from '@Helpers/drawTopology/templates/structureTemplate';
 import { constantToString } from '@Tools/strings';
 import { generateRange } from '@Tools/arrays';
 import { UUID } from '@Tools/UUID';
+import {
+  getRoundRobinGroupMatchUps,
+  drawPositionsHash,
+  groupRounds,
+} from '@Helpers/drawTopology/roundRobin/roundRobinGroups';
 
 // constants and types
-import { PlayoffAttributes, PolicyDefinitions, SeedingProfile, ResultType } from '@Types/factoryTypes';
+import { PlayoffAttributes, PolicyDefinitions, SeedingProfile } from '@Types/factoryTypes';
 import { MAIN, ITEM, WIN_RATIO, CONTAINER } from '@Constants/drawDefinitionConstants';
 import { MatchUp, EventTypeUnion, TieFormat } from '@Types/tournamentTypes';
 import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';
@@ -157,27 +162,6 @@ function deriveGroups({ appliedPolicies, structureOptions, drawSize }) {
 
   const groupCount = Math.ceil(drawSize / groupSize);
   return { groupSize, groupCount };
-}
-
-type GetValidGroupSizesArgs = {
-  groupSizeLimit?: number;
-  drawSize: number;
-};
-export function getValidGroupSizes(params: GetValidGroupSizesArgs): ResultType & { validGroupSizes?: number[] } {
-  const { groupSizeLimit = 10, drawSize = 0 } = params ?? {};
-  const validGroupSizes = generateRange(3, groupSizeLimit + 1).filter((groupSize) => {
-    const groupsCount = Math.ceil(drawSize / groupSize);
-    const byesCount = groupsCount * groupSize - drawSize;
-    const maxParticipantsPerGroup = Math.ceil(drawSize / groupsCount);
-    const maxByesPerGroup = Math.ceil(byesCount / groupsCount);
-    return (
-      (!byesCount || byesCount < groupSize) &&
-      maxParticipantsPerGroup === groupSize &&
-      maxParticipantsPerGroup >= 3 &&
-      maxByesPerGroup < 2
-    );
-  });
-  return { ...SUCCESS, validGroupSizes };
 }
 
 type RoundRobinMatchUpsArgs = {

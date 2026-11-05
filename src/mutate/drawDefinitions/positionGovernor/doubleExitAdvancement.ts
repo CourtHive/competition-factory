@@ -1,6 +1,7 @@
 import { releaseAdvancedDrawPositionAcrossLinks } from '@Mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement';
 import { releaseHoldersByeFromTarget } from '@Mutate/drawDefinitions/positionGovernor/releaseHoldersByeFromTarget';
 import { advanceDrawPosition, assignDrawPositionBye } from '@Mutate/matchUps/drawPositions/assignDrawPositionBye';
+import { carriedExitStatus, getSideExitProvenance, getExitSides } from '@Helpers/drawTopology/sideExitProvenance';
 import { getDrawPositionSideNumber, getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getPairedPreviousMatchUpIsDoubleExit } from '@Query/matchUps/getPairedPreviousMatchUpIsDoubleExit';
 import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
@@ -33,14 +34,11 @@ import { overlap } from '@Tools/arrays';
 import {
   deriveExitStateFromProvenance,
   buildCarriedExitProvenance,
-  carriedExitStatus,
   collapseDoubleExitStatus,
   retainPolicyCodes,
   buildSideExitProvenance,
   mergeSideExitProvenance,
   withdrawProducedExits,
-  getSideExitProvenance,
-  getExitSides,
   deriveStatusCodes,
   producedExitStatus,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';

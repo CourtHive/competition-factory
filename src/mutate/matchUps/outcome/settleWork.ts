@@ -8,8 +8,8 @@ import { findOwedByeAdvance } from '@Mutate/matchUps/matchUpStatus/reconcileByeA
 import { hasForwardWork } from '@Mutate/matchUps/matchUpStatus/settleForwardConsequences';
 import { findOwedCarry } from '@Mutate/matchUps/matchUpStatus/reconcileCarriesPastByes';
 import { matchUpIsScored } from '@Mutate/matchUps/matchUpStatus/reconcileScoredTimes';
-import { carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getDeciderSnapshot } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
+import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 

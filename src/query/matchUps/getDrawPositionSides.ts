@@ -1,5 +1,5 @@
 import { getOrderedDrawPositions } from '@Query/matchUps/getOrderedDrawPositions';
-import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
+import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 
 // types

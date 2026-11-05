@@ -1,5 +1,5 @@
+import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { MatchUp, Structure, TeamCompetitor, TieFormat, Tournament } from '@Types/tournamentTypes';
-import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { HydratedMatchUp, HydratedSide } from '@Types/hydrated';
 
 // constants

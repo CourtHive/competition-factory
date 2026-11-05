@@ -1,9 +1,9 @@
 import { isRotatingPartnerScoringVariant, sameScoringVariant } from '@Validators/rotatingPartnerScoringPolicy';
 import { getRotatingPartnerScoringPolicy } from '@Query/drawDefinition/getRotatingPartnerScoringPolicy';
 import { validateRotatingPartnerEntrants } from '@Validators/rotatingPartnerDraw';
+import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { isCompetitionProfile } from '@Validators/competitionProfile';
-import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { canonicalJson } from '@Tools/canonicalJson';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 

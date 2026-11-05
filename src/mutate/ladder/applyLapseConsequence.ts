@@ -1,9 +1,9 @@
 import { removeLadderParticipant } from '@Mutate/ladder/removeLadderParticipant';
+import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
 import { applyLadderMovement } from '@Mutate/ladder/applyLadderMovement';
 import { ladderStandingNotice } from '@Mutate/ladder/ladderNotices';
 import { getLadderOrdering } from '@Query/ladder/getLadderPolicy';
-import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { getLapses } from '@Query/ladder/getLapses';
 
 // constants and types

@@ -1,8 +1,8 @@
 import { getStructureRoundProfile } from '@Query/structure/getStructureRoundProfile';
+import { structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { getLinkQualifiersCount } from './getQualifiersCount';
 import { isValidForQualifying } from './isValidForQualifying';
 import { getPositionAssignments } from './positionsGetter';
-import { structuresOf } from '@Acquire/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
 import { getStructureLinks } from './linkGetter';
 

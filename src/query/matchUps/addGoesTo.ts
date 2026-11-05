@@ -1,7 +1,7 @@
-import { addFinishingRounds } from '@Assemblies/generators/drawDefinitions/addFinishingRounds';
 import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
+import { addFinishingRounds } from '@Query/structure/addFinishingRounds';
 import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
-import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { isLinkObject } from '@Query/drawDefinition/malformedLinks';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { decorateResult } from '@Functions/global/decorateResult';

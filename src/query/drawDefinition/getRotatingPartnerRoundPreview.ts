@@ -7,7 +7,7 @@ import { getRotatingPartnerScoringContract } from './getRotatingPartnerScoringCo
 import { getRotatingPartnerTallyPolicy } from './getRotatingPartnerTallyPolicy';
 import { getRotatingPartnerStandings } from './getRotatingPartnerStandings';
 import { checkValidEntries } from '@Query/entries/checkValidEntries';
-import { matchUpsOf } from '@Acquire/structureMembers';
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { canonicalJson } from '@Tools/canonicalJson';
 
 // constants and types

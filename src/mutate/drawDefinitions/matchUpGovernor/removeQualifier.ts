@@ -1,5 +1,5 @@
+import { positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
-import { positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { decorateResult } from '@Functions/global/decorateResult';

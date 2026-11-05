@@ -1,7 +1,7 @@
-import { generateTieMatchUps } from '@Assemblies/generators/drawDefinitions/tieMatchUps';
 import { getGenerators } from '@Assemblies/generators/drawDefinitions/getGenerators';
 import { automatedPositioning } from '@Mutate/drawDefinitions/automatedPositioning';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
+import { generateTieMatchUps } from '@Helpers/drawTopology/templates/tieMatchUps';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';
 import { getStageEntries } from '@Query/drawDefinition/stageGetter';

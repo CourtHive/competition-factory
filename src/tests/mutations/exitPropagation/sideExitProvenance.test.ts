@@ -1,11 +1,10 @@
+import { isPropagatedExit, getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
 import { setSchemaWriteMode } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { afterEach, expect, it } from 'vitest';
 import {
   buildSideExitProvenance,
-  isPropagatedExit,
-  getSideExitProvenance,
   producedExitStatus,
   setSideExitProvenance,
   exitOutcomeCode,

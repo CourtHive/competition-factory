@@ -1,5 +1,5 @@
+import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { calculateMatchUpMargin } from '@Query/matchUp/calculateMatchUpMargin';
-import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';

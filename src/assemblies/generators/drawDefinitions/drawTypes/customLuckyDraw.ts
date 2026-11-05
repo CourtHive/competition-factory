@@ -1,5 +1,5 @@
-import { addFinishingRounds } from '@Generators/drawDefinitions/addFinishingRounds';
 import { generateMatchUpId } from '@Generators/drawDefinitions/generateMatchUpId';
+import { addFinishingRounds } from '@Query/structure/addFinishingRounds';
 import { buildRound } from '@Generators/drawDefinitions/buildRound';
 import { isConvertableInteger } from '@Tools/math';
 import { generateRange } from '@Tools/arrays';

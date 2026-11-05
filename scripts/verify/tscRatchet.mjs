@@ -57,7 +57,7 @@ const COUNTS = {
     keyOf: (file) => dirname(file),
     counts: () => true,
     include: (key) => key.startsWith('src/') && !key.startsWith('src/types/typeAssertions'),
-    fix: 'Read the structure through matchUpsOf/positionAssignmentsOf/structuresOf (@Acquire/structureMembers), or narrow on structureType first.',
+    fix: 'Read the structure through matchUpsOf/positionAssignmentsOf/structuresOf (@Helpers/drawTopology/structureMembers), or narrow on structureType first.',
   },
 };
 

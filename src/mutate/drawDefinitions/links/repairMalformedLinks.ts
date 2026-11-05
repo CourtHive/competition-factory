@@ -1,7 +1,7 @@
+import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { isLinkObject, isMalformedRoundLink } from '@Query/drawDefinition/malformedLinks';
-import { traversesByFinishingPosition } from '@Query/drawDefinition/linkTraversal';
+import { traversesByFinishingPosition } from '@Helpers/drawTopology/linkTraversal';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { addGoesTo } from '@Query/matchUps/addGoesTo';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';

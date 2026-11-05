@@ -2,7 +2,7 @@ import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyPa
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getPolicyDefinitions } from '@Query/extensions/getAppliedPolicies';
 import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
-import { structuresOf } from '@Acquire/structureMembers';
+import { structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { isLucky } from '@Query/drawDefinition/isLucky';
 

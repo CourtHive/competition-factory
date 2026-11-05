@@ -1,4 +1,5 @@
 import { releaseAdvancedDrawPositionAcrossLinks } from '@Mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement';
+import { arrivedByResult, getSideExitProvenance, carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { releaseHoldersByeFromTarget } from '@Mutate/drawDefinitions/positionGovernor/releaseHoldersByeFromTarget';
 import { addPositionActionTelemetry } from '@Mutate/drawDefinitions/positionGovernor/addPositionActionTelemetry';
 import { modifyMatchUpNotice, modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
@@ -12,6 +13,7 @@ import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { normalizeDrawPositions } from './normalizeDrawPositions';
@@ -22,25 +24,21 @@ import { drawPositionFilled } from './drawPositionFilled';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { ensureGoesTo } from '@Query/matchUps/addGoesTo';
 import { findStructure } from '@Acquire/findStructure';
-import { matchUpsOf } from '@Acquire/structureMembers';
 import { numericSort } from '@Tools/sorting';
-import {
-  arrivalMovesOccupant,
-  rekeySideFacts,
-  setMatchUpDrawPositions,
-} from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 import {
   deriveExitStateFromProvenance,
   buildCarriedExitProvenance,
   mergeSideExitProvenance,
   setSideExitProvenance,
-  arrivedByResult,
-  getSideExitProvenance,
   blankSideExitCode,
-  carriedExitStatus,
   retainPolicyCodes,
   policyCodeString,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import {
+  arrivalMovesOccupant,
+  rekeySideFacts,
+  setMatchUpDrawPositions,
+} from '@Mutate/matchUps/drawPositions/setMatchUpDrawPositions';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, Structure, Tournament } from '@Types/tournamentTypes';

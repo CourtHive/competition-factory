@@ -1,7 +1,7 @@
 import { emptyProjectionAuditCounts, type ProjectionAudit, type ProjectionAuditCounts } from './projectionAudit';
 import { feederSendsNobody, seatShowsBye } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
-import { carriedExitStatus } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';

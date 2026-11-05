@@ -1,5 +1,5 @@
 import { generateQualifyingLink } from '@Generators/drawDefinitions/links/generateQualifyingLink';
-import structureTemplate from '@Generators/templates/structureTemplate';
+import structureTemplate from '@Helpers/drawTopology/templates/structureTemplate';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { mustBeAnArray } from '@Tools/mustBeAnArray';
 import { constantToString } from '@Tools/strings';
