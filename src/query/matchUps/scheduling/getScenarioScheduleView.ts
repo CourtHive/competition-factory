@@ -1,5 +1,6 @@
 import { competitionScheduleMatchUps } from '@Query/matchUps/competitionScheduleMatchUps';
 import { bulkScheduleMatchUps } from '@Mutate/matchUps/schedule/bulkScheduleMatchUps';
+import { withDraftWrites } from '@Global/state/withDraftWrites';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import {
   getScheduleScenarioStatus,
@@ -28,7 +29,8 @@ type GetScenarioScheduleViewArgs = {
  * laid on top, so the client renders the plan through its existing grid path unchanged.
  *
  * Purity: the overlay is applied to a THROWAWAY deep copy of the records; the real
- * records / engine state are never mutated (the "not applied" guarantee). Completed
+ * records / engine state are never mutated (the "not applied" guarantee), and the notices and
+ * modified flag the draft's scheduling raises are discarded with it (`withDraftWrites`). Completed
  * matchUps are skipped by `bulkScheduleMatchUps`. `plannedMatchUpIds` /
  * `skippedCompletedMatchUpIds` (derived from the real state) let the client tint the
  * planned cells and warn about skips.
@@ -42,11 +44,13 @@ export function getScenarioScheduleView(params: GetScenarioScheduleViewArgs): an
     (params.tournamentRecord ? { [params.tournamentRecord.tournamentId]: params.tournamentRecord } : {});
   const draft = makeDeepCopy(source, false, true);
 
-  bulkScheduleMatchUps({
-    tournamentRecords: draft,
-    matchUpDetails: scenario.placements,
-    removePriorValues: true,
-  });
+  withDraftWrites(() =>
+    bulkScheduleMatchUps({
+      tournamentRecords: draft,
+      matchUpDetails: scenario.placements,
+      removePriorValues: true,
+    }),
+  );
 
   const view = competitionScheduleMatchUps({
     tournamentRecords: draft,
