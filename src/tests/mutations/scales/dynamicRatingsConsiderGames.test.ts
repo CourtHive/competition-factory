@@ -11,9 +11,10 @@ import { expect, it } from 'vitest';
 // Corrected to `const setTo = parsedFormat?.setFormat?.setTo || 1` and `bestOf * setTo`.
 //
 // Deterministic golden values for a best-of-3, set-to-6 draw (maxCountables 3*6 = 18):
-//   considerGames:false stays [1402,1402,1402,1592] (fix is scoped to the true branch)
+//   considerGames:false stays [1402,1402,1408,1586] (fix is scoped to the true branch)
 //   considerGames:true was [1467,1467,1467,1531] when buggy (maxCountables 3&1 = 1)
-//   considerGames:true is  [909,909,909,2049] fixed (maxCountables 18 → far larger swing)
+//   considerGames:true is  [909,909,951,2017] fixed (maxCountables 18 → far larger swing)
+// Both moved 2026-11-05 when the winner's K stopped reading the loser's set count (side-index fix).
 const outcomes = [
   { roundNumber: 1, roundPosition: 1, scoreString: '6-1 6-2', winningSide: 1 },
   { roundNumber: 1, roundPosition: 2, scoreString: '6-3 6-4', winningSide: 1 },
@@ -38,10 +39,11 @@ it('scales the Elo K-factor by bestOf * setTo when considerGames is true', () =>
   const setBased = sortedRatingValues(false, baseRecord);
   const gameBased = sortedRatingValues(true, baseRecord);
 
-  // set-based path unchanged (maxCountables = bestOf = 3)
-  expect(setBased).toEqual([1402, 1402, 1402, 1592]);
-  // game-based path uses maxCountables = bestOf * setTo = 18 (was ~1 when buggy)
-  expect(gameBased).toEqual([909, 909, 909, 2049]);
+  // set-based path (maxCountables = bestOf = 3); [1402,1402,1402,1592] while the winner's K read the loser's sets
+  expect(setBased).toEqual([1402, 1402, 1408, 1586]);
+  // game-based path uses maxCountables = bestOf * setTo = 18 (was ~1 when buggy); [909,909,909,2049] before the
+  // winner's K read its own sets
+  expect(gameBased).toEqual([909, 909, 951, 2017]);
   // sanity: the corrected game-based K-factor moves ratings further than the set-based one
   expect(gameBased[3] - gameBased[0]).toBeGreaterThan(setBased[3] - setBased[0]);
 });
