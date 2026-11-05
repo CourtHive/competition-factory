@@ -1,7 +1,7 @@
 import { isCompletedCombinedPointTie } from '@Validators/isCompletedCombinedPointTie';
 import { parsedFormatCanEndTied } from '@Validators/tiedFormatCompatibility';
 import { parse, type SetFormat } from '@Helpers/matchUpFormatCode/parse';
-import { overtimeDecision } from '@Validators/overtimeScore';
+import { overtimeDecision } from '@Scoring/analysis/overtimeScore';
 import { parseTallyFormat } from './parseTallyFormat';
 
 // constants and types

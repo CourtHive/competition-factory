@@ -1,5 +1,5 @@
 import { deleteNotices, setOutcomePipeline, setSchemaWriteMode, setSubscriptions } from '@Global/state/globalState';
-import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
+import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';

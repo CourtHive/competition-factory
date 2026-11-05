@@ -1,4 +1,4 @@
-import { generateScoreString } from '@Assemblies/generators/matchUps/generateScoreString';
+import { generateScoreString } from '@Scoring/views/generateScoreString';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 
 // Fixtures

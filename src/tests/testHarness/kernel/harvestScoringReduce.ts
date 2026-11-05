@@ -3,7 +3,7 @@ import { overTheWire } from './kernel';
 import fs from 'node:fs';
 
 // types
-import type { ScoringConfiguration, TimelineEntry } from '@Assemblies/engines/scoring/v2/types';
+import type { ScoringConfiguration, TimelineEntry } from '@Scoring/kernel/types';
 
 /**
  * `pnpm kernel:harvest-scoring` sets `SCORING_REDUCE_CASES=<file>` and records the scoring corpus: each scenario's

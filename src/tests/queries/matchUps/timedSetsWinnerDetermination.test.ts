@@ -1,4 +1,4 @@
-import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
+import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { analyzeScore } from '@Query/matchUp/analyzeScore';
 import { expect, it } from 'vitest';
 

@@ -1,4 +1,4 @@
-import { reverseScore } from '@Assemblies/generators/score/reverseScore';
+import { reverseScore } from '@Scoring/views/reverseScore';
 import { validateScore } from '@Validators/validateScore';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import { tournamentEngine } from '@Engines/syncEngine';

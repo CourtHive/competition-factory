@@ -1,4 +1,4 @@
-import { generateOutcomeFromScoreString as outcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
+import { generateOutcomeFromScoreString as outcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { generateOutcome as outcome } from '@Generators/simulation/generateOutcome';
 
 export { generateTournamentRecord } from '@Generators/mocks/generateTournamentRecord';

@@ -1,8 +1,8 @@
-import { reduce } from '@Assemblies/engines/scoring/v2/reduce';
+import { reduce } from '@Scoring/kernel/reduce';
 import { describe, expect, it } from 'vitest';
 
 // constants and types
-import type { TimelineEntry } from '@Assemblies/engines/scoring/v2/types';
+import type { TimelineEntry } from '@Scoring/kernel/types';
 
 /*
  * ScoringEngine v2 (SE2b): the points-to views (§ 11.2), held to the spec. `pointsToGame` and `isBreakpoint` are

@@ -1,8 +1,8 @@
-import { createContext, reduce, serverOf } from '@Assemblies/engines/scoring/v2/reduce';
+import { createContext, reduce, serverOf } from '@Scoring/kernel/reduce';
 import { describe, expect, it } from 'vitest';
 
 // constants and types
-import type { ScoringConfiguration, TimelineEntry } from '@Assemblies/engines/scoring/v2/types';
+import type { ScoringConfiguration, TimelineEntry } from '@Scoring/kernel/types';
 
 /*
  * ScoringEngine v2 (SE2b): service (§ 10), held directly to the spec. The differential holds every point's server,

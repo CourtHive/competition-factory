@@ -1,4 +1,4 @@
-import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
+import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { getDifferentialTally } from '@Mutate/matchUps/outcome/differential';
 import { setOutcomePipeline } from '@Global/state/globalState';
 import { afterEach, describe, expect, it } from 'vitest';

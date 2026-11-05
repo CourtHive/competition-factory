@@ -1,4 +1,4 @@
-import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
+import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { computeTiebreakers } from '@Query/standings/swiss/computeTiebreakers';
 import { computeScoreGroups } from '@Query/standings/swiss/computeScoreGroups';
 import mocksEngine from '@Assemblies/engines/mock';

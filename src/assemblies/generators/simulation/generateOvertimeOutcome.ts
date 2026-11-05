@@ -1,4 +1,4 @@
-import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
+import { matchUpScore } from '@Scoring/views/matchUpScore';
 import { randomInt, weightedRandom } from '@Tools/math';
 
 // constants and types

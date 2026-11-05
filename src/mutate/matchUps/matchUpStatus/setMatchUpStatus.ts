@@ -24,7 +24,6 @@ import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParame
 import { collectionChoiceOutcomeRefusal } from '@Query/matchUp/collectionChoice';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
 import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
-import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
 import { validateDrawTallyOptions } from '@Validators/validateTallyPolicy';
 import { getDeciderFinals } from '@Query/drawDefinition/deciderStructures';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
@@ -33,6 +32,7 @@ import { tiebreakPointsWarnings } from '@Validators/validateScore';
 import { decideOutcomeV2 } from '@Mutate/matchUps/outcome/decide';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
+import { matchUpScore } from '@Scoring/views/matchUpScore';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { holdGoesTo } from '@Query/matchUps/addGoesTo';

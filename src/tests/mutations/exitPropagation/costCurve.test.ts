@@ -1,4 +1,4 @@
-import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
+import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
 import { setOutcomePipeline, setSubscriptions } from '@Global/state/globalState';
 import { firstPlayable } from '@Tests/testHarness/exitPropagation/driver';

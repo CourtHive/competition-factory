@@ -10,8 +10,8 @@ import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { isRoundWinnerLink } from '@Query/drawDefinition/linkTraversal';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { reverseScore } from '@Generators/score/reverseScore';
 import { pushGlobalLog } from '@Functions/global/globalLog';
+import { reverseScore } from '@Scoring/views/reverseScore';
 import {
   reconcileFedLoserEligibility,
   fedLoserPlacementRefusal,

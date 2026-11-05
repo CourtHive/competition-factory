@@ -1,13 +1,13 @@
 import { isLevelScore } from '@Query/matchUps/roundRobinTally/drawnResults';
+import { overtimeDecision } from '@Scoring/analysis/overtimeScore';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
-import { overtimeDecision } from './overtimeScore';
 
 // constants and types
 import type { DecidedBy, DecidedByMethod, DecidedIn } from '@Types/scoring/types';
+import type { MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
 import { INVALID_SCORE } from '@Constants/errorConditionConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import type { ResultType } from '@Types/factoryTypes';
-import type { MatchUpStatusUnion, Score } from '@Types/tournamentTypes';
 
 export const EXTERNAL = 'EXTERNAL';
 export const DECIDED_IN: DecidedIn[] = ['REGULATION', 'OVERTIME', 'DECIDER', EXTERNAL];

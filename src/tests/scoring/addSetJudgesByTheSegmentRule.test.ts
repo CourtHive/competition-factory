@@ -1,5 +1,5 @@
-import { LEGACY_REFUSED_INPUT } from '@Assemblies/engines/scoring/v2/legacy';
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
+import { LEGACY_REFUSED_INPUT } from '@Scoring/kernel/legacy';
 import { describe, expect, it } from 'vitest';
 
 // constants

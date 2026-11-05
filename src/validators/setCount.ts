@@ -1,6 +1,6 @@
 import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
+import { overtimeSetAfterDecision } from '@Scoring/analysis/overtimeScore';
 import { parse, ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
-import { overtimeSetAfterDecision } from './overtimeScore';
 
 // types
 import type { Set as SetType } from '@Types/tournamentTypes';

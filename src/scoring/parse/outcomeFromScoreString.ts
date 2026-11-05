@@ -1,6 +1,6 @@
 import { formatForSet, readTiebreakSet } from '@Helpers/matchUpFormatCode/setRules/tiebreakSetShape';
 import { isAggregateFormat } from '@Helpers/matchUpFormatCode/isAggregateFormat';
-import { generateScoreString } from '@Generators/matchUps/generateScoreString';
+import { generateScoreString } from '@Scoring/views/generateScoreString';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import { parseScoreString } from '@Scoring/parse/parseScoreString';
 import { definedAttributes } from '@Tools/definedAttributes';

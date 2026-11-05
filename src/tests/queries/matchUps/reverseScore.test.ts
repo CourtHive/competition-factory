@@ -1,4 +1,4 @@
-import { reverseScore } from '@Assemblies/generators/score/reverseScore';
+import { reverseScore } from '@Scoring/views/reverseScore';
 import { expect, it } from 'vitest';
 
 // constants

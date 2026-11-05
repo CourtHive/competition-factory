@@ -1,10 +1,10 @@
 import { getSetComplement, getTiebreakComplement } from '@Helpers/matchUpFormatCode/setRules/setComplement';
 import { aggregateDeciderSetNumber, finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { generateOvertimeOutcome } from '@Assemblies/generators/simulation/generateOvertimeOutcome';
-import { matchUpScore } from '@Assemblies/generators/matchUps/matchUpScore';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { resolveFormat } from '@Helpers/matchUpFormatCode/matchRule';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
+import { matchUpScore } from '@Scoring/views/matchUpScore';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { generateRange, randomPop } from '@Tools/arrays';
 import { randomInt, weightedRandom } from '@Tools/math';

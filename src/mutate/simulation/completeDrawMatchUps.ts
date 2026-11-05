@@ -1,6 +1,6 @@
-import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
 import { automatedPlayoffPositioning } from '@Mutate/drawDefinitions/automatedPlayoffPositioning';
 import { getLuckyDrawRoundStatus } from '@Query/drawDefinition/getLuckyDrawRoundStatus';
+import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import { generateLineUps } from '@Assemblies/generators/participants/generateLineUps';
 import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
@@ -18,8 +18,8 @@ const automatedPlayoffPositioningRecorded = recorded('automatedPlayoffPositionin
 const generateLineUpsRecorded = recorded('generateLineUps', generateLineUps);
 
 // constants and types
-import { MAIN, PLAY_OFF, QUALIFYING, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import { ErrorType, INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';
+import { MAIN, PLAY_OFF, QUALIFYING, WIN_RATIO } from '@Constants/drawDefinitionConstants';
 import type { DrawDefinition, Structure } from '@Types/tournamentTypes';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/matchUpTypes';
 import { ASCENDING } from '@Constants/sortingConstants';

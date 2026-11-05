@@ -1,14 +1,14 @@
+import { INITIAL_SERVICE, afterPoint, corrected, nextServer, serveSide, serviceCode } from './service';
+import { resolveFormat, ruleForSet } from '@Helpers/matchUpFormatCode/matchRule';
+import { decideMatch, isClosed, setsWon } from './decide';
+import { configuredFormat, takesInput } from './format';
+import { isBreakpoint, pointsTo } from './view';
 import {
   lastPlayableSet,
   overtimeGoverns,
   overtimeTotalError,
   periodForSet,
 } from '@Helpers/matchUpFormatCode/overtimeRule';
-import { INITIAL_SERVICE, afterPoint, corrected, nextServer, serveSide, serviceCode } from './service';
-import { resolveFormat, ruleForSet } from '@Helpers/matchUpFormatCode/matchRule';
-import { decideMatch, isClosed, setsWon } from './decide';
-import { configuredFormat, takesInput } from './format';
-import { isBreakpoint, pointsTo } from './view';
 import {
   readChallenge,
   readEndSegment,
