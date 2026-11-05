@@ -587,6 +587,7 @@ function givenWinnerReason(args: Parameters<typeof exitReason>[0]): AbstainReaso
   // the loser carrying their own exit onto the seat the unwind frees: the carry planned on the draw as the unwind leaves
   // it (`unwoundCarryReason`)
   if (direction?.loser?.exit) return unwoundCarryReason(args, direction.loser);
+  if (direction?.loser?.converged) return unwoundConvergedReason(args);
   const unwound = levels.flatMap(({ seatOps }) => seatOps);
   if (
     direction?.loser?.arrives &&
@@ -656,17 +657,39 @@ function unwoundCarryReason(
   return plainLoserReason(after.view, after.direction) ?? carriedReason(after.view, write);
 }
 
+/**
+ * S7: the loser's carry meets the carry the unwind brought home. Read RULE 4 against the rebuilt view: the BYE is
+ * gone, its matchUp re-derived to the standing carry, and the relay it produces into is left as the unwind wrote it.
+ * Everything a fresh convergence refuses stays v1's, including an occupied seat or an unclean produced target.
+ */
+function unwoundConvergedReason(args: Parameters<typeof exitReason>[0]): AbstainReason | undefined {
+  const { view, request, write } = args;
+  if (view.targets.loserLink?.linkCondition) return 'exit';
+  const after = unwoundView(args, { releasedLandings: true });
+  const loser = after?.direction?.loser;
+  if (!after || !loser?.converged) return 'exit';
+  return convergedReason(after.view, request, write as MatchUpWrite, loser);
+}
+
 /** the view with a double exit's unwind folded in, and the direction planned on it (`rebuild`); undefined where none */
-function unwoundView(args: {
-  drawDefinition?: DrawDefinition;
-  request: OutcomeRequest;
-  view: OutcomeView;
-  route?: Route;
-  rebuild?: RebuildView;
-}): ReturnType<RebuildView> {
+function unwoundView(
+  args: {
+    drawDefinition?: DrawDefinition;
+    request: OutcomeRequest;
+    view: OutcomeView;
+    route?: Route;
+    rebuild?: RebuildView;
+  },
+  { releasedLandings = false }: { releasedLandings?: boolean } = {},
+): ReturnType<RebuildView> {
   if (args.route !== 'winner' || !args.rebuild) return undefined;
-  const { ops } = unwoundOps(args.view, args.request, args.route, args.drawDefinition);
-  return args.rebuild(ops, args.route);
+  const { ops, reannounced } = unwoundOps(args.view, args.request, args.route, args.drawDefinition);
+  // A convergence produces into a released landing: its emptied award is written back to be played before the
+  // direction's ops (`planOps`). Other deferred writes, including standing-BYE advancements, stay out of this fold.
+  const released = releasedLandings
+    ? reannounced.filter((op) => op.op === 'setMatchUpResult' && op.announcedAs === 'reconcileScoredTimes')
+    : [];
+  return args.rebuild([...ops, ...released], args.route);
 }
 
 /**
@@ -4366,6 +4389,17 @@ function unwoundCarriedFor(
   return carriedFor(after?.view ?? view, args, loser);
 }
 
+/** RULE 4's writes, read after the unwind and its released landings where this call replaces a double exit (S7). */
+function unwoundConvergedFor(
+  view: OutcomeView,
+  args: Parameters<typeof planOutcome>[0],
+  loser?: DirectionPlan['loser'],
+): OutcomeOp[] {
+  if (!loser?.converged) return [];
+  const after = isDoubleExit(view.existing.matchUpStatus) ? unwoundView(args, { releasedLandings: true }) : undefined;
+  return convergedOps(after?.view ?? view, args.request, args.write as MatchUpWrite, after?.direction?.loser ?? loser);
+}
+
 /** the schedule attributes v2 plans: those v1's writer writes on the matchUp alone (S7) */
 const PLANNED_SCHEDULE = new Set(['scheduledDate', 'scheduledTime', 'courtId', 'venueId', 'courtOrder']);
 
@@ -4957,7 +4991,7 @@ function byeChainOnward(view: OutcomeView, from: HydratedMatchUp, drawPosition: 
 function unwoundArrivalOps(view: OutcomeView, unwound: OutcomeOp[], loser?: DirectionPlan['loser']): OutcomeOp[] {
   const { loserMatchUpId, loserTargetDrawPosition: drawPosition } = view.targets;
   const byeMatchUp = indexed(view, loserMatchUpId);
-  if (!loser?.arrives || !byeMatchUp || !drawPosition) return [];
+  if (!loser?.arrives || loser.converged || !byeMatchUp || !drawPosition) return [];
   const cleared = unwound.some(
     (op) =>
       op.op === 'clearMatchUpBye' &&
@@ -5102,7 +5136,7 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
   const reservation = write.winningSide ? view.targets.reservations?.[write.winningSide as 1 | 2] : undefined;
   const reserved = reservation?.kind === 'reserve' ? seatBye(reservation) : [];
   // two exits meeting where the loser lands (RULE 4), and what the double exit they make produces (S5)
-  const converging = loser?.converged ? convergedOps(view, request, write, loser) : [];
+  const converging = unwoundConvergedFor(view, args, loser);
   // a double exit's loser seats, BYEs (S5)
   const seatOps = args.route === DOUBLE_EXIT ? doubleExitSeatOps(view, request, args.direction) : undefined;
   const doubleExitSeated = seatOps?.ops ?? [];
@@ -5154,5 +5188,15 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
     (args.route === APPLY_VALUES || args.route === 'swap') &&
     !!args.direction?.loser?.exit &&
     carried.landing.length > 0;
-  return { ops, shape: args.route === 'winner' || carriedOn ? 'direction' : 'local' };
+  // The convergence writes a fresh produced exit into the released landing. v1's scored-time reconciliation then
+  // leaves that exit standing, including its existing stamp, rather than resetting the emptied award it replaced.
+  const convergedWrites = new Set(converging.filter((op) => op.op === 'setMatchUpResult').map((op) => op.matchUpId));
+  const superseded = new Set(
+    reannounced.filter(
+      (op) =>
+        op.op === 'setMatchUpResult' && op.announcedAs === 'reconcileScoredTimes' && convergedWrites.has(op.matchUpId),
+    ),
+  );
+  const writes = ops.filter((op) => !superseded.has(op));
+  return { ops: writes, shape: args.route === 'winner' || carriedOn ? 'direction' : 'local' };
 }
