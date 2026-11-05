@@ -123,9 +123,9 @@ matchUp a participant plays is of the other matchUpType). They are resolved from
 A **timed format** carries its own average when no rule names it: a whole-match cap (`-M:T60`) is the average outright;
 otherwise the set count (exactly N, else best of N) × set minutes, with the final set's minutes substituted when the
 code gives them (`SET3-S:T15-F:T10` is 40). Overtime adds its ceiling: every period of a finite block, then the decider
-at its own minutes when timed, nothing when it is one point (`TB1` has no time dimension:
-`SET2XA-S:T45P-O:2X/T15P-F:TB1` is 90 + 30 = 120), otherwise 10 (`-F:TB7` makes it 130); unlimited periods add one
-period (`SET4XA-S:T12P-O:U/T5P` is 53). Where a competition plays shorter or longer, give the format
+at its own minutes when timed, nothing when it is a tiebreak (`TB1` or `TB7` has no time dimension:
+`SET2XA-S:T45P-O:2X/T15P-F:TB7` is 90 + 30 = 120), otherwise 10 (a shootout, `-F:SO5`, makes it 130); unlimited
+periods add one period (`SET4XA-S:T12P-O:U/T5P` is 53). Where a competition plays shorter or longer, give the format
 code its own average in the scheduling policy. The floor, when nothing applies, is 90 minutes and no recovery.
 
 `scheduleMatchUps` with no timing stated anywhere (no call minutes, no policy, no timing on the event or tournament)
