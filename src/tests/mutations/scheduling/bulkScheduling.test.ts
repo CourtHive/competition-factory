@@ -1,4 +1,4 @@
-import { visualizeScheduledMatchUps } from '@Tests/testHarness/testUtilities/visualizeScheduledMatchUps';
+import { visualizeScheduledMatchUps } from '@Assemblies/tools/visualizeScheduledMatchUps';
 import { getStructureRoundProfile } from '@Query/structure/getStructureRoundProfile';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { getMatchUpIds } from '@Functions/global/extractors';

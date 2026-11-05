@@ -1,7 +1,7 @@
 import { getRotatingPartnerScoringContract } from '@Query/drawDefinition/getRotatingPartnerScoringContract';
 import { stringifyCombinedPointFormat } from '@Helpers/matchUpFormatCode/combinedPointFormat';
-import { validRotatingPartnerSettlementHistory } from './rotatingPartnerSettlement';
-import { isRotatingPartnerTallyPolicy } from './rotatingPartnerTallyPolicy';
+import { validRotatingPartnerSettlementHistory } from '@Validators/rotatingPartnerSettlement';
+import { isRotatingPartnerTallyPolicy } from '@Validators/rotatingPartnerTallyPolicy';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { canonicalJson } from '@Tools/canonicalJson';
 

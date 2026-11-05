@@ -1,5 +1,5 @@
 export { nearestPowerOf2, nextPowerOf2, isPowerOf2, isOdd, isConvertableInteger, isNumeric } from '@Tools/math';
-export { visualizeScheduledMatchUps } from '@Tests/testHarness/testUtilities/visualizeScheduledMatchUps';
+export { visualizeScheduledMatchUps } from '@Assemblies/tools/visualizeScheduledMatchUps';
 // Pure helpers for the signed competitive-exposure axis. Exported here rather
 // than from a governor because they take POSITIONAL arguments — a governor
 // export becomes an engine method, and the engine wrapper hands every method a

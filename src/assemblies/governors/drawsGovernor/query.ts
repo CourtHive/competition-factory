@@ -1,6 +1,6 @@
 export { getRotatingPartnerTallyPolicy } from '@Query/drawDefinition/getRotatingPartnerTallyPolicy';
 export { getRotatingPartnerStandings } from '@Query/drawDefinition/getRotatingPartnerStandings';
-export { getRotatingPartnerRoundPreview } from '@Query/drawDefinition/getRotatingPartnerRoundPreview';
+export { getRotatingPartnerRoundPreview } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/getRotatingPartnerRoundPreview';
 export { getRotatingPartnerScoringContract } from '@Query/drawDefinition/getRotatingPartnerScoringContract';
 export { getRotatingPartnerScoringPolicy } from '@Query/drawDefinition/getRotatingPartnerScoringPolicy';
 export { getEligibleVoluntaryConsolationParticipants } from '@Query/drawDefinition/getEligibleVoluntaryConsolationParticipants';

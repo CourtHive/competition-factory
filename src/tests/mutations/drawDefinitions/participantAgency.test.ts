@@ -1,4 +1,4 @@
-import { resolveDrawPositions } from '@Assemblies/generators/drawDefinitions/drawPositionsResolver';
+import { resolveDrawPositions } from '@Helpers/positioning/drawPositionsResolver';
 import { getDrawPosition, getParticipantId } from '@Functions/global/extractors';
 import { generateRange, randomPop, unique } from '@Tools/arrays';
 import mocksEngine from '@Assemblies/engines/mock';

@@ -1,12 +1,12 @@
 import { automatedPlayoffPositioning } from '@Mutate/drawDefinitions/automatedPlayoffPositioning';
 import { getLuckyDrawRoundStatus } from '@Query/drawDefinition/getLuckyDrawRoundStatus';
 import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
-import { generateLineUps } from '@Assemblies/generators/participants/generateLineUps';
+import { recordSetMatchUpStatus, recorded } from '@Mutate/simulation/scenarioRecorder';
 import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
+import { generateLineUps } from '@Generators/participants/generateLineUps';
 import { generateOutcome } from '@Generators/simulation/generateOutcome';
-import { recordSetMatchUpStatus, recorded } from './scenarioRecorder';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { structureSort } from '@Functions/sorters/structureSort';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';

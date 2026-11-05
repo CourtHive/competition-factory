@@ -1,4 +1,4 @@
-import { visualizeScheduledMatchUps } from '@Tests/testHarness/testUtilities/visualizeScheduledMatchUps';
+import { visualizeScheduledMatchUps } from '@Assemblies/tools/visualizeScheduledMatchUps';
 import { getMatchUpIds } from '@Functions/global/extractors';
 import { hasSchedule } from '@Query/matchUp/hasSchedule';
 import { instanceCount, unique } from '@Tools/arrays';

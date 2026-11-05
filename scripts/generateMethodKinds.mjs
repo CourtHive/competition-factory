@@ -125,7 +125,7 @@ async function loadEngine() {
     stdin: {
       contents:
         "export * as governors from './src/assemblies/governors';\n" +
-        "export { tournamentEngine } from './src/tests/engines/syncEngine';\n",
+        "export { tournamentEngine } from './src/assemblies/engines/sync/assembled';\n",
       resolveDir: ROOT,
       loader: 'ts',
     },

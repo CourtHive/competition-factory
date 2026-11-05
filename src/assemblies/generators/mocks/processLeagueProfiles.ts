@@ -1,4 +1,4 @@
-import { generateDrawDefinition } from '@Assemblies/governors/drawsGovernor';
+import { generateDrawDefinition } from '@Generators/drawDefinitions/generateDrawDefinition/generateDrawDefinition';
 import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { generateVenues } from '@Mutate/venues/generateVenues';
 import { generateParticipants } from './generateParticipants';

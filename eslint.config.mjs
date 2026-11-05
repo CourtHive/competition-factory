@@ -184,10 +184,13 @@ export default [
      * - globalState.ts    — the default log sink, and the fallback when a custom sink throws
      * - *Validator.ts     — output sits behind a published `debug` option, default false
      * - src/server/**     — not reachable from src/index.ts and not part of the published bundle
+     * - examples/asyncEngine/asyncGlobalState.ts — the server-side state provider: its console
+     *                       IS the server's log sink, as globalState.ts is the default one
      */
     files: [
       'src/functions/global/globalLog.ts',
       'src/global/state/globalState.ts',
+      'src/examples/asyncEngine/asyncGlobalState.ts',
       'src/scoring/replay/mcpValidator.ts',
       'src/scoring/replay/pbpValidator.ts',
       'src/server/**',

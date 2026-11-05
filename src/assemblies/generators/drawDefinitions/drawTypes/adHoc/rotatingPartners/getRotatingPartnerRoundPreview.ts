@@ -1,11 +1,11 @@
 import { generateAmericanoPairings } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/generateAmericanoPairings';
 import { generateMexicanoPairings } from '@Generators/drawDefinitions/drawTypes/adHoc/rotatingPartners/generateMexicanoPairings';
+import { appliedRotatingPartnerRoundsAreIntact } from '@Query/drawDefinition/appliedRotatingPartnerRoundsAreIntact';
 import { getAvailableMatchUpsCount } from '@Generators/drawDefinitions/drawTypes/adHoc/getAvailableMatchUpsCount';
-import { appliedRotatingPartnerRoundsAreIntact } from '@Validators/appliedRotatingPartnerRoundsAreIntact';
+import { getRotatingPartnerScoringContract } from '@Query/drawDefinition/getRotatingPartnerScoringContract';
 import { isRotatingPartnerDraw, validateRotatingPartnerEntrants } from '@Validators/rotatingPartnerDraw';
-import { getRotatingPartnerScoringContract } from './getRotatingPartnerScoringContract';
-import { getRotatingPartnerTallyPolicy } from './getRotatingPartnerTallyPolicy';
-import { getRotatingPartnerStandings } from './getRotatingPartnerStandings';
+import { getRotatingPartnerTallyPolicy } from '@Query/drawDefinition/getRotatingPartnerTallyPolicy';
+import { getRotatingPartnerStandings } from '@Query/drawDefinition/getRotatingPartnerStandings';
 import { checkValidEntries } from '@Query/entries/checkValidEntries';
 import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { canonicalJson } from '@Tools/canonicalJson';
@@ -124,4 +124,4 @@ export function getRotatingPartnerRoundPreview(params: RotatingPartnerRoundArgs)
   };
 }
 
-export { appliedRotatingPartnerRoundsAreIntact } from '@Validators/appliedRotatingPartnerRoundsAreIntact';
+export { appliedRotatingPartnerRoundsAreIntact } from '@Query/drawDefinition/appliedRotatingPartnerRoundsAreIntact';

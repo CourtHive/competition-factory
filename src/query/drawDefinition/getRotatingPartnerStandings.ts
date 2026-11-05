@@ -1,4 +1,4 @@
-import { appliedRotatingPartnerRoundsAreIntact } from '@Validators/appliedRotatingPartnerRoundsAreIntact';
+import { appliedRotatingPartnerRoundsAreIntact } from '@Query/drawDefinition/appliedRotatingPartnerRoundsAreIntact';
 import { isRotatingPartnerDraw, validateRotatingPartnerEntrants } from '@Validators/rotatingPartnerDraw';
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { isRotatingPartnerTallyPolicy } from '@Validators/rotatingPartnerTallyPolicy';

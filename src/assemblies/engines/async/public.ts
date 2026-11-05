@@ -1,4 +1,4 @@
-import { competitionEngineAsync as assembled } from '../../../tests/engines/asyncEngine';
+import { competitionEngineAsync as assembled } from './assembled';
 import createAsyncEngine from './index';
 
 import type { AsyncEngineFactory, AsyncFactoryEngine } from '../../../types/asyncEngineTypes';

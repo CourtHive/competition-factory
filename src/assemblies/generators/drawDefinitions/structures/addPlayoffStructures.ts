@@ -1,6 +1,6 @@
-import { generateAndPopulatePlayoffStructures } from '@Assemblies/generators/drawDefinitions/generateAndPopulatePlayoffStructures';
+import { generateAndPopulatePlayoffStructures } from '@Generators/drawDefinitions/generateAndPopulatePlayoffStructures';
+import { attachPlayoffStructures } from '@Mutate/drawDefinitions/attachStructures';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { attachPlayoffStructures } from './attachStructures';
 
 export function addPlayoffStructures(params) {
   const result = generateAndPopulatePlayoffStructures(params);
