@@ -1,7 +1,6 @@
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { addDynamicRatings } from '@Mutate/participants/scaleItems/addDynamicRatings';
 import { getParticipantScaleItem } from '@Query/participant/getParticipantScaleItem';
-import { aggregateDeciderSetNumber } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
@@ -9,20 +8,25 @@ import { recorded } from '@Mutate/simulation/scenarioRecorder';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
 import { calculateNewRatings } from './calculateNewRatings';
 import { getRatingConvertedToELO } from './eloConversions';
+import { kOf, winnerActualOf } from './ratingsPolicyRules';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
-import { aggregateSets } from './aggregators';
+import { findPolicy } from '@Acquire/findPolicy';
 
 // constants, fixtures and types
 import { ARRAY, ERROR, OF_TYPE, TOURNAMENT_RECORD, VALIDATE } from '@Constants/attributeConstants';
-import { completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
-import { MISSING_MATCHUP_IDS } from '@Constants/errorConditionConstants';
+import { MISSING_MATCHUP_IDS, MISSING_VALUE } from '@Constants/errorConditionConstants';
+import { completedMatchUpStatuses, WALKOVER } from '@Constants/matchUpStatusConstants';
+import { POLICY_RATINGS_DEFAULT } from '@Fixtures/policies/POLICY_RATINGS_DEFAULT';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
+import { POLICY_TYPE_RATINGS } from '@Constants/policyConstants';
+import type { RatingsPolicy } from '@Types/ratingsPolicyTypes';
+import type { ExpectationRule } from './ratingUpdate';
 import { DYNAMIC, RATING } from '@Constants/scaleConstants';
 import { EventTypeUnion } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import { ELO } from '@Constants/ratingConstants';
 import { ResultType } from '@Types/factoryTypes';
-import { HydratedSide } from '@Types/hydrated';
+import { HydratedMatchUp, HydratedSide } from '@Types/hydrated';
 
 // the ratings write, logged when a scenario is recorded (see scenarioRecorder)
 const addDynamicRatingsRecorded = recorded('addDynamicRatings', addDynamicRatings);
@@ -49,7 +53,8 @@ export function generateDynamicRatings(params): ResultType & {
     ratingType = ELO, // default to ELO when not provided
     convertToELO, // when true, convert initial ratings to ELO and stay in ELO space
     refreshDynamic, // ignore previously calculated values
-    considerGames, // when true, consider games; otherwise consider sets
+    ratingsPolicy, // a RatingsPolicy, ahead of one attached to the event or tournament and the default
+    matchesPlayed, // { [participantId]: career matches played before this run }, for a MATCHES_PLAYED K
     drawDefinition,
     matchUpIds, // matchUpIds to process for ratings when params.matchUps not provided
     asDynamic, // when true, return dynamic scaleName; otherwise return ratingType
@@ -85,7 +90,27 @@ export function generateDynamicRatings(params): ResultType & {
 
   matchUps.sort(matchUpSort);
 
-  for (const matchUp of matchUps) {
+  const policyOf = (matchUp: HydratedMatchUp): RatingsPolicy => {
+    if (ratingsPolicy) return ratingsPolicy;
+    const event = tournamentRecord.events?.find(({ eventId }) => eventId === matchUp.eventId);
+    const { policy } = findPolicy({ tournamentRecord, event, policyType: POLICY_TYPE_RATINGS });
+    return policy ?? POLICY_RATINGS_DEFAULT[POLICY_TYPE_RATINGS];
+  };
+  const rated = matchUps
+    .map((matchUp) => ({ matchUp, policy: policyOf(matchUp) }))
+    .filter(({ matchUp, policy }) => !(matchUp.matchUpStatus === WALKOVER && policy.walkovers === 'EXCLUDE'));
+
+  // a MATCHES_PLAYED K reads each player's career count, which only the caller holds: refuse before any write
+  const careerCounts: Record<string, number> = { ...matchesPlayed };
+  const uncounted = rated
+    .filter(({ policy }) => policy.k.rule === 'MATCHES_PLAYED')
+    .flatMap(({ matchUp }) => (matchUp.sides ?? []).map((side) => side.participant?.participantId))
+    .filter((participantId) => participantId && careerCounts[participantId] === undefined);
+  if (uncounted.length) {
+    return { error: MISSING_VALUE, info: `matchesPlayed: no career count for ${[...new Set(uncounted)].join(', ')}` };
+  }
+
+  for (const { matchUp, policy } of rated) {
     const { endDate, matchUpFormat, score, sides, winningSide } = matchUp;
 
     const matchUpType = matchUp.matchUpType as EventTypeUnion;
@@ -107,7 +132,7 @@ export function generateDynamicRatings(params): ResultType & {
       ? { scaleName: `${ratingType}.${DYNAMIC}`, eventType: matchUpType, scaleType: RATING }
       : undefined;
 
-    const sideParticipantIds: string[] = Object.assign(
+    const sideParticipantIds: Record<number, string[]> = Object.assign(
       {},
       ...(sides ?? []).map((side: HydratedSide) => {
         const { sideNumber, participant } = side;
@@ -145,20 +170,30 @@ export function generateDynamicRatings(params): ResultType & {
         ),
     );
 
-    const maxCountables = maxCountablesOf(matchUpFormat, considerGames);
-
-    const countables = (score?.sets && aggregateSets(score.sets)) || (winningSide === 1 && [1, 0]) || [0, 1];
+    const parsedFormat: any = matchUpFormat ? parse(matchUpFormat) : undefined;
+    const loserSetsWon = (score?.sets ?? []).filter((set) => winningSide && set.winningSide === 3 - winningSide).length;
+    const sideK = (sideNumber: number) => {
+      const participantId = sides?.find((side) => side.sideNumber === sideNumber)?.participant?.participantId;
+      return kOf(policy.k, participantId ? careerCounts[participantId] : undefined);
+    };
 
     updateRatingsForMatchUp({
+      winnerActual: winningSide ? winnerActualOf({ rule: policy.actual, parsedFormat, loserSetsWon }) : undefined,
+      winnerK: winningSide ? sideK(winningSide) : undefined,
+      loserK: winningSide ? sideK(3 - winningSide) : undefined,
+      expectation: policy.expectation,
       sideParticipantIds,
       computeRatingType,
       outputScaleName,
       scaleItemMap,
       winningSide,
-      countables,
-      maxCountables,
       accessor,
     });
+
+    for (const side of sides ?? []) {
+      const participantId = side.participant?.participantId;
+      if (participantId && careerCounts[participantId] !== undefined) careerCounts[participantId] += 1;
+    }
 
     Object.assign(modifiedScaleValues, scaleItemMap);
 
@@ -167,7 +202,7 @@ export function generateDynamicRatings(params): ResultType & {
     }
   }
 
-  const processedMatchUpIds = matchUps.map(({ matchUpId }) => matchUpId);
+  const processedMatchUpIds = rated.map(({ matchUp }) => matchUp.matchUpId);
 
   return {
     ...SUCCESS,
@@ -176,20 +211,6 @@ export function generateDynamicRatings(params): ResultType & {
     processedMatchUpIds,
     ...(isEloNative && { sourceRatingType: ratingType }),
   };
-}
-
-/**
- * The most sets a matchUp in this format can count, which `kMultiplier` weights a result by. An exactly-N format
- * plays N (its `bestOf` is undefined, so it read as 1 and a three-period aggregate counted a third of its weight),
- * and an aggregate format's decider is one more set, N + 1, played on a level total.
- */
-export function maxCountablesOf(matchUpFormat: string | undefined, considerGames?: boolean): number {
-  const parsedFormat: any = matchUpFormat ? parse(matchUpFormat) : {};
-  // aggregateDeciderSetNumber names the set an -F: would govern; without an -F: there is no decider to play
-  const deciderSet = parsedFormat?.finalSetFormat ? aggregateDeciderSetNumber(parsedFormat) : undefined;
-  const sets = deciderSet ?? parsedFormat?.exactly ?? parsedFormat?.bestOf ?? 1;
-  const setTo = parsedFormat?.setFormat?.setTo || 1;
-  return considerGames ? sets * setTo : sets;
 }
 
 function resolveParticipantScaleItem({
@@ -300,16 +321,32 @@ function resolveSourceDynamicItem({
   return undefined;
 }
 
+type UpdateRatingsForMatchUpArgs = {
+  sideParticipantIds: Record<number, string[]>;
+  scaleItemMap: Record<string, any>;
+  expectation: ExpectationRule;
+  winnerActual?: number;
+  computeRatingType: string;
+  outputScaleName: string;
+  winningSide?: number;
+  /** the scale value's accessor, absent for ELO's plain numbers */
+  accessor: string;
+  winnerK?: number;
+  loserK?: number;
+};
+
 function updateRatingsForMatchUp({
   sideParticipantIds,
   computeRatingType,
   outputScaleName,
+  winnerActual,
   scaleItemMap,
   winningSide,
-  countables,
-  maxCountables,
+  expectation,
+  winnerK,
+  loserK,
   accessor,
-}) {
+}: UpdateRatingsForMatchUpArgs) {
   const winningSideParticipantIds = winningSide ? sideParticipantIds[winningSide] : [];
   const losingSideParticipantIds = winningSide ? sideParticipantIds[3 - winningSide] : [];
 
@@ -321,17 +358,14 @@ function updateRatingsForMatchUp({
       const loserScaleValue = scaleItemMap[loserParticipantId]?.scaleValue;
       const loserRating = typeof loserScaleValue === 'object' ? loserScaleValue[accessor] : loserScaleValue;
 
-      // countables are per side, [side1, side2]: winningSide 1 is index 0 (it read the loser's count as the winner's)
-      const winnerCountables = countables[winningSide - 1];
-      const loserCountables = countables[2 - winningSide];
-
       const { newWinnerRating, newLoserRating } = calculateNewRatings({
         ratingType: computeRatingType,
-        winnerCountables,
-        loserCountables,
-        maxCountables,
+        winnerActual,
         winnerRating,
         loserRating,
+        expectation,
+        winnerK,
+        loserK,
       });
 
       const newWinnerScaleValue = accessor ? { ...winnerScaleValue, [accessor]: newWinnerRating } : newWinnerRating;

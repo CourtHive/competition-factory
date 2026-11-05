@@ -1,29 +1,10 @@
-import { LOGISTIC_400, matchesPlayedK, ratingUpdate } from './ratingUpdate';
+import { ExpectationRule, LOGISTIC_400, ratingUpdate } from './ratingUpdate';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { convertRange } from './convertRange';
 
 // constants
 import { MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { ELO } from '@Constants/ratingConstants';
-
-// FiveThirtyEight's K, fed this match's sets won where the source counts career matches played (RATINGS_POLICY_PLAN § 1)
-const k538 = (countables = 0) => matchesPlayedK({ matchesPlayed: countables });
-const kDefault = () => 1;
-
-// win multipier is scaled by % countables won
-// https://www.stat.berkeley.edu/~aldous/157/Old_Projects/huang.pdf
-function kSet(maxCountables = 3, counted = 2) {
-  const kset = maxCountables / counted;
-  return Number.isNaN(kset) ? eloConfig.kDefault() : kset;
-}
-
-const eloConfig = {
-  diffThreshold: 0.125,
-
-  kCalc: k538, // use calculation defined by FiveThirtyEight.com
-  kMultiplier: kSet, // change to kDefault for value of 1
-  kDefault,
-};
 
 /**
 export function getRatingDelta({ ratings = ratingsParameters, ratingType, rating, delta }) {
@@ -36,26 +17,30 @@ export function getRatingDelta({ ratings = ratingsParameters, ratingType, rating
  */
 
 type CalculateNewRatings = {
-  winnerCountables: number;
-  loserCountables: number;
-  maxCountables: number;
+  /** the winner's actual result, 1 unless the policy grades the win (e.g. by sets played); the loser takes 1 − it */
+  winnerActual?: number;
+  expectation?: ExpectationRule;
   ratingRange?: number[];
   winnerRating: number;
-  countables?: number;
   loserRating: number;
   ratingType: string;
+  winnerK?: number;
+  loserK?: number;
   ratings?: any;
 };
+
+// the default policy's K (POLICY_RATINGS_DEFAULT: Huang 2014's flat-K run)
+const DEFAULT_K = 25;
 
 export function calculateNewRatings(params: CalculateNewRatings) {
   let { winnerRating, loserRating } = params;
   const {
+    expectation = LOGISTIC_400,
     ratings = ratingsParameters,
-    winnerCountables = 1,
-    loserCountables = 0,
+    winnerK = DEFAULT_K,
+    loserK = winnerK,
+    winnerActual = 1,
     ratingType = ELO,
-    maxCountables,
-    countables,
   } = params ?? {};
   const ratingParameters = ratings?.[ratingType];
   if (!ratingParameters) return { error: MISSING_VALUE };
@@ -88,15 +73,11 @@ export function calculateNewRatings(params: CalculateNewRatings) {
     value: invertedScale ? ratingRange[0] - loserRating : loserRating,
   });
 
-  const winnerKValue = eloConfig.kCalc(winnerCountables);
-  const loserKValue = eloConfig.kCalc(loserCountables);
-  const k = eloConfig.kMultiplier(maxCountables, countables);
-
   const { deltas } = ratingUpdate({
     ratings: [convertedWinnerRating, convertedLoserRating],
-    k: [k * winnerKValue, k * loserKValue],
-    expectation: LOGISTIC_400,
-    actual: [1, 0],
+    actual: [winnerActual, 1 - winnerActual],
+    k: [winnerK, loserK],
+    expectation,
   });
 
   const winnerUpdatedConvertedRating = convertedWinnerRating + deltas[0];
@@ -121,16 +102,8 @@ export function calculateNewRatings(params: CalculateNewRatings) {
   const updatedLoserRating = invertedScale ? ratingRange[0] - convertedUpdatedLoserRating : convertedUpdatedLoserRating;
   let newLoserRating = Number.parseFloat(updatedLoserRating.toFixed(decimalPlaces));
 
-  //  if expected winner && percentageDifference > threshold don't change ratings
-  const percentageDifference = Math.max(...ratingRange)
-    ? Math.abs(winnerRating - loserRating) / Math.max(...ratingRange)
-    : 0;
-
-  if (
-    (convertedUpdatedWinnerRating > convertedUpdatedLoserRating && percentageDifference > eloConfig.diffThreshold) ||
-    newWinnerRating < 0 ||
-    newLoserRating < 0
-  ) {
+  // a rating that would leave the scale's range is not written
+  if (newWinnerRating < 0 || newLoserRating < 0) {
     newWinnerRating = winnerRating;
     newLoserRating = loserRating;
   }
