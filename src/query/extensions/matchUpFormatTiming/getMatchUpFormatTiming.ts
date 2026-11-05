@@ -196,15 +196,12 @@ function deriveTimedDefaultMinutes(parsed: ReturnType<typeof parseMatchUpFormat>
   return regulation + overtimeCeilingMinutes(parsed);
 }
 
-/** a decider that is neither timed nor a tiebreak (a shootout) is priced at this many minutes */
-const UNTIMED_DECIDER_MINUTES = 10;
 /** unlimited overtime has no ceiling: it is priced at this many periods */
 const UNLIMITED_OVERTIME_PERIODS_PRICED = 1;
 
 /**
  * Overtime prices its ceiling (CA ruling, 2026-11-04): every period of a finite block, sudden death or not, then the
- * decider (`-F:` follows the block), its own minutes when timed, none for a tiebreak decider, otherwise
- * UNTIMED_DECIDER_MINUTES. Unlimited periods have no ceiling and price UNLIMITED_OVERTIME_PERIODS_PRICED; a decider
+ * decider (`-F:` follows the block) at its own minutes when timed and none otherwise. Unlimited periods have no ceiling and price UNLIMITED_OVERTIME_PERIODS_PRICED; a decider
  * never follows them.
  */
 function overtimeCeilingMinutes(parsed: NonNullable<ReturnType<typeof parseMatchUpFormat>>): number {
@@ -215,10 +212,12 @@ function overtimeCeilingMinutes(parsed: NonNullable<ReturnType<typeof parseMatch
   return overtime.count * periodMinutes + deciderMinutesOf(parsed.finalSetFormat);
 }
 
-/** a tiebreak decider (`TB1`, `TB7`, ...) has no time dimension whatsoever (CA, 2026-11-04) */
+/**
+ * A decider adds only the clock the code gives it: a tiebreak or a shootout has none (CA, 2026-11-04). An allowance
+ * for the time an untimed decider takes belongs in the scheduling policy's averageTimes for the format, not here.
+ */
 function deciderMinutesOf(final: NonNullable<ReturnType<typeof parseMatchUpFormat>>['finalSetFormat']): number {
-  if (!final || final.tiebreakSet) return 0;
-  return final.timed && typeof final.minutes === 'number' ? final.minutes : UNTIMED_DECIDER_MINUTES;
+  return final?.timed && typeof final.minutes === 'number' ? final.minutes : 0;
 }
 
 type MatchUpFormatTimesArgs = {
