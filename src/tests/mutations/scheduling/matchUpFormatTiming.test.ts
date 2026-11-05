@@ -127,13 +127,13 @@ test.each([
   // A non-aggregate exactly format's -F: governs set N.
   { matchUpFormat: 'SET4X-S:T20P-F:T10', expectedMinutes: 70 },
   // Overtime prices its ceiling (CA ruling, 2026-11-04): regulation, then every finite period, then the decider
-  // (its own minutes when timed, none for a tiebreak decider, otherwise UNTIMED_DECIDER_MINUTES, 10); unlimited
-  // periods price one. A tiebreak decider, one point or a race, has no time dimension whatsoever (CA, 2026-11-04).
+  // at its own minutes when timed, none otherwise; unlimited periods price one. A tiebreak or shootout decider has no
+  // time dimension whatsoever (CA, 2026-11-04): an allowance for it belongs in the policy's averageTimes.
   { matchUpFormat: 'SET2XA-S:T40P-O:1/T10P', expectedMinutes: 90 },
   { matchUpFormat: 'SET2XA-S:T45P-O:2X/T15P-F:TB1', expectedMinutes: 120 },
   { matchUpFormat: 'SET2XA-S:T45P-O:2X/T15P-F:TB1NOAD', expectedMinutes: 120 },
   { matchUpFormat: 'SET2XA-S:T45P-O:2X/T15P-F:TB7', expectedMinutes: 120 },
-  { matchUpFormat: 'SET2XA-S:T45P-O:2X/T15P-F:SO5', expectedMinutes: 130 },
+  { matchUpFormat: 'SET2XA-S:T45P-O:2X/T15P-F:SO5', expectedMinutes: 120 },
   { matchUpFormat: 'SET2XA-S:T45P-O:2/T15P-F:T5P', expectedMinutes: 125 },
   { matchUpFormat: 'SET3XA-S:T20P-O:1SD/T5P-F:TB1', expectedMinutes: 65 },
   { matchUpFormat: 'SET4XA-S:T12P-O:U/T5P', expectedMinutes: 53 },

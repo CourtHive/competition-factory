@@ -46,6 +46,23 @@ to 11. Everything else in the fixture (the server rule, a 60-second changeover, 
 timeout per set, no substitutions, plus its penalty and point vocabularies) is how the sport is played, and none
 of it can be expressed in the code.
 
+## Which format owns time
+
+Time belongs to whichever format answers the question being asked (CA, 2026-11-04):
+
+| Time                                                                     | Owner                                                      | Example                                |
+| ------------------------------------------------------------------------ | ---------------------------------------------------------- | -------------------------------------- |
+| The clock of a scored segment: a timed set, half or overtime period      | `matchUpFormat`                                            | `S:T45P`, `O:2X/T15P`, `-M:T60`        |
+| A clock on a single action within play: per attempt, shot or changeover  | `competitionFormat` (`timerProfile`)                       | seconds allowed for each penalty kick  |
+| How long a matchUp is expected to take, including an allowance for parts | scheduling policy `averageTimes`, keyed by the format code | 10 minutes added for a likely shootout |
+
+A decider with no clock in its code, a tiebreak (`TB1`, `TB7`) or a shootout (`SO5`), has no time dimension: a
+default duration derived from the code adds nothing for it. A limit on each attempt in a shootout is a playing
+rule, not a length for the shootout, so it is a competitionFormat timer and never a matchUpFormat clock; and an
+allowance for the time a shootout usually takes is a scheduling decision, made in the policy, not read from the
+code. See [scheduling pipeline](./scheduling-pipeline.md). `timerProfile` has no field for a per-attempt shootout
+clock yet (`shotClockSeconds` is the nearest); when one is needed, it is added there.
+
 ## Where each is stored and resolved
 
 | Format              | Stored on                                                                                               | Resolution order                             | Query                                                                       |
