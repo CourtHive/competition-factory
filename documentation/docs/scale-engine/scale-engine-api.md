@@ -370,8 +370,8 @@ const { newWinnerRating, newLoserRating } = scaleEngine.calculateNewRatings({
   winnerRating, // required
   loserRating, // required
   ratingType, // optional — defaults to 'ELO'
-  winnerK, // optional — defaults to 25
-  loserK, // optional — defaults to winnerK
+  winnerKFactor, // optional — defaults to 25
+  loserKFactor, // optional — defaults to winnerKFactor
   winnerActual, // optional — the winner's actual result, defaults to 1; the loser takes 1 − winnerActual
   expectation, // optional — { rule: 'LOGISTIC', base: 10, spread: 400 }
 });
