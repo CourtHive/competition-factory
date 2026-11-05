@@ -1,5 +1,5 @@
 import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';
 import { checkScoreCompleteness } from '@Validators/scoreCompleteness';
 import { coercedGender } from '@Helpers/coercedGender';
@@ -7,14 +7,18 @@ import { findMatchUp } from '@Acquire/findMatchUp';
 
 // constants and types
 import { completedMatchUpStatuses, COMPLETED, DEFAULTED, RETIRED } from '@Constants/matchUpStatusConstants';
+import { CollectionDefinition, DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
+import type { HydratedMatchUp, HydratedParticipant, HydratedSide } from '@Types/hydrated';
+import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
+import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
+import { SUCCESS } from '@Constants/resultConstants';
+import { DOUBLES } from '@Constants/matchUpTypes';
 import {
   ErrorType,
   INVALID_VALUES,
   MISSING_MATCHUP,
   MISSING_TOURNAMENT_RECORD,
 } from '@Constants/errorConditionConstants';
-import { FEMALE, MALE, MIXED } from '@Constants/genderConstants';
-import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
 import {
   DUAL_DECIDED,
   DUPLICATE_IN_COLLECTION,
@@ -26,10 +30,6 @@ import {
   MISSING_REASON,
   SCORE_INCOMPLETE,
 } from '@Constants/dualIssueConstants';
-import { CollectionDefinition, DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
-import type { HydratedMatchUp, HydratedParticipant, HydratedSide } from '@Types/hydrated';
-import { SUCCESS } from '@Constants/resultConstants';
-import { DOUBLES } from '@Constants/matchUpTypes';
 
 export type DualIssue = {
   code: string;

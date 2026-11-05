@@ -1,5 +1,5 @@
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 
 // constants and types
 import { BYE, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';

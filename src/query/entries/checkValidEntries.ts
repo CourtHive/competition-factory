@@ -1,12 +1,12 @@
-import { isRotatingPartnerDraw, isRotatingPartnerEntrant } from './rotatingPartnerDraw';
+import { isRotatingPartnerDraw, isRotatingPartnerEntrant } from '@Validators/rotatingPartnerDraw';
 import { expectedParticipantType } from '@Query/event/participantTypeForEvent';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { isUngrouped } from '@Query/entries/isUngrouped';
 import { coercedGender } from '@Helpers/coercedGender';
-import { isGendered } from './isGendered';
+import { isGendered } from '@Validators/isGendered';
+import { isMixed } from '@Validators/isMixed';
+import { isAny } from '@Validators/isAny';
 import { unique } from '@Tools/arrays';
-import { isMixed } from './isMixed';
-import { isAny } from './isAny';
 
 // constants, fixtures and types
 import POLICY_MATCHUP_ACTIONS_DEFAULT from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';

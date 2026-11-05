@@ -2,19 +2,19 @@ import { addMatchUpPresenceAttestation } from '@Mutate/timeItems/matchUps/matchU
 import { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInParticipantIds';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getMatchUpParticipantIds } from '@Query/matchUp/getMatchUpParticipantIds';
-import { resolveFromParameters } from '@Helpers/parameters/resolveFromParameters';
 import { validatePresenceAttribution } from '@Query/participant/presencePolicy';
+import { resolveFromParameters } from '@Acquire/resolveFromParameters';
 import { buildAttestation } from '@Mutate/presence/buildAttestation';
 
 // constants and types
+import { CheckInOutParticipantArgs } from '@Types/factoryTypes';
+import { CHECKED_IN } from '@Constants/presenceConstants';
+import { SUCCESS } from '@Constants/resultConstants';
 import {
   INVALID_ATTESTATION_SUBJECT,
   INVALID_ATTRIBUTION,
   INVALID_PARTICIPANT_ID,
 } from '@Constants/errorConditionConstants';
-import { CheckInOutParticipantArgs } from '@Types/factoryTypes';
-import { CHECKED_IN } from '@Constants/presenceConstants';
-import { SUCCESS } from '@Constants/resultConstants';
 import {
   DRAW_DEFINITION,
   ERROR,

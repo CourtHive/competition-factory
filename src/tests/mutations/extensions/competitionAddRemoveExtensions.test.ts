@@ -1,5 +1,5 @@
+import { findExtension } from '@Helpers/extensions/findExtension';
 import competitionEngineSync from '@Engines/syncEngine';
-import { findExtension } from '@Acquire/findExtension';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, test } from 'vitest';
 

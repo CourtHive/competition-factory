@@ -1,7 +1,7 @@
-import { isCompetitorRole } from '@Query/participant/participantRoleOf';
+import { isCompetitorRole } from '@Helpers/participants/participantRoleOf';
+import { findExtension } from '@Helpers/extensions/findExtension';
 import { addExtension } from '@Mutate/extensions/addExtension';
 import { getAccessorValue } from '@Tools/getAccessorValue';
-import { findExtension } from '@Acquire/findExtension';
 import { addNotice } from '@Global/state/globalState';
 import { UUID } from '@Tools/UUID';
 

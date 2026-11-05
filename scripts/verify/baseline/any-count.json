@@ -1,5 +1,5 @@
 {
-  "src/acquire": 13,
+  "src/acquire": 14,
   "src/analyze/report": 3,
   "src/assemblies/engines/ask": 3,
   "src/assemblies/engines/async": 5,
@@ -37,6 +37,7 @@
   "src/global": 5,
   "src/global/state": 42,
   "src/helpers": 12,
+  "src/helpers/extensions": 5,
   "src/helpers/keyValueScore": 10,
   "src/helpers/matchUpFormatCode": 7,
   "src/helpers/matchUpFormatCode/setRules": 6,
@@ -86,7 +87,7 @@
   "src/mutate/timeItems": 16,
   "src/mutate/timeItems/matchUps": 3,
   "src/mutate/tournaments": 21,
-  "src/mutate/tournaments/mutationLocks": 4,
+  "src/mutate/tournaments/mutationLocks": 8,
   "src/mutate/venues": 19,
   "src/query/base": 3,
   "src/query/drawDefinition": 52,

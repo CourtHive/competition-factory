@@ -1,6 +1,6 @@
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { toBePlayed } from '@Fixtures/scoring/outcomes/toBePlayed';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';

@@ -1,6 +1,6 @@
 import { getAllPositionedParticipantIds } from '@Query/drawDefinition/positionsGetter';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
-import { participantRoleOf } from '@Query/participant/participantRoleOf';
+import { participantRoleOf } from '@Helpers/participants/participantRoleOf';
 import { latestPresenceState } from '@Acquire/presenceAttestations';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { getParticipantId } from '@Functions/global/extractors';

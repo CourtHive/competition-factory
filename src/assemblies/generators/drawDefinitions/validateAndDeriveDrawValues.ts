@@ -1,6 +1,6 @@
 import { getAllowedDrawTypes, getAppliedPolicies } from '@Assemblies/governors/queryGovernor';
+import { checkValidEntries } from '@Query/entries/checkValidEntries';
 import { decorateResult } from '@Functions/global/decorateResult';
-import { checkValidEntries } from '@Validators/checkValidEntries';
 import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { getDrawTypeCoercion } from './getDrawTypeCoercion';
 import { getCoercedDrawType } from './getCoercedDrawType';

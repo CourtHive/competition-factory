@@ -2,21 +2,21 @@ import { addMatchUpPresenceAttestation } from '@Mutate/timeItems/matchUps/matchU
 import { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInParticipantIds';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getMatchUpParticipantIds } from '@Query/matchUp/getMatchUpParticipantIds';
-import { resolveFromParameters } from '@Helpers/parameters/resolveFromParameters';
+import { resolveFromParameters } from '@Acquire/resolveFromParameters';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { buildAttestation } from '@Mutate/presence/buildAttestation';
 
 // constants and types
+import { activeMatchUpStatuses, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
+import { CheckInOutParticipantArgs } from '@Types/factoryTypes';
+import { CHECKED_OUT } from '@Constants/presenceConstants';
+import { SUCCESS } from '@Constants/resultConstants';
 import {
   INVALID_ACTION,
   INVALID_ATTESTATION_SUBJECT,
   INVALID_PARTICIPANT_ID,
   PARTICIPANT_NOT_CHECKED_IN,
 } from '@Constants/errorConditionConstants';
-import { activeMatchUpStatuses, completedMatchUpStatuses } from '@Constants/matchUpStatusConstants';
-import { CheckInOutParticipantArgs } from '@Types/factoryTypes';
-import { CHECKED_OUT } from '@Constants/presenceConstants';
-import { SUCCESS } from '@Constants/resultConstants';
 import {
   DRAW_DEFINITION,
   IN_CONTEXT,

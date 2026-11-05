@@ -1,8 +1,8 @@
 import { removeCompetitionProfile, setCompetitionProfile } from '@Mutate/drawDefinitions/competitionProfile';
 import { addDrawEntries } from '@Mutate/drawDefinitions/addDrawEntries';
 import { addAdHocMatchUps } from '@Mutate/structures/addAdHocMatchUps';
+import { checkValidEntries } from '@Query/entries/checkValidEntries';
 import { addEventEntries } from '@Mutate/entries/addEventEntries';
-import { checkValidEntries } from '@Validators/checkValidEntries';
 import { matchUpsOf } from '@Acquire/structureMembers';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it } from 'vitest';

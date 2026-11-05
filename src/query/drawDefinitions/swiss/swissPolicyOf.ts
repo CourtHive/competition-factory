@@ -1,4 +1,4 @@
-import { findExtension } from '@Acquire/findExtension';
+import { findExtension } from '@Helpers/extensions/findExtension';
 
 // constants and types
 import { INVALID_VALUES, ErrorType } from '@Constants/errorConditionConstants';

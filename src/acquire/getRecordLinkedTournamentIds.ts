@@ -1,4 +1,4 @@
-import { findExtension } from './findExtension';
+import { findExtension } from '@Helpers/extensions/findExtension';
 
 // constants
 import { LINKED_TOURNAMENTS } from '@Constants/extensionConstants';

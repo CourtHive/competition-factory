@@ -1,9 +1,9 @@
 import { announceDrawChange, attributesSnapshot } from '@Mutate/drawDefinitions/announceDrawChange';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { getParticipantScaleItem } from '@Query/participant/getParticipantScaleItem';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { resolveScaleValueNumber } from '@Query/scales/resolveScaleValue';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants and types

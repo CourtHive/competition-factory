@@ -1,8 +1,8 @@
 import { getSourceStructureIdsAndRelevantLinks } from '@Query/structure/getSourceStructureIdsAndRelevantLinks';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { isCompletedStructure } from '@Query/drawDefinition/structureActions';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { definedAttributes } from '@Tools/definedAttributes';
 
 // constants and types

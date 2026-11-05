@@ -14,6 +14,7 @@ import { correctionKindChange } from '@Mutate/matchUps/matchUpStatus/correctionK
 import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinningSide';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
 import { resolveScoringFormat } from '@Query/hierarchical/resolveScoringFormat';
@@ -30,7 +31,6 @@ import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
 import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { addGoesTo, hasStoredGoesTo } from '@Query/matchUps/addGoesTo';
 import { checkScoreHasValue } from '@Query/matchUp/checkScoreHasValue';
 import { buildStructuralIndex } from '@Query/matchUps/structuralIndex';

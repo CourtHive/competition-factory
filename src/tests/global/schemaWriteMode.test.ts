@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { setSchemaWriteMode, getSchemaWriteMode } from '@Global/state/globalState';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import tournamentEngine from '@Engines/syncEngine';
 
 // constants

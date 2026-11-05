@@ -1,5 +1,5 @@
 // Acquire
-import { findExtension } from '@Acquire/findExtension';
+import { findExtension } from '@Helpers/extensions/findExtension';
 
 // constants
 import { SANCTIONING_CONSTRAINTS } from '@Constants/extensionConstants';

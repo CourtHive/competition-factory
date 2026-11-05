@@ -1,5 +1,5 @@
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { extensionConstants } from '@Constants/extensionConstants';
 import { factoryVersion } from '@Functions/global/factoryVersion';
 import { isValidExtension } from '@Validators/isValidExtension';

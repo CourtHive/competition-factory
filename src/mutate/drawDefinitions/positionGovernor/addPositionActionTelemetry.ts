@@ -1,6 +1,6 @@
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
+import { findExtension } from '@Helpers/extensions/findExtension';
 import { addExtension } from '@Mutate/extensions/addExtension';
-import { findExtension } from '@Acquire/findExtension';
 
 // constants and types
 import { POSITION_ACTIONS } from '@Constants/extensionConstants';

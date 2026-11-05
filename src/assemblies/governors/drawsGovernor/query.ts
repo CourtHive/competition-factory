@@ -40,7 +40,7 @@ export { getDraftState } from '@Query/drawDefinition/draft/getDraftState';
 export { getAdditionalSeedsAllowance } from '@Query/drawDefinition/getAdditionalSeedsAllowance';
 export { getSeedsCount } from '@Query/drawDefinition/getSeedsCount';
 export { getTeamLineUp } from '@Query/drawDefinition/getTeamLineUp';
-export { checkValidEntries } from '@Validators/checkValidEntries';
+export { checkValidEntries } from '@Query/entries/checkValidEntries';
 export { getDrawDefinitionTimeItem } from '@Query/base/timeItems';
 export { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 export { isAdHocType } from '@Query/drawDefinition/isAdHocType';

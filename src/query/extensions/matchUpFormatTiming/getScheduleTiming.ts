@@ -1,7 +1,7 @@
-import { firstClassGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
+import { firstClassGroupLeafOrExtension } from '@Helpers/extensions/firstClassGroupLeafOrExtension';
 import { timingCategoryType } from '@Query/event/timingCategoryType';
 import { timingCategoryName } from '@Query/event/timingCategoryName';
-import { findExtension } from '@Acquire/findExtension';
+import { findExtension } from '@Helpers/extensions/findExtension';
 import { findPolicy } from '@Acquire/findPolicy';
 
 // constants and types

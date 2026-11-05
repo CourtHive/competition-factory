@@ -1,4 +1,4 @@
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { generateTeamTournament } from './generateTestTeamTournament';
 import { resetLineUps } from '@Mutate/matchUps/lineUps/resetLineUps';
 import { setSubscriptions } from '@Global/state/globalState';

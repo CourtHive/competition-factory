@@ -1,4 +1,4 @@
-import { findExtension } from '@Acquire/findExtension';
+import { findExtension } from '@Helpers/extensions/findExtension';
 import tournamentEngine from '@Engines/syncEngine';
 import { xa } from '@Tools/extractAttributes';
 import { expect, it } from 'vitest';

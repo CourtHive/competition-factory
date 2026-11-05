@@ -1,4 +1,4 @@
-import { findExtension } from '@Acquire/findExtension';
+import { findExtension } from '@Helpers/extensions/findExtension';
 
 export function getDrawParticipantRepresentativeIds({ drawDefinition }) {
   const result = findExtension({

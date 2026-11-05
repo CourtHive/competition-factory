@@ -1,6 +1,6 @@
 import { announceDrawChange, attributesSnapshot } from '@Mutate/drawDefinitions/announceDrawChange';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 
 // constants and types
 import { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';

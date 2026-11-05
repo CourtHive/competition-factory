@@ -8,8 +8,8 @@ import { modifyEventMatchUpFormatTiming } from '@Mutate/extensions/events/modify
 import { positionQualifiers, getQualifiersData } from '@Mutate/matchUps/drawPositions/positionQualifiers';
 import { publishEventSeeding, unPublishEventSeeding } from '@Mutate/publishing/eventSeeding';
 import { getMatchUpParticipantIds } from '@Query/matchUp/getMatchUpParticipantIds';
-import { resolveFromParameters } from '@Helpers/parameters/resolveFromParameters';
 import { getProfileRounds } from '@Query/matchUps/scheduling/getProfileRounds';
+import { resolveFromParameters } from '@Acquire/resolveFromParameters';
 import { resetTieFormat } from '@Mutate/tieFormat/resetTieFormat';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';

@@ -14,9 +14,10 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { firstClassGroupLeafOrExtension, setGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
+import { firstClassGroupLeafOrExtension } from '@Helpers/extensions/firstClassGroupLeafOrExtension';
+import { setGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
+import { findExtension } from '@Helpers/extensions/findExtension';
 import { setSchemaWriteMode } from '@Global/state/globalState';
-import { findExtension } from '@Acquire/findExtension';
 
 // constants
 import { SCHEDULE_LIMITS, SCHEDULE_TIMING, SCHEDULING_PROFILE } from '@Constants/extensionConstants';

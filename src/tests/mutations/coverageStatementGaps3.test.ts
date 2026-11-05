@@ -5,7 +5,7 @@
 import { proConflicts } from '@Mutate/matchUps/schedule/schedulers/proScheduler/proConflicts';
 import { generateStatCrew } from '@Assemblies/generators/tournamentRecords/generateStatCrew';
 import { generateLineUps } from '@Assemblies/generators/participants/generateLineUps';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { updateTieFormat } from '@Mutate/tieFormat/updateTieFormat';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
