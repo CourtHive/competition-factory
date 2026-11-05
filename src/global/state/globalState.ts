@@ -455,6 +455,9 @@ export function setDeepCopy(value: boolean, attributes: DeepCopyAttributes) {
     if (Array.isArray(attributes.toJSON)) globalState.deepCopyAttributes.toJSON = attributes.toJSON;
     if (Array.isArray(attributes.stringify)) globalState.deepCopyAttributes.stringify = attributes.stringify;
     if (attributes.threshold) globalState.deepCopyAttributes.threshold = attributes.threshold;
+    // an explicit `threshold: undefined` clears it; before, nothing could, and a threshold once set held for the process
+    else if ('threshold' in attributes && attributes.threshold === undefined)
+      delete globalState.deepCopyAttributes.threshold;
   }
 }
 

@@ -7,7 +7,7 @@ import { expect, test } from 'vitest';
 // constants
 import { FACTORY } from '@Constants/extensionConstants';
 
-test('setting deepCopy option to false will allow source objects to be modified', () => {
+test('setting deepCopy option to false will allow source objects to be modified', async () => {
   const { tournamentRecord } = mocksEngine.generateTournamentRecord();
   const { startDate, endDate } = tournamentRecord;
 
@@ -58,19 +58,20 @@ test('setting deepCopy option to false will allow source objects to be modified'
   // a root extension is a modification of the record (announced since CA 2026-10-18), so it is stamped like any other
   expect(latestFactoryTimeStamp).toBeGreaterThanOrEqual(factoryTimeStamp);
 
-  setTimeout(() => {
-    const nextStartDate = dateStringDaysChange(startDate, 1);
-    result = tournamentEngine.setTournamentStartDate({
-      startDate: nextStartDate,
-    });
-    expect(result.success).toEqual(true);
+  // awaited, so the assertions below run inside this test: a bare setTimeout fired after the test had ended, where a
+  // failure surfaced as an unhandled error in whichever file was running then, or not at all
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  const nextStartDate = dateStringDaysChange(startDate, 1);
+  result = tournamentEngine.setTournamentStartDate({
+    startDate: nextStartDate,
+  });
+  expect(result.success).toEqual(true);
 
-    tournament = tournamentEngine.getTournament().tournamentRecord;
-    latestFactoryTimeStamp = firstClassOrExtension({
-      element: tournament,
-      attribute: 'factory',
-      name: FACTORY,
-    }).timeStamp;
-    expect(factoryTimeStamp).not.toEqual(latestFactoryTimeStamp);
-  }, 5);
+  tournament = tournamentEngine.getTournament().tournamentRecord;
+  latestFactoryTimeStamp = firstClassOrExtension({
+    element: tournament,
+    attribute: 'factory',
+    name: FACTORY,
+  }).timeStamp;
+  expect(factoryTimeStamp).not.toEqual(latestFactoryTimeStamp);
 });

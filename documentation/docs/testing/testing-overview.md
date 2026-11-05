@@ -319,6 +319,36 @@ Scoring conformance does not prove tournament exit propagation. See
 [format support](../scoring-engine/format-support.md) and
 [adoption notes](../whats-new-7.0.0.md#adoption-notes-7160).
 
+## Test isolation
+
+By default vitest gives every test file a fresh module graph, so each file imports, and under coverage instruments,
+the whole engine again. On PRs into `dev` (`FACTORY_MATRIX_TIER=pr`, see
+[matrix tiers](./exit-propagation-harness.md#matrix-tiers)) most files instead run in the `shared` project, where a
+worker keeps its modules from one file to the next. That roughly halves the suite. Checkpoint PRs into `master`, pushes
+to `master` and local runs keep every file isolated, so a test that passes only because files share modules cannot
+land.
+
+Sharing modules means sharing module state, so a test file must not depend on, or leave behind, global state:
+
+- `src/tests/testHarness/resetGlobalState.ts` runs before every file. It restores the engine's global state that the
+  public setters reach: dev context, global log, invoke observer, captured clocks and stamps, the call random source,
+  save-draw-deletions and audit flags, deep copy, loaded tournaments, subscriptions, notices and the mutation status.
+  It also clears the policy registry and the officiating and sanctioning record stores.
+- A file that changes any of that should still restore it itself, and must not start timers or promises it does not
+  await: a callback that fires after its test has ended runs inside whichever file comes next.
+- Two kinds of file run in the `isolated` project, on every tier:
+  - a file that mocks a module (`vi.mock`, `vi.doMock`, `vi.unmock`, `vi.doUnmock`). A module an earlier file already
+    loaded is not replaced, so the mock would silently not apply. `vitest.config.mts` finds these files by reading the
+    source, so a new mocking file is isolated automatically.
+  - a file listed in `ISOLATED_FILES` in `vitest.config.mts`, because it needs state no public setter can clear. Each
+    entry gives the reason.
+
+To check a change against the PR configuration locally:
+
+```bash
+FACTORY_MATRIX_TIER=pr pnpm test --run
+```
+
 ## CI shards
 
 CI runs the suite as four coverage shards (`vitest run --shard=i/4`). Vitest's own sharding splits files into
