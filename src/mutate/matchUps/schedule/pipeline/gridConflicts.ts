@@ -2,12 +2,12 @@ import { getParticipantReachability, getReachableParticipantIds } from '../sched
 import { normalizeTimes, requirementFor, resolveAnchors } from '@Query/matchUps/scheduling/getParticipantRest';
 import { courtTimeOrderConflicts, usesNoCourtTime } from '../schedulers/proScheduler/courtTimeOrder';
 import { getLeanMatchUpDependencies } from '@Query/matchUps/getLeanMatchUpDependencies';
+import { matchUpWillNeverBePlayed } from '@Helpers/scheduling/schedulePredicates';
 import { getTournamentTimeZone } from '@Query/tournaments/getTournamentTimeZone';
 import { makeTimingResolver } from '@Query/matchUps/scheduling/schedulingTiming';
 import { getParticipantClashes } from '../scheduleMatchUps/participantClashes';
 import { isFinished } from '@Query/matchUps/scheduling/getMatchUpReadiness';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';
-import { matchUpWillNeverBePlayed } from '../byeScheduling';
 import { wasPlayed } from '@Query/reports/recoveryTimeline';
 import { generateRange, unique } from '@Tools/arrays';
 import { ensureInt } from '@Tools/ensureInt';

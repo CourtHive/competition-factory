@@ -1,4 +1,4 @@
-import { deriveBookingId } from '@Mutate/practice/findPracticeBooking';
+import { deriveBookingId } from '@Helpers/scheduling/bookingId';
 import { sameDay } from '@Tools/dateTime';
 
 // constants and types

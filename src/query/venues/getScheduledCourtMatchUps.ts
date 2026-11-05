@@ -1,6 +1,6 @@
 import { scheduledSortedMatchUps } from '@Functions/sorters/scheduledSortedMatchUps';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
-import { getSchedulingProfile } from '@Mutate/tournaments/schedulingProfile';
+import { getSchedulingProfile } from '@Query/scheduling/getSchedulingProfile';
 import { requireParams } from '@Helpers/parameters/requireParams';
 
 // constants and types

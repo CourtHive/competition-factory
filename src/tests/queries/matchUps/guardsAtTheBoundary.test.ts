@@ -1,6 +1,6 @@
+import { validateSchedulingProfile } from '@Query/scheduling/validateSchedulingProfile';
 import { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInParticipantIds';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { validateSchedulingProfile } from '@Validators/validateSchedulingProfile';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';

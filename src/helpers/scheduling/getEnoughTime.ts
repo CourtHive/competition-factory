@@ -1,4 +1,4 @@
-import { generateTimeSlots } from '@Assemblies/generators/scheduling/generateTimeSlots';
+import { generateTimeSlots } from '@Helpers/scheduling/generateTimeSlots';
 import { minutesDifference, timeToDate } from '@Tools/dateTime';
 
 export function getEnoughTime({ averageMatchUpMinutes, includeBookingTypes, periodStartTime, periodEndTime }) {

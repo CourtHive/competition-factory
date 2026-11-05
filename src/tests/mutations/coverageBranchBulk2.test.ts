@@ -9,7 +9,7 @@ import { resetVoluntaryConsolationStructure } from '@Mutate/drawDefinitions/rese
 import { getScheduledCourtMatchUps, getScheduledVenueMatchUps } from '@Query/venues/getScheduledCourtMatchUps';
 import { organizeDrawPositionOptions } from '@Query/drawDefinition/avoidance/organizeDrawPositionOptions';
 import { removeMatchUpCourtAssignment } from '@Mutate/matchUps/schedule/removeMatchUpCourtAssignment';
-import { getCourtsAvailableAtPeriodStart } from '@Query/venues/getCourtsAvailableAtPeriodStart';
+import { getCourtsAvailableAtPeriodStart } from '@Helpers/scheduling/getCourtsAvailableAtPeriodStart';
 import { getCompetitionParticipants } from '@Query/participants/getCompetitionParticipants';
 import { getParticipantEventDetails } from '@Query/participants/getParticipantEventDetails';
 import { removeSeededParticipant } from '@Mutate/drawDefinitions/removeSeededParticipant';

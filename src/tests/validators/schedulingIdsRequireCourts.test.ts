@@ -1,4 +1,4 @@
-import { tournamentRelevantSchedulingIds } from '@Validators/validateSchedulingProfile';
+import { tournamentRelevantSchedulingIds } from '@Query/scheduling/validateSchedulingProfile';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 

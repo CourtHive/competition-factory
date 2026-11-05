@@ -1,4 +1,4 @@
-import { getCourtDateAvailability } from '@Query/venues/getCourtDateAvailability';
+import { getCourtDateAvailability } from '@Helpers/scheduling/getCourtDateAvailability';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { addNotice } from '@Global/state/globalState';
 import { findCourt } from '@Query/venues/findCourt';
