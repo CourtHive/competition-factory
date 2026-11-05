@@ -2,7 +2,7 @@
 import { generateOutcomeFromScoreString } from '@Generators/simulation/generateOutcomeFromScoreString';
 import { deriveCountables } from '@Generators/scales/competition/deriveCountables';
 import { computeActualOutput } from '@Generators/scales/competition/actualOutput';
-import { expectedScore } from '@Generators/scales/competition/expectedScore';
+import { expectedResult, LOGISTIC_400 } from '@Generators/scales/ratingUpdate';
 
 // Fixtures
 import { POLICY_COMPETITION_PRESSURE } from '@Fixtures/policies/POLICY_COMPETITION_PRESSURE';
@@ -92,25 +92,25 @@ function completeMatchUps({ drawId, roundNumber, scores }: { drawId: string; rou
 
 // ==================== UNIT TESTS ====================
 
-describe('expectedScore', () => {
+describe('expectedResult', () => {
   test('equal ratings produce 0.5', () => {
-    expect(expectedScore(1500, 1500, 400)).toBeCloseTo(0.5, 5);
+    expect(expectedResult(1500, 1500, LOGISTIC_400)).toBeCloseTo(0.5, 5);
   });
 
   test('higher rating produces higher expected score', () => {
-    const e = expectedScore(1600, 1400, 400);
+    const e = expectedResult(1600, 1400, LOGISTIC_400);
     expect(e).toBeGreaterThan(0.5);
     expect(e).toBeLessThan(1);
   });
 
   test('complementary expected scores sum to 1', () => {
-    const e1 = expectedScore(1800, 1200, 400);
-    const e2 = expectedScore(1200, 1800, 400);
+    const e1 = expectedResult(1800, 1200, LOGISTIC_400);
+    const e2 = expectedResult(1200, 1800, LOGISTIC_400);
     expect(e1 + e2).toBeCloseTo(1, 5);
   });
 
   test('400-point ELO difference gives ~0.909', () => {
-    const e = expectedScore(1900, 1500, 400);
+    const e = expectedResult(1900, 1500, LOGISTIC_400);
     expect(e).toBeCloseTo(0.909, 2);
   });
 });

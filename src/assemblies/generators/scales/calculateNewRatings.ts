@@ -1,3 +1,4 @@
+import { LOGISTIC_400, matchesPlayedK, ratingUpdate } from './ratingUpdate';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
 import { convertRange } from './convertRange';
 
@@ -5,9 +6,8 @@ import { convertRange } from './convertRange';
 import { MISSING_VALUE } from '@Constants/errorConditionConstants';
 import { ELO } from '@Constants/ratingConstants';
 
-// see footnote #3 here:
-// http://fivethirtyeight.com/features/serena-williams-and-the-difference-between-all-time-great-and-greatest-of-all-time/
-const k538 = (countables = 0) => 250 / Math.pow(countables + 5, 0.4);
+// FiveThirtyEight's K, fed this match's sets won where the source counts career matches played (RATINGS_POLICY_PLAN § 1)
+const k538 = (countables = 0) => matchesPlayedK({ matchesPlayed: countables });
 const kDefault = () => 1;
 
 // win multipier is scaled by % countables won
@@ -18,7 +18,6 @@ function kSet(maxCountables = 3, counted = 2) {
 }
 
 const eloConfig = {
-  nSpread: 400, // determines the 'spread' of the scale
   diffThreshold: 0.125,
 
   kCalc: k538, // use calculation defined by FiveThirtyEight.com
@@ -89,18 +88,19 @@ export function calculateNewRatings(params: CalculateNewRatings) {
     value: invertedScale ? ratingRange[0] - loserRating : loserRating,
   });
 
-  const getExpectation = (playerRating, opponentRating) =>
-    1 / (1 + Math.pow(10, (opponentRating - playerRating) / eloConfig.nSpread));
-
-  const winnerExpectation = getExpectation(convertedWinnerRating, convertedLoserRating);
-  const loserExpectation = getExpectation(convertedLoserRating, convertedWinnerRating);
-
   const winnerKValue = eloConfig.kCalc(winnerCountables);
   const loserKValue = eloConfig.kCalc(loserCountables);
   const k = eloConfig.kMultiplier(maxCountables, countables);
 
-  const winnerUpdatedConvertedRating = convertedWinnerRating + k * winnerKValue * (1 - winnerExpectation);
-  const loserUpdatedConvertedRating = convertedLoserRating + k * loserKValue * (0 - loserExpectation);
+  const { deltas } = ratingUpdate({
+    ratings: [convertedWinnerRating, convertedLoserRating],
+    k: [k * winnerKValue, k * loserKValue],
+    expectation: LOGISTIC_400,
+    actual: [1, 0],
+  });
+
+  const winnerUpdatedConvertedRating = convertedWinnerRating + deltas[0];
+  const loserUpdatedConvertedRating = convertedLoserRating + deltas[1];
 
   // convert calculated new ratings from ELO into ratingType
   const convertedUpdatedWinnerRating = convertRange({
