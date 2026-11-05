@@ -1,3 +1,4 @@
+import { matrixTier, sliceMissingValues, tierCells } from '@Tests/testHarness/matrixTier';
 import { setSubscriptions } from '@Global/state/globalState';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import tournamentEngine from '@Engines/syncEngine';
@@ -285,7 +286,7 @@ it.each(POLICIES)(
     const reports: string[] = [];
 
     let severeCoordinates = 0;
-    for (const cell of MATRIX) {
+    for (const cell of CELLS) {
       const { bucket, report, coordinates } = classify(cell, 'DOWNGRADE', doubleExitPropagateBye);
       counts[bucket]++;
       severeCoordinates += coordinates ?? 0;
@@ -307,7 +308,7 @@ it.each(POLICIES)(
     }).toEqual({
       provenanceOnly: BASELINE.provenanceOnly,
       incomparable: BASELINE.incomparable,
-      identical: BASELINE.identical,
+      identical: swept(BASELINE).identical,
       severeCoordinates: BASELINE.severeCoordinates,
     });
     // 192 cells, each generating two draws and playing them out. It runs in ~10s alone and the
@@ -392,6 +393,26 @@ const UPGRADE_BASELINE = {
   severeCoordinates: 0,
 };
 
+/**
+ * matrixTier.ts: a PR into dev sweeps a third of the cells, every draw type x flavour kept; checkpoints sweep all 192.
+ * Only while every baseline reads "all identical": a slice cannot be checked against a baseline that counts another
+ * bucket, so the moment one does, PRs sweep the full matrix again.
+ */
+const allIdentical = (baseline: typeof BASELINE) => baseline.identical === baseline.cells;
+const CELLS =
+  allIdentical(BASELINE) && allIdentical(UPGRADE_BASELINE)
+    ? tierCells(MATRIX, { stratum: (cell) => `${cell.drawType} ${cell.doubleExitStatus}` })
+    : MATRIX;
+/** a baseline as this run measures it: as recorded, or under a slice every swept cell identical */
+const swept = (baseline: typeof BASELINE) =>
+  CELLS === MATRIX ? baseline : { ...baseline, cells: CELLS.length, identical: CELLS.length };
+
+// CONTROL: the tier narrows the run, never a dimension of it
+it(`the ${matrixTier} tier keeps every value of every matrix dimension`, () => {
+  const dimensions = ['drawType', 'drawSize', 'participantsCount', 'doubleExitStatus', 'propagateExitStatus'] as const;
+  expect(sliceMissingValues(MATRIX, CELLS, [...dimensions])).toEqual([]);
+});
+
 it.each(POLICIES)(
   'a single exit re-scored UP to a double leaves the draw where the direct path leaves it — $label',
   ({ doubleExitPropagateBye }) => {
@@ -400,7 +421,7 @@ it.each(POLICIES)(
     const reports: string[] = [];
 
     let severeCoordinates = 0;
-    for (const cell of MATRIX) {
+    for (const cell of CELLS) {
       const { bucket, report, coordinates } = classify(cell, 'UPGRADE', doubleExitPropagateBye);
       counts[bucket]++;
       severeCoordinates += coordinates ?? 0;
@@ -421,7 +442,7 @@ it.each(POLICIES)(
     }).toEqual({
       provenanceOnly: UPGRADE_BASELINE.provenanceOnly,
       incomparable: UPGRADE_BASELINE.incomparable,
-      identical: UPGRADE_BASELINE.identical,
+      identical: swept(UPGRADE_BASELINE).identical,
       severeCoordinates: UPGRADE_BASELINE.severeCoordinates,
     });
   },
@@ -458,7 +479,7 @@ it.each(POLICIES)(
     const reports: string[] = [];
     const carrierWins: string[] = [];
 
-    for (const cell of MATRIX) {
+    for (const cell of CELLS) {
       const { bucket, report } = classify(cell, 'ORDER', doubleExitPropagateBye);
       counts[bucket]++;
       if (report) reports.push(report);
@@ -476,7 +497,7 @@ it.each(POLICIES)(
 
     // the control: a sweep that measured nothing would satisfy every assertion below vacuously
     expect(MATRIX.length).toEqual(192);
-    expect(counts.identical + counts.provenanceOnly + counts.severe + counts.incomparable).toEqual(192);
+    expect(counts.identical + counts.provenanceOnly + counts.severe + counts.incomparable).toEqual(CELLS.length);
 
     expect(`severe=${counts.severe}\n${reports.join('\n')}`.trim()).toEqual('severe=0');
     expect({ provenanceOnly: counts.provenanceOnly, incomparable: counts.incomparable }).toEqual({

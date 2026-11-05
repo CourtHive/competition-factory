@@ -92,8 +92,15 @@ size, a reduction or the propagate flag.
 The quarantine check described below is limited, under the `pr` tier, to keys that name a registered cell or
 name no cell at all, so a typo'd key still fails on a PR. The full run at the checkpoint checks every key.
 
-Tiered today: the TEAM matrix slice files (`teamMatrix.{dual,line}.*.test.ts`), `exitPropagationMatrix.test.ts`
-and `exitPropagationMatrixExtension.test.ts`. To run a PR's slice locally:
+Tiered today: the TEAM matrix slice files (`teamMatrix.{dual,line}.*.test.ts`), `exitPropagationMatrix.test.ts`,
+`exitPropagationMatrixExtension.test.ts`, `transitionProperties.test.ts`, `doubleExitStatusParity.test.ts`,
+`scheduledExitMatrix.test.ts`, `storedEdgesAreNotRequired.test.ts` and `correctionDivergence.test.ts`, plus three
+censuses: `exitBeforeArrivalCensus.test.ts` (four of twelve seed windows) and the recorded census regressions
+`censusF1FeedRegression20261011.test.ts` and `censusF2RefusalRegression20261011.test.ts`. Those two are stratified by
+expected classification and by arm and group respectively, so a PR still replays at least one instance of every
+expected outcome. `correctionDivergence` slices only while each of its baselines reads "all identical"; once a
+baseline records another bucket, PRs sweep its full matrix again, since a slice cannot be compared with that count.
+To run a PR's slice locally:
 
 ```bash
 FACTORY_MATRIX_TIER=pr pnpm test src/tests/mutations/exitPropagation
