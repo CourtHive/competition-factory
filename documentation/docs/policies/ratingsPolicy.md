@@ -6,6 +6,8 @@ The **Ratings Policy** (`POLICY_TYPE_RATINGS`) sets how `scaleEngine.generateDyn
 
 **Policy Type:** `ratings`
 
+The CODES schema describes a ratings policy as `#/definitions/RatingsPolicy` (`PolicyDefinitions.ratings`, and a competition policy's `dynamicFormRating.ratingsPolicy`). It is closed: each rule is one of those below, with its parameters.
+
 ## How a rating moves
 
 Each side moves by `K × (actual − expected)` from the ratings before the result:
