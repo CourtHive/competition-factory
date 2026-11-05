@@ -8,6 +8,7 @@
 
 import { configDefaults, defineConfig } from 'vitest/config';
 
+import DurationSequencer from './vitest.sequencer.mjs';
 import { testFileAliases } from './vitest.aliases.mjs';
 
 // A `--shard=i/n` run holds a fraction of the suite, so its coverage is a fraction too: every file another
@@ -27,6 +28,8 @@ export default defineConfig({
   test: {
     testTimeout, // 30 seconds for slow tests; 180 under a second implementation (above)
     environment: 'node',
+    // `--shard` splits by recorded duration, not file count (vitest.sequencer.mts); unsharded runs are unaffected
+    sequence: { sequencer: DurationSequencer },
     // Persist transformed modules under node_modules/.vitest-cache so a rerun skips
     // the transform pass. Transform was ~30% of tracked time on a cold local run.
     // The cache lives inside node_modules, so a reinstall invalidates it.

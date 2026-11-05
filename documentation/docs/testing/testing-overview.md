@@ -319,6 +319,24 @@ Scoring conformance does not prove tournament exit propagation. See
 [format support](../scoring-engine/format-support.md) and
 [adoption notes](../whats-new-7.0.0.md#adoption-notes-7160).
 
+## CI shards
+
+CI runs the suite as four coverage shards (`vitest run --shard=i/4`). Vitest's own sharding splits files into
+equal counts, so one shard could carry half again as much test time as another. `vitest.sequencer.mts` splits by
+recorded duration instead: it sorts files heaviest first and gives each to the least-loaded shard. Every shard
+process computes the same assignment, so the shards stay disjoint and together hold every file, which the merged
+coverage report relies on.
+
+Durations live in `vitest.shardDurations.json`, one map per [matrix tier](./exit-propagation-harness.md#matrix-tiers).
+A file with no recorded duration counts as a light one, so stale durations cost balance, never coverage. To
+refresh a tier from a CI run, download the run's `coverage-blob-node26-*` artifacts into one directory, merge them,
+and record:
+
+```bash
+pnpm exec vitest --merge-reports=<dir> --reporter=json --outputFile=report.json --coverage.enabled=false
+node scripts/updateShardDurations.mjs report.json pr   # a PR into dev; use `full` for a checkpoint or master push
+```
+
 ## Checking documentation contracts
 
 After building the package, run `pnpm verify:docs-model`, `pnpm verify:docs-examples`,
