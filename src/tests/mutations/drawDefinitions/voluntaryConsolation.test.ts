@@ -240,13 +240,14 @@ it('can generate a draw with voluntary consolation stage and delay attachment', 
   });
   expect(matchUps.length).toEqual(0);
 
-  expect(notificationsCounter).toEqual(3);
+  // addDrawEntries only: generating the consolation structure is a draft, announced when it is attached
+  expect(notificationsCounter).toEqual(1);
   tournamentEngine.attachConsolationStructures({
     structures: result.structures,
     links: result.links,
     drawId,
   });
-  expect(notificationsCounter).toEqual(4);
+  expect(notificationsCounter).toEqual(2);
 
   matchUps = tournamentEngine.allTournamentMatchUps({
     contextFilters: { stages: [VOLUNTARY_CONSOLATION] },

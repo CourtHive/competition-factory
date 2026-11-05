@@ -14,6 +14,7 @@ import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { isConvertableInteger, nextPowerOf2 } from '@Tools/math';
+import { withDraftWrites } from '@Global/state/withDraftWrites';
 import { getMatchUpId } from '@Functions/global/extractors';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { structuresOf } from '@Acquire/structureMembers';
@@ -57,7 +58,19 @@ type GenerateAndPopulateArgs = {
   uuids?: string[];
   event?: Event;
 };
-export function generateAndPopulatePlayoffStructures(params: GenerateAndPopulateArgs): ResultType & {
+
+/**
+ * Builds on a draft (the caller attaches the result later), so whatever the mutate helpers it builds with announce
+ * is discarded with the draft (`withDraftWrites`): no notice for a structure that is not attached reaches a subscriber,
+ * and the loaded record is not stamped as modified.
+ */
+export function generateAndPopulatePlayoffStructures(
+  params: GenerateAndPopulateArgs,
+): ReturnType<typeof generateAndPopulatePlayoffStructuresDraft> {
+  return withDraftWrites(() => generateAndPopulatePlayoffStructuresDraft(params));
+}
+
+function generateAndPopulatePlayoffStructuresDraft(params: GenerateAndPopulateArgs): ResultType & {
   drawDefinition?: DrawDefinition;
   matchUpModifications?: any[];
   structures?: Structure[];
