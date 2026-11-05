@@ -1,0 +1,78 @@
+{
+  "sport": "women",
+  "policy": "POLICY_RATINGS_FIFA_WOMEN",
+  "ratingType": "ELO",
+  "k": 60,
+  "start": 1500,
+  "kByTier": {
+    "FIFA:WOMENS_WORLD_CUP": 60
+  },
+  "tier": {
+    "system": "FIFA",
+    "value": "WOMENS_WORLD_CUP"
+  },
+  "matchUpFormat": "SET1A-S:T90",
+  "description": "Two groups of a women's world cup (importance 4: K 60 by tier): eight teams, twelve matches, four draws. Full-time scores, recorded as one segment.",
+  "matches": [
+    {
+      "sides": ["Team 01", "Team 02"],
+      "sets": [[1, 0]]
+    },
+    {
+      "sides": ["Team 03", "Team 04"],
+      "sets": [[0, 2]]
+    },
+    {
+      "sides": ["Team 01", "Team 03"],
+      "sets": [[0, 1]]
+    },
+    {
+      "sides": ["Team 04", "Team 02"],
+      "sets": [[0, 0]]
+    },
+    {
+      "sides": ["Team 04", "Team 01"],
+      "sets": [[0, 0]]
+    },
+    {
+      "sides": ["Team 02", "Team 03"],
+      "sets": [[6, 0]]
+    },
+    {
+      "sides": ["Team 05", "Team 06"],
+      "sets": [[1, 0]]
+    },
+    {
+      "sides": ["Team 07", "Team 08"],
+      "sets": [[0, 0]]
+    },
+    {
+      "sides": ["Team 08", "Team 06"],
+      "sets": [[2, 1]]
+    },
+    {
+      "sides": ["Team 05", "Team 07"],
+      "sets": [[2, 3]]
+    },
+    {
+      "sides": ["Team 08", "Team 05"],
+      "sets": [[0, 4]]
+    },
+    {
+      "sides": ["Team 06", "Team 07"],
+      "sets": [[0, 0]]
+    }
+  ],
+  "teams": ["Team 01", "Team 02", "Team 03", "Team 04", "Team 05", "Team 06", "Team 07", "Team 08"],
+  "source": "Anonymised public results; expected values from an independent implementation of the published method, with the factory storage rounding.",
+  "expected": {
+    "Team 01": 1496.0,
+    "Team 02": 1512.0,
+    "Team 03": 1469.0,
+    "Team 04": 1515.0,
+    "Team 05": 1529.0,
+    "Team 06": 1463.0,
+    "Team 07": 1513.0,
+    "Team 08": 1487.0
+  }
+}

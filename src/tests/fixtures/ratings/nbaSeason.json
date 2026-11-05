@@ -1,0 +1,100 @@
+{
+  "sport": "nba",
+  "policy": "POLICY_RATINGS_ELO_538_NBA",
+  "ratingType": "ELO",
+  "k": 20,
+  "start": 1500,
+  "matchUpFormat": "SET1A-S:T48P",
+  "description": "One basketball team's first fifteen games: ten teams, four opponents met twice, two games won in overtime. Final scores, recorded as one segment.",
+  "matches": [
+    {
+      "sides": ["Team 01", "Team 02"],
+      "sets": [[104, 108]]
+    },
+    {
+      "sides": ["Team 02", "Team 03"],
+      "sets": [[119, 111]]
+    },
+    {
+      "sides": ["Team 04", "Team 02"],
+      "sets": [[107, 126]]
+    },
+    {
+      "sides": ["Team 02", "Team 05"],
+      "sets": [[155, 104]]
+    },
+    {
+      "sides": ["Team 06", "Team 02"],
+      "sets": [[114, 124]]
+    },
+    {
+      "sides": ["Team 07", "Team 02"],
+      "sets": [[114, 109]]
+    },
+    {
+      "sides": ["Team 08", "Team 02"],
+      "sets": [[106, 103]]
+    },
+    {
+      "sides": ["Team 02", "Team 06"],
+      "sets": [[121, 107]]
+    },
+    {
+      "sides": ["Team 02", "Team 09"],
+      "sets": [[117, 94]]
+    },
+    {
+      "sides": ["Team 02", "Team 01"],
+      "sets": [[114, 98]]
+    },
+    {
+      "sides": ["Team 08", "Team 02"],
+      "sets": [[107, 117]]
+    },
+    {
+      "sides": ["Team 09", "Team 02"],
+      "sets": [[105, 108]]
+    },
+    {
+      "sides": ["Team 10", "Team 02"],
+      "sets": [[100, 102]]
+    },
+    {
+      "sides": ["Team 11", "Team 02"],
+      "sets": [[121, 118]]
+    },
+    {
+      "sides": ["Team 02", "Team 12"],
+      "sets": [[119, 116]]
+    }
+  ],
+  "teams": [
+    "Team 01",
+    "Team 02",
+    "Team 03",
+    "Team 04",
+    "Team 05",
+    "Team 06",
+    "Team 07",
+    "Team 08",
+    "Team 09",
+    "Team 10",
+    "Team 11",
+    "Team 12"
+  ],
+  "source": "Anonymised public results; expected values from an independent implementation of the published method, with the factory storage rounding.",
+  "expected": {
+    "Team 01": 1484.0,
+    "Team 02": 1596.0,
+    "Team 03": 1491.0,
+    "Team 04": 1485.0,
+    "Team 05": 1471.0,
+    "Team 06": 1482.0,
+    "Team 07": 1509.0,
+    "Team 08": 1499.0,
+    "Team 09": 1482.0,
+    "Team 10": 1497.0,
+    "Team 11": 1508.0,
+    "Team 12": 1496.0
+  }
+}
