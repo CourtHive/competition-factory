@@ -159,7 +159,7 @@ export type { StatObject, MatchStatistics, StatCounters, StatisticsOptions } fro
 // `episode.needed` is what a points-to visualization renders, so the type it renders against has to
 // be importable.
 export type { Episode, EpisodeGame, EpisodeNeeded, EpisodePoint, EpisodeSet } from './types/scoring/types';
-export type { PointsToDecoration } from './mutate/scoring/pointsToCalculator';
+export type { PointsToDecoration } from '@Scoring/v1/pointsToCalculator';
 // The payloads of `getMatchUpReadiness` and `getParticipantRest` / `getParticipantsRest`, named so a consumer rendering
 // them can type against the factory instead of redeclaring the shapes (TMX carried its own copies).
 export type {

@@ -8,7 +8,7 @@
  * - addEventEntries.getTypedParticipantIdsHelper
  */
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
-import { shotParser } from '@Validators/scoring/mcpParser';
+import { shotParser } from '@Scoring/replay/mcpParser';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { defined } from '@Tests/helpers/defined';

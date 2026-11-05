@@ -9,7 +9,7 @@ import { stringify } from '@Helpers/matchUpFormatCode/stringify';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { takesInput } from '@Scoring/kernel/format';
-import { addPoint } from '@Mutate/scoring/addPoint';
+import { addPoint } from '@Scoring/v1/addPoint';
 import { reduce } from '@Scoring/kernel/reduce';
 import { describe, expect, it } from 'vitest';
 

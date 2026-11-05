@@ -6,11 +6,11 @@ import { configuredFormat, DEFAULT_MATCHUP_FORMAT, takesInput } from '@Scoring/k
 import { calculateMatchStatistics } from '@Query/scoring/statistics/standalone';
 import { toStatObjects } from '@Query/scoring/statistics/toStatObjects';
 import { finalGoverns } from '@Helpers/matchUpFormatCode/matchRule';
-import { createMatchUp } from '@Mutate/scoring/createMatchUp';
-import { getScoreboard } from '@Query/scoring/getScoreboard';
 import { ruleInPlay, scoreOf } from '@Scoring/kernel/score';
+import { createMatchUp } from '@Scoring/v1/createMatchUp';
+import { getScoreboard } from '@Scoring/v1/getScoreboard';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
-import { getEpisodes } from '@Query/scoring/getEpisodes';
+import { getEpisodes } from '@Scoring/v1/getEpisodes';
 import { materialize } from '@Scoring/kernel/record';
 import { setsWon } from '@Scoring/kernel/decide';
 import { nowIso } from '@Tools/clock';

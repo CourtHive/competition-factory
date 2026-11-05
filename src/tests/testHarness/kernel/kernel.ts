@@ -18,7 +18,7 @@ import { planGridDate } from '@Mutate/matchUps/schedule/pipeline/gridPlan';
 import { addMinutesToDateTime, endOnTheDay } from '@Tools/civilDateTime';
 import { isValidMatchUpFormat } from '@Validators/isValidMatchUpFormat';
 import { planSchedule } from '@Mutate/matchUps/schedule/pipeline/plan';
-import { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
+import { calculatePointsTo } from '@Scoring/v1/pointsToCalculator';
 import { stringify } from '@Helpers/matchUpFormatCode/stringify';
 import { normativeReduction } from './normativeReduction';
 import { addMinutesToTimeString } from '@Tools/dateTime';

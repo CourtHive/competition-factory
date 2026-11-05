@@ -8,10 +8,10 @@
  * 4. Returns validation results
  */
 
-import { deduceMatchUpFormat } from '@Query/scoring/deduceMatchUpFormat';
-import { createMatchUp } from '@Mutate/scoring/createMatchUp';
-import { addPoint } from '@Mutate/scoring/addPoint';
-import { getScore } from '@Query/scoring/getScore';
+import { deduceMatchUpFormat } from '@Helpers/matchUpFormatCode/deduceMatchUpFormat';
+import { createMatchUp } from '@Scoring/v1/createMatchUp';
+import { addPoint } from '@Scoring/v1/addPoint';
+import { getScore } from '@Scoring/v1/getScore';
 
 // constants
 import { COMPLETED } from '@Constants/matchUpStatusConstants';

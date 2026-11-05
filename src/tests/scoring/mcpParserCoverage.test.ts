@@ -11,7 +11,7 @@
  * - groupByMatch: non-array input, multiple matches
  */
 
-import type { MCPPoint } from '@Validators/scoring/mcpParser';
+import type { MCPPoint } from '@Scoring/replay/mcpParser';
 import { describe, it, expect } from 'vitest';
 import {
   shotSplitter,
@@ -22,7 +22,7 @@ import {
   parsePointWinner,
   parseCSV,
   groupByMatch,
-} from '@Validators/scoring/mcpParser';
+} from '@Scoring/replay/mcpParser';
 
 function makeMCPPoint(overrides: Partial<MCPPoint> = {}): MCPPoint {
   return {

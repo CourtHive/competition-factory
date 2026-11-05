@@ -57,12 +57,12 @@ export type {
 } from '@Query/scoring/statistics/types';
 
 // Scoring validators
-export { validateMatchUp, validateSet, getSetScoreString } from '@Validators/scoring/validateMatchUp';
-export type { ValidateMatchUpOptions, ValidationDetails } from '@Validators/scoring/validateMatchUp';
-export { pbpValidator } from '@Validators/scoring/pbpValidator';
-export type { PBPValidationOptions, PBPValidationResult } from '@Validators/scoring/pbpValidator';
-export { mcpValidator, validateMCPMatch, exportMatchUpJSON } from '@Validators/scoring/mcpValidator';
-export type { MCPValidationOptions, MCPValidationResult, MCPMatchResult } from '@Validators/scoring/mcpValidator';
+export { validateMatchUp, validateSet, getSetScoreString } from '@Scoring/replay/validateMatchUp';
+export type { ValidateMatchUpOptions, ValidationDetails } from '@Scoring/replay/validateMatchUp';
+export { pbpValidator } from '@Scoring/replay/pbpValidator';
+export type { PBPValidationOptions, PBPValidationResult } from '@Scoring/replay/pbpValidator';
+export { mcpValidator, validateMCPMatch, exportMatchUpJSON } from '@Scoring/replay/mcpValidator';
+export type { MCPValidationOptions, MCPValidationResult, MCPMatchResult } from '@Scoring/replay/mcpValidator';
 export {
   parseCSV,
   groupByMatch,
@@ -71,5 +71,5 @@ export {
   analyzeSequence,
   pointParser,
   shotParser,
-} from '@Validators/scoring/mcpParser';
-export type { MCPPoint, MCPMatch, ParsedMCPPoint } from '@Validators/scoring/mcpParser';
+} from '@Scoring/replay/mcpParser';
+export type { MCPPoint, MCPMatch, ParsedMCPPoint } from '@Scoring/replay/mcpParser';

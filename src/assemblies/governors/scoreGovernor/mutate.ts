@@ -1,8 +1,8 @@
-export { createMatchUp } from '@Mutate/scoring/createMatchUp';
-export { addPoint } from '@Mutate/scoring/addPoint';
-export type { AddPointConfig } from '@Mutate/scoring/addPoint';
-export { resolvePointValue } from '@Mutate/scoring/resolvePointValue';
-export type { PointMultiplier } from '@Mutate/scoring/resolvePointValue';
-export { calculatePointsTo } from '@Mutate/scoring/pointsToCalculator';
-export type { PointsToDecoration } from '@Mutate/scoring/pointsToCalculator';
-export { inferServeSide } from '@Mutate/scoring/serveSideCalculator';
+export { createMatchUp } from '@Scoring/v1/createMatchUp';
+export { addPoint } from '@Scoring/v1/addPoint';
+export type { AddPointConfig } from '@Scoring/v1/addPoint';
+export { resolvePointValue } from '@Scoring/v1/resolvePointValue';
+export type { PointMultiplier } from '@Scoring/v1/resolvePointValue';
+export { calculatePointsTo } from '@Scoring/v1/pointsToCalculator';
+export type { PointsToDecoration } from '@Scoring/v1/pointsToCalculator';
+export { inferServeSide } from '@Scoring/v1/serveSideCalculator';

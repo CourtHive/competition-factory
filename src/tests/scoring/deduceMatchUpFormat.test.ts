@@ -1,4 +1,4 @@
-import { deduceMatchUpFormat } from '@Query/scoring/deduceMatchUpFormat';
+import { deduceMatchUpFormat } from '@Helpers/matchUpFormatCode/deduceMatchUpFormat';
 import { describe, expect, it } from 'vitest';
 
 const DEFAULT_FORMAT = 'SET3-S:6/TB7';

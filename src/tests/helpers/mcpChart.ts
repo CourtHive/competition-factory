@@ -8,7 +8,7 @@
  * replay reaches the same score the columns describe.
  */
 
-import type { MCPPoint } from '@Validators/scoring/mcpParser';
+import type { MCPPoint } from '@Scoring/replay/mcpParser';
 
 // The header of MCP's published charting-*-points files
 export const MCP_POINTS_HEADER = 'match_id,Pt,Set1,Set2,Gm1,Gm2,Pts,Gm#,TbSet,Svr,1st,2nd,Notes,PtWinner';
