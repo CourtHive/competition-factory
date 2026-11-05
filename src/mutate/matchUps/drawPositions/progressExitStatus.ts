@@ -1,4 +1,5 @@
 import { assignMatchUpDrawPosition, directWinner } from '@Mutate/matchUps/drawPositions/drawPositionPlacement';
+import { getSideExitProvenance, carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { getSideStatusCode } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { setMatchUpState } from '@Mutate/matchUps/matchUpStatus/setMatchUpState';
 import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
@@ -12,9 +13,7 @@ import {
   buildCarriedExitProvenance,
   collapseDoubleExitStatus,
   mergeSideExitProvenance,
-  getSideExitProvenance,
   deriveStatusCodes,
-  carriedExitStatus,
   placeCodeAtSide,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 

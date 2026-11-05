@@ -1,5 +1,5 @@
 import { setDeepCopy, setSubscriptions } from '@Global/state/globalState';
-import { matchUpsOf } from '@Acquire/structureMembers';
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { afterEach, describe, expect, it } from 'vitest';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';

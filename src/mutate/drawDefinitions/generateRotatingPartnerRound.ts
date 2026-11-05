@@ -4,7 +4,7 @@ import { addMatchUpsNotice, modifyDrawNotice } from '@Mutate/notifications/drawN
 import { checkMutationLock } from '@Mutate/tournaments/mutationLocks/checkMutationLock';
 import { addAdHocMatchUps } from '@Mutate/structures/addAdHocMatchUps';
 import { addParticipant } from '@Mutate/participants/addParticipant';
-import { matchUpsOf } from '@Acquire/structureMembers';
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { addNotice } from '@Global/state/globalState';
 import {
   appliedRotatingPartnerRoundsAreIntact,

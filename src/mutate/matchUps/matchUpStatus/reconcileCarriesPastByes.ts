@@ -1,4 +1,4 @@
-import { carriedExitStatus, getExitSides, getSideExitProvenance } from './sideExitProvenance';
+import { carriedExitStatus, getExitSides, getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
 import { carryExitOnward } from '@Mutate/matchUps/matchUpStatus/settleRederivedDoubleExits';
 import { matchUpHoldsBye } from '@Query/drawDefinition/getByeCrossings';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';

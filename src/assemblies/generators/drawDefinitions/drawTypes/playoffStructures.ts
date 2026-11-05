@@ -1,5 +1,5 @@
+import structureTemplate from '@Helpers/drawTopology/templates/structureTemplate';
 import { feedInMatchUps } from '@Generators/drawDefinitions/feedInMatchUps';
-import structureTemplate from '@Generators/templates/structureTemplate';
 import { treeMatchUps } from './eliminationTree';
 import { generateRange } from '@Tools/arrays';
 

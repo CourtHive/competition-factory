@@ -1,4 +1,4 @@
-import { addFinishingRounds } from '@Generators/drawDefinitions/addFinishingRounds';
+import { addFinishingRounds } from '@Query/structure/addFinishingRounds';
 import { buildRound } from '@Generators/drawDefinitions/buildRound';
 import { generateRange } from '@Tools/arrays';
 import { isPowerOf2 } from '@Tools/math';

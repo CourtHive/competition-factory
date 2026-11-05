@@ -1,8 +1,8 @@
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { isConvertableInteger, isPowerOf2 } from '@Tools/math';
 import { getDrawStructures } from '@Acquire/findStructure';
-import { structuresOf } from '@Acquire/structureMembers';
 import { isValidDateString } from '@Tools/dateTime';
 
 // constants and types

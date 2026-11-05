@@ -1,4 +1,4 @@
-import { generateCollectionMatchUps } from '@Assemblies/generators/drawDefinitions/tieMatchUps';
+import { generateCollectionMatchUps } from '@Helpers/drawTopology/templates/tieMatchUps';
 import { compareTieFormats } from '@Query/hierarchical/tieFormats/compareTieFormats';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { copyTieFormat } from '@Query/hierarchical/tieFormats/copyTieFormat';

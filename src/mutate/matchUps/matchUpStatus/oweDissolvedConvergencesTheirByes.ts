@@ -1,5 +1,5 @@
 import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
-import { carriedExitStatus, getSideExitProvenance } from './sideExitProvenance';
+import { carriedExitStatus, getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { isDoubleExit, isExit } from '@Validators/isExit';

@@ -1,11 +1,11 @@
 import { getPlayoffScopeStructureIds } from './getPlayoffScopeStructureIds';
+import { structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { allDrawMatchUps } from '@Query/matchUps/getAllDrawMatchUps';
 import { getPositionsPlayedOff } from './getPositionsPlayedOff';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
 import { getPositionAssignments } from './positionsGetter';
 import { getDrawStructures } from '@Acquire/findStructure';
 import { chunkArray, generateRange } from '@Tools/arrays';
-import { structuresOf } from '@Acquire/structureMembers';
 import { getSourceRounds } from './getSourceRounds';
 import { getStructureLinks } from './linkGetter';
 import { numericSort } from '@Tools/sorting';

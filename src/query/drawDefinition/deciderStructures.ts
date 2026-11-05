@@ -1,7 +1,7 @@
-import { isRoundWinnerLink } from '@Query/drawDefinition/linkTraversal';
+import { isRoundWinnerLink } from '@Helpers/drawTopology/linkTraversal';
 import { isLinkObject } from '@Query/drawDefinition/malformedLinks';
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
-import { matchUpsOf } from '@Acquire/structureMembers';
 
 // constants and types
 import { LOSER } from '@Constants/drawDefinitionConstants';

@@ -6,7 +6,7 @@ export { getRotatingPartnerScoringPolicy } from '@Query/drawDefinition/getRotati
 export { getEligibleVoluntaryConsolationParticipants } from '@Query/drawDefinition/getEligibleVoluntaryConsolationParticipants';
 export { getAvailableMatchUpsCount } from '@Generators/drawDefinitions/drawTypes/adHoc/getAvailableMatchUpsCount';
 export { getDrawParticipantRepresentativeIds } from '@Query/drawDefinition/getDrawParticipantRepresentativeIds';
-export { getValidGroupSizes } from '@Assemblies/generators/drawDefinitions/drawTypes/roundRobin/roundRobin';
+export { getValidGroupSizes } from '@Helpers/drawTopology/roundRobin/validGroupSizes';
 export { getFeedInQualifyingPositions } from '@Generators/drawDefinitions/feedInQualifying';
 export { allPlayoffPositionsFilled, isCompletedStructure } from '@Query/drawDefinition/structureActions';
 export { getStructureInconsistencies } from '@Query/drawDefinition/getStructureInconsistencies';

@@ -1,6 +1,6 @@
 import { stringifyCombinedPointFormat } from '@Helpers/matchUpFormatCode/combinedPointFormat';
-import { isRoundWinnerLink } from '@Query/drawDefinition/linkTraversal';
-import { structuresOf, matchUpsOf } from '@Acquire/structureMembers';
+import { structuresOf, matchUpsOf } from '@Helpers/drawTopology/structureMembers';
+import { isRoundWinnerLink } from '@Helpers/drawTopology/linkTraversal';
 
 // constants and types
 import type { DrawDefinition, Structure, Event } from '@Types/tournamentTypes';

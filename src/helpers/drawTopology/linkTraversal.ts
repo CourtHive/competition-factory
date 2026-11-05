@@ -1,4 +1,4 @@
-import { structuresOf } from '@Acquire/structureMembers';
+import { structuresOf } from '@Helpers/drawTopology/structureMembers';
 
 // constants and types
 import { CONTAINER, LOSER, POSITION, WINNER } from '@Constants/drawDefinitionConstants';

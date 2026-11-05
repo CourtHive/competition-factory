@@ -1,4 +1,4 @@
-import { LinkStructures, traversesByFinishingPosition } from '@Query/drawDefinition/linkTraversal';
+import { LinkStructures, traversesByFinishingPosition } from '@Helpers/drawTopology/linkTraversal';
 
 // constants and types
 import { LOSER, WINNER } from '@Constants/drawDefinitionConstants';

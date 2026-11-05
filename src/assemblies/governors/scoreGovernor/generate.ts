@@ -1,4 +1,4 @@
-export { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
+export { generateTieMatchUpScore } from '@Query/matchUp/tieMatchUpScore/generateTieMatchUpScore';
 export { generateScoreString } from '@Scoring/views/generateScoreString';
 export { reverseScore } from '@Scoring/views/reverseScore';
 

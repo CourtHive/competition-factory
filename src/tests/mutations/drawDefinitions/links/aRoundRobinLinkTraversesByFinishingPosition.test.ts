@@ -1,4 +1,4 @@
-import { isRoundWinnerLink, traversesByFinishingPosition, traversesByRound } from '@Query/drawDefinition/linkTraversal';
+import { isRoundWinnerLink, traversesByFinishingPosition, traversesByRound } from '@Helpers/drawTopology/linkTraversal';
 import { repairMalformedLinks } from '@Mutate/drawDefinitions/links/repairMalformedLinks';
 import { migrateTournamentRecord } from '@Mutate/tournaments/migrateTournamentRecord';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';

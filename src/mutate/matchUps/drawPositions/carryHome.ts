@@ -1,11 +1,11 @@
+import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { getDrawPositionSideNumber } from '@Query/matchUps/getDrawPositionSides';
-import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
+import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import {
   deriveExitStateFromProvenance,
   mergeSideExitProvenance,
-  carriedExitStatus,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types

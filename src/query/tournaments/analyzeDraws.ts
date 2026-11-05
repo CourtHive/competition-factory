@@ -1,10 +1,10 @@
 import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getStructureGroups } from '@Query/structure/getStructureGroups';
+import { structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { getStructureLinks } from '@Query/drawDefinition/linkGetter';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { stageOrder } from '@Constants/drawDefinitionConstants';
-import { structuresOf } from '@Acquire/structureMembers';
 import { ensureInt } from '@Tools/ensureInt';
 
 // constants

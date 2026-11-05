@@ -10,5 +10,5 @@ export { generateAdHocRounds } from '@Generators/drawDefinitions/drawTypes/adHoc
 export { generateConsolationStructure } from '@Mutate/drawDefinitions/addLinkedConsolationStructure';
 export { generateSwissRound } from '@Generators/drawDefinitions/drawTypes/adHoc/swiss/generateSwissRound';
 export { drawMatic } from '@Generators/drawDefinitions/drawTypes/adHoc/drawMatic/drawMatic';
-export { addFinishingRounds } from '@Generators/drawDefinitions/addFinishingRounds';
+export { addFinishingRounds } from '@Query/structure/addFinishingRounds';
 export { autoSeeding } from '@Generators/drawDefinitions/autoSeeding';

@@ -207,7 +207,7 @@ directory, deletes the `never` fields that make `Structure` and `DrawLink` "soft
 copy, and counts tsc errors per directory in non-test `src` against `baseline/tsc-hard-union.json` (44 at the start,
 all in the 14 unconverted writes and the areas another workstream holds). A read added the old way —
 `structure.matchUps` without narrowing — raises the count; read it through `matchUpsOf` / `positionAssignmentsOf` /
-`structuresOf` (`@Acquire/structureMembers`) or narrow on `structureType`. `src/types/typeAssertions` is not counted:
+`structuresOf` (`@Helpers/drawTopology/structureMembers`) or narrow on `structureType`. `src/types/typeAssertions` is not counted:
 its soft-form assertions fail under the hard form by design. When the count is 0 everywhere, 8.0.0 deletes the
 `never` fields (Mentat/planning/FACTORY_STRUCTURE_UNIONS_8_0_0.md). The transform refuses to run unless each `never`
 line is found exactly once, so a reshaped `tournamentTypes.ts` fails loudly instead of silently counting the soft form.

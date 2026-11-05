@@ -1,4 +1,4 @@
-import { getValidGroupSizes } from '@Assemblies/generators/drawDefinitions/drawTypes/roundRobin/roundRobin';
+import { getValidGroupSizes } from '@Helpers/drawTopology/roundRobin/validGroupSizes';
 import { chunkArray, generateRange, overlap } from '@Tools/arrays';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isConvertableInteger, nextPowerOf2 } from '@Tools/math';

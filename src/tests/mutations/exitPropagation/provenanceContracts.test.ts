@@ -1,6 +1,7 @@
 import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
 import { reconcileDecider } from '@Mutate/matchUps/matchUpStatus/reconcileDecider';
 import { byeSeatStands } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
+import { exitCarriedFrom } from '@Helpers/drawTopology/sideExitProvenance';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { describe, expect, it } from 'vitest';
@@ -10,7 +11,6 @@ import {
   clearSideExitProvenance,
   mergeSideExitProvenance,
   policyCodeString,
-  exitCarriedFrom,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants

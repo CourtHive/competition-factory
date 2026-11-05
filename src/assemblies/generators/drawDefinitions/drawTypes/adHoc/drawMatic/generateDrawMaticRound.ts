@@ -9,8 +9,8 @@ import { generateDynamicRatings } from '@Mutate/participants/scaleItems/generate
 import { formRatingsPolicy } from '@Helpers/ratings/competition/formRatingsPolicy';
 
 // Acquire
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
-import { matchUpsOf } from '@Acquire/structureMembers';
 
 // Helpers
 import { getPairingsData } from './getPairingsData';

@@ -1,5 +1,5 @@
 import { GOES_TO_NOT_STORED, migrateTournamentRecord } from '@Mutate/tournaments/migrateTournamentRecord';
-import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
+import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it } from 'vitest';
 

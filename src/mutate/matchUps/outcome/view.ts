@@ -1,14 +1,15 @@
+import { getSideExitProvenance, carriedExitStatus, isPropagatedExit } from '@Helpers/drawTopology/sideExitProvenance';
 import { scheduleRefusal as scheduleWriteRefusal } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
-import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
+import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { removalMissingDrawPositions } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { fedLoserPlacementRefusal } from '@Mutate/matchUps/drawPositions/reconcileFedLoserEligibility';
 import { propagatesByeOnDoubleExit } from '@Mutate/matchUps/drawPositions/propagatesByeOnDoubleExit';
 import { isValidMatchUpFormat, isWellFormedMatchUpFormat } from '@Validators/isValidMatchUpFormat';
+import { generateTieMatchUpScore } from '@Query/matchUp/tieMatchUpScore/generateTieMatchUpScore';
 import { hasPropagatedExitDownstream } from '@Query/drawDefinition/hasPropagatedExitDownstream';
 import { getCompetitionPolicy } from '@Query/drawDefinition/competition/getCompetitionPolicy';
 import { resolveTieScoreSource } from '@Query/hierarchical/tieFormats/resolveTieScoreSource';
 import { feedEligibilityChange } from '@Mutate/matchUps/matchUpStatus/feedEligibilityGuard';
-import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { getMappedStructureMatchUps, getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { correctionKindChange } from '@Mutate/matchUps/matchUpStatus/correctionKindGuard';
 import { getProjectedDualWinningSide } from '@Query/matchUp/getProjectedDualWinningSide';
@@ -46,11 +47,6 @@ import { findStructure } from '@Acquire/findStructure';
 import { canonicalJson } from '@Tools/canonicalJson';
 import { isObject } from '@Tools/objects';
 import { overlap } from '@Tools/arrays';
-import {
-  getSideExitProvenance,
-  carriedExitStatus,
-  isPropagatedExit,
-} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import {
   relabelledPathFeedChanges,
   relabelledPathFeedRefusal,

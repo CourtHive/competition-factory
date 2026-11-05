@@ -16,7 +16,7 @@ import {
   extractParticipants,
   buildTournamentRecord,
   buildFromSources,
-} from '@Tools/buildFromSources/buildFromSources';
+} from '@Generators/ingestion/buildFromSources/buildFromSources';
 
 // constants
 import { ROUND_ROBIN, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';

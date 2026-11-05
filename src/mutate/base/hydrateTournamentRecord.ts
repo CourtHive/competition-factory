@@ -1,4 +1,4 @@
-import { hydrateRoundNames } from '@Generators/drawDefinitions/generateDrawDefinition/hydrateRoundNames';
+import { hydrateRoundNames } from '@Mutate/drawDefinitions/hydrateRoundNames';
 
 // constants
 import { MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';

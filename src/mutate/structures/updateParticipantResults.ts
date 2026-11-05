@@ -1,6 +1,6 @@
 import { updateAssignmentParticipantResults } from '@Mutate/drawDefinitions/matchUpGovernor/updateAssignmentParticipantResults';
+import { positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import { positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { findStructure } from '@Acquire/findStructure';
 

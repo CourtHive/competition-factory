@@ -1,8 +1,8 @@
 import { getLadderPolicy, getLadderOrdering } from '@Query/ladder/getLadderPolicy';
 import { participantScaleItem } from '@Query/participant/participantScaleItem';
+import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { resolveLadderStructure } from '@Query/ladder/resolveLadderContext';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
-import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { isObject } from '@Tools/objects';
 
 // constants and types

@@ -1,6 +1,6 @@
 import { feedInMatchUps } from '@Assemblies/generators/drawDefinitions/feedInMatchUps';
 import { feedInLinks } from '@Assemblies/generators/drawDefinitions/links/feedInLinks';
-import { structureTemplate } from '@Assemblies/generators/templates/structureTemplate';
+import { structureTemplate } from '@Helpers/drawTopology/templates/structureTemplate';
 import { constantToString } from '@Tools/strings';
 import { treeMatchUps } from './eliminationTree';
 

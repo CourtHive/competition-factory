@@ -1,4 +1,4 @@
-import { isRoundWinnerLink, traversesByFinishingPosition } from '@Query/drawDefinition/linkTraversal';
+import { isRoundWinnerLink, traversesByFinishingPosition } from '@Helpers/drawTopology/linkTraversal';
 import { getStructureLinks } from '@Query/drawDefinition/linkGetter';
 import { DrawDefinition, DrawLink } from '@Types/tournamentTypes';
 import { findStructure } from '@Acquire/findStructure';

@@ -1,9 +1,9 @@
 import { deleteMatchUpsNotice, modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
-import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { resequenceStructures } from './resequenceStructures';
 import { getMatchUpIds } from '@Functions/global/extractors';

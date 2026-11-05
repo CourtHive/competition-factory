@@ -1,7 +1,7 @@
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { getDrawPositionWinCount } from '@Query/matchUp/getDrawPositionWinCount';
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { teamLevelMatchUps } from '@Acquire/teamLevelMatchUps';
-import { matchUpsOf } from '@Acquire/structureMembers';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, test } from 'vitest';

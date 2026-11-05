@@ -1,5 +1,5 @@
+import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
-import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';

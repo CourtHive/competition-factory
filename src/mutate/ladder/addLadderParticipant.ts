@@ -1,9 +1,9 @@
 import { getLadderOrdering, getLadderPolicy } from '@Query/ladder/getLadderPolicy';
 import { participantScaleItem } from '@Query/participant/participantScaleItem';
+import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { mirrorStandingToScale } from '@Mutate/ladder/mirrorStandingToScale';
 import { ladderStandingNotice } from '@Mutate/ladder/ladderNotices';
 import ratingsParameters from '@Fixtures/ratings/ratingsParameters';
-import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { isLadder } from '@Query/drawDefinition/isLadder';
 import { isObject } from '@Tools/objects';
 

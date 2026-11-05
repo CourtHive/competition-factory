@@ -1,5 +1,5 @@
-import { getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { withdrawByeSeats } from '@Mutate/matchUps/matchUpStatus/withdrawByeSeats';
+import { getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
 import { modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { getSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';

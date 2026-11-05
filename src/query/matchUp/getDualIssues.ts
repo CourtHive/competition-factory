@@ -1,4 +1,4 @@
-import { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
+import { generateTieMatchUpScore } from '@Query/matchUp/tieMatchUpScore/generateTieMatchUpScore';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { checkScoreCompleteness } from '@Scoring/analysis/scoreCompleteness';
 import { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';

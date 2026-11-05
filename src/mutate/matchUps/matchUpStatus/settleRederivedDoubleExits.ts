@@ -1,3 +1,4 @@
+import { getSideExitProvenance, carriedExitStatus, getExitSides } from '@Helpers/drawTopology/sideExitProvenance';
 import { propagateUnfillableLoserBye } from '@Mutate/matchUps/drawPositions/propagateUnfillableLoserBye';
 import { arrivedOverLoserLink } from '@Mutate/drawDefinitions/matchUpGovernor/removeDoubleExit';
 import { progressExitStatus } from '@Mutate/matchUps/drawPositions/progressExitStatus';
@@ -12,13 +13,10 @@ import { applyWithdrawnExits } from './applyWithdrawnExits';
 import { withdrawByeSeats } from './withdrawByeSeats';
 import {
   clearSideExitProvenance,
-  getSideExitProvenance,
   withdrawProducedExits,
-  carriedExitStatus,
   setSideExitProvenance,
   blankSideExitCode,
   blankExitCodes,
-  getExitSides,
 } from './sideExitProvenance';
 
 // constants and types

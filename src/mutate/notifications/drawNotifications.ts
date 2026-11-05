@@ -1,8 +1,8 @@
 import { addNotice, deleteNotice, DEFERRED_PAYLOAD, getCapturedStamps, markModified } from '@Global/state/globalState';
+import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getDrawPositionSides } from '@Query/matchUps/getDrawPositionSides';
 import { drawOrigin, eventOrigin } from '@Query/readModel/readModelRows';
-import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { requireParams } from '@Helpers/parameters/requireParams';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { nowMs } from '@Tools/clock';

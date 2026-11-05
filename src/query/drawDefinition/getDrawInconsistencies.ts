@@ -1,10 +1,10 @@
 import { getStructureInconsistencies } from '@Query/drawDefinition/getStructureInconsistencies';
+import { positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { finalize, hasErrorSeverity, Inconsistency } from '@Query/integrity/inconsistency';
 import { isLinkObject, isMalformedRoundLink } from '@Query/drawDefinition/malformedLinks';
-import { isPropagatedExit } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
-import { positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
+import { isPropagatedExit } from '@Helpers/drawTopology/sideExitProvenance';
 import { isFedLoserEligible } from '@Query/matchUp/isFedLoserEligible';
-import { traversesByRound } from '@Query/drawDefinition/linkTraversal';
+import { traversesByRound } from '@Helpers/drawTopology/linkTraversal';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 
 // constants and types

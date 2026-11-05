@@ -2,6 +2,7 @@ import { buildIndividualIdsMap, getSharedIndividualConflicts } from '@Query/part
 import { addVoluntaryConsolationStructure } from '@Mutate/drawDefinitions/addVoluntaryConsolationStructure';
 import { remapDrawDefinitionMatchUpIds } from '@Mutate/drawDefinitions/remapDrawDefinitionMatchUpIds';
 import { addPlayoffStructures } from '@Mutate/drawDefinitions/addPlayoffStructures';
+import { hydrateRoundNames } from '@Mutate/drawDefinitions/hydrateRoundNames';
 import { getDrawFormat } from '@Generators/drawDefinitions/getDrawFormat';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { decorateResult } from '@Functions/global/decorateResult';
@@ -10,7 +11,6 @@ import { isAdHocType } from '@Query/drawDefinition/isAdHocType';
 import { generateOrGetExisting } from './generateOrGetExisting';
 import { entriesNotPlacedWarnings } from './entriesNotPlaced';
 import { qualifyingGeneration } from './qualifyingGeneration';
-import { hydrateRoundNames } from './hydrateRoundNames';
 import { constantToString } from '@Tools/strings';
 import {
   getFilteredEntries,

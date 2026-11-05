@@ -1,4 +1,4 @@
-import { getValidGroupSizes } from '@Assemblies/generators/drawDefinitions/drawTypes/roundRobin/roundRobin';
+import { getValidGroupSizes } from '@Helpers/drawTopology/roundRobin/validGroupSizes';
 import { roundRobinWithPlayoffsTest } from './roundRobinWithPlayoffsTest';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';

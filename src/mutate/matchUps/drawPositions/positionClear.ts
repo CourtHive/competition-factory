@@ -8,31 +8,31 @@ import { bringCarryHome, carriedEntryAt } from '@Mutate/matchUps/drawPositions/c
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { byeSeatStands } from '@Mutate/matchUps/matchUpStatus/feederSendsNobody';
 import { getInitialRoundNumber } from '@Query/matchUps/getInitialRoundNumber';
+import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { awardStands } from '@Mutate/matchUps/drawPositions/awardStands';
 import { getRoundMatchUps } from '@Query/matchUps/getRoundMatchUps';
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { isAnyExit, isExit } from '@Validators/isExit';
-import { matchUpsOf } from '@Acquire/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
 import { ensureInt } from '@Tools/ensureInt';
 import { overlap } from '@Tools/arrays';
+import {
+  deriveExitStateFromProvenance,
+  clearSideExitProvenance,
+  withoutWinnersOrigins,
+  sideRecordOf,
+} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import {
   releaseAdvancedDrawPositionAcrossLinks,
   releaseAcrossWinnerLinks,
   releaseLinkedWinnerAdvancement,
 } from '@Mutate/matchUps/drawPositions/releaseLinkedWinnerAdvancement';
-import {
-  deriveExitStateFromProvenance,
-  clearSideExitProvenance,
-  withoutWinnersOrigins,
-  carriedExitStatus,
-  sideRecordOf,
-} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
 import { BYE, TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';

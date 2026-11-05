@@ -1,9 +1,9 @@
 import { modifyDrawNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
-import { matchUpsOf } from '@Acquire/structureMembers';
 import { isString } from '@Tools/objects';
 
 // constants and types

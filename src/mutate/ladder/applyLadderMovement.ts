@@ -1,5 +1,5 @@
 import { getLadderMovement, getLadderOrdering, getLadderPolicy } from '@Query/ladder/getLadderPolicy';
-import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
+import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { resolveLadderStructure } from '@Query/ladder/resolveLadderContext';
 import { isLadder } from '@Query/drawDefinition/isLadder';
 

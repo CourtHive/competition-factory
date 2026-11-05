@@ -1,8 +1,12 @@
-import { buildFromSources, buildTournamentRecord, repairDrawLinks } from '@Tools/buildFromSources/buildFromSources';
 import { getDrawData } from '@Query/drawDefinition/getDrawData';
 import tournamentEngine from '@Tests/engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
+import {
+  buildFromSources,
+  buildTournamentRecord,
+  repairDrawLinks,
+} from '@Generators/ingestion/buildFromSources/buildFromSources';
 
 // constants
 import { FIRST_MATCH_LOSER_CONSOLATION, ROUND_ROBIN } from '@Constants/drawDefinitionConstants';

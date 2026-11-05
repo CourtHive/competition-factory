@@ -1,18 +1,15 @@
 import { enableSettleTelemetry, takeSettleEvents } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
+import { deriveStatusCodes, exitOutcomeCode } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 import { getInvariantViolations, describeViolations, type InvariantViolation } from './invariants';
 import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import type { SettleEvent } from '@Mutate/matchUps/matchUpStatus/settleTelemetry';
+import { getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
 import { auditAcceptedRecord, type ProjectionAudit } from './projectionAudit';
 import { captureRecord, compareRecord } from '@Tools/recordDiff';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
 import { getTournamentRecord } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';
 import { isAnyExit } from '@Validators/isExit';
-import {
-  deriveStatusCodes,
-  exitOutcomeCode,
-  getSideExitProvenance,
-} from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants
 import { TO_BE_PLAYED } from '@Constants/matchUpStatusConstants';

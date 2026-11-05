@@ -2,9 +2,9 @@ import { getTournamentPublishStatus } from '@Query/tournaments/getTournamentPubl
 import { isEventPublished, resolveMatchUpPublishState } from './readModelPublish';
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
+import { structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { applyProgressionEdges } from './progressionEdges';
-import { structuresOf } from '@Acquire/structureMembers';
 import {
   courtRow,
   drawRow,

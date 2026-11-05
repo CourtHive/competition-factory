@@ -3,8 +3,8 @@ import { isRotatingPartnerDraw, validateRotatingPartnerEntrants } from '@Validat
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { isRotatingPartnerTallyPolicy } from '@Validators/rotatingPartnerTallyPolicy';
 import { settlementMatches } from '@Validators/rotatingPartnerSettlement';
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { validateScore } from '@Scoring/analysis/validateScore';
-import { matchUpsOf } from '@Acquire/structureMembers';
 
 // constants and types
 import type { DrawDefinition, Event, MatchUp, MatchUpStatusUnion, Tournament } from '@Types/tournamentTypes';

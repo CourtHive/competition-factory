@@ -1,5 +1,5 @@
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
-import { positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
+import { positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { getEventSeedAssignments } from '@Query/event/getEventSeedAssignments';
 import { getDrawId, getParticipantId } from '@Functions/global/extractors';

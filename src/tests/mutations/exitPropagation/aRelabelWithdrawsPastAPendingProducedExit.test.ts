@@ -1,6 +1,6 @@
-import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
 import { getDrawDefinition, getDrawMatchUps } from '@Tests/testHarness/exitPropagation/transitions';
-import { getSideExitProvenance } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { getDrawInconsistencies } from '@Query/drawDefinition/getDrawInconsistencies';
+import { getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
 import { prepareDraw } from '@Tests/testHarness/exitPropagation/sweep';
 import { setSubscriptions } from '@Global/state/globalState';
 import tournamentEngine from '@Engines/syncEngine';

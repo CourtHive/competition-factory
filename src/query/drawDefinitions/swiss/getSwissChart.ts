@@ -1,9 +1,9 @@
 import { computeScoreGroups } from '@Query/standings/swiss/computeScoreGroups';
 import { swissPolicyOf } from '@Query/drawDefinitions/swiss/swissPolicyOf';
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { getParticipantId } from '@Functions/global/extractors';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { findStructure } from '@Acquire/findStructure';
-import { matchUpsOf } from '@Acquire/structureMembers';
 
 // constants and types
 import { MISSING_DRAW_DEFINITION, STRUCTURE_NOT_FOUND, ErrorType } from '@Constants/errorConditionConstants';

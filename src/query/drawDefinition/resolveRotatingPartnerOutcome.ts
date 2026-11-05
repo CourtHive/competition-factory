@@ -3,9 +3,9 @@ import { advancesMatchWinner, drawStructures } from '@Validators/tiedFormatCompa
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { resolveScoringFormat } from '@Query/hierarchical/resolveScoringFormat';
 import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { validateScore } from '@Scoring/analysis/validateScore';
 import { isLevelScore } from '@Scoring/analysis/levelScore';
-import { matchUpsOf } from '@Acquire/structureMembers';
 
 // constants and types
 import { INVALID_VALUES, INVALID_SCORE, UNDECIDED_LEVEL_RESULT } from '@Constants/errorConditionConstants';

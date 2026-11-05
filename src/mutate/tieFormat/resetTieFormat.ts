@@ -1,5 +1,5 @@
 import { addMatchUpsNotice, deleteMatchUpsNotice, modifyMatchUpNotice } from '@Mutate/notifications/drawNotifications';
-import { generateCollectionMatchUps } from '@Assemblies/generators/drawDefinitions/tieMatchUps';
+import { generateCollectionMatchUps } from '@Helpers/drawTopology/templates/tieMatchUps';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { resolveTieFormat } from '@Query/hierarchical/tieFormats/resolveTieFormat';
 import { removeOrphanedTieFormats } from '@Mutate/tieFormat/writeTieFormat';

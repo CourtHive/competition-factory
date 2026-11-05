@@ -1,5 +1,5 @@
+import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { getExitProfiles } from '@Query/drawDefinition/getExitProfile';
-import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 
 // constants and types
 import { INVALID_VALUES, MISSING_DRAW_DEFINITION } from '@Constants/errorConditionConstants';

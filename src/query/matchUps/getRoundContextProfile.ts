@@ -1,5 +1,5 @@
 import { getWinnerLinkRoundNumbers } from '@Query/drawDefinition/linkGetter';
-import { structuresOf } from '@Acquire/structureMembers';
+import { structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { isLucky } from '@Query/drawDefinition/isLucky';
 import { getRoundMatchUps } from './getRoundMatchUps';

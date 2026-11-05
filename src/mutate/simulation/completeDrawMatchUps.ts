@@ -4,9 +4,9 @@ import { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreS
 import { generateLineUps } from '@Assemblies/generators/participants/generateLineUps';
 import { setMatchUpStatus } from '@Mutate/matchUps/matchUpStatus/setMatchUpStatus';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
+import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { generateOutcome } from '@Generators/simulation/generateOutcome';
 import { recordSetMatchUpStatus, recorded } from './scenarioRecorder';
-import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { structureSort } from '@Functions/sorters/structureSort';
 import { matchUpSort } from '@Functions/sorters/matchUpSort';

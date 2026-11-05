@@ -7,7 +7,7 @@ import { kOf, winnerActualOf } from '@Helpers/ratings/ratingsPolicyRules';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // Acquire
-import { matchUpsOf } from '@Acquire/structureMembers';
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 
 // constants and types
 import type { CompetitionParticipantState, CompetitionPolicy, CompetitionState } from '@Types/competitionPolicyTypes';

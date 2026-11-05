@@ -14,7 +14,7 @@ import { getAdHocRatings } from '@Query/participants/getAdHocRatings';
 import { generateSwissPairings } from './swissPairing';
 
 // Acquire
-import { matchUpsOf, positionAssignmentsOf } from '@Acquire/structureMembers';
+import { matchUpsOf, positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { findStructure } from '@Acquire/findStructure';
 
 // constants

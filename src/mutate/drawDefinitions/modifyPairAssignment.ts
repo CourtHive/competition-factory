@@ -1,7 +1,7 @@
 import { modifyDrawEntriesNotice, modifyEventEntriesNotice } from '@Mutate/notifications/entriesNotifications';
+import { positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { modifyPositionAssignmentsNotice } from '@Mutate/notifications/drawNotifications';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
-import { positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
 import { getPairedParticipant } from '@Query/participant/getPairedParticipant';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { deleteParticipants } from '@Mutate/participants/deleteParticipants';

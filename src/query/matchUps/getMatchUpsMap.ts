@@ -1,4 +1,4 @@
-import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
+import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 
 // types

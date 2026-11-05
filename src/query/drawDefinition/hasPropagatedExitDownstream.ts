@@ -1,4 +1,4 @@
-import { exitCarriedFrom } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
+import { exitCarriedFrom } from '@Helpers/drawTopology/sideExitProvenance';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 
 /**

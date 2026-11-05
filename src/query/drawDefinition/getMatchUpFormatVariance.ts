@@ -1,4 +1,4 @@
-import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
+import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, Structure, Tournament } from '@Types/tournamentTypes';

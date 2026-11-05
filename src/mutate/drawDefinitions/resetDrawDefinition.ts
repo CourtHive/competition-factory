@@ -5,8 +5,8 @@ import { modifyDrawEntriesNotice } from '@Mutate/notifications/entriesNotificati
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { isLuckyBasedDraw } from '@Query/drawDefinition/isLuckyBasedDraw';
 import { removeExtension } from '@Mutate/extensions/removeExtension';
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
-import { matchUpsOf } from '@Acquire/structureMembers';
 
 // constants and types
 import { MAIN, QUALIFYING, VOLUNTARY_CONSOLATION } from '@Constants/drawDefinitionConstants';

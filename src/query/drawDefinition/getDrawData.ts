@@ -5,6 +5,7 @@ import { getStructureSeedAssignments } from '@Query/structure/getStructureSeedAs
 import { getReferencedParticipants } from '@Query/participants/getReferencedParticipants';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
+import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { hydrateParticipants } from '@Query/participants/hydrateParticipants';
 import { getEventPublishStatus } from '@Query/event/getEventPublishStatus';
@@ -14,7 +15,6 @@ import { getStructureGroups } from '@Query/structure/getStructureGroups';
 import { withContextExclusion } from '@Query/matchUps/contextExclusion';
 import { getExitProfiles } from '@Query/drawDefinition/getExitProfile';
 import { createHydrationCache } from '@Query/matchUps/hydrationCache';
-import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { getPublishState } from '@Query/publishing/getPublishState';
 import { applyRoundLimit } from '@Query/publishing/applyRoundLimit';
 import { drawWithDerivedGoesTo } from '@Query/matchUps/addGoesTo';

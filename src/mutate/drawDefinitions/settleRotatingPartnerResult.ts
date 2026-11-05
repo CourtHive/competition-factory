@@ -2,7 +2,7 @@ import { getRotatingPartnerStandings } from '@Query/drawDefinition/getRotatingPa
 import { checkMutationLock } from '@Mutate/tournaments/mutationLocks/checkMutationLock';
 import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
-import { matchUpsOf } from '@Acquire/structureMembers';
+import { matchUpsOf } from '@Helpers/drawTopology/structureMembers';
 import { canonicalJson } from '@Tools/canonicalJson';
 import {
   validRotatingPartnerSettlementHistory,

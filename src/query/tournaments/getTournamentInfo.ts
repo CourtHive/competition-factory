@@ -1,4 +1,4 @@
-import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/structureMembers';
+import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
 import { scheduledMatchUpTime } from '@Query/matchUp/scheduledMatchUpTime';

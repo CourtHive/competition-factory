@@ -47,7 +47,6 @@ import type { getModifiedMatchUpFormatTiming } from '@Query/extensions/matchUpFo
 import type { repairMalformedLink, repairMalformedLinks } from '@Mutate/drawDefinitions/links/repairMalformedLinks';
 import type { withdrawParticipantAtDrawPosition } from '@Mutate/drawDefinitions/withdrawParticipantAtDrawPosition';
 import type { declineEndorsement, endorseApplication, requestEndorsement } from '@Mutate/sanctioning/endorsement';
-import type { getValidGroupSizes } from '@Assemblies/generators/drawDefinitions/drawTypes/roundRobin/roundRobin';
 import type { generateDrawStructuresAndLinks } from '@Generators/drawDefinitions/generateDrawStructuresAndLinks';
 import type { addVoluntaryConsolationStructure } from '@Mutate/drawDefinitions/addVoluntaryConsolationStructure';
 import type { initializeCompetitionState } from '@Mutate/drawDefinitions/competition/initializeCompetitionState';
@@ -64,7 +63,6 @@ import type { modifyEventMatchUpFormatTiming } from '@Mutate/extensions/events/m
 import type { removeEventMatchUpFormatTiming } from '@Mutate/extensions/events/removeEventMatchUpFormatTiming';
 import type { bulkScheduleTournamentMatchUps } from '@Mutate/matchUps/schedule/bulkScheduleTournamentMatchUps';
 import type { addMatchUpScheduledDate } from '@Mutate/matchUps/schedule/scheduleItems/addMatchUpScheduledDate';
-import type { generateTieMatchUpScore } from '@Assemblies/generators/tieMatchUpScore/generateTieMatchUpScore';
 import type { aggregateDeciderSetNumber, finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
 import type { setPositionAssignments } from '@Mutate/drawDefinitions/positionGovernor/setPositionAssignments';
 import type { getMatchUpsToSchedule } from '@Mutate/matchUps/schedule/scheduleMatchUps/getMatchUpsToSchedule';
@@ -123,6 +121,7 @@ import type { transitionCertificationStatus } from '@Mutate/officiating/transiti
 import type { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
 import type { getSetScoreString, validateMatchUp, validateSet } from '@Scoring/replay/validateMatchUp';
 import type { setEventDates, setEventEndDate, setEventStartDate } from '@Mutate/events/setEventDates';
+import type { generateTieMatchUpScore } from '@Query/matchUp/tieMatchUpScore/generateTieMatchUpScore';
 import type { getScheduledRoundsDetails } from '@Query/matchUps/scheduling/getScheduledRoundsDetails';
 import type { exportMatchUpJSON, mcpValidator, validateMCPMatch } from '@Scoring/replay/mcpValidator';
 import type { setStructureOrder } from '@Mutate/drawDefinitions/structureGovernor/setStructureOrder';
@@ -229,6 +228,7 @@ import type { getCheckedInParticipantIds } from '@Query/matchUp/getCheckedInPart
 import type { generateOutcomeFromScoreString } from '@Scoring/parse/outcomeFromScoreString';
 import type { getDrawTypeCoercion } from '@Generators/drawDefinitions/getDrawTypeCoercion';
 import type { generateTournamentRecord } from '@Generators/mocks/generateTournamentRecord';
+import type { getValidGroupSizes } from '@Helpers/drawTopology/roundRobin/validGroupSizes';
 import type { seedWithdrawalCascade } from '@Mutate/drawDefinitions/seedWithdrawalCascade';
 import type { substituteParticipant } from '@Mutate/drawDefinitions/substituteParticipant';
 import type { acceptChallenge, declineChallenge } from '@Mutate/ladder/respondToChallenge';
@@ -258,7 +258,6 @@ import type { getMatchUpReadiness } from '@Query/matchUps/scheduling/getMatchUpR
 import type { getParticipantScaleItem } from '@Query/participant/getParticipantScaleItem';
 import type { getAvailableTransitions } from '@Query/sanctioning/getAvailableTransitions';
 import type { getCompetitionDateRange } from '@Query/tournaments/getCompetitionDateRange';
-import type { addFinishingRounds } from '@Generators/drawDefinitions/addFinishingRounds';
 import type { addPlayoffStructures } from '@Mutate/drawDefinitions/addPlayoffStructures';
 import type { automatedPositioning } from '@Mutate/drawDefinitions/automatedPositioning';
 import type { luckyDrawAdvancement } from '@Mutate/drawDefinitions/luckyDrawAdvancement';
@@ -439,6 +438,7 @@ import type { getEntryStatusReports } from '@Query/entries/entryStatusReport';
 import type { getMaxEntryPosition } from '@Query/entries/getMaxEntryPosition';
 import type { getEventCompleteness } from '@Query/event/getEventCompleteness';
 import type { getAvailableReports } from '@Query/reports/getAvailableReports';
+import type { addFinishingRounds } from '@Query/structure/addFinishingRounds';
 import type { analyzeTournament } from '@Query/tournaments/analyzeTournament';
 import type { getTournamentInfo } from '@Query/tournaments/getTournamentInfo';
 import type { generateScoreString } from '@Scoring/views/generateScoreString';

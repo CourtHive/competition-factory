@@ -22,7 +22,7 @@ import {
   drawPositionsHash,
   groupRounds,
   determineRoundNumber,
-} from '@Generators/drawDefinitions/drawTypes/roundRobin/roundRobinGroups';
+} from '@Helpers/drawTopology/roundRobin/roundRobinGroups';
 
 // constants
 import { ALTERNATE, DIRECT_ACCEPTANCE } from '@Constants/entryStatusConstants';

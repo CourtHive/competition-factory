@@ -1,6 +1,8 @@
+import { carriedExitStatus, getSideExitProvenance } from '@Helpers/drawTopology/sideExitProvenance';
 import { getWinningSideDrawPosition } from '@Query/matchUps/getDrawPositionSides';
+import { withdrawProducedExits, withdrawRelayedExit } from './sideExitProvenance';
+import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
-import { positionAssignmentsOf } from '@Acquire/structureMembers';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { positionTargets } from '@Query/matchUp/positionTargets';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -8,12 +10,6 @@ import { applyWithdrawnExits } from './applyWithdrawnExits';
 import { isDoubleExit, isExit } from '@Validators/isExit';
 import { findStructure } from '@Acquire/findStructure';
 import { settleUnlessIdle } from './indexPrecheck';
-import {
-  carriedExitStatus,
-  getSideExitProvenance,
-  withdrawProducedExits,
-  withdrawRelayedExit,
-} from './sideExitProvenance';
 
 // constants and types
 import { DrawDefinition, Event, MatchUp, Tournament } from '@Types/tournamentTypes';

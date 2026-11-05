@@ -1,7 +1,7 @@
 import { generateQualifyingLink } from '@Generators/drawDefinitions/links/generateQualifyingLink';
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { getAllStructureMatchUps } from '@Query/matchUps/getAllStructureMatchUps';
-import structureTemplate from '@Generators/templates/structureTemplate';
+import structureTemplate from '@Helpers/drawTopology/templates/structureTemplate';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { coerceEven, isConvertableInteger } from '@Tools/math';
 import { feedInQualifyingMatchUps } from '../feedInQualifying';
@@ -11,7 +11,7 @@ import { treeMatchUps } from './eliminationTree';
 
 // constants and types
 import { FEED_IN, POSITION, QUALIFYING, ROUND_ROBIN, WINNER } from '@Constants/drawDefinitionConstants';
-import { generateTieMatchUps } from '@Generators/drawDefinitions/tieMatchUps';
+import { generateTieMatchUps } from '@Helpers/drawTopology/templates/tieMatchUps';
 import { DrawLink, Structure, TieFormat } from '@Types/tournamentTypes';
 import { MISSING_DRAW_SIZE } from '@Constants/errorConditionConstants';
 import { PolicyDefinitions, ResultType } from '@Types/factoryTypes';

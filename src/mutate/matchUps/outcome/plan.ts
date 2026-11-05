@@ -2,12 +2,13 @@ import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyPa
 import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
+import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
 import { getCapturedClock, writeLegacyEnabled } from '@Global/state/globalState';
 import { ensuredDualSides } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
+import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
 import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
 import { annotateScoreSets } from '@Query/matchUps/addMatchUpContext';
-import { matchUpsOf, structuresOf } from '@Acquire/structureMembers';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { validMatchUps } from '@Validators/validMatchUp';
 import { withFinishingOrder } from './finishingOrderOps';
@@ -16,7 +17,6 @@ import {
   buildCarriedExitProvenance,
   buildSideExitProvenance,
   collapseDoubleExitStatus,
-  carriedExitStatus,
   deriveStatusCodes,
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 

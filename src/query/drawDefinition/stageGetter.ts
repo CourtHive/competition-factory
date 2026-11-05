@@ -1,5 +1,5 @@
-import { traversesByFinishingPosition } from '@Query/drawDefinition/linkTraversal';
-import { positionAssignmentsOf } from '@Acquire/structureMembers';
+import { traversesByFinishingPosition } from '@Helpers/drawTopology/linkTraversal';
+import { positionAssignmentsOf } from '@Helpers/drawTopology/structureMembers';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 
 // Query

@@ -1,4 +1,4 @@
-import { inferDrawLinks } from '@Mutate/drawDefinitions/links/inferDrawLinks';
+import { inferDrawLinks } from '@Query/drawDefinition/inferDrawLinks';
 import { getDrawData } from '@Query/drawDefinition/getDrawData';
 import mocksEngine from '@Assemblies/engines/mock';
 import { expect, it, describe } from 'vitest';
