@@ -1,11 +1,11 @@
 import { getObjectTieFormat } from '@Query/hierarchical/tieFormats/getObjectTieFormat';
 import { checkRequiredParameters } from '@Helpers/parameters/checkRequiredParameters';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
+import { categoryCanContain } from '@Helpers/categories/categoryCanContain';
 import { getCategoryAgeDetails } from '@Query/event/getCategoryAgeDetails';
-import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import { validateEntryProfile } from '@Validators/validateEntryProfile';
+import { allEventMatchUps } from '@Query/matchUps/getAllEventMatchUps';
 import { getParticipants } from '@Query/participants/getParticipants';
-import { categoryCanContain } from '@Query/event/categoryCanContain';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getFlightProfile } from '@Query/event/getFlightProfile';
 import { validateCategory } from '@Validators/validateCategory';

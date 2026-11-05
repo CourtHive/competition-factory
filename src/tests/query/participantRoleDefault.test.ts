@@ -1,5 +1,5 @@
 import { PARTICIPANT_ROLE_INVALID, PARTICIPANT_ROLE_MISSING } from '@Query/tournaments/getTournamentInconsistencies';
-import { participantRoleOf } from '@Query/participant/participantRoleOf';
+import { participantRoleOf } from '@Helpers/participants/participantRoleOf';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';

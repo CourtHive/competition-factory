@@ -1,6 +1,6 @@
+import { checkMutationLock } from '@Mutate/tournaments/mutationLocks/checkMutationLock';
 import { engineLogging, paramsMayBeLogged } from '@Global/state/engineLogging';
 import { withContextExclusion } from '@Query/matchUps/contextExclusion';
-import { checkMutationLock } from './checkMutationLock';
 import { paramsMiddleware } from './paramsMiddleware';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import {

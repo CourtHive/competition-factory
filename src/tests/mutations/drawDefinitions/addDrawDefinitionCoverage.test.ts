@@ -1,6 +1,6 @@
 import { newDrawDefinition } from '@Assemblies/generators/drawDefinitions/newDrawDefinition';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { addDrawDefinition } from '@Mutate/drawDefinitions/addDrawDefinition';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { setSubscriptions } from '@Global/state/globalState';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';

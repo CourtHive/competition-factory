@@ -1,4 +1,4 @@
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import tournamentEngine from '@Tests/engines/syncEngine';
 import { dateStringDaysChange } from '@Tools/dateTime';
 import mocksEngine from '@Assemblies/engines/mock';

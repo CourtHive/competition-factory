@@ -1,6 +1,6 @@
 import { addMatchUpTimeItem, resetMatchUpTimeItems } from '@Mutate/timeItems/matchUps/matchUpTimeItems';
 import { addTimeItem, resetTimeItems, addEventTimeItem } from '@Mutate/timeItems/addTimeItem';
-import { getTimeItemValues } from '@Mutate/timeItems/getTimeItemValues';
+import { getTimeItemValues } from '@Acquire/getTimeItemValues';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';
 import { expect, it, describe } from 'vitest';

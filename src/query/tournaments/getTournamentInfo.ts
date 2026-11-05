@@ -2,12 +2,12 @@ import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Acquire/struct
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { scheduledMatchUpDate } from '@Query/matchUp/scheduledMatchUpDate';
 import { scheduledMatchUpTime } from '@Query/matchUp/scheduledMatchUpTime';
+import { isCompetitorRole } from '@Helpers/participants/participantRoleOf';
 import { getVenuesAndCourts } from '@Query/venues/venuesAndCourtsGetter';
-import { getTimeItemValues } from '@Mutate/timeItems/getTimeItemValues';
-import { isCompetitorRole } from '@Query/participant/participantRoleOf';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { getPublishState } from '@Query/publishing/getPublishState';
 import { extractEventInfo } from '@Query/event/extractEventInfo';
+import { getTimeItemValues } from '@Acquire/getTimeItemValues';
 import { definedAttributes } from '@Tools/definedAttributes';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 

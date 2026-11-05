@@ -1,6 +1,6 @@
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
 import { generateMatchUpOutcome } from '@Tests/helpers/generateMatchUpOutcome';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
 import { setsValues } from './roundRobinSetsValues';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';

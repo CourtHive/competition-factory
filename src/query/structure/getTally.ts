@@ -1,4 +1,4 @@
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 
 // constants
 import { MISSING_POSITION_ASSIGNMENTS, NOT_FOUND } from '@Constants/errorConditionConstants';

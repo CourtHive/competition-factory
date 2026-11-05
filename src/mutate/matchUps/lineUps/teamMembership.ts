@@ -1,11 +1,11 @@
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 
 // constants and types
-import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { ErrorType, SHARED_INDIVIDUAL_PARTICIPANT } from '@Constants/errorConditionConstants';
+import type { DrawDefinition, Event, Tournament } from '@Types/tournamentTypes';
 import { NOT_ON_TEAM_ROSTER, TEAM } from '@Constants/participantConstants';
-import type { ResultWarning } from '@Types/factoryTypes';
 import { WITHDRAWN } from '@Constants/entryStatusConstants';
+import type { ResultWarning } from '@Types/factoryTypes';
 import { LINEUPS } from '@Constants/extensionConstants';
 
 /** individualId -> the teams of an event it belongs to: by roster (entered, not withdrawn) or by a draw's lineUp */

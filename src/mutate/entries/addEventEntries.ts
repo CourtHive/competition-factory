@@ -1,10 +1,10 @@
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
 import { modifyEventEntriesNotice } from '@Mutate/notifications/entriesNotifications';
 import { isMatchUpEventType } from '@Helpers/matchUpEventTypes/isMatchUpEventType';
+import { isCompetitorRole } from '@Helpers/participants/participantRoleOf';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
 import { addDrawEntries } from '@Mutate/drawDefinitions/addDrawEntries';
-import { isCompetitorRole } from '@Query/participant/participantRoleOf';
 import { entityIdMismatch } from '@Helpers/parameters/entityIdMismatch';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { refreshEntryPositions } from './refreshEntryPositions';

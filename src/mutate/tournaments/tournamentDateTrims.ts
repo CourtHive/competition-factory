@@ -1,4 +1,5 @@
-import { firstClassGroupLeafOrExtension, setGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
+import { firstClassGroupLeafOrExtension } from '@Helpers/extensions/firstClassGroupLeafOrExtension';
+import { setGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
 import { addNotice } from '@Global/state/globalState';
 import { extractDate } from '@Tools/dateTime';

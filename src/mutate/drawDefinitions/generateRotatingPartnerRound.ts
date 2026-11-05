@@ -1,7 +1,7 @@
 import { generateAdHocMatchUps } from '@Generators/drawDefinitions/drawTypes/adHoc/generateAdHocMatchUps';
 import { stringifyCombinedPointFormat } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { addMatchUpsNotice, modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
-import { checkMutationLock } from '@Assemblies/engines/parts/checkMutationLock';
+import { checkMutationLock } from '@Mutate/tournaments/mutationLocks/checkMutationLock';
 import { addAdHocMatchUps } from '@Mutate/structures/addAdHocMatchUps';
 import { addParticipant } from '@Mutate/participants/addParticipant';
 import { matchUpsOf } from '@Acquire/structureMembers';

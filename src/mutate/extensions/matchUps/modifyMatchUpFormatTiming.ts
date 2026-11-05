@@ -1,8 +1,9 @@
-import { firstClassGroupLeafOrExtension, setGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
 import { groupLeafFingerprint, modifyTournamentDetailNotice } from '@Mutate/tournaments/tournamentDetailNotice';
+import { firstClassGroupLeafOrExtension } from '@Helpers/extensions/firstClassGroupLeafOrExtension';
+import { setGroupLeafOrExtension } from '@Mutate/extensions/setGroupLeafOrExtension';
 import { modifyEventNotice } from '@Mutate/notifications/eventNotifications';
+import { findExtension } from '@Helpers/extensions/findExtension';
 import { addExtension } from '@Mutate/extensions/addExtension';
-import { findExtension } from '@Acquire/findExtension';
 import { findEvent } from '@Acquire/findEvent';
 
 // constants

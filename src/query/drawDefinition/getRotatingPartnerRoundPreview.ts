@@ -6,7 +6,7 @@ import { isRotatingPartnerDraw, validateRotatingPartnerEntrants } from '@Validat
 import { getRotatingPartnerScoringContract } from './getRotatingPartnerScoringContract';
 import { getRotatingPartnerTallyPolicy } from './getRotatingPartnerTallyPolicy';
 import { getRotatingPartnerStandings } from './getRotatingPartnerStandings';
-import { checkValidEntries } from '@Validators/checkValidEntries';
+import { checkValidEntries } from '@Query/entries/checkValidEntries';
 import { matchUpsOf } from '@Acquire/structureMembers';
 import { canonicalJson } from '@Tools/canonicalJson';
 

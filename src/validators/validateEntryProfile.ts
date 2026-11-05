@@ -1,4 +1,4 @@
-import { getEntryProfileQualifiersCount } from '@Query/drawDefinition/getEntryProfileQualifiers';
+import { getEntryProfileQualifiersCount } from '@Helpers/entries/getEntryProfileQualifiers';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { isValidExtension } from './isValidExtension';
 

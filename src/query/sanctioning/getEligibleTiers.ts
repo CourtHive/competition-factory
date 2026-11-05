@@ -1,4 +1,4 @@
-import { sumAgainstBound, describeAmount } from './comparePrizeMoney';
+import { sumAgainstBound, describeAmount } from '@Helpers/sanctioning/comparePrizeMoney';
 
 // constants
 import { MISSING_SANCTIONING_POLICY, MISSING_PROPOSAL } from '@Constants/sanctioningConstants';

@@ -17,9 +17,9 @@
 import { describe, expect, it } from 'vitest';
 
 import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
+import { findExtension } from '@Helpers/extensions/findExtension';
 import { setSchemaWriteMode } from '@Global/state/globalState';
-import { findExtension } from '@Acquire/findExtension';
 
 // constants
 import { BRIDGE, LEGACY, NATIVE, SchemaWriteMode } from '@Constants/schemaWriteModeConstants';

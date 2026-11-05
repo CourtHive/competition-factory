@@ -1,5 +1,5 @@
 import { allTournamentMatchUps } from '@Query/matchUps/getAllTournamentMatchUps';
-import { isCompetitorRole } from '@Query/participant/participantRoleOf';
+import { isCompetitorRole } from '@Helpers/participants/participantRoleOf';
 import { getParticipants } from '@Query/participants/getParticipants';
 import { getDetailsWTN } from '@Query/scales/getDetailsWTN';
 

@@ -1,4 +1,4 @@
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { unlinkTournament } from '@Mutate/tournaments/tournamentLinks';
 import competitionEngineSync from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';

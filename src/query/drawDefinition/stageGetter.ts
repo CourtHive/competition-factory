@@ -7,7 +7,7 @@ import { getDrawCompositionConstraints } from './getDrawCompositionConstraints';
 import { getBestFinishers } from '@Query/drawDefinition/getBestFinishers';
 
 // Acquire
-import { firstClassOrExtension } from '@Acquire/firstClassOrExtension';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { findStructure } from '@Acquire/findStructure';
 
 // Helpers
