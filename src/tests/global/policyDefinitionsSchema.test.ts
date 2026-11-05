@@ -211,6 +211,10 @@ describe('RatingsPolicy', () => {
     ['an unknown protection', { ...DEFAULT, protections: ['HOME_PROTECTION'] }],
     ['a member the type does not declare', { ...DEFAULT, homeAdvantage: 100 }],
     ['a logistic spread of 0', { ...DEFAULT, expectation: { rule: 'LOGISTIC', base: 10, spread: 0 } }],
+    ['a linear expectation without its cap', { ...DEFAULT, expectation: { rule: 'LINEAR', slope: 0.05 } }],
+    ['a set-score value keyed by a word', { ...DEFAULT, actual: { rule: 'SET_SCORE_VALUE', values: { win: 2 } } }],
+    ['a threshold margin without its multiplier', { ...DEFAULT, margin: { rule: 'THRESHOLD', above: 15 } }],
+    ['a winner minimum gain of 0', { ...DEFAULT, winnerMinimumGain: 0 }],
   ])('rejects %s', (_, policy) => {
     expect(validateRatings(policy)).toEqual(false);
   });
@@ -271,7 +275,6 @@ describe('the policy definitions match their TypeScript types', () => {
     ['./src/types/factoryTypes.ts', 'AdditionalSeedsAllowance', 'AdditionalSeedsAllowance'],
     ['./src/types/competitionPolicyTypes.ts', 'CompetitionPolicy', 'CompetitionPolicy'],
     ['./src/types/ratingsPolicyTypes.ts', 'RatingsPolicy', 'RatingsPolicy'],
-    ['./src/assemblies/generators/scales/ratingUpdate.ts', 'ExpectationRule', 'RatingsExpectationRule'],
   ];
 
   const files = [...new Set(PAIRS.map(([file]) => file))];

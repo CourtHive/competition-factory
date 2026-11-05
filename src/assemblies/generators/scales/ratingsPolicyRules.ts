@@ -52,6 +52,7 @@ export function marginMultiplier({
   if (rule.rule === 'WINNER_GAME_SHARE') return winnerGameShare ?? 1;
   if (draw && rule.rule === 'LOG_MOV_AUTOCORRECTED' && rule.drawMultiplier !== undefined) return rule.drawMultiplier;
   if (!marginOfVictory || marginOfVictory < 1) return 1;
+  if (rule.rule === 'THRESHOLD') return marginOfVictory > rule.above ? rule.multiplier : 1;
   if (rule.rule === 'POWER_MOV_AUTOCORRECTED') {
     const { offset, power, intercept, slope } = rule;
     return Math.pow(marginOfVictory + offset, power) / (intercept + slope * winnerEloDiff);

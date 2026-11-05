@@ -29,6 +29,8 @@ type CalculateNewRatings = {
   margin?: { rule?: RatingsMarginRule; marginOfVictory?: number; winnerGameShare?: number; draw?: boolean };
   /** a side whose result fell short of its expectation keeps its rating (FIFA's knock-out loss protection) */
   protectLosses?: boolean;
+  /** a winner who would lose points gains this instead and the loser loses it (FIVB's 0.01) */
+  winnerMinimumGain?: number;
   expectation?: ExpectationRule;
   ratingRange?: number[];
   winnerRating: number;
@@ -51,6 +53,7 @@ export function calculateNewRatings(params: CalculateNewRatings) {
     loserKFactor = winnerKFactor,
     winnerActual = 1,
     loserActual = 1 - winnerActual,
+    winnerMinimumGain,
     protectLosses,
     margin,
     ratingType = ELO,
@@ -74,14 +77,17 @@ export function calculateNewRatings(params: CalculateNewRatings) {
     if (!inRange(ratingRange, loserRating)) loserRating = ratingParameters.defaultInitialization;
   }
 
+  // a native scale (World Rugby, FIVB) is rated in its own points; any other is converted into ELO and back
+  const eloRange = ratingParameters.native ? consideredRange : ratingsParameters[ELO].range;
+
   // convert inbound ratings from ratingType into ELO
   const convertedWinnerRating = convertRange({
-    targetRange: ratingsParameters[ELO].range,
+    targetRange: eloRange,
     sourceRange: consideredRange,
     value: invertedScale ? ratingRange[0] - winnerRating : winnerRating,
   });
   const convertedLoserRating = convertRange({
-    targetRange: ratingsParameters[ELO].range,
+    targetRange: eloRange,
     sourceRange: consideredRange,
     value: invertedScale ? ratingRange[0] - loserRating : loserRating,
   });
@@ -93,19 +99,23 @@ export function calculateNewRatings(params: CalculateNewRatings) {
     actual: [winnerActual, loserActual],
     expectation,
   });
-  const [winnerDelta, loserDelta] = protectLosses ? deltas.map((delta) => Math.max(0, delta)) : deltas;
+  let [winnerDelta, loserDelta] = protectLosses ? deltas.map((delta) => Math.max(0, delta)) : deltas;
+  if (winnerMinimumGain !== undefined && winnerDelta < winnerMinimumGain) {
+    winnerDelta = winnerMinimumGain;
+    loserDelta = -winnerMinimumGain;
+  }
 
   const winnerUpdatedConvertedRating = convertedWinnerRating + winnerDelta;
   const loserUpdatedConvertedRating = convertedLoserRating + loserDelta;
 
   // convert calculated new ratings from ELO into ratingType
   const convertedUpdatedWinnerRating = convertRange({
-    sourceRange: ratingsParameters[ELO].range,
+    sourceRange: eloRange,
     value: winnerUpdatedConvertedRating,
     targetRange: consideredRange,
   });
   const convertedUpdatedLoserRating = convertRange({
-    sourceRange: ratingsParameters[ELO].range,
+    sourceRange: eloRange,
     value: loserUpdatedConvertedRating,
     targetRange: consideredRange,
   });

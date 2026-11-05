@@ -13,6 +13,8 @@ import {
   US_SQUASH,
   SQUASH_LEVELS,
   BWF,
+  WORLD_RUGBY,
+  FIVB,
 } from '@Constants/ratingConstants';
 
 export const ratingsParameters = {
@@ -150,6 +152,24 @@ export const ratingsParameters = {
     attributes: {
       tournaments: { generator: true, range: [1, 10] }, // Max 10 tournaments count
     },
+  },
+
+  // Team-sport ranking points, rated in their own units (native: no conversion into ELO)
+  [WORLD_RUGBY]: {
+    // World Rugby Rankings: points out of about 100; a new men's member starts at 30
+    defaultInitialization: 30,
+    decimalsCount: 2,
+    ascending: false, // Higher is better
+    range: [0, 100],
+    native: true,
+  },
+  [FIVB]: {
+    // FIVB Volleyball World Ranking: a new team enters at 0
+    defaultInitialization: 0,
+    decimalsCount: 2,
+    ascending: false, // Higher is better
+    range: [0, 1000],
+    native: true,
   },
 };
 

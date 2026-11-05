@@ -23,7 +23,12 @@ export type RatingsActualRule =
    * The share of the scoring units won: points, else games, else sets (UTR rates on the share of games won; the
    * competition policy's POINT_SHARE). A draw can be other than 0.5.
    */
-  | { rule: 'SCORE_SHARE' };
+  | { rule: 'SCORE_SHARE' }
+  /**
+   * FIVB: the value of the result in sets, keyed by sets won and lost ('3-0': 2, '3-1': 1.5, '3-2': 1, '2-3': -1,
+   * '1-3': -1.5, '0-3': -2), compared with the ORDERED_PROBIT expectation's value. A result with no value is not rated.
+   */
+  | { rule: 'SET_SCORE_VALUE'; values: Record<string, number> };
 
 export type RatingsMarginRule =
   /**
@@ -51,7 +56,9 @@ export type RatingsMarginRule =
    */
   | { rule: 'POWER_MOV_AUTOCORRECTED'; offset: number; power: number; intercept: number; slope: number }
   /** Weighted Elo, Angelini, Candila & De Angelis 2022: both updates × the winner's share of the games */
-  | { rule: 'WINNER_GAME_SHARE' };
+  | { rule: 'WINNER_GAME_SHARE' }
+  /** World Rugby: K × multiplier when the margin is above `above` points (× 1.5 above 15) */
+  | { rule: 'THRESHOLD'; above: number; multiplier: number };
 
 export type RatingsShootoutRule =
   /** FiveThirtyEight NHL: a full win, rated as won by one goal */
@@ -82,4 +89,6 @@ export type RatingsPolicy = {
    * here as a MAIN-stage elimination structure (not round robin, not ad hoc).
    */
   protections?: 'KNOCKOUT_LOSS_PROTECTION'[];
+  /** FIVB: a winner who would lose points gains this instead, and the loser loses it (0.01) */
+  winnerMinimumGain?: number;
 };
