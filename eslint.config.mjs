@@ -147,8 +147,8 @@ export default [
      *
      * `ignores` is a RATCHET, not an allow-list: the files that still import a read-only helper or a type from a
      * mutation module (22 measured 2026-10-17; 7 after the layering moves, 2026-11-06). Each leaves the list
-     * when its helper moves to `@Query`/`@Acquire`; nothing is ever added to it. A new file under src/query that needs a
-     * helper living in `@Mutate` moves the helper.
+     * when its helper moves to `@Query`/`@Acquire`; nothing is ever added to it. A new file under src/query that
+     * needs a helper living in `@Mutate` moves the helper.
      */
     files: ['src/query/**/*.ts'],
     ignores: [
