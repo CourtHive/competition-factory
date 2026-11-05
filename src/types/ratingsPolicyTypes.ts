@@ -28,7 +28,13 @@ export type RatingsActualRule =
    * FIVB: the value of the result in sets, keyed by sets won and lost ('3-0': 2, '3-1': 1.5, '3-2': 1, '2-3': -1,
    * '1-3': -1.5, '0-3': -2), compared with the ORDERED_PROBIT expectation's value. A result with no value is not rated.
    */
-  | { rule: 'SET_SCORE_VALUE'; values: Record<string, number> };
+  | { rule: 'SET_SCORE_VALUE'; values: Record<string, number> }
+  /**
+   * FIFA's women's ranking: the non-winner's actual result from a table, rows by its goals (0 to the last row, which
+   * holds that many or more), columns by the goal difference (0 to the last column, likewise); the winner takes 1 − it,
+   * and at a draw (difference 0) both sides take it. Read in an aggregate format; any other is rated win or loss.
+   */
+  | { rule: 'GOAL_TABLE'; table: number[][] };
 
 export type RatingsMarginRule =
   /**
