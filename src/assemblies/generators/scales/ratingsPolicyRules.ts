@@ -40,15 +40,22 @@ export function marginMultiplier({
   marginOfVictory,
   winnerGameShare,
   winnerEloDiff = 0,
+  draw,
 }: {
   rule?: RatingsMarginRule;
   marginOfVictory?: number;
   winnerGameShare?: number;
   winnerEloDiff?: number;
+  draw?: boolean;
 }): number {
   if (!rule) return 1;
   if (rule.rule === 'WINNER_GAME_SHARE') return winnerGameShare ?? 1;
+  if (draw && rule.rule === 'LOG_MOV_AUTOCORRECTED' && rule.drawMultiplier !== undefined) return rule.drawMultiplier;
   if (!marginOfVictory || marginOfVictory < 1) return 1;
+  if (rule.rule === 'POWER_MOV_AUTOCORRECTED') {
+    const { offset, power, intercept, slope } = rule;
+    return Math.pow(marginOfVictory + offset, power) / (intercept + slope * winnerEloDiff);
+  }
   if (rule.rule === 'GOAL_DIFFERENCE_STEPS') {
     if (marginOfVictory === 1) return 1;
     if (marginOfVictory === 2) return 1.5;

@@ -15,7 +15,7 @@ export type RatedResult = {
   winningSide: number;
   winnerActual: number;
   loserActual: number;
-  margin: { rule?: RatingsMarginRule; marginOfVictory?: number; winnerGameShare?: number };
+  margin: { rule?: RatingsMarginRule; marginOfVictory?: number; winnerGameShare?: number; draw?: boolean };
   protectLosses: boolean;
 };
 
@@ -35,7 +35,13 @@ export function ratedResultOf(matchUp: HydratedMatchUp, policy: RatingsPolicy): 
   if (!winningSide) {
     if (matchUpStatus !== COMPLETED || policy.draws === 'EXCLUDE') return undefined;
     const side1Actual = share?.[0] ?? 0.5;
-    return { winningSide: 1, winnerActual: side1Actual, loserActual: 1 - side1Actual, margin, protectLosses };
+    return {
+      margin: { ...margin, draw: true },
+      loserActual: 1 - side1Actual,
+      winnerActual: side1Actual,
+      winningSide: 1,
+      protectLosses,
+    };
   }
 
   const loserSetsWon = (score?.sets ?? []).filter((set) => set.winningSide === 3 - winningSide).length;
