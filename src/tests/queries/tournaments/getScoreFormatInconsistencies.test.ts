@@ -4,6 +4,7 @@ import tournamentEngine from '@Engines/syncEngine';
 import { describe, expect, it } from 'vitest';
 
 // constants
+import { FIRST_MATCH_LOSER_CONSOLATION } from '@Constants/drawDefinitionConstants';
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 import { TEAM_EVENT } from '@Constants/eventConstants';
@@ -110,5 +111,34 @@ describe('MATCHUP_SCORE_INVALID_FOR_FORMAT', () => {
     const target = matchUps.find((m: any) => m.matchUpFormat === FORMAT && !m.collectionId && m.roundNumber === 1);
     store(target, [set(1, 7, 6), set(2, 6, 4)], 1);
     expect(findings()).toEqual([]);
+  });
+  // The score judgement hydrates every matchUp, and hydration once threw on a link whose target the draw does not
+  // hold, which is the very defect the scan exists to report: the whole scan came back as a throw (CFS logged one
+  // "integrity scan threw" in place of the link errors). It must report the link and still judge the other draw.
+  it('a link to a structure the draw does not hold is reported, and the scores are still judged', () => {
+    mocksEngine.generateTournamentRecord({
+      eventProfiles: [
+        { drawProfiles: [{ drawSize: 8, matchUpFormat: FORMAT }] },
+        { drawProfiles: [{ drawSize: 16, drawType: FIRST_MATCH_LOSER_CONSOLATION }] },
+      ],
+      completeAllMatchUps: true,
+      setState: true,
+    });
+    const { matchUps } = tournamentEngine.allTournamentMatchUps({ inContext: true });
+    const target = matchUps.find((m: any) => m.matchUpFormat === FORMAT && m.roundNumber === 1);
+    store(target, [set(1, 3, 7), set(2, 6, 4), set(3, 6, 4)], 1);
+
+    const { tournamentRecord } = tournamentEngine.getTournament();
+    const linked = tournamentRecord.events.flatMap((e: any) => e.drawDefinitions).find((d: any) => d.links?.length);
+    const [link] = linked.links;
+    linked.links.push({ ...structuredClone(link), target: { ...link.target, structureId: 'not-in-this-draw' } });
+    tournamentEngine.setState(tournamentRecord);
+
+    let result: any = tournamentEngine.getTournamentInconsistencies();
+    expect(result.valid).toBe(false);
+    const errors = result.inconsistencies.filter(({ severity }: any) => severity === 'error');
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors.every(({ drawId }: any) => drawId === linked.drawId)).toBe(true);
+    expect(findings().map(({ matchUpId }: any) => matchUpId)).toEqual([target.matchUpId]);
   });
 });
