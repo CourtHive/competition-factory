@@ -63,7 +63,10 @@ export function getExitProfiles({ drawDefinition }) {
       const exitRound = link.source.roundNumber;
       const targetRound = link.target.roundNumber;
       const targetStructureId = link.target.structureId;
-      const stage = structures.find((structure) => structure.structureId === targetStructureId).stage;
+      // a link to a structure the draw does not hold routes nowhere, so it gives no exit profile; the integrity scan
+      // reports it, and since that scan hydrates matchUps to judge their scores, a read that threw here took it down too
+      const stage = structures.find((structure) => structure.structureId === targetStructureId)?.stage;
+      if (!stage) continue;
 
       const fp = [stage, targetStructureId, targetRound, exitRound].join('|');
       if (aggregator[fp]) return;
