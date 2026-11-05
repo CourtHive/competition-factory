@@ -5852,6 +5852,25 @@
           },
           "required": ["rule", "values"],
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "const": "GOAL_TABLE"
+            },
+            "table": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "number", "minimum": 0, "maximum": 1 }
+              }
+            }
+          },
+          "required": ["rule", "table"],
+          "additionalProperties": false
         }
       ]
     },

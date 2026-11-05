@@ -31,15 +31,19 @@ export function ratedResultOf(matchUp: HydratedMatchUp, policy: RatingsPolicy): 
   const margin = { rule: policy.margin, marginOfVictory: marginOfVictoryOf(matchUp), winnerGameShare: undefined };
   const protectLosses = !!policy.protections?.includes('KNOCKOUT_LOSS_PROTECTION') && isKnockout(matchUp);
 
-  // the share of the scoring units won rates a draw by its score too
-  const share = policy.actual.rule === 'SCORE_SHARE' ? scoreShareOf(matchUp) : undefined;
+  // the share of the scoring units won, or FIFA's goal table, rates a draw by its score too
+  const share =
+    (policy.actual.rule === 'SCORE_SHARE' && scoreShareOf(matchUp)) ||
+    (policy.actual.rule === 'GOAL_TABLE' && goalTableShareOf(matchUp, policy.actual.table)) ||
+    undefined;
 
   if (!winningSide) {
     if (matchUpStatus !== COMPLETED || policy.draws === 'EXCLUDE') return undefined;
-    const side1Actual = share?.[0] ?? 0.5;
+    // a share sums to 1; FIFA's goal table gives both sides the same value at a draw
+    const [side1Actual, side2Actual] = share ?? [0.5, 0.5];
     return {
       margin: { ...margin, draw: true },
-      loserActual: 1 - side1Actual,
+      loserActual: side2Actual,
       winnerActual: side1Actual,
       winningSide: 1,
       protectLosses,
@@ -125,4 +129,20 @@ function scoreShareOf(matchUp: HydratedMatchUp): [number, number] {
   const { side1Count, side2Count } = deriveCountables(matchUp);
   const total = side1Count + side2Count;
   return total ? [side1Count / total, side2Count / total] : [0.5, 0.5];
+}
+
+/**
+ * Each side's actual result from FIFA's women's goal table: the non-winner's value by its goals and the goal
+ * difference, the winner's 1 − it; undefined where the format sums no goals.
+ */
+function goalTableShareOf(matchUp: HydratedMatchUp, table: number[][]): [number, number] | undefined {
+  const { matchUpFormat } = matchUp;
+  if (!matchUpFormat || !parse(matchUpFormat)?.aggregate) return undefined;
+  const { aggregateScores } = analyzeMatchUp({ matchUp, matchUpFormat });
+  if (!aggregateScores) return undefined;
+  const [side1, side2] = aggregateScores;
+  const row = table[Math.min(Math.min(side1, side2), table.length - 1)];
+  const value = row[Math.min(Math.abs(side1 - side2), row.length - 1)];
+  if (side1 === side2) return [value, value];
+  return side1 > side2 ? [1 - value, value] : [value, 1 - value];
 }
