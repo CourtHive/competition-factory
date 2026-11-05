@@ -134,6 +134,8 @@ export default defineConfig({
         // typed async engine fixtures: checked by tsc and by a lint regression, never executed
         'src/tests/engines/typedAsyncEngine.contract.ts',
         'src/tests/engines/typedAsyncEngine.lint.fixture.ts',
+        // compile-time type assertions: checked by tsc (and the hard-union ratchet), never executed
+        'src/tests/typeAssertions/**',
         'src/assemblies/governors/**',
         'src/assemblies/tools/**',
         'src/fixtures/data/**',
