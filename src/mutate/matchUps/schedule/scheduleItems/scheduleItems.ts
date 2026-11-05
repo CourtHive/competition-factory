@@ -23,7 +23,7 @@ import { eventDateWarning } from '@Query/events/eventDateWarning';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
 import { findParticipant } from '@Acquire/findParticipant';
-import { validTimeString } from '@Validators/regex';
+import { validTimeString } from '@Tools/dateTimePatterns';
 import { isConvertableInteger } from '@Tools/math';
 import { competitionNow } from '@Tools/clock';
 import { ensureInt } from '@Tools/ensureInt';

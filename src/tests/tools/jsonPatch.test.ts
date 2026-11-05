@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { generatePatch, JsonPatch } from './jsonPatch';
+import { generatePatch, JsonPatch } from '@Tools/jsonPatch';
 
 describe('generatePatch — RFC 6902 generator', () => {
   it('returns an empty patch for identical values', () => {

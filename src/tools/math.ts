@@ -123,3 +123,17 @@ export function safePct(numerator, denominator, round = true) {
 export function fixedDecimals(value: number, to = 2) {
   return Number.parseFloat(Number(Math.round(value * 1000) / 1000).toFixed(to));
 }
+
+/** Maps `value` linearly from `sourceRange` onto `targetRange`, each `[a, b]` in either order; 0 without a source range. */
+export function convertRange({ value, sourceRange, targetRange }) {
+  if (!Array.isArray(sourceRange) || sourceRange.length !== 2) {
+    return 0;
+  }
+  const minSourceRange = Math.min(...sourceRange);
+  const maxSourceRange = Math.max(...sourceRange);
+  const minTargetRange = Math.min(...targetRange);
+  const maxTargetRange = Math.max(...targetRange);
+  return (
+    ((value - minSourceRange) * (maxTargetRange - minTargetRange)) / (maxSourceRange - minSourceRange) + minTargetRange
+  );
+}

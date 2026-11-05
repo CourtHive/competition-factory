@@ -1,6 +1,6 @@
 import { it, expect } from 'vitest';
 
-import { dateValidation, timeValidation, validDateString, validTimeString } from '@Validators/regex';
+import { dateValidation, timeValidation, validDateString, validTimeString } from '@Tools/dateTimePatterns';
 
 const testStrings = ['2020-01-01T08:05:00Z'];
 

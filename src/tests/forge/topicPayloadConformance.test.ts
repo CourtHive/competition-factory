@@ -8,7 +8,7 @@ import * as topicConstants from '@Constants/topicConstants';
 /**
  * TopicPayloadMap ↔ addNotice conformance.
  *
- * `src/forge/topicTypes.ts` declares payload shapes that its own header describes as "derived from
+ * `src/types/topicTypes.ts` declares payload shapes that its own header describes as "derived from
  * inspection of `addNotice({ topic, payload })` callsites" — a hand-maintained mirror of code it cannot
  * see change. #4630 added a guard that every typed map KEY is a real topic constant; this is the other
  * half, and the half that actually rots: does each declared REQUIRED field still get emitted?
@@ -101,7 +101,7 @@ function extractEmittedPayloads(): Map<string, string[][]> {
 
 /** map key -> required (non-optional) field names declared in its payload interface */
 function extractDeclaredRequired(): Map<string, string[]> {
-  const src = readFileSync(path.join(SRC, 'forge/topicTypes.ts'), 'utf8');
+  const src = readFileSync(path.join(SRC, 'types/topicTypes.ts'), 'utf8');
 
   const interfaces = new Map<string, string[]>();
   for (const m of src.matchAll(/export interface (\w+)[^{]*\{/g)) {

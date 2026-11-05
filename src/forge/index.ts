@@ -24,8 +24,8 @@ export { buildQueryFacade, queryRegistry } from './q';
 export type { QueryFacade } from './q';
 export { unwrap, unwrapOr } from './unwrap';
 export type { Unwrap } from './unwrap';
-export { generatePatch } from './jsonPatch';
-export type { JsonPatch, JsonPatchOp } from './jsonPatch';
+export { generatePatch } from '@Tools/jsonPatch';
+export type { JsonPatch, JsonPatchOp } from '@Tools/jsonPatch';
 export { dryRun } from './dryRun';
 export type { DryRunResult, EmittedNotice } from './dryRun';
 export { explain } from './explain';
@@ -34,7 +34,7 @@ export { inspect } from './inspect';
 export type { EngineInspection, EngineInspectionCounts } from './inspect';
 export { createEventBus } from './bus';
 export type { EventBus, EventHandler, EventPredicate, Unsubscribe } from './bus';
-export type { Topic, TopicPayloadMap } from './topicTypes';
+export type { Topic, TopicPayloadMap } from '@Types/topicTypes';
 export { buildFacade, EventBuilder, ParticipantBuilder } from './builders';
 export type {
   BuildFacade,

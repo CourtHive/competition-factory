@@ -1,4 +1,4 @@
-import { competitionUtcDate } from '@Query/tournaments/competitionToday';
+import { competitionUtcDate } from '@Tools/clock';
 
 // Constants
 import { MISSING_OFFICIAL_RECORD } from '@Constants/officiatingConstants';

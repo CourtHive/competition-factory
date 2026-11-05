@@ -31,7 +31,7 @@ import {
   STATUS_SUSPENDED,
   STATUS_INTERRUPTED,
   STATUS_ABANDONED,
-} from './constants';
+} from '@Constants/keyValueConstants';
 
 export function keyValueMatchUpScore(params) {
   const { auto, checkFormat, shiftFirst, lowSide, value, matchUp } = params;

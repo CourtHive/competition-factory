@@ -12,7 +12,7 @@
  * signatures and behaviour are unchanged.
  */
 
-import { dateValidation, timeValidation, validDateString } from '@Validators/regex';
+import { dateValidation, timeValidation, validDateString } from '@Tools/dateTimePatterns';
 import { isDateObject, zeroPad, isDate } from '@Tools/dateTimeInternals';
 import { now } from '@Tools/clock';
 import {

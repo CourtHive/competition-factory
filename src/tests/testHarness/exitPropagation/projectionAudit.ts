@@ -1,5 +1,5 @@
-import { generatePatch } from '../../../forge/jsonPatch';
 import { captureRecord } from '@Tools/recordDiff';
+import { generatePatch } from '@Tools/jsonPatch';
 
 /** Accepted-call measurement, not an outcome oracle: omitted writes may be legitimate. */
 export type ProjectionAuditCounts = {

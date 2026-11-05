@@ -50,7 +50,7 @@ import { captureOperation, OperationState, restoreOperation } from '@Assemblies/
 import { prepareDirective, validateDirectives } from '@Assemblies/engines/parts/directives';
 import { withCallRandomSource, withForkedRandomSource } from '@Tools/prng';
 import { executeFunction } from '@Assemblies/engines/parts/executeMethod';
-import { generatePatch, JsonPatch } from './jsonPatch';
+import { generatePatch, JsonPatch } from '@Tools/jsonPatch';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import { withCapturedClock } from '@Tools/clock';
 import {

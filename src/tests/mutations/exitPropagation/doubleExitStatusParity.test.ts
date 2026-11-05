@@ -13,7 +13,7 @@ import {
 
 // constants
 import { DEFAULTED, DOUBLE_DEFAULT, DOUBLE_WALKOVER, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
-import { OUTCOME_DEFAULT, OUTCOME_WALKOVER } from '@Helpers/keyValueScore/constants';
+import { OUTCOME_DEFAULT, OUTCOME_WALKOVER } from '@Constants/keyValueConstants';
 import {
   MODIFIED_FEED_IN_CHAMPIONSHIP,
   FIRST_MATCH_LOSER_CONSOLATION,
