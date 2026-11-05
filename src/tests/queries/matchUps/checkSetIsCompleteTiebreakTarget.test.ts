@@ -7,7 +7,7 @@
  * delegate here, so every consumer reading a `winningSide` off the analysis was told those sets were
  * over. The rule is now the validator's, and the two agree.
  */
-import { checkSetIsComplete } from '@Query/matchUp/checkSetIsComplete';
+import { checkSetIsComplete } from '@Helpers/matchUpFormatCode/setRules/setCompletion';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { analyzeSet } from '@Query/matchUp/analyzeSet';
 import { describe, expect, it } from 'vitest';

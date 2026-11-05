@@ -1,9 +1,9 @@
 import { validateMatchUpScore, validateSetScore } from '@Validators/validateMatchUpScore';
+import { checkSetIsComplete } from '@Helpers/matchUpFormatCode/setRules/setCompletion';
 import { enterValues, scoreMatchUp } from '../helpers/keyValueScore/primitives';
+import { setHasTiebreak } from '@Helpers/matchUpFormatCode/formatUtilities';
 import { retainScoreForFormat } from '@Query/matchUp/retainScoreForFormat';
 import { ScoringEngine } from '@Assemblies/engines/scoring/ScoringEngine';
-import { checkSetIsComplete } from '@Query/matchUp/checkSetIsComplete';
-import { setHasTiebreak } from '@Tools/scoring/scoringUtilities';
 import { validateScore } from '@Validators/validateScore';
 import { describe, expect, it } from 'vitest';
 

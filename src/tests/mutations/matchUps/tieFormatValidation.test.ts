@@ -1,4 +1,4 @@
-import tieFormatDefaults from '@Assemblies/generators/templates/tieFormatDefaults';
+import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { validateTieFormat } from '@Validators/validateTieFormat';
 import { mocksEngine } from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';

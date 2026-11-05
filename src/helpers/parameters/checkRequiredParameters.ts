@@ -7,7 +7,7 @@ import { intersection } from '@Tools/arrays';
 
 // Constants and types
 import { IDENTIFIER, RESOURCE_SUB_TYPE, RESOURCE_TYPE } from '@Constants/resourceConstants';
-import tieFormatDefaults from '@Generators/templates/tieFormatDefaults';
+import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { DOUBLES, SINGLES, TEAM } from '@Constants/eventConstants';
 import { validStages } from '@Constants/drawDefinitionConstants';
 import { ResultType } from '@Types/factoryTypes';

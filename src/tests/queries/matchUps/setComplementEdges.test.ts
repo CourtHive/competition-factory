@@ -1,4 +1,4 @@
-import { getSetComplement, getTiebreakComplement } from '@Query/matchUp/getComplement';
+import { getSetComplement, getTiebreakComplement } from '@Helpers/matchUpFormatCode/setRules/setComplement';
 import { expect, it } from 'vitest';
 
 /**

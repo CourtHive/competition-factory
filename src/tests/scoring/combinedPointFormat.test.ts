@@ -1,6 +1,6 @@
 import { analyzeCombinedPointSet } from '@Helpers/matchUpFormatCode/combinedPointFormat';
+import { checkSetIsComplete } from '@Helpers/matchUpFormatCode/setRules/setCompletion';
 import { validateMatchUpScore } from '@Validators/validateMatchUpScore';
-import { checkSetIsComplete } from '@Query/matchUp/checkSetIsComplete';
 import { ScoringEngine } from '@Assemblies/governors/scoreGovernor';
 import { stringify } from '@Helpers/matchUpFormatCode/stringify';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';

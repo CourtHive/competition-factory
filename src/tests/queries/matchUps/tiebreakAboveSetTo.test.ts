@@ -1,6 +1,6 @@
+import { getMaxSetScore, getSetComplement } from '@Helpers/matchUpFormatCode/setRules/setComplement';
 import { validateMatchUpScore, validateSetScore } from '@Validators/validateMatchUpScore';
-import { getMaxSetScore, getSetComplement } from '@Query/matchUp/getComplement';
-import { checkSetIsComplete } from '@Query/matchUp/checkSetIsComplete';
+import { checkSetIsComplete } from '@Helpers/matchUpFormatCode/setRules/setCompletion';
 import { enterValues } from '../../helpers/keyValueScore/primitives';
 import { validateScore } from '@Validators/validateScore';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
@@ -12,7 +12,7 @@ import {
   tiebreakSetGames,
   wonWithoutTiebreak,
   reachedTiebreak,
-} from '@Query/matchUp/tiebreakAtRules';
+} from '@Helpers/matchUpFormatCode/setRules/tiebreakAtRules';
 
 import { COMPLETED } from '@Constants/matchUpStatusConstants';
 

@@ -1,4 +1,8 @@
-import { getSetComplement, getTiebreakComplement, getMaxSetScore } from '@Query/matchUp/getComplement';
+import {
+  getSetComplement,
+  getTiebreakComplement,
+  getMaxSetScore,
+} from '@Helpers/matchUpFormatCode/setRules/setComplement';
 import { describe, expect, it } from 'vitest';
 
 it('can generate appropriate highValue for standard sets', () => {

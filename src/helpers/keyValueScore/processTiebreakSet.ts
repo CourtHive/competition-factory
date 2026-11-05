@@ -1,5 +1,5 @@
 import { getHighTiebreakValue, testTiebreakEntry } from './keyValueUtilities';
-import { tiebreakMargin } from '@Tools/scoring/scoringUtilities';
+import { tiebreakMargin } from '@Helpers/matchUpFormatCode/formatUtilities';
 import { ensureInt } from '@Tools/ensureInt';
 
 import { MATCH_TIEBREAK_BRACKETS, MATCH_TIEBREAK_JOINER } from './constants';

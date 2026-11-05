@@ -1,5 +1,5 @@
 import { validateMatchUpScore } from '@Validators/validateMatchUpScore';
-import { parseScoreString } from '@Tools/parseScoreString';
+import { parseScoreString } from '@Scoring/parse/parseScoreString';
 import { validateScore } from '@Validators/validateScore';
 import mocksEngine from '@Assemblies/engines/mock';
 import tournamentEngine from '@Engines/syncEngine';

@@ -1,4 +1,4 @@
-import tieFormatDefaults from '@Generators/templates/tieFormatDefaults';
+import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 import { processTieFormat } from './processTieFormat';
 
 // constants

@@ -1,6 +1,6 @@
 import { getObjectTieFormat } from '@Query/hierarchical/tieFormats/getObjectTieFormat';
 import { validateTieFormat } from '@Assemblies/governors/scoreGovernor';
-import tieFormatDefaults from '@Generators/templates/tieFormatDefaults';
+import tieFormatDefaults from '@Helpers/tieFormats/tieFormatDefaults';
 
 // constants and types
 import { FORMAT_STANDARD } from '@Fixtures/scoring/matchUpFormats';

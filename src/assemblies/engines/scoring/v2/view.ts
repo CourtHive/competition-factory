@@ -1,11 +1,11 @@
+import { overtimeGoverns } from '@Helpers/matchUpFormatCode/overtimeRule';
 import { NEW_GAME, playGamePoint, playRacePoint } from './segments/game';
 import { inTiebreak, standardSetWinner } from './segments/standard';
-import { overtimeGoverns } from './overtime';
-import { ruleForSet } from './format';
+import { ruleForSet } from '@Helpers/matchUpFormatCode/matchRule';
 import { setsWon } from './decide';
 
 // constants and types
-import type { MatchRule, RaceRule, SegmentRule, StandardRule } from './format';
+import type { MatchRule, RaceRule, SegmentRule, StandardRule } from '@Helpers/matchUpFormatCode/matchRule';
 import type { GameInPlay, Pair, ScoredSet, ScoringState, Side } from './types';
 import type { ServicePosition } from './service';
 

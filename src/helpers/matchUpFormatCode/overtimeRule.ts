@@ -1,6 +1,6 @@
 import { scoringPeriod } from '@Helpers/matchUpFormatCode/overtimeContext';
-import type { MatchRule, SegmentRule } from './format';
-import type { Pair } from './types';
+import type { MatchRule, SegmentRule } from './matchRule';
+import type { Pair } from '@Types/scoring/types';
 
 /** Internal scoring rule; public activation waits for the score-record integration slice. */
 export type OvertimeRule = {

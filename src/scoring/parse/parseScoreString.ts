@@ -1,5 +1,5 @@
+import { getTiebreakComplement } from '@Helpers/matchUpFormatCode/setRules/setComplement';
 import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
-import { getTiebreakComplement } from '@Query/matchUp/getComplement';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 type ParseScoreArgs = {

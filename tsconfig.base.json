@@ -33,6 +33,7 @@
       "@Forge/*": ["./src/forge/*"],
       "@Acquire/*": ["./src/acquire/*"],
       "@Helpers/*": ["./src/helpers/*"],
+      "@Scoring/*": ["./src/scoring/*"],
       "@Global/*": ["./src/global/*"],
       "@Mutate/*": ["./src/mutate/*"],
       "@Server/*": ["./src/server/*"],

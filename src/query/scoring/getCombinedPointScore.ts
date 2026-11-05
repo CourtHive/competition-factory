@@ -1,5 +1,5 @@
+import { analyzeRotatingPartnerScore } from '@Helpers/matchUpFormatCode/combinedPointFormat';
 import { isDecisionRequired, decisionRequiredSituation } from './decisionRequired';
-import { analyzeRotatingPartnerScore } from '@Query/matchUp/rotatingPartnerScore';
 
 // constants and types
 import type { RotatingPartnerScoreContract } from '@Types/rotatingPartnerScoring';

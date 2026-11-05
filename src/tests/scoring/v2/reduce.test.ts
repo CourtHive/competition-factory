@@ -1,11 +1,12 @@
-import { DEFAULT_MATCHUP_FORMAT, finalGoverns, resolveFormat } from '@Assemblies/engines/scoring/v2/format';
 import { createContext, initialState, reduce, step } from '@Assemblies/engines/scoring/v2/reduce';
+import { finalGoverns, resolveFormat } from '@Helpers/matchUpFormatCode/matchRule';
+import { DEFAULT_MATCHUP_FORMAT } from '@Assemblies/engines/scoring/v2/format';
 import { decideMatch } from '@Assemblies/engines/scoring/v2/decide';
 import { describe, expect, it } from 'vitest';
 
 // constants and types
 import type { ScoredSet, TimelineEntry } from '@Assemblies/engines/scoring/v2/types';
-import type { MatchRule } from '@Assemblies/engines/scoring/v2/format';
+import type { MatchRule } from '@Helpers/matchUpFormatCode/matchRule';
 
 /*
  * ScoringEngine v2 (SE2a): the reducer held directly to the spec (documentation/docs/scoring-engine/

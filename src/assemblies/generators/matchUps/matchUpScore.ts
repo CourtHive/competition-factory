@@ -1,4 +1,4 @@
-import { formatForSet, withPointsInTiebreakFields } from '@Query/matchUp/tiebreakSetShape';
+import { formatForSet, withPointsInTiebreakFields } from '@Helpers/matchUpFormatCode/setRules/tiebreakSetShape';
 import { parse, ParsedFormat } from '@Helpers/matchUpFormatCode/parse';
 import { generateScoreString } from './generateScoreString';
 import { isString } from '@Tools/objects';

@@ -1,8 +1,8 @@
+import { isTiebreakGamesScore } from '@Helpers/matchUpFormatCode/setRules/tiebreakAtRules';
+import { formatForSet } from '@Helpers/matchUpFormatCode/setRules/tiebreakSetShape';
 import { INVALID_TIEBREAK_POINTS_DROPPED } from '@Constants/scoreWarningConstants';
 import { finalSetGoverns } from '@Helpers/matchUpFormatCode/aggregateDecider';
-import { isTiebreakGamesScore } from '@Query/matchUp/tiebreakAtRules';
 import { validateSetScore } from '@Validators/validateMatchUpScore';
-import { formatForSet } from '@Query/matchUp/tiebreakSetShape';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 
 // types

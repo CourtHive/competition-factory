@@ -1,6 +1,6 @@
 import { getMatchUpWinner, removeFromScore, getHighTiebreakValue } from './keyValueUtilities';
+import { getLeadingSide } from '@Helpers/matchUpFormatCode/setRules/setCompletion';
 import { processIncompleteSetScore } from './processIncompleteSetScore';
-import { getLeadingSide } from '@Query/matchUp/checkSetIsComplete';
 import { keyValueTimedSetScore } from './keyValueTimedSetScore';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { processTiebreakSet } from './processTiebreakSet';
