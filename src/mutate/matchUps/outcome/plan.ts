@@ -3356,7 +3356,7 @@ function ownCarryAlone(matchUp: HydratedMatchUp, sourceId: string): boolean {
   return matchUp.matchUpStatus === BYE || matchUp.matchUpStatus === status;
 }
 
-/** A produced exit directly feeding this BYE, with its pending copy alone one round on (S7). */
+/** A produced exit directly feeding this feed-round BYE, retained beside its empty seat (S7). */
 function producedBesideBye(
   view: OutcomeView,
   bye: HydratedMatchUp,
@@ -3404,6 +3404,77 @@ function producedRelaySeatOps(
   ];
 }
 
+/** An awarded copy loses its exit on the unwind, before the arriving loser can read it (S7). */
+function awardedProducedRelaySeatOps(
+  view: OutcomeView,
+  bye: HydratedMatchUp,
+  drawPosition: number,
+  withdraw: OutcomeOp,
+  withdrawn: Set<string>,
+): OutcomeOp[] | undefined {
+  const status = producedBesideBye(view, bye, drawPosition);
+  const next = indexed(view, bye.winnerMatchUpId);
+  if (!status || !next || next.structureId !== bye.structureId || next.loserMatchUpId) return undefined;
+  if (next.matchUpStatus !== status || !next.winningSide || !scoreless(next) || next.matchUpStatusCodes?.length)
+    return undefined;
+  const winner = next.sides?.find((side) => side.sideNumber === next.winningSide);
+  const held = positionsOf(next);
+  if (!winner?.participantId || !winner.drawPosition || held.length !== 1) return undefined;
+  const [kept] = Object.values(bye.sideExitProvenance ?? {});
+  const entries = Object.entries(next.sideExitProvenance ?? {});
+  const exits = entries.filter(([, entry]) => isDoubleExit(entry.previousMatchUpStatus));
+  const [produced, ...more] = exits;
+  if (!produced || more.length || Number(produced[0]) === next.winningSide) return undefined;
+  if (produced[1].sourceMatchUpId !== kept.sourceMatchUpId || carriedExitStatus(produced[1]) !== status)
+    return undefined;
+  if (produced[1].previousMatchUpStatus !== kept.previousMatchUpStatus) return undefined;
+  if (
+    entries.some(
+      ([, entry]) => entry !== produced[1] && (entry.matchUpStatus || entry.previousMatchUpStatus !== COMPLETED),
+    )
+  )
+    return undefined;
+  const beyond = indexed(view, next.winnerMatchUpId);
+  if (beyond) {
+    if (
+      beyond.structureId !== next.structureId ||
+      beyond.loserMatchUpId ||
+      beyond.winningSide ||
+      !unwoundClean(beyond, withdrawn)
+    )
+      return undefined;
+    if (!positionsOf(beyond).includes(winner.drawPosition)) return undefined;
+    const further = indexed(view, beyond.winnerMatchUpId);
+    if (further && (further.structureId !== beyond.structureId || positionsOf(further).includes(winner.drawPosition)))
+      return undefined;
+  }
+  return [
+    withdraw,
+    { op: 'clearMatchUpBye', matchUpId: bye.matchUpId, drawPosition, rederived: { matchUpStatus: status } },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: bye.matchUpId },
+    {
+      op: 'setMatchUpDrawPositions',
+      matchUpId: next.matchUpId,
+      drawPositions: held,
+      withdrawnByePosition: drawPosition,
+      withdrawsProducedExit: true,
+    },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId },
+    ...(beyond
+      ? [
+          {
+            op: 'setMatchUpDrawPositions' as const,
+            matchUpId: beyond.matchUpId,
+            drawPositions: positionsOf(beyond).filter((position) => position !== winner.drawPosition),
+            releasedDrawPosition: winner.drawPosition,
+            announcesContext: false as const,
+          },
+          { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: beyond.matchUpId },
+        ]
+      : []),
+  ];
+}
+
 function unwoundSeatOps(
   view: OutcomeView,
   loserSeat: WinnerLoserSeat,
@@ -3429,7 +3500,9 @@ function unwoundSeatOps(
   if (!placedBye) return seat.free && loserSeat.matchUpStatus !== BYE ? [withdraw] : undefined;
   const byeMatchUp = indexed(view, matchUpId);
   if (!seat.bye || !seat.byeFromPropagation || !byeMatchUp) return undefined;
-  const produced = producedRelaySeatOps(view, byeMatchUp, drawPosition, withdraw, withdrawn);
+  const produced =
+    producedRelaySeatOps(view, byeMatchUp, drawPosition, withdraw, withdrawn) ??
+    awardedProducedRelaySeatOps(view, byeMatchUp, drawPosition, withdraw, withdrawn);
   if (produced) return produced;
   // an exit carried onto the BYE matchUp's other side stands once the BYE goes: v1 re-derives the matchUp to it (a
   // final's consolation seat beside a carried walkover, S6 tail): v1's. Under `doubleExitPropagateBye: false` the carry
@@ -5047,7 +5120,7 @@ function unwoundArrivalOps(view: OutcomeView, unwound: OutcomeOp[], loser?: Dire
       op.op === 'clearMatchUpBye' &&
       op.matchUpId === byeMatchUp.matchUpId &&
       op.drawPosition === drawPosition &&
-      !!op.rederived,
+      !!op.rederived?.winningSide,
   );
   const writtenBy = (matchUpId: string) =>
     unwound.find(
@@ -5101,7 +5174,10 @@ function arrivalOps(view: OutcomeView, loser?: DirectionPlan['loser']): OutcomeO
     : [];
 }
 
-/** The produced exit rests where its BYE went; its later copy is withdrawn by the settle pass (S7). */
+/**
+ * The produced exit rests where its BYE went (S7). A pending copy is withdrawn after the arrival; an awarded copy was
+ * already reset on the unwind, so the arrival joins its legitimate occupant without repeating that withdrawal.
+ */
 function producedRelayAfterOps(view: OutcomeView, unwound: OutcomeOp[], loser?: DirectionPlan['loser']): OutcomeOp[] {
   return unwound.flatMap((op): OutcomeOp[] => {
     if (op.op !== 'clearMatchUpBye' || !op.rederived || op.rederived.winningSide) return [];
@@ -5110,6 +5186,7 @@ function producedRelayAfterOps(view: OutcomeView, unwound: OutcomeOp[], loser?: 
     const next = indexed(view, home.winnerMatchUpId) as HydratedMatchUp;
     const arrived = loser?.arrives && !loser.exit && !loser.converged && view.targets.loserMatchUpId === home.matchUpId;
     const beyond = indexed(view, next.winnerMatchUpId);
+    const drawPositions = [...positionsOf(next), op.drawPosition];
     const arrival: OutcomeOp[] = arrived
       ? [
           {
@@ -5125,10 +5202,10 @@ function producedRelayAfterOps(view: OutcomeView, unwound: OutcomeOp[], loser?: 
           {
             op: 'setMatchUpDrawPositions',
             matchUpId: next.matchUpId,
-            drawPositions: [op.drawPosition],
+            drawPositions,
             placedDrawPosition: op.drawPosition,
           },
-          ...(beyond
+          ...(beyond && !next.winningSide
             ? [
                 {
                   op: 'setMatchUpDrawPositions' as const,
@@ -5141,23 +5218,28 @@ function producedRelayAfterOps(view: OutcomeView, unwound: OutcomeOp[], loser?: 
             : []),
         ]
       : [];
+    const reset: OutcomeOp[] = next.winningSide
+      ? []
+      : [
+          {
+            op: 'setMatchUpResult',
+            matchUpId: next.matchUpId,
+            matchUpStatus: TO_BE_PLAYED,
+            matchUpStatusCodes: [],
+            announcedAs: 'withdrawProducedExits',
+          },
+          { op: 'setSideExitProvenance', matchUpId: next.matchUpId },
+          { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId },
+        ];
     return [
       ...arrival,
-      {
-        op: 'setMatchUpResult',
-        matchUpId: next.matchUpId,
-        matchUpStatus: TO_BE_PLAYED,
-        matchUpStatusCodes: [],
-        announcedAs: 'withdrawProducedExits',
-      },
-      { op: 'setSideExitProvenance', matchUpId: next.matchUpId },
-      { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId },
+      ...reset,
       ...(!arrived
         ? [
             {
               op: 'setMatchUpDrawPositions' as const,
               matchUpId: next.matchUpId,
-              drawPositions: [op.drawPosition],
+              drawPositions,
               advancesThroughBye: true as const,
               announcesEvent: true as const,
             },

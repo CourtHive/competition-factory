@@ -765,7 +765,41 @@ const PRODUCED_RELAY: [string, Scenario][] = [DOUBLE_WALKOVER, DOUBLE_DEFAULT].f
   ),
 );
 
+// S7: the relay copy was awarded; it is withdrawn before the loser arrives on the re-derived home.
+const AWARDED_PRODUCED_RELAY: [string, Scenario][] = [FEED_IN_CHAMPIONSHIP, FEED_IN_CHAMPIONSHIP_TO_SF].flatMap(
+  (drawType) =>
+    [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((produced) =>
+      [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((stored) =>
+        (
+          [
+            ['cleared', cleared],
+            ['played', won(1)],
+            ['given a walkover', walkover(1)],
+          ] as [string, Record<string, unknown>][]
+        ).map(([label, outcome]): [string, Scenario] => [
+          `${drawType} 8 awarded produced relay: ${produced} beside the BYE of ${stored}, ${label}`,
+          {
+            drawProfile: { drawSize: 8, drawType },
+            setup: [
+              ...MAIN_R1_8,
+              { target: R1(1, 'Consolation'), outcome: { matchUpStatus: produced } },
+              {
+                target: { roundNumber: 2, roundPosition: 2, structureName: 'Main' },
+                outcome: { matchUpStatus: stored },
+              },
+              { target: { roundNumber: 2, roundPosition: 1, structureName: 'Main' }, outcome: won(1) },
+              { target: R1(2, 'Consolation'), outcome: won(1) },
+              { target: { roundNumber: 2, roundPosition: 2, structureName: 'Consolation' }, outcome: won(1) },
+            ],
+            steps: [{ target: { roundNumber: 2, roundPosition: 2, structureName: 'Main' }, outcome }],
+          },
+        ]),
+      ),
+    ),
+);
+
 const SCENARIOS: [string, Scenario][] = [
+  ...AWARDED_PRODUCED_RELAY,
   ...PRODUCED_RELAY,
   ...UNWOUND_CONVERGENCE,
   ...UNWOUND_CARRY,
