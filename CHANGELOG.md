@@ -1,5 +1,48 @@
 # Changelog
 
+## [7.31.0](https://github.com/CourtHive/competition-factory/compare/v7.30.0...v7.31.0) (2026-11-06)
+
+
+### Features
+
+* admit first matchup arrivals on their unwound bye seats ([7e10e1a](https://github.com/CourtHive/competition-factory/commit/7e10e1a0f9391f8cb2d592c9737cf92d3ee3636d))
+* admit first matchup arrivals through unwound branches ([dfb04be](https://github.com/CourtHive/competition-factory/commit/dfb04bedd3959a3d7544d1d5e815b235eac184a6))
+* compose carried arrivals with retained relay exits ([42f93d3](https://github.com/CourtHive/competition-factory/commit/42f93d3ab25523eacd5ea15c0e12034767df8c6a))
+* **outcome:** prototype clear-only indirect relay composition ([8000d18](https://github.com/CourtHive/competition-factory/commit/8000d18dd9c04313e0cf462279ceffa9c8ff7cef))
+* **outcome:** retain carried awards when clearing occupied final relays ([27a37a9](https://github.com/CourtHive/competition-factory/commit/27a37a943dec39b599ef8012350dd355a2c07bab))
+* plan terminal occupied relay winner awards ([fc9ee35](https://github.com/CourtHive/competition-factory/commit/fc9ee35824a09aa9cb658ecc682989ebe19495af))
+* preserve standing bye advancements during unwind ([22d1c8d](https://github.com/CourtHive/competition-factory/commit/22d1c8de8c10950b11906618864d78834ded2ad4))
+* retain directly produced exits in terminal relays ([65a5148](https://github.com/CourtHive/competition-factory/commit/65a5148865a3160dcf331d57b03dc18b766f4add))
+* **tools:** expose positionTargets ([8a19e2d](https://github.com/CourtHive/competition-factory/commit/8a19e2dd0c45b818a2e05e7346893b89b752e703))
+* unwind a produced relay with a converged onward copy ([51cf851](https://github.com/CourtHive/competition-factory/commit/51cf851e14f3397bf7882516ef4e899b48d3661a))
+
+
+### Bug Fixes
+
+* bound retained relay positions to their structure ([e8eef53](https://github.com/CourtHive/competition-factory/commit/e8eef5310dac7418d8adf7081448ef67cf96c457))
+* bound TEAM identity checker Git subprocesses ([e86ca5c](https://github.com/CourtHive/competition-factory/commit/e86ca5cf8792b689deb7a7a1631dfcf231f37952))
+* **deps:** update tods-competition-factory to 7.30.0 ([#6224](https://github.com/CourtHive/competition-factory/issues/6224)) ([44a6f7d](https://github.com/CourtHive/competition-factory/commit/44a6f7d03e57472c842cc98620b7fa6370743156))
+* **ingestion:** a rebuilt AD_HOC draw keeps its entries ([8bb8f31](https://github.com/CourtHive/competition-factory/commit/8bb8f31809a450e3d5efb5b6bb605b3c3a97eb51))
+* **ingestion:** a rebuilt position keeps disabled links ([91a8f96](https://github.com/CourtHive/competition-factory/commit/91a8f96dd4467784a4e2d1b453f60e395e618433))
+* **ingestion:** a rebuilt structure keeps its finishingPosition ([8df5121](https://github.com/CourtHive/competition-factory/commit/8df512164ffe62934e6558b3ffcbe79c485a2552))
+* **ingestion:** an unstated finishingPosition is the one the factory generates ([1bf1b6a](https://github.com/CourtHive/competition-factory/commit/1bf1b6a93ab9b4cadd558d5871135b635d7cd237))
+* **integrity:** a loser whose target position is disabled was not dropped ([ae25865](https://github.com/CourtHive/competition-factory/commit/ae258656a11a4e53249f2b1b64615a85f4343935))
+* **outcome:** bind retained origin to opposite ledger side ([a3c3deb](https://github.com/CourtHive/competition-factory/commit/a3c3deb8be01528e066ead92a900f5aa22810575))
+* **outcome:** certify retained pending award loser seat ([80bc73a](https://github.com/CourtHive/competition-factory/commit/80bc73a5bca49fe0d8ed4164d568ac8e4dd12b5e))
+* **outcome:** couple indirect relay and pending award programs ([b40ffb4](https://github.com/CourtHive/competition-factory/commit/b40ffb49b97f95f103ea0e728d23dadb8561d58e))
+* **outcome:** preserve notice contracts across repeated exits and unwinds ([e1208c7](https://github.com/CourtHive/competition-factory/commit/e1208c7ced464641a9824bb0002578405c2a1b7b))
+* **outcome:** require literal pending ledger side keys ([f9bfde4](https://github.com/CourtHive/competition-factory/commit/f9bfde4139dead185f51fb445a415ed37a52d245))
+* **outcome:** route tie auto-calc through the pipeline ([c8d887f](https://github.com/CourtHive/competition-factory/commit/c8d887f590898527b2969ab7182c42b8776d8bf7))
+* **tests:** notice coverage measures every file again, beside the purity check ([1e08d01](https://github.com/CourtHive/competition-factory/commit/1e08d01d0cb7120d2d3bbf2627f13bd9cce544f7))
+* **tools:** export firstClassOrExtension, the helper the 5.0.0 guide documents ([18f729e](https://github.com/CourtHive/competition-factory/commit/18f729e49e23c27433a72bddf2bb0ff71fc51276))
+* **types:** one SubstitutionRules, with the closed timing and matchUp types ([70290aa](https://github.com/CourtHive/competition-factory/commit/70290aa82b1d8ab3e0212d10367b36a236e34c4c))
+
+
+### Documentation
+
+* **outcome:** bound the captured carry notice ordering ([a8949bb](https://github.com/CourtHive/competition-factory/commit/a8949bb771b98931f801af3f70250a0a0ccf8972))
+* **outcome:** list pending award position field ([f93bf29](https://github.com/CourtHive/competition-factory/commit/f93bf2912c3cf0310d2b0f2a0e0a87bd1cb3eb3b))
+
 ## [7.30.0](https://github.com/CourtHive/competition-factory/compare/v7.29.0...v7.30.0) (2026-11-05)
 
 
