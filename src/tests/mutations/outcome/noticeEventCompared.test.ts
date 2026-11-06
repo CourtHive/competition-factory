@@ -41,9 +41,21 @@ describe('the event a notice names is compared', () => {
   });
 
   it("the call's own in-context notice is compared by topic and key alone", () => {
-    const planned = plannedNotices({ ops: [], matchUpId: 'm' });
+    const planned = plannedNotices({
+      ops: [{ op: 'setMatchUpResult', matchUpId: 'm', matchUpStatus: 'TO_BE_PLAYED' }],
+      matchUpId: 'm',
+    });
     const added = [{ topic: UPDATE_INCONTEXT_MATCHUP, key: 'm', payload: {} }];
     expect(compareNotices({ planned, added, topics }).equal).toEqual(true);
+    expect(compareNotices({ planned, added: [], topics }).equal).toEqual(false);
+  });
+
+  it('a satisfied result with an empty plan announces nothing', () => {
+    const planned = plannedNotices({ ops: [], matchUpId: 'm' });
+    expect(compareNotices({ planned, added: [], topics }).equal).toEqual(true);
+    expect(compareNotices({ planned, added: [{ topic: UPDATE_INCONTEXT_MATCHUP, key: 'm' }], topics }).equal).toEqual(
+      false,
+    );
   });
 
   // v1's buffer keeps the last write's context and an earlier write's event (`preserveNoticeIdentity`, S6 tail)
