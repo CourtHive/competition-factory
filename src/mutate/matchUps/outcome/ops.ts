@@ -283,7 +283,7 @@ export type OutcomeOp =
       rederived?: { matchUpStatus: MatchUpStatusUnion; winningSide?: 1 | 2 };
       /** the relayed copy converged onward: its surviving origin is retained by the unwind's separate ops */
       retainedOnwardMatchUpId?: string;
-      /** A final retains the actual carrier's award while this relay's produced copy is withdrawn (S7 clear). */
+      /** A final retains the actual carrier's award while this relay's produced copy is withdrawn (S7 clear or certified plain winner). */
       retainedCarriedAward?: {
         matchUpId: string;
         carrierDrawPosition: number;
