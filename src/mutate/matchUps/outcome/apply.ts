@@ -69,6 +69,9 @@ export function applyOwnedPlan({
   // in-context notice (a settle pass's write defers none: v1's `reconcileScoredTimes` announces the matchUp, not its
   // context)
   const scored = ops.flatMap((op) => (op.op === 'setMatchUpResult' && !op.announcedAs ? [op.matchUpId] : []));
+  const lastScores = new Map(
+    ops.flatMap((op) => (op.op === 'setMatchUpResult' && !op.announcedAs ? [[op.matchUpId, op] as const] : [])),
+  );
   const written = [...new Set(scored.toReversed())].reverse();
   const announced = [...new Set(writes.toReversed())].reverse();
   // a matchUp given its result and then a position (that next matchUp): its last notice is the placement's
@@ -100,7 +103,8 @@ export function applyOwnedPlan({
   // a carry recorded beside a BYE it passed: the BYE matchUp's state is not rewritten, so v1's `progressExitStatus`
   // announces the entry itself (`recordCarryBesideBye`)
   const relayed = new Set(ops.flatMap((op) => (op.op === 'mergeSideExitProvenance' ? [op.matchUpId] : [])));
-  const { removed, unevented, untournamented, unbyed, settledResults, arrived, byeNamed } = noticeRules(ops);
+  const { removed, unevented, untournamented, unbyed, settledResults, arrived, byeNamed, carriedNotices } =
+    noticeRules(ops);
   // a position advanced through a BYE a double exit placed: v1's `doubleExitAdvancement` announces it as `advanceWinner`
   const advanced = new Set(
     ops.flatMap((op) => (op.op === 'setMatchUpDrawPositions' && op.advancesThroughBye ? [op.matchUpId] : [])),
@@ -115,9 +119,9 @@ export function applyOwnedPlan({
   // own, and a carried exit's on the matchUp it lands in (S5)
   for (const matchUpId of written) {
     if (!subscribed || !resulted.has(matchUpId) || !stored.has(matchUpId)) continue;
-    const contextless =
-      untournamented.has(matchUpId) ||
-      ops.some((op) => op.op === 'setMatchUpResult' && op.matchUpId === matchUpId && op.inContextBare);
+    // v1's deferred callback is replaced by the last score write, including the record it captures.
+    const score = lastScores.get(matchUpId);
+    const contextless = score?.announcesContext === false || score?.inContextBare;
     const record = contextless ? undefined : tournamentRecord;
     deferInContextMatchUp({
       inContextMatchUp: () => getInContextMatchUp({ tournamentRecord: record, drawDefinition, matchUpId }),
@@ -135,7 +139,7 @@ export function applyOwnedPlan({
     const unbyedPosition = resulted.has(matchUpId) && !unbyedLast.has(matchUpId) ? undefined : unbyed.get(matchUpId);
     // a settle pass's result write names the event and the tournament, whatever an earlier write of the matchUp in the
     // same call left out (a convergence re-derived past the produced exit's matchUp: contextless on the unwind, S6 tail)
-    const settledWrite = settledResults.has(matchUpId);
+    const settledWrite = settledResults.has(matchUpId) || carriedNotices.has(matchUpId);
     const noticeEvent =
       !settledWrite && (removedPosition || unbyedPosition || unevented.has(matchUpId)) ? undefined : event;
     modifyMatchUpNotice({
@@ -290,7 +294,12 @@ function noticeRules(ops: OutcomeOp[]) {
   const settledResults = new Set(
     ops.flatMap((op) => (op.op === 'setMatchUpResult' && op.announcedAs ? [op.matchUpId] : [])),
   );
-  return { removed, unevented, untournamented, unbyed, settledResults, arrived, byeNamed };
+  const carriedNotices = new Set(
+    [...namedWriters(ops).settled].flatMap(([matchUpId, writer]) =>
+      writer === 'progressExitStatus' ? [matchUpId] : [],
+    ),
+  );
+  return { removed, unevented, untournamented, unbyed, settledResults, arrived, byeNamed, carriedNotices };
 }
 
 /**
@@ -299,14 +308,16 @@ function noticeRules(ops: OutcomeOp[]) {
  * where v1's writer passes none; a structure's where nothing evented is placed in it (`announceAssignments`)
  */
 export function eventlessNotices(ops: OutcomeOp[]): { matchUps: Set<string>; structures: Set<string> } {
-  const { removed, unevented, unbyed, settledResults } = noticeRules(ops);
+  const { removed, unevented, unbyed, settledResults, carriedNotices } = noticeRules(ops);
   const resulted = new Set(ops.flatMap((op) => (op.op === 'setMatchUpResult' ? [op.matchUpId] : [])));
   const matchUps = new Set(
     ops.flatMap((op) => {
       if (!('matchUpId' in op)) return [];
       const { matchUpId } = op;
       const unplaced = !resulted.has(matchUpId) && (removed.has(matchUpId) || unbyed.has(matchUpId));
-      return !settledResults.has(matchUpId) && (unplaced || unevented.has(matchUpId)) ? [matchUpId] : [];
+      return !settledResults.has(matchUpId) && !carriedNotices.has(matchUpId) && (unplaced || unevented.has(matchUpId))
+        ? [matchUpId]
+        : [];
     }),
   );
   const structures = new Set(touchedStructures(ops).filter((structureId) => !eventedPlacement(ops, structureId)));
@@ -460,7 +471,10 @@ function namedWriters(ops: OutcomeOp[]) {
   // line-up, so the carry's notice is the matchUp's, with its event
   const relayed = new Set(ops.flatMap((op) => (op.op === 'mergeSideExitProvenance' ? [op.matchUpId] : [])));
   for (const op of ops) {
-    if (op.op === 'setSideLineUp') {
+    if (op.op === 'mergeSideExitProvenance' && op.announcedAs) {
+      settled.set(op.matchUpId, op.announcedAs);
+      lineUpUnevented.delete(op.matchUpId);
+    } else if (op.op === 'setSideLineUp') {
       if (relayed.has(op.matchUpId)) continue;
       settled.set(op.matchUpId, op.announcedAs);
       if (op.announcesEvent === false) lineUpUnevented.add(op.matchUpId);
