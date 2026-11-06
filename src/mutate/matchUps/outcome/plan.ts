@@ -3442,6 +3442,11 @@ function unwoundLevels(
     collectUnwound(seatOps, released, relay);
     seatOpsAt.set(index, seatOps);
   }
+  const indirect = [...seatOpsAt.values()].some((program) =>
+    program.some((op) => op.op === 'clearMatchUpBye' && indirectRelayReset(view, op, program)),
+  );
+  // Neither program is independently admitted: both absent preserves ordinary unwind paths.
+  if (pendingRemovals.size > 0 !== indirect) return undefined;
   return path.map((id, index) => {
     const taken = takenBack.get(id);
     const kept = rederived.get(id);
@@ -3453,6 +3458,27 @@ function unwoundLevels(
       ...(pendingRemovals.has(id) ? { pendingRemoval: pendingRemovals.get(id) } : {}),
     };
   });
+}
+
+/** The same validated level owns both this two-position relay clear and its exact onward reset. */
+function indirectRelayReset(
+  view: OutcomeView,
+  clear: Extract<OutcomeOp, { op: 'clearMatchUpBye' }>,
+  program: OutcomeOp[],
+): boolean {
+  if (!program.includes(clear)) return false;
+  const home = indexed(view, clear.matchUpId);
+  return (
+    !!home &&
+    positionsOf(home).length === 2 &&
+    program.some(
+      (op) =>
+        op.op === 'setMatchUpDrawPositions' &&
+        op.matchUpId === home.winnerMatchUpId &&
+        op.withdrawsProducedExit &&
+        op.withdrawnByePosition === clear.drawPosition,
+    )
+  );
 }
 
 /** what a level's seat ops leave for the levels read after them: the positions released, the matchUps cleared or reset */
@@ -4751,9 +4777,9 @@ function unwoundOps(
   route: Route | undefined,
   drawDefinition?: DrawDefinition,
   retainOccupiedAward = route === CLEAR_SCORE,
-): { ops: OutcomeOp[]; reannounced: OutcomeOp[] } {
+): { ops: OutcomeOp[]; reannounced: OutcomeOp[]; seatPrograms: OutcomeOp[][] } {
   if ((route !== CLEAR_SCORE && route !== 'winner') || !isDoubleExit(view.existing.matchUpStatus))
-    return { ops: [], reannounced: [] };
+    return { ops: [], reannounced: [], seatPrograms: [] };
   const levels = unwoundPath(view, request.matchUpId, drawDefinition, retainOccupiedAward, route === CLEAR_SCORE) ?? [];
   const retainedAward =
     retainOccupiedAward &&
@@ -4848,7 +4874,7 @@ function unwoundOps(
       : [],
   );
   reannounced.push(...levels.flatMap(({ seatOps }) => seatOps.filter(deferred)));
-  return { ops, reannounced };
+  return { ops, reannounced, seatPrograms: levels.map(({ seatOps }) => seatOps) };
 }
 
 /**
@@ -6071,25 +6097,20 @@ function retainedCarriedAwardOps(
  * The produced exit rests where its BYE went (S7). A pending copy is withdrawn after the arrival; an awarded copy was
  * already reset on the unwind, so the arrival joins its legitimate occupant without repeating that withdrawal.
  */
-function producedRelayAfterOps(view: OutcomeView, unwound: OutcomeOp[], loser?: DirectionPlan['loser']): OutcomeOp[] {
+function producedRelayAfterOps(
+  view: OutcomeView,
+  unwound: OutcomeOp[],
+  loser: DirectionPlan['loser'] | undefined,
+  seatPrograms: OutcomeOp[][],
+): OutcomeOp[] {
   return unwound.flatMap((op): OutcomeOp[] => {
     if (op.op !== 'clearMatchUpBye' || !op.rederived || op.rederived.winningSide) return [];
     // The relay reader certified its retained producer and any onward copy before emitting this pending exit.
     const home = indexed(view, op.matchUpId) as HydratedMatchUp;
     const next = indexed(view, home.winnerMatchUpId) as HydratedMatchUp;
     if (op.retainedCarriedAward) return [];
-    // The separate clear program already withdrew this two-position indirect copy, in v1's release-before-reset order.
-    if (
-      positionsOf(home).length === 2 &&
-      unwound.some(
-        (write) =>
-          write.op === 'setMatchUpDrawPositions' &&
-          write.matchUpId === next?.matchUpId &&
-          write.withdrawsProducedExit &&
-          write.withdrawnByePosition === op.drawPosition,
-      )
-    )
-      return [];
+    // Reuse the complete-level proof; an unrelated level's reset cannot suppress this relay's late write.
+    if (seatPrograms.some((program) => indirectRelayReset(view, op, program))) return [];
     if (op.retainedOnwardMatchUpId) {
       const copy = convergedRelayCopy(view, home, op.drawPosition) as NonNullable<
         ReturnType<typeof convergedRelayCopy>
@@ -6200,7 +6221,7 @@ function recordedPlanOps(args: Parameters<typeof planOutcome>[0], drawDefinition
   if (terminalWinner) return { ops: terminalWinner, shape: 'direction' };
   const score = writtenScore(request, write);
   // a cleared double exit's unwind, announced before the clear's own write, as v1 makes it first (S6)
-  const { ops: unwound, reannounced } = unwoundOps(view, request, args.route, drawDefinition);
+  const { ops: unwound, reannounced, seatPrograms } = unwoundOps(view, request, args.route, drawDefinition);
   const retainedAward = retainedCarriedAwardOps(args, unwound);
   if (!retainedAward) return { abstain: 'exit' };
   const ops: OutcomeOp[] = [
@@ -6333,7 +6354,7 @@ function recordedPlanOps(args: Parameters<typeof planOutcome>[0], drawDefinition
   );
   const writes = ops.filter((op) => !superseded.has(op));
   return {
-    ops: [...writes, ...producedRelayAfterOps(view, unwound, loser), ...retainedAward],
+    ops: [...writes, ...producedRelayAfterOps(view, unwound, loser, seatPrograms), ...retainedAward],
     shape: args.route === 'winner' || carriedOn ? 'direction' : 'local',
   };
 }

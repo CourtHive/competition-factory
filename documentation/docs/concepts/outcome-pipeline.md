@@ -1449,7 +1449,10 @@ its `announcesContext: false` matches the captured removal notice's absent event
 named settle score write. The clear-only per-level projection is separate from dissolved-convergence derivation, so
 it does not change the unwind's unfillable-BYE reset index or create a settle reannouncement. The indirect produced
 reservation's successor release precedes its onward reset, and that complete reset program is not followed by a stale
-relay advance. Winner corrections keep their prior fallback boundary.
+relay advance. The complete unwind admits this pending-award projection and validated indirect relay program only together:
+exactly one without the other refuses. Both absent preserves existing unwind paths. Coupling and late-write
+suppression use the same actual level program, so another level's reset cannot satisfy the proof.
+Winner corrections keep their prior fallback boundary.
 
 v2 states a call's writes as **ops**, a closed vocabulary folded by one reducer (`outcome/ops.ts`) into a stored-shape
 draw. The overlay, the `differential` shadow apply and, from S2, apply itself all use the same reducer, so what a plan
