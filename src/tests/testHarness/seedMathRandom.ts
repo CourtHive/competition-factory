@@ -1,3 +1,4 @@
+import { testRandomSeed } from './testRandomSeed';
 import { createSeededRandom } from '@Tools/prng';
 import { beforeEach, expect } from 'vitest';
 import { relative } from 'node:path';
@@ -21,21 +22,27 @@ import { relative } from 'node:path';
  * `nonRandom` is untouched: the mocks' own seeded generator is what a scenario's seed means, and
  * this does not stand in for it.
  */
-function hash(text: string): number {
-  let value = 2166136261;
-  for (let index = 0; index < text.length; index++) {
-    value ^= text.charCodeAt(index);
-    value = Math.imul(value, 16777619);
-  }
-  return value >>> 0;
-}
-
 // `it.each` rows can share one name — `roundRobinSeededByePlacement` runs five under a single
 // title and asserts that their BYE placements DIFFER — so the seed also counts how many times a
 // name has run in this file. Still deterministic: the fourth row is always the fourth row.
 const runsByName = new Map<string, number>();
 
 let current: { name: string; ordinal: number; seed: number } | undefined;
+
+type SeedIdentity = { name: string; ordinal: number };
+const seedIdentities = new Map<string, (title: string, ordinal: number) => SeedIdentity>();
+
+/** Register a relocated test's seed identity before any setup hook observes its diagnostics. */
+export function registerTestSeedIdentity(file: string, identity: (title: string, ordinal: number) => SeedIdentity) {
+  seedIdentities.set(file, identity);
+}
+
+/** Reseed both the effective RNG and its replay diagnostics without changing the Vitest task identity. */
+export function setTestRandomSeed(name: string, ordinal: number) {
+  const seed = testRandomSeed(name, ordinal);
+  current = { name, ordinal, seed };
+  Math.random = createSeededRandom(seed);
+}
 
 /** The seed and identity of the test currently running, for the corpus recorder. */
 export function currentTestSeed() {
@@ -45,10 +52,10 @@ export function currentTestSeed() {
 beforeEach(() => {
   const { testPath, currentTestName } = expect.getState();
   // relative to the repo, so the seed is the same on every machine and in CI
-  const name = `${relative(process.cwd(), testPath ?? '')}::${currentTestName ?? ''}`;
+  const file = relative(process.cwd(), testPath ?? '');
+  const name = `${file}::${currentTestName ?? ''}`;
   const ordinal = (runsByName.get(name) ?? 0) + 1;
   runsByName.set(name, ordinal);
-  const seed = hash(`${name}#${ordinal}`);
-  current = { name, ordinal, seed };
-  Math.random = createSeededRandom(seed);
+  const identity = seedIdentities.get(file)?.(currentTestName ?? '', ordinal);
+  setTestRandomSeed(identity?.name ?? name, identity?.ordinal ?? ordinal);
 });
