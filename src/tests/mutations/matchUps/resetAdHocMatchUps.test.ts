@@ -8,9 +8,9 @@ import { defined } from '@Tests/helpers/defined';
 import { it, expect, vi } from 'vitest';
 
 // constants
+import { DEFAULTED, TO_BE_PLAYED, WALKOVER } from '@Constants/matchUpStatusConstants';
 import { AD_HOC, SINGLE_ELIMINATION } from '@Constants/drawDefinitionConstants';
 import { POLICY_TYPE_SCORING } from '@Constants/policyConstants';
-import { DEFAULTED } from '@Constants/matchUpStatusConstants';
 import { DOMINANT_DUO } from '@Constants/tieFormatConstants';
 import { SINGLES, TEAM } from '@Constants/eventConstants';
 import {
@@ -432,7 +432,7 @@ it('returns error when resetMatchUpLineUps fails for TEAM matchUps with removeAs
   spy.mockRestore();
 });
 
-it('returns error when setMatchUpState fails', async () => {
+it('returns the first error from the outcome selector', async () => {
   const drawId = 'drawId';
   const drawSize = 8;
 
@@ -453,18 +453,45 @@ it('returns error when setMatchUpState fails', async () => {
   const matchUps = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
   const matchUpIds = matchUps.map(getMatchUpId);
 
-  // Mock setMatchUpState to return an error
-  const setMatchUpStateModule = await import('@Mutate/matchUps/matchUpStatus/setMatchUpState');
-  const spy = vi.spyOn(setMatchUpStateModule, 'setMatchUpState').mockReturnValue({
+  // Inject the outer dependency error, before any selected matchUp is changed.
+  const selectorModule = await import('@Mutate/matchUps/matchUpStatus/setMatchUpStatus');
+  const spy = vi.spyOn(selectorModule, 'setMatchUpStatus').mockReturnValue({
     error: INCOMPATIBLE_MATCHUP_STATUS,
   });
 
-  const resetResult = tournamentEngine.resetAdHocMatchUps({
-    matchUpIds,
-    drawId,
-  });
-  expect(spy).toHaveBeenCalled();
-  expect(resetResult.error).toEqual(INCOMPATIBLE_MATCHUP_STATUS);
+  try {
+    const resetResult = tournamentEngine.resetAdHocMatchUps({
+      matchUpIds,
+      drawId,
+    });
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(resetResult.error).toEqual(INCOMPATIBLE_MATCHUP_STATUS);
+  } finally {
+    spy.mockRestore();
+  }
+});
 
-  spy.mockRestore();
+// A reset is the canonical blank. Writing only status, winner and score left a walkover's reason code behind as
+// `sideStatusCodes` on a matchUp back at TO_BE_PLAYED (found 2026-11-06 moving the reset to the outcome selector).
+it('clears a walkover reason code and its exit provenance', () => {
+  mocksEngine.generateTournamentRecord({
+    drawProfiles: [{ drawId: 'codes', drawType: AD_HOC, drawSize: 4, roundsCount: 1, automated: true }],
+    setState: true,
+  });
+  const [matchUp] = defined(tournamentEngine.allTournamentMatchUps().matchUps, 'matchUps');
+  let result: any = tournamentEngine.setMatchUpStatus({
+    outcome: { matchUpStatus: WALKOVER, winningSide: 1, matchUpStatusCodes: ['', 'W1'] },
+    matchUpId: matchUp.matchUpId,
+    drawId: 'codes',
+  });
+  expect(result.success).toEqual(true);
+
+  result = tournamentEngine.resetAdHocMatchUps({ drawId: 'codes', matchUpIds: [matchUp.matchUpId] });
+  expect(result.success).toEqual(true);
+  const reset: any = tournamentEngine.findMatchUp({ drawId: 'codes', matchUpId: matchUp.matchUpId }).matchUp;
+  expect(reset.matchUpStatus).toEqual(TO_BE_PLAYED);
+  expect(reset.winningSide).toBeUndefined();
+  expect(reset.sideStatusCodes).toBeUndefined();
+  expect(reset.matchUpStatusCodes ?? []).toEqual([]);
+  expect(reset.sideExitProvenance).toBeUndefined();
 });
