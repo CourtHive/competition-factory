@@ -345,10 +345,14 @@ function verifyExecution(bridge, records) {
   );
 }
 
-function verifyNative(bridge, path, enabled) {
-  const report = JSON.parse(readFileSync(path, 'utf8'));
+function verifyNativeReport(bridge, report, enabled) {
   invariant(report.success === true, 'native run failed');
   const expected = bridge.rows.map((row) => ({ ...row.original, ...row.destination }));
+  const expectedFiles = [...new Set(expected.map((row) => row.file))];
+  invariant(
+    multiset(report.testResults.map((file) => relative(root, file.name))) === multiset(expectedFiles),
+    'native selected file inventory differs from the exact nineteen-file bridge',
+  );
   const actual = [];
   for (const file of report.testResults) {
     const occurrences = new Map();
@@ -370,6 +374,10 @@ function verifyNative(bridge, path, enabled) {
     'native executed identity/status multiset differs from sealed bridge',
   );
   return { nativeFiles: report.testResults.length, nativeTests: actual.length, enabled };
+}
+
+function verifyNative(bridge, path, enabled) {
+  return verifyNativeReport(bridge, JSON.parse(readFileSync(path, 'utf8')), enabled);
 }
 
 function main() {
@@ -468,7 +476,38 @@ function main() {
         );
     result.hookOrderControl = 'downstream recorder observes original effective seed before cell body';
     result.duplicateTitleControl = 'destination occurrence one retains original occurrence two';
-    result.negativeControls = [...Object.keys(checks), 'dynamicRunToSkip'];
+    const native = {
+      success: true,
+      testResults: currentFiles().map((file) => ({
+        name: resolve(root, file),
+        assertionResults: actual
+          .filter((row) => row.file === file)
+          .map((row) => ({ fullName: row.title, status: 'passed' })),
+      })),
+    };
+    verifyNativeReport(bridge, native, true);
+    const suiteMutations = {
+      extraEmptySuite: (report) =>
+        report.testResults.push({ name: resolve(root, 'src/unknown.test.ts'), assertionResults: [] }),
+      duplicateEmptySuite: (report) =>
+        report.testResults.push({ name: report.testResults[0].name, assertionResults: [] }),
+      missingSuite: (report) => report.testResults.pop(),
+      sameCountDuplicateSuite: (report) => {
+        report.testResults[0].name = report.testResults[1].name;
+      },
+    };
+    for (const [name, mutate] of Object.entries(suiteMutations)) {
+      const changed = structuredClone(native);
+      mutate(changed);
+      let rejected = false;
+      try {
+        verifyNativeReport(bridge, changed, true);
+      } catch (error) {
+        rejected = error.message.includes('native selected file inventory');
+      }
+      invariant(rejected, `native suite inventory negative control escaped: ${name}`);
+    }
+    result.negativeControls = [...Object.keys(checks), 'dynamicRunToSkip', ...Object.keys(suiteMutations)];
   }
   console.log(JSON.stringify(result));
 }
