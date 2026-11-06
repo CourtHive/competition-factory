@@ -2670,6 +2670,14 @@ type ProducedTarget = {
   feed: boolean;
 };
 
+/** The ordinary award certified by the produced-exit reader, retained for a standalone clear. */
+type ProducedAward = {
+  target: ProducedTarget;
+  paired: HydratedMatchUp;
+  drawPosition: number;
+  participantId: string;
+};
+
 /**
  * Where a double exit at `source` produces its exit, read from the index as `planProducedExit` reads the call's: the next
  * matchUp of the same structure, in a round of half as many matchUps (roundPosition n feeds side 1 when odd and 2 when
@@ -3308,6 +3316,14 @@ function indirectProducedRelaySeatOps(
   ];
 }
 
+type ProducedUnwind = {
+  path: string[];
+  rederived: Map<string, Rederived>;
+  takenBack: Map<string, number>;
+  pendingRemovals: Map<string, PendingRemoval>;
+  award?: ProducedAward;
+};
+
 function unwoundPath(
   view: OutcomeView,
   matchUpId?: string,
@@ -3332,7 +3348,7 @@ function unwoundPath(
   // a structure's final (or the one matchUp of a one-round structure) produced nothing: the path is the call's matchUp
   // alone, its own seat visited as any first level's (S6 tail, family 6). A final whose winner link leads on
   // (DOUBLE_ELIMINATION's Decider) has a next matchUp, and is read as any path
-  const produced = source.winnerMatchUpId
+  const produced: ProducedUnwind | undefined = source.winnerMatchUpId
     ? unwoundProducedPath(view, source, structureId, clearOnly)
     : {
         path: [source.matchUpId],
@@ -3341,7 +3357,7 @@ function unwoundPath(
         pendingRemovals: new Map<string, PendingRemoval>(),
       };
   if (!produced) return undefined;
-  const { path, rederived, takenBack, pendingRemovals } = produced;
+  const { path, rederived, takenBack, pendingRemovals, award } = produced;
   // the BYEs this unwind withdraws (its own seat's and its produced exit's), which a seat's onward matchUp is read without:
   // v1 withdraws the deeper one first, so the own seat's onward matchUp has lost the unfillable seat's BYE by the time it
   // is visited (FIRST_MATCH_LOSER_CONSOLATION: both BYEs meet in the consolation's second round). Past a convergence
@@ -3363,6 +3379,7 @@ function unwoundPath(
     clearing,
     clearOnly,
     pendingRemovals,
+    award,
   };
   const plain = unwoundLevels(view, context);
   if (plain) return plain;
@@ -3384,6 +3401,7 @@ type UnwoundContext = {
   clearing: boolean;
   clearOnly: boolean;
   pendingRemovals: Map<string, PendingRemoval>;
+  award?: ProducedAward;
 };
 
 /**
@@ -3401,7 +3419,10 @@ type UnwindRelay = { sourceId: string; cleared: Set<string>; reset: Set<string>;
  */
 function unwoundLevels(
   view: OutcomeView,
-  {
+  context: UnwoundContext,
+  walk?: Map<number, OutcomeOp[]>,
+): UnwoundLevel[] | undefined {
+  const {
     path,
     seats,
     rederived,
@@ -3413,9 +3434,7 @@ function unwoundLevels(
     clearing,
     clearOnly,
     pendingRemovals,
-  }: UnwoundContext,
-  walk?: Map<number, OutcomeOp[]>,
-): UnwoundLevel[] | undefined {
+  } = context;
   // a position the own seat's withdrawal releases out of a matchUp a deeper seat's BYE also sends to (a double BYE's next
   // matchUp, a BYE until then, had sent it on): that matchUp is read without it, and written once, by the release
   const released = new Set<number>();
@@ -3442,11 +3461,7 @@ function unwoundLevels(
     collectUnwound(seatOps, released, relay);
     seatOpsAt.set(index, seatOps);
   }
-  const indirect = [...seatOpsAt.values()].some((program) =>
-    program.some((op) => op.op === 'clearMatchUpBye' && indirectRelayReset(view, op, program)),
-  );
-  // Neither program is independently admitted: both absent preserves ordinary unwind paths.
-  if (pendingRemovals.size > 0 !== indirect) return undefined;
+  if (!unwoundProgramsStand(view, context, seatOpsAt)) return undefined;
   return path.map((id, index) => {
     const taken = takenBack.get(id);
     const kept = rederived.get(id);
@@ -3458,6 +3473,68 @@ function unwoundLevels(
       ...(pendingRemovals.has(id) ? { pendingRemoval: pendingRemovals.get(id) } : {}),
     };
   });
+}
+
+/** The pending foreign award remains coupled; an ordinary award needs its own complete certificate. */
+function unwoundProgramsStand(view: OutcomeView, context: UnwoundContext, programs: Map<number, OutcomeOp[]>): boolean {
+  const indirect = [...programs].filter(([, program]) =>
+    program.some((op) => op.op === 'clearMatchUpBye' && indirectRelayReset(view, op, program)),
+  );
+  if (context.pendingRemovals.size) return !!indirect.length;
+  if (!indirect.length) return true;
+  const [own, ...other] = indirect;
+  return !other.length && own[0] === 0 && standaloneIndirectClear(view, context, own[1]);
+}
+
+/** A plain produced award and its clean final, with exactly the source's certified indirect seat program. */
+function standaloneIndirectClear(view: OutcomeView, context: UnwoundContext, program: OutcomeOp[]): boolean {
+  const { path, sourceId, award, seats, takenBack } = context;
+  // The sole two-position indirect program already requires a policy-off clear at its constructor.
+  if (!award || award.target.feed || path.length !== 3) return false;
+  const source = indexed(view, sourceId);
+  const final = indexed(view, path[2]);
+  if (!source || !final || final.structureId !== source.structureId || final.winnerMatchUpId || final.loserMatchUpId)
+    return false;
+  if (takenBack.get(final.matchUpId) !== award.drawPosition) return false;
+  if (!ordinaryAwardStands(source, award)) return false;
+  const seat = seats[0]?.loserSeat;
+  const clear = program.find(
+    (op): op is Extract<OutcomeOp, { op: 'clearMatchUpBye' }> =>
+      op.op === 'clearMatchUpBye' && op.matchUpId === seat?.matchUpId && op.drawPosition === seat.drawPosition,
+  );
+  return !!clear && indirectRelayReset(view, clear, program);
+}
+
+/** Live source and paired result agree with the two literal origins retained by the ordinary award reader. */
+function ordinaryAwardStands(source: HydratedMatchUp, award: ProducedAward): boolean {
+  const { target, paired, drawPosition, participantId } = award;
+  if (
+    !isDoubleExit(source.matchUpStatus) ||
+    source.winningSide ||
+    !scoreless(source) ||
+    source.matchUpStatusCodes?.length
+  )
+    return false;
+  if (
+    Object.keys(source.sideExitProvenance ?? {}).length ||
+    source.sides?.filter((side) => side.participantId).length !== 2
+  )
+    return false;
+  if (paired.winnerMatchUpId !== target.entry.matchUpId) return false;
+  if (paired.matchUpStatus !== WALKOVER && paired.matchUpStatus !== DEFAULTED) return false;
+  if (!scoreless(paired) || paired.matchUpStatusCodes?.length || Object.keys(paired.sideExitProvenance ?? {}).length)
+    return false;
+  const produced = target.entry.sideExitProvenance?.[target.fedSide];
+  const arrival = target.entry.sideExitProvenance?.[target.awardedSide];
+  const winner = paired.sides?.find((side) => side.sideNumber === paired.winningSide);
+  return (
+    produced?.matchUpStatus === target.matchUpStatus &&
+    produced.previousMatchUpStatus === source.matchUpStatus &&
+    arrival?.matchUpStatus === undefined &&
+    arrival?.previousMatchUpStatus === paired.matchUpStatus &&
+    winner?.drawPosition === drawPosition &&
+    winner.participantId === participantId
+  );
 }
 
 /** The same validated level owns both this two-position relay clear and its exact onward reset. */
@@ -3555,14 +3632,7 @@ function unwoundProducedPath(
   source: HydratedMatchUp,
   structureId: string,
   clearOnly = false,
-):
-  | {
-      path: string[];
-      rederived: Map<string, Rederived>;
-      takenBack: Map<string, number>;
-      pendingRemovals: Map<string, PendingRemoval>;
-    }
-  | undefined {
+): ProducedUnwind | undefined {
   const target = producedTarget(view, source, source.matchUpStatus as MatchUpStatusUnion);
   if (!target) return undefined;
   const { entry } = target;
@@ -3581,7 +3651,13 @@ function unwoundProducedPath(
   const rederived = new Map(
     converged?.flatMap((level): [string, Rederived][] => (level.rederived ? [[level.matchUpId, level.rederived]] : [])),
   );
-  return { path: walked.path, rederived, takenBack: walked.takenBack, pendingRemovals };
+  return {
+    path: walked.path,
+    rederived,
+    takenBack: walked.takenBack,
+    pendingRemovals,
+    ...(awardee ? { award: awardee } : {}),
+  };
 }
 
 /**
@@ -3640,7 +3716,11 @@ function unwoundWinnerPath(
  * provenance and nothing placed; or awarded to the winner of the matchUp beside this one, who stands there alone with
  * their arrival recorded beside that origin (their drawPosition). False for anything else (a convergence, a score, codes).
  */
-function awardedReason(view: OutcomeView, source: HydratedMatchUp, target: ProducedTarget): number | false | undefined {
+function awardedReason(
+  view: OutcomeView,
+  source: HydratedMatchUp,
+  target: ProducedTarget,
+): ProducedAward | false | undefined {
   const { entry, fedSide, awardedSide } = target;
   const provenance = entry.sideExitProvenance ?? {};
   const origins = Object.keys(provenance);
@@ -3665,7 +3745,7 @@ function awardedReason(view: OutcomeView, source: HydratedMatchUp, target: Produ
   if (arrival?.sourceMatchUpId !== paired.matchUpId) return false;
   if (held.length !== 1 || !scoreless(entry) || entry.matchUpStatusCodes?.length) return false;
   if (entry.sides?.some((side) => side.bye)) return false;
-  return awarded.drawPosition;
+  return { target, paired, drawPosition: awarded.drawPosition, participantId: awarded.participantId };
 }
 
 /**
