@@ -3928,6 +3928,8 @@ function unwoundOwnConvergence(view: OutcomeView, seat: WinnerLoserSeat, relay?:
   const next = indexed(view, start?.winnerMatchUpId);
   const onwardId = next && relay?.retained.get(next.matchUpId);
   if (!start || !next || !onwardId || next.winnerMatchUpId !== onwardId) return undefined;
+  // Numeric positions are forwarded only within this structure.
+  if (next.structureId !== start.structureId) return undefined;
   if (!isDoubleExit(start.matchUpStatus) || start.winningSide || !scoreless(start)) return undefined;
   if (start.loserMatchUpId || start.matchUpStatusCodes?.length || start.sides?.some((side) => side.bye))
     return undefined;
