@@ -1445,6 +1445,16 @@ release precedes the onward reset, and no stale relay advance follows. The compl
 programs together; either program alone remains refused. Eight clear variants agree with v1 on whole records
 and ordered notices. The 32 winner corrections keep their existing fallback boundary.
 
+An indirect reservation can also unwind beside an ordinary produced award (S7). This clear keeps the certified
+three-level path in one structure: the double exit, its award to the paired feeder’s winner, and the clean terminal
+matchUp holding that exact awardee. The retained ordinary-award descriptor binds the paired feeder’s winner edge,
+participant and position to the literal arrival origin; source and paired results remain scoreless and code-free.
+Only the source’s own validated two-position indirect reset program is admitted. The pending foreign-award
+projection still requires its companion indirect program; every other partial combination refuses. Existing ops
+release the successor before resetting the relay and remove the ordinary award’s origin through a real score write.
+The minimal shape announces twelve notices; the captured shape retaining another unfillable origin announces
+thirteen, using the existing late one-position relay advancement. Winner corrections remain v1’s.
+
 ## 7.2 The plan as ops (S1)
 
 A certified clear's position removal can withdraw an award while retaining the independent pending foreign exit
@@ -1455,8 +1465,9 @@ its `announcesContext: false` matches the captured removal notice's absent event
 named settle score write. The clear-only per-level projection is separate from dissolved-convergence derivation, so
 it does not change the unwind's unfillable-BYE reset index or create a settle reannouncement. The indirect produced
 reservation's successor release precedes its onward reset, and that complete reset program is not followed by a stale
-relay advance. The complete unwind admits this pending-award projection and validated indirect relay program only together:
-exactly one without the other refuses. Both absent preserves existing unwind paths. Coupling and late-write
+relay advance. The complete unwind admits this pending-award projection only with its validated indirect relay program.
+An indirect program without that projection requires the separate ordinary-award clear certificate above; every
+other partial combination refuses. Both absent preserves existing unwind paths. Coupling and late-write
 suppression use the same actual level program, so another level's reset cannot satisfy the proof.
 Winner corrections keep their prior fallback boundary.
 

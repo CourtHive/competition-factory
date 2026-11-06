@@ -1042,7 +1042,190 @@ const INDIRECT_COMPOUND_CLEARS: [string, Scenario][] = [DOUBLE_WALKOVER, DOUBLE_
   ),
 );
 
+// C10: the source's ordinary award and same-level indirect relay reset unwind together, without a pending award.
+const standaloneTarget: Target = { structureName: 'Main', roundNumber: 2, roundPosition: 1 };
+const standaloneBase = {
+  drawProfile: { drawSize: 16, participantsCount: 11, drawType: FEED_IN_CHAMPIONSHIP_TO_SF },
+  nonRandom: 20473821,
+  randomSeed: 2496245122,
+  policyDefinitions: POLICY_OFF,
+};
+const STANDALONE_INDIRECT_CLEARS: [string, Scenario][] = [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((source) =>
+  [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((producer) =>
+    [WALKOVER, DEFAULTED].flatMap((paired) =>
+      [WALKOVER, DEFAULTED].map((upstream): [string, Scenario] => [
+        `C10 standalone indirect clear: ${source}/${producer}/${paired}/${upstream}`,
+        {
+          ...standaloneBase,
+          setup: [
+            { target: R1(5, 'Main'), outcome: { winningSide: 2 }, params: CARRIED },
+            { target: R1(7, 'Main'), outcome: { matchUpStatus: producer }, params: CARRIED },
+            {
+              target: { structureName: 'Main', roundNumber: 2, roundPosition: 2 },
+              outcome: { matchUpStatus: paired, winningSide: 2 },
+              params: CARRIED,
+            },
+            { target: R1(2, 'Main'), outcome: { matchUpStatus: upstream, winningSide: 1 }, params: CARRIED },
+            { target: standaloneTarget, outcome: { matchUpStatus: source }, params: CARRIED },
+          ],
+          steps: [{ target: standaloneTarget, outcome: cleared, params: CARRIED }],
+        },
+      ]),
+    ),
+  ),
+);
+const standaloneMinimal = STANDALONE_INDIRECT_CLEARS[0][1];
+STANDALONE_INDIRECT_CLEARS.push([
+  'C10 standalone indirect clear: plain upstream',
+  {
+    ...standaloneMinimal,
+    setup: standaloneMinimal.setup!.map((step, index) =>
+      index === 3 ? { ...step, outcome: { winningSide: 1 } } : step,
+    ),
+  },
+]);
+const standaloneFull: Scenario = {
+  ...standaloneBase,
+  setup: [
+    {
+      target: { structureName: 'Main', roundNumber: 1, roundPosition: 5 },
+      outcome: { winningSide: 2 },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 2, roundPosition: 3 },
+      outcome: { matchUpStatus: 'DOUBLE_WALKOVER' },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 1, roundPosition: 7 },
+      outcome: { winningSide: 1 },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 1, roundPosition: 5 },
+      outcome: { winningSide: 2 },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 1, roundPosition: 2 },
+      outcome: { matchUpStatus: 'DOUBLE_DEFAULT' },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 2, roundPosition: 4 },
+      outcome: { matchUpStatus: 'RETIRED', winningSide: 1, score: { sets: [{ side1Score: 6, side2Score: 3 }] } },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 2, roundPosition: 4 },
+      outcome: { matchUpStatus: 'DEFAULTED', winningSide: 1 },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 2, roundPosition: 4 },
+      outcome: { winningSide: 1 },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 2, roundPosition: 4 },
+      outcome: { score: { scoreStringSide1: '', scoreStringSide2: '' }, matchUpStatus: 'TO_BE_PLAYED' },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 2, roundPosition: 3 },
+      outcome: { matchUpStatus: 'WALKOVER', winningSide: 1 },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 1, roundPosition: 7 },
+      outcome: { matchUpStatus: 'DOUBLE_WALKOVER' },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 3, roundPosition: 2 },
+      outcome: { matchUpStatus: 'RETIRED', winningSide: 1, score: { sets: [{ side1Score: 6, side2Score: 3 }] } },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 2, roundPosition: 2 },
+      outcome: { matchUpStatus: 'DOUBLE_WALKOVER' },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Consolation', roundNumber: 4, roundPosition: 2 },
+      outcome: { matchUpStatus: 'DOUBLE_WALKOVER' },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Consolation', roundNumber: 4, roundPosition: 2 },
+      outcome: { matchUpStatus: 'WALKOVER', winningSide: 1 },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Consolation', roundNumber: 4, roundPosition: 2 },
+      outcome: { score: { scoreStringSide1: '', scoreStringSide2: '' }, matchUpStatus: 'TO_BE_PLAYED' },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 2, roundPosition: 2 },
+      outcome: { winningSide: 2 },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 2, roundPosition: 2 },
+      outcome: { winningSide: 2 },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 3, roundPosition: 2 },
+      outcome: { winningSide: 1 },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 2, roundPosition: 2 },
+      outcome: { matchUpStatus: 'WALKOVER', winningSide: 2 },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 1, roundPosition: 2 },
+      outcome: { matchUpStatus: 'WALKOVER', winningSide: 1 },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 2, roundPosition: 1 },
+      outcome: { matchUpStatus: 'DOUBLE_WALKOVER' },
+      params: CARRIED,
+    },
+  ],
+  steps: [{ target: standaloneTarget, outcome: cleared, params: CARRIED }],
+};
+STANDALONE_INDIRECT_CLEARS.push(['C10 standalone indirect clear: full thirteen notices', standaloneFull]);
+const STANDALONE_INDIRECT_WINNERS: [string, Scenario, number, number][] = [
+  ['minimal', standaloneMinimal, 12],
+  ['full', standaloneFull, 13],
+].flatMap(([shape, base, notices]) =>
+  [1, 2].flatMap((winningSide) =>
+    [undefined, WALKOVER, DEFAULTED].map((matchUpStatus): [string, Scenario, number, number] => [
+      `C10 standalone indirect winner fallback: ${shape}/${matchUpStatus ?? 'bare'}/${winningSide}`,
+      {
+        ...(base as Scenario),
+        steps: [
+          {
+            target: standaloneTarget,
+            outcome: { winningSide, ...(matchUpStatus ? { matchUpStatus } : {}) },
+            params: CARRIED,
+          },
+        ],
+      },
+      matchUpStatus ? 2 : 1,
+      Number(notices) + (matchUpStatus ? 2 : 0),
+    ]),
+  ),
+);
+
 const SCENARIOS: [string, Scenario][] = [
+  ...STANDALONE_INDIRECT_CLEARS,
   ...INDIRECT_COMPOUND_CLEARS,
   ...STANDING_BYE_CAPTURES,
   ...FIRST_MATCHUP_OWNED,
@@ -3795,6 +3978,37 @@ describe('S7 FMLC FIRST_MATCHUP arrivals compare subscribed differential notices
     expect(compared.results).toEqual(v1.results);
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
+  });
+});
+
+describe('C10 standalone indirect v1 oracle and subscribed differential notices', () => {
+  it.each(STANDALONE_INDIRECT_CLEARS)('%s v1 oracle', (label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    expect(v1.v1Writes).toEqual(1);
+    expect(v1.notices).toHaveLength(label.includes('thirteen') ? 13 : 12);
+  });
+  it.each(STANDALONE_INDIRECT_CLEARS)('%s subscribed differential', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
+});
+describe('C10 standalone indirect winners retain the whole legacy program', () => {
+  it.each(STANDALONE_INDIRECT_WINNERS)('%s', (_label, scenario, writers, notices) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    expect(v1.v1Writes).toEqual(writers);
+    expect(v1.notices).toHaveLength(notices);
+    for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+      const compared = play(mode, scenario);
+      expect(compared.v1Writes).toEqual(writers);
+      expect(compared.results).toEqual(v1.results);
+      expect(compared.record).toEqual(v1.record);
+      expect(compared.notices).toEqual(v1.notices);
+    }
   });
 });
 
