@@ -540,6 +540,14 @@ export type WinnerLoserSeat = {
     /** exact original propagated opposite BYE; the requested empty seat passed the canonical activity check */
     standingBye?: { opponentDrawPosition: number };
   };
+  /** Canonical LOSER seat of the one foreign double origin carried by this target. */
+  foreignProducedSeat?: {
+    sourceMatchUpId: string;
+    matchUpId: string;
+    structureId: string;
+    drawPosition: number;
+    linkCondition?: string;
+  };
   /** the positions the matchUp holding the seat already stands with */
   drawPositions: number[];
   matchUpStatus?: MatchUpStatusUnion;

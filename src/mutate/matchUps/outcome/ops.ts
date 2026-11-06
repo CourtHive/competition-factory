@@ -118,6 +118,8 @@ export type OutcomeOp =
        * too (v1's `removeSubsequentRoundsParticipant`, S4)
        */
       removedDrawPosition?: number;
+      /** The removed awardee leaves a separately certified pending foreign exit; position removal supplies its notice. */
+      withdrawsPendingAward?: true;
       /**
        * the position placed in by the same write, when one is: a changed winner replacing the old one (S4); a loser gone
        * on through a BYE into the matchUp an unwind left holding their position (S7), whose notice is then the last
@@ -497,6 +499,7 @@ function foldMatchUpWrite(
       matchUp.matchUpStatus = TO_BE_PLAYED;
       setSideExitProvenance({ matchUp, provenance: undefined });
     }
+    if (op.withdrawsPendingAward) delete matchUp.winningSide;
     if (op.withdrawsProducedExit) {
       matchUp.matchUpStatus = TO_BE_PLAYED;
       delete matchUp.winningSide;

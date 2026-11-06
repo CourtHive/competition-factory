@@ -549,6 +549,7 @@ function loserSeatOf(draw: DrawContext, matchUpId: string, depth = 0): WinnerLos
   return {
     ...(beyond ? { beyond } : {}),
     seat: seat && { ...seat, ...(standingBye ? { standingBye } : {}) },
+    foreignProducedSeat: foreignProducedSeat(draw, matchUp),
     drawPositions: (matchUp.drawPositions ?? []).filter((position): position is number => !!position),
     linkCondition: targetLinks?.loserTargetLink?.linkCondition,
     matchUpStatus: matchUp.matchUpStatus,
@@ -1151,6 +1152,26 @@ function storedSideRecord(matchUpsMap: MatchUpsMap, matchUpId?: string): Outcome
   return {
     matchUpStatusCodes: stored.matchUpStatusCodes,
     provenance: Object.values(stored.sideExitProvenance ?? {}).some(Boolean),
+  };
+}
+
+/** Bind an empty produced reservation by its live provenance source's canonical LOSER mapping. */
+function foreignProducedSeat(draw: DrawContext, relay: HydratedMatchUp): WinnerLoserSeat['foreignProducedSeat'] {
+  if (relay.matchUpStatus !== BYE) return undefined;
+  const [entry, ...more] = Object.values(relay.sideExitProvenance ?? {});
+  if (!entry || more.length || !isDoubleExit(entry.previousMatchUpStatus)) return undefined;
+  const source = draw.inContextDrawMatchUps.find((matchUp) => matchUp.matchUpId === entry.sourceMatchUpId);
+  if (!source || source.winningSide || source.matchUpStatus !== entry.previousMatchUpStatus) return undefined;
+  const { targetMatchUps, targetLinks } = positionTargets({ ...draw, matchUpId: source.matchUpId }) ?? {};
+  const target = targetMatchUps?.loserMatchUp;
+  const drawPosition = targetMatchUps?.loserTargetDrawPosition;
+  if (!target || !drawPosition) return undefined;
+  return {
+    sourceMatchUpId: source.matchUpId,
+    matchUpId: target.matchUpId,
+    structureId: target.structureId,
+    drawPosition,
+    linkCondition: targetLinks?.loserTargetLink?.linkCondition,
   };
 }
 
