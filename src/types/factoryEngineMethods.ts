@@ -339,6 +339,7 @@ export type FactoryEngineMethod =
   | 'getLadderStanding'
   | 'getLapses'
   | 'getLinkedTournamentIds'
+  | 'getLoadedFootprint'
   | 'getLuckyDrawRoundStatus'
   | 'getMatchUpCheckInHistory'
   | 'getMatchUpCheckInState'
@@ -508,6 +509,7 @@ export type FactoryEngineMethod =
   | 'iterateDayTicks'
   | 'keyValueScore'
   | 'linkTournaments'
+  | 'loadedFootprint'
   | 'luckyDrawAdvancement'
   | 'luckyLoserDrawPositionAssignment'
   | 'matchUpActions'
@@ -1143,6 +1145,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getLadderStanding',
   'getLapses',
   'getLinkedTournamentIds',
+  'getLoadedFootprint',
   'getLuckyDrawRoundStatus',
   'getMatchUpCheckInHistory',
   'getMatchUpCheckInState',
@@ -1312,6 +1315,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'iterateDayTicks',
   'keyValueScore',
   'linkTournaments',
+  'loadedFootprint',
   'luckyDrawAdvancement',
   'luckyLoserDrawPositionAssignment',
   'matchUpActions',
