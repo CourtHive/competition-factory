@@ -1043,6 +1043,17 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   carries changes, seeded or reserved loser arrivals and nonterminal re-derived winner targets
   remain v1's. The original five-setup outer correction still uses both legacy writers.
 
+  A **terminal directly produced relay** (S7) retains the producer's pending WALKOVER or DEFAULTED
+  when the source's propagated BYE is withdrawn. It has one position, one opposing produced origin,
+  no raw winner or loser continuation, and a live direct producer in the same structure whose double
+  status still matches that origin. The reader keeps producer codes and indirect origins outside
+  this certificate. A clear leaves the pending exit and its original provenance. A plain arriving
+  loser receives the relay's award through the existing named `assignMatchUpDrawPosition` result,
+  without another callback. No onward position or copy is invented. The raw relay score property is
+  absent in the captured family and stays absent; the named award carries no score field.
+  Trigger propagation enabled still permits the captured clears; given winners under that flag
+  remain refused by the existing per-op settle scope. No scope marker or detector exemption is added.
+
   A **final's** double exit (or the one matchUp of a one-round structure) produced nothing: cleared or given a winner, its
   unwind is the own loser seat's withdrawal alone, where a link feeds one (FEED_IN_CHAMPIONSHIP's consolation final seat;
   under `doubleExitPropagateBye: false` the carry there, taken back as the branch), and the call's own write; given a

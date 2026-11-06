@@ -3672,6 +3672,26 @@ function producedRelaySeatOps(
   ];
 }
 
+/** A terminal feed-round relay retains its direct producer's pending exit when its propagated BYE is withdrawn. */
+function terminalProducedRelaySeatOps(
+  view: OutcomeView,
+  bye: HydratedMatchUp,
+  drawPosition: number,
+  withdraw: OutcomeOp,
+): OutcomeOp[] | undefined {
+  if (bye.winnerMatchUpId) return undefined;
+  const status = producedBesideBye(view, bye, drawPosition);
+  const [entry] = Object.values(bye.sideExitProvenance ?? {});
+  const origin = indexed(view, entry?.sourceMatchUpId);
+  if (!status || !origin || origin.structureId !== bye.structureId) return undefined;
+  if (origin.matchUpStatus !== entry.previousMatchUpStatus || origin.matchUpStatusCodes?.length) return undefined;
+  return [
+    withdraw,
+    { op: 'clearMatchUpBye', matchUpId: bye.matchUpId, drawPosition, rederived: { matchUpStatus: status } },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: bye.matchUpId },
+  ];
+}
+
 /** An awarded copy loses its exit on the unwind, before the arriving loser can read it (S7). */
 function awardedProducedRelaySeatOps(
   view: OutcomeView,
@@ -3953,6 +3973,7 @@ function unwoundSeatOps(
     producedRelaySeatOps(view, byeMatchUp, drawPosition, withdraw, withdrawn) ??
     awardedProducedRelaySeatOps(view, byeMatchUp, drawPosition, withdraw, withdrawn) ??
     convergedProducedRelaySeatOps(view, byeMatchUp, drawPosition, withdraw) ??
+    terminalProducedRelaySeatOps(view, byeMatchUp, drawPosition, withdraw) ??
     (clearing ? occupiedFinalRelaySeatOps(view, byeMatchUp, drawPosition, withdraw, withdrawn) : undefined);
   if (produced) return produced;
   // an exit carried onto the BYE matchUp's other side stands once the BYE goes: v1 re-derives the matchUp to it (a
@@ -5762,7 +5783,7 @@ function retainedCarriedAwardOps(
 function producedRelayAfterOps(view: OutcomeView, unwound: OutcomeOp[], loser?: DirectionPlan['loser']): OutcomeOp[] {
   return unwound.flatMap((op): OutcomeOp[] => {
     if (op.op !== 'clearMatchUpBye' || !op.rederived || op.rederived.winningSide) return [];
-    // producedRelaySeatOps has already checked both matchUps before emitting this re-derived pending exit.
+    // The relay reader certified its retained producer and any onward copy before emitting this pending exit.
     const home = indexed(view, op.matchUpId) as HydratedMatchUp;
     const next = indexed(view, home.winnerMatchUpId) as HydratedMatchUp;
     if (op.retainedCarriedAward) return [];
@@ -5780,9 +5801,7 @@ function producedRelayAfterOps(view: OutcomeView, unwound: OutcomeOp[], loser?: 
       ];
     }
     const arrived = loser?.arrives && !loser.exit && !loser.converged && view.targets.loserMatchUpId === home.matchUpId;
-    const beyond = indexed(view, next.winnerMatchUpId);
-    const drawPositions = [...positionsOf(next), op.drawPosition];
-    const arrival: OutcomeOp[] = arrived
+    const award: OutcomeOp[] = arrived
       ? [
           {
             op: 'setMatchUpResult',
@@ -5794,6 +5813,15 @@ function producedRelayAfterOps(view: OutcomeView, unwound: OutcomeOp[], loser?: 
             announcedAs: 'assignMatchUpDrawPosition',
           },
           { op: 'stampUpdatedAt', entity: 'matchUp', id: home.matchUpId },
+        ]
+      : [];
+    // This direct terminal certificate has no onward copy; named assignment preserves its absent score and callback.
+    if (!home.winnerMatchUpId) return award;
+    const beyond = indexed(view, next.winnerMatchUpId);
+    const drawPositions = [...positionsOf(next), op.drawPosition];
+    const arrival: OutcomeOp[] = arrived
+      ? [
+          ...award,
           {
             op: 'setMatchUpDrawPositions',
             matchUpId: next.matchUpId,
