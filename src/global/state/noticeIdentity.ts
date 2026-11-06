@@ -1,7 +1,18 @@
 import { NoticeIdentity } from '@Types/topicTypes';
 
 // constants
-import { AUDIT, DATA_ISSUE } from '@Constants/topicConstants';
+import {
+  ADD_MATCHUPS,
+  AUDIT,
+  DATA_ISSUE,
+  DELETED_MATCHUP_IDS,
+  MODIFY_DRAW_DEFINITION,
+  MODIFY_DRAW_ENTRIES,
+  MODIFY_MATCHUP,
+  MODIFY_POSITION_ASSIGNMENTS,
+  MODIFY_SEED_ASSIGNMENTS,
+  UPDATE_INCONTEXT_MATCHUP,
+} from '@Constants/topicConstants';
 
 /**
  * Identity fields carried on a notice ENVELOPE — the SINGLE definition.
@@ -75,4 +86,28 @@ export function noticeModifies(topic: string): boolean {
 export function modifiedTournamentId(payload?: { tournamentId?: unknown }): string {
   const tournamentId = payload?.tournamentId;
   return typeof tournamentId === 'string' && tournamentId ? tournamentId : UNNAMED_TOURNAMENT;
+}
+
+/** The topic recorded for a write marked modified without a notice: nothing says what it changed. */
+export const UNANNOUNCED_WRITE = '*';
+
+// the topics of a change confined to a drawDefinition: its matchUps, positions, seeds and entries
+const DRAW_TOPICS = new Set([
+  ADD_MATCHUPS,
+  DELETED_MATCHUP_IDS,
+  MODIFY_DRAW_DEFINITION,
+  MODIFY_DRAW_ENTRIES,
+  MODIFY_MATCHUP,
+  MODIFY_POSITION_ASSIGNMENTS,
+  MODIFY_SEED_ASSIGNMENTS,
+  UPDATE_INCONTEXT_MATCHUP,
+]);
+
+/**
+ * Whether a call's modifying topics changed anything outside its draws. Unknown topics (`undefined`, from a provider
+ * that does not record them) and an unannounced write count as outside: nothing says they were confined to a draw.
+ */
+export function modifiedOutsideDraws(topics?: Set<string>): boolean {
+  if (!topics) return true;
+  return [...topics].some((topic) => !DRAW_TOPICS.has(topic));
 }

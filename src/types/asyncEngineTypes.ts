@@ -15,6 +15,7 @@ import type {
   DevContextType,
   getOutcomePipeline,
   getSchemaWriteMode,
+  getStampScope,
   setTournamentId,
 } from '../global/state/globalState';
 
@@ -60,6 +61,8 @@ export interface AsyncEngineSetup extends Pick<FactoryEngineTyped, 'on' | 'once'
   getSchemaWriteMode: typeof getSchemaWriteMode;
   outcomePipeline(mode: ReturnType<typeof getOutcomePipeline>): AsyncFactoryEngine;
   getOutcomePipeline: typeof getOutcomePipeline;
+  stampScope(scope?: ReturnType<typeof getStampScope>): AsyncFactoryEngine;
+  getStampScope: typeof getStampScope;
   saveDrawDeletions(flag?: boolean): AsyncFactoryEngine;
   getSaveDrawDeletions(): boolean;
   auditAuthorityServer(flag?: boolean): AsyncFactoryEngine;

@@ -945,3 +945,36 @@ const mode = engine.getOutcomePipeline(); // 'v1'
 ```
 
 ---
+
+## stampScope
+
+Where the engine stamps the factory `{ version, timeStamp }` after a mutation. `'tournament'` (the default) stamps the
+tournament record whatever changed, as every version before it did. `'modified'` stamps what changed:
+
+- each drawDefinition the call modified, on its own `factory` attribute;
+- the tournament, only when something outside its draws changed as well (an event, a participant, a venue, the
+  tournament's own details), or when nothing names a draw as the change.
+
+A score entry then changes one draw and leaves the tournament shell as it was: what a storage layer that keeps a
+tournament in parts needs in order to write one draw row for it. A state provider that does not record its notices'
+topics (the optional `cycleModifiedTopics`) stamps the tournament too, as under `'tournament'`.
+
+No argument restores `'tournament'`; any other value is refused with `INVALID_VALUES`. Process-wide, like
+`outcomePipeline`.
+
+```js
+engine.stampScope('modified');
+engine.stampScope(); // back to 'tournament'
+```
+
+---
+
+## getStampScope
+
+Returns the current stamp scope: `'tournament'` or `'modified'`.
+
+```js
+const scope = engine.getStampScope(); // 'tournament'
+```
+
+---
