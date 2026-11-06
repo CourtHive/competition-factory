@@ -47,6 +47,10 @@ export {
   extractParticipants,
 } from '@Generators/ingestion/buildFromSources/buildFromSources';
 export { dehydrateMatchUps } from '@Mutate/tournaments/dehydrate';
+// The read the engine makes of every attribute promoted from an extension: first-class when present, else the legacy
+// extension. Here rather than on a governor because a governor export becomes an engine method, and this reads an
+// element the caller holds. The migration-5.0.0 guide has promised it since 5.0.0 under a subpath that never resolved.
+export { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 export { extractAttributes } from '@Tools/extractAttributes';
 export { definedAttributes } from '@Tools/definedAttributes';
 export { attributeFilter } from '@Tools/attributeFilter';
