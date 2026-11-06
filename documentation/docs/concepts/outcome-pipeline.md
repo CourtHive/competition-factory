@@ -1338,7 +1338,9 @@ tiebreak-only set read 1-0). A line that decides its dual hands the dual's own p
 A carry arriving after an unwind can announce a matchUp that the unwind already wrote quietly. The carry
 recorded beside its BYE announces `progressExitStatus`, with the tournament and event, even though the earlier
 score write announced neither (`mergeSideExitProvenance.announcedAs`). A later result write supersedes that
-name again. Deferred in-context payloads independently follow the **last score write**: its captured tournament
+name again. The measured supported composition ends with this carry announcement; later writes to the same
+matchUp require a separate captured ordering contract before extension. Deferred in-context payloads
+independently follow the **last score write**: its captured tournament
 determines whether participants are hydrated, so a quiet earlier write cannot strip a later evented result's
 payload. The FIC_TO_SF 16/11 sequence Main 1/5 winner(2), Main 2/3 DOUBLE_WALKOVER, then Main 2/3 WALKOVER(1)
 carried under policy off captures both contracts. Whole records, ordered notice payloads and results agree
