@@ -126,6 +126,8 @@ export function getMethodFootprint(
   params: Record<string, any> | undefined,
   context: FootprintContext = {},
 ): MethodFootprint {
-  const rule = mutationFootprints[method];
+  // own keys only: a method name is caller input, and `constructor` or `toString` would otherwise dispatch to the
+  // Object.prototype function of that name as if it were a rule
+  const rule = Object.hasOwn(mutationFootprints, method) ? mutationFootprints[method] : undefined;
   return rule ? rule(params ?? {}, context) : TOURNAMENT;
 }
