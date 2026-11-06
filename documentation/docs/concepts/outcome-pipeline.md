@@ -1490,9 +1490,26 @@ Deferred unwind announcements run before this restoration; rederived levels rema
 No advancement is invented when no opponent is present. A later restored BYE supersedes its earlier
 withdrawal notice; a later real advancement restores tournament identity after the quiet release,
 while retaining its absent event. Reverse operation order retains the later withdrawal or release.
-The captured program uses one actual source writer. When both possible source participants already
-have qualifying wins, v1 leaves the reservation standing throughout: that distinct program remains
-unowned here, as does an explicit exit still carried by the existing settle boundary.
+The captured program uses one actual source writer. A distinct program below preserves the reservation
+when both possible source participants already have qualifying wins. An explicit exit still carried
+by the existing settle boundary remains outside this restoration program.
+
+A standing FIRST_MATCHUP reservation stays untouched when a round-two FMLC double exit is given a
+winner (S7). v1's early `reservationStands` check calls `firstRoundFeedersWon` and skips the loser-target
+block; it does not reach `byeSeatStands` or withdraw the BYE in this shape. The canonical first-round
+filter and qualifying-win predicate are shared unchanged by v1 and the planner. COMPLETED without a
+score still qualifies; the canonical query retains its existing empty-selection behavior.
+The planner separately binds both actual source participants to distinct first-round winners, the
+canonical marked BYE seat and its existing advance in a different structure. Its actual own-seat
+program is empty, supplied before any withdrawal context is built, so the marker remains standing
+through the complete early unwind. Every deeper level must have no loser seat; rederived, pending
+removal and walked programs refuse. All actual resets, result writes, winner placement and deferred
+announcements remain on the source structure. The entire consolation structure, including its
+assignments and timestamps, stays unchanged. No BYE assignment, reannouncement, advancement or score
+callback is invented there. Clear and double-exit correction routes receive no such program; TEAM,
+group and uncertified custom geometry remain outside this bounded certificate. Independent material
+controls also retain the neighboring restoration's actual BYE write and timestamp change, so the two
+programs cannot become equivalent through a shared-predicate error. No operation or view field is added.
 
 ## 7.2 The plan as ops (S1)
 

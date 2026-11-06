@@ -2927,7 +2927,57 @@ const FMLC_STANDING_RESERVATIONS: [string, Scenario][] = [
   ],
 ];
 
+// C14 keeps the original reservation; explicit carried requests and other routes remain outside this program.
+const FMLC_STANDING_WINNERS: [string, Scenario][] = FMLC_STANDING_RESERVATIONS.flatMap(([label, base]) =>
+  [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((matchUpStatus) =>
+    ([1, 2] as const).flatMap((winningSide) =>
+      [undefined, WALKOVER, DEFAULTED].map((requested) => {
+        const target = base.steps[0].target;
+        const setup = (base.setup ?? []).map((step) => ({
+          ...step,
+          outcome:
+            step.target.structureName === target.structureName &&
+            step.target.roundNumber === target.roundNumber &&
+            step.target.roundPosition === target.roundPosition &&
+            [DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(step.outcome.matchUpStatus as typeof DOUBLE_WALKOVER)
+              ? { matchUpStatus }
+              : step.outcome,
+          params: { ...step.params, ...(requested ? { propagateExitStatus: false } : {}) },
+        }));
+        return [
+          `${label.replace('C13 standing reservation remains v1', 'C14 standing reservation')}/${matchUpStatus}/side${winningSide}/${requested ?? 'bare'}`,
+          {
+            ...base,
+            setup,
+            steps: [
+              {
+                ...base.steps[0],
+                outcome: { winningSide, ...(requested ? { matchUpStatus: requested } : {}) },
+                params: { ...base.steps[0].params, ...(requested ? { propagateExitStatus: false } : {}) },
+              },
+            ],
+          },
+        ] as [string, Scenario];
+      }),
+    ),
+  ),
+);
+const FMLC_STANDING_OUTSIDE: [string, Scenario][] = FMLC_STANDING_RESERVATIONS.flatMap(([label, base]) =>
+  (
+    [
+      ['clear', cleared],
+      ['carried WO', { matchUpStatus: WALKOVER, winningSide: 1 }],
+      ['carried DEF', { matchUpStatus: DEFAULTED, winningSide: 2 }],
+      ['double correction', { matchUpStatus: DOUBLE_DEFAULT }],
+    ] as const
+  ).map(
+    ([kind, outcome]) =>
+      [`C14 outside/${label}/${kind}`, { ...base, steps: [{ ...base.steps[0], outcome }] }] as [string, Scenario],
+  ),
+);
+
 const SCENARIOS: [string, Scenario][] = [
+  ...FMLC_STANDING_WINNERS,
   ...FMLC_NO_ARRIVAL_WINNERS,
   ...FMLC_NO_ARRIVAL_REAL,
   ...STANDALONE_CARRIED_CONVERGENCES,
@@ -5613,6 +5663,7 @@ function play(
     });
     // the targets are found before the pipeline is set, so finding them is not part of what is compared
     const matchUpIds = steps.map(({ target }) => findTarget(target));
+    const recordBefore = canonicalJson(tournamentEngine.getTournament().tournamentRecord);
     setOutcomePipeline(mode);
     v1Writes.count = 0;
     const results = steps.map(({ outcome, params }, i) => {
@@ -5620,6 +5671,7 @@ function play(
       return tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId: matchUpIds[i], outcome, ...params });
     });
     return {
+      recordBefore,
       record: canonicalJson(tournamentEngine.getTournament().tournamentRecord),
       v1Writes: v1Writes.count,
       notices,
@@ -6487,7 +6539,7 @@ describe('C13 no-arrival public writers and subscribed differential notices', ()
       },
     ],
   );
-  it.each([...FMLC_STANDING_RESERVATIONS, ...carried])('%s', (_label, scenario) => {
+  it.each(carried)('%s', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
       const compared = play(mode, scenario);
@@ -6497,4 +6549,68 @@ describe('C13 no-arrival public writers and subscribed differential notices', ()
       expect(compared.notices).toEqual(v1.notices);
     }
   });
+});
+
+/** Entire stored Consolation structures, including raw field presence and timestamps. */
+function consolationRecord(record: string) {
+  const structures = JSON.parse(record)
+    .events.flatMap((event: any) => event.drawDefinitions ?? [])
+    .flatMap((draw: any) => draw.structures ?? [])
+    .filter((structure: any) => structure.structureName === 'Consolation');
+  expect(structures).toHaveLength(1);
+  return structures;
+}
+
+const materialModes = (scenarios: [string, Scenario][]) =>
+  scenarios.flatMap(([label, scenario]) =>
+    ([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const).map((mode) => [`${label}/${mode}`, scenario, mode] as const),
+  );
+
+describe('C14 standing reservations preserve their original stored records', () => {
+  it.each(materialModes(FMLC_STANDING_WINNERS))('%s independent standing material', (_label, scenario, mode) => {
+    const actual = play(mode, scenario);
+    expect(actual.results.every((result: any) => result.success)).toEqual(true);
+    expect(consolationRecord(actual.record)).toEqual(consolationRecord(actual.recordBefore));
+    expect(actual.v1Writes).toEqual(mode === OUTCOME_PIPELINE_V1 ? 1 : 0);
+  });
+  it.each(FMLC_STANDING_WINNERS)('%s subscribed differential', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
+  it.each(FMLC_STANDING_OUTSIDE)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+      const compared = play(mode, scenario);
+      expect(compared.v1Writes).toEqual(1);
+      expect(compared.results).toEqual(v1.results);
+      expect(compared.record).toEqual(v1.record);
+      expect(compared.notices).toEqual(v1.notices);
+    }
+  });
+  it.each(materialModes(FMLC_NO_ARRIVAL_REAL))(
+    '%s C14 boundary: the withdrawn BYE is actually re-announced',
+    (_label, scenario, mode) => {
+      const actual = play(mode, scenario);
+      const at = (record: string) =>
+        consolationRecord(record)[0].matchUps.find(
+          (matchUp: any) =>
+            matchUp.roundNumber === 2 && matchUp.roundPosition === scenario.steps[0].target.roundPosition,
+        );
+      const before = at(actual.recordBefore);
+      const after = at(actual.record);
+      expect(before).toBeDefined();
+      expect(after).toBeDefined();
+      expect(before.matchUpStatus).toEqual(BYE);
+      expect(after.matchUpStatus).toEqual(BYE);
+      expect(after.updatedAt).not.toEqual(before.updatedAt);
+      expect(after.updatedAt).toEqual('2026-10-25T00:01:00.000Z');
+      expect(
+        actual.notices.some((notice) => notice.includes('setMatchUpStatusBye') && notice.includes(after.matchUpId)),
+      ).toEqual(true);
+    },
+  );
 });
