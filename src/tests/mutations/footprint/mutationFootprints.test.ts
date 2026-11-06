@@ -130,6 +130,14 @@ const outcome = {
   matchUpStatus: 'COMPLETED',
 };
 
+const bulkOutcome = (record: any, eventId: string, drawId: string) => ({
+  ...outcome,
+  matchUpId: findMatchUp(record, drawId).matchUpId,
+  tournamentId: record.tournamentId,
+  eventId,
+  drawId,
+});
+
 const scheduled = (record: any, schedule: any) => {
   const matchUp = findMatchUp(record, 'D1');
   return { drawId: 'D1', matchUpId: matchUp.matchUpId, schedule };
@@ -177,6 +185,18 @@ const SCENARIOS: Scenario[] = [
     name: 'TEAM collection line score',
     method: 'setMatchUpStatus',
     params: (r) => ({ drawId: 'D4', matchUpId: collectionLine(r).matchUpId, outcome }),
+    pipelines: [OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2],
+  },
+  {
+    name: 'bulk scores, two draws of one event',
+    method: 'bulkMatchUpStatusUpdate',
+    params: (r) => ({ outcomes: [bulkOutcome(r, 'E1', 'D1'), bulkOutcome(r, 'E1', 'D2')] }),
+    pipelines: [OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2],
+  },
+  {
+    name: 'bulk scores, draws of two events',
+    method: 'bulkMatchUpStatusUpdate',
+    params: (r) => ({ outcomes: [bulkOutcome(r, 'E1', 'D1'), bulkOutcome(r, 'E2', 'D3')] }),
     pipelines: [OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2],
   },
   {

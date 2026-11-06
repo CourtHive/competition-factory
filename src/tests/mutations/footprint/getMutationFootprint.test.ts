@@ -89,4 +89,23 @@ describe('getMutationFootprint', () => {
     expect(format({ eventId: 'E1', structureId: 'S1' }).eventIds).toEqual(['E1']);
     expect(format({}).tournament).toEqual(true);
   });
+
+  it('scopes bulk scores to the draws their outcomes name, in one tournament', () => {
+    const bulk = (outcomes: any, outcomePipeline?: any) =>
+      getMutationFootprint({ methods: [{ method: 'bulkMatchUpStatusUpdate', params: { outcomes } }], outcomePipeline });
+    const T1D1 = { tournamentId: 'T1', eventId: 'E1', drawId: 'D1', matchUpId: 'M1' };
+    const T1D2 = { tournamentId: 'T1', eventId: 'E2', drawId: 'D2', matchUpId: 'M2' };
+
+    let result: any = bulk([T1D1, T1D2, { ...T1D1, matchUpId: 'M3' }]);
+    expect(result.shards).toEqual(['shell', 'draw', 'participants']);
+    expect(result.drawIds).toEqual(['D1', 'D2']);
+    expect(bulk([T1D1], OUTCOME_PIPELINE_V2).shards).toEqual(['shell', 'draw']);
+
+    // a draw it cannot name, outcomes across tournaments, or nothing to scope by
+    result = bulk([T1D1, { ...T1D2, drawId: undefined }]);
+    expect(result.tournament).toEqual(true);
+    expect(bulk([T1D1, { ...T1D2, tournamentId: 'T2' }]).tournament).toEqual(true);
+    expect(bulk([]).tournament).toEqual(true);
+    expect(bulk(undefined).tournament).toEqual(true);
+  });
 });

@@ -63,6 +63,17 @@ const scoreRule: FootprintRule = (params, context) => {
   return drawScoped(extra)(params, context);
 };
 
+// each outcome is a score entry in the draw it names, which the method refuses to look for anywhere else; outcomes
+// across tournaments are more than one record's footprint can say
+const bulkStatusRule: FootprintRule = (params, context) => {
+  const outcomes: { tournamentId?: string; drawId?: string }[] = Array.isArray(params?.outcomes) ? params.outcomes : [];
+  const tournamentIds = new Set(outcomes.map((outcome) => outcome?.tournamentId));
+  const drawIds = outcomes.map((outcome) => outcome?.drawId).filter((drawId): drawId is string => !!drawId);
+  if (!outcomes.length || tournamentIds.size > 1 || drawIds.length < outcomes.length) return TOURNAMENT;
+  const extra: FootprintShard[] = context.outcomePipeline === OUTCOME_PIPELINE_V2 ? [] : ['participants'];
+  return { shards: ['shell', 'draw', ...extra], drawIds: [...new Set(drawIds)] };
+};
+
 const removeAssignmentRule: FootprintRule = (params, context) => {
   // withdrawing or making an alternate rewrites the participant's entries across every draw of the event; a pair
   // destroyed on the way splits into its individuals
@@ -96,6 +107,7 @@ const matchUpFormatRule: FootprintRule = (params) => {
 export const mutationFootprints: Record<string, FootprintRule> = {
   // score entry
   setMatchUpStatus: scoreRule,
+  bulkMatchUpStatusUpdate: bulkStatusRule,
 
   // positions
   assignDrawPosition: drawScoped(),

@@ -1025,7 +1025,10 @@ schedule change widens it to the whole record.
 Score entry includes `participants` unless `outcomePipeline: 'v2'` is passed: the v1 pipeline resolves a TEAM
 collection line's sides against the tournament's participants.
 
-Declared today: `setMatchUpStatus`, `assignDrawPosition`, `assignDrawPositionBye`, `removeDrawPositionAssignment`, the
+`bulkMatchUpStatusUpdate` is score entry in every draw its outcomes name, however many draws and events that spans.
+An outcome without a `drawId`, or outcomes from more than one tournament, need the whole record.
+
+Declared today: `setMatchUpStatus`, `bulkMatchUpStatusUpdate`, `assignDrawPosition`, `assignDrawPositionBye`, `removeDrawPositionAssignment`, the
 matchUp schedule methods (`addMatchUpScheduleItems`, `addMatchUpScheduledDate`, `addMatchUpScheduledTime`,
 `addMatchUpCourtOrder`, the start, end, stop and resume times, `assignMatchUpCourt`, `assignMatchUpVenue`),
 `checkInParticipant`, `checkOutParticipant` and `setMatchUpFormat`. Every other method needs the whole record.
