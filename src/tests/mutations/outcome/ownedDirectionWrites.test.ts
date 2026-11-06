@@ -1224,7 +1224,40 @@ const STANDALONE_INDIRECT_WINNERS: [string, Scenario, number, number][] = [
   ),
 );
 
+// Bare winners keep the retained foreign relay exit; carried WO/DEFAULTED corrections remain separate.
+const STANDALONE_BARE_WINNERS: [string, Scenario][] = STANDALONE_INDIRECT_CLEARS.slice(0, 17).flatMap(
+  ([label, scenario]) =>
+    [1, 2].map((winningSide): [string, Scenario] => [
+      `${label.replace('C10 standalone indirect clear', 'C11 standalone bare winner')}/${winningSide}`,
+      { ...scenario, steps: [{ target: standaloneTarget, outcome: { winningSide }, params: CARRIED }] },
+    ]),
+);
+for (const source of [DOUBLE_WALKOVER, DOUBLE_DEFAULT]) {
+  for (const producer of [DOUBLE_WALKOVER, DOUBLE_DEFAULT]) {
+    for (const winningSide of [1, 2]) {
+      STANDALONE_BARE_WINNERS.push([
+        `C11 standalone bare winner: full thirteen/${source}/${producer}/${winningSide}`,
+        {
+          ...standaloneFull,
+          setup: standaloneFull.setup!.map((step, index, all) => {
+            if (index === all.length - 1) return { ...step, outcome: { matchUpStatus: source } };
+            if (
+              step.target.roundNumber === 1 &&
+              step.target.roundPosition === 7 &&
+              step.outcome.matchUpStatus === DOUBLE_WALKOVER
+            )
+              return { ...step, outcome: { matchUpStatus: producer } };
+            return step;
+          }),
+          steps: [{ target: standaloneTarget, outcome: { winningSide }, params: CARRIED }],
+        },
+      ]);
+    }
+  }
+}
+
 const SCENARIOS: [string, Scenario][] = [
+  ...STANDALONE_BARE_WINNERS,
   ...STANDALONE_INDIRECT_CLEARS,
   ...INDIRECT_COMPOUND_CLEARS,
   ...STANDING_BYE_CAPTURES,
@@ -3981,6 +4014,22 @@ describe('S7 FMLC FIRST_MATCHUP arrivals compare subscribed differential notices
   });
 });
 
+describe('C11 standalone bare winners compare v1 and all subscribed differential notices', () => {
+  it.each(STANDALONE_BARE_WINNERS)('%s v1 oracle', (label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    expect(v1.v1Writes).toEqual(1);
+    expect(v1.notices).toHaveLength(label.includes('thirteen') ? 13 : 12);
+  });
+  it.each(STANDALONE_BARE_WINNERS)('%s subscribed differential', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
+});
+
 describe('C10 standalone indirect v1 oracle and subscribed differential notices', () => {
   it.each(STANDALONE_INDIRECT_CLEARS)('%s v1 oracle', (label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
@@ -3997,19 +4046,22 @@ describe('C10 standalone indirect v1 oracle and subscribed differential notices'
   });
 });
 describe('C10 standalone indirect winners retain the whole legacy program', () => {
-  it.each(STANDALONE_INDIRECT_WINNERS)('%s', (_label, scenario, writers, notices) => {
-    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
-    expect(v1.results.every((result: any) => result.success)).toEqual(true);
-    expect(v1.v1Writes).toEqual(writers);
-    expect(v1.notices).toHaveLength(notices);
-    for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
-      const compared = play(mode, scenario);
-      expect(compared.v1Writes).toEqual(writers);
-      expect(compared.results).toEqual(v1.results);
-      expect(compared.record).toEqual(v1.record);
-      expect(compared.notices).toEqual(v1.notices);
-    }
-  });
+  it.each(STANDALONE_INDIRECT_WINNERS.filter(([, , writers]) => writers === 2))(
+    '%s',
+    (_label, scenario, writers, notices) => {
+      const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+      expect(v1.results.every((result: any) => result.success)).toEqual(true);
+      expect(v1.v1Writes).toEqual(writers);
+      expect(v1.notices).toHaveLength(notices);
+      for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+        const compared = play(mode, scenario);
+        expect(compared.v1Writes).toEqual(writers);
+        expect(compared.results).toEqual(v1.results);
+        expect(compared.record).toEqual(v1.record);
+        expect(compared.notices).toEqual(v1.notices);
+      }
+    },
+  );
 });
 
 describe('S7 indirect compound clears compare subscribed differential notices', () => {

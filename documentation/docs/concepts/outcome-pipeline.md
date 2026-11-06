@@ -1453,7 +1453,18 @@ Only the source’s own validated two-position indirect reset program is admitte
 projection still requires its companion indirect program; every other partial combination refuses. Existing ops
 release the successor before resetting the relay and remove the ordinary award’s origin through a real score write.
 The minimal shape announces twelve notices; the captured shape retaining another unfillable origin announces
-thirteen, using the existing late one-position relay advancement. Winner corrections remain v1’s.
+thirteen, using the existing late one-position relay advancement.
+
+A bare winner can follow that same certified ordinary-award removal (S7). With no explicit status, score,
+format, schedule or notes, the source becomes COMPLETED. The shared removal program is folded into a working
+view before planning both directions; its actual own-level reset supplies the onward positions. A plain,
+unseeded loser arrives on the freed seat beside the retained foreign exit, with no conditioned link, opposite
+BYE or reservation. The real assignment awards the relay while preserving its absent score and exact foreign
+origin, then places that participant onward beside the reset's legitimate occupant. The source winner uses
+its re-planned ordinary placement. Successor release remains before the source score write; the three actual
+assignment notices precede the unchanged actual-score callbacks. The separate thirteen-notice shape retains
+its existing late one-position advancement. Explicit WALKOVER/DEFAULTED winner requests still refuse this
+composition; they require a distinct carried-convergence program. No new op field or callback is introduced.
 
 ## 7.2 The plan as ops (S1)
 
