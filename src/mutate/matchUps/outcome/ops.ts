@@ -58,7 +58,7 @@ export type OutcomeOp =
        * schedule is left as it is: a double exit's produced exit (`doubleExitAdvancement` → `modifyMatchUpScore`)
        */
       stampsScoredTime?: false;
-      /** the retained origin and all its onward consequences are explicitly planned (S7 own-seat convergence) */
+      /** the retained origin and all its onward consequences are explicitly planned (S7) */
       retainedExitPlanned?: true;
       /**
        * false where v1 writes the result with neither the tournament nor the event (a produced exit recorded beside a BYE
@@ -78,10 +78,15 @@ export type OutcomeOp =
        * relabel, whose last emission is `reconcileScoredTimes` taking its `scoredTime` (S6); a convergence an unwind
        * dissolved, written again as it stands by `settleRederivedDoubleExits` after the call's own write (S6 tail);
        * a produced exit awarded on placement (`assignMatchUpDrawPosition`, without an in-context notice), or its stale
-       * relay copy reset by `withdrawProducedExits` (S7)
+       * relay copy reset by `withdrawProducedExits` (S7); an empty final reservation's `advanceWinner` notice does not
+       * defer another score callback
        */
       announcedAs?:
-        'reconcileScoredTimes' | 'settleRederivedDoubleExit' | 'assignMatchUpDrawPosition' | 'withdrawProducedExits';
+        | 'reconcileScoredTimes'
+        | 'settleRederivedDoubleExit'
+        | 'assignMatchUpDrawPosition'
+        | 'withdrawProducedExits'
+        | 'advanceWinner';
       /**
        * a TEAM dual's write after its line's result (S7), `updateTieMatchUpScore`'s: the sides it ensures and the
        * tieFormat it copies on, each present only where it changes the stored value. v1 returns the write as the
@@ -278,6 +283,14 @@ export type OutcomeOp =
       rederived?: { matchUpStatus: MatchUpStatusUnion; winningSide?: 1 | 2 };
       /** the relayed copy converged onward: its surviving origin is retained by the unwind's separate ops */
       retainedOnwardMatchUpId?: string;
+      /** A final retains the actual carrier's award while this relay's produced copy is withdrawn (S7 clear). */
+      retainedCarriedAward?: {
+        matchUpId: string;
+        carrierDrawPosition: number;
+        participantId: string;
+        matchUpStatus: MatchUpStatusUnion;
+        provenance: SideExitProvenance;
+      };
     }
   | {
       op: 'setParticipantResults';
