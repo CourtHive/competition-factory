@@ -102,7 +102,7 @@ export function substitutionViolations(
   const inSegment = substitutions.filter((event) => situation.setOf(event) === situation.setInPlay).length;
   if (rules.maxPerSegment !== undefined && inSegment >= rules.maxPerSegment) violations.push('MAX_PER_SEGMENT');
   if (rules.timing === 'BETWEEN_GAMES' && situation.gameHasPoints) violations.push('TIMING');
-  const types = rules.allowedMatchUpTypes;
+  const types: readonly string[] | undefined = rules.allowedMatchUpTypes;
   if (types && situation.matchUpType && !types.includes(situation.matchUpType)) violations.push('MATCHUP_TYPE');
   return violations;
 }
