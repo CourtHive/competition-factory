@@ -20,7 +20,7 @@ name: Verify
 #   coverage        merges the 4 blobs (vitest --merge-reports --coverage): the thresholds and
 #                   coverage/coverage-summary.json are computed over the MERGED result
 #   slow-gates      route-differential, double-exit-sweep, deep-corrections and hydrations, one job each
-#   team-arms       verify:team-arms split 5 ways (vitest --shard), one extended-arm file per job
+#   team-arms       verify:team-arms split 5 ways (vitest --shard), nineteen strictly selected TEAM files
 #   v2-arm          INFORMATIONAL: the suite under OUTCOME_PIPELINE=v2 on a dev PR touching the outcome pipeline,
 #                   split 4 ways (vitest --shard)
 #   differential-arm the suite under OUTCOME_PIPELINE=differential on a dev PR touching the outcome pipeline, split
@@ -496,7 +496,7 @@ jobs:
 
   # verify:team-arms: the TEAM matrix over the seven extension draw types and more tieFormats, inert on
   # `pnpm test` (2026-10-05). As one job it was the slowest in the run (up to 30 min, 2026-10). vitest
-  # --shard splits it by FILE, so with five files each shard runs exactly one, and the file list stays in
+  # --shard splits nineteen TEAM files across the existing five jobs; the explicit file list stays in
   # package.json alone: a file added there lands in some shard without touching this workflow. A shard
   # that receives no file fails (vitest exits 1 on "No test files found"), so raise the count only when
   # the file count grows past it.
