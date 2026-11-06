@@ -1439,6 +1439,12 @@ forward. Clearing the empty assignment preserves that structural BYE advancement
 only the existing exact-seat withdrawal/assignment notice is planned, with no target result or new callback.
 Other topology, active seats, orphan markers and conditioned unplaced links remain v1's.
 
+A clear can withdraw a given award while preserving an independent pending foreign exit (S7). In the captured
+FIC_TO_SF 16/11 policy-off shape, the re-derived BYE also releases an indirect produced reservation: its successor
+release precedes the onward reset, and no stale relay advance follows. The complete unwind owns these two
+programs together; either program alone remains refused. Eight clear variants agree with v1 on whole records
+and ordered notices. The 32 winner corrections keep their existing fallback boundary.
+
 ## 7.2 The plan as ops (S1)
 
 A certified clear's position removal can withdraw an award while retaining the independent pending foreign exit
