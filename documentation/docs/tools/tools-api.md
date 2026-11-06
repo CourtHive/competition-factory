@@ -895,6 +895,21 @@ It is idempotent, and a record that is already in stored shape is returned uncha
 
 `tools.buildFromSources` applies it to every record it builds.
 
+### firstClassOrExtension
+
+Read an attribute that 5.0.0 promoted from an extension to a first-class field, whatever mode the record was written
+in: the first-class value when it is defined, otherwise the legacy extension's value. It is the read every engine
+query makes; use it only where no engine method returns the attribute. See
+[Migrating to 5.0.0](/docs/migration-5.0.0#mode-agnostic-read-helper).
+
+```js
+const flightProfile = tools.firstClassOrExtension({
+  element: event,
+  attribute: 'flightProfile', // the first-class field
+  name: 'flightProfile', // the legacy extension name
+});
+```
+
 ### visualizeScheduledMatchUps
 
 Generate color-coded console output of match schedule.

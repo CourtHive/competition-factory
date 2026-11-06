@@ -182,12 +182,12 @@ Or run the record through `engine.migrateTournamentRecord({ tournamentRecord })`
 
 ## Mode-agnostic read helper
 
-If you genuinely need to do a manual read of an attribute that doesn't have a dedicated engine method, the factory exports the underlying helper:
+If you genuinely need to do a manual read of an attribute that doesn't have a dedicated engine method, the factory exports the underlying helper on `tools`:
 
 ```ts
-import { firstClassOrExtension } from 'tods-competition-factory/acquire/firstClassOrExtension';
+import { tools } from 'tods-competition-factory';
 
-const value = firstClassOrExtension({
+const value = tools.firstClassOrExtension({
   element: event,
   attribute: 'flightProfile',
   name: 'flightProfile', // legacy extension name
