@@ -13,7 +13,6 @@ import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { validMatchUps } from '@Validators/validMatchUp';
 import { withFinishingOrder } from './finishingOrderOps';
 import { unwindWalk } from './unwindWalk';
-import { canonicalJson } from '@Tools/canonicalJson';
 import {
   buildCarriedExitProvenance,
   buildSideExitProvenance,
@@ -723,7 +722,6 @@ function retainedRelayShape(view: OutcomeView, after: OutcomeView, ops: OutcomeO
   if (positionsOf(relay).length !== 1 || positionsOf(relay)[0] !== clear.drawPosition) return undefined;
   if (!onward || onward.winningSide || !scoreless(onward) || onward.matchUpStatusCodes?.length) return undefined;
   if (onward.matchUpStatus !== copy.kept.matchUpStatus || positionsOf(onward).length !== 1) return undefined;
-  if (canonicalJson(onward.sideExitProvenance) !== canonicalJson(copy.kept.provenance)) return undefined;
   if (!successor || successor.matchUpStatus !== TO_BE_PLAYED || !unwoundClean(successor, new Set())) return undefined;
   if (!unplaced(successor)) return undefined;
   return { own, relay, onward, clear, copy };
@@ -738,7 +736,11 @@ function retainedRelayReservation(
   const { ops, reannounced } = unwoundOps(args.view, args.request, args.route, args.drawDefinition);
   const shape = retainedRelayShape(args.view, after.view, ops);
   if (!shape) return undefined;
-  const { own, relay, onward, clear, copy } = shape;
+  const { onward, clear, copy } = shape;
+  const own = indexed(after.view, after.view.targets.loserMatchUpId);
+  const target = own && producedTarget(after.view, own, after.direction.loser.converged);
+  const awarded = target?.entry.sides?.find((side) => side.sideNumber === target.awardedSide);
+  if (!target?.feed || awarded?.drawPosition !== clear.drawPosition) return undefined;
   const held = positionsOf(onward)[0];
   if (held === clear.drawPosition) return undefined;
   const drawPositions = [held, clear.drawPosition].sort((a, b) => a - b);
@@ -748,9 +750,7 @@ function retainedRelayReservation(
   if (!side) return undefined;
   const [foreign] = Object.values(copy.kept.provenance);
   return {
-    ownMatchUpId: own.matchUpId,
-    relayMatchUpId: relay.matchUpId,
-    drawPosition: clear.drawPosition,
+    target,
     onward: { matchUpId: onward.matchUpId, drawPositions, provenance: { [side]: foreign } },
   };
 }
@@ -2510,9 +2510,7 @@ function producedOps(view: OutcomeView, request: OutcomeRequest, write: MatchUpW
 }
 
 type RetainedRelayReservation = {
-  ownMatchUpId: string;
-  relayMatchUpId: string;
-  drawPosition: number;
+  target: Omit<ProducedTarget, 'reservation'>;
   onward: { matchUpId: string; drawPositions: number[]; provenance: SideExitProvenance };
 };
 
@@ -2722,7 +2720,8 @@ function convergenceAt(
     ...(ownSeat ? { seats: [...ownSeat.assigns, ...ownSeat.writes] } : {}),
   };
   if (!landing.winnerMatchUpId) return convergence;
-  const target = certifiedRelayTarget(producedTarget(view, landing, matchUpStatus), landing.matchUpId, reservation);
+  // A reservation is built only for this same rebuilt loser convergence; walked convergences have none.
+  const target = reservation ? { ...reservation.target, reservation } : producedTarget(view, landing, matchUpStatus);
   // the award's position already gone on into that matchUp: v1 takes it back out as the convergence unseats it, v1's
   const advanced = target?.entry.drawPositions?.some(
     (position) => !!position && landing.drawPositions?.includes(position),
@@ -2734,20 +2733,6 @@ function convergenceAt(
   if (!target || advanced || !producedTargetReason(view, landing, target, targetLinked)) return undefined;
   const seats = [...(convergence.seats ?? []), ...(unfillable ? [...unfillable.assigns, ...unfillable.writes] : [])];
   return { ...convergence, target, ...(seats.length ? { seats } : {}) };
-}
-
-/** A certified reservation can extend only its own fresh convergence's exact produced target. */
-function certifiedRelayTarget(
-  target: ProducedTarget | undefined,
-  ownId: string,
-  reservation?: RetainedRelayReservation,
-) {
-  if (!reservation) return target;
-  if (!target || reservation.ownMatchUpId !== ownId || reservation.relayMatchUpId !== target.entry.matchUpId)
-    return undefined;
-  const awarded = target.entry.sides?.find((side) => side.sideNumber === target.awardedSide);
-  if (!target.feed || awarded?.drawPosition !== reservation.drawPosition) return undefined;
-  return { ...target, reservation };
 }
 
 /** the double exit RULE 4 writes, the arriving side's entry merged beside the standing one, and what it produces on */
