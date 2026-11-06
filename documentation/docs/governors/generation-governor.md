@@ -168,6 +168,10 @@ This is a convenience method which handles most use cases for draw generation. S
 The `automated` parameter is "truthy" and supports placing only seeded participants and any byes which are adjacent to seeded positions.
 Support for this scenario is provided to enable some unique positioning strategies where unseeded participants have some agency in the selection process.
 
+A draw is generated from its MAIN stage. A `stage` other than `MAIN` is refused with `INVALID_STAGE` (7.32.0; before, it
+was refused as `STRUCTURE_NOT_FOUND`). Generate a qualifying-only draw with `qualifyingOnly: true` and `qualifyingProfiles`:
+see [Qualifying first](../concepts/draws-overview.mdx#qualifying-first).
+
 ```js
 const drawDefinitionValues = {
   eventId, // optional - used to find any avoidance policies to be applied
