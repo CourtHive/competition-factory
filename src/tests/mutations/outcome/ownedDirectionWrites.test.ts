@@ -3656,6 +3656,35 @@ describe('S7 occupied-final results compare subscribed differential notices', ()
   });
 });
 
+describe('S7 occupied-final winner scope controls remain v1s', () => {
+  const controls: [string, Record<string, unknown>, Record<string, unknown>][] = [
+    ['reported score', won(1), CARRIED],
+    ['requested format', { winningSide: 1 }, { ...CARRIED, matchUpFormat: 'SET1-S:6/TB7' }],
+    ['carried schedule', { winningSide: 1 }, { ...CARRIED, schedule: { scheduledDate: '2026-10-25' } }],
+    ['carried notes', { winningSide: 1 }, { ...CARRIED, notes: 'occupied winner scope control' }],
+  ];
+  it.each(controls)('%s', (_label, outcome, params) => {
+    const captured = OCCUPIED_FINAL_RELAY_CAPTURES.find(([label]) =>
+      label.endsWith('WALKOVER/DOUBLE_WALKOVER/DOUBLE_WALKOVER/winner1'),
+    );
+    expect(captured).toBeDefined();
+    const scenario: Scenario = {
+      ...captured![1],
+      steps: [{ ...captured![1].steps[0], outcome, params }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    expect(v1.v1Writes).toBeGreaterThan(0);
+    for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+      const compared = play(mode, scenario);
+      expect(compared.v1Writes).toEqual(v1.v1Writes);
+      expect(compared.results).toEqual(v1.results);
+      expect(compared.record).toEqual(v1.record);
+      expect(compared.notices).toEqual(v1.notices);
+    }
+  });
+});
+
 describe('S7 the nonterminal outer occupied correction remains v1s', () => {
   it('the original five-setup Main 1/2 double default corrected to walkover remains fallback, whole', () => {
     const scenario: Scenario = {
