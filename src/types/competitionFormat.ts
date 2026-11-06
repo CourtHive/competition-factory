@@ -99,6 +99,12 @@ export interface TimeoutRules {
 
 export type SubstitutionTiming = 'BETWEEN_GAMES' | 'BETWEEN_POINTS' | 'ANY';
 
+/**
+ * A competition's substitution rules. Advisory (CA 2026-10-17): the engine reports what a substitution
+ * would break through evaluateSubstitution(), and the host decides; substitute() refuses only a
+ * substitution that would corrupt who is on court. A required substitution (a player out of time, a
+ * penalty removal) is the host's to allow.
+ */
 export interface SubstitutionRules {
   allowed: boolean;
   maxPerMatchUp?: number; // Omit = unlimited; 0 = none despite allowed: true
