@@ -57,8 +57,11 @@ export type SourceStructure = {
   structureType?: string;
   stage?: string;
   stageSequence?: number;
+  /** ROUND_OUTCOME or WIN_RATIO: how the structure finishes, and so whether its links are followed round by round */
+  finishingPosition?: string;
   matchUpFormat?: string;
   sourceStructureIds?: string[];
+  structures?: SourceStructure[];
   participantResults?: unknown;
   positionAssignments?: { drawPosition?: number; participantId?: string }[];
   roundMatchUps?: Record<string, SourceMatchUp[]>;
