@@ -23,10 +23,13 @@ import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTo
 import { deriveSourceLinks, DerivedLink, SourceDraw, SourceStructure } from './deriveSourceLinks';
 import { Event, MatchUp, Structure, TieFormat, Tournament } from '@Types/tournamentTypes';
 import { inferDrawLinks, InferredLink } from '@Query/drawDefinition/inferDrawLinks';
+import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExtension';
+import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { dehydrateRecordMatchUps } from '@Mutate/tournaments/dehydrate';
 
 // constants
 import { AD_HOC, CONTAINER, LADDER, ROUND_OUTCOME, SWISS, WIN_RATIO } from '@Constants/drawDefinitionConstants';
+import { DISABLE_LINKS } from '@Constants/extensionConstants';
 
 // ------------------------------------------------------------------- types
 //
@@ -529,7 +532,7 @@ function buildGroupStructures(
 // from the matchUps' own `structureId`s.
 function buildDrawDefinitionFromDrawData(draw: SourceDraw, report?: BuildReport) {
   const drawDefinition: Record<string, any> = buildFirstStructure(draw);
-  if ((draw.structures?.length ?? 0) < 2) return carryFinishingPositions(draw, drawDefinition);
+  if ((draw.structures?.length ?? 0) < 2) return carrySourceFacts(draw, drawDefinition);
 
   const builtIds = new Set<string>();
   walkStructures(drawDefinition.structures, (s: SourceStructure) => builtIds.add(s.structureId));
@@ -551,7 +554,7 @@ function buildDrawDefinitionFromDrawData(draw: SourceDraw, report?: BuildReport)
   const { links, derived, issues } = deriveSourceLinks({ draw });
   if (links.length) drawDefinition.links = links;
   report?.derivedLinks.push({ drawId: draw.drawId, derived, issues });
-  return carryFinishingPositions(draw, drawDefinition);
+  return carrySourceFacts(draw, drawDefinition);
 }
 
 /**
@@ -562,6 +565,62 @@ function buildDrawDefinitionFromDrawData(draw: SourceDraw, report?: BuildReport)
  * Older exports state none at all, so the generators' own rule fills the gap: a round robin (the container and its
  * groups) and an AD_HOC, LADDER or SWISS draw finish by WIN_RATIO; every other structure by ROUND_OUTCOME.
  */
+// What a source states about each structure and position, carried onto what is built from it.
+function carrySourceFacts(draw: SourceDraw, drawDefinition: Record<string, any>) {
+  carryFinishingPositions(draw, drawDefinition);
+  carryDisabledLinks(draw, drawDefinition);
+  return drawDefinition;
+}
+
+/**
+ * A position whose links the source DISABLED stays disabled. An operator who removes a fed participant and seats a BYE
+ * (removeDrawPositionAssignment with replaceWithBye) disables that position's links, and the engine then feeds nobody
+ * there: it is how a loser who declined a consolation is recorded. Positions are rebuilt from the matchUps' sides,
+ * which carry no such marker, so every rebuilt draw lost it and read as a loser dropped between structures (found
+ * 2026-11-06 on 2022 public data, where the marker is a legacy extension; first-class or extension, both are read).
+ */
+function carryDisabledLinks(draw: SourceDraw, drawDefinition: Record<string, any>) {
+  type SourceAssignment = { drawPosition?: number; participantId?: string; bye?: boolean };
+  const disabled = new Map<string, Map<number, SourceAssignment>>();
+  const collect = (structures?: SourceStructure[]) => {
+    for (const source of structures ?? []) {
+      for (const assignment of (source?.positionAssignments ?? []) as SourceAssignment[]) {
+        const isDisabled = firstClassOrExtension({
+          element: assignment,
+          attribute: 'disableLinks',
+          name: DISABLE_LINKS,
+        });
+        if (!isDisabled || typeof assignment.drawPosition !== 'number') continue;
+        if (!disabled.has(source.structureId)) disabled.set(source.structureId, new Map());
+        disabled.get(source.structureId)?.set(assignment.drawPosition, assignment);
+      }
+      collect(source?.structures);
+    }
+  };
+  collect(draw.structures);
+  if (!disabled.size) return;
+  walkStructures(drawDefinition.structures, (s: Structure) => {
+    const positions = disabled.get(s.structureId);
+    const assignments = positionAssignmentsOf(s);
+    if (!positions || !assignments) return;
+    for (const [drawPosition, source] of positions) {
+      // Positions are rebuilt from the matchUps' sides, and a BYE side becomes a position only at dehydration: the
+      // source's own assignment states it, so it is taken from there.
+      let assignment = assignments.find((candidate) => candidate.drawPosition === drawPosition);
+      if (!assignment) {
+        assignment = {
+          drawPosition,
+          ...(source.participantId ? { participantId: source.participantId } : {}),
+          ...(source.bye ? { bye: true } : {}),
+        };
+        assignments.push(assignment);
+      }
+      setFirstClassOrExtension({ element: assignment, attribute: 'disableLinks', name: DISABLE_LINKS, value: true });
+    }
+    assignments.sort((x, y) => x.drawPosition - y.drawPosition);
+  });
+}
+
 const WIN_RATIO_DRAW_TYPES = new Set<string>([AD_HOC, LADDER, SWISS]);
 type FinishedStructure = {
   structureId: string;
