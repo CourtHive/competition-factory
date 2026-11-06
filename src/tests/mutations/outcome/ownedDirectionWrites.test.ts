@@ -1201,29 +1201,6 @@ const standaloneFull: Scenario = {
   steps: [{ target: standaloneTarget, outcome: cleared, params: CARRIED }],
 };
 STANDALONE_INDIRECT_CLEARS.push(['C10 standalone indirect clear: full thirteen notices', standaloneFull]);
-const STANDALONE_INDIRECT_WINNERS: [string, Scenario, number, number][] = [
-  ['minimal', standaloneMinimal, 12],
-  ['full', standaloneFull, 13],
-].flatMap(([shape, base, notices]) =>
-  [1, 2].flatMap((winningSide) =>
-    [undefined, WALKOVER, DEFAULTED].map((matchUpStatus): [string, Scenario, number, number] => [
-      `C10 standalone indirect winner fallback: ${shape}/${matchUpStatus ?? 'bare'}/${winningSide}`,
-      {
-        ...(base as Scenario),
-        steps: [
-          {
-            target: standaloneTarget,
-            outcome: { winningSide, ...(matchUpStatus ? { matchUpStatus } : {}) },
-            params: CARRIED,
-          },
-        ],
-      },
-      matchUpStatus ? 2 : 1,
-      Number(notices) + (matchUpStatus ? 2 : 0),
-    ]),
-  ),
-);
-
 // Bare winners keep the retained foreign relay exit; carried WO/DEFAULTED corrections remain separate.
 const STANDALONE_BARE_WINNERS: [string, Scenario][] = STANDALONE_INDIRECT_CLEARS.slice(0, 17).flatMap(
   ([label, scenario]) =>
@@ -1256,7 +1233,15 @@ for (const source of [DOUBLE_WALKOVER, DOUBLE_DEFAULT]) {
   }
 }
 
+const STANDALONE_CARRIED_CONVERGENCES: [string, Scenario][] = STANDALONE_BARE_WINNERS.flatMap(([label, scenario]) =>
+  [WALKOVER, DEFAULTED].map((matchUpStatus): [string, Scenario] => [
+    `${label.replace('C11 standalone bare winner', 'C12 standalone carried convergence')}/${matchUpStatus}`,
+    { ...scenario, steps: scenario.steps.map((step) => ({ ...step, outcome: { ...step.outcome, matchUpStatus } })) },
+  ]),
+);
+
 const SCENARIOS: [string, Scenario][] = [
+  ...STANDALONE_CARRIED_CONVERGENCES,
   ...STANDALONE_BARE_WINNERS,
   ...STANDALONE_INDIRECT_CLEARS,
   ...INDIRECT_COMPOUND_CLEARS,
@@ -4045,23 +4030,20 @@ describe('C10 standalone indirect v1 oracle and subscribed differential notices'
     expect(compared.notices).toEqual(v1.notices);
   });
 });
-describe('C10 standalone indirect winners retain the whole legacy program', () => {
-  it.each(STANDALONE_INDIRECT_WINNERS.filter(([, , writers]) => writers === 2))(
-    '%s',
-    (_label, scenario, writers, notices) => {
-      const v1 = play(OUTCOME_PIPELINE_V1, scenario);
-      expect(v1.results.every((result: any) => result.success)).toEqual(true);
-      expect(v1.v1Writes).toEqual(writers);
-      expect(v1.notices).toHaveLength(notices);
-      for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
-        const compared = play(mode, scenario);
-        expect(compared.v1Writes).toEqual(writers);
-        expect(compared.results).toEqual(v1.results);
-        expect(compared.record).toEqual(v1.record);
-        expect(compared.notices).toEqual(v1.notices);
-      }
-    },
-  );
+describe('C12 standalone carries compare the real nested writers and subscribed notices', () => {
+  it.each(STANDALONE_CARRIED_CONVERGENCES)('%s v1 oracle', (label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    expect(v1.v1Writes).toEqual(2);
+    expect(v1.notices).toHaveLength(label.includes('thirteen') ? 15 : 14);
+  });
+  it.each(STANDALONE_CARRIED_CONVERGENCES)('%s subscribed differential', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
 });
 
 describe('S7 indirect compound clears compare subscribed differential notices', () => {
