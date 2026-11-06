@@ -1511,6 +1511,28 @@ group and uncertified custom geometry remain outside this bounded certificate. I
 controls also retain the neighboring restoration's actual BYE write and timestamp change, so the two
 programs cannot become equivalent through a shared-predicate error. No operation or view field is added.
 
+A produced exit can supersede its own stale relay after a given-winner unwind (S7). The original
+loser home holds this source's propagated BYE beside a foreign double exit's origin. Its actual
+own-seat program withdraws that BYE, and the rebuilt home holds the foreign single exit pending,
+without a winner. The arriving carried WALKOVER or DEFAULTED genuinely converges with that opposite
+origin. A source-bound `Convergence` program certifies the actual pending landing, canonical side,
+collapsed status and projected codes; it carries the measured blank relay score, including for a
+DOUBLE_DEFAULT. The generic convergence reader still requires its existing awarded-winner shape.
+The produced target is a canonical nonfeed next matchUp with no positions, winner, reason codes,
+BYE or loser link. Its sole origin stands on the produced arrival side and exactly matches the
+foreign origin retained at the home, with both canonical producer edges bound. Original and folded
+target status, positions, provenance, winner, score, codes and schedule agree. The undecided paired
+feeder can hold positions; it has not delivered a winner into this empty target.
+The existing convergence and produced-target operations write the real double exit, then replace the
+target's same-side origin with this landing's produced exit. The target gains no scored time and
+nothing advances or converges beyond it. The same actual program prevents only its own-level late
+relay-copy reset from being generated, tied to the actual clear operation and exact home/target IDs;
+other late reconciliation paths retain their order. Both canonical produced sides are captured,
+with two legacy writers, thirteen ordered notices and five callbacks in v1. Independent controls
+pin the relay's blank score, target origin and absent scored time, paired feeder and untouched onward
+matchUp. Bare and clear requests receive no new program. TEAM, conditioned links and uncertified
+origins or geometry remain outside this certificate. No operation or view field is added.
+
 ## 7.2 The plan as ops (S1)
 
 A quiet produced-award placement can put back the exact position a preceding release removed. Its final

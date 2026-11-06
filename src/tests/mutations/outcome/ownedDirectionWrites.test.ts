@@ -2976,7 +2976,80 @@ const FMLC_STANDING_OUTSIDE: [string, Scenario][] = FMLC_STANDING_RESERVATIONS.f
   ),
 );
 
+const supersededRelayOutcome = (requested: string, winningSide: 1 | 2) => {
+  if (requested === 'clear') return {};
+  return { winningSide, ...(requested === 'bare' ? {} : { matchUpStatus: requested }) };
+};
+const SUPERSEDED_OWN_RELAY_TABLE: [string, Scenario][] = [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((stored) =>
+  [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((producer) =>
+    ([WALKOVER, DEFAULTED, 'bare', 'clear'] as const).flatMap((requested) =>
+      (requested === 'clear' ? ([1] as const) : ([1, 2] as const)).map((winningSide): [string, Scenario] => [
+        `C15 superseded own relay/${stored}/${producer}/${requested}/side${winningSide}`,
+        {
+          drawProfile: { drawType: FEED_IN_CHAMPIONSHIP_TO_SF, drawSize: 16, participantsCount: 13 },
+          nonRandom: 20733977,
+          randomSeed: 3488028307,
+          setup: [
+            { target: R1(4, 'Main'), outcome: { winningSide: 2 }, params: SWAP_CARRIED },
+            { target: R1(5, 'Main'), outcome: { winningSide: 2 }, params: SWAP_CARRIED },
+            {
+              target: R1(6, 'Main'),
+              outcome: { matchUpStatus: RETIRED, winningSide: 1, score: { sets: [{ side1Score: 6, side2Score: 3 }] } },
+              params: SWAP_CARRIED,
+            },
+            { target: R1(7, 'Main'), outcome: { winningSide: 1 }, params: SWAP_CARRIED },
+            {
+              target: { structureName: 'Main', roundNumber: 2, roundPosition: 2 },
+              outcome: { matchUpStatus: stored },
+              params: SWAP_CARRIED,
+            },
+            { target: R1(2, 'Main'), outcome: { matchUpStatus: DEFAULTED, winningSide: 1 }, params: SWAP_CARRIED },
+            { target: R1(3, 'Consolation'), outcome: { matchUpStatus: producer }, params: SWAP_CARRIED },
+          ],
+          steps: [
+            {
+              target: { structureName: 'Main', roundNumber: 2, roundPosition: 2 },
+              outcome: supersededRelayOutcome(requested, winningSide),
+              params: SWAP_CARRIED,
+            },
+          ],
+        },
+      ]),
+    ),
+  ),
+);
+const ORIGINAL_SUPERSEDED_OWN_RELAYS = SUPERSEDED_OWN_RELAY_TABLE.filter(
+  ([, scenario]) => !!scenario.steps[0].outcome.matchUpStatus,
+);
+// Public 16-participant mirror: the newly produced exit supersedes provenance on side 2.
+const MIRRORED_SUPERSEDED_OWN_RELAYS: [string, Scenario][] = ORIGINAL_SUPERSEDED_OWN_RELAYS.map(([label, scenario]) => [
+  label.replace('C15 superseded own relay/', 'C15 superseded own relay/mirror/'),
+  {
+    ...scenario,
+    drawProfile: { ...scenario.drawProfile, participantsCount: 16 },
+    setup: [
+      ...Array.from({ length: 8 }, (_, index) => ({
+        target: R1(index + 1, 'Main'),
+        outcome: { winningSide: 1 },
+        params: SWAP_CARRIED,
+      })),
+      {
+        target: { structureName: 'Main', roundNumber: 2, roundPosition: 3 },
+        outcome: scenario.setup![4].outcome,
+        params: SWAP_CARRIED,
+      },
+      { target: R1(2, 'Consolation'), outcome: scenario.setup![6].outcome, params: SWAP_CARRIED },
+    ],
+    steps: [{ ...scenario.steps[0], target: { structureName: 'Main', roundNumber: 2, roundPosition: 3 } }],
+  },
+]);
+const SUPERSEDED_OWN_RELAYS = [...ORIGINAL_SUPERSEDED_OWN_RELAYS, ...MIRRORED_SUPERSEDED_OWN_RELAYS];
+const SUPERSEDED_OWN_RELAY_OUTSIDE = SUPERSEDED_OWN_RELAY_TABLE.filter(
+  ([, scenario]) => !scenario.steps[0].outcome.matchUpStatus,
+);
+
 const SCENARIOS: [string, Scenario][] = [
+  ...SUPERSEDED_OWN_RELAYS,
   ...FMLC_STANDING_WINNERS,
   ...FMLC_NO_ARRIVAL_WINNERS,
   ...FMLC_NO_ARRIVAL_REAL,
@@ -6613,4 +6686,87 @@ describe('C14 standing reservations preserve their original stored records', () 
       ).toEqual(true);
     },
   );
+});
+
+describe('C15 superseded own relay material and notice contracts', () => {
+  it.each(SUPERSEDED_OWN_RELAYS)('%s subscribed differential', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
+  it.each(materialModes(SUPERSEDED_OWN_RELAYS))(
+    '%s independent stored and writer contract',
+    (_label, scenario, mode) => {
+      const actual = play(mode, scenario);
+      expect(actual.results.every((result: any) => result.success)).toEqual(true);
+      const before = consolationRecord(actual.recordBefore)[0].matchUps;
+      const after = consolationRecord(actual.record)[0].matchUps;
+      const at = (list: any[], roundNumber: number, roundPosition: number) =>
+        list.find((matchUp: any) => matchUp.roundNumber === roundNumber && matchUp.roundPosition === roundPosition);
+      const mirrored = _label.includes('/mirror/');
+      const producedSide = mirrored ? 2 : 1;
+      const relay = at(after, 2, mirrored ? 2 : 3);
+      const target = at(after, 3, mirrored ? 1 : 2);
+      const targetBefore = at(before, 3, mirrored ? 1 : 2);
+      const producer = at(before, 1, mirrored ? 2 : 3);
+      const isDefault =
+        producer.matchUpStatus === DOUBLE_DEFAULT && scenario.steps[0].outcome.matchUpStatus === DEFAULTED;
+      const producedStatus = isDefault ? DEFAULTED : WALKOVER;
+      const doubleStatus = isDefault ? DOUBLE_DEFAULT : DOUBLE_WALKOVER;
+      expect(targetBefore.sideExitProvenance?.[producedSide]?.sourceMatchUpId).toEqual(producer.matchUpId);
+      expect(relay.matchUpStatus).toEqual(doubleStatus);
+      expect(relay.score).toEqual({ scoreStringSide1: '', scoreStringSide2: '' });
+      expect(relay.schedule.scoredTime).toEqual('2026-10-25T00:01:00.000Z');
+      expect(target.drawPositions).toEqual([]);
+      expect(target.matchUpStatus).toEqual(producedStatus);
+      expect(target).not.toHaveProperty('winningSide');
+      expect(target.score).toEqual({ scoreStringSide1: '', scoreStringSide2: '' });
+      expect(target.matchUpStatusCodes).toEqual([]);
+      expect(target.schedule ?? {}).not.toHaveProperty('scoredTime');
+      expect(target.sideExitProvenance).toEqual({
+        [producedSide]: {
+          matchUpStatus: producedStatus,
+          previousMatchUpStatus: doubleStatus,
+          sourceMatchUpId: relay.matchUpId,
+        },
+      });
+      expect(at(after, 4, mirrored ? 1 : 2)).toEqual(at(before, 4, mirrored ? 1 : 2));
+      expect(at(after, 2, mirrored ? 1 : 4)).toEqual(at(before, 2, mirrored ? 1 : 4));
+      expect(actual.v1Writes).toEqual(mode === OUTCOME_PIPELINE_V1 ? 2 : 0);
+      const notices = actual.notices.map((notice) => {
+        const split = notice.indexOf(' ');
+        return { topic: notice.slice(0, split), payload: JSON.parse(notice.slice(split + 1)) };
+      });
+      expect(notices.map(({ topic }) => topic)).toEqual([
+        MODIFY_DRAW_DEFINITION,
+        MODIFY_POSITION_ASSIGNMENTS,
+        ...Array(6).fill(MODIFY_MATCHUP),
+        ...Array(5).fill(UPDATE_INCONTEXT_MATCHUP),
+      ]);
+      expect(notices.filter(({ topic }) => topic === MODIFY_MATCHUP).map(({ payload }) => payload.context)).toEqual([
+        'modifyMatchUpScore',
+        mirrored ? 'removeDrawPosition-2' : 'removeDrawPosition-1',
+        'modifyMatchUpScore',
+        'assignMatchUpDrawPosition',
+        'modifyMatchUpScore',
+        'modifyMatchUpScore',
+      ]);
+      expect(notices[6].payload.matchUp.matchUpId).toEqual(relay.matchUpId);
+      expect(notices[7].payload.matchUp.matchUpId).toEqual(target.matchUpId);
+    },
+  );
+  it.each(SUPERSEDED_OWN_RELAY_OUTSIDE)('%s preserves existing boundary', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+      const compared = play(mode, scenario);
+      expect(compared.results).toEqual(v1.results);
+      expect(compared.record).toEqual(v1.record);
+      expect(compared.notices).toEqual(v1.notices);
+      // A locally owned clear still runs v1 in differential's comparison shadow.
+      expect(compared.v1Writes).toEqual(_label.includes('/clear/') && mode === OUTCOME_PIPELINE_V2 ? 0 : 1);
+    }
+  });
 });
