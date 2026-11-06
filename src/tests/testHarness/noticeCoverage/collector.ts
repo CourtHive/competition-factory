@@ -53,7 +53,37 @@ type Open = {
 };
 
 const MAX_EXAMPLES = 3;
+// Marked on the provider, not on its `addNotice`: the other suite-wide harness wraps `addNotice` too, and a mark on
+// the function it replaced is lost, so each would re-wrap before every test and this one would measure nothing.
 const MIRRORED = Symbol('noticeCoverageMirror');
+
+// The collector the provider's mirrors report to. Resolved at call time, not closed over: on a run with
+// `isolate: false` the provider object outlives a test file and keeps the mirrors installed by the first file,
+// while each file's setup builds a new collector. Closed over, every later file's notices went to the first
+// file's collector, so its calls read as silent (the same defect queryPurity/checker.ts fixed).
+let active: NoticeCoverageCollector | undefined;
+
+function activate(collector: NoticeCoverageCollector) {
+  active = collector;
+}
+
+function mirror(provider: any) {
+  const { addNotice, deleteNotice, deleteNotices } = provider;
+  provider.addNotice = (notice: Notice, isGlobalSubscription?: boolean) => {
+    const result = addNotice(notice, isGlobalSubscription);
+    if (result?.success) active?.noticeAdded(notice);
+    return result;
+  };
+  provider.deleteNotice = (params?: { topic?: string; key?: string }) => {
+    active?.noticeDeleted(params);
+    return deleteNotice(params);
+  };
+  provider.deleteNotices = () => {
+    active?.noticesDelivered();
+    return deleteNotices();
+  };
+  provider[MIRRORED] = true;
+}
 
 export class NoticeCoverageCollector {
   private readonly outFile: string;
@@ -78,7 +108,8 @@ export class NoticeCoverageCollector {
     );
     setGlobalSubscriptions({ subscriptions });
     const provider: any = getProvider();
-    if (!provider.addNotice?.[MIRRORED]) this.mirror(provider);
+    activate(this);
+    if (!provider[MIRRORED]) mirror(provider);
     const current = getInvokeObserver();
     if (current !== this.observer) this.previous = current;
     setInvokeObserver(this.observer);
@@ -87,38 +118,36 @@ export class NoticeCoverageCollector {
   }
 
   private measured() {
-    return !!getProvider().addNotice?.[MIRRORED];
+    return !!(getProvider() as any)?.[MIRRORED];
   }
 
-  private mirror(provider: any) {
-    const { addNotice, deleteNotice, deleteNotices } = provider;
-    provider.addNotice = (notice: Notice, isGlobalSubscription?: boolean) => {
-      const result = addNotice(notice, isGlobalSubscription);
-      if (result?.success) {
-        if (notice.key)
-          this.buffered = this.buffered.filter((n) => !(n.topic === notice.topic && n.key === notice.key));
-        this.buffered.push({ topic: notice.topic, payload: notice.payload, key: notice.key, seq: this.seq++ });
-      }
-      return result;
-    };
-    provider.deleteNotice = (params?: { topic?: string; key?: string }) => {
-      const { topic, key } = params ?? {};
-      this.buffered = this.buffered.filter((n) => !((!topic || n.topic === topic) && n.key === key));
-      return deleteNotice(params);
-    };
-    provider.deleteNotices = () => {
-      // engineInvoke delivers and clears BEFORE its `after`: calls still open keep what they buffered
-      for (const open of this.stack) {
-        open.saved.push(...this.since(open.mark));
-        open.mark = 0;
-      }
-      this.buffered = [];
-      return deleteNotices();
-    };
-    provider.addNotice[MIRRORED] = true;
+  /** The provider accepted a notice: buffered, superseding a keyed one. */
+  noticeAdded(notice: Notice) {
+    if (notice.key) this.buffered = this.buffered.filter((n) => !(n.topic === notice.topic && n.key === notice.key));
+    this.buffered.push({ topic: notice.topic, payload: notice.payload, key: notice.key, seq: this.seq++ });
   }
+
+  noticeDeleted({ topic, key }: { topic?: string; key?: string } = {}) {
+    this.buffered = this.buffered.filter((n) => !((!topic || n.topic === topic) && n.key === key));
+  }
+
+  /** engineInvoke delivers and clears BEFORE its `after`: calls still open keep what they buffered. */
+  noticesDelivered() {
+    for (const open of this.stack) {
+      open.saved.push(...this.since(open.mark));
+      open.mark = 0;
+    }
+    this.buffered = [];
+  }
+
+  // Re-entered only through a cycle of `previous` links: this harness and the other suite-wide one
+  // (noticeCoverage / queryPurity) each re-install before every test and adopt the other's observer as
+  // `previous`, so each chains to the other. The event has already been seen here; stop the walk.
+  private observing = false;
 
   private readonly observer = (event: InvokeEvent) => {
+    if (this.observing) return;
+    this.observing = true;
     try {
       if (event.phase === 'before') this.invoked.set(event.methodName, (this.invoked.get(event.methodName) ?? 0) + 1);
       if (this.measured()) this.observe(event);
@@ -127,7 +156,11 @@ export class NoticeCoverageCollector {
       // test it belongs to must not see the harness's failure
       this.stack.length = 0;
     } finally {
-      this.previous?.(event);
+      try {
+        this.previous?.(event);
+      } finally {
+        this.observing = false;
+      }
     }
   };
 

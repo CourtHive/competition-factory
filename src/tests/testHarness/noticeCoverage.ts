@@ -8,6 +8,9 @@ import fs from 'node:fs';
  * notice-conformance rules and appends one JSON line per test file to `NOTICE_COVERAGE_OUT`
  * (default `.notice-coverage/tally.jsonl`, ignored by git). `node scripts/noticeCoverageReport.mjs`
  * summarises it. Without the variable this file does nothing.
+ *
+ * Read the run from its tally, not its exit code: every topic is subscribed, so the few tests that assert what
+ * happens with NO subscription (e.g. deleteDrawDefinitions' unsubscribed AUDIT path) fail under it by design.
  */
 const enabled = process.env.NOTICE_COVERAGE === '1';
 

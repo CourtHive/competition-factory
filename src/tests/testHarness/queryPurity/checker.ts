@@ -54,6 +54,8 @@ type Open = {
   writes: Set<string>;
 };
 
+// Marked on the provider, not on its `addNotice`: the other suite-wide harness wraps `addNotice` too, and a mark on
+// the function it replaced is lost, so each would re-wrap before every test and this one would measure nothing.
 const MIRRORED = Symbol('queryPurityMirror');
 
 // The check the provider's mirrors report to. Resolved at call time, not closed over: on a run with `isolate: false` the
@@ -114,7 +116,7 @@ function mirror(provider: any) {
     if (open && typeof notice?.topic === 'string') open.writes.add(`notice:${notice.topic}`);
     return addNotice.call(this, notice, ...rest);
   };
-  provider.addNotice[MIRRORED] = true;
+  provider[MIRRORED] = true;
   if (typeof markModified === 'function')
     provider.markModified = function (...args: any[]) {
       active?.openQuery()?.writes.add('modified');
@@ -148,7 +150,7 @@ export class QueryPurityCheck {
   install() {
     activate(this);
     const provider: any = getProvider();
-    if (provider && !provider.addNotice?.[MIRRORED]) mirror(provider);
+    if (provider && !provider[MIRRORED]) mirror(provider);
     const current = getInvokeObserver();
     if (current !== this.observer) this.previous = current;
     setInvokeObserver(this.observer);
@@ -167,11 +169,22 @@ export class QueryPurityCheck {
     return top?.checked ? top : undefined;
   }
 
+  // Re-entered only through a cycle of `previous` links: this harness and the other suite-wide one
+  // (noticeCoverage / queryPurity) each re-install before every test and adopt the other's observer as
+  // `previous`, so each chains to the other. The event has already been seen here; stop the walk.
+  private observing = false;
+
   private readonly observer = (event: InvokeEvent) => {
+    if (this.observing) return;
+    this.observing = true;
     try {
       this.observe(event);
     } finally {
-      this.previous?.(event);
+      try {
+        this.previous?.(event);
+      } finally {
+        this.observing = false;
+      }
     }
   };
 
