@@ -1466,7 +1466,25 @@ assignment notices precede the unchanged actual-score callbacks. The separate th
 its existing late one-position advancement. Explicit WALKOVER/DEFAULTED winner requests still refuse this
 composition; they require a distinct carried-convergence program. No new op field or callback is introduced.
 
+An explicit WALKOVER or DEFAULTED winner can carry into that indirect relay (S7). The same certified
+ordinary-award removal is folded before reading either direction. Its loser meets the retained foreign
+single while that relay is pending, with no temporary winner. A separate pending-convergence reader binds
+the actual slot, original foreign origin and same-level onward reset. The relay becomes DOUBLE_DEFAULT
+only when both exits are defaults; otherwise it becomes DOUBLE_WALKOVER. Both forms receive the actual
+blank score of this captured writer and preserve the foreign-side codes while recording the new source.
+The resulting exit is awarded to the real paired feeder's winner already in the onward matchUp, using
+canonical source-relative sibling geometry and the existing produced-score/advance operations. That
+paired feeder's own provenance stays intact; only its literal current status is the new paired origin.
+The actual source, relay and onward writers give five deferred score callbacks together with the unwind,
+with fourteen ordered notices, or fifteen when the independent old one-position late advance remains.
+No operation field, eligibility flag, artificial intermediate award or synthetic callback is added.
+
 ## 7.2 The plan as ops (S1)
+
+A quiet produced-award placement can put back the exact position a preceding release removed. Its final
+notice is then the assignment's, while retaining its quiet identity. The notice projection derives this
+from the actual released position and later position-write data; a different position, withdrawal or BYE
+advance does not erase the release. Existing plain-placement precedence is unchanged.
 
 A certified clear's position removal can withdraw an award while retaining the independent pending foreign exit
 (`setMatchUpDrawPositions.withdrawsPendingAward`). The reducer removes only `winningSide`;
