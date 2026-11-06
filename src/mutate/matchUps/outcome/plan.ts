@@ -3949,7 +3949,7 @@ function occupiedFinalRelaySeatOps(
 /** The empty seat already advanced through its standing opposite BYE; its clear changes neither matchUp. */
 function standingByeSeat(view: OutcomeView, seat: WinnerLoserSeat, withdrawn: Set<string>): boolean {
   const opposite = seat.seat?.standingBye?.opponentDrawPosition;
-  if (!opposite || seat.seat?.byeFromPropagation) return false;
+  if (!opposite) return false;
   if (withdrawn.has(seatKey({ structureId: seat.structureId, drawPosition: opposite }))) return false;
   const target = indexed(view, seat.matchUpId);
   if (!target || target.structureId !== seat.structureId || target.roundNumber !== 1 || target.loserMatchUpId)
