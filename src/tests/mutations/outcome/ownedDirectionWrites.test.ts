@@ -939,8 +939,20 @@ const TERMINAL_RELAY_CAPTURES: [string, Scenario][] = [WALKOVER, DEFAULTED].flat
   ),
 );
 
+// Only the trigger changes propagation; the captured setup remains unchanged.
+const TERMINAL_TRUE_CAPTURES: [string, Scenario][] = TERMINAL_RELAY_CAPTURES.map(([label, scenario]) => [
+  label.replace('terminal direct relay:', 'terminal trigger propagation:'),
+  {
+    ...scenario,
+    steps: scenario.steps.map((step) => ({ ...step, params: { ...step.params, propagateExitStatus: true } })),
+  },
+]);
+const TERMINAL_TRUE_CLEARS = TERMINAL_TRUE_CAPTURES.filter(([label]) => label.endsWith('/clear'));
+const TERMINAL_TRUE_WINNERS = TERMINAL_TRUE_CAPTURES.filter(([label]) => !label.endsWith('/clear'));
+
 const SCENARIOS: [string, Scenario][] = [
   ...TERMINAL_RELAY_CAPTURES,
+  ...TERMINAL_TRUE_CLEARS,
   ...OCCUPIED_FINAL_RELAY_CAPTURES,
   ...CONVERGED_PRODUCED_RELAYS,
   ...CARRIED_CONVERGED_PRODUCED_RELAYS,
@@ -3671,12 +3683,27 @@ describe('S7 converged produced relays compare subscribed differential notices',
 });
 
 describe('S7 terminal direct relays compare subscribed differential notices', () => {
-  it.each(TERMINAL_RELAY_CAPTURES)('%s', (_label, scenario) => {
+  it.each([...TERMINAL_RELAY_CAPTURES, ...TERMINAL_TRUE_CLEARS])('%s', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
     expect(compared.results).toEqual(v1.results);
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
+  });
+});
+
+describe('S7 terminal propagation winners remain v1s', () => {
+  it.each(TERMINAL_TRUE_WINNERS)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    expect(v1.v1Writes).toEqual(1);
+    for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+      const compared = play(mode, scenario);
+      expect(compared.v1Writes).toEqual(1);
+      expect(compared.results).toEqual(v1.results);
+      expect(compared.record).toEqual(v1.record);
+      expect(compared.notices).toEqual(v1.notices);
+    }
   });
 });
 
