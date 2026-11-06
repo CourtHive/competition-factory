@@ -19,10 +19,10 @@
 //   { tournamentParticipants: { participants } }
 //   The unwrapped factory shapes are accepted too.
 
+import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { deriveSourceLinks, DerivedLink, SourceDraw, SourceStructure } from './deriveSourceLinks';
 import { Event, MatchUp, Structure, TieFormat, Tournament } from '@Types/tournamentTypes';
 import { inferDrawLinks, InferredLink } from '@Query/drawDefinition/inferDrawLinks';
-import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { dehydrateRecordMatchUps } from '@Mutate/tournaments/dehydrate';
 
 // ------------------------------------------------------------------- types
@@ -874,14 +874,29 @@ const DEFAULT_ENTRY_INFO = { entryStage: 'MAIN', entryStatus: 'DIRECT_ACCEPTANCE
 // crashing on missing arrays.
 function deriveDrawEntries(drawDef) {
   const entryInfo = collectEntryInfoFromDrawSides(drawDef);
-  const positions = selectPositionsForDraw(drawDef);
+  const positioned = selectPositionsForDraw(drawDef).map((pa: PositionAssignmentLike) => pa.participantId);
   const seen = new Set<string>();
-  for (const pa of positions) {
-    if (!pa.participantId || seen.has(pa.participantId)) continue;
-    seen.add(pa.participantId);
-    const info = entryInfo.get(pa.participantId) ?? DEFAULT_ENTRY_INFO;
-    drawDef.entries.push({ participantId: pa.participantId, ...info });
+  for (const participantId of [...positioned, ...unpositionedSideParticipantIds(drawDef)]) {
+    if (!participantId || seen.has(participantId)) continue;
+    seen.add(participantId);
+    const info = entryInfo.get(participantId) ?? DEFAULT_ENTRY_INFO;
+    drawDef.entries.push({ participantId, ...info });
   }
+}
+
+// An AD_HOC structure positions nobody: its participants are on its matchUps' sides, so an entry list read from
+// positionAssignments alone left every rebuilt AD_HOC draw with NO entries. Only a structure that positions no
+// participant is read this way — elsewhere the sides repeat the positions, and a TEAM draw's collection matchUps
+// (tieMatchUps, not read here) carry individuals who are not the draw's entries.
+function unpositionedSideParticipantIds(drawDef: { structures?: Structure[] }): string[] {
+  const participantIds: string[] = [];
+  walkStructures(drawDef.structures, (s: Structure) => {
+    if ((positionAssignmentsOf(s) ?? []).some((pa) => pa.participantId)) return;
+    for (const m of matchUpsOf(s) ?? []) {
+      for (const side of m.sides ?? []) if (side.participantId) participantIds.push(side.participantId);
+    }
+  });
+  return participantIds;
 }
 
 function deriveEventEntries(event) {
