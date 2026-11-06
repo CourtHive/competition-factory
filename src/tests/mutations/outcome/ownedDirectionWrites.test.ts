@@ -982,8 +982,7 @@ const FIRST_MATCHUP_CAPTURES: [string, Scenario][] = [1, 2].flatMap((roundPositi
     ),
   ),
 );
-const FIRST_MATCHUP_OWNED = FIRST_MATCHUP_CAPTURES.filter(([label]) => label.endsWith('policyOfffalse'));
-const FIRST_MATCHUP_FALLBACK = FIRST_MATCHUP_CAPTURES.filter(([label]) => label.endsWith('policyOfftrue'));
+const FIRST_MATCHUP_OWNED = FIRST_MATCHUP_CAPTURES;
 
 const SCENARIOS: [string, Scenario][] = [
   ...FIRST_MATCHUP_OWNED,
@@ -3718,28 +3717,13 @@ describe('S7 converged produced relays compare subscribed differential notices',
   });
 });
 
-describe('S7 FMLC FIRST_MATCHUP default-policy arrivals compare subscribed differential notices', () => {
+describe('S7 FMLC FIRST_MATCHUP arrivals compare subscribed differential notices', () => {
   it.each(FIRST_MATCHUP_OWNED)('%s', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
     expect(compared.results).toEqual(v1.results);
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
-  });
-});
-
-describe('S7 FMLC FIRST_MATCHUP policy-off branches remain v1s', () => {
-  it.each(FIRST_MATCHUP_FALLBACK)('%s', (_label, scenario) => {
-    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
-    expect(v1.results.every((result: any) => result.success)).toEqual(true);
-    expect(v1.v1Writes).toEqual(1);
-    for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
-      const compared = play(mode, scenario);
-      expect(compared.v1Writes).toEqual(1);
-      expect(compared.results).toEqual(v1.results);
-      expect(compared.record).toEqual(v1.record);
-      expect(compared.notices).toEqual(v1.notices);
-    }
   });
 });
 
