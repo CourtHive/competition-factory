@@ -3946,7 +3946,6 @@ function unwoundOwnConvergence(view: OutcomeView, seat: WinnerLoserSeat, relay?:
   if (source?.loserMatchUpId !== start.matchUpId || source.matchUpStatus !== status) return undefined;
   const copy = Object.values(next.sideExitProvenance ?? {});
   if (next.matchUpStatus !== BYE || copy.length !== 1 || copy[0].sourceMatchUpId !== start.matchUpId) return undefined;
-  if (!relay?.cleared.has(next.matchUpId) || !relay.reset.has(onwardId)) return undefined;
   return [
     {
       op: 'setMatchUpResult',
