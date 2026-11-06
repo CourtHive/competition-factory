@@ -893,7 +893,130 @@ function unwoundConvergedReason(args: Parameters<typeof exitReason>[0]): Abstain
   const after = unwoundView(args, { releasedLandings: true });
   const loser = after?.direction?.loser;
   if (!after || !loser?.converged) return 'exit';
-  return convergedReason(after.view, request, write as MatchUpWrite, loser, retainedRelayReservation(args, after));
+  const superseded = supersededOwnRelayConvergence(args, after);
+  return superseded
+    ? undefined
+    : convergedReason(after.view, request, write as MatchUpWrite, loser, retainedRelayReservation(args, after));
+}
+
+/** The old produced origin passes through this landing and occupies the same side of its next matchUp. */
+function supersededRelayOrigin(view: OutcomeView, home: HydratedMatchUp, target: ProducedTarget) {
+  const origins = Object.entries(home.sideExitProvenance ?? {});
+  if (origins.length !== 1) return undefined;
+  const [side, origin] = origins[0];
+  const foreign = indexed(view, origin.sourceMatchUpId);
+  if (!foreign || !isDoubleExit(foreign.matchUpStatus) || Object.keys(foreign.sideExitProvenance ?? {}).length)
+    return undefined;
+  const produced = producedTarget(view, foreign, foreign.matchUpStatus);
+  if (produced?.entry.matchUpId !== home.matchUpId || String(produced.fedSide) !== side) return undefined;
+  if (origin.matchUpStatus !== produced.matchUpStatus || origin.previousMatchUpStatus !== foreign.matchUpStatus)
+    return undefined;
+  const entry = indexed(view, target.entry.matchUpId);
+  if (!entry || Object.keys(entry.sideExitProvenance ?? {}).length !== 1) return undefined;
+  if (JSON.stringify(entry.sideExitProvenance?.[target.fedSide]) !== JSON.stringify(origin)) return undefined;
+  return { origin, side };
+}
+
+/** Original own propagated BYE, actually withdrawn, then a genuine convergence superseding its stale relay. */
+function supersededOwnRelayConvergence(
+  args: Parameters<typeof exitReason>[0],
+  after: NonNullable<ReturnType<RebuildView>>,
+): Convergence | undefined {
+  const { view, request, write } = args;
+  if (view.isTeam || view.group) return undefined;
+  if (
+    !write?.winningSide ||
+    write.matchUpStatusCodes?.length ||
+    !after.direction?.loser?.arrives ||
+    !SINGLE_EXITS.has(request.matchUpStatus ?? '') ||
+    request.matchUpStatus === RETIRED
+  )
+    return undefined;
+  const seat = view.targets.loserTargetSeat;
+  const home = indexed(view, view.targets.loserMatchUpId);
+  const landing = indexed(after.view, home?.matchUpId);
+  const position = view.targets.loserTargetDrawPosition;
+  if (!seat?.bye || !seat.byeFromPropagation || home?.matchUpStatus !== BYE || !landing || !position) return undefined;
+  const own = unwoundOps(view, request, 'winner', args.drawDefinition).seatPrograms[0];
+  if (
+    !own?.some((op) => op.op === 'withdrawBye' && op.structureId === home.structureId && op.drawPosition === position)
+  )
+    return undefined;
+  const clear = own.find(
+    (op) =>
+      op.op === 'clearMatchUpBye' &&
+      op.matchUpId === home.matchUpId &&
+      op.drawPosition === position &&
+      op.rederived?.matchUpStatus === landing.matchUpStatus,
+  );
+  const sideNumber = sideOf(landing, position);
+  if (
+    !clear ||
+    !sideNumber ||
+    landing.winningSide ||
+    landing.loserMatchUpId ||
+    !scoreless(landing) ||
+    landing.matchUpStatusCodes?.length ||
+    landing.sideStatusCodes ||
+    !after.view.targets.loserTargetSeat?.free ||
+    after.view.targets.loserTargetSeat.opponentBye
+  )
+    return undefined;
+  const matchUpStatus = collapseDoubleExitStatus([carriedStatus(request.matchUpStatus), landing.matchUpStatus]);
+  if (after.direction?.loser?.converged !== matchUpStatus) return undefined;
+  const target = producedTarget(after.view, landing, matchUpStatus);
+  if (!target || target.feed) return undefined;
+  const retained = supersededRelayOrigin(view, home, target);
+  if (!retained || JSON.stringify(landing.sideExitProvenance) !== JSON.stringify(home.sideExitProvenance))
+    return undefined;
+  if (retained.side !== String(3 - sideNumber)) return undefined;
+  const original = indexed(view, target.entry.matchUpId);
+  const entry = target.entry;
+  if (
+    !original ||
+    JSON.stringify(original.sideExitProvenance) !== JSON.stringify(entry.sideExitProvenance) ||
+    (['winningSide', 'score', 'matchUpStatusCodes', 'sideStatusCodes', 'schedule'] as const).some(
+      (key) => JSON.stringify(original[key]) !== JSON.stringify(entry[key]),
+    ) ||
+    original.matchUpStatus !== entry.matchUpStatus ||
+    JSON.stringify(original.drawPositions) !== JSON.stringify(entry.drawPositions)
+  )
+    return undefined;
+  if (
+    entry.matchUpStatus !== retained.origin.matchUpStatus ||
+    entry.winningSide ||
+    !unplaced(entry) ||
+    !scoreless(entry)
+  )
+    return undefined;
+  if (
+    entry.matchUpStatusCodes?.length ||
+    entry.sideStatusCodes ||
+    entry.loserMatchUpId ||
+    entry.sides?.some((side) => side.bye || side.qualifier || side.participantId)
+  )
+    return undefined;
+  const paired = after.view.inContextDrawMatchUps?.find(
+    (matchUp) =>
+      matchUp.structureId === landing.structureId &&
+      matchUp.roundNumber === landing.roundNumber &&
+      matchUp.roundPosition === (landing.roundPosition! % 2 ? landing.roundPosition! + 1 : landing.roundPosition! - 1),
+  );
+  if (
+    !paired ||
+    paired.winnerMatchUpId !== entry.matchUpId ||
+    paired.matchUpStatus !== TO_BE_PLAYED ||
+    !unwoundClean(paired, new Set())
+  )
+    return undefined;
+  return {
+    matchUpId: landing.matchUpId,
+    sideNumber,
+    matchUpStatus,
+    matchUpStatusCodes: deriveStatusCodes(landing),
+    score: BLANK_SCORE,
+    target,
+  };
 }
 
 /** The shared removeDoubleExit program has no actual source clear/result in it. */
@@ -3322,6 +3445,8 @@ type Convergence = {
   matchUpStatus: MatchUpStatusUnion;
   /** the codes v1 writes there: its projection of the matchUp's provenance before the arrival (`deriveStatusCodes`) */
   matchUpStatusCodes: string[];
+  /** The pending convergence is a nested score write; an awarded convergence keeps its existing score. */
+  score?: Score;
   target?: ProducedTarget;
   /** a landing that links its loser on: the BYEs the double exit places, walked as v1's recursion places them (S6 tail) */
   seats?: OutcomeOp[];
@@ -3393,6 +3518,7 @@ function convergenceOps(
     previousMatchUpStatus,
     sourceMatchUpId,
   });
+  const score = convergence.score ?? (matchUpStatus === DOUBLE_WALKOVER ? BLANK_SCORE : undefined);
   return [
     {
       op: 'setMatchUpResult',
@@ -3401,7 +3527,7 @@ function convergenceOps(
       // a side whose standing exit a double exit delivered shows its outcome code (S6 tail)
       ...(matchUpStatusCodes.length ? { matchUpStatusCodes } : {}),
       // a DOUBLE_WALKOVER says nothing was played, so its score is blanked; a DOUBLE_DEFAULT keeps what stood
-      ...(matchUpStatus === DOUBLE_WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
+      ...(score ? { score } : {}),
     },
     ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId, provenance }] : []),
     { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
@@ -5944,16 +6070,30 @@ function unwoundConvergedFor(
   view: OutcomeView,
   args: Parameters<typeof planOutcome>[0],
   loser?: DirectionPlan['loser'],
-): OutcomeOp[] {
-  if (!loser?.converged) return [];
+): { ops: OutcomeOp[]; superseded?: Convergence } {
+  if (!loser?.converged) return { ops: [] };
   const after = isDoubleExit(view.existing.matchUpStatus) ? unwoundView(args, { releasedLandings: true }) : undefined;
-  return convergedOps(
-    after?.view ?? view,
-    args.request,
-    args.write as MatchUpWrite,
-    after?.direction?.loser ?? loser,
-    after ? retainedRelayReservation(args, after) : undefined,
-  );
+  const superseded = after && supersededOwnRelayConvergence(args, after);
+  if (superseded)
+    return {
+      superseded,
+      ops: convergenceOps(
+        after.view,
+        superseded,
+        carriedStatus(args.request.matchUpStatus),
+        args.request.matchUpId,
+        args.write?.matchUpStatus as MatchUpStatusUnion,
+      ),
+    };
+  return {
+    ops: convergedOps(
+      after?.view ?? view,
+      args.request,
+      args.write as MatchUpWrite,
+      after?.direction?.loser ?? loser,
+      after ? retainedRelayReservation(args, after) : undefined,
+    ),
+  };
 }
 
 /** the schedule attributes v2 plans: those v1's writer writes on the matchUp alone (S7) */
@@ -6679,12 +6819,20 @@ function producedRelayAfterOps(
   unwound: OutcomeOp[],
   loser: DirectionPlan['loser'] | undefined,
   seatPrograms: OutcomeOp[][],
+  superseded?: Convergence,
 ): OutcomeOp[] {
   return unwound.flatMap((op): OutcomeOp[] => {
     if (op.op !== 'clearMatchUpBye' || !op.rederived || op.rederived.winningSide) return [];
     // The relay reader certified its retained producer and any onward copy before emitting this pending exit.
     const home = indexed(view, op.matchUpId) as HydratedMatchUp;
     const next = indexed(view, home.winnerMatchUpId) as HydratedMatchUp;
+    // This same own program now produces a fresh exit on its old relay side; its obsolete copy cannot be replayed.
+    if (
+      seatPrograms[0]?.includes(op) &&
+      superseded?.matchUpId === home.matchUpId &&
+      superseded.target?.entry.matchUpId === next?.matchUpId
+    )
+      return [];
     if (op.retainedCarriedAward) return [];
     // Reuse the complete-level proof; an unrelated level's reset cannot suppress this relay's late write.
     if (seatPrograms.some((program) => indirectRelayReset(view, op, program))) return [];
@@ -6872,7 +7020,8 @@ function recordedPlanOps(args: Parameters<typeof planOutcome>[0], drawDefinition
   const reservation = write.winningSide ? view.targets.reservations?.[write.winningSide as 1 | 2] : undefined;
   const reserved = reservation?.kind === 'reserve' ? seatBye(reservation) : [];
   // two exits meeting where the loser lands (RULE 4), and what the double exit they make produces (S5)
-  const converging = unwoundConvergedFor(view, args, loser);
+  const convergence = unwoundConvergedFor(view, args, loser);
+  const converging = convergence.ops;
   // a double exit's loser seats, BYEs (S5)
   const seatOps = args.route === DOUBLE_EXIT ? doubleExitSeatOps(view, request, args.direction) : undefined;
   const doubleExitSeated = seatOps?.ops ?? [];
@@ -6935,7 +7084,11 @@ function recordedPlanOps(args: Parameters<typeof planOutcome>[0], drawDefinition
   );
   const writes = ops.filter((op) => !superseded.has(op));
   return {
-    ops: [...writes, ...producedRelayAfterOps(view, unwound, loser, seatPrograms), ...retainedAward],
+    ops: [
+      ...writes,
+      ...producedRelayAfterOps(view, unwound, loser, seatPrograms, convergence.superseded),
+      ...retainedAward,
+    ],
     shape: args.route === 'winner' || carriedOn ? 'direction' : 'local',
   };
 }
