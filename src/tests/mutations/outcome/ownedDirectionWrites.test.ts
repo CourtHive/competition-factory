@@ -20,6 +20,7 @@ import {
   OUTCOME_PIPELINE_V2,
 } from '@Constants/outcomePipelineConstants';
 import {
+  BYE,
   COMPLETED,
   DEFAULTED,
   DOUBLE_DEFAULT,
@@ -855,7 +856,48 @@ const CONVERGED_RELAY_CAPTURES: [string, Scenario][] = [DOUBLE_WALKOVER, DOUBLE_
 const CONVERGED_PRODUCED_RELAYS = CONVERGED_RELAY_CAPTURES.filter(([label]) => !label.includes(' carried'));
 const CARRIED_CONVERGED_PRODUCED_RELAYS = CONVERGED_RELAY_CAPTURES.filter(([label]) => label.includes(' carried'));
 
+// A direct produced copy is withdrawn from an occupied final, leaving the carrier's own awarded exit.
+const OCCUPIED_FINAL_RELAY_CAPTURES: [string, Scenario][] = [WALKOVER, DEFAULTED].flatMap((carry) =>
+  [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((source) =>
+    [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((producer) =>
+      (
+        [
+          ['clear', cleared],
+          ['winner1', { winningSide: 1 }],
+          ['winner2', { winningSide: 2 }],
+        ] as [string, Record<string, unknown>][]
+      ).map(([trigger, outcome]): [string, Scenario] => [
+        `occupied final relay: ${carry}/${source}/${producer}/${trigger}`,
+        {
+          drawProfile: { drawSize: 8, participantsCount: 7, drawType: FEED_IN_CHAMPIONSHIP_TO_SF },
+          nonRandom: 20650915,
+          setup: [
+            { target: R1(2, 'Main'), outcome: { matchUpStatus: carry, winningSide: 1 }, params: CARRIED },
+            { target: R1(3, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+            { target: R1(4, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+            {
+              target: { roundNumber: 2, roundPosition: 2, structureName: 'Main' },
+              outcome: { matchUpStatus: DOUBLE_WALKOVER },
+              params: CARRIED,
+            },
+            { target: R1(2, 'Consolation'), outcome: { matchUpStatus: producer }, params: CARRIED },
+            {
+              target: { roundNumber: 2, roundPosition: 1, structureName: 'Main' },
+              outcome: { matchUpStatus: source },
+              params: CARRIED,
+            },
+          ],
+          steps: [{ target: { roundNumber: 2, roundPosition: 1, structureName: 'Main' }, outcome, params: CARRIED }],
+        },
+      ]),
+    ),
+  ),
+);
+const OCCUPIED_FINAL_CLEARS = OCCUPIED_FINAL_RELAY_CAPTURES.filter(([label]) => label.endsWith('/clear'));
+const OCCUPIED_FINAL_WINNERS = OCCUPIED_FINAL_RELAY_CAPTURES.filter(([label]) => !label.endsWith('/clear'));
+
 const SCENARIOS: [string, Scenario][] = [
+  ...OCCUPIED_FINAL_CLEARS,
   ...CONVERGED_PRODUCED_RELAYS,
   ...CARRIED_CONVERGED_PRODUCED_RELAYS,
   ...NOTICE_RELAY_CARRIES,
@@ -3570,6 +3612,59 @@ describe('M1 notice contracts also compare with in-context subscribers under dif
 describe('S7 converged produced relays compare subscribed differential notices', () => {
   it.each(CONVERGED_RELAY_CAPTURES)('%s', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
+});
+
+describe('S7 occupied-final clear compares subscribed differential notices', () => {
+  it('the public setup has a real carrier beside the relay producer in a final', () => {
+    const [, scenario] = OCCUPIED_FINAL_CLEARS[0];
+    play(OUTCOME_PIPELINE_V1, { ...scenario, steps: [] });
+    const matchUps = tournamentEngine.allDrawMatchUps({ drawId: 'd', inContext: true }).matchUps;
+    const at = (structureName: string, roundNumber: number, roundPosition: number) =>
+      matchUps.find(
+        (matchUp: any) =>
+          matchUp.structureName === structureName &&
+          matchUp.roundNumber === roundNumber &&
+          matchUp.roundPosition === roundPosition,
+      );
+    const producer = at('Consolation', 1, 2);
+    const relay = at('Consolation', 2, 2);
+    const onward = at('Consolation', 3, 1);
+    const carrierSource = at('Main', 1, 2);
+    expect(producer.winnerMatchUpId).toEqual(relay.matchUpId);
+    expect(relay.matchUpStatus).toEqual(BYE);
+    expect(relay.drawPositions).toEqual([2]);
+    expect(onward.matchUpStatus).toEqual(DOUBLE_WALKOVER);
+    expect(onward.winnerMatchUpId).toBeUndefined();
+    expect(onward.sides.filter((side: any) => side.participantId).map((side: any) => side.drawPosition)).toEqual([4]);
+    expect(
+      Object.values(onward.sideExitProvenance)
+        .map((entry: any) => entry.sourceMatchUpId)
+        .sort(),
+    ).toEqual([producer.matchUpId, carrierSource.matchUpId].sort());
+  });
+  it.each(OCCUPIED_FINAL_CLEARS)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
+});
+
+describe('S7 occupied-final winners keep the re-derived winner branch with v1', () => {
+  it.each(OCCUPIED_FINAL_WINNERS)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    expect(v2.v1Writes).toEqual(2);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
     expect(compared.results).toEqual(v1.results);
     expect(compared.record).toEqual(v1.record);
