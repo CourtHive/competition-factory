@@ -1441,6 +1441,16 @@ Other topology, active seats, orphan markers and conditioned unplaced links rema
 
 ## 7.2 The plan as ops (S1)
 
+A certified clear's position removal can withdraw an award while retaining the independent pending foreign exit
+(`setMatchUpDrawPositions.withdrawsPendingAward`). The reducer removes only `winningSide`;
+`removedDrawPosition` already deletes the score, and a separate `setSideExitProvenance` keeps the exact surviving
+origin. Status and raw codes remain as stored and certified. This position writer supplies no actual-score callback;
+its `announcesContext: false` matches the captured removal notice's absent event and tournament identity. It is not a
+named settle score write. The clear-only per-level projection is separate from dissolved-convergence derivation, so
+it does not change the unwind's unfillable-BYE reset index or create a settle reannouncement. The indirect produced
+reservation's successor release precedes its onward reset, and that complete reset program is not followed by a stale
+relay advance. Winner corrections keep their prior fallback boundary.
+
 v2 states a call's writes as **ops**, a closed vocabulary folded by one reducer (`outcome/ops.ts`) into a stored-shape
 draw. The overlay, the `differential` shadow apply and, from S2, apply itself all use the same reducer, so what a plan
 says and what lands are one thing. The reducer decides nothing and refuses nothing.
