@@ -1,6 +1,7 @@
 import { checkMutationLock } from '@Mutate/tournaments/mutationLocks/checkMutationLock';
 import { engineLogging, paramsMayBeLogged } from '@Global/state/engineLogging';
 import { withContextExclusion } from '@Query/matchUps/contextExclusion';
+import { checkLoadedFootprint } from './loadedFootprintGuard';
 import { paramsMiddleware } from './paramsMiddleware';
 import { makeDeepCopy } from '@Tools/makeDeepCopy';
 import {
@@ -57,6 +58,9 @@ export function executeFunction(
 }
 
 function resolve({ method, params, methodName, tournamentRecords, tournamentId }) {
+  const footprintError = checkLoadedFootprint({ methodName, params, tournamentRecords, tournamentId });
+  if (footprintError) return footprintError;
+
   const augmentedParams = params ? paramsMiddleware(tournamentRecords, params, methodName) : undefined;
   if (augmentedParams?.error) return augmentedParams;
   const resolved = augmentedParams as { tournamentRecord?: Tournament } | undefined;

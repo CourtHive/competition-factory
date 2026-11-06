@@ -161,6 +161,14 @@ and that team. A player who belongs to no team may be placed: the result is a su
 warning (`warnings: [{ code: 'NOT_ON_TEAM_ROSTER', info: { participantIds } }]`), and from then on the player belongs
 to that team for the rest of the event.
 
+**Assignment fills a free seat** (7.32.0). A SINGLES line whose side already shows another player, or a DOUBLES line
+whose side already shows a full pair, is refused with `EXISTING_PARTICIPANT`; `context` names the holders, the
+`collectionId`, `collectionPosition` and `sideNumber`. Change who holds a seat with
+[replaceTieMatchUpParticipantId](#replacetiematchupparticipantid), or with a substitution once the line is in play. This is
+the rule [matchUpActions](/docs/governors/query-governor#matchupactions) applies when it offers `ASSIGN`. Assigning the
+player who already holds the seat is still a success. Before 7.32.0 the SINGLES call succeeded and left two holders in
+the lineUp while the line showed the first, and a third DOUBLES player broke up the pair.
+
 ---
 
 ## bulkMatchUpStatusUpdate

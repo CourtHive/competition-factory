@@ -156,6 +156,30 @@ what it inherits; a tie whose format really differs keeps its own.
 Measured on a USTA playtennis TEAM tournament (121 teams, 127 ties, 2,467 collection matchUps): 19.7 MB without these
 steps, 4.3 MB with them, with every matchUp reading the same through the engine.
 
+### What a rebuilt draw keeps
+
+Positions and entries are rebuilt from the matchUps' sides. The sides carry who played where, but they do not carry
+everything the engine needs to keep editing the draw. Three facts are therefore read from elsewhere, so that a
+rebuilt record behaves like the one it came from when it is edited later.
+
+- **Entries of an AD_HOC draw.** An AD_HOC structure positions nobody: its participants exist only on its matchUps'
+  sides. A structure with no positioned participant takes its entries from those sides, so a rebuilt AD_HOC draw keeps
+  every participant as a draw and event entry. Other structures are unaffected, because their sides repeat their
+  positions. A TEAM draw's collection matchUps are not read, so individual players never become a team draw's entries.
+- **`finishingPosition`.** Each built structure carries the `finishingPosition` its source structure states. Without
+  `ROUND_OUTCOME`, the engine does not follow a structure's links round by round: progression out of the structure is
+  not followed, and [`positionTargets`](./tools-api#positiontargets) names no target for a loser. Older exports state
+  none at all, so a structure whose source is silent gets the value the generators would have given it. A round robin
+  (the container and its groups) and an `AD_HOC`, `LADDER` or `SWISS` draw finish by `WIN_RATIO`, and every other
+  structure by `ROUND_OUTCOME`.
+- **Disabled links.** An operator who removes a fed participant and seats a BYE (`removeDrawPositionAssignment` with
+  `replaceWithBye`) disables that position's links, and the engine then feeds nobody there. That is how a loser who
+  declined a consolation is recorded. The sides carry no such marker, so the marker is carried over from the source's
+  own `positionAssignments`, as the first-class `disableLinks` or as the legacy extension older exports carry. A BYE
+  position the sides did not produce is taken from the source too. Without the marker, the rebuilt draw would read as
+  a loser dropped between structures; with it, [`getDrawInconsistencies`](/docs/governors/query-governor#getdrawinconsistencies)
+  reads the draw clean.
+
 ## buildTournamentRecord
 
 The lower-level assembler, for a caller that has already separated its sources.

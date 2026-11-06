@@ -1,4 +1,10 @@
-import { modifiedTournamentId, noticeModifies, preserveNoticeIdentity, UNNAMED_TOURNAMENT } from './noticeIdentity';
+import {
+  modifiedTournamentId,
+  noticeModifies,
+  preserveNoticeIdentity,
+  UNANNOUNCED_WRITE,
+  UNNAMED_TOURNAMENT,
+} from './noticeIdentity';
 import {
   CallListenerArgs,
   DeleteNoticeArgs,
@@ -25,6 +31,7 @@ const syncGlobalState: ImplemtationGlobalStateTypes = {
   subscriptions: {},
   modified: false,
   modifiedTournamentIds: new Set(),
+  modifiedTopics: new Set(),
   methods: {},
   notices: [],
 };
@@ -34,6 +41,7 @@ export default {
   callListener,
   cycleMutationStatus,
   cycleModifiedTournamentIds,
+  cycleModifiedTopics,
   markModified,
   getCapturedClock,
   setCapturedClock,
@@ -208,10 +216,19 @@ export function cycleModifiedTournamentIds(): Set<string> {
 
 // optional: marks a write modified without announcing it (a write made with suppressNotifications), the tournament
 // named, or every loaded record when none is
-export function markModified(tournamentId?: string) {
+export function markModified(tournamentId?: string, topic?: string) {
   syncGlobalState.modified = true;
   syncGlobalState.modifiedTournamentIds ??= new Set();
   syncGlobalState.modifiedTournamentIds.add(tournamentId || UNNAMED_TOURNAMENT);
+  syncGlobalState.modifiedTopics ??= new Set();
+  syncGlobalState.modifiedTopics.add(topic || UNANNOUNCED_WRITE);
+}
+
+// optional: the topics of the call's modifying notices, cleared as they are read (see getMutationStatus)
+export function cycleModifiedTopics(): Set<string> {
+  const topics = syncGlobalState.modifiedTopics ?? new Set<string>();
+  syncGlobalState.modifiedTopics = new Set();
+  return topics;
 }
 
 // optional: sets the flag back to a value `cycleMutationStatus` returned (see globalState.readMutationStatus)
@@ -223,7 +240,8 @@ export function addNotice({ topic, payload, key }: Notice, isGlobalSubscription?
   if (typeof topic !== 'string' || typeof payload !== 'object') return;
   // if there is a notice then the state has been modified, regardless of whether there is a subscription: the
   // tournament it names (every loaded record when it names none), unless it only reports
-  if (!syncGlobalState.disableNotifications && noticeModifies(topic)) markModified(modifiedTournamentId(payload));
+  if (!syncGlobalState.disableNotifications && noticeModifies(topic))
+    markModified(modifiedTournamentId(payload), topic);
   if (syncGlobalState.disableNotifications || (!syncGlobalState.subscriptions[topic] && !isGlobalSubscription)) return;
 
   let outgoing = payload;

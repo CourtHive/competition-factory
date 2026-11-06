@@ -1,4 +1,5 @@
 import type { AsyncEngineDirectMethod } from './asyncEngineDirectMethods';
+import type { LoadedFootprint } from '../global/state/loadedFootprint';
 import type { setClock, setCompetitionClock } from '../tools/clock';
 import type { setRandomSource } from '../tools/prng';
 import type { Tournament } from './tournamentTypes';
@@ -15,6 +16,7 @@ import type {
   DevContextType,
   getOutcomePipeline,
   getSchemaWriteMode,
+  getStampScope,
   setTournamentId,
 } from '../global/state/globalState';
 
@@ -60,6 +62,10 @@ export interface AsyncEngineSetup extends Pick<FactoryEngineTyped, 'on' | 'once'
   getSchemaWriteMode: typeof getSchemaWriteMode;
   outcomePipeline(mode: ReturnType<typeof getOutcomePipeline>): AsyncFactoryEngine;
   getOutcomePipeline: typeof getOutcomePipeline;
+  stampScope(scope?: ReturnType<typeof getStampScope>): AsyncFactoryEngine;
+  getStampScope: typeof getStampScope;
+  loadedFootprint(footprint?: LoadedFootprint, tournamentId?: string): AsyncFactoryEngine;
+  getLoadedFootprint(tournamentId?: string): LoadedFootprint | undefined;
   saveDrawDeletions(flag?: boolean): AsyncFactoryEngine;
   getSaveDrawDeletions(): boolean;
   auditAuthorityServer(flag?: boolean): AsyncFactoryEngine;

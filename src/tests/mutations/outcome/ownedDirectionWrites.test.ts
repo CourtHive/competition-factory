@@ -1042,7 +1042,1947 @@ const INDIRECT_COMPOUND_CLEARS: [string, Scenario][] = [DOUBLE_WALKOVER, DOUBLE_
   ),
 );
 
+// C10: the source's ordinary award and same-level indirect relay reset unwind together, without a pending award.
+const standaloneTarget: Target = { structureName: 'Main', roundNumber: 2, roundPosition: 1 };
+const standaloneBase = {
+  drawProfile: { drawSize: 16, participantsCount: 11, drawType: FEED_IN_CHAMPIONSHIP_TO_SF },
+  nonRandom: 20473821,
+  randomSeed: 2496245122,
+  policyDefinitions: POLICY_OFF,
+};
+const STANDALONE_INDIRECT_CLEARS: [string, Scenario][] = [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((source) =>
+  [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((producer) =>
+    [WALKOVER, DEFAULTED].flatMap((paired) =>
+      [WALKOVER, DEFAULTED].map((upstream): [string, Scenario] => [
+        `C10 standalone indirect clear: ${source}/${producer}/${paired}/${upstream}`,
+        {
+          ...standaloneBase,
+          setup: [
+            { target: R1(5, 'Main'), outcome: { winningSide: 2 }, params: CARRIED },
+            { target: R1(7, 'Main'), outcome: { matchUpStatus: producer }, params: CARRIED },
+            {
+              target: { structureName: 'Main', roundNumber: 2, roundPosition: 2 },
+              outcome: { matchUpStatus: paired, winningSide: 2 },
+              params: CARRIED,
+            },
+            { target: R1(2, 'Main'), outcome: { matchUpStatus: upstream, winningSide: 1 }, params: CARRIED },
+            { target: standaloneTarget, outcome: { matchUpStatus: source }, params: CARRIED },
+          ],
+          steps: [{ target: standaloneTarget, outcome: cleared, params: CARRIED }],
+        },
+      ]),
+    ),
+  ),
+);
+const standaloneMinimal = STANDALONE_INDIRECT_CLEARS[0][1];
+STANDALONE_INDIRECT_CLEARS.push([
+  'C10 standalone indirect clear: plain upstream',
+  {
+    ...standaloneMinimal,
+    setup: standaloneMinimal.setup!.map((step, index) =>
+      index === 3 ? { ...step, outcome: { winningSide: 1 } } : step,
+    ),
+  },
+]);
+const standaloneFull: Scenario = {
+  ...standaloneBase,
+  setup: [
+    {
+      target: { structureName: 'Main', roundNumber: 1, roundPosition: 5 },
+      outcome: { winningSide: 2 },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 2, roundPosition: 3 },
+      outcome: { matchUpStatus: 'DOUBLE_WALKOVER' },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 1, roundPosition: 7 },
+      outcome: { winningSide: 1 },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 1, roundPosition: 5 },
+      outcome: { winningSide: 2 },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 1, roundPosition: 2 },
+      outcome: { matchUpStatus: 'DOUBLE_DEFAULT' },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 2, roundPosition: 4 },
+      outcome: { matchUpStatus: 'RETIRED', winningSide: 1, score: { sets: [{ side1Score: 6, side2Score: 3 }] } },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 2, roundPosition: 4 },
+      outcome: { matchUpStatus: 'DEFAULTED', winningSide: 1 },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 2, roundPosition: 4 },
+      outcome: { winningSide: 1 },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 2, roundPosition: 4 },
+      outcome: { score: { scoreStringSide1: '', scoreStringSide2: '' }, matchUpStatus: 'TO_BE_PLAYED' },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 2, roundPosition: 3 },
+      outcome: { matchUpStatus: 'WALKOVER', winningSide: 1 },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 1, roundPosition: 7 },
+      outcome: { matchUpStatus: 'DOUBLE_WALKOVER' },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 3, roundPosition: 2 },
+      outcome: { matchUpStatus: 'RETIRED', winningSide: 1, score: { sets: [{ side1Score: 6, side2Score: 3 }] } },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 2, roundPosition: 2 },
+      outcome: { matchUpStatus: 'DOUBLE_WALKOVER' },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Consolation', roundNumber: 4, roundPosition: 2 },
+      outcome: { matchUpStatus: 'DOUBLE_WALKOVER' },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Consolation', roundNumber: 4, roundPosition: 2 },
+      outcome: { matchUpStatus: 'WALKOVER', winningSide: 1 },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Consolation', roundNumber: 4, roundPosition: 2 },
+      outcome: { score: { scoreStringSide1: '', scoreStringSide2: '' }, matchUpStatus: 'TO_BE_PLAYED' },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 2, roundPosition: 2 },
+      outcome: { winningSide: 2 },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 2, roundPosition: 2 },
+      outcome: { winningSide: 2 },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 3, roundPosition: 2 },
+      outcome: { winningSide: 1 },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 2, roundPosition: 2 },
+      outcome: { matchUpStatus: 'WALKOVER', winningSide: 2 },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 1, roundPosition: 2 },
+      outcome: { matchUpStatus: 'WALKOVER', winningSide: 1 },
+      params: CARRIED,
+    },
+    {
+      target: { structureName: 'Main', roundNumber: 2, roundPosition: 1 },
+      outcome: { matchUpStatus: 'DOUBLE_WALKOVER' },
+      params: CARRIED,
+    },
+  ],
+  steps: [{ target: standaloneTarget, outcome: cleared, params: CARRIED }],
+};
+STANDALONE_INDIRECT_CLEARS.push(['C10 standalone indirect clear: full thirteen notices', standaloneFull]);
+// Bare winners keep the retained foreign relay exit; carried WO/DEFAULTED corrections remain separate.
+const STANDALONE_BARE_WINNERS: [string, Scenario][] = STANDALONE_INDIRECT_CLEARS.slice(0, 17).flatMap(
+  ([label, scenario]) =>
+    [1, 2].map((winningSide): [string, Scenario] => [
+      `${label.replace('C10 standalone indirect clear', 'C11 standalone bare winner')}/${winningSide}`,
+      { ...scenario, steps: [{ target: standaloneTarget, outcome: { winningSide }, params: CARRIED }] },
+    ]),
+);
+for (const source of [DOUBLE_WALKOVER, DOUBLE_DEFAULT]) {
+  for (const producer of [DOUBLE_WALKOVER, DOUBLE_DEFAULT]) {
+    for (const winningSide of [1, 2]) {
+      STANDALONE_BARE_WINNERS.push([
+        `C11 standalone bare winner: full thirteen/${source}/${producer}/${winningSide}`,
+        {
+          ...standaloneFull,
+          setup: standaloneFull.setup!.map((step, index, all) => {
+            if (index === all.length - 1) return { ...step, outcome: { matchUpStatus: source } };
+            if (
+              step.target.roundNumber === 1 &&
+              step.target.roundPosition === 7 &&
+              step.outcome.matchUpStatus === DOUBLE_WALKOVER
+            )
+              return { ...step, outcome: { matchUpStatus: producer } };
+            return step;
+          }),
+          steps: [{ target: standaloneTarget, outcome: { winningSide }, params: CARRIED }],
+        },
+      ]);
+    }
+  }
+}
+
+const STANDALONE_CARRIED_CONVERGENCES: [string, Scenario][] = STANDALONE_BARE_WINNERS.flatMap(([label, scenario]) =>
+  [WALKOVER, DEFAULTED].map((matchUpStatus): [string, Scenario] => [
+    `${label.replace('C11 standalone bare winner', 'C12 standalone carried convergence')}/${matchUpStatus}`,
+    { ...scenario, steps: scenario.steps.map((step) => ({ ...step, outcome: { ...step.outcome, matchUpStatus } })) },
+  ]),
+);
+
+// C13: public FIRST_MATCHUP corrections whose own unwind withdraws a marked BYE before restoring it.
+const FMLC_NO_ARRIVAL_BASES: [string, Scenario][] = [
+  [
+    'small-four-call-FMLC8-standing-opponent',
+    {
+      drawProfile: {
+        participantsCount: 7,
+        drawSize: 8,
+        drawType: 'FIRST_MATCH_LOSER_CONSOLATION',
+      },
+      nonRandom: 20099923,
+      randomSeed: 294488990,
+      setup: [
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 3,
+          },
+          outcome: {
+            matchUpStatus: 'WALKOVER',
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 4,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 2,
+          },
+          outcome: {
+            matchUpStatus: 'DOUBLE_WALKOVER',
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+      ],
+      steps: [
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 2,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+      ],
+    },
+  ],
+  [
+    'real-F1-on20463476-remove-only-failed',
+    {
+      drawProfile: {
+        participantsCount: 16,
+        drawSize: 16,
+        drawType: 'FIRST_MATCH_LOSER_CONSOLATION',
+      },
+      nonRandom: 20463476,
+      randomSeed: 1531584124,
+      setup: [
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 6,
+          },
+          outcome: {
+            score: {
+              scoreStringSide1: '',
+              scoreStringSide2: '',
+            },
+            matchUpStatus: 'TO_BE_PLAYED',
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 1,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 3,
+          },
+          outcome: {
+            matchUpStatus: 'DEFAULTED',
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 7,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 6,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 1,
+          },
+          outcome: {
+            score: {
+              scoreStringSide1: '',
+              scoreStringSide2: '',
+            },
+            matchUpStatus: 'TO_BE_PLAYED',
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 3,
+          },
+          outcome: {
+            matchUpStatus: 'WALKOVER',
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 8,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 4,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Consolation',
+            roundNumber: 1,
+            roundPosition: 4,
+          },
+          outcome: {
+            matchUpStatus: 'DOUBLE_DEFAULT',
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 2,
+          },
+          outcome: {
+            matchUpStatus: 'WALKOVER',
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 5,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 4,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 2,
+          },
+          outcome: {
+            matchUpStatus: 'DOUBLE_DEFAULT',
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+      ],
+      steps: [
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 2,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+      ],
+    },
+  ],
+];
+const FMLC_NO_ARRIVAL_WINNERS: [string, Scenario][] = FMLC_NO_ARRIVAL_BASES.flatMap(([label, base]) =>
+  ([1, 2] as const).flatMap((winningSide) =>
+    [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((matchUpStatus) =>
+      [undefined, WALKOVER, DEFAULTED].map((requested) => {
+        const propagateExitStatus = requested === undefined;
+        const setup = (base.setup ?? []).map((step) => {
+          const { target } = step;
+          let outcome = step.outcome;
+          if (
+            target.structureName === 'Main' &&
+            target.roundNumber === 1 &&
+            [3, 4].includes(target.roundPosition ?? 0)
+          ) {
+            const feeder = target.roundPosition === 3 ? 1 : 2;
+            outcome = { winningSide: feeder, ...(feeder === winningSide ? { matchUpStatus: WALKOVER } : {}) };
+          }
+          if (
+            target.structureName === 'Main' &&
+            target.roundNumber === 2 &&
+            target.roundPosition === 2 &&
+            [DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(step.outcome.matchUpStatus as typeof DOUBLE_WALKOVER)
+          )
+            outcome = { matchUpStatus };
+          return { ...step, outcome, params: { ...step.params, propagateExitStatus } };
+        });
+        return [
+          `C13 no-arrival/${label}/side${winningSide}/${matchUpStatus}/${requested ?? 'bare'}`,
+          {
+            ...base,
+            setup,
+            steps: [
+              {
+                ...base.steps[0],
+                outcome: { winningSide, ...(requested ? { matchUpStatus: requested } : {}) },
+                params: { ...base.steps[0].params, propagateExitStatus },
+              },
+            ],
+          },
+        ] as [string, Scenario];
+      }),
+    ),
+  ),
+);
+const FMLC_NO_ARRIVAL_REAL: [string, Scenario][] = [
+  [
+    'C13 no-arrival real/real-F1-on20463476-step17-successful-only',
+    {
+      drawProfile: {
+        participantsCount: 16,
+        drawSize: 16,
+        drawType: 'FIRST_MATCH_LOSER_CONSOLATION',
+      },
+      nonRandom: 20463476,
+      randomSeed: 1531584124,
+      setup: [
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 6,
+          },
+          outcome: {
+            score: {
+              scoreStringSide1: '',
+              scoreStringSide2: '',
+            },
+            matchUpStatus: 'TO_BE_PLAYED',
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 1,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 3,
+          },
+          outcome: {
+            matchUpStatus: 'DEFAULTED',
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 7,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 6,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 1,
+          },
+          outcome: {
+            score: {
+              scoreStringSide1: '',
+              scoreStringSide2: '',
+            },
+            matchUpStatus: 'TO_BE_PLAYED',
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 3,
+          },
+          outcome: {
+            matchUpStatus: 'WALKOVER',
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 8,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 4,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Consolation',
+            roundNumber: 1,
+            roundPosition: 4,
+          },
+          outcome: {
+            matchUpStatus: 'DOUBLE_DEFAULT',
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 2,
+          },
+          outcome: {
+            matchUpStatus: 'WALKOVER',
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 5,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 4,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 2,
+          },
+          outcome: {
+            matchUpStatus: 'DOUBLE_DEFAULT',
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+      ],
+      steps: [
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 2,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+      ],
+    },
+  ],
+  [
+    'C13 no-arrival real/real-censusF1-on20473585-step19-successful-only',
+    {
+      drawProfile: {
+        participantsCount: 14,
+        drawSize: 16,
+        drawType: 'FIRST_MATCH_LOSER_CONSOLATION',
+      },
+      nonRandom: 20473585,
+      randomSeed: 2035705846,
+      setup: [
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 7,
+          },
+          outcome: {
+            matchUpStatus: 'WALKOVER',
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 5,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 4,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 5,
+          },
+          outcome: {
+            matchUpStatus: 'DOUBLE_WALKOVER',
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 2,
+          },
+          outcome: {
+            matchUpStatus: 'WALKOVER',
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 1,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 1,
+          },
+          outcome: {
+            matchUpStatus: 'DOUBLE_DEFAULT',
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 4,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 4,
+          },
+          outcome: {
+            matchUpStatus: 'WALKOVER',
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 6,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 5,
+          },
+          outcome: {
+            matchUpStatus: 'RETIRED',
+            winningSide: 1,
+            score: {
+              sets: [
+                {
+                  side1Score: 6,
+                  side2Score: 3,
+                },
+              ],
+            },
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 2,
+          },
+          outcome: {
+            matchUpStatus: 'RETIRED',
+            winningSide: 1,
+            score: {
+              sets: [
+                {
+                  side1Score: 6,
+                  side2Score: 3,
+                },
+              ],
+            },
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Consolation',
+            roundNumber: 1,
+            roundPosition: 3,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 2,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+      ],
+      steps: [
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 1,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+      ],
+    },
+  ],
+  [
+    'C13 no-arrival real/real-censusF1-on20486698-step10-successful-only',
+    {
+      drawProfile: {
+        participantsCount: 13,
+        drawSize: 16,
+        drawType: 'FIRST_MATCH_LOSER_CONSOLATION',
+      },
+      nonRandom: 20486698,
+      randomSeed: 873967781,
+      setup: [
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 4,
+          },
+          outcome: {
+            matchUpStatus: 'WALKOVER',
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: false,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 2,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: false,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 2,
+          },
+          outcome: {
+            matchUpStatus: 'WALKOVER',
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: false,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 3,
+          },
+          outcome: {
+            matchUpStatus: 'WALKOVER',
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: false,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 3,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: false,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 3,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: false,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 2,
+          },
+          outcome: {
+            matchUpStatus: 'WALKOVER',
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: false,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 2,
+          },
+          outcome: {
+            matchUpStatus: 'DOUBLE_WALKOVER',
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: false,
+          },
+        },
+      ],
+      steps: [
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 2,
+          },
+          outcome: {
+            matchUpStatus: 'WALKOVER',
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: false,
+          },
+        },
+      ],
+    },
+  ],
+];
+const FMLC_STANDING_RESERVATIONS: [string, Scenario][] = [
+  [
+    'C13 standing reservation remains v1/real-censusF2-off20474808-step17-successful-only',
+    {
+      drawProfile: {
+        participantsCount: 13,
+        drawSize: 16,
+        drawType: 'FIRST_MATCH_LOSER_CONSOLATION',
+      },
+      nonRandom: 20474808,
+      randomSeed: 1828851803,
+      setup: [
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 6,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 5,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Consolation',
+            roundNumber: 1,
+            roundPosition: 3,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Consolation',
+            roundNumber: 1,
+            roundPosition: 3,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 7,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 4,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 4,
+          },
+          outcome: {
+            matchUpStatus: 'DOUBLE_DEFAULT',
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 2,
+          },
+          outcome: {
+            matchUpStatus: 'DEFAULTED',
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 1,
+          },
+          outcome: {
+            matchUpStatus: 'DOUBLE_WALKOVER',
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 1,
+          },
+          outcome: {
+            score: {
+              scoreStringSide1: '',
+              scoreStringSide2: '',
+            },
+            matchUpStatus: 'TO_BE_PLAYED',
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 3,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 1,
+          },
+          outcome: {
+            matchUpStatus: 'WALKOVER',
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 3,
+            roundPosition: 1,
+          },
+          outcome: {
+            score: {
+              scoreStringSide1: '',
+              scoreStringSide2: '',
+            },
+            matchUpStatus: 'TO_BE_PLAYED',
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 3,
+          },
+          outcome: {
+            matchUpStatus: 'DOUBLE_WALKOVER',
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Consolation',
+            roundNumber: 1,
+            roundPosition: 3,
+          },
+          outcome: {
+            matchUpStatus: 'WALKOVER',
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+      ],
+      steps: [
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 3,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+      ],
+    },
+  ],
+  [
+    'C13 standing reservation remains v1/real-censusF2-on20474808-step17-successful-only',
+    {
+      drawProfile: {
+        participantsCount: 13,
+        drawSize: 16,
+        drawType: 'FIRST_MATCH_LOSER_CONSOLATION',
+      },
+      nonRandom: 20474808,
+      randomSeed: 1627423709,
+      setup: [
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 6,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 5,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Consolation',
+            roundNumber: 1,
+            roundPosition: 3,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Consolation',
+            roundNumber: 1,
+            roundPosition: 3,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 7,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 4,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 4,
+          },
+          outcome: {
+            matchUpStatus: 'DOUBLE_DEFAULT',
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 2,
+          },
+          outcome: {
+            matchUpStatus: 'DEFAULTED',
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 1,
+          },
+          outcome: {
+            matchUpStatus: 'DOUBLE_WALKOVER',
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 1,
+          },
+          outcome: {
+            score: {
+              scoreStringSide1: '',
+              scoreStringSide2: '',
+            },
+            matchUpStatus: 'TO_BE_PLAYED',
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 3,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 1,
+          },
+          outcome: {
+            matchUpStatus: 'WALKOVER',
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 3,
+            roundPosition: 1,
+          },
+          outcome: {
+            score: {
+              scoreStringSide1: '',
+              scoreStringSide2: '',
+            },
+            matchUpStatus: 'TO_BE_PLAYED',
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 3,
+          },
+          outcome: {
+            matchUpStatus: 'DOUBLE_WALKOVER',
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Consolation',
+            roundNumber: 1,
+            roundPosition: 3,
+          },
+          outcome: {
+            matchUpStatus: 'WALKOVER',
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 7,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+      ],
+      steps: [
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 3,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: true,
+            propagateExitStatus: true,
+          },
+        },
+      ],
+    },
+  ],
+  [
+    'C13 standing reservation remains v1/stall-off20099923-step6-successful-only',
+    {
+      drawProfile: {
+        participantsCount: 7,
+        drawSize: 8,
+        drawType: 'FIRST_MATCH_LOSER_CONSOLATION',
+      },
+      nonRandom: 20099923,
+      randomSeed: 294488990,
+      setup: [
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 3,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 4,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 2,
+          },
+          outcome: {
+            matchUpStatus: 'WALKOVER',
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 2,
+          },
+          outcome: {
+            matchUpStatus: 'DOUBLE_WALKOVER',
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+      ],
+      steps: [
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 2,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+      ],
+    },
+  ],
+  [
+    'C13 standing reservation remains v1/stall-policyoff20099923-step6-successful-only',
+    {
+      drawProfile: {
+        participantsCount: 7,
+        drawSize: 8,
+        drawType: 'FIRST_MATCH_LOSER_CONSOLATION',
+      },
+      nonRandom: 20099923,
+      randomSeed: 294488990,
+      setup: [
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 3,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 1,
+            roundPosition: 4,
+          },
+          outcome: {
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 2,
+          },
+          outcome: {
+            matchUpStatus: 'WALKOVER',
+            winningSide: 2,
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 2,
+          },
+          outcome: {
+            matchUpStatus: 'DOUBLE_WALKOVER',
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+      ],
+      steps: [
+        {
+          target: {
+            structureName: 'Main',
+            roundNumber: 2,
+            roundPosition: 2,
+          },
+          outcome: {
+            winningSide: 1,
+          },
+          params: {
+            allowChangePropagation: false,
+            propagateExitStatus: true,
+          },
+        },
+      ],
+      policyDefinitions: {
+        progression: {
+          doubleExitPropagateBye: false,
+        },
+      },
+    },
+  ],
+];
+
+// C14 keeps the original reservation; explicit carried requests and other routes remain outside this program.
+const FMLC_STANDING_WINNERS: [string, Scenario][] = FMLC_STANDING_RESERVATIONS.flatMap(([label, base]) =>
+  [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((matchUpStatus) =>
+    ([1, 2] as const).flatMap((winningSide) =>
+      [undefined, WALKOVER, DEFAULTED].map((requested) => {
+        const target = base.steps[0].target;
+        const setup = (base.setup ?? []).map((step) => ({
+          ...step,
+          outcome:
+            step.target.structureName === target.structureName &&
+            step.target.roundNumber === target.roundNumber &&
+            step.target.roundPosition === target.roundPosition &&
+            [DOUBLE_WALKOVER, DOUBLE_DEFAULT].includes(step.outcome.matchUpStatus as typeof DOUBLE_WALKOVER)
+              ? { matchUpStatus }
+              : step.outcome,
+          params: { ...step.params, ...(requested ? { propagateExitStatus: false } : {}) },
+        }));
+        return [
+          `${label.replace('C13 standing reservation remains v1', 'C14 standing reservation')}/${matchUpStatus}/side${winningSide}/${requested ?? 'bare'}`,
+          {
+            ...base,
+            setup,
+            steps: [
+              {
+                ...base.steps[0],
+                outcome: { winningSide, ...(requested ? { matchUpStatus: requested } : {}) },
+                params: { ...base.steps[0].params, ...(requested ? { propagateExitStatus: false } : {}) },
+              },
+            ],
+          },
+        ] as [string, Scenario];
+      }),
+    ),
+  ),
+);
+const FMLC_STANDING_OUTSIDE: [string, Scenario][] = FMLC_STANDING_RESERVATIONS.flatMap(([label, base]) =>
+  (
+    [
+      ['clear', cleared],
+      ['carried WO', { matchUpStatus: WALKOVER, winningSide: 1 }],
+      ['carried DEF', { matchUpStatus: DEFAULTED, winningSide: 2 }],
+      ['double correction', { matchUpStatus: DOUBLE_DEFAULT }],
+    ] as const
+  ).map(
+    ([kind, outcome]) =>
+      [`C14 outside/${label}/${kind}`, { ...base, steps: [{ ...base.steps[0], outcome }] }] as [string, Scenario],
+  ),
+);
+
 const SCENARIOS: [string, Scenario][] = [
+  ...FMLC_STANDING_WINNERS,
+  ...FMLC_NO_ARRIVAL_WINNERS,
+  ...FMLC_NO_ARRIVAL_REAL,
+  ...STANDALONE_CARRIED_CONVERGENCES,
+  ...STANDALONE_BARE_WINNERS,
+  ...STANDALONE_INDIRECT_CLEARS,
   ...INDIRECT_COMPOUND_CLEARS,
   ...STANDING_BYE_CAPTURES,
   ...FIRST_MATCHUP_OWNED,
@@ -3723,6 +5663,7 @@ function play(
     });
     // the targets are found before the pipeline is set, so finding them is not part of what is compared
     const matchUpIds = steps.map(({ target }) => findTarget(target));
+    const recordBefore = canonicalJson(tournamentEngine.getTournament().tournamentRecord);
     setOutcomePipeline(mode);
     v1Writes.count = 0;
     const results = steps.map(({ outcome, params }, i) => {
@@ -3730,6 +5671,7 @@ function play(
       return tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId: matchUpIds[i], outcome, ...params });
     });
     return {
+      recordBefore,
       record: canonicalJson(tournamentEngine.getTournament().tournamentRecord),
       v1Writes: v1Writes.count,
       notices,
@@ -3790,6 +5732,53 @@ describe('S7 CURTIS standing BYE compares subscribed differential notices', () =
 
 describe('S7 FMLC FIRST_MATCHUP arrivals compare subscribed differential notices', () => {
   it.each(FIRST_MATCHUP_OWNED)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
+});
+
+describe('C11 standalone bare winners compare v1 and all subscribed differential notices', () => {
+  it.each(STANDALONE_BARE_WINNERS)('%s v1 oracle', (label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    expect(v1.v1Writes).toEqual(1);
+    expect(v1.notices).toHaveLength(label.includes('thirteen') ? 13 : 12);
+  });
+  it.each(STANDALONE_BARE_WINNERS)('%s subscribed differential', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
+});
+
+describe('C10 standalone indirect v1 oracle and subscribed differential notices', () => {
+  it.each(STANDALONE_INDIRECT_CLEARS)('%s v1 oracle', (label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    expect(v1.v1Writes).toEqual(1);
+    expect(v1.notices).toHaveLength(label.includes('thirteen') ? 13 : 12);
+  });
+  it.each(STANDALONE_INDIRECT_CLEARS)('%s subscribed differential', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
+});
+describe('C12 standalone carries compare the real nested writers and subscribed notices', () => {
+  it.each(STANDALONE_CARRIED_CONVERGENCES)('%s v1 oracle', (label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    expect(v1.v1Writes).toEqual(2);
+    expect(v1.notices).toHaveLength(label.includes('thirteen') ? 15 : 14);
+  });
+  it.each(STANDALONE_CARRIED_CONVERGENCES)('%s subscribed differential', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
     expect(compared.results).toEqual(v1.results);
@@ -4526,4 +6515,102 @@ describe('under v2, notes on a double exit are v1s (S7: v1 forwards the calls pa
     expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
   });
+});
+
+describe('C13 no-arrival public writers and subscribed differential notices', () => {
+  it.each([...FMLC_NO_ARRIVAL_WINNERS, ...FMLC_NO_ARRIVAL_REAL])('%s v1 oracle', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    expect(v1.v1Writes).toEqual(1);
+  });
+  it.each([...FMLC_NO_ARRIVAL_WINNERS, ...FMLC_NO_ARRIVAL_REAL])('%s subscribed differential', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
+  const carried = FMLC_NO_ARRIVAL_WINNERS.filter(([, scenario]) => scenario.steps[0].outcome.matchUpStatus).map(
+    ([label, scenario]): [string, Scenario] => [
+      `${label}/carried still v1`,
+      {
+        ...scenario,
+        steps: scenario.steps.map((step) => ({ ...step, params: { ...step.params, propagateExitStatus: true } })),
+      },
+    ],
+  );
+  it.each(carried)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+      const compared = play(mode, scenario);
+      expect(compared.v1Writes).toEqual(1);
+      expect(compared.results).toEqual(v1.results);
+      expect(compared.record).toEqual(v1.record);
+      expect(compared.notices).toEqual(v1.notices);
+    }
+  });
+});
+
+/** Entire stored Consolation structures, including raw field presence and timestamps. */
+function consolationRecord(record: string) {
+  const structures = JSON.parse(record)
+    .events.flatMap((event: any) => event.drawDefinitions ?? [])
+    .flatMap((draw: any) => draw.structures ?? [])
+    .filter((structure: any) => structure.structureName === 'Consolation');
+  expect(structures).toHaveLength(1);
+  return structures;
+}
+
+const materialModes = (scenarios: [string, Scenario][]) =>
+  scenarios.flatMap(([label, scenario]) =>
+    ([OUTCOME_PIPELINE_V1, OUTCOME_PIPELINE_V2] as const).map((mode) => [`${label}/${mode}`, scenario, mode] as const),
+  );
+
+describe('C14 standing reservations preserve their original stored records', () => {
+  it.each(materialModes(FMLC_STANDING_WINNERS))('%s independent standing material', (_label, scenario, mode) => {
+    const actual = play(mode, scenario);
+    expect(actual.results.every((result: any) => result.success)).toEqual(true);
+    expect(consolationRecord(actual.record)).toEqual(consolationRecord(actual.recordBefore));
+    expect(actual.v1Writes).toEqual(mode === OUTCOME_PIPELINE_V1 ? 1 : 0);
+  });
+  it.each(FMLC_STANDING_WINNERS)('%s subscribed differential', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
+  it.each(FMLC_STANDING_OUTSIDE)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+      const compared = play(mode, scenario);
+      expect(compared.v1Writes).toEqual(1);
+      expect(compared.results).toEqual(v1.results);
+      expect(compared.record).toEqual(v1.record);
+      expect(compared.notices).toEqual(v1.notices);
+    }
+  });
+  it.each(materialModes(FMLC_NO_ARRIVAL_REAL))(
+    '%s C14 boundary: the withdrawn BYE is actually re-announced',
+    (_label, scenario, mode) => {
+      const actual = play(mode, scenario);
+      const at = (record: string) =>
+        consolationRecord(record)[0].matchUps.find(
+          (matchUp: any) =>
+            matchUp.roundNumber === 2 && matchUp.roundPosition === scenario.steps[0].target.roundPosition,
+        );
+      const before = at(actual.recordBefore);
+      const after = at(actual.record);
+      expect(before).toBeDefined();
+      expect(after).toBeDefined();
+      expect(before.matchUpStatus).toEqual(BYE);
+      expect(after.matchUpStatus).toEqual(BYE);
+      expect(after.updatedAt).not.toEqual(before.updatedAt);
+      expect(after.updatedAt).toEqual('2026-10-25T00:01:00.000Z');
+      expect(
+        actual.notices.some((notice) => notice.includes('setMatchUpStatusBye') && notice.includes(after.matchUpId)),
+      ).toEqual(true);
+    },
+  );
 });

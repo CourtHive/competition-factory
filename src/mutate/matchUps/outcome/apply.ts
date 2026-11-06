@@ -221,12 +221,22 @@ const plainPlacement = (op: OutcomeOp): op is Extract<OutcomeOp, { op: 'setMatch
  * after the release (the awardee sent on again as a carry lands, S7): then the placement's name, as v1's buffer keeps it
  */
 function releasedNotices(ops: OutcomeOp[]): Set<string> {
-  const released = new Set<string>();
+  const released = new Map<string, number>();
   for (const op of ops) {
-    if (op.op === 'setMatchUpDrawPositions' && op.releasedDrawPosition) released.add(op.matchUpId);
-    else if (plainPlacement(op)) released.delete(op.matchUpId);
+    if (op.op !== 'setMatchUpDrawPositions') continue;
+    if (op.releasedDrawPosition) released.set(op.matchUpId, op.releasedDrawPosition);
+    else if (
+      (op.announcesContext === false &&
+        !op.advancesThroughBye &&
+        !op.withdrawnByePosition &&
+        !op.removedDrawPosition &&
+        op.drawPositions.includes(released.get(op.matchUpId) ?? 0)) ||
+      plainPlacement(op)
+    )
+      // A produced award quietly seats the same released participant again; its assignment is the last writer too.
+      released.delete(op.matchUpId);
   }
-  return released;
+  return new Set(released.keys());
 }
 
 /** the matchUps among `quiet` a plain placement writes after their quiet write: v1's buffer keeps the placement's notice */
@@ -268,13 +278,12 @@ function noticeRules(ops: OutcomeOp[]) {
     ),
   );
   // and with no tournament either (a produced exit's award, #5875; an exit recorded beside a BYE and carried on)
-  const untournamented = new Set(
-    ops.flatMap((op) =>
-      (op.op === 'setMatchUpDrawPositions' || op.op === 'setMatchUpResult') && op.announcesContext === false
-        ? [op.matchUpId]
-        : [],
-    ),
-  );
+  const untournamented = new Set<string>();
+  for (const op of ops) {
+    if ((op.op === 'setMatchUpDrawPositions' || op.op === 'setMatchUpResult') && op.announcesContext === false)
+      untournamented.add(op.matchUpId);
+    else if (op.op === 'setMatchUpDrawPositions' && op.advancesThroughBye) untournamented.delete(op.matchUpId);
+  }
   // ...but a BYE written there too: v1's `setMatchUpStatusBye` announces the matchUp last, with the tournament, though
   // its context stays read without it (the matchUp the unfillable seat's BYE makes a BYE, S7; the only order measured)
   const byeNamed = new Set(ops.flatMap((op) => (op.op === 'setMatchUpBye' ? [op.matchUpId] : [])));
@@ -422,7 +431,7 @@ function withdrawnByeNotices(ops: OutcomeOp[]): Map<string, number> {
       unbyed.set(op.matchUpId, op.withdrawnByePosition);
     // any later positions write (a seat advanced through the standing BYE, a loser placed through it (`unwoundThrough`),
     // a release emptying the BYE matchUp, an awardee sent on after the carry lands, S7): its notice is the last
-    else if (op.op === 'setMatchUpDrawPositions') unbyed.delete(op.matchUpId);
+    else if (op.op === 'setMatchUpDrawPositions' || op.op === 'setMatchUpBye') unbyed.delete(op.matchUpId);
   }
   return unbyed;
 }

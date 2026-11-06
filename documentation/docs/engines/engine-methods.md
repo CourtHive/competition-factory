@@ -945,3 +945,68 @@ const mode = engine.getOutcomePipeline(); // 'v1'
 ```
 
 ---
+
+## stampScope
+
+Where the engine stamps the factory `{ version, timeStamp }` after a mutation. `'tournament'` (the default) stamps the
+tournament record whatever changed, as every version before it did. `'modified'` stamps what changed:
+
+- each drawDefinition the call modified, on its own `factory` attribute;
+- the tournament, only when something outside its draws changed as well (an event, a participant, a venue, the
+  tournament's own details), or when nothing names a draw as the change.
+
+A score entry then changes one draw and leaves the tournament shell as it was: what a storage layer that keeps a
+tournament in parts needs in order to write one draw row for it. A state provider that does not record its notices'
+topics (the optional `cycleModifiedTopics`) stamps the tournament too, as under `'tournament'`.
+
+No argument restores `'tournament'`; any other value is refused with `INVALID_VALUES`. Process-wide, like
+`outcomePipeline`.
+
+```js
+engine.stampScope('modified');
+engine.stampScope(); // back to 'tournament'
+```
+
+---
+
+## getStampScope
+
+Returns the current stamp scope: `'tournament'` or `'modified'`.
+
+````js
+const scope = engine.getStampScope(); // 'tournament'
+## loadedFootprint
+
+Partial-record mode, for a storage layer that loaded only part of a tournament record: it tells the engine which part
+the record in state holds, as returned by [`tools.getMutationFootprint`](/docs/tools/tools-api#getmutationfootprint).
+From then on the engine **refuses**, with `FOOTPRINT_NOT_LOADED` and before anything is written, any method whose
+declared footprint needs more than was loaded. That includes every method with no declared footprint, queries among
+them, because on a partial record a read of missing data gives a wrong answer rather than an error. An
+`executionQueue` is checked whole, before its first directive runs.
+
+Off unless called. The mark belongs to the record object in state, so installing a record again (`setState`) clears
+it, and it is never saved with the record. No footprint clears it. The second argument names the tournament when more
+than one is loaded. A missing record is refused with `MISSING_TOURNAMENT_RECORD`, and a footprint without a `shards`
+array with `INVALID_VALUES`.
+
+```js
+const footprint = tools.getMutationFootprint({ methods, outcomePipeline: engine.getOutcomePipeline() });
+engine.setState(partialRecord); // the shell, the footprint's draws and participants
+engine.loadedFootprint(footprint);
+engine.executionQueue(methods); // refused with FOOTPRINT_NOT_LOADED if any method needs more
+````
+
+The draws a method needs are checked against the record itself. The event's draws and the participants are checked
+against the mark, because the record cannot show that they are missing.
+
+---
+
+## getLoadedFootprint
+
+The footprint the record in state was marked with by `loadedFootprint`, or `undefined` for a whole record.
+
+```js
+const footprint = engine.getLoadedFootprint(); // undefined unless marked
+```
+
+---

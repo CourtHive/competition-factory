@@ -3,6 +3,7 @@ import {
   modifiedTournamentId,
   noticeModifies,
   preserveNoticeIdentity,
+  UNANNOUNCED_WRITE,
   UNNAMED_TOURNAMENT,
 } from '@Global/state/noticeIdentity';
 import {
@@ -42,6 +43,7 @@ function newInstanceState(): ImplemtationGlobalStateTypes {
     subscriptions: {},
     modified: false,
     modifiedTournamentIds: new Set(),
+    modifiedTopics: new Set(),
     notices: [],
     methods: {},
   };
@@ -119,6 +121,7 @@ export default {
   implicitContextCreations,
   cycleMutationStatus,
   cycleModifiedTournamentIds,
+  cycleModifiedTopics,
   markModified,
   getCapturedClock,
   setCapturedClock,
@@ -301,11 +304,21 @@ function cycleModifiedTournamentIds(): Set<string> {
 }
 
 // optional: marks a write modified without announcing it, the tournament named, or every loaded record when none is
-function markModified(tournamentId?: string) {
+function markModified(tournamentId?: string, topic?: string) {
   const instanceState = getInstanceState();
   instanceState.modified = true;
   instanceState.modifiedTournamentIds ??= new Set();
   instanceState.modifiedTournamentIds.add(tournamentId || UNNAMED_TOURNAMENT);
+  instanceState.modifiedTopics ??= new Set();
+  instanceState.modifiedTopics.add(topic || UNANNOUNCED_WRITE);
+}
+
+// optional: the topics of the call's modifying notices, cleared as they are read (see getMutationStatus)
+function cycleModifiedTopics(): Set<string> {
+  const instanceState = getInstanceState();
+  const topics = instanceState.modifiedTopics ?? new Set<string>();
+  instanceState.modifiedTopics = new Set();
+  return topics;
 }
 
 // optional: sets the flag back to a value `cycleMutationStatus` returned (see globalState.readMutationStatus)
@@ -318,7 +331,7 @@ function addNotice({ topic, payload, key }: Notice, isGlobalSubscription?: boole
   const instanceState = getInstanceState();
   // if there is a notice then the state has been modified, regardless of whether there is a subscription: the
   // tournament it names (every loaded record when it names none), unless it only reports
-  if (!instanceState.disableNotifications && noticeModifies(topic)) markModified(modifiedTournamentId(payload));
+  if (!instanceState.disableNotifications && noticeModifies(topic)) markModified(modifiedTournamentId(payload), topic);
   if (instanceState.disableNotifications || (!instanceState.subscriptions[topic] && !isGlobalSubscription)) return;
 
   let outgoing = payload;

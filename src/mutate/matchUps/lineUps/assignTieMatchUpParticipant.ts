@@ -17,11 +17,10 @@ import { ensureSideLineUps } from './ensureSideLineUps';
 import { overlap } from '@Tools/arrays';
 
 // constants and types
-import { DrawDefinition, Event, MatchUp, Participant, PositionAssignment, Tournament } from '@Types/tournamentTypes';
 import POLICY_MATCHUP_ACTIONS_DEFAULT from '@Fixtures/policies/POLICY_MATCHUP_ACTIONS_DEFAULT';
 import { LineUp, PolicyDefinitions, ResultType } from '@Types/factoryTypes';
 import { POLICY_TYPE_MATCHUP_ACTIONS } from '@Constants/policyConstants';
-import { HydratedMatchUp, HydratedParticipant } from '@Types/hydrated';
+import { HydratedMatchUp, HydratedParticipant, HydratedSide } from '@Types/hydrated';
 import { INDIVIDUAL, PAIR } from '@Constants/participantConstants';
 import { DOUBLES, SINGLES } from '@Constants/matchUpTypes';
 import { COMPETITOR } from '@Constants/participantRoles';
@@ -30,6 +29,16 @@ import { SUCCESS } from '@Constants/resultConstants';
 import { isGendered } from '@Validators/isGendered';
 import { isMixed } from '@Validators/isMixed';
 import {
+  DrawDefinition,
+  Event,
+  GenderUnion,
+  MatchUp,
+  Participant,
+  PositionAssignment,
+  Tournament,
+} from '@Types/tournamentTypes';
+import {
+  EXISTING_PARTICIPANT,
   INVALID_PARTICIPANT,
   INVALID_PARTICIPANT_TYPE,
   INVALID_SIDE_NUMBER,
@@ -146,13 +155,25 @@ export function assignTieMatchUpParticipantId(
     sideNumber: params.sideNumber,
   });
 
-  const mixedError = checkMixedDoublesPairing({
-    targetSide: inContextTieMatchUp?.sides?.find((side) => side.sideNumber === sideNumber),
+  const tieMatchUpSide = inContextTieMatchUp?.sides?.find((side) => side.sideNumber === sideNumber);
+
+  // the seat on the line: a mixed pair's second player, and whether the seat is free. Assignment fills a free seat; a
+  // seat someone else holds is changed by replaceTieMatchUpParticipantId (or a substitution), the rule matchUpActions
+  // applies when it offers ASSIGN. Without it a SINGLES line kept two holders and a full DOUBLES pair was broken up
+  // (NOC-723, CA 2026-11-06)
+  const seatRefusal = targetSeatRefusal({
     gender: inContextTieMatchUp?.gender,
+    incomingIds: relevantParticipantIds,
     participantToAssign,
+    collectionPosition,
+    tieMatchUpSide,
     genderEnforced,
+    collectionId,
+    matchUpType,
+    sideNumber,
+    stack,
   });
-  if (mixedError) return decorateResult({ result: mixedError, stack });
+  if (seatRefusal) return seatRefusal;
 
   if (!tieFormat) {
     return { error: MISSING_TIE_FORMAT };
@@ -174,8 +195,6 @@ export function assignTieMatchUpParticipantId(
   });
 
   const dualMatchUpSide = dualMatchUp?.sides?.find((side) => side.sideNumber === sideNumber);
-
-  const tieMatchUpSide = inContextTieMatchUp?.sides?.find((side) => side.sideNumber === sideNumber);
 
   const lineUp =
     dualMatchUpSide?.lineUp ??
@@ -338,6 +357,58 @@ function checkMixedDoublesPairing({ targetSide, gender, participantToAssign, gen
   }
 
   return undefined;
+}
+
+// refuses a mixed pair's second player of the wrong gender, and a seat the line shows held by others when the incoming participants do not fit beside them (matchUpActions
+// reads the same side). The lineUp is not counted: a legacy lineUp can name more holders than the line shows, and the
+// assignment that follows is what clears them
+type TargetSeatRefusalArgs = {
+  participantToAssign: HydratedParticipant;
+  tieMatchUpSide?: HydratedSide;
+  collectionPosition?: number;
+  genderEnforced?: boolean;
+  incomingIds?: string[];
+  collectionId?: string;
+  matchUpType?: string;
+  sideNumber?: number;
+  gender?: GenderUnion;
+  stack: string;
+};
+
+function targetSeatRefusal({
+  participantToAssign,
+  collectionPosition,
+  tieMatchUpSide,
+  genderEnforced,
+  collectionId,
+  incomingIds,
+  matchUpType,
+  sideNumber,
+  gender,
+  stack,
+}: TargetSeatRefusalArgs): ResultType | undefined {
+  const mixedError = checkMixedDoublesPairing({
+    targetSide: tieMatchUpSide,
+    participantToAssign,
+    genderEnforced,
+    gender,
+  });
+  if (mixedError) return decorateResult({ result: mixedError, stack });
+
+  const seats = isMatchUpEventType(DOUBLES)(matchUpType) ? 2 : 1;
+  const participant = tieMatchUpSide?.participant;
+  const shown: string[] =
+    participant?.individualParticipantIds ?? (participant?.participantId ? [participant.participantId] : []);
+  const incoming: string[] = incomingIds ?? [];
+  const holders = shown.filter((participantId) => !incoming.includes(participantId));
+  if (!holders.length || holders.length + incoming.length <= seats) return undefined;
+
+  return decorateResult({
+    context: { participantIds: holders, collectionId, collectionPosition, sideNumber },
+    info: 'seat is held: use replaceTieMatchUpParticipantId',
+    result: { error: EXISTING_PARTICIPANT },
+    stack,
+  });
 }
 
 function resolveAssignmentParticipantIds({

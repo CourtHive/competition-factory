@@ -816,6 +816,17 @@
             "$ref": "#/definitions/Extension"
           }
         },
+        "factory": {
+          "type": "object",
+          "description": "The factory version and engine clock of the last write to this draw, written only when the engine stamps what a mutation modified (stampScope 'modified').",
+          "properties": {
+            "version": { "type": "string", "description": "Factory version that last wrote the draw" },
+            "timeStamp": {
+              "type": "number",
+              "description": "Engine clock (milliseconds since the epoch) at the last write"
+            }
+          }
+        },
         "notes": {
           "type": "string"
         },

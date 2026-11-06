@@ -1,6 +1,7 @@
 import { buildQueryFacade, buildFacade, createEventBus, inspect, dryRun, explain } from '@Forge/index';
 import { createTournamentRecord } from '@Generators/tournamentRecords/createTournamentRecord';
 import { setClock, setCompetitionClock, type CompetitionTimeProvider } from '@Tools/clock';
+import { getLoadedFootprint, markLoadedFootprint } from '@Global/state/loadedFootprint';
 import { methodImporter } from '@Assemblies/engines/parts/methodImporter';
 import { processResult } from '@Assemblies/engines/parts/processResult';
 import { factoryVersion } from '@Functions/global/factoryVersion';
@@ -20,6 +21,8 @@ import {
   getSchemaWriteMode,
   setOutcomePipeline,
   getOutcomePipeline,
+  setStampScope,
+  getStampScope,
   setSaveDrawDeletions,
   getSaveDrawDeletions,
   setAuditAuthorityServer,
@@ -28,9 +31,13 @@ import {
   setTournamentRecords,
   setTournamentId,
   getTournamentId,
+  getTournamentRecord,
 } from '@Global/state/globalState';
 
 // constants and types
+import { INVALID_VALUES, MISSING_TOURNAMENT_RECORD } from '@Constants/errorConditionConstants';
+import type { LoadedFootprint } from '@Global/state/loadedFootprint';
+import type { StampScope } from '@Constants/stampScopeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { FactoryEngine } from '@Types/factoryTypes';
 
@@ -63,6 +70,22 @@ export function engineStart(engine: FactoryEngine, engineInvoke: any): void {
     return processResult(engine, result);
   };
   engine.getOutcomePipeline = () => getOutcomePipeline();
+  engine.stampScope = (scope?: StampScope) => {
+    const result = setStampScope(scope);
+    return processResult(engine, result);
+  };
+  engine.getStampScope = () => getStampScope();
+  // partial-record mode: mark the active record (or `tournamentId`'s) as holding only `footprint`; none clears the mark
+  engine.loadedFootprint = (footprint?: LoadedFootprint, tournamentId?: string) => {
+    const record = getTournamentRecord(tournamentId ?? getTournamentId());
+    if (!record) return processResult(engine, { error: MISSING_TOURNAMENT_RECORD });
+    if (footprint !== undefined && !Array.isArray(footprint?.shards))
+      return processResult(engine, { error: INVALID_VALUES });
+    markLoadedFootprint(record, footprint);
+    return processResult(engine, { ...SUCCESS });
+  };
+  engine.getLoadedFootprint = (tournamentId?: string) =>
+    getLoadedFootprint(getTournamentRecord(tournamentId ?? getTournamentId()));
   engine.saveDrawDeletions = (flag) => {
     const result = setSaveDrawDeletions(flag);
     return processResult(engine, result);

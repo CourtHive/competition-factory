@@ -267,7 +267,10 @@ export function deleteDrawDefinitions(params: DeleteDrawDefinitionArgs) {
     });
   }
 
-  drawIds.forEach((drawId) => deleteDrawNotice({ drawId }));
+  // the notice names the draw's tournament and event, as deleteEvents' does, so a subscriber can find what held it
+  drawIds.forEach((drawId) =>
+    deleteDrawNotice({ tournamentId: tournamentRecord?.tournamentId, eventId: event?.eventId, drawId }),
+  );
 
   // the deleted draws' flightProfile entries were pruned from the event above, its publish state
   // may have dropped them, and the deletion may be recorded on it (a DRAW_DELETIONS timeItem or a

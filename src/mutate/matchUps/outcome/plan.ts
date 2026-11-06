@@ -1,12 +1,14 @@
 import { tallyParticipantResults } from '@Query/matchUps/roundRobinTally/tallyParticipantResults';
 import { addMatchUpScheduleItems } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { removeLineUpSubstitutions } from '@Mutate/drawDefinitions/removeLineUpSubstitutions';
+import { getSideStatusCode } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { matchUpsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
 import { SETTLE_PASS_LIMITS } from '@Mutate/matchUps/matchUpStatus/settleBounds';
 import { getCapturedClock, writeLegacyEnabled } from '@Global/state/globalState';
 import { ensuredDualSides } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
 import { carriedExitStatus } from '@Helpers/drawTopology/sideExitProvenance';
+import { firstRoundFeedersWon } from '@Query/matchUp/firstRoundFeedersWon';
 import { createSubOrderMap } from '@Query/structure/createSubOrderMap';
 import { annotateScoreSets } from '@Query/matchUps/addMatchUpContext';
 import { isAnyExit, isDoubleExit } from '@Validators/isExit';
@@ -21,7 +23,7 @@ import {
 } from '@Mutate/matchUps/matchUpStatus/sideExitProvenance';
 
 // constants and types
-import { FIRST_MATCHUP, LOSER, WINNER } from '@Constants/drawDefinitionConstants';
+import { FIRST_MATCH_LOSER_CONSOLATION, FIRST_MATCHUP, LOSER, WINNER } from '@Constants/drawDefinitionConstants';
 import type { HydratedMatchUp, HydratedSide } from '@Types/hydrated';
 import { LINEUPS } from '@Constants/extensionConstants';
 import type { LineUp } from '@Types/factoryTypes';
@@ -575,9 +577,13 @@ function givenWinnerReason(args: Parameters<typeof exitReason>[0]): AbstainReaso
   if (request.matchUpStatus && request.matchUpStatus !== write.matchUpStatus) return 'exit';
   if (write.matchUpStatus === DEFAULTED && view.draw.defaultProcessCodes) return 'exit';
   if (direction?.produced || direction?.converged || direction?.decider) return 'exit';
-  const levels = unwoundPath(view, request.matchUpId, args.drawDefinition);
+  if (standaloneBareWinnerOps(args) || standaloneCarriedWinnerOps(args)) return undefined;
+  const standing = standingReservationPrograms(args);
+  const levels = unwoundPath(view, request.matchUpId, args.drawDefinition, false, false, standing);
   // a convergence the unwind dissolves: the winner then lands beside the re-derived pending exit and is awarded it, v1's
   if (!levels || levels.some(({ rederived }) => rederived)) return terminalOccupiedWinnerOps(args) ? undefined : 'exit';
+  // The actual own seat program is empty: v1's reservation check never withdraws this BYE.
+  if (standing) return undefined;
   // no loser link out of the call's matchUp (CURTIS_CONSOLATION's first round of 8): the unwind's seat writes are the
   // produced exit's seat's alone, applied as the clear applies them, and the winner is directed as any (S7)
   if (!view.targets.loserMatchUpId && !view.targets.loserLink && !direction?.loser) return undefined;
@@ -601,7 +607,12 @@ function givenWinnerReason(args: Parameters<typeof exitReason>[0]): AbstainReaso
     !unwoundThrough(view, unwound)
   )
     return 'exit';
-  return unwoundLoserReason(view, levels[0], direction?.loser);
+  return unwoundLoserReason(
+    view,
+    levels[0],
+    direction?.loser,
+    direction?.loser?.bye ? unwoundView(args)?.view : undefined,
+  );
 }
 
 /**
@@ -615,8 +626,10 @@ function unwoundLoserReason(
   view: OutcomeView,
   own: UnwoundLevel,
   loser?: DirectionPlan['loser'],
+  after?: OutcomeView,
 ): AbstainReason | undefined {
   const { targets } = view;
+  if (unwoundKeptOutOps(view, own.seatOps, loser, after)) return undefined;
   if (!loser?.arrives || loser.exit || loser.converged || loser.carriedPast || loser.bye || loser.withdrawn)
     return 'exit';
   if (!targets.loserStructureId || !targets.loserTargetDrawPosition) return 'exit';
@@ -638,6 +651,211 @@ function unwoundLoserReason(
   if (!branched && (!freed || !targets.loserTargetSeat?.bye)) return 'exit';
   if (targets.seededParticipantIds?.includes(loser.participantId)) return 'loser';
   return undefined;
+}
+
+/** v1's standing FIRST_MATCHUP reservation is an actual empty own-seat program, only for this winner route. */
+function standingReservationPrograms({
+  view,
+  request,
+  route,
+}: Pick<Parameters<typeof planOutcome>[0], 'view' | 'request' | 'route'>): Map<number, OutcomeOp[]> | undefined {
+  if (
+    route !== 'winner' ||
+    (request.winningSide !== 1 && request.winningSide !== 2) ||
+    view.isTeam ||
+    view.group ||
+    view.drawType !== FIRST_MATCH_LOSER_CONSOLATION
+  )
+    return undefined;
+  const source = indexed(view, request.matchUpId);
+  const seats = view.targets.unwindLoserSeats;
+  const own = seats?.[0];
+  if (
+    !source ||
+    source.roundNumber !== 2 ||
+    !isDoubleExit(source.matchUpStatus) ||
+    source.winningSide ||
+    Object.keys(source.sideExitProvenance ?? {}).length ||
+    own?.matchUpId !== source.matchUpId ||
+    !own.loserSeat ||
+    seats?.slice(1).some((level) => level.loserSeat)
+  )
+    return undefined;
+  if (!standingReservationFeeders(view, source) || !standingReservationSeat(view, source, own.loserSeat))
+    return undefined;
+  return new Map([[0, []]]);
+}
+
+/** Exact two live first-round winners, then the unmodified canonical reservation predicate. */
+function standingReservationFeeders(view: OutcomeView, source: HydratedMatchUp): boolean {
+  const drawPositions = positionsOf(source);
+  const sides = source.sides?.filter((side) => !!side.participantId && !side.bye && !side.qualifier) ?? [];
+  if (drawPositions.length !== 2 || new Set(drawPositions).size !== 2 || source.sides?.length !== 2) return false;
+  if (
+    ![1, 2].every((number) => sides.filter((side) => side.sideNumber === number).length === 1) ||
+    !drawPositions.every((position) => sides.filter((side) => side.drawPosition === position).length === 1)
+  )
+    return false;
+  const matchUps = (view.inContextDrawMatchUps ?? []).filter((matchUp) => matchUp.structureId === source.structureId);
+  const feeders = matchUps.filter(
+    (matchUp) => matchUp.roundNumber === 1 && positionsOf(matchUp).some((position) => drawPositions.includes(position)),
+  );
+  if (!firstRoundFeedersWon({ matchUps, drawPositions })) return false;
+  return sides.every((side) => {
+    const feeding = feeders.filter((feeder) => positionsOf(feeder).includes(side.drawPosition as number));
+    if (feeding.length !== 1) return false;
+    const feeder = feeding[0];
+    const winner = feeder.sides?.find((candidate) => candidate.sideNumber === feeder.winningSide);
+    return (
+      feeder.winnerMatchUpId === source.matchUpId &&
+      winner?.drawPosition === side.drawPosition &&
+      winner?.participantId === side.participantId
+    );
+  });
+}
+
+/** The original untouched reservation and its already-standing advance, across a distinct structure. */
+function standingReservationSeat(view: OutcomeView, source: HydratedMatchUp, seat: WinnerLoserSeat): boolean {
+  const home = indexed(view, seat.matchUpId);
+  const { targets } = view;
+  if (
+    targets.loserLink?.linkCondition !== FIRST_MATCHUP ||
+    targets.loserMatchUpRoundNumber !== 2 ||
+    source.loserMatchUpId !== seat.matchUpId ||
+    targets.loserMatchUpId !== seat.matchUpId ||
+    targets.loserTargetDrawPosition !== seat.drawPosition ||
+    targets.loserStructureId !== seat.structureId ||
+    !seat.seat?.bye ||
+    !seat.seat.byeFromPropagation ||
+    seat.seat.opponentBye
+  )
+    return false;
+  if (
+    !home ||
+    home.structureId !== seat.structureId ||
+    home.structureId === source.structureId ||
+    home.matchUpStatus !== BYE ||
+    home.winningSide ||
+    !scoreless(home) ||
+    home.matchUpStatusCodes?.length ||
+    Object.keys(home.sideExitProvenance ?? {}).length ||
+    home.loserMatchUpId
+  )
+    return false;
+  const positions = positionsOf(home);
+  if (!positions.includes(seat.drawPosition) || Math.min(...positions) !== seat.drawPosition || positions.length > 2)
+    return false;
+  const opposite = positions.filter((position) => position !== seat.drawPosition);
+  const held = home.sides?.find((side) => side.drawPosition === opposite[0]);
+  if (opposite.length && (!held?.participantId || held.bye || held.qualifier)) return false;
+  const next = indexed(view, home.winnerMatchUpId);
+  return (
+    !!next &&
+    next.structureId === home.structureId &&
+    next.roundNumber === 3 &&
+    !next.winningSide &&
+    next.matchUpStatus === TO_BE_PLAYED &&
+    unwoundClean(next, new Set()) &&
+    !next.loserMatchUpId &&
+    JSON.stringify(positionsOf(next)) === JSON.stringify(opposite)
+  );
+}
+
+/** A FIRST_MATCHUP loser kept out by a qualifying win restores the BYE its own unwind withdrew. */
+function unwoundKeptOutOps(
+  view: OutcomeView,
+  program: OutcomeOp[],
+  loser?: DirectionPlan['loser'],
+  after?: OutcomeView,
+): OutcomeOp[] | undefined {
+  const { targets } = view;
+  const bye = loser?.bye;
+  if (targets.priorWinsBefore[1] > 0 && targets.priorWinsBefore[2] > 0) return undefined;
+  // planLoser's sole BYE constructor already proves !arrives and FIRST_MATCHUP into round two.
+  if (!bye) return undefined;
+  if (bye.structureId !== targets.loserStructureId || bye.drawPosition !== targets.loserTargetDrawPosition)
+    return undefined;
+  const home = indexed(view, targets.loserMatchUpId);
+  if (
+    !home ||
+    home.matchUpStatus !== BYE ||
+    home.winningSide ||
+    !scoreless(home) ||
+    home.matchUpStatusCodes?.length ||
+    Object.keys(home.sideExitProvenance ?? {}).length ||
+    home.loserMatchUpId
+  )
+    return undefined;
+  const freed = program.some(
+    (op) => op.op === 'withdrawBye' && op.structureId === bye.structureId && op.drawPosition === bye.drawPosition,
+  );
+  const clear = program.some(
+    (op) =>
+      op.op === 'clearMatchUpBye' &&
+      op.matchUpId === home.matchUpId &&
+      op.drawPosition === bye.drawPosition &&
+      !op.rederived,
+  );
+  if (!freed || !clear || !after) return undefined;
+  const folded = indexed(after, home.matchUpId);
+  const seat = after.targets.loserTargetSeat;
+  if (
+    !folded ||
+    folded.matchUpStatus !== TO_BE_PLAYED ||
+    folded.winningSide ||
+    !unwoundClean(folded, new Set()) ||
+    !seat?.free ||
+    seat.byeFromPropagation ||
+    JSON.stringify(positionsOf(folded)) !== JSON.stringify(positionsOf(home))
+  )
+    return undefined;
+  const seated = seatBye({ ...bye, matchUpId: home.matchUpId });
+  const opposite = positionsOf(home).filter((position) => position !== bye.drawPosition);
+  if (!opposite.length) return seated;
+  const next = indexed(view, home.winnerMatchUpId);
+  const opponent = home.sides?.find((side) => side.drawPosition === opposite[0]);
+  if (!opponent?.participantId || opponent.bye || opponent.qualifier) return undefined;
+  if (
+    opposite.length !== 1 ||
+    !next ||
+    next.structureId !== home.structureId ||
+    next.matchUpStatus !== TO_BE_PLAYED ||
+    next.winningSide ||
+    !scoreless(next) ||
+    Object.keys(next.sideExitProvenance ?? {}).length ||
+    next.matchUpStatusCodes?.length
+  )
+    return undefined;
+  const released = program.some(
+    (op) =>
+      op.op === 'setMatchUpDrawPositions' &&
+      op.matchUpId === next.matchUpId &&
+      op.releasedDrawPosition === opposite[0] &&
+      op.drawPositions.length === 0,
+  );
+  if (!released || positionsOf(next).length !== 1 || positionsOf(next)[0] !== opposite[0]) return undefined;
+  const landing = indexed(after, next.matchUpId);
+  const held = folded.sides?.find((side) => side.drawPosition === opposite[0]);
+  if (
+    !landing ||
+    landing.matchUpStatus !== TO_BE_PLAYED ||
+    !unwoundClean(landing, new Set()) ||
+    positionsOf(landing).length ||
+    held?.participantId !== opponent.participantId ||
+    held.bye ||
+    held.qualifier
+  )
+    return undefined;
+  return [
+    ...seated,
+    {
+      op: 'setMatchUpDrawPositions',
+      matchUpId: next.matchUpId,
+      drawPositions: positionsOf(next),
+      advancesThroughBye: true,
+    },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId },
+  ];
 }
 
 /**
@@ -676,6 +894,261 @@ function unwoundConvergedReason(args: Parameters<typeof exitReason>[0]): Abstain
   const loser = after?.direction?.loser;
   if (!after || !loser?.converged) return 'exit';
   return convergedReason(after.view, request, write as MatchUpWrite, loser, retainedRelayReservation(args, after));
+}
+
+/** The shared removeDoubleExit program has no actual source clear/result in it. */
+function standaloneIndirectRemoval(args: Parameters<typeof planOutcome>[0]) {
+  const { view, request, write, drawDefinition } = args;
+  const structureId = view.targets.source.structureId;
+  if (!structureId || args.route !== 'winner' || !args.rebuild || !drawDefinition || view.isTeam || view.group)
+    return undefined;
+  if (!isDoubleExit(view.existing.matchUpStatus) || !write?.winningSide) return undefined;
+  if (request.score || request.matchUpFormat || request.carries?.schedule || request.carries?.notes !== undefined)
+    return undefined;
+  const unwind = unwoundOps(view, request, CLEAR_SCORE, drawDefinition);
+  if (unwind.ops.some((op) => op.op === 'setMatchUpDrawPositions' && op.withdrawsPendingAward)) return undefined;
+  const own = unwind.seatPrograms[0];
+  const clear = own?.find(
+    (op): op is Extract<OutcomeOp, { op: 'clearMatchUpBye' }> =>
+      op.op === 'clearMatchUpBye' &&
+      op.matchUpId === view.targets.loserMatchUpId &&
+      !!indirectRelayReset(view, op, own),
+  );
+  const reset = clear && indirectRelayReset(view, clear, own);
+  if (!clear || !reset) return undefined;
+  const after = args.rebuild(unwind.ops, 'winner');
+  const direction = after?.direction;
+  if (!after || !direction?.winner || direction.produced || direction.converged || direction.decider) return undefined;
+  return { unwind, clear, reset, after, structureId };
+}
+
+/** The bare winner's ordinary arrivals after its certified shared removal. */
+function standaloneBareWinnerOps(args: Parameters<typeof planOutcome>[0]): OutcomeOp[] | undefined {
+  const { request, write, view, drawDefinition } = args;
+  if (write?.matchUpStatus !== COMPLETED || !write.winningSide || request.matchUpStatus || !drawDefinition)
+    return undefined;
+  const removal = standaloneIndirectRemoval(args);
+  if (!removal) return undefined;
+  const { unwind, clear, reset, after, structureId } = removal;
+  const direction = after.direction as DirectionPlan;
+  const loser = direction.loser;
+  if (
+    !loser?.arrives ||
+    !loser.participantId ||
+    loser.exit ||
+    loser.converged ||
+    loser.carriedPast ||
+    loser.bye ||
+    loser.withdrawn
+  )
+    return undefined;
+  if (!standaloneArrivalStands(after.view, args, direction)) return undefined;
+  const placement = standaloneBareArrival(after.view, clear, reset, loser);
+  if (!placement) return undefined;
+  return [
+    ...unwind.ops,
+    ...resultOps(request, write, request.matchUpId as string),
+    ...winnerPlacementOps(after.view, 'winner', write, direction.winner),
+    ...placement,
+    ...unwind.reannounced,
+    ...producedRelayAfterOps(view, unwind.ops, undefined, unwind.seatPrograms),
+    ...structureStamps([...unwind.ops, ...placement], structureId),
+    { op: 'stampUpdatedAt', entity: 'structure', id: structureId },
+    { op: 'stampUpdatedAt', entity: 'drawDefinition', id: drawDefinition.drawId },
+  ];
+}
+
+/** A free canonical arrival, without an unmodelled seed, conditioned link, BYE or reservation. */
+function standaloneArrivalStands(
+  view: OutcomeView,
+  args: Parameters<typeof planOutcome>[0],
+  direction: DirectionPlan,
+): boolean {
+  const target = view.targets;
+  if (!target.loserTargetSeat?.free || target.loserLink?.linkCondition || target.loserTargetSeat.opponentBye)
+    return false;
+  if (target.seededParticipantIds?.includes(direction.loser?.participantId as string)) return false;
+  const reservation = target.reservations?.[args.write?.winningSide as 1 | 2];
+  if (reservation?.kind === 'reserve' || reservation?.kind === 'abstain') return false;
+  return !directionReason({ ...args, view, direction });
+}
+
+/** A real carried exit meets the exact pending foreign origin; it was never temporarily awarded. */
+function standaloneCarriedWinnerOps(args: Parameters<typeof planOutcome>[0]): OutcomeOp[] | undefined {
+  const { request, write, view, drawDefinition } = args;
+  if (
+    (request.matchUpStatus !== WALKOVER && request.matchUpStatus !== DEFAULTED) ||
+    write?.matchUpStatus !== request.matchUpStatus ||
+    !drawDefinition
+  )
+    return undefined;
+  if (write.matchUpStatusCodes?.length || request.matchUpStatusCodes?.length) return undefined;
+  const removal = standaloneIndirectRemoval(args);
+  if (!removal) return undefined;
+  const { unwind, clear, reset, after, structureId } = removal;
+  const direction = after.direction as DirectionPlan;
+  const loser = direction.loser;
+  if (!loser?.arrives || !loser.participantId || !loser.converged) return undefined;
+  if (!standaloneArrivalStands(after.view, args, direction)) return undefined;
+  const convergence = standalonePendingConvergence(
+    after.view,
+    clear,
+    reset,
+    loser.converged,
+    request.matchUpStatus,
+    request.matchUpId,
+  );
+  if (!convergence) return undefined;
+  const produced = standaloneFreshProducedAward(after.view, convergence.relay, convergence.status, reset);
+  if (!produced) return undefined;
+  const relayOps = convergenceOps(
+    after.view,
+    convergence.plan,
+    request.matchUpStatus,
+    request.matchUpId,
+    request.matchUpStatus,
+  ).map((op): OutcomeOp =>
+    op.op === 'setMatchUpResult' && op.matchUpId === clear.matchUpId ? { ...op, score: BLANK_SCORE } : op,
+  );
+  const arrival = arrivalOps(after.view, loser);
+  return [
+    ...unwind.ops,
+    ...resultOps(request, write, request.matchUpId as string),
+    ...winnerPlacementOps(after.view, 'winner', write, direction.winner),
+    ...arrival,
+    ...relayOps,
+    ...produced,
+    ...unwind.reannounced,
+    ...producedRelayAfterOps(view, unwind.ops, undefined, unwind.seatPrograms),
+    ...structureStamps([...unwind.ops, ...arrival, ...relayOps, ...produced], structureId),
+    { op: 'stampUpdatedAt', entity: 'structure', id: structureId },
+    { op: 'stampUpdatedAt', entity: 'drawDefinition', id: drawDefinition.drawId },
+  ];
+}
+
+/** Pending RULE 4, tied to the same certified original relay and actual onward reset. */
+function standalonePendingConvergence(
+  view: OutcomeView,
+  clear: Extract<OutcomeOp, { op: 'clearMatchUpBye' }>,
+  reset: Extract<OutcomeOp, { op: 'setMatchUpDrawPositions' }>,
+  expected: MatchUpStatusUnion,
+  carried: MatchUpStatusUnion,
+  sourceId?: string,
+) {
+  const relay = indexed(view, clear.matchUpId);
+  const position = view.targets.loserTargetDrawPosition;
+  const side = sideOf(relay, position);
+  if (!relay || !side || position !== clear.drawPosition || relay.winnerMatchUpId !== reset.matchUpId) return undefined;
+  if (
+    relay.winningSide ||
+    relay.score ||
+    relay.loserMatchUpId ||
+    relay.matchUpStatus !== clear.rederived?.matchUpStatus
+  )
+    return undefined;
+  const provenance = relay.sideExitProvenance ?? {};
+  if (Object.keys(provenance).length !== 1 || provenance[side] || !carriedExitStatus(provenance[3 - side]))
+    return undefined;
+  const status = collapseDoubleExitStatus([carried, relay.matchUpStatus]);
+  if (status !== expected) return undefined;
+  const source = indexed(view, sourceId);
+  if (!source) return undefined;
+  if (
+    [1, 2].some(
+      (sideNumber) =>
+        getSideStatusCode({ matchUp: source, sideNumber }) || getSideStatusCode({ matchUp: relay, sideNumber }),
+    )
+  )
+    return undefined;
+  const plan: Convergence = {
+    matchUpId: relay.matchUpId,
+    matchUpStatus: status,
+    sideNumber: side,
+    matchUpStatusCodes: deriveStatusCodes(relay),
+  };
+  return { relay, status, plan };
+}
+
+/** A fresh product is awarded to its real canonical paired winner, then that participant advances. */
+function standaloneFreshProducedAward(
+  view: OutcomeView,
+  source: HydratedMatchUp,
+  status: MatchUpStatusUnion,
+  reset: Extract<OutcomeOp, { op: 'setMatchUpDrawPositions' }>,
+): OutcomeOp[] | undefined {
+  const target = producedTarget(view, source, status);
+  if (!target || target.feed || target.entry.matchUpId !== reset.matchUpId) return undefined;
+  const entry = target.entry;
+  if (
+    entry.matchUpStatus !== TO_BE_PLAYED ||
+    entry.winningSide ||
+    entry.loserMatchUpId ||
+    !unwoundClean(entry, new Set())
+  )
+    return undefined;
+  if (JSON.stringify(positionsOf(entry)) !== JSON.stringify(reset.drawPositions)) return undefined;
+  const awarded = entry.sides?.find((side) => side.sideNumber === target.awardedSide);
+  if (!awarded?.participantId || !awarded.drawPosition || positionsOf(entry).length !== 1 || awarded.bye)
+    return undefined;
+  const paired = pairedFeeder(view, source);
+  if (
+    !paired ||
+    paired.winnerMatchUpId !== entry.matchUpId ||
+    (paired.matchUpStatus !== WALKOVER && paired.matchUpStatus !== DEFAULTED)
+  )
+    return undefined;
+  const winner = paired.sides?.find((side) => side.sideNumber === paired.winningSide);
+  if (winner?.participantId !== awarded.participantId || winner.drawPosition !== awarded.drawPosition) return undefined;
+  if (!scoreless(paired) || paired.matchUpStatusCodes?.length) return undefined;
+  const onward = onwardFrom(view, entry, awarded.drawPosition);
+  if (!onward) return undefined;
+  const provenance = buildSideExitProvenance({
+    sourceMatchUpId: source.matchUpId,
+    sourceMatchUpStatus: status,
+    sourceSideNumber: target.fedSide,
+    pairedMatchUpId: paired.matchUpId,
+    pairedMatchUpStatus: paired.matchUpStatus,
+  });
+  return producedAwardWriteOps(entry.matchUpId, target.matchUpStatus, target.awardedSide, provenance, onward);
+}
+
+/** Award the foreign exit on assignment, then advance into the certified released seat. */
+function standaloneBareArrival(
+  view: OutcomeView,
+  clear: Extract<OutcomeOp, { op: 'clearMatchUpBye' }>,
+  reset: Extract<OutcomeOp, { op: 'setMatchUpDrawPositions' }>,
+  loser: NonNullable<DirectionPlan['loser']>,
+): OutcomeOp[] | undefined {
+  const relay = indexed(view, clear.matchUpId);
+  const next = indexed(view, reset.matchUpId);
+  const position = view.targets.loserTargetDrawPosition;
+  const side = sideOf(relay, position);
+  if (!relay || !next || !position || !side || position !== clear.drawPosition) return undefined;
+  const status = clear.rederived?.matchUpStatus;
+  if (!status || relay.winningSide || relay.score || relay.matchUpStatus !== status) return undefined;
+  if (next.matchUpStatus !== TO_BE_PLAYED || !unwoundClean(next, new Set())) return undefined;
+  if (positionsOf(next).includes(position) || JSON.stringify(positionsOf(next)) !== JSON.stringify(reset.drawPositions))
+    return undefined;
+  return [
+    ...arrivalOps(view, loser),
+    {
+      op: 'setMatchUpResult',
+      matchUpId: relay.matchUpId,
+      matchUpStatus: status,
+      winningSide: side,
+      stampsScoredTime: false,
+      retainedExitPlanned: true,
+      announcedAs: 'assignMatchUpDrawPosition',
+    },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: relay.matchUpId },
+    {
+      op: 'setMatchUpDrawPositions',
+      matchUpId: next.matchUpId,
+      drawPositions: [...reset.drawPositions, position].sort((a, b) => a - b),
+      placedDrawPosition: position,
+    },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId },
+  ];
 }
 
 /** A terminal produced exit keeps its foreign origin and is awarded to this freshly arriving winner. */
@@ -2591,8 +3064,11 @@ function fedSeatReason(
 }
 
 /** the matchUp beside this one in its round, which feeds the other side of the same next matchUp */
-function pairedFeeder(view: OutcomeView): HydratedMatchUp | undefined {
-  const { structureId, roundNumber, roundPosition } = view.targets.source;
+function pairedFeeder(
+  view: OutcomeView,
+  source: Partial<Pick<HydratedMatchUp, 'structureId' | 'roundNumber' | 'roundPosition'>> = view.targets.source,
+): HydratedMatchUp | undefined {
+  const { structureId, roundNumber, roundPosition } = source;
   if (!roundPosition) return undefined;
   const paired = roundPosition % 2 ? roundPosition + 1 : roundPosition - 1;
   return view.inContextDrawMatchUps?.find(
@@ -2625,19 +3101,35 @@ function producedOps(view: OutcomeView, request: OutcomeRequest, write: MatchUpW
     // the opponent standing there arrived from the feeder beside this one: its origin is recorded too
     ...(paired ? { pairedMatchUpStatus: paired.matchUpStatus, pairedMatchUpId: paired.matchUpId } : {}),
   });
-  const ops: OutcomeOp[] = [
+  return producedAwardWriteOps(
+    produced.matchUpId,
+    produced.matchUpStatus,
+    paired ? produced.winningSide : undefined,
+    provenance,
+    onward,
+  );
+}
+
+/** The real produced score writer and its ordinary award's forward placement. */
+function producedAwardWriteOps(
+  matchUpId: string,
+  matchUpStatus: MatchUpStatusUnion,
+  winningSide: 1 | 2 | undefined,
+  provenance: SideExitProvenance | undefined,
+  onward?: { matchUpId: string; drawPositions: number[] },
+): OutcomeOp[] {
+  return [
     {
       op: 'setMatchUpResult',
-      matchUpId: produced.matchUpId,
-      matchUpStatus: produced.matchUpStatus,
-      ...(paired ? { winningSide: produced.winningSide } : {}),
+      matchUpId,
+      matchUpStatus,
+      ...(winningSide ? { winningSide } : {}),
       matchUpStatusCodes: [],
       stampsScoredTime: false,
-      ...(produced.matchUpStatus === WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
+      ...(matchUpStatus === WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
     },
-    ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId: produced.matchUpId, provenance }] : []),
-    { op: 'stampUpdatedAt', entity: 'matchUp', id: produced.matchUpId },
-    // the awarded opponent going on (`directWinner`), or the reservation; announced as v1 announces them here
+    ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId, provenance }] : []),
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: matchUpId },
     ...(onward
       ? [
           {
@@ -2650,7 +3142,6 @@ function producedOps(view: OutcomeView, request: OutcomeRequest, write: MatchUpW
         ]
       : []),
   ];
-  return ops;
 }
 
 type RetainedRelayReservation = {
@@ -2668,6 +3159,14 @@ type ProducedTarget = {
   matchUpStatus: MatchUpStatusUnion;
   /** the next round is a feed round: the awarded side is the seat fed from another structure */
   feed: boolean;
+};
+
+/** The ordinary award certified by the produced-exit reader, retained for a standalone clear. */
+type ProducedAward = {
+  target: ProducedTarget;
+  paired: HydratedMatchUp;
+  drawPosition: number;
+  participantId: string;
 };
 
 /**
@@ -3308,12 +3807,21 @@ function indirectProducedRelaySeatOps(
   ];
 }
 
+type ProducedUnwind = {
+  path: string[];
+  rederived: Map<string, Rederived>;
+  takenBack: Map<string, number>;
+  pendingRemovals: Map<string, PendingRemoval>;
+  award?: ProducedAward;
+};
+
 function unwoundPath(
   view: OutcomeView,
   matchUpId?: string,
   drawDefinition?: DrawDefinition,
   clearing = false,
   clearOnly = false,
+  seatPrograms?: Map<number, OutcomeOp[]>,
 ): UnwoundLevel[] | undefined {
   const source = indexed(view, matchUpId);
   const structureId = source?.structureId;
@@ -3332,7 +3840,7 @@ function unwoundPath(
   // a structure's final (or the one matchUp of a one-round structure) produced nothing: the path is the call's matchUp
   // alone, its own seat visited as any first level's (S6 tail, family 6). A final whose winner link leads on
   // (DOUBLE_ELIMINATION's Decider) has a next matchUp, and is read as any path
-  const produced = source.winnerMatchUpId
+  const produced: ProducedUnwind | undefined = source.winnerMatchUpId
     ? unwoundProducedPath(view, source, structureId, clearOnly)
     : {
         path: [source.matchUpId],
@@ -3341,7 +3849,8 @@ function unwoundPath(
         pendingRemovals: new Map<string, PendingRemoval>(),
       };
   if (!produced) return undefined;
-  const { path, rederived, takenBack, pendingRemovals } = produced;
+  const { path, rederived, takenBack, pendingRemovals, award } = produced;
+  if (seatPrograms && (rederived.size || pendingRemovals.size)) return undefined;
   // the BYEs this unwind withdraws (its own seat's and its produced exit's), which a seat's onward matchUp is read without:
   // v1 withdraws the deeper one first, so the own seat's onward matchUp has lost the unfillable seat's BYE by the time it
   // is visited (FIRST_MATCH_LOSER_CONSOLATION: both BYEs meet in the consolation's second round). Past a convergence
@@ -3349,7 +3858,11 @@ function unwoundPath(
   // convergence is v1's): the first two levels suffice
   const reset = 1 + rederived.size;
   const withdrawn = new Set(
-    seats.slice(0, 2).flatMap(({ loserSeat }) => (loserSeat?.seat?.byeFromPropagation ? [seatKey(loserSeat)] : [])),
+    seats.slice(0, 2).flatMap(({ loserSeat }, index) => {
+      const program = seatPrograms?.get(index);
+      if (program) return program.flatMap((op) => (op.op === 'withdrawBye' ? [seatKey(op)] : []));
+      return loserSeat?.seat?.byeFromPropagation ? [seatKey(loserSeat)] : [];
+    }),
   );
   const context = {
     path,
@@ -3363,9 +3876,11 @@ function unwoundPath(
     clearing,
     clearOnly,
     pendingRemovals,
+    award,
   };
-  const plain = unwoundLevels(view, context);
+  const plain = unwoundLevels(view, context, seatPrograms);
   if (plain) return plain;
+  if (seatPrograms) return undefined;
   // where the plain reading of a placed seat refuses, v1's removal is walked for both placed seats together
   const walk = walkedSeatOps(view, path, seats, { reset, rederived, branched, drawDefinition });
   return walk ? unwoundLevels(view, context, walk) : undefined;
@@ -3384,6 +3899,7 @@ type UnwoundContext = {
   clearing: boolean;
   clearOnly: boolean;
   pendingRemovals: Map<string, PendingRemoval>;
+  award?: ProducedAward;
 };
 
 /**
@@ -3401,7 +3917,10 @@ type UnwindRelay = { sourceId: string; cleared: Set<string>; reset: Set<string>;
  */
 function unwoundLevels(
   view: OutcomeView,
-  {
+  context: UnwoundContext,
+  walk?: Map<number, OutcomeOp[]>,
+): UnwoundLevel[] | undefined {
+  const {
     path,
     seats,
     rederived,
@@ -3413,9 +3932,7 @@ function unwoundLevels(
     clearing,
     clearOnly,
     pendingRemovals,
-  }: UnwoundContext,
-  walk?: Map<number, OutcomeOp[]>,
-): UnwoundLevel[] | undefined {
+  } = context;
   // a position the own seat's withdrawal releases out of a matchUp a deeper seat's BYE also sends to (a double BYE's next
   // matchUp, a BYE until then, had sent it on): that matchUp is read without it, and written once, by the release
   const released = new Set<number>();
@@ -3442,11 +3959,7 @@ function unwoundLevels(
     collectUnwound(seatOps, released, relay);
     seatOpsAt.set(index, seatOps);
   }
-  const indirect = [...seatOpsAt.values()].some((program) =>
-    program.some((op) => op.op === 'clearMatchUpBye' && indirectRelayReset(view, op, program)),
-  );
-  // Neither program is independently admitted: both absent preserves ordinary unwind paths.
-  if (pendingRemovals.size > 0 !== indirect) return undefined;
+  if (!unwoundProgramsStand(view, context, seatOpsAt)) return undefined;
   return path.map((id, index) => {
     const taken = takenBack.get(id);
     const kept = rederived.get(id);
@@ -3460,24 +3973,83 @@ function unwoundLevels(
   });
 }
 
+/** The pending foreign award remains coupled; an ordinary award needs its own complete certificate. */
+function unwoundProgramsStand(view: OutcomeView, context: UnwoundContext, programs: Map<number, OutcomeOp[]>): boolean {
+  const indirect = [...programs].filter(([, program]) =>
+    program.some((op) => op.op === 'clearMatchUpBye' && indirectRelayReset(view, op, program)),
+  );
+  if (context.pendingRemovals.size) return !!indirect.length;
+  if (!indirect.length) return true;
+  const [own, ...other] = indirect;
+  return !other.length && own[0] === 0 && standaloneIndirectClear(view, context, own[1]);
+}
+
+/** A plain produced award and its clean final, with exactly the source's certified indirect seat program. */
+function standaloneIndirectClear(view: OutcomeView, context: UnwoundContext, program: OutcomeOp[]): boolean {
+  const { path, sourceId, award, seats, takenBack } = context;
+  // The sole two-position indirect program already requires a policy-off clear at its constructor.
+  if (!award || award.target.feed || path.length !== 3) return false;
+  const source = indexed(view, sourceId);
+  const final = indexed(view, path[2]);
+  if (!source || !final || final.structureId !== source.structureId || final.winnerMatchUpId || final.loserMatchUpId)
+    return false;
+  if (takenBack.get(final.matchUpId) !== award.drawPosition) return false;
+  if (!ordinaryAwardStands(source, award)) return false;
+  const seat = seats[0]?.loserSeat;
+  const clear = program.find(
+    (op): op is Extract<OutcomeOp, { op: 'clearMatchUpBye' }> =>
+      op.op === 'clearMatchUpBye' && op.matchUpId === seat?.matchUpId && op.drawPosition === seat.drawPosition,
+  );
+  return !!clear && !!indirectRelayReset(view, clear, program);
+}
+
+/** Live source and paired result agree with the two literal origins retained by the ordinary award reader. */
+function ordinaryAwardStands(source: HydratedMatchUp, award: ProducedAward): boolean {
+  const { target, paired, drawPosition, participantId } = award;
+  if (
+    !isDoubleExit(source.matchUpStatus) ||
+    source.winningSide ||
+    !scoreless(source) ||
+    source.matchUpStatusCodes?.length
+  )
+    return false;
+  if (
+    Object.keys(source.sideExitProvenance ?? {}).length ||
+    source.sides?.filter((side) => side.participantId).length !== 2
+  )
+    return false;
+  if (paired.winnerMatchUpId !== target.entry.matchUpId) return false;
+  if (paired.matchUpStatus !== WALKOVER && paired.matchUpStatus !== DEFAULTED) return false;
+  if (!scoreless(paired) || paired.matchUpStatusCodes?.length || Object.keys(paired.sideExitProvenance ?? {}).length)
+    return false;
+  const produced = target.entry.sideExitProvenance?.[target.fedSide];
+  const arrival = target.entry.sideExitProvenance?.[target.awardedSide];
+  const winner = paired.sides?.find((side) => side.sideNumber === paired.winningSide);
+  return (
+    produced?.matchUpStatus === target.matchUpStatus &&
+    produced.previousMatchUpStatus === source.matchUpStatus &&
+    arrival?.matchUpStatus === undefined &&
+    arrival?.previousMatchUpStatus === paired.matchUpStatus &&
+    winner?.drawPosition === drawPosition &&
+    winner.participantId === participantId
+  );
+}
+
 /** The same validated level owns both this two-position relay clear and its exact onward reset. */
 function indirectRelayReset(
   view: OutcomeView,
   clear: Extract<OutcomeOp, { op: 'clearMatchUpBye' }>,
   program: OutcomeOp[],
-): boolean {
-  if (!program.includes(clear)) return false;
+): Extract<OutcomeOp, { op: 'setMatchUpDrawPositions' }> | undefined {
+  if (!program.includes(clear)) return undefined;
   const home = indexed(view, clear.matchUpId);
-  return (
-    !!home &&
-    positionsOf(home).length === 2 &&
-    program.some(
-      (op) =>
-        op.op === 'setMatchUpDrawPositions' &&
-        op.matchUpId === home.winnerMatchUpId &&
-        op.withdrawsProducedExit &&
-        op.withdrawnByePosition === clear.drawPosition,
-    )
+  if (!home || positionsOf(home).length !== 2) return undefined;
+  return program.find(
+    (op): op is Extract<OutcomeOp, { op: 'setMatchUpDrawPositions' }> =>
+      op.op === 'setMatchUpDrawPositions' &&
+      op.matchUpId === home.winnerMatchUpId &&
+      !!op.withdrawsProducedExit &&
+      op.withdrawnByePosition === clear.drawPosition,
   );
 }
 
@@ -3555,14 +4127,7 @@ function unwoundProducedPath(
   source: HydratedMatchUp,
   structureId: string,
   clearOnly = false,
-):
-  | {
-      path: string[];
-      rederived: Map<string, Rederived>;
-      takenBack: Map<string, number>;
-      pendingRemovals: Map<string, PendingRemoval>;
-    }
-  | undefined {
+): ProducedUnwind | undefined {
   const target = producedTarget(view, source, source.matchUpStatus as MatchUpStatusUnion);
   if (!target) return undefined;
   const { entry } = target;
@@ -3581,7 +4146,13 @@ function unwoundProducedPath(
   const rederived = new Map(
     converged?.flatMap((level): [string, Rederived][] => (level.rederived ? [[level.matchUpId, level.rederived]] : [])),
   );
-  return { path: walked.path, rederived, takenBack: walked.takenBack, pendingRemovals };
+  return {
+    path: walked.path,
+    rederived,
+    takenBack: walked.takenBack,
+    pendingRemovals,
+    ...(awardee ? { award: awardee } : {}),
+  };
 }
 
 /**
@@ -3640,7 +4211,11 @@ function unwoundWinnerPath(
  * provenance and nothing placed; or awarded to the winner of the matchUp beside this one, who stands there alone with
  * their arrival recorded beside that origin (their drawPosition). False for anything else (a convergence, a score, codes).
  */
-function awardedReason(view: OutcomeView, source: HydratedMatchUp, target: ProducedTarget): number | false | undefined {
+function awardedReason(
+  view: OutcomeView,
+  source: HydratedMatchUp,
+  target: ProducedTarget,
+): ProducedAward | false | undefined {
   const { entry, fedSide, awardedSide } = target;
   const provenance = entry.sideExitProvenance ?? {};
   const origins = Object.keys(provenance);
@@ -3665,7 +4240,7 @@ function awardedReason(view: OutcomeView, source: HydratedMatchUp, target: Produ
   if (arrival?.sourceMatchUpId !== paired.matchUpId) return false;
   if (held.length !== 1 || !scoreless(entry) || entry.matchUpStatusCodes?.length) return false;
   if (entry.sides?.some((side) => side.bye)) return false;
-  return awarded.drawPosition;
+  return { target, paired, drawPosition: awarded.drawPosition, participantId: awarded.participantId };
 }
 
 /**
@@ -4780,7 +5355,9 @@ function unwoundOps(
 ): { ops: OutcomeOp[]; reannounced: OutcomeOp[]; seatPrograms: OutcomeOp[][] } {
   if ((route !== CLEAR_SCORE && route !== 'winner') || !isDoubleExit(view.existing.matchUpStatus))
     return { ops: [], reannounced: [], seatPrograms: [] };
-  const levels = unwoundPath(view, request.matchUpId, drawDefinition, retainOccupiedAward, route === CLEAR_SCORE) ?? [];
+  const ownPrograms = standingReservationPrograms({ view, request, route });
+  const levels =
+    unwoundPath(view, request.matchUpId, drawDefinition, retainOccupiedAward, route === CLEAR_SCORE, ownPrograms) ?? [];
   const retainedAward =
     retainOccupiedAward &&
     levels.some(({ seatOps }) => seatOps.some((op) => op.op === 'clearMatchUpBye' && !!op.retainedCarriedAward));
@@ -6217,6 +6794,8 @@ function recordedPlanOps(args: Parameters<typeof planOutcome>[0], drawDefinition
   const structureId = view.targets.source.structureId;
   if (!structureId) return { abstain: 'route' };
 
+  const standaloneWinner = standaloneBareWinnerOps(args) ?? standaloneCarriedWinnerOps(args);
+  if (standaloneWinner) return { ops: standaloneWinner, shape: 'direction' };
   const terminalWinner = terminalOccupiedWinnerOps(args);
   if (terminalWinner) return { ops: terminalWinner, shape: 'direction' };
   const score = writtenScore(request, write);
@@ -6286,7 +6865,9 @@ function recordedPlanOps(args: Parameters<typeof planOutcome>[0], drawDefinition
   );
   // a kept-out loser's BYE on the seat the link feeds (v1's `directLoser`), unless a reservation placed it already
   const keptOut = loser?.bye && !loser.arrives && !view.targets.loserTargetSeat?.bye ? loser.bye : undefined;
-  const keptOutBye = keptOut && loserMatchUpId ? seatBye({ ...keptOut, matchUpId: loserMatchUpId }) : [];
+  const keptOutBye =
+    unwoundKeptOutOps(view, seatPrograms[0] ?? [], loser, loser?.bye ? unwoundView(args)?.view : undefined) ??
+    (keptOut && loserMatchUpId ? seatBye({ ...keptOut, matchUpId: loserMatchUpId }) : []);
   // the FIRST_MATCHUP reservation the winner's arrival makes (v1's `propagateConsolationBye`)
   const reservation = write.winningSide ? view.targets.reservations?.[write.winningSide as 1 | 2] : undefined;
   const reserved = reservation?.kind === 'reserve' ? seatBye(reservation) : [];

@@ -298,6 +298,12 @@ export const INVALID_ENTRIES = {
   message: 'Invalid entries',
   code: 'ERR_INVALID_ENTRIES' as const,
 } satisfies ErrorType;
+// partial-record mode: the method needs more of the record than the engine was told is loaded (`loadedFootprint`)
+export const FOOTPRINT_NOT_LOADED = {
+  message: 'Method footprint exceeds the loaded record',
+  code: 'ERR_FOOTPRINT_NOT_LOADED' as const,
+} satisfies ErrorType;
+
 export const MISSING_ASSIGNMENTS = {
   message: 'Missing assignments',
   code: 'ERR_MISSING_ASSIGNMENTS' as const,
@@ -1170,6 +1176,7 @@ export const errorConditionConstants = {
   MUTATION_LOCKED,
   MUTATION_LOCK_EXISTS,
   MUTATION_LOCK_NOT_FOUND,
+  FOOTPRINT_NOT_LOADED,
   MISSING_ASSIGNMENTS,
   MISSING_ASYNC_STATE_PROVIDER,
   MISSING_AVOIDANCE_POLICY,

@@ -629,6 +629,8 @@ export interface DrawDefinition {
   endDate?: string;
   entries?: Entry[];
   extensions?: Extension[];
+  // the factory version and engine clock of the last write to this draw; written only under `stampScope('modified')`
+  factory?: { version?: string; timeStamp?: number };
   // CODES first-class: previously stored as `competitionState` extension
   competitionState?: any;
   // CODES first-class: previously stored as `draftState` extension

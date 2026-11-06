@@ -1445,7 +1445,78 @@ release precedes the onward reset, and no stale relay advance follows. The compl
 programs together; either program alone remains refused. Eight clear variants agree with v1 on whole records
 and ordered notices. The 32 winner corrections keep their existing fallback boundary.
 
+An indirect reservation can also unwind beside an ordinary produced award (S7). This clear keeps the certified
+three-level path in one structure: the double exit, its award to the paired feeder’s winner, and the clean terminal
+matchUp holding that exact awardee. The retained ordinary-award descriptor binds the paired feeder’s winner edge,
+participant and position to the literal arrival origin; source and paired results remain scoreless and code-free.
+Only the source’s own validated two-position indirect reset program is admitted. The pending foreign-award
+projection still requires its companion indirect program; every other partial combination refuses. Existing ops
+release the successor before resetting the relay and remove the ordinary award’s origin through a real score write.
+The minimal shape announces twelve notices; the captured shape retaining another unfillable origin announces
+thirteen, using the existing late one-position relay advancement.
+
+A bare winner can follow that same certified ordinary-award removal (S7). With no explicit status, score,
+format, schedule or notes, the source becomes COMPLETED. The shared removal program is folded into a working
+view before planning both directions; its actual own-level reset supplies the onward positions. A plain,
+unseeded loser arrives on the freed seat beside the retained foreign exit, with no conditioned link, opposite
+BYE or reservation. The real assignment awards the relay while preserving its absent score and exact foreign
+origin, then places that participant onward beside the reset's legitimate occupant. The source winner uses
+its re-planned ordinary placement. Successor release remains before the source score write; the three actual
+assignment notices precede the unchanged actual-score callbacks. The separate thirteen-notice shape retains
+its existing late one-position advancement. Explicit WALKOVER/DEFAULTED winner requests still refuse this
+composition; they require a distinct carried-convergence program. No new op field or callback is introduced.
+
+An explicit WALKOVER or DEFAULTED winner can carry into that indirect relay (S7). The same certified
+ordinary-award removal is folded before reading either direction. Its loser meets the retained foreign
+single while that relay is pending, with no temporary winner. A separate pending-convergence reader binds
+the actual slot, original foreign origin and same-level onward reset. The relay becomes DOUBLE_DEFAULT
+only when both exits are defaults; otherwise it becomes DOUBLE_WALKOVER. Both forms receive the actual
+blank score of this captured writer and preserve the foreign-side codes while recording the new source.
+The resulting exit is awarded to the real paired feeder's winner already in the onward matchUp, using
+canonical source-relative sibling geometry and the existing produced-score/advance operations. That
+paired feeder's own provenance stays intact; only its literal current status is the new paired origin.
+The actual source, relay and onward writers give five deferred score callbacks together with the unwind,
+with fourteen ordered notices, or fifteen when the independent old one-position late advance remains.
+No operation field, eligibility flag, artificial intermediate award or synthetic callback is added.
+
+A given winner over an FMLC round-two double exit can leave its loser out of the FIRST_MATCHUP feed
+(S7). Where that loser's qualifying win makes v1 restore the propagated BYE that the source's own
+unwind withdrew, the plan binds the exact own-level withdrawal and folds the complete unwind before
+checking the freed seat. The restored BYE keeps the original home positions. If an actual participant
+stood opposite it, that same program must have released the participant from the clean next matchUp;
+the complete folded view must still hold that participant at home and leave the next matchUp empty.
+Existing BYE, position and timestamp ops then restore the reservation and its real advancement.
+Deferred unwind announcements run before this restoration; rederived levels remain excluded.
+No advancement is invented when no opponent is present. A later restored BYE supersedes its earlier
+withdrawal notice; a later real advancement restores tournament identity after the quiet release,
+while retaining its absent event. Reverse operation order retains the later withdrawal or release.
+The captured program uses one actual source writer. A distinct program below preserves the reservation
+when both possible source participants already have qualifying wins. An explicit exit still carried
+by the existing settle boundary remains outside this restoration program.
+
+A standing FIRST_MATCHUP reservation stays untouched when a round-two FMLC double exit is given a
+winner (S7). v1's early `reservationStands` check calls `firstRoundFeedersWon` and skips the loser-target
+block; it does not reach `byeSeatStands` or withdraw the BYE in this shape. The canonical first-round
+filter and qualifying-win predicate are shared unchanged by v1 and the planner. COMPLETED without a
+score still qualifies; the canonical query retains its existing empty-selection behavior.
+The planner separately binds both actual source participants to distinct first-round winners, the
+canonical marked BYE seat and its existing advance in a different structure. Its actual own-seat
+program is empty, supplied before any withdrawal context is built, so the marker remains standing
+through the complete early unwind. Every deeper level must have no loser seat; rederived, pending
+removal and walked programs refuse. All actual resets, result writes, winner placement and deferred
+announcements remain on the source structure. The entire consolation structure, including its
+assignments and timestamps, stays unchanged. No BYE assignment, reannouncement, advancement or score
+callback is invented there. Clear and double-exit correction routes receive no such program; TEAM,
+group and uncertified custom geometry remain outside this bounded certificate. Independent material
+controls also retain the neighboring restoration's actual BYE write and timestamp change, so the two
+programs cannot become equivalent through a shared-predicate error. No operation or view field is added.
+
 ## 7.2 The plan as ops (S1)
+
+A quiet produced-award placement can put back the exact position a preceding release removed. Its final
+notice is then the assignment's, while retaining its quiet identity. The notice projection derives this
+from the actual released position and later position-write data; a different position, withdrawal or BYE
+advance does not erase the release. Existing plain-placement precedence is unchanged.
 
 A certified clear's position removal can withdraw an award while retaining the independent pending foreign exit
 (`setMatchUpDrawPositions.withdrawsPendingAward`). The reducer removes only `winningSide`;
@@ -1455,8 +1526,9 @@ its `announcesContext: false` matches the captured removal notice's absent event
 named settle score write. The clear-only per-level projection is separate from dissolved-convergence derivation, so
 it does not change the unwind's unfillable-BYE reset index or create a settle reannouncement. The indirect produced
 reservation's successor release precedes its onward reset, and that complete reset program is not followed by a stale
-relay advance. The complete unwind admits this pending-award projection and validated indirect relay program only together:
-exactly one without the other refuses. Both absent preserves existing unwind paths. Coupling and late-write
+relay advance. The complete unwind admits this pending-award projection only with its validated indirect relay program.
+An indirect program without that projection requires the separate ordinary-award clear certificate above; every
+other partial combination refuses. Both absent preserves existing unwind paths. Coupling and late-write
 suppression use the same actual level program, so another level's reset cannot satisfy the proof.
 Winner corrections keep their prior fallback boundary.
 
