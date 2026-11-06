@@ -10,6 +10,7 @@ export type AsyncEngineDirectMethod =
   | 'getOutcomePipeline'
   | 'getSaveDrawDeletions'
   | 'getSchemaWriteMode'
+  | 'getStampScope'
   | 'getState'
   | 'getTournament'
   | 'getTournamentId'
@@ -32,5 +33,6 @@ export type AsyncEngineDirectMethod =
   | 'setState'
   | 'setTournamentId'
   | 'setTournamentRecord'
+  | 'stampScope'
   | 'version'
   | 'waitFor';

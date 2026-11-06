@@ -437,6 +437,7 @@ export type FactoryEngineMethod =
   | 'getSeedsCount'
   | 'getSetComplement'
   | 'getSetScoreString'
+  | 'getStampScope'
   | 'getState'
   | 'getStatusHistory'
   | 'getStructureCompleteness'
@@ -737,6 +738,7 @@ export type FactoryEngineMethod =
   | 'snapToGranularity'
   | 'sortBlocksByStart'
   | 'sortEdges'
+  | 'stampScope'
   | 'stringify'
   | 'stringifyMatchUpFormat'
   | 'submitApplication'
@@ -1239,6 +1241,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'getSeedsCount',
   'getSetComplement',
   'getSetScoreString',
+  'getStampScope',
   'getState',
   'getStatusHistory',
   'getStructureCompleteness',
@@ -1539,6 +1542,7 @@ export const FACTORY_ENGINE_METHODS: readonly FactoryEngineMethod[] = [
   'snapToGranularity',
   'sortBlocksByStart',
   'sortEdges',
+  'stampScope',
   'stringify',
   'stringifyMatchUpFormat',
   'submitApplication',

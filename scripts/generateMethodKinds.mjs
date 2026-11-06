@@ -39,6 +39,7 @@ const ENGINE_API = [
   'getOutcomePipeline',
   'getSaveDrawDeletions',
   'getSchemaWriteMode',
+  'getStampScope',
   'getState',
   'getTournament',
   'getTournamentId',
@@ -60,6 +61,7 @@ const ENGINE_API = [
   'setState',
   'setTournamentId',
   'setTournamentRecord',
+  'stampScope',
   'version',
   'waitFor',
 ];

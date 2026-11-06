@@ -20,6 +20,8 @@ import {
   getSchemaWriteMode,
   setOutcomePipeline,
   getOutcomePipeline,
+  setStampScope,
+  getStampScope,
   setSaveDrawDeletions,
   getSaveDrawDeletions,
   setAuditAuthorityServer,
@@ -31,6 +33,7 @@ import {
 } from '@Global/state/globalState';
 
 // constants and types
+import type { StampScope } from '@Constants/stampScopeConstants';
 import { SUCCESS } from '@Constants/resultConstants';
 import { FactoryEngine } from '@Types/factoryTypes';
 
@@ -63,6 +66,11 @@ export function engineStart(engine: FactoryEngine, engineInvoke: any): void {
     return processResult(engine, result);
   };
   engine.getOutcomePipeline = () => getOutcomePipeline();
+  engine.stampScope = (scope?: StampScope) => {
+    const result = setStampScope(scope);
+    return processResult(engine, result);
+  };
+  engine.getStampScope = () => getStampScope();
   engine.saveDrawDeletions = (flag) => {
     const result = setSaveDrawDeletions(flag);
     return processResult(engine, result);

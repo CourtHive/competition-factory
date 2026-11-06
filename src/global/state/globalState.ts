@@ -4,6 +4,7 @@ import syncGlobalState from './syncGlobalState';
 // constants and types
 import { OUTCOME_PIPELINE_V1, OutcomePipelineMode, outcomePipelineModes } from '@Constants/outcomePipelineConstants';
 import { BRIDGE, LEGACY, NATIVE, SchemaWriteMode, schemaWriteModes } from '@Constants/schemaWriteModeConstants';
+import { STAMP_SCOPE_TOURNAMENT, StampScope, stampScopes } from '@Constants/stampScopeConstants';
 import { TournamentRecords, ResultType } from '@Types/factoryTypes';
 import { SUCCESS } from '@Constants/resultConstants';
 import {
@@ -20,6 +21,7 @@ export {
   preserveNoticeIdentity,
   NOTICE_IDENTITY_FIELDS,
   modifiedTournamentId,
+  UNANNOUNCED_WRITE,
   UNNAMED_TOURNAMENT,
   noticeModifies,
 } from './noticeIdentity';
@@ -65,6 +67,7 @@ type GlobalStateTypes = {
   devContext?: DevContextType; // devContext is used to control logging
   schemaWriteMode: SchemaWriteMode; // controls extension vs first-class write behavior
   outcomePipeline: OutcomePipelineMode; // which outcome pipeline decides: v1, v2, or both (differential)
+  stampScope: StampScope; // where a mutation's factory stamp goes: the tournament, or what was modified
   saveDrawDeletions: boolean; // opt-in: persist drawDeletions audit on the record
   auditAuthorityServer: boolean; // true on server engines — suppresses local audit writes
   timers: timersType; // timers are used to track elapsed time for methods
@@ -81,6 +84,7 @@ export type ImplemtationGlobalStateTypes = {
   notices: Notice[];
   modified: boolean;
   modifiedTournamentIds?: Set<string>; // the tournaments the call modified; see getMutationStatus
+  modifiedTopics?: Set<string>; // the topics of the call's modifying notices (UNANNOUNCED for an unannounced write)
   capturedClock?: number; // epoch ms an outer engine call captured; see tools/clock.ts
   capturedCompetitionClock?: number; // likewise, when a competition provider is installed
   capturedStamps?: WeakSet<object>; // the entities an outer engine call has stamped `updatedAt` on; see tools/clock.ts
@@ -98,6 +102,7 @@ const globalState: GlobalStateTypes = {
   globalMethods: [],
   schemaWriteMode: NATIVE,
   outcomePipeline: OUTCOME_PIPELINE_V1,
+  stampScope: STAMP_SCOPE_TOURNAMENT,
   saveDrawDeletions: false,
   auditAuthorityServer: false,
   deepCopy: true,
@@ -397,6 +402,20 @@ export function getOutcomePipeline(): OutcomePipelineMode {
   return globalState.outcomePipeline;
 }
 
+export function setStampScope(scope?: StampScope): { success?: boolean; error?: ErrorType } {
+  if (scope === undefined) {
+    globalState.stampScope = STAMP_SCOPE_TOURNAMENT;
+    return { ...SUCCESS };
+  }
+  if (!stampScopes.includes(scope)) return { error: INVALID_VALUES };
+  globalState.stampScope = scope;
+  return { ...SUCCESS };
+}
+
+export function getStampScope(): StampScope {
+  return globalState.stampScope;
+}
+
 export function writeNativeEnabled(): boolean {
   return globalState.schemaWriteMode === NATIVE || globalState.schemaWriteMode === BRIDGE;
 }
@@ -516,6 +535,15 @@ export function cycleModifiedTournamentIds(): Set<string> | undefined {
 }
 
 /**
+ * The topics of the notices that modified state in the call, cleared as they are read; `UNANNOUNCED` among them for a
+ * write marked modified without a notice. `undefined` from a provider without the optional hook, which then stamps as
+ * if anything had changed.
+ */
+export function cycleModifiedTopics(): Set<string> | undefined {
+  return _globalStateProvider.cycleModifiedTopics?.();
+}
+
+/**
  * Marks a write modified without announcing it: a write made with `suppressNotifications` is still stamped. A provider
  * without the optional hook marks nothing (the write is then unstamped, as before).
  */
@@ -526,6 +554,7 @@ export function markModified(tournamentId?: string) {
 /** Clears the mutation flag and the tournaments it names: a refused write is not a modification. */
 export function clearMutationStatus() {
   cycleModifiedTournamentIds();
+  cycleModifiedTopics();
   return _globalStateProvider.cycleMutationStatus();
 }
 

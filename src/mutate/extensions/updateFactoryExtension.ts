@@ -2,12 +2,23 @@ import { setFirstClassOrExtension } from '@Mutate/extensions/setFirstClassOrExte
 import { firstClassOrExtension } from '@Helpers/extensions/firstClassOrExtension';
 import { extensionConstants } from '@Constants/extensionConstants';
 
+// types
+import { DrawDefinition, Tournament } from '@Types/tournamentTypes';
+
 const { FACTORY } = extensionConstants;
 
-export function updateFactoryExtension({ tournamentRecord, value }) {
-  const existing = firstClassOrExtension({ element: tournamentRecord, attribute: 'factory', name: FACTORY });
+type UpdateFactoryExtensionArgs = {
+  element?: Tournament | DrawDefinition;
+  value: { version?: string; timeStamp?: number };
+  tournamentRecord?: unknown;
+};
+
+/** Stamps `value` onto an element's `factory`: the tournament record, or under `stampScope('modified')` a drawDefinition. */
+export function updateFactoryExtension({ tournamentRecord, element, value }: UpdateFactoryExtensionArgs) {
+  element ??= tournamentRecord as Tournament;
+  const existing = firstClassOrExtension({ element, attribute: 'factory', name: FACTORY });
   setFirstClassOrExtension({
-    element: tournamentRecord,
+    element,
     attribute: 'factory',
     name: FACTORY,
     value: { ...existing, ...value },
