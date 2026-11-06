@@ -25,6 +25,9 @@ import { Event, MatchUp, Structure, TieFormat, Tournament } from '@Types/tournam
 import { inferDrawLinks, InferredLink } from '@Query/drawDefinition/inferDrawLinks';
 import { dehydrateRecordMatchUps } from '@Mutate/tournaments/dehydrate';
 
+// constants
+import { AD_HOC, CONTAINER, LADDER, ROUND_OUTCOME, SWISS, WIN_RATIO } from '@Constants/drawDefinitionConstants';
+
 // ------------------------------------------------------------------- types
 //
 // The BOUNDARY types are deliberately loose. These functions exist to accept data whose shape is
@@ -552,11 +555,21 @@ function buildDrawDefinitionFromDrawData(draw: SourceDraw, report?: BuildReport)
 }
 
 /**
- * Each structure keeps the `finishingPosition` its source states. The builders never copied it, so every rebuilt
- * elimination structure lost ROUND_OUTCOME — which is what tells the engine to follow a structure's links round by
- * round. Without it `positionTargets` names no target for a loser, and progression out of the structure is not
- * followed (found 2026-11-06, placing a loser who declined a consolation).
+ * Each structure keeps the `finishingPosition` its source states — and one the source does not state is the one the
+ * factory generates. The builders never copied it, so every rebuilt elimination structure lost ROUND_OUTCOME, which is
+ * what tells the engine to follow a structure's links round by round: `positionTargets` named no target for a loser,
+ * and progression out of the structure was not followed (found 2026-11-06, placing a loser who declined a consolation).
+ * Older exports state none at all, so the generators' own rule fills the gap: a round robin (the container and its
+ * groups) and an AD_HOC, LADDER or SWISS draw finish by WIN_RATIO; every other structure by ROUND_OUTCOME.
  */
+const WIN_RATIO_DRAW_TYPES = new Set<string>([AD_HOC, LADDER, SWISS]);
+type FinishedStructure = {
+  structureId: string;
+  structureType?: string;
+  finishingPosition?: string;
+  structures?: FinishedStructure[];
+};
+
 function carryFinishingPositions(draw: SourceDraw, drawDefinition: Record<string, any>) {
   const stated = new Map<string, string>();
   const collect = (structures?: SourceStructure[]) => {
@@ -566,10 +579,15 @@ function carryFinishingPositions(draw: SourceDraw, drawDefinition: Record<string
     }
   };
   collect(draw.structures);
-  walkStructures(drawDefinition.structures, (s: { structureId: string; finishingPosition?: string }) => {
-    const finishingPosition = stated.get(s.structureId);
-    if (finishingPosition && !s.finishingPosition) s.finishingPosition = finishingPosition;
-  });
+  const byWinRatio = WIN_RATIO_DRAW_TYPES.has(draw.drawType ?? '');
+  const assign = (structures: FinishedStructure[] | undefined, inRoundRobin: boolean) => {
+    for (const s of structures ?? []) {
+      const roundRobin = inRoundRobin || s.structureType === CONTAINER;
+      s.finishingPosition ??= stated.get(s.structureId) ?? (byWinRatio || roundRobin ? WIN_RATIO : ROUND_OUTCOME);
+      assign(s.structures, roundRobin);
+    }
+  };
+  assign(drawDefinition.structures, false);
   return drawDefinition;
 }
 
