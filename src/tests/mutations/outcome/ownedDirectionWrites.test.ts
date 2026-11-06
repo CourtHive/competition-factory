@@ -1016,7 +1016,34 @@ const STANDING_BYE_CAPTURES: [string, Scenario][] = [DOUBLE_WALKOVER, DOUBLE_DEF
   ),
 );
 
+// An indirect produced origin remains in the two-position relay while its onward award is withdrawn.
+const INDIRECT_COMPOUND_CLEARS: [string, Scenario][] = [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((source) =>
+  [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((producer) =>
+    [DOUBLE_WALKOVER, DOUBLE_DEFAULT].map((other): [string, Scenario] => [
+      `indirect compound clear: ${source}/${producer}/${other}`,
+      {
+        drawProfile: { drawSize: 16, participantsCount: 11, drawType: FEED_IN_CHAMPIONSHIP_TO_SF },
+        nonRandom: 20473821,
+        randomSeed: 2496245122,
+        policyDefinitions: POLICY_OFF,
+        setup: [
+          { target: R1(2, 'Main'), outcome: { matchUpStatus: source }, params: CARRIED },
+          { target: R1(5, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+          { target: R1(7, 'Main'), outcome: { matchUpStatus: producer }, params: CARRIED },
+          {
+            target: { roundNumber: 2, roundPosition: 2, structureName: 'Main' },
+            outcome: { matchUpStatus: other },
+            params: CARRIED,
+          },
+        ],
+        steps: [{ target: R1(2, 'Main'), outcome: cleared, params: CARRIED }],
+      },
+    ]),
+  ),
+);
+
 const SCENARIOS: [string, Scenario][] = [
+  ...INDIRECT_COMPOUND_CLEARS,
   ...STANDING_BYE_CAPTURES,
   ...FIRST_MATCHUP_OWNED,
   ...TERMINAL_RELAY_CAPTURES,
@@ -3768,6 +3795,40 @@ describe('S7 FMLC FIRST_MATCHUP arrivals compare subscribed differential notices
     expect(compared.results).toEqual(v1.results);
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
+  });
+});
+
+describe('S7 indirect compound clears compare subscribed differential notices', () => {
+  it.each(INDIRECT_COMPOUND_CLEARS)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
+});
+
+describe('S7 the original indirect compound winner remains v1s', () => {
+  it('Main 1/2 double default corrected to walkover retains two legacy writers, whole', () => {
+    const captured = INDIRECT_COMPOUND_CLEARS.find(
+      ([label]) => label === 'indirect compound clear: DOUBLE_DEFAULT/DOUBLE_WALKOVER/DOUBLE_WALKOVER',
+    );
+    expect(captured).toBeDefined();
+    const scenario: Scenario = {
+      ...captured![1],
+      steps: [{ ...captured![1].steps[0], outcome: { matchUpStatus: WALKOVER, winningSide: 1 } }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    expect(v1.v1Writes).toEqual(2);
+    expect(v1.notices).toHaveLength(18);
+    for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+      const compared = play(mode, scenario);
+      expect(compared.v1Writes).toEqual(2);
+      expect(compared.results).toEqual(v1.results);
+      expect(compared.record).toEqual(v1.record);
+      expect(compared.notices).toEqual(v1.notices);
+    }
   });
 });
 
