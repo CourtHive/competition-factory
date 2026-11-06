@@ -105,6 +105,8 @@ type Scenario = {
   policyDefinitions?: Record<string, unknown>;
   /** the generator's seed (an exit matrix cell's), where the draw's BYEs are where its steps need them */
   nonRandom?: number;
+  /** Ambient RNG captured separately from the generator seed for public setup reproducibility. */
+  randomSeed?: number;
 };
 
 // `propagateExitStatus`: a WALKOVER or DEFAULTED follows its loser across the link (S5)
@@ -896,7 +898,49 @@ const OCCUPIED_FINAL_RELAY_CAPTURES: [string, Scenario][] = [WALKOVER, DEFAULTED
 );
 const OCCUPIED_FINAL_CLEARS = OCCUPIED_FINAL_RELAY_CAPTURES.filter(([label]) => label.endsWith('/clear'));
 
+// A directly produced exit beside the final loser-seat BYE has no onward relay or award to withdraw.
+const TERMINAL_RELAY_CAPTURES: [string, Scenario][] = [WALKOVER, DEFAULTED].flatMap((carry) =>
+  [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((source) =>
+    [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((producer) =>
+      (
+        [
+          ['clear', {}],
+          ['winner1', { winningSide: 1 }],
+          ['winner2', { winningSide: 2 }],
+        ] as [string, Record<string, unknown>][]
+      ).map(([trigger, outcome]): [string, Scenario] => [
+        `terminal direct relay: ${carry}/${source}/${producer}/${trigger}`,
+        {
+          drawProfile: { drawSize: 8, participantsCount: 4, drawType: FEED_IN_CHAMPIONSHIP },
+          nonRandom: 9000579,
+          randomSeed: 2187201951,
+          setup: [
+            {
+              target: { roundNumber: 2, roundPosition: 1, structureName: 'Main' },
+              outcome: { winningSide: 1 },
+              params: { propagateExitStatus: false },
+            },
+            {
+              target: { roundNumber: 2, roundPosition: 2, structureName: 'Main' },
+              outcome: { matchUpStatus: carry, winningSide: 2 },
+              params: { propagateExitStatus: false },
+            },
+            { target: FINAL_8('Main'), outcome: { matchUpStatus: source }, params: { propagateExitStatus: false } },
+            {
+              target: { roundNumber: 3, roundPosition: 1, structureName: 'Consolation' },
+              outcome: { matchUpStatus: producer },
+              params: { propagateExitStatus: false },
+            },
+          ],
+          steps: [{ target: FINAL_8('Main'), outcome, params: { propagateExitStatus: false } }],
+        },
+      ]),
+    ),
+  ),
+);
+
 const SCENARIOS: [string, Scenario][] = [
+  ...TERMINAL_RELAY_CAPTURES,
   ...OCCUPIED_FINAL_RELAY_CAPTURES,
   ...CONVERGED_PRODUCED_RELAYS,
   ...CARRIED_CONVERGED_PRODUCED_RELAYS,
@@ -3533,53 +3577,60 @@ function findTarget(target: Target): string {
 /** the steps from a fresh record, every topic subscribed and the clock fixed */
 function play(
   mode: OutcomePipelineMode,
-  { drawProfile, steps, setup = [], policyDefinitions, nonRandom = 1 }: Scenario,
+  { drawProfile, steps, setup = [], policyDefinitions, nonRandom = 1, randomSeed }: Scenario,
   { realClock }: { realClock?: boolean } = {},
 ) {
-  setOutcomePipeline(OUTCOME_PIPELINE_V1);
-  setClock(realClock ? undefined : '2026-10-25T00:00:00.000Z');
-  setSubscriptions({ subscriptions: {} });
-  mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ ...drawProfile, drawId: 'd' }],
-    nonRandom,
-    setState: true,
-  });
-  if (policyDefinitions) tournamentEngine.attachPolicies({ policyDefinitions });
-  for (const { target, outcome, params } of setup) {
-    const result = tournamentEngine.setMatchUpStatus({
-      drawId: 'd',
-      matchUpId: findTarget(target),
-      outcome,
-      ...params,
+  // Pin the capture RNG and restore it even when setup or comparison throws; absent seeds leave old behavior alone.
+  const previousRandom = randomSeed === undefined ? undefined : Math.random;
+  try {
+    if (randomSeed !== undefined) Math.random = createSeededRandom(randomSeed);
+    setOutcomePipeline(OUTCOME_PIPELINE_V1);
+    setClock(realClock ? undefined : '2026-10-25T00:00:00.000Z');
+    setSubscriptions({ subscriptions: {} });
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ ...drawProfile, drawId: 'd' }],
+      nonRandom,
+      setState: true,
     });
-    if (!result.success) throw new Error(`setup step failed: ${JSON.stringify(target)}`);
+    if (policyDefinitions) tournamentEngine.attachPolicies({ policyDefinitions });
+    for (const { target, outcome, params } of setup) {
+      const result = tournamentEngine.setMatchUpStatus({
+        drawId: 'd',
+        matchUpId: findTarget(target),
+        outcome,
+        ...params,
+      });
+      if (!result.success) throw new Error(`setup step failed: ${JSON.stringify(target)}`);
+    }
+    deleteNotices();
+    const notices: string[] = [];
+    setSubscriptions({
+      subscriptions: Object.fromEntries(
+        // the differential plans the stored topics, not the in-context one (a notice v2 defers to its apply), and compares
+        // what is subscribed: the real-clock arm asks only what it can compare
+        (realClock ? TOPICS.filter((topic) => topic !== UPDATE_INCONTEXT_MATCHUP) : TOPICS).map((topic) => [
+          topic,
+          (payloads: any[]) => payloads.forEach((p) => notices.push(`${topic} ${canonicalJson(p)}`)),
+        ]),
+      ),
+    });
+    // the targets are found before the pipeline is set, so finding them is not part of what is compared
+    const matchUpIds = steps.map(({ target }) => findTarget(target));
+    setOutcomePipeline(mode);
+    v1Writes.count = 0;
+    const results = steps.map(({ outcome, params }, i) => {
+      if (!realClock) setClock(`2026-10-25T00:0${i + 1}:00.000Z`);
+      return tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId: matchUpIds[i], outcome, ...params });
+    });
+    return {
+      record: canonicalJson(tournamentEngine.getTournament().tournamentRecord),
+      v1Writes: v1Writes.count,
+      notices,
+      results: results.map(({ stack: _stack, ...result }: any) => result),
+    };
+  } finally {
+    if (previousRandom) Math.random = previousRandom;
   }
-  deleteNotices();
-  const notices: string[] = [];
-  setSubscriptions({
-    subscriptions: Object.fromEntries(
-      // the differential plans the stored topics, not the in-context one (a notice v2 defers to its apply), and compares
-      // what is subscribed: the real-clock arm asks only what it can compare
-      (realClock ? TOPICS.filter((topic) => topic !== UPDATE_INCONTEXT_MATCHUP) : TOPICS).map((topic) => [
-        topic,
-        (payloads: any[]) => payloads.forEach((p) => notices.push(`${topic} ${canonicalJson(p)}`)),
-      ]),
-    ),
-  });
-  // the targets are found before the pipeline is set, so finding them is not part of what is compared
-  const matchUpIds = steps.map(({ target }) => findTarget(target));
-  setOutcomePipeline(mode);
-  v1Writes.count = 0;
-  const results = steps.map(({ outcome, params }, i) => {
-    if (!realClock) setClock(`2026-10-25T00:0${i + 1}:00.000Z`);
-    return tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId: matchUpIds[i], outcome, ...params });
-  });
-  return {
-    record: canonicalJson(tournamentEngine.getTournament().tournamentRecord),
-    v1Writes: v1Writes.count,
-    notices,
-    results: results.map(({ stack: _stack, ...result }: any) => result),
-  };
 }
 
 describe('under v2, the first direction is v2s, and leaves exactly what v1 leaves', () => {
@@ -3611,6 +3662,16 @@ describe('M1 notice contracts also compare with in-context subscribers under dif
 
 describe('S7 converged produced relays compare subscribed differential notices', () => {
   it.each(CONVERGED_RELAY_CAPTURES)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
+});
+
+describe('S7 terminal direct relays compare subscribed differential notices', () => {
+  it.each(TERMINAL_RELAY_CAPTURES)('%s', (_label, scenario) => {
     const v1 = play(OUTCOME_PIPELINE_V1, scenario);
     const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
     expect(compared.results).toEqual(v1.results);
