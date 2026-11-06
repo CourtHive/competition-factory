@@ -851,12 +851,13 @@ const CONVERGED_RELAY_CAPTURES: [string, Scenario][] = [DOUBLE_WALKOVER, DOUBLE_
   ),
 );
 
-// Carried arrivals need a separate convergence into the retained onward copy; this slice owns plain arrivals and clears.
+// The carried arrivals form a new convergence whose product reserves into the retained onward copy.
 const CONVERGED_PRODUCED_RELAYS = CONVERGED_RELAY_CAPTURES.filter(([label]) => !label.includes(' carried'));
-const CONVERGED_RELAY_CARRIED_WALL = CONVERGED_RELAY_CAPTURES.filter(([label]) => label.includes(' carried'));
+const CARRIED_CONVERGED_PRODUCED_RELAYS = CONVERGED_RELAY_CAPTURES.filter(([label]) => label.includes(' carried'));
 
 const SCENARIOS: [string, Scenario][] = [
   ...CONVERGED_PRODUCED_RELAYS,
+  ...CARRIED_CONVERGED_PRODUCED_RELAYS,
   ...NOTICE_RELAY_CARRIES,
   ...AWARDED_PRODUCED_RELAY,
   ...PRODUCED_RELAY,
@@ -3573,17 +3574,6 @@ describe('S7 converged produced relays compare subscribed differential notices',
     expect(compared.results).toEqual(v1.results);
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
-  });
-});
-
-describe('S7 converged relays keep carried arrivals refused until their onward convergence is planned', () => {
-  it.each(CONVERGED_RELAY_CARRIED_WALL)('%s', (_label, scenario) => {
-    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
-    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
-    expect(v2.v1Writes).toBeGreaterThan(0);
-    expect(v2.results).toEqual(v1.results);
-    expect(v2.record).toEqual(v1.record);
-    expect(v2.notices).toEqual(v1.notices);
   });
 });
 

@@ -13,6 +13,7 @@ import { isAnyExit, isDoubleExit } from '@Validators/isExit';
 import { validMatchUps } from '@Validators/validMatchUp';
 import { withFinishingOrder } from './finishingOrderOps';
 import { unwindWalk } from './unwindWalk';
+import { canonicalJson } from '@Tools/canonicalJson';
 import {
   buildCarriedExitProvenance,
   buildSideExitProvenance,
@@ -589,6 +590,10 @@ function givenWinnerReason(args: Parameters<typeof exitReason>[0]): AbstainReaso
   if (direction?.loser?.exit) return unwoundCarryReason(args, direction.loser);
   if (direction?.loser?.converged) return unwoundConvergedReason(args);
   const unwound = levels.flatMap(({ seatOps }) => seatOps);
+  if (hasRetainedRelay(unwound)) {
+    const after = unwoundView(args, { releasedLandings: true });
+    if (after?.direction?.loser?.converged) return unwoundConvergedReason(args);
+  }
   if (
     direction?.loser?.arrives &&
     loserTargetSeat?.opponentBye &&
@@ -668,7 +673,7 @@ function unwoundConvergedReason(args: Parameters<typeof exitReason>[0]): Abstain
   const after = unwoundView(args, { releasedLandings: true });
   const loser = after?.direction?.loser;
   if (!after || !loser?.converged) return 'exit';
-  return convergedReason(after.view, request, write as MatchUpWrite, loser);
+  return convergedReason(after.view, request, write as MatchUpWrite, loser, retainedRelayReservation(args, after));
 }
 
 /** the view with a double exit's unwind folded in, and the direction planned on it (`rebuild`); undefined where none */
@@ -686,10 +691,78 @@ function unwoundView(
   const { ops, reannounced } = unwoundOps(args.view, args.request, args.route, args.drawDefinition);
   // A convergence produces into a released landing: its emptied award is written back to be played before the
   // direction's ops (`planOps`). Other deferred writes, including standing-BYE advancements, stay out of this fold.
-  const released = releasedLandings
-    ? reannounced.filter((op) => op.op === 'setMatchUpResult' && op.announcedAs === 'reconcileScoredTimes')
-    : [];
+  const released = releasedLandings ? earlyReleasedLandings(reannounced) : [];
   return args.rebuild([...ops, ...released], args.route);
+}
+
+/** Only the released-landing writes belong before a fresh direction; other deferred writers remain late. */
+const earlyReleasedLandings = (ops: OutcomeOp[]) =>
+  ops.filter((op) => op.op === 'setMatchUpResult' && op.announcedAs === 'reconcileScoredTimes');
+
+const hasRetainedRelay = (ops: OutcomeOp[]) =>
+  ops.some((op) => op.op === 'setMatchUpResult' && !!op.retainedExitPlanned);
+
+/** The exact original relay and its foreign origin, checked again as the unwind leaves them. */
+function retainedRelayShape(view: OutcomeView, after: OutcomeView, ops: OutcomeOp[]) {
+  const clears = ops.filter(
+    (op): op is Extract<OutcomeOp, { op: 'clearMatchUpBye' }> =>
+      op.op === 'clearMatchUpBye' && !!op.retainedOnwardMatchUpId,
+  );
+  if (clears.length !== 1 || !hasRetainedRelay(ops)) return undefined;
+  const clear = clears[0];
+  const home = indexed(view, clear.matchUpId);
+  if (!home) return undefined;
+  const copy = convergedRelayCopy(view, home, clear.drawPosition);
+  if (!copy || copy.next.matchUpId !== clear.retainedOnwardMatchUpId) return undefined;
+  const own = indexed(view, view.targets.loserMatchUpId);
+  if (own?.winnerMatchUpId !== home.matchUpId) return undefined;
+  const relay = indexed(after, home.matchUpId);
+  const onward = indexed(after, copy.next.matchUpId);
+  const successor = indexed(after, copy.successor.matchUpId);
+  if (!relay || relay.matchUpStatus !== TO_BE_PLAYED || !unwoundClean(relay, new Set())) return undefined;
+  if (positionsOf(relay).length !== 1 || positionsOf(relay)[0] !== clear.drawPosition) return undefined;
+  if (!onward || onward.winningSide || !scoreless(onward) || onward.matchUpStatusCodes?.length) return undefined;
+  if (onward.matchUpStatus !== copy.kept.matchUpStatus || positionsOf(onward).length !== 1) return undefined;
+  if (canonicalJson(onward.sideExitProvenance) !== canonicalJson(copy.kept.provenance)) return undefined;
+  if (!successor || successor.matchUpStatus !== TO_BE_PLAYED || !unwoundClean(successor, new Set())) return undefined;
+  if (!unplaced(successor)) return undefined;
+  return { own, relay, onward, clear, copy };
+}
+
+/** Certify a reservation beside this unwind's retained foreign exit, using the working view's new side geometry. */
+function retainedRelayReservation(
+  args: Parameters<typeof unwoundView>[0],
+  after: NonNullable<ReturnType<RebuildView>>,
+): RetainedRelayReservation | undefined {
+  if (args.route !== 'winner' || !args.rebuild || !after.direction?.loser?.converged) return undefined;
+  const { ops, reannounced } = unwoundOps(args.view, args.request, args.route, args.drawDefinition);
+  const shape = retainedRelayShape(args.view, after.view, ops);
+  if (!shape) return undefined;
+  const { own, relay, onward, clear, copy } = shape;
+  const held = positionsOf(onward)[0];
+  if (held === clear.drawPosition) return undefined;
+  const drawPositions = [held, clear.drawPosition].sort((a, b) => a - b);
+  const reserved: OutcomeOp = { op: 'setMatchUpDrawPositions', matchUpId: onward.matchUpId, drawPositions };
+  const geometry = args.rebuild([...ops, ...earlyReleasedLandings(reannounced), reserved], args.route);
+  const side = sideOf(geometry && indexed(geometry.view, onward.matchUpId), held);
+  if (!side) return undefined;
+  const [foreign] = Object.values(copy.kept.provenance);
+  return {
+    ownMatchUpId: own.matchUpId,
+    relayMatchUpId: relay.matchUpId,
+    drawPosition: clear.drawPosition,
+    onward: { matchUpId: onward.matchUpId, drawPositions, provenance: { [side]: foreign } },
+  };
+}
+
+/** Re-plan the fresh carry only for the certified retained-relay composition. */
+function retainedRelayDirection(
+  args: Parameters<typeof unwoundView>[0] & { direction?: DirectionPlan },
+  ops: OutcomeOp[],
+) {
+  if (!hasRetainedRelay(ops)) return args.direction;
+  const after = unwoundView(args, { releasedLandings: true });
+  return after && retainedRelayReservation(args, after) ? after.direction : args.direction;
 }
 
 /**
@@ -2436,7 +2509,16 @@ function producedOps(view: OutcomeView, request: OutcomeRequest, write: MatchUpW
   return ops;
 }
 
+type RetainedRelayReservation = {
+  ownMatchUpId: string;
+  relayMatchUpId: string;
+  drawPosition: number;
+  onward: { matchUpId: string; drawPositions: number[]; provenance: SideExitProvenance };
+};
+
 type ProducedTarget = {
+  /** A reservation into the exact foreign exit retained by this unwind, certified before direction planning. */
+  reservation?: RetainedRelayReservation;
   entry: HydratedMatchUp;
   /** the side the double exit feeds, and the side its produced exit is awarded to */
   fedSide: 1 | 2;
@@ -2492,7 +2574,8 @@ function producedTargetReason(
   if ((entry.loserMatchUpId && !loserLinked) || entry.sides?.some((side) => side.bye)) return false;
   const awarded = entry.sides?.find((side) => side.sideNumber === target.awardedSide);
   if (awarded?.participantId) return false;
-  if (target.feed) return !!awarded?.drawPosition && !!onwardFrom(view, entry, awarded.drawPosition);
+  if (target.feed)
+    return !!awarded?.drawPosition && (!!target.reservation || !!onwardFrom(view, entry, awarded.drawPosition));
   if (awarded?.drawPosition) return false;
   const pairedPosition =
     (source.roundPosition ?? 0) % 2 ? (source.roundPosition ?? 0) + 1 : (source.roundPosition ?? 0) - 1;
@@ -2519,7 +2602,9 @@ function producedTargetOps(
     sourceMatchUpId,
   });
   const awarded = entry.sides?.find((side) => side.sideNumber === target.awardedSide);
-  const onward = target.feed && awarded?.drawPosition ? onwardFrom(view, entry, awarded.drawPosition) : undefined;
+  const onward =
+    target.reservation?.onward ??
+    (target.feed && awarded?.drawPosition ? onwardFrom(view, entry, awarded.drawPosition) : undefined);
   return [
     {
       op: 'setMatchUpResult',
@@ -2527,6 +2612,7 @@ function producedTargetOps(
       matchUpStatus: target.matchUpStatus,
       matchUpStatusCodes: [],
       stampsScoredTime: false,
+      ...(target.reservation ? { restoresNoticeIdentity: true as const } : {}),
       ...(target.matchUpStatus === WALKOVER ? { score: { scoreStringSide1: '', scoreStringSide2: '' } } : {}),
     },
     ...(provenance ? [{ op: 'mergeSideExitProvenance' as const, matchUpId: entry.matchUpId, provenance }] : []),
@@ -2539,6 +2625,15 @@ function producedTargetOps(
             drawPositions: onward.drawPositions,
             announcesContext: false as const,
           },
+          ...(target.reservation
+            ? [
+                {
+                  op: 'setSideExitProvenance' as const,
+                  matchUpId: onward.matchUpId,
+                  provenance: target.reservation.onward.provenance,
+                },
+              ]
+            : []),
           { op: 'stampUpdatedAt' as const, entity: 'matchUp' as const, id: onward.matchUpId },
         ]
       : []),
@@ -2561,6 +2656,7 @@ function convergedReason(
   request: OutcomeRequest,
   write: MatchUpWrite,
   loser: NonNullable<DirectionPlan['loser']>,
+  reservation?: RetainedRelayReservation,
 ): AbstainReason | undefined {
   const { targets } = view;
   const seat = targets.loserTargetSeat;
@@ -2573,6 +2669,7 @@ function convergedReason(
     loserTargetDrawPosition,
     carriedStatus(request.matchUpStatus),
     targets.landingWalk,
+    reservation,
   );
   return convergence && loser.converged === convergence.matchUpStatus ? undefined : 'exit';
 }
@@ -2602,6 +2699,7 @@ function convergenceAt(
   drawPosition: number | undefined,
   carried: MatchUpStatusUnion,
   walk?: { own?: ByeWalk; unfillable?: ByeWalk },
+  reservation?: RetainedRelayReservation,
 ): Convergence | undefined {
   const landing = indexed(view, matchUpId);
   const sideNumber = sideOf(landing, drawPosition);
@@ -2624,7 +2722,7 @@ function convergenceAt(
     ...(ownSeat ? { seats: [...ownSeat.assigns, ...ownSeat.writes] } : {}),
   };
   if (!landing.winnerMatchUpId) return convergence;
-  const target = producedTarget(view, landing, matchUpStatus);
+  const target = certifiedRelayTarget(producedTarget(view, landing, matchUpStatus), landing.matchUpId, reservation);
   // the award's position already gone on into that matchUp: v1 takes it back out as the convergence unseats it, v1's
   const advanced = target?.entry.drawPositions?.some(
     (position) => !!position && landing.drawPositions?.includes(position),
@@ -2636,6 +2734,20 @@ function convergenceAt(
   if (!target || advanced || !producedTargetReason(view, landing, target, targetLinked)) return undefined;
   const seats = [...(convergence.seats ?? []), ...(unfillable ? [...unfillable.assigns, ...unfillable.writes] : [])];
   return { ...convergence, target, ...(seats.length ? { seats } : {}) };
+}
+
+/** A certified reservation can extend only its own fresh convergence's exact produced target. */
+function certifiedRelayTarget(
+  target: ProducedTarget | undefined,
+  ownId: string,
+  reservation?: RetainedRelayReservation,
+) {
+  if (!reservation) return target;
+  if (!target || reservation.ownMatchUpId !== ownId || reservation.relayMatchUpId !== target.entry.matchUpId)
+    return undefined;
+  const awarded = target.entry.sides?.find((side) => side.sideNumber === target.awardedSide);
+  if (!target.feed || awarded?.drawPosition !== reservation.drawPosition) return undefined;
+  return { ...target, reservation };
 }
 
 /** the double exit RULE 4 writes, the arriving side's entry merged beside the standing one, and what it produces on */
@@ -2802,12 +2914,18 @@ function producedExitOps(view: OutcomeView, request: OutcomeRequest, write: Matc
 }
 
 /** a convergence's writes: the landing as the double exit, the arriving side's entry, and the exit it produces */
-function convergedOps(view: OutcomeView, request: OutcomeRequest, write: MatchUpWrite, loser?: DirectionPlan['loser']) {
+function convergedOps(
+  view: OutcomeView,
+  request: OutcomeRequest,
+  write: MatchUpWrite,
+  loser?: DirectionPlan['loser'],
+  reservation?: RetainedRelayReservation,
+) {
   const { loserMatchUpId, loserTargetDrawPosition } = view.targets;
   const carried = carriedStatus(request.matchUpStatus);
   const convergence =
     loser?.arrives && loser.converged
-      ? convergenceAt(view, loserMatchUpId, loserTargetDrawPosition, carried, view.targets.landingWalk)
+      ? convergenceAt(view, loserMatchUpId, loserTargetDrawPosition, carried, view.targets.landingWalk, reservation)
       : undefined;
   if (!convergence) return [];
   return convergenceOps(view, convergence, carried, request.matchUpId, write.matchUpStatus as MatchUpStatusUnion);
@@ -4656,7 +4774,13 @@ function unwoundConvergedFor(
 ): OutcomeOp[] {
   if (!loser?.converged) return [];
   const after = isDoubleExit(view.existing.matchUpStatus) ? unwoundView(args, { releasedLandings: true }) : undefined;
-  return convergedOps(after?.view ?? view, args.request, args.write as MatchUpWrite, after?.direction?.loser ?? loser);
+  return convergedOps(
+    after?.view ?? view,
+    args.request,
+    args.write as MatchUpWrite,
+    after?.direction?.loser ?? loser,
+    after ? retainedRelayReservation(args, after) : undefined,
+  );
 }
 
 /** the schedule attributes v2 plans: those v1's writer writes on the matchUp alone (S7) */
@@ -5342,7 +5466,7 @@ function producedRelayAfterOps(view: OutcomeView, unwound: OutcomeOp[], loser?: 
         ReturnType<typeof convergedRelayCopy>
       >;
       return [
-        ...unwound.filter((write) => write.op === 'setMatchUpResult' && write.retainedExitPlanned),
+        ...unwound.filter((write) => write.op === 'setMatchUpResult' && write.retainedExitPlanned && !loser?.converged),
         ...unwound.filter(
           (write) =>
             write.op === 'setMatchUpResult' &&
@@ -5447,7 +5571,7 @@ function planOps(args: Parameters<typeof planOutcome>[0]): OutcomePlan {
     ...dualTallyOps(view.line, args.route),
   ];
   // the first direction: the winner's position joins the next matchUp's, which v1 stores ascending
-  const placing = placedDirection(view, args.route, write, args.direction);
+  const placing = placedDirection(view, args.route, write, retainedRelayDirection(args, unwound));
   const winner = placing?.winner;
   ops.push(
     ...winnerPlacementOps(view, args.route, write, winner),

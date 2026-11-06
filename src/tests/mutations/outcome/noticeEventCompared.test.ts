@@ -84,6 +84,41 @@ describe('the event a notice names is compared', () => {
     expect(compareNotices({ planned, added: byeNotice(), topics }).equal).toEqual(false);
   });
 
+  const score = (flags: { announcesContext?: false; restoresNoticeIdentity?: true } = {}) => ({
+    op: 'setMatchUpResult' as const,
+    matchUpId: 'c',
+    matchUpStatus: 'WALKOVER' as const,
+    ...flags,
+  });
+  const scoreNotice = (eventId?: string) => [...byeNotice(eventId), { topic: UPDATE_INCONTEXT_MATCHUP, key: 'c' }];
+
+  it('a restoring score after a quiet score names its event and still defers its in-context notice', () => {
+    const planned = plannedNotices({
+      ops: [score({ announcesContext: false }), stamp('c'), score({ restoresNoticeIdentity: true }), stamp('c')],
+      matchUpId: 'm',
+    });
+    expect(compareNotices({ planned, added: scoreNotice('e'), topics }).equal).toEqual(true);
+    expect(compareNotices({ planned, added: scoreNotice(), topics }).equal).toEqual(false);
+  });
+
+  it('a later quiet score supersedes a restoring score and names no event', () => {
+    const planned = plannedNotices({
+      ops: [score({ restoresNoticeIdentity: true }), stamp('c'), score({ announcesContext: false }), stamp('c')],
+      matchUpId: 'm',
+    });
+    expect(compareNotices({ planned, added: scoreNotice(), topics }).equal).toEqual(true);
+    expect(compareNotices({ planned, added: scoreNotice('e'), topics }).equal).toEqual(false);
+  });
+
+  it('an unmarked score after a quiet score keeps the existing eventless boundary', () => {
+    const planned = plannedNotices({
+      ops: [score({ announcesContext: false }), stamp('c'), score(), stamp('c')],
+      matchUpId: 'm',
+    });
+    expect(compareNotices({ planned, added: scoreNotice(), topics }).equal).toEqual(true);
+    expect(compareNotices({ planned, added: scoreNotice('e'), topics }).equal).toEqual(false);
+  });
+
   it('an advance through a BYE alone names no event', () => {
     const planned = plannedNotices({ ops: [advance, stamp('c')], matchUpId: 'm' });
     expect(compareNotices({ planned, added: byeNotice(), topics }).equal).toEqual(true);
