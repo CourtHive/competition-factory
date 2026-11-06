@@ -963,6 +963,27 @@ True for a `WINNER` link that traverses by round: what match-by-match advancemen
 const advancesRoundWinners = tools.isRoundWinnerLink(link, drawDefinition);
 ```
 
+### positionTargets
+
+Where a matchUp's winner, loser and bye go: the target matchUps and the `drawPosition` each takes there. It is the
+engine's own progression geometry — what `setMatchUpStatus` follows — for a tool that must place a participant its
+source left out, such as a loser who declined a consolation and was recorded as a bye.
+
+It reads a `drawDefinition` and the draw's in-context matchUps that the caller holds, rather than engine state.
+
+```js
+const { matchUps: inContextDrawMatchUps } = tournamentEngine.allDrawMatchUps({ drawId, inContext: true });
+const { targetMatchUps, targetLinks, error } = tools.positionTargets({
+  inContextDrawMatchUps,
+  drawDefinition,
+  matchUpId,
+});
+// targetMatchUps.loserMatchUp — the matchUp the loser feeds; targetMatchUps.loserTargetDrawPosition — the position
+```
+
+The targets are copies unless `asReferences: true` is passed. A malformed round link (a `WINNER` or `LOSER` link with
+no source round) is returned as `error`.
+
 ---
 
 ## Not in tools Module

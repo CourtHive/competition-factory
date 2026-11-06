@@ -30,6 +30,11 @@ export { matchUpSort } from '@Functions/sorters/matchUpSort';
 // method because callers are ingest/import tools operating on a record they hold, not on engine
 // state — and because third-party data cannot be relied on to arrive linked.
 export { inferDrawLinks } from '@Query/drawDefinition/inferDrawLinks';
+// Where a matchUp's winner, loser and bye go: target matchUps and the drawPosition each takes there. The engine's own
+// progression geometry, for an ingest tool that must place a participant a source left out (a loser who declined a
+// consolation, recorded as a bye). A tool, not a governor method: it reads a drawDefinition and in-context matchUps the
+// caller holds (`allDrawMatchUps({ inContext: true })`), and an engine method would resolve them from state instead.
+export { positionTargets } from '@Query/matchUp/positionTargets';
 // How a link TRAVERSES: by finishing position (out of a round robin, labelled POSITION or WINNER) or by round (out of
 // an elimination structure). A client reading `drawDefinition.links` asks here instead of comparing `linkType`, so it
 // reads a round robin's WINNER link as the engine does (CA, 2026-10-23). Positional arguments: (link, drawDefinition).
