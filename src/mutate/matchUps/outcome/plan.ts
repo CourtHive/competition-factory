@@ -3174,7 +3174,7 @@ function pendingAwardRemoval(
     return undefined;
   if (!scoreless(foreign) || foreign.matchUpStatusCodes?.length || Object.keys(foreign.sideExitProvenance ?? {}).length)
     return undefined;
-  if (at.matchUpStatus !== status || Number(kept[0]) === at.winningSide) return undefined;
+  if (at.matchUpStatus !== status || Number(kept[0]) !== 3 - at.winningSide) return undefined;
   if (foreign.structureId !== at.structureId || !pendingAwardSeatStands(view, at)) return undefined;
   return { drawPosition: held[0], provenance: { [Number(kept[0])]: kept[1] } };
 }
