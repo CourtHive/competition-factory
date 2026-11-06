@@ -1,5 +1,34 @@
 # Changelog
 
+## [7.32.0](https://github.com/CourtHive/competition-factory/compare/v7.31.0...v7.32.0) (2026-11-06)
+
+
+### Features
+
+* **engine:** partial-record mode — refuse what a loaded footprint does not cover ([1c0a9ae](https://github.com/CourtHive/competition-factory/commit/1c0a9aebc84ec01f868eba0d307c5a2fd6aa1661))
+* **engine:** stampScope — stamp the draws a mutation modified, not always the tournament ([a8102d6](https://github.com/CourtHive/competition-factory/commit/a8102d6d9e7d63f6d5dbd96e6077c1cb4047a7bb))
+* **outcome:** certify standalone indirect clear unwinds ([0b35eff](https://github.com/CourtHive/competition-factory/commit/0b35eff3568358eb5d8c4880b342975d36e78ccc))
+* **outcome:** plan bare winners after indirect relay unwinds ([5514205](https://github.com/CourtHive/competition-factory/commit/5514205113336772455b193342a5afed235863df))
+* **outcome:** plan carried convergence after indirect unwinds ([7e978a2](https://github.com/CourtHive/competition-factory/commit/7e978a24387fe53fb2a3de4b69671108d1333964))
+* **outcome:** preserve standing first-match feed reservations ([0a31eee](https://github.com/CourtHive/competition-factory/commit/0a31eeeae107d68f7f78f6c977a8f686ab7510df))
+* **outcome:** restore first-match feed BYEs after winner unwinds ([7511fae](https://github.com/CourtHive/competition-factory/commit/7511faed0b646716370c0bd581627c5eb2f48f12))
+* **tools:** mutation footprints — what part of a record an executionQueue reads and writes ([9a8d4e5](https://github.com/CourtHive/competition-factory/commit/9a8d4e5f14f75a27e8b3d28ed88246dd13ad32c3))
+
+
+### Bug Fixes
+
+* **generation:** generateDrawDefinition refuses a stage other than MAIN ([4de7721](https://github.com/CourtHive/competition-factory/commit/4de772196ab1b160c39715816e0a770cf55b7ebc))
+* **lineUps:** assigning a tie line player fills a free seat ([f4cb35d](https://github.com/CourtHive/competition-factory/commit/f4cb35df5646acee5f4d0360b791316a7d15d671))
+* **notifications:** deleteDrawDefinitions names the tournament and event of a deleted draw ([9cface8](https://github.com/CourtHive/competition-factory/commit/9cface88649f688ceb061f43678cec0b189bf8d4))
+* **tools:** a footprint is looked up by the map's own method names ([#6265](https://github.com/CourtHive/competition-factory/issues/6265)) ([13a89c4](https://github.com/CourtHive/competition-factory/commit/13a89c4944ce14e233b4ca91be9f89a9b698ad28))
+* **tools:** footprint names pass attr-audit — 'draw' shard allowed, no Pick literal ([9864fad](https://github.com/CourtHive/competition-factory/commit/9864fadd60726d941d4317c9fb77de172ab30388))
+
+
+### Documentation
+
+* **events:** getEvent returns copies while deep copy is enabled ([8401241](https://github.com/CourtHive/competition-factory/commit/8401241f16bc430eb49633456f6c7f3e47747a25))
+* what a rebuilt draw keeps; 25,000+ tests ([#6254](https://github.com/CourtHive/competition-factory/issues/6254)) ([48f2908](https://github.com/CourtHive/competition-factory/commit/48f290824065766e719060745396b046304eeb0d))
+
 ## [7.31.0](https://github.com/CourtHive/competition-factory/compare/v7.30.0...v7.31.0) (2026-11-06)
 
 
