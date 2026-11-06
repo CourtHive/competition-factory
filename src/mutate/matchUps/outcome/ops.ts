@@ -66,6 +66,8 @@ export type OutcomeOp =
        * context is read without the tournament
        */
       announcesContext?: false;
+      /** A later actual score writer restores event/tournament identity after a quiet unwind (S7 certified relay). */
+      restoresNoticeIdentity?: true;
       /**
        * true where v1's notice names the tournament and the event but the matchUp it defers in context is read without
        * the tournament: a produced exit landed past a BYE-held matchUp beyond the first (`carryExitOnward`, S7)
