@@ -1429,6 +1429,16 @@ payload. The FIC_TO_SF 16/11 sequence Main 1/5 winner(2), Main 2/3 DOUBLE_WALKOV
 carried under policy off captures both contracts. Whole records, ordered notice payloads and results agree
 under v1, v2 and subscribed differential; the existing refusal boundary is unchanged.
 
+An unplaced deeper loser seat may be empty beside a standing propagated BYE (S7). Its exact original assignment
+has neither occupant, qualifier, BYE nor propagation marker, and the canonical indexed activity read certifies it
+inactive. The opposite raw assignment remains a marked BYE; its identity is preserved, not claimed by this unwind.
+In the bounded first-round shape the empty seat already stands in the clean second-round matchUp beside an
+independent position, and appears nowhere further; the opposite BYE appears nowhere later. The whole structure
+holds no other result, exit provenance or BYE, has no outgoing link, and its winner edges remain inside it and move
+forward. Clearing the empty assignment preserves that structural BYE advancement (`advancedByOpponentsBye`):
+only the existing exact-seat withdrawal/assignment notice is planned, with no target result or new callback.
+Other topology, active seats, orphan markers and conditioned unplaced links remain v1's.
+
 ## 7.2 The plan as ops (S1)
 
 v2 states a call's writes as **ops**, a closed vocabulary folded by one reducer (`outcome/ops.ts`) into a stored-shape
