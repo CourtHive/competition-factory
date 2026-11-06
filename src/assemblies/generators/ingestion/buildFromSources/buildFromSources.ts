@@ -526,7 +526,7 @@ function buildGroupStructures(
 // from the matchUps' own `structureId`s.
 function buildDrawDefinitionFromDrawData(draw: SourceDraw, report?: BuildReport) {
   const drawDefinition: Record<string, any> = buildFirstStructure(draw);
-  if ((draw.structures?.length ?? 0) < 2) return drawDefinition;
+  if ((draw.structures?.length ?? 0) < 2) return carryFinishingPositions(draw, drawDefinition);
 
   const builtIds = new Set<string>();
   walkStructures(drawDefinition.structures, (s: SourceStructure) => builtIds.add(s.structureId));
@@ -548,6 +548,28 @@ function buildDrawDefinitionFromDrawData(draw: SourceDraw, report?: BuildReport)
   const { links, derived, issues } = deriveSourceLinks({ draw });
   if (links.length) drawDefinition.links = links;
   report?.derivedLinks.push({ drawId: draw.drawId, derived, issues });
+  return carryFinishingPositions(draw, drawDefinition);
+}
+
+/**
+ * Each structure keeps the `finishingPosition` its source states. The builders never copied it, so every rebuilt
+ * elimination structure lost ROUND_OUTCOME — which is what tells the engine to follow a structure's links round by
+ * round. Without it `positionTargets` names no target for a loser, and progression out of the structure is not
+ * followed (found 2026-11-06, placing a loser who declined a consolation).
+ */
+function carryFinishingPositions(draw: SourceDraw, drawDefinition: Record<string, any>) {
+  const stated = new Map<string, string>();
+  const collect = (structures?: SourceStructure[]) => {
+    for (const source of structures ?? []) {
+      if (source?.structureId && source.finishingPosition) stated.set(source.structureId, source.finishingPosition);
+      collect(source?.structures);
+    }
+  };
+  collect(draw.structures);
+  walkStructures(drawDefinition.structures, (s: { structureId: string; finishingPosition?: string }) => {
+    const finishingPosition = stated.get(s.structureId);
+    if (finishingPosition && !s.finishingPosition) s.finishingPosition = finishingPosition;
+  });
   return drawDefinition;
 }
 
