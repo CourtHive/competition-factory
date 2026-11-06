@@ -52,6 +52,12 @@ export {
   extractParticipants,
 } from '@Generators/ingestion/buildFromSources/buildFromSources';
 export { dehydrateMatchUps } from '@Mutate/tournaments/dehydrate';
+// What part of a record an executionQueue reads and may write, for a storage layer that keeps a tournament in parts
+// (a shell, its draws, its participants). Pure reads of the methods and their params, called BEFORE anything is
+// loaded, so tools rather than engine methods, which resolve from state. `reduceRecordToFootprint` builds the partial
+// record such a layer would assemble.
+export { getMutationFootprint } from '@Query/footprint/getMutationFootprint';
+export { reduceRecordToFootprint } from '@Query/footprint/reduceRecordToFootprint';
 // The read the engine makes of every attribute promoted from an extension: first-class when present, else the legacy
 // extension. Here rather than on a governor because a governor export becomes an engine method, and this reads an
 // element the caller holds. The migration-5.0.0 guide has promised it since 5.0.0 under a subpath that never resolved.
