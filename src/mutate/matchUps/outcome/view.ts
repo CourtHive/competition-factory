@@ -1,3 +1,4 @@
+import { getStructureDrawPositionProfiles } from '@Query/structure/getStructureDrawPositionProfiles';
 import { getSideExitProvenance, carriedExitStatus, isPropagatedExit } from '@Helpers/drawTopology/sideExitProvenance';
 import { scheduleRefusal as scheduleWriteRefusal } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { matchUpsOf, positionAssignmentsOf, structuresOf } from '@Helpers/drawTopology/structureMembers';
@@ -543,9 +544,12 @@ function loserSeatOf(draw: DrawContext, matchUpId: string, depth = 0): WinnerLos
     matchUp.loserMatchUpId && depth < SETTLE_PASS_LIMITS.exitLevels
       ? loserSeatOf(draw, matchUp.matchUpId, depth + 1)
       : undefined;
+  const seat = loserTargetSeat(draw.drawDefinition, matchUp.structureId, drawPosition, matchUp.drawPositions);
+  const standingBye = inactiveStandingBye(draw, matchUp, drawPosition, seat);
   return {
     ...(beyond ? { beyond } : {}),
-    seat: loserTargetSeat(draw.drawDefinition, matchUp.structureId, drawPosition, matchUp.drawPositions),
+    seat: seat && { ...seat, ...(standingBye ? { standingBye } : {}) },
+    foreignProducedSeat: foreignProducedSeat(draw, matchUp),
     drawPositions: (matchUp.drawPositions ?? []).filter((position): position is number => !!position),
     linkCondition: targetLinks?.loserTargetLink?.linkCondition,
     matchUpStatus: matchUp.matchUpStatus,
@@ -1149,6 +1153,52 @@ function storedSideRecord(matchUpsMap: MatchUpsMap, matchUpId?: string): Outcome
     matchUpStatusCodes: stored.matchUpStatusCodes,
     provenance: Object.values(stored.sideExitProvenance ?? {}).some(Boolean),
   };
+}
+
+/** Bind an empty produced reservation by its live provenance source's canonical LOSER mapping. */
+function foreignProducedSeat(draw: DrawContext, relay: HydratedMatchUp): WinnerLoserSeat['foreignProducedSeat'] {
+  if (relay.matchUpStatus !== BYE) return undefined;
+  const [entry, ...more] = Object.values(relay.sideExitProvenance ?? {});
+  if (!entry || more.length || !isDoubleExit(entry.previousMatchUpStatus)) return undefined;
+  const source = draw.inContextDrawMatchUps.find((matchUp) => matchUp.matchUpId === entry.sourceMatchUpId);
+  if (!source || source.winningSide || source.matchUpStatus !== entry.previousMatchUpStatus) return undefined;
+  const { targetMatchUps, targetLinks } = positionTargets({ ...draw, matchUpId: source.matchUpId }) ?? {};
+  const target = targetMatchUps?.loserMatchUp;
+  const drawPosition = targetMatchUps?.loserTargetDrawPosition;
+  if (!target || !drawPosition) return undefined;
+  return {
+    sourceMatchUpId: source.matchUpId,
+    matchUpId: target.matchUpId,
+    structureId: target.structureId,
+    drawPosition,
+    linkCondition: targetLinks?.loserTargetLink?.linkCondition,
+  };
+}
+
+/** Original assignment identity plus canonical activity, read only for the standing-BYE candidate. */
+function inactiveStandingBye(
+  draw: DrawContext,
+  matchUp: HydratedMatchUp,
+  drawPosition: number,
+  seat: OutcomeView['targets']['loserTargetSeat'],
+): NonNullable<WinnerLoserSeat['seat']>['standingBye'] {
+  if (!seat?.free || seat.byeFromPropagation || matchUp.matchUpStatus !== BYE || !matchUp.structureId) return undefined;
+  const opponents = (matchUp.drawPositions ?? []).filter((position) => position && position !== drawPosition);
+  if (opponents.length !== 1 || !opponents[0]) return undefined;
+  const opponentDrawPosition = opponents[0];
+  const { structure } = findStructure({ drawDefinition: draw.drawDefinition, structureId: matchUp.structureId });
+  const assignments = positionAssignmentsOf(structure) ?? [];
+  const requested = assignments.find((assignment) => assignment.drawPosition === drawPosition);
+  // v1 deletes these fields even when falsy; withdrawBye does not, so retain only their absent-value shape.
+  if (!requested || requested.participantId !== undefined || requested.qualifier !== undefined) return undefined;
+  const opponent = assignments.find((assignment) => assignment.drawPosition === opponentDrawPosition);
+  if (!opponent?.bye || !opponent.byeFromPropagation || opponent.participantId || opponent.qualifier) return undefined;
+  if ((draw.drawDefinition.links ?? []).some((link) => link.source?.structureId === matchUp.structureId))
+    return undefined;
+  // The supplied index avoids hydration. This query supplies no tournament records; its dependency read is params-only.
+  const { activeDrawPositions } = getStructureDrawPositionProfiles({ ...draw, structureId: matchUp.structureId });
+  if (!Array.isArray(activeDrawPositions) || activeDrawPositions.includes(drawPosition)) return undefined;
+  return { opponentDrawPosition };
 }
 
 /** the stored assignment a loser link feeds: free (no participant, no BYE), or what holds it */

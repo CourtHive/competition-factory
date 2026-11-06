@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { canonicalJson } from '@Tools/canonicalJson';
 import tournamentEngine from '@Engines/syncEngine';
 import mocksEngine from '@Assemblies/engines/mock';
+import { createSeededRandom } from '@Tools/prng';
 import { setClock } from '@Tools/clock';
 
 // constants
@@ -20,6 +21,7 @@ import {
   OUTCOME_PIPELINE_V2,
 } from '@Constants/outcomePipelineConstants';
 import {
+  BYE,
   COMPLETED,
   DEFAULTED,
   DOUBLE_DEFAULT,
@@ -103,6 +105,8 @@ type Scenario = {
   policyDefinitions?: Record<string, unknown>;
   /** the generator's seed (an exit matrix cell's), where the draw's BYEs are where its steps need them */
   nonRandom?: number;
+  /** Ambient RNG captured separately from the generator seed for public setup reproducibility. */
+  randomSeed?: number;
 };
 
 // `propagateExitStatus`: a WALKOVER or DEFAULTED follows its loser across the link (S5)
@@ -798,7 +802,256 @@ const AWARDED_PRODUCED_RELAY: [string, Scenario][] = [FEED_IN_CHAMPIONSHIP, FEED
     ),
 );
 
+// M1 notice contract: the unwind writes the BYE quietly before the carrier records a fresh exit beside it.
+const NOTICE_RELAY_CARRIES: [string, Scenario][] = [
+  [
+    'FEED_IN_CHAMPIONSHIP_TO_SF: a carry after the quiet unwind names its own writer and hydrates its final landing',
+    {
+      drawProfile: { drawSize: 16, participantsCount: 11, drawType: FEED_IN_CHAMPIONSHIP_TO_SF },
+      nonRandom: 20473821,
+      policyDefinitions: POLICY_OFF,
+      setup: [
+        { target: R1(5, 'Main'), outcome: { winningSide: 2 }, params: CARRIED },
+        {
+          target: { roundNumber: 2, roundPosition: 3, structureName: 'Main' },
+          outcome: { matchUpStatus: DOUBLE_WALKOVER },
+          params: CARRIED,
+        },
+      ],
+      steps: [
+        { target: { roundNumber: 2, roundPosition: 3, structureName: 'Main' }, outcome: walkover(1), params: CARRIED },
+      ],
+    },
+  ],
+];
+
+const CONVERGED_RELAY_TRIGGERS: [string, Record<string, unknown>][] = [
+  ['winner1', { winningSide: 1 }],
+  ['winner2', { winningSide: 2 }],
+  ['walkover1 carried', { matchUpStatus: WALKOVER, winningSide: 1 }],
+  ['walkover2 carried', { matchUpStatus: WALKOVER, winningSide: 2 }],
+  ['default1 carried', { matchUpStatus: DEFAULTED, winningSide: 1 }],
+  ['default2 carried', { matchUpStatus: DEFAULTED, winningSide: 2 }],
+  ['cleared', cleared],
+];
+const CONVERGED_RELAY_CAPTURES: [string, Scenario][] = [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((first) =>
+  [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((source) =>
+    [WALKOVER, DEFAULTED].flatMap((middle) =>
+      CONVERGED_RELAY_TRIGGERS.map(([trigger, outcome]): [string, Scenario] => [
+        `produced relay convergence: ${first}/${middle}/${source}/${trigger}`,
+        {
+          drawProfile: { drawSize: 16, participantsCount: 13, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+          nonRandom: 20496326,
+          policyDefinitions: POLICY_OFF,
+          setup: [
+            { target: R1(2, 'Main'), outcome: { matchUpStatus: first }, params: CARRIED },
+            { target: R1(4, 'Main'), outcome: { matchUpStatus: middle, winningSide: 1 }, params: CARRIED },
+            { target: R1(3, 'Main'), outcome: { matchUpStatus: source }, params: CARRIED },
+          ],
+          steps: [{ target: R1(3, 'Main'), outcome, params: CARRIED }],
+        },
+      ]),
+    ),
+  ),
+);
+
+// The carried arrivals form a new convergence whose product reserves into the retained onward copy.
+const CONVERGED_PRODUCED_RELAYS = CONVERGED_RELAY_CAPTURES.filter(([label]) => !label.includes(' carried'));
+const CARRIED_CONVERGED_PRODUCED_RELAYS = CONVERGED_RELAY_CAPTURES.filter(([label]) => label.includes(' carried'));
+
+// A direct produced copy is withdrawn from an occupied final, leaving the carrier's own awarded exit.
+const OCCUPIED_FINAL_RELAY_CAPTURES: [string, Scenario][] = [WALKOVER, DEFAULTED].flatMap((carry) =>
+  [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((source) =>
+    [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((producer) =>
+      (
+        [
+          ['clear', cleared],
+          ['winner1', { winningSide: 1 }],
+          ['winner2', { winningSide: 2 }],
+        ] as [string, Record<string, unknown>][]
+      ).map(([trigger, outcome]): [string, Scenario] => [
+        `occupied final relay: ${carry}/${source}/${producer}/${trigger}`,
+        {
+          drawProfile: { drawSize: 8, participantsCount: 7, drawType: FEED_IN_CHAMPIONSHIP_TO_SF },
+          nonRandom: 20650915,
+          setup: [
+            { target: R1(2, 'Main'), outcome: { matchUpStatus: carry, winningSide: 1 }, params: CARRIED },
+            { target: R1(3, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+            { target: R1(4, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+            {
+              target: { roundNumber: 2, roundPosition: 2, structureName: 'Main' },
+              outcome: { matchUpStatus: DOUBLE_WALKOVER },
+              params: CARRIED,
+            },
+            { target: R1(2, 'Consolation'), outcome: { matchUpStatus: producer }, params: CARRIED },
+            {
+              target: { roundNumber: 2, roundPosition: 1, structureName: 'Main' },
+              outcome: { matchUpStatus: source },
+              params: CARRIED,
+            },
+          ],
+          steps: [{ target: { roundNumber: 2, roundPosition: 1, structureName: 'Main' }, outcome, params: CARRIED }],
+        },
+      ]),
+    ),
+  ),
+);
+const OCCUPIED_FINAL_CLEARS = OCCUPIED_FINAL_RELAY_CAPTURES.filter(([label]) => label.endsWith('/clear'));
+
+// A directly produced exit beside the final loser-seat BYE has no onward relay or award to withdraw.
+const TERMINAL_RELAY_CAPTURES: [string, Scenario][] = [WALKOVER, DEFAULTED].flatMap((carry) =>
+  [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((source) =>
+    [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((producer) =>
+      (
+        [
+          ['clear', {}],
+          ['winner1', { winningSide: 1 }],
+          ['winner2', { winningSide: 2 }],
+        ] as [string, Record<string, unknown>][]
+      ).map(([trigger, outcome]): [string, Scenario] => [
+        `terminal direct relay: ${carry}/${source}/${producer}/${trigger}`,
+        {
+          drawProfile: { drawSize: 8, participantsCount: 4, drawType: FEED_IN_CHAMPIONSHIP },
+          nonRandom: 9000579,
+          randomSeed: 2187201951,
+          setup: [
+            {
+              target: { roundNumber: 2, roundPosition: 1, structureName: 'Main' },
+              outcome: { winningSide: 1 },
+              params: { propagateExitStatus: false },
+            },
+            {
+              target: { roundNumber: 2, roundPosition: 2, structureName: 'Main' },
+              outcome: { matchUpStatus: carry, winningSide: 2 },
+              params: { propagateExitStatus: false },
+            },
+            { target: FINAL_8('Main'), outcome: { matchUpStatus: source }, params: { propagateExitStatus: false } },
+            {
+              target: { roundNumber: 3, roundPosition: 1, structureName: 'Consolation' },
+              outcome: { matchUpStatus: producer },
+              params: { propagateExitStatus: false },
+            },
+          ],
+          steps: [{ target: FINAL_8('Main'), outcome, params: { propagateExitStatus: false } }],
+        },
+      ]),
+    ),
+  ),
+);
+
+// Only the trigger changes propagation; the captured setup remains unchanged.
+const TERMINAL_TRUE_CAPTURES: [string, Scenario][] = TERMINAL_RELAY_CAPTURES.map(([label, scenario]) => [
+  label.replace('terminal direct relay:', 'terminal trigger propagation:'),
+  {
+    ...scenario,
+    steps: scenario.steps.map((step) => ({ ...step, params: { ...step.params, propagateExitStatus: true } })),
+  },
+]);
+const TERMINAL_TRUE_CLEARS = TERMINAL_TRUE_CAPTURES.filter(([label]) => label.endsWith('/clear'));
+const TERMINAL_TRUE_WINNERS = TERMINAL_TRUE_CAPTURES.filter(([label]) => !label.endsWith('/clear'));
+
+// These first-match losers have one earlier BYE but zero qualifying wins; policy-off lacks the own BYE withdrawal.
+const FIRST_MATCHUP_CAPTURES: [string, Scenario][] = [1, 2].flatMap((roundPosition) =>
+  [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((source) =>
+    [1, 2].flatMap((winningSide) =>
+      [false, true].flatMap((propagateExitStatus) =>
+        [false, true].map((policyOff): [string, Scenario] => [
+          `FMLC FIRST_MATCHUP: r2/${roundPosition} ${source} winner${winningSide} propagate${propagateExitStatus} policyOff${policyOff}`,
+          {
+            drawProfile: { drawSize: 8, participantsCount: 4, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+            nonRandom: 9000579,
+            randomSeed: 2187201951,
+            policyDefinitions: policyOff ? POLICY_OFF : undefined,
+            setup: [
+              {
+                target: { roundNumber: 2, roundPosition, structureName: 'Main' },
+                outcome: { matchUpStatus: source },
+                params: { propagateExitStatus },
+              },
+            ],
+            steps: [
+              {
+                target: { roundNumber: 2, roundPosition, structureName: 'Main' },
+                outcome: { winningSide },
+                params: { propagateExitStatus },
+              },
+            ],
+          },
+        ]),
+      ),
+    ),
+  ),
+);
+const FIRST_MATCHUP_OWNED = FIRST_MATCHUP_CAPTURES;
+
+// Captured CURTIS standing-BYE boundary: the corrected source does not own the deeper opponent's BYE.
+// Preserve raw capture labels producer/source/trigger from variants.json; all four public setups propagate exits.
+const STANDING_BYE_CAPTURES: [string, Scenario][] = [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((producer) =>
+  [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((source) =>
+    ['clear', 'winner'].map((trigger): [string, Scenario] => [
+      `CURTIS standing BYE: ${producer}/${source}/${trigger}`,
+      {
+        drawProfile: { drawSize: 32, participantsCount: 27, drawType: CURTIS_CONSOLATION },
+        nonRandom: 9000062,
+        randomSeed: 2722004236,
+        setup: [
+          { target: R1(7, 'Main'), outcome: { matchUpStatus: WALKOVER, winningSide: 1 }, params: CARRIED },
+          { target: R1(8, 'Main'), outcome: { matchUpStatus: WALKOVER, winningSide: 2 }, params: CARRIED },
+          {
+            target: { roundNumber: 2, roundPosition: 4, structureName: 'Main' },
+            outcome: { matchUpStatus: producer },
+            params: CARRIED,
+          },
+          { target: R1(3, 'Main'), outcome: { matchUpStatus: source }, params: CARRIED },
+        ],
+        steps: [
+          {
+            target: R1(3, 'Main'),
+            outcome: trigger === 'clear' ? cleared : { matchUpStatus: WALKOVER, winningSide: 1 },
+            params: CARRIED,
+          },
+        ],
+      },
+    ]),
+  ),
+);
+
+// An indirect produced origin remains in the two-position relay while its onward award is withdrawn.
+const INDIRECT_COMPOUND_CLEARS: [string, Scenario][] = [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((source) =>
+  [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((producer) =>
+    [DOUBLE_WALKOVER, DOUBLE_DEFAULT].map((other): [string, Scenario] => [
+      `indirect compound clear: ${source}/${producer}/${other}`,
+      {
+        drawProfile: { drawSize: 16, participantsCount: 11, drawType: FEED_IN_CHAMPIONSHIP_TO_SF },
+        nonRandom: 20473821,
+        randomSeed: 2496245122,
+        policyDefinitions: POLICY_OFF,
+        setup: [
+          { target: R1(2, 'Main'), outcome: { matchUpStatus: source }, params: CARRIED },
+          { target: R1(5, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+          { target: R1(7, 'Main'), outcome: { matchUpStatus: producer }, params: CARRIED },
+          {
+            target: { roundNumber: 2, roundPosition: 2, structureName: 'Main' },
+            outcome: { matchUpStatus: other },
+            params: CARRIED,
+          },
+        ],
+        steps: [{ target: R1(2, 'Main'), outcome: cleared, params: CARRIED }],
+      },
+    ]),
+  ),
+);
+
 const SCENARIOS: [string, Scenario][] = [
+  ...INDIRECT_COMPOUND_CLEARS,
+  ...STANDING_BYE_CAPTURES,
+  ...FIRST_MATCHUP_OWNED,
+  ...TERMINAL_RELAY_CAPTURES,
+  ...TERMINAL_TRUE_CLEARS,
+  ...OCCUPIED_FINAL_RELAY_CAPTURES,
+  ...CONVERGED_PRODUCED_RELAYS,
+  ...CARRIED_CONVERGED_PRODUCED_RELAYS,
+  ...NOTICE_RELAY_CARRIES,
   ...AWARDED_PRODUCED_RELAY,
   ...PRODUCED_RELAY,
   ...UNWOUND_CONVERGENCE,
@@ -3431,53 +3684,60 @@ function findTarget(target: Target): string {
 /** the steps from a fresh record, every topic subscribed and the clock fixed */
 function play(
   mode: OutcomePipelineMode,
-  { drawProfile, steps, setup = [], policyDefinitions, nonRandom = 1 }: Scenario,
+  { drawProfile, steps, setup = [], policyDefinitions, nonRandom = 1, randomSeed }: Scenario,
   { realClock }: { realClock?: boolean } = {},
 ) {
-  setOutcomePipeline(OUTCOME_PIPELINE_V1);
-  setClock(realClock ? undefined : '2026-10-25T00:00:00.000Z');
-  setSubscriptions({ subscriptions: {} });
-  mocksEngine.generateTournamentRecord({
-    drawProfiles: [{ ...drawProfile, drawId: 'd' }],
-    nonRandom,
-    setState: true,
-  });
-  if (policyDefinitions) tournamentEngine.attachPolicies({ policyDefinitions });
-  for (const { target, outcome, params } of setup) {
-    const result = tournamentEngine.setMatchUpStatus({
-      drawId: 'd',
-      matchUpId: findTarget(target),
-      outcome,
-      ...params,
+  // Pin the capture RNG and restore it even when setup or comparison throws; absent seeds leave old behavior alone.
+  const previousRandom = randomSeed === undefined ? undefined : Math.random;
+  try {
+    if (randomSeed !== undefined) Math.random = createSeededRandom(randomSeed);
+    setOutcomePipeline(OUTCOME_PIPELINE_V1);
+    setClock(realClock ? undefined : '2026-10-25T00:00:00.000Z');
+    setSubscriptions({ subscriptions: {} });
+    mocksEngine.generateTournamentRecord({
+      drawProfiles: [{ ...drawProfile, drawId: 'd' }],
+      nonRandom,
+      setState: true,
     });
-    if (!result.success) throw new Error(`setup step failed: ${JSON.stringify(target)}`);
+    if (policyDefinitions) tournamentEngine.attachPolicies({ policyDefinitions });
+    for (const { target, outcome, params } of setup) {
+      const result = tournamentEngine.setMatchUpStatus({
+        drawId: 'd',
+        matchUpId: findTarget(target),
+        outcome,
+        ...params,
+      });
+      if (!result.success) throw new Error(`setup step failed: ${JSON.stringify(target)}`);
+    }
+    deleteNotices();
+    const notices: string[] = [];
+    setSubscriptions({
+      subscriptions: Object.fromEntries(
+        // the differential plans the stored topics, not the in-context one (a notice v2 defers to its apply), and compares
+        // what is subscribed: the real-clock arm asks only what it can compare
+        (realClock ? TOPICS.filter((topic) => topic !== UPDATE_INCONTEXT_MATCHUP) : TOPICS).map((topic) => [
+          topic,
+          (payloads: any[]) => payloads.forEach((p) => notices.push(`${topic} ${canonicalJson(p)}`)),
+        ]),
+      ),
+    });
+    // the targets are found before the pipeline is set, so finding them is not part of what is compared
+    const matchUpIds = steps.map(({ target }) => findTarget(target));
+    setOutcomePipeline(mode);
+    v1Writes.count = 0;
+    const results = steps.map(({ outcome, params }, i) => {
+      if (!realClock) setClock(`2026-10-25T00:0${i + 1}:00.000Z`);
+      return tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId: matchUpIds[i], outcome, ...params });
+    });
+    return {
+      record: canonicalJson(tournamentEngine.getTournament().tournamentRecord),
+      v1Writes: v1Writes.count,
+      notices,
+      results: results.map(({ stack: _stack, ...result }: any) => result),
+    };
+  } finally {
+    if (previousRandom) Math.random = previousRandom;
   }
-  deleteNotices();
-  const notices: string[] = [];
-  setSubscriptions({
-    subscriptions: Object.fromEntries(
-      // the differential plans the stored topics, not the in-context one (a notice v2 defers to its apply), and compares
-      // what is subscribed: the real-clock arm asks only what it can compare
-      (realClock ? TOPICS.filter((topic) => topic !== UPDATE_INCONTEXT_MATCHUP) : TOPICS).map((topic) => [
-        topic,
-        (payloads: any[]) => payloads.forEach((p) => notices.push(`${topic} ${canonicalJson(p)}`)),
-      ]),
-    ),
-  });
-  // the targets are found before the pipeline is set, so finding them is not part of what is compared
-  const matchUpIds = steps.map(({ target }) => findTarget(target));
-  setOutcomePipeline(mode);
-  v1Writes.count = 0;
-  const results = steps.map(({ outcome, params }, i) => {
-    if (!realClock) setClock(`2026-10-25T00:0${i + 1}:00.000Z`);
-    return tournamentEngine.setMatchUpStatus({ drawId: 'd', matchUpId: matchUpIds[i], outcome, ...params });
-  });
-  return {
-    record: canonicalJson(tournamentEngine.getTournament().tournamentRecord),
-    v1Writes: v1Writes.count,
-    notices,
-    results: results.map(({ stack: _stack, ...result }: any) => result),
-  };
 }
 
 describe('under v2, the first direction is v2s, and leaves exactly what v1 leaves', () => {
@@ -3493,6 +3753,212 @@ describe('under v2, the first direction is v2s, and leaves exactly what v1 leave
     expect(v2.results).toEqual(v1.results);
     expect(v2.record).toEqual(v1.record);
     expect(v2.notices).toEqual(v1.notices);
+  });
+});
+
+describe('M1 notice contracts also compare with in-context subscribers under differential', () => {
+  const noops = SCENARIOS.filter(([label]) => label.includes('asked for again'));
+  it.each([...noops, ...NOTICE_RELAY_CARRIES])('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results.every((result: any) => result.success)).toEqual(true);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
+});
+
+describe('S7 converged produced relays compare subscribed differential notices', () => {
+  it.each(CONVERGED_RELAY_CAPTURES)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
+});
+
+describe('S7 CURTIS standing BYE compares subscribed differential notices', () => {
+  it.each(STANDING_BYE_CAPTURES)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
+});
+
+describe('S7 FMLC FIRST_MATCHUP arrivals compare subscribed differential notices', () => {
+  it.each(FIRST_MATCHUP_OWNED)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
+});
+
+describe('S7 indirect compound clears compare subscribed differential notices', () => {
+  it.each(INDIRECT_COMPOUND_CLEARS)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
+});
+
+describe('S7 the original indirect compound winner remains v1s', () => {
+  it('Main 1/2 double default corrected to walkover retains two legacy writers, whole', () => {
+    const captured = INDIRECT_COMPOUND_CLEARS.find(
+      ([label]) => label === 'indirect compound clear: DOUBLE_DEFAULT/DOUBLE_WALKOVER/DOUBLE_WALKOVER',
+    );
+    expect(captured).toBeDefined();
+    const scenario: Scenario = {
+      ...captured![1],
+      steps: [{ ...captured![1].steps[0], outcome: { matchUpStatus: WALKOVER, winningSide: 1 } }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    expect(v1.v1Writes).toEqual(2);
+    expect(v1.notices).toHaveLength(18);
+    for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+      const compared = play(mode, scenario);
+      expect(compared.v1Writes).toEqual(2);
+      expect(compared.results).toEqual(v1.results);
+      expect(compared.record).toEqual(v1.record);
+      expect(compared.notices).toEqual(v1.notices);
+    }
+  });
+});
+
+describe('S7 terminal direct relays compare subscribed differential notices', () => {
+  it.each([...TERMINAL_RELAY_CAPTURES, ...TERMINAL_TRUE_CLEARS])('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
+});
+
+describe('S7 terminal propagation winners remain v1s', () => {
+  it.each(TERMINAL_TRUE_WINNERS)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    expect(v1.v1Writes).toEqual(1);
+    for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+      const compared = play(mode, scenario);
+      expect(compared.v1Writes).toEqual(1);
+      expect(compared.results).toEqual(v1.results);
+      expect(compared.record).toEqual(v1.record);
+      expect(compared.notices).toEqual(v1.notices);
+    }
+  });
+});
+
+describe('S7 occupied-final results compare subscribed differential notices', () => {
+  it('the public setup has a real carrier beside the relay producer in a final', () => {
+    const [, scenario] = OCCUPIED_FINAL_CLEARS[0];
+    play(OUTCOME_PIPELINE_V1, { ...scenario, steps: [] });
+    const matchUps = tournamentEngine.allDrawMatchUps({ drawId: 'd', inContext: true }).matchUps;
+    const at = (structureName: string, roundNumber: number, roundPosition: number) =>
+      matchUps.find(
+        (matchUp: any) =>
+          matchUp.structureName === structureName &&
+          matchUp.roundNumber === roundNumber &&
+          matchUp.roundPosition === roundPosition,
+      );
+    const producer = at('Consolation', 1, 2);
+    const relay = at('Consolation', 2, 2);
+    const onward = at('Consolation', 3, 1);
+    const carrierSource = at('Main', 1, 2);
+    expect(producer.winnerMatchUpId).toEqual(relay.matchUpId);
+    expect(relay.matchUpStatus).toEqual(BYE);
+    expect(relay.drawPositions).toEqual([2]);
+    expect(onward.matchUpStatus).toEqual(DOUBLE_WALKOVER);
+    expect(onward.winnerMatchUpId).toBeUndefined();
+    expect(onward.sides.filter((side: any) => side.participantId).map((side: any) => side.drawPosition)).toEqual([4]);
+    expect(
+      Object.values(onward.sideExitProvenance)
+        .map((entry: any) => entry.sourceMatchUpId)
+        .sort(),
+    ).toEqual([producer.matchUpId, carrierSource.matchUpId].sort());
+  });
+  it.each(OCCUPIED_FINAL_RELAY_CAPTURES)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
+});
+
+describe('S7 occupied-final winner scope controls remain v1s', () => {
+  const controls: [string, Record<string, unknown>, Record<string, unknown>][] = [
+    ['reported score', won(1), CARRIED],
+    ['requested format', { winningSide: 1 }, { ...CARRIED, matchUpFormat: 'SET1-S:6/TB7' }],
+    ['carried schedule', { winningSide: 1 }, { ...CARRIED, schedule: { scheduledDate: '2026-10-25' } }],
+    ['carried notes', { winningSide: 1 }, { ...CARRIED, notes: 'occupied winner scope control' }],
+  ];
+  it.each(controls)('%s', (_label, outcome, params) => {
+    const captured = OCCUPIED_FINAL_RELAY_CAPTURES.find(([label]) =>
+      label.endsWith('WALKOVER/DOUBLE_WALKOVER/DOUBLE_WALKOVER/winner1'),
+    );
+    expect(captured).toBeDefined();
+    const scenario: Scenario = {
+      ...captured![1],
+      steps: [{ ...captured![1].steps[0], outcome, params }],
+    };
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    expect(v1.results.every((result: any) => result.success)).toEqual(true);
+    expect(v1.v1Writes).toBeGreaterThan(0);
+    for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+      const compared = play(mode, scenario);
+      expect(compared.v1Writes).toEqual(v1.v1Writes);
+      expect(compared.results).toEqual(v1.results);
+      expect(compared.record).toEqual(v1.record);
+      expect(compared.notices).toEqual(v1.notices);
+    }
+  });
+});
+
+describe('S7 the nonterminal outer occupied correction remains v1s', () => {
+  it('the original five-setup Main 1/2 double default corrected to walkover remains fallback, whole', () => {
+    const scenario: Scenario = {
+      drawProfile: { drawSize: 8, participantsCount: 7, drawType: FEED_IN_CHAMPIONSHIP_TO_SF },
+      nonRandom: 20650915,
+      setup: [
+        { target: R1(2, 'Main'), outcome: { matchUpStatus: DOUBLE_DEFAULT }, params: CARRIED },
+        { target: R1(3, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+        { target: R1(4, 'Main'), outcome: { winningSide: 1 }, params: CARRIED },
+        {
+          target: { roundNumber: 2, roundPosition: 2, structureName: 'Main' },
+          outcome: { matchUpStatus: DOUBLE_WALKOVER },
+          params: CARRIED,
+        },
+        { target: R1(2, 'Consolation'), outcome: { matchUpStatus: DOUBLE_WALKOVER }, params: CARRIED },
+      ],
+      steps: [{ target: R1(2, 'Main'), outcome: { matchUpStatus: WALKOVER, winningSide: 1 }, params: CARRIED }],
+    };
+    const random = Math.random;
+    try {
+      Math.random = createSeededRandom(2519021469);
+      const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+      expect(v1.results.every((result: any) => result.success)).toEqual(true);
+      expect(v1.v1Writes).toEqual(2);
+      expect(v1.notices).toHaveLength(12);
+      for (const mode of [OUTCOME_PIPELINE_V2, OUTCOME_PIPELINE_DIFFERENTIAL] as const) {
+        Math.random = createSeededRandom(2519021469);
+        const compared = play(mode, scenario);
+        expect(compared.v1Writes).toEqual(2);
+        expect(compared.results).toEqual(v1.results);
+        expect(compared.record).toEqual(v1.record);
+        expect(compared.notices).toEqual(v1.notices);
+      }
+    } finally {
+      Math.random = random;
+    }
   });
 });
 

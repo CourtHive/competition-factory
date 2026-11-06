@@ -41,9 +41,21 @@ describe('the event a notice names is compared', () => {
   });
 
   it("the call's own in-context notice is compared by topic and key alone", () => {
-    const planned = plannedNotices({ ops: [], matchUpId: 'm' });
+    const planned = plannedNotices({
+      ops: [{ op: 'setMatchUpResult', matchUpId: 'm', matchUpStatus: 'TO_BE_PLAYED' }],
+      matchUpId: 'm',
+    });
     const added = [{ topic: UPDATE_INCONTEXT_MATCHUP, key: 'm', payload: {} }];
     expect(compareNotices({ planned, added, topics }).equal).toEqual(true);
+    expect(compareNotices({ planned, added: [], topics }).equal).toEqual(false);
+  });
+
+  it('a satisfied result with an empty plan announces nothing', () => {
+    const planned = plannedNotices({ ops: [], matchUpId: 'm' });
+    expect(compareNotices({ planned, added: [], topics }).equal).toEqual(true);
+    expect(compareNotices({ planned, added: [{ topic: UPDATE_INCONTEXT_MATCHUP, key: 'm' }], topics }).equal).toEqual(
+      false,
+    );
   });
 
   // v1's buffer keeps the last write's context and an earlier write's event (`preserveNoticeIdentity`, S6 tail)
@@ -70,6 +82,41 @@ describe('the event a notice names is compared', () => {
     const planned = plannedNotices({ ops: [bye, stamp('c'), unfillable, stamp('c')], matchUpId: 'm' });
     expect(compareNotices({ planned, added: byeNotice('e'), topics }).equal).toEqual(true);
     expect(compareNotices({ planned, added: byeNotice(), topics }).equal).toEqual(false);
+  });
+
+  const score = (flags: { announcesContext?: false; restoresNoticeIdentity?: true } = {}) => ({
+    op: 'setMatchUpResult' as const,
+    matchUpId: 'c',
+    matchUpStatus: 'WALKOVER' as const,
+    ...flags,
+  });
+  const scoreNotice = (eventId?: string) => [...byeNotice(eventId), { topic: UPDATE_INCONTEXT_MATCHUP, key: 'c' }];
+
+  it('a restoring score after a quiet score names its event and still defers its in-context notice', () => {
+    const planned = plannedNotices({
+      ops: [score({ announcesContext: false }), stamp('c'), score({ restoresNoticeIdentity: true }), stamp('c')],
+      matchUpId: 'm',
+    });
+    expect(compareNotices({ planned, added: scoreNotice('e'), topics }).equal).toEqual(true);
+    expect(compareNotices({ planned, added: scoreNotice(), topics }).equal).toEqual(false);
+  });
+
+  it('a later quiet score supersedes a restoring score and names no event', () => {
+    const planned = plannedNotices({
+      ops: [score({ restoresNoticeIdentity: true }), stamp('c'), score({ announcesContext: false }), stamp('c')],
+      matchUpId: 'm',
+    });
+    expect(compareNotices({ planned, added: scoreNotice(), topics }).equal).toEqual(true);
+    expect(compareNotices({ planned, added: scoreNotice('e'), topics }).equal).toEqual(false);
+  });
+
+  it('an unmarked score after a quiet score keeps the existing eventless boundary', () => {
+    const planned = plannedNotices({
+      ops: [score({ announcesContext: false }), stamp('c'), score(), stamp('c')],
+      matchUpId: 'm',
+    });
+    expect(compareNotices({ planned, added: scoreNotice(), topics }).equal).toEqual(true);
+    expect(compareNotices({ planned, added: scoreNotice('e'), topics }).equal).toEqual(false);
   });
 
   it('an advance through a BYE alone names no event', () => {
