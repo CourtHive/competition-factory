@@ -1,4 +1,6 @@
+import { deleteNotices, getNotices, setSubscriptions } from '@Global/state/globalState';
 import { compareNotices, plannedNotices } from '@Mutate/matchUps/outcome/shadow';
+import { applyOwnedPlan } from '@Mutate/matchUps/outcome/apply';
 import { describe, expect, it } from 'vitest';
 
 // constants
@@ -122,5 +124,80 @@ describe('the event a notice names is compared', () => {
   it('an advance through a BYE alone names no event', () => {
     const planned = plannedNotices({ ops: [advance, stamp('c')], matchUpId: 'm' });
     expect(compareNotices({ planned, added: byeNotice(), topics }).equal).toEqual(true);
+  });
+});
+
+// The real writers restored by C13: assignDrawPositionBye and advanceWinner follow the unwind's quiet removals.
+describe('C13 actual writer identity follows operation order', () => {
+  const clear = { op: 'clearMatchUpBye' as const, matchUpId: 'c', drawPosition: 1 };
+  const bye = { op: 'setMatchUpBye' as const, matchUpId: 'c' };
+  const release = {
+    op: 'setMatchUpDrawPositions' as const,
+    matchUpId: 'c',
+    drawPositions: [],
+    releasedDrawPosition: 2,
+    announcesContext: false as const,
+  };
+  const advance = {
+    op: 'setMatchUpDrawPositions' as const,
+    matchUpId: 'c',
+    drawPositions: [2],
+    advancesThroughBye: true as const,
+  };
+  function notice(ops: Parameters<typeof applyOwnedPlan>[0]['ops']) {
+    const matchUp = { matchUpId: 'c', drawPositions: [1, 2], matchUpStatus: 'BYE', roundNumber: 1, roundPosition: 1 };
+    const drawDefinition = {
+      drawId: 'd',
+      structures: [
+        {
+          structureId: 's',
+          stage: 'MAIN',
+          structureType: 'ITEM',
+          positionAssignments: [
+            { drawPosition: 1, bye: true, byeFromPropagation: true },
+            { drawPosition: 2, participantId: 'p' },
+          ],
+          matchUps: [matchUp],
+        },
+      ],
+    };
+    const event = { eventId: 'e', drawDefinitions: [drawDefinition] };
+    const tournamentRecord = { tournamentId: 't', events: [event] };
+    deleteNotices();
+    setSubscriptions({ subscriptions: { [MODIFY_MATCHUP]: () => {} } });
+    try {
+      const result = applyOwnedPlan({
+        shape: 'direction',
+        ops,
+        args: { drawDefinition, tournamentRecord, event, matchUpsMap: { drawMatchUps: [matchUp] } } as any,
+      });
+      expect(result.success).toEqual(true);
+      const written = getNotices({ topic: MODIFY_MATCHUP });
+      expect(written).toHaveLength(1);
+      return written[0];
+    } finally {
+      deleteNotices();
+      setSubscriptions({ subscriptions: {} });
+    }
+  }
+  it('a restored BYE supersedes the withdrawal name and restores event and tournament', () => {
+    expect(notice([clear, bye])).toMatchObject({ context: 'setMatchUpStatusBye', eventId: 'e', tournamentId: 't' });
+  });
+  it('a later withdrawal retains its position name and omits event and tournament', () => {
+    const actual = notice([bye, clear]);
+    expect(actual.context).toEqual('removeDrawPosition-1');
+    expect(actual.eventId).toBeUndefined();
+    expect(actual.tournamentId).toBeUndefined();
+  });
+  it('a restored advancement names the tournament after a quiet release, without inventing an event', () => {
+    const actual = notice([release, advance]);
+    expect(actual.context).toEqual('advanceWinner');
+    expect(actual.tournamentId).toEqual('t');
+    expect(actual.eventId).toBeUndefined();
+  });
+  it('a later quiet release still omits the tournament after an advancement', () => {
+    const actual = notice([advance, release]);
+    expect(actual.tournamentId).toBeUndefined();
+    expect(actual.eventId).toBeUndefined();
   });
 });

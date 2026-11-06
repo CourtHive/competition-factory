@@ -1479,6 +1479,21 @@ The actual source, relay and onward writers give five deferred score callbacks t
 with fourteen ordered notices, or fifteen when the independent old one-position late advance remains.
 No operation field, eligibility flag, artificial intermediate award or synthetic callback is added.
 
+A given winner over an FMLC round-two double exit can leave its loser out of the FIRST_MATCHUP feed
+(S7). Where that loser's qualifying win makes v1 restore the propagated BYE that the source's own
+unwind withdrew, the plan binds the exact own-level withdrawal and folds the complete unwind before
+checking the freed seat. The restored BYE keeps the original home positions. If an actual participant
+stood opposite it, that same program must have released the participant from the clean next matchUp;
+the complete folded view must still hold that participant at home and leave the next matchUp empty.
+Existing BYE, position and timestamp ops then restore the reservation and its real advancement.
+Deferred unwind announcements run before this restoration; rederived levels remain excluded.
+No advancement is invented when no opponent is present. A later restored BYE supersedes its earlier
+withdrawal notice; a later real advancement restores tournament identity after the quiet release,
+while retaining its absent event. Reverse operation order retains the later withdrawal or release.
+The captured program uses one actual source writer. When both possible source participants already
+have qualifying wins, v1 leaves the reservation standing throughout: that distinct program remains
+unowned here, as does an explicit exit still carried by the existing settle boundary.
+
 ## 7.2 The plan as ops (S1)
 
 A quiet produced-award placement can put back the exact position a preceding release removed. Its final

@@ -603,7 +603,12 @@ function givenWinnerReason(args: Parameters<typeof exitReason>[0]): AbstainReaso
     !unwoundThrough(view, unwound)
   )
     return 'exit';
-  return unwoundLoserReason(view, levels[0], direction?.loser);
+  return unwoundLoserReason(
+    view,
+    levels[0],
+    direction?.loser,
+    direction?.loser?.bye ? unwoundView(args)?.view : undefined,
+  );
 }
 
 /**
@@ -617,8 +622,10 @@ function unwoundLoserReason(
   view: OutcomeView,
   own: UnwoundLevel,
   loser?: DirectionPlan['loser'],
+  after?: OutcomeView,
 ): AbstainReason | undefined {
   const { targets } = view;
+  if (unwoundKeptOutOps(view, own.seatOps, loser, after)) return undefined;
   if (!loser?.arrives || loser.exit || loser.converged || loser.carriedPast || loser.bye || loser.withdrawn)
     return 'exit';
   if (!targets.loserStructureId || !targets.loserTargetDrawPosition) return 'exit';
@@ -640,6 +647,103 @@ function unwoundLoserReason(
   if (!branched && (!freed || !targets.loserTargetSeat?.bye)) return 'exit';
   if (targets.seededParticipantIds?.includes(loser.participantId)) return 'loser';
   return undefined;
+}
+
+/** A FIRST_MATCHUP loser kept out by a qualifying win restores the BYE its own unwind withdrew. */
+function unwoundKeptOutOps(
+  view: OutcomeView,
+  program: OutcomeOp[],
+  loser?: DirectionPlan['loser'],
+  after?: OutcomeView,
+): OutcomeOp[] | undefined {
+  const { targets } = view;
+  const bye = loser?.bye;
+  if (targets.priorWinsBefore[1] > 0 && targets.priorWinsBefore[2] > 0) return undefined;
+  // planLoser's sole BYE constructor already proves !arrives and FIRST_MATCHUP into round two.
+  if (!bye) return undefined;
+  if (bye.structureId !== targets.loserStructureId || bye.drawPosition !== targets.loserTargetDrawPosition)
+    return undefined;
+  const home = indexed(view, targets.loserMatchUpId);
+  if (
+    !home ||
+    home.matchUpStatus !== BYE ||
+    home.winningSide ||
+    !scoreless(home) ||
+    home.matchUpStatusCodes?.length ||
+    Object.keys(home.sideExitProvenance ?? {}).length ||
+    home.loserMatchUpId
+  )
+    return undefined;
+  const freed = program.some(
+    (op) => op.op === 'withdrawBye' && op.structureId === bye.structureId && op.drawPosition === bye.drawPosition,
+  );
+  const clear = program.some(
+    (op) =>
+      op.op === 'clearMatchUpBye' &&
+      op.matchUpId === home.matchUpId &&
+      op.drawPosition === bye.drawPosition &&
+      !op.rederived,
+  );
+  if (!freed || !clear || !after) return undefined;
+  const folded = indexed(after, home.matchUpId);
+  const seat = after.targets.loserTargetSeat;
+  if (
+    !folded ||
+    folded.matchUpStatus !== TO_BE_PLAYED ||
+    folded.winningSide ||
+    !unwoundClean(folded, new Set()) ||
+    !seat?.free ||
+    seat.byeFromPropagation ||
+    JSON.stringify(positionsOf(folded)) !== JSON.stringify(positionsOf(home))
+  )
+    return undefined;
+  const seated = seatBye({ ...bye, matchUpId: home.matchUpId });
+  const opposite = positionsOf(home).filter((position) => position !== bye.drawPosition);
+  if (!opposite.length) return seated;
+  const next = indexed(view, home.winnerMatchUpId);
+  const opponent = home.sides?.find((side) => side.drawPosition === opposite[0]);
+  if (!opponent?.participantId || opponent.bye || opponent.qualifier) return undefined;
+  if (
+    opposite.length !== 1 ||
+    !next ||
+    next.structureId !== home.structureId ||
+    next.matchUpStatus !== TO_BE_PLAYED ||
+    next.winningSide ||
+    !scoreless(next) ||
+    Object.keys(next.sideExitProvenance ?? {}).length ||
+    next.matchUpStatusCodes?.length
+  )
+    return undefined;
+  const released = program.some(
+    (op) =>
+      op.op === 'setMatchUpDrawPositions' &&
+      op.matchUpId === next.matchUpId &&
+      op.releasedDrawPosition === opposite[0] &&
+      op.drawPositions.length === 0,
+  );
+  if (!released || positionsOf(next).length !== 1 || positionsOf(next)[0] !== opposite[0]) return undefined;
+  const landing = indexed(after, next.matchUpId);
+  const held = folded.sides?.find((side) => side.drawPosition === opposite[0]);
+  if (
+    !landing ||
+    landing.matchUpStatus !== TO_BE_PLAYED ||
+    !unwoundClean(landing, new Set()) ||
+    positionsOf(landing).length ||
+    held?.participantId !== opponent.participantId ||
+    held.bye ||
+    held.qualifier
+  )
+    return undefined;
+  return [
+    ...seated,
+    {
+      op: 'setMatchUpDrawPositions',
+      matchUpId: next.matchUpId,
+      drawPositions: positionsOf(next),
+      advancesThroughBye: true,
+    },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId },
+  ];
 }
 
 /**
@@ -6640,7 +6744,9 @@ function recordedPlanOps(args: Parameters<typeof planOutcome>[0], drawDefinition
   );
   // a kept-out loser's BYE on the seat the link feeds (v1's `directLoser`), unless a reservation placed it already
   const keptOut = loser?.bye && !loser.arrives && !view.targets.loserTargetSeat?.bye ? loser.bye : undefined;
-  const keptOutBye = keptOut && loserMatchUpId ? seatBye({ ...keptOut, matchUpId: loserMatchUpId }) : [];
+  const keptOutBye =
+    unwoundKeptOutOps(view, seatPrograms[0] ?? [], loser, loser?.bye ? unwoundView(args)?.view : undefined) ??
+    (keptOut && loserMatchUpId ? seatBye({ ...keptOut, matchUpId: loserMatchUpId }) : []);
   // the FIRST_MATCHUP reservation the winner's arrival makes (v1's `propagateConsolationBye`)
   const reservation = write.winningSide ? view.targets.reservations?.[write.winningSide as 1 | 2] : undefined;
   const reserved = reservation?.kind === 'reserve' ? seatBye(reservation) : [];
