@@ -531,7 +531,15 @@ export type WinnerLoserSeat = {
   structureId: string;
   drawPosition: number;
   linkCondition?: string;
-  seat?: { free: boolean; opponentBye: boolean; opponentHeld: boolean; bye?: boolean; byeFromPropagation?: boolean };
+  seat?: {
+    free: boolean;
+    opponentBye: boolean;
+    opponentHeld: boolean;
+    bye?: boolean;
+    byeFromPropagation?: boolean;
+    /** exact original propagated opposite BYE; the requested empty seat passed the canonical activity check */
+    standingBye?: { opponentDrawPosition: number };
+  };
   /** the positions the matchUp holding the seat already stands with */
   drawPositions: number[];
   matchUpStatus?: MatchUpStatusUnion;

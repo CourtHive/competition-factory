@@ -3946,6 +3946,51 @@ function occupiedFinalRelaySeatOps(
   ];
 }
 
+/** The empty seat already advanced through its standing opposite BYE; its clear changes neither matchUp. */
+function standingByeSeat(view: OutcomeView, seat: WinnerLoserSeat, withdrawn: Set<string>): boolean {
+  const opposite = seat.seat?.standingBye?.opponentDrawPosition;
+  if (!opposite || seat.seat?.byeFromPropagation) return false;
+  if (withdrawn.has(seatKey({ structureId: seat.structureId, drawPosition: opposite }))) return false;
+  const target = indexed(view, seat.matchUpId);
+  if (!target || target.structureId !== seat.structureId || target.roundNumber !== 1 || target.loserMatchUpId)
+    return false;
+  if (target.matchUpStatus !== BYE || target.winningSide || !scoreless(target)) return false;
+  if (target.matchUpStatusCodes?.length || Object.keys(target.sideExitProvenance ?? {}).length) return false;
+  const positions = positionsOf(target);
+  if (positions.length !== 2 || !positions.includes(seat.drawPosition) || !positions.includes(opposite)) return false;
+  if (target.sides?.some((side) => side.participantId || side.qualifier)) return false;
+  if (!target.sides?.some((side) => side.drawPosition === opposite && side.bye)) return false;
+  const next = indexed(view, target.winnerMatchUpId);
+  if (!next || next.structureId !== target.structureId || next.roundNumber !== 2) return false;
+  const advanced = positionsOf(next);
+  if (advanced.length !== 2 || !advanced.includes(seat.drawPosition) || advanced.includes(opposite)) return false;
+  const members = (view.inContextDrawMatchUps ?? []).filter((matchUp) => matchUp.structureId === seat.structureId);
+  return members.every((matchUp) => standingByeRemainder(view, matchUp, target, next, seat.drawPosition, opposite));
+}
+
+/** Bound the v1 pairing/removal tasks: preserve one BYE advancement, with no result or further reservation. */
+function standingByeRemainder(
+  view: OutcomeView,
+  matchUp: HydratedMatchUp,
+  target: HydratedMatchUp,
+  next: HydratedMatchUp,
+  drawPosition: number,
+  opposite: number,
+): boolean {
+  if (matchUp.matchUpId === target.matchUpId) return true;
+  if (matchUp.matchUpStatus !== TO_BE_PLAYED || matchUp.winningSide || !scoreless(matchUp)) return false;
+  if (matchUp.matchUpStatusCodes?.length || Object.keys(matchUp.sideExitProvenance ?? {}).length) return false;
+  if (matchUp.loserMatchUpId || matchUp.sides?.some((side) => side.bye || side.qualifier)) return false;
+  const positions = positionsOf(matchUp);
+  if (positions.includes(opposite) || (matchUp.matchUpId !== next.matchUpId && positions.includes(drawPosition)))
+    return false;
+  if (!matchUp.winnerMatchUpId) return true;
+  const onward = indexed(view, matchUp.winnerMatchUpId);
+  return (
+    !!onward && onward.structureId === target.structureId && (onward.roundNumber ?? 0) > (matchUp.roundNumber ?? 0)
+  );
+}
+
 function unwoundSeatOps(
   view: OutcomeView,
   loserSeat: WinnerLoserSeat,
@@ -3969,7 +4014,10 @@ function unwoundSeatOps(
   // exit's to take back: v1's
   const conditioned = loserSeat.linkCondition && !(placedBye && loserSeat.linkCondition === FIRST_MATCHUP);
   if (!seat || conditioned) return undefined;
-  if (!placedBye) return seat.free && loserSeat.matchUpStatus !== BYE ? [withdraw] : undefined;
+  if (!placedBye)
+    return seat.free && (loserSeat.matchUpStatus !== BYE || standingByeSeat(view, loserSeat, withdrawn))
+      ? [withdraw]
+      : undefined;
   const byeMatchUp = indexed(view, matchUpId);
   if (!seat.bye || !seat.byeFromPropagation || !byeMatchUp) return undefined;
   const produced =
