@@ -1,3 +1,4 @@
+import { missingDrawPositionsRefusal, isUndirectedDrawnOutcome } from '@Query/matchUp/missingDrawPositionsRefusal';
 import { addMatchUpScheduleItems, scheduleRefusal } from '@Mutate/matchUps/schedule/scheduleItems/scheduleItems';
 import { removalMissingDrawPositions } from '@Mutate/matchUps/drawPositions/removeDirectedParticipants';
 import { isDirectingMatchUpStatus, isNonDirectingMatchUpStatus } from '@Query/matchUp/checkStatusType';
@@ -24,7 +25,6 @@ import { getTargetsDownstream } from '@Query/drawDefinition/isActiveDownstream';
 import { ensureSideLineUps } from '@Mutate/matchUps/lineUps/ensureSideLineUps';
 import { modifyMatchUpScore } from '@Mutate/matchUps/score/modifyMatchUpScore';
 import { getPositionAssignments } from '@Query/drawDefinition/positionsGetter';
-import { isDrawnResult } from '@Query/matchUps/roundRobinTally/drawnResults';
 import { isDeciderStructure } from '@Query/drawDefinition/deciderStructures';
 import { isPropagatedExit } from '@Helpers/drawTopology/sideExitProvenance';
 import { validateDrawTallyOptions } from '@Validators/validateTallyPolicy';
@@ -32,7 +32,6 @@ import { modifyDrawNotice } from '@Mutate/notifications/drawNotifications';
 import { getAppliedPolicies } from '@Query/extensions/getAppliedPolicies';
 import { checkScoreHasValue } from '@Scoring/analysis/checkScoreHasValue';
 import { getMalformedRoundLink } from '@Query/drawDefinition/linkGetter';
-import { isRotatingPartnerDraw } from '@Validators/rotatingPartnerDraw';
 import { decorateResult } from '@Functions/global/decorateResult';
 import { getAllDrawMatchUps } from '@Query/matchUps/drawMatchUps';
 import { getMatchUpsMap } from '@Query/matchUps/getMatchUpsMap';
@@ -41,7 +40,7 @@ import { exitAwardable } from '@Helpers/outcome/exitAwardable';
 import { analyzeMatchUp } from '@Query/matchUp/analyzeMatchUp';
 import { pushGlobalLog } from '@Functions/global/globalLog';
 import { findDrawMatchUp } from '@Acquire/findDrawMatchUp';
-import { isDoubleExit, isExit } from '@Validators/isExit';
+import { isDoubleExit } from '@Validators/isExit';
 import { parse } from '@Helpers/matchUpFormatCode/parse';
 import { isAdHoc } from '@Query/drawDefinition/isAdHoc';
 import { clearsABye } from '@Query/matchUp/clearsABye';
@@ -55,7 +54,7 @@ import {
 
 // constants and types
 import type { DerivedStatusCodes } from '@Mutate/matchUps/matchUpStatus/sideStatusCodes';
-import { QUALIFYING, WIN_RATIO } from '@Constants/drawDefinitionConstants';
+import { QUALIFYING } from '@Constants/drawDefinitionConstants';
 import { MatchUpsMap, PolicyDefinitions } from '@Types/factoryTypes';
 import { DISABLE_AUTO_CALC } from '@Constants/extensionConstants';
 import { SUCCESS } from '@Constants/resultConstants';
@@ -914,35 +913,6 @@ function resolveAndApplyOutcome({
   return decorateResult({ result, stack });
 }
 
-/**
- * A WINNER WITH NO DRAWPOSITIONS TO DIRECT FROM IS REFUSED BEFORE THE FIRST WRITE.
- *
- * `directParticipants` refused `MISSING_DRAW_POSITIONS` only after `attemptToModifyScore` had written the score and the
- * winner: measured on `dev` 01ce40e544, a SINGLE_ELIMINATION matchUp stored without `drawPositions`, scored under
- * `requireParticipantsForScoring: false`, returned the error over a written result (CA, 2026-10-22: an error leaves the
- * record unchanged, and no mutation relies on rollback). The same question, asked of the same matchUp, on the route
- * that reaches it: a matchUp that has sent nothing (so neither the swap nor the downstream-dependency route), not a
- * line of a dual, not ad hoc, given a winner or an exit to carry. Read before anything is written, so it cannot drift
- * from what `directParticipants` reads.
- */
-/** what `missingDrawPositionsRefusal` reads of the call: the outcome view (v2) asks it with the same values */
-export type MissingDrawPositionsParams = SetMatchUpStateArgs & { matchUp: MatchUp; structure?: Structure };
-
-export function missingDrawPositionsRefusal({
-  activeDownstream,
-  params,
-}: {
-  params: MissingDrawPositionsParams;
-  activeDownstream: boolean;
-}) {
-  const { matchUp, structure, matchUpStatus } = params;
-  if (matchUp.drawPositions || matchUp.collectionId || isAdHoc({ structure })) return undefined;
-  if (matchUp.winningSide || isDoubleExit(matchUp.matchUpStatus)) return undefined;
-  const directs = !!params.winningSide || (!!params.propagateExitStatus && isExit(matchUpStatus));
-  if (!directs || isUndirectedDrawnOutcome(params, activeDownstream)) return undefined;
-  return decorateResult({ result: { error: MISSING_DRAW_POSITIONS }, stack: 'setMatchUpStatus' });
-}
-
 // Auto-capture matchUp.schedule.scoredTime the first time a matchUp becomes
 // "scored" (a score with value, a winningSide, or a completed status). Applied
 // at the convergence point so it covers every apply sub-path. Captured once —
@@ -1302,33 +1272,6 @@ function checkParticipants({
   return { ...SUCCESS };
 }
 
-/**
- * A drawn result where no winner is needed (a round robin, an ad hoc draw, rotating partners) retains its score without
- * removing directed positions: a level combined total, or a level finish of a format that can end level (§ 9.7).
- */
-function isUndirectedDrawnOutcome(
-  params: SetMatchUpStateArgs & { structure?: Structure; matchUp?: MatchUp; inContextMatchUp?: MatchUp },
-  activeDownstream: boolean,
-): boolean {
-  const format = resolveScoringFormat({ ...params, incoming: params.matchUpFormat });
-  const noWinnerNeeded =
-    params.structure?.finishingPosition === WIN_RATIO ||
-    isAdHoc({ structure: params.structure }) ||
-    isRotatingPartnerDraw(params.drawDefinition, params.event);
-  return (
-    !activeDownstream &&
-    !params.winningSide &&
-    noWinnerNeeded &&
-    isDrawnResult({
-      matchUpId: params.matchUpId ?? '',
-      matchUpStatus: params.matchUpStatus ?? COMPLETED,
-      score: params.score,
-      winningSide: params.winningSide,
-      matchUpFormat: format,
-    })
-  );
-}
-
 function isWalkoverStatus(status?: string) {
   return !!status && [WALKOVER, DOUBLE_WALKOVER].includes(status);
 }
@@ -1403,3 +1346,9 @@ function feedEligibilityRefusal(args: Parameters<typeof feedEligibilityChange>[0
     stack: 'feedEligibility',
   });
 }
+
+// Retain the existing internal import surface while consumers move to the query.
+export {
+  missingDrawPositionsRefusal,
+  type MissingDrawPositionsParams,
+} from '@Query/matchUp/missingDrawPositionsRefusal';
