@@ -36,7 +36,7 @@ const tokenHash = (text) =>
   );
 const read = (file, revision) =>
   revision
-    ? execFileSync('git', ['show', `${revision}:${file}`], { encoding: 'utf8' })
+    ? execFileSync('git', ['show', `${revision}:${file}`], { encoding: 'utf8', timeout: 30_000, killSignal: 'SIGKILL' })
     : readFileSync(resolve(root, file), 'utf8');
 const render = (title, cell) => title.replace(/\$([A-Za-z][A-Za-z0-9_]*)/g, (_s, k) => String(cell[k]));
 const destination = (row) => {
@@ -290,7 +290,11 @@ function baselineBridge(revision) {
   ];
   return {
     schema: 1,
-    sourceRevision: execFileSync('git', ['rev-parse', revision], { encoding: 'utf8' }).trim(),
+    sourceRevision: execFileSync('git', ['rev-parse', revision], {
+      encoding: 'utf8',
+      timeout: 30_000,
+      killSignal: 'SIGKILL',
+    }).trim(),
     sourceHashes: Object.fromEntries(sourceFiles.map((f) => [f, hash(read(f, revision))])),
     rows: mapped.map((r) => ({
       original: r.original,
@@ -383,7 +387,9 @@ function verifyNative(bridge, path, enabled) {
 function main() {
   const [command, arg] = process.argv.slice(2);
   if (command === 'seal') {
-    const revision = arg ?? execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+    const revision =
+      arg ??
+      execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8', timeout: 30_000, killSignal: 'SIGKILL' }).trim();
     const b = baselineBridge(revision);
     mkdirSync(dirname(fixture), { recursive: true });
     const { rows, ...header } = b;
