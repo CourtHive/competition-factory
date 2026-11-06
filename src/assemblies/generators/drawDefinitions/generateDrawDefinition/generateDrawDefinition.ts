@@ -18,13 +18,18 @@ import {
 } from '@Generators/drawDefinitions/validateAndDeriveDrawValues';
 
 // constants and types
-import { ErrorType, INVALID_VALUES, SHARED_INDIVIDUAL_PARTICIPANT } from '@Constants/errorConditionConstants';
 import { GenerateDrawDefinitionArgs, ResultType, WithPlayoffsArgs } from '@Types/factoryTypes';
 import { DIRECT_ACCEPTANCE, DIRECT_ENTRY_STATUSES } from '@Constants/entryStatusConstants';
 import { POLICY_TYPE_ROUND_NAMING } from '@Constants/policyConstants';
-import { LOSER } from '@Constants/drawDefinitionConstants';
+import { LOSER, MAIN } from '@Constants/drawDefinitionConstants';
 import { DrawDefinition } from '@Types/tournamentTypes';
 import { SUCCESS } from '@Constants/resultConstants';
+import {
+  ErrorType,
+  INVALID_STAGE,
+  INVALID_VALUES,
+  SHARED_INDIVIDUAL_PARTICIPANT,
+} from '@Constants/errorConditionConstants';
 
 /**
  * Builds on a draft (the caller attaches the result later), so whatever the mutate helpers it builds with announce
@@ -49,6 +54,18 @@ function generateDrawDefinitionDraft(params: GenerateDrawDefinitionArgs): Result
 } {
   const { voluntaryConsolation, withPlayoffs, targetMatchUpIds, tournamentRecord, event } = params;
   const stack = 'generateDrawDefinition';
+
+  // a draw is generated from its MAIN stage: a `stage` other than MAIN reached the structure generators and surfaced as
+  // a STRUCTURE_NOT_FOUND nobody could act on (NOC-717). A qualifying-only draw is qualifyingOnly + qualifyingProfiles
+  const stage = (params as { stage?: string }).stage;
+  if (stage && stage !== MAIN) {
+    return decorateResult({
+      info: 'generate a qualifying-only draw with qualifyingOnly and qualifyingProfiles',
+      result: { error: INVALID_STAGE },
+      context: { stage },
+      stack,
+    });
+  }
 
   // get participants both for entry validation and for automated placement
   // automated placement requires them to be "inContext" for avoidance policies to work
