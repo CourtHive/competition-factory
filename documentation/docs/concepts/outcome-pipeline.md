@@ -1054,6 +1054,15 @@ restores `v1`, and an unknown mode is `INVALID_VALUES`.
   Trigger propagation enabled still permits the captured clears; given winners under that flag
   remain refused by the existing per-op settle scope. No scope marker or detector exemption is added.
 
+  A **FIRST_MATCHUP arrival on a double exit's own freed loser seat** (S7) is admitted only for
+  a round-two target when this own unwind explicitly withdraws the matching propagated BYE and
+  the original seat has both `bye` and `byeFromPropagation`. The already planned plain arrival
+  supplies its participant and zero qualifying wins, using the same win-count query as v1; that
+  is not a claim of zero prior matches. Existing seeded, reservation, clean BYE-through and
+  settle checks still apply. The ordinary unwind, result and direction ops are unchanged. A
+  policy-off carried branch without that explicit own BYE withdrawal remains v1's, as do other
+  conditioned rounds. No history is recomputed and no scope marker or reducer field is added.
+
   A **final's** double exit (or the one matchUp of a one-round structure) produced nothing: cleared or given a winner, its
   unwind is the own loser seat's withdrawal alone, where a link feeds one (FEED_IN_CHAMPIONSHIP's consolation final seat;
   under `doubleExitPropagateBye: false` the carry there, taken back as the branch), and the call's own write; given a
