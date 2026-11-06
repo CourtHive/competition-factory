@@ -2852,7 +2852,7 @@ type Rederived = { matchUpStatus: MatchUpStatusUnion; provenance: SideExitProven
 function convergedChain(
   view: OutcomeView,
   source: HydratedMatchUp,
-  target: ProducedTarget,
+  target: Pick<ProducedTarget, 'entry'>,
 ): { matchUpId: string; rederived?: Rederived }[] | undefined {
   const chain: { matchUpId: string; rederived?: Rederived }[] = [];
   let previous: HydratedMatchUp | undefined = source;
@@ -2959,7 +2959,7 @@ type UnwoundContext = {
  * (`unwoundPassage`, S7): the BYE matchUps they wrote back to be played (`cleared`), and the matchUps whose pending exit
  * went with the position taken out (`reset`), as v1's chain finds them once the unfillable seat's BYE has gone
  */
-type UnwindRelay = { sourceId: string; cleared: Set<string>; reset: Set<string> };
+type UnwindRelay = { sourceId: string; cleared: Set<string>; reset: Set<string>; retained: Map<string, string> };
 
 /**
  * The levels of an unwind (`unwoundPath`): each matchUp on the path with the writes at the seat its loser link feeds, the
@@ -2975,7 +2975,7 @@ function unwoundLevels(
   // a position the own seat's withdrawal releases out of a matchUp a deeper seat's BYE also sends to (a double BYE's next
   // matchUp, a BYE until then, had sent it on): that matchUp is read without it, and written once, by the release
   const released = new Set<number>();
-  const relay: UnwindRelay = { sourceId, cleared: new Set(), reset: new Set() };
+  const relay: UnwindRelay = { sourceId, cleared: new Set(), reset: new Set(), retained: new Map() };
   const indices = path.map((_, index) => index);
   const order = branched && indices.length > 1 ? [...indices.slice(1), 0] : indices;
   const seatOpsAt = new Map<number, OutcomeOp[]>();
@@ -3007,7 +3007,13 @@ function unwoundLevels(
 /** what a level's seat ops leave for the levels read after them: the positions released, the matchUps cleared or reset */
 function collectUnwound(seatOps: OutcomeOp[], released: Set<number>, relay: UnwindRelay): void {
   for (const op of seatOps) {
-    if (op.op === 'clearMatchUpBye') relay.cleared.add(op.matchUpId);
+    if (op.op === 'clearMatchUpBye') {
+      relay.cleared.add(op.matchUpId);
+      if (op.retainedOnwardMatchUpId) {
+        relay.retained.set(op.matchUpId, op.retainedOnwardMatchUpId);
+        relay.reset.add(op.retainedOnwardMatchUpId);
+      }
+    }
     if (op.op !== 'setMatchUpDrawPositions') continue;
     if (op.releasedDrawPosition) released.add(op.releasedDrawPosition);
     if (op.clearsPendingExit) relay.reset.add(op.matchUpId);
@@ -3481,6 +3487,76 @@ function awardedProducedRelaySeatOps(
   ];
 }
 
+/** A produced copy converged with another origin, producing once more into a clean final. */
+function convergedRelayCopy(view: OutcomeView, bye: HydratedMatchUp, drawPosition: number) {
+  const status = producedBesideBye(view, bye, drawPosition);
+  const next = indexed(view, bye.winnerMatchUpId);
+  if (!status || !next || next.structureId !== bye.structureId || next.loserMatchUpId) return undefined;
+  if (!isDoubleExit(next.matchUpStatus) || next.winningSide || !scoreless(next)) return undefined;
+  if (positionsOf(next).length !== 1 || next.matchUpStatusCodes?.length) return undefined;
+  if (next.sides?.some((side) => side.participantId || side.bye)) return undefined;
+  const [entry] = Object.values(bye.sideExitProvenance ?? {});
+  const origin = indexed(view, entry?.sourceMatchUpId);
+  if (!origin) return undefined;
+  const entries = Object.values(next.sideExitProvenance ?? {});
+  const copy = entries.find((candidate) => candidate.sourceMatchUpId === origin.matchUpId);
+  if (entries.length !== 2 || copy?.previousMatchUpStatus !== entry.previousMatchUpStatus) return undefined;
+  if (carriedExitStatus(copy) !== status) return undefined;
+  const chain = convergedChain(view, origin, { entry: next });
+  if (!chain || chain.length !== 2 || !chain[0].rederived || chain[1].rederived) return undefined;
+  const kept = chain[0].rederived;
+  const successor = indexed(view, chain[1].matchUpId);
+  if (!successor || successor.structureId !== next.structureId || successor.loserMatchUpId) return undefined;
+  if (successor.winnerMatchUpId || !undecided(successor)) return undefined;
+  if (successor.matchUpStatus !== (next.matchUpStatus === DOUBLE_DEFAULT ? DEFAULTED : WALKOVER)) return undefined;
+  return { status, next, successor, kept };
+}
+
+/** Retain the foreign onward origin before rebuilding the arriving direction. */
+function convergedProducedRelaySeatOps(
+  view: OutcomeView,
+  bye: HydratedMatchUp,
+  drawPosition: number,
+  withdraw: OutcomeOp,
+): OutcomeOp[] | undefined {
+  const copy = convergedRelayCopy(view, bye, drawPosition);
+  if (!copy) return undefined;
+  const { status, next, successor, kept } = copy;
+  return [
+    withdraw,
+    {
+      op: 'clearMatchUpBye',
+      matchUpId: bye.matchUpId,
+      drawPosition,
+      rederived: { matchUpStatus: status },
+      retainedOnwardMatchUpId: next.matchUpId,
+    },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: bye.matchUpId },
+    {
+      op: 'setMatchUpResult',
+      matchUpId: next.matchUpId,
+      matchUpStatus: kept.matchUpStatus,
+      score: BLANK_SCORE,
+      matchUpStatusCodes: [],
+      stampsScoredTime: false,
+      announcedAs: 'settleRederivedDoubleExit',
+    },
+    { op: 'setSideExitProvenance', matchUpId: next.matchUpId, provenance: kept.provenance },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId },
+    {
+      op: 'setMatchUpResult',
+      matchUpId: successor.matchUpId,
+      matchUpStatus: TO_BE_PLAYED,
+      ...(successor.score ? { score: BLANK_SCORE } : {}),
+      matchUpStatusCodes: [],
+      stampsScoredTime: false,
+      announcedAs: 'withdrawProducedExits',
+    },
+    { op: 'setSideExitProvenance', matchUpId: successor.matchUpId },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: successor.matchUpId },
+  ];
+}
+
 function unwoundSeatOps(
   view: OutcomeView,
   loserSeat: WinnerLoserSeat,
@@ -3508,7 +3584,8 @@ function unwoundSeatOps(
   if (!seat.bye || !seat.byeFromPropagation || !byeMatchUp) return undefined;
   const produced =
     producedRelaySeatOps(view, byeMatchUp, drawPosition, withdraw, withdrawn) ??
-    awardedProducedRelaySeatOps(view, byeMatchUp, drawPosition, withdraw, withdrawn);
+    awardedProducedRelaySeatOps(view, byeMatchUp, drawPosition, withdraw, withdrawn) ??
+    convergedProducedRelaySeatOps(view, byeMatchUp, drawPosition, withdraw);
   if (produced) return produced;
   // an exit carried onto the BYE matchUp's other side stands once the BYE goes: v1 re-derives the matchUp to it (a
   // final's consolation seat beside a carried walkover, S6 tail): v1's. Under `doubleExitPropagateBye: false` the carry
@@ -3738,7 +3815,7 @@ function unwoundLevelSeatOps(
   // P39 claims it back, `settleRederivedDoubleExit`), nothing written. Under `doubleExitPropagateBye: false` the seat
   // holds the carries' own convergence, which the first level's branch refuses before this level is read
   if (at.kept) return [];
-  if (branched && !byeHeld) return unwoundBranch(view, loserSeat, at.first, withdrawn);
+  if (branched && !byeHeld) return unwoundBranch(view, loserSeat, at.first, withdrawn, relay);
   if (branched && !loserSeat.seat?.bye) return unwoundPassage(view, loserSeat, relay);
   // the relay is read whatever the policy: only under `doubleExitPropagateBye: false` can a BYE matchUp hold this
   // double exit's own carry (its loser seats take BYEs otherwise), so it refuses nothing new under the default
@@ -3845,6 +3922,57 @@ function carriesAlone(matchUp: HydratedMatchUp, drawPosition: number): boolean {
   return scoreless(matchUp) && !matchUp.sides?.some((side) => side.bye);
 }
 
+/** The own carried convergence dissolves before its produced relay, whose foreign onward origin stands. */
+function unwoundOwnConvergence(view: OutcomeView, seat: WinnerLoserSeat, relay?: UnwindRelay): OutcomeOp[] | undefined {
+  const start = indexed(view, seat.matchUpId);
+  const next = indexed(view, start?.winnerMatchUpId);
+  const onwardId = next && relay?.retained.get(next.matchUpId);
+  if (!start || !next || !onwardId || next.winnerMatchUpId !== onwardId) return undefined;
+  if (!isDoubleExit(start.matchUpStatus) || start.winningSide || !scoreless(start)) return undefined;
+  if (start.loserMatchUpId || start.matchUpStatusCodes?.length || start.sides?.some((side) => side.bye))
+    return undefined;
+  const fedSide = sideOf(start, seat.drawPosition);
+  if (!fedSide) return undefined;
+  const own = start.sideExitProvenance?.[fedSide];
+  const keptSide = (3 - fedSide) as 1 | 2;
+  const kept = start.sideExitProvenance?.[keptSide];
+  const status = carriedExitStatus(kept);
+  const source = indexed(view, kept?.sourceMatchUpId);
+  if (Object.keys(start.sideExitProvenance ?? {}).length !== 2 || own?.sourceMatchUpId !== relay?.sourceId)
+    return undefined;
+  if (!carriedExitStatus(own) || !kept || !status || kept.previousMatchUpStatus !== status) return undefined;
+  if (source?.loserMatchUpId !== start.matchUpId || source.matchUpStatus !== status) return undefined;
+  const copy = Object.values(next.sideExitProvenance ?? {});
+  if (next.matchUpStatus !== BYE || copy.length !== 1 || copy[0].sourceMatchUpId !== start.matchUpId) return undefined;
+  if (!relay?.cleared.has(next.matchUpId) || !relay.reset.has(onwardId)) return undefined;
+  return [
+    {
+      op: 'setMatchUpResult',
+      matchUpId: next.matchUpId,
+      matchUpStatus: TO_BE_PLAYED,
+      score: BLANK_SCORE,
+      matchUpStatusCodes: [],
+      stampsScoredTime: false,
+      announcesContext: false,
+    },
+    { op: 'setSideExitProvenance', matchUpId: next.matchUpId },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId },
+    {
+      op: 'setMatchUpResult',
+      matchUpId: start.matchUpId,
+      matchUpStatus: status,
+      winningSide: fedSide,
+      retainedExitPlanned: true,
+      score: BLANK_SCORE,
+      matchUpStatusCodes: [],
+      stampsScoredTime: false,
+    },
+    { op: 'setSideExitProvenance', matchUpId: start.matchUpId, provenance: { [keptSide]: kept } },
+    { op: 'stampUpdatedAt', entity: 'matchUp', id: start.matchUpId },
+    { op: 'stampUpdatedAt', entity: 'structure', id: seat.structureId },
+  ];
+}
+
 /**
  * Under `doubleExitPropagateBye: false` the seat a level's loser link feeds shows no BYE: the double exit carries its exit
  * there, awarded to whoever stands or arrives opposite, and a further level's seat holds nothing of this unwind's. v1
@@ -3863,10 +3991,11 @@ function unwoundBranch(
   loserSeat: WinnerLoserSeat,
   first: boolean,
   withdrawn: Set<string>,
+  relay?: UnwindRelay,
 ): OutcomeOp[] | undefined {
   const start = indexed(view, loserSeat.matchUpId);
   if (!start) return undefined;
-  if (first && !carriesAlone(start, loserSeat.drawPosition)) return undefined;
+  if (first && !carriesAlone(start, loserSeat.drawPosition)) return unwoundOwnConvergence(view, loserSeat, relay);
   const all = view.inContextDrawMatchUps ?? [];
   const taken = new Set<number>();
   const written = new Set<string>();
@@ -5121,6 +5250,23 @@ function unwoundArrivalOps(view: OutcomeView, unwound: OutcomeOp[], loser?: Dire
   const { loserMatchUpId, loserTargetDrawPosition: drawPosition } = view.targets;
   const byeMatchUp = indexed(view, loserMatchUpId);
   if (!loser?.arrives || loser.converged || !byeMatchUp || !drawPosition) return [];
+  const retained = unwound.find(
+    (op): op is Extract<OutcomeOp, { op: 'setMatchUpResult' }> =>
+      op.op === 'setMatchUpResult' && op.matchUpId === loserMatchUpId && !!op.retainedExitPlanned,
+  );
+  if (retained && !loser.exit) {
+    const next = indexed(view, byeMatchUp.winnerMatchUpId) as HydratedMatchUp;
+    return [
+      {
+        op: 'setMatchUpDrawPositions',
+        matchUpId: next.matchUpId,
+        drawPositions: [...positionsOf(next), drawPosition].sort((a, b) => a - b),
+        placedDrawPosition: drawPosition,
+      },
+      { op: 'stampUpdatedAt', entity: 'matchUp', id: next.matchUpId },
+      retained,
+    ];
+  }
   const cleared = unwound.some(
     (op) =>
       op.op === 'clearMatchUpBye' &&
@@ -5190,6 +5336,19 @@ function producedRelayAfterOps(view: OutcomeView, unwound: OutcomeOp[], loser?: 
     // producedRelaySeatOps has already checked both matchUps before emitting this re-derived pending exit.
     const home = indexed(view, op.matchUpId) as HydratedMatchUp;
     const next = indexed(view, home.winnerMatchUpId) as HydratedMatchUp;
+    if (op.retainedOnwardMatchUpId) {
+      const copy = convergedRelayCopy(view, home, op.drawPosition) as NonNullable<
+        ReturnType<typeof convergedRelayCopy>
+      >;
+      return [
+        ...unwound.filter((write) => write.op === 'setMatchUpResult' && write.retainedExitPlanned),
+        ...unwound.filter(
+          (write) =>
+            write.op === 'setMatchUpResult' &&
+            (write.matchUpId === copy.next.matchUpId || write.matchUpId === copy.successor.matchUpId),
+        ),
+      ];
+    }
     const arrived = loser?.arrives && !loser.exit && !loser.converged && view.targets.loserMatchUpId === home.matchUpId;
     const beyond = indexed(view, next.winnerMatchUpId);
     const drawPositions = [...positionsOf(next), op.drawPosition];
