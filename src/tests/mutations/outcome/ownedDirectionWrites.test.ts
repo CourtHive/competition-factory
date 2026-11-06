@@ -821,7 +821,42 @@ const NOTICE_RELAY_CARRIES: [string, Scenario][] = [
   ],
 ];
 
+const CONVERGED_RELAY_TRIGGERS: [string, Record<string, unknown>][] = [
+  ['winner1', { winningSide: 1 }],
+  ['winner2', { winningSide: 2 }],
+  ['walkover1 carried', { matchUpStatus: WALKOVER, winningSide: 1 }],
+  ['walkover2 carried', { matchUpStatus: WALKOVER, winningSide: 2 }],
+  ['default1 carried', { matchUpStatus: DEFAULTED, winningSide: 1 }],
+  ['default2 carried', { matchUpStatus: DEFAULTED, winningSide: 2 }],
+  ['cleared', cleared],
+];
+const CONVERGED_RELAY_CAPTURES: [string, Scenario][] = [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((first) =>
+  [DOUBLE_WALKOVER, DOUBLE_DEFAULT].flatMap((source) =>
+    [WALKOVER, DEFAULTED].flatMap((middle) =>
+      CONVERGED_RELAY_TRIGGERS.map(([trigger, outcome]): [string, Scenario] => [
+        `produced relay convergence: ${first}/${middle}/${source}/${trigger}`,
+        {
+          drawProfile: { drawSize: 16, participantsCount: 13, drawType: FIRST_MATCH_LOSER_CONSOLATION },
+          nonRandom: 20496326,
+          policyDefinitions: POLICY_OFF,
+          setup: [
+            { target: R1(2, 'Main'), outcome: { matchUpStatus: first }, params: CARRIED },
+            { target: R1(4, 'Main'), outcome: { matchUpStatus: middle, winningSide: 1 }, params: CARRIED },
+            { target: R1(3, 'Main'), outcome: { matchUpStatus: source }, params: CARRIED },
+          ],
+          steps: [{ target: R1(3, 'Main'), outcome, params: CARRIED }],
+        },
+      ]),
+    ),
+  ),
+);
+
+// Carried arrivals need a separate convergence into the retained onward copy; this slice owns plain arrivals and clears.
+const CONVERGED_PRODUCED_RELAYS = CONVERGED_RELAY_CAPTURES.filter(([label]) => !label.includes(' carried'));
+const CONVERGED_RELAY_CARRIED_WALL = CONVERGED_RELAY_CAPTURES.filter(([label]) => label.includes(' carried'));
+
 const SCENARIOS: [string, Scenario][] = [
+  ...CONVERGED_PRODUCED_RELAYS,
   ...NOTICE_RELAY_CARRIES,
   ...AWARDED_PRODUCED_RELAY,
   ...PRODUCED_RELAY,
@@ -3528,6 +3563,27 @@ describe('M1 notice contracts also compare with in-context subscribers under dif
     expect(compared.results.every((result: any) => result.success)).toEqual(true);
     expect(compared.record).toEqual(v1.record);
     expect(compared.notices).toEqual(v1.notices);
+  });
+});
+
+describe('S7 converged produced relays compare subscribed differential notices', () => {
+  it.each(CONVERGED_RELAY_CAPTURES)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const compared = play(OUTCOME_PIPELINE_DIFFERENTIAL, scenario);
+    expect(compared.results).toEqual(v1.results);
+    expect(compared.record).toEqual(v1.record);
+    expect(compared.notices).toEqual(v1.notices);
+  });
+});
+
+describe('S7 converged relays keep carried arrivals refused until their onward convergence is planned', () => {
+  it.each(CONVERGED_RELAY_CARRIED_WALL)('%s', (_label, scenario) => {
+    const v1 = play(OUTCOME_PIPELINE_V1, scenario);
+    const v2 = play(OUTCOME_PIPELINE_V2, scenario);
+    expect(v2.v1Writes).toBeGreaterThan(0);
+    expect(v2.results).toEqual(v1.results);
+    expect(v2.record).toEqual(v1.record);
+    expect(v2.notices).toEqual(v1.notices);
   });
 });
 

@@ -58,6 +58,8 @@ export type OutcomeOp =
        * schedule is left as it is: a double exit's produced exit (`doubleExitAdvancement` → `modifyMatchUpScore`)
        */
       stampsScoredTime?: false;
+      /** the retained origin and all its onward consequences are explicitly planned (S7 own-seat convergence) */
+      retainedExitPlanned?: true;
       /**
        * false where v1 writes the result with neither the tournament nor the event (a produced exit recorded beside a BYE
        * and carried on, `stampExitOnByeHeldLoserTarget`, `carryExitOnward`): the notice names neither, and the matchUp in
@@ -272,6 +274,8 @@ export type OutcomeOp =
        * keeps its award on an empty seat), its provenance kept; a produced exit instead stays pending with no winningSide
        */
       rederived?: { matchUpStatus: MatchUpStatusUnion; winningSide?: 1 | 2 };
+      /** the relayed copy converged onward: its surviving origin is retained by the unwind's separate ops */
+      retainedOnwardMatchUpId?: string;
     }
   | {
       op: 'setParticipantResults';
