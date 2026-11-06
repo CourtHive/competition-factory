@@ -587,6 +587,8 @@ const {
 });
 ```
 
+While deep copy is enabled (the default) `event` and `drawDefinition` are deep copies: modifying them does not modify engine state, so make changes through engine methods, by id. With `setDeepCopy(false)` they are the live objects held in state.
+
 ---
 
 ## getEvents
