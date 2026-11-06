@@ -3165,7 +3165,7 @@ function pendingAwardRemoval(
   const arrival = entries.find(([, entry]) => entry.sourceMatchUpId === previous.matchUpId);
   const kept = entries.find(([, entry]) => entry.sourceMatchUpId !== previous.matchUpId);
   if (entries.length !== 2 || !arrival || !kept || arrival[1].matchUpStatus) return undefined;
-  if (arrival[1].previousMatchUpStatus !== previous.matchUpStatus || Number(arrival[0]) !== at.winningSide)
+  if (arrival[1].previousMatchUpStatus !== previous.matchUpStatus || arrival[0] !== String(at.winningSide))
     return undefined;
   const foreign = indexed(view, kept[1].sourceMatchUpId);
   const status = carriedExitStatus(kept[1]);
@@ -3174,7 +3174,7 @@ function pendingAwardRemoval(
     return undefined;
   if (!scoreless(foreign) || foreign.matchUpStatusCodes?.length || Object.keys(foreign.sideExitProvenance ?? {}).length)
     return undefined;
-  if (at.matchUpStatus !== status || Number(kept[0]) !== 3 - at.winningSide) return undefined;
+  if (at.matchUpStatus !== status || kept[0] !== String(3 - at.winningSide)) return undefined;
   if (foreign.structureId !== at.structureId || !pendingAwardSeatStands(view, at)) return undefined;
   return { drawPosition: held[0], provenance: { [Number(kept[0])]: kept[1] } };
 }
