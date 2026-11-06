@@ -1012,7 +1012,10 @@ Draw-level checks (in addition to every structure-level `issueType`):
 - `DROPPED_PROGRESSION` — a `LOSER`- or `WINNER`-linked source matchUp whose feeding participant is
   **eligible** to feed the target structure yet is absent from its `positionAssignments` — a
   consolation or feed-back progression that silently failed. The `direction` field records `LOSER`
-  vs `WINNER`. (error)
+  vs `WINNER`. A target position whose links are disabled is not reported: that is how
+  `removeDrawPositionAssignment` with `replaceWithBye` records a loser who declined a consolation,
+  and the engine feeds nobody there. The scan asks `getTargetMatchUp`, the lookup progression itself
+  uses. (error)
 
 The three link findings (`DANGLING_LINK`, `LINK_MISSING_SOURCE_ROUND`, `INVALID_LINK`) are repaired, or
 removed and reported, by [`repairMalformedLinks`](/docs/governors/draws-governor#repairmalformedlinks).
